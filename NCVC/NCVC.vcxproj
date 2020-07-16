@@ -1,0 +1,344 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3DCF530D-781E-4F47-8CC7-15530F93412C}</ProjectGuid>
+    <RootNamespace>NCVC</RootNamespace>
+    <Keyword>MFCProj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140_xp</PlatformToolset>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>false</ValidateAllParameters>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalIncludeDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost;C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\include\old</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0411</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>MagaDbg.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib;C:\Users\magara\Documents\Visual Studio 2015\lib;C:\Users\magara\Documents\Visual Studio 2015\lib\old</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>false</ValidateAllParameters>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0411</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>MagaDbg.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="3Dto2D.cpp" />
+    <ClCompile Include="AboutDlg.cpp" />
+    <ClCompile Include="AddinDlg.cpp" />
+    <ClCompile Include="ChildBase.cpp" />
+    <ClCompile Include="CustomControl.cpp" />
+    <ClCompile Include="CustomMenu.cpp" />
+    <ClCompile Include="CustomToolBar.cpp" />
+    <ClCompile Include="DocBase.cpp" />
+    <ClCompile Include="DxfAutoWorkingDlg.cpp" />
+    <ClCompile Include="DXFBlock.cpp" />
+    <ClCompile Include="DXFChild.cpp" />
+    <ClCompile Include="DXFdata.cpp" />
+    <ClCompile Include="DXFDoc.cpp" />
+    <ClCompile Include="DXFDoc2.cpp" />
+    <ClCompile Include="DxfEditOrgDlg.cpp" />
+    <ClCompile Include="DXFMakeClass.cpp" />
+    <ClCompile Include="DXFMakeOption.cpp" />
+    <ClCompile Include="DXFOption.cpp" />
+    <ClCompile Include="DxfSetup.cpp" />
+    <ClCompile Include="DxfSetup1.cpp" />
+    <ClCompile Include="DxfSetup2.cpp" />
+    <ClCompile Include="DxfSetupReload.cpp" />
+    <ClCompile Include="DXFshape.cpp" />
+    <ClCompile Include="DXFShapeView.cpp" />
+    <ClCompile Include="DXFView.cpp" />
+    <ClCompile Include="ExecOption.cpp" />
+    <ClCompile Include="ExecSetupDlg.cpp" />
+    <ClCompile Include="ExtensionDlg.cpp" />
+    <ClCompile Include="Layer.cpp" />
+    <ClCompile Include="LayerDlg.cpp" />
+    <ClCompile Include="MainFrm.cpp" />
+    <ClCompile Include="MainStatusBar.cpp" />
+    <ClCompile Include="MakeDXFDlg.cpp" />
+    <ClCompile Include="MakeDXFDlg1.cpp" />
+    <ClCompile Include="MakeDXFDlg2.cpp" />
+    <ClCompile Include="MakeNCDlg.cpp" />
+    <ClCompile Include="MakeNCDlgEx1.cpp" />
+    <ClCompile Include="MakeNCDlgEx11.cpp" />
+    <ClCompile Include="MakeNCDlgEx2.cpp" />
+    <ClCompile Include="MakeNCDlgEx21.cpp" />
+    <ClCompile Include="MCOption.cpp" />
+    <ClCompile Include="MCSetup.cpp" />
+    <ClCompile Include="MCSetup1.cpp" />
+    <ClCompile Include="MCSetup2.cpp" />
+    <ClCompile Include="MCSetup3.cpp" />
+    <ClCompile Include="MCSetup4.cpp" />
+    <ClCompile Include="MKNCSetup.cpp" />
+    <ClCompile Include="MKNCSetup1.cpp" />
+    <ClCompile Include="MKNCSetup2.cpp" />
+    <ClCompile Include="MKNCSetup3.cpp" />
+    <ClCompile Include="MKNCSetup4.cpp" />
+    <ClCompile Include="MKNCSetup5.cpp" />
+    <ClCompile Include="MKNCSetup6.cpp" />
+    <ClCompile Include="MKNCSetup8.cpp" />
+    <ClCompile Include="NCChild.cpp" />
+    <ClCompile Include="NCdata.cpp" />
+    <ClCompile Include="NCDoc.cpp" />
+    <ClCompile Include="NCInfoTab.cpp" />
+    <ClCompile Include="NCInfoView.cpp" />
+    <ClCompile Include="NCJumpDlg.cpp" />
+    <ClCompile Include="NCListView.cpp" />
+    <ClCompile Include="NCMakeClass.cpp" />
+    <ClCompile Include="NCMakeOption.cpp" />
+    <ClCompile Include="NCVC.cpp" />
+    <ClCompile Include="NCVCaddinDXF.cpp" />
+    <ClCompile Include="NCVCaddinIF.cpp" />
+    <ClCompile Include="NCVCaddinNC.cpp" />
+    <ClCompile Include="NCView.cpp" />
+    <ClCompile Include="NCViewSplit.cpp" />
+    <ClCompile Include="NCViewTab.cpp" />
+    <ClCompile Include="NCViewXY.cpp" />
+    <ClCompile Include="NCViewXZ.cpp" />
+    <ClCompile Include="NCViewYZ.cpp" />
+    <ClCompile Include="NCWorkDlg.cpp" />
+    <ClCompile Include="ShapePropDlg.cpp" />
+    <ClCompile Include="SplashWnd.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="TabView.cpp" />
+    <ClCompile Include="ThreadDlg.cpp" />
+    <ClCompile Include="TH_AutoWorkingSet.cpp" />
+    <ClCompile Include="TH_Correct.cpp" />
+    <ClCompile Include="TH_Cuttime.cpp" />
+    <ClCompile Include="TH_MakeNCD.cpp" />
+    <ClCompile Include="TH_NCRead.cpp" />
+    <ClCompile Include="TH_ShapeSearch.cpp" />
+    <ClCompile Include="ToolBarSetupDlg.cpp" />
+    <ClCompile Include="ViewBase.cpp" />
+    <ClCompile Include="ViewOption.cpp" />
+    <ClCompile Include="ViewSetup.cpp" />
+    <ClCompile Include="ViewSetup1.cpp" />
+    <ClCompile Include="ViewSetup2.cpp" />
+    <ClCompile Include="ViewSetup3.cpp" />
+    <ClCompile Include="ViewSetup4.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="3Dto2D.h" />
+    <ClInclude Include="AboutDlg.h" />
+    <ClInclude Include="AddinDlg.h" />
+    <ClInclude Include="ChildBase.h" />
+    <ClInclude Include="CustomClass.h" />
+    <ClInclude Include="CustomControl.h" />
+    <ClInclude Include="CustomMenu.h" />
+    <ClInclude Include="CustomToolBar.h" />
+    <ClInclude Include="DocBase.h" />
+    <ClInclude Include="DxfAutoWorkingDlg.h" />
+    <ClInclude Include="DXFBlock.h" />
+    <ClInclude Include="DXFChild.h" />
+    <ClInclude Include="DXFdata.h" />
+    <ClInclude Include="DXFDoc.h" />
+    <ClInclude Include="DxfEditOrgDlg.h" />
+    <ClInclude Include="DXFkeyword.h" />
+    <ClInclude Include="DXFMakeClass.h" />
+    <ClInclude Include="DXFMakeOption.h" />
+    <ClInclude Include="DXFOption.h" />
+    <ClInclude Include="DxfSetup.h" />
+    <ClInclude Include="DxfSetup1.h" />
+    <ClInclude Include="DxfSetup2.h" />
+    <ClInclude Include="DxfSetupReload.h" />
+    <ClInclude Include="DXFshape.h" />
+    <ClInclude Include="DXFShapeView.h" />
+    <ClInclude Include="DXFView.h" />
+    <ClInclude Include="ExecOption.h" />
+    <ClInclude Include="ExecSetupDlg.h" />
+    <ClInclude Include="ExtensionDlg.h" />
+    <ClInclude Include="Layer.h" />
+    <ClInclude Include="LayerDlg.h" />
+    <ClInclude Include="MainFrm.h" />
+    <ClInclude Include="MainStatusBar.h" />
+    <ClInclude Include="MakeDXFDlg.h" />
+    <ClInclude Include="MakeDXFDlg1.h" />
+    <ClInclude Include="MakeDXFDlg2.h" />
+    <ClInclude Include="MakeNCDlg.h" />
+    <ClInclude Include="MakeNCDlgEx1.h" />
+    <ClInclude Include="MakeNCDlgEx11.h" />
+    <ClInclude Include="MakeNCDlgEx2.h" />
+    <ClInclude Include="MakeNCDlgEx21.h" />
+    <ClInclude Include="MCOption.h" />
+    <ClInclude Include="MCSetup.h" />
+    <ClInclude Include="MCSetup1.h" />
+    <ClInclude Include="MCSetup2.h" />
+    <ClInclude Include="MCSetup3.h" />
+    <ClInclude Include="MCSetup4.h" />
+    <ClInclude Include="MKNCSetup.h" />
+    <ClInclude Include="MKNCSetup1.h" />
+    <ClInclude Include="MKNCSetup2.h" />
+    <ClInclude Include="MKNCSetup3.h" />
+    <ClInclude Include="MKNCSetup4.h" />
+    <ClInclude Include="MKNCSetup5.h" />
+    <ClInclude Include="MKNCSetup6.h" />
+    <ClInclude Include="MKNCSetup8.h" />
+    <ClInclude Include="NCChild.h" />
+    <ClInclude Include="NCdata.h" />
+    <ClInclude Include="NCDoc.h" />
+    <ClInclude Include="NCInfoTab.h" />
+    <ClInclude Include="NCInfoView.h" />
+    <ClInclude Include="NCJumpDlg.h" />
+    <ClInclude Include="NCListView.h" />
+    <ClInclude Include="NCMakeClass.h" />
+    <ClInclude Include="NCMakeOption.h" />
+    <ClInclude Include="NCVC.h" />
+    <ClInclude Include="NCVCaddinIF.h" />
+    <ClInclude Include="NCView.h" />
+    <ClInclude Include="NCViewBase.h" />
+    <ClInclude Include="NCViewSplit.h" />
+    <ClInclude Include="NCViewTab.h" />
+    <ClInclude Include="NCViewXY.h" />
+    <ClInclude Include="NCViewXZ.h" />
+    <ClInclude Include="NCViewYZ.h" />
+    <ClInclude Include="NCWorkDlg.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="ShapePropDlg.h" />
+    <ClInclude Include="SplashWnd.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TabView.h" />
+    <ClInclude Include="ThreadDlg.h" />
+    <ClInclude Include="ToolBarSetupDlg.h" />
+    <ClInclude Include="ViewBase.h" />
+    <ClInclude Include="ViewOption.h" />
+    <ClInclude Include="ViewSetup.h" />
+    <ClInclude Include="ViewSetup1.h" />
+    <ClInclude Include="ViewSetup2.h" />
+    <ClInclude Include="ViewSetup3.h" />
+    <ClInclude Include="ViewSetup4.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DXFdata.inl" />
+    <None Include="NCdata.inl" />
+    <None Include="res\NCVC.rc2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\check.ico" />
+    <Image Include="res\deficonlarge.ico" />
+    <Image Include="res\deficonsmall.ico" />
+    <Image Include="res\DXFDoc.ico" />
+    <Image Include="res\list.bmp" />
+    <Image Include="res\machine.bmp" />
+    <Image Include="res\makencd.bmp" />
+    <Image Include="res\NCDDoc.ico" />
+    <Image Include="res\NCVC.ico" />
+    <Image Include="res\NCVCDoc.ico" />
+    <Image Include="res\NCVClogo2.bmp" />
+    <Image Include="res\shape.bmp" />
+    <Image Include="res\Toolbar.bmp" />
+    <Image Include="res\tracebar.bmp" />
+    <Image Include="res\tree.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NCVC.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="NCVC.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

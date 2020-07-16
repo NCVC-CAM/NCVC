@@ -1,0 +1,201 @@
+// stdafx.cpp : 標準インクルード NCVC.pch のみを
+// 含むソース ファイルは、プリコンパイル済みヘッダーになります。
+// stdafx.obj にはプリコンパイルされた型情報が含まれます。
+
+#include "stdafx.h"
+
+#include "MagaDbgMac.h"
+#ifdef _DEBUG
+CMagaDbg	g_dbg;
+#endif
+
+// NCVCﾚｼﾞｽﾄﾘｷｰ
+extern	LPCTSTR	gg_szRegKey = "Software\\MNCT-S\\NCVC\\";
+
+// 改行文字
+extern	LPCTSTR	gg_szReturn = "\n";
+// 分解文字
+extern	LPCTSTR	gg_szDelimiter = ":";
+// 文字連結
+extern	LPCTSTR	gg_szCat = ", ";
+// カンマ分割
+extern	LPCTSTR	gg_szComma = ",";
+// ﾜｲﾙﾄﾞｶｰﾄﾞ
+extern	LPCTSTR	gg_szWild = "*.";
+
+// ｱｲｺﾝｻｲｽﾞ
+extern	const	int		gg_nIconX = 16;
+extern	const	int		gg_nIconY = 15;
+
+// BrowseForFolder() ｺｰﾙﾊﾞｯｸ関数
+static	int	AFXAPI	BrowseCallbackProc(HWND, UINT, LPARAM, LPARAM);
+
+/////////////////////////////////////////////////////////////////////////////
+// NCVC 共通関数
+
+// ﾌｫﾙﾀﾞ名からｱｲﾃﾑIDを返す
+LPITEMIDLIST GetItemIDList(LPCTSTR lpszFolder)
+{
+	if ( !lpszFolder || lstrlen(lpszFolder) <= 0 )
+		return NULL;
+
+	LPITEMIDLIST	lpIDL;
+	LPSHELLFOLDER	lpDesktopFolder;
+	if ( ::SHGetDesktopFolder(&lpDesktopFolder) != NOERROR )
+		return NULL;
+
+	OLECHAR		ochPath[_MAX_PATH];
+	ULONG		chEaten;	//文字列のサイズを受け取ります。
+	ULONG		dwAttributes;	//属性を受け取ります。
+
+	::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, lpszFolder, -1, ochPath, _MAX_PATH);
+	if ( lpDesktopFolder->ParseDisplayName( NULL, NULL,
+					ochPath, &chEaten, &lpIDL, &dwAttributes) != NOERROR )
+		lpIDL = NULL;
+
+	lpDesktopFolder->Release();
+
+	return lpIDL;
+}
+
+// ﾌｫﾙﾀﾞ参照ﾀﾞｲｱﾛｸﾞの表示(ﾌﾙﾊﾟｽを返す)
+CString	BrowseForFolder(LPCTSTR lpszCaption/*=NULL*/, LPCTSTR lpszInitFolder/*=NULL*/)
+{
+	LPITEMIDLIST	pidlRetFolder, pidlInitFolder;
+	BROWSEINFO		brInfo;
+	TCHAR			szFolder[_MAX_PATH];
+	CString			strFolder;
+
+	pidlInitFolder = GetItemIDList(lpszInitFolder);
+
+	::ZeroMemory(&brInfo, sizeof(BROWSEINFO));
+	brInfo.hwndOwner		= AfxGetMainWnd()->m_hWnd;
+	brInfo.pszDisplayName	= szFolder;
+	brInfo.lpszTitle		= lpszCaption;
+	brInfo.ulFlags			= BIF_BROWSEFORCOMPUTER | BIF_DONTGOBELOWDOMAIN | BIF_RETURNONLYFSDIRS;
+	brInfo.lpfn				= (BFFCALLBACK)BrowseCallbackProc;
+	brInfo.lParam			= (LPARAM)pidlInitFolder;
+
+	pidlRetFolder = ::SHBrowseForFolder(&brInfo);
+	if ( pidlRetFolder ) {
+		if ( ::SHGetPathFromIDList(pidlRetFolder, szFolder) )
+			strFolder = szFolder;
+		::CoTaskMemFree(pidlRetFolder);
+	}
+
+	if ( pidlInitFolder )
+		::CoTaskMemFree(pidlInitFolder);
+
+	return strFolder;
+}
+
+int	AFXAPI BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
+{
+	if ( uMsg == BFFM_INITIALIZED ) {
+		::SetWindowText(hwnd, _T("ﾌｫﾙﾀﾞの参照"));
+		::SendMessage(hwnd, BFFM_SETSELECTION, FALSE, lpData);
+	}
+
+	return 0;
+}
+
+// ﾌﾙﾊﾟｽ名をﾊﾟｽ名とﾌｧｲﾙ名に分割
+void Path_Name_From_FullPath
+	(LPCTSTR lpszFullPath, CString& strPath, CString& strName, BOOL bExt/*=TRUE*/)
+{
+	if ( !lpszFullPath || lstrlen(lpszFullPath) <= 0 ) {
+		strPath.Empty();
+		strName.Empty();
+		return;
+	}
+	TCHAR	szDrive[_MAX_DRIVE],
+			szDir[_MAX_DIR],
+			szFileName[_MAX_FNAME],
+			szExt[_MAX_EXT];
+	_splitpath_s(lpszFullPath,
+		szDrive, SIZEOF(szDrive), szDir, SIZEOF(szDir),
+		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
+	strPath  = szDrive;
+	strPath += szDir;
+	strName  = szFileName;
+	if ( bExt )
+		strName += szExt;
+}
+
+// ﾌｧｲﾙのﾊﾞｰｼﾞｮﾝﾘｿｰｽの取得
+LPVOID GetVersionResource(LPCTSTR lpszFileName, LPDWORD* pdwTrans)
+{
+	LPVOID	pVersionInfo;	// ﾊﾞｰｼﾞｮﾝﾘｿｰｽを指すﾎﾟｲﾝﾀ
+	UINT	uDumy;
+	DWORD	dwDumy;
+	DWORD	dwSize;			// ﾊﾞｰｼﾞｮﾝﾘｿｰｽのｻｲｽﾞ
+
+	// ﾊﾞｰｼﾞｮﾝﾘｿｰｽのｻｲｽﾞを取得
+	dwSize = GetFileVersionInfoSize( const_cast<LPTSTR>(lpszFileName), &dwDumy );
+	if ( dwSize <= 0 )
+		return NULL;
+
+	pVersionInfo = new byte [dwSize];
+	if ( !pVersionInfo )
+		return NULL;
+
+	// ﾊﾞｰｼﾞｮﾝﾘｿｰｽを取得
+	if ( GetFileVersionInfo( const_cast<LPTSTR>(lpszFileName), 0, dwSize, pVersionInfo ) ) {
+		// ﾊﾞｰｼﾞｮﾝﾘｿｰｽの言語情報を取得
+		if ( VerQueryValue( pVersionInfo, "\\VarFileInfo\\Translation", (LPVOID*)pdwTrans, &uDumy ) )
+			return pVersionInfo;
+	}
+	delete[]	pVersionInfo;
+
+	return	NULL;
+}
+
+// ﾊﾞｰｼﾞｮﾝﾘｿｰｽからﾊﾞｰｼﾞｮﾝ情報のｺﾋﾟｰを取得
+BOOL GetVersionValue(CString& strBuffer, LPVOID pVersionInfo, DWORD dwTrans, LPCTSTR strKeyWord)
+{
+	static	WORD  wCodePageID[] = { 0, 932, 949, 950, 1200, 1250, 1251, 1252, 1253, 1254, 1255, 1256 };
+	static	WORD  wLanguageID[] = {
+		0x0401, 0x0402, 0x0403, 0x0404, 0x0405, 0x0406, 0x0407, 0x0408,
+		0x0409, 0x040A, 0x040B, 0x040C, 0x040D, 0x040E, 0x040F, 0x0410,
+		0x0411, 0x0412, 0x0413, 0x0414, 0x0415, 0x0416, 0x0417, 0x0418,
+		0x0419, 0x041A, 0x041B, 0x041C, 0x041D, 0x041E, 0x041F, 0x0420,
+		0x0421, 0x0804, 0x0807, 0x0809, 0x080A, 0x080C, 0x0810, 0x0813,
+		0x0814, 0x0816, 0x081A, 0x0C0C, 0x100C
+	};
+	LPTSTR	lpszValue;	// ﾊﾞｰｼﾞｮﾝﾘｿｰｽ中のﾊﾞｰｼﾞｮﾝ情報を指すﾎﾟｲﾝﾀ
+	CString	strPath;
+	UINT	uDumy;
+
+	strPath.Format("\\StringFileInfo\\%04x%04x\\%s", LOWORD(dwTrans), HIWORD(dwTrans), strKeyWord);
+	if ( VerQueryValue( pVersionInfo, const_cast<LPTSTR>((LPCTSTR)strPath), (LPVOID*)&lpszValue, &uDumy ) ) {
+		strBuffer = lpszValue;
+		return TRUE;
+	}
+
+	// バージョンリソースに言語情報が記録されていない場合
+	for( int i=0; i<SIZEOF(wCodePageID); i++ ) {
+		for( int j=0; j<SIZEOF(wLanguageID); j++ ) {
+			strPath.Format("\\StringFileInfo\\%04x%04x\\%s", wLanguageID[j], wCodePageID[i], strKeyWord);
+			if ( VerQueryValue( pVersionInfo, const_cast<LPTSTR>((LPCTSTR)strPath), (LPVOID*)&lpszValue, &uDumy ) ) {
+				strBuffer = lpszValue;
+				return TRUE;
+			}
+		}
+	}
+
+	strBuffer.Empty();
+	return FALSE;
+}
+
+#ifdef _DEBUG
+// GetLastMessage() のﾒｯｾｰｼﾞ整形
+void NC_FormatMessage(void)
+{
+	LPVOID	lpMsgBuf;
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&lpMsgBuf, 0, NULL);
+	g_dbg.printf("ErrorMsg = %s", lpMsgBuf);
+	LocalFree( lpMsgBuf );
+}
+#endif

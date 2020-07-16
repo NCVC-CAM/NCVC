@@ -1,0 +1,34 @@
+/////////////////////////////////////////////////////////////////////////////
+// アプリケーションのバージョン情報で使われる CAboutDlg ダイアログ
+// NCVC.cpp より抜粋
+
+#pragma once
+
+class CAboutDlg : public CDialog
+{
+	CFont	m_fontURL;	// 下線付きﾌｫﾝﾄ
+
+public:
+	CAboutDlg();
+
+// ダイアログ データ
+	//{{AFX_DATA(CAboutDlg)
+	enum { IDD = IDD_ABOUTBOX };
+	CIEStatic	m_ctURL;
+	//}}AFX_DATA
+
+	// ClassWizard 仮想関数のオーバーライドを生成します。
+	//{{AFX_VIRTUAL(CAboutDlg)
+	protected:
+	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV のサポート
+	//}}AFX_VIRTUAL
+
+// インプリメンテーション
+protected:
+	//{{AFX_MSG(CAboutDlg)
+	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
+	virtual BOOL OnInitDialog();
+	//}}AFX_MSG
+
+	DECLARE_MESSAGE_MAP()
+};
