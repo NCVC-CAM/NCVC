@@ -206,11 +206,13 @@ extern	const GLuint	GLShpereTopElement[] = {
 static inline void _SetEndmillCircle(float r, const CPoint3F& ptOrg,
 	CVfloat& v)
 {
+	CPoint3F	pt(ptOrg);
+	auto		b = begin(pt.xyz), e = end(pt.xyz);
 	// â~ç¿ïWÇ v Ç…æØƒ
 	for ( int i=0; i<ARCCOUNT; i++ ) {
-		v.push_back( r * _TABLECOS[i] + ptOrg.x );
-		v.push_back( r * _TABLESIN[i] + ptOrg.y );
-		v.push_back( ptOrg.z );
+		pt.x = r * _TABLECOS[i] + ptOrg.x;
+		pt.y = r * _TABLESIN[i] + ptOrg.y;
+		v.insert(v.end(), b, e);
 	}
 	// ç≈å„ÇÃï¬ç¿ïWÇÕï`âÊéûÇ…ê›íË
 }
@@ -252,13 +254,11 @@ BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 		// ñ@ê¸Õﬁ∏ƒŸ
 		optional<CPointF> ptResult = CalcPerpendicularPoint(STARTPOINT, 1.0, 1);
 		if ( ptResult ) {
-			CPointF	pt(*ptResult);
-			vnr.push_back(pt.x);
-			vnr.push_back(pt.y);
-			vnr.push_back(m_ptValS.z);
-			vnr.push_back(pt.x);
-			vnr.push_back(pt.y);
-			vnr.push_back(pts.z);
+			CPoint3F	pt(*ptResult);
+			pt.z = m_ptValS.z;
+			vnr.insert(vnr.end(), begin(pt.xyz), end(pt.xyz));
+			pt.z = pts.z;
+			vnr.insert(vnr.end(), begin(pt.xyz), end(pt.xyz));
 		}
 		else {
 			// ï€åØ
@@ -386,28 +386,24 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 					q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+RAD(90.0f),
 					cos_qp = cos(q),
 					sin_qp = sin(q);
-			CPoint3F	pt;
+			CPoint3F	pt1, pt2;
 			for ( int i=ARCCOUNT/2; i<ARCCOUNT; i++ ) {
-				x    = m_dEndmill * _TABLECOS[i];
-				pt.z = m_dEndmill * _TABLESIN[i] + m_dEndmill;
-				pt.x = x * cos_qp;
-				pt.y = x * sin_qp;
-				bd.vpt.push_back( pt.x + m_ptValS.x );
-				bd.vpt.push_back( pt.y + m_ptValS.y );
-				bd.vpt.push_back( pt.z + m_ptValS.z );
-				bd.vpt.push_back( pt.x + m_ptValE.x );
-				bd.vpt.push_back( pt.y + m_ptValE.y );
-				bd.vpt.push_back( pt.z + m_ptValE.z );
+				x = m_dEndmill * _TABLECOS[i];
+				pt1.z = pt2.z = m_dEndmill * _TABLESIN[i] + m_dEndmill;
+				pt1.x = pt2.x = x * cos_qp;
+				pt1.y = pt2.x = x * sin_qp;
+				pt1 += m_ptValS;
+				pt2 += m_ptValE;
+				bd.vpt.insert(bd.vpt.end(), begin(pt1.xyz), end(pt1.xyz));
+				bd.vpt.insert(bd.vpt.end(), begin(pt2.xyz), end(pt2.xyz));
 			}
-			x = pt.z = m_dEndmill;
-			pt.x = x * cos_qp;
-			pt.y = x * sin_qp;
-			bd.vpt.push_back( pt.x + m_ptValS.x );
-			bd.vpt.push_back( pt.y + m_ptValS.y );
-			bd.vpt.push_back( pt.z + m_ptValS.z );
-			bd.vpt.push_back( pt.x + m_ptValE.x );
-			bd.vpt.push_back( pt.y + m_ptValE.y );
-			bd.vpt.push_back( pt.z + m_ptValE.z );
+			x = pt1.z = pt2.z = m_dEndmill;
+			pt1.x = pt2.x = x * cos_qp;
+			pt1.y = pt2.x = x * sin_qp;
+			pt1 += m_ptValS;
+			pt2 += m_ptValE;
+			bd.vpt.insert(bd.vpt.end(), begin(pt1.xyz), end(pt1.xyz));
+			bd.vpt.insert(bd.vpt.end(), begin(pt2.xyz), end(pt2.xyz));
 			bd.mode = GL_TRIANGLE_STRIP;
 			bd.re = 0;	// glDrawArrays()ï`âÊ
 			vBD.push_back(bd);
@@ -448,20 +444,16 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 					sin_q = sin(q) * m_dEndmill,
 					ptsz = m_ptValS.z + m_dEndmill,
 					ptez = m_ptValE.z + m_dEndmill;
-			bd.vpt.push_back(  cos_q + m_ptValS.x );
-			bd.vpt.push_back(  sin_q + m_ptValS.y );
-			bd.vpt.push_back(  ptsz );
-			bd.vpt.push_back(  cos_q + m_ptValE.x );
-			bd.vpt.push_back(  sin_q + m_ptValE.y );
-			bd.vpt.push_back(  ptez );
+			CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, ptsz),
+						pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, ptez),
+						pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, ptsz),
+						pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, ptez);
+			bd.vpt.insert(bd.vpt.end(), begin(pts1.xyz), end(pts1.xyz));
+			bd.vpt.insert(bd.vpt.end(), begin(pte1.xyz), end(pte1.xyz));
 			bd.vpt.insert(bd.vpt.end(), begin(m_ptValS.xyz), end(m_ptValS.xyz));
 			bd.vpt.insert(bd.vpt.end(), begin(m_ptValE.xyz), end(m_ptValE.xyz));
-			bd.vpt.push_back( -cos_q + m_ptValS.x );
-			bd.vpt.push_back( -sin_q + m_ptValS.y );
-			bd.vpt.push_back(  ptsz );
-			bd.vpt.push_back( -cos_q + m_ptValE.x );
-			bd.vpt.push_back( -sin_q + m_ptValE.y );
-			bd.vpt.push_back(  ptez );
+			bd.vpt.insert(bd.vpt.end(), begin(pts2.xyz), end(pts2.xyz));
+			bd.vpt.insert(bd.vpt.end(), begin(pte2.xyz), end(pte2.xyz));
 			bd.re = 0;	// glDrawArrays()ï`âÊ
 			vBD.push_back(bd);
 		}
@@ -512,18 +504,14 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 				float	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+RAD(90.0f),
 						cos_q = cos(q) * m_dEndmill,
 						sin_q = sin(q) * m_dEndmill;
-				bd.vpt.push_back(  cos_q + m_ptValS.x );
-				bd.vpt.push_back(  sin_q + m_ptValS.y );
-				bd.vpt.push_back(  m_ptValS.z );
-				bd.vpt.push_back(  cos_q + m_ptValE.x );
-				bd.vpt.push_back(  sin_q + m_ptValE.y );
-				bd.vpt.push_back(  m_ptValE.z );
-				bd.vpt.push_back( -cos_q + m_ptValS.x );
-				bd.vpt.push_back( -sin_q + m_ptValS.y );
-				bd.vpt.push_back(  m_ptValS.z );
-				bd.vpt.push_back( -cos_q + m_ptValE.x );
-				bd.vpt.push_back( -sin_q + m_ptValE.y );
-				bd.vpt.push_back(  m_ptValE.z );
+				CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, m_ptValS.z),
+							pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, m_ptValE.z),
+							pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, m_ptValS.z),
+							pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, m_ptValE.z);
+				bd.vpt.insert(bd.vpt.end(), begin(pts1.xyz), end(pts1.xyz));
+				bd.vpt.insert(bd.vpt.end(), begin(pte1.xyz), end(pte1.xyz));
+				bd.vpt.insert(bd.vpt.end(), begin(pts2.xyz), end(pts2.xyz));
+				bd.vpt.insert(bd.vpt.end(), begin(pte2.xyz), end(pte2.xyz));
 				bd.re = 0;	// glDrawArrays()ï`âÊ
 				vBD.push_back(bd);
 			}
@@ -573,13 +561,11 @@ BOOL CNCline::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 			// ñ@ê¸
 			optional<CPointF> ptResult = CalcPerpendicularPoint(ENDPOINT, 1.0, 1);
 			if ( ptResult ) {
-				CPointF	pt(*ptResult);
-				vnr.push_back(pt.x);
-				vnr.push_back(pt.y);
-				vnr.push_back(m_ptValE.z);
-				vnr.push_back(pt.x);
-				vnr.push_back(pt.y);
-				vnr.push_back(pte.z);
+				CPoint3F	pt(*ptResult);
+				pt.z = m_ptValE.z;
+				vnr.insert(vnr.end(), begin(pt.xyz), end(pt.xyz));
+				pt.z = pte.z;
+				vnr.insert(vnr.end(), begin(pt.xyz), end(pt.xyz));
 			}
 			else {
 				// ï€åØ
@@ -828,12 +814,10 @@ static inline void _SetEndmillPathXY
 {
 	float	cos_q = cos(q), 
 			sin_q = sin(q);
-	v.push_back( r1 * cos_q + pt.x );
-	v.push_back( r1 * sin_q + pt.y );
-	v.push_back( h );
-	v.push_back( r2 * cos_q + pt.x );
-	v.push_back( r2 * sin_q + pt.y );
-	v.push_back( h );
+	CPoint3F	pt1(r1*cos_q+pt.x, r1*sin_q+pt.y, h),
+				pt2(r2*cos_q+pt.x, r2*sin_q+pt.y, h);
+	v.insert(v.end(), begin(pt1.xyz), end(pt1.xyz));
+	v.insert(v.end(), begin(pt2.xyz), end(pt2.xyz));
 }
 
 static inline void _SetEndmillPathXY_Pipe
@@ -1126,45 +1110,36 @@ void CNCcircle::SetEndmillBall(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 
 static inline void _SendEndmillChamferXY(float q, float rr, float d, float z, const CPointF& pto, CVfloat& v)
 {
-	float	cos_q = cos(q), sin_q = sin(q),
-			r1 = rr + d,	r2 = rr - d;
-	v.push_back( r1 * cos_q + pto.x );
-	v.push_back( r1 * sin_q + pto.y );
-	v.push_back( z );
-	v.push_back( rr * cos_q + pto.x );
-	v.push_back( rr * sin_q + pto.y );
-	v.push_back( z - d );
-	v.push_back( r2 * cos_q + pto.x );
-	v.push_back( r2 * sin_q + pto.y );
-	v.push_back( z );
+	float		cos_q = cos(q), sin_q = sin(q),
+				r1 = rr + d,	r2 = rr - d;
+	CPoint3F	pt1(r1*cos_q+pto.x, r1*sin_q+pto.y, z),
+				pt2(rr*cos_q+pto.x, rr*sin_q+pto.y, z-d),
+				pt3(r2*cos_q+pto.x, r2*sin_q+pto.y, z);
+	v.insert(v.end(), begin(pt1.xyz), end(pt1.xyz));
+	v.insert(v.end(), begin(pt2.xyz), end(pt2.xyz));
+	v.insert(v.end(), begin(pt3.xyz), end(pt3.xyz));
 }
 
 static inline void _SendEndmillChamferXZ(float q, float rr, float d, float y, const CPointF& pto, CVfloat& v)
 {
-	float	cos_q = cos(q), sin_q = sin(q);
-	v.push_back( rr * cos_q + pto.x - d );
-	v.push_back( y - d );
-	v.push_back( rr * sin_q + pto.y + d );	// Zï˚å¸Ç÷ÇÕÃﬂ◊Ω
-	v.push_back( rr * cos_q + pto.x );
-	v.push_back( y );
-	v.push_back( rr * sin_q + pto.y );
-	v.push_back( rr * cos_q + pto.x + d );
-	v.push_back( y + d );
-	v.push_back( rr * sin_q + pto.y + d );
+	float		cos_q = cos(q), sin_q = sin(q);
+	CPoint3F	pt1(rr*cos_q+pto.x-d, y-d, rr*sin_q+pto.y+d),
+				pt2(rr*cos_q+pto.x,   y,   rr*sin_q+pto.y),
+				pt3(rr*cos_q+pto.x+d, y+d, rr*sin_q+pto.y+d);
+	v.insert(v.end(), begin(pt1.xyz), end(pt1.xyz));
+	v.insert(v.end(), begin(pt2.xyz), end(pt2.xyz));
+	v.insert(v.end(), begin(pt3.xyz), end(pt3.xyz));
 }
 
 static inline void _SendEndmillChamferYZ(float q, float rr, float d, float x, const CPointF& pto, CVfloat& v)
 {
-	float	cos_q = cos(q), sin_q = sin(q);
-	v.push_back( x - d );
-	v.push_back( rr * cos_q + pto.x - d );
-	v.push_back( rr * sin_q + pto.y + d );	// Zï˚å¸Ç÷ÇÕÃﬂ◊Ω
-	v.push_back( x );
-	v.push_back( rr * cos_q + pto.x );
-	v.push_back( rr * sin_q + pto.y );
-	v.push_back( x + d );
-	v.push_back( rr * cos_q + pto.x + d );
-	v.push_back( rr * sin_q + pto.y + d );
+	float		cos_q = cos(q), sin_q = sin(q);
+	CPoint3F	pt1(x-d, rr*cos_q+pto.x-d, rr*sin_q+pto.y+d),
+				pt2(x,   rr*cos_q+pto.x,   rr*sin_q+pto.y),
+				pt3(x+d, rr*cos_q+pto.x+d, rr*sin_q+pto.y+d);
+	v.insert(v.end(), begin(pt1.xyz), end(pt1.xyz));
+	v.insert(v.end(), begin(pt2.xyz), end(pt2.xyz));
+	v.insert(v.end(), begin(pt3.xyz), end(pt3.xyz));
 }
 
 void CNCcircle::SetEndmillChamfer(BOTTOMDRAW& bd, CVBtmDraw& vBD) const

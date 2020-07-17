@@ -49,6 +49,7 @@ struct	_TAPER {
 #define	NCMIL_CHAMFER		0x0002
 #define	NCFLG_G98		0x0004	// G98,G99（旋盤ﾓｰﾄﾞで使用）
 #define	NCFLG_G02G03	0x0008	// 0:G02, 1:G03
+#define	NCMIL_MAXTYPE	NCMIL_CHAMFER
 
 // 始点終点指示
 enum	ENPOINTORDER
@@ -174,8 +175,6 @@ public:
 	float	SetMove(size_t, float);
 	float	GetEndmill(void) const;
 	int		GetEndmillType(void) const;
-//	BOOL	GetBallEndmill(void) const;
-//	BOOL	GetChamfermill(void) const;
 	BOOL	GetG98(void) const;
 	CNCdata*	NC_CopyObject(void);			// from TH_Correct.cpp
 	void		AddCorrectObject(CNCdata*);

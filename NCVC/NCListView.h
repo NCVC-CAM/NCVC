@@ -63,6 +63,8 @@ protected:
 	afx_msg void OnUpdateViewFind(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateFileInsert(CCmdUI* pCmdUI);
+	afx_msg void OnFileInsert();
 	//}}AFX_MSG
 	afx_msg LRESULT OnSelectTrace(WPARAM, LPARAM);	// from NCViewTab.cpp
 

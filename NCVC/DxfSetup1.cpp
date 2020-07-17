@@ -73,8 +73,15 @@ BOOL CDxfSetup1::OnApply()
 	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
 	pOpt->m_strReadLayer[DXFORGLAYER]	= m_strOrgLayer;
 	pOpt->m_strReadLayer[DXFCAMLAYER]	= m_strCamLayer;
-	pOpt->m_regCutter = m_strCamLayer;
 	pOpt->m_nOrgType  = m_nOrgType;
+	try {
+		pOpt->m_regCutter = m_strCamLayer;
+	}
+	catch (boost::regex_error&) {
+		AfxMessageBox(IDS_ERR_REGEX, MB_OK|MB_ICONEXCLAMATION);
+		m_ctCamLayer.SetFocus();
+		return FALSE;
+	}
 
 	return TRUE;
 }

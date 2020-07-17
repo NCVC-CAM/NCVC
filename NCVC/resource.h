@@ -441,7 +441,6 @@
 #define IDC_MCST3_H                     3504
 #define IDC_MCST3_TYPEA                 3505
 #define IDC_MCST3_TYPEB                 3506
-#define IDC_MCST3_ENDMILLTYPE           3507
 #define IDC_MCST3_MILLTYPE              3507
 #define IDD_MC_SETUP4                   3600
 #define IDC_MCST4_MACROCODE             3600
@@ -747,6 +746,7 @@
 #define IDS_ERR_FILEPATH                21011
 #define IDS_ERR_UNDERZERO               21012
 #define IDS_ERR_SETTING                 21013
+#define IDS_ERR_REGEX                   21014
 #define IDS_ERR_CAMDATA                 21050
 #define IDS_ERR_CAMVER                  21051
 #define IDS_ERR_CAMOLD                  21052
@@ -848,7 +848,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        185
+#define _APS_NEXT_RESOURCE_VALUE        190
 #define _APS_NEXT_COMMAND_VALUE         32822
 #define _APS_NEXT_CONTROL_VALUE         1057
 #define _APS_NEXT_SYMED_VALUE           101

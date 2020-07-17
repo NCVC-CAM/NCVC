@@ -55,7 +55,12 @@ CDXFOption::CDXFOption()
 		m_strReadLayer[i] = AfxGetApp()->GetProfileString(strRegKey, strEntry,
 			i<=DXFCAMLAYER ? g_szDefaultLayer[i] : strResult );	// ÃÞÌ«ÙÄÊß×Ò°À ‚ÍCŒ´“_‚ÆØíÚ²Ô‚Ì‚Ý
 	}
-	m_regCutter = m_strReadLayer[DXFCAMLAYER];
+	try {
+		m_regCutter = m_strReadLayer[DXFCAMLAYER];
+	}
+	catch (boost::regex_error&) {
+		m_regCutter = g_szDefaultLayer[DXFCAMLAYER];
+	}
 
 	// µÌß¼®Ý
 	for ( i=0; i<SIZEOF(m_ubNums); i++ ) {

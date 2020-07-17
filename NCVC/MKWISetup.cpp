@@ -14,6 +14,8 @@ extern	CMagaDbg	g_dbg;
 extern	int		g_nLastPage_NCMakeWire;
 
 BEGIN_MESSAGE_MAP(CMKWISetup, CPropertySheet)
+	ON_WM_DESTROY()
+	ON_BN_CLICKED (ID_APPLY_NOW, &CMKWISetup::OnApplyNow)
 END_MESSAGE_MAP()
 
 IMPLEMENT_DYNAMIC(CMKWISetup, CPropertySheet)

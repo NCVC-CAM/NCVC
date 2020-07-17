@@ -2004,13 +2004,18 @@ BOOL CDXFView::OnToolTipNotify(UINT id, NMHDR *pNMH, LRESULT *pResult)
 #endif
 	// 親ｳｨﾝﾄﾞｳでﾒｯｾｰｼﾞが処理される
 	TOOLTIPTEXT *pText = (TOOLTIPTEXT *)pNMH;
-	if ( pText->lParam >= 0 ) {
-		CString	strTip(GetDocument()->GetBindInfoData(pText->lParam)->pDoc->GetTitle());
-		lstrcpyn(pText->lpszText, strTip, sizeof(pText->szText)-1);
+	if ( pText->lParam > 0 ) {
+		INT_PTR	n = pText->lParam - 1;
+		if ( 0<=n && n<GetDocument()->GetBindInfoCnt() ) {
+			CString	strTip(GetDocument()->GetBindInfoData(n)->pDoc->GetTitle());
+			lstrcpyn(pText->lpszText, strTip, sizeof(pText->szText)-1);
+			pText->hinst = AfxGetInstanceHandle();
+			return TRUE;
+		}
 	}
-	pText->hinst = AfxGetInstanceHandle();
 
-	return TRUE;
+	// 子ﾃﾞｰﾀのﾂｰﾙﾋﾝﾄ以外（ﾂｰﾙﾊﾞｰなど）はMainFrm.cppで処理
+	return FALSE;
 }
 
 INT_PTR CDXFView::OnToolHitTest(CPoint point, TOOLINFO* pTI) const
@@ -2023,7 +2028,8 @@ INT_PTR CDXFView::OnToolHitTest(CPoint point, TOOLINFO* pTI) const
 	pTI->uId	= (UINT_PTR)hwnd;
 	pTI->lpszText = LPSTR_TEXTCALLBACK;
 	CDXFDoc*	pParentDoc = static_cast<const CDXFDoc*>(m_pDocument)->GetBindParentDoc();
-	pTI->lParam	= pParentDoc ? pParentDoc->GetBindInfo_fromView(this) : -1;
+	// ｾﾞﾛﾍﾞｰｽだと通常のﾂｰﾙﾁｯﾌﾟと区別がつかない
+	pTI->lParam	= pParentDoc ? (pParentDoc->GetBindInfo_fromView(this)+1) : 0;
 
 	return 0;
 }

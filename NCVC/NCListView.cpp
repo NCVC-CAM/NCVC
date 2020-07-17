@@ -42,12 +42,14 @@ BEGIN_MESSAGE_MAP(CNCListView, CListView)
 	ON_UPDATE_COMMAND_UI(ID_NCVIEW_JUMP, &CNCListView::OnUpdateViewJump)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_FIND, &CNCListView::OnUpdateViewFind)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCListView::OnUpdateEditCopy)
+	ON_UPDATE_COMMAND_UI(ID_FILE_NCINSERT, &CNCListView::OnUpdateFileInsert)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCListView::OnUpdateMoveRoundKey)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCListView::OnUpdateMoveRoundKey)
 	ON_COMMAND(ID_NCVIEW_TRACE_BREAK, &CNCListView::OnTraceBreak)
 	ON_COMMAND(ID_NCVIEW_TRACE_BREAKOFF, &CNCListView::OnTraceBreakOFF)
 	ON_COMMAND(ID_NCVIEW_JUMP, &CNCListView::OnViewJump)
 	ON_COMMAND(ID_EDIT_FIND, &CNCListView::OnViewFind)
+	ON_COMMAND(ID_FILE_NCINSERT, &CNCListView::OnFileInsert)
 	//}}AFX_MSG_MAP
 	ON_MESSAGE(WM_USERTRACESELECT, &CNCListView::OnSelectTrace)
 END_MESSAGE_MAP()
@@ -133,6 +135,13 @@ BOOL CNCListView::PreTranslateMessage(MSG* pMsg)
 		case VK_DOWN:
 			GetListCtrl().SendMessage(WM_KEYDOWN, pMsg->wParam, pMsg->lParam);
 			return TRUE;	// Ø½Ä±²ÃÑˆÚ“®‚Ì‚½‚ß‚Ì–îˆó·°“™‚ª“KØ‚Éˆ—‚³‚ê‚é
+		// ˆÈ‰ºA‚È‚º‚©±¸¾×Ú°À‚ªŒø‚©‚È‚¢
+		case VK_F9:
+			OnTraceBreak();
+			return TRUE;
+		case VK_INSERT:
+			OnFileInsert();
+			return TRUE;
 		}
 	}
 	return CListView::PreTranslateMessage(pMsg);
@@ -163,8 +172,15 @@ void CNCListView::SetJumpList(int nJump)
 
 void CNCListView::SetFindList(int nUpDown, const CString& strFind)
 {
-	if ( strFind != m_regFind.str().c_str() )
-		m_regFind = strFind;
+	if ( strFind != m_regFind.str().c_str() ) {
+		try {
+			m_regFind = strFind;
+		}
+		catch (boost::regex_error&) {
+			AfxMessageBox(IDS_ERR_REGEX, MB_OK|MB_ICONEXCLAMATION);
+			return;
+		}
+	}
 
 	BOOL	bReverse;
 	INT_PTR	nIndex = 0;
@@ -281,6 +297,26 @@ void CNCListView::OnUpdateEditCopy(CCmdUI* pCmdUI)
 void CNCListView::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 
 {
 	pCmdUI->Enable(FALSE);
+}
+
+void CNCListView::OnUpdateFileInsert(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(GetListCtrl().GetFirstSelectedItemPosition() ? TRUE : FALSE);
+}
+
+void CNCListView::OnFileInsert()
+{
+	POSITION pos;
+	if ( !(pos=GetListCtrl().GetFirstSelectedItemPosition()) )
+		return;
+	int	nInsert = GetListCtrl().GetNextSelectedItem(pos);
+
+	CString	strFileName(AfxGetNCVCApp()->GetRecentFileName());
+	if ( ::NCVC_FileDlgCommon(ID_FILE_NCINSERT,
+				AfxGetNCVCApp()->GetFilterString(TYPE_NCD), TRUE, strFileName) != IDOK )
+		return;
+
+	GetDocument()->InsertBlock(nInsert, strFileName);
 }
 
 /////////////////////////////////////////////////////////////////////////////

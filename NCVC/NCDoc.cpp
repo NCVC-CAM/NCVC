@@ -62,8 +62,6 @@ IMPLEMENT_DYNCREATE(CNCDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(CNCDoc, CDocument)
 	//{{AFX_MSG_MAP(CNCDoc)
-	ON_UPDATE_COMMAND_UI(ID_FILE_NCINSERT, &CNCDoc::OnUpdateFileInsert)
-	ON_COMMAND(ID_FILE_NCINSERT, &CNCDoc::OnFileInsert)
 	ON_COMMAND(ID_FILE_NCD2DXF, &CNCDoc::OnFileNCD2DXF)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, &CNCDoc::OnUpdateFileSave)
 	ON_UPDATE_COMMAND_UI(ID_NCVIEW_WORKRECT, &CNCDoc::OnUpdateWorkRect)
@@ -669,6 +667,44 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 	return TRUE;
 }
 
+void CNCDoc::InsertBlock(int nInsert, const CString& strFileName)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("CNCDoc::OnFileInsert()\nStart");
+#endif
+	int		i;
+
+	// 「ｶｰｿﾙ位置に読み込み」の準備
+	WaitCalcThread();		// 切削時間計算の中断
+
+	// 再変換を行うため m_obGdata を削除
+	for ( i=0; i<m_obGdata.GetSize(); i++ )
+		delete	m_obGdata[i];
+	m_obGdata.RemoveAll();
+	m_bDocFlg.reset(NCDOC_REVISEING); 
+	// ﾌﾞﾛｯｸﾃﾞｰﾀのﾌﾗｸﾞをｸﾘｱ
+	for ( i=0; i<GetNCBlockSize(); i++ )
+		m_obBlock[i]->SetNCBlkErrorCode(0);
+	// 変数初期化
+	m_bDocFlg.set(NCDOC_ERROR);
+	m_nTraceDraw = 0;
+
+	// ﾌｧｲﾙ(NCﾌﾞﾛｯｸの挿入)
+	if ( SerializeInsertBlock(strFileName, nInsert) ) {
+		// 処理中のﾌｧｲﾙを挿入ﾌｧｲﾙ名に設定
+		m_strCurrentFile = strFileName;
+		// ﾌｧｲﾙ読み込み後のﾁｪｯｸ
+		SerializeAfterCheck();	// 戻り値ﾁｪｯｸしてもどうにもならない
+		// 更新ﾌﾗｸﾞON
+		SetModifiedFlag();
+		// 各ﾋﾞｭｰの設定 & 描画更新
+		UpdateAllViews(NULL, UAV_FILEINSERT);
+	}
+
+	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
+	AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
+}
+
 void CNCDoc::GetWorkRectPP(int a, float dResult[])
 {
 	ASSERT(a>=NCA_X && a<=NCA_Z);
@@ -1214,63 +1250,6 @@ BOOL CNCDoc::SerializeInsertBlock
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCDoc コマンド
-
-void CNCDoc::OnUpdateFileInsert(CCmdUI* pCmdUI) 
-{
-	CNCChild*		pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
-	CNCListView*	pList = pFrame->GetListView();
-	pCmdUI->Enable(pList->GetListCtrl().GetFirstSelectedItemPosition() ? TRUE : FALSE);
-}
-
-void CNCDoc::OnFileInsert()
-{
-	int		i;
-	CNCChild*		pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
-	CNCListView*	pList = pFrame->GetListView();
-	POSITION pos;
-	if ( !(pos=pList->GetListCtrl().GetFirstSelectedItemPosition()) )
-		return;
-	int	nInsert = pList->GetListCtrl().GetNextSelectedItem(pos);
-
-	CString	strFileName(AfxGetNCVCApp()->GetRecentFileName());
-	if ( ::NCVC_FileDlgCommon(ID_FILE_NCINSERT,
-				AfxGetNCVCApp()->GetFilterString(TYPE_NCD), TRUE, strFileName) != IDOK )
-		return;
-
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCDoc::OnFileInsert()\nStart");
-#endif
-
-	// 「ｶｰｿﾙ位置に読み込み」の準備
-	WaitCalcThread();			// 切削時間計算の中断
-
-	// 再変換を行うため m_obGdata を削除
-	for ( i=0; i<m_obGdata.GetSize(); i++ )
-		delete	m_obGdata[i];
-	m_obGdata.RemoveAll();
-	m_bDocFlg.reset(NCDOC_REVISEING); 
-	// ﾌﾞﾛｯｸﾃﾞｰﾀのﾌﾗｸﾞをｸﾘｱ
-	for ( i=0; i<GetNCBlockSize(); i++ )
-		m_obBlock[i]->SetNCBlkErrorCode(0);
-	// 変数初期化
-	m_bDocFlg.set(NCDOC_ERROR);
-	m_nTraceDraw = 0;
-
-	// ﾌｧｲﾙ(NCﾌﾞﾛｯｸの挿入)
-	if ( SerializeInsertBlock(strFileName, nInsert) ) {
-		// 処理中のﾌｧｲﾙを挿入ﾌｧｲﾙ名に設定
-		m_strCurrentFile = strFileName;
-		// ﾌｧｲﾙ読み込み後のﾁｪｯｸ
-		SerializeAfterCheck();	// 戻り値ﾁｪｯｸしてもどうにもならない
-		// 更新ﾌﾗｸﾞON
-		SetModifiedFlag();
-		// 各ﾋﾞｭｰの設定 & 描画更新
-		UpdateAllViews(NULL, UAV_FILEINSERT);
-	}
-
-	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
-	AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
-}
 
 void CNCDoc::OnUpdateFileSave(CCmdUI* pCmdUI) 
 {

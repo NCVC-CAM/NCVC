@@ -166,7 +166,7 @@ public:
 	BOOL	IsLoop(void) const;
 	BOOL	IsPointInPolygon(const CPointF&) const;
 	//
-	POSITION	SetLoopFunc(const CDXFdata*, BOOL);
+	POSITION	SetLoopFunc(const CDXFdata*, BOOL, BOOL);
 	POSITION	GetFirstPosition(void) {
 		return (this->*m_pfnGetFirstPos)();
 	}

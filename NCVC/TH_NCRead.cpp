@@ -313,7 +313,7 @@ struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 	struct	_SetBallMill {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.dEndmill = d;
-			g_ncArgv.nEndmillType = 1;
+			g_ncArgv.nEndmillType = NCMIL_BALL;
 #ifdef _DEBUG_GSPIRIT
 			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("SetBallEndmill()", DBG_MAGENTA);
@@ -326,7 +326,7 @@ struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 	struct	_SetChamferMill {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.dEndmill = d;
-			g_ncArgv.nEndmillType = 2;
+			g_ncArgv.nEndmillType = NCMIL_CHAMFER;
 #ifdef _DEBUG_GSPIRIT
 			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("SetChamfermill()", DBG_MAGENTA);
@@ -339,6 +339,8 @@ struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 	struct _SetEndmillType {
 		void operator()(const char& c, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.nEndmillType = c - '0';	// ÇPï∂éöÇêîílÇ…ïœä∑
+			if ( g_ncArgv.nEndmillType<0 || NCMIL_MAXTYPE<g_ncArgv.nEndmillType )
+				g_ncArgv.nEndmillType = 0;
 #ifdef _DEBUG_GSPIRIT
 			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("SetEndmillType()", DBG_MAGENTA);

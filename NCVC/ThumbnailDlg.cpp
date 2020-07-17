@@ -145,7 +145,7 @@ void CThumbnailDlg::ChangeFolder(const CString& strPath)
 	for ( i=0; i<m_aExt.GetSize(); i++ )
 		SetAllFileFromFolder(strPath, m_aExt[i]);
 
-	if ( m_thumbInfo.GetSize() <= 9 )
+	if ( m_thumbInfo.GetSize() < 9 )
 		m_ctScroll.EnableScrollBar(ESB_DISABLE_BOTH);
 	else {
 		INT_PTR	nRange;

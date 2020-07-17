@@ -861,7 +861,7 @@ BOOL MakeLoopWireAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bEu
 	}
 
 	// ¶¬‡˜‚Ìİ’è
-	ltEuler.SetLoopFunc(NULL, bReverse);
+	ltEuler.SetLoopFunc(NULL, bReverse, FALSE);
 
 	BOOL	bNext = FALSE;
 	// ØíÃŞ°À‚Ü‚Å‚ÌˆÚ“®

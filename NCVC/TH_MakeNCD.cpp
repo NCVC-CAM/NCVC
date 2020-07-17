@@ -1994,7 +1994,7 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 		}
 		// -- 加工指示に伴う開始位置や方向等の設定
 		ASSERT(pData);
-		pos1 = pos2 = pChain->SetLoopFunc(pData, bReverse);
+		pos1 = pos2 = pChain->SetLoopFunc(pData, bReverse, FALSE);
 	}
 	ASSERT(pos1);
 
@@ -2149,7 +2149,7 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bE
 	}
 
 	// 生成順序の設定
-	ltEuler.SetLoopFunc(NULL, bReverse);
+	ltEuler.SetLoopFunc(NULL, bReverse, FALSE);
 
 	// --- 切削ﾃﾞｰﾀ生成
 	if ( GetFlg(MKNC_FLG_DEEP) ) {

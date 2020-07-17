@@ -195,6 +195,7 @@ BOOL CDXFShapeView::PreTranslateMessage(MSG* pMsg)
 			case VK_UP:
 			case VK_RIGHT:
 			case VK_DOWN:
+			case VK_DELETE:	// ±¸¾×Ú°ÀŒø‚©‚È‚¢??
 			case VK_F2:		// €–Ú–¼•ÒW—p
 				GetTreeCtrl().SendMessage(WM_KEYDOWN, pMsg->wParam, pMsg->lParam);
 				return TRUE;	// –îˆó·°“™‚ª“KØ‚Éˆ—‚³‚ê‚é

@@ -223,17 +223,7 @@ inline int CNCdata::GetEndmillType(void) const
 {
 	return (int)(GetFlags() & NCFLG_ENDMILL);
 }
-/*
-inline BOOL CNCdata::GetBallEndmill(void) const
-{
-	return GetEndmillType() == NCFLG_BALLENDMILL;
-}
 
-inline BOOL CNCdata::GetChamfermill(void) const
-{
-	return GetEndmillType() == NCFLG_CHAMFERMILL;
-}
-*/
 inline BOOL CNCdata::GetG98(void) const
 {
 	return GetFlags() & NCFLG_G98;

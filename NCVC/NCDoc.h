@@ -223,6 +223,9 @@ public:
 		m_nTraceStart = 0;
 	}
 
+	// from NCListView.cpp
+	void	InsertBlock(int, const CString&);
+
 	// from ThumbnailDlg.cpp
 	void	ReadThumbnail(LPCTSTR);
 
@@ -245,8 +248,6 @@ public:
 // 生成されたメッセージ マップ関数
 protected:
 	//{{AFX_MSG(CNCDoc)
-	afx_msg void OnUpdateFileInsert(CCmdUI* pCmdUI);
-	afx_msg void OnFileInsert();
 	afx_msg void OnFileNCD2DXF();
 	afx_msg void OnUpdateFileSave(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateWorkRect(CCmdUI* pCmdUI);
