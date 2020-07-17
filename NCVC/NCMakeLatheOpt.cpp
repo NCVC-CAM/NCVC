@@ -149,6 +149,11 @@ void CNCMakeLatheOpt::InitialDefault(void)
 		m_strOption[i] = g_pszExecDir + m_strOption[i];
 }
 
+BOOL CNCMakeLatheOpt::IsPathID(int n)
+{
+	return ( n==MKLA_STR_HEADER || n==MKLA_STR_FOOTER );
+}
+
 #ifdef _DEBUG
 void CNCMakeLatheOpt::DbgDump(void) const
 {

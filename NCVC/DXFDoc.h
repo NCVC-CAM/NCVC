@@ -171,7 +171,7 @@ public:
 		ASSERT(n>=0 && n<GetBindInfoCnt());
 		return m_bindInfo[n];
 	}
-	int		GetBindInfo_fromView(const CDXFView* pView) {
+	int		GetBindInfo_fromView(const CDXFView* pView) const {
 		for ( int i=0; i<m_bindInfo.GetSize(); i++ ) {
 			if ( m_bindInfo[i]->pView == pView )
 				return i;

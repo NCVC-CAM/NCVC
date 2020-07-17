@@ -88,6 +88,7 @@ class CNCMakeLatheOpt : public CNCMakeOption
 
 protected:
 	virtual	void	InitialDefault(void);
+	virtual	BOOL	IsPathID(int);
 
 public:
 	CNCMakeLatheOpt(LPCTSTR);

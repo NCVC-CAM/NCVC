@@ -85,7 +85,8 @@ enum {
 	MKNC_STR_FOOTER,			// ∂Ω¿—ÃØ¿∞
 	MKNC_STR_CUSTMOVE_B,		// ∂Ω¿—à⁄ìÆ∫∞ƒﬁ(ëOå„)
 	MKNC_STR_CUSTMOVE_A,
-		MKNC_STR_NUMS		// [6]
+	MKNC_STR_PERLSCRIPT,		// ê∂ê¨å„Ç…é¿çsÇ≥ÇÍÇÈPerlΩ∏ÿÃﬂƒ
+		MKNC_STR_NUMS		// [7]
 };
 //
 #define	MIL_I_PROG					m_pIntOpt[MKNC_NUM_PROG]
@@ -171,6 +172,7 @@ class CNCMakeMillOpt : public CNCMakeOption
 
 protected:
 	virtual	void	InitialDefault(void);
+	virtual	BOOL	IsPathID(int);
 
 public:
 	CNCMakeMillOpt(LPCTSTR);

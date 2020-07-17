@@ -3,7 +3,8 @@
 <assemblyIdentity
   version="1.0.0.0"
   processorArchitecture="X86"
-  name="Radio.exe"
+  name="MNCT-S.NCVC.NCVC.exe"
+  type="win32"
 />
 <description>.NET control deployment tool</description>
 <dependency>

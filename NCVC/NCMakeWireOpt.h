@@ -86,6 +86,7 @@ class CNCMakeWireOpt : public CNCMakeOption
 
 protected:
 	virtual	void	InitialDefault(void);
+	virtual	BOOL	IsPathID(int);
 
 public:
 	CNCMakeWireOpt(LPCTSTR);

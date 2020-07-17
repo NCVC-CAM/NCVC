@@ -37,6 +37,7 @@ static	CNCMakeMillOpt*	g_pMakeOpt;
 #define	GetFlg(a)	g_pMakeOpt->GetFlag(a)
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
+#define	GetStr(a)	g_pMakeOpt->GetStr(a)
 
 // NC生成に必要なﾃﾞｰﾀ群
 static	CDXFmap		g_mpDXFdata,	// 座標をｷｰにCDXFdataを格納
@@ -691,9 +692,9 @@ void SetStaticOption(void)
 		break;
 	}
 	// 移動指示ﾚｲﾔのｶｽﾀﾑｺｰﾄﾞ
-	g_pfnAddMoveCust_B = g_pMakeOpt->GetStr(MKNC_STR_CUSTMOVE_B).IsEmpty() ?
+	g_pfnAddMoveCust_B = GetStr(MKNC_STR_CUSTMOVE_B).IsEmpty() ?
 		&AddMoveZ_NotMove : &AddMoveCust_B;
-	g_pfnAddMoveCust_A = g_pMakeOpt->GetStr(MKNC_STR_CUSTMOVE_A).IsEmpty() ?
+	g_pfnAddMoveCust_A = GetStr(MKNC_STR_CUSTMOVE_A).IsEmpty() ?
 		&AddMoveZ_NotMove : &AddMoveCust_A;
 	// 加工検索許容差
 	CDXFmap::ms_dTolerance = GetFlg(MKNC_FLG_DEEP) ?
@@ -920,23 +921,44 @@ BOOL MakeNCD_FinalFunc(LPCTSTR lpszFileName/*=NULL*/)
 		AddMoveGdataZ(0, g_dZInitial, -1);
 	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
 	if ( g_wBindOperator & TH_FOOTER )
-		AddCustomMillCode(g_pMakeOpt->GetStr(MKNC_STR_FOOTER), NULL);
+		AddCustomMillCode(GetStr(MKNC_STR_FOOTER), NULL);
 	// ﾌｧｲﾙ出力ﾌｪｰｽﾞ
 	return OutputMillCode(lpszFileName);
 }
 
 BOOL OutputMillCode(LPCTSTR lpszFileName)
 {
-	CString	strPath, strFile,
+	static CString	s_strNCtemp;
+	CString	strPath, strFile, strWriteFile,
 			strNCFile(lpszFileName ? lpszFileName : g_pDoc->GetNCFileName());
 	Path_Name_From_FullPath(strNCFile, strPath, strFile);
 	SendFaseMessage(g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
+
+	// 一時ﾌｧｲﾙ生成か否か
+	if ( g_wBindOperator & TH_HEADER ) {
+		if ( !GetStr(MKNC_STR_PERLSCRIPT).IsEmpty() && ::IsFileExist(GetStr(MKNC_STR_PERLSCRIPT), TRUE, FALSE) ) {
+			TCHAR	szPath[_MAX_PATH], szFile[_MAX_PATH];
+			::GetTempPath(_MAX_PATH, szPath);
+			::GetTempFileName(szPath, AfxGetNCVCApp()->GetDocExtString(TYPE_NCD).Right(3)/*ncd*/,
+				0, szFile);
+			strWriteFile = s_strNCtemp = szFile;
+		}
+		else {
+			strWriteFile = strNCFile;
+			s_strNCtemp.Empty();
+		}
+	}
+	else {
+		strWriteFile = s_strNCtemp.IsEmpty() ? strNCFile : s_strNCtemp;
+	}
+
+	// ﾌｧｲﾙ出力
 	try {
 		UINT	nOpenFlg = CFile::modeCreate | CFile::modeWrite |
 			CFile::shareExclusive | CFile::typeText | CFile::osSequentialScan;
 		if ( g_wBindOperator & TH_APPEND )
 			nOpenFlg |= CFile::modeNoTruncate;
-		CStdioFile	fp(strNCFile, nOpenFlg);
+		CStdioFile	fp(strWriteFile, nOpenFlg);
 		if ( g_wBindOperator & TH_APPEND )
 			fp.SeekToEnd();
 		for ( int i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
@@ -950,8 +972,15 @@ BOOL OutputMillCode(LPCTSTR lpszFileName)
 		e->Delete();
 		return FALSE;
 	}
-
 	g_pParent->m_ctReadProgress.SetPos(g_obMakeData.GetSize());
+
+	// 出力後の処理
+	if ( g_wBindOperator & TH_FOOTER && !s_strNCtemp.IsEmpty() ) {
+		CString	strArgv("\""+GetStr(MKNC_STR_PERLSCRIPT)+"\" \""+s_strNCtemp+"\" \""+strNCFile+"\"");
+		// Perlｽｸﾘﾌﾟﾄ起動
+		AfxGetNCVCMainWnd()->CreateOutsideProcess("perl.exe", strArgv, TRUE, TRUE);
+	}
+
 	return IsThread();
 }
 
@@ -1059,7 +1088,7 @@ BOOL MakeNCD_ShapeFunc(void)
 	if ( !g_bData ) {
 		// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 		if ( g_wBindOperator & TH_HEADER )
-			AddCustomMillCode(g_pMakeOpt->GetStr(MKNC_STR_HEADER), NULL);
+			AddCustomMillCode(GetStr(MKNC_STR_HEADER), NULL);
 		// ﾌｧｲﾙ名のｺﾒﾝﾄ
 		if ( g_pDoc->IsDocFlag(DXFDOC_BIND) && AfxGetNCVCApp()->GetDXFOption()->GetDxfOptFlg(DXFOPT_FILECOMMENT) ) {
 			CString	strBuf;
@@ -1190,7 +1219,7 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer
 		g_bData = TRUE;
 		// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 		if ( g_wBindOperator & TH_HEADER )
-			AddCustomMillCode(g_pMakeOpt->GetStr(MKNC_STR_HEADER), pData);
+			AddCustomMillCode(GetStr(MKNC_STR_HEADER), pData);
 		// ﾌｧｲﾙ名のｺﾒﾝﾄ(-- BindModeの時は、たぶんここにこない --)
 		if ( g_pDoc->IsDocFlag(DXFDOC_BIND) && AfxGetNCVCApp()->GetDXFOption()->GetDxfOptFlg(DXFOPT_FILECOMMENT) ) {
 			CString	strBuf;
@@ -3211,12 +3240,12 @@ void AddMoveZ_Initial(void)
 
 void AddMoveCust_B(void)
 {
-	AddMakeGdataStr(g_pMakeOpt->GetStr(MKNC_STR_CUSTMOVE_B));
+	AddMakeGdataStr(GetStr(MKNC_STR_CUSTMOVE_B));
 }
 
 void AddMoveCust_A(void)
 {
-	AddMakeGdataStr(g_pMakeOpt->GetStr(MKNC_STR_CUSTMOVE_A));
+	AddMakeGdataStr(GetStr(MKNC_STR_CUSTMOVE_A));
 }
 
 // ﾃｷｽﾄ情報の生成

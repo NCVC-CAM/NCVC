@@ -146,6 +146,11 @@ void CNCMakeWireOpt::InitialDefault(void)
 		m_strOption[i] = g_pszExecDir + m_strOption[i];
 }
 
+BOOL CNCMakeWireOpt::IsPathID(int n)
+{
+	return ( n==MKWI_STR_HEADER || n==MKWI_STR_FOOTER );
+}
+
 #ifdef _DEBUG
 void CNCMakeWireOpt::DbgDump(void) const
 {

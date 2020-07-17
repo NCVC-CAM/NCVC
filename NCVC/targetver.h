@@ -7,10 +7,7 @@
 // SDKDDKVer.h をインクルードする前に、サポート対象とするプラットフォームを示すように _WIN32_WINNT マクロを設定します。
 
 //#include <SDKDDKVer.h>	// これだとXPで SystemParametersInfo() の値が正しくない
-#define _WIN32_WINNT 0x0501		// Windows XP ～
-#include <WinSDKVer.h>
 
-/*
 // 以下のマクロは、最低限必要なプラットフォームを定義します。最低限必要なプラットフォームは、
 // アプリケーションを実行するのに必要な最小バージョンの Windows や Internet Explorer などです。
 // このマクロは、利用可能なプラットフォームのバージョンで実行できるすべての機能を有効にします。
@@ -36,4 +33,5 @@
 #define _WIN32_IE 0x0700		// これを IE の他のバージョン向けに適切な値に変更してください。
 //#define _WIN32_IE 0x0600
 #endif
-*/
+
+#include <WinSDKVer.h>

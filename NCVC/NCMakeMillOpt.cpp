@@ -76,11 +76,13 @@ static	const	BOOL	g_dfMilBOrder[] = {
 // CString型命令
 static	LPCTSTR	g_szMilSOrder[] = {
 	"LineForm", "EOB", "Header", "Footer",
-	"CustomMoveB", "CustomMoveA"
+	"CustomMoveB", "CustomMoveA",
+	"PerlScript"
 };
 static	LPCTSTR	g_dfMilSOrder[] = {
 	"N%04d", "", "Header.txt", "Footer.txt",
-	"", ""
+	"", "",
+	""
 };
 
 // ｵﾌﾟｼｮﾝ統合
@@ -171,7 +173,8 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_DBL,	MKNC_DBL_TOLERANCE,		"同一座標と見なす許容差"},
 	{NC_NUM,	MKNC_NUM_TOLERANCE,		"超えた時の動作(0:Z上昇G00移動,1:G01補間)"},
 	{NC_NUM,	MKNC_NUM_OPTIMAIZEDRILL,"穴加工基準軸(0:なし,1:X,2:Y)"},
-	{NC_DBL,	MKNC_DBL_DRILLMARGIN,	"穴加工同一軸上と見なす許容差"}
+	{NC_DBL,	MKNC_DBL_DRILLMARGIN,	"穴加工同一軸上と見なす許容差"},
+	{NC_STR,	MKNC_STR_PERLSCRIPT,	"生成後に実行されるPerlｽｸﾘﾌﾟﾄ"},
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -220,6 +223,11 @@ void CNCMakeMillOpt::InitialDefault(void)
 
 	for ( i=MKNC_STR_HEADER; i<=MKNC_STR_FOOTER; i++ )
 		m_strOption[i] = g_pszExecDir + m_strOption[i];
+}
+
+BOOL CNCMakeMillOpt::IsPathID(int n)
+{
+	return ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER || n==MKNC_STR_PERLSCRIPT );
 }
 
 // ﾚｼﾞｽﾄﾘからの移行
@@ -383,5 +391,6 @@ void CNCMakeMillOpt::DbgDump(void) const
 	dbg.printf("  TolerancePro =%d", MIL_I_TOLERANCE);
 	dbg.printf("  DrillOptimaiz=%d", MIL_I_OPTIMAIZEDRILL);
 	dbg.printf("  DrillMargin  =%f", MIL_D_DRILLMARGIN);
+	dbg.printf("  PerlScript   =%s", m_strOption[MKNC_STR_PERLSCRIPT]);
 }
 #endif

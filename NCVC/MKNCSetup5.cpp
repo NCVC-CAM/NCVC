@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "resource.h"
+#include "NCVC.h"
 #include "NCMakeMillOpt.h"
 #include "MKNCSetup.h"
 
@@ -15,6 +15,7 @@ extern	CMagaDbg	g_dbg;
 BEGIN_MESSAGE_MAP(CMKNCSetup5, CPropertyPage)
 	//{{AFX_MSG_MAP(CMKNCSetup5)
 	ON_CBN_SELCHANGE(IDC_MKNC5_DRILL, &CMKNCSetup5::OnSelchangeDrill)
+	ON_BN_CLICKED(IDC_MKNC5_SCRIPT_LOOKUP, &CMKNCSetup5::OnScriptLookup)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -38,8 +39,10 @@ void CMKNCSetup5::DoDataExchange(CDataExchange* pDX)
 	//{{AFX_DATA_MAP(CMKNCSetup5)
 	DDX_Control(pDX, IDC_MKNC5_TOLERANCE, m_dTolerance);
 	DDX_Control(pDX, IDC_MKNC5_DRILLMARGIN, m_dDrillMargin);
+	DDX_Control(pDX, IDC_MKNC5_SCRIPT, m_ctScript);
 	DDX_CBIndex(pDX, IDC_MKNC5_DRILL, m_nOptimaizeDrill);
 	DDX_CBIndex(pDX, IDC_MKNC5_TOLERANCE_P, m_nTolerance);
+	DDX_Text(pDX, IDC_MKNC5_SCRIPT, m_strScript);
 	//}}AFX_DATA_MAP
 }
 
@@ -62,6 +65,10 @@ BOOL CMKNCSetup5::OnInitDialog()
 	m_nTolerance		= pOpt->MIL_I_TOLERANCE;
 	m_nOptimaizeDrill	= pOpt->MIL_I_OPTIMAIZEDRILL;
 	m_dDrillMargin		= pOpt->MIL_D_DRILLMARGIN;
+	::Path_Name_From_FullPath(pOpt->m_strOption[MKNC_STR_PERLSCRIPT], m_strScriptPath, m_strScript);
+	// Êß½•\Ž¦‚ÌÅ“K‰»(shlwapi.h)
+	::PathSetDlgItemPath(m_hWnd, IDC_MKNC5_SCRIPTPATH, m_strScriptPath);
+	//
 	EnableControl_Drill();
 
 	UpdateData(FALSE);
@@ -76,6 +83,20 @@ void CMKNCSetup5::OnSelchangeDrill()
 	EnableControl_Drill();
 }
 
+void CMKNCSetup5::OnScriptLookup() 
+{
+	UpdateData();
+	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_PERL_FILTER, TRUE, m_strScript, m_strScriptPath) == IDOK ) {
+		// ÃÞ°À‚Ì”½‰f
+		::Path_Name_From_FullPath(m_strScript, m_strScriptPath, m_strScript);
+		::PathSetDlgItemPath(m_hWnd, IDC_MKNC5_SCRIPTPATH, m_strScriptPath);
+		UpdateData(FALSE);
+		// •¶Žš‘I‘ðó‘Ô
+		m_ctScript.SetFocus();
+		m_ctScript.SetSel(0, -1);
+	}
+}
+
 BOOL CMKNCSetup5::OnApply() 
 {
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
@@ -85,6 +106,20 @@ BOOL CMKNCSetup5::OnApply()
 	pOpt->MIL_I_TOLERANCE		= m_nTolerance;
 	pOpt->MIL_I_OPTIMAIZEDRILL	= m_nOptimaizeDrill;
 	pOpt->MIL_D_DRILLMARGIN		= fabs((double)m_dDrillMargin);
+	pOpt->m_strOption[MKNC_STR_PERLSCRIPT] = m_strScriptPath+m_strScript;
+
+	return TRUE;
+}
+
+BOOL CMKNCSetup5::OnKillActive() 
+{
+	if ( !__super::OnKillActive() )
+		return FALSE;
+
+	if ( !m_strScript.IsEmpty() && !::IsFileExist(m_strScriptPath+m_strScript) ) {
+		m_ctScript.SetFocus();
+		return FALSE;
+	}
 
 	return TRUE;
 }

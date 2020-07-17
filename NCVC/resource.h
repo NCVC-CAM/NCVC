@@ -130,6 +130,7 @@
 #define IDS_VIEW_SETUP_INPORT           1314
 #define IDS_VIEW_SETUP_EXPORT           1315
 #define IDS_VIEW_TEXTURE                1316
+#define IDS_PERL_FILTER                 1385
 #define IDS_TEXTURE_FILTER              1386
 #define IDS_NCVC_FILTER                 1387
 #define IDS_NCD_FILTER                  1388
@@ -467,6 +468,8 @@
 #define IDC_MKNC1_HEADER_EDIT           4012
 #define IDC_MKNC1_FOOTER_LOOPUP         4013
 #define IDC_MKNC1_FOOTER_EDIT           4014
+#define IDC_MKNC1_HEADERPATH            4015
+#define IDC_MKNC1_FOOTERPATH            4016
 #define IDC_MKNC1_XREV                  4020
 #define IDC_MKNC1_YREV                  4021
 #define IDD_MKLA_SETUP1                 4050
@@ -536,6 +539,9 @@
 #define IDC_MKNC5_TOLERANCE_P           4404
 #define IDC_MKNC5_DRILL                 4405
 #define IDC_MKNC5_DRILLMARGIN           4406
+#define IDC_MKNC5_SCRIPTPATH            4410
+#define IDC_MKNC5_SCRIPT                4411
+#define IDC_MKNC5_SCRIPT_LOOKUP         4412
 #define IDD_MKNC_SETUP6                 4500
 #define IDC_MKNC6_POINT                 4501
 #define IDC_MKNC6_FEED                  4502
@@ -837,7 +843,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        166
+#define _APS_NEXT_RESOURCE_VALUE        170
 #define _APS_NEXT_COMMAND_VALUE         32822
 #define _APS_NEXT_CONTROL_VALUE         1056
 #define _APS_NEXT_SYMED_VALUE           101

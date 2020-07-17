@@ -52,9 +52,9 @@ inline	double	RoundCt(double dVal)
 //////////////////////////////////////////////////////////////////////
 // 実数型 CPoint の雛形
 
-template<class T> class	CPoint3T;
+template<typename T> class	CPoint3T;
 
-template<class T>
+template<typename T>
 class CPointT :
 	// +=, -=, *=, /= で +, -, * / も自動定義
 	boost::operators< CPointT<T> >
@@ -177,7 +177,7 @@ typedef	std::vector<CPointD>	CVPointD;
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD クラス
 
-template<class T>
+template<typename T>
 class CPoint3T :
 	boost::operators< CPoint3T<T> >
 {

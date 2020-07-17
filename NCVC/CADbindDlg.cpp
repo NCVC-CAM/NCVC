@@ -22,7 +22,7 @@ static	BINDFILEHEADER	g_BindFileHeader[] = {
 	{"Ì§²Ù–¼", LVCFMT_LEFT}
 };
 
-using namespace std;
+using std::string;
 using namespace boost;
 
 BEGIN_MESSAGE_MAP(CCADbindDlg, CDialog)

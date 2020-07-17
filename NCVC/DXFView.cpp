@@ -57,6 +57,7 @@ BEGIN_MESSAGE_MAP(CDXFView, CViewBase)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_UNDO, &CDXFView::OnUpdateEditUndo)
 	ON_COMMAND(ID_EDIT_COPY, &CDXFView::OnEditCopy)
 	//}}AFX_MSG_MAP
+	ON_NOTIFY_EX_RANGE(TTN_NEEDTEXT, 0, 0xFFFF, &CDXFView::OnToolTipNotify)
 	// ﾕｰｻﾞｲﾆｼｬﾙ処理 & 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
 	ON_MESSAGE(WM_USERVIEWFITMSG, &CDXFView::OnUserViewFitMsg)
 	// ﾏｳｽ移動のｽﾃｰﾀｽﾊﾞｰ更新
@@ -82,6 +83,7 @@ CDXFView::CDXFView()
 {
 	m_nSelect = -1;
 	m_pSelData = NULL;
+//	m_pToolTip = NULL;
 	m_enBind = BD_NONE;
 }
 
@@ -104,12 +106,45 @@ BOOL CDXFView::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* p
 	}
 	return __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 }
+/*
+BOOL CDXFView::PreTranslateMessage(MSG* pMsg)
+{
+	if ( m_pToolTip )
+		m_pToolTip->RelayEvent(pMsg);
 
+	return __super::PreTranslateMessage(pMsg);
+}
+*/
 void CDXFView::OnInitialUpdate() 
 {
-	CView::OnInitialUpdate();
+	__super::OnInitialUpdate();
 
-	if ( !IsBindMode() ) {
+
+	if ( IsBindMode() ) {
+/*
+		// ﾂｰﾙﾁｯﾌﾟ準備
+		m_pToolTip = new CToolTipCtrl;
+//		m_pToolTip = new CMFCToolTipCtrl;
+		m_pToolTip->Create(this);
+
+//		m_pToolTip->AddTool(this);	// この内部でﾒﾓﾘﾘｰｸの要因があるらしい??
+
+		TOOLINFO	ti;
+		memset(&ti, 0, sizeof(TOOLINFO));
+		HWND	hwnd = GetSafeHwnd();
+		ti.cbSize	= sizeof(TOOLINFO);
+		ti.uFlags	= TTF_IDISHWND;
+		ti.hwnd		= ::GetParent(hwnd);
+		ti.uId		= (UINT_PTR)hwnd;
+		BOOL bResult = m_pToolTip->SendMessage(TTM_ADDTOOL, 0, (LPARAM)&ti);
+
+		m_pToolTip->SetDelayTime(1000);
+		m_pToolTip->UpdateTipText(GetDocument()->GetTitle(), this);
+//		m_pToolTip->SetDescription(GetDocument()->GetTitle());
+*/
+		EnableToolTips(TRUE);
+	}
+	else {
 		if ( !IsBindParent() ) {
 			// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
 			// -- IsBindParent()もこの時点では子のDataCntが済んでいない
@@ -862,6 +897,14 @@ void CDXFView::OnViewLensComm(void)
 
 void CDXFView::OnDestroy()
 {
+/*
+	if ( m_pToolTip ) {
+		m_pToolTip->Activate(FALSE);
+		m_pToolTip->DelTool(this);
+		m_pToolTip->DestroyWindow();
+		delete	m_pToolTip;
+	}
+*/
 	DeleteOutlineTempObject();
 	__super::OnDestroy();
 }
@@ -1946,4 +1989,41 @@ LRESULT CDXFView::OnNcHitTest(CPoint point)
 		}
 	}
 	return __super::OnNcHitTest(point);
+}
+
+BOOL CDXFView::OnToolTipNotify(UINT id, NMHDR *pNMH, LRESULT *pResult)
+{
+#ifdef _DEBUG
+	CString	strDbg;
+	if ( IsBindParent() )
+		strDbg = "P";
+	else if ( IsBindMode() )
+		strDbg = "C";
+	strDbg = "CDXFView::OnToolTipNotify("+strDbg+")\nStart";
+	CMagaDbg	dbg((LPSTR)(LPCTSTR)strDbg);
+#endif
+	// 親ｳｨﾝﾄﾞｳでﾒｯｾｰｼﾞが処理される
+	TOOLTIPTEXT *pText = (TOOLTIPTEXT *)pNMH;
+	if ( pText->lParam >= 0 ) {
+		CString	strTip(GetDocument()->GetBindInfoData(pText->lParam)->pDoc->GetTitle());
+		lstrcpyn(pText->lpszText, strTip, sizeof(pText->szText)-1);
+	}
+	pText->hinst = AfxGetInstanceHandle();
+
+	return TRUE;
+}
+
+INT_PTR CDXFView::OnToolHitTest(CPoint point, TOOLINFO* pTI) const
+{
+	HWND	hwnd = GetSafeHwnd();
+	pTI->cbSize	= sizeof(TOOLINFO);
+	pTI->uFlags	= TTF_IDISHWND;
+//	pTI->hwnd	= ::GetParent(hwnd);
+	pTI->hwnd	= hwnd;	// hwndでも親ﾋﾞｭｰにOnToolTipNotify()が飛ぶ??
+	pTI->uId	= (UINT_PTR)hwnd;
+	pTI->lpszText = LPSTR_TEXTCALLBACK;
+	CDXFDoc*	pParentDoc = static_cast<const CDXFDoc*>(m_pDocument)->GetBindParentDoc();
+	pTI->lParam	= pParentDoc ? pParentDoc->GetBindInfo_fromView(this) : -1;
+
+	return 0;
 }

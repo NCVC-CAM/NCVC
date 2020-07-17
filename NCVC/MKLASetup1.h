@@ -8,6 +8,10 @@
 
 class CMKLASetup1 : public CPropertyPage
 {
+	// ｽﾀﾃｨｯｸｺﾝﾄﾛｰﾙに表示する前の省略形文字列
+	CString		m_strHeaderPath,	// 本物のﾊﾟｽ名
+				m_strFooterPath;
+
 public:
 	CMKLASetup1();
 

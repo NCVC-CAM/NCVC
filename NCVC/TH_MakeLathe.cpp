@@ -33,6 +33,7 @@ static	CNCMakeLatheOpt*	g_pMakeOpt;
 #define	GetFlg(a)	g_pMakeOpt->GetFlag(a)
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
+#define	GetStr(a)	g_pMakeOpt->GetStr(a)
 #define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
 
 // NC生成に必要なﾃﾞｰﾀ群
@@ -592,7 +593,7 @@ BOOL MakeLatheCode(void)
 	// 先頭ﾃﾞｰﾀの始点に移動
 	if ( nLoop > 0 ) {
 		// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
-		AddCustomLatheCode(g_pMakeOpt->GetStr(MKLA_STR_HEADER));
+		AddCustomLatheCode(GetStr(MKLA_STR_HEADER));
 		//
 		pData = g_obLathePass[0];
 		pt = pData->GetStartMakePoint();
@@ -708,7 +709,7 @@ BOOL MakeLatheCode(void)
 			g_obMakeData.Add(pNCD);
 		}
 		// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
-		AddCustomLatheCode(g_pMakeOpt->GetStr(MKLA_STR_FOOTER));
+		AddCustomLatheCode(GetStr(MKLA_STR_FOOTER));
 	}
 
 	return IsThread();

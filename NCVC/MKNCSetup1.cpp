@@ -75,12 +75,15 @@ BOOL CMKNCSetup1::OnInitDialog()
 	m_dZFeed	= pOpt->MIL_D_ZFEED;
 	m_dZCut		= pOpt->MIL_D_ZCUT;
 	m_dZG0Stop	= pOpt->MIL_D_ZG0STOP;
-	for ( int i=0; i<NCXYZ; i++ )
-		m_dG92[i] = pOpt->m_pDblOpt[MKNC_DBL_G92X+i];
-	m_strHeader = pOpt->m_strOption[MKNC_STR_HEADER];
-	m_strFooter = pOpt->m_strOption[MKNC_STR_FOOTER];
 	m_bXrev		= pOpt->MIL_F_XREV;
 	m_bYrev		= pOpt->MIL_F_YREV;
+	for ( int i=0; i<NCXYZ; i++ )
+		m_dG92[i] = pOpt->m_pDblOpt[MKNC_DBL_G92X+i];
+	::Path_Name_From_FullPath(pOpt->m_strOption[MKNC_STR_HEADER], m_strHeaderPath, m_strHeader);
+	::Path_Name_From_FullPath(pOpt->m_strOption[MKNC_STR_FOOTER], m_strFooterPath, m_strFooter);
+	// ﾊﾟｽ表示の最適化(shlwapi.h)
+	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_HEADERPATH, m_strHeaderPath);
+	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_FOOTERPATH, m_strFooterPath);
 	// 編集ﾎﾞﾀﾝの有効無効
 	if ( AfxGetNCVCApp()->GetExecList()->GetCount() < 1 ) {
 		m_ctHeaderBt.EnableWindow(FALSE);
@@ -96,13 +99,10 @@ BOOL CMKNCSetup1::OnInitDialog()
 void CMKNCSetup1::OnHeaderLoopup() 
 {
 	UpdateData();
-	CString		strPath, strFile;
-	::Path_Name_From_FullPath(m_strHeader, strPath, strFile);
-	if ( !strFile.IsEmpty() )
-		strFile = m_strHeader;
-	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, strFile, strPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, m_strHeader, m_strHeaderPath) == IDOK ) {
 		// ﾃﾞｰﾀの反映
-		m_strHeader = strFile;
+		::Path_Name_From_FullPath(m_strHeader, m_strHeaderPath, m_strHeader);
+		::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_HEADERPATH, m_strHeaderPath);
 		UpdateData(FALSE);
 		// 文字選択状態
 		m_ctHeader.SetFocus();
@@ -113,13 +113,10 @@ void CMKNCSetup1::OnHeaderLoopup()
 void CMKNCSetup1::OnFooterLoopup() 
 {
 	UpdateData();
-	CString		strPath, strFile;
-	::Path_Name_From_FullPath(m_strFooter, strPath, strFile);
-	if ( !strFile.IsEmpty() )
-		strFile = m_strFooter;
-	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, strFile, strPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, m_strFooter, m_strFooterPath) == IDOK ) {
 		// ﾃﾞｰﾀの反映
-		m_strFooter = strFile;
+		::Path_Name_From_FullPath(m_strFooter, m_strFooterPath, m_strFooter);
+		::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_FOOTERPATH, m_strFooterPath);
 		UpdateData(FALSE);
 		// 文字選択状態
 		m_ctFooter.SetFocus();
@@ -132,7 +129,8 @@ void CMKNCSetup1::OnHeaderEdit()
 	ASSERT( AfxGetNCVCApp()->GetExecList()->GetCount() > 0 );
 	UpdateData();
 	AfxGetNCVCMainWnd()->CreateOutsideProcess(
-		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(), "\""+m_strHeader+"\"");
+		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(),
+		"\""+m_strHeaderPath+m_strHeader+"\"");
 	m_ctHeader.SetFocus();
 }
 
@@ -141,7 +139,8 @@ void CMKNCSetup1::OnFooterEdit()
 	ASSERT( AfxGetNCVCApp()->GetExecList()->GetCount() > 0 );
 	UpdateData();
 	AfxGetNCVCMainWnd()->CreateOutsideProcess(
-		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(), "\""+m_strFooter+"\"");
+		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(),
+		"\""+m_strFooterPath+m_strFooter+"\"");
 	m_ctFooter.SetFocus();
 }
 
@@ -194,12 +193,12 @@ BOOL CMKNCSetup1::OnApply()
 	pOpt->MIL_D_ZFEED	= m_dZFeed;
 	pOpt->MIL_D_ZCUT	= m_dZCut;
 	pOpt->MIL_D_ZG0STOP	= m_dZG0Stop;
-	for ( int i=0; i<NCXYZ; i++ )
-		pOpt->m_pDblOpt[MKNC_DBL_G92X+i] = m_dG92[i];
-	pOpt->m_strOption[MKNC_STR_HEADER] = m_strHeader;
-	pOpt->m_strOption[MKNC_STR_FOOTER] = m_strFooter;
 	pOpt->MIL_F_XREV	= m_bXrev;
 	pOpt->MIL_F_YREV	= m_bYrev;
+	pOpt->m_strOption[MKNC_STR_HEADER] = m_strHeaderPath+m_strHeader;
+	pOpt->m_strOption[MKNC_STR_FOOTER] = m_strFooterPath+m_strFooter;
+	for ( int i=0; i<NCXYZ; i++ )
+		pOpt->m_pDblOpt[MKNC_DBL_G92X+i] = m_dG92[i];
 
 	return TRUE;
 }
@@ -228,6 +227,14 @@ BOOL CMKNCSetup1::OnKillActive()
 	}
 	if ( m_strFooter.IsEmpty() ) {
 		AfxMessageBox(IDS_ERR_CUSTOMFILE, MB_OK|MB_ICONEXCLAMATION);
+		m_ctFooter.SetFocus();
+		return FALSE;
+	}
+	if ( !::IsFileExist(m_strHeaderPath+m_strHeader) ) {
+		m_ctHeader.SetFocus();
+		return FALSE;
+	}
+	if ( !::IsFileExist(m_strFooterPath+m_strFooter) ) {
 		m_ctFooter.SetFocus();
 		return FALSE;
 	}

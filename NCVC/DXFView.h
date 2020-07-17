@@ -33,7 +33,13 @@ enum ENBINDSTATE
 	BD_MOVE,
 	BD_CANCEL
 };
-
+/*
+// CToolTipCtrlﾒﾓﾘﾘｰｸ対策 -> 効かず...
+struct TOOLINFO_EX : public TOOLINFO
+{
+	void*	lpReserved;
+};
+*/
 /////////////////////////////////////////////////////////////////////////////
 // CDXFView ビュー
 
@@ -50,6 +56,9 @@ class CDXFView : public CViewBase
 	std::vector<SELECTBIND>						m_bindSel;	// 選択情報
 	CTypedPtrListEx<CPtrList, LPCADBINDINFO>	m_bindUndo;	// 移動のUNDO蓄積
 	ENBINDSTATE	m_enBind;
+	// ↓謎のﾒﾓﾘﾘｰｸが発生
+//	CToolTipCtrl*	m_pToolTip;		// 子ﾋﾞｭｰ用ToolTip(ﾌｧｲﾙ名表示)
+//	CMFCToolTipCtrl*	m_pToolTip;	// 子ﾋﾞｭｰ用ToolTip(ﾌｧｲﾙ名表示)
 
 	BOOL	OnUpdateShape(DXFTREETYPE[]);
 	BOOL	IsRootTree(DWORD);
@@ -92,8 +101,10 @@ public:
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 	//{{AFX_VIRTUAL(CDXFView)
 	public:
-	virtual void OnInitialUpdate();
 	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
+//	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	virtual void OnInitialUpdate();
+	virtual INT_PTR OnToolHitTest(CPoint point, TOOLINFO* pTI) const;
 	protected:
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
 	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
@@ -123,6 +134,7 @@ protected:
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg LRESULT OnNcHitTest(CPoint point);
 	//}}AFX_MSG
+	afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
 	// OnInitialUpdate() から PostMessage() or 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
 	afx_msg LRESULT OnUserViewFitMsg(WPARAM, LPARAM);
 	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰ表示更新(ｵﾌﾞｼﾞｪｸﾄIDがClassWizard一覧に載らないので手動ｺｰﾃﾞｨﾝｸﾞ)

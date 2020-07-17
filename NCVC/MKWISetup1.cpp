@@ -64,8 +64,11 @@ BOOL CMKWISetup1::OnInitDialog()
 	m_dG92X			= pOpt->WIR_D_G92X;
 	m_dG92Y			= pOpt->WIR_D_G92Y;
 	m_strTaperMode	= pOpt->m_strOption[MKWI_STR_TAPERMODE];
-	m_strHeader		= pOpt->m_strOption[MKWI_STR_HEADER];
-	m_strFooter		= pOpt->m_strOption[MKWI_STR_FOOTER];
+	::Path_Name_From_FullPath(pOpt->m_strOption[MKWI_STR_HEADER], m_strHeaderPath, m_strHeader);
+	::Path_Name_From_FullPath(pOpt->m_strOption[MKWI_STR_FOOTER], m_strFooterPath, m_strFooter);
+	// ﾊﾟｽ表示の最適化(shlwapi.h)
+	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_HEADERPATH, m_strHeaderPath);
+	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_FOOTERPATH, m_strFooterPath);
 	// 編集ﾎﾞﾀﾝの有効無効
 	if ( AfxGetNCVCApp()->GetExecList()->GetCount() < 1 ) {
 		m_ctButton1.EnableWindow(FALSE);
@@ -80,13 +83,10 @@ BOOL CMKWISetup1::OnInitDialog()
 void CMKWISetup1::OnHeaderLoopup() 
 {
 	UpdateData();
-	CString		strPath, strFile;
-	::Path_Name_From_FullPath(m_strHeader, strPath, strFile);
-	if ( !strFile.IsEmpty() )
-		strFile = m_strHeader;
-	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, strFile, strPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, m_strHeader, m_strHeaderPath) == IDOK ) {
 		// ﾃﾞｰﾀの反映
-		m_strHeader = strFile;
+		::Path_Name_From_FullPath(m_strHeader, m_strHeaderPath, m_strHeader);
+		::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_HEADERPATH, m_strHeaderPath);
 		UpdateData(FALSE);
 		// 文字選択状態
 		m_ctHeader.SetFocus();
@@ -97,13 +97,10 @@ void CMKWISetup1::OnHeaderLoopup()
 void CMKWISetup1::OnFooterLoopup() 
 {
 	UpdateData();
-	CString		strPath, strFile;
-	::Path_Name_From_FullPath(m_strFooter, strPath, strFile);
-	if ( !strFile.IsEmpty() )
-		strFile = m_strFooter;
-	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, strFile, strPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, m_strFooter, m_strFooterPath) == IDOK ) {
 		// ﾃﾞｰﾀの反映
-		m_strFooter = strFile;
+		::Path_Name_From_FullPath(m_strFooter, m_strFooterPath, m_strFooter);
+		::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_FOOTERPATH, m_strFooterPath);
 		UpdateData(FALSE);
 		// 文字選択状態
 		m_ctFooter.SetFocus();
@@ -116,7 +113,8 @@ void CMKWISetup1::OnHeaderEdit()
 	ASSERT( AfxGetNCVCApp()->GetExecList()->GetCount() > 0 );
 	UpdateData();
 	AfxGetNCVCMainWnd()->CreateOutsideProcess(
-		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(), "\""+m_strHeader+"\"");
+		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(),
+		"\""+m_strHeaderPath+m_strHeader+"\"");
 	m_ctHeader.SetFocus();
 }
 
@@ -125,7 +123,8 @@ void CMKWISetup1::OnFooterEdit()
 	ASSERT( AfxGetNCVCApp()->GetExecList()->GetCount() > 0 );
 	UpdateData();
 	AfxGetNCVCMainWnd()->CreateOutsideProcess(
-		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(), "\""+m_strFooter+"\"");
+		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(),
+		"\""+m_strFooterPath+m_strFooter+"\"");
 	m_ctFooter.SetFocus();
 }
 
@@ -138,8 +137,8 @@ BOOL CMKWISetup1::OnApply()
 	pOpt->WIR_D_G92X	= m_dG92X;
 	pOpt->WIR_D_G92Y	= m_dG92Y;
 	pOpt->m_strOption[MKWI_STR_TAPERMODE]	= m_strTaperMode;
-	pOpt->m_strOption[MKWI_STR_HEADER]		= m_strHeader;
-	pOpt->m_strOption[MKWI_STR_FOOTER]		= m_strFooter;
+	pOpt->m_strOption[MKWI_STR_HEADER]		= m_strHeaderPath+m_strHeader;
+	pOpt->m_strOption[MKWI_STR_FOOTER]		= m_strFooterPath+m_strFooter;
 
 	return TRUE;
 }
@@ -174,6 +173,14 @@ BOOL CMKWISetup1::OnKillActive()
 	}
 	if ( m_strFooter.IsEmpty() ) {
 		AfxMessageBox(IDS_ERR_CUSTOMFILE, MB_OK|MB_ICONEXCLAMATION);
+		m_ctFooter.SetFocus();
+		return FALSE;
+	}
+	if ( !::IsFileExist(m_strHeaderPath+m_strHeader) ) {
+		m_ctHeader.SetFocus();
+		return FALSE;
+	}
+	if ( !::IsFileExist(m_strFooterPath+m_strFooter) ) {
 		m_ctFooter.SetFocus();
 		return FALSE;
 	}

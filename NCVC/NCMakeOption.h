@@ -46,6 +46,7 @@ protected:
 	CNCMakeOption(NCMAKEOPTION[],
 		int, LPCTSTR*, int, LPSAVEORDER);	// SaveMakeOption()î•ñ
 	virtual	void	InitialDefault(void) = 0;	// ÃŞÌ«ÙÄİ’è(Še”h¶¸×½‚É‚Ä)
+	virtual	BOOL	IsPathID(int) = 0;			// Ì§²ÙÊß½ID‚©”Û‚©
 
 	CString	GetInsertSpace(int nLen) {
 		CString	strResult(' ', m_nOrderLength - nLen);

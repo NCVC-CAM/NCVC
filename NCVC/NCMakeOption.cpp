@@ -152,7 +152,7 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 			// –½—ßŒŸ¸(CStringŒ^)
 			n = stSOrder.GetIndex(strOrder.c_str());
 			if ( 0<=n && n<m_MakeOpt[3].nOrderCnt ) {
-				if ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER ) {
+				if ( IsPathID(n) ) {
 					// ‘Š‘ÎÊß½‚È‚çâ‘ÎÊß½‚É•ÏŠ·
 					if ( !strResult.empty() &&
 								::PathIsRelative(strResult.c_str()) &&		// Shlwapi.h
@@ -231,10 +231,13 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 					m_pSaveOrder[i].lpszComment);
 				break;
 			case NC_STR:	// CStringŒ^
-				if ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER ) {
+				if ( IsPathID(n) ) {
 					// “¯‚¶Ù°ÄÊß½‚È‚ç‘Š‘ÎÊß½‚É•ÏŠ·
-					if ( !m_strOption[n].IsEmpty() && ::PathIsSameRoot(m_strInitFile, m_strOption[n]) )
+					if ( !m_strOption[n].IsEmpty() && ::PathIsSameRoot(m_strInitFile, m_strOption[n]) ) {
 						strResult = ::RelativePath(m_strInitFile, m_strOption[n]);
+						if ( strResult.GetLength() >= m_strOption[n].GetLength() )
+							strResult = m_strOption[n];	// ‘Š‘ÎÊß½‚Ì•û‚ª’·‚¯‚ê‚Î‚»‚Ì‚Ü‚Ü
+					}
 					else
 						strResult = m_strOption[n];
 				}

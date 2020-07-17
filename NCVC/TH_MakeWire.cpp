@@ -34,6 +34,7 @@ static	CNCMakeWireOpt*		g_pMakeOpt;
 #define	GetFlg(a)	g_pMakeOpt->GetFlag(a)
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
+#define	GetStr(a)	g_pMakeOpt->GetStr(a)
 #define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
 
 // NC生成に必要なﾃﾞｰﾀ群
@@ -81,7 +82,7 @@ static inline	void	AddMakeWireStr(const CString& strData)
 static inline	void	AddAWFconnect(void)
 {
 	if ( !g_bAWF ) {
-		AddMakeWireStr(g_pMakeOpt->GetStr(MKWI_STR_AWFCNT));
+		AddMakeWireStr(GetStr(MKWI_STR_AWFCNT));
 		g_bAWF = TRUE;
 	}
 }
@@ -89,7 +90,7 @@ static inline	void	AddAWFconnect(void)
 static inline	void	AddAWFcut(void)
 {
 	if ( g_bAWF ) {
-		AddMakeWireStr(g_pMakeOpt->GetStr(MKWI_STR_AWFCUT));
+		AddMakeWireStr(GetStr(MKWI_STR_AWFCUT));
 		g_bAWF = FALSE;
 	}
 }
@@ -356,7 +357,7 @@ BOOL MakeWire_MainFunc(void)
 			AddAWFcut();
 		// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
 		if ( g_wBindOperator & TH_FOOTER )
-			AddCustomWireCode(g_pMakeOpt->GetStr(MKWI_STR_FOOTER));
+			AddCustomWireCode(GetStr(MKWI_STR_FOOTER));
 	}
 
 	return IsThread();
@@ -510,7 +511,7 @@ BOOL MakeLoopWireAdd(CDXFshape* pShapeXY, CDXFshape* pShapeUV, BOOL bParent)
 	if ( g_obMakeData.IsEmpty() ) {
 		// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 		if ( g_wBindOperator & TH_HEADER )
-			AddCustomWireCode(g_pMakeOpt->GetStr(MKWI_STR_HEADER));
+			AddCustomWireCode(GetStr(MKWI_STR_HEADER));
 		// ﾌｧｲﾙ名のｺﾒﾝﾄ
 		if ( g_pDoc->IsDocFlag(DXFDOC_BIND) && AfxGetNCVCApp()->GetDXFOption()->GetDxfOptFlg(DXFOPT_FILECOMMENT) ) {
 			CString	strBuf;
@@ -1021,7 +1022,7 @@ public:
 			strResult.Format(IDS_MAKENCD_FORMAT, GetDbl(MKWI_DBL_DEPTH));
 			break;
 		case 2:		// TaperMode
-			strResult = g_pMakeOpt->GetStr(MKWI_STR_TAPERMODE);
+			strResult = GetStr(MKWI_STR_TAPERMODE);
 			break;
 		case 3:		// G90orG91
 			strResult = CNCMakeBase::MakeCustomString(GetNum(MKWI_NUM_G90)+90);

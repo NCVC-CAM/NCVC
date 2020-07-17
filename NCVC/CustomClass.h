@@ -19,11 +19,52 @@
 	for ( POSITION pos=(MAP)->GetStartPosition(); pos; ) { \
 		(MAP)->GetNextAssoc(pos, KEY, VAL);
 #define	END_FOREACH		}
+/*
+template<typename BASE, typename VAR>
+class CPLIST_FOREACH
+{
+	BASE&		list;
+	POSITION	pos;
+public:
+	CPLIST_FOREACH(BASE List) : list(List) {
+		pos = list.GetHeadPosition();
+		if ( pos )
+			var = list.GetNext(pos);
+	}
+	BOOL	IsLoop(void) {
+		if ( pos )
+			var = list.GetNext(pos);
+		return pos;
+	}
+	VAR*	var;
+};
+template<typename BASE, typename VAR>
+class CPLIST_FOREACH<BASE*, VAR>
+{
+	BASE*		list;
+	POSITION	pos;
+public:
+	CPLIST_FOREACH(BASE List) : list(List) {
+		pos = list->GetHeadPosition();
+		if ( pos )
+			var = list->GetNext(pos);
+	}
+	BOOL	IsLoop(void) {
+		if ( pos )
+			var = list->GetNext(pos);
+		return pos;
+	}
+	VAR*	var;
+};
+#define	PLIST_FOREACH(VAR, LIST) \
+	for ( CPLIST_FOREACH<LIST, VAR> PF(LIST); PF.IsLoop(); )
+//	for ( CPLIST_FOREACH<typeid(LIST).name(), typeid(VAR).name()> hoge(LIST, VAR); hoge.IsEnd(); )
+*/
 
 //////////////////////////////////////////////////////////////////////
 //	CTypedPtrArrayEx : ägí£ CTypedPtrArray
 
-template<class BASE_CLASS, class TYPE>
+template<typename BASE_CLASS, typename TYPE>
 class CTypedPtrArrayEx : public CTypedPtrArray<BASE_CLASS, TYPE>
 {
 public:
@@ -48,7 +89,7 @@ public:
 //////////////////////////////////////////////////////////////////////
 //	CSortArray : Sortã@î\ÇéùÇ¡ÇΩ CObArray∫›√≈
 
-template<class BASE_CLASS, class TYPE>
+template<typename BASE_CLASS, typename TYPE>
 class CSortArray : public CTypedPtrArrayEx<BASE_CLASS, TYPE>
 {
 public:
@@ -90,7 +131,7 @@ public:
 //////////////////////////////////////////////////////////////////////
 //	CTypedPtrListEx : ägí£ CTypedPtrList
 
-template<class BASE_CLASS, class TYPE>
+template<typename BASE_CLASS, typename TYPE>
 class CTypedPtrListEx : public CTypedPtrList<BASE_CLASS, TYPE>
 {
 public:

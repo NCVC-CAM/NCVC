@@ -22,7 +22,7 @@ extern	CMagaDbg	g_dbg;
 //#define	_DEBUGDUMP
 #endif
 
-using namespace std;
+using std::vector;
 using namespace boost;
 
 // ¾¸¼®Ý–¼ from ReadDXF.cpp
