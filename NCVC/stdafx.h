@@ -44,6 +44,10 @@
 #include <afxmt.h>			// ｽﾚｯﾄﾞ関連
 #include <afxcview.h>		// CListView, CTreeView
 
+#include <gl\gl.h>			// OpenGL
+#include <gl\glu.h>
+#include <gl\glaux.h>
+
 #ifndef _AFX_NO_OLE_SUPPORT
 #include <afxdtctl.h>		// MFC の Internet Explorer 4 コモン コントロール サポート
 #endif
@@ -61,7 +65,8 @@
 #include "boost/spirit.hpp"			// 構文解析
 
 #define	NCVCSERIALVERSION_1503	1503	// v1.00RC～
-#define	NCVCSERIALVERSION		1505	// v1.10～
+#define	NCVCSERIALVERSION_1505	1505	// v1.10～
+#define	NCVCSERIALVERSION		1507	// v1.10a～
 #define	SIZEOF(array)			( sizeof(array)/sizeof(array[0]) )
 
 #include <string>

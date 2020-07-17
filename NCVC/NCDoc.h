@@ -23,9 +23,9 @@ class CNCDoc : public CDocument, public CDocBase
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
 				m_strCurrentFile;	// 現在処理中のNCﾌｧｲﾙ名(FileInsert etc.)
 	// NCﾃﾞｰﾀ
-	int			m_nWorkOrg;					// 使用中のﾜｰｸ座標
-	CPoint3D	m_ptNcWorkOrg[WORKOFFSET],	// ﾜｰｸ座標系(G54～G59)原点
-				m_ptNcLocalOrg;				// ﾛｰｶﾙ座標系(G52)原点
+	int			m_nWorkOrg;						// 使用中のﾜｰｸ座標
+	CPoint3D	m_ptNcWorkOrg[WORKOFFSET+1],	// ﾜｰｸ座標系(G54～G59)とG92原点
+				m_ptNcLocalOrg;					// ﾛｰｶﾙ座標系(G52)原点
 	CNCblockArray	m_obBlock;	// ﾌｧｲﾙｲﾒｰｼﾞﾌﾞﾛｯｸﾃﾞｰﾀ
 	CTypedPtrArrayEx<CPtrArray, CNCdata*>
 				m_obGdata;		// Gｺｰﾄﾞ描画ｵﾌﾞｼﾞｪｸﾄ

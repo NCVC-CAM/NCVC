@@ -451,13 +451,13 @@ BOOL CViewBase::OnMouseWheel(UINT nFlags, short zDelta, const CPoint& pt)
 		return FALSE;
 
 	if ( zDelta <= -WHEEL_DELTA ) {
-		if ( pOpt->GetWheelType()==0 )
+		if ( pOpt->GetWheelType() == 0 )
 			OnViewLensP();
 		else
 			OnViewLensN();
 	}
 	else if ( zDelta >= WHEEL_DELTA ) {
-		if ( pOpt->GetWheelType()==0 )
+		if ( pOpt->GetWheelType() == 0 )
 			OnViewLensN();
 		else
 			OnViewLensP();

@@ -28,6 +28,7 @@ public:
 	public:
 	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	protected:
+	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
 	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
@@ -43,7 +44,6 @@ protected:
 	// 生成されたメッセージ マップ関数
 protected:
 	//{{AFX_MSG(CNCInfoView1)
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnEditCopy();
@@ -77,6 +77,7 @@ public:
 	public:
 	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	protected:
+	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
 	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
@@ -92,7 +93,6 @@ protected:
 	// 生成されたメッセージ マップ関数
 protected:
 	//{{AFX_MSG(CNCInfoView2)
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnEditCopy();
@@ -106,7 +106,7 @@ protected:
 
 #ifndef _DEBUG
 inline CNCDoc* CNCInfoView1::GetDocument()
-   { return (CNCDoc*)m_pDocument; }
+   { return static_cast<CNCDoc *>(m_pDocument); }
 inline CNCDoc* CNCInfoView2::GetDocument()
-   { return (CNCDoc*)m_pDocument; }
+   { return static_cast<CNCDoc *>(m_pDocument); }
 #endif

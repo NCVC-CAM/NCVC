@@ -6,9 +6,9 @@
 #include "MainFrm.h"	// DXFView.h
 #include "DXFdata.h"
 #include "DXFshape.h"
+#include "DXFDoc.h"
 #include "DXFView.h"	// DXFTREETYPE
 #include "Layer.h"
-#include "DXFDoc.h"
 #include "ThreadDlg.h"
 
 #include "MagaDbgMac.h"

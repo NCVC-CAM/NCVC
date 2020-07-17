@@ -80,7 +80,6 @@ class CMainFrame : public CMDIFrameWnd
 
 	// NCVC共通属性
 	// CPen, CBrush の[2]はｸﾘｯﾌﾟﾎﾞｰﾄﾞへの描画用．白->黒変換
-	COLORREF	m_colOrg[NCXYZ];	// 中心線カラー
 	CPen		m_penOrg[2][NCXYZ],	// 中心線
 				m_penCom[2][2],		// 拡大縮小矩形, 選択
 				m_penNC[2][7],		// G0, G1, G1Z, 補正, Cycle, Work, MaxCut
@@ -126,10 +125,6 @@ public:
 
 // 属性
 public:
-	COLORREF	GetOrgColor(size_t a) {
-		ASSERT(a>=NCA_X && a<=NCA_Z);
-		return m_colOrg[a];
-	}
 	CPen*		GetPenOrg(size_t a) {
 		ASSERT(a>=NCA_X && a<=NCA_Z);
 		return &m_penOrg[m_nSelectGDI][a];

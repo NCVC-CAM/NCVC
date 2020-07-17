@@ -165,6 +165,7 @@ void CNCViewXY::DrawConvertMaxRect(void)
 void CNCViewXY::OnDraw(CDC* pDC)
 {
 	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	ASSERT_VALID(GetDocument());
 	int		i;
@@ -176,7 +177,7 @@ void CNCViewXY::OnDraw(CDC* pDC)
 		CPoint	pt(0, 0);
 		pDC->DPtoLP(&pt);
 		pDC->SetTextAlign(TA_LEFT|TA_TOP);
-		pDC->SetTextColor(AfxGetNCVCApp()->GetViewOption()->GetNcDrawColor(NCCOL_PANE));
+		pDC->SetTextColor(pOpt->GetNcDrawColor(NCCOL_PANE));
 		pDC->TextOut(pt.x, pt.y, g_szNdelimiter, 2);	// XY
 	}
 	// ｶﾞｲﾄﾞ表示
@@ -185,7 +186,7 @@ void CNCViewXY::OnDraw(CDC* pDC)
 		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenOrg(i));
 		pDC->MoveTo(m_ptGuid[i][0]);
 		pDC->LineTo(m_ptGuid[i][1]);
-		pDC->SetTextColor(AfxGetNCVCMainWnd()->GetOrgColor(i));
+		pDC->SetTextColor(pOpt->GetNcDrawColor(i+NCCOL_GUIDEX));
 		pDC->TextOut(m_ptGuid[i][0].x, m_ptGuid[i][0].y, g_szNdelimiter+i, 1);
 	}
 	// NCﾃﾞｰﾀ描画
@@ -226,7 +227,7 @@ void CNCViewXY::Dump(CDumpContext& dc) const
 CNCDoc* CNCViewXY::GetDocument() // 非デバッグ バージョンはインラインです。
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CNCDoc)));
-	return (CNCDoc*)m_pDocument;
+	return static_cast<CNCDoc *>(m_pDocument);
 }
 #endif //_DEBUG
 
@@ -304,7 +305,7 @@ void CNCViewXY::OnViewLensComm(void)
 
 int CNCViewXY::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if (CView::OnCreate(lpCreateStruct) == -1)
+	if ( CView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	// ﾏｯﾋﾟﾝｸﾞﾓｰﾄﾞの変更など
@@ -322,7 +323,7 @@ LRESULT CNCViewXY::OnUserActivatePage(WPARAM, LPARAM lParam)
 		OnLensKey(ID_VIEW_FIT);
 	}
 	else {
-		if ( (BOOL)lParam ) {
+		if ( lParam ) {
 			// 拡大率の再更新
 			OnViewLensComm();
 		}
@@ -337,7 +338,7 @@ LRESULT CNCViewXY::OnUserViewFitMsg(WPARAM, LPARAM lParam)
 #endif
 	// 拡大率の計算と図形ﾌｨｯﾄ
 	CViewBase::OnViewFit(GetDocument()->GetMaxRect());
-	if ( (BOOL)lParam )		// 再描画ﾌﾗｸﾞ == 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ
+	if ( lParam )		// 再描画ﾌﾗｸﾞ == 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ
 		OnViewLensComm();
 	return 0;
 }

@@ -21,7 +21,6 @@
 #define IDI_CHECK                       140
 #define IDI_DEFICONLARGE                142
 #define IDI_DEFICONSMALL                143
-#define IDD_DIALOG1                     145
 #define IDS_ADDIN_INFO                  200
 #define IDS_TAB_INFO1                   496
 #define IDS_TAB_INFO2                   497
@@ -65,11 +64,9 @@
 #define ID_FILE_DXF2NCD_EX1             1004
 #define ID_FILE_DXF2NCD_EX2             1005
 #define ID_FILE_DXF2NCD_SHAPE           1006
-#define IDC_CHECK1                      1006
-#define IDC_RADIO2                      1009
 #define ID_FILE_NCINSERT                1010
-#define IDC_HOTKEY1                     1010
 #define ID_FILE_NCD2DXF                 1011
+#define IDC_EDIT1                       1011
 #define ID_FILE_CLANDOP                 1090
 #define IDD_DXF_SETUP1                  1200
 #define IDC_DXF_CAMLINE                 1201
@@ -265,7 +262,6 @@
 #define IDD_NCVIEW_JUMP                 2550
 #define IDC_JUMP                        2551
 #define IDD_NCVIEW_FIND                 2560
-#define IDC_NCVIEW_FIND                 2560
 #define IDC_NCVIEW_FIND_STR             2561
 #define IDC_NCVIEW_FIND_UP              2562
 #define IDC_NCVIEW_FIND_DOWN            2563
@@ -361,6 +357,7 @@
 #define IDC_MCST4_MACROIF_BT            3606
 #define IDD_MC_SETUP5                   3700
 #define IDC_MCST5_L0CYCLE               3700
+#define IDC_MCST5_AUTOBREAK             3701
 #define IDD_MKNC_SETUP1                 4000
 #define IDC_MKNC1_SPINDLE               4001
 #define IDC_MKNC1_FEED                  4002
@@ -514,7 +511,6 @@
 #define IDS_REGKEY_DXF                  10004
 #define IDS_REGKEY_NC                   10005
 #define IDS_REGKEY_MAKEDXF              10010
-#define IDS_REGKEY_WINDOW_SENDDLG       10050
 #define IDS_REGKEY_WINDOW_FINDDLG       10050
 #define IDS_REGKEY_WINDOW_JUMPDLG       10051
 #define IDS_REGKEY_WINDOW_WORKDLG       10052
@@ -674,7 +670,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1011
+#define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

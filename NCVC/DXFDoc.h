@@ -126,7 +126,7 @@ public:
 			ptResult = m_pCircle->GetCenter();
 		return ptResult;
 	}
-	void	SetCutterOrigin(const CPointD&, double, BOOL = FALSE);
+	void	CreateCutterOrigin(const CPointD&, double, BOOL = FALSE);
 	double	GetCutterOrgR(void) {
 		return m_pCircle ? m_pCircle->GetR() : 0.0;
 	}

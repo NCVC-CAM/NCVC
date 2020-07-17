@@ -91,5 +91,5 @@ protected:
 
 #ifndef _DEBUG  // NCView.cpp ファイルがデバッグ環境の時使用されます。
 inline CNCDoc* CNCView::GetDocument()
-   { return (CNCDoc*)m_pDocument; }
+   { return static_cast<CNCDoc *>(m_pDocument); }
 #endif

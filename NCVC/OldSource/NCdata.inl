@@ -18,19 +18,6 @@ inline void CNCdata::Constracter(LPNCARGV lpArgv)
 	m_nc.dLength	= 0.0;
 	m_dFeed			= lpArgv->dFeed;
 	m_dMove[NCA_X] = m_dMove[NCA_Y] = m_dMove[NCA_Z] = 0.0;
-	m_pRead = new CNCread;
-	memcpy(&(m_pRead->m_g68), &(lpArgv->g68), sizeof(G68ROUND));
-}
-
-inline const CNCread* CNCdata::GetReadData(void) const
-{
-	return m_pRead;
-}
-
-inline void CNCdata::DeleteReadData(void)
-{
-	delete	m_pRead;
-	m_pRead = NULL;
 }
 
 inline void CNCdata::AddCorrectObject(CNCdata* pData)
@@ -48,7 +35,7 @@ inline UINT CNCdata::GetNCObjErrorCode(void) const
 	return	m_nc.nErrorCode;
 }
 
-inline int CNCdata::GetBlockLineNo(void) const
+inline int CNCdata::GetStrLine(void) const
 {
 	return	m_nc.nLine;
 }
@@ -97,20 +84,17 @@ inline double CNCdata::GetEndValue(size_t a) const
 
 inline const CPoint3D CNCdata::GetOriginalEndPoint(void) const
 {
-	ASSERT( m_pRead );
-	return m_pRead->m_ptValOrg;
+	return m_ptValOrg;
 }
 
 inline double CNCdata::GetOriginalEndValue(size_t a) const
 {
-	ASSERT( m_pRead );
-	return m_pRead->m_ptValOrg[a];
+	return m_ptValOrg[a];
 }
 
 inline const CPoint3D CNCdata::GetOffsetPoint(void) const
 {
-	ASSERT( m_pRead );
-	return m_pRead->m_ptOffset;
+	return m_ptOffset;
 }
 
 inline const CPoint3D CNCdata::GetEndCorrectPoint(void) const

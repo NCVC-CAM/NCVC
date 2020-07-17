@@ -37,11 +37,11 @@ CMainStatusBar::~CMainStatusBar()
 
 int CMainStatusBar::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if (CStatusBar::OnCreate(lpCreateStruct) == -1)
+	if ( CStatusBar::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	// ½Ã°À½ÊÞ°‚ÉÌßÛ¸ÞÚ½ºÝÄÛ°Ù‚ð”z’u
-	if (!m_ctProgress.Create(WS_CHILD|WS_VISIBLE, CRect(0, 0, 0, 0),
+	if ( !m_ctProgress.Create(WS_CHILD|WS_VISIBLE, CRect(0, 0, 0, 0),
 			this, ID_MAIN_PROGRESS) ) {
 		TRACE0("Failed to create progress control\n");
 		return -1;      // ì¬‚ÉŽ¸”s

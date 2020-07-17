@@ -22,7 +22,8 @@ CMCSetup5::CMCSetup5() : CPropertyPage(CMCSetup5::IDD)
 {
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
-	m_bL0Cycle = pMCopt->m_bL0Cycle;
+	m_bL0Cycle		= pMCopt->m_bL0Cycle;
+	m_strAutoBreak	= pMCopt->m_strAutoBreak;
 }
 
 CMCSetup5::~CMCSetup5()
@@ -33,6 +34,7 @@ void CMCSetup5::DoDataExchange(CDataExchange* pDX)
 {
 	CPropertyPage::DoDataExchange(pDX);
 	DDX_Check(pDX, IDC_MCST5_L0CYCLE, m_bL0Cycle);
+	DDX_Text(pDX, IDC_MCST5_AUTOBREAK, m_strAutoBreak);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -47,6 +49,10 @@ BOOL CMCSetup5::OnApply()
 	if ( pMCopt->m_bL0Cycle != m_bL0Cycle ) {
 		pMCopt->m_bL0Cycle = m_bL0Cycle;
 		pParent->m_bReload = TRUE;		// Ä“Çž‚ª•K—v
+	}
+	if ( pMCopt->m_strAutoBreak != m_strAutoBreak ) {
+		pMCopt->m_strAutoBreak = m_strAutoBreak;
+		pParent->m_bReload = TRUE;
 	}
 
 	return TRUE;

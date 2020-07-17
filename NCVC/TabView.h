@@ -39,8 +39,7 @@ public:
 		return GetTabCtrl().GetCurSel();
 	}
 	CWnd*	GetPage(int nIndex) {
-		ASSERT( nIndex >= 0 && nIndex < GetPageCount() );
-		return m_pPages[nIndex];
+		return ( nIndex>=0 && nIndex<GetPageCount() ) ? m_pPages[nIndex] : NULL;
 	}
 	CWnd*	GetActivePageWnd(void) {
 		return GetPage(GetActivePage());

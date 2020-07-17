@@ -465,7 +465,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 #ifdef _DEBUG
 				dbg.printf("Org x=%f y=%f", pt.x, pt.y);
 #endif
-				pDoc->SetCutterOrigin(pt, g_dValue[VALUE40]);
+				pDoc->CreateCutterOrigin(pt, g_dValue[VALUE40]);
 				break;
 			case DXFCAMLAYER:
 				pLayer = pDoc->AddLayerMap(g_strLayer);
@@ -569,7 +569,7 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 #ifdef _DEBUG
 			dbg.printf("Org x=%f y=%f", pt.x, pt.y);
 #endif
-			pDoc->SetCutterOrigin(pt, g_dValue[VALUE40]);
+			pDoc->CreateCutterOrigin(pt, g_dValue[VALUE40]);
 			break;
 		case DXFCAMLAYER:
 			dxfCircle.pLayer = pDoc->AddLayerMap(g_strLayer);

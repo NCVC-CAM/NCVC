@@ -346,7 +346,7 @@ void CDXFDoc::AllChangeFactor(double f) const
 		m_pCircle->DrawTuning(f);
 }
 
-void CDXFDoc::SetCutterOrigin(const CPointD& pt, double r, BOOL bRedraw/*=FALSE*/)
+void CDXFDoc::CreateCutterOrigin(const CPointD& pt, double r, BOOL bRedraw/*=FALSE*/)
 {
 	if ( m_pCircle ) {
 		delete	m_pCircle;
@@ -508,8 +508,13 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 			AfxMessageBox(IDS_ERR_DXFDATACUT, MB_OK|MB_ICONEXCLAMATION);
 			bResult = FALSE;
 		}
-		// 原点ﾃﾞｰﾀがないとき(矩形の上下に注意)
-		else if ( !m_pCircle ) {
+		else if ( m_pCircle ) {
+			if ( !m_ptOrgOrig )		// ｼﾘｱﾙ情報に含まれている(CAMﾌｧｲﾙ)場合を除く
+				m_ptOrgOrig = m_pCircle->GetCenter();	// ﾌｧｲﾙからのｵﾘｼﾞﾅﾙ原点を保存
+			m_bReady = TRUE;	// 生成OK!
+		}
+		else {
+			// 原点ﾃﾞｰﾀがないとき(矩形の上下に注意)
 			optional<CPointD>	pt;
 			CPointD				ptRC;	// optional型への代入用
 			switch ( AfxGetNCVCApp()->GetDXFOption()->GetDxfFlag(DXFOPT_ORGTYPE) ) {
@@ -534,17 +539,13 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 				break;
 			default:
 				AfxMessageBox(IDS_ERR_DXFDATAORG, MB_OK|MB_ICONEXCLAMATION);
-				bResult = FALSE;
+				// OnOpenDocument() 戻り値 bResult はそのままで良い
 				break;
 			}
 			if ( pt ) {
-				SetCutterOrigin(*pt, dOrgR);
+				CreateCutterOrigin(*pt, dOrgR);
 				m_bReady = TRUE;	// 生成OK!
 			}
-		}
-		else {
-			m_ptOrgOrig = m_pCircle->GetCenter();	// ﾌｧｲﾙからのｵﾘｼﾞﾅﾙ原点を保存
-			m_bReady = TRUE;	// 生成OK!
 		}
 	}
 
@@ -695,15 +696,21 @@ void CDXFDoc::Serialize(CArchive& ar)
 		ar << m_bReady << m_bShape << m_dOffset << m_bAcute;
 		// NC生成ﾌｧｲﾙ名
 		ar << m_strNCFileName;
-		// 原点
+		// 原点ｵﾌﾞｼﾞｪｸﾄ
 		if ( m_pCircle ) {
 			ar << (BYTE)1;
 			ar.WriteObject(m_pCircle);
 		}
 		else
 			ar << (BYTE)0;
-		pt = *m_ptOrgOrig;
-		ar << pt.x << pt.y;
+		// CADｵﾘｼﾞﾅﾙ原点
+		if ( m_ptOrgOrig ) {
+			ar << (BYTE)1;
+			pt = *m_ptOrgOrig;
+			ar << pt.x << pt.y;
+		}
+		else
+			ar << (BYTE)0;
 		// ﾚｲﾔ情報(兼DXFﾃﾞｰﾀ)の保存
 		m_obLayer.Serialize(ar);
 		return;		//保存はここまで
@@ -715,15 +722,23 @@ void CDXFDoc::Serialize(CArchive& ar)
 		ar >> m_bAcute;
 	// NC生成ﾌｧｲﾙ名
 	ar >> m_strNCFileName;
-	// 原点
+	// 原点ｵﾌﾞｼﾞｪｸﾄ
 	BYTE	bExist;
 	ar >> bExist;
 	if ( bExist ) {
 		m_pCircle = static_cast<CDXFcircleEx*>(ar.ReadObject(RUNTIME_CLASS(CDXFcircleEx)));
 		SetMaxRect(m_pCircle);
 	}
-	ar >> pt.x >> pt.y;
-	m_ptOrgOrig = pt;
+	// CADｵﾘｼﾞﾅﾙ原点
+	if ( g_dwCamVer > NCVCSERIALVERSION_1505 ) // Ver1.10a～
+		ar >> bExist;
+	else
+		bExist = 1;		// 強制読み込み
+	if ( bExist ) {
+		ar >> pt.x >> pt.y;
+		m_ptOrgOrig = pt;
+	}
+
 	// ﾚｲﾔ情報(兼DXFﾃﾞｰﾀ)の読み込み
 	m_obLayer.Serialize(ar);
 
@@ -820,7 +835,7 @@ void CDXFDoc::OnEditOrigin()
 	}
 
 	if ( pt ) {
-		SetCutterOrigin(*pt, dOrgR, TRUE);
+		CreateCutterOrigin(*pt, dOrgR, TRUE);
 		m_bReady = TRUE;	// 生成OK!
 	}
 }

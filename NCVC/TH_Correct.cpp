@@ -80,6 +80,8 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 				if ( (i & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
 					pParent->m_ctReadProgress.SetPos(i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
 				pData1 = pDoc->GetNCdata(i);
+				if ( pData1->GetGtype() != G_TYPE )
+					continue;
 				dwValFlags = pData1->GetValFlags();
 				if ( dwValFlags & NCD_CORRECT ) {
 					// 工具情報の取得
@@ -113,7 +115,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 			}
 
 			// 補正開始ﾌﾞﾛｯｸのﾁｪｯｸ
-			if ( pData1->GetType() != NCDLINEDATA ) {
+			if ( pData1->GetGtype()==G_TYPE && pData1->GetType()!=NCDLINEDATA ) {
 				SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTSTART);
 				nCorrect = 0;	// 補正ﾙｰﾌﾟに入らない
 			}
@@ -124,6 +126,8 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 				if ( (i & 0x003f) == 0 )
 					pParent->m_ctReadProgress.SetPos(i);
 				pData2 = pDoc->GetNCdata(i);
+				if ( pData2->GetGtype() != G_TYPE )
+					continue;
 				dwValFlags = pData1->GetValFlags();
 				// 補正処理ｷｬﾝｾﾙﾓｰﾄﾞ
 				if ( !(pData2->GetValFlags() & NCD_CORRECT) )
@@ -628,7 +632,7 @@ CNCdata* CreateNCobj
 	// 必要な初期ﾊﾟﾗﾒｰﾀのｾｯﾄ
 	ncArgv.bAbs			= TRUE;
 	ncArgv.dFeed		= pData->GetFeed();
-	ncArgv.nc.nLine		= pData->GetStrLine();
+	ncArgv.nc.nLine		= pData->GetBlockLineNo();
 	ncArgv.nc.nGtype	= G_TYPE;
 	ncArgv.nc.nGcode	= pData->GetGcode() > 0 ? 1 : 0;
 	ncArgv.nc.enPlane	= pData->GetPlane();
@@ -678,7 +682,7 @@ CNCdata* CreateNCobj
 
 	if ( bCreate ) {
 		ncArgv.nc.dwValFlags |= (pData->GetValFlags() & NCD_CORRECT);
-		pDataResult = new CNCline(pData, &ncArgv);
+		pDataResult = new CNCline(pData, &ncArgv, pData->GetOffsetPoint());
 		pData = pDataResult;
 	}
 
@@ -688,7 +692,7 @@ CNCdata* CreateNCobj
 void SetErrorCode(CNCDoc* pDoc, CNCdata* pData, int nID)
 {
 	// ｵﾌﾞｼﾞｪｸﾄｴﾗｰをﾌﾞﾛｯｸにも適用
-	int	nLine = pData->GetStrLine();
+	int	nLine = pData->GetBlockLineNo();
 	if ( nLine < pDoc->GetNCBlockSize() )
 		pDoc->GetNCblock(nLine)->SetNCBlkErrorCode(nID);
 }

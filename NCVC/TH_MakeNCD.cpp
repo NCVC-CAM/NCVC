@@ -204,33 +204,38 @@ inline	void	AddMoveGdataG1(const CDXFdata* pData)
 	ASSERT( mkNCD );
 	g_obMakeGdata.Add(mkNCD);
 }
-// ØíÃŞ°À‚Ì¶¬
-inline	void	AddMakeGdata(CDXFdata* pData)
+// ØíÃŞ°À‚Ì¶¬(Øí)
+inline	void	AddMakeGdataCut(CDXFdata* pData)
 {
 	// ŠJnˆÊ’u‚Æ“™‚µ‚¢Ã·½ÄÃŞ°À‚Ì¶¬
 	AddCutterTextIntegrated( pData->GetStartCutterPoint() );
 	// ØíÃŞ°À¶¬
-	CNCMake*	mkNCD = new CNCMake(pData,
-		pData->GetMakeType() == DXFPOINTDATA ?
-			GetDbl(MKNC_DBL_DRILLFEED) : GetDbl(MKNC_DBL_FEED) );
+	CNCMake*	mkNCD = new CNCMake(pData, GetDbl(MKNC_DBL_FEED));
 	ASSERT( mkNCD );
 	g_obMakeGdata.Add(mkNCD);
 	pData->SetMakeFlg();
 }
-// ØíÃŞ°À‚Ì¶¬i[’¤j
+// ØíÃŞ°À‚Ì¶¬([’¤)
 inline	void	AddMakeGdataDeep(CDXFdata* pData, BOOL bDeep)
 {
-	// ŠJnˆÊ’u‚Æ“™‚µ‚¢Ã·½ÄÃŞ°À‚Ì¶¬
 	AddCutterTextIntegrated( pData->GetStartCutterPoint() );
-	// ØíÃŞ°À¶¬
 	CNCMake*	mkNCD = new CNCMake(pData,
 		bDeep ? GetDbl(MKNC_DBL_DEEPFEED) : GetDbl(MKNC_DBL_FEED) );
 	ASSERT( mkNCD );
 	g_obMakeGdata.Add(mkNCD);
 	pData->SetMakeFlg();
 }
+// ØíÃŞ°À‚Ì¶¬(ŒŠ‰ÁH)
+inline	void	AddMakeGdataDrill(CDXFdata* pData)
+{
+	AddCutterTextIntegrated( pData->GetStartCutterPoint() );
+	CNCMake*	mkNCD = new CNCMake(pData, GetDbl(MKNC_DBL_DRILLFEED));
+	ASSERT( mkNCD );
+	g_obMakeGdata.Add(mkNCD);
+	pData->SetMakeFlg();
+}
 // ”CˆÓÃŞ°À‚Ì¶¬
-inline	void	AddMakeGdata(const CString& strData)
+inline	void	AddMakeGdataStr(const CString& strData)
 {
 	CNCMake*	mkNCD = new CNCMake(strData);
 	ASSERT( mkNCD );
@@ -251,7 +256,7 @@ inline	void	AddMakeMove(CDXFdata* pData, BOOL bL0 = FALSE)
 inline	void	AddMakeGdataCycleCancel(void)
 {
 	if ( CDXFdata::ms_pData->GetMakeType() == DXFPOINTDATA ) {
-		AddMakeGdata( CNCMake::MakeCustomString(80) );
+		AddMakeGdataStr( CNCMake::MakeCustomString(80) );
 		InitialCycleBaseVariable();
 	}
 }
@@ -260,7 +265,7 @@ inline	void	AddMakeText(CDXFdata* pData)
 {
 	CString	strText( ((CDXFtext *)pData)->GetStrValue() );
 	strText.Replace("\\n", "\n");
-	AddMakeGdata(strText);
+	AddMakeGdataStr(strText);
 	pData->SetMakeFlg();
 }
 
@@ -786,16 +791,20 @@ void SetGlobalMapToLayer(const CLayerData* pLayer)
 	int		i;
 	CPointD	pt;
 	CDXFdata*	pData;
+	CDXFellipse*	pEllipse;
 	CDXFarray*	pDummy = NULL;
 
 	// w’èÚ²Ô‚ÌDXFÃŞ°ÀµÌŞ¼Şª¸Ä(ŒŠ‰ÁH‚Ì‚İ)‚ğºËß°
 	for ( i=0; i<pLayer->GetDxfSize() && IsThread(); i++ ) {
 		pData = pLayer->GetDxfData(i);
-		// ‘È‰~ÃŞ°À‚Ì•Ïg(’·Œa’ZŒa‚ª“™‚µ‚¢‘È‰~‚È‚ç)
-		if ( GetFlg(MKNC_FLG_ELLIPSE) && pData->GetType()==DXFELLIPSEDATA ) {
-			CDXFellipse* pEllipse = static_cast<CDXFellipse*>(pData);
-			if ( fabs( RoundUp(pEllipse->GetLongLength()) - RoundUp(pEllipse->GetShortLength()) ) < EPS )
-				pData->ChangeMakeType( pEllipse->GetArc() ? DXFARCDATA : DXFCIRCLEDATA);	// ‰~ŒÊ‚©‰~ÃŞ°À‚É•Ïg
+		// ‘È‰~ÃŞ°À‚Ì•Ïg
+		if ( pData->GetType() == DXFELLIPSEDATA ) {
+			pEllipse = static_cast<CDXFellipse*>(pData);
+			if ( GetFlg(MKNC_FLG_ELLIPSE) &&
+					fabs( RoundUp(pEllipse->GetLongLength()) - RoundUp(pEllipse->GetShortLength()) ) < EPS ) {
+				// ’·Œa’ZŒa‚ª“™‚µ‚¢‘È‰~‚È‚ç‰~ŒÊ‚©‰~ÃŞ°À‚É•Ïg
+				pData->ChangeMakeType( pEllipse->GetArc() ? DXFARCDATA : DXFCIRCLEDATA);
+			}
 		}
 		// ŠeµÌŞ¼Şª¸ÄÀ²Ìß‚²‚Æ‚Ìˆ—
 		switch ( pData->GetMakeType() ) {
@@ -982,7 +991,7 @@ BOOL MakeNCD_ShapeFunc(void)
 	// ‰ñ“]”
 	strBuf = CNCMake::MakeSpindle(DXFLINEDATA);
 	if ( !strBuf.IsEmpty() )
-		AddMakeGdata(strBuf);
+		AddMakeGdataStr(strBuf);
 	// ‰ÁH‘OˆÚ“®w¦‚Ì¶¬
 	MakeLoopAddFirstMove(MAKECUTTER);
 
@@ -1080,14 +1089,14 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer
 	// Ú²Ô‚²‚Æ‚ÌºÒİÄ
 	if ( !strLayer.IsEmpty() && GetFlg(MKNC_FLG_LAYERCOMMENT) ) {
 		strBuf.Format(IDS_MAKENCD_LAYERBREAK, strLayer);
-		AddMakeGdata(strBuf);
+		AddMakeGdataStr(strBuf);
 		// “¯‚¶ºÒİÄ‚ğ“ü‚ê‚È‚¢‚æ‚¤‚ÉÚ²Ô–¼‚ğ¸Ø±
 		strLayer.Empty();
 	}
 	// ‰ñ“]”
 	strBuf = CNCMake::MakeSpindle(pData->GetMakeType());
 	if ( !strBuf.IsEmpty() )
-		AddMakeGdata(strBuf);
+		AddMakeGdataStr(strBuf);
 
 	// ‰ÁH‘OˆÚ“®w¦‚Ì¶¬
 	if ( !bMatch && enMake!=MAKEDRILLCIRCLE ) {
@@ -1119,7 +1128,7 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer
 			// ‰~ÃŞ°À‚ÌI—¹ºÒİÄ
 			if ( GetFlg(MKNC_FLG_DRILLBREAK) ) {
 				VERIFY(strBuf.LoadString(IDS_MAKENCD_CIRCLEEND));
-				AddMakeGdata(strBuf);
+				AddMakeGdataStr(strBuf);
 			}
 		}
 		break;
@@ -1136,10 +1145,12 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 	CLayerData*	pLayerDbg = NULL;
 #endif
 	int		i, nCnt = 0, nLayerLoop, nDataLoop;
-	BOOL	bMatch = FALSE, bCalc = !g_bData;
+	BOOL	bMatch = FALSE, bCalc = !g_bData,
+			bRound = GetNum(MKNC_NUM_CIRCLECODE) == 0 ? FALSE : TRUE;
 	double	dGap, dGapMin = HUGE_VAL;	// Œ´“_‚Ü‚Å‚Ì‹——£
 	CDXFdata*	pDataResult = NULL;
 	CDXFdata*	pData;
+	CDXFellipse*	pEllipse;
 	CLayerData*	pLayer;
 
 	// Ìª°½Ş1(ˆ—Œ”¶³İÄ)
@@ -1183,6 +1194,14 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 				}
 				// À•WÏ¯Ìß‚É“o˜^
 				g_mpDXFdata.SetMakePointMap(pData);
+				// ‘È‰~ÃŞ°À‚Ì’²®
+				if ( pData->GetMakeType() == DXFELLIPSEDATA ) {
+					pEllipse = static_cast<CDXFellipse*>(pData);
+					if ( !pEllipse->GetArc() && pEllipse->GetRound()!=bRound ) {
+						// ‘È‰~‚ÌØí•ûŒü‚ğİ’è
+						pEllipse->SetRoundFixed(bRound);
+					}
+				}
 			}
 			SendProgressPos(nCnt);
 		}
@@ -1499,7 +1518,7 @@ int MakeLoopEulerAdd(const CDXFmap* pEuler)
 		// ØíÃŞ°À¶¬
 		for ( pos=ltEuler.GetHeadPosition(); pos && IsThread(); ) {
 			pData = ltEuler.GetNext(pos);
-			AddMakeGdata(pData);
+			AddMakeGdataCut(pData);
 		}
 		// ÅŒã‚É¶¬‚µ‚½ÃŞ°À‚ğ‘Ò”ğ
 		CDXFdata::ms_pData = pData;
@@ -1806,12 +1825,16 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 
 	// •ûŒüw¦‚¨‚æ‚Ñ¶¬‡‚ÌÁª¯¸
 	tie(pWork, pDataFix) = pShape->GetDirectionObject();
-	if ( pChain->GetCount()==1 && pData->GetMakeType()==DXFCIRCLEDATA ) {
+	if ( pChain->GetCount()==1 &&
+			(pData->GetMakeType()==DXFCIRCLEDATA || pData->GetMakeType()==DXFELLIPSEDATA) ) {
 		if ( pDataFix ) {
+			CDXFcircle*	pCircle = static_cast<CDXFcircle*>(pData);
 			CPointD	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() ),
 					pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() );
 			// ‰ñ“]İ’è
-			static_cast<CDXFcircle*>(pData)->SetRoundFixed(pts, pte);
+			pCircle->SetRoundFixed(pts, pte);
+			if ( pData->GetMakeType() == DXFELLIPSEDATA ) 
+				static_cast<CDXFellipse*>(pData)->SetRoundFixed(pCircle->GetRound());
 		}
 		pData->GetEdgeGap(ptNow);	// —ÖŠsµÌŞ¼Şª¸Ä‚Ì‹ßÚÀ•WŒvZ
 	}
@@ -1901,12 +1924,12 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 		// ŠJnÎß¼Ş¼®İ‚©‚çÙ°Ìß
 		while ( pos1 && IsThread() ) {
 			pData = (pChain->*pfnGetData)(pos1);
-			AddMakeGdata(pData);
+			AddMakeGdataCut(pData);
 		}
 		// [æ“ª|I’[]‚©‚çŠJnµÌŞ¼Şª¸Ä‚Ü‚Å
 		for ( pos1=(pChain->*pfnGetPosition)(); pos1!=pos2 && IsThread(); ) {
 			pData = (pChain->*pfnGetData)(pos1);
-			AddMakeGdata(pData);
+			AddMakeGdataCut(pData);
 		}
 		// ÅŒã‚É¶¬‚µ‚½ÃŞ°À‚ğ‘Ò”ğ
 		CDXFdata::ms_pData = pData;
@@ -1986,6 +2009,7 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bE
 	CPointD		pt;
 	CDXFdata*	pData;
 	CDXFdata*	pDataFix;
+	CDXFcircle*	pCircle;
 	CDXFarray*	pArray;
 	CDXFworking*	pWork;
 	CDXFchain	ltEuler;
@@ -2018,10 +2042,13 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bE
 		for ( pos=ltEuler.GetHeadPosition(); pos && IsThread(); ) {
 			pData = ltEuler.GetNext(pos);
 			if ( pDataFix == pData ) {
-				if ( pData->GetMakeType() == DXFCIRCLEDATA ) {
+				if ( pData->GetMakeType()==DXFCIRCLEDATA || pData->GetMakeType()==DXFELLIPSEDATA ) {
+					pCircle = static_cast<CDXFcircle*>(pData);
 					CPointD	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() ),
 							pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() );
-					static_cast<CDXFcircle*>(pData)->SetRoundFixed(pts, pte);
+					pCircle->SetRoundFixed(pts, pte);
+					if ( pData->GetMakeType() == DXFELLIPSEDATA )
+						static_cast<CDXFellipse*>(pData)->SetRoundFixed(pCircle->GetRound());
 				}
 				else {
 					CPointD	ptFix( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
@@ -2087,7 +2114,7 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bE
 					AddMoveGdataG0(pData);
 					bNext = FALSE;
 				}
-				AddMakeGdata(pData);
+				AddMakeGdataCut(pData);
 			}
 			else
 				bNext = TRUE;
@@ -2162,7 +2189,7 @@ BOOL MakeLoopDeepAdd(void)
 	// ‰ñ“]”
 	CString	strSpindle( CNCMake::MakeSpindle(DXFLINEDATA) );
 	if ( !strSpindle.IsEmpty() )
-		AddMakeGdata(strSpindle);
+		AddMakeGdataStr(strSpindle);
 	// ØíÃŞ°À‚Ü‚Å‚ÌˆÚ“®
 	AddMoveGdataG0( g_ltDeepGlist.GetHead() );
 
@@ -2217,7 +2244,7 @@ BOOL MakeLoopDeepAdd(void)
 			// Z²ã¸
 			MakeLoopDeepZUp();
 			// dã‚°—p‰ñ“]”‚É•ÏX
-			AddMakeGdata( CNCMake::MakeSpindle(DXFLINEDATA, TRUE) );
+			AddMakeGdataStr( CNCMake::MakeSpindle(DXFLINEDATA, TRUE) );
 			// µÌŞ¼Şª¸ÄØíˆÊ’u‚ÖˆÚ“®
 			pData = bAction ? g_ltDeepGlist.GetHead() : g_ltDeepGlist.GetTail();
 			AddMoveGdataG0(pData);
@@ -2612,7 +2639,7 @@ BOOL MakeLoopDrillCircle(void)
 			// ‘å‚«‚³‚²‚Æ‚ÉºÒİÄ‚ğ–„‚ß‚Ş
 			if ( GetFlg(MKNC_FLG_DRILLBREAK) ) {
 				strBreak.Format(IDS_MAKENCD_CIRCLEBREAK, static_cast<CDXFcircle*>(pDataResult)->GetMakeR());
-				AddMakeGdata(strBreak);
+				AddMakeGdataStr(strBreak);
 			}
 			// ‰ÁH‘OˆÚ“®w¦‚Ì¶¬
 			if ( !bMatch ) {
@@ -2638,7 +2665,7 @@ BOOL MakeLoopAddDrill(CDXFdata* pData)
 				bCust = TRUE;		// ˆÚ“®ÃŞ°À‘O‚Ì¶½ÀÑº°ÄŞ‘}“ü
 
 	// ÃŞ°À¶¬
-	AddMakeGdata(pData);
+	AddMakeGdataDrill(pData);
 	CDXFdata::ms_pData = pData;
 
 	// GetNearPoint() ‚ÌŒ‹‰Ê‚ª NULL ‚É‚È‚é‚Ü‚Å
@@ -2691,7 +2718,7 @@ BOOL MakeLoopAddDrill(CDXFdata* pData)
 			bMove = FALSE;
 		}
 		// ÃŞ°À¶¬
-		AddMakeGdata(pData);
+		AddMakeGdataDrill(pData);
 		CDXFdata::ms_pData = pData;
 		SendProgressPos(++nPos);
 	} // End of while
@@ -2712,7 +2739,7 @@ tuple<int, CDXFdata*> MakeLoopAddDrillSeq(int nProgress, int nStart, CDXFsort* p
 		if ( pData->IsMakeFlg() )
 			continue;
 		// ÃŞ°À¶¬
-		AddMakeGdata(pData);
+		AddMakeGdataDrill(pData);
 		SendProgressPos(i+nProgress);
 		nCnt++;
 		// ˆÚ“®Ú²Ô‚ÌÁª¯¸
@@ -3056,10 +3083,10 @@ void AddCustomCode(const CString& strFileName, const CDXFdata* pData)
 			strResult.clear();
 			if ( parse((LPCTSTR)strBuf, *( *(anychar_p - '{')[custom] >> comment_p('{', '}')[custom] ) ).hit ) {
 				if ( !strResult.empty() )
-					AddMakeGdata( strResult.c_str() );
+					AddMakeGdataStr( strResult.c_str() );
 			}
 			else
-				AddMakeGdata( strBuf );
+				AddMakeGdataStr( strBuf );
 		}
 	}
 	catch (CFileException* e) {
@@ -3127,12 +3154,12 @@ void AddMoveZ_Initial(void)
 
 void AddMoveCust_B(void)
 {
-	AddMakeGdata(g_pMakeOpt->GetStr(MKNC_STR_CUSTMOVE_B));
+	AddMakeGdataStr(g_pMakeOpt->GetStr(MKNC_STR_CUSTMOVE_B));
 }
 
 void AddMoveCust_A(void)
 {
-	AddMakeGdata(g_pMakeOpt->GetStr(MKNC_STR_CUSTMOVE_A));
+	AddMakeGdataStr(g_pMakeOpt->GetStr(MKNC_STR_CUSTMOVE_A));
 }
 
 // Ã·½Äî•ñ‚Ì¶¬
@@ -3145,7 +3172,7 @@ void AddCommentText(const CPointD& pt)
 		for ( int i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
 			pData = pobArray->GetAt(i);
 			if ( !pData->IsMakeFlg() ) {
-				AddMakeGdata( "(" + ((CDXFtext *)pData)->GetStrValue() + ")" );
+				AddMakeGdataStr( "(" + ((CDXFtext *)pData)->GetStrValue() + ")" );
 				pData->SetMakeFlg();
 				break;
 			}

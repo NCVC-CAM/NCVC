@@ -20,6 +20,8 @@ IMPLEMENT_DYNCREATE(CNCInfoTab, CTabView)
 BEGIN_MESSAGE_MAP(CNCInfoTab, CTabView)
 	ON_WM_CREATE()
 	ON_WM_DESTROY()
+	ON_WM_SETFOCUS()
+	ON_WM_ERASEBKGND()
 	// ﾀﾌﾞ移動
 	ON_COMMAND_RANGE(ID_TAB_NEXT, ID_TAB_PREV, OnMoveTab)
 END_MESSAGE_MAP()
@@ -113,7 +115,7 @@ void CNCInfoTab::Dump(CDumpContext& dc) const
 CNCDoc* CNCInfoTab::GetDocument() // 非デバッグ バージョンはインラインです。
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CNCDoc)));
-	return (CNCDoc*)m_pDocument;
+	return static_cast<CNCDoc *>(m_pDocument);
 }
 #endif //_DEBUG
 
@@ -122,7 +124,7 @@ CNCDoc* CNCInfoTab::GetDocument() // 非デバッグ バージョンはインラインです。
 
 int CNCInfoTab::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if (CTabView::OnCreate(lpCreateStruct) == -1)
+	if ( CTabView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 	GetTabCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);
 
@@ -133,11 +135,11 @@ int CNCInfoTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		VERIFY(strTitle.LoadString(IDS_TAB_INFO2));
 		nIndex = AddPage(strTitle,
 			RUNTIME_CLASS(CNCInfoView1), GetDocument(), GetParentFrame());
-		ASSERT(nIndex != -1);
+		ASSERT(nIndex >= 0);
 		VERIFY(strTitle.LoadString(IDS_TAB_INFO3));
 		nIndex = AddPage(strTitle,
 			RUNTIME_CLASS(CNCInfoView2), GetDocument(), GetParentFrame());
-		ASSERT(nIndex != -1);
+		ASSERT(nIndex >= 0);
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -162,6 +164,11 @@ void CNCInfoTab::OnSetFocus(CWnd*)
 {
 	if ( GetActivePage() > 0 )
 		GetActivePageWnd()->SetFocus();
+}
+
+BOOL CNCInfoTab::OnEraseBkgnd(CDC* pDC) 
+{
+	return TRUE;
 }
 
 void CNCInfoTab::OnMoveTab(UINT nID)

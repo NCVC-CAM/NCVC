@@ -17,17 +17,6 @@ enum	ENPOINTORDER
 	{STARTPOINT, ENDPOINT};
 
 /////////////////////////////////////////////////////////////////////////////
-// NCﾃﾞｰﾀを読み込む時にだけ必要なﾃﾞｰﾀ
-// 読み込み終了後に消去することで、ﾒﾓﾘ使用効率を上げる
-class CNCread
-{
-public:
-	CPoint3D	m_ptValOrg,		// 回転・ｽｹｰﾙ等無視の純粋な加工終点
-				m_ptOffset;		// ﾜｰｸ座標系のｵﾌｾｯﾄ
-	G68ROUND	m_g68;			// G68座標回転情報
-};
-
-/////////////////////////////////////////////////////////////////////////////
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀ，描画ｵﾌﾞｼﾞｪｸﾄ以外のﾍﾞｰｽｸﾗｽ
 // 描画ｵﾌﾞｼﾞｪｸﾄ以外でも生成することで，ﾄﾚｰｽの重要ﾎﾟｲﾝﾄで停止させる
 class CNCdata
@@ -45,9 +34,10 @@ protected:
 	//	固定ｻｲｸﾙでは，指定された座標が最終座標ではないので
 	//	m_nc.dValue[] ではない最終座標の保持が必要
 	// 他、座標回転(G68)でもｵﾘｼﾞﾅﾙ座標と計算座標を別に保管
-	CPoint3D	m_ptValS, m_ptValE;		// 開始,終了座標
+	CPoint3D	m_ptValS, m_ptValE,		// 開始,終了座標
+				m_ptValOrg,		// 回転・ｽｹｰﾙ等無視の純粋な加工終点
+				m_ptOffset;		// ﾜｰｸ座標系のｵﾌｾｯﾄ
 	CRect3D		m_rcMax;		// 空間占有矩形
-	CNCread*	m_pRead;		// 読み込み終了後に消去するﾃﾞｰﾀ群
 
 	// CPoint3Dから平面の2D座標を抽出
 	CPointD	GetPlaneValue(const CPoint3D&) const;
@@ -70,7 +60,7 @@ public:
 public:
 	ENNCDTYPE	GetType(void) const;
 	UINT	GetNCObjErrorCode(void) const;
-	int		GetBlockLineNo(void) const;
+	int		GetStrLine(void) const;
 	int		GetGtype(void) const;
 	int		GetGcode(void) const;
 	ENPLANE	GetPlane(void) const;
@@ -91,8 +81,6 @@ public:
 	const CRect3D	GetMaxRect(void) const;
 	CNCdata*	NC_CopyObject(void);	// from TH_Correct.cpp
 	void		AddCorrectObject(CNCdata*);
-	const CNCread*	GetReadData(void) const;
-	void		DeleteReadData(void);
 
 	virtual	void	DrawTuning(double);
 	virtual	void	DrawTuningXY(double);
@@ -181,16 +169,11 @@ struct PTCYCLE
 	CRect		rcDraw;			// 同一平面の丸印描画用
 	void	DrawTuning(double f);
 };
-struct PTCYCLE3D
-{
-	CPoint3D	ptI, ptR, ptC;
-};
 
 class CNCcycle : public CNCline
 {
 	int			m_nDrawCnt;		// ｵﾌﾞｼﾞｪｸﾄ座標値生成数==描画用繰り返し数
 	PTCYCLE*	m_Cycle[1+NCXYZ];	// XYZとXY,XZ,YZ
-	PTCYCLE3D*	m_Cycle3D;			// OpenGL用
 
 	CPoint3D	m_ptValI,		// 前回位置と１点目の穴加工座標
 				m_ptValR;

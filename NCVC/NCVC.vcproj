@@ -67,7 +67,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="MagaDbg.lib version.lib"
+				AdditionalDependencies="MagaDbg.lib version.lib opengl32.lib glu32.lib glaux.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				GenerateMapFile="true"
@@ -155,7 +155,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="MagaDbg.lib version.lib"
+				AdditionalDependencies="MagaDbg.lib version.lib  opengl32.lib glu32.lib glaux.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				GenerateMapFile="true"
@@ -477,6 +477,10 @@
 			</File>
 			<File
 				RelativePath=".\NCView.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\NCViewGL.cpp"
 				>
 			</File>
 			<File
@@ -887,6 +891,10 @@
 			</File>
 			<File
 				RelativePath=".\NCViewBase.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NCViewGL.h"
 				>
 			</File>
 			<File

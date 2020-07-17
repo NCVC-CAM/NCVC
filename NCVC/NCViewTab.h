@@ -16,7 +16,7 @@ friend	class	CTraceThread;
 					m_wndSplitter2,		// ４面-2
 					m_wndSplitter22;
 
-	HDC		m_hDC[NC_SINGLEPANE];		// 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
+	HDC		m_hDC[NCVIEW_SINGLEPANE];		// 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
 	UINT	m_nTraceSpeed,	// ﾄﾚｰｽ実行の速度
 			m_nTrace;		// ﾄﾚｰｽ実行状態
 	HANDLE	m_hTrace;		// ﾄﾚｰｽ実行ｽﾚｯﾄﾞﾊﾝﾄﾞﾙ
@@ -24,7 +24,7 @@ friend	class	CTraceThread;
 			m_bTracePause;		// ﾄﾚｰｽ一時停止
 	CEvent	m_evTrace;		// ﾄﾚｰｽ開始ｲﾍﾞﾝﾄ(ｺﾝｽﾄﾗｸﾀにて手動ｲﾍﾞﾝﾄ設定)
 
-	BOOL	m_bSplit[NC_SINGLEPANE];	// ｽﾌﾟﾘｯﾀ表示されたかどうか
+	BOOL	m_bSplit[NCVIEW_SINGLEPANE];	// ｽﾌﾟﾘｯﾀ表示されたかどうか
 
 protected:
 	CNCViewTab();		// 動的生成に使用されるプロテクト コンストラクタ
@@ -65,6 +65,7 @@ protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
 	afx_msg void OnSetFocus(CWnd* pOldWnd);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	// ﾀﾌﾞ移動
 	afx_msg	void OnMoveTab(UINT);
 	// ﾄﾚｰｽ
@@ -85,7 +86,7 @@ protected:
 
 #ifndef _DEBUG
 inline CNCDoc* CNCViewTab::GetDocument()
-   { return (CNCDoc*)m_pDocument; }
+   { return static_cast<CNCDoc *>(m_pDocument); }
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

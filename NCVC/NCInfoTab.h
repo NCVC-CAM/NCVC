@@ -37,6 +37,7 @@ protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
 	afx_msg void OnSetFocus(CWnd* pOldWnd);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	// ÀÌÞˆÚ“®
 	afx_msg	void OnMoveTab(UINT);
 
@@ -47,5 +48,5 @@ protected:
 
 #ifndef _DEBUG
 inline CNCDoc* CNCInfoTab::GetDocument()
-   { return (CNCDoc*)m_pDocument; }
+   { return static_cast<CNCDoc *>(m_pDocument); }
 #endif

@@ -743,6 +743,8 @@ double CDXFcircle::OrgTuning(BOOL bCalc/*=TRUE*/)
 		m_ptTun[2].y = m_ctTun.y + m_r;
 		m_ptTun[3].y = m_ctTun.y - m_r;
 		m_ptTun[2].x = m_ptTun[3].x = m_ctTun.x;
+		//
+		m_nArrayExt = 0;
 	}
 	m_bRoundFixed = FALSE;	// ï˚å¸éwé¶ÇÃâèú
 	OrgTuningBase();
@@ -1634,7 +1636,7 @@ void CDXFellipse::XRev(void)
 	if ( GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA )
 		CDXFcircle::XRev();
 	else {
-		// åXÇ´ÇÃÇ»Ç¢énì_èIì_ç¿ïWÅCÇ©Ç¬ùGïΩó¶ÇÃñ≥Ç¢Åuâ~ÅvÇ≈çƒåvéZ
+		// åXÇ´ÇÃÇ»Ç¢énì_èIì_ç¿ïWÅCÇ©Ç¬ïŒïΩó¶ÇÃñ≥Ç¢Åuâ~ÅvÇ≈çƒåvéZ
 		CPointD	pts(m_dLongLength * cos(m_sq), m_dLongLength * sin(m_sq)),
 				pte(m_dLongLength * cos(m_eq), m_dLongLength * sin(m_eq));
 		pts.x = -pts.x;
@@ -1673,7 +1675,7 @@ void CDXFellipse::XYRev(const CPointD& pts, const CPointD& pte)
 	m_lqMakeCos = cos(m_lqMake);
 	m_lqMakeSin = sin(m_lqMake);
 	if ( m_bArc ) {
-		// (äpìxçƒåvéZå„)ùGïΩó¶ÇÃîΩâf
+		// (äpìxçƒåvéZå„)ïŒïΩó¶ÇÃîΩâf
 		CPointD	pt1[2], pt;
 		pt1[0].SetPoint(pts.x, pts.y * m_dShort);
 		pt1[1].SetPoint(pte.x, pte.y * m_dShort);
@@ -1692,9 +1694,60 @@ void CDXFellipse::XYRev(const CPointD& pts, const CPointD& pte)
 	}
 }
 
+void CDXFellipse::SwapPt(int n)
+{
+	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
+		// ç¿ïWÇÃì¸ÇÍë÷Ç¶ÇÕïKóvÇ»Çµ
+//		CDXFdata::SwapPt(n);	// CDXFcircle::SwapPt()
+		if ( !m_bArc ) {
+			// ë»â~ÇÃèÍçáÅAäJénÅEèIóπäpìxÇí≤êÆ
+			switch ( m_nArrayExt ) {
+			case 1:		// 180Åã
+				m_sq = 180.0*RAD;
+				break;
+			case 2:		// 90Åã
+				m_sq = 90.0*RAD;
+				break;
+			case 3:		// 270Åã
+				m_sq = 270.0*RAD;
+				break;
+			default:	// 0Åã
+				m_sq = 0.0;
+				break;
+			}
+			m_eq = m_sq + 360.0*RAD;
+			AngleTuning();
+		}
+	}
+	else
+		CDXFarc::SwapPt(n);
+}
+
+void CDXFellipse::SetEllipseTunPoint(void)
+{
+	double	dShort = m_dLongLength * m_dShort;
+	// 0Å`1 -> Xé≤
+	m_ptTun[0].x =  m_dLongLength;
+	m_ptTun[1].x = -m_dLongLength;
+	m_ptTun[0].y = m_ptTun[1].y = 0;
+	// 2Å`3 -> Yé≤
+	m_ptTun[2].y =  dShort;
+	m_ptTun[3].y = -dShort;
+	m_ptTun[2].x = m_ptTun[3].x = 0;
+	//
+	m_nArrayExt = 0;
+	// âÒì]
+	CPointD	pt;
+	for ( int i=0; i<GetPointNumber(); i++ ) {
+		pt = m_ptTun[i];
+		m_ptTun[i].x = pt.x * m_lqMakeCos - pt.y * m_lqMakeSin + m_ctTun.x;
+		m_ptTun[i].y = pt.x * m_lqMakeSin + pt.y * m_lqMakeCos + m_ctTun.y;
+	}
+}
+
 void CDXFellipse::DrawTuning(double f)
 {
-	m_DrawLongLength  = m_dLongLength * f;
+	m_dDrawLongLength = m_dLongLength * f;
 	// íÜêSç¿ïWÇÃí≤êÆ
 	CDXFarc::DrawTuning(f);
 }
@@ -1705,14 +1758,14 @@ void CDXFellipse::Draw(CDC* pDC) const
 	CMagaDbg	dbg("CDXFellipse::Draw()", DBG_RED);
 #endif
 	double	sq, eq,
-			dShort = m_DrawLongLength * m_dShort;
+			dShort = m_dDrawLongLength * m_dShort;
 	if ( m_bRoundOrig ) {
 		sq = m_sqDraw;	eq = m_eqDraw;
 	}
 	else {
 		sq = m_eqDraw;	eq = m_sqDraw;
 	}
-	CPointD	pt(m_DrawLongLength * cos(sq), dShort * sin(sq));
+	CPointD	pt(m_dDrawLongLength * cos(sq), dShort * sin(sq));
 	CPointD	ptDraw(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin + m_ptDraw.x,
 					pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y );
 	CPointD	ptBak(ptDraw);
@@ -1721,13 +1774,13 @@ void CDXFellipse::Draw(CDC* pDC) const
 	dbg.printf("pts.x=%d pts.y=%d", (int)pt.x, (int)pt.y);
 #endif
 	for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
-		pt.SetPoint(m_DrawLongLength * cos(sq), dShort * sin(sq));
+		pt.SetPoint(m_dDrawLongLength * cos(sq), dShort * sin(sq));
 		ptDraw.SetPoint(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin,
 						pt.x * m_lqDrawSin + pt.y * m_lqDrawCos);
 		ptDraw += m_ptDraw;
 		pDC->LineTo(ptDraw);
 	}
-	pt.SetPoint(m_DrawLongLength * cos(eq), dShort * sin(eq));
+	pt.SetPoint(m_dDrawLongLength * cos(eq), dShort * sin(eq));
 	ptDraw.SetPoint(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin,
 					pt.x * m_lqDrawSin + pt.y * m_lqDrawCos);
 	ptDraw += m_ptDraw;
@@ -1745,10 +1798,10 @@ double CDXFellipse::OrgTuning(BOOL bCalc/*=TRUE*/)
 	double	dResult;
 	if ( GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA )
 		dResult = CDXFcircle::OrgTuning(bCalc);
-	else if ( m_bArc ) {
+	else if ( m_bArc )
 		dResult = CDXFarc::OrgTuning(bCalc);
-	}
 	else {
+		m_bRound = m_bRoundOrig;
 		m_sq = m_sqDraw;
 		m_eq = m_eqDraw;
 		m_ctTun = m_ct - ms_ptOrg;
@@ -1778,7 +1831,7 @@ double CDXFellipse::GetSelectPointGap(const CPointD& pt)
 	// åXÇ´Ç™ñ≥Ç¢èÛë‘Ç≈îªíËÇ∑ÇÈÇÊÇ§∏ÿØ∏Œﬂ≤›ƒÇï‚ê≥
 	if ( fabs(m_lq) > 0.0 )
 		pt1.RoundPoint(-m_lq);
-	// ùGïΩó¶ÇÃï‚ê≥å„ÅCäpìxåvéZ
+	// ïŒïΩó¶ÇÃï‚ê≥å„ÅCäpìxåvéZ
 	pt1.y /= m_dShort;
 	if ( (q1=atan2(pt1.y, pt1.x)) < 0.0 )
 		q1 += 360.0*RAD;
@@ -1794,7 +1847,7 @@ BOOL CDXFellipse::GetDirectionArraw(const CPointD& ptClick, CPointD ptResult[][3
 	double	q[2];
 
 	if ( m_bArc ) {
-		// ùGïΩó¶Ç∆åXÇ´äpÇçló∂
+		// ïŒïΩó¶Ç∆åXÇ´äpÇçló∂
 		for ( int i=0; i<SIZEOF(q); i++ ) {
 			pt1 = pt[i] = m_pt[i];
 			pt1 -= m_ct;
@@ -1825,8 +1878,9 @@ BOOL CDXFellipse::GetDirectionArraw(const CPointD& ptClick, CPointD ptResult[][3
 
 void CDXFellipse::SetDirectionFixed(const CPointD& pts)
 {
-	if ( m_bArc )
+	if ( m_bArc )	// ë»â~å ÇÃèÍçáÇæÇØ
 		CDXFarc::SetDirectionFixed(pts);
+	// ë»â~ÇÃèÍçáÇÕâ~ìØólÅAç¿ïWì¸ÇÍë÷Ç¶ïsóv
 }
 
 int CDXFellipse::GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL) const
@@ -1872,31 +1926,29 @@ CDXFpolyline::CDXFpolyline(CLayerData* pLayer, const CDXFpolyline* pPoly, LPDXFB
 	for ( int i=0; i<SIZEOF(m_nObjCnt); i++ )
 		m_nObjCnt[i] = 0;
 	// ó·äOΩ€∞ÇÕè„à Ç≈∑¨Ø¡
+	CDXFdata*		pDataSrc;
 	CDXFdata*		pData;
-	CDXFpoint*		pPoint;
-	CDXFarc*		pArc;
-	CDXFellipse*	pEllipse;
 	DXFEARGV		dxfEllipse;
 	for ( POSITION pos=pPoly->m_ltVertex.GetHeadPosition(); pos; ) {
-		pData = pPoly->m_ltVertex.GetNext(pos);
-		switch ( pData->GetType() ) {
+		pDataSrc = pPoly->m_ltVertex.GetNext(pos);
+		switch ( pDataSrc->GetType() ) {
 		case DXFPOINTDATA:
-			pPoint = new CDXFpoint(NULL, static_cast<CDXFpoint*>(pData), lpBlock);
-			ASSERT(pPoint);
-			m_ltVertex.AddTail(pPoint);
+			pData = new CDXFpoint(NULL, static_cast<CDXFpoint*>(pDataSrc), lpBlock);
+			ASSERT(pData);
+			m_ltVertex.AddTail(pData);
 			break;
 		case DXFARCDATA:
 			// äeé≤ì∆é©ÇÃägëÂó¶ÇÕ CDXFarc -> CDXFellipse
 			if ( lpBlock->dMagni[NCA_X] != lpBlock->dMagni[NCA_Y] ) {
-				(static_cast<CDXFarc*>(pData))->SetEllipseArgv(lpBlock, &dxfEllipse);
-				pEllipse = new CDXFellipse(&dxfEllipse); 
-				ASSERT(pEllipse);
-				m_ltVertex.AddTail(pEllipse);
+				(static_cast<CDXFarc*>(pDataSrc))->SetEllipseArgv(lpBlock, &dxfEllipse);
+				pData = new CDXFellipse(&dxfEllipse); 
+				ASSERT(pData);
+				m_ltVertex.AddTail(pData);
 			}
 			else {
-				pArc = new CDXFarc(NULL, static_cast<CDXFarc*>(pData), lpBlock);
-				ASSERT(pArc);
-				m_ltVertex.AddTail(pArc);
+				pData = new CDXFarc(NULL, static_cast<CDXFarc*>(pDataSrc), lpBlock);
+				ASSERT(pData);
+				m_ltVertex.AddTail(pData);
 			}
 			break;
 		}

@@ -167,11 +167,11 @@ void CDXFChild::ShowShapeView(void)
 
 int CDXFChild::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if (CMDIChildWnd::OnCreate(lpCreateStruct) == -1)
+	if ( CMDIChildWnd::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 	
 	// ½Ã°À½ÊÞ°ì¬
-	if (!m_wndStatusBar.Create(this, WS_CHILD|WS_VISIBLE|CBRS_BOTTOM, ID_DXF_STATUSBAR) ||
+	if ( !m_wndStatusBar.Create(this, WS_CHILD|WS_VISIBLE|CBRS_BOTTOM, ID_DXF_STATUSBAR) ||
 			!m_wndStatusBar.SetIndicators(g_nIndicators, SIZEOF(g_nIndicators)) ) {
 		TRACE0("Failed to DXF child status bar\n");
 		return -1;      // ì¬‚ÉŽ¸”s

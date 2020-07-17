@@ -35,7 +35,7 @@ CNCdata::CNCdata(LPNCARGV lpArgv)
 	for ( i=0; i<VALUESIZE; i++ )
 		m_nc.dValue[i] = lpArgv->nc.dValue[i];
 	for ( i=0; i<NCXYZ; i++ ) {
-		m_pRead->m_ptValOrg[i] = m_ptValS[i] = m_ptValE[i] = m_nc.dValue[i];
+		m_ptValOrg[i] = m_ptValS[i] = m_ptValE[i] = m_nc.dValue[i];
 	}
 	m_pt2D = m_ptValE.PointConvert();
 	m_enType = NCDBASEDATA;
@@ -53,19 +53,29 @@ CNCdata::CNCdata(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset
 	// 座標指定のないﾃﾞｰﾀは前回計算座標から取得
 	for ( i=0; i<NCXYZ; i++ ) {
 		// 指定されている分だけ代入
-		m_nc.dValue[i] = m_nc.dwValFlags & g_dwSetValFlags[i] ?
-			lpArgv->nc.dValue[i] : pData->GetValue(i);
+		if ( m_nc.dwValFlags & g_dwSetValFlags[i] ) {
+			m_nc.dValue[i] = lpArgv->nc.dValue[i];
+			if ( m_nc.nGcode == 92 )
+				m_ptValS[i] = m_ptValE[i] = m_ptValOrg[i] = m_nc.dValue[i];
+			else {
+				m_ptValS[i] = m_ptValE[i] = pData->GetEndValue(i);
+				m_ptValOrg[i] = pData->GetOriginalEndValue(i);
+			}
+		}
+		else {
+			m_ptValS[i] = m_ptValE[i] = m_nc.dValue[i] = pData->GetEndValue(i);
+			m_ptValOrg[i] = pData->GetOriginalEndValue(i);
+		}
 	}
-	m_ptValS = m_ptValE = pData->GetEndPoint();
-	m_pRead->m_ptValOrg = pData->GetOriginalEndPoint();
-	m_pRead->m_ptOffset = ptOffset;
+	m_ptOffset = ptOffset;
+	m_ptValS  += ptOffset;
+	m_ptValE  += ptOffset;
 	// 座標値以外も指定されている分は代入
 	for ( ; i<VALUESIZE; i++ )
 		m_nc.dValue[i] = m_nc.dwValFlags & g_dwSetValFlags[i] ?
 			lpArgv->nc.dValue[i] : pData->GetValue(i);
-	// 前回の計算値を引き継ぎ
-	m_pt2D   = pData->Get2DPoint();
-	m_rcMax  = pData->GetMaxRect();
+	// G92なら新規計算，でなければ前回の計算値を引き継ぎ
+	m_pt2D = m_nc.nGcode==92 ? m_ptValE.PointConvert() : pData->Get2DPoint();
 	m_enType = NCDBASEDATA;
 
 #ifdef _DEBUG
@@ -83,12 +93,10 @@ CNCdata::CNCdata
 	Constracter(lpArgv);
 	// 座標指定のないﾃﾞｰﾀは前回純粋座標から補間
 	for ( i=0; i<NCXYZ; i++ ) {
-		// 指定されている分だけ代入
-		if ( m_nc.dwValFlags & g_dwSetValFlags[i] ) {
-			m_nc.dValue[i] = lpArgv->nc.dValue[i];
-			if ( !lpArgv->bAbs )		// ｲﾝｸﾘﾒﾝﾀﾙ補正
-				m_nc.dValue[i] += pData->GetOriginalEndValue(i);	// ｵﾘｼﾞﾅﾙ値で加算
-		}
+		// 指定されているときだけ代入
+		if ( m_nc.dwValFlags & g_dwSetValFlags[i] )
+			m_nc.dValue[i] = lpArgv->bAbs ?		// 座標の補正
+				lpArgv->nc.dValue[i] : (pData->GetOriginalEndValue(i)+lpArgv->nc.dValue[i]);
 		else
 			m_nc.dValue[i] = pData->GetOriginalEndValue(i);
 	}
@@ -100,7 +108,7 @@ CNCdata::CNCdata
 	// m_nc.dLength は TH_Cuttime.cpp にてセット
 	// ---------------------------------------------------------------
 	m_enType = enType;
-	m_pRead->m_ptOffset = ptOffset;
+	m_ptOffset = ptOffset;
 }
 
 // 複製用ｺﾝｽﾄﾗｸﾀ
@@ -109,7 +117,7 @@ CNCdata::CNCdata(const CNCdata* pData)
 	int		i;
 	m_enType = pData->GetType();
 	m_nc.nErrorCode	= pData->GetNCObjErrorCode();
-	m_nc.nLine		= pData->GetBlockLineNo();
+	m_nc.nLine		= pData->GetStrLine();
 	m_nc.nGtype		= pData->GetGtype();
 	m_nc.nGcode		= pData->GetGcode();
 	m_nc.enPlane	= pData->GetPlane();
@@ -122,18 +130,14 @@ CNCdata::CNCdata(const CNCdata* pData)
 	m_dFeed		= pData->GetFeed();
 	m_ptValS	= pData->GetStartPoint();
 	m_ptValE	= pData->GetEndPoint();
-	m_pRead = new CNCread;
-	m_pRead->m_ptValOrg = pData->GetOriginalEndPoint();
-	m_pRead->m_ptOffset = pData->GetOffsetPoint();
-	memcpy(&(m_pRead->m_g68), &(pData->GetReadData()->m_g68), sizeof(G68ROUND));
+	m_ptValOrg	= pData->GetOriginalEndPoint();
+	m_ptOffset	= pData->GetOffsetPoint();
 }
 
 CNCdata::~CNCdata()
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
 		delete	m_obCdata[i];
-	if ( m_pRead )
-		delete	m_pRead;
 }
 
 CPointD CNCdata::GetPlaneValue(const CPoint3D& ptVal) const
@@ -303,7 +307,7 @@ CNCline::CNCline(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset
 	m_ptValS = pData->GetEndPoint();
 	// 最終座標(==指定座標)ｾｯﾄ
 	m_ptValE.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
-	m_pRead->m_ptValOrg = m_ptValE;
+	m_ptValOrg = m_ptValE;
 	m_ptValE += ptOffset;
 	// 座標回転
 	if ( lpArgv->g68.bG68 )
@@ -386,7 +390,7 @@ void CNCline::Draw(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::Draw()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	DrawLine(pDC, 0, bSelect, bCorrect);
 	CNCdata::Draw(pDC, bSelect, TRUE);
@@ -396,7 +400,7 @@ void CNCline::DrawXY(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::DrawXY()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	DrawLine(pDC, 1, bSelect, bCorrect);
 	CNCdata::DrawXY(pDC, bSelect, TRUE);
@@ -406,7 +410,7 @@ void CNCline::DrawXZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::DrawXZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	DrawLine(pDC, 2, bSelect, bCorrect);
 	CNCdata::DrawXZ(pDC, bSelect, TRUE);
@@ -416,7 +420,7 @@ void CNCline::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::DrawYZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	DrawLine(pDC, 3, bSelect, bCorrect);
 	CNCdata::DrawYZ(pDC, bSelect, TRUE);
@@ -523,14 +527,8 @@ optional<CPointD> CNCline::SetChamferingPoint(BOOL bStart, double c)
 	if ( bStart )
 		m_pt2Ds = m_ptValS.PointConvert();
 	else {
-		m_pRead->m_ptValOrg = m_ptValE;
-		if ( m_pRead->m_g68.bG68 ) {
-			// m_ptValE はG68回転済み座標のため回転を元に戻してｵﾌｾｯﾄ減算
-			m_pRead->m_g68.dRound = -m_pRead->m_g68.dRound;
-			CalcG68Round(&(m_pRead->m_g68), m_pRead->m_ptValOrg);
-			m_pRead->m_g68.dRound = -m_pRead->m_g68.dRound;
-		}
-		m_pRead->m_ptValOrg -= m_pRead->m_ptOffset;	// m_ptValEがG68の場合、おかしくなる
+		m_ptValOrg  = m_ptValE;
+		m_ptValOrg -= m_ptOffset;	// m_ptValEがG68の場合、おかしくなる
 		m_pt2D = m_ptValE.PointConvert();
 	}
 
@@ -676,9 +674,7 @@ CNCcycle::CNCcycle
 	int		i, x, y, z,
 			nH, nV;		// 縦横の繰り返し数
 
-	// 初期化
 	for ( i=0; i<SIZEOF(m_Cycle); m_Cycle[i++]=NULL );
-	m_Cycle3D = NULL;
 
 	// 基準平面による座標設定
 	switch ( GetPlane() ) {
@@ -740,7 +736,7 @@ CNCcycle::CNCcycle
 			m_dDwell = 0.0;
 			m_nc.dLength = m_dCycleMove = 0.0;
 			m_ptValI = m_ptValR = m_ptValE = m_ptValS = pData->GetEndPoint();
-			m_pRead->m_ptValOrg = pData->GetOriginalEndPoint();
+			m_ptValOrg = pData->GetOriginalEndPoint();
 			m_dInitial += ptOffset[z];
 			m_pt2D = m_pt2Ds;
 			return;
@@ -748,14 +744,14 @@ CNCcycle::CNCcycle
 	}
 
 	m_ptValE.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
-	m_pRead->m_ptValOrg = m_ptValE;
+	m_ptValOrg = m_ptValE;
 	pt = pData->GetOriginalEndPoint();
 	// 座標回転
 	if ( lpArgv->g68.bG68 )
 		CalcG68Round(&(lpArgv->g68), m_ptValE);
 	// 各軸ごとの移動長計算
-	dx = m_ptValE[x] - m_ptValS[x];		dox = m_pRead->m_ptValOrg[x] - pt[x];
-	dy = m_ptValE[y] - m_ptValS[y];		doy = m_pRead->m_ptValOrg[y] - pt[y];
+	dx = m_ptValE[x] - m_ptValS[x];		dox = m_ptValOrg[x] - pt[x];
+	dy = m_ptValE[y] - m_ptValS[y];		doy = m_ptValOrg[y] - pt[y];
 	dRLength = fabs(dI - dR);
 	dZLength = fabs(dR - m_ptValE[z]);
 	m_dMove[x] = fabs(dx) * nH;
@@ -773,19 +769,19 @@ CNCcycle::CNCcycle
 		m_ptValI.SetPoint(m_ptValE.x, m_ptValE.y, m_ptValS.z);	// 描画用
 		m_ptValR.SetPoint(m_ptValE.x, m_ptValE.y, dR);
 		m_ptValE.SetPoint(m_ptValS.x+dx*nH, m_ptValS.y+dy*nH, dI);
-		m_pRead->m_ptValOrg.SetPoint(pt.x+dox*nH, pt.y+doy*nH, dI);
+		m_ptValOrg.SetPoint(pt.x+dox*nH, pt.y+doy*nH, dI);
 		break;
 	case XZ_PLANE:
 		m_ptValI.SetPoint(m_ptValE.x, m_ptValS.y, m_ptValE.z);
 		m_ptValR.SetPoint(m_ptValE.x, dR, m_ptValE.z);
 		m_ptValE.SetPoint(m_ptValS.x+dx*nH, dI, m_ptValS.z+dy*nH);
-		m_pRead->m_ptValOrg.SetPoint(pt.x+dox*nH, dI, pt.z+doy*nH);
+		m_ptValOrg.SetPoint(pt.x+dox*nH, dI, pt.z+doy*nH);
 		break;
 	case YZ_PLANE:
 		m_ptValI.SetPoint(m_ptValS.x, m_ptValE.y, m_ptValE.z);
 		m_ptValR.SetPoint(dR, m_ptValE.y, m_ptValE.z);
 		m_ptValE.SetPoint(dI, m_ptValS.y+dx*nH, m_ptValS.z+dy*nH);
-		m_pRead->m_ptValOrg.SetPoint(dI, pt.y+dox*nH, pt.z+doy*nH);
+		m_ptValOrg.SetPoint(dI, pt.y+dox*nH, pt.z+doy*nH);
 		break;
 	}
 	m_ptValS += ptOffset;
@@ -821,7 +817,6 @@ CNCcycle::CNCcycle
 	// 座標格納領域確保
 	for ( i=0; i<SIZEOF(m_Cycle); i++ )
 		m_Cycle[i] = new PTCYCLE[m_nDrawCnt];
-	m_Cycle3D = new PTCYCLE3D[m_nDrawCnt];
 
 	pt = m_ptValS;
 	for ( i=0; i<m_nDrawCnt; i++ ) {
@@ -831,19 +826,16 @@ CNCcycle::CNCcycle
 #endif
 		// 各平面ごとに座標設定
 		pt[z] = dI;
-		m_Cycle3D[i].ptI  = pt;
 		m_Cycle[0][i].ptI = pt.PointConvert();
 		m_Cycle[1][i].ptI = pt.GetXY();
 		m_Cycle[2][i].ptI = pt.GetXZ();
 		m_Cycle[3][i].ptI = pt.GetYZ();
 		pt[z] = dR;
-		m_Cycle3D[i].ptR  = pt;
 		m_Cycle[0][i].ptR = pt.PointConvert();
 		m_Cycle[1][i].ptR = pt.GetXY();
 		m_Cycle[2][i].ptR = pt.GetXZ();
 		m_Cycle[3][i].ptR = pt.GetYZ();
 		pt[z] = GetValue(z);
-		m_Cycle3D[i].ptC  = pt;
 		m_Cycle[0][i].ptC = pt.PointConvert();
 		m_Cycle[1][i].ptC = pt.GetXY();
 		m_Cycle[2][i].ptC = pt.GetXZ();
@@ -896,8 +888,6 @@ CNCcycle::~CNCcycle()
 		for ( int i=0; i<SIZEOF(m_Cycle); i++ )
 			delete[] m_Cycle[i];
 	}
-	if ( m_Cycle3D )
-		delete m_Cycle3D;
 }
 
 void CNCcycle::DrawTuning(double f)
@@ -948,7 +938,7 @@ void CNCcycle::Draw(CDC* pDC, BOOL bSelect, BOOL) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::Draw()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	DrawCycle(pDC, 0, bSelect);
 }
@@ -957,7 +947,7 @@ void CNCcycle::DrawXY(CDC* pDC, BOOL bSelect, BOOL) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::DrawXY()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	if ( GetPlane() == XY_PLANE ) {
 		CNCline::DrawXY(pDC, bSelect);
@@ -971,7 +961,7 @@ void CNCcycle::DrawXZ(CDC* pDC, BOOL bSelect, BOOL) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::DrawXZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	if ( GetPlane() == XZ_PLANE ) {
 		CNCline::DrawXZ(pDC, bSelect);
@@ -985,7 +975,7 @@ void CNCcycle::DrawYZ(CDC* pDC, BOOL bSelect, BOOL) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::DrawYZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	if ( GetPlane() == YZ_PLANE ) {
 		CNCline::DrawYZ(pDC, bSelect);
@@ -1036,33 +1026,6 @@ void CNCcycle::DrawCycle(CDC* pDC, size_t n, BOOL bSelect) const
 
 void CNCcycle::DrawGL(void) const
 {
-	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	colG0 = pOpt->GetNcDrawColor( NCCOL_G0 ),
-				colCY = pOpt->GetNcDrawColor( NCCOL_CYCLE );
-	BYTE	bG0r = GetRValue(colG0), bG0g = GetGValue(colG0), bG0b = GetBValue(colG0),
-			bCYr = GetRValue(colCY), bCYg = GetGValue(colCY), bCYb = GetBValue(colCY);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern);
-	::glBegin(GL_LINE_STRIP);
-	::glColor3ub( bG0r, bG0g, bG0b );
-	::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
-	::glVertex3d(m_ptValI.x, m_ptValI.y, m_ptValI.z);
-	::glVertex3d(m_ptValR.x, m_ptValR.y, m_ptValR.z);
-	::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
-	::glEnd();
-	for ( int i=0; i<m_nDrawCnt; i++ ) {
-		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern);
-		::glBegin(GL_LINES);
-		::glColor3ub( bG0r, bG0g, bG0b );
-		::glVertex3d(m_Cycle3D[i].ptI.x, m_Cycle3D[i].ptI.y, m_Cycle3D[i].ptI.z);
-		::glVertex3d(m_Cycle3D[i].ptR.x, m_Cycle3D[i].ptR.y, m_Cycle3D[i].ptR.z);
-		::glEnd();
-		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_CYCLE)].nGLpattern);
-		::glBegin(GL_LINES);
-		::glColor3ub( bCYr, bCYg, bCYb );
-		::glVertex3d(m_Cycle3D[i].ptR.x, m_Cycle3D[i].ptR.y, m_Cycle3D[i].ptR.z);
-		::glVertex3d(m_Cycle3D[i].ptC.x, m_Cycle3D[i].ptC.y, m_Cycle3D[i].ptC.z);
-		::glEnd();
-	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1085,9 +1048,10 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOf
 		m_nG23 = 1 - m_nG23;	// 0->1 , 1->0;
 
 	// ﾈｲﾃｨﾌﾞの座標ﾃﾞｰﾀで中心を計算してから座標回転
-	m_ptValS = pData->GetOriginalEndPoint();	// あとで設定し直し
+	m_ptValS = pData->GetOriginalEndPoint();	// Not GetEndPoint()
 	m_ptValE.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
-	m_pRead->m_ptValOrg = m_ptValE;
+	m_ptValOrg = m_ptValE;
+	m_ptValE += ptOffset;
 
 	// 平面座標取得
 	CPointD	pts( GetPlaneValue(m_ptValS) ),
@@ -1121,15 +1085,13 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOf
 			pto = m_ptOrg.GetYZ();
 			break;
 		}
-		pts -= pto;		// 角度調整用の原点補正
+		pts -= pto;
 		pte -= pto;
 		AngleTuning(pts, pte);
 		fError = FALSE;
 	}
 
 	m_ptValS = pData->GetEndPoint();	// 前回の計算値を補間
-	m_ptValE += ptOffset;
-	m_ptOrg  += ptOffset;
 	// 座標回転
 	if ( lpArgv->g68.bG68 ) {
 		CalcG68Round(&(lpArgv->g68), m_ptValE);
@@ -1324,7 +1286,7 @@ void CNCcircle::Draw(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::Draw()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	// 平面ごとの描画関数
 	CPen*	pOldPen;
@@ -1347,7 +1309,7 @@ void CNCcircle::DrawXY(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::DrawXY()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	CPen*	pOldPen;
 	if ( bSelect )
@@ -1368,7 +1330,7 @@ void CNCcircle::DrawXZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::DrawXZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	CPen*	pOldPen;
 	if ( bSelect )
@@ -1389,7 +1351,7 @@ void CNCcircle::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::DrawYZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo());
+	dbg.printf("Line=%d", GetStrLine());
 #endif
 	CPen*	pOldPen;
 	if ( bSelect )
@@ -1690,113 +1652,6 @@ void CNCcircle::Draw_G19(EN_NCCIRCLEDRAW enType, CDC* pDC) const	// YZ_PLANE
 
 void CNCcircle::DrawGL(void) const
 {
-	double		sq, eq, r = fabs(m_r), dFinalVal;
-	CPoint3D	pt;
-
-	if ( m_nG23 == 0 ) {
-		sq = m_eq;
-		eq = m_sq;
-	}
-	else {
-		sq = m_sq;
-		eq = m_eq;
-	}
-
-	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetNcDrawColor( NCCOL_G1 );
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
-	::glBegin(GL_LINES);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-
-	switch ( GetPlane() ) {
-	case XY_PLANE:
-		dFinalVal = m_ptValE.z;
-		pt.x = r * cos(sq) + m_ptOrg.x;
-		pt.y = r * sin(sq) + m_ptOrg.y;
-		pt.z = m_nG23==0 ? dFinalVal : m_ptOrg.z;	// ﾍﾘｶﾙ開始座標
-		::glVertex3d(pt.x, pt.y, pt.z);	// 開始点
-		// ARCSTEP づつ微細線分で描画
-		if ( m_nG23 == 0 ) {
-			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
-				pt.x = r * cos(sq) + m_ptOrg.x;
-				pt.y = r * sin(sq) + m_ptOrg.y;
-				pt.z += m_dHelicalStep;
-				::glVertex3d(pt.x, pt.y, pt.z);
-			}
-		}
-		else {
-			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
-				pt.x = r * cos(sq) + m_ptOrg.x;
-				pt.y = r * sin(sq) + m_ptOrg.y;
-				pt.z += m_dHelicalStep;
-				::glVertex3d(pt.x, pt.y, pt.z);
-			}
-		}
-		// 端数分描画
-		pt.x = r * cos(eq) + m_ptOrg.x;
-		pt.y = r * sin(eq) + m_ptOrg.y;
-		pt.z = m_nG23==0 ? m_ptOrg.z : dFinalVal;	// ﾍﾘｶﾙ終了座標
-		::glVertex3d(pt.x, pt.y, pt.z);
-		break;
-
-	case XZ_PLANE:
-		dFinalVal = m_ptValE.y;
-		pt.x = r * cos(sq) + m_ptOrg.x;
-		pt.y = m_nG23==0 ? dFinalVal : m_ptOrg.y;
-		pt.z = r * sin(sq) + m_ptOrg.z;
-		::glVertex3d(pt.x, pt.y, pt.z);
-		if ( m_nG23 == 0 ) {
-			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
-				pt.x = r * cos(sq) + m_ptOrg.x;
-				pt.y += m_dHelicalStep;
-				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3d(pt.x, pt.y, pt.z);
-			}
-		}
-		else {
-			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
-				pt.x = r * cos(sq) + m_ptOrg.x;
-				pt.y += m_dHelicalStep;
-				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3d(pt.x, pt.y, pt.z);
-			}
-		}
-		pt.x = r * cos(eq) + m_ptOrg.x;
-		pt.y = m_nG23==0 ? m_ptOrg.y : dFinalVal;
-		pt.z = r * sin(eq) + m_ptOrg.z;
-		::glVertex3d(pt.x, pt.y, pt.z);
-		break;
-
-	case YZ_PLANE:
-		dFinalVal = m_ptValE.x;
-		pt.x = m_nG23==0 ? dFinalVal : m_ptOrg.x;
-		pt.y = r * cos(sq) + m_ptOrg.y;
-		pt.z = r * sin(sq) + m_ptOrg.z;
-		::glVertex3d(pt.x, pt.y, pt.z);
-		if ( m_nG23 == 0 ) {
-			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
-				pt.x += m_dHelicalStep;
-				pt.y = r * cos(sq) + m_ptOrg.y;
-				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3d(pt.x, pt.y, pt.z);
-			}
-		}
-		else {
-			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
-				pt.x += m_dHelicalStep;
-				pt.y = r * cos(sq) + m_ptOrg.y;
-				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3d(pt.x, pt.y, pt.z);
-			}
-		}
-		pt.x = m_nG23==0 ? m_ptOrg.y : dFinalVal;
-		pt.y = r * cos(eq) + m_ptOrg.y;
-		pt.z = r * sin(eq) + m_ptOrg.z;
-		::glVertex3d(pt.x, pt.y, pt.z);
-		break;
-	}
-
-	::glEnd();
 }
 
 void CNCcircle::SetMaxRect(void)
@@ -1867,23 +1722,23 @@ void CNCcircle::SetMaxRect(void)
 		m_rcMax.top		= rcMax.top;
 		m_rcMax.right	= rcMax.right;
 		m_rcMax.bottom	= rcMax.bottom;
-		m_rcMax.low		= m_ptValS.z;
-		m_rcMax.high	= m_ptValE.z;
+		m_rcMax.low		= GetValue(NCA_Z);
+		m_rcMax.high	= m_ptOrg.z;
 		break;
 	case XZ_PLANE:
 		rcMax.OffsetRect(m_ptOrg.GetXZ());
 		m_rcMax.left	= rcMax.left;
-		m_rcMax.top		= m_ptValS.y;
+		m_rcMax.top		= GetValue(NCA_Y);
 		m_rcMax.right	= rcMax.right;
-		m_rcMax.bottom	= m_ptValE.y;
+		m_rcMax.bottom	= m_ptOrg.y;
 		m_rcMax.low		= rcMax.top;
 		m_rcMax.high	= rcMax.bottom;
 		break;
 	case YZ_PLANE:
 		rcMax.OffsetRect(m_ptOrg.GetYZ());
-		m_rcMax.left	= m_ptValS.x;
+		m_rcMax.left	= GetValue(NCA_X);
 		m_rcMax.top		= rcMax.left;
-		m_rcMax.right	= m_ptValE.x;
+		m_rcMax.right	= m_ptOrg.x;
 		m_rcMax.bottom	= rcMax.right;
 		m_rcMax.low		= rcMax.top;
 		m_rcMax.high	= rcMax.bottom;
@@ -2102,14 +1957,8 @@ optional<CPointD> CNCcircle::SetChamferingPoint(BOOL bStart, double c)
 			}
 		}
 		SetPlaneValue(pt, m_ptValE);
-		m_pRead->m_ptValOrg = m_ptValE;
-		if ( m_pRead->m_g68.bG68 ) {
-			// m_ptValE はG68回転済み座標のため回転を元に戻してｵﾌｾｯﾄ減算
-			m_pRead->m_g68.dRound = -m_pRead->m_g68.dRound;
-			CalcG68Round(&(m_pRead->m_g68), m_pRead->m_ptValOrg);
-			m_pRead->m_g68.dRound = -m_pRead->m_g68.dRound;
-		}
-		m_pRead->m_ptValOrg -= m_pRead->m_ptOffset;
+		m_ptValOrg  = m_ptValE;
+		m_ptValOrg -= m_ptOffset;
 		m_eq = pa;
 		m_pt2D = m_ptValE.PointConvert();
 	}

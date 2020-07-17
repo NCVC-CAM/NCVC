@@ -109,5 +109,5 @@ protected:
 
 #ifndef _DEBUG  // DXFView.cpp ファイルがデバッグ環境の時使用されます。
 inline CDXFDoc* CDXFView::GetDocument()
-   { return (CDXFDoc*)m_pDocument; }
+   { return static_cast<CDXFDoc *>(m_pDocument); }
 #endif

@@ -169,6 +169,7 @@ void CNCViewXZ::DrawConvertMaxRect(void)
 void CNCViewXZ::OnDraw(CDC* pDC)
 {
 	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	ASSERT_VALID(GetDocument());
 	int		i;
@@ -181,8 +182,8 @@ void CNCViewXZ::OnDraw(CDC* pDC)
 	CString		strXZ[2];
 	pOrgPen[0]	= AfxGetNCVCMainWnd()->GetPenOrg(NCA_X);
 	pOrgPen[1]	= AfxGetNCVCMainWnd()->GetPenOrg(NCA_Z);
-	colOrg[0]	= AfxGetNCVCMainWnd()->GetOrgColor(NCA_X);
-	colOrg[1]	= AfxGetNCVCMainWnd()->GetOrgColor(NCA_Z);
+	colOrg[0]	= pOpt->GetNcDrawColor(NCCOL_GUIDEX);
+	colOrg[1]	= pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
 	strXZ[0] = g_szNdelimiter[NCA_X];
 	strXZ[1] = g_szNdelimiter[NCA_Z];
 
@@ -191,7 +192,7 @@ void CNCViewXZ::OnDraw(CDC* pDC)
 		CPoint	pt(0, 0);
 		pDC->DPtoLP(&pt);
 		pDC->SetTextAlign(TA_LEFT|TA_TOP);
-		pDC->SetTextColor(AfxGetNCVCApp()->GetViewOption()->GetNcDrawColor(NCCOL_PANE));
+		pDC->SetTextColor(pOpt->GetNcDrawColor(NCCOL_PANE));
 		pDC->TextOut(pt.x, pt.y, strXZ[0]+strXZ[1]);
 	}
 	// ｶﾞｲﾄﾞ表示
@@ -241,7 +242,7 @@ void CNCViewXZ::Dump(CDumpContext& dc) const
 CNCDoc* CNCViewXZ::GetDocument() // 非デバッグ バージョンはインラインです。
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CNCDoc)));
-	return (CNCDoc*)m_pDocument;
+	return static_cast<CNCDoc *>(m_pDocument);
 }
 #endif //_DEBUG
 
@@ -319,7 +320,7 @@ void CNCViewXZ::OnViewLensComm(void)
 
 int CNCViewXZ::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if (CView::OnCreate(lpCreateStruct) == -1)
+	if ( CView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	// ﾏｯﾋﾟﾝｸﾞﾓｰﾄﾞの変更など
@@ -337,7 +338,7 @@ LRESULT CNCViewXZ::OnUserActivatePage(WPARAM, LPARAM lParam)
 		OnLensKey(ID_VIEW_FIT);
 	}
 	else {
-		if ( (BOOL)lParam ) {
+		if ( lParam ) {
 			// 拡大率の再更新
 			OnViewLensComm();
 		}
@@ -352,7 +353,7 @@ LRESULT CNCViewXZ::OnUserViewFitMsg(WPARAM, LPARAM lParam)
 #endif
 	// 拡大率の計算と図形ﾌｨｯﾄ
 	CViewBase::OnViewFit(GetMaxRect());
-	if ( (BOOL)lParam )		// 再描画ﾌﾗｸﾞ == 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ
+	if ( lParam )		// 再描画ﾌﾗｸﾞ == 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ
 		OnViewLensComm();
 	return 0;
 }

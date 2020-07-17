@@ -6,12 +6,12 @@
 
 #include "NCVCdefine.h"
 // ModalGroup
-#define	MODALGROUP	5
-#define	MODALGROUP0	0	// G00Å`G03
-#define	MODALGROUP1	1	// G17Å`G19
-#define	MODALGROUP2	2	// G54Å`G59
-#define	MODALGROUP3	3	// G90ÅCG91
-#define	MODALGROUP4	4	// G98ÅCG99
+#define	MODALGROUP		5
+#define	MODALGROUP0			0	// G00Å`G03
+#define	MODALGROUP1			1	// G17Å`G19
+#define	MODALGROUP2			2	// G54Å`G59
+#define	MODALGROUP3			3	// G90ÅCG91
+#define	MODALGROUP4			4	// G98ÅCG99
 // G54Å`G59
 #define	WORKOFFSET		6
 // œ∏€ä÷òA
@@ -102,6 +102,7 @@ friend	class	CMCSetup5;
 	};
 	// CStringå^µÃﬂºÆ›
 	CString		m_strMCname,	// ã@äBñº
+				m_strAutoBreak,	// é©ìÆÃﬁ⁄≤∏ê›íË∫∞ƒﬁ
 				m_strMacroOpt[MCMACROSTRING];	// œ∏€ä÷åW
 	// çHãÔèÓïÒµÃﬂºÆ›
 	CTypedPtrList<CPtrList, CMCTOOLINFO*>	m_ltTool;	// CMCTOOLINFOå^Çäiî[
@@ -163,12 +164,11 @@ public:
 		ASSERT( n>=0 && n<SIZEOF(m_strMacroOpt) );
 		return m_strMacroOpt[n];
 	}
-	BOOL	IsMacroSearch(void) const {
-		return !(m_strMacroOpt[MCMACROCODE].IsEmpty() | m_strMacroOpt[MCMACROIF].IsEmpty());
-	}
 	CString	MakeMacroCommand(int) const;
 	CString	GetDefaultOption(void) const;	// from MCSetup4.cpp
-
+	CString	GetAutoBreakStr(void) const {
+		return m_strAutoBreak;
+	}
 	int		GetCorrectType(void) const {
 		return m_nCorrectType;
 	}

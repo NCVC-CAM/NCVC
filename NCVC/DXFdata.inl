@@ -144,7 +144,7 @@ inline void CDXFdata::SwapPt(int n)		// m_ptTun ‚Ì“ü‚ê‘Ö‚¦
 #ifdef _DEBUG
 	CMagaDbg	dbg("SwapPt()", DBG_CYAN);
 #endif
-	if ( m_nPoint > 1 ) {	// ”O‚Ì‚½‚ßÁª¯¸
+	if ( m_nPoint > n+1 ) {	// ”O‚Ì‚½‚ßÁª¯¸
 #ifdef _DEBUG
 		dbg.printf("calling ok");
 #endif
@@ -444,11 +444,9 @@ inline BOOL CDXFcircle::IsMatchPoint(const CPointD& pt)
 		return CDXFpoint::IsMatchPoint(pt);
 
 	for ( int i=0; i<GetPointNumber(); i++ ) {
-		if ( m_ptMake[i] == pt ) {
-			m_nArrayExt = i & 0xfe;		// 0 or 2 (‰ºˆÊ1ËÞ¯ÄÏ½¸)
-			// Šï”(180, 270)‚ÌŽž‚¾‚¯“ü‚ê‘Ö‚¦
-			if ( i & 0x01 )
-				SwapPt( m_nArrayExt );
+		if ( m_ptMake[i]==pt && m_nArrayExt!=i ) {
+			m_nArrayExt = i;
+			SwapPt( i & 0xfe );		// 0 or 2 (‰ºˆÊ1ËÞ¯ÄÏ½¸) => dummy
 			return TRUE;
 		}
 	}
@@ -465,7 +463,7 @@ inline double CDXFcircle::GetEdgeGap(const CPointD& pt, BOOL bSwap/*=TRUE*/)
 	if ( GetMakeType() == DXFPOINTDATA )
 		return CDXFpoint::GetEdgeGap(pt, bSwap);
 
-	int		i, a;
+	int		i, a = 0;
 	double	dGap, dGapMin = HUGE_VAL;
 	for ( i=0; i<GetPointNumber(); i++ ) {
 		dGap = GAPCALC(m_ptTun[i] - pt);
@@ -474,10 +472,9 @@ inline double CDXFcircle::GetEdgeGap(const CPointD& pt, BOOL bSwap/*=TRUE*/)
 			a = i;
 		}
 	}
-	if ( bSwap ) {
-		m_nArrayExt = a & 0xfe;
-		if ( a & 0x01 )
-			SwapPt( m_nArrayExt );
+	if ( bSwap && m_nArrayExt!=a ) {
+		m_nArrayExt = a;
+		SwapPt( a & 0xfe );			// 0 or 2 (‰ºˆÊ1ËÞ¯ÄÏ½¸) => dummy
 	}
 	return dGapMin;
 }
@@ -506,6 +503,11 @@ inline const CPointD CDXFcircle::GetEndMakePoint(void) const
 inline double CDXFcircle::GetLength(void) const
 {
 	return 2 * PI * m_r;
+}
+
+inline void CDXFcircle::SwapPt(int)
+{
+	// ‰½‚à‚µ‚È‚¢
 }
 
 inline void CDXFcircle::ReversePt(void)
@@ -564,11 +566,11 @@ inline void CDXFarc::AngleTuning(void)
 		m_eq += 360.0*RAD;
 	if ( m_bRound ) {
 		// ”÷–­‚ÈŒë·‚Ì‹zŽû(=>”÷×‰~ŒÊ‚ª‘å‚«‚È‰~‚É•Ï‚í‚Á‚Ä‚µ‚Ü‚¤)
-		while ( ::RoundUp(m_sq*DEG) > ::RoundUp(m_eq*DEG) )
+		while ( ::RoundUp(m_sq*DEG) >= ::RoundUp(m_eq*DEG) )
 			m_eq += 360.0*RAD;
 	}
 	else {
-		while ( ::RoundUp(m_eq*DEG) > ::RoundUp(m_sq*DEG) )
+		while ( ::RoundUp(m_eq*DEG) >= ::RoundUp(m_sq*DEG) )
 			m_sq += 360.0*RAD;
 	}
 }
@@ -723,37 +725,10 @@ inline BOOL CDXFellipse::GetArc(void) const
 	return m_bArc;
 }
 
-inline void CDXFellipse::SwapPt(int n)
+inline void CDXFellipse::SetRoundFixed(BOOL bRound)
 {
-	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
-		CDXFdata::SwapPt(n);	// CDXFcircle::SwapPt()
-		if ( !m_bArc ) {
-			m_sq += 180.0*RAD;	// Ž²‚ÌŒü‚«‚ð180‹‰ñ“]
-			m_eq += 180.0*RAD;
-		}
-	}
-	else
-		CDXFarc::SwapPt(n);
-}
-
-inline void CDXFellipse::SetEllipseTunPoint(void)
-{
-	double	dShort = m_dLongLength * m_dShort;
-	// 0`1 -> XŽ²
-	m_ptTun[0].x =  m_dLongLength;
-	m_ptTun[1].x = -m_dLongLength;
-	m_ptTun[0].y = m_ptTun[1].y = 0;
-	// 2`3 -> YŽ²
-	m_ptTun[2].y =  dShort;
-	m_ptTun[3].y = -dShort;
-	m_ptTun[2].x = m_ptTun[3].x = 0;
-	// ‰ñ“]
-	CPointD	pt;
-	for ( int i=0; i<GetPointNumber(); i++ ) {
-		pt = m_ptTun[i];
-		m_ptTun[i].x = pt.x * m_lqMakeCos - pt.y * m_lqMakeSin + m_ctTun.x;
-		m_ptTun[i].y = pt.x * m_lqMakeSin + pt.y * m_lqMakeCos + m_ctTun.y;
-	}
+	m_bRound = bRound;
+	SwapAngle();
 }
 
 inline BOOL CDXFellipse::IsMatchPoint(const CPointD& pt)
@@ -799,8 +774,12 @@ inline const CPointD CDXFellipse::GetEndMakePoint(void) const
 
 inline void CDXFellipse::ReversePt(void)
 {
-	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA )
-		CDXFcircle::ReversePt();	// ‰½‚à‚µ‚È‚¢
+	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
+		// ‰ñ“]•ûŒü‚Ì”½“]
+		SwapRound();
+		// Šp“x‚Ì“ü‚ê‘Ö‚¦
+		SwapAngle();
+	}
 	else
 		CDXFarc::ReversePt();
 }

@@ -21,6 +21,7 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CNCViewSplit, CSplitterWnd)
 	ON_WM_DESTROY()
+	ON_WM_ERASEBKGND()
 	ON_WM_LBUTTONDBLCLK()
 	// ’∞ªﬁ≤∆º¨Ÿèàóù
 	ON_MESSAGE (WM_USERINITIALUPDATE, OnUserInitialUpdate)
@@ -80,7 +81,7 @@ void CNCViewSplit::AllPane_PostMessage(int nID, UINT msg, WPARAM wParam, LPARAM 
 {
 	int		i, j;
 
-	if ( nID == NC_SINGLEPANE ) {	// ÇSñ -1
+	if ( nID == NCVIEW_SINGLEPANE ) {	// ÇSñ -1
 		for ( i=0; i<GetRowCount(); i++ ) {			// çs
 			for ( j=0; j<GetColumnCount(); j++ ) {	// óÒ
 				GetPane(i, j)->PostMessage(msg, wParam, lParam);
@@ -109,7 +110,7 @@ void CNCViewSplit::CalcPane(int nID, BOOL bInitial/*=FALSE*/)
 	GetParent()->GetClientRect(&rc);
 
 	// ΩÃﬂÿØ¿≥®›ƒﬁ≥ÇÃèâä˙ª≤Ωﬁê›íË
-	if ( nID == NC_SINGLEPANE ) {	// ÇSñ -1
+	if ( nID == NCVIEW_SINGLEPANE ) {	// ÇSñ -1
 		nRow = (rc.Height() >> 1) - nCyEdge;
 		nCol = (rc.Width()  >> 1) - nCxEdge;
 		if ( bInitial ) {
@@ -151,7 +152,7 @@ LRESULT CNCViewSplit::OnUserInitialUpdate(WPARAM wParam, LPARAM lParam)
 	// ΩÃﬂÿØ¿≥®›ƒﬁ≥ÇÃèâä˙ª≤Ωﬁê›íË
 	CalcPane(wParam, TRUE);
 	// äeÕﬂ≤›Ç÷ê}å`Ã®Øƒ“Øæ∞ºﬁÇÃëóêM
-	if ( wParam == NC_SINGLEPANE ) {	// ÇSñ -1
+	if ( wParam == NCVIEW_SINGLEPANE ) {	// ÇSñ -1
 		for ( i=0; i<GetRowCount(); i++ ) {			// çs
 			for ( j=0; j<GetColumnCount(); j++ ) {	// óÒ
 				if ( (BOOL)lParam )
@@ -232,6 +233,11 @@ void CNCViewSplit::OnDestroy()
 			}
 		}
 	}
+}
+
+BOOL CNCViewSplit::OnEraseBkgnd(CDC* pDC)
+{
+	return TRUE;
 }
 
 void CNCViewSplit::OnLButtonDblClk(UINT nFlags, CPoint point) 

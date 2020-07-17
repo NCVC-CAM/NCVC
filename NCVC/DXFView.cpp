@@ -541,7 +541,7 @@ void CDXFView::Dump(CDumpContext& dc) const
 CDXFDoc* CDXFView::GetDocument() // 非デバッグ バージョンはインラインです。
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CDXFDoc)));
-	return (CDXFDoc*)m_pDocument;
+	return static_cast<CDXFDoc *>(m_pDocument);
 }
 #endif //_DEBUG
 
@@ -652,7 +652,7 @@ void CDXFView::OnViewLensComm(void)
 
 int CDXFView::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if (CView::OnCreate(lpCreateStruct) == -1)
+	if ( CView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	// ﾏｯﾋﾟﾝｸﾞﾓｰﾄﾞの変更など

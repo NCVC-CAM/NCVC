@@ -256,7 +256,7 @@ void CLayerData::Serialize(CArchive& ar)
 	else {
 		ar >> m_strLayer >> m_nType >> m_bView;
 		// CDXFdata¼Ø±×²½Şî•ñ—p‚ÉCLayerData*‚ğCArchive::m_pDocument‚ÉŠi”[
-		ar.m_pDocument = (CDocument *)this;
+		ar.m_pDocument = reinterpret_cast<CDocument *>(this);
 	}
 	// DXFµÌŞ¼Şª¸Ä‚Ì¼Ø±×²½Ş
 	m_obDXFArray.Serialize(ar);

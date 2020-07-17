@@ -69,7 +69,7 @@ NCEXPORT BOOL WINAPI NCVC_GetNCData(NCVCHANDLE hDoc, int nIndex, LPNCDATA pData)
 
 	CNCdata* pNC = pDoc->GetNCdata(nIndex);
 	pData->nErrorCode = pNC->GetNCObjErrorCode();
-	pData->nLine = pNC->GetStrLine();
+	pData->nLine = pNC->GetBlockLineNo();
 	pData->nGtype = pNC->GetGtype();
 	pData->nGcode = pNC->GetGcode();
 	pData->dwValFlags = pNC->GetValFlags();

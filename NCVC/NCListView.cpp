@@ -214,7 +214,7 @@ void CNCListView::Dump(CDumpContext& dc) const
 CNCDoc* CNCListView::GetDocument() // 非デバッグ バージョンはインラインです。
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CNCDoc)));
-	return (CNCDoc*)m_pDocument;
+	return static_cast<CNCDoc *>(m_pDocument);
 }
 #endif //_DEBUG
 
@@ -286,7 +286,7 @@ void CNCListView::OnUpdateEditCopy(CCmdUI* pCmdUI)
 
 int CNCListView::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if (CListView::OnCreate(lpCreateStruct) == -1)
+	if ( CListView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	// ｲﾒｰｼﾞﾘｽﾄ
@@ -372,7 +372,7 @@ LRESULT CNCListView::OnSelectTrace(WPARAM wParam, LPARAM)
 	CNCdata*	pData = reinterpret_cast<CNCdata *>(wParam);
 	ASSERT( pData );
 	// 別ｽﾚｯﾄﾞ(CTraceThread)からの呼び出しのため、ﾒｯｾｰｼﾞ送信にて不具合対応
-	int	nIndex = pData->GetStrLine();
+	int	nIndex = pData->GetBlockLineNo();
 	m_bTraceSelect = TRUE;	// OnItemChanged を発動しない
 	GetListCtrl().SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
 	m_bTraceSelect = FALSE;

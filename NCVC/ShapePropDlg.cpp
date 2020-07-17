@@ -6,6 +6,7 @@
 #include "MainFrm.h"	// DXFView.h
 #include "DXFdata.h"
 #include "DXFshape.h"
+#include "DXFDoc.h"
 #include "DXFView.h"	// DXFTREETYPE
 #include "ShapePropDlg.h"
 

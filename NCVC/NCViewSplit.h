@@ -5,11 +5,12 @@
 #pragma once
 
 // 単一表示ﾍﾟｲﾝ数
-#define		NC_SINGLEPANE		4
+#define		NCVIEW_SINGLEPANE		4
+#define		NCVIEW_OPENGL			6
 
 class CNCViewSplit : public CSplitterWnd  
 {
-	HDC		m_hDC[NC_SINGLEPANE];		// 各ﾍﾟｲﾝのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
+	HDC		m_hDC[NCVIEW_SINGLEPANE];		// 各ﾍﾟｲﾝのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
 
 	void	CalcPane(int, BOOL = FALSE);	// 各ﾍﾟｲﾝ領域の計算
 	void	AllPane_PostMessage(int, UINT, WPARAM = 0, LPARAM = 0);
@@ -27,6 +28,7 @@ public:
 // 生成されたメッセージ マップ関数
 protected:
 	afx_msg void OnDestroy();
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	// CNCViewTab::OnInitialUpdate() から PostMessage()
 	afx_msg LRESULT OnUserInitialUpdate(WPARAM, LPARAM);

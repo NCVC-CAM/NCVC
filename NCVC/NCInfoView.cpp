@@ -37,7 +37,6 @@ CNCInfoView1::~CNCInfoView1()
 
 BEGIN_MESSAGE_MAP(CNCInfoView1, CView)
 	//{{AFX_MSG_MAP(CNCInfoView1)
-	ON_WM_CREATE()
 	ON_WM_CONTEXTMENU()
 	ON_WM_ERASEBKGND()
 	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
@@ -61,7 +60,6 @@ CNCInfoView2::~CNCInfoView2()
 
 BEGIN_MESSAGE_MAP(CNCInfoView2, CView)
 	//{{AFX_MSG_MAP(CNCInfoView2)
-	ON_WM_CREATE()
 	ON_WM_CONTEXTMENU()
 	ON_WM_ERASEBKGND()
 	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
@@ -71,6 +69,23 @@ END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCInfoView クラスのオーバライド関数
+
+BOOL CNCInfoView1::PreCreateWindow(CREATESTRUCT& cs)
+{
+	// ｽﾌﾟﾘｯﾀからの境界ｶｰｿﾙが移るので，IDC_IBEAM を明示的に指定
+	cs.lpszClass = AfxRegisterWndClass(
+			CS_HREDRAW|CS_VREDRAW,
+			AfxGetApp()->LoadStandardCursor(IDC_IBEAM) );
+	return CView::PreCreateWindow(cs);
+}
+
+BOOL CNCInfoView2::PreCreateWindow(CREATESTRUCT& cs)
+{
+	cs.lpszClass = AfxRegisterWndClass(
+			CS_HREDRAW|CS_VREDRAW,
+			AfxGetApp()->LoadStandardCursor(IDC_IBEAM) );
+	return CView::PreCreateWindow(cs);
+}
 
 void CNCInfoView1::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
 {
@@ -259,7 +274,7 @@ void CNCInfoView1::Dump(CDumpContext& dc) const
 CNCDoc* CNCInfoView1::GetDocument() // 非デバッグ バージョンはインラインです。
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CNCDoc)));
-	return (CNCDoc*)m_pDocument;
+	return static_cast<CNCDoc *>(m_pDocument);
 }
 
 void CNCInfoView2::AssertValid() const
@@ -275,24 +290,12 @@ void CNCInfoView2::Dump(CDumpContext& dc) const
 CNCDoc* CNCInfoView2::GetDocument() // 非デバッグ バージョンはインラインです。
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CNCDoc)));
-	return (CNCDoc*)m_pDocument;
+	return static_cast<CNCDoc *>(m_pDocument);
 }
 #endif //_DEBUG
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCInfoView1 メッセージ ハンドラ
-
-int CNCInfoView1::OnCreate(LPCREATESTRUCT lpCreateStruct) 
-{
-	if (CView::OnCreate(lpCreateStruct) == -1)
-		return -1;
-
-	// 標準ﾏｳｽｶｰｿﾙの変更
-	::SetClassLong(m_hWnd, GCL_HCURSOR,
-		(LONG)(AfxGetApp()->LoadStandardCursor(IDC_IBEAM)));
-
-	return 0;
-}
 
 void CNCInfoView1::OnUpdateEditCopy(CCmdUI* pCmdUI) 
 {
@@ -332,18 +335,6 @@ LRESULT CNCInfoView1::OnUserCalcMsg(WPARAM, LPARAM)
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCInfoView2 メッセージ ハンドラ
-
-int CNCInfoView2::OnCreate(LPCREATESTRUCT lpCreateStruct) 
-{
-	if (CView::OnCreate(lpCreateStruct) == -1)
-		return -1;
-
-	// 標準ﾏｳｽｶｰｿﾙの変更
-	::SetClassLong(m_hWnd, GCL_HCURSOR,
-		(LONG)(AfxGetApp()->LoadStandardCursor(IDC_IBEAM)));
-
-	return 0;
-}
 
 void CNCInfoView2::OnUpdateEditCopy(CCmdUI* pCmdUI) 
 {

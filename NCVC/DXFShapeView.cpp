@@ -934,7 +934,7 @@ void CDXFShapeView::Dump(CDumpContext& dc) const
 CDXFDoc* CDXFShapeView::GetDocument() // 非デバッグ バージョンはインラインです。
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CDXFDoc)));
-	return (CDXFDoc*)m_pDocument;
+	return static_cast<CDXFDoc *>(m_pDocument);
 }
 #endif //_DEBUG
 
@@ -1274,7 +1274,7 @@ void CDXFShapeView::OnEditShapeName()
 
 int CDXFShapeView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	if (CTreeView::OnCreate(lpCreateStruct) == -1)
+	if ( CTreeView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	// ｲﾒｰｼﾞﾘｽﾄ

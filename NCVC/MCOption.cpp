@@ -36,12 +36,12 @@ static	const	int		g_dfNOrder[] = {
 // doubleŒ^–½—ß
 static	LPCTSTR	g_szDOrder[] = {
 	"DefaultFeed",
+	"Initial%c",
 	"BlockTime",
-	"Initial%c"
 };
 static	const	double	g_dfDOrder[] = {
 	30.0,
-	0.0, 0.0, 0.0,
+	0.0, 0.0, 10.0,
 	0.0,
 	// G54`G59
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -59,6 +59,7 @@ static	const	BOOL	g_dfBOrder[] = {
 // CStringŒ^–½—ß
 static	LPCTSTR	g_szSOrder[] = {
 	"Name",
+	"AutoBreak",
 	"Tool%d"
 };
 static	LPCTSTR	g_szSOrderMacro[] = {
@@ -285,6 +286,8 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 	k = 0;
 	::GetPrivateProfileString(strRegKey, g_szSOrder[k++], "", szResult, _MAX_PATH, lpszFile);
 	m_strMCname = szResult;
+	::GetPrivateProfileString(strRegKey, g_szSOrder[k++], "", szResult, _MAX_PATH, lpszFile);
+	m_strAutoBreak = szResult;
 
 	// H‹ïî•ñ‚ğˆê’Uíœ
 	for ( POSITION pos=m_ltTool.GetHeadPosition(); pos; )
@@ -421,6 +424,8 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 	}
 	k = 0;
 	if ( !::WritePrivateProfileString(strRegKey, g_szSOrder[k++], m_strMCname, lpszFile) )
+		return FALSE;
+	if ( !::WritePrivateProfileString(strRegKey, g_szSOrder[k++], m_strAutoBreak, lpszFile) )
 		return FALSE;
 
 	// H‹ïî•ñ‚ğˆê’Uíœ(“Ç‚İ‚İŒ”Šm”FŒã)

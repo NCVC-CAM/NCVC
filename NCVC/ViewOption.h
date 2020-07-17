@@ -15,6 +15,8 @@ typedef	struct	tagPENSTYLE {
 	int		nDXFdash;		// ÀŞ¯¼­‚Ì’·‚³€–Ú”(º°ÄŞ73==º°ÄŞ49‚Ì”)
 	float	dDXFpattern;	// ÊßÀ°İ‘S‘Ì’·‚³(º°ÄŞ40)
 	float	dDXFdash[6];	// ÀŞ¯¼­’·‚³(º°ÄŞ49)
+	// --- ˆÈ‰ºOpenGL—p
+	GLushort	nGLpattern;	// for glLineStipple
 } PENSTYLE;
 #define	MAXPENSTYLE		5
 

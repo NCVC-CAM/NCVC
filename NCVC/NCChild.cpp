@@ -163,7 +163,7 @@ void CNCChild::SetFactorInfo(ENNCVPLANE enView, double dFactor)
 
 int CNCChild::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if (CMDIChildWnd::OnCreate(lpCreateStruct) == -1)
+	if ( CMDIChildWnd::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	// ½Ã°À½ÊÞ°ì¬

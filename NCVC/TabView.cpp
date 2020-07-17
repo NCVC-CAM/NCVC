@@ -182,7 +182,7 @@ int CTabView::PrevActivatePage(void)
 
 void CTabView::ResizePage(int nIndex, int cx, int cy)
 {
-	CWnd* pWnd = GetPage(nIndex);	// ASSERT check..
+	CWnd* pWnd = GetPage(nIndex);
 	if ( !pWnd )
 		return;
 

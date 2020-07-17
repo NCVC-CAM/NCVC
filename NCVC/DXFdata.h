@@ -310,11 +310,12 @@ class CDXFcircle : public CDXFline
 	void	SetCirclePoint(void);	// m_pt への代入
 
 protected:
-	int		m_nArrayExt;	// m_ptTun, m_ptMake の配列を指示(0:X軸 or 2:Y軸)
+	int		m_nArrayExt;	// m_ptTun, m_ptMake の配列を指示(0-1:±X軸 or 2-3:±Y軸)
 	double	m_r, m_rMake;	// 半径, 小数第３位までの半径 -> NC生成で使用
 	CPointD	m_ct, m_ctTun;	// 中心座標
 	BOOL	m_bRound;		// G2(FALSE)/G3(TRUE) DXFの基本は G3(反時計回り)
 
+	virtual	void	SwapPt(int);
 	virtual	void	XRev(void);
 	virtual	void	YRev(void);
 
@@ -488,7 +489,7 @@ class CDXFellipse : public CDXFarc
 {
 	CPointD		m_ptLong;	// 長軸(中心からの相対)
 	double		m_dShort;	// 短軸(倍率)
-	double		m_dLongLength, m_DrawLongLength;
+	double		m_dLongLength, m_dDrawLongLength;
 	double		m_lq, m_lqMake;		// 長軸角度(==楕円の傾き)
 	double		m_lqMakeCos, m_lqMakeSin,	// 傾きの cos(), sin()
 				m_lqDrawCos, m_lqDrawSin;	// 使用頻度が高いので計算結果を保存
@@ -519,6 +520,7 @@ public:
 	double	GetLeanCos(void) const;
 	double	GetLeanSin(void) const;
 	BOOL	GetArc(void) const;
+	void	SetRoundFixed(BOOL);
 
 	virtual	BOOL	IsMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;

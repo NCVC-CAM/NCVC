@@ -327,8 +327,8 @@ void CMainFrame::ChangeViewOption(void)
 	static	int		colBrushDXF[] = {
 		DXFCOL_CUTTER, DXFCOL_START, DXFCOL_MOVE, DXFCOL_TEXT
 	};
-	int		i, pen;
-	COLORREF		col;
+	int			i, pen;
+	COLORREF	col;
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();	// Can't const(GetLogFont)
 
 	// ‹¤’ÊÍßİ‚Ìì¬
@@ -345,14 +345,14 @@ void CMainFrame::ChangeViewOption(void)
 
 	// ’†Sü‚ÌFİ’è(¶Ş²ÄŞ•¶šF)‚ÆÍßİì¬
 	for ( i=0; i<SIZEOF(m_penOrg[0]); i++ ) {
-		m_colOrg[i] = pOpt->GetNcDrawColor(i+NCCOL_GUIDEX);
+		col = pOpt->GetNcDrawColor(i+NCCOL_GUIDEX);
 		if ( (HPEN)m_penOrg[0][i] )
 			m_penOrg[0][i].DeleteObject();
 		if ( (HPEN)m_penOrg[1][i] )
 			m_penOrg[1][i].DeleteObject();
 		pen = g_penStyle[pOpt->GetNcDrawType(i)].nPenType;
-		m_penOrg[0][i].CreatePen(pen, 0, m_colOrg[i]);
-		m_penOrg[1][i].CreatePen(pen, 0, m_colOrg[i]!=RGB(255,255,255) ? m_colOrg[i] : RGB(0,0,0));
+		m_penOrg[0][i].CreatePen(pen, 0, col);
+		m_penOrg[1][i].CreatePen(pen, 0, col!=RGB(255,255,255) ? col : RGB(0,0,0));
 	}
 	// Êß½•`‰æÍßİì¬
 	ASSERT( SIZEOF(m_penNC[0]) == SIZEOF(colNC) );
@@ -824,7 +824,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 #ifdef _DEBUG
 	CMagaDbg	dbg("CMainFrame::OnCreate\nStart");
 #endif
-	if ( CMDIFrameWnd::OnCreate(lpCreateStruct) == -1 )
+	if ( CMDIFrameWnd::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	CString	strRegKey, strEntry;
@@ -1284,7 +1284,7 @@ int CMachineToolBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	CMagaDbg	dbg("CMachineToolBar::OnCreate\nStart");
 #endif
 
-	if ( CCustomToolBar::OnCreate(lpCreateStruct) == -1 ) {
+	if ( CCustomToolBar::OnCreate(lpCreateStruct) < 0 ) {
 		TRACE0("Failed to CCustomToolBar::OnCreate (CMachineToolBar)\n");
 		return -1;
 	}

@@ -326,7 +326,7 @@ BOOL CNCVCApp::NCVCRegInit(void)
 		m_nTraceSpeed = ID_NCVIEW_TRACE_LOW;
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_VIEWPAGE));
 	m_nNCTabPage = GetProfileInt(strRegKey, strEntry, 0);
-	if ( m_nNCTabPage < 0 || m_nNCTabPage >= 6/*GetPageCount()*/ )
+	if ( m_nNCTabPage < 0 || m_nNCTabPage > NCVIEW_OPENGL/*GetPageCount()*/ )
 		m_nNCTabPage = 0;
 
 	// µÃﬂºÆ›ÇÃç\íz

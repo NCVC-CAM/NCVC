@@ -159,6 +159,9 @@ void CNCMake::MakeEllipse(const CDXFellipse* pEllipse, double dFeed)
 	CString	strGcode;
 	BOOL	bFeed = TRUE;
 	CPointD	pt, ptMake;
+#ifdef _DEBUG
+	pEllipse->GetBaseAxis();
+#endif;
 	double	sq = pEllipse->GetStartAngle(), eq = pEllipse->GetEndAngle();
 	// Šp“x‚Ì½Ã¯Ìß”‚ð‹‚ß‚é -> (sq-eq) / (r*(sq-eq) / STEP)
 	double	dStep = 1.0 / (pEllipse->GetR() / GetDbl(MKNC_DBL_ELLIPSE));

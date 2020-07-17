@@ -83,13 +83,10 @@ inline	ENGCODEOBJ	IsGcodeObject(int nCode)
 // 解析関数
 static	int		NC_GSeparater(int, CNCdata*&);
 static	CNCdata*	AddGcode(CNCblock*, CNCdata*, int);
+static	CNCdata*	AddM98code(CNCblock*, CNCdata*, int);
 static	int			CallSubProgram(CNCblock*, CNCdata*&);
 static	void	CheckGcodeOther(int);
-static	int		NC_SearchSubProgram(int*);
-typedef	int		(*PFNSEARCHMACRO)(CNCblock*);
-static	int		NC_SearchMacroProgram(CNCblock*);
-static	int		NC_NoSearchMacro(CNCblock*);
-static	PFNSEARCHMACRO	g_pfnSearchMacro;
+// 面取り・ｺｰﾅｰR処理
 static	void	MakeChamferingObject(CNCblock*, CNCdata*, CNCdata*);
 // Fﾊﾟﾗﾒｰﾀ, ﾄﾞｳｪﾙ時間の解釈
 typedef double (*PFNFEEDANALYZE)(const string&);
@@ -101,6 +98,16 @@ static	CString	g_strSearchFolder[2];	// ｶﾚﾝﾄと指定ﾌｫﾙﾀﾞ
 static	CString	SearchFolder(regex&);
 static	CString	SearchFolder_Sub(int, LPCTSTR, regex&);
 static	BOOL	SearchProgNo(LPCTSTR, regex&);
+static	regex	g_reMacroStr;
+static	int		NC_SearchSubProgram(int*);
+typedef	int		(*PFNBLOCKPROCESS)(CNCblock*);
+static	int		NC_SearchMacroProgram(CNCblock*);
+static	int		NC_NoSearch(CNCblock*);
+static	PFNBLOCKPROCESS	g_pfnSearchMacro;
+// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
+static	regex	g_reAutoBreak;
+static	int		NC_SearchAutoBreak(CNCblock*);
+static	PFNBLOCKPROCESS	g_pfnSearchAutoBreak;
 
 //////////////////////////////////////////////////////////////////////
 //	NCｺｰﾄﾞのｵﾌﾞｼﾞｪｸﾄ生成ｽﾚｯﾄﾞ
@@ -199,7 +206,6 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	CGcode		a(vResult);
 	int			i, nCode,
 				nNotModalCode = -1,	// ﾓｰﾀﾞﾙ不要のGｺｰﾄﾞ(ﾌﾞﾛｯｸ内でのみ有効)
-				nLoopCnt = g_pDoc->GetNCBlockSize(),
 				nResult, nIndex;
 	BOOL		bNCobj = FALSE, bNCval = FALSE, bNCsub = FALSE;
 	ENGCODEOBJ	enGcode;
@@ -216,10 +222,17 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	dbg.printf("No.%004d Line=%s", nLine+1, pBlock->GetStrGcode());
 #endif
 
+	// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
+	(*g_pfnSearchAutoBreak)(pBlock);
+
 	// ﾏｸﾛ置換解析
 	if ( (nIndex=(*g_pfnSearchMacro)(pBlock)) >= 0 ) {
 		g_nSubprog++;
-		for ( i=nIndex; i<nLoopCnt && IsThread(); i++ ) {
+		// M98ｵﾌﾞｼﾞｪｸﾄとO番号(nIndex)の登録
+		pDataResult = AddM98code(pBlock, pDataResult, nIndex);
+		// g_pfnSearchMacro でﾌﾞﾛｯｸが追加される可能性アリ
+		// ここでは nLoop 変数を使わず、ﾈｲﾃｨﾌﾞのﾌﾞﾛｯｸｻｲｽﾞにて判定
+		for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && IsThread(); i++ ) {
 			nResult = NC_GSeparater(i, pDataResult);	// 再帰
 			if ( nResult == 30 )
 				return 30;
@@ -227,7 +240,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 				break;
 		}
 		// EOFで終了ならM99復帰扱い
-		if ( i >= nLoopCnt && nResult == 0 ) {
+		if ( i >= g_pDoc->GetNCBlockSize() && nResult == 0 ) {
 			if ( g_nSubprog > 0 )
 				g_nSubprog--;
 		}
@@ -247,7 +260,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		switch ( it->at(0) ) {
 		case 'M':
 			// 前回のｺｰﾄﾞで登録ｵﾌﾞｼﾞｪｸﾄがあるなら
-			if ( bNCobj ) {
+			if ( bNCobj || bNCval ) {
 				// ｵﾌﾞｼﾞｪｸﾄ生成
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 				// 面取りｵﾌﾞｼﾞｪｸﾄの登録
@@ -255,8 +268,8 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
 				g_strComma = strComma;
-				bNCobj = FALSE;
 				nNotModalCode = -1;
+				bNCobj = bNCval = FALSE;
 			}
 			// 前回のｺｰﾄﾞでｻﾌﾞﾌﾟﾛ呼び出しがあれば
 			if ( bNCsub ) {
@@ -280,6 +293,8 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			case 99:
 				if ( g_nSubprog > 0 )
 					g_nSubprog--;
+				// 復帰用ｵﾌﾞｼﾞｪｸﾄ生成
+				pDataResult = AddM98code(pBlock, pDataResult, -1);
 				return 99;
 			}
 			break;
@@ -292,14 +307,14 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 				break;
 			}
 			// 前回のｺｰﾄﾞで登録ｵﾌﾞｼﾞｪｸﾄがあるなら
-			if ( bNCobj ) {
+			if ( bNCobj || bNCval ) {
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 				if ( !g_strComma.empty() )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
 				g_strComma = strComma;
 				nNotModalCode = -1;
-				// bNCobj ｸﾘｱ不要
+				bNCval = FALSE;		// bNCobj ｸﾘｱ不要
 			}
 			if ( bNCsub ) {
 				bNCsub = FALSE;
@@ -322,17 +337,10 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			dbg1.printf("strComma=%s", strComma.c_str());
 #endif
 			break;
-		case 'X':
-		case 'Y':
-		case 'Z':
-		case 'R':
-		case 'I':
-		case 'J':
-		case 'K':
-		case 'P':
-		case 'L':
-		case 'D':
-		case 'H':
+		case 'X':	case 'Y':	case 'Z':
+		case 'R':	case 'I':	case 'J':	case 'K':
+		case 'P':	case 'L':
+		case 'D':	case 'H':
 			nCode = (int)(strchr(g_szNdelimiter, it->at(0)) - g_szNdelimiter);
 			// 値取得
 			if ( g_ncArgv.nc.nGcode>=81 && g_ncArgv.nc.nGcode<=89 ) {
@@ -351,14 +359,14 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			//
 			g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[nCode];
 			//
-			if ( nCode <= NCA_L ) {
+			if ( nCode < NCA_P ) {
 				if ( IsGcodeObject(g_ncArgv.nc.nGcode) != NOOBJ ) {
-					g_ncArgv.nc.dwValFlags |= g_dwValFlags;	// 前回のﾙｰﾌﾟ分も加味
+					g_ncArgv.nc.dwValFlags |= g_dwValFlags;	// 前回のD,H分も加味
 					bNCval = TRUE;
 					g_dwValFlags = 0;
 				}
 			}
-			else {		// D, H
+			else if ( nCode >= NCA_D ) {	// D, H
 				// 座標以外の値指示は次のﾙｰﾌﾟ用に退避
 				g_dwValFlags |= g_dwSetValFlags[nCode];
 			}
@@ -388,28 +396,28 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 
 CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 {
-	int			nGcode;
 	CNCdata*	pDataResult = pDataBefore;
 
-	if ( !(g_ncArgv.nc.dwValFlags & 0x0000FFFF) )
-		return pDataResult;
-
-	// G68座標回転指示のﾁｪｯｸ
-	if ( nNotModalCode == 68 ) {
-		G68RoundCheck(pBlock);
-		if ( !g_ncArgv.g68.bG68 )
+	if ( g_ncArgv.nc.nGtype == G_TYPE ) {
+		// Gｺｰﾄﾞｵﾌﾞｼﾞｪｸﾄのみﾁｪｯｸ
+		if ( !(g_ncArgv.nc.dwValFlags & 0x0000FFFF) )
 			return pDataResult;
+		// G68座標回転指示のﾁｪｯｸ
+		if ( nNotModalCode == 68 ) {
+			G68RoundCheck(pBlock);
+			if ( !g_ncArgv.g68.bG68 )
+				return pDataResult;
+		}
+		// 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間
+		if ( g_Cycle.bCycle )
+			CycleInterpolate();
 	}
-
-	// 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間
-	if ( g_Cycle.bCycle )
-		CycleInterpolate();
 
 	// NCﾃﾞｰﾀの登録
 	// --- 面取り等による再計算項目があるが，
 	// --- この時点でｵﾌﾞｼﾞｪｸﾄ登録しておかないと色々面倒(?)
 	if ( nNotModalCode >= 0 ) {
-		nGcode = g_ncArgv.nc.nGcode;
+		int nGcode = g_ncArgv.nc.nGcode;	// ﾓｰﾀﾞﾙｺｰﾄﾞﾊﾞｯｸｱｯﾌﾟ
 		g_ncArgv.nc.nGcode = nNotModalCode;
 		pDataResult = g_pDoc->DataOperation(pDataBefore, &g_ncArgv);
 		g_ncArgv.nc.nGcode = nGcode;
@@ -420,10 +428,32 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 	return pDataResult;
 }
 
-int CallSubProgram(CNCblock* pBlock, CNCdata*& pData)
+CNCdata* AddM98code(CNCblock* pBlock, CNCdata* pDataBefore, int nIndex)
 {
-	int		i, nIndex, nRepeat, nResult = 0,
-			nLoop = g_pDoc->GetNCBlockSize();
+	CNCdata*	pData;
+	DWORD		dwFlags = g_ncArgv.nc.dwValFlags;
+
+	g_ncArgv.nc.dwValFlags = 0;
+	g_ncArgv.nc.nGtype = M_TYPE;
+	if ( nIndex >= 0 ) {
+		pData = AddGcode(pBlock, pDataBefore, 98);
+		g_ncArgv.nc.nGtype = O_TYPE;
+		g_ncArgv.nc.nLine  = nIndex;
+		pData = AddGcode(g_pDoc->GetNCblock(nIndex), pData, 0);
+	}
+	else
+		pData = AddGcode(pBlock, pDataBefore, 99);
+
+	// 復元
+	g_ncArgv.nc.nGtype = G_TYPE;
+	g_ncArgv.nc.dwValFlags = dwFlags;
+
+	return pData;
+}
+
+int CallSubProgram(CNCblock* pBlock, CNCdata*& pDataResult)
+{
+	int			i, nIndex, nRepeat, nResult = 0;
 
 	if ( !(g_ncArgv.nc.dwValFlags & NCD_P) )
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
@@ -431,10 +461,14 @@ int CallSubProgram(CNCblock* pBlock, CNCdata*& pData)
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_M98);
 	else {
 		g_nSubprog++;
+		// M98ｵﾌﾞｼﾞｪｸﾄとO番号(nIndex)の登録
+		pDataResult = AddM98code(pBlock, pDataResult, nIndex);
 		// nRepeat分繰り返し
 		while ( nRepeat-- > 0 && IsThread() ) {
-			for ( i=nIndex; i<nLoop && IsThread(); i++ ) {
-				nResult = NC_GSeparater(i, pData);	// 再帰(?)
+			// NC_SearchSubProgram でﾌﾞﾛｯｸが追加される可能性アリ
+			// ここでは nLoop 変数を使わず、ﾈｲﾃｨﾌﾞのﾌﾞﾛｯｸｻｲｽﾞにて判定
+			for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && IsThread(); i++ ) {
+				nResult = NC_GSeparater(i, pDataResult);	// 再帰
 				if ( nResult == 30 )
 					return 30;
 				else if ( nResult == 99 )
@@ -442,7 +476,7 @@ int CallSubProgram(CNCblock* pBlock, CNCdata*& pData)
 			}
 		}
 		// EOFで終了ならM99復帰扱い
-		if ( i >= nLoop && nResult == 0 ) {
+		if ( i >= g_pDoc->GetNCBlockSize() && nResult == 0 ) {
 			if ( g_nSubprog > 0 )
 				g_nSubprog--;
 		}
@@ -572,9 +606,7 @@ int NC_SearchMacroProgram(CNCblock* pBlock)
 	CString	strBlock(pBlock->GetStrGcode());
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
 
-	// pMCopt->IsMacroSearch() はﾁｪｯｸ済み
-	regex	r(pMCopt->GetMacroStr(MCMACROCODE));
-	if ( !regex_search((LPCTSTR)strBlock, r) )
+	if ( !regex_search((LPCTSTR)strBlock, g_reMacroStr) )
 		return -1;
 	// 5階層以上の呼び出しはｴﾗｰ(4階層まで)
 	if ( g_nSubprog+1 >= 5 ) {
@@ -631,7 +663,16 @@ int NC_SearchMacroProgram(CNCblock* pBlock)
 	return -1;
 }
 
-int NC_NoSearchMacro(CNCblock*)
+// 自動ﾌﾞﾚｲｸｺｰﾄﾞの検索
+int NC_SearchAutoBreak(CNCblock* pBlock)
+{
+	if ( regex_search((LPCTSTR)(pBlock->GetStrBlock()), g_reAutoBreak) )
+		pBlock->SetBlockFlag(NCF_BREAK);
+
+	return 0;	// dummy
+}
+
+int NC_NoSearch(CNCblock*)
 {
 	return -1;
 }
@@ -701,7 +742,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	ZeroMemory(&ncArgv, sizeof(NCARGV));
 	ncArgv.bAbs			= TRUE;
 	ncArgv.dFeed		= pData1->GetFeed();
-	ncArgv.nc.nLine		= pData1->GetStrLine();
+	ncArgv.nc.nLine		= pData1->GetBlockLineNo();
 	ncArgv.nc.nGtype	= G_TYPE;
 	ncArgv.nc.enPlane	= pData1->GetPlane();
 	// 座標値のｾｯﾄ
@@ -975,7 +1016,20 @@ void InitialVariable(void)
 	g_nSubprog = 0;
 	g_strComma.clear();
 
-	g_pfnSearchMacro = pMCopt->IsMacroSearch() ? &NC_SearchMacroProgram : &NC_NoSearchMacro;
+	if ( pMCopt->GetMacroStr(MCMACROCODE).IsEmpty() || pMCopt->GetMacroStr(MCMACROIF).IsEmpty() )
+		g_pfnSearchMacro = &NC_NoSearch;
+	else {
+		g_reMacroStr = pMCopt->GetMacroStr(MCMACROCODE);
+		g_pfnSearchMacro = &NC_SearchMacroProgram;
+	}
+
+	if ( pMCopt->GetAutoBreakStr().IsEmpty() )
+		g_pfnSearchAutoBreak = &NC_NoSearch;
+	else {
+		g_reAutoBreak = pMCopt->GetAutoBreakStr();
+		g_pfnSearchAutoBreak = &NC_SearchAutoBreak;
+	}
+
 	// ｶﾚﾝﾄと指定ﾌｫﾙﾀﾞの初期化
 	CString	strFile;	// dummy
 	::Path_Name_From_FullPath(g_pDoc->GetCurrentFileName(), g_strSearchFolder[0], strFile);

@@ -75,5 +75,5 @@ protected:
 
 #ifndef _DEBUG
 inline CNCDoc* CNCViewXY::GetDocument()
-   { return (CNCDoc*)m_pDocument; }
+   { return static_cast<CNCDoc *>(m_pDocument); }
 #endif

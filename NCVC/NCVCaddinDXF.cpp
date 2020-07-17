@@ -274,7 +274,7 @@ NCEXPORT void WINAPI NCVC_SetDXFCutterOrigin
 	if ( IsDXFDocument(hDoc) ) {
 		CPointD	pt;
 		pt.x = lpptOrg->x;	pt.y = lpptOrg->y;
-		reinterpret_cast<CDXFDoc *>(hDoc)->SetCutterOrigin(pt, dR, bRedraw);
+		reinterpret_cast<CDXFDoc *>(hDoc)->CreateCutterOrigin(pt, dR, bRedraw);
 	}
 }
 

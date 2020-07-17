@@ -74,7 +74,8 @@ CNCDoc::CNCDoc()
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
 	for ( int i=0; i<WORKOFFSET; i++ )
 		m_ptNcWorkOrg[i] = pMCopt->GetWorkOffset(i);
-	m_nWorkOrg = 0;		// G54
+	m_ptNcWorkOrg[i] = 0.0;		// G92の初期化
+	m_nWorkOrg = pMCopt->GetModalSetting(MODALGROUP2);		// G54～G59
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
 	// 増分割り当てサイズ
@@ -131,102 +132,103 @@ CNCdata* CNCDoc::DataOperation
 {
 	CMCOption*	pOpt = AfxGetNCVCApp()->GetMCOption();
 	CNCdata*	pData = NULL;
-	CNCline*	pLine = NULL;
-	CNCcycle*	pCycle = NULL;
-	CNCcircle*	pCircle = NULL;
 	CNCblock*	pBlock;
 	CPoint3D	pt( m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg );
 	int			i;
 
 	// 例外ｽﾛｰは上位でｷｬｯﾁ
-	switch ( lpArgv->nc.nGcode ) {
-	case 0:		// 直線
-	case 1:
-		// 座標系の補正
-		for ( i=0; i<NCXYZ; i++ )
-			lpArgv->nc.dValue[i] += pt[i];
-		// ｵﾌﾞｼﾞｪｸﾄ生成
-		pLine = new CNCline(pDataSrc, lpArgv);
-		SetMaxRect(pLine);		// 最小・最大値の更新
-		pData = pLine;
-		if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
-			m_bCorrect = TRUE;
-		break;
-	case 2:		// 円弧
-	case 3:
-		for ( i=0; i<NCXYZ; i++ )
-			lpArgv->nc.dValue[i] += pt[i];
-		pCircle = new CNCcircle(pDataSrc, lpArgv);
-		SetMaxRect(pCircle);
-		pData = pCircle;
-		if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
-			m_bCorrect = TRUE;
-		break;
-	case 81:	// 固定ｻｲｸﾙ
-	case 82:
-	case 83:
-	case 84:
-	case 85:
-	case 86:
-	case 87:
-	case 88:
-	case 89:
-		for ( i=0; i<NCXYZ; i++ )
-			lpArgv->nc.dValue[i] += pt[i];
-		pCycle = new CNCcycle(pDataSrc, lpArgv, pOpt->GetFlag(MC_FLG_L0CYCLE));
-		SetMaxRect(pCycle);
-		pData = pCycle;
-		break;
-	case 10:	// ﾃﾞｰﾀ設定
-		if ( lpArgv->nc.dwValFlags & (NCD_P|NCD_R) ) {	// G10P_R_
-			// 工具情報の追加
-			if ( !pOpt->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) ) {
-				i = lpArgv->nc.nLine;
-				if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
-					pBlock = GetNCblock(i);
-					pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_G10ADDTOOL);
+	if ( lpArgv->nc.nGtype == G_TYPE ) {
+		switch ( lpArgv->nc.nGcode ) {
+		case 0:		// 直線
+		case 1:
+			// ｵﾌﾞｼﾞｪｸﾄ生成
+			pData = new CNCline(pDataSrc, lpArgv, pt);
+			SetMaxRect(pData);		// 最小・最大値の更新
+			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
+				m_bCorrect = TRUE;
+			break;
+		case 2:		// 円弧
+		case 3:
+			pData = new CNCcircle(pDataSrc, lpArgv, pt);
+			SetMaxRect(pData);
+			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
+				m_bCorrect = TRUE;
+			break;
+		case 81:	// 固定ｻｲｸﾙ
+		case 82:
+		case 83:
+		case 84:
+		case 85:
+		case 86:
+		case 87:
+		case 88:
+		case 89:
+			pData = new CNCcycle(pDataSrc, lpArgv, pt, pOpt->GetFlag(MC_FLG_L0CYCLE));
+			SetMaxRect(pData);
+			break;
+		case 10:	// ﾃﾞｰﾀ設定
+			if ( lpArgv->nc.dwValFlags & (NCD_P|NCD_R) ) {	// G10P_R_
+				// 工具情報の追加
+				if ( pOpt->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) ) {
+					pData = new CNCdata(pDataSrc, lpArgv, pt);
 				}
-			}
-		}
-		// through
-	case 52:	// ﾛｰｶﾙ座標設定
-		if ( lpArgv->nc.dwValFlags & (NCD_X|NCD_Y|NCD_Z) ) {
-			if ( lpArgv->nc.nGcode == 52 ) {
-				for ( i=0; i<NCXYZ; i++ ) {
-					if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
-						m_ptNcLocalOrg[i] = lpArgv->nc.dValue[i];
-				}
-			}
-			else {	// G10
-				if ( lpArgv->nc.dwValFlags & NCD_P ) {
-					int nWork = (int)lpArgv->nc.dValue[NCA_P];
-					if ( nWork>=0 && nWork<WORKOFFSET ) { 
-						for ( i=0; i<NCXYZ; i++ ) {
-							if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
-								m_ptNcWorkOrg[nWork][i] += lpArgv->nc.dValue[i];
-						}
-					}
-					else {
-						// P値認識不能
-						i = lpArgv->nc.nLine;
-						if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
-							pBlock = GetNCblock(i);
-							pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
-						}
+				else {
+					i = lpArgv->nc.nLine;
+					if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
+						pBlock = GetNCblock(i);
+						pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_G10ADDTOOL);
 					}
 				}
+				break;
 			}
-		}
-		// through
-	case 92:
-		// G92 ならﾛｰｶﾙ座標系ｸﾘｱ
-		if ( lpArgv->nc.nGcode == 92 ) {
-			for ( i=0; i<NCXYZ; i++ )
+			else if ( lpArgv->nc.dwValFlags & NCD_P ) {
+				// ﾜｰｸ座標系の設定
+				int nWork = (int)lpArgv->nc.dValue[NCA_P];
+				if ( nWork>=0 && nWork<WORKOFFSET ) { 
+					for ( i=0; i<NCXYZ; i++ ) {
+						if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
+							m_ptNcWorkOrg[nWork][i] += lpArgv->nc.dValue[i];
+					}
+					pData = new CNCdata(pDataSrc, lpArgv, pt);
+					break;
+				}
+			}
+			// P値認識不能
+			i = lpArgv->nc.nLine;
+			if ( 0<=i && i<m_obBlock.GetSize() ) {
+				pBlock = GetNCblock(i);
+				pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
+			}
+			break;
+		case 52:	// ﾛｰｶﾙ座標設定
+			for ( i=0; i<NCXYZ; i++ ) {
+				if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
+					m_ptNcLocalOrg[i] = lpArgv->nc.dValue[i];
+			}
+			pData = new CNCdata(pDataSrc, lpArgv, pt);
+			break;
+		case 92:
+			pt = 0.0;
+			// ﾛｰｶﾙ座標系ｸﾘｱとG92値取得
+			for ( i=0; i<NCXYZ; i++ ) {
 				m_ptNcLocalOrg[i] = 0.0;
+				pt[i] = lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ?
+					lpArgv->nc.dValue[i] : pDataSrc->GetEndValue(i);
+//				if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
+//					pt[i] = lpArgv->nc.dValue[i];
+			}
+			// 現在位置 - G92値 で、G92座標系原点を計算
+			m_ptNcWorkOrg[WORKOFFSET] = pDataSrc->GetEndPoint() - pt;
+			m_nWorkOrg = WORKOFFSET;	// G92座標系選択
+			pt = m_ptNcWorkOrg[WORKOFFSET];
+			// through
+		default:	// G04 ...
+			pData = new CNCdata(pDataSrc, lpArgv, pt);
 		}
-		// through
-	default:	// G04 ...
-		pData = new CNCdata(pDataSrc, lpArgv);
+	}	// end of G_TYPE
+	else {
+		// M_TYPE, O_TYPE, etc.
+		pData = new CNCdata(pDataSrc, lpArgv, pt);
 	}
 
 	// ｵﾌﾞｼﾞｪｸﾄ登録
@@ -246,7 +248,7 @@ CNCdata* CNCDoc::DataOperation
 	// 行番号にﾘﾝｸしたｴﾗｰﾌﾗｸﾞの設定
 	UINT	nError = pData->GetNCObjErrorCode();
 	if ( nError > 0 ) {
-		i = pData->GetStrLine();
+		i = pData->GetBlockLineNo();
 		if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
 			pBlock = GetNCblock(i);
 			pBlock->SetNCBlkErrorCode(nError);
@@ -284,17 +286,19 @@ void CNCDoc::RemoveAt(int nIndex, int nCnt)
 	CNCdata*	pData;
 	for ( int i=nIndex; i<nIndex+nCnt; i++ ) {
 		pData = m_obGdata[i];
-		switch ( pData->GetType() ) {
-		case NCDLINEDATA:
-			m_dMove[pData->GetGcode()] -= pData->GetCutLength();
-			break;
-		case NCDCYCLEDATA:
-			m_dMove[0] -= static_cast<CNCcycle *>(pData)->GetCycleMove();
-			m_dMove[1] -= pData->GetCutLength();
-			break;
-		case NCDARCDATA:
-			m_dMove[1] -= pData->GetCutLength();
-			break;
+		if ( pData->GetGtype() == G_TYPE ) {
+			switch ( pData->GetType() ) {
+			case NCDLINEDATA:
+				m_dMove[pData->GetGcode()] -= pData->GetCutLength();
+				break;
+			case NCDCYCLEDATA:
+				m_dMove[0] -= static_cast<CNCcycle *>(pData)->GetCycleMove();
+				m_dMove[1] -= pData->GetCutLength();
+				break;
+			case NCDARCDATA:
+				m_dMove[1] -= pData->GetCutLength();
+				break;
+			}
 		}
 		delete pData;
 	}
@@ -422,9 +426,21 @@ void CNCDoc::ClearBreakPoint(void)
 
 BOOL CNCDoc::IncrementTrace(int& nTraceDraw)
 {
-	int		nMax = GetNCsize();
+	int			nMax = GetNCsize(), nLine1, nLine2;
+	BOOL		bResult = FALSE, bBreakChk;
+	CNCdata*	pData;
 
 	m_csTraceDraw.Lock();
+	if ( m_nTraceDraw > 0 ) {
+		pData = GetNCdata(m_nTraceDraw-1);
+		nLine1 = pData->GetBlockLineNo();		// ｲﾝｸﾘﾒﾝﾄ前のﾌﾞﾛｯｸ行
+		bBreakChk = pData->GetGtype()==M_TYPE ? FALSE : TRUE;
+	}
+	else {
+		nLine1 = 0;
+		bBreakChk = FALSE;
+	}
+	// NCｵﾌﾞｼﾞｪｸﾄ単位のｲﾝｸﾘﾒﾝﾄ
 	m_nTraceDraw++;
 	if ( nMax < m_nTraceDraw ) {
 		nTraceDraw = -1;
@@ -432,10 +448,30 @@ BOOL CNCDoc::IncrementTrace(int& nTraceDraw)
 		m_csTraceDraw.Unlock();
 		return FALSE;
 	}
+	pData = GetNCdata(m_nTraceDraw-1);
+	// ｲﾝｸﾘﾒﾝﾄ後のｵﾌﾞｼﾞｪｸﾄがM_TYPEで、ｲﾝｸﾘﾒﾝﾄ前と同じﾌﾞﾛｯｸなら
+	if ( pData->GetGtype()==M_TYPE && nLine1==pData->GetBlockLineNo() ) {
+		// さらにｲﾝｸﾘﾒﾝﾄ
+		m_nTraceDraw++;
+		pData = GetNCdata(m_nTraceDraw-1);
+	}
+	nLine2 = pData->GetBlockLineNo();			// ｲﾝｸﾘﾒﾝﾄ後のﾌﾞﾛｯｸ行
 	nTraceDraw = m_nTraceDraw;
 	m_csTraceDraw.Unlock();
 
-	return IsBreakPoint( GetNCdata(nTraceDraw-1)->GetStrLine() );
+	// ﾌﾞﾚｲｸﾎﾟｲﾝﾄのﾁｪｯｸ
+	if ( bBreakChk ) {
+		while ( ++nLine1 <= nLine2 ) {
+			if ( IsBreakPoint(nLine1) ) {
+				bResult = TRUE;
+				break;
+			}
+		}
+	}
+	else
+		bResult = IsBreakPoint( GetNCdata(nTraceDraw-1)->GetBlockLineNo() );
+
+	return bResult;
 }
 
 BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)

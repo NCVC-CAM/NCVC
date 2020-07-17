@@ -61,7 +61,7 @@ BOOL CSplashWnd::PreCreateWindow(CREATESTRUCT& cs)
 
 int CSplashWnd::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if (CWnd::OnCreate(lpCreateStruct) == -1)
+	if ( CWnd::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	CenterWindow();
