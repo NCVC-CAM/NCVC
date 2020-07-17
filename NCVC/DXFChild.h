@@ -23,7 +23,7 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 // CDXFChild フレーム
 
-class CDXFChild : public CMDIChildWnd, public CChildBase
+class CDXFChild : public CChildBase
 {
 	CDXFFrameSplit	m_wndSplitter;
 	CStatusBar		m_wndStatusBar;
@@ -55,33 +55,21 @@ public:
 
 	//{{AFX_VIRTUAL(CDXFChild)
 	public:
-	virtual void ActivateFrame(int nCmdShow = -1);
 	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	protected:
 	virtual BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext);
 	//}}AFX_VIRTUAL
 
-// インプリメンテーション
-protected:
-	virtual ~CDXFChild();
-#ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
-#endif
-
 // 生成されたメッセージ マップ関数
 protected:
 
 	//{{AFX_MSG(CDXFChild)
-	afx_msg void OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd);
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
-	afx_msg void OnClose();
+	afx_msg void OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd);
 	//}}AFX_MSG
 	// ﾕｰｻﾞｲﾆｼｬﾙ処理
 	afx_msg LRESULT OnUserInitialUpdate(WPARAM, LPARAM);
-	// ﾌｧｲﾙ変更通知 from DocBase.cpp
-	afx_msg LRESULT OnUserFileChangeNotify(WPARAM, LPARAM);
 
 	DECLARE_MESSAGE_MAP()
 };

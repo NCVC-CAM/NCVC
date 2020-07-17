@@ -27,50 +27,67 @@ typedef	struct	tagPENSTYLE {
 #define	VIEWUPDATE_TEXTURE			0x0010
 #define	VIEWUPDATE_ALL				0x001f
 
-#define	COMCOL_RECT			0
-#define	COMCOL_SELECT		1
-#define	NCCOL_BACKGROUND1	0
-#define	NCCOL_BACKGROUND2	1
-#define	NCCOL_PANE			2
-#define	NCCOL_GUIDEX		3
-#define	NCCOL_GUIDEY		4
-#define	NCCOL_GUIDEZ		5
-#define	NCCOL_G0			6
-#define	NCCOL_G1			7
-#define	NCCOL_G1Z			8
-#define	NCCOL_CYCLE			9
-#define	NCCOL_CENTERCIRCLE	10
-#define	NCCOL_WORK			11
-#define	NCCOL_MAXCUT		12
-#define	NCCOL_CORRECT		13
-#define	NCCOL_GL_WRK		14
-#define	NCCOL_GL_CUT		15
-#define	NCCOLLINE_G0		3
-#define	NCCOLLINE_G1		4
-#define	NCCOLLINE_G1Z		5
-#define	NCCOLLINE_CYCLE		6
-#define	NCCOLLINE_WORK		7
-#define	NCCOLLINE_MAXCUT	8
-#define	NCINFOCOL_BACKGROUND1	0
-#define	NCINFOCOL_BACKGROUND2	1
-#define	NCINFOCOL_TEXT			2
-#define	NCVIEWFLG_TRACEMARKER		0
-#define	NCVIEWFLG_DRAWREVISE		1
-#define	NCVIEWFLG_DRAWCIRCLECENTER	2
-#define	NCVIEWFLG_GUIDESCALE		3
-#define	NCVIEWFLG_GUIDELENGTH		4
-#define	NCVIEWFLG_SOLIDVIEW			5
-#define	NCVIEWFLG_G00VIEW			6
-#define	NCVIEWFLG_DRAGRENDER		7
-#define	NCVIEWFLG_TEXTURE			8
-#define	DXFCOL_BACKGROUND1	0
-#define	DXFCOL_BACKGROUND2	1
-#define	DXFCOL_ORIGIN		2
-#define	DXFCOL_CUTTER		3
-#define	DXFCOL_START		4
-#define	DXFCOL_MOVE			5
-#define	DXFCOL_TEXT			6
-#define	DXFCOL_WORKER		7
+enum {
+	NCVIEWFLG_TRACEMARKER = 0,
+	NCVIEWFLG_DRAWREVISE,
+	NCVIEWFLG_DRAWCIRCLECENTER,
+	NCVIEWFLG_GUIDESCALE,
+	NCVIEWFLG_GUIDELENGTH,
+	NCVIEWFLG_SOLIDVIEW,
+	NCVIEWFLG_G00VIEW,
+	NCVIEWFLG_DRAGRENDER,
+	NCVIEWFLG_TEXTURE,
+		NCVIEWFLG_NUMS		// [9]
+};
+enum {
+	COMCOL_RECT = 0,
+	COMCOL_SELECT,
+		COMCOL_NUMS			// [2]
+};
+enum {
+	NCCOL_BACKGROUND1 = 0,
+	NCCOL_BACKGROUND2,
+	NCCOL_PANE,
+	NCCOL_GUIDEX, NCCOL_GUIDEY, NCCOL_GUIDEZ,
+	NCCOL_G0, NCCOL_G1, NCCOL_G1Z,
+	NCCOL_CYCLE,
+	NCCOL_CENTERCIRCLE,
+	NCCOL_WORK,
+	NCCOL_MAXCUT,
+	NCCOL_CORRECT,
+	NCCOL_GL_WRK,
+	NCCOL_GL_CUT,
+		NCCOL_NUMS			// [16]
+};
+enum {
+	NCINFOCOL_BACKGROUND1 = 0,
+	NCINFOCOL_BACKGROUND2,
+	NCINFOCOL_TEXT,
+		NCINFOCOL_NUMS		// [3]
+};
+enum {
+	DXFCOL_BACKGROUND1 = 0,
+	DXFCOL_BACKGROUND2,
+	DXFCOL_ORIGIN,
+	DXFCOL_CUTTER,
+	DXFCOL_START,
+	DXFCOL_MOVE,
+	DXFCOL_TEXT,
+	DXFCOL_OUTLINE,
+	DXFCOL_WORK,
+		DXFCOL_NUMS			// [9]
+};
+enum {
+	// NCCOLLINE_GUIDE_[X|Y|Z] は NCA_[X|Y|Z] で代用
+	NCCOLLINE_G0 = NCXYZ,
+	NCCOLLINE_G1,
+	NCCOLLINE_G1Z,
+	NCCOLLINE_CYCLE,
+	NCCOLLINE_WORK,
+	NCCOLLINE_MAXCUT,
+		NCCOLLINE_NUMS		// [9]
+};
+const size_t	DXFCOLLINE_NUMS = 6;
 
 class CViewOption
 {
@@ -79,6 +96,7 @@ friend	class	CViewSetup2;
 friend	class	CViewSetup3;
 friend	class	CViewSetup4;
 friend	class	CViewSetup5;
+friend	class	CViewSetup6;
 friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 
 	DWORD	m_dwUpdateFlg;		// ViewSetupによる直前の更新状況
@@ -96,19 +114,21 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 					m_bDragRender,		// ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ
 					m_bTexture;			// ﾃｸｽﾁｬの貼り付け
 		};
-		BOOL		m_bNCFlag[9];
+		BOOL		m_bNCFlag[NCVIEWFLG_NUMS];
 	};
-	COLORREF	m_colView[2],			// ﾋﾞｭｰの各色
-				m_colNCView[16],
-				m_colNCInfoView[3],
-				m_colDXFView[8],
-				m_colCustom[16];
+	COLORREF	m_colView[COMCOL_NUMS],	// ﾋﾞｭｰの各色
+				m_colNCView[NCCOL_NUMS],
+				m_colNCInfoView[NCINFOCOL_NUMS],
+				m_colDXFView[DXFCOL_NUMS],
+				m_colCustom[16];		// 色の設定ﾀﾞｲｱﾛｸﾞ(CColorDialog)
 	int			m_nLineType[2],			// 線種
-				m_nNCLineType[9],
-				m_nDXFLineType[5],
+				m_nNCLineType[NCCOLLINE_NUMS],
+				m_nDXFLineType[DXFCOLLINE_NUMS],
 				m_nWheelType,			// 0->手前:拡大,奥:縮小 1->逆
 				m_nTraceSpeed[3],		// 0:高速, 1:中速, 2:低速
-				m_nMillType;			// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ
+				m_nMillType,			// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ
+				m_nForceView01[4],		// 4面-1:左上,右上,左下,右下
+				m_nForceView02[4];		// 4面-2:左上,左中,左下,右
 	double		m_dGuide[NCXYZ],		// ｶﾞｲﾄﾞ軸の長さ
 				m_dDefaultEndmill;		// ﾃﾞﾌｫﾙﾄｴﾝﾄﾞﾐﾙ径(半径)
 	LOGFONT		m_lfFont[2];			// NC/DXFで使用するﾌｫﾝﾄ情報
@@ -150,9 +170,6 @@ public:
 		ASSERT( a>=0 && a<SIZEOF(m_colDXFView) );
 		return m_colDXFView[a];
 	}
-	COLORREF*	GetCustomColor(void) {
-		return m_colCustom;
-	}
 	int			GetDrawType(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_nLineType) );
 		return m_nLineType[a];
@@ -180,6 +197,14 @@ public:
 	}
 	CString	GetTextureFile(void) const {
 		return m_strTexture;
+	}
+	int		GetForceView01(int n) const {
+		return m_nForceView01[n]>=0 && m_nForceView01[n]<SIZEOF(m_nForceView01) ?
+			m_nForceView01[n] : 0;
+	}
+	int		GetForceView02(int n) const {
+		return m_nForceView02[n]>=0 && m_nForceView02[n]<SIZEOF(m_nForceView02) ?
+			m_nForceView02[n] : 0;
 	}
 
 	// ｴｸｽﾎﾟｰﾄ，ｲﾝﾎﾟｰﾄ

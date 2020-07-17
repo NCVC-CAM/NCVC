@@ -138,8 +138,6 @@ static	LPCTSTR	g_szCommandReplace[] = {
 IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
-	ON_UPDATE_COMMAND_UI(ID_INDICATOR_DATE, OnUpdateDate)
-	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TIME, OnUpdateTime)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
 	ON_WM_ENDSESSION()
@@ -150,19 +148,21 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_DRAWITEM()
 	ON_WM_MEASUREITEM()
 	ON_WM_SYSCOLORCHANGE()
-	ON_COMMAND(ID_WINDOW_NEXT, OnNextPane)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_CUT, OnUpdateEditCut)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_PASTE, OnUpdateEditPaste)
-	ON_COMMAND(ID_VIEW_TOOLBARCUSTOM, OnViewToolbarCustom)
 	ON_WM_CONTEXTMENU()
 	ON_WM_SYSCOMMAND()
-	ON_COMMAND(ID_CONTEXT_HELP, CMDIFrameWnd::OnContextHelp)
+	ON_COMMAND(ID_WINDOW_NEXT, &CMainFrame::OnNextPane)
+	ON_UPDATE_COMMAND_UI(ID_INDICATOR_DATE, &CMainFrame::OnUpdateDate)
+	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TIME, &CMainFrame::OnUpdateTime)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_CUT, &CMainFrame::OnUpdateEditCut)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_PASTE, &CMainFrame::OnUpdateEditPaste)
+	ON_COMMAND(ID_VIEW_TOOLBARCUSTOM, &CMainFrame::OnViewToolbarCustom)
+//	ON_COMMAND(ID_CONTEXT_HELP, &CMDIFrameWnd::OnContextHelp)
 	// ﾌｧｲﾙ再読込通知
-	ON_MESSAGE(WM_USERFILECHANGENOTIFY, OnUserFileChange)
+	ON_MESSAGE(WM_USERFILECHANGENOTIFY, &CMainFrame::OnUserFileChange)
 	// ｱﾄﾞｲﾝ，外部ｱﾌﾟﾘｹｰｼｮﾝ起動ﾂｰﾙﾊﾞｰ用ﾂｰﾙﾁｯﾌﾟ
 	ON_NOTIFY_EX(TTN_NEEDTEXT, 0, OnToolTipText)
-	ON_UPDATE_COMMAND_UI_RANGE(EXECSTARTID,  ADDINSTARTID-1,    OnUpdateExecButtonCheck)
-	ON_UPDATE_COMMAND_UI_RANGE(ADDINSTARTID, EXECADDIN_ENDID-1, OnUpdateAddinButtonCheck)
+	ON_UPDATE_COMMAND_UI_RANGE(EXECSTARTID,  ADDINSTARTID-1,    &CMainFrame::OnUpdateExecButtonCheck)
+	ON_UPDATE_COMMAND_UI_RANGE(ADDINSTARTID, EXECADDIN_ENDID-1, &CMainFrame::OnUpdateAddinButtonCheck)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -187,10 +187,6 @@ CMainFrame::CMainFrame()
 			MAKEINTRESOURCE(IDI_DEFICONSMALL), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
 	ASSERT(m_hDefIconLarge);
 	ASSERT(m_hDefIconSmall);
-}
-
-CMainFrame::~CMainFrame()
-{
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -295,7 +291,8 @@ void CMainFrame::ChangeViewOption(void)
 	static	int		colDXF[] = {
 		DXFCOL_ORIGIN,
 		DXFCOL_CUTTER, DXFCOL_START, DXFCOL_MOVE,
-		DXFCOL_WORKER
+		DXFCOL_OUTLINE,
+		DXFCOL_WORK
 	};
 	static	int		colBrushDXF[] = {
 		DXFCOL_CUTTER, DXFCOL_START, DXFCOL_MOVE, DXFCOL_TEXT
@@ -388,35 +385,6 @@ void CMainFrame::ChangeViewOption(void)
 	m_nTextHeight = tm.tmHeight + tm.tmExternalLeading;
 	m_nTextWidth  = tm.tmAveCharWidth;
 	dc.SelectObject(pOldFont);
-}
-
-BOOL CMainFrame::DrawBackGroundView(CDC* pDC, CRect* pRect, COLORREF col1, COLORREF col2)
-{
-	pDC->DPtoLP(pRect);
-	pRect->NormalizeRect();
-
-	if ( col1 == col2 ) {
-		pDC->FillSolidRect(pRect, col1);
-	}
-	else {
-		TRIVERTEX	tv[2];
-		tv[0].x = pRect->left;	tv[0].y = pRect->top;
-		tv[1].x = pRect->right;	tv[1].y = pRect->bottom;
-		tv[0].Red	= (COLOR16)(GetRValue(col1) << 8);
-		tv[0].Green	= (COLOR16)(GetGValue(col1) << 8);
-		tv[0].Blue	= (COLOR16)(GetBValue(col1) << 8);
-		tv[0].Alpha	= 0;
-		tv[1].Red	= (COLOR16)(GetRValue(col2) << 8);
-		tv[1].Green	= (COLOR16)(GetGValue(col2) << 8);
-		tv[1].Blue	= (COLOR16)(GetBValue(col2) << 8);
-		tv[1].Alpha	= 0;
-		GRADIENT_RECT	rcGrad;
-		rcGrad.UpperLeft	= 0;
-		rcGrad.LowerRight	= 1;
-		VERIFY( pDC->GradientFill(tv, 2, &rcGrad, 1, GRADIENT_FILL_RECT_V) );
-	}
-
-	return TRUE;
 }
 
 HICON CMainFrame::GetIconHandle(BOOL bLarge, LPCTSTR lpszFile)
@@ -623,8 +591,8 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 	CMagaDbg	dbg("CMainFrame::SetExecButtons()\nStart");
 #endif
 	static	LPCTSTR	szMenu = "外部ｱﾌﾟﾘ(&X)";
-	UINT	nCount, nMenuNCD, nMenuDXF;
-	int		i, nIndex, nBtnCnt;
+	UINT	nMenuNCD, nMenuDXF;
+	int		i, nCount, nIndex, nBtnCnt;
 	POSITION	pos;
 	CDocument*	pDoc = GetActiveFrame()->GetActiveDocument();
 	CExecList*	pExeList = AfxGetNCVCApp()->GetExecList();
@@ -1068,11 +1036,11 @@ LRESULT CMainFrame::OnUserFileChange(WPARAM, LPARAM)
 	PFNNCVCSERIALIZEFUNC pfnSerialFunc;			// ｼﾘｱﾙ関数
 	BOOL	bDoc;	// TRUE:NCD, FALSE:DXF
 	if ( pDoc->IsKindOf(RUNTIME_CLASS(CNCDoc)) ) {
-		pfnSerialFunc = ((CNCDoc *)pDoc)->GetSerializeFunc();
+		pfnSerialFunc = static_cast<CNCDoc *>(pDoc)->GetSerializeFunc();
 		bDoc = TRUE;
 	}
 	else {
-		pfnSerialFunc = ((CDXFDoc *)pDoc)->GetSerializeFunc();
+		pfnSerialFunc = static_cast<CDXFDoc *>(pDoc)->GetSerializeFunc();
 		bDoc = FALSE;
 	}
 	// 閉じて開く
@@ -1271,7 +1239,7 @@ void CMainFrame::OnContextMenu(CWnd* pWnd, CPoint point)
 
 BEGIN_MESSAGE_MAP(CMachineToolBar, CCustomToolBar)
 	ON_WM_CREATE()
-	ON_CBN_SELCHANGE(ID_OPTION_MCCOMBO, OnSelchangeMC)
+	ON_CBN_SELCHANGE(ID_OPTION_MCCOMBO, &CMachineToolBar::OnSelchangeMC)
 END_MESSAGE_MAP()
 
 int CMachineToolBar::OnCreate(LPCREATESTRUCT lpCreateStruct)

@@ -14,7 +14,7 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CNCFindDlg, CDialog)
-	ON_MESSAGE (WM_USERSWITCHDOCUMENT, OnUserSwitchDocument)
+	ON_MESSAGE (WM_USERSWITCHDOCUMENT, &CNCFindDlg::OnUserSwitchDocument)
 END_MESSAGE_MAP()
 
 // CNCFindDlg ダイアログ
@@ -23,10 +23,6 @@ CNCFindDlg::CNCFindDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CNCFindDlg::IDD, pParent)
 {
 	m_nUpDown = 1;		// 下へ
-}
-
-CNCFindDlg::~CNCFindDlg()
-{
 }
 
 void CNCFindDlg::DoDataExchange(CDataExchange* pDX)

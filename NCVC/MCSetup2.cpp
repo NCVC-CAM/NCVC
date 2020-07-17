@@ -28,10 +28,6 @@ CMCSetup2::CMCSetup2() : CPropertyPage(CMCSetup2::IDD)
 	//}}AFX_DATA_INIT
 }
 
-CMCSetup2::~CMCSetup2()
-{
-}
-
 void CMCSetup2::DoDataExchange(CDataExchange* pDX)
 {
 	CPropertyPage::DoDataExchange(pDX);

@@ -131,10 +131,10 @@ NCEXPORT NCVCHANDLE WINAPI NCVC_GetDocument(LPCTSTR lpszPathName)
 		return pChild ? pChild->GetActiveDocument() : NULL;
 	}
 	// “o˜^ŠOŠg’£Žq‚Ìê‡‚à‚ ‚é‚Ì‚ÅC‚Q‚Â‚ÌÄÞ·­ÒÝÄÃÝÌßÚ°Ä‚ðŒŸõ
-	CDocument*	pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(lpszPathName);
+	CDocument*	pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, lpszPathName);
 	if ( pDoc )
 		return pDoc;
-	return AfxGetNCVCApp()->GetAlreadyDXFDocument(lpszPathName);
+	return AfxGetNCVCApp()->GetAlreadyDocument(TYPE_DXF, lpszPathName);
 }
 
 NCEXPORT int WINAPI NCVC_GetDocumentFileName(NCVCHANDLE hDoc, LPTSTR lpszPathName, int nSize)
@@ -155,14 +155,18 @@ NCEXPORT int WINAPI NCVC_GetDocumentFileName(NCVCHANDLE hDoc, LPTSTR lpszPathNam
 
 NCEXPORT void WINAPI NCVC_LockDocument(NCVCHANDLE hDoc, HANDLE hThread)
 {
-	if ( IsNCDocument(hDoc) || IsDXFDocument(hDoc) )
-		reinterpret_cast<CDocBase *>(hDoc)->LockDocument(hThread);
+	if ( IsNCDocument(hDoc) )
+		reinterpret_cast<CNCDoc *>(hDoc)->LockDocument(hThread);
+	if ( IsDXFDocument(hDoc) )
+		reinterpret_cast<CDXFDoc *>(hDoc)->LockDocument(hThread);
 }
 
 NCEXPORT void WINAPI NCVC_UnlockDocument(NCVCHANDLE hDoc)
 {
-	if ( IsNCDocument(hDoc) || IsDXFDocument(hDoc) )
-		reinterpret_cast<CDocBase *>(hDoc)->UnlockDocument();
+	if ( IsNCDocument(hDoc) )
+		reinterpret_cast<CNCDoc *>(hDoc)->UnlockDocument();
+	if ( IsDXFDocument(hDoc) )
+		reinterpret_cast<CDXFDoc *>(hDoc)->UnlockDocument();
 }
 
 NCEXPORT void WINAPI NCVC_MainfrmProgressRange(int nMin, int nMax)

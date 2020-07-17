@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 #include "stdafx.h"
 #include "NCVC.h"
+#include "MainFrm.h"
 #include "DXFdata.h"
 #include "DXFshape.h"
 #include "Layer.h"
@@ -17,8 +18,14 @@ extern	CMagaDbg	g_dbg;
 
 static	CThreadDlg*	g_pParent;
 typedef	BOOL	(*PFNISTHREAD)(void);
-static	BOOL	IsThread_Dlg(void);
-static	BOOL	IsThread_NoChk(void);
+static	BOOL	IsThread_Dlg(void)
+{
+	return g_pParent->IsThreadContinue();
+}
+static	BOOL	IsThread_NoChk(void)
+{
+	return TRUE;
+}
 static	PFNISTHREAD		g_pfnIsThread;
 #define	IsThread()		(*g_pfnIsThread)()
 #define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
@@ -267,16 +274,4 @@ UINT CheckMapWorking_Thread(LPVOID pVoid)
 	}
 
 	return 0;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-BOOL	IsThread_Dlg(void)
-{
-	return g_pParent->IsThreadContinue();
-}
-
-BOOL	IsThread_NoChk(void)
-{
-	return TRUE;
 }

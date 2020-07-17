@@ -18,8 +18,8 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMKNCSetup6, CPropertyPage)
 	//{{AFX_MSG_MAP(CMKNCSetup6)
-	ON_BN_CLICKED(IDC_MKNC6_R, OnCircleR)
-	ON_BN_CLICKED(IDC_MKNC6_IJ, OnCircleIJ)
+	ON_BN_CLICKED(IDC_MKNC6_R, &CMKNCSetup6::OnCircleR)
+	ON_BN_CLICKED(IDC_MKNC6_IJ, &CMKNCSetup6::OnCircleIJ)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -36,12 +36,9 @@ CMKNCSetup6::CMKNCSetup6() : CPropertyPage(CMKNCSetup6::IDD)
 	m_nCircleCode	= -1;
 	m_nIJ			= -1;
 	m_bCircleHalf	= FALSE;
+	m_bZeroCutIJ	= TRUE;
 	m_bEllipse		= FALSE;
 	//}}AFX_DATA_INIT
-}
-
-CMKNCSetup6::~CMKNCSetup6()
-{
 }
 
 void CMKNCSetup6::DoDataExchange(CDataExchange* pDX)
@@ -53,12 +50,14 @@ void CMKNCSetup6::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKNC6_R, m_ctCircleR);
 	DDX_Control(pDX, IDC_MKNC6_IJ, m_ctCircleIJ);
 	DDX_Control(pDX, IDC_MKNC6_CIRCLEHALF, m_ctCircleHalf);
+	DDX_Control(pDX, IDC_MKNC6_ZEROCUT_IJ, m_ctZeroCutIJ);
 	DDX_CBIndex(pDX, IDC_MKNC6_POINT, m_nDot);
 	DDX_CBIndex(pDX, IDC_MKNC6_FEED, m_nFDot);
 	DDX_Radio(pDX, IDC_MKNC6_CIRCLECODE1, m_nCircleCode);
 	DDX_Radio(pDX, IDC_MKNC6_R, m_nIJ);
 	DDX_Check(pDX, IDC_MKNC6_ZEROCUT, m_bZeroCut);
 	DDX_Check(pDX, IDC_MKNC6_CIRCLEHALF, m_bCircleHalf);
+	DDX_Check(pDX, IDC_MKNC6_ZEROCUT_IJ, m_bZeroCutIJ);
 	DDX_Check(pDX, IDC_MKNC6_ELL2CIR, m_bEllipse);
 	//}}AFX_DATA_MAP
 }
@@ -81,6 +80,7 @@ BOOL CMKNCSetup6::OnInitDialog()
 		m_nCircleCode	= pOpt->m_nCircleCode;
 		m_nIJ			= pOpt->m_nIJ;
 		m_bCircleHalf	= pOpt->m_bCircleHalf;
+		m_bZeroCutIJ	= pOpt->m_bZeroCutIJ;
 		m_dEllipse		= pOpt->m_dEllipse;
 		m_bEllipse		= pOpt->m_bEllipse;
 	}
@@ -102,6 +102,7 @@ BOOL CMKNCSetup6::OnInitDialog()
 		m_ctCircleR.ShowWindow(SW_HIDE);
 		m_ctCircleIJ.ShowWindow(SW_HIDE);
 		m_ctCircleHalf.ShowWindow(SW_HIDE);
+		m_ctZeroCutIJ.ShowWindow(SW_HIDE);
 		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(GetParent())->GetNCMakeOption();
 		m_nDot			= pOpt->m_nDot;
 		m_nFDot			= pOpt->m_nFDot;
@@ -112,7 +113,7 @@ BOOL CMKNCSetup6::OnInitDialog()
 	}
 
 	if ( m_nIJ == 0 )
-		m_ctCircleHalf.EnableWindow(FALSE);
+		OnCircleR();
 
 	UpdateData(FALSE);
 
@@ -123,11 +124,13 @@ BOOL CMKNCSetup6::OnInitDialog()
 void CMKNCSetup6::OnCircleR() 
 {
 	m_ctCircleHalf.EnableWindow(FALSE);
+	m_ctZeroCutIJ.EnableWindow(FALSE);
 }
 
 void CMKNCSetup6::OnCircleIJ() 
 {
 	m_ctCircleHalf.EnableWindow(TRUE);
+	m_ctZeroCutIJ.EnableWindow(TRUE);
 }
 
 BOOL CMKNCSetup6::OnApply() 
@@ -141,6 +144,7 @@ BOOL CMKNCSetup6::OnApply()
 		pOpt->m_nCircleCode	= m_nCircleCode;
 		pOpt->m_nIJ			= m_nIJ;
 		pOpt->m_bCircleHalf	= m_bCircleHalf;
+		pOpt->m_bZeroCutIJ	= m_bZeroCutIJ;
 		pOpt->m_dEllipse	= m_dEllipse;
 		pOpt->m_bEllipse	= m_bEllipse;
 	}
@@ -152,6 +156,7 @@ BOOL CMKNCSetup6::OnApply()
 		pOpt->m_nCircleCode	= m_nCircleCode;
 		pOpt->m_nIJ			= m_nIJ;
 		pOpt->m_bCircleHalf	= m_bCircleHalf;
+		pOpt->m_bZeroCutIJ	= m_bZeroCutIJ;
 		pOpt->m_dEllipse	= m_dEllipse;
 		pOpt->m_bEllipse	= m_bEllipse;
 	}

@@ -41,10 +41,13 @@ typedef	struct	tagFNCNGTHREADPARAM {
 	HANDLE		hFinish;		// 終了通知ｲﾍﾞﾝﾄﾊﾝﾄﾞﾙ
 } FNCNGTHREADPARAM, *LPFNCNGTHREADPARAM;
 
+//	ﾌｧｲﾙ変更通知の監視ｽﾚｯﾄﾞ
+UINT	FileChangeNotificationThread(LPVOID pParam);
+
 /////////////////////////////////////////////////////////////////////////////
 // CDocBase
 
-class CDocBase
+template<size_t T> class CDocBase : public CDocument
 {
 	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
 	CWinThread*	m_pFileChangeThread;
@@ -52,24 +55,44 @@ class CDocBase
 	CEvent		m_evFinish;				// 終了通知ｲﾍﾞﾝﾄ
 
 protected:
+	// 派生ｸﾗｽ用ﾄﾞｷｭﾒﾝﾄﾌﾗｸﾞ
+	std::bitset<T>	m_bDocFlg;
+
 	// ｱﾄﾞｲﾝｼﾘｱﾙ関数の保持
 	PFNNCVCSERIALIZEFUNC	m_pfnSerialFunc;
 	// ｱﾄﾞｲﾝ向けﾛｯｸﾊﾝﾄﾞﾙ
-	BOOL	IsLockThread(void);	// 終了ﾁｪｯｸ
+	BOOL	IsLockThread(void);
 
 protected:
 	CDocBase() {
 		UnlockDocument();
 		m_pFileChangeThread = NULL;
 		m_pfnSerialFunc = NULL;
+		m_bDocFlg.reset();
 	}
+#ifdef _DEBUG
+	virtual void AssertValid() const {
+		__super::AssertValid();
+	}
+	virtual void Dump(CDumpContext& dc) const {
+		__super::Dump(dc);
+	}
+#endif
 
 protected:
-	BOOL	OnOpenDocumentSP(LPCTSTR, CFrameWnd*);
+	BOOL	OnOpenDocumentSP(LPCTSTR lpstrFileName, CFrameWnd* pWnd);
 	void	OnCloseDocumentSP(void);
-	BOOL	UpdateModifiedTitle(BOOL, CString&);
+	BOOL	UpdateModifiedTitle(BOOL bModified, CString& strTitle);
 
 public:
+	BOOL	IsDocFlag(size_t n) const {
+		ASSERT( n < m_bDocFlg.size() );
+		return m_bDocFlg[n];
+	}
+	void	SetDocFlag(size_t n, BOOL val = TRUE) {
+		ASSERT( n < m_bDocFlg.size() );
+		m_bDocFlg.set(n, val);
+	}
 	void	LockDocument(HANDLE hThread) {
 		m_hAddinThread = hThread;
 	}
@@ -82,4 +105,21 @@ public:
 	HANDLE	GetLockHandle(void) {
 		return m_hAddinThread;
 	}
+	//
+	virtual void ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault) {
+		if ( e->IsKindOf(RUNTIME_CLASS(CUserException)) ) {
+			AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
+			return;	// 標準ｴﾗｰﾒｯｾｰｼﾞを出さない
+		}
+		__super::ReportSaveLoadException(lpszPathName, e, bSaving, nIDPDefault);
+	}
+	// 更新ﾏｰｸ付与
+	virtual void SetModifiedFlag(BOOL bModified = TRUE) {
+		CString	strTitle( GetTitle() );
+		if ( UpdateModifiedTitle(bModified, strTitle) )
+			SetTitle(strTitle);
+		__super::SetModifiedFlag(bModified);
+	}
 };
+
+#include "DocBase.inl"

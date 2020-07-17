@@ -9,8 +9,8 @@
 class CViewSetup3 : public CPropertyPage
 {
 	LOGFONT		m_lfFont;
-	COLORREF	m_colView[8];
-	CBrush		m_brColor[8];
+	COLORREF	m_colView[DXFCOL_NUMS];
+	CBrush		m_brColor[DXFCOL_NUMS];
 
 // コンストラクション
 public:
@@ -22,8 +22,8 @@ public:
 	enum { IDD = IDD_VIEW_SETUP3 };
 	CButton	m_ctFontButton;
 	//}}AFX_DATA
-	CStatic		m_ctColor[8];
-	CComboBox	m_cbLineType[5];
+	CStatic		m_ctColor[DXFCOL_NUMS];
+	CComboBox	m_cbLineType[DXFCOLLINE_NUMS];
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

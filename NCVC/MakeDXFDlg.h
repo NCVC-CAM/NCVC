@@ -43,7 +43,6 @@ public:
 
 // インプリメンテーション
 public:
-	virtual ~CMakeDXFDlg();
 
 	// 生成されたメッセージ マップ関数
 protected:

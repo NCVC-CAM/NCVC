@@ -25,14 +25,19 @@ enum NCDOCFLG {
 		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[11]
 };
 
+enum NCCOMMENT {		// g_szNCcomment[]
+	ENDMILL = 0, WORKRECT,
+	LATHEVIEW, WIREVIEW,
+	TOOLPOS
+};
+
 // CNCDoc::DataOperation() の操作方法
 enum ENNCOPERATION {
 	NCADD, NCINS, NCMOD
 };
 
-class CNCDoc : public CDocument, public CDocBase
+class CNCDoc : public CDocBase<NCDOC_FLGNUM>
 {
-	std::bitset<NCDOC_FLGNUM>	m_bNcDocFlg;	// CNCDocﾌﾗｸﾞ
 	CWinThread*	m_pCutcalcThread;	// 切削時間計算ｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
 				m_strCurrentFile;	// 現在処理中のNCﾌｧｲﾙ名(FileInsert etc.)
@@ -58,15 +63,15 @@ class CNCDoc : public CDocument, public CDocBase
 
 	// ﾄﾚｰｽ中のｵﾌﾞｼﾞｪｸﾄ
 	CCriticalSection	m_csTraceDraw;
-	int		m_nTraceDraw;	// 次の描画ﾎﾟｲﾝﾄ
-	int		m_nTraceStart;	// 描画開始ﾎﾟｲﾝﾄ(ｶｰｿﾙ位置からﾄﾚｰｽ実行)
+	size_t	m_nTraceDraw;	// 次の描画ﾎﾟｲﾝﾄ
+	size_t	m_nTraceStart;	// 描画開始ﾎﾟｲﾝﾄ(ｶｰｿﾙ位置からﾄﾚｰｽ実行)
 
 	void	MakeDXF(const CDXFMakeOption*);
 
 	// 移動・切削長，時間計算ｽﾚｯﾄﾞ
 	static	UINT CuttimeCalc_Thread(LPVOID);
 
-	void	SerializeBlock(CArchive&, CNCblockArray&, DWORD, BOOL);
+	void	SerializeBlock(CArchive&, CNCblockArray&, DWORD);
 	BOOL	SerializeAfterCheck(void);
 	BOOL	ValidBlockCheck(void);
 	BOOL	ValidDataCheck(void);
@@ -80,9 +85,6 @@ protected: // シリアライズ機能のみから作成します。
 
 // アトリビュート
 public:
-	BOOL	IsNCDocFlag(NCDOCFLG n) const {
-		return m_bNcDocFlg[n];
-	}
 	CString	GetDXFFileName(void) const {
 		return m_strDXFFileName;
 	}
@@ -129,13 +131,13 @@ public:
 		return GetNCblock(a)->GetBlockFlag() & NCF_BREAK;
 	}
 	void	ClearBreakPoint(void);		// ﾌﾞﾚｰｸﾎﾟｲﾝﾄ全解除
-	int		GetTraceDraw(void) {
+	size_t	GetTraceDraw(void) {
 		m_csTraceDraw.Lock();
-		int	nTraceDraw = m_nTraceDraw;
+		size_t	nTraceDraw = m_nTraceDraw;
 		m_csTraceDraw.Unlock();
 		return nTraceDraw;
 	}
-	int		GetTraceStart(void) const {
+	size_t	GetTraceStart(void) const {
 		return m_nTraceStart;
 	}
 
@@ -159,41 +161,37 @@ public:
 		m_nWorkOrg = nWork;
 	}
 	CNCdata*	DataOperation(const CNCdata*, LPNCARGV, int = -1, ENNCOPERATION = NCADD);
-	void	StrOperation(LPCSTR, int = -1, ENNCOPERATION = NCADD);
+	void	StrOperation(LPCTSTR, int = -1, ENNCOPERATION = NCADD);
 	void	RemoveAt(int, int);
 	void	RemoveStr(int, int);
 
-	void	AllChangeFactor(double) const;	// 拡大率の更新
-	void	AllChangeFactorXY(double) const;
-	void	AllChangeFactorXZ(double) const;
-	void	AllChangeFactorYZ(double) const;
+	void	AllChangeFactor(ENNCDRAWVIEW, double) const;	// 拡大率の更新
 
 	void	CreateCutcalcThread(void);		// 切削時間計算ｽﾚｯﾄﾞの生成
 	void	WaitCalcThread(BOOL = FALSE);	// ｽﾚｯﾄﾞの終了
 
 	// from TH_NCRead.cpp
-	BOOL	SerializeInsertBlock(LPCTSTR, int, DWORD = 0, BOOL = TRUE);	// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの挿入
+	BOOL	SerializeInsertBlock(LPCTSTR, int, DWORD = 0);	// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの挿入
 	void	AddMacroFile(const CString&);	// ﾄﾞｷｭﾒﾝﾄ破棄後に消去する一時ﾌｧｲﾙ
 	void	SetWorkRectOrg(const CRect3D& rc, BOOL bUpdate = TRUE) {
 		m_rcWorkCo = rc;	// ｺﾒﾝﾄで指定されたﾜｰｸ矩形
 		if ( bUpdate ) {
 			m_rcWorkCo.NormalizeRect();
-			m_bNcDocFlg.set(NCDOC_COMMENTWORK);
+			m_bDocFlg.set(NCDOC_COMMENTWORK);
 		}
 	}
 	void	SetWorkLatheR(double r) {
 		m_rcWorkCo.high = r;
 		m_rcWorkCo.low  = 0;
-		m_bNcDocFlg.set(NCDOC_COMMENTWORK_R);
+		m_bDocFlg.set(NCDOC_COMMENTWORK_R);
 	}
 	void	SetWorkLatheZ(double z1, double z2) {
 		m_rcWorkCo.left  = z1;
 		m_rcWorkCo.right = z2;
 		m_rcWorkCo.NormalizeRect();
-		m_bNcDocFlg.set(NCDOC_COMMENTWORK_Z);
+		m_bDocFlg.set(NCDOC_COMMENTWORK_Z);
 	}
 	void	SetLatheViewMode(void);
-	void	SetWireViewMode(void);
 
 	// from NCWorkDlg.cpp
 	void	SetWorkRect(BOOL bShow, const CRect3D& rc) {
@@ -201,8 +199,9 @@ public:
 			m_rcWork = rc;
 		UpdateAllViews(NULL, UAV_DRAWWORKRECT,
 			reinterpret_cast<CObject *>(bShow));
-		m_bNcDocFlg.set(NCDOC_WRKRECT, bShow);
+		m_bDocFlg.set(NCDOC_WRKRECT, bShow);
 	}
+	void	SetCommentStr(const CString&);
 
 	// from NCViewTab.cpp
 	BOOL	IncrementTrace(int&);	// ﾄﾚｰｽ実行の次のｺｰﾄﾞ検査
@@ -222,9 +221,6 @@ public:
 	}
 
 	// from ThumbnailDlg.cpp
-	void	SetThumbnailMode(void) {
-		m_bNcDocFlg.set(NCDOC_THUMBNAIL);
-	}
 	void	ReadThumbnail(LPCTSTR);
 
 //オーバーライド
@@ -235,21 +231,13 @@ public:
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
 	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
 	virtual void OnCloseDocument();
-	virtual void ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault);
 	//}}AFX_VIRTUAL
-	virtual void SetModifiedFlag(BOOL bModified = TRUE);	// 更新ﾏｰｸ付与
 	virtual void SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU = TRUE);
 	virtual void OnChangedViewList();
 
 // インプリメンテーション
 public:
 	virtual ~CNCDoc();
-#ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
-#endif
-
-protected:
 
 // 生成されたメッセージ マップ関数
 protected:

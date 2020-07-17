@@ -13,7 +13,7 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CMCSetup5, CPropertyPage)
-	ON_CBN_SELCHANGE(IDC_MCST5_VIEWMODE, OnSelchangeViewMode)
+	ON_CBN_SELCHANGE(IDC_MCST5_VIEWMODE, &CMCSetup5::OnSelchangeViewMode)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -26,10 +26,6 @@ CMCSetup5::CMCSetup5() : CPropertyPage(CMCSetup5::IDD)
 	m_nForceViewMode	= pMCopt->m_nForceViewMode;
 	m_bL0Cycle			= pMCopt->m_bL0Cycle;
 	m_strAutoBreak		= pMCopt->m_strAutoBreak;
-}
-
-CMCSetup5::~CMCSetup5()
-{
 }
 
 void CMCSetup5::DoDataExchange(CDataExchange* pDX)

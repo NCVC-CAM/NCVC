@@ -28,10 +28,6 @@ CSplashWnd::CSplashWnd()
 		m_bitmap.GetBitmap(&m_bm);
 }
 
-CSplashWnd::~CSplashWnd()
-{
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // CSplashWnd メッセージ ハンドラ
 

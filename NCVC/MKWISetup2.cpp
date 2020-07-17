@@ -25,10 +25,6 @@ CMKWISetup2::CMKWISetup2() : CPropertyPage(CMKWISetup2::IDD)
 	m_bAWFstart = m_bAWFend = FALSE;
 }
 
-CMKWISetup2::~CMKWISetup2()
-{
-}
-
 void CMKWISetup2::DoDataExchange(CDataExchange* pDX)
 {
 	CPropertyPage::DoDataExchange(pDX);

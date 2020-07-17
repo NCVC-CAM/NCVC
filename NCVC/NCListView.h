@@ -12,7 +12,9 @@ class CNCListView : public CListView
 	BOOL	m_bTraceSelect;	// SelectTrace()呼び出し中か否か
 
 protected:
-	CNCListView();			// 動的生成に使用されるプロテクト コンストラクタ
+	CNCListView() {
+		m_bTraceSelect = FALSE;
+	}
 	DECLARE_DYNCREATE(CNCListView)
 
 // アトリビュート
@@ -39,7 +41,6 @@ public:
 
 // インプリメンテーション
 protected:
-	virtual ~CNCListView();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;

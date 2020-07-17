@@ -36,7 +36,7 @@ class CThumbnailDlg : public CDialog
 
 	CStringArray		m_aExt;
 	CThumbnailStatic	m_ctChild[9];		// ËÞ­°‚ð”[‚ß‚éºÝÄÛ°Ù
-	CSortArray<CPtrArray, LPTHUMBNAILINFO>	m_aInfo;
+	CSortArray<CPtrArray, LPTHUMBNAILINFO>	m_thumbInfo;
 
 	void	ResizeControl(int, int);
 	void	ChangeFolder(const CString&);

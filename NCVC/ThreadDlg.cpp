@@ -17,7 +17,7 @@ BEGIN_MESSAGE_MAP(CThreadDlg, CDialog)
 	//{{AFX_MSG_MAP(CThreadDlg)
 	ON_WM_NCHITTEST()
 	//}}AFX_MSG_MAP
-	ON_MESSAGE (WM_USERFINISH, OnUserFinish)
+	ON_MESSAGE (WM_USERFINISH, &CThreadDlg::OnUserFinish)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -55,44 +55,40 @@ BOOL CThreadDlg::OnInitDialog()
 {
 	__super::OnInitDialog();
 
-	m_ctReadProgress.SetPos(0);
+	AFX_THREADPROC	pfnThread;
 
 	switch ( m_nID ) {
 	case IDS_READ_NCD:			// NCﾃﾞｰﾀ内部変換ｽﾚｯﾄﾞ開始
-		m_pThread = AfxBeginThread(NCDtoXYZ_Thread, &m_paramThread,
-			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+		pfnThread = NCDtoXYZ_Thread;
 		break;
 
 	case IDS_CORRECT_NCD:		// 補正座標計算ｽﾚｯﾄﾞ開始
-		m_pThread = AfxBeginThread(CorrectCalc_Thread, &m_paramThread,
-			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+		pfnThread = CorrectCalc_Thread;
 		break;
 
 	case IDS_UVTAPER_NCD:		// ﾜｲﾔ加工用UV軸ｵﾌﾞｼﾞｪｸﾄの生成
-		m_pThread = AfxBeginThread(UVWire_Thread, &m_paramThread,
-			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+		pfnThread = UVWire_Thread;
 		break;
 
 	case ID_FILE_DXF2NCD:		// NC生成ｽﾚｯﾄﾞ開始
 		if ( m_paramThread.wParam == ID_FILE_DXF2NCD_LATHE )
-			m_pThread = AfxBeginThread(MakeLathe_Thread, &m_paramThread,
-				THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+			pfnThread = MakeLathe_Thread;
 		else if ( m_paramThread.wParam == ID_FILE_DXF2NCD_WIRE )
-			m_pThread = AfxBeginThread(MakeWire_Thread, &m_paramThread,
-				THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+			pfnThread = MakeWire_Thread;
 		else
-			m_pThread = AfxBeginThread(MakeNCD_Thread, &m_paramThread,
-				THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+			pfnThread = MakeNCD_Thread;
 		break;
 
 	case ID_EDIT_DXFSHAPE:		// 連結ｵﾌﾞｼﾞｪｸﾄの検索ｽﾚｯﾄﾞ開始
-		m_pThread = AfxBeginThread(ShapeSearch_Thread, &m_paramThread,
-			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+		pfnThread = ShapeSearch_Thread;
 		break;
 
 	case ID_EDIT_SHAPE_AUTO:	// 自動加工指示ｽﾚｯﾄﾞ開始
-		m_pThread = AfxBeginThread(AutoWorkingSet_Thread, &m_paramThread,
-			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+		pfnThread = AutoWorkingSet_Thread;
+		break;
+
+	case ID_FILE_CADBIND:		// CADﾃﾞｰﾀの統合
+		pfnThread = CADbind_Thread;
 		break;
 
 	default:
@@ -100,7 +96,10 @@ BOOL CThreadDlg::OnInitDialog()
 		return TRUE;
 	}
 
+	m_pThread = AfxBeginThread(pfnThread, &m_paramThread,
+					THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 	if ( m_pThread ) {
+		m_ctReadProgress.SetPos(0);
 		m_pThread->m_bAutoDelete = FALSE;
 		m_pThread->ResumeThread();
 	}

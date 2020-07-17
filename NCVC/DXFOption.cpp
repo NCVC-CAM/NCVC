@@ -14,18 +14,24 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 static	const	int		g_nDxfID[] = {
-	IDS_REG_DXF_VIEWER, IDS_REG_DXF_ORGTYPE
+	IDS_REG_DXF_VIEWER, IDS_REG_DXF_ORGTYPE, IDS_REG_DXF_BINDORGTYPE
 };
 static	const	int		g_nDxfOldID[] = {
 	IDS_REG_DXF_REGEX, IDS_REG_DXF_MATCH, IDS_REG_DXF_ACCEPT
 };
 static	const	int		g_nDxfDef[] = {
-	1, 0
+	1, 0,
+	0
+};
+static	const	double	g_dDxfDef[] = {
+	300.0, 300.0,
+	1.0
 };
 extern	LPCTSTR	g_szDefaultLayer[] = {
 	"ORIGIN", "CAM",
-	"MOVE", "CORRECT"		// DXF出力におけるﾃﾞﾌｫﾙﾄﾚｲﾔ名にのみ使用
+	"MOVE", "CORRECT"			// DXF出力におけるﾃﾞﾌｫﾙﾄﾚｲﾔ名にのみ使用
 };
+extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFOption クラスの構築/消滅
@@ -34,21 +40,30 @@ CDXFOption::CDXFOption()
 {
 	extern	LPCTSTR	gg_szRegKey;
 	int		i;
-	CString	strRegKey, strEntry, strTmp, strResult;
+	CString	strRegKey, strEntry, strResult;
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	for ( i=0; i<DXFLAYERSIZE; i++ ) {	// DXF[ORG|CAM|STR|MOV|COM]LAYER
 		VERIFY(strEntry.LoadString(IDS_REG_DXF_ORGLAYER+i));
 		m_strReadLayer[i] = AfxGetApp()->GetProfileString(strRegKey, strEntry,
-			i<=DXFCAMLAYER ? g_szDefaultLayer[i] : strTmp );	// ﾃﾞﾌｫﾙﾄﾊﾟﾗﾒｰﾀ は，原点と切削ﾚｲﾔのみ
+			i<=DXFCAMLAYER ? g_szDefaultLayer[i] : strResult );	// ﾃﾞﾌｫﾙﾄﾊﾟﾗﾒｰﾀ は，原点と切削ﾚｲﾔのみ
 	}
 	m_regCutter = m_strReadLayer[DXFCAMLAYER];
 
 	// ｵﾌﾟｼｮﾝ
-	for ( i=0; i<SIZEOF(m_nDXF); i++ ) {
+	for ( i=0; i<SIZEOF(m_unNums); i++ ) {
 		VERIFY(strEntry.LoadString(g_nDxfID[i]));
-		m_nDXF[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, g_nDxfDef[i]);
+		m_unNums[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, g_nDxfDef[i]);
 	}
+	for ( i=0; i<SIZEOF(m_dBindWork); i++ ) {
+		VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDSIZE));
+		strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry+g_szNdelimiter[i]);
+		m_dBindWork[i] = strResult.IsEmpty() ? g_dDxfDef[i] : atof(strResult);
+	}
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDMARGIN));
+	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
+	m_dBindMargin = strResult.IsEmpty() ? g_dDxfDef[i] : atof(strResult);
+
 	// 旧式ｵﾌﾟｼｮﾝの削除
 	CRegKey	reg;
 	// --- "Software\MNCT-S\NCVC\Settings"
@@ -187,18 +202,41 @@ BOOL CDXFOption::SaveDXFoption(void)
 {
 	int			i;
 	CString		strRegKey, strEntry;
+
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	for ( i=0; i<DXFLAYERSIZE; i++ ) {
 		VERIFY(strEntry.LoadString(IDS_REG_DXF_ORGLAYER+i));
 		if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, m_strReadLayer[i]) )
 			return FALSE;
 	}
-
-	for ( i=0; i<SIZEOF(m_nDXF); i++ ) {
+	for ( i=0; i<SIZEOF(m_unNums)-1; i++ ) {	// DXFOPT_BINDORG除く
 		VERIFY(strEntry.LoadString(g_nDxfID[i]));
-		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nDXF[i]) )
+		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_unNums[i]) )
 			return FALSE;
 	}
+
+	return TRUE;
+}
+
+BOOL CDXFOption::SaveBindOption(void)
+{
+	int			i;
+	CString		strRegKey, strEntry, strResult;
+
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDORGTYPE));
+	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nBindOrg) )
+		return FALSE;
+	for ( i=0; i<SIZEOF(m_dBindWork); i++ ) {
+		VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDSIZE));
+		strResult.Format(IDS_MAKENCD_FORMAT, m_dBindWork[i]);
+		if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry+g_szNdelimiter[i], strResult) )
+			return FALSE;
+	}
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDMARGIN));
+	strResult.Format(IDS_MAKENCD_FORMAT, m_dBindMargin);
+	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, strResult) )
+		return FALSE;
 
 	return TRUE;
 }

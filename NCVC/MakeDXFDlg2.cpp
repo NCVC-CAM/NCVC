@@ -14,7 +14,7 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMakeDXFDlg2, CPropertyPage)
 	//{{AFX_MSG_MAP(CMakeDXFDlg2)
-	ON_CBN_SELCHANGE(IDC_MKDX2_CYCLE, OnSelchangeCycle)
+	ON_CBN_SELCHANGE(IDC_MKDX2_CYCLE, &CMakeDXFDlg2::OnSelchangeCycle)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -29,10 +29,6 @@ CMakeDXFDlg2::CMakeDXFDlg2() : CPropertyPage(CMakeDXFDlg2::IDD)
 	m_bOrgCross		= FALSE;
 	m_nCycle		= -1;
 	//}}AFX_DATA_INIT
-}
-
-CMakeDXFDlg2::~CMakeDXFDlg2()
-{
 }
 
 void CMakeDXFDlg2::DoDataExchange(CDataExchange* pDX)

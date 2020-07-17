@@ -25,11 +25,13 @@ using namespace boost;
 
 // 指定座標との閾値
 static	const	double	SELECTGAP = 5.0;
+//
+#define	IsBindMode()	GetDocument()->IsDocFlag(DXFDOC_BIND)
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFView
 
-IMPLEMENT_DYNCREATE(CDXFView, CView)
+IMPLEMENT_DYNCREATE(CDXFView, CViewBase)
 
 BEGIN_MESSAGE_MAP(CDXFView, CView)
 	//{{AFX_MSG_MAP(CDXFView)
@@ -43,19 +45,21 @@ BEGIN_MESSAGE_MAP(CDXFView, CView)
 	ON_WM_MOUSEWHEEL()
 	ON_WM_KEYDOWN()
 	ON_WM_CONTEXTMENU()
-	ON_COMMAND(ID_DXFVIEW_LAYER, OnViewLayer)
-	ON_UPDATE_COMMAND_UI(ID_DXFVIEW_LAYER, OnUpdateViewLayer)
 	ON_WM_ERASEBKGND()
-	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
-	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
+	ON_COMMAND(ID_DXFVIEW_LAYER, &CDXFView::OnViewLayer)
+	ON_UPDATE_COMMAND_UI(ID_DXFVIEW_LAYER, &CDXFView::OnUpdateViewLayer)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CDXFView::OnUpdateEditCopy)
+	ON_COMMAND(ID_EDIT_COPY, &CDXFView::OnEditCopy)
 	//}}AFX_MSG_MAP
 	// ﾕｰｻﾞｲﾆｼｬﾙ処理 & 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
-	ON_MESSAGE (WM_USERVIEWFITMSG, OnUserViewFitMsg)
+	ON_MESSAGE(WM_USERVIEWFITMSG, &CDXFView::OnUserViewFitMsg)
 	// ﾏｳｽ移動のｽﾃｰﾀｽﾊﾞｰ更新
-	ON_UPDATE_COMMAND_UI(ID_DXFST_MOUSE, OnUpdateMouseCursor)
+	ON_UPDATE_COMMAND_UI(ID_DXFST_MOUSE, &CDXFView::OnUpdateMouseCursor)
+	// CADﾃﾞｰﾀの統合
+	ON_MESSAGE(WM_USERBINDINIT, &CDXFView::OnBindInitMsg)
 	// 移動
-	ON_COMMAND_RANGE(ID_VIEW_UP, ID_VIEW_RT, OnMoveKey)
-	ON_COMMAND_RANGE(ID_VIEW_BEFORE, ID_VIEW_LENSN, OnLensKey)
+	ON_COMMAND_RANGE(ID_VIEW_UP, ID_VIEW_RT, &CDXFView::OnMoveKey)
+	ON_COMMAND_RANGE(ID_VIEW_BEFORE, ID_VIEW_LENSN, &CDXFView::OnLensKey)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -75,33 +79,26 @@ CDXFView::~CDXFView()
 /////////////////////////////////////////////////////////////////////////////
 // CDXFView クラスのオーバライド関数
 
-BOOL CDXFView::PreCreateWindow(CREATESTRUCT& cs) 
-{
-	// ｽﾌﾟﾘｯﾀからの境界ｶｰｿﾙが移るので，IDC_ARROW を明示的に指定
-	cs.lpszClass = AfxRegisterWndClass(
-			CS_HREDRAW|CS_VREDRAW|CS_OWNDC|CS_DBLCLKS,
-			AfxGetApp()->LoadStandardCursor(IDC_ARROW) );
-	return CView::PreCreateWindow(cs);
-}
-
 void CDXFView::OnInitialUpdate() 
 {
 	CView::OnInitialUpdate();
 
-	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-	static_cast<CDXFChild *>(GetParentFrame())->SetDataInfo(
-		GetDocument()->GetDxfDataCnt(DXFLINEDATA),
-		GetDocument()->GetDxfDataCnt(DXFCIRCLEDATA),
-		GetDocument()->GetDxfDataCnt(DXFARCDATA),
-		GetDocument()->GetDxfDataCnt(DXFELLIPSEDATA),
-		GetDocument()->GetDxfDataCnt(DXFPOINTDATA) );
+	if ( !IsBindMode() ) {
+		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
+		static_cast<CDXFChild *>(GetParentFrame())->SetDataInfo(
+			GetDocument()->GetDxfDataCnt(DXFLINEDATA),
+			GetDocument()->GetDxfDataCnt(DXFCIRCLEDATA),
+			GetDocument()->GetDxfDataCnt(DXFARCDATA),
+			GetDocument()->GetDxfDataCnt(DXFELLIPSEDATA),
+			GetDocument()->GetDxfDataCnt(DXFPOINTDATA) );
 
-	// ｼﾘｱﾙ化後の図形ﾌｨｯﾄﾒｯｾｰｼﾞの送信
-	// OnInitialUpdate()関数内では，GetClientRect()のｻｲｽﾞが正しくない
-	if ( GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) )
-		GetParentFrame()->PostMessage(WM_USERINITIALUPDATE);
-	else
-		PostMessage(WM_USERVIEWFITMSG);
+		// ｼﾘｱﾙ化後の図形ﾌｨｯﾄﾒｯｾｰｼﾞの送信
+		// OnInitialUpdate()関数内では，GetClientRect()のｻｲｽﾞが正しくない
+		if ( GetDocument()->IsDocFlag(DXFDOC_SHAPE) )
+			GetParentFrame()->PostMessage(WM_USERINITIALUPDATE);
+		else
+			PostMessage(WM_USERVIEWFITMSG);
+	}
 }
 
 void CDXFView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
@@ -178,7 +175,7 @@ BOOL CDXFView::OnUpdateShape(DXFTREETYPE vSelect[])
 		for ( i=0; i<SIZEOF(pWork); i++ ) {
 			if ( pWork[i] ) {
 				dc.SelectObject( i==0 ?
-					AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER) :
+					AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE) :
 					AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL) );
 				pWork[i]->Draw(&dc);
 			}
@@ -452,6 +449,11 @@ void CDXFView::OnDraw(CDC* pDC)
 	// 仮加工指示の描画
 	if ( m_pSelData && m_nSelect>=0 )
 		DrawTemporaryProcess(pDC);
+	// ﾜｰｸ矩形(bind)
+	if ( GetDocument()->IsDocFlag(DXFDOC_BINDPARENT) ) {
+		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORK));
+		pDC->Rectangle(m_rcDrawWork);
+	}
 
 	pDC->SelectObject(pOldPen);
 	pDC->SelectObject(pOldBrush);
@@ -493,7 +495,7 @@ void CDXFView::DrawTempArraw(CDC* pDC)
 		ptDraw[i][0] = m_ptArraw[i][0] + ptDraw[i][1];
 		ptDraw[i][2] = m_ptArraw[i][2] + ptDraw[i][1];
 	}
-	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE));
 	pDC->SetROP2(R2_XORPEN);
 	pDC->Polyline(ptDraw[m_nSelect], SIZEOF(ptDraw[0]));
 	pDC->SelectObject(pOldPen);
@@ -511,7 +513,7 @@ void CDXFView::DrawTempStart(CDC* pDC)
 	rcDraw.BottomRight()	= pt + LOMETRICFACTOR*2.5;
 
 	CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
-	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE));
 	pDC->SetROP2(R2_XORPEN);
 	pDC->Ellipse(&rcDraw);
 	pDC->SelectObject(pOldPen);
@@ -524,7 +526,7 @@ void CDXFView::DrawTempOutline(CDC* pDC)
 	CDXFdata*	pData;
 
 	if ( !m_ltOutline[m_nSelect].IsEmpty() ) {
-		CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+		CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE));
 		CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
 		pDC->SetROP2(R2_XORPEN);
 		for ( POSITION pos=m_ltOutline[m_nSelect].GetHeadPosition(); pos; ) {
@@ -541,16 +543,6 @@ void CDXFView::DrawTempOutline(CDC* pDC)
 // CDXFView 診断
 
 #ifdef _DEBUG
-void CDXFView::AssertValid() const
-{
-	CView::AssertValid();
-}
-
-void CDXFView::Dump(CDumpContext& dc) const
-{
-	CView::Dump(dc);
-}
-
 CDXFDoc* CDXFView::GetDocument() // 非デバッグ バージョンはインラインです。
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CDXFDoc)));
@@ -586,23 +578,25 @@ void CDXFView::OnEditCopy()
 
 void CDXFView::OnUpdateMouseCursor(CCmdUI* pCmdUI) 
 {
-	CFrameWnd*	pChild = AfxGetNCVCMainWnd()->GetActiveFrame();
-	CView*		pView  = pChild ? pChild->GetActiveView() : NULL;
-	optional<CPointD>	ptOrg = GetDocument()->GetCutterOrigin();
-	if ( pView==this && ptOrg ) {
-		POINT	pt;
-		::GetCursorPos(&pt);
-		ScreenToClient(&pt);
-		CClientDC	dc(this);
-		dc.DPtoLP(&pt);
-		CPointD	ptd( pt.x/m_dFactor/LOMETRICFACTOR,
-					 pt.y/m_dFactor/LOMETRICFACTOR );
-		// 原点からの距離
-		ptd -= *ptOrg;
-		static_cast<CDXFChild *>(GetParentFrame())->OnUpdateMouseCursor(&ptd);
+	if ( !IsBindMode() ) {
+		CFrameWnd*	pChild = AfxGetNCVCMainWnd()->GetActiveFrame();
+		CView*		pView  = pChild ? pChild->GetActiveView() : NULL;
+		optional<CPointD>	ptOrg = GetDocument()->GetCutterOrigin();
+		if ( pView==this && ptOrg ) {
+			POINT	pt;
+			::GetCursorPos(&pt);
+			ScreenToClient(&pt);
+			CClientDC	dc(this);
+			dc.DPtoLP(&pt);
+			CPointD	ptd( pt.x/m_dFactor/LOMETRICFACTOR,
+						 pt.y/m_dFactor/LOMETRICFACTOR );
+			// 原点からの距離
+			ptd -= *ptOrg;
+			static_cast<CDXFChild *>(GetParentFrame())->OnUpdateMouseCursor(&ptd);
+		}
+		else
+			static_cast<CDXFChild *>(GetParentFrame())->OnUpdateMouseCursor();
 	}
-	else
-		static_cast<CDXFChild *>(GetParentFrame())->OnUpdateMouseCursor();
 }
 
 void CDXFView::OnUpdateViewLayer(CCmdUI* pCmdUI) 
@@ -638,13 +632,17 @@ void CDXFView::OnLensKey(UINT nID)
 		break;
 	case ID_VIEW_FIT:
 		rc  = GetDocument()->GetMaxRect();
-		pData = GetDocument()->GetCircleObject();
-		if ( pData )
-			rc |= pData->GetMaxRect();
-		for ( int i=0; i<2; i++ ) {
-			pData = GetDocument()->GetLatheLine(0);
+		if ( !IsBindMode() ) {
+			pData = GetDocument()->GetCircleObject();
 			if ( pData )
 				rc |= pData->GetMaxRect();
+		}
+		if ( GetDocument()->IsDocFlag(DXFDOC_LATHE) ) {
+			for ( int i=0; i<2; i++ ) {
+				pData = GetDocument()->GetLatheLine(0);
+				if ( pData )
+					rc |= pData->GetMaxRect();
+			}
 		}
 		CViewBase::OnViewFit(rc);
 		break;
@@ -666,6 +664,14 @@ void CDXFView::OnViewLensComm(void)
 	GetDocument()->AllChangeFactor(m_dFactor);
 	// 一時ｵﾌﾞｼﾞｪｸﾄ分
 	AllChangeFactor_OutlineTempObject();
+	// ﾜｰｸ矩形
+	if ( GetDocument()->IsDocFlag(DXFDOC_BINDPARENT) ) {
+		CRectD	rc(GetDocument()->GetMaxRect());
+		m_rcDrawWork.left	= DrawConvert(rc.left);
+		m_rcDrawWork.top	= DrawConvert(rc.top);
+		m_rcDrawWork.right	= DrawConvert(rc.right);
+		m_rcDrawWork.bottom	= DrawConvert(rc.bottom);
+	}
 	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
 	static_cast<CDXFChild *>(GetParentFrame())->SetFactorInfo(m_dFactor);
 	// ﾋﾞｭｰの再描画
@@ -677,18 +683,18 @@ void CDXFView::OnViewLensComm(void)
 
 int CDXFView::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if ( CView::OnCreate(lpCreateStruct) < 0 )
-		return -1;
-
 	// ﾏｯﾋﾟﾝｸﾞﾓｰﾄﾞの変更など
-	CViewBase::OnCreate(this);
-
-	return 0;
+	return CViewBase::OnCreate(lpCreateStruct);
 }
 
 LRESULT CDXFView::OnUserViewFitMsg(WPARAM, LPARAM)
 {
 	OnLensKey(ID_VIEW_FIT);
+	return 0;
+}
+
+LRESULT CDXFView::OnBindInitMsg(WPARAM, LPARAM)
+{
 	return 0;
 }
 
@@ -719,7 +725,7 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 		return;
 	}
 	// 加工指示[しない|できない]条件
-	if ( !bSelect || m_bMagRect || !GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) )
+	if ( !bSelect || m_bMagRect || !GetDocument()->IsDocFlag(DXFDOC_SHAPE) )
 		return;
 
 	// --- 加工指示
@@ -944,7 +950,7 @@ void CDXFView::OnLButtonUp_Vector
 		// 加工指示描画
 		if ( pWork ) {
 			pWork->DrawTuning(m_dFactor*LOMETRICFACTOR);
-			CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+			CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE));
 			pDC->SetROP2(R2_COPYPEN);
 			pWork->Draw(pDC);
 			pDC->SelectObject(pOldPen);
@@ -982,7 +988,7 @@ void CDXFView::OnLButtonUp_Start
 		// 加工指示描画
 		if ( pWork ) {
 			pWork->DrawTuning(m_dFactor*LOMETRICFACTOR);
-			CPen*	pOldPen	  = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+			CPen*	pOldPen	  = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE));
 			CBrush*	pOldBrush = pDC->SelectObject(AfxGetNCVCMainWnd()->GetBrushDXF(DXFBRUSH_START));
 			pDC->SetROP2(R2_COPYPEN);
 			pWork->Draw(pDC);
@@ -1030,7 +1036,7 @@ void CDXFView::OnLButtonUp_Outline
 		// 加工指示描画
 		if ( pWork ) {
 			pWork->DrawTuning(m_dFactor*LOMETRICFACTOR);
-			CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+			CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE));
 			CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
 			pDC->SetROP2(R2_COPYPEN);
 			pWork->Draw(pDC);
@@ -1213,7 +1219,7 @@ void CDXFView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	switch ( nChar ) {
 	case VK_TAB:
-		if ( GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) )
+		if ( GetDocument()->IsDocFlag(DXFDOC_SHAPE) )
 			static_cast<CDXFChild *>(GetParentFrame())->GetTreeView()->SetFocus();
 		break;
 	case VK_ESCAPE:
@@ -1226,12 +1232,12 @@ void CDXFView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 BOOL CDXFView::OnEraseBkgnd(CDC* pDC) 
 {
-	CRect	rc;
-	GetClientRect(rc);
-
-	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col1 = pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2),
-				col2 = pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1);
-
-	return AfxGetNCVCMainWnd()->DrawBackGroundView(pDC, &rc, col1, col2);
+	BOOL	bResult = FALSE;
+	if ( !IsBindMode() ) {
+		const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+		COLORREF	col1 = pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1),
+					col2 = pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2);
+		bResult = CViewBase::OnEraseBkgnd(pDC, col1, col2);
+	}
+	return bResult;
 }

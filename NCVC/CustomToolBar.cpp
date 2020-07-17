@@ -14,11 +14,11 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CCustomToolBar, CToolBar)
 	ON_WM_DESTROY()
-	ON_NOTIFY_REFLECT(TBN_QUERYINSERT, OnNotifyQueryInsertOrDelete)
-	ON_NOTIFY_REFLECT(TBN_QUERYDELETE, OnNotifyQueryInsertOrDelete)
-	ON_NOTIFY_REFLECT(TBN_GETBUTTONINFO, OnNotifyGetButtonInfo)
-	ON_NOTIFY_REFLECT(TBN_RESET, OnNotifyReset)
-	ON_NOTIFY_REFLECT(TBN_TOOLBARCHANGE, OnNotifyToolBarChange)
+	ON_NOTIFY_REFLECT(TBN_QUERYINSERT, &CCustomToolBar::OnNotifyQueryInsertOrDelete)
+	ON_NOTIFY_REFLECT(TBN_QUERYDELETE, &CCustomToolBar::OnNotifyQueryInsertOrDelete)
+	ON_NOTIFY_REFLECT(TBN_GETBUTTONINFO, &CCustomToolBar::OnNotifyGetButtonInfo)
+	ON_NOTIFY_REFLECT(TBN_RESET, &CCustomToolBar::OnNotifyReset)
+	ON_NOTIFY_REFLECT(TBN_TOOLBARCHANGE, &CCustomToolBar::OnNotifyToolBarChange)
 END_MESSAGE_MAP()
 
 //////////////////////////////////////////////////////////////////////

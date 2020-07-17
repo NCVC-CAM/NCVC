@@ -35,25 +35,21 @@ static	const	int		PROGRESS_INDEX = 3;
 
 IMPLEMENT_DYNCREATE(CNCChild, CMDIChildWnd)
 
-BEGIN_MESSAGE_MAP(CNCChild, CMDIChildWnd)
+BEGIN_MESSAGE_MAP(CNCChild, CChildBase)
 	//{{AFX_MSG_MAP(CNCChild)
 	ON_WM_CREATE()
 	ON_WM_SIZE()
 	ON_WM_MDIACTIVATE()
-	ON_WM_CLOSE()
 	//}}AFX_MSG_MAP
-	ON_WM_SYSCOMMAND()
-	// ﾌｧｲﾙ変更通知 from DocBase.cpp
-	ON_MESSAGE(WM_USERFILECHANGENOTIFY, OnUserFileChangeNotify)
 	// ｽﾃｰﾀｽﾊﾞｰの更新 from NCListView.cpp
-	ON_MESSAGE(WM_USERSTATUSLINENO, OnUpdateStatusLineNo)
+	ON_MESSAGE(WM_USERSTATUSLINENO, &CNCChild::OnUpdateStatusLineNo)
 END_MESSAGE_MAP()
 
 BEGIN_MESSAGE_MAP(CNCFrameSplit, CSplitterWnd)
 	ON_WM_DESTROY()
 	ON_WM_LBUTTONDBLCLK()
 	// ﾕｰｻﾞｲﾆｼｬﾙ処理
-	ON_MESSAGE(WM_USERINITIALUPDATE, OnUserInitialUpdate)
+	ON_MESSAGE(WM_USERINITIALUPDATE, &CNCFrameSplit::OnUserInitialUpdate)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -66,10 +62,6 @@ CNCChild::CNCChild()
 #endif
 	m_nPos = m_nMaxSize = 0;
 	m_vStatus = (CNCdata *)NULL;	// dummy
-}
-
-CNCChild::~CNCChild()
-{
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -87,14 +79,6 @@ BOOL CNCChild::OnCreateClient(LPCREATESTRUCT /*lpcs*/, CCreateContext* pContext)
 		return FALSE;
 
 	return TRUE;
-}
-
-void CNCChild::ActivateFrame(int nCmdShow) 
-{
-#ifdef _DEBUG
-	g_dbg.printf("CNCChild::ActivateFrame() Call");
-#endif
-	__super::ActivateFrame(ActivateFrameSP(nCmdShow));	// CChildBase
 }
 
 BOOL CNCChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
@@ -117,21 +101,6 @@ BOOL CNCChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* p
 	return pDoc->RouteCmdToAllViews(pChild ? pChild->GetActiveView() : NULL,
 		nID, nCode, pExtra, pHandlerInfo);
 }
-
-/////////////////////////////////////////////////////////////////////////////
-// CNCChild クラスの診断
-
-#ifdef _DEBUG
-void CNCChild::AssertValid() const
-{
-	__super::AssertValid();
-}
-
-void CNCChild::Dump(CDumpContext& dc) const
-{
-	__super::Dump(dc);
-}
-#endif //_DEBUG
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCChild クラスのﾒﾝﾊﾞ関数
@@ -175,12 +144,6 @@ int CNCChild::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
-void CNCChild::OnClose() 
-{
-	AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();
-	__super::OnClose();
-}
-
 void CNCChild::OnSize(UINT nType, int cx, int cy) 
 {
 	__super::OnSize(nType, cx, cy);
@@ -204,15 +167,12 @@ void CNCChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactiva
 {
 	__super::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
 	DBGBOOL(g_dbg, "CNCChild::bActivate", bActivate);
-	CChildBase::OnMDIActivate(this, bActivate);
+	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞへのﾄﾞｷｭﾒﾝﾄ切替通知
+	if ( bActivate )
+		AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();
+	//
 	if ( !bActivate )
 		GetMainView()->OnUserTraceStop();
-}
-
-LRESULT CNCChild::OnUserFileChangeNotify(WPARAM, LPARAM)
-{
-	CChildBase::OnUserFileChangeNotify(this);
-	return 0;
 }
 
 LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM wParam, LPARAM)
@@ -239,7 +199,7 @@ LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM wParam, LPARAM)
 				pData = pBlock->GetBlockToNCdata();
 		}
 		else {
-			if ( reinterpret_cast<CNCDoc *>(wParam)->IsNCDocFlag(NCDOC_LATHE) )
+			if ( reinterpret_cast<CNCDoc *>(wParam)->IsDocFlag(NCDOC_LATHE) )
 				VERIFY(strInfo.LoadString(ID_NCDST_COORDINATE_L));
 			else
 				VERIFY(strInfo.LoadString(ID_NCDST_COORDINATE_M));
@@ -250,13 +210,13 @@ LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM wParam, LPARAM)
 
 	if ( pData ) {
 		CPoint3D	pt(pData->GetEndCorrectPoint());
-		if ( reinterpret_cast<CNCDoc *>(wParam)->IsNCDocFlag(NCDOC_LATHE) )
+		if ( reinterpret_cast<CNCDoc *>(wParam)->IsDocFlag(NCDOC_LATHE) )
 			strInfo.Format(ID_NCDST_COORDINATE_LF, pt.x, pt.z*2.0);	// X軸直径表示
 		else
 			strInfo.Format(ID_NCDST_COORDINATE_MF, pt.x, pt.y, pt.z);
 	}
 	else if ( strInfo.IsEmpty() ) {
-		if ( reinterpret_cast<CNCDoc *>(wParam)->IsNCDocFlag(NCDOC_LATHE) )
+		if ( reinterpret_cast<CNCDoc *>(wParam)->IsDocFlag(NCDOC_LATHE) )
 			VERIFY(strInfo.LoadString(ID_NCDST_COORDINATE_L));
 		else
 			VERIFY(strInfo.LoadString(ID_NCDST_COORDINATE_M));

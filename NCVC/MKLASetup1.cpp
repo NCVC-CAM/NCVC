@@ -15,10 +15,10 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CMKLASetup1, CPropertyPage)
-	ON_BN_CLICKED(IDC_MKNC1_HEADER_LOOPUP, OnHeaderLoopup)
-	ON_BN_CLICKED(IDC_MKNC1_FOOTER_LOOPUP, OnFooterLoopup)
-	ON_BN_CLICKED(IDC_MKNC1_HEADER_EDIT, OnHeaderEdit)
-	ON_BN_CLICKED(IDC_MKNC1_FOOTER_EDIT, OnFooterEdit)
+	ON_BN_CLICKED(IDC_MKNC1_HEADER_LOOPUP, &CMKLASetup1::OnHeaderLoopup)
+	ON_BN_CLICKED(IDC_MKNC1_FOOTER_LOOPUP, &CMKLASetup1::OnFooterLoopup)
+	ON_BN_CLICKED(IDC_MKNC1_HEADER_EDIT, &CMKLASetup1::OnHeaderEdit)
+	ON_BN_CLICKED(IDC_MKNC1_FOOTER_EDIT, &CMKLASetup1::OnFooterEdit)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -27,10 +27,6 @@ END_MESSAGE_MAP()
 CMKLASetup1::CMKLASetup1() : CPropertyPage(CMKLASetup1::IDD)
 {
 	m_psp.dwFlags &= ~PSP_HASHELP;
-}
-
-CMKLASetup1::~CMKLASetup1()
-{
 }
 
 void CMKLASetup1::DoDataExchange(CDataExchange* pDX)

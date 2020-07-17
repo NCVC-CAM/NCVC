@@ -11,7 +11,6 @@ class CShapePropDlg : public CDialog
 
 public:
 	CShapePropDlg(DXFTREETYPE&, BOOL, int, boost::optional<double>&, BOOL);
-	virtual ~CShapePropDlg();
 
 // ダイアログ データ
 	enum { IDD = IDD_SHAPE_PROP };

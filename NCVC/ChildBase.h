@@ -4,18 +4,26 @@
 
 #pragma once
 
-class CChildBase  
+class CChildBase : public CMDIChildWnd
 {
+protected:
 	BOOL	m_bNotify;	// ﾌｧｲﾙ変更通知処理中か?
 
-protected:
 	CChildBase() {
 		m_bNotify = FALSE;
 	}
+#ifdef _DEBUG
+	virtual void AssertValid() const;
+	virtual void Dump(CDumpContext& dc) const;
+#endif
+
+public:
+	virtual void ActivateFrame(int nCmdShow = -1);
 
 protected:
-	// ﾒｯｾｰｼﾞﾏｯﾌﾟの共通部分
-	int		ActivateFrameSP(int nCmdShow);
-	void	OnMDIActivate(CMDIChildWnd*, BOOL bActivate);
-	void	OnUserFileChangeNotify(CMDIChildWnd*);
+	afx_msg void OnClose();
+	// ﾌｧｲﾙ変更通知 from DocBase.cpp
+	afx_msg LRESULT OnUserFileChangeNotify(WPARAM, LPARAM);
+
+	DECLARE_MESSAGE_MAP()
 };

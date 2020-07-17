@@ -32,10 +32,6 @@ CMKNCSetup8::CMKNCSetup8() : CPropertyPage(CMKNCSetup8::IDD)
 	//}}AFX_DATA_INIT
 }
 
-CMKNCSetup8::~CMKNCSetup8()
-{
-}
-
 void CMKNCSetup8::DoDataExchange(CDataExchange* pDX)
 {
 	CPropertyPage::DoDataExchange(pDX);

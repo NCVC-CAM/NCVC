@@ -17,7 +17,7 @@ BEGIN_MESSAGE_MAP(CViewSetup, CPropertySheet)
 	//{{AFX_MSG_MAP(CViewSetup)
 	ON_WM_DESTROY()
 	//}}AFX_MSG_MAP
-	ON_BN_CLICKED (ID_APPLY_NOW, OnApplyNow)
+	ON_BN_CLICKED (ID_APPLY_NOW, &CViewSetup::OnApplyNow)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -28,15 +28,12 @@ CViewSetup::CViewSetup(void) :
 {
 	m_psh.dwFlags &= ~PSH_HASHELP;
 
-	AddPage(&m_dlg1);
-	AddPage(&m_dlg4);
-	AddPage(&m_dlg2);
-	AddPage(&m_dlg5);
-	AddPage(&m_dlg3);
-}
-
-CViewSetup::~CViewSetup()
-{
+	AddPage(&m_dlg1);	// ã§í 
+	AddPage(&m_dlg4);	// èÓïÒ¥ÿ±Ç∆ƒ⁄∞Ωê›íË
+	AddPage(&m_dlg2);	// º–≠⁄∞ºÆ›¥ÿ±ê›íË
+	AddPage(&m_dlg6);	// 4ñ ΩÃﬂÿØƒï\é¶ê›íË
+	AddPage(&m_dlg5);	// OpenGLê›íË
+	AddPage(&m_dlg3);	// CAD√ﬁ∞¿ï\é¶ê›íË
 }
 
 /////////////////////////////////////////////////////////////////////////////

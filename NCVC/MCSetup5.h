@@ -12,7 +12,6 @@ class CMCSetup5 : public CPropertyPage
 
 public:
 	CMCSetup5();
-	virtual ~CMCSetup5();
 
 // ダイアログ データ
 	enum { IDD = IDD_MC_SETUP5 };

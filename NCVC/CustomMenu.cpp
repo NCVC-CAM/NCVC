@@ -416,14 +416,14 @@ void CCustomMenu::DrawItemSeparator(CDC* pDC, LPDRAWITEMSTRUCT lpDIS)
 void CCustomMenu::OnInitMenuPopup(CMenu* pMenu)
 {
 	ASSERT(pMenu);
-	int		nIndex;
+	int		i, nIndex;
 
 	HMENU hMenu = pMenu->GetSafeHmenu();
 	ASSERT(hMenu);
 
 	MENUITEMINFO mii;
 	// ŠY“–ÒÆ­°‚ðÙ°Ìß
-	for ( UINT i=0; i<pMenu->GetMenuItemCount(); i++ ) {
+	for ( i=0; i<pMenu->GetMenuItemCount(); i++ ) {
 		// ÒÆ­°•¶Žš—ñÍÞ¸À‚É“o˜^
 		nIndex = SetMenuString(pMenu, i);
 		if ( nIndex >= 0 ) {

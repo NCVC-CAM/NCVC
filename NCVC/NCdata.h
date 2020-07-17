@@ -16,8 +16,11 @@
 enum	ENPOINTORDER
 	{STARTPOINT, ENDPOINT};
 // 描画ﾋﾞｭｰ指定
-enum	EN_NCDRAWVIEW
-	{NCDRAWVIEW_XYZ=0, NCDRAWVIEW_XY=1, NCDRAWVIEW_XZ=2, NCDRAWVIEW_YZ=3};
+enum	ENNCDRAWVIEW
+{
+	NCDRAWVIEW_XYZ=0, NCDRAWVIEW_XY, NCDRAWVIEW_XZ, NCDRAWVIEW_YZ,
+		NCDRAWVIEW_NUM		// [4]
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // NCﾃﾞｰﾀを読み込む時にだけ必要なﾃﾞｰﾀ
@@ -134,7 +137,7 @@ public:
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
 	virtual	CPoint	GetDrawEndPoint(size_t) const;
-	virtual	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
+	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 	// ｵﾌﾞｼﾞｪｸﾄ占有矩形(都度ｾｯﾄ)
 	virtual	CRect3D	GetMaxRect(void) const;
@@ -174,13 +177,13 @@ class CNCline : public CNCdata
 {
 	EN_NCPEN	GetPenType(void) const;
 	int			GetLineType(void) const;
-	void	DrawLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
+	void	DrawLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 	void	SetEndmillPath(CPointD*, CPointD*, CPointD*) const;
 
 protected:
 	CPointD		m_pt2Ds;				// 2次元変換後の始点(XYZ平面用)
-	CPoint		m_ptDrawS[1+NCXYZ],		// 拡大係数込みの描画始点終点
-				m_ptDrawE[1+NCXYZ];
+	CPoint		m_ptDrawS[NCDRAWVIEW_NUM],	// 拡大係数込みの描画始点終点
+				m_ptDrawE[NCDRAWVIEW_NUM];
 
 	CNCline(ENNCDTYPE enType, const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset) :	// 派生ｸﾗｽ用
 		CNCdata(enType, pData, lpArgv, ptOffset) {}
@@ -210,7 +213,7 @@ public:
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
 	virtual	CPoint	GetDrawEndPoint(size_t) const;
-	virtual	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
+	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
 	virtual	CRect3D	GetMaxCutRect(void) const;
@@ -242,20 +245,20 @@ struct PTCYCLE3D
 class CNCcycle : public CNCline
 {
 	int			m_nDrawCnt;			// ｵﾌﾞｼﾞｪｸﾄ座標値生成数==描画用繰り返し数
-	PTCYCLE*	m_Cycle[1+NCXYZ];	// XYZとXY,XZ,YZ
+	PTCYCLE*	m_Cycle[NCDRAWVIEW_NUM];
 	PTCYCLE3D*	m_Cycle3D;			// 実際の3D座標(兼OpenGL)
 
 	CPoint3D	m_ptValI,			// 前回位置と１点目の穴加工座標
 				m_ptValR;
-	CPoint		m_ptDrawI[1+NCXYZ],	// 拡大係数
-				m_ptDrawR[1+NCXYZ];
+	CPoint		m_ptDrawI[NCDRAWVIEW_NUM],	// 拡大係数
+				m_ptDrawR[NCDRAWVIEW_NUM];
 
 	double		m_dInitial,			// ｲﾆｼｬﾙ点の記憶
 				m_dCycleMove,		// 移動距離(切削距離はm_nc.dLength)
 				m_dDwell;			// ﾄﾞｳｪﾙ時間
 
-	void	DrawCyclePlane(EN_NCDRAWVIEW, CDC*, BOOL) const;
-	void	DrawCycle(EN_NCDRAWVIEW, CDC*, BOOL) const;
+	void	DrawCyclePlane(ENNCDRAWVIEW, CDC*, BOOL) const;
+	void	DrawCycle(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 public:
 	CNCcycle(const CNCdata*, LPNCARGV, const CPoint3D&, BOOL);
@@ -304,7 +307,7 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 // G2,G3 円弧補間ｸﾗｽ
 class	CNCcircle;
-typedef void (CNCcircle::*PFNCIRCLEDRAW)(EN_NCDRAWVIEW, CDC*) const;
+typedef void (CNCcircle::*PFNCIRCLEDRAW)(ENNCDRAWVIEW, CDC*) const;
 
 class CNCcircle : public CNCline  
 {
@@ -342,9 +345,9 @@ public:
 	double	GetEndAngle(void) const;
 	boost::tuple<double, double>	GetSqEq(void) const;
 
-	void	Draw_G17(EN_NCDRAWVIEW, CDC*) const;
-	void	Draw_G18(EN_NCDRAWVIEW, CDC*) const;
-	void	Draw_G19(EN_NCDRAWVIEW, CDC*) const;
+	void	Draw_G17(ENNCDRAWVIEW, CDC*) const;
+	void	Draw_G18(ENNCDRAWVIEW, CDC*) const;
+	void	Draw_G19(ENNCDRAWVIEW, CDC*) const;
 	void	DrawGLWire(void) const;
 
 	virtual	void	DrawTuning(double);
@@ -366,7 +369,7 @@ public:
 	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
 	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
 	//
-	virtual	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
+	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
 	virtual	CRect3D	GetMaxCutRect(void) const;
@@ -398,7 +401,7 @@ class CNCblock
 	int			m_nArray;	// CNCDoc::m_obGdata 内の番号
 
 public:
-	CNCblock(const CString&, const CString&, DWORD = 0);
+	CNCblock(const CString&, DWORD = 0);
 
 	CString	GetStrLine(void) const;
 	CString	GetStrGcode(void) const;

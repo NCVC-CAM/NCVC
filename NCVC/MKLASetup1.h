@@ -10,7 +10,6 @@ class CMKLASetup1 : public CPropertyPage
 {
 public:
 	CMKLASetup1();
-	virtual ~CMKLASetup1();
 
 // ダイアログ データ
 	enum { IDD = IDD_MKLA_SETUP1 };

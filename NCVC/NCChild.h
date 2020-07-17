@@ -30,7 +30,7 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 // CNCChild フレーム
 
-class CNCChild : public CMDIChildWnd, public CChildBase
+class CNCChild : public CChildBase
 {
 	CNCFrameSplit	m_wndSplitter1, m_wndSplitter2;
 	CMainStatusBar  m_wndStatusBar;
@@ -74,19 +74,10 @@ public:
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 	//{{AFX_VIRTUAL(CNCChild)
 	public:
-	virtual void ActivateFrame(int nCmdShow = -1);
 	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	protected:
 	virtual BOOL OnCreateClient(LPCREATESTRUCT lpcs, CCreateContext* pContext);
 	//}}AFX_VIRTUAL
-
-// インプリメンテーション
-public:
-	virtual ~CNCChild();
-#ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
-#endif
 
 // 生成したメッセージ マップ関数
 protected:
@@ -94,10 +85,7 @@ protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd);
-	afx_msg void OnClose();
 	//}}AFX_MSG
-	// ﾌｧｲﾙ変更通知 from DocBase.cpp
-	afx_msg LRESULT OnUserFileChangeNotify(WPARAM, LPARAM);
 	// ｽﾃｰﾀｽﾊﾞｰの更新 from NCListView.cpp
 	afx_msg LRESULT OnUpdateStatusLineNo(WPARAM, LPARAM);
 

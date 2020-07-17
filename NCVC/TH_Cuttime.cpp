@@ -15,7 +15,7 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-#define	IsThread()	pDoc->IsNCDocFlag(NCDOC_CUTCALC)
+#define	IsThread()	pDoc->IsDocFlag(NCDOC_CUTCALC)
 
 typedef	double	(*PFNCUTTIME)(const CNCdata*);
 static	double	GetCutTime_Milling(const CNCdata*);
@@ -80,7 +80,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	}
 
 	pDoc->m_dCutTime = 0.0;
-	PFNCUTTIME	pfnGetCutTime = pDoc->IsNCDocFlag(NCDOC_LATHE) ?
+	PFNCUTTIME	pfnGetCutTime = pDoc->IsDocFlag(NCDOC_LATHE) ?
 		GetCutTime_Lathe : GetCutTime_Milling;
 
 	for ( i=0; i<nLoopCnt && IsThread(); i++ ) {

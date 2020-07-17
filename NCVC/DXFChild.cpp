@@ -29,18 +29,14 @@ static const UINT g_nIndicators[] =
 
 IMPLEMENT_DYNCREATE(CDXFChild, CMDIChildWnd)
 
-BEGIN_MESSAGE_MAP(CDXFChild, CMDIChildWnd)
+BEGIN_MESSAGE_MAP(CDXFChild, CChildBase)
 	//{{AFX_MSG_MAP(CDXFChild)
-	ON_WM_MDIACTIVATE()
 	ON_WM_CREATE()
-	ON_WM_CLOSE()
-	//}}AFX_MSG_MAP
-	ON_WM_SYSCOMMAND()
-	// ﾕｰｻﾞｲﾆｼｬﾙ処理
-	ON_MESSAGE(WM_USERINITIALUPDATE, OnUserInitialUpdate)
-	// ﾌｧｲﾙ変更通知 from DocBase.cpp
-	ON_MESSAGE(WM_USERFILECHANGENOTIFY, OnUserFileChangeNotify)
 	ON_WM_SIZE()
+	ON_WM_MDIACTIVATE()
+	//}}AFX_MSG_MAP
+	// ﾕｰｻﾞｲﾆｼｬﾙ処理
+	ON_MESSAGE(WM_USERINITIALUPDATE, &CDXFChild::OnUserInitialUpdate)
 END_MESSAGE_MAP()
 
 BEGIN_MESSAGE_MAP(CDXFFrameSplit, CSplitterWnd)
@@ -51,10 +47,6 @@ END_MESSAGE_MAP()
 // CDXFChild クラスの構築/消滅
 
 CDXFChild::CDXFChild()
-{
-}
-
-CDXFChild::~CDXFChild()
 {
 }
 
@@ -76,14 +68,6 @@ BOOL CDXFChild::OnCreateClient(LPCREATESTRUCT /*lpcs*/, CCreateContext* pContext
 	return TRUE;
 }
 
-void CDXFChild::ActivateFrame(int nCmdShow) 
-{
-#ifdef _DEBUG
-	g_dbg.printf("CDXFChild::ActivateFrame() Call");
-#endif
-	__super::ActivateFrame(ActivateFrameSP(nCmdShow));	// CChildBase
-}
-
 BOOL CDXFChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
 //	return __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
@@ -101,21 +85,6 @@ BOOL CDXFChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 	return pDoc->RouteCmdToAllViews(pChild ? pChild->GetActiveView() : NULL,
 		nID, nCode, pExtra, pHandlerInfo);
 }
-
-/////////////////////////////////////////////////////////////////////////////
-// CDXFChild クラスの診断
-
-#ifdef _DEBUG
-void CDXFChild::AssertValid() const
-{
-	__super::AssertValid();
-}
-
-void CDXFChild::Dump(CDumpContext& dc) const
-{
-	__super::Dump(dc);
-}
-#endif //_DEBUG
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFChild ﾒﾝﾊﾞ関数
@@ -187,36 +156,26 @@ void CDXFChild::OnSize(UINT nType, int cx, int cy)
 	if ( cx<=0 || cy<=0 )
 		return;
 
-	CDXFDoc* pDoc = static_cast<CDXFDoc *>(GetActiveDocument());
-	if ( pDoc && !pDoc->IsDXFDocFlag(DXFDOC_SHAPE) ) {
+	CDXFDoc* pDoc = static_cast<CDXFDoc*>(GetActiveDocument());
+	if ( pDoc && !pDoc->IsDocFlag(DXFDOC_SHAPE) ) {
 		m_wndSplitter.SetColumnInfo(0, cx, 0);
 		m_wndSplitter.RecalcLayout();
 		// 再描画時にﾂｰﾙﾊﾞｰ領域で妙なスジがでる
 	}
 }
 
-void CDXFChild::OnClose() 
-{
-	AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();
-	__super::OnClose();
-}
-
 void CDXFChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd) 
 {
 	__super::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
 	DBGBOOL(g_dbg, "CDXFChild::bActivate", bActivate);
-	CChildBase::OnMDIActivate(this, bActivate);
+	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞへのﾄﾞｷｭﾒﾝﾄ切替通知
+	if ( bActivate )
+		AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();
 }
 
 LRESULT CDXFChild::OnUserInitialUpdate(WPARAM, LPARAM)
 {
 	ShowShapeView();
-	return 0;
-}
-
-LRESULT CDXFChild::OnUserFileChangeNotify(WPARAM, LPARAM)
-{
-	CChildBase::OnUserFileChangeNotify(this);
 	return 0;
 }
 

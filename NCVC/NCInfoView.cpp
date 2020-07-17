@@ -9,7 +9,6 @@
 #include "NCViewTab.h"
 #include "NCListView.h"
 #include "NCInfoView.h"
-#include "ViewBase.h"
 #include "ViewOption.h"
 
 #include "MagaDbgMac.h"
@@ -26,60 +25,19 @@ static	LPCTSTR	g_szSpace = " ";
 static	void	CopyNCInfoForClipboard(CView*, CNCDoc*);	// ｸﾘｯﾌﾟﾎﾞｰﾄﾞへのｺﾋﾟｰ
 
 /////////////////////////////////////////////////////////////////////////////
-// CNCInfoView1
+// CNCInfoBase
 
-IMPLEMENT_DYNCREATE(CNCInfoView1, CView)
-
-CNCInfoView1::CNCInfoView1()
-{
-}
-
-CNCInfoView1::~CNCInfoView1()
-{
-}
-
-BEGIN_MESSAGE_MAP(CNCInfoView1, CView)
-	//{{AFX_MSG_MAP(CNCInfoView1)
+BEGIN_MESSAGE_MAP(CNCInfoBase, CView)
 	ON_WM_CONTEXTMENU()
 	ON_WM_KEYDOWN()
 	ON_WM_ERASEBKGND()
-	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  OnUpdateMoveRoundKey)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, OnUpdateMoveRoundKey)
-	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
-	//}}AFX_MSG_MAP
-	ON_MESSAGE (WM_USERPROGRESSPOS, OnUserCalcMsg)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCInfoBase::OnUpdateEditCopy)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCInfoBase::OnUpdateMoveRoundKey)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCInfoBase::OnUpdateMoveRoundKey)
+	ON_COMMAND(ID_EDIT_COPY, &CNCInfoBase::OnEditCopy)
 END_MESSAGE_MAP()
 
-/////////////////////////////////////////////////////////////////////////////
-// CNCInfoView2
-
-IMPLEMENT_DYNCREATE(CNCInfoView2, CView)
-
-CNCInfoView2::CNCInfoView2()
-{
-}
-
-CNCInfoView2::~CNCInfoView2()
-{
-}
-
-BEGIN_MESSAGE_MAP(CNCInfoView2, CView)
-	//{{AFX_MSG_MAP(CNCInfoView2)
-	ON_WM_CONTEXTMENU()
-	ON_WM_KEYDOWN()
-	ON_WM_ERASEBKGND()
-	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  OnUpdateMoveRoundKey)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, OnUpdateMoveRoundKey)
-	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
-	//}}AFX_MSG_MAP
-END_MESSAGE_MAP()
-
-/////////////////////////////////////////////////////////////////////////////
-// CNCInfoView クラスのオーバライド関数
-
-BOOL CNCInfoView1::PreCreateWindow(CREATESTRUCT& cs)
+BOOL CNCInfoBase::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// ｽﾌﾟﾘｯﾀからの境界ｶｰｿﾙが移るので，IDC_IBEAM を明示的に指定
 	cs.lpszClass = AfxRegisterWndClass(
@@ -88,15 +46,14 @@ BOOL CNCInfoView1::PreCreateWindow(CREATESTRUCT& cs)
 	return CView::PreCreateWindow(cs);
 }
 
-BOOL CNCInfoView2::PreCreateWindow(CREATESTRUCT& cs)
+BOOL CNCInfoBase::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
-	cs.lpszClass = AfxRegisterWndClass(
-			CS_HREDRAW|CS_VREDRAW,
-			AfxGetApp()->LoadStandardCursor(IDC_IBEAM) );
-	return CView::PreCreateWindow(cs);
+	// ここから CDocument::OnCmdMsg() を呼ばないようにする
+//	return CView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+	return CWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 }
 
-void CNCInfoView1::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
+void CNCInfoBase::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
 {
 	switch ( lHint ) {
 	case UAV_STARTSTOPTRACE:
@@ -114,37 +71,91 @@ void CNCInfoView1::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 	CView::OnUpdate(pSender, lHint, pHint);
 }
 
-void CNCInfoView2::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
+#ifdef _DEBUG
+CNCDoc* CNCInfoBase::GetDocument()
 {
-	switch ( lHint ) {
-	case UAV_STARTSTOPTRACE:
-	case UAV_TRACECURSOR:
-	case UAV_DRAWWORKRECT:
-	case UAV_DRAWMAXRECT:
-		return;		// 再描画不要
-	case UAV_CHANGEFONT:
-		{
-			CClientDC	dc(this);
-			dc.SelectObject(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD));
-		}
-		break;
+	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CNCDoc)));
+	return static_cast<CNCDoc *>(m_pDocument);
+}
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+// CNCInfoBase メッセージ ハンドラ
+
+void CNCInfoBase::OnUpdateEditCopy(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(!GetDocument()->IsDocFlag(NCDOC_CUTCALC));
+}
+
+void CNCInfoBase::OnEditCopy() 
+{
+	CopyNCInfoForClipboard(this, GetDocument());
+}
+
+void CNCInfoBase::OnContextMenu(CWnd* pWnd, CPoint point) 
+{
+	CViewBase::OnContextMenu(point, IDR_NCPOPUP3);
+}
+
+void CNCInfoBase::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	if ( nChar == VK_TAB ) {
+		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
+		if ( ::GetKeyState(VK_SHIFT) < 0 )
+			pFrame->GetMainView()->SetFocus();
+		else
+			pFrame->GetListView()->SetFocus();
 	}
-	CView::OnUpdate(pSender, lHint, pHint);
+
+	CView::OnKeyDown(nChar, nRepCnt, nFlags);
 }
 
-BOOL CNCInfoView1::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
+void CNCInfoBase::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 
 {
-	// ここから CDocument::OnCmdMsg() を呼ばないようにする
-//	return CView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
-	return CWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+	pCmdUI->Enable(FALSE);
 }
 
-BOOL CNCInfoView2::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
+BOOL CNCInfoBase::OnEraseBkgnd(CDC* pDC) 
 {
-	// ここから CDocument::OnCmdMsg() を呼ばないようにする
-//	return CView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
-	return CWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	COLORREF	col1 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND1),
+				col2 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND2);
+	return CViewBase::OnEraseBkgnd(pDC, col1, col2);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// CNCInfoView1
+
+IMPLEMENT_DYNCREATE(CNCInfoView1, CNCInfoBase)
+
+CNCInfoView1::CNCInfoView1()
+{
+}
+
+BEGIN_MESSAGE_MAP(CNCInfoView1, CNCInfoBase)
+	ON_MESSAGE (WM_USERPROGRESSPOS, &CNCInfoView1::OnUserCalcMsg)
+END_MESSAGE_MAP()
+
+LRESULT CNCInfoView1::OnUserCalcMsg(WPARAM, LPARAM)
+{
+	Invalidate();
+	// ｽﾚｯﾄﾞの終了処理
+	GetDocument()->WaitCalcThread();
+
+	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// CNCInfoView2
+
+IMPLEMENT_DYNCREATE(CNCInfoView2, CNCInfoBase)
+
+CNCInfoView2::CNCInfoView2()
+{
+}
+
+BEGIN_MESSAGE_MAP(CNCInfoView2, CNCInfoBase)
+END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCInfoView 描画
@@ -177,9 +188,9 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 	VERIFY(strBuf.LoadString(IDCV_CUTTIME));
 	pDC->TextOut(0, (i+1)*nHeight, strBuf+strFormat);
 	// ---
-	if ( GetDocument()->IsNCDocFlag(NCDOC_ERROR) )
+	if ( GetDocument()->IsDocFlag(NCDOC_ERROR) )
 		strFormat.Empty();
-	else if ( GetDocument()->IsNCDocFlag(NCDOC_CUTCALC) )
+	else if ( GetDocument()->IsDocFlag(NCDOC_CUTCALC) )
 		VERIFY(strFormat.LoadString(IDCV_CUTCALC));
 	else {
 		double	dMove = 0.0, dTime = GetDocument()->GetCutTime();
@@ -241,7 +252,7 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 	VERIFY(strBuf.LoadString(IDCV_MAXRECT));
 	pDC->TextOut(0, 0, strBuf);
 	// 矩形情報
-	if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) ) {
+	if ( GetDocument()->IsDocFlag(NCDOC_LATHE) ) {
 		int		ZX[] = {NCA_Z, NCA_X};
 		for ( i=0; i<SIZEOF(ZX); i++ ) {
 			strBuf = g_szNdelimiter[ZX[i]] + strDelimiter;
@@ -253,7 +264,7 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 			VERIFY(strBuf.LoadString(IDCV_MILI));
 			pDC->TextOut(11*nWidth+W*2, (i+1)*nHeight, strBuf);
 		}
-		if ( !GetDocument()->IsNCDocFlag(NCDOC_ERROR) ) {
+		if ( !GetDocument()->IsDocFlag(NCDOC_ERROR) ) {
 			double	dResult[2], dHosei[] = {1.0, 2.0};	// X軸直径表示補正
 			int		XZ[] = {NCA_X, NCA_Z};
 			for ( i=0; i<SIZEOF(XZ); i++ ) {
@@ -280,7 +291,7 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 			VERIFY(strBuf.LoadString(IDCV_MILI));
 			pDC->TextOut(11*nWidth+W*2, (i+1)*nHeight, strBuf);
 		}
-		if ( !GetDocument()->IsNCDocFlag(NCDOC_ERROR) ) {
+		if ( !GetDocument()->IsDocFlag(NCDOC_ERROR) ) {
 			double	dResult[2];
 			for ( i=0; i<NCXYZ; i++ ) {
 				GetDocument()->GetWorkRectPP(i, dResult);
@@ -297,148 +308,6 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 	}
 
 	pDC->SelectObject(pFontOld);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// CNCInfoView 診断
-
-#ifdef _DEBUG
-void CNCInfoView1::AssertValid() const
-{
-	CView::AssertValid();
-}
-
-void CNCInfoView1::Dump(CDumpContext& dc) const
-{
-	CView::Dump(dc);
-}
-
-CNCDoc* CNCInfoView1::GetDocument() // 非デバッグ バージョンはインラインです。
-{
-	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CNCDoc)));
-	return static_cast<CNCDoc *>(m_pDocument);
-}
-
-void CNCInfoView2::AssertValid() const
-{
-	CView::AssertValid();
-}
-
-void CNCInfoView2::Dump(CDumpContext& dc) const
-{
-	CView::Dump(dc);
-}
-
-CNCDoc* CNCInfoView2::GetDocument() // 非デバッグ バージョンはインラインです。
-{
-	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CNCDoc)));
-	return static_cast<CNCDoc *>(m_pDocument);
-}
-#endif //_DEBUG
-
-/////////////////////////////////////////////////////////////////////////////
-// CNCInfoView1 メッセージ ハンドラ
-
-void CNCInfoView1::OnUpdateEditCopy(CCmdUI* pCmdUI) 
-{
-	pCmdUI->Enable(!GetDocument()->IsNCDocFlag(NCDOC_CUTCALC));
-}
-
-void CNCInfoView1::OnEditCopy() 
-{
-	CopyNCInfoForClipboard(this, GetDocument());
-}
-
-void CNCInfoView1::OnContextMenu(CWnd* pWnd, CPoint point) 
-{
-	CViewBase::OnContextMenu(point, IDR_NCPOPUP3);
-}
-
-void CNCInfoView1::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
-{
-	if ( nChar == VK_TAB ) {
-		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-		if ( ::GetKeyState(VK_SHIFT) < 0 )
-			pFrame->GetMainView()->SetFocus();
-		else
-			pFrame->GetListView()->SetFocus();
-	}
-
-	CView::OnKeyDown(nChar, nRepCnt, nFlags);
-}
-
-BOOL CNCInfoView1::OnEraseBkgnd(CDC* pDC) 
-{
-	CRect	rc;
-	GetClientRect(rc);
-
-	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col1 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND1),
-				col2 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND2);
-
-	return AfxGetNCVCMainWnd()->DrawBackGroundView(pDC, &rc, col1, col2);
-}
-
-LRESULT CNCInfoView1::OnUserCalcMsg(WPARAM, LPARAM)
-{
-	Invalidate();
-	// ｽﾚｯﾄﾞの終了処理
-	GetDocument()->WaitCalcThread();
-
-	return 0;
-}
-
-void CNCInfoView1::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 
-{
-	pCmdUI->Enable(FALSE);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// CNCInfoView2 メッセージ ハンドラ
-
-void CNCInfoView2::OnUpdateEditCopy(CCmdUI* pCmdUI) 
-{
-	pCmdUI->Enable(!GetDocument()->IsNCDocFlag(NCDOC_CUTCALC));
-}
-
-void CNCInfoView2::OnEditCopy() 
-{
-	CopyNCInfoForClipboard(this, GetDocument());
-}
-
-void CNCInfoView2::OnContextMenu(CWnd* pWnd, CPoint point) 
-{
-	CViewBase::OnContextMenu(point, IDR_NCPOPUP3);
-}
-
-void CNCInfoView2::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
-{
-	if ( nChar == VK_TAB ) {
-		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-		if ( ::GetKeyState(VK_SHIFT) < 0 )
-			pFrame->GetMainView()->SetFocus();
-		else
-			pFrame->GetListView()->SetFocus();
-	}
-
-	CView::OnKeyDown(nChar, nRepCnt, nFlags);
-}
-
-BOOL CNCInfoView2::OnEraseBkgnd(CDC* pDC) 
-{
-	CRect	rc;
-	GetClientRect(rc);
-
-	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col1 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND1),
-				col2 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND2);
-
-	return AfxGetNCVCMainWnd()->DrawBackGroundView(pDC, &rc, col1, col2);
-}
-
-void CNCInfoView2::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 
-{
-	pCmdUI->Enable(FALSE);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -539,7 +408,7 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 		VERIFY(strItem.LoadString(IDCV_G0MOVESPEED));
 		strarrayInfo.Add(CString(' ', 2) + strItem);
 		VERIFY(strBuf.LoadString(IDCV_MILIpMIN));
-		if ( pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+		if ( pDoc->IsDocFlag(NCDOC_LATHE) ) {
 			for ( i=0; i<SIZEOF(ZX); i++ ) {
 				strItem = strSpace + g_szNdelimiter[ZX[i]] + strDelimiter;
 				strFormat.Format("%12d", pMCopt->GetG0Speed(ZX[i]));
@@ -559,7 +428,7 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 		VERIFY(strItem.LoadString(IDS_TAB_INFO3));
 		strarrayInfo.Add(szBracket[0] + strItem + szBracket[1]);
 		VERIFY(strBuf.LoadString(IDCV_KARA));
-		if ( pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+		if ( pDoc->IsDocFlag(NCDOC_LATHE) ) {
 			double	dHosei[] = {1.0, 2.0};	// X軸直径表示補正
 			for ( i=0; i<SIZEOF(XZ); i++ ) {
 				pDoc->GetWorkRectPP(XZ[i], dResult);

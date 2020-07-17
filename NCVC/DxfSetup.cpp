@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "MainFrm.h"
 #include "DXFDoc.h"
 #include "DxfSetup.h"
 #include "DxfSetupReload.h"
@@ -34,10 +35,6 @@ CDxfSetup::CDxfSetup(UINT nIDCaption) :
 	AddPage(&m_dlg2);
 }
 
-CDxfSetup::~CDxfSetup()
-{
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // ÒÝÊÞŠÖ”
 
@@ -53,7 +50,7 @@ BOOL CDxfSetup::OnReload(CPropertyPage* pActPage)
 
 	// ÄÞ·­ÒÝÄ‚Ì”‚ª‚P‚Â‚¾‚¯‚È‚çC‚»‚ê‚ðÄ“Çž
 	if ( AfxGetNCVCApp()->GetDXFOpenDocumentCount() == 1 )
-		AfxGetNCVCApp()->GetAlreadyDXFDocument()->SetReload(TRUE);
+		static_cast<CDXFDoc*>(AfxGetNCVCApp()->GetAlreadyDocument(TYPE_DXF))->SetDocFlag(DXFDOC_RELOAD);
 	else {
 		CDxfSetupReload	dlg(this);
 		if ( dlg.DoModal() != IDOK )

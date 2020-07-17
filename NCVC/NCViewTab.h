@@ -7,12 +7,14 @@
 #include "TabView.h"
 #include "ViewBase.h"
 #include "NCViewSplit.h"
+#include "NCdata.h"		// NCDRAWVIEW_NUM
+
+class CNCViewTab;
+class CNCListView;
 
 /////////////////////////////////////////////////////////////////////////////
 // CTraceThread スレッド
 
-class CNCViewTab;
-class CNCListView;
 // ｽﾚｯﾄﾞへの引数
 typedef struct tagTRACETHREADPARAM {
 	CMainFrame*		pMainFrame;
@@ -46,7 +48,7 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewTab
 
-class CNCViewTab : public CTabView, public CViewBase
+class CNCViewTab : public CTabViewBase
 {
 friend	class	CTraceThread;
 
@@ -54,7 +56,7 @@ friend	class	CTraceThread;
 					m_wndSplitter2,		// ４面-2
 					m_wndSplitter22;
 
-	HDC			m_hDC[NCVIEW_FOURSVIEW];	// XYZ, XY, XZ, YZ 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
+	HDC			m_hDC[NCDRAWVIEW_NUM];	// XYZ, XY, XZ, YZ 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
 	UINT		m_nTraceSpeed,		// ﾄﾚｰｽ実行の速度
 				m_nTrace;			// ﾄﾚｰｽ実行状態
 	CTraceThread*	m_pTraceThread;	// ﾄﾚｰｽ実行ｽﾚｯﾄﾞﾊﾝﾄﾞﾙ
@@ -63,7 +65,7 @@ friend	class	CTraceThread;
 	CNCdata*	m_pDataTraceSel;	// ﾄﾚｰｽ実行中の選択ﾃﾞｰﾀ
 	CEvent		m_evTrace;			// ﾄﾚｰｽ開始ｲﾍﾞﾝﾄ(ｺﾝｽﾄﾗｸﾀにて手動ｲﾍﾞﾝﾄ設定)
 
-	BOOL		m_bSplit[NCVIEW_FOURSVIEW];	// ｽﾌﾟﾘｯﾀ表示されたかどうか
+	BOOL		m_bSplit[NCDRAWVIEW_NUM];	// ｽﾌﾟﾘｯﾀ表示されたかどうか
 
 protected:
 	CNCViewTab();		// 動的生成に使用されるプロテクト コンストラクタ
@@ -93,7 +95,6 @@ protected:
 
 // インプリメンテーション
 protected:
-	virtual ~CNCViewTab();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -103,7 +104,7 @@ protected:
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
-	afx_msg void OnSetFocus(CWnd* pOldWnd);
+//	afx_msg void OnSetFocus(CWnd* pOldWnd);
 	// ﾀﾌﾞ移動
 	afx_msg	void OnMoveTab(UINT);
 	// ﾄﾚｰｽ

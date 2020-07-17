@@ -33,6 +33,7 @@ double	CNCMakeBase::ms_dFeed = -1.0;
 int		CNCMakeBase::ms_nCnt = 1;
 int		CNCMakeBase::ms_nMagni = 1;
 int		CNCMakeBase::ms_nCircleCode = 2;
+BOOL	CNCMakeBase::ms_bIJValue = FALSE;
 double	CNCMakeBase::ms_dEllipse = 0.5;
 CString	CNCMakeBase::ms_strEOB;
 PFNGETARGINT		CNCMakeBase::ms_pfnGetSpindle = &CNCMakeBase::GetSpindleString;
@@ -315,7 +316,7 @@ CString	CNCMakeBase::GetValString_Normal(double dVal)
 CString	CNCMakeBase::GetValString_UZeroCut(double dVal)
 {
 	CString		strResult;
-	if ( dVal == 0.0 ) {
+	if ( fabs(dVal) < NCMIN ) {
 		strResult = "0";
 		return strResult;
 	}
@@ -345,8 +346,8 @@ CString	CNCMakeBase::GetValString_Multi1000(double dVal)
 CString	CNCMakeBase::MakeCircleSub_R(int nCode, const CPointD& pt, const CPointD&, double r)
 {
 	return CString( (*ms_pfnGetGString)(nCode) +
-		(*ms_pfnGetValString)(NCAX, pt.x, FALSE) +
-		(*ms_pfnGetValString)(NCAY, pt.y, FALSE) +
+		(*ms_pfnGetValString)(NCAX,  pt.x, FALSE) +
+		(*ms_pfnGetValString)(NCAY,  pt.y, FALSE) +
 		(*ms_pfnGetValString)(NCA_R, r,    FALSE) );
 }
 
@@ -355,8 +356,8 @@ CString	CNCMakeBase::MakeCircleSub_IJ(int nCode, const CPointD& pt, const CPoint
 	return CString( (*ms_pfnGetGString)(nCode) +
 		(*ms_pfnGetValString)(NCAX, pt.x,   FALSE) +
 		(*ms_pfnGetValString)(NCAY, pt.y,   FALSE) +
-		(*ms_pfnGetValString)(NCAI, ptij.x, FALSE) +
-		(*ms_pfnGetValString)(NCAJ, ptij.y, FALSE) );
+		(*ms_pfnGetValString)(NCAI, ptij.x, ms_bIJValue) +
+		(*ms_pfnGetValString)(NCAJ, ptij.y, ms_bIJValue) );
 }
 
 CString	CNCMakeBase::MakeCircleSub_Helical(int nCode, const CPoint3D& pt)
@@ -386,14 +387,11 @@ CString	CNCMakeBase::MakeCircle_R(const CDXFcircle* pCircle, double dFeed)
 
 CString	CNCMakeBase::MakeCircle_IJ(const CDXFcircle* pCircle, double dFeed)
 {
-	CString	strGcode, strBuf( pCircle->GetBaseAxis() > 1 ?	// XŽ²‚©YŽ²‚©
-						(*ms_pfnGetValString)(NCAJ, pCircle->GetIJK(NCA_J), FALSE) :
-						(*ms_pfnGetValString)(NCAI, pCircle->GetIJK(NCA_I), FALSE) ); 
 	int		nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
-	if ( !strBuf.IsEmpty() )
-		strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
-					strBuf + GetFeedString(dFeed) + ms_strEOB;
-	return strGcode;
+	return CString( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
+				(*ms_pfnGetValString)(NCAI, pCircle->GetIJK(NCA_I), ms_bIJValue) +
+				(*ms_pfnGetValString)(NCAJ, pCircle->GetIJK(NCA_J), ms_bIJValue) +
+				GetFeedString(dFeed) + ms_strEOB );
 }
 
 CString	CNCMakeBase::MakeCircle_IJHALF(const CDXFcircle* pCircle, double dFeed)
@@ -407,9 +405,9 @@ CString	CNCMakeBase::MakeCircle_IJHALF(const CDXFcircle* pCircle, double dFeed)
 	else 			// XŽ²ÍÞ°½
 		ij.x = pCircle->GetIJK(NCA_I);
 	CString	strGcode;
-	CString	strBuf1( MakeCircleSub_IJ(nCode, pCircle->GetMakePoint(b), ij, 0.0) );
+	CString	strBuf1( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(b), ij, 0.0) );
 	ij *= -1.0;		// ij = -ij;
-	CString	strBuf2( MakeCircleSub_IJ(nCode, pCircle->GetMakePoint(a), ij, 0.0) );
+	CString	strBuf2( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(a), ij, 0.0) );
 	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() )
 		strGcode = (*ms_pfnGetLineNo)() + strBuf1 + GetFeedString(dFeed) + ms_strEOB +
 						(*ms_pfnGetLineNo)() + strBuf2 + ms_strEOB;
@@ -436,15 +434,12 @@ CString	CNCMakeBase::MakeCircle_R_Helical(const CDXFcircle* pCircle, double dFee
 
 CString	CNCMakeBase::MakeCircle_IJ_Helical(const CDXFcircle* pCircle, double dFeed, double dHelical)
 {
-	CString	strGcode, strBuf( pCircle->GetBaseAxis() > 1 ?
-						(*ms_pfnGetValString)(NCAJ, pCircle->GetIJK(NCA_J), FALSE) :
-						(*ms_pfnGetValString)(NCAI, pCircle->GetIJK(NCA_I), FALSE) ); 
 	int		nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
-	if ( !strBuf.IsEmpty() )
-		strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
-					(*ms_pfnGetValString)(NCA_Z, dHelical, FALSE) +
-					strBuf + GetFeedString(dFeed) + ms_strEOB;
-	return strGcode;
+	return CString( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
+				(*ms_pfnGetValString)(NCA_Z, dHelical, FALSE) +
+				(*ms_pfnGetValString)(NCAI, pCircle->GetIJK(NCA_I), ms_bIJValue) +
+				(*ms_pfnGetValString)(NCAJ, pCircle->GetIJK(NCA_J), ms_bIJValue) +
+				GetFeedString(dFeed) + ms_strEOB );
 }
 
 CString	CNCMakeBase::MakeCircle_IJHALF_Helical(const CDXFcircle* pCircle, double dFeed, double dHelical)
@@ -461,9 +456,9 @@ CString	CNCMakeBase::MakeCircle_IJHALF_Helical(const CDXFcircle* pCircle, double
 	else
 		ij.x = pCircle->GetIJK(NCA_I);
 	CString	strGcode;
-	CString	strBuf1( (*ms_pfnGetValString)(NCAI, ij.x, FALSE) + (*ms_pfnGetValString)(NCAJ, ij.y, FALSE) );
+	CString	strBuf1( (*ms_pfnGetValString)(NCAI, ij.x, ms_bIJValue) + (*ms_pfnGetValString)(NCAJ, ij.y, ms_bIJValue) );
 	ij *= -1.0;		// ij = -ij;
-	CString	strBuf2( (*ms_pfnGetValString)(NCAI, ij.x, FALSE) + (*ms_pfnGetValString)(NCAJ, ij.y, FALSE) );
+	CString	strBuf2( (*ms_pfnGetValString)(NCAI, ij.x, ms_bIJValue) + (*ms_pfnGetValString)(NCAJ, ij.y, ms_bIJValue) );
 	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() ) {
 		// ŒvŽZ‡˜‚ÌŠÖŒW‚Å‚Ps‚É‚Å‚«‚È‚¢
 		strGcode  = MakeCircleSub_Helical(nCode, pt1) + strBuf1 + GetFeedString(dFeed) + ms_strEOB;
@@ -486,7 +481,7 @@ CString	CNCMakeBase::MakeArc_IJ(const CDXFarc* pArc, double dFeed)
 {
 	CPointD	ij(pArc->GetIJK(NCA_I), pArc->GetIJK(NCA_J));
 	CString	strGcode,
-			strBuf( MakeCircleSub_IJ(pArc->GetG(), pArc->GetEndMakePoint(), ij, 0.0) );
+			strBuf( (*ms_pfnMakeCircleSub)(pArc->GetG(), pArc->GetEndMakePoint(), ij, 0.0) );
 	if ( !strBuf.IsEmpty() )
 		strGcode = (*ms_pfnGetLineNo)() + strBuf + GetFeedString(dFeed) + ms_strEOB;
 	return strGcode;

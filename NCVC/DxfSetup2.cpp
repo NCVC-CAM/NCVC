@@ -14,7 +14,7 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CDxfSetup2, CPropertyPage)
 	//{{AFX_MSG_MAP(CDxfSetup2)
-	ON_BN_CLICKED(IDC_DXF_RELOAD, OnReload)
+	ON_BN_CLICKED(IDC_DXF_RELOAD, &CDxfSetup2::OnReload)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -30,10 +30,6 @@ CDxfSetup2::CDxfSetup2() : CPropertyPage(CDxfSetup2::IDD)
 	m_strStartLayer		= pOpt->m_strReadLayer[DXFSTRLAYER];
 	m_strMoveLayer		= pOpt->m_strReadLayer[DXFMOVLAYER];
 	m_strCommentLayer	= pOpt->m_strReadLayer[DXFCOMLAYER];
-}
-
-CDxfSetup2::~CDxfSetup2()
-{
 }
 
 void CDxfSetup2::DoDataExchange(CDataExchange* pDX)

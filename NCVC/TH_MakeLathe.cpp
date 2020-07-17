@@ -13,7 +13,7 @@
 #include "MakeCustomCode.h"
 #include "ThreadDlg.h"
 
-using namespace std;
+using std::string;
 using namespace boost;
 
 #include "MagaDbgMac.h"
@@ -27,17 +27,17 @@ extern	CMagaDbg	g_dbg;
 //#define	_DBG_NCMAKE_TIME
 #endif
 
+// ｸﾞﾛｰﾊﾞﾙ変数定義
+static	CThreadDlg*			g_pParent;
+static	CDXFDoc*			g_pDoc;
+static	CNCMakeLatheOpt*	g_pMakeOpt;
+
 // よく使う変数や呼び出しの簡略置換
 #define	IsThread()	g_pParent->IsThreadContinue()
 #define	GetFlg(a)	g_pMakeOpt->GetFlag(a)
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
 #define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
-
-// ｸﾞﾛｰﾊﾞﾙ変数定義
-static	CThreadDlg*			g_pParent;
-static	CDXFDoc*			g_pDoc;
-static	CNCMakeLatheOpt*	g_pMakeOpt;
 
 // NC生成に必要なﾃﾞｰﾀ群
 static	CShapeArray	g_obShape;

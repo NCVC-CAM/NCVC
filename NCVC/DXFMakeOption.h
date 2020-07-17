@@ -4,31 +4,40 @@
 
 #pragma once
 
-#define	MKDX_NUM_LTYPE_O		0
-#define	MKDX_NUM_LTYPE_C		1
-#define	MKDX_NUM_LTYPE_M		2
-#define	MKDX_NUM_LTYPE_H		3
-#define	MKDX_NUM_LCOL_O			4
-#define	MKDX_NUM_LCOL_C			5
-#define	MKDX_NUM_LCOL_M			6
-#define	MKDX_NUM_LCOL_H			7
-#define	MKDX_NUM_PLANE			8
-#define	MKDX_NUM_CYCLE			9
-
-#define	MKDX_DBL_ORGLENGTH		0
-#define	MKDX_DBL_CYCLER			1
-
-#define	MKDX_FLG_OUT_O			0
-#define	MKDX_FLG_OUT_C			1
-#define	MKDX_FLG_OUT_M			2
-#define	MKDX_FLG_OUT_H			3
-#define	MKDX_FLG_ORGCIRCLE		4
-#define	MKDX_FLG_ORGCROSS		5
-
-#define	MKDX_STR_ORIGIN			0
-#define	MKDX_STR_CAMLINE		1
-#define	MKDX_STR_MOVE			2
-#define	MKDX_STR_CORRECT		3
+enum {
+	MKDX_NUM_LTYPE_O = 0,
+	MKDX_NUM_LTYPE_C,
+	MKDX_NUM_LTYPE_M,
+	MKDX_NUM_LTYPE_H,
+	MKDX_NUM_LCOL_O,
+	MKDX_NUM_LCOL_C,
+	MKDX_NUM_LCOL_M,
+	MKDX_NUM_LCOL_H,
+	MKDX_NUM_PLANE,
+	MKDX_NUM_CYCLE,
+		MKDX_NUM_NUMS		// [10]
+};
+enum {
+	MKDX_DBL_ORGLENGTH = 0,
+	MKDX_DBL_CYCLER,
+		MKDX_DBL_NUMS		// [2]
+};
+enum {
+	MKDX_FLG_OUT_O = 0,
+	MKDX_FLG_OUT_C,
+	MKDX_FLG_OUT_M,
+	MKDX_FLG_OUT_H,
+	MKDX_FLG_ORGCIRCLE,
+	MKDX_FLG_ORGCROSS,
+		MKDX_FLG_NUMS		// [6]
+};
+enum {
+	MKDX_STR_ORIGIN = 0,
+	MKDX_STR_CAMLINE,
+	MKDX_STR_MOVE,
+	MKDX_STR_CORRECT,
+		MKDX_STR_NUMS		// [4]
+};
 
 class CDXFMakeOption  
 {
@@ -44,7 +53,7 @@ friend class CMakeDXFDlg2;
 					m_nPlane,		// ïΩñ éwíË
 					m_nCycle;		// å≈íËª≤∏ŸèoóÕ¿≤Ãﬂ
 		};
-		int			m_unNums[10];
+		int			m_unNums[MKDX_NUM_NUMS];
 	};
 	// doubleå^µÃﬂºÆ›
 	union {
@@ -52,7 +61,7 @@ friend class CMakeDXFDlg2;
 			double	m_dOrgLength,	// å¥ì_í∑Ç≥(åa)
 					m_dCycleR;		// å≈íËª≤∏Ÿâ~èoóÕÇÃåa
 		};
-		double		m_udNums[2];
+		double		m_udNums[MKDX_DBL_NUMS];
 	};
 	// BOOLå^µÃﬂºÆ›
 	union {
@@ -61,10 +70,10 @@ friend class CMakeDXFDlg2;
 					m_bOrgCircle,	// å¥ì_â~èoóÕ
 					m_bOrgCross;	// å¥ì_è\éöèoóÕ
 		};
-		BOOL		m_ubFlags[6];
+		BOOL		m_ubFlags[MKDX_FLG_NUMS];
 	};
 	// CStringå^µÃﬂºÆ›
-	CString		m_strOption[4];		// äeéÌ⁄≤‘
+	CString		m_strOption[MKDX_STR_NUMS];	// äeéÌ⁄≤‘
 
 public:
 	CDXFMakeOption();

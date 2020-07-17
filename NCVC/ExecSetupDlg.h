@@ -17,7 +17,6 @@ class CExecSetupDlg : public CDialog
 // コンストラクション
 public:
 	CExecSetupDlg();
-	~CExecSetupDlg();
 
 // ダイアログ データ
 	//{{AFX_DATA(CExecSetupDlg)

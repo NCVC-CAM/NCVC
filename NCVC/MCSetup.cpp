@@ -18,7 +18,7 @@ BEGIN_MESSAGE_MAP(CMCSetup, CPropertySheet)
 	//{{AFX_MSG_MAP(CMCSetup)
 	ON_WM_DESTROY()
 	//}}AFX_MSG_MAP
-	ON_BN_CLICKED (ID_APPLY_NOW, OnApplyNow)
+	ON_BN_CLICKED (ID_APPLY_NOW, &CMCSetup::OnApplyNow)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -40,10 +40,6 @@ CMCSetup::CMCSetup(LPCTSTR lpszCaption, LPCTSTR lpszFile) :
 	AddPage(&m_dlg3);	// çHãÔ
 	AddPage(&m_dlg4);	// É}ÉNÉç
 	AddPage(&m_dlg5);	// CNC
-}
-
-CMCSetup::~CMCSetup()
-{
 }
 
 /////////////////////////////////////////////////////////////////////////////

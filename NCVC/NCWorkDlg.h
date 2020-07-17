@@ -5,6 +5,8 @@
 
 #include "NCVCdefine.h"
 
+class CNCDoc;
+
 /////////////////////////////////////////////////////////////////////////////
 // CNCWorkDlg ダイアログ
 
@@ -12,6 +14,7 @@ class CNCWorkDlg : public CDialog
 {
 	void	EnableButton(BOOL, BOOL);
 	void	SetValue(const CNCDoc*, const CRect3D&);
+	CNCDoc*	GetNCDocument(void);
 
 // コンストラクション
 public:
@@ -20,9 +23,9 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CNCWorkDlg)
 	enum { IDD = IDD_NCVIEW_WORK };
-	CButton	m_ctOK;
-	CButton	m_ctHide;
-	CButton m_ctRecover;
+	CButton	m_ctOK, m_ctHide,
+			m_ctRecover, m_ctComment;
+
 	//}}AFX_DATA
 	CStatic		m_ctLabel[2][NCXYZ];
 	CFloatEdit	m_ctWork[2][NCXYZ];
@@ -45,6 +48,7 @@ protected:
 	//{{AFX_MSG(CNCWorkDlg)
 	afx_msg void OnHide();
 	afx_msg void OnRecover();
+	afx_msg void OnComment();
 	//}}AFX_MSG
 	afx_msg LRESULT OnUserSwitchDocument(WPARAM, LPARAM);
 

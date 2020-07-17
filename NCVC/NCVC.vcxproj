@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -14,19 +14,18 @@
     <ProjectGuid>{3DCF530D-781E-4F47-8CC7-15530F93412C}</ProjectGuid>
     <RootNamespace>NCVC</RootNamespace>
     <Keyword>MFCProj</Keyword>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -41,17 +40,21 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
+    <_ProjectFileVersion>11.0.61030.0</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_56_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_56_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_56_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_56_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -69,7 +72,8 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalIncludeDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost;C:\Users\magara\Documents\Visual Studio 2015\include</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -77,15 +81,19 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>MagaDbg.lib;winmm.lib;version.lib;opengl32.lib;glu32.lib;glew32sd.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MagaDbg.lib;opengl32.lib;glu32.lib;glew32sd.lib;gdiplus.lib;version.lib;winmm.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib;C:\Users\magara\Documents\Visual Studio 2015\lib</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>
+      </AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -105,6 +113,8 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat />
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -122,11 +132,16 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>
+      </AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="3Dto2D.cpp" />
     <ClCompile Include="AboutDlg.cpp" />
     <ClCompile Include="AddinDlg.cpp" />
+    <ClCompile Include="CADbindDlg.cpp" />
     <ClCompile Include="ChildBase.cpp" />
     <ClCompile Include="CustomControl.cpp" />
     <ClCompile Include="CustomMenu.cpp" />
@@ -223,9 +238,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TabView.cpp" />
-    <ClCompile Include="ThreadDlg.cpp" />
-    <ClCompile Include="ThumbnailDlg.cpp" />
     <ClCompile Include="TH_AutoWorkingSet.cpp" />
+    <ClCompile Include="TH_CADbind.cpp" />
     <ClCompile Include="TH_Correct.cpp" />
     <ClCompile Include="TH_Cuttime.cpp" />
     <ClCompile Include="TH_MakeLathe.cpp" />
@@ -234,6 +248,8 @@
     <ClCompile Include="TH_NCRead.cpp" />
     <ClCompile Include="TH_ShapeSearch.cpp" />
     <ClCompile Include="TH_UVWire.cpp" />
+    <ClCompile Include="ThreadDlg.cpp" />
+    <ClCompile Include="ThumbnailDlg.cpp" />
     <ClCompile Include="ToolBarSetupDlg.cpp" />
     <ClCompile Include="ViewBase.cpp" />
     <ClCompile Include="ViewOption.cpp" />
@@ -243,11 +259,13 @@
     <ClCompile Include="ViewSetup3.cpp" />
     <ClCompile Include="ViewSetup4.cpp" />
     <ClCompile Include="ViewSetup5.cpp" />
+    <ClCompile Include="ViewSetup6.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3Dto2D.h" />
     <ClInclude Include="AboutDlg.h" />
     <ClInclude Include="AddinDlg.h" />
+    <ClInclude Include="CADbindDlg.h" />
     <ClInclude Include="ChildBase.h" />
     <ClInclude Include="CustomClass.h" />
     <ClInclude Include="CustomControl.h" />
@@ -352,12 +370,14 @@
     <ClInclude Include="ViewSetup3.h" />
     <ClInclude Include="ViewSetup4.h" />
     <ClInclude Include="ViewSetup5.h" />
+    <ClInclude Include="ViewSetup6.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagram1.cd" />
+    <None Include="DocBase.inl" />
     <None Include="DXFdata.inl" />
     <None Include="NCdata.inl" />
     <None Include="res\NCVC.rc2" />
+    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\check.ico" />

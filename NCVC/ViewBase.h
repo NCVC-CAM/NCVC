@@ -6,7 +6,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // CViewBase
 
-class CViewBase
+class CViewBase : public CView
 {
 	int			m_nBoth;		// —¼ÎÞÀÝˆ—¶³ÝÀ
 								// ÅŒã‚É—£‚µ‚½ÎÞÀÝ‚ÅReleaseCapture()‚·‚é‚½‚ß
@@ -16,13 +16,14 @@ class CViewBase
 	CRect		m_rcMagnify;	// Šg‘å‹éŒ`(ƒˆ‚È˜_—À•W)
 	double		m_dBeforeFactor;// ’¼‘O‚ÌŠg‘å—¦
 
-	int		OnMouseButtonUp(int, CPoint&);	// ÎÞÀÝ‚ð—£‚µ‚½‚Æ‚«‚Ì‹¤’Êˆ—
+	int		OnMouseButtonUp(int, const CPoint&);	// ÎÞÀÝ‚ð—£‚µ‚½‚Æ‚«‚Ì‹¤’Êˆ—
 
 protected:
 	CViewBase();
-	virtual	~CViewBase();
+public:
+	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 
-	CView*		m_pView;		// ”h¶ËÞ­°
+protected:
 	BOOL		m_bMagRect;		// Šg‘å‹éŒ`•\Ž¦’†
 	double		m_dFactor;		// Šg‘å—¦
 	int			m_nLState,		// -1:Up, 0:Down, 1:Šg‘å‹éŒ`•\Ž¦’†
@@ -49,24 +50,30 @@ protected:
 	void	CopyNCDrawForClipboard(HENHMETAFILE);
 
 	// Ò¯¾°¼ÞÏ¯Ìß‚Ì‹¤’Ê•”•ª
-	void	OnViewFit(const CRectD&);		// }Œ`Ì¨¯Ä
-	void	OnViewLensP(void);				// Šg‘å
-	void	OnViewLensN(void);				// k¬
-	void	OnMoveKey(UINT);				// ˆÚ“®
-	void	OnBeforeMagnify(void);			// ‘O‰ñ‚ÌŠg‘å—¦
+	void	OnViewFit(const CRectD&, BOOL = TRUE);	// }Œ`Ì¨¯Ä
+	void	OnViewLensP(void);						// Šg‘å
+	void	OnViewLensN(void);						// k¬
+	void	OnMoveKey(UINT);						// ˆÚ“®
+	void	OnBeforeMagnify(void);					// ‘O‰ñ‚ÌŠg‘å—¦
 
-	void	OnCreate(CView*, BOOL bDC = TRUE);
+	int		OnCreate(LPCREATESTRUCT, BOOL bDC = TRUE);
 	void	OnLButtonDown(const CPoint&);
-	int		OnLButtonUp(CPoint&);
+	int		OnLButtonUp(const CPoint&);
 	void	OnRButtonDown(const CPoint&);
-	int		OnRButtonUp(CPoint&);
+	int		OnRButtonUp(const CPoint&);
 	BOOL	OnMouseMove(UINT, const CPoint&);
 	BOOL	OnMouseWheel(UINT, short, const CPoint&);
-	void	OnContextMenu(CPoint point, UINT nID) {
+	void	OnContextMenu(CPoint pt, UINT nID) {
 		CMenu	menu;
 		menu.LoadMenu(nID);
 		CMenu*	pMenu = menu.GetSubMenu(0);
 		pMenu->TrackPopupMenu(TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON,
-			point.x, point.y, AfxGetMainWnd());
+			pt.x, pt.y, AfxGetMainWnd());
 	}
+	BOOL	OnEraseBkgnd(CDC*, COLORREF, COLORREF);
+
+#ifdef _DEBUG
+	virtual void AssertValid() const;
+	virtual void Dump(CDumpContext& dc) const;
+#endif
 };

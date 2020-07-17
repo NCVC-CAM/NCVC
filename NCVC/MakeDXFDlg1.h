@@ -14,7 +14,6 @@ class CMakeDXFDlg1 : public CPropertyPage
 // コンストラクション
 public:
 	CMakeDXFDlg1();
-	~CMakeDXFDlg1();
 
 // ダイアログ データ
 	//{{AFX_DATA(CMakeDXFDlg1)

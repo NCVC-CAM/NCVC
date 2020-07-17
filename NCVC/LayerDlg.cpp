@@ -20,11 +20,11 @@ static	LPCTSTR	g_szTreeTitle[] = {
 
 BEGIN_MESSAGE_MAP(CLayerDlg, CDialog)
 	//{{AFX_MSG_MAP(CLayerDlg)
-	ON_NOTIFY(TVN_KEYDOWN, IDC_DXFVIEW_LAYER, OnLayerTreeKeydown)
-	ON_NOTIFY(NM_CLICK, IDC_DXFVIEW_LAYER, OnLayerTreeClick)
-	ON_NOTIFY(TVN_GETDISPINFO, IDC_DXFVIEW_LAYER, OnLayerTreeGetdispinfo)
+	ON_NOTIFY(TVN_KEYDOWN, IDC_DXFVIEW_LAYER, &CLayerDlg::OnLayerTreeKeydown)
+	ON_NOTIFY(NM_CLICK, IDC_DXFVIEW_LAYER, &CLayerDlg::OnLayerTreeClick)
+	ON_NOTIFY(TVN_GETDISPINFO, IDC_DXFVIEW_LAYER, &CLayerDlg::OnLayerTreeGetdispinfo)
 	//}}AFX_MSG_MAP
-	ON_MESSAGE (WM_USERSWITCHDOCUMENT, OnUserSwitchDocument)
+	ON_MESSAGE (WM_USERSWITCHDOCUMENT, &CLayerDlg::OnUserSwitchDocument)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

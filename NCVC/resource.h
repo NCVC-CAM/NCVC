@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by NCVC.rc
+// Microsoft Visual C++ で生成されたインクルード ファイル。
+// NCVC.rc で使用
 //
 #define IDP_OLE_INIT_FAILED             100
 #define IDB_SPLASH                      105
@@ -86,6 +86,17 @@
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
 #define ID_FILE_CLANDOP                 1090
+#define IDD_CADBIND                     1100
+#define ID_FILE_CADBIND                 1100
+#define IDC_BIND_LIST                   1101
+#define IDC_BIND_LIST_ST                1102
+#define IDC_BIND_ADD                    1103
+#define IDC_BIND_CLR                    1104
+#define IDC_BIND_ALLCLR                 1105
+#define IDC_BIND_ORGTYPE                1106
+#define IDC_BIND_WORK_X                 1110
+#define IDC_BIND_WORK_Y                 1111
+#define IDC_BIND_MARGIN                 1112
 #define IDD_DXF_SETUP1                  1200
 #define IDC_DXF_CAMLINE                 1201
 #define IDC_DXF_ORIGIN                  1202
@@ -256,6 +267,7 @@
 #define IDC_VIEWSETUP3_ST_MOVE          2205
 #define IDC_VIEWSETUP3_ST_TEXT          2206
 #define IDC_VIEWSETUP3_ST_OUTLINE       2207
+#define IDC_VIEWSETUP3_ST_WORK          2208
 #define IDC_VIEWSETUP3_BT_BACKGROUND1   2210
 #define IDC_VIEWSETUP3_BT_BACKGROUND2   2211
 #define IDC_VIEWSETUP3_BT_ORIGIN        2212
@@ -264,11 +276,13 @@
 #define IDC_VIEWSETUP3_BT_MOVE          2215
 #define IDC_VIEWSETUP3_BT_TEXT          2216
 #define IDC_VIEWSETUP3_BT_OUTLINE       2217
+#define IDC_VIEWSETUP3_BT_WORK          2218
 #define IDC_VIEWSETUP3_CB_ORIGIN        2221
 #define IDC_VIEWSETUP3_CB_CUTTER        2222
 #define IDC_VIEWSETUP3_CB_START         2223
 #define IDC_VIEWSETUP3_CB_MOVE          2224
 #define IDC_VIEWSETUP3_CB_OUTLINE       2225
+#define IDC_VIEWSETUP3_CB_WORK          2226
 #define IDC_VIEWSETUP3_FONT             2250
 #define IDD_VIEW_SETUP4                 2300
 #define IDC_VIEWSETUP4_ST_BACKGROUND1   2300
@@ -295,6 +309,15 @@
 #define IDC_VIEWSETUP5_ST_CUT           2421
 #define IDC_VIEWSETUP5_BT_WORK          2430
 #define IDC_VIEWSETUP5_BT_CUT           2431
+#define IDD_VIEW_SETUP6                 2450
+#define IDC_VIEWSETUP6_LT               2451
+#define IDC_VIEWSETUP6_RT               2452
+#define IDC_VIEWSETUP6_LB               2453
+#define IDC_VIEWSETUP6_RB               2454
+#define IDC_VIEWSETUP6_L1               2455
+#define IDC_VIEWSETUP6_L2               2456
+#define IDC_VIEWSETUP6_L3               2457
+#define IDC_VIEWSETUP6_RR               2458
 #define IDD_NCVIEW_WORK                 2500
 #define IDC_WORK_X                      2501
 #define IDC_WORK_Y                      2502
@@ -304,6 +327,8 @@
 #define IDC_WORK_ZO                     2506
 #define IDC_WORK_HIDE                   2510
 #define IDC_WORK_RECOVER                2511
+#define IDC_WORK_RECOVER2               2512
+#define IDC_WORK_COMMENT                2512
 #define IDC_WORK_XS                     2521
 #define IDC_WORK_YS                     2522
 #define IDC_WORK_ZS                     2523
@@ -508,6 +533,7 @@
 #define IDC_MKNC6_CIRCLECODE2           4511
 #define IDC_MKNC6_R                     4520
 #define IDC_MKNC6_IJ                    4521
+#define IDC_MKNC6_ZEROCUT_IJ            4522
 #define IDC_MKNC6_CIRCLEHALF            4523
 #define IDC_MKNC6_CGRP                  4524
 #define IDC_MKNC6_KOUSA                 4530
@@ -620,6 +646,9 @@
 #define IDS_REG_DXF_ACCEPT              10113
 #define IDS_REG_DXF_ORGTYPE             10114
 #define IDS_REG_DXF_REGEX               10115
+#define IDS_REG_DXF_BINDSIZE            10116
+#define IDS_REG_DXF_BINDMARGIN          10117
+#define IDS_REG_DXF_BINDORGTYPE         10118
 #define IDS_REG_DXF_SORTLAYER1          10120
 #define IDS_REG_DXF_SORTLAYER2          10121
 #define IDS_REG_DXF_SUBPRO              10150
@@ -674,6 +703,8 @@
 #define IDS_REG_VIEW_NC_MILLTYPE        10970
 #define IDS_REG_VIEW_NC_TEXTURE         10971
 #define IDS_REG_VIEW_NC_TEXTUREFILE     10972
+#define IDS_REG_VIEW_NC_FOURVIEW01      10980
+#define IDS_REG_VIEW_NC_FOURVIEW02      10981
 #define IDS_REG_CONVERT                 10999
 #define IDS_REG_WINFLAGS                11900
 #define IDS_REG_ICONIC                  11901
@@ -690,6 +721,7 @@
 #define IDS_ERR_OPENGLVER               21006
 #define IDS_ERR_OUTOFVRAM               21007
 #define IDS_ERR_TEXTURE                 21008
+#define IDS_ERR_CONTROL                 21009
 #define IDS_ERR_FILEPATH                21010
 #define IDS_ERR_UNDERZERO               21011
 #define IDS_ERR_SETTING                 21012
@@ -766,9 +798,6 @@
 #define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
-#define ID_32804                        32804
-#define ID_32805                        32805
-#define ID_32806                        32806
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -791,9 +820,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        155
-#define _APS_NEXT_COMMAND_VALUE         32810
-#define _APS_NEXT_CONTROL_VALUE         1049
+#define _APS_NEXT_RESOURCE_VALUE        158
+#define _APS_NEXT_COMMAND_VALUE         32813
+#define _APS_NEXT_CONTROL_VALUE         1053
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

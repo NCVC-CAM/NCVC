@@ -31,10 +31,6 @@ CMCSetup1::CMCSetup1() : CPropertyPage(CMCSetup1::IDD),
 		m_nModalGroup[i] = -1;
 }
 
-CMCSetup1::~CMCSetup1()
-{
-}
-
 void CMCSetup1::DoDataExchange(CDataExchange* pDX)
 {
 	CPropertyPage::DoDataExchange(pDX);

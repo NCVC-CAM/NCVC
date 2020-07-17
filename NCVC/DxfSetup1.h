@@ -13,7 +13,6 @@ class CDxfSetup1 : public CPropertyPage
 // コンストラクション
 public:
 	CDxfSetup1();
-	~CDxfSetup1();
 
 // ダイアログ データ
 	//{{AFX_DATA(CDxfSetup1)

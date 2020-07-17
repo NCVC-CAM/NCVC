@@ -21,32 +21,36 @@ static	const	int		MAGNIFY_RANGE = 10;	// ﾋﾟｸｾﾙ
 
 CViewBase::CViewBase()
 {
-	m_pView = NULL;
 	m_dFactor = m_dBeforeFactor = 0.0;
 	m_nLState = m_nRState = -1;
 	m_nBoth = 0;
 	m_bMagRect = FALSE;
 }
 
-CViewBase::~CViewBase()
+BOOL CViewBase::PreCreateWindow(CREATESTRUCT& cs) 
 {
+	// ｽﾌﾟﾘｯﾀからの境界ｶｰｿﾙが移るので，IDC_ARROW を明示的に指定
+	cs.lpszClass = AfxRegisterWndClass(
+			CS_HREDRAW|CS_VREDRAW|CS_OWNDC|CS_DBLCLKS,
+			AfxGetApp()->LoadStandardCursor(IDC_ARROW) );
+	return __super::PreCreateWindow(cs);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // CViewBase クラスのメッセージ ハンドラ (メニューコマンド)
 
-void CViewBase::OnViewFit(const CRectD& rcMax)
+void CViewBase::OnViewFit(const CRectD& rcMax, BOOL bInflate/*=TRUE*/)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CViewBase::OnViewFit()");
 #endif
-	// ｵﾌﾞｼﾞｪｸﾄ矩形を10%(上下左右5%ずつ)大きく
 	CRectD	rcObj(rcMax);
-	rcObj.InflateRect(rcMax.Width()*0.05, rcMax.Height()*0.05);
 
-	ASSERT(m_pView);
-	CClientDC	dc(m_pView);
-
+	if ( bInflate ) {
+		// ｵﾌﾞｼﾞｪｸﾄ矩形を10%(上下左右5%ずつ)大きく
+		rcObj.InflateRect(rcMax.Width()*0.05, rcMax.Height()*0.05);
+	}
+	CClientDC	dc(this);
 	// 直前の拡大率
 	if ( m_dFactor != 0.0 ) {
 		m_dBeforeFactor = m_dFactor;
@@ -55,7 +59,7 @@ void CViewBase::OnViewFit(const CRectD& rcMax)
 
 	// 画面の表示領域を 1mm単位で取得
 	CRect		rc;
-	m_pView->GetClientRect(rc);
+	GetClientRect(rc);
 	CSize	sz(rc.Width(), rc.Height());
 	dc.DPtoLP(&sz);
 	double	cx = sz.cx / LOMETRICFACTOR;
@@ -101,12 +105,11 @@ void CViewBase::OnViewLensP(void)
 #ifdef _DEBUG
 	CMagaDbg	dbg("CViewBase::OnViewLensP()");
 #endif
-	ASSERT(m_pView);
-	CClientDC	dc(m_pView);
+	CClientDC	dc(this);
 
 	// 現在のｸﾗｲｱﾝﾄ領域の大きさ
 	CRect		rc;
-	m_pView->GetClientRect(rc);
+	GetClientRect(rc);
 	CSize	sz(rc.Width(), rc.Height());
 	dc.DPtoLP(&sz);
 
@@ -172,12 +175,11 @@ void CViewBase::OnViewLensN(void)
 #ifdef _DEBUG
 	CMagaDbg	dbg("CViewBase::OnViewLensN()");
 #endif
-	ASSERT(m_pView);
-	CClientDC	dc(m_pView);
+	CClientDC	dc(this);
 
 	// 現在のｸﾗｲｱﾝﾄ領域の大きさ
 	CRect		rc;
-	m_pView->GetClientRect(rc);
+	GetClientRect(rc);
 	CSize	sz(rc.Width(), rc.Height());
 	dc.DPtoLP(&sz);
 
@@ -230,11 +232,10 @@ void CViewBase::OnViewLensN(void)
 
 void CViewBase::OnMoveKey(UINT nID)
 {
-	ASSERT(m_pView);
-	CClientDC	dc(m_pView);
+	CClientDC	dc(this);
 
 	CRect		rc;
-	m_pView->GetClientRect(rc);
+	GetClientRect(rc);
 	// ｸﾗｲｱﾝﾄ座標の1/6を移動範囲とする
 	CSize	sz(rc.Width()/6, rc.Height()/6);
 	dc.DPtoLP(&sz);
@@ -255,7 +256,7 @@ void CViewBase::OnMoveKey(UINT nID)
 		break;
 	}
 	dc.SetWindowOrg(pt);
-	m_pView->Invalidate();
+	Invalidate();
 }
 
 void CViewBase::OnBeforeMagnify(void)
@@ -263,8 +264,7 @@ void CViewBase::OnBeforeMagnify(void)
 	if ( m_dBeforeFactor == 0.0 )
 		return;
 
-	ASSERT(m_pView);
-	CClientDC	dc(m_pView);
+	CClientDC	dc(this);
 
 	// 現在表示中の値をﾊﾞｯｸｱｯﾌﾟ
 	CPoint	ptOrg(dc.GetWindowOrg());
@@ -281,24 +281,26 @@ void CViewBase::OnBeforeMagnify(void)
 /////////////////////////////////////////////////////////////////////////////
 // CViewBase クラスのメッセージ ハンドラ
 
-void CViewBase::OnCreate(CView* pView, BOOL bDC/*=TRUE*/)
+int CViewBase::OnCreate(LPCREATESTRUCT lpCreateStruct, BOOL bDC/*=TRUE*/)
 {
-	m_pView = pView;
-	ASSERT(m_pView);
+	if ( __super::OnCreate(lpCreateStruct) < 0 )
+		return -1;
+
 	if ( bDC ) {
 		// View の WNDCLASS に CS_OWNDC を指定しているため
 		// OnCreate() にて、マッピングモード等の変更
-		CClientDC	dc(m_pView);
+		CClientDC	dc(this);
 		dc.SetMapMode(MM_LOMETRIC);		// 0.1mm
 		dc.SetBkMode(TRANSPARENT);
 		dc.SelectStockObject(NULL_BRUSH);
 	}
+
+	return 0;
 }
 
 void CViewBase::OnLButtonDown(const CPoint& pt)
 {
-	ASSERT(m_pView);
-	CClientDC	dc(m_pView);
+	CClientDC	dc(this);
 
 	// 表示中なら前回矩形を消去
 	if ( m_bMagRect )
@@ -310,7 +312,7 @@ void CViewBase::OnLButtonDown(const CPoint& pt)
 		m_nBoth = 2;		// 両ﾎﾞﾀﾝ処理ｶｳﾝﾀ
 	}
 	else {
-		m_pView->SetCapture();
+		SetCapture();
 		m_nBoth = 1;
 	}
 
@@ -322,7 +324,7 @@ void CViewBase::OnLButtonDown(const CPoint& pt)
 	m_rcMagnify.TopLeft() = ptLog;
 }
 
-int CViewBase::OnLButtonUp(CPoint& pt)
+int CViewBase::OnLButtonUp(const CPoint& pt)
 {
 	int nResult = OnMouseButtonUp(m_nLState, pt);
 	m_nLState = -1;
@@ -339,10 +341,9 @@ void CViewBase::OnRButtonDown(const CPoint& pt)
 	else
 		m_nBoth = 1;
 
-	ASSERT(m_pView);
-	CClientDC	dc(m_pView);
+	CClientDC	dc(this);
 
-	m_pView->SetCapture();
+	SetCapture();
 	m_nRState = 0;
 	m_ptMouse = pt;		// ﾃﾞﾊﾞｲｽ座標
 	// 移動基点をｾｯﾄ
@@ -350,7 +351,7 @@ void CViewBase::OnRButtonDown(const CPoint& pt)
 	dc.DPtoLP(&m_ptMovOrg);
 }
 
-int CViewBase::OnRButtonUp(CPoint& pt)
+int CViewBase::OnRButtonUp(const CPoint& pt)
 {
 	int nResult = OnMouseButtonUp(m_nRState, pt);
 	switch ( nResult ) {
@@ -366,14 +367,13 @@ int CViewBase::OnRButtonUp(CPoint& pt)
 	return nResult;
 }
 
-int CViewBase::OnMouseButtonUp(int nState, CPoint& pt)
+int CViewBase::OnMouseButtonUp(int nState, const CPoint& pt)
 {
 	if ( m_nBoth-1 <= 0 )
 		ReleaseCapture();
 
 	int	nResult = 0;
-	ASSERT(m_pView);
-	CClientDC	dc(m_pView);
+	CClientDC	dc(this);
 	CPoint	ptLog(pt);
 	dc.DPtoLP(&ptLog);
 
@@ -394,7 +394,6 @@ int CViewBase::OnMouseButtonUp(int nState, CPoint& pt)
 	if ( --m_nBoth < 0 )
 		m_nBoth = 0;
 
-	pt = ptLog;		// 論理座標を返す
 	return nResult;
 }
 
@@ -417,8 +416,7 @@ BOOL CViewBase::OnMouseMove(UINT nFlags, const CPoint& pt)
 			return FALSE;
 	}
 
-	ASSERT(m_pView);
-	CClientDC	dc(m_pView);
+	CClientDC	dc(this);
 	CPoint		ptLog(pt);
 	dc.DPtoLP(&ptLog);
 
@@ -437,8 +435,8 @@ BOOL CViewBase::OnMouseMove(UINT nFlags, const CPoint& pt)
 		m_nRState = 1;
 		// 移動基点との差分を論理座標原点に加算
 		dc.SetWindowOrg(dc.GetWindowOrg() + (m_ptMovOrg - ptLog));
-		m_pView->Invalidate();
-		m_pView->UpdateWindow();
+		Invalidate();
+		UpdateWindow();
 		m_ptMouse = pt;
 	}
 
@@ -467,12 +465,57 @@ BOOL CViewBase::OnMouseWheel(UINT nFlags, short zDelta, const CPoint& pt)
 	return TRUE;
 }
 
+BOOL CViewBase::OnEraseBkgnd(CDC* pDC, COLORREF col1, COLORREF col2) 
+{
+	CRect	rc;
+	GetClientRect(rc);
+	pDC->DPtoLP(&rc);
+
+	if ( col1 == col2 ) {
+		pDC->FillSolidRect(&rc, col1);
+	}
+	else {
+		TRIVERTEX	tv[2];
+		tv[0].x = rc.left;	tv[0].y = rc.top;
+		tv[1].x = rc.right;	tv[1].y = rc.bottom;
+		tv[0].Red	= (COLOR16)(GetRValue(col1) << 8);
+		tv[0].Green	= (COLOR16)(GetGValue(col1) << 8);
+		tv[0].Blue	= (COLOR16)(GetBValue(col1) << 8);
+		tv[0].Alpha	= 0;
+		tv[1].Red	= (COLOR16)(GetRValue(col2) << 8);
+		tv[1].Green	= (COLOR16)(GetGValue(col2) << 8);
+		tv[1].Blue	= (COLOR16)(GetBValue(col2) << 8);
+		tv[1].Alpha	= 0;
+		GRADIENT_RECT	rcGrad;
+		rcGrad.UpperLeft	= 0;
+		rcGrad.LowerRight	= 1;
+		VERIFY( pDC->GradientFill(tv, 2, &rcGrad, 1, GRADIENT_FILL_RECT_V) );
+	}
+
+	return TRUE;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// CViewBase クラスの診断
+
+#ifdef _DEBUG
+void CViewBase::AssertValid() const
+{
+	__super::AssertValid();
+}
+
+void CViewBase::Dump(CDumpContext& dc) const
+{
+	__super::Dump(dc);
+}
+#endif //_DEBUG
+
 /////////////////////////////////////////////////////////////////////////////
 
 void CViewBase::CopyNCDrawForClipboard(HENHMETAFILE hEmf)
 {
 	// ｸﾘｯﾌﾟﾎﾞｰﾄﾞへのﾃﾞｰﾀｺﾋﾟｰ
-	if ( !m_pView->OpenClipboard() ) {
+	if ( !OpenClipboard() ) {
 		::DeleteEnhMetaFile(hEmf);
 		AfxMessageBox(IDS_ERR_CLIPBOARD, MB_OK|MB_ICONEXCLAMATION);
 		return;

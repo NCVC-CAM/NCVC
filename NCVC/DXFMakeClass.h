@@ -22,17 +22,17 @@ class CDXFMake
 	}
 
 	// æ∏ºÆ›ê∂ê¨(ã§í )
-	static	CString		MakeSection(int nType) {
+	static	CString		MakeSection(enSECNAME enType) {
 		extern	LPCTSTR	gg_szReturn;
 		extern	LPCTSTR	g_szGroupCode[];
 		extern	LPCTSTR	g_szSection[];
 		extern	LPCTSTR	g_szSectionName[];
-		ASSERT(nType>=SEC_HEADER && nType<=SEC_ENTITIES);
+		ASSERT(enType > SEC_NOSECNAME);
 		//  ﬂ¿∞›ëgÇ›óßÇƒ
 		return GROUPCODE(g_szGroupCode[GROUP0])+
 					g_szSection[SEC_SECTION]+gg_szReturn+
 					GROUPCODE(g_szGroupCode[GROUP2])+
-					g_szSectionName[nType]+gg_szReturn;
+					g_szSectionName[enType]+gg_szReturn;
 	}
 	static	CString		MakeEndSec(void) {
 		extern	LPCTSTR	gg_szReturn;
@@ -147,7 +147,7 @@ class CDXFMake
 
 public:
 	// äeæ∏ºÆ›èÓïÒ
-	CDXFMake(int, const CNCDoc* = NULL);
+	CDXFMake(enSECNAME, const CNCDoc* = NULL);
 	// ENTITIES√ﬁ∞¿
 	CDXFMake(const CNCdata*, BOOL = FALSE);
 	// å¥ì_èÓïÒ

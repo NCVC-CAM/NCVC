@@ -13,7 +13,6 @@ class CMKNCSetup1 : public CPropertyPage
 // コンストラクション
 public:
 	CMKNCSetup1();
-	~CMKNCSetup1();
 
 // ダイアログ データ
 	//{{AFX_DATA(CMKNCSetup1)

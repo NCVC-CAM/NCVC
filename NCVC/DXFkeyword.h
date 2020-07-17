@@ -4,37 +4,40 @@
 
 #pragma once
 
-#define	SEC_NOSECTION		-1
-#define	SEC_SECTION			0
-#define	SEC_ENDSEC			1
-#define	SEC_EOF				2
-#define	SEC_HEADER			0
-#define	SEC_TABLES			1
-#define	SEC_BLOCKS			2
-#define	SEC_ENTITIES		3
+enum enSECTION
+{
+	SEC_NOSECTION = -1,
+	SEC_SECTION, SEC_ENDSEC, SEC_EOF,
+		SEC_SECTION_NUM		// [3]
+};
+enum enSECNAME
+{
+	SEC_NOSECNAME = -1,
+	SEC_HEADER, SEC_TABLES, SEC_BLOCKS, SEC_ENTITIES,
+		SEC_SECNAME_NUM		// [4]
+};
 //
-#define	GROUP0				0
-#define	GROUP1				1
-#define	GROUP2				2
-#define	GROUP3				3
-#define	GROUP6				4
-#define	GROUP8				5
-#define	GROUP9				6
-#define	GROUP70				7
+enum
+{
+	GROUP0 = 0,
+	GROUP1,
+	GROUP2,
+	GROUP3,
+	GROUP6,
+	GROUP8,
+	GROUP9,
+	GROUP70,
+		GROUP_NUM			// [8]
+};
 //
-#define	DXFMAXVALUESIZE		12
-#define	VALUE10				0
-#define	VALUE20				1
-#define	VALUE11				2
-#define	VALUE21				3
-#define	VALUE40				4
-#define	VALUE41				5
-#define	VALUE42				6
-#define	VALUE50				7
-#define	VALUE51				8
-#define	VALUE210			9
-#define	VALUE220			10
-#define	VALUE230			11
+enum {
+	VALUE10 = 0,	VALUE20,
+	VALUE11,		VALUE21,
+	VALUE40,		VALUE41,		VALUE42,
+	VALUE50,		VALUE51,
+	VALUE210,		VALUE220,		VALUE230,
+		DXFMAXVALUESIZE		// [12]
+};
 #define	VALFLG10			0x0001
 #define	VALFLG20			0x0002
 #define	VALFLG11			0x0004
@@ -57,31 +60,44 @@
 #define	VALFLG_TEXT			(VALFLG_POINT)
 #define	VALFLG_PLANE		(VALFLG210|VALFLG220|VALFLG230)
 //
-#define	HEAD_ACADVER		0
-#define	HEAD_EXTMIN			1
-#define	HEAD_EXTMAX			2
-#define	HEAD_LIMMIN			3
-#define	HEAD_LIMMAX			4
+enum
+{
+	HEAD_ACADVER = 0,
+	HEAD_EXTMIN, HEAD_EXTMAX,
+	HEAD_LIMMIN, HEAD_LIMMAX,
+		HEAD_NUM		// [5]
+};
 //
-#define	TABLES_TABLE		0
-#define	TABLES_ENDTAB		1
-#define	TABLEKEY_LTYPE		0
-#define	TABLEKEY_LAYER		1
-#define	TABLEKEY_VPORT		2
+enum
+{
+	TABLES_TABLE = 0, TABLES_ENDTAB,
+	TABLEKEY_LTYPE,
+	TABLEKEY_LAYER,
+	TABLEKEY_VPORT
+};
 //
-#define	LTYPE_CONTINUOUS	0
-#define	LTYPE_DASHED		1
-#define	LTYPE_DOT			2
-#define	LTYPE_DASHDOT		3
-#define	LTYPE_DIVDE			4
+enum
+{
+	LTYPE_CONTINUOUS = 0,
+	LTYPE_DASHED,
+	LTYPE_DOT,
+	LTYPE_DASHDOT,
+	LTYPE_DIVDE,
+};
 //
-#define	TYPE_POINT			0
-#define	TYPE_LINE			1
-#define	TYPE_CIRCLE			2
-#define	TYPE_ARC			3
-#define	TYPE_ELLIPSE		4
-#define	TYPE_POLYLINE		5
-#define	TYPE_TEXT			6
-#define	TYPE_INSERT			7
-#define	TYPE_LWPOLYLINE		8
-#define	TYPE_VIEWPORT		9
+enum enENTITIESTYPE
+{
+	TYPE_SECTION_ERR = -2,
+	TYPE_NOTSUPPORT = -1,
+	TYPE_POINT = 0,
+	TYPE_LINE,
+	TYPE_CIRCLE,
+	TYPE_ARC,
+	TYPE_ELLIPSE,
+	TYPE_POLYLINE,
+	TYPE_TEXT,
+	TYPE_INSERT,
+	TYPE_LWPOLYLINE,
+	TYPE_VIEWPORT,
+		TYPE_ENTITIES_NUM	// [10]
+};

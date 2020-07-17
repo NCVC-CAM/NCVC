@@ -23,13 +23,15 @@ extern	CMagaDbg	g_dbg;
 using namespace boost;
 
 // ²Ò°¼Þ•\Ž¦²ÝÃÞ¯¸½
-#define	TREEIMG_OUTLINE		0
-#define	TREEIMG_TRACE		1
-#define	TREEIMG_EXCLUDE		2
-#define	TREEIMG_LAYER		3
-#define	TREEIMG_WORK		4
-#define	TREEIMG_CHAIN		5
-#define	TREEIMG_MAP			6
+enum {
+	TREEIMG_OUTLINE = 0,
+	TREEIMG_TRACE,
+	TREEIMG_EXCLUDE,
+	TREEIMG_LAYER,
+	TREEIMG_WORK,
+	TREEIMG_CHAIN,
+	TREEIMG_MAP
+};
 
 extern	LPTSTR	gg_RootTitle[] = {
 	"—ÖŠsW‡", "‹OÕW‡", "œŠOW‡"
@@ -44,24 +46,24 @@ BEGIN_MESSAGE_MAP(CDXFShapeView, CTreeView)
 	//{{AFX_MSG_MAP(CDXFShapeView)
 	ON_WM_CREATE()
 	ON_WM_CONTEXTMENU()
-	ON_NOTIFY_REFLECT(TVN_GETDISPINFO, OnGetDispInfo)
-	ON_NOTIFY_REFLECT(TVN_BEGINLABELEDIT, OnBeginLabelEdit)
-	ON_NOTIFY_REFLECT(TVN_ENDLABELEDIT, OnEndLabelEdit)
-	ON_NOTIFY_REFLECT(TVN_KEYDOWN, OnKeyDown)
-	ON_NOTIFY_REFLECT(TVN_SELCHANGED, OnSelChanged)
-	ON_NOTIFY_REFLECT(TVN_BEGINDRAG, OnBeginDrag)
 	ON_WM_CHAR()
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONUP()
 	ON_WM_RBUTTONDOWN()
 	ON_WM_RBUTTONUP()
-	ON_COMMAND(ID_EDIT_SORTSHAPE, OnSortShape)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_DEL, OnUpdateWorkingDel)
-	ON_COMMAND(ID_EDIT_SHAPE_DEL, OnWorkingDel)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_PROP, OnUpdateEditShapeProp)
-	ON_COMMAND(ID_EDIT_SHAPE_PROP, OnEditShapeProp)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_NAME, OnUpdateEditShapeName)
-	ON_COMMAND(ID_EDIT_SHAPE_NAME, OnEditShapeName)
+	ON_NOTIFY_REFLECT(TVN_GETDISPINFO, &CDXFShapeView::OnGetDispInfo)
+	ON_NOTIFY_REFLECT(TVN_BEGINLABELEDIT, &CDXFShapeView::OnBeginLabelEdit)
+	ON_NOTIFY_REFLECT(TVN_ENDLABELEDIT, &CDXFShapeView::OnEndLabelEdit)
+	ON_NOTIFY_REFLECT(TVN_KEYDOWN, &CDXFShapeView::OnKeyDown)
+	ON_NOTIFY_REFLECT(TVN_SELCHANGED, &CDXFShapeView::OnSelChanged)
+	ON_NOTIFY_REFLECT(TVN_BEGINDRAG, &CDXFShapeView::OnBeginDrag)
+	ON_COMMAND(ID_EDIT_SORTSHAPE, &CDXFShapeView::OnSortShape)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_DEL, &CDXFShapeView::OnUpdateWorkingDel)
+	ON_COMMAND(ID_EDIT_SHAPE_DEL, &CDXFShapeView::OnWorkingDel)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_PROP, &CDXFShapeView::OnUpdateEditShapeProp)
+	ON_COMMAND(ID_EDIT_SHAPE_PROP, &CDXFShapeView::OnEditShapeProp)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_NAME, &CDXFShapeView::OnUpdateEditShapeName)
+	ON_COMMAND(ID_EDIT_SHAPE_NAME, &CDXFShapeView::OnEditShapeName)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -75,10 +77,6 @@ CDXFShapeView::CDXFShapeView()
 	m_pDragShape = NULL;
 	m_dwDragRoot = 0;
 	m_pImageList = NULL;
-}
-
-CDXFShapeView::~CDXFShapeView()
-{
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -115,7 +113,7 @@ void CDXFShapeView::OnInitialUpdate()
 	}
 
 	// ¼Ø±Ù‰»Œã‚Ìˆ—
-	if ( GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) ) {
+	if ( GetDocument()->IsDocFlag(DXFDOC_SHAPE) ) {
 		// Œ`óî•ñ‚ð“o˜^
 		SetShapeTree();
 		// ‰ÁHŽwŽ¦‚ð“o˜^
@@ -987,7 +985,7 @@ void CDXFShapeView::OnUpdateWorkingDel(CCmdUI* pCmdUI)
 {
 	HTREEITEM hTree = GetTreeCtrl().GetSelectedItem();
 	BOOL	bEnable = FALSE;
-	if ( GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) && hTree && !IsRootTree(hTree) ) {
+	if ( GetDocument()->IsDocFlag(DXFDOC_SHAPE) && hTree && !IsRootTree(hTree) ) {
 		CDXFworking* pWork = reinterpret_cast<CDXFworking *>(GetTreeCtrl().GetItemData(hTree));
 		bEnable = pWork && pWork->IsKindOf(RUNTIME_CLASS(CDXFworking));
 	}

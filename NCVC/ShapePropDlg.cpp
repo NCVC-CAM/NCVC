@@ -37,10 +37,6 @@ CShapePropDlg::CShapePropDlg
 	m_bAcuteRound = bAcute;
 }
 
-CShapePropDlg::~CShapePropDlg()
-{
-}
-
 void CShapePropDlg::DoDataExchange(CDataExchange* pDX)
 {
 	__super::DoDataExchange(pDX);

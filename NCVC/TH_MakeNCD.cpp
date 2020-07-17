@@ -14,7 +14,7 @@
 #include "ThreadDlg.h"
 //#include <fstream>		// AddCustomMillCode()
 
-using namespace std;
+using std::string;
 using namespace boost;
 
 #include "MagaDbgMac.h"
@@ -30,16 +30,16 @@ extern	CMagaDbg	g_dbg;
 
 // --- CDXFdata の GetType() と GetMakeType() の使い分けに注意！！
 
+// ｸﾞﾛｰﾊﾞﾙ変数定義
+static	CThreadDlg*		g_pParent;
+static	CDXFDoc*		g_pDoc;
+static	CNCMakeMillOpt*	g_pMakeOpt;
+
 // よく使う変数や呼び出しの簡略置換
 #define	IsThread()	g_pParent->IsThreadContinue()
 #define	GetFlg(a)	g_pMakeOpt->GetFlag(a)
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
-
-// ｸﾞﾛｰﾊﾞﾙ変数定義
-static	CThreadDlg*		g_pParent;
-static	CDXFDoc*		g_pDoc;
-static	CNCMakeMillOpt*	g_pMakeOpt;
 
 // NC生成に必要なﾃﾞｰﾀ群
 static	CDXFmap		g_mpDXFdata,	// 座標をｷｰにCDXFdataを格納

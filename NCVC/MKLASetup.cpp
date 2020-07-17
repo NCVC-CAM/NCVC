@@ -14,7 +14,7 @@ extern	CMagaDbg	g_dbg;
 extern	int		g_nLastPage_NCMakeLathe;
 
 BEGIN_MESSAGE_MAP(CMKLASetup, CPropertySheet)
-	ON_BN_CLICKED (ID_APPLY_NOW, OnApplyNow)
+	ON_BN_CLICKED (ID_APPLY_NOW, &CMKLASetup::OnApplyNow)
 END_MESSAGE_MAP()
 
 IMPLEMENT_DYNAMIC(CMKLASetup, CPropertySheet)

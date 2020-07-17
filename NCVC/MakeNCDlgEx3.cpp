@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "MainFrm.h"
 #include "Layer.h"
 #include "DXFDoc.h"
 #include "NCMakeMillOpt.h"
@@ -34,13 +35,13 @@ static	int		HEADINDEX[][4] = {
 };
 
 BEGIN_MESSAGE_MAP(CMakeNCDlgEx3, CPropertyPage)
-	ON_NOTIFY(LVN_GETDISPINFO, IDC_MKNCEX_LAYERLIST, OnGetDispInfoLayerList)
-	ON_NOTIFY(NM_DBLCLK, IDC_MKNCEX_LAYERLIST, OnDblClkLayerList)
-	ON_NOTIFY(LVN_COLUMNCLICK, IDC_MKNCEX_LAYERLIST, OnColumnClickLayerList)
-	ON_NOTIFY(LVN_ENDSCROLL, IDC_MKNCEX_LAYERLIST, OnEndScrollLayerList)
-	ON_BN_CLICKED(IDC_EXE_UP, OnUp)
-	ON_BN_CLICKED(IDC_EXE_DOWN, OnDown)
-	ON_MESSAGE(PSM_QUERYSIBLINGS, OnQuerySiblings)
+	ON_NOTIFY(LVN_GETDISPINFO, IDC_MKNCEX_LAYERLIST, &CMakeNCDlgEx3::OnGetDispInfoLayerList)
+	ON_NOTIFY(NM_DBLCLK, IDC_MKNCEX_LAYERLIST, &CMakeNCDlgEx3::OnDblClkLayerList)
+	ON_NOTIFY(LVN_COLUMNCLICK, IDC_MKNCEX_LAYERLIST, &CMakeNCDlgEx3::OnColumnClickLayerList)
+	ON_NOTIFY(LVN_ENDSCROLL, IDC_MKNCEX_LAYERLIST, CMakeNCDlgEx3::OnEndScrollLayerList)
+	ON_BN_CLICKED(IDC_EXE_UP, &CMakeNCDlgEx3::OnUp)
+	ON_BN_CLICKED(IDC_EXE_DOWN, &CMakeNCDlgEx3::OnDown)
+	ON_MESSAGE(PSM_QUERYSIBLINGS, &CMakeNCDlgEx3::OnQuerySiblings)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -50,10 +51,6 @@ CMakeNCDlgEx3::CMakeNCDlgEx3() : CPropertyPage(CMakeNCDlgEx3::IDD)
 {
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	m_nSortColumn = 0;
-}
-
-CMakeNCDlgEx3::~CMakeNCDlgEx3()
-{
 }
 
 void CMakeNCDlgEx3::DoDataExchange(CDataExchange* pDX)

@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "MainFrm.h"
 #include "DXFDoc.h"
 #include "MakeNCDlg.h"
 #include "MakeNCDlgEx.h"
@@ -46,10 +47,3 @@ CMakeNCDlgEx::CMakeNCDlgEx(UINT nID, CDXFDoc* pDoc) : CPropertySheet(nID)
 		pOpt->AddInitHistory(NCMAKELAYER, strPath);
 	}
 }
-
-CMakeNCDlgEx::~CMakeNCDlgEx()
-{
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// CMakeNCDlgEx メッセージ ハンドラ

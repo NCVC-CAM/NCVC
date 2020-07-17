@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// 日本語 resources
+// 日本語 (日本) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
-#ifdef _WIN32
 LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
 #pragma code_page(932)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -90,7 +88,7 @@ IDB_TREEVIEW_MARK       BITMAP                  "res\\tree.bmp"
 // Toolbar
 //
 
-IDR_MAINFRAME TOOLBAR  16, 15
+IDR_MAINFRAME TOOLBAR 16, 15
 BEGIN
     BUTTON      ID_FILE_OPEN
     BUTTON      ID_FILE_SAVE
@@ -111,7 +109,7 @@ BEGIN
     BUTTON      ID_CONTEXT_HELP
 END
 
-IDR_TRACEBAR TOOLBAR  16, 15
+IDR_TRACEBAR TOOLBAR 16, 15
 BEGIN
     BUTTON      ID_NCVIEW_TRACE_RUN
     BUTTON      ID_NCVIEW_TRACE_PAUSE
@@ -125,7 +123,7 @@ BEGIN
     BUTTON      ID_NCVIEW_TRACE_LOW
 END
 
-IDR_MAKENCD TOOLBAR  16, 15
+IDR_MAKENCD TOOLBAR 16, 15
 BEGIN
     BUTTON      ID_OPTION_MAKENC
     SEPARATOR
@@ -139,12 +137,12 @@ BEGIN
     BUTTON      ID_FILE_NCD2DXF
 END
 
-IDR_MACHINE TOOLBAR  16, 15
+IDR_MACHINE TOOLBAR 16, 15
 BEGIN
     BUTTON      ID_OPTION_MC
 END
 
-IDR_SHAPE TOOLBAR  16, 15
+IDR_SHAPE TOOLBAR 16, 15
 BEGIN
     BUTTON      ID_EDIT_SHAPE_VEC
     BUTTON      ID_EDIT_SHAPE_START
@@ -163,12 +161,14 @@ END
 // Menu
 //
 
-IDR_MAINFRAME MENU 
+IDR_MAINFRAME MENU
 BEGIN
     POPUP "ﾌｧｲﾙ(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
         MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
+        MENUITEM SEPARATOR
+        MENUITEM "CADﾃﾞｰﾀの統合(&B)...\tCtrl+B",   ID_FILE_CADBIND
         MENUITEM SEPARATOR
         MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1, GRAYED
         MENUITEM SEPARATOR
@@ -211,13 +211,16 @@ BEGIN
     END
 END
 
-IDR_NCTYPE MENU 
+IDR_NCTYPE MENU
 BEGIN
     POPUP "ﾌｧｲﾙ(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
         MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
         MENUITEM "ｶｰｿﾙ位置に読み込み(&I)...\tIns",     ID_FILE_NCINSERT
+        MENUITEM SEPARATOR
+        MENUITEM "CADﾃﾞｰﾀの統合(&B)...\tCtrl+B",   ID_FILE_CADBIND
+        MENUITEM SEPARATOR
         MENUITEM "閉じて開く(&L)...",                ID_FILE_CLANDOP
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
         MENUITEM SEPARATOR
@@ -329,12 +332,15 @@ BEGIN
     END
 END
 
-IDR_DXFTYPE MENU 
+IDR_DXFTYPE MENU
 BEGIN
     POPUP "ﾌｧｲﾙ(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
         MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
+        MENUITEM SEPARATOR
+        MENUITEM "CADﾃﾞｰﾀの統合(&B)...\tCtrl+B",   ID_FILE_CADBIND
+        MENUITEM SEPARATOR
         MENUITEM "閉じて開く(&L)...",                ID_FILE_CLANDOP
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
         MENUITEM SEPARATOR
@@ -443,7 +449,7 @@ BEGIN
     END
 END
 
-IDR_DXFPOPUP1 MENU 
+IDR_DXFPOPUP1 MENU
 BEGIN
     POPUP ""
     BEGIN
@@ -495,7 +501,7 @@ BEGIN
     END
 END
 
-IDR_NCPOPUP1 MENU 
+IDR_NCPOPUP1 MENU
 BEGIN
     POPUP ""
     BEGIN
@@ -555,7 +561,7 @@ BEGIN
     END
 END
 
-IDR_NCPOPUP2 MENU 
+IDR_NCPOPUP2 MENU
 BEGIN
     POPUP ""
     BEGIN
@@ -581,7 +587,7 @@ BEGIN
     END
 END
 
-IDR_NCPOPUP3 MENU 
+IDR_NCPOPUP3 MENU
 BEGIN
     POPUP ""
     BEGIN
@@ -589,7 +595,7 @@ BEGIN
     END
 END
 
-IDR_DXFPOPUP2 MENU 
+IDR_DXFPOPUP2 MENU
 BEGIN
     POPUP ""
     BEGIN
@@ -617,7 +623,7 @@ END
 // Accelerator
 //
 
-IDR_MAINFRAME ACCELERATORS 
+IDR_MAINFRAME ACCELERATORS
 BEGIN
     VK_F1,          ID_CONTEXT_HELP,        VIRTKEY, SHIFT, NOINVERT
     "L",            ID_DXFVIEW_LAYER,       VIRTKEY, CONTROL, NOINVERT
@@ -640,6 +646,7 @@ BEGIN
     VK_F7,          ID_FILE_DXF2NCD_EX2,    VIRTKEY, SHIFT, NOINVERT
     VK_F7,          ID_FILE_DXF2NCD_LATHE,  VIRTKEY, CONTROL, ALT, NOINVERT
     VK_F7,          ID_FILE_DXF2NCD_SHAPE,  VIRTKEY, ALT, NOINVERT
+    VK_F7,          ID_FILE_DXF2NCD_WIRE,   VIRTKEY, SHIFT, CONTROL, ALT, NOINVERT
     "D",            ID_FILE_NCD2DXF,        VIRTKEY, CONTROL, NOINVERT
     VK_INSERT,      ID_FILE_NCINSERT,       VIRTKEY, NOINVERT
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
@@ -675,7 +682,7 @@ BEGIN
     VK_UP,          ID_VIEW_RUP,            VIRTKEY, CONTROL, NOINVERT
     VK_UP,          ID_VIEW_UP,             VIRTKEY, NOINVERT
     VK_F6,          ID_WINDOW_NEXT,         VIRTKEY, NOINVERT
-    VK_F7,          ID_FILE_DXF2NCD_WIRE,   VIRTKEY, SHIFT, CONTROL, ALT, NOINVERT
+    "B",            ID_FILE_CADBIND,        VIRTKEY, CONTROL, NOINVERT
 END
 
 
@@ -693,8 +700,8 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.50",IDC_STATIC,86,166,130,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 1997-2013 MNCT K.Magara",IDC_STATIC,86,182,123,8
+    LTEXT           "NCVC Version 3.51c",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 1997-2014 MNCT K.Magara",IDC_STATIC,86,182,123,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
 
@@ -755,7 +762,7 @@ BEGIN
     LISTBOX         IDC_DXF_RELOADLIST,7,7,217,92,NOT LBS_NOTIFY | LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | LBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
     DEFPUSHBUTTON   "&OK",IDOK,57,119,50,14
     PUSHBUTTON      "&Cancel",IDCANCEL,123,119,50,14
-    LTEXT           "",IDC_DXF_RELOADLIST_ST,21,103,185,8,NOT WS_VISIBLE
+    LTEXT           "",IDC_DXF_RELOADLIST_ST,21,103,185,8,NOT WS_VISIBLE | WS_BORDER
 END
 
 IDD_DXF_SETUP1 DIALOGEX 0, 0, 219, 220
@@ -1331,12 +1338,13 @@ BEGIN
     CONTROL         "小数点以下の無駄なｾﾞﾛを取る(&Z)",IDC_MKNC6_ZEROCUT,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,14,40,114,10
     GROUPBOX        "数値表記",IDC_STATIC,7,7,229,50,WS_GROUP
     CONTROL         "時計回り(G0&2)",IDC_MKNC6_CIRCLECODE1,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,13,83,57,10
-    CONTROL         "反時計回り(G0&3)",IDC_MKNC6_CIRCLECODE2,"Button",BS_AUTORADIOBUTTON,13,100,72,10
-    GROUPBOX        "円・楕円の切削方向",IDC_STATIC,7,70,94,50,WS_GROUP
-    CONTROL         "&R指定",IDC_MKNC6_R,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,122,83,34,10
-    CONTROL         "&I/J/K指定",IDC_MKNC6_IJ,"Button",BS_AUTORADIOBUTTON,175,83,46,10
-    CONTROL         "全円は２分割(&H)",IDC_MKNC6_CIRCLEHALF,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,122,100,89,10
-    GROUPBOX        "円弧補間",IDC_MKNC6_CGRP,116,70,120,50,WS_GROUP
+    CONTROL         "反時計回り(G0&3)",IDC_MKNC6_CIRCLECODE2,"Button",BS_AUTORADIOBUTTON,13,100,64,10
+    GROUPBOX        "円・楕円の切削方向",IDC_STATIC,7,70,90,50,WS_GROUP
+    CONTROL         "&R指定",IDC_MKNC6_R,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,113,83,34,10
+    CONTROL         "&I/J/K指定",IDC_MKNC6_IJ,"Button",BS_AUTORADIOBUTTON,180,83,46,10
+    CONTROL         "全円は２分割(&H)",IDC_MKNC6_CIRCLEHALF,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,113,100,63,10
+    CONTROL         "ｾﾞﾛは省略(&K)",IDC_MKNC6_ZEROCUT_IJ,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,180,100,54,10
+    GROUPBOX        "円弧補間",IDC_MKNC6_CGRP,106,70,130,50,WS_GROUP
     LTEXT           "直線補間公差(&T)",IDC_STATIC,14,145,50,8
     EDITTEXT        IDC_MKNC6_KOUSA,70,143,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,114,145,32,8
@@ -1400,9 +1408,10 @@ BEGIN
     EDITTEXT        IDC_WORK_ZO,178,62,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,229,64,18,8
     GROUPBOX        "原点からのｵﾌｾｯﾄ",IDC_STATIC,130,7,118,76,WS_GROUP
-    PUSHBUTTON      "元の大きさに戻す(&R)",IDC_WORK_RECOVER,83,92,88,16
-    DEFPUSHBUTTON   "表示(&V)",IDOK,48,117,71,16
-    PUSHBUTTON      "非表示(&C)",IDC_WORK_HIDE,135,117,71,16
+    PUSHBUTTON      "この情報をｺﾒﾝﾄで埋め込む(&I)",IDC_WORK_COMMENT,32,92,86,16
+    PUSHBUTTON      "元の大きさに戻す(&R)",IDC_WORK_RECOVER,135,92,86,16
+    DEFPUSHBUTTON   "表示(&V)",IDOK,32,117,86,16
+    PUSHBUTTON      "非表示(&C)",IDC_WORK_HIDE,135,117,86,16
 END
 
 IDD_SHAPE_PROP DIALOGEX 0, 0, 207, 155
@@ -1477,7 +1486,7 @@ END
 
 IDD_VIEW_SETUP2 DIALOGEX 0, 0, 334, 212
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "NCD-2"
+CAPTION "ｼﾐｭﾚｰｼｮﾝｴﾘｱ設定"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
     LTEXT           "",IDC_VIEWSETUP2_ST_BACKGROUND1,13,20,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
@@ -1534,7 +1543,7 @@ END
 
 IDD_VIEW_SETUP3 DIALOGEX 0, 0, 334, 212
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "CAD"
+CAPTION "CADﾃﾞｰﾀ表示設定"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
     LTEXT           "",IDC_VIEWSETUP3_ST_BACKGROUND1,13,20,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
@@ -1558,16 +1567,19 @@ BEGIN
     COMBOBOX        IDC_VIEWSETUP3_CB_MOVE,272,81,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "",IDC_VIEWSETUP3_ST_TEXT,176,100,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
     PUSHBUTTON      "ｺﾒﾝﾄ文字色",IDC_VIEWSETUP3_BT_TEXT,195,99,72,16
-    LTEXT           "",IDC_VIEWSETUP3_ST_OUTLINE,176,140,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
-    PUSHBUTTON      "加工指示",IDC_VIEWSETUP3_BT_OUTLINE,195,139,72,16
-    COMBOBOX        IDC_VIEWSETUP3_CB_OUTLINE,272,141,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "",IDC_VIEWSETUP3_ST_OUTLINE,176,120,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "加工指示",IDC_VIEWSETUP3_BT_OUTLINE,195,119,72,16
+    COMBOBOX        IDC_VIEWSETUP3_CB_OUTLINE,272,121,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "",IDC_VIEWSETUP3_ST_WORK,176,140,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "ﾜｰｸ矩形",IDC_VIEWSETUP3_BT_WORK,195,139,72,16
+    COMBOBOX        IDC_VIEWSETUP3_CB_WORK,272,141,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "表示属性",IDC_STATIC,170,7,157,160,WS_GROUP
     PUSHBUTTON      "色と線種属性を初期設定に戻す",IDC_VIEWSETUP1_DEFCOLOR,107,189,120,16
 END
 
 IDD_VIEW_SETUP4 DIALOGEX 0, 0, 334, 212
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "NCD-1"
+CAPTION "情報ｴﾘｱとﾄﾚｰｽ設定"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
     LTEXT           "",IDC_VIEWSETUP4_ST_BACKGROUND1,13,20,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
@@ -1633,7 +1645,7 @@ END
 
 IDD_VIEW_SETUP5 DIALOGEX 0, 0, 334, 212
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "NCD-3"
+CAPTION "OpenGL設定"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
     LTEXT           "",IDC_VIEWSETUP5_ST_WORK,13,20,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
@@ -1767,6 +1779,57 @@ BEGIN
     GROUPBOX        "AWF設定",-1,7,7,229,70
 END
 
+IDD_VIEW_SETUP6 DIALOGEX 0, 0, 334, 212
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "4面ｽﾌﾟﾘｯﾄ表示設定"
+FONT 9, "MS UI Gothic", 0, 0, 0x1
+BEGIN
+    PUSHBUTTON      "初期設定に戻す",IDC_VIEWSETUP1_DEFCOLOR,107,189,120,16
+    GROUPBOX        "4面-1",IDC_STATIC,7,7,157,150,WS_GROUP
+    LTEXT           "左上(&0)",IDC_STATIC,20,35,29,8
+    COMBOBOX        IDC_VIEWSETUP6_LT,16,50,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "右上(&1)",IDC_STATIC,94,35,29,8
+    COMBOBOX        IDC_VIEWSETUP6_RT,90,50,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "左下(&2)",IDC_STATIC,20,75,29,8
+    COMBOBOX        IDC_VIEWSETUP6_LB,16,90,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "右下(&3)",IDC_STATIC,94,75,29,8
+    COMBOBOX        IDC_VIEWSETUP6_RB,90,90,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "4面-2",IDC_STATIC,170,7,157,150,WS_GROUP
+    LTEXT           "左上(&4)",IDC_STATIC,180,20,29,8
+    COMBOBOX        IDC_VIEWSETUP6_L1,180,35,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "左中(&5)",IDC_STATIC,180,55,29,8
+    COMBOBOX        IDC_VIEWSETUP6_L2,180,70,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "左下(&6)",IDC_STATIC,180,90,29,8
+    COMBOBOX        IDC_VIEWSETUP6_L3,180,105,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "右(&7)",IDC_STATIC,255,55,29,8
+    COMBOBOX        IDC_VIEWSETUP6_RR,255,70,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "この設定は次回読み込み時から有効です",IDC_STATIC,110,166,113,8
+END
+
+IDD_CADBIND DIALOGEX 0, 0, 308, 180
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "CADﾃﾞｰﾀの統合"
+FONT 9, "MS UI Gothic", 400, 0, 0x80
+BEGIN
+    LTEXT           "ﾜｰｸｻｲｽﾞ(&W)",IDC_STATIC,7,124,46,8
+    EDITTEXT        IDC_BIND_WORK_X,55,122,37,12,ES_RIGHT | ES_AUTOHSCROLL | WS_GROUP,WS_EX_RIGHT
+    LTEXT           "x",IDC_STATIC,98,124,8,8
+    EDITTEXT        IDC_BIND_WORK_Y,107,122,37,12,ES_RIGHT | ES_AUTOHSCROLL | WS_GROUP,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,149,124,11,8
+    LTEXT           "配置ﾏｰｼﾞﾝ(&M)",IDC_STATIC,7,140,46,8
+    EDITTEXT        IDC_BIND_MARGIN,55,138,37,12,ES_RIGHT | ES_AUTOHSCROLL | WS_GROUP,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,98,140,11,8
+    LTEXT           "加工原点(&N)",IDC_STATIC,211,124,46,8
+    COMBOBOX        IDC_BIND_ORGTYPE,260,122,41,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "",IDC_BIND_LIST_ST,7,113,190,8,NOT WS_VISIBLE | WS_BORDER
+    LISTBOX         IDC_BIND_LIST,7,7,212,108,LBS_NOINTEGRALHEIGHT | LBS_EXTENDEDSEL | LBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP,WS_EX_ACCEPTFILES
+    PUSHBUTTON      "ﾌｧｲﾙの追加(&F)...",IDC_BIND_ADD,224,7,77,14
+    PUSHBUTTON      "選択ﾌｧｲﾙのｸﾘｱ(&R)",IDC_BIND_CLR,224,32,77,14
+    PUSHBUTTON      "全ｸﾘｱ(&A)",IDC_BIND_ALLCLR,224,57,77,14
+    DEFPUSHBUTTON   "&OK",IDOK,96,159,50,14
+    PUSHBUTTON      "ｷｬﾝｾﾙ(&C)",IDCANCEL,162,159,50,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1774,8 +1837,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,5,0,0
- PRODUCTVERSION 3,5,0,0
+ FILEVERSION 3,5,1,3
+ PRODUCTVERSION 3,5,1,3
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1792,16 +1855,16 @@ BEGIN
         BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
-            VALUE "FileDescription", "NCVC MFC ｱﾌﾟﾘｹｰｼｮﾝ"
-            VALUE "FileVersion", "3.5.0.0"
+            VALUE "FileDescription", "NC Viewer and Converter"
+            VALUE "FileVersion", "3.5.1.3"
             VALUE "InternalName", "NCVC.exe"
-            VALUE "LegalCopyright", "Copyright (C) 1997-2013 MNCT K.Magara"
+            VALUE "LegalCopyright", "Copyright (C) 1997-2014 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.5.0.0"
-            VALUE "SpecialBuild", "VC++2008SP1 FeaturePack"
+            VALUE "ProductVersion", "3.5.1.3"
+            VALUE "SpecialBuild", "VC++2012"
         END
     END
     BLOCK "VarFileInfo"
@@ -1817,7 +1880,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
@@ -2170,6 +2233,22 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 196
     END
+
+    IDD_VIEW_SETUP6, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 327
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 205
+    END
+
+    IDD_CADBIND, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 301
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 173
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -2446,31 +2525,115 @@ BEGIN
     0
 END
 
+IDD_VIEW_SETUP6 DLGINIT
+BEGIN
+    IDC_VIEWSETUP6_LT, 0x403, 4, 0
+0x5958, 0x005a, 
+    IDC_VIEWSETUP6_LT, 0x403, 3, 0
+0x5958, "\000" 
+    IDC_VIEWSETUP6_LT, 0x403, 3, 0
+0x5a58, "\000" 
+    IDC_VIEWSETUP6_LT, 0x403, 3, 0
+0x5a59, "\000" 
+    IDC_VIEWSETUP6_RT, 0x403, 4, 0
+0x5958, 0x005a, 
+    IDC_VIEWSETUP6_RT, 0x403, 3, 0
+0x5958, "\000" 
+    IDC_VIEWSETUP6_RT, 0x403, 3, 0
+0x5a58, "\000" 
+    IDC_VIEWSETUP6_RT, 0x403, 3, 0
+0x5a59, "\000" 
+    IDC_VIEWSETUP6_LB, 0x403, 4, 0
+0x5958, 0x005a, 
+    IDC_VIEWSETUP6_LB, 0x403, 3, 0
+0x5958, "\000" 
+    IDC_VIEWSETUP6_LB, 0x403, 3, 0
+0x5a58, "\000" 
+    IDC_VIEWSETUP6_LB, 0x403, 3, 0
+0x5a59, "\000" 
+    IDC_VIEWSETUP6_RB, 0x403, 4, 0
+0x5958, 0x005a, 
+    IDC_VIEWSETUP6_RB, 0x403, 3, 0
+0x5958, "\000" 
+    IDC_VIEWSETUP6_RB, 0x403, 3, 0
+0x5a58, "\000" 
+    IDC_VIEWSETUP6_RB, 0x403, 3, 0
+0x5a59, "\000" 
+    IDC_VIEWSETUP6_L1, 0x403, 4, 0
+0x5958, 0x005a, 
+    IDC_VIEWSETUP6_L1, 0x403, 3, 0
+0x5958, "\000" 
+    IDC_VIEWSETUP6_L1, 0x403, 3, 0
+0x5a58, "\000" 
+    IDC_VIEWSETUP6_L1, 0x403, 3, 0
+0x5a59, "\000" 
+    IDC_VIEWSETUP6_L2, 0x403, 4, 0
+0x5958, 0x005a, 
+    IDC_VIEWSETUP6_L2, 0x403, 3, 0
+0x5958, "\000" 
+    IDC_VIEWSETUP6_L2, 0x403, 3, 0
+0x5a58, "\000" 
+    IDC_VIEWSETUP6_L2, 0x403, 3, 0
+0x5a59, "\000" 
+    IDC_VIEWSETUP6_L3, 0x403, 4, 0
+0x5958, 0x005a, 
+    IDC_VIEWSETUP6_L3, 0x403, 3, 0
+0x5958, "\000" 
+    IDC_VIEWSETUP6_L3, 0x403, 3, 0
+0x5a58, "\000" 
+    IDC_VIEWSETUP6_L3, 0x403, 3, 0
+0x5a59, "\000" 
+    IDC_VIEWSETUP6_RR, 0x403, 4, 0
+0x5958, 0x005a, 
+    IDC_VIEWSETUP6_RR, 0x403, 3, 0
+0x5958, "\000" 
+    IDC_VIEWSETUP6_RR, 0x403, 3, 0
+0x5a58, "\000" 
+    IDC_VIEWSETUP6_RR, 0x403, 3, 0
+0x5a59, "\000" 
+    0
+END
+
+IDD_CADBIND DLGINIT
+BEGIN
+    IDC_BIND_ORGTYPE, 0x403, 5, 0
+0x8692, 0x9b89, "\000" 
+    IDC_BIND_ORGTYPE, 0x403, 5, 0
+0x4589, 0xe38f, "\000" 
+    IDC_BIND_ORGTYPE, 0x403, 5, 0
+0x4589, 0xba89, "\000" 
+    IDC_BIND_ORGTYPE, 0x403, 5, 0
+0xb68d, 0xe38f, "\000" 
+    IDC_BIND_ORGTYPE, 0x403, 5, 0
+0xb68d, 0xba89, "\000" 
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDP_OLE_INIT_FAILED     "OLE の初期化に失敗しました。OLE ライブラリのバージョンが正しいことを確認してください。"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDR_MAINFRAME           "NCVC"
     IDR_NCTYPE              "\n\n\nNC ﾌｧｲﾙ (*.ncd)\n.ncd\nNC.Document\nNC Document"
     IDR_DXFTYPE             "\n\n\nCAM ﾌｧｲﾙ (*.cam)\n.cam\nCAM.Document\nCAM Document"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     AFX_IDS_APP_TITLE       "NCVC"
     AFX_IDS_IDLEMESSAGE     "レディ"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_FILE_OPEN            "既存のファイルを開く\n開く"
     ID_FILE_CLOSE           "作業中のファイルを閉じる\n閉じる"
@@ -2478,7 +2641,7 @@ BEGIN
     ID_FILE_SAVE_AS         "作業中のファイルを新しい名前で保存\n名前をつけて保存"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_APP_ABOUT            "プログラム情報・バージョン・著作権を表示します。\nバージョン情報"
     ID_APP_EXIT             "アプリケーションを終了し、ファイルの保存を指示\\終了"
@@ -2486,7 +2649,7 @@ BEGIN
     ID_HELP                 "ﾍﾙﾌﾟ ﾄﾋﾟｯｸの一覧\nﾍﾙﾌﾟ ﾄﾋﾟｯｸ"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_FILE_MRU_FILE1       "指定のファイルを開く"
     ID_FILE_MRU_FILE2       "指定のファイルを開く"
@@ -2500,7 +2663,7 @@ BEGIN
     ID_FILE_MRU_FILE10      "指定のファイルを開く"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_WINDOW_ARRANGE       "ウィンドウの下部にアイコンを整列\nアイコンの整列"
     ID_WINDOW_CASCADE       "ウィンドウを重ねて表示\n重ねて表示"
@@ -2508,7 +2671,7 @@ BEGIN
     ID_WINDOW_TILE_VERT     "ウィンドウを並べて表示\n並べて表示"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_EDIT_CLEAR           "選択範囲を消去\n消去"
     ID_EDIT_CLEAR_ALL       "すべて消去\nすべて消去"
@@ -2523,13 +2686,13 @@ BEGIN
     ID_EDIT_REDO            "取り消した操作をやり直す\nやり直す"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_VIEW_TOOLBAR         "ツール バーの 表示/非表示\nツール バーの表示切り替え"
     ID_VIEW_STATUS_BAR      "ステータス バーの 表示/非表示\nステータス バーの表示切り替え"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     AFX_IDS_SCSIZE          "ウィンドウのサイズを変更"
     AFX_IDS_SCMOVE          "ウィンドウの位置を変更"
@@ -2540,14 +2703,14 @@ BEGIN
     AFX_IDS_SCCLOSE         "作業中のウィンドウを閉じ、変更したファイルの保存を指示"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     AFX_IDS_SCRESTORE       "ウィンドウを通常のサイズに戻す"
     AFX_IDS_SCTASKLIST      "タスク一覧をアクティブにする"
     AFX_IDS_MDICHILD        "ウィンドウをアクティブにする"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REGISTRY_KEY        "MNCT-S"
     IDS_REGKEY_SETTINGS     "Settings"
@@ -2558,7 +2721,7 @@ BEGIN
     IDS_REGKEY_MAKEDXF      "MakeDXF"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_COMPORT         "COM"
     IDS_REG_COMFORM         "COM%dDCB"
@@ -2574,7 +2737,7 @@ BEGIN
     IDS_REG_DXF_VIEWER      "VIEWER"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_COMMON_FORMAT       "%s%02d"
     ID_FILE_THUMBNAIL       "ｻﾑﾈｲﾙ表示からファイルを開く\nｻﾑﾈｲﾙで開く"
@@ -2585,14 +2748,14 @@ BEGIN
     ID_FILE_DXF2NCD_LATHE   "旋盤用NCﾃﾞｰﾀを生成します\n旋盤NC生成(Ctrl+Alt+F7)"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_FILE_DXF2NCD_WIRE    "ﾜｲﾔ加工機NCﾃﾞｰﾀを生成します\nﾜｲﾔ加工機NC生成(Shift+Ctrl+Alt+F7)"
     ID_FILE_NCINSERT        "NCｺｰﾄﾞのｶｰｿﾙ位置に他のﾌｧｲﾙを読み込み挿入します"
     ID_FILE_NCD2DXF         "NCﾃﾞｰﾀからDXFを出力します\nDXF出力(Ctrl+D)"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_OUTOFMEM        "Out of memory"
     IDS_ERR_CRITICAL        "ﾌﾟﾛｸﾞﾗﾑ内部で致命的なｴﾗｰが発生しました。処理を中断します。\nFile=%s\nLine=%d"
@@ -2604,12 +2767,12 @@ BEGIN
     IDS_ERR_OUTOFVRAM       "ﾋﾞﾃﾞｵﾒﾓﾘが確保できませんでした。"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_CONVERT         "Convert"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_OPTION_MC            "各種工作機械の設定を行います。正しく設定しないと切削時間の計算ができません\n機械情報の設定"
     ID_OPTION_MCCOMBO       "\n機械情報選択履歴"
@@ -2620,7 +2783,7 @@ BEGIN
     ID_OPTION_VIEW_SETUP    "画面表示の色、ﾏｳｽの動作をｶｽﾀﾏｲｽﾞできます\n表示属性"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_OPTION_VIEW_INPORT   "ｴｸｽﾎﾟｰﾄした表示属性(ﾌｫﾝﾄ情報除く)を取り込みます"
     ID_OPTION_VIEW_EXPORT   "現在の表示属性をﾃｷｽﾄﾌｧｲﾙに出力します。自分の設定を保存するとき、また他人に自分の設定を渡すのに使います"
@@ -2629,7 +2792,7 @@ BEGIN
     ID_OPTION_DEFVIEWINFO   "現在表示中の回転角度をデフォルトとして設定します"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_TEXTURE_FILTER      "ﾃｸｽﾁｬ画像ﾌｧｲﾙ (*.bmp; *.png; *.gif; *.jpeg; *.tiff)|*.bmp;*.png;*.gif;*.jpg;*.jpeg;*.tif;*.tiff"
     IDS_NCVC_FILTER         "NCVC files (%s)|%s"
@@ -2639,7 +2802,7 @@ BEGIN
     IDS_NCI_FILTER          "切削条件ﾌｧｲﾙ (*.nci; *.ncj; *.ncw)|*.nci;*.ncj;*.ncw"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_NCIM_FILTER         "nci\n切削条件ﾌｧｲﾙ (*.nci)|*.nci"
     IDS_NCIL_FILTER         "ncj\n旋盤用切削条件ﾌｧｲﾙ (*.ncj)|*.ncj"
@@ -2652,7 +2815,7 @@ BEGIN
     IDS_ALL_FILTER          "|All Files (*.*)|*.*||"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_NOTEPAD         "NotePad"
     IDS_REG_CAD             "CAD"
@@ -2664,7 +2827,7 @@ BEGIN
     IDS_REG_THUMBNAIL_PLANE "ThumbnailPlane"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_MAKEDXFLAYER    "少なくとも１つ以上のレイヤを指定してください"
     IDS_ERR_MAKEMULTILAYER  "切削対象ﾚｲﾔを１つ以上指定してください"
@@ -2680,7 +2843,7 @@ BEGIN
     IDS_ERR_DXFDATACUT      "切削ﾚｲﾔが見つかりませんでした。\nCADﾃﾞｰﾀを確認してください"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_DLL             "以下のアドインDLL\n%s\nが返した内部情報が現在のNCVCのバージョンと合いません\nアドインDLLをバージョンアップするか消去してください"
     IDS_ERR_PROCESS         "外部編集ﾌﾟﾛｾｽを起動できませんでした"
@@ -2690,7 +2853,7 @@ BEGIN
     IDS_ERR_SUBPRO          "M99ｻﾌﾞﾌﾟﾛ終了ｺｰﾄﾞが見つかりませんでした"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_DXF2NCD_FILE        "NCﾃﾞｰﾀの出力先指定"
     IDS_NCD2DXF_FILE        "DXFﾃﾞｰﾀの出力先指定"
@@ -2704,17 +2867,20 @@ BEGIN
     IDS_OPTION_MC_MACRO     "ﾏｸﾛ変換I/Fの参照"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_DXF_MATCH       "MATCH"
     IDS_REG_DXF_ACCEPT      "ACCEPT"
     IDS_REG_DXF_ORGTYPE     "OriginType"
     IDS_REG_DXF_REGEX       "Regex"
+    IDS_REG_DXF_BINDSIZE    "BindSize"
+    IDS_REG_DXF_BINDMARGIN  "BindMargin"
+    IDS_REG_DXF_BINDORGTYPE "BindOriginType"
     IDS_REG_DXF_SORTLAYER1  "SORTLAYER1"
     IDS_REG_DXF_SORTLAYER2  "SORTLAYER2"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_NCVIEW_MAXRECT       "最大移動矩形の表示"
     ID_NCVIEW_WORKRECT      "ﾜｰｸ矩形表示"
@@ -2722,7 +2888,7 @@ BEGIN
     ID_NCVIEW_JUMP          "指定されたNCｺｰﾄﾞの行を表示\nｼﾞｬﾝﾌﾟ"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_VIEW_TOOLBARCUSTOM   "ﾂｰﾙﾊﾞｰの表示/非表示、ｶｽﾀﾏｲｽﾞ\nﾂｰﾙﾊﾞｰの表示切り替え"
     ID_VIEW_BEFORE          "矩形指定による拡大縮小の直前の拡大率(+表示位置)に戻します\n前倍率(Ctrl+Z)"
@@ -2732,7 +2898,7 @@ BEGIN
     ID_DXFVIEW_LAYER        "ﾚｲﾔの表示・非表示を切り替えます\nﾚｲﾔ(Ctrl+L)"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_NCVIEW_TRACE_RUN     "ﾄﾚｰｽ実行\nﾄﾚｰｽ実行(F5)"
     ID_NCVIEW_TRACE_PAUSE   "ﾄﾚｰｽ一時停止\n一時停止(Shift+F5)"
@@ -2746,7 +2912,7 @@ BEGIN
     ID_NCVIEW_TRACE_LOW     "ﾄﾚｰｽ低速実行\n低速(F4)"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REGKEY_WINDOW_FINDDLG "FindDlg"
     IDS_REGKEY_WINDOW_JUMPDLG "JumpDlg"
@@ -2756,7 +2922,7 @@ BEGIN
     IDS_REGKEY_WINDOW_TOOLBAR "ToolBar"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_WINFLAGS        "Flags"
     IDS_REG_ICONIC          "Iconic"
@@ -2764,13 +2930,13 @@ BEGIN
     IDS_REG_TOP             "Top"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_WIDTH           "Width"
     IDS_REG_HEIGHT          "Height"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_DXF_CIRCLEIJ    "CIRCLEIJ"
     IDS_REG_DXF_ZERO        "UNDERZERO"
@@ -2781,7 +2947,7 @@ BEGIN
     IDS_REG_DXF_XREV        "XREV"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_TAB_INFO1           "NCﾌｧｲﾙ情報"
     IDS_TAB_INFO2           "加工情報"
@@ -2801,7 +2967,7 @@ BEGIN
     IDCV_MILIpMIN           "/min"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_MAKENCD_FORMAT      "%.3f"
     IDS_MAKENCD_CIRCLEBREAK "(R%.3f start)"
@@ -2810,7 +2976,7 @@ BEGIN
     IDS_MAKENCD_PROG        "O%04d"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_NCV_MCFILE      "MCFILE"
     IDS_REG_NCV_MCTOOLSORT  "MCTOOLSORT"
@@ -2821,30 +2987,30 @@ BEGIN
     IDS_REG_NCV_FPROCESS    "FProcess"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_WINDOW_ALLCLOSE      "すべてのｳｨﾝﾄﾞｳを閉じます"
     ID_WINDOW_NEXT          "次のｳｨﾝﾄﾞｳに切り替える\n次のｳｨﾝﾄﾞｳ(F6)"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_ADDITEM         "ﾘｽﾄｺﾝﾄﾛｰﾙへの登録でｴﾗｰが発生しました。行番号=%d\n登録処理を中断します"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_HELP_ADDIN           "読み込んだｱﾄﾞｲﾝについての情報表示\nｱﾄﾞｲﾝ情報"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_DEEPFINAL       "「深彫最終切り込み」は「基本切り込み」よりも小さく(低く)設定してください"
     IDS_ERR_DEEPSTEP        "切り込みｽﾃｯﾌﾟはｾﾞﾛ未満(ﾏｲﾅｽ値)でないと無限ﾙｰﾌﾟになります"
     IDS_ERR_DEEPVALUE       "加工済み深さの指示が「ｵﾌｾｯﾄ」の時は値がｾﾞﾛを超える必要があります"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ANA_NOMCFILE        "ﾌｧｲﾙへの保存が選択されませんでした。または書き込みに失敗しました。\n後で機械情報を設定して下さい。関連するﾚｼﾞｽﾄﾘは消去されます"
     IDS_ANA_MCFILESHIFT     "ﾚｼﾞｽﾄﾘに登録されている機械情報をﾌｧｲﾙに移行します。\n「はい」を選択すると現在の設定がﾌｧｲﾙへ\n「いいえ」を選択すると後で設定し直す必要があります"
@@ -2858,18 +3024,18 @@ BEGIN
     IDS_ANA_DEFVIEWINFO     "ﾃﾞﾌｫﾙﾄ回転情報を保存しました。\n初期化は HOMEｷｰ後、これを再実行してください。"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_ZCUT            "切削点(切り込み)とR点の関係が間違っています\n切り込みを小さくしてください"
     IDS_ERR_CUSTOMFILE      "ｶｽﾀﾑﾍｯﾀﾞｰ/ﾌｯﾀｰﾌｧｲﾙを指定してください"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_ELLIPSE_KOUSA   "楕円公差が小さすぎます"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_DXFKEYWORD      "以下のDXFｷｰﾜｰﾄﾞ\n%s\nは現在のNCVCでは未ｻﾎﾟｰﾄです"
     IDS_ERR_DXFBLOCK        "以下のﾌﾞﾛｯｸ名\n%s\nが見つかりませんでした"
@@ -2878,28 +3044,22 @@ BEGIN
     IDS_ERR_DXFLAYER        "ﾚｲﾔ名を省略できません"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_TEXTURE         "ﾃｸｽﾁｬ画像の読み込みに失敗しました"
+    IDS_ERR_CONTROL         "ｺﾝﾄﾛｰﾙの生成に失敗しました\nFile=%s\nLine=%d"
     IDS_ERR_FILEPATH        "有効なﾌｧｲﾙﾊﾟｽを指示してください"
     IDS_ERR_UNDERZERO       "指定の項目にﾏｲﾅｽ(またはｾﾞﾛ)値を設定できません"
     IDS_ERR_SETTING         "ﾃﾞｰﾀを設定してください"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_DXF_CUT         "GOMISSION"
     IDS_REG_DXF_G90         "G90"
 END
 
-STRINGTABLE 
-BEGIN
-    IDS_REG_DXF_SUBPRO      "SUBPRO"
-    IDS_REG_DXF_SUBPRONO    "SUBPRONO"
-    IDS_REG_DXF_STARTZ      "SUBPRO_STARTZ"
-END
-
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_INDICATOR_DATE       "99/99"
     ID_INDICATOR_TIME       "99:99"
@@ -2919,7 +3079,7 @@ BEGIN
     ID_DXFST_MOUSE_F        "切削原点からの距離  x : %#6.3f / y : %#6.3f"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_NCV_INFOPAGE    "InfoPage"
     IDS_REG_NCV_VIEWPAGE    "ViewPage"
@@ -2929,7 +3089,7 @@ BEGIN
     IDS_REG_NCV_DEFGLINFO   "DefaultGLInfo"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_VIEW_WHEEL      "MouseWheel"
     IDS_REG_VIEW_WHEELTYPE  "MouseWheelType"
@@ -2939,7 +3099,7 @@ BEGIN
     IDS_REG_VIEW_NC_DRAWREVISE "DrawRevise"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REG_VIEW_NC_DRAWCENTERCIRCLE "DrawCenterCircle"
     IDS_REG_VIEW_NC_GUIDE   "GuideLength"
@@ -2956,12 +3116,12 @@ BEGIN
     IDS_REG_VIEW_NC_TEXTUREFILE "TextureFile"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ANA_LOCKADDIN       "ｱﾄﾞｲﾝがﾄﾞｷｭﾒﾝﾄをﾛｯｸしています。終了しますか？"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_OPTION_EXEC         "外部ｱﾌﾟﾘｹｰｼｮﾝの参照"
     IDS_VIEW_SETUP          "画面表示属性"
@@ -2970,13 +3130,13 @@ BEGIN
     IDS_VIEW_TEXTURE        "ﾃｸｽﾁｬ画像の選択"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_DEEPFIXZ        "加工済み深さの「固定Z値」の値は「基本切り込み」よりも高く(大きく)設定して下さい"
     IDS_ERR_DEEPFIXR        "加工済み深さの「固定Z値」の値は「R点」よりも小さく(低く)設定して下さい"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDCV_HOUR               "時間"
     IDCV_MINUTE             "分"
@@ -2987,7 +3147,7 @@ BEGIN
     IDCV_VALFORMAT          "%#12.3f"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_EDIT_DXFORG          "機械原点情報を更新します\n原点調整(Ctrl+@)"
     ID_EDIT_DXFSHAPE        "形状認識処理のあと各種加工指示(輪郭・ポケット)が可能です\n形状認識(Ctrl+E)"
@@ -3003,17 +3163,17 @@ BEGIN
     ID_EDIT_SHAPE_POC       "形状のポケット加工を指示します\nﾎﾟｹｯﾄ加工(Ctrl+F11)"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_EDIT_SHAPE_DEL       "加工指示を取り消します\n加工指示削除(DEL)"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ADDIN_INFO          "Copyright:\r\n%s\r\n\r\nProductVersion:\r\n%s\r\n\r\nSupport:\r\n%s\r\n\r\nComment:\r\n%s"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_MAKE_NCD            "NC生成ｵﾌﾟｼｮﾝの設定"
     IDS_MAKE_DXF            "DXFの出力設定"
@@ -3021,7 +3181,7 @@ BEGIN
     IDS_SETUP_CADLAYER      "CADﾃﾞｰﾀの読み込み設定"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_READ_NCD            "ＮＣﾃﾞｰﾀを内部3Dﾃﾞｰﾀに変換中 ..."
     IDS_CORRECT_NCD         "補正座標計算中 ..."
@@ -3032,12 +3192,12 @@ BEGIN
     IDS_UVTAPER_NCD         "UVﾃｰﾊﾟｵﾌﾞｼﾞｪｸﾄ生成中 ..."
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_MCMACRO         "ﾏｸﾛ呼び出し関連は検索ﾌｫﾙﾀﾞ以外全ての項目の設定が必要です"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_CAMDATA         "%s\nNCVC CAMﾃﾞｰﾀではありません"
     IDS_ERR_CAMVER          "%s\nNCVC CAMﾃﾞｰﾀのﾊﾞｰｼﾞｮﾝが違います。最新のNCVCを取得してください。"
@@ -3047,7 +3207,7 @@ BEGIN
     IDS_ERR_DXF_CREATEOUTELINE "輪郭ｵﾌﾞｼﾞｪｸﾄ計算でｴﾗｰが発生しました"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_NCBLK_NOTLATHE  "旋盤ﾓｰﾄﾞではｻﾎﾟｰﾄされない"
     IDS_ERR_NCBLK_CORRECT   "補正情報がない"
@@ -3060,7 +3220,7 @@ BEGIN
     IDS_ERR_NCBLK_PLANE     "平面が違う"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_NCBLK_UNKNOWN   "未知ｴﾗｰ"
     IDS_ERR_NCBLK_VALUE     "座標値が認識できない"
@@ -3071,35 +3231,35 @@ BEGIN
     IDS_ERR_NCBLK_CHAMFERING "ｺｰﾅ,面取り指示ｴﾗｰ"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_NCBLK_CIRCLECENTER "円弧補間の中心計算ｴﾗｰ"
     IDS_ERR_NCBLK_NOTCYCLEZ "固定ｻｲｸﾙの切り込み値がない"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_NCBLK_INTERSECTION "交点計算ｴﾗｰ"
     IDS_ERR_NCBLK_LENGTH    "補正のための長さが足らない"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ERR_DRAGTREE        "移動処理に失敗しました。ﾄﾞﾗｯｸﾞ処理を中断します。"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ANA_DATAINIT        "ﾃﾞｰﾀ準備中!!!"
     IDS_ANA_DATAFINAL       "NCﾃﾞｰﾀ出力中!!!"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     ID_DXFST_MOUSE          "切削原点からの距離  x :            / y :           "
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_MAKENCD_TITLE_BASIC "標準NCﾃﾞｰﾀ生成"
     IDS_MAKENCD_TITLE_EX1   "ﾚｲﾔごとの複数条件でNCﾃﾞｰﾀ生成"
@@ -3109,12 +3269,23 @@ BEGIN
     IDS_MAKENCD_TITLE_WIRE  "ﾜｲﾔ放電加工機用NCﾃﾞｰﾀの生成"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_NEW_SAVE            "新規保存"
 END
 
-#endif    // 日本語 resources
+STRINGTABLE
+BEGIN
+    IDS_REG_VIEW_NC_FOURVIEW01 "FourView01"
+    IDS_REG_VIEW_NC_FOURVIEW02 "FourView02"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_CADBIND         "複数のCADﾃﾞｰﾀをﾜｰｸ矩形に配置します"
+END
+
+#endif    // 日本語 (日本) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

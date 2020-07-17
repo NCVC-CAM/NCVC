@@ -6,51 +6,47 @@
 #include "ViewBase.h"
 
 /////////////////////////////////////////////////////////////////////////////
+// CNCInfoView[1|2] 共通
+
+class CNCInfoBase : public CViewBase
+{
+protected:
+	virtual BOOL PreCreateWindow(CREATESTRUCT&);
+	virtual void OnUpdate(CView*, LPARAM, CObject*);
+	//
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
+	afx_msg void OnEditCopy();
+	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+
+public:
+	CNCDoc*	GetDocument();
+	virtual BOOL OnCmdMsg(UINT, int, void*, AFX_CMDHANDLERINFO*);
+
+	DECLARE_MESSAGE_MAP()
+};
+
+/////////////////////////////////////////////////////////////////////////////
 // CNCInfoView1 ビュー
 
-class CNCInfoView1 : public CView, public CViewBase
+class CNCInfoView1 : public CNCInfoBase
 {
 protected:
 	CNCInfoView1();           // 動的生成に使用されるプロテクト コンストラクタ
 	DECLARE_DYNCREATE(CNCInfoView1)
 
-// アトリビュート
-public:
-	CNCDoc*	GetDocument();
-
-// オペレーション
-public:
-
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 
 	//{{AFX_VIRTUAL(CNCInfoView1)
-	public:
-	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	protected:
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
-	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
 
 // インプリメンテーション
 protected:
-	virtual ~CNCInfoView1();
-#ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
-#endif
-
-	// 生成されたメッセージ マップ関数
-protected:
-	//{{AFX_MSG(CNCInfoView1)
-	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
-	afx_msg void OnEditCopy();
-	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
-	//}}AFX_MSG
 	afx_msg LRESULT OnUserCalcMsg(WPARAM, LPARAM);
 
 	DECLARE_MESSAGE_MAP()
@@ -59,49 +55,19 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 // CNCInfoView2 ビュー
 
-class CNCInfoView2 : public CView, public CViewBase
+class CNCInfoView2 : public CNCInfoBase
 {
 protected:
 	CNCInfoView2();           // 動的生成に使用されるプロテクト コンストラクタ
 	DECLARE_DYNCREATE(CNCInfoView2)
 
-// アトリビュート
-public:
-	CNCDoc*	GetDocument();
-
-// オペレーション
-public:
-
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 
 	//{{AFX_VIRTUAL(CNCInfoView2)
-	public:
-	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	protected:
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
-	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
-
-// インプリメンテーション
-protected:
-	virtual ~CNCInfoView2();
-#ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
-#endif
-
-	// 生成されたメッセージ マップ関数
-protected:
-	//{{AFX_MSG(CNCInfoView2)
-	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
-	afx_msg void OnEditCopy();
-	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
-	//}}AFX_MSG
 
 	DECLARE_MESSAGE_MAP()
 };
@@ -109,8 +75,6 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 
 #ifndef _DEBUG
-inline CNCDoc* CNCInfoView1::GetDocument()
-   { return static_cast<CNCDoc *>(m_pDocument); }
-inline CNCDoc* CNCInfoView2::GetDocument()
+inline CNCDoc* CNCInfoBase::GetDocument()
    { return static_cast<CNCDoc *>(m_pDocument); }
 #endif

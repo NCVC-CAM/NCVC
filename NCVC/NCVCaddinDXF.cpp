@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "MainFrm.h"
 #include "NCVCaddin.h"
 #include "NCVCaddinIF.h"
 #include "DXFdata.h"
@@ -290,7 +291,7 @@ NCEXPORT void WINAPI NCVC_SetDXFLatheLine
 NCEXPORT void WINAPI NCVC_SetDXFReady(NCVCHANDLE hDoc, BOOL bReady)
 {
 	if ( IsDXFDocument(hDoc) )
-		reinterpret_cast<CDXFDoc *>(hDoc)->SetReadyFlg(bReady);
+		reinterpret_cast<CDXFDoc *>(hDoc)->SetDocFlag(DXFDOC_READY, bReady);
 }
 
 NCEXPORT BOOL WINAPI NCVC_GetDXFoption(LPDXFOPTION pOpt)

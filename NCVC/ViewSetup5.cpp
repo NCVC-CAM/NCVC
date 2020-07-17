@@ -13,17 +13,17 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CViewSetup5, CPropertyPage)
-	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, OnDefColor)
-	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_WORK, OnColorButton)
-	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_CUT, OnColorButton)
-	ON_BN_CLICKED(IDC_VIEWSETUP5_SOLIDVIEW, OnSolidClick)
-	ON_BN_CLICKED(IDC_VIEWSETUP5_G00VIEW, OnChange)
-	ON_BN_CLICKED(IDC_VIEWSETUP5_DRAGRENDER, OnChange)
-	ON_BN_CLICKED(IDC_VIEWSETUP5_TEXTURE, OnTextureClick)
-	ON_BN_CLICKED(IDC_VIEWSETUP5_TEXTUREFIND, OnTextureFind)
-	ON_CBN_SELCHANGE(IDC_VIEWSETUP5_MILL_TYPE, OnChange)
-	ON_EN_CHANGE(IDC_VIEWSETUP5_DEFAULTENDMILL, OnChange)
-	ON_EN_CHANGE(IDC_VIEWSETUP5_TEXTUREFILE, OnChange)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, &CViewSetup5::OnDefColor)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_WORK, &CViewSetup5::OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_CUT, &CViewSetup5::OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_SOLIDVIEW, &CViewSetup5::OnSolidClick)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_G00VIEW, &CViewSetup5::OnChange)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_DRAGRENDER, &CViewSetup5::OnChange)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_TEXTURE, &CViewSetup5::OnTextureClick)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_TEXTUREFIND, &CViewSetup5::OnTextureFind)
+	ON_CBN_SELCHANGE(IDC_VIEWSETUP5_MILL_TYPE, &CViewSetup5::OnChange)
+	ON_EN_CHANGE(IDC_VIEWSETUP5_DEFAULTENDMILL, &CViewSetup5::OnChange)
+	ON_EN_CHANGE(IDC_VIEWSETUP5_TEXTUREFILE, &CViewSetup5::OnChange)
 	ON_WM_CTLCOLOR()
 END_MESSAGE_MAP()
 
@@ -166,7 +166,7 @@ void CViewSetup5::OnColorButton()
 	int	nIndex = GetFocus()->GetDlgCtrlID() - IDC_VIEWSETUP5_BT_WORK;
 	if ( 0<=nIndex && nIndex<SIZEOF(m_colView) ) {
 		CColorDialog	dlg(m_colView[nIndex]);
-		dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
+		dlg.m_cc.lpCustColors = (COLORREF *)&(AfxGetNCVCApp()->GetViewOption()->m_colCustom);
 		if ( dlg.DoModal() == IDOK ) {
 			m_colView[nIndex] = dlg.GetColor();
 			m_brColor[nIndex].DeleteObject();

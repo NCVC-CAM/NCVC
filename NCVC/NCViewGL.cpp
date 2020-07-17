@@ -23,7 +23,8 @@ extern	CMagaDbg	g_dbg;
 #include <mmsystem.h>			// timeGetTime()
 #endif
 
-using namespace std;
+using std::vector;
+using namespace boost;
 extern	int		g_nProcesser;		// ﾌﾟﾛｾｯｻ数(NCVC.cpp)
 
 // 頂点配列生成ｽﾚｯﾄﾞ用
@@ -75,17 +76,17 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CView)
 	ON_WM_KEYDOWN()
 	ON_WM_TIMER()
 	// ﾍﾟｰｼﾞ切替ｲﾍﾞﾝﾄ
-	ON_MESSAGE (WM_USERACTIVATEPAGE, OnUserActivatePage)
+	ON_MESSAGE (WM_USERACTIVATEPAGE, &CNCViewGL::OnUserActivatePage)
 	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
-	ON_MESSAGE (WM_USERVIEWFITMSG, OnUserViewFitMsg)
+	ON_MESSAGE (WM_USERVIEWFITMSG, &CNCViewGL::OnUserViewFitMsg)
 	// ﾒﾆｭｰｺﾏﾝﾄﾞ
-	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  OnUpdateMoveRoundKey)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, OnUpdateMoveRoundKey)
-	ON_COMMAND_RANGE(ID_VIEW_UP,  ID_VIEW_RT,    OnMoveKey)
-	ON_COMMAND_RANGE(ID_VIEW_RUP, ID_VIEW_RRT,   OnRoundKey)
-	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, OnLensKey)
-	ON_COMMAND(ID_OPTION_DEFVIEWINFO, OnDefViewInfo)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCViewGL::OnUpdateEditCopy)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCViewGL::OnUpdateMoveRoundKey)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewGL::OnUpdateMoveRoundKey)
+	ON_COMMAND_RANGE(ID_VIEW_UP,  ID_VIEW_RT,    &CNCViewGL::OnMoveKey)
+	ON_COMMAND_RANGE(ID_VIEW_RUP, ID_VIEW_RRT,   &CNCViewGL::OnRoundKey)
+	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &CNCViewGL::OnLensKey)
+	ON_COMMAND(ID_OPTION_DEFVIEWINFO, &CNCViewGL::OnDefViewInfo)
 END_MESSAGE_MAP()
 
 //	ｳｨﾝﾄﾞｳﾒｯｾｰｼﾞを受信し、OpenGL命令を操作するときは
@@ -117,17 +118,13 @@ CNCViewGL::CNCViewGL()
 	ClearObjectForm();
 }
 
-CNCViewGL::~CNCViewGL()
-{
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewGL クラスのオーバライド関数
 
 BOOL CNCViewGL::PreCreateWindow(CREATESTRUCT& cs)
 {
 	cs.style |= WS_CLIPSIBLINGS|WS_CLIPCHILDREN;
-	return CView::PreCreateWindow(cs);
+	return __super::PreCreateWindow(cs);
 }
 
 void CNCViewGL::OnInitialUpdate() 
@@ -137,10 +134,10 @@ void CNCViewGL::OnInitialUpdate()
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCViewGL::OnInitialUpdate()\nStart", DBG_CYAN);
 #endif
-	CView::OnInitialUpdate();
+	__super::OnInitialUpdate();
 
 	// ｶﾞｲﾄﾞ表示
-	if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) ) {
+	if ( GetDocument()->IsDocFlag(NCDOC_LATHE) ) {
 		m_strGuide  = g_szNdelimiter[NCA_Z];	// [ZYX]
 		m_strGuide += g_szNdelimiter[NCA_Y];
 		m_strGuide += g_szNdelimiter[NCA_X];
@@ -174,21 +171,40 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		// through
 	case UAV_CHANGEFONT:	// 色の変更 etc.
 		if ( m_bActive ) {
-			// 各ﾍﾟｰｼﾞごとに更新情報がｾｯﾄされている
+			GLdouble	objectXform[4][4];
+			CPointD		ptCenter(m_ptCenter);
+			if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
+				// 行列ﾏﾄﾘｸｽのﾊﾞｯｸｱｯﾌﾟ
+				memcpy(objectXform, m_objectXform, sizeof(objectXform));
+				// 行列ﾏﾄﾘｸｽの初期化
+				OnLensKey(ID_VIEW_FIT);
+			}
+			// 表示情報の更新
 			UpdateViewOption();
+			if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
+				// 行列ﾏﾄﾘｸｽのﾘｽﾄｱ
+				memcpy(m_objectXform, objectXform, sizeof(objectXform));
+				m_ptCenter = ptCenter;
+				// 回転の復元
+				CClientDC	dc(this);
+				::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+				SetupViewingTransform();
+				::wglMakeCurrent( NULL, NULL );
+			}
 		}
 		pOpt->m_dwUpdateFlg = 0;
-		return;
+		// through
 	case UAV_ADDINREDRAW:
 		Invalidate(FALSE);
 		return;
 	}
-	CView::OnUpdate(pSender, lHint, pHint);
+	__super::OnUpdate(pSender, lHint, pHint);
 }
 
 void CNCViewGL::UpdateViewOption(void)
 {
-	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	CWaitCursor		wait;
+	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
@@ -202,9 +218,9 @@ void CNCViewGL::UpdateViewOption(void)
 			if ( ReadTexture(pOpt->GetTextureFile()) &&	// m_nPictureID値ｾｯﾄ
 					!(pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL) ) {
 				// 画像だけ変更
-				if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) )
+				if ( GetDocument()->IsDocFlag(NCDOC_LATHE) )
 					CreateTextureLathe();
-				else if ( GetDocument()->IsNCDocFlag(NCDOC_WIRE) )
+				else if ( GetDocument()->IsDocFlag(NCDOC_WIRE) )
 					CreateTextureWire();
 				else
 					CreateTextureMill();
@@ -262,13 +278,13 @@ void CNCViewGL::UpdateViewOption(void)
 				BOOL	bResult;
 				// 切削領域の設定
 				m_rcDraw = GetDocument()->GetWorkRect();
-				if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) ) {
+				if ( GetDocument()->IsDocFlag(NCDOC_LATHE) ) {
 					// 旋盤用回転モデルの生成
 					bResult = CreateLathe();
 					if ( bResult && m_nPictureID > 0 )
 						CreateTextureLathe();	// ﾃｸｽﾁｬ座標の生成
 				}
-				else if ( GetDocument()->IsNCDocFlag(NCDOC_WIRE) ) {
+				else if ( GetDocument()->IsDocFlag(NCDOC_WIRE) ) {
 					// ﾜｲﾔ加工
 					bResult = CreateWire();
 					if ( bResult && m_nPictureID > 0 )
@@ -305,7 +321,7 @@ BOOL CNCViewGL::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 	g_dbg.printf("CNCViewGL::OnCmdMsg()");
 #endif
 	// ここから CDocument::OnCmdMsg() を呼ばないようにする
-//	return CView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+//	return __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 	return CWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 }
 
@@ -1317,7 +1333,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 	GLdouble	mvMatrix[16], pjMatrix[16],
 				wx1, wy1, wz1, wx2, wy2, wz2;
 	GLfloat		fz, fx, fxb;
-	boost::optional<GLfloat>	fzb;
+	optional<GLfloat>	fzb;
 	GLfloat*	pfDepth = NULL;		// ﾃﾞﾌﾟｽ値取得配列一時領域
 	GLfloat*	pfCylinder = NULL;	// 円筒形座標
 	GLfloat*	pfNOR = NULL;		// 法線ﾍﾞｸﾄﾙ
@@ -1885,7 +1901,7 @@ void CNCViewGL::CreateTextureWire(void)
 	}
 
 	// ﾃｸｽﾁｬ座標をGPUﾒﾓﾘに転送
-	ASSERT( n == nVertex );
+//	ASSERT( n == nVertex );			// 要調査！！
 	CreateTexture(nVertex, pfTEX);
 
 	delete[]	pfTEX;
@@ -2312,12 +2328,12 @@ void CNCViewGL::OnDraw(CDC* pDC)
 #ifdef _DEBUG
 void CNCViewGL::AssertValid() const
 {
-	CView::AssertValid();
+	__super::AssertValid();
 }
 
 void CNCViewGL::Dump(CDumpContext& dc) const
 {
-	CView::Dump(dc);
+	__super::Dump(dc);
 }
 
 CNCDoc* CNCViewGL::GetDocument() // 非デバッグ バージョンはインラインです。
@@ -2335,7 +2351,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 #ifdef _DEBUG_FILEOPEN
 	g_dbg.printf("CNCViewGL::OnCreate() Start");
 #endif
-	if ( CView::OnCreate(lpCreateStruct) < 0 )
+	if ( __super::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	// ｽﾌﾟﾘｯﾀからの境界ｶｰｿﾙが移るので，IDC_ARROW を明示的に指定
@@ -2421,9 +2437,11 @@ void CNCViewGL::OnDestroy()
 		KillTimer(IDC_OPENGL_DRAGROUND);
 
 	// 回転行列等を保存
-	CRecentViewInfo*	pInfo = GetDocument()->GetRecentViewInfo();
-	if ( pInfo ) 
-		pInfo->SetViewInfo(m_objectXform, m_rcView, m_ptCenter);
+	if ( m_bActive ) {
+		CRecentViewInfo* pInfo = GetDocument()->GetRecentViewInfo();
+		if ( pInfo ) 
+			pInfo->SetViewInfo(m_objectXform, m_rcView, m_ptCenter);
+	}
 
 	// OpenGL 後処理
 	CClientDC	dc(this);
@@ -2439,12 +2457,12 @@ void CNCViewGL::OnDestroy()
 	::wglMakeCurrent(NULL, NULL);
 	::wglDeleteContext( m_hRC );
 	
-	CView::OnDestroy();
+	__super::OnDestroy();
 }
 
 void CNCViewGL::OnSize(UINT nType, int cx, int cy)
 {
-	CView::OnSize(nType, cx, cy);
+	__super::OnSize(nType, cx, cy);
 	if( cx <= 0 || cy <= 0 )
 		return;
 
@@ -2472,19 +2490,20 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 	}
 #endif
 
-	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
+	__super::OnActivateView(bActivate, pActivateView, pDeactiveView);
 }
 
 LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCViewGL::OnUserActivatePage()\nStart");
+	dbg.printf("lParam=%d m_bActive=%d", lParam, m_bActive);
 #endif
 	if ( !m_bActive ) {
 		// m_rcView初期化
 		OnUserViewFitMsg(1, 0);		// glOrtho() を実行しない
 		// 描画関数の決定(OnInitialUpdateよりもここが都合が良い)
-		m_pfnDrawProc = GetDocument()->IsNCDocFlag(NCDOC_WIRE) ?
+		m_pfnDrawProc = GetDocument()->IsDocFlag(NCDOC_WIRE) ?
 			&(CNCdata::DrawGLWireWire) : &(CNCdata::DrawGLMillWire);
 		// 描画初期設定
 		CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
@@ -2498,14 +2517,10 @@ LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 			if ( pInfo ) {
 				CRect3D	rcView;		// dummy
 				CPointD	ptCenter;
-				if ( !pInfo->GetViewInfo(m_objectXform, rcView, ptCenter) )
-					pInfo = NULL;
+				pInfo->GetViewInfo(m_objectXform, rcView, ptCenter);
 			}
 		}
-		if ( !pInfo ) {
-			// 図形ﾌｨｯﾄﾒｯｾｰｼﾞを再送
-			PostMessage(WM_USERVIEWFITMSG);
-		}
+		//
 		CClientDC	dc(this);
 		::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 		::glMatrixMode( GL_PROJECTION );
@@ -2534,6 +2549,7 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 	extern	const	double	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCViewGL::OnUserViewFitMsg()\nStart");
+	dbg.printf("wParam=%d lParam=%d", wParam, lParam);
 #endif
 	double		dW, dH, dZ, dLength, d;
 
@@ -2549,7 +2565,6 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 	}
 	else {
 		m_rcView  = GetDocument()->GetMaxRect();
-//		m_rcView |= GetDocument()->GetWorkRect();
 		dW = fabs(m_rcView.Width());
 		dH = fabs(m_rcView.Height());
 		dZ = fabs(m_rcView.Depth());
@@ -2775,7 +2790,7 @@ void CNCViewGL::OnRButtonUp(UINT nFlags, CPoint point)
 		SetTimer(IDC_OPENGL_DRAGROUND, 150, NULL);	// 連続回転再開
 
 	if ( m_ptDownClick == point )
-		CView::OnRButtonUp(nFlags, point);	// ｺﾝﾃｷｽﾄﾒﾆｭｰの表示
+		__super::OnRButtonUp(nFlags, point);	// ｺﾝﾃｷｽﾄﾒﾆｭｰの表示
 }
 
 void CNCViewGL::OnMButtonDown(UINT nFlags, CPoint point)
@@ -2839,7 +2854,7 @@ void CNCViewGL::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		return;
 	}
 
-	CView::OnKeyDown(nChar, nRepCnt, nFlags);
+	__super::OnKeyDown(nChar, nRepCnt, nFlags);
 }
 
 BOOL CNCViewGL::OnEraseBkgnd(CDC* pDC)
@@ -2865,5 +2880,5 @@ void CNCViewGL::OnTimer(UINT nIDEvent)
 		::wglMakeCurrent( NULL, NULL );
 	}
 
-	CView::OnTimer(nIDEvent);
+	__super::OnTimer(nIDEvent);
 }

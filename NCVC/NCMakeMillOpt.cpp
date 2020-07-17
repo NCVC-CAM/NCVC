@@ -61,7 +61,7 @@ static	LPCTSTR	g_szBOrder[] = {
 	"ProgSet", "ProgAuto", "LineAdd", "ZeroCut", "GClip", "EllipseFlg",
 	// --
 	"XRev", "YRev", "DisableSpindle",
-	"CircleHalf",
+	"CircleHalf", "ZeroCutIJ",
 	"Deep", "Helical", "DeepFinishSet",
 	"DrillMatch", "DrillCircle", "DrillBreak",
 	"LayerComment", "L0Cycle"
@@ -69,7 +69,7 @@ static	LPCTSTR	g_szBOrder[] = {
 static	const	BOOL	g_dfBOrder[] = {
 	TRUE, FALSE, FALSE, TRUE, TRUE, TRUE,
 	FALSE, FALSE, FALSE,
-	FALSE,
+	FALSE, TRUE,
 	FALSE, TRUE, FALSE,
 	TRUE, FALSE, TRUE,
 	TRUE, FALSE
@@ -123,6 +123,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKNC_NUM_CIRCLECODE,	"â~√ﬁ∞¿ÇÃêÿçÌ(0:G02,1:G03)"},
 	{NC_NUM,	MKNC_NUM_IJ,			"â~å éwé¶(0:R,1:I/J)"},
 	{NC_FLG,	MKNC_FLG_CIRCLEHALF,	"ëSâ~ÇÕ2ï™äÑ"},
+	{NC_FLG,	MKNC_FLG_ZEROCUT_IJ,	"[I|J]0ÇÕè»ó™"},
 	{NC_DBL,	MKNC_DBL_ELLIPSE,		"ë»â~åˆç∑"},
 	{NC_FLG,	MKNC_FLG_ELLIPSE,		"í∑åaÇ∆íZåaÇ™ìôÇµÇ¢ë»â~ÇÕâ~Ç∆Ç›Ç»Ç∑"},
 	{NC_PAGE,	4},		// Page4(ê[í§:Dialog3)
@@ -315,6 +316,7 @@ void CNCMakeMillOpt::DbgDump(void) const
 	dbg.printf("  CircleCode   =%d", m_nCircleCode);
 	dbg.printf("  IJ           =%d", m_nIJ);
 	dbg.printf("  CircleHalf   =%d", m_bCircleHalf);
+	dbg.printf("  ZeroCutIJ    =%d", m_bZeroCutIJ);
 	dbg.printf("----------");
 	dbg.printf("  Ellipse      =%f", m_dEllipse);
 	dbg.printf("  EllipseFlg   =%d", m_bEllipse);

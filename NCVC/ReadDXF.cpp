@@ -96,8 +96,8 @@ static	BOOL	g_bVertex,		// Polylineの各頂点処理中
 				g_bPuff;		// ふくらみ情報処理中
 static	double	g_dPuff;		// 前のVERTEXのふくらみ値
 static	CPointD	g_ptPuff;		// ふくらみ情報を計算するための前回位置
-static	int		g_nType,		// TYPE_XXX
-				g_nBlock,		// (-1:未処理, 0:Block基点待ち, 1:Block処理中)
+static	enENTITIESTYPE	g_nType;// TYPE_XXX
+static	int		g_nBlock,		// (-1:未処理, 0:Block基点待ち, 1:Block処理中)
 				g_nLayer;		// ﾚｲﾔ情報
 static	CString	g_strLayer,		// ﾚｲﾔ名
 				g_strBlock;		// ﾌﾞﾛｯｸ名
@@ -163,27 +163,27 @@ static inline int _SetValue(void)
 	return -1;
 }
 
-static inline int _SectionCheck(void)
+static inline enSECTION _SectionCheck(void)
 {
 	if ( g_strGroup != g_szGroupCode[GROUP0] )
 		return SEC_NOSECTION;
 	// EOF除くﾙｰﾌﾟ
 	for ( int i=0; i<SIZEOF(g_szSection)-1; i++ ) {
 		if ( g_strOrder == g_szSection[i] )
-			return i;
+			return (enSECTION)i;
 	}
 	return SEC_NOSECTION;
 }
 
-static inline int _SectionNameCheck(void)
+static inline enSECNAME _SectionNameCheck(void)
 {
 	if ( g_strGroup != g_szGroupCode[GROUP2] )
-		return SEC_NOSECTION;
+		return SEC_NOSECNAME;
 	for ( int i=0; i<SIZEOF(g_szSectionName); i++ ) {
 		if ( g_strOrder == g_szSectionName[i] )
-			return i;
+			return (enSECNAME)i;
 	}
-	return SEC_NOSECTION;	// -1
+	return SEC_NOSECNAME;
 }
 
 static inline void _ArbitraryAxis(CPointD& pt)	// 任意の軸のｱﾙｺﾞﾘｽﾞﾑ
@@ -457,7 +457,8 @@ static inline void _InitialVariable(void)
 {
 	g_bVertex = g_bPuff = FALSE;
 	g_ptPuff = g_dPuff = 0.0;
-	g_nType = g_nBlock = g_nLayer = -1;
+	g_nType = TYPE_NOTSUPPORT;
+	g_nBlock = g_nLayer = -1;
 	g_strLayer.Empty();
 	g_strBlock.Empty();
 	g_strMissOrder.Empty();
@@ -506,15 +507,17 @@ BOOL HeaderProcedure(void)
 /////////////////////////////////////////////////////////////////////////////
 //	Entitiesｾｸｼｮﾝ 補助関数
 
-static inline int _EntitiesKeywordCheck(void)
+static inline enENTITIESTYPE _EntitiesKeywordCheck(void)
 {
 	if ( g_strGroup != g_szGroupCode[GROUP0] )
-		return -2;
+		return TYPE_SECTION_ERR;
 	for ( int i=0; i<SIZEOF(g_szEntitiesKey); i++ ) {
-		if ( g_strOrder == g_szEntitiesKey[i] )
-			return i;
+		if ( g_strOrder == g_szEntitiesKey[i] ) {
+			ASSERT( SIZEOF(g_szEntitiesKey) == TYPE_ENTITIES_NUM );
+			return (enENTITIESTYPE)i;
+		}
 	}
-	return -1;
+	return TYPE_NOTSUPPORT;
 }
 
 static inline int _EntitiesLayerCheck(void)
@@ -807,11 +810,11 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 #ifdef _DEBUG
 	CMagaDbg	dbg("EntitiesProcedure()", DBG_GREEN);
 #endif
-	int		nResultType = _EntitiesKeywordCheck();
+	enENTITIESTYPE	enResultType = _EntitiesKeywordCheck();
 	int		nResultLayer;
 	BOOL	bResult = TRUE;
 	
-	switch ( nResultType ) {
+	switch ( enResultType ) {
 	case -2:	// ﾃﾞｰﾀ開始ｺｰﾄﾞ " 0" でない
 		if ( g_strGroup == g_szGroupCode[GROUP2] ) {
 			g_strBlock = g_strOrder;	// ﾌﾞﾛｯｸ名ｾｯﾄ
@@ -826,7 +829,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 		nResultLayer = _EntitiesLayerCheck();
 		switch ( nResultLayer ) {
 		case -2:	// ﾚｲﾔｺｰﾄﾞでもない
-			if ( g_nType >= 0 ) {
+			if ( g_nType > TYPE_NOTSUPPORT ) {
 				if ( g_nType == TYPE_LWPOLYLINE )
 					LWPolylineProcedure(pDoc, FALSE);
 				_SetValue();				// 値ｾｯﾄ
@@ -834,7 +837,8 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			break;
 		case -1:	// 違うﾚｲﾔ
 			if ( !g_pPolyline ) {
-				g_nType = g_nLayer = -1;
+				g_nType = TYPE_NOTSUPPORT;
+				g_nLayer = -1;
 				g_strLayer.Empty();
 				g_strBlock.Empty();
 				g_strMissOrder.Empty();
@@ -842,7 +846,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			}
 			break;
 		default:	// Hit Layer!
-			if ( g_nType < 0 ) {
+			if ( g_nType <= TYPE_NOTSUPPORT ) {
 				if ( !g_strMissOrder.IsEmpty() )
 					_NotsupportList();	// 未ｻﾎﾟｰﾄｷｰﾜｰﾄﾞの登録
 			}
@@ -864,13 +868,13 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 		// through
 	default:	// 認識した
 		// すでに処理中の時は登録処理
-		if ( g_nType>=0 && g_nLayer>=0 ) {
+		if ( g_nType>TYPE_NOTSUPPORT && g_nLayer>=0 ) {
 			SetEntitiesInfo(pDoc);
 			_ClearValue();
 		}
-		if ( nResultType >= 0 )		// nResult==-1 以外
+		if ( enResultType >= 0 )		// nResult==-1 以外
 			g_strMissOrder.Empty();
-		g_nType = nResultType;
+		g_nType = enResultType;
 		g_nLayer = -1;
 		g_strLayer.Empty();
 		g_strBlock.Empty();
@@ -998,7 +1002,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 	if ( nResultBlock < 0 && g_nBlock < 0 )	// BLOCK処理中でなければ
 		return TRUE;
 
-	int		nResultEntities;
+	enENTITIESTYPE	nResultEntities;
 	BOOL	bResult = TRUE;
 
 	switch ( nResultBlock ) {
@@ -1027,7 +1031,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
 		}
 		else {
-			if ( g_nType>=0 || g_nBlock==0 ) {
+			if ( g_nType>TYPE_NOTSUPPORT || g_nBlock==0 ) {
 				if ( g_nType == TYPE_LWPOLYLINE )
 					LWPolylineProcedure(pDoc, FALSE);
 				_SetValue();
@@ -1047,7 +1051,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 			bResult = PolylineProcedure(pDoc);
 			break;
 		}
-		if ( g_nType>=0 && g_pBkData ) {
+		if ( g_nType>TYPE_NOTSUPPORT && g_pBkData ) {
 			// 処理中のﾌﾞﾛｯｸ要素登録
 			bResult = SetBlockData();
 			_ClearValue();
@@ -1057,7 +1061,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		if ( nResultEntities < 0 ) {
 			g_strMissOrder = g_strOrder;
 			_NotsupportList();
-			g_nType = -1;
+			g_nType = TYPE_NOTSUPPORT;
 		}
 		else {
 			g_nType = nResultEntities;
@@ -1077,7 +1081,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		break;
 	case 1:		// ENDBLKｷｰﾜｰﾄﾞ
 		if ( g_pBkData ) {
-			if ( g_nType >= 0 ) {
+			if ( g_nType > TYPE_NOTSUPPORT ) {
 				// 処理中のﾌﾞﾛｯｸ要素登録
 				bResult = SetBlockData();
 			}
@@ -1085,7 +1089,8 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 				_SetBlockMap();	// BLOCKSﾏｯﾌﾟに登録
 		}
 		_ClearValue();
-		g_nType = g_nBlock = -1;
+		g_nType = TYPE_NOTSUPPORT;
+		g_nBlock = -1;
 		break;
 	default:	// ???
 		bResult = FALSE;
@@ -1151,7 +1156,7 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 		if ( !PolylineEndProcedure(pDoc) )
 			return FALSE;
 		g_pPolyline = NULL;
-		g_nType = -1;
+		g_nType = TYPE_NOTSUPPORT;
 		_ClearValue();
 		g_bPuff = FALSE;
 		break;
@@ -1251,6 +1256,14 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 #endif
 	extern	LPCTSTR	gg_szCat;
 
+	ASSERT( SIZEOF(g_szGroupCode) == GROUP_NUM );
+	ASSERT( SIZEOF(g_szValueGroupCode) == DXFMAXVALUESIZE );
+	ASSERT( SIZEOF(g_dwValSet) == DXFMAXVALUESIZE );
+	ASSERT( SIZEOF(g_szSection) == SEC_SECTION_NUM );
+	ASSERT( SIZEOF(g_szSectionName) == SEC_SECNAME_NUM );
+	ASSERT( SIZEOF(g_szHeader) == HEAD_NUM );
+	ASSERT( SIZEOF(g_szEntitiesKey) == TYPE_ENTITIES_NUM );
+
 	CStdioFile	fp;
 	// ﾌｧｲﾙｵｰﾌﾟﾝ
 	if ( !fp.Open(lpszPathName, CFile::modeRead | CFile::shareDenyWrite) ) {
@@ -1258,17 +1271,20 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 		return FALSE;
 	}
 
-	CProgressCtrl*	pProgress = AfxGetNCVCMainWnd()->GetProgressCtrl();
+	CProgressCtrl*	pProgress = pDoc->IsDocFlag(DXFDOC_BIND) ? NULL : AfxGetNCVCMainWnd()->GetProgressCtrl();
 	ULONGLONG	dwSize = fp.GetLength();	// ﾌｧｲﾙｻｲｽﾞ
 	ULONGLONG	dwPosition = 0;				// ﾌｧｲﾙ現在位置
 	UINT	nReadCnt = 0;				// ﾚｺｰﾄﾞ件数
 	BOOL	bSection = FALSE;			// ｾｸｼｮﾝ処理中
-	int		n, nSectionName = SEC_NOSECTION;	// -1: ENDSECまで読み飛ばし
+	int		n;
+	enSECNAME	nSectionName = SEC_NOSECNAME;	// -1: ENDSECまで読み飛ばし
 	BOOL	bResult = TRUE;
 
 	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ準備
-	pProgress->SetRange32(0, 100);		// 100%表記
-	pProgress->SetPos(0);
+	if ( pProgress ) {
+		pProgress->SetRange32(0, 100);		// 100%表記
+		pProgress->SetPos(0);
+	}
 
 	// ｽﾚｯﾄﾞ側でﾛｯｸ解除するまで待つ
 	g_csRemoveBlockMap.Lock();
@@ -1288,13 +1304,15 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	// ﾒｲﾝﾙｰﾌﾟ
 	try {
 		while ( _DubleRead(fp) && bResult ) {
-			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
-			dwPosition += g_strGroup.GetLength() + 2 +	// +2 = 改行ｺｰﾄﾞ分
-						  g_strOrder.GetLength() + 2;
-			nReadCnt += 2;	// ２行づつ
-			if ( (nReadCnt & 0x0100) == 0 ) {	// 128(256/2)行おき
-				n = (int)(dwPosition*100/dwSize);
-				pProgress->SetPos(min(100, n));
+			if ( pProgress ) {
+				// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
+				dwPosition += g_strGroup.GetLength() + 2 +	// +2 = 改行ｺｰﾄﾞ分
+							  g_strOrder.GetLength() + 2;
+				nReadCnt += 2;	// ２行づつ
+				if ( (nReadCnt & 0x0100) == 0 ) {	// 128(256/2)行おき
+					n = (int)(dwPosition*100/dwSize);
+					pProgress->SetPos(min(100, n));
+				}
 			}
 			// ｾｸｼｮﾝのﾁｪｯｸ == DXFﾌｧｲﾙのﾌｫｰﾏｯﾄﾁｪｯｸ
 			switch ( _SectionCheck() ) {
@@ -1313,7 +1331,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 				dbg.printf("ENDSEC keyword");
 #endif
 				// 途中ﾃﾞｰﾀの後処理
-				if ( g_nType>=0 && g_nLayer>=0 )
+				if ( g_nType>TYPE_NOTSUPPORT && g_nLayer>=0 )
 					SetEntitiesInfo(pDoc);
 				if ( g_pBkData  ) {		// BLOCKﾃﾞｰﾀは必ずENDBLKで終了のため
 					delete	g_pBkData;		// ここでは消去
@@ -1322,7 +1340,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 				if ( g_pPolyline )		// SEQENDで登録するため
 					_DeletePolyline();		// ここでは消去
 				// 初期化
-				nSectionName = SEC_NOSECTION;
+				nSectionName = SEC_NOSECNAME;
 				_InitialVariable();
 				continue;
 			}
@@ -1365,7 +1383,8 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 		bResult = FALSE;
 	}
 
-	pProgress->SetPos(100);
+	if ( pProgress )
+		pProgress->SetPos(100);
 
 #ifdef _DEBUG
 	dbg.printf("dwSize=%d dwPosition=%d", dwSize, dwPosition);

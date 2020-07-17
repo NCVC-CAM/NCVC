@@ -8,8 +8,8 @@
 
 class CViewSetup1 : public CPropertyPage
 {
-	COLORREF	m_colView[2];
-	CBrush		m_brColor[2];
+	COLORREF	m_colView[COMCOL_NUMS];
+	CBrush		m_brColor[COMCOL_NUMS];
 
 	void	EnableControl(void);
 
@@ -23,10 +23,10 @@ public:
 	enum { IDD = IDD_VIEW_SETUP1 };
 	BOOL	m_bMouseWheel;
 	int		m_nWheelType;
-	CButton m_ctMouseWheel[2];
+	CButton m_ctMouseWheel[COMCOL_NUMS];
 	//}}AFX_DATA
-	CStatic		m_ctColor[2];
-	CComboBox	m_cbLineType[2];
+	CStatic		m_ctColor[COMCOL_NUMS];
+	CComboBox	m_cbLineType[COMCOL_NUMS];
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

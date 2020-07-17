@@ -24,33 +24,33 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-IMPLEMENT_DYNCREATE(CNCViewTab, CTabView)
+IMPLEMENT_DYNCREATE(CNCViewTab, CTabViewBase)
 
-BEGIN_MESSAGE_MAP(CNCViewTab, CTabView)
+BEGIN_MESSAGE_MAP(CNCViewTab, CTabViewBase)
 	ON_WM_CREATE()
 	ON_WM_DESTROY()
-	ON_WM_SETFOCUS()
+//	ON_WM_SETFOCUS()
 	// ﾀﾌﾞ移動
-	ON_COMMAND_RANGE(ID_TAB_NEXT, ID_TAB_PREV, OnMoveTab)
+	ON_COMMAND_RANGE(ID_TAB_NEXT, ID_TAB_PREV, &CNCViewTab::OnMoveTab)
 	// ﾄﾚｰｽ
-	ON_UPDATE_COMMAND_UI_RANGE(ID_NCVIEW_TRACE_FAST, ID_NCVIEW_TRACE_LOW, OnUpdateTraceSpeed)
-	ON_COMMAND_RANGE(ID_NCVIEW_TRACE_FAST, ID_NCVIEW_TRACE_LOW, OnTraceSpeed)
-	ON_UPDATE_COMMAND_UI(ID_NCVIEW_TRACE_RUN, OnUpdateTraceRun)
-	ON_COMMAND(ID_NCVIEW_TRACE_RUN, OnTraceRun)
-	ON_UPDATE_COMMAND_UI(ID_NCVIEW_TRACE_PAUSE, OnUpdateTracePause)
-	ON_COMMAND(ID_NCVIEW_TRACE_PAUSE, OnTracePause)
-	ON_COMMAND(ID_NCVIEW_TRACE_STOP, OnTraceStop)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_NCVIEW_TRACE_CURSOR, ID_NCVIEW_TRACE_CURSOR2, OnUpdateTraceCursor)
-	ON_COMMAND_RANGE(ID_NCVIEW_TRACE_CURSOR, ID_NCVIEW_TRACE_CURSOR2, OnTraceCursor)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_NCVIEW_TRACE_FAST, ID_NCVIEW_TRACE_LOW, &CNCViewTab::OnUpdateTraceSpeed)
+	ON_COMMAND_RANGE(ID_NCVIEW_TRACE_FAST, ID_NCVIEW_TRACE_LOW, &CNCViewTab::OnTraceSpeed)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_TRACE_RUN, &CNCViewTab::OnUpdateTraceRun)
+	ON_COMMAND(ID_NCVIEW_TRACE_RUN, &CNCViewTab::OnTraceRun)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_TRACE_PAUSE, &CNCViewTab::OnUpdateTracePause)
+	ON_COMMAND(ID_NCVIEW_TRACE_PAUSE, &CNCViewTab::OnTracePause)
+	ON_COMMAND(ID_NCVIEW_TRACE_STOP, &CNCViewTab::OnTraceStop)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_NCVIEW_TRACE_CURSOR, ID_NCVIEW_TRACE_CURSOR2, &CNCViewTab::OnUpdateTraceCursor)
+	ON_COMMAND_RANGE(ID_NCVIEW_TRACE_CURSOR, ID_NCVIEW_TRACE_CURSOR2, &CNCViewTab::OnTraceCursor)
 	// 「全てのﾍﾟｲﾝの図形ﾌｨｯﾄ」ﾒﾆｭｰｺﾏﾝﾄﾞの使用許可
-	ON_UPDATE_COMMAND_UI(ID_NCVIEW_ALLFIT, OnUpdateAllFitCmd)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_ALLFIT, &CNCViewTab::OnUpdateAllFitCmd)
 	// 「直前の拡大率」ﾒﾆｭｰｺﾏﾝﾄﾞの使用許可
-	ON_UPDATE_COMMAND_UI(ID_VIEW_BEFORE, OnUpdateBeforeView)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_BEFORE, &CNCViewTab::OnUpdateBeforeView)
 	// 他
-	ON_UPDATE_COMMAND_UI(ID_OPTION_DEFVIEWINFO, OnUpdateDefViewInfo)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  OnUpdateMoveKey)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, OnUpdateRoundKey)
+	ON_UPDATE_COMMAND_UI(ID_OPTION_DEFVIEWINFO, &CNCViewTab::OnUpdateDefViewInfo)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCViewTab::OnUpdateEditCopy)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCViewTab::OnUpdateMoveKey)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewTab::OnUpdateRoundKey)
 END_MESSAGE_MAP()
 
 //////////////////////////////////////////////////////////////////////
@@ -75,19 +75,15 @@ CNCViewTab::CNCViewTab() : m_evTrace(FALSE, TRUE)
 		m_bSplit[i] = FALSE;
 }
 
-CNCViewTab::~CNCViewTab()
-{
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewTab クラスのオーバライド関数
 
 void CNCViewTab::OnInitialUpdate() 
 {
-	CTabView::OnInitialUpdate();
+	CTabViewBase::OnInitialUpdate();
 
 	// ﾄﾚｰｽ描画ｽﾚｯﾄﾞ生成
-	// --- OnCreateではIsNCDocFlag()が間に合わない
+	// --- OnCreateではIsDocFlag()が間に合わない
 	LPTRACETHREADPARAM	pParam = new TRACETHREADPARAM;
 	pParam->pMainFrame	= AfxGetNCVCMainWnd();
 	pParam->pParent		= this;
@@ -105,10 +101,10 @@ void CNCViewTab::OnInitialUpdate()
 
 	// CNCViewSplitのｻｲｽﾞ調整
 	// 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞと等しいときは，さらに各ﾋﾞｭｰWM_USERVIEWFITMSG送信
-	m_wndSplitter1.PostMessage(WM_USERINITIALUPDATE, NCVIEW_FOURSVIEW,   nPage==NCVIEW_FOURSVIEW);
-	m_wndSplitter2.PostMessage(WM_USERINITIALUPDATE, NCVIEW_FOURSVIEW+1, nPage==NCVIEW_FOURSVIEW+1);
+	m_wndSplitter1.PostMessage(WM_USERINITIALUPDATE, NCDRAWVIEW_NUM,   nPage==NCDRAWVIEW_NUM);
+	m_wndSplitter2.PostMessage(WM_USERINITIALUPDATE, NCDRAWVIEW_NUM+1, nPage==NCDRAWVIEW_NUM+1);
 
-	if ( nPage<NCVIEW_FOURSVIEW || nPage==NCVIEW_OPENGL ) {
+	if ( nPage<NCDRAWVIEW_NUM || nPage==NCVIEW_OPENGL ) {
 		// 図形ﾌｨｯﾄﾒｯｾｰｼﾞの送信
 		// 各ﾋﾞｭｰのOnInitialUpdate()関数内では，GetClientRect()のｻｲｽﾞが正しくない
 		CWnd*	pWnd = GetPage(nPage);
@@ -135,7 +131,7 @@ void CNCViewTab::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		GetTabCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);
 		break;
 	}
-	CTabView::OnUpdate(pSender, lHint, pHint);
+	CTabViewBase::OnUpdate(pSender, lHint, pHint);
 }
 
 BOOL CNCViewTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
@@ -152,16 +148,16 @@ BOOL CNCViewTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 				pWnd->IsKindOf(RUNTIME_CLASS(CNCViewXZ)) ||
 				pWnd->IsKindOf(RUNTIME_CLASS(CNCViewYZ)) ||
 				pWnd->IsKindOf(RUNTIME_CLASS(CNCViewGL)) )
-			return CTabView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+			return CTabViewBase::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 		else
 			return FALSE;
 	}
 
 	// 自分自身とｱｸﾃｨﾌﾞなﾋﾞｭｰだけにｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞ
 	// 結果的に CNCDoc へのｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞはここからだけになる
-	if ( CTabView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) ) {
+	if ( CTabViewBase::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) ) {
 #ifdef _DEBUG_CMDMSG
-		g_dbg.printf("CTabView::OnCmdMsg() return");
+		g_dbg.printf("CTabViewBase::OnCmdMsg() return");
 #endif
 		return TRUE;
 	}
@@ -175,11 +171,11 @@ void CNCViewTab::OnActivatePage(int nIndex)
 	CWnd*	pWnd = GetPage(nIndex);
 	if ( pWnd ) {
 		// ４面表示と単一平面表示の拡大率更新のためにﾒｯｾｰｼﾞ送信
-		LPARAM	lSplit = nIndex < NCVIEW_FOURSVIEW ? (LPARAM)m_bSplit[nIndex] : 0;
+		LPARAM	lSplit = nIndex < NCDRAWVIEW_NUM ? (LPARAM)m_bSplit[nIndex] : 0;
 		// WPARAMはCNCViewSplit::OnUserActivatePage()向けのみ
 		pWnd->SendMessage(WM_USERACTIVATEPAGE, (WPARAM)nIndex, lSplit);
 	}
-	if ( nIndex < NCVIEW_FOURSVIEW ) {
+	if ( nIndex < NCDRAWVIEW_NUM ) {
 		m_bSplit[nIndex] = FALSE;
 		GetParentFrame()->SetActiveView(static_cast<CView *>(pWnd));
 	}
@@ -201,12 +197,12 @@ void CNCViewTab::OnActivatePage(int nIndex)
 #ifdef _DEBUG
 void CNCViewTab::AssertValid() const
 {
-	CTabView::AssertValid();
+	CTabViewBase::AssertValid();
 }
 
 void CNCViewTab::Dump(CDumpContext& dc) const
 {
-	CTabView::Dump(dc);
+	CTabViewBase::Dump(dc);
 }
 
 CNCDoc* CNCViewTab::GetDocument() // 非デバッグ バージョンはインラインです。
@@ -226,13 +222,12 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 #endif
 	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
-	if ( CTabView::OnCreate(lpCreateStruct) < 0 )
+	if ( CTabViewBase::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 	GetTabCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);
 
-	// thisﾎﾟｲﾝﾀのｾｯﾄのみ
-	CViewBase::OnCreate(this, FALSE);
-
+	int		i, nIndex;
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	//	静的ｽﾌﾟﾘｯﾀ作成
 	CCreateContext	ct;
 	ct.m_pCurrentDoc = GetDocument();
@@ -240,40 +235,50 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	ct.m_pLastView = NULL;
 	ct.m_pNewDocTemplate = GetDocument()->GetDocTemplate();
 	ct.m_pNewViewClass = NULL;
+	CRuntimeClass*	pNCView[NCDRAWVIEW_NUM];
+	CRuntimeClass*	pView01Class[NCDRAWVIEW_NUM];
+	CRuntimeClass*	pView02Class[NCDRAWVIEW_NUM];
+	pNCView[0] = RUNTIME_CLASS(CNCView);
+	pNCView[1] = RUNTIME_CLASS(CNCViewXY);
+	pNCView[2] = RUNTIME_CLASS(CNCViewXZ);
+	pNCView[3] = RUNTIME_CLASS(CNCViewYZ);
+	for ( i=0; i<SIZEOF(pView01Class); i++ ) {
+		pView01Class[i] = pNCView[ pOpt->GetForceView01(i) ];
+		pView02Class[i] = pNCView[ pOpt->GetForceView02(i) ];
+	}
 	// ４面-1
 	if ( !m_wndSplitter1.CreateStatic(this, 2, 2, WS_CHILD) ||
-			!m_wndSplitter1.CreateView(0, 0, RUNTIME_CLASS(CNCView),   CSize(0, 0), &ct) ||
-			!m_wndSplitter1.CreateView(0, 1, RUNTIME_CLASS(CNCViewYZ), CSize(0, 0), &ct) ||
-			!m_wndSplitter1.CreateView(1, 0, RUNTIME_CLASS(CNCViewXZ), CSize(0, 0), &ct) ||
-			!m_wndSplitter1.CreateView(1, 1, RUNTIME_CLASS(CNCViewXY), CSize(0, 0), &ct) )
+			!m_wndSplitter1.CreateView(0, 0, pView01Class[0], CSize(0, 0), &ct) ||
+			!m_wndSplitter1.CreateView(0, 1, pView01Class[1], CSize(0, 0), &ct) ||
+			!m_wndSplitter1.CreateView(1, 0, pView01Class[2], CSize(0, 0), &ct) ||
+			!m_wndSplitter1.CreateView(1, 1, pView01Class[3], CSize(0, 0), &ct) )
 		return -1;
 	// ４面-2
 	if ( !m_wndSplitter2.CreateStatic(this, 1, 2, WS_CHILD) ||
 			!m_wndSplitter22.CreateStatic(&m_wndSplitter2, 3, 1,
 							WS_CHILD|WS_VISIBLE, m_wndSplitter2.IdFromRowCol(0, 0)) ||
-			!m_wndSplitter22.CreateView(0, 0, RUNTIME_CLASS(CNCViewYZ), CSize(0, 0), &ct) ||
-			!m_wndSplitter22.CreateView(1, 0, RUNTIME_CLASS(CNCViewXZ), CSize(0, 0), &ct) ||
-			!m_wndSplitter22.CreateView(2, 0, RUNTIME_CLASS(CNCViewXY), CSize(0, 0), &ct) ||
-			!m_wndSplitter2.CreateView(0, 1, RUNTIME_CLASS(CNCView),   CSize(0, 0), &ct) )
+			!m_wndSplitter22.CreateView(0, 0, pView02Class[0], CSize(0, 0), &ct) ||
+			!m_wndSplitter22.CreateView(1, 0, pView02Class[1], CSize(0, 0), &ct) ||
+			!m_wndSplitter22.CreateView(2, 0, pView02Class[2], CSize(0, 0), &ct) ||
+			!m_wndSplitter2.CreateView (0, 1, pView02Class[3], CSize(0, 0), &ct) )
 		return -1;
 
 	// 各ﾍﾟｰｼﾞﾋﾞｭｰの生成
-	int		i, nIndex;
 	CString	strXYZ[NCXYZ];
 	for ( i=0; i<NCXYZ; i++ )
 		strXYZ[i] = g_szNdelimiter[i];
 	try {
 		nIndex = AddPage(strXYZ[NCA_X]+strXYZ[NCA_Y]+strXYZ[NCA_Z],
-			RUNTIME_CLASS(CNCView), GetDocument(), GetParentFrame());
+			pNCView[0], GetDocument(), GetParentFrame());
 		ASSERT(nIndex >= 0);
 		nIndex = AddPage(strXYZ[NCA_X]+strXYZ[NCA_Y],
-			RUNTIME_CLASS(CNCViewXY), GetDocument(), GetParentFrame());
+			pNCView[1], GetDocument(), GetParentFrame());
 		ASSERT(nIndex >= 0);
 		nIndex = AddPage(strXYZ[NCA_X]+strXYZ[NCA_Z],
-			RUNTIME_CLASS(CNCViewXZ), GetDocument(), GetParentFrame());
+			pNCView[2], GetDocument(), GetParentFrame());
 		ASSERT(nIndex >= 0);
 		nIndex = AddPage(strXYZ[NCA_Y]+strXYZ[NCA_Z],
-			RUNTIME_CLASS(CNCViewYZ), GetDocument(), GetParentFrame());
+			pNCView[3], GetDocument(), GetParentFrame());
 		ASSERT(nIndex >= 0);
 		nIndex = AddPage("４面-1", &m_wndSplitter1);
 		ASSERT(nIndex >= 0);
@@ -283,7 +288,7 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 			RUNTIME_CLASS(CNCViewGL), GetDocument(), GetParentFrame());
 		// 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙを取得
 		CClientDC*	pDC;
-		for ( i=0; i<NCVIEW_FOURSVIEW; i++ ) {	// ４面以外
+		for ( i=0; i<NCDRAWVIEW_NUM; i++ ) {	// ４面以外
 			pDC = new CClientDC(GetPage(i));
 			m_hDC[i] = pDC->GetSafeHdc();
 			delete	pDC;
@@ -324,25 +329,7 @@ void CNCViewTab::OnDestroy()
 		delete	m_pTraceThread;
 	}
 
-	CTabView::OnDestroy();
-}
-
-void CNCViewTab::OnSetFocus(CWnd*) 
-{
-#ifdef _DEBUG
-	g_dbg.print("CNCViewTab::OnSetFocus()");
-#endif
-	int	nIndex = GetActivePage();
-	if ( nIndex >= 0 ) {
-//		GetPage(nIndex)->SetFocus();
-		GetTabCtrl().SetCurSel(nIndex);
-		GetTabCtrl().SetCurFocus(nIndex);
-	}
-#ifdef _DEBUG
-	else {
-		g_dbg.print("not select active page");
-	}
-#endif
+	CTabViewBase::OnDestroy();
 }
 
 void CNCViewTab::OnMoveTab(UINT nID)
@@ -476,7 +463,7 @@ void CNCViewTab::OnTraceCursor(UINT nID)
 void CNCViewTab::OnUpdateAllFitCmd(CCmdUI* pCmdUI)
 {
 	int nIndex = GetActivePage();
-	pCmdUI->Enable( NCVIEW_FOURSVIEW<=nIndex && nIndex<NCVIEW_OPENGL );
+	pCmdUI->Enable( NCDRAWVIEW_NUM<=nIndex && nIndex<NCVIEW_OPENGL );
 }
 
 void CNCViewTab::OnUpdateBeforeView(CCmdUI* pCmdUI)
@@ -517,21 +504,27 @@ BOOL CTraceThread::InitInstance()
 	CNCViewSplit*	pWnd;
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	CDC		dc;
-	int		nPage, nTraceDraw;
+	int		i, nPage, nTraceDraw;
 	BOOL	bBreak, bSelect;
-	PFNNCDRAWPROC	pfnDrawProc[NCVIEW_FOURSVIEW];
+	PFNNCDRAWPROC	pfnDrawXYZ[NCDRAWVIEW_NUM],
+					pfnDrawSplit01[NCDRAWVIEW_NUM],
+					pfnDrawSplit02[NCDRAWVIEW_NUM];
 
-	if ( pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
-		pfnDrawProc[0] = &(CNCdata::DrawWire);
-		pfnDrawProc[1] = &(CNCdata::DrawWireXY);
-		pfnDrawProc[2] = &(CNCdata::DrawWireXZ);
-		pfnDrawProc[3] = &(CNCdata::DrawWireYZ);
+	if ( pDoc->IsDocFlag(NCDOC_WIRE) ) {
+		pfnDrawXYZ[0] = &(CNCdata::DrawWire);
+		pfnDrawXYZ[1] = &(CNCdata::DrawWireXY);
+		pfnDrawXYZ[2] = &(CNCdata::DrawWireXZ);
+		pfnDrawXYZ[3] = &(CNCdata::DrawWireYZ);
 	}
 	else {
-		pfnDrawProc[0] = &(CNCdata::Draw);
-		pfnDrawProc[1] = &(CNCdata::DrawXY);
-		pfnDrawProc[2] = &(CNCdata::DrawXZ);
-		pfnDrawProc[3] = &(CNCdata::DrawYZ);
+		pfnDrawXYZ[0] = &(CNCdata::Draw);
+		pfnDrawXYZ[1] = &(CNCdata::DrawXY);
+		pfnDrawXYZ[2] = &(CNCdata::DrawXZ);
+		pfnDrawXYZ[3] = &(CNCdata::DrawYZ);
+	}
+	for ( i=0; i<SIZEOF(pfnDrawXYZ); i++ ) {
+		pfnDrawSplit01[i] = pfnDrawXYZ[ pOpt->GetForceView01(i) ];
+		pfnDrawSplit02[i] = pfnDrawXYZ[ pOpt->GetForceView02(i) ];
 	}
 
 	// ｽﾚｯﾄﾞのﾙｰﾌﾟ
@@ -550,23 +543,23 @@ BOOL CTraceThread::InitInstance()
 		do {
 			nPage = m_pParent->GetActivePage();
 			if ( nPage < 0 )
-				continue;
+				break;
 			bBreak = pDoc->IncrementTrace(nTraceDraw);
 			if ( nTraceDraw < 0 ) {
 				// 最後の選択消去
 				if ( bSelect && m_pParent->m_pDataTraceSel ) {
-					if ( nPage < NCVIEW_FOURSVIEW ) {
+					if ( nPage < NCDRAWVIEW_NUM ) {
 						if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
 							::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 						dc.SetROP2(R2_COPYPEN);
-						(m_pParent->m_pDataTraceSel->*pfnDrawProc[nPage])(&dc, FALSE);
+						(m_pParent->m_pDataTraceSel->*pfnDrawXYZ[nPage])(&dc, FALSE);
 						dc.Detach();
 					}
 					else if ( nPage < NCVIEW_OPENGL ) {
 						pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
-						if ( pWnd ) {
-							pWnd->DrawData(m_pParent->m_pDataTraceSel, FALSE, pfnDrawProc);
-						}
+						if ( pWnd )
+							pWnd->DrawData(m_pParent->m_pDataTraceSel, FALSE,
+								nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
 					}
 				}
 				// ﾂｰﾙﾎﾞﾀﾝを即時更新
@@ -578,22 +571,24 @@ BOOL CTraceThread::InitInstance()
 			}
 			pData = pDoc->GetNCdata(nTraceDraw-1);
 			m_pListView->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
-			if ( nPage < NCVIEW_FOURSVIEW ) {
+			if ( nPage < NCDRAWVIEW_NUM ) {
 				if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
 					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 				if ( bSelect && m_pParent->m_pDataTraceSel ) {
 					dc.SetROP2(R2_COPYPEN);
-					(m_pParent->m_pDataTraceSel->*pfnDrawProc[nPage])(&dc, FALSE);
+					(m_pParent->m_pDataTraceSel->*pfnDrawXYZ[nPage])(&dc, FALSE);
 				}
-				(pData->*pfnDrawProc[nPage])(&dc, bSelect);
+				(pData->*pfnDrawXYZ[nPage])(&dc, bSelect);
 				dc.Detach();
 			}
 			else if ( nPage < NCVIEW_OPENGL ) {
 				pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
 				if ( pWnd && bSelect && m_pParent->m_pDataTraceSel ) {
-					pWnd->DrawData(m_pParent->m_pDataTraceSel, FALSE, pfnDrawProc);
+					pWnd->DrawData(m_pParent->m_pDataTraceSel, FALSE,
+						nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
 				}
-				pWnd->DrawData(pData, bSelect, pfnDrawProc);
+				pWnd->DrawData(pData, bSelect,
+					nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
 			}
 			::GdiFlush();
 			if ( bBreak ) {

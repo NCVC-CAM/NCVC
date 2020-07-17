@@ -19,27 +19,39 @@ extern	CMagaDbg	g_dbg;
 //#define	_DEBUG_GSPIRIT
 #endif
 
-using namespace std;
+using std::string;
 using namespace boost;
 using namespace boost::spirit;
 
 extern	const	DWORD	g_dwSetValFlags[];
 extern	LPCTSTR			g_szNdelimiter; // "XYZUVWIJKRPLDH"
+extern	LPCTSTR			g_szNCcomment[];// "Endmill", "WorkRect", etc.
 static	CThreadDlg*		g_pParent;
-
+static	CNCDoc*			g_pDoc;
+static	NCARGV			g_ncArgv;		// NCVCdefine.h
+static	int				g_nWorkRect,
+						g_nLatheView,
+						g_nWireView,
+						g_nSubprog;		// ｻﾌﾞﾌﾟﾛｸﾞﾗﾑ呼び出しの階層
+static	double			g_dWorkRect[NCXYZ*2],
+						g_dLatheView[3],
+						g_dWireView,
+						g_dToolPos[NCXYZ];
+static	DWORD			g_dwToolPosFlags;	// ToolPos用
+static	LPTSTR			g_lpstrComma;		// 次のﾌﾞﾛｯｸとの計算
 //
-static	CNCDoc*		g_pDoc;
-static	NCARGV		g_ncArgv;			// NCVCdefine.h
-static	int			g_nWorkRect,
-					g_nLatheView,
-					g_nWireView,
-					g_nSubprog;		// ｻﾌﾞﾌﾟﾛｸﾞﾗﾑ呼び出しの階層
-static	double		g_dWorkRect[NCXYZ*2],
-					g_dLatheView[3],
-					g_dWireView,
-					g_dToolPos[NCXYZ];
-static	DWORD		g_dwToolPosFlags;	// ToolPos用
-static	LPTSTR		g_lpstrComma;	// 次のﾌﾞﾛｯｸとの計算
+typedef	BOOL	(*PFNISTHREAD)(void);
+static	BOOL	IsThreadContinue(void)
+{
+	return g_pParent->IsThreadContinue();
+}
+static	BOOL	IsThreadThumbnail(void)
+{
+	return TRUE;
+}
+static	PFNISTHREAD		g_pfnIsThread;
+#define	IsThread()		(*g_pfnIsThread)()
+#define	IsThumbnail()	g_pDoc->IsDocFlag(NCDOC_THUMBNAIL)
 
 // 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間値
 struct	CYCLE_INTERPOLATE
@@ -114,13 +126,14 @@ static	PFNBLOCKPROCESS	g_pfnSearchAutoBreak;
 
 //////////////////////////////////////////////////////////////////////
 
-// 共通
-static inline BOOL _IsThread(void)
+// Ｇコードの小数点判定
+static inline	int		_GetGcode(const string& str)
 {
-	// g_pParent==NULL(ｻﾑﾈｲﾙ表示)は TRUE を返す
-	return g_pParent ? g_pParent->IsThreadContinue() : TRUE;
+	double	dResult = atof(str.c_str());
+	if ( str.find('.') != string::npos )
+		dResult += 1000.0;		// 小数点があれば ｺｰﾄﾞ+1000
+	return (int)dResult;
 }
-
 // 数値変換( 1/1000 ﾃﾞｰﾀを判断する)
 static inline	double	_GetNCValue(const string& str)
 {
@@ -170,7 +183,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	g_pParent = pParam->pParent;
 	g_pDoc  = static_cast<CNCDoc*>(pParam->pDoc);
-
+	g_pfnIsThread = g_pParent ? &IsThreadContinue : &IsThreadThumbnail;
 	ASSERT(g_pDoc);
 	InitialVariable();
 
@@ -182,7 +195,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		g_pParent->m_ctReadProgress.SetRange32(0, nLoopCnt);
 	}
 #ifdef _DEBUG
-	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+	if ( !IsThumbnail() )
 		dbg.printf("LoopCount=%d", nLoopCnt);
 #endif
 
@@ -190,7 +203,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		// １つ前のｵﾌﾞｼﾞｪｸﾄ参照でNULL参照しないため
 		pDataFirst = pData = new CNCdata(&g_ncArgv);
 		// 1行(1ﾌﾞﾛｯｸ)解析しｵﾌﾞｼﾞｪｸﾄの登録
-		for ( i=0; i<nLoopCnt && _IsThread(); i++ ) {
+		for ( i=0; i<nLoopCnt && IsThread(); i++ ) {
 			if ( NC_GSeparater(i, pData) != 0 )
 				break;
 			if ( (i & 0x003f)==0 && g_pParent )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
@@ -211,7 +224,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 
 	if ( g_pParent ) {
 		g_pParent->m_ctReadProgress.SetPos(nLoopCnt);
-		g_pParent->PostMessage(WM_USERFINISH, _IsThread() ? nResult : IDCANCEL);
+		g_pParent->PostMessage(WM_USERFINISH, IsThread() ? nResult : IDCANCEL);
 	}
 
 	return 0;	// AfxEndThread(0);
@@ -220,26 +233,49 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 //////////////////////////////////////////////////////////////////////
 //	Gｺｰﾄﾞの構文解析
 
+//typedef qi::rule<string::iterator, qi::space_type, string()>	SkipperType;
+//typedef qi::rule<string::iterator>	SkipperType;
+//static	SkipperType	skip_p = ascii::space | (qi::char_('(') >> *(qi::char_ - ')') >> ')');
+
 //	NCﾌﾟﾛｸﾞﾗﾑ解析
 template<typename Iterator>
-struct CGcodeParser : qi::grammar<Iterator, std::string(), qi::space_type>
+//struct CGcodeParser : qi::grammar<Iterator, SkipperType, string()>
+struct CGcodeParser : qi::grammar<Iterator, qi::space_type, string()>
 {
-	qi::rule<Iterator, std::string(), qi::space_type>		rr;
+//	qi::rule<Iterator, SkipperType, string()>	rr;
+	qi::rule<Iterator, qi::space_type, string()>	rr;
 
 	CGcodeParser() : CGcodeParser::base_type(rr) {
 		using qi::char_;
 		using qi::double_;
 		rr = qi::raw[ (qi::upper >> double_) |
 				(char_(',') >> (char_('R')|'C') >> double_ ) ];
+		// ほんとは↓でアクションから取り出したい
+//		rr = +(qi::upper >> double_)[hoge()] >>
+//				!(char_(',') >> (char_('R')|'C') >> double_ )[hoge()];
 	}
 };
+/*
+// NCﾌﾟﾛｸﾞﾗﾑを解析するときのｽｷｯﾌﾟﾊﾟｰｻ
+template<typename Iterator>
+struct CCommentSkip : qi::grammar<Iterator>
+{
+	qi::rule<Iterator>	rc;
+	
+	CCommentSkip() : CCommentSkip::base_type(rc) {
+		using qi::char_;
+		rc = ascii::space | (char_('(') >> *(char_ - ')') >> ')');
+	};
+};
+*/
 
 //	ｺﾒﾝﾄ文字列解析
 template<typename Iterator>
 struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 {
 	qi::rule<Iterator, qi::space_type>		rr,
-		rs1, rs2, rs3, rs4, rs5, rr1, r11, r12, rr2, rr3, rr4, rr5;
+		rs1, rs2, rs3, rs4, rs5,
+		rr1, r11, r12, rr2, rr3, rr4, rr5;
 
 	CCommentParser() : CCommentParser::base_type(rr) {
 		using qi::no_case;
@@ -247,26 +283,26 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 		using qi::double_;
 
 		// Endmill
-		rs1 = no_case["endmill"] >> '=';
+		rs1 = no_case[ g_szNCcomment[ENDMILL] ] >> '=';
 		r11 = double_[SetEndmill()] >> -no_case["mm"] >>
 						-(',' >> qi::digit[SetEndmillType()]);
 		r12 = (char_('R')|'r') >> double_[SetBallEndmill()] >>	// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
 						-no_case["mm"];
 		rr1 = r11 | r12;
 		// WorkRect
-		rs2 = no_case["workrect"] >> '=';
+		rs2 = no_case[ g_szNCcomment[WORKRECT] ] >> '=';
 		rr2 = double_[SetWorkRect()] % ',';
 		// ViewMode
-		rs3 = no_case["latheview"] >> '=';
+		rs3 = no_case[ g_szNCcomment[LATHEVIEW] ] >> '=';
 		rr3 = double_[SetLatheView()] % ',';
-		rs4 = no_case["wireview"] >> '=';
+		rs4 = no_case[ g_szNCcomment[WIREVIEW] ] >> '=';
 		rr4 = double_[SetWireView()];
 		// ToolPos
-		rs5 = no_case["toolpos"] >> '=';
+		rs5 = no_case[ g_szNCcomment[TOOLPOS] ] >> '=';
 		rr5 = -double_[ToolPosX()] >>
 				-(',' >> -double_[ToolPosY()] >> -(',' >> -double_[ToolPosZ()]));
 		//
-		rr  = char_('(') >> *(char_ - (rs1|rs2|rs3|rs4|rs5)) >>
+		rr  = *(char_ - '(') >> '(' >> *(char_ - (rs1|rs2|rs3|rs4|rs5)) >>
 					// コメント行を全て処理させるために
 					// ↓は＊としている
 					*( rs1>>rr1 | rs2>>rr2 | rs3>>rr3 | rs4>>rr4 | rs5>>rr5 );
@@ -277,7 +313,7 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 		void operator()(const double& d, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.dEndmill = d / 2.0;
 #ifdef _DEBUG_GSPIRIT
-			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("SetEndmill()", DBG_MAGENTA);
 				dbg.printf("Endmill=%f", g_ncArgv.dEndmill);
 			}
@@ -290,7 +326,7 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 			g_ncArgv.dEndmill = d;
 			g_ncArgv.nEndmillType = 1;
 #ifdef _DEBUG_GSPIRIT
-			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("SetBallEndmill()", DBG_MAGENTA);
 				dbg.printf("BallEndmill=R%f", g_ncArgv.dEndmill);
 			}
@@ -302,7 +338,7 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 		void operator()(char& c, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.nEndmillType = c - '0';	// １文字を数値に変換
 #ifdef _DEBUG_GSPIRIT
-			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("SetEndmillType()", DBG_MAGENTA);
 				dbg.printf("EndmillType=%d", g_ncArgv.nEndmillType);
 			}
@@ -336,7 +372,7 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 			g_dToolPos[NCA_X] = d;
 			g_dwToolPosFlags |= NCD_X;
 #ifdef _DEBUG_GSPIRIT
-			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("ToolPosX()", DBG_MAGENTA);
 				dbg.printf("x=%f", d);
 			}
@@ -348,7 +384,7 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 			g_dToolPos[NCA_Y] = d;
 			g_dwToolPosFlags |= NCD_Y;
 #ifdef _DEBUG_GSPIRIT
-			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("ToolPosY()", DBG_MAGENTA);
 				dbg.printf("y=%f", d);
 			}
@@ -360,7 +396,7 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 			g_dToolPos[NCA_Z] = d;
 			g_dwToolPosFlags |= NCD_Z;
 #ifdef _DEBUG_GSPIRIT
-			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("ToolPosZ()", DBG_MAGENTA);
 				dbg.printf("z=%f", d);
 			}
@@ -369,11 +405,18 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 	};
 };
 
-// ｸﾞﾙｰﾊﾞﾙ変数に移すことで
+// ｸﾞﾛｰﾊﾞﾙ変数に移すことで
 // 再入のたびに変数がｲﾝｽﾀﾝｽ化されることを防ぐ
 // 結果、ｽﾋﾟｰﾄﾞUP
+// --- 独自Skipperのコンパイルが通らない...
+//typedef CCommentSkip<string::iterator>				SkipperType;
+//static	SkipperType									skip_p;
+//static	CGcodeParser<string::iterator, SkipperType>	gr_p;
+// ---
 static	CGcodeParser<string::iterator>		gr_p;
 static	CCommentParser<string::iterator>	comment_p;
+// 不本意ながら regex_replace で置換
+static	regex	reComment("\\([^\\)]*\\)");	// (hoge)にﾏｯﾁ
 
 //////////////////////////////////////////////////////////////////////
 // Gｺｰﾄﾞの分割(再帰関数)
@@ -406,12 +449,12 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 #ifdef _DEBUG_GSPIRIT
 	CMagaDbg	dbg("NC_Gseparate()", DBG_BLUE);
 	CMagaDbg	dbg1(DBG_GREEN);
-	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+	if ( !IsThumbnail() )
 		dbg.printf("No.%004d Line=%s", nLine+1, strBlock.c_str());
 #endif
 
 	// ｻﾑﾈｲﾙ表示のときは処理しないﾙｰﾁﾝ
-	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+	if ( !IsThumbnail() ) {
 		// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
 		(*g_pfnSearchAutoBreak)(strBlock, pBlock);
 	}
@@ -427,11 +470,12 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			SetWireRect_fromComment();
 		if ( g_dwToolPosFlags )
 			pDataResult = SetToolPosition_fromComment(pBlock, pDataResult);	// create dummy object
+		// 後に続く処理のためにカッコを除去
+		strBlock = regex_replace(strBlock, reComment, "");
 #ifdef _DEBUG_GSPIRIT
-		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
-			dbg.printf("--- Comment OK");
+		if ( !IsThumbnail() )
+			dbg.printf("--- [%s] --- Comment remove OK", strBlock);
 #endif
-		return 0;	// ｺﾒﾝﾄ行なら終了
 	}
 
 	// ﾏｸﾛ置換解析
@@ -441,7 +485,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		pDataResult = AddM98code(pBlock, pDataResult, nIndex);
 		// g_pfnSearchMacro でﾌﾞﾛｯｸが追加される可能性アリ
 		// ここでは nLoop 変数を使わず、ﾈｲﾃｨﾌﾞのﾌﾞﾛｯｸｻｲｽﾞにて判定
-		for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && _IsThread(); i++ ) {
+		for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && IsThread(); i++ ) {
 			nResult = NC_GSeparater(i, pDataResult);	// 再帰
 			if ( nResult == 30 )
 				return 30;
@@ -458,12 +502,13 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 
 	// Gｺｰﾄﾞ構文解析
 	it = strBlock.begin();
-	while ( _IsThread() ) {
+	while ( IsThread() ) {
 		strWord.clear();
+//		if ( !qi::phrase_parse(it, strBlock.end(), gr_p, skip_p, strWord) )
 		if ( !qi::phrase_parse(it, strBlock.end(), gr_p, qi::space, strWord) )
 			break;
 #ifdef _DEBUG_GSPIRIT
-		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+		if ( !IsThumbnail() ) {
 			dbg1.printf("G Cut=%s", strWord.c_str());
 		}
 #endif
@@ -487,7 +532,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 				if ( CallSubProgram(pBlock, pDataResult) == 30 )
 					return 30;	// 終了ｺｰﾄﾞ
 			}
-			nCode = atoi(strWord.substr(1).c_str());
+			nCode = _GetGcode(strWord.substr(1));
 			switch ( nCode ) {
 			case 2:
 			case 30:
@@ -512,7 +557,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			break;
 		case 'G':
 			// 先に現在のｺｰﾄﾞ種別をﾁｪｯｸ
-			nCode = atoi(strWord.substr(1).c_str());
+			nCode = _GetGcode(strWord.substr(1));
 			enGcode = (*g_pfnIsGcode)(nCode);	// IsGcodeObject_～
 			if ( enGcode == NOOBJ ) {
 				nResult = (*g_pfnCheckGcodeOther)(nCode);
@@ -549,7 +594,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			g_ncArgv.nSpindle = abs(atoi(strWord.substr(1).c_str()));
 			break;
 		case 'T':
-			if ( g_pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
+			if ( g_pDoc->IsDocFlag(NCDOC_WIRE) ) {
 				// ﾃｰﾊﾟ角度ｾｯﾄ
 				nResult = SetTaperAngle(strWord.substr(1));
 				if ( nResult > 0 )	
@@ -562,7 +607,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			}
 			break;
 		case ',':
-			if ( g_pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
+			if ( g_pDoc->IsDocFlag(NCDOC_WIRE) ) {
 				// ﾜｲﾔﾓｰﾄﾞでｻﾎﾟｰﾄすべきか...
 				string	strTmp = ::Trim(strWord.substr(1));
 				if ( strTmp[0] == 'R' ) {
@@ -573,7 +618,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			else {
 				strComma = ::Trim(strWord.substr(1));	// ｶﾝﾏ以降を取得
 #ifdef _DEBUG_GSPIRIT
-				if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+				if ( !IsThumbnail() )
 					dbg1.printf("strComma=%s", strComma.c_str());
 #endif
 			}
@@ -598,7 +643,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 					g_ncArgv.nc.dValue[nCode] = _GetNCValue(strWord.substr(1));
 				}
 			}
-			else if ( g_pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
+			else if ( g_pDoc->IsDocFlag(NCDOC_WIRE) ) {
 				// ﾜｲﾔﾓｰﾄﾞにおける特別処理(L値)
 				g_ncArgv.nc.dValue[nCode] = nCode<GVALSIZE || nCode==NCA_L ?
 					_GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
@@ -643,7 +688,7 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 {
 	CNCdata*	pDataResult = pDataBefore;
 
-	if ( !g_pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
+	if ( !g_pDoc->IsDocFlag(NCDOC_WIRE) ) {
 		// ﾜｲﾔ加工以外はUVW座標の加算
 		for ( int i=0; i<NCXYZ; i++ ) {
 			if ( g_ncArgv.nc.dwValFlags & g_dwSetValFlags[i+NCA_U] ) {
@@ -653,10 +698,10 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 		}
 	}
 
-	if ( g_pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+	if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
 		// 旋盤ﾓｰﾄﾞでの座標入れ替え(ﾄﾞｳｪﾙ除く)
 		if ( g_ncArgv.nc.nGcode != 4 ) {
-			boost::optional<double>	x, z, i, k;
+			optional<double>	x, z, i, k;
 			if ( g_ncArgv.nc.dwValFlags & NCD_X )
 				x = g_ncArgv.nc.dValue[NCA_X] / 2.0;	// 直径指示
 			if ( g_ncArgv.nc.dwValFlags & NCD_Z )
@@ -695,7 +740,7 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 					return pDataResult;
 				break;
 			case 92:
-				if ( g_pDoc->IsNCDocFlag(NCDOC_WIRE) && g_ncArgv.nc.dwValFlags&NCD_J ) {
+				if ( g_pDoc->IsDocFlag(NCDOC_WIRE) && g_ncArgv.nc.dwValFlags&NCD_J ) {
 					// ﾌﾟﾛｸﾞﾗﾑ面(XY軸)の設定
 					g_ncArgv.nc.dValue[NCA_Z] = g_ncArgv.nc.dValue[NCA_J];
 					g_ncArgv.nc.dwValFlags |= NCD_Z;
@@ -759,10 +804,10 @@ int CallSubProgram(CNCblock* pBlock, CNCdata*& pDataResult)
 		// M98ｵﾌﾞｼﾞｪｸﾄとO番号(nIndex)の登録
 		pDataResult = AddM98code(pBlock, pDataResult, nIndex);
 		// nRepeat分繰り返し
-		while ( nRepeat-- > 0 && _IsThread() ) {
+		while ( nRepeat-- > 0 && IsThread() ) {
 			// NC_SearchSubProgram でﾌﾞﾛｯｸが追加される可能性アリ
 			// ここでは nLoop 変数を使わず、ﾈｲﾃｨﾌﾞのﾌﾞﾛｯｸｻｲｽﾞにて判定
-			for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && _IsThread(); i++ ) {
+			for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && IsThread(); i++ ) {
 				nResult = NC_GSeparater(i, pDataResult);	// 再帰
 				if ( nResult == 30 )
 					return 30;
@@ -986,7 +1031,7 @@ int CheckGcodeOther_Lathe(int nCode)
 }
 
 // ｻﾌﾞﾌﾟﾛｸﾞﾗﾑの検索
-int NC_SearchSubProgram(int *pRepeat)
+int NC_SearchSubProgram(int* pRepeat)
 {
 	int		nProg, n;
 	CString	strProg;
@@ -1027,7 +1072,7 @@ int NC_SearchSubProgram(int *pRepeat)
 
 	// Ｏ番号が存在すればNCﾌﾞﾛｯｸの挿入 ->「ｶｰｿﾙ位置に読み込み」でﾌﾞﾛｯｸ追加
 	n = g_pDoc->GetNCBlockSize();
-	if ( g_pDoc->SerializeInsertBlock(strFile, n, NCF_AUTOREAD, FALSE) ) {
+	if ( g_pDoc->SerializeInsertBlock(strFile, n, NCF_AUTOREAD) ) {
 		// 挿入ﾌﾞﾛｯｸの最初だけNCF_FOLDER
 		if ( n < g_pDoc->GetNCBlockSize() )	// 挿入前 < 挿入後
 			g_pDoc->GetNCblock(n)->SetBlockFlag(NCF_FOLDER);
@@ -1091,7 +1136,7 @@ int NC_SearchMacroProgram(const string& strBlock, CNCblock* pBlock)
 	g_pDoc->AddMacroFile(strMacroFile);
 	// ﾌﾞﾛｯｸ挿入
 	int	n = g_pDoc->GetNCBlockSize();
-	if ( g_pDoc->SerializeInsertBlock(strMacroFile, n, NCF_AUTOREAD, FALSE) ) {
+	if ( g_pDoc->SerializeInsertBlock(strMacroFile, n, NCF_AUTOREAD) ) {
 		// 挿入ﾌﾞﾛｯｸの最初だけNCF_FOLDER
 		if ( n < g_pDoc->GetNCBlockSize() )	// ﾌﾞﾛｯｸ挿入が失敗の可能性もある
 			g_pDoc->GetNCblock(n)->SetBlockFlag(NCF_FOLDER);
@@ -1121,7 +1166,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	CMagaDbg	dbg("MakeChamferingObject()", DBG_BLUE);
 #endif
 	// ﾃﾞｰﾀﾁｪｯｸ
-	if ( g_pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+	if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
 		// 旋盤ﾓｰﾄﾞではｻﾎﾟｰﾄされない
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_NOTLATHE);
 		return;
@@ -1147,7 +1192,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 
 	double	r1, r2, cr = fabs(atof(g_lpstrComma + 1));
 	CPointD	pts, pte, pto, ptOffset(g_pDoc->GetOffsetOrig());
-	boost::optional<CPointD>	ptResult;
+	optional<CPointD>	ptResult;
 	BOOL	bResult;
 
 	// 計算開始
@@ -1193,7 +1238,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	pte -= ptOffset;
 
 #ifdef _DEBUG_GSPIRIT
-	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+	if ( !IsThumbnail() ) {
 		dbg.printf("%c=%f, %f", cCham, r1, r2);
 		dbg.printf("pts=(%f, %f)", pts.x, pts.y);
 		dbg.printf("pte=(%f, %f)", pte.x, pte.y);
@@ -1274,17 +1319,17 @@ void SetEndmillDiameter(const string& str)
 #endif
 
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
-	boost::optional<double> dResult = pMCopt->GetToolD( atoi(str.c_str()) );
+	optional<double> dResult = pMCopt->GetToolD( atoi(str.c_str()) );
 	if ( dResult ) {
 		g_ncArgv.dEndmill = *dResult;	// ｵﾌｾｯﾄは半径なので、そのまま使用
 #ifdef _DEBUG
-		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+		if ( !IsThumbnail() )
 			dbg.printf("Endmill=%f from T-No.%d", g_ncArgv.dEndmill, atoi(str.c_str()));
 #endif
 	}
 #ifdef _DEBUG
 	else {
-		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+		if ( !IsThumbnail() )
 			dbg.printf("Endmill T-No.%d nothing", atoi(str.c_str()));
 	}
 #endif
@@ -1310,7 +1355,7 @@ int SetTaperAngle(const string& str)
 		else
 			g_ncArgv.taper.dTaper = RAD(dTaper);	// ﾗｼﾞｱﾝ保持
 #ifdef _DEBUG
-		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+		if ( !IsThumbnail() ) {
 			int dbgTaper = 0;
 			if ( g_ncArgv.taper.nTaper == 1 )
 				dbgTaper = 51;
@@ -1380,7 +1425,7 @@ void SetWorkRect_fromComment(void)
 	g_pDoc->SetWorkRectOrg(rc);
 
 #ifdef _DEBUG
-	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+	if ( !IsThumbnail() ) {
 		dbg.printf("(%f,%f)-(%f,%f)", rc.left, rc.top, rc.right, rc.bottom);
 		dbg.printf("(%f,%f)", rc.low, rc.high);
 	}
@@ -1406,7 +1451,7 @@ void SetLatheRect_fromComment(void)
 		case 0:		// ﾜｰｸ径
 			g_pDoc->SetWorkLatheR( g_dLatheView[0] / 2.0 );	// 半径で保管
 #ifdef _DEBUG
-			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+			if ( !IsThumbnail() )
 				dbg.printf("r=%f", g_dLatheView[0]/2);
 #endif
 			break;
@@ -1414,7 +1459,7 @@ void SetLatheRect_fromComment(void)
 			// z2 があるときだけ
 			g_pDoc->SetWorkLatheZ( g_dLatheView[1], g_dLatheView[2] );
 #ifdef _DEBUG
-			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+			if ( !IsThumbnail() )
 				dbg.printf("(%f)-(%f)", g_dLatheView[1], g_dLatheView[2]);
 #endif
 			break;
@@ -1428,7 +1473,7 @@ void SetWireRect_fromComment(void)
 	CMagaDbg	dbg("SetWireRect_fromComment()", DBG_MAGENTA);
 #endif
 	// ﾜｲﾔ加工ﾓｰﾄﾞのﾌﾗｸﾞON
-	g_pDoc->SetWireViewMode();
+	g_pDoc->SetDocFlag(NCDOC_WIRE);
 	// 呼び出す関数の指定
 	g_pfnIsGcode = &IsGcodeObject_Wire;
 	g_pfnCheckGcodeOther = &CheckGcodeOther_Wire;
@@ -1438,7 +1483,7 @@ void SetWireRect_fromComment(void)
 	rc.high = g_dWireView;
 	g_pDoc->SetWorkRectOrg(rc, FALSE);	// 描画領域を更新しない(CNCDoc::SerializeAfterCheck)
 #ifdef _DEBUG
-	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+	if ( !IsThumbnail() )
 		dbg.printf("t=%f", rc.high);
 #endif
 }
@@ -1565,7 +1610,7 @@ void CycleInterpolate(void)
 
 void G68RoundCheck(CNCblock* pBlock)
 {
-	if ( g_pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+	if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
 		// 旋盤ﾓｰﾄﾞではｻﾎﾟｰﾄされない
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_NOTLATHE);
 		return;
@@ -1661,7 +1706,7 @@ void InitialVariable(void)
 //	g_ncArgv.nc.nErrorCode = 0;
 //	g_ncArgv.nc.dwValFlags = 0;
 	switch ( pMCopt->GetInt(MC_INT_FORCEVIEWMODE) ) {
-	case 1:		// 旋盤
+	case MC_VIEWMODE_LATHE:		// 旋盤
 		g_nLatheView = 0;
 		SetLatheRect_fromComment();	// 旋盤ﾓｰﾄﾞへ強制切替
 		g_ncArgv.nc.dValue[NCA_X] = pMCopt->GetInitialXYZ(NCA_Z);
@@ -1669,7 +1714,7 @@ void InitialVariable(void)
 		g_ncArgv.nc.dValue[NCA_Z] = pMCopt->GetInitialXYZ(NCA_X) / 2.0;
 		i = 3;	// XYZ初期化ｲﾝﾃﾞｯｸｽを進める
 		break;
-	case 2:		// ﾜｲﾔ加工機
+	case MC_VIEWMODE_WIRE:		// ﾜｲﾔ加工機
 		g_dWireView = pMCopt->GetDbl(MC_DBL_DEFWIREDEPTH);
 		SetWireRect_fromComment();
 		for ( i=0; i<NCXYZ; i++ )
@@ -1697,7 +1742,7 @@ void InitialVariable(void)
 	g_nSubprog = 0;
 	g_lpstrComma = NULL;
 
-	if ( g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+	if ( IsThumbnail() ) {
 		g_pfnSearchMacro = &NC_NoSearch;
 		g_pfnSearchAutoBreak = &NC_NoSearch;
 	}

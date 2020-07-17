@@ -11,7 +11,6 @@ class CMKNCSetup6 : public CPropertyPage
 // コンストラクション
 public:
 	CMKNCSetup6();
-	~CMKNCSetup6();
 
 // ダイアログ データ
 	//{{AFX_DATA(CMKNCSetup6)
@@ -20,6 +19,7 @@ public:
 	CButton m_ctCircleR;
 	CButton m_ctCircleIJ;
 	CButton	m_ctCircleHalf;
+	CButton	m_ctZeroCutIJ;
 	CFloatEdit	m_dEllipse;
 	int		m_nDot;
 	int		m_nFDot;
@@ -27,6 +27,7 @@ public:
 	int		m_nIJ;
 	BOOL	m_bZeroCut;
 	BOOL	m_bCircleHalf;
+	BOOL	m_bZeroCutIJ;
 	BOOL	m_bEllipse;
 	//}}AFX_DATA
 

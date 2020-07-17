@@ -1,4 +1,4 @@
-// TabView.cpp: CTabView クラスのインプリメンテーション
+// TabView.cpp: CTabViewBase クラスのインプリメンテーション
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -11,19 +11,20 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-IMPLEMENT_DYNCREATE(CTabView, CCtrlView)
+IMPLEMENT_DYNCREATE(CTabViewBase, CCtrlView)
 
-BEGIN_MESSAGE_MAP(CTabView, CCtrlView)
+BEGIN_MESSAGE_MAP(CTabViewBase, CCtrlView)
 	ON_WM_SIZE()
 	ON_WM_DESTROY()
-	ON_NOTIFY_REFLECT(TCN_SELCHANGING, OnSelChanging)
-	ON_NOTIFY_REFLECT(TCN_SELCHANGE, OnSelChange)
+	ON_WM_ERASEBKGND()
+	ON_NOTIFY_REFLECT(TCN_SELCHANGING, &CTabViewBase::OnSelChanging)
+	ON_NOTIFY_REFLECT(TCN_SELCHANGE, &CTabViewBase::OnSelChange)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// CTabView クラスのメンバ関数
+// CTabViewBase クラスのメンバ関数
 
-int CTabView::AddPage
+int CTabViewBase::AddPage
 	(LPCTSTR pszTitle, CRuntimeClass* pClass, CDocument* pDoc, CFrameWnd* pFrameWnd)
 {
 	CCreateContext	ct;
@@ -45,7 +46,7 @@ int CTabView::AddPage
 	return AddPage(pszTitle, pWnd);
 }
 
-int CTabView::AddPage(LPCTSTR pszTitle, CWnd* pWnd)
+int CTabViewBase::AddPage(LPCTSTR pszTitle, CWnd* pWnd)
 {
 	TC_ITEM tci;
 	tci.mask	= TCIF_TEXT;
@@ -61,7 +62,7 @@ int CTabView::AddPage(LPCTSTR pszTitle, CWnd* pWnd)
 	return nIndex;
 }
 
-void CTabView::RemovePage(int nIndex)
+void CTabViewBase::RemovePage(int nIndex)
 {
 	ASSERT( nIndex >= 0 && nIndex < GetPageCount() );
 
@@ -92,7 +93,7 @@ void CTabView::RemovePage(int nIndex)
 	Invalidate();
 }
 
-BOOL CTabView::GetPageTitle(int nIndex, CString &strTitle)
+BOOL CTabViewBase::GetPageTitle(int nIndex, CString &strTitle)
 {
 	ASSERT( nIndex >= 0 && nIndex < GetPageCount() );
 
@@ -109,7 +110,7 @@ BOOL CTabView::GetPageTitle(int nIndex, CString &strTitle)
 	return TRUE;
 }
 
-BOOL CTabView::SetPageTitle(int nIndex, LPCTSTR pszTitle)
+BOOL CTabViewBase::SetPageTitle(int nIndex, LPCTSTR pszTitle)
 {
 	ASSERT( nIndex >= 0 && nIndex < GetPageCount() );
 
@@ -123,7 +124,7 @@ BOOL CTabView::SetPageTitle(int nIndex, LPCTSTR pszTitle)
 	return bResult;
 }
 
-void CTabView::ActivatePage(int nIndex)
+void CTabViewBase::ActivatePage(int nIndex)
 {
 	ASSERT( nIndex >= 0 && nIndex < GetPageCount() );
 
@@ -155,7 +156,7 @@ void CTabView::ActivatePage(int nIndex)
 	OnActivatePage(nIndex);
 }
 
-int CTabView::NextActivatePage(void)
+int CTabViewBase::NextActivatePage(void)
 {
 	int	nIndex = GetActivePage() + 1;
 	if ( nIndex < 0 || nIndex >= GetPageCount() )
@@ -164,7 +165,7 @@ int CTabView::NextActivatePage(void)
 	return nIndex;
 }
 
-int CTabView::PrevActivatePage(void)
+int CTabViewBase::PrevActivatePage(void)
 {
 	int	nIndex = GetActivePage() - 1;
 	if ( nIndex < 0 || nIndex >= GetPageCount() )
@@ -173,7 +174,7 @@ int CTabView::PrevActivatePage(void)
 	return nIndex;
 }
 
-void CTabView::ResizePage(CWnd* pWnd)
+void CTabViewBase::ResizePage(CWnd* pWnd)
 {
 	CRect	rc;
 	GetTabCtrl().GetClientRect(rc);
@@ -182,9 +183,9 @@ void CTabView::ResizePage(CWnd* pWnd)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CTabView クラスのメッセージ ハンドラ
+// CTabViewBase クラスのメッセージ ハンドラ
 
-void CTabView::OnSize(UINT nType, int cx, int cy)
+void CTabViewBase::OnSize(UINT nType, int cx, int cy)
 {
 	// When the view's size changes, resize the dialog (if any) shown in the
 	// view to prevent the dialog from clipping the view's inside border.
@@ -193,13 +194,25 @@ void CTabView::OnSize(UINT nType, int cx, int cy)
 		ResizePage(GetActivePageWnd());
 }
 
-void CTabView::OnDestroy() 
+void CTabViewBase::OnDestroy() 
 {
 	m_pPages.RemoveAll();
 	CCtrlView::OnDestroy();
 }
 
-void CTabView::OnSelChanging(NMHDR* pNMHDR, LRESULT* pResult)
+BOOL CTabViewBase::OnEraseBkgnd(CDC* pDC)
+{
+	// -----------------------------------------------------------
+	// VS2012から、これがないとタブの背景が描画されない不具合...
+	// なので自分で描画
+	// -----------------------------------------------------------
+	CRect	rc;
+	GetClientRect(rc);
+	pDC->FillSolidRect(&rc, ::GetSysColor(COLOR_INACTIVEBORDER));
+	return TRUE;
+}
+
+void CTabViewBase::OnSelChanging(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	// Notify derived classes that the selection is changing.
 	int nIndex = GetActivePage();
@@ -217,7 +230,7 @@ void CTabView::OnSelChanging(NMHDR* pNMHDR, LRESULT* pResult)
 	*pResult = 0;
 }
 
-void CTabView::OnSelChange(NMHDR* pNMHDR, LRESULT* pResult)
+void CTabViewBase::OnSelChange(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	int nIndex = GetActivePage();
 	if ( nIndex < 0 )

@@ -435,10 +435,9 @@ inline int CNCcircle::GetG23(void) const
 
 inline boost::tuple<double, double> CNCcircle::GetSqEq(void) const
 {
-	using namespace boost;
 	return ( m_nG23 == 0 ) ?
-		make_tuple(m_eq, m_sq) :
-		make_tuple(m_sq, m_eq);
+		boost::make_tuple(m_eq, m_sq) :
+		boost::make_tuple(m_sq, m_eq);
 }
 
 inline const CPoint3D CNCcircle::GetOrg(void) const
@@ -470,10 +469,11 @@ inline CRect3D CNCcircle::GetMaxCutRect(void) const
 // ＮＣデータのブロッククラス
 /////////////////////////////////////////////////////////////////////////////
 inline CNCblock::CNCblock
-	(const CString& strLine, const CString& strBlock, DWORD dwFlags/*=0*/)
+	(const CString& strBuf, DWORD dwFlags/*=0*/)
 {
-	m_strLine	= strLine;
-	m_strGcode	= strBlock;
+	extern	LPCTSTR	g_szLineDelimiter;	// "%N0123456789" from NCDoc.cpp
+	m_strLine	= strBuf.SpanIncluding(g_szLineDelimiter);
+	m_strGcode	= strBuf.Mid(m_strLine.GetLength()).Trim();
 	m_dwFlags	= dwFlags;
 	m_nError	= 0;
 	m_pData		= NULL;

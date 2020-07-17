@@ -6,42 +6,48 @@
 
 #include "NCMakeOption.h"
 
-// -- 基本MillOption共通
-#define	MKWI_NUM_PROG			0
-#define	MKWI_NUM_LINEADD		1
-#define	MKWI_NUM_G90			2
-#define	MKWI_NUM_DOT			3
-#define	MKWI_NUM_FDOT			4
-#define	MKWI_NUM_CIRCLECODE		5
-// --
-
-#define	MKWI_DBL_DEPTH			0
-#define	MKWI_DBL_TAPER			1
-#define	MKWI_DBL_FEED			2
-#define	MKWI_DBL_G92X			3
-#define	MKWI_DBL_G92Y			4
-#define	MKWI_DBL_AWFCIRCLE_LO	5
-#define	MKWI_DBL_AWFCIRCLE_HI	6
-#define	MKWI_DBL_ELLIPSE		7
-
-// -- 基本MillOption共通
-#define	MKWI_FLG_PROG			0
-#define	MKWI_FLG_PROGAUTO		1
-#define	MKWI_FLG_LINEADD		2
-#define	MKWI_FLG_ZEROCUT		3
-#define	MKWI_FLG_GCLIP			4
-#define	MKWI_FLG_ELLIPSE		5
-// --
-#define	MKWI_FLG_AWFSTART		6
-#define	MKWI_FLG_AWFEND			7
-
-#define	MKWI_STR_LINEFORM		0
-#define	MKWI_STR_EOB			1
-#define	MKWI_STR_HEADER			2
-#define	MKWI_STR_FOOTER			3
-#define	MKWI_STR_TAPERMODE		4
-#define	MKWI_STR_AWFCNT			5
-#define	MKWI_STR_AWFCUT			6
+enum {		// -- 基本MillOption共通
+	MKWI_NUM_PROG = 0,
+	MKWI_NUM_LINEADD,
+	MKWI_NUM_G90,
+	MKWI_NUM_DOT,
+	MKWI_NUM_FDOT,
+	MKWI_NUM_CIRCLECODE,
+		MKWI_NUM_NUMS		// [6]
+};
+enum {
+	MKWI_DBL_DEPTH = 0,
+	MKWI_DBL_TAPER,
+	MKWI_DBL_FEED,
+	MKWI_DBL_G92X,
+	MKWI_DBL_G92Y,
+	MKWI_DBL_AWFCIRCLE_LO,
+	MKWI_DBL_AWFCIRCLE_HI,
+	MKWI_DBL_ELLIPSE,
+		MKWI_DBL_NUMS		// [8]
+};
+enum {		// -- 基本MillOption共通
+	MKWI_FLG_PROG = 0,
+	MKWI_FLG_PROGAUTO,
+	MKWI_FLG_LINEADD,
+	MKWI_FLG_ZEROCUT,
+	MKWI_FLG_GCLIP,
+	MKWI_FLG_ELLIPSE,
+	// --
+	MKWI_FLG_AWFSTART,
+	MKWI_FLG_AWFEND,
+		MKWI_FLG_NUMS		// [8]
+};
+enum {
+	MKWI_STR_LINEFORM = 0,
+	MKWI_STR_EOB,
+	MKWI_STR_HEADER,
+	MKWI_STR_FOOTER,
+	MKWI_STR_TAPERMODE,
+	MKWI_STR_AWFCNT,
+	MKWI_STR_AWFCUT,
+		MKWI_STR_NUMS		// [7]
+};
 
 class CNCMakeWireOpt : public CNCMakeOption
 {
@@ -61,7 +67,7 @@ friend class CMKNCSetup6;
 					m_nFDot,			// Ｆﾊﾟﾗﾒｰﾀの数値表記
 					m_nCircleCode;		// 円切削(G2 or G3)
 		};
-		int			m_unNums[6];
+		int			m_unNums[MKWI_NUM_NUMS];
 	};
 	// double型ｵﾌﾟｼｮﾝ
 	union {
@@ -76,7 +82,7 @@ friend class CMKNCSetup6;
 			// -----
 					m_dEllipse;			// 楕円公差
 		};
-		double		m_udNums[8];
+		double		m_udNums[MKWI_DBL_NUMS];
 	};
 	// BOOL型ｵﾌﾟｼｮﾝ
 	union {
@@ -92,7 +98,7 @@ friend class CMKNCSetup6;
 					m_bAWFstart,		// 加工前結線
 					m_bAWFend;			// 加工後切断
 		};
-		BOOL		m_ubFlags[8];
+		BOOL		m_ubFlags[MKWI_FLG_NUMS];
 	};
 	// CString型ｵﾌﾟｼｮﾝ -> 実体はﾍﾞｰｽｸﾗｽへ
 		// 行番号ﾌｫｰﾏｯﾄ, EOB, ｶｽﾀﾑﾍｯﾀﾞｰ，ｶｽﾀﾑﾌｯﾀｰ,

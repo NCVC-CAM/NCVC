@@ -39,6 +39,8 @@
 #include <afxcmn.h>			// MFC の Windows コモン コントロール サポート
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
+#include <afxcontrolbars.h>	// MFC におけるリボンとコントロール バーのサポート
+
 // OpenGL
 #define	GLEW_STATIC			// GLEW static link
 #include <gl/glew.h>		// OpenGL Extention
@@ -89,9 +91,9 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 #define	AfxGetNCVCApp()			( static_cast<CNCVCApp *>(AfxGetApp()) )
 #define	AfxGetNCVCMainWnd()		( static_cast<CMainFrame *>(AfxGetMainWnd()) )
 #define	LOMETRICFACTOR			10.0
-// 円を64(2π/64≒5.6度)分割で描画 from NCdata.cpp, DXFdata.cpp
+// 円を64(360度/64≒5.6度)分割で描画 from NCdata.cpp, DXFdata.cpp
 #define	ARCCOUNT				64
-#define	ARCSTEP					(PI/32)		// 2π[rad](360°)÷ARCCOUNT
+#define	ARCSTEP					(PI/32)		// 2π[rad]÷ARCCOUNT
 
 // Timer Event
 #define	IDC_SPLASH_TIMER		100
@@ -123,15 +125,17 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 #define	WM_USERPROGRESSPOS		WM_USER+106
 	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞへのﾄﾞｷｭﾒﾝﾄ切替通知
 #define	WM_USERSWITCHDOCUMENT	WM_USER+107
-	// CTabView のﾍﾟｰｼﾞ切替ｲﾍﾞﾝﾄ
+	// CTabViewBase のﾍﾟｰｼﾞ切替ｲﾍﾞﾝﾄ
 #define	WM_USERACTIVATEPAGE		WM_USER+108
 	// MDI子ｳｨﾝﾄﾞｳのｼｽﾃﾑｺﾏﾝﾄﾞ(最大化,元に戻す)に対するﾌｨｯﾄﾒｯｾｰｼﾞ 兼
 	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
 #define	WM_USERVIEWFITMSG		WM_USER+109
-	// ﾄﾚｰｽ実行ｽﾚｯﾄﾞからの通知(CTraceThread->CNCListView)
+	// ﾄﾚｰｽ実行ｽﾚｯﾄﾞからの通知(CTraceThread -> CNCListView)
 #define WM_USERTRACESELECT		WM_USER+110
-	// Gｺｰﾄﾞのｽﾃｰﾀｽﾊﾞｰ更新(CNCListView->CNCChild)
+	// Gｺｰﾄﾞのｽﾃｰﾀｽﾊﾞｰ更新(CNCListView -> CNCChild)
 #define WM_USERSTATUSLINENO		WM_USER+111
+	// CADﾃﾞｰﾀの統合(CNCVCApp::OnFileCADbind() -> CDXFView )
+#define	WM_USERBINDINIT			WM_USER+112
 
 /////////////////////////////////////////////////////////////////////////////
 // NCVC 共通関数
@@ -230,3 +234,4 @@ void	NC_FormatMessage(void);
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 //#endif
+

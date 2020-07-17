@@ -15,14 +15,14 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-IMPLEMENT_DYNCREATE(CNCInfoTab, CTabView)
+IMPLEMENT_DYNCREATE(CNCInfoTab, CTabViewBase)
 
-BEGIN_MESSAGE_MAP(CNCInfoTab, CTabView)
+BEGIN_MESSAGE_MAP(CNCInfoTab, CTabViewBase)
 	ON_WM_CREATE()
 	ON_WM_DESTROY()
-	ON_WM_SETFOCUS()
+//	ON_WM_SETFOCUS()
 	// ﾀﾌﾞ移動
-	ON_COMMAND_RANGE(ID_TAB_NEXT, ID_TAB_PREV, OnMoveTab)
+	ON_COMMAND_RANGE(ID_TAB_NEXT, ID_TAB_PREV, &CNCInfoTab::OnMoveTab)
 END_MESSAGE_MAP()
 
 //////////////////////////////////////////////////////////////////////
@@ -32,16 +32,12 @@ CNCInfoTab::CNCInfoTab()
 {
 }
 
-CNCInfoTab::~CNCInfoTab()
-{
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // CNCInfoTab クラスのオーバライド関数
 
 void CNCInfoTab::OnInitialUpdate() 
 {
-	CTabView::OnInitialUpdate();
+	CTabViewBase::OnInitialUpdate();
 
 	//	ｱｸﾃｨﾌﾞﾍﾟｰｼﾞをﾚｼﾞｽﾄﾘから読み出し
 	CString	strRegKey, strEntry;
@@ -66,7 +62,7 @@ void CNCInfoTab::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		GetTabCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);
 		break;
 	}
-	CTabView::OnUpdate(pSender, lHint, pHint);
+	CTabViewBase::OnUpdate(pSender, lHint, pHint);
 }
 
 BOOL CNCInfoTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
@@ -77,14 +73,14 @@ BOOL CNCInfoTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 		if ( pWnd->IsKindOf(RUNTIME_CLASS(CNCInfoTab)) ||
 				pWnd->IsKindOf(RUNTIME_CLASS(CNCInfoView1)) ||
 				pWnd->IsKindOf(RUNTIME_CLASS(CNCInfoView2)) )
-			return CTabView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+			return CTabViewBase::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 		else
 			return FALSE;
 	}
 
 	// 自分自身(CWnd)とｱｸﾃｨﾌﾞなﾋﾞｭｰだけにｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞ
 	// 結果的に CNCDoc へのｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞはここからだけになる
-	if ( CTabView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) )
+	if ( CTabViewBase::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) )
 		return TRUE;
 	if ( GetPageCount() <= 0 )
 		return FALSE;
@@ -102,12 +98,12 @@ void CNCInfoTab::OnActivatePage(int nIndex)
 #ifdef _DEBUG
 void CNCInfoTab::AssertValid() const
 {
-	CTabView::AssertValid();
+	CTabViewBase::AssertValid();
 }
 
 void CNCInfoTab::Dump(CDumpContext& dc) const
 {
-	CTabView::Dump(dc);
+	CTabViewBase::Dump(dc);
 }
 
 CNCDoc* CNCInfoTab::GetDocument() // 非デバッグ バージョンはインラインです。
@@ -122,9 +118,13 @@ CNCDoc* CNCInfoTab::GetDocument() // 非デバッグ バージョンはインラインです。
 
 int CNCInfoTab::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if ( CTabView::OnCreate(lpCreateStruct) < 0 )
+	if ( CTabViewBase::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 	GetTabCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);
+
+	// Style setting
+//	DWORD dwStyle = GetTabCtrl().GetExtendedStyle();
+//	GetTabCtrl().SetExtendedStyle( dwStyle | TCS_EX_FLATSEPARATORS );
 
 	// 各ﾍﾟｰｼﾞﾋﾞｭｰの生成
 	int		nIndex;
@@ -155,9 +155,9 @@ void CNCInfoTab::OnDestroy()
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_INFOPAGE));
 	AfxGetApp()->WriteProfileInt(strRegKey, strEntry, GetActivePage());
 
-	CTabView::OnDestroy();
+	CTabViewBase::OnDestroy();
 }
-
+/*
 void CNCInfoTab::OnSetFocus(CWnd*) 
 {
 #ifdef _DEBUG
@@ -175,7 +175,7 @@ void CNCInfoTab::OnSetFocus(CWnd*)
 	}
 #endif
 }
-
+*/
 void CNCInfoTab::OnMoveTab(UINT nID)
 {
 	if ( nID == ID_TAB_NEXT )

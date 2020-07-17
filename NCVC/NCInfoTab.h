@@ -6,7 +6,7 @@
 
 #include "TabView.h"
 
-class CNCInfoTab : public CTabView  
+class CNCInfoTab : public CTabViewBase  
 {
 protected:
 	CNCInfoTab();		// 動的生成に使用されるプロテクト コンストラクタ
@@ -26,7 +26,6 @@ protected:
 
 // インプリメンテーション
 protected:
-	virtual ~CNCInfoTab();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -34,11 +33,11 @@ protected:
 
 // 生成されたメッセージ マップ関数
 protected:
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnDestroy();
-	afx_msg void OnSetFocus(CWnd* pOldWnd);
+	afx_msg int		OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void	OnDestroy();
+//	afx_msg void	OnSetFocus(CWnd* pOldWnd);
 	// ﾀﾌﾞ移動
-	afx_msg	void OnMoveTab(UINT);
+	afx_msg	void	OnMoveTab(UINT);
 
 	DECLARE_MESSAGE_MAP()
 };

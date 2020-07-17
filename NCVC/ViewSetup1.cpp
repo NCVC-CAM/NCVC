@@ -15,14 +15,14 @@ extern	CMagaDbg	g_dbg;
 BEGIN_MESSAGE_MAP(CViewSetup1, CPropertyPage)
 	//{{AFX_MSG_MAP(CViewSetup1)
 	ON_WM_CTLCOLOR()
-	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, OnDefColor)
-	ON_BN_CLICKED(IDC_VIEWSETUP1_BT_RECT, OnColorButton)
-	ON_BN_CLICKED(IDC_VIEWSETUP1_BT_SEL, OnColorButton)
-	ON_BN_CLICKED(IDC_VIEWSETUP1_WHEEL, OnWheel)
-	ON_BN_CLICKED(IDC_VIEWSETUP1_NtoP, OnChange)
-	ON_BN_CLICKED(IDC_VIEWSETUP1_PtoN, OnChange)
-	ON_CBN_SELCHANGE(IDC_VIEWSETUP1_CB_RECT, OnChange)
-	ON_CBN_SELCHANGE(IDC_VIEWSETUP1_CB_SEL, OnChange)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, &CViewSetup1::OnDefColor)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_BT_RECT, &CViewSetup1::OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_BT_SEL, &CViewSetup1::OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_WHEEL, &CViewSetup1::OnWheel)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_NtoP, &CViewSetup1::OnChange)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_PtoN, &CViewSetup1::OnChange)
+	ON_CBN_SELCHANGE(IDC_VIEWSETUP1_CB_RECT, &CViewSetup1::OnChange)
+	ON_CBN_SELCHANGE(IDC_VIEWSETUP1_CB_SEL, &CViewSetup1::OnChange)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -137,7 +137,7 @@ void CViewSetup1::OnColorButton()
 	int	nIndex = GetFocus()->GetDlgCtrlID() - IDC_VIEWSETUP1_BT_RECT;
 	if ( 0<=nIndex && nIndex<SIZEOF(m_colView) ) {
 		CColorDialog	dlg(m_colView[nIndex]);
-		dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
+		dlg.m_cc.lpCustColors = (COLORREF *)&(AfxGetNCVCApp()->GetViewOption()->m_colCustom);
 		if ( dlg.DoModal() == IDOK ) {
 			m_colView[nIndex] = dlg.GetColor();
 			m_brColor[nIndex].DeleteObject();

@@ -18,9 +18,9 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMKNCSetup2, CPropertyPage)
 	//{{AFX_MSG_MAP(CMKNCSetup2)
-	ON_BN_CLICKED(IDC_MKNC2_PROG, OnProgNo)
-	ON_BN_CLICKED(IDC_MKNC2_PROGAUTO, OnProgNo)
-	ON_BN_CLICKED(IDC_MKNC2_LINE, OnLineAdd)
+	ON_BN_CLICKED(IDC_MKNC2_PROG, &CMKNCSetup2::OnProgNo)
+	ON_BN_CLICKED(IDC_MKNC2_PROGAUTO, &CMKNCSetup2::OnProgNo)
+	ON_BN_CLICKED(IDC_MKNC2_LINE, &CMKNCSetup2::OnLineAdd)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -40,10 +40,6 @@ CMKNCSetup2::CMKNCSetup2() : CPropertyPage(CMKNCSetup2::IDD)
 	m_nG90				= -1;
 	m_nZReturn			= -1;
 	//}}AFX_DATA_INIT
-}
-
-CMKNCSetup2::~CMKNCSetup2()
-{
 }
 
 void CMKNCSetup2::DoDataExchange(CDataExchange* pDX)

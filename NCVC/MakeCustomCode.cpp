@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "MainFrm.h"
 #include "DXFdata.h"
 #include "DXFDoc.h"
 #include "NCMakeOption.h"
@@ -15,7 +16,6 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-using namespace std;
 using namespace boost;
 
 static	LPCTSTR	g_szCustomCode[] = {
@@ -32,7 +32,7 @@ CMakeCustomCode::CMakeCustomCode
 	m_strOrderIndex.SetElement(SIZEOF(g_szCustomCode), g_szCustomCode);
 }
 
-tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const string& str) const
+tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) const
 {
 	static	LPCTSTR	szReplaceErr = "???";
 

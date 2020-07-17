@@ -11,7 +11,6 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-using namespace std;
 using namespace boost;
 
 //////////////////////////////////////////////////////////////////////
@@ -419,9 +418,9 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LE
 	else {
 		// ‚QŽŸ•û’öŽ®‚©‚çx’l‚ðŒvŽZ
 		tie(nResult, pr1.x, pr2.x) = GetKon(
-			ya*ya + xa*xa*b*b/(a*a),
-			2.0*ya*(xa*pt1.y - pt1.x*ya),
-			(pt1.y*pt1.y-b*b)*xa*xa + (pt1.x*ya-2*pt1.y*xa)*pt1.x*ya );
+				ya*ya + xa*xa*b*b/(a*a),
+				2.0*ya*(xa*pt1.y - pt1.x*ya),
+				(pt1.y*pt1.y-b*b)*xa*xa + (pt1.x*ya-2*pt1.y*xa)*pt1.x*ya );
 		// y’l‚ðŒvŽZ
 		if ( nResult > 1 )
 			pr2.y = ya*(pr2.x-pt1.x)/xa + pt1.y;

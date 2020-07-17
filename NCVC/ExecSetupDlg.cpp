@@ -15,15 +15,15 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CExecSetupDlg, CDialog)
 	//{{AFX_MSG_MAP(CExecSetupDlg)
-	ON_BN_CLICKED(IDC_EXE_ADD, OnAdd)
-	ON_BN_CLICKED(IDC_EXE_MOD, OnMod)
-	ON_BN_CLICKED(IDC_EXE_DEL, OnDel)
-	ON_BN_CLICKED(IDC_EXE_UP, OnUp)
-	ON_BN_CLICKED(IDC_EXE_DOWN, OnDown)
-	ON_BN_CLICKED(IDC_EXE_FILEUP, OnFileUP)
-	ON_NOTIFY(LVN_GETDISPINFO, IDC_EXE_LIST, OnGetDispInfoExeList)
-	ON_NOTIFY(LVN_ITEMCHANGED, IDC_EXE_LIST, OnItemChangedExeList)
-	ON_NOTIFY(LVN_KEYDOWN, IDC_EXE_LIST, OnKeyDownList)
+	ON_BN_CLICKED(IDC_EXE_ADD, &CExecSetupDlg::OnAdd)
+	ON_BN_CLICKED(IDC_EXE_MOD, &CExecSetupDlg::OnMod)
+	ON_BN_CLICKED(IDC_EXE_DEL, &CExecSetupDlg::OnDel)
+	ON_BN_CLICKED(IDC_EXE_UP, &CExecSetupDlg::OnUp)
+	ON_BN_CLICKED(IDC_EXE_DOWN, &CExecSetupDlg::OnDown)
+	ON_BN_CLICKED(IDC_EXE_FILEUP, &CExecSetupDlg::OnFileUP)
+	ON_NOTIFY(LVN_GETDISPINFO, IDC_EXE_LIST, &CExecSetupDlg::OnGetDispInfoExeList)
+	ON_NOTIFY(LVN_ITEMCHANGED, IDC_EXE_LIST, &CExecSetupDlg::OnItemChangedExeList)
+	ON_NOTIFY(LVN_KEYDOWN, IDC_EXE_LIST, &CExecSetupDlg::OnKeyDownList)
 	//}}AFX_MSG_MAP
 	ON_WM_DROPFILES()
 END_MESSAGE_MAP()
@@ -48,10 +48,6 @@ CExecSetupDlg::CExecSetupDlg() : CDialog(CExecSetupDlg::IDD, NULL)
 		pExec->m_bDlgAdd = FALSE;
 		pExec->m_bDlgDel = FALSE;
 	}
-}
-
-CExecSetupDlg::~CExecSetupDlg()
-{
 }
 
 void CExecSetupDlg::DoDataExchange(CDataExchange* pDX)
@@ -420,11 +416,12 @@ void CExecSetupDlg::OnFileUP()
 
 void CExecSetupDlg::OnDropFiles(HDROP hDropInfo) 
 {
-	if ( ::DragQueryFile(hDropInfo, (UINT)-1, NULL, 0) == 1 ) {
+	if ( ::DragQueryFile(hDropInfo, -1, NULL, 0) > 1 ) {
+		// D&DÇÕ1åèÇæÇØéÛÇØïtÇØ
 		CString	strPath, strFile;
-		TCHAR	szFileName[_MAX_PATH];
-		::DragQueryFile(hDropInfo, 0, szFileName, _MAX_PATH);
-		m_strFile = szFileName;
+		UINT nLen = ::DragQueryFile(hDropInfo, 0, NULL, 0);
+		::DragQueryFile(hDropInfo, 0, m_strFile.GetBuffer(nLen+1), nLen+1);
+		m_strFile.ReleaseBuffer();
 		::Path_Name_From_FullPath(m_strFile, strPath, strFile, FALSE);
 		m_strToolTip = strFile;
 		UpdateData(FALSE);

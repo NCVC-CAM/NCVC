@@ -73,9 +73,9 @@ class CRecentViewInfo
 {
 	friend	class	CNCVCApp;
 
-	BOOL		m_bInfo;
-
 	CString		m_strFile;
+	BOOL		m_bGLActivate;		// OpenGL‚ğˆê“x‚Å‚à±¸Ã¨ÌŞ‚É‚µ‚½‚©
+
 	struct VINFO {		// Ú¼Ş½ÄØ‚©‚çÊŞ²ÅØ‚Å“Ç‚İ‘‚«‚·‚é’PˆÊ
 		GLdouble	objectXform[4][4];	// OpenGL‰ñ“]ÏÄØ¸½
 		CRect3D		rcView;				// ÓÃŞÙ‹óŠÔ
@@ -113,8 +113,8 @@ class CNCVCApp : public CWinAppEx
 
 	// ±ÄŞ²İî•ñ
 	CNCVCaddinIF*	m_pActiveAddin;	// Œ»İ±¸Ã¨ÌŞ‚È±ÄŞ²İ
-	WORD			m_wAddin;		// ±ÄŞ²İºÏİÄŞID
-	CNCVCaddinArray	m_obAddin;
+	WORD				m_wAddin;	// ±ÄŞ²İºÏİÄŞID
+	CNCVCaddinArray		m_obAddin;
 	CNCVCaddinWordMap	m_mpAddin;	// ÒÆ­°ID‚ğ·°‚Æ‚·‚é´İÄØŠÖ”Ï¯Ìß
 	BOOL	NCVCAddinInit(int);		// ±ÄŞ²İî•ñ“Ç‚İ‚İ
 	BOOL	NCVCAddinMenu(void);	// ±ÄŞ²İ‚ÌÒÆ­°“o˜^
@@ -136,9 +136,6 @@ class CNCVCApp : public CWinAppEx
 	void	InitialRecentViewList(void);
 	void	WriteRecentViewList(void);
 	void	AddToRecentViewList(LPCTSTR);
-
-	// NCVC¶½ÀÑ
-	BOOL	DoPromptFileNameEx(CString&);	// ¶½ÀÑÌ§²Ùµ°Ìßİ
 
 public:
 	CNCVCApp();
@@ -220,9 +217,10 @@ public:
 	CRecentViewInfo*	GetDefaultViewInfo(void) {
 		return m_pDefViewInfo;
 	}
+	BOOL		DoPromptFileNameEx(CStringArray&, int = -1);
+
 	void		SetDefaultViewInfo(const GLdouble[4][4]);
-	CNCDoc*		GetAlreadyNCDocument(LPCTSTR = NULL);
-	CDXFDoc*	GetAlreadyDXFDocument(LPCTSTR = NULL);
+	CDocument*	GetAlreadyDocument(DOCTYPE, LPCTSTR = NULL);
 	int			GetDXFOpenDocumentCount(void);
 	void		ReloadDXFDocument(void);
 	void		ChangeViewOption(void);
@@ -247,6 +245,7 @@ public:
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileOpen();
 	afx_msg void OnFileThumbnail();
+	afx_msg void OnFileCADbind();
 	afx_msg void OnFileCloseAndOpen();
 	afx_msg void OnHelp();
 	afx_msg void OnHelpUsing(UINT);
@@ -263,6 +262,7 @@ public:
 	afx_msg void OnViewSetupExport();
 	afx_msg void OnWindowAllClose();
 	afx_msg void OnUpdateOptionEdit(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateFileCADbind(CCmdUI* pCmdUI);
 
 	DECLARE_MESSAGE_MAP()
 };
@@ -272,6 +272,8 @@ public:
 
 // ¸ØÃ¨¶Ù´×°‚ÌÒ¯¾°¼ŞÎŞ¯¸½
 void	NCVC_CriticalErrorMsg(LPCTSTR, int);
+// ºİÄÛ°Ù¶¬´×°‚ÌÒ¯¾°¼ŞÎŞ¯¸½
+void	NCVC_ControlErrorMsg(LPCTSTR, int);
 // Ì§²Ù‚Ì‘¶İÁª¯¸
 BOOL	IsFileExist(LPCTSTR lpszFile, BOOL bExist = TRUE, BOOL bMsg = TRUE);
 

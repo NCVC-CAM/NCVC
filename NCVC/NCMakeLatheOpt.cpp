@@ -40,12 +40,14 @@ static	const	double	g_dfDOrder[] = {
 static	LPCTSTR	g_szBOrder[] = {
 	"ProgSet", "ProgAuto",
 	"LineAdd", "ZeroCut", "GClip", "DisableSpindle",
-	"CircleHalf", "EllipseFlg"
+	"CircleHalf", "ZeroCutIJ",
+	"EllipseFlg"
 };
 static	const	BOOL	g_dfBOrder[] = {
 	TRUE, FALSE,
 	FALSE, TRUE, TRUE, FALSE,
 	FALSE, TRUE,
+	TRUE,
 };
 
 // CStringå^ñΩóﬂ
@@ -94,6 +96,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKLA_NUM_CIRCLECODE,	"â~√ﬁ∞¿ÇÃêÿçÌ(0:G02,1:G03)"},
 	{NC_NUM,	MKLA_NUM_IJ,			"â~å éwé¶(0:R,1:I/J)"},
 	{NC_FLG,	MKLA_FLG_CIRCLEHALF,	"ëSâ~ÇÕ2ï™äÑ"},
+	{NC_FLG,	MKLA_FLG_ZEROCUT_IJ,	"[I|J]0ÇÕè»ó™"},
 	{NC_DBL,	MKLA_DBL_ELLIPSE,		"ë»â~åˆç∑"},
 	{NC_FLG,	MKLA_FLG_ELLIPSE,		"í∑åaÇ∆íZåaÇ™ìôÇµÇ¢ë»â~ÇÕâ~Ç∆Ç›Ç»Ç∑"}
 };
@@ -154,6 +157,7 @@ void CNCMakeLatheOpt::DbgDump(void) const
 	dbg.printf("  CircleCode   =%d", m_nCircleCode);
 	dbg.printf("  IJ           =%d", m_nIJ);
 	dbg.printf("  CircleHalf   =%d", m_bCircleHalf);
+	dbg.printf("  ZeroCutIJ    =%d", m_bZeroCutIJ);
 	dbg.printf("----------");
 	dbg.printf("  Ellipse      =%f", m_dEllipse);
 	dbg.printf("  EllipseFlg   =%d", m_bEllipse);

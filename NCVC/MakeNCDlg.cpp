@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "MainFrm.h"
 #include "Layer.h"
 #include "DXFDoc.h"
 #include "MKNCSetup.h"
@@ -18,12 +19,12 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMakeNCDlg, CDialog)
 	//{{AFX_MSG_MAP(CMakeNCDlg)
-	ON_BN_CLICKED(IDC_MKNC_NCFILEUP, OnMKNCFileUp)
-	ON_BN_CLICKED(IDC_MKNC_INITUP, OnMKNCInitUp)
-	ON_BN_CLICKED(IDC_MKNC_INITED, OnMKNCInitEdit)
-	ON_CBN_SELCHANGE(IDC_MKNC_INIT, OnSelChangeInit)
-	ON_CBN_KILLFOCUS(IDC_MKNC_INIT, OnKillFocusInit)
-	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, OnKillFocusNCFile)
+	ON_BN_CLICKED(IDC_MKNC_NCFILEUP, &CMakeNCDlg::OnMKNCFileUp)
+	ON_BN_CLICKED(IDC_MKNC_INITUP, &CMakeNCDlg::OnMKNCInitUp)
+	ON_BN_CLICKED(IDC_MKNC_INITED, &CMakeNCDlg::OnMKNCInitEdit)
+	ON_CBN_SELCHANGE(IDC_MKNC_INIT, &CMakeNCDlg::OnSelChangeInit)
+	ON_CBN_KILLFOCUS(IDC_MKNC_INIT, &CMakeNCDlg::OnKillFocusInit)
+	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, &CMakeNCDlg::OnKillFocusNCFile)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 

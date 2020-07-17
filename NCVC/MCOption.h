@@ -5,44 +5,66 @@
 #pragma once
 
 #include "NCVCdefine.h"
+
 // ModalGroup
-#define	MODALGROUP		5
-#define	MODALGROUP0			0	// G00Å`G03
-#define	MODALGROUP1			1	// G17Å`G19
-#define	MODALGROUP2			2	// G54Å`G59
-#define	MODALGROUP3			3	// G90ÅCG91
-#define	MODALGROUP4			4	// G98ÅCG99
-// G54Å`G59
-#define	WORKOFFSET		6
-// œ∏€ä÷òA
-#define	MCMACROSTRING	4
-#define	MCMACROCODE				0	// åƒÇ—èoÇµ∫∞ƒﬁ
-#define	MCMACROFOLDER			1	// Ã´Ÿ¿ﬁ
-#define	MCMACROIF				2	// I/F
-#define	MCMACROARGV				3	// à¯êî
-#define	MCMACRORESULT			4	// èoóÕåãâ 
-#define	MCMACHINEFILE			5	// åªç›ÇÃã@äBèÓïÒÃß≤Ÿñº
-#define	MCCURRENTFOLDER			6	// åªç›ÇÃNCÃß≤ŸÃ´Ÿ¿ﬁ
-// intå^
-#define	MC_INT_FDOT				8
-#define	MC_INT_CORRECTTYPE		9
-#define	MC_INT_FORCEVIEWMODE	10
-// doubleå^
-#define	MC_DBL_FEED				3
-#define	MC_DBL_BLOCKWAIT		4
-#define	MC_DBL_DEFWIREDEPTH		5
-// BOOLå^
-#define	MC_FLG_L0CYCLE			0
+enum {
+	MODALGROUP0 = 0,	// G00Å`G03
+	MODALGROUP1,		// G17Å`G19
+	MODALGROUP2,		// G54Å`G59
+	MODALGROUP3,		// G90ÅCG91
+	MODALGROUP4,		// G98ÅCG99
+		MODALGROUP		// [5]
+};
+enum {		// intå^
+	MC_INT_FDOT = MODALGROUP+NCXYZ,
+	MC_INT_CORRECTTYPE,
+	MC_INT_FORCEVIEWMODE,
+		MC_INT_NUMS		// [11]
+};
+enum {		// doubleå^
+	MC_DBL_FEED = NCXYZ,
+	MC_DBL_BLOCKWAIT,
+	MC_DBL_DEFWIREDEPTH,
+		MC_DBL_AAA		// [6](dummy)
+};
+#define	WORKOFFSET		6	// G54Å`G59
+const	size_t	MC_DBL_NUMS = MC_DBL_AAA+WORKOFFSET*NCXYZ;	// 24
+enum {		// BOOLå^
+	MC_FLG_L0CYCLE = 0,
+		MC_FLG_NUMS
+};
+enum {		// œ∏€ä÷òA(CStringå^)
+	MCMACROCODE = 0,	// åƒÇ—èoÇµ∫∞ƒﬁ
+	MCMACROFOLDER,		// Ã´Ÿ¿ﬁ
+	MCMACROIF,			// I/F
+	MCMACROARGV,		// à¯êî
+		MCMACROSTRING	// [4]
+};
+enum {		// íuä∑óp
+	MCMACRORESULT = MCMACROSTRING,	// èoóÕåãâ 
+	MCMACHINEFILE,					// åªç›ÇÃã@äBèÓïÒÃß≤Ÿñº
+	MCCURRENTFOLDER,				// åªç›ÇÃNCÃß≤ŸÃ´Ÿ¿ﬁ
+};
 // çHãÔï‚ê≥¿≤Ãﬂ
-#define	MC_TYPE_A			0
-#define	MC_TYPE_B			1
-// ã≠êßï\é¶”∞ƒﬁ
-#define	MC_VIEWMODE_MILL	0
-#define	MC_VIEWMODE_LATHE	1
-#define	MC_VIEWMODE_WIRE	2
+enum {
+	MC_TYPE_A = 0,
+	MC_TYPE_B
+};
+// ã≠êßï\é¶”∞ƒﬁ(MC_INT_FORCEVIEWMODE)
+enum {
+	MC_VIEWMODE_MILL = 0,
+	MC_VIEWMODE_LATHE,
+	MC_VIEWMODE_WIRE
+};
 
 // çHãÔèÓïÒ
-#define	MCTOOLINFOOPT	4	// MCTOOLINFO ÇÃµÃﬂºÆ›ãÊêÿÇËêî
+enum {
+	MCTOOL_T = 0,
+	MCTOOL_NAME,
+	MCTOOL_D,
+	MCTOOL_H,
+		MCTOOL_NUMS		// [4]
+};
 class CMCTOOLINFO
 {
 friend	class	CMCOption;
@@ -94,7 +116,7 @@ friend	class	CMCSetup5;
 					m_nCorrectType,			// ï‚ê≥¿≤Ãﬂ
 					m_nForceViewMode;		// ã≠êßï\é¶”∞ƒﬁ
 		};
-		int			m_unNums[11];
+		int			m_unNums[MC_INT_NUMS];
 	};
 	// doubleå^µÃﬂºÆ›
 	union {
@@ -105,14 +127,14 @@ friend	class	CMCSetup5;
 					m_dDefWireDepth,		// ‹≤‘â¡çHã@ÇÃ√ﬁÃ´Ÿƒå˙Ç≥
 					m_dWorkOffset[WORKOFFSET][NCXYZ];	// G54Å`G59
 		};
-		double		m_udNums[24];
+		double		m_udNums[MC_DBL_NUMS];
 	};
 	// BOOLå^µÃﬂºÆ›
 	union {
 		struct {
 			BOOL	m_bL0Cycle;		// å≈íËª≤∏ŸíÜÇÃL0ìÆçÏ
 		};
-		BOOL		m_ubFlgs[1];
+		BOOL		m_ubFlgs[MC_FLG_NUMS];
 	};
 	// CStringå^µÃﬂºÆ›
 	CString		m_strMCname,	// ã@äBñº

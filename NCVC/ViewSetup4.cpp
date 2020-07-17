@@ -17,14 +17,14 @@ extern	CMagaDbg	g_dbg;
 BEGIN_MESSAGE_MAP(CViewSetup4, CPropertyPage)
 	//{{AFX_MSG_MAP(CViewSetup4)
 	ON_WM_CTLCOLOR()
-	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, OnDefColor)
-	ON_BN_CLICKED(IDC_VIEWSETUP4_FONT, OnFontChange)
-	ON_BN_CLICKED(IDC_VIEWSETUP4_BT_BACKGROUND1, OnColorButton)
-	ON_BN_CLICKED(IDC_VIEWSETUP4_BT_BACKGROUND2, OnColorButton)
-	ON_BN_CLICKED(IDC_VIEWSETUP4_BT_TEXT, OnColorButton)
-	ON_EN_CHANGE(IDC_VIEWSETUP4_TRACE0, OnChange)
-	ON_EN_CHANGE(IDC_VIEWSETUP4_TRACE1, OnChange)
-	ON_EN_CHANGE(IDC_VIEWSETUP4_TRACE2, OnChange)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, &CViewSetup4::OnDefColor)
+	ON_BN_CLICKED(IDC_VIEWSETUP4_FONT, &CViewSetup4::OnFontChange)
+	ON_BN_CLICKED(IDC_VIEWSETUP4_BT_BACKGROUND1, &CViewSetup4::OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP4_BT_BACKGROUND2, &CViewSetup4::OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP4_BT_TEXT, &CViewSetup4::OnColorButton)
+	ON_EN_CHANGE(IDC_VIEWSETUP4_TRACE0, &CViewSetup4::OnChange)
+	ON_EN_CHANGE(IDC_VIEWSETUP4_TRACE1, &CViewSetup4::OnChange)
+	ON_EN_CHANGE(IDC_VIEWSETUP4_TRACE2, &CViewSetup4::OnChange)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -133,7 +133,7 @@ void CViewSetup4::OnColorButton()
 	int	nIndex = GetFocus()->GetDlgCtrlID() - IDC_VIEWSETUP4_BT_BACKGROUND1;
 	if ( 0<=nIndex && nIndex<SIZEOF(m_colView) ) {
 		CColorDialog	dlg(m_colView[nIndex]);
-		dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
+		dlg.m_cc.lpCustColors = (COLORREF *)&(AfxGetNCVCApp()->GetViewOption()->m_colCustom);
 		if ( dlg.DoModal() == IDOK ) {
 			m_colView[nIndex] = dlg.GetColor();
 			m_brColor[nIndex].DeleteObject();

@@ -18,7 +18,7 @@ extern	CMagaDbg	g_dbg;
 BEGIN_MESSAGE_MAP(CNCJumpDlg, CDialog)
 	//{{AFX_MSG_MAP(CNCJumpDlg)
 	//}}AFX_MSG_MAP
-	ON_MESSAGE (WM_USERSWITCHDOCUMENT, OnUserSwitchDocument)
+	ON_MESSAGE (WM_USERSWITCHDOCUMENT, &CNCJumpDlg::OnUserSwitchDocument)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

@@ -25,13 +25,13 @@ static	TOOLHEADER	g_ToolHeader[] = {
 
 BEGIN_MESSAGE_MAP(CMCSetup3, CPropertyPage)
 	//{{AFX_MSG_MAP(CMCSetup3)
-	ON_NOTIFY(LVN_ITEMCHANGED, IDC_MCST3_LIST, OnItemChangedToolList)
-	ON_NOTIFY(LVN_GETDISPINFO, IDC_MCST3_LIST, OnGetDispInfoToolList)
-	ON_NOTIFY(LVN_COLUMNCLICK, IDC_MCST3_LIST, OnColumnClickToolList)
-	ON_NOTIFY(LVN_KEYDOWN, IDC_MCST3_LIST, OnKeyDownToolList)
-	ON_BN_CLICKED(IDC_EXE_ADD, OnAdd)
-	ON_BN_CLICKED(IDC_EXE_MOD, OnMod)
-	ON_BN_CLICKED(IDC_EXE_DEL, OnDel)
+	ON_NOTIFY(LVN_ITEMCHANGED, IDC_MCST3_LIST, &CMCSetup3::OnItemChangedToolList)
+	ON_NOTIFY(LVN_GETDISPINFO, IDC_MCST3_LIST, &CMCSetup3::OnGetDispInfoToolList)
+	ON_NOTIFY(LVN_COLUMNCLICK, IDC_MCST3_LIST, &CMCSetup3::OnColumnClickToolList)
+	ON_NOTIFY(LVN_KEYDOWN, IDC_MCST3_LIST, &CMCSetup3::OnKeyDownToolList)
+	ON_BN_CLICKED(IDC_EXE_ADD, &CMCSetup3::OnAdd)
+	ON_BN_CLICKED(IDC_EXE_MOD, &CMCSetup3::OnMod)
+	ON_BN_CLICKED(IDC_EXE_DEL, &CMCSetup3::OnDel)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -52,10 +52,6 @@ CMCSetup3::CMCSetup3() : CPropertyPage(CMCSetup3::IDD)
 		pToolInfo->m_bDlgAdd = pToolInfo->m_bDlgDel = FALSE;
 	}
 	m_nType = pMCopt->m_nCorrectType;
-}
-
-CMCSetup3::~CMCSetup3()
-{
 }
 
 void CMCSetup3::DoDataExchange(CDataExchange* pDX)

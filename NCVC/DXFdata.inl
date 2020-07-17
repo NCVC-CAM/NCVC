@@ -566,7 +566,7 @@ inline void CDXFarc::SwapRound(void)
 inline void CDXFarc::SwapAngle(void)
 {
 	// Šp“x‚Ì“ü‚ê‘Ö‚¦‚Æ’²®
-	std::swap(m_sq, m_eq);
+	boost::swap(m_sq, m_eq);
 	AngleTuning();
 }
 

@@ -27,7 +27,6 @@ public:
 // コンストラクション
 public:
 	CMakeNCDlgEx2();
-	virtual ~CMakeNCDlgEx2();
 
 // ダイアログ データ
 	//{{AFX_DATA(CMakeNCDlgEx2)

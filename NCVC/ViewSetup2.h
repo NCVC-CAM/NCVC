@@ -28,7 +28,7 @@ public:
 	BOOL		m_bDraw[2];
 	BOOL		m_bGuide[2];
 	CStatic		m_ctColor[14];
-	CComboBox	m_cbLineType[9];
+	CComboBox	m_cbLineType[NCCOLLINE_NUMS];
 	CFloatEdit	m_dGuide[NCXYZ];
 
 // オーバーライド

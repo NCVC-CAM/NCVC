@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "MainFrm.h"
 #include "DXFDoc.h"
 #include "DxfSetupReload.h"
 
@@ -53,12 +54,12 @@ BOOL CDxfSetupReload::OnInitDialog()
 
 	m_ctReloadList.SendMessage(WM_SETREDRAW, FALSE);
 	for ( POSITION pos=AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetFirstDocPosition(); pos; ) {
-		pDoc = (CDXFDoc *)(AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetNextDoc(pos));
+		pDoc = static_cast<CDXFDoc*>(AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetNextDoc(pos));
 		// ˆê’U½ÀÃ¨¯¸ºÝÄÛ°Ù‚É¾¯Ä‚µ‚ÄÊß½•\Ž¦‚ÌÅ“K‰»(shlwapi.h)
 		::PathSetDlgItemPath(m_hWnd, IDC_DXF_RELOADLIST_ST, pDoc->GetPathName());
 		// ‚»‚ÌÃ·½Ä‚ðŽæ“¾‚µ‚ÄØ½ÄºÝÄÛ°Ù‚É¾¯Ä
 		pStatic->GetWindowText(strPath);
-		m_ctReloadList.SetCheck(m_ctReloadList.AddString(strPath), pDoc->IsDXFDocFlag(DXFDOC_RELOAD));
+		m_ctReloadList.SetCheck(m_ctReloadList.AddString(strPath), pDoc->IsDocFlag(DXFDOC_RELOAD));
 	}
 	m_ctReloadList.SendMessage(WM_SETREDRAW, TRUE);
 	m_ctReloadList.SetCurSel(0);
@@ -73,7 +74,7 @@ void CDxfSetupReload::OnOK()
 	CDXFDoc*	pDoc;
 	for ( POSITION pos=AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetFirstDocPosition(); pos; ) {
 		pDoc = (CDXFDoc *)(AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetNextDoc(pos));
-		pDoc->SetReload( m_ctReloadList.GetCheck(nCnt++)==1 ? TRUE : FALSE );
+		pDoc->SetDocFlag(DXFDOC_RELOAD, m_ctReloadList.GetCheck(nCnt++)==1 ? TRUE : FALSE);
 	}
 
 	__super::OnOK();

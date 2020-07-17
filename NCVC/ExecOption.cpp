@@ -99,10 +99,6 @@ CExecOption::CExecOption(const CString& strApp, DOCTYPE emDoc)
 	m_bDlgAdd = m_bDlgDel = FALSE;
 }
 
-CExecOption::~CExecOption()
-{
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // CExecOption ÉNÉâÉXÇÃÉÅÉìÉoä÷êî
 

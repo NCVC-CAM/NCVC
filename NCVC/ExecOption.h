@@ -26,7 +26,6 @@ public:
 	CExecOption(const CString&, const CString&, const CString&,
 			BOOL, BOOL, BOOL);				// ÀŞ²±Û¸Ş‚©‚ç‚Ì¶¬
 	CExecOption(const CString&, DOCTYPE);	// ‹ŒÊŞ°¼Ş®İˆÚs—p
-	virtual ~CExecOption();
 
 	CString		GetStringData(void) const;	// Ú¼Ş½ÄØ‚ÖŠi”[‚·‚é‚½‚ß‚Ì•¶š—ñ‚ğ¶¬
 

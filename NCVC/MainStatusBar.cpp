@@ -18,17 +18,13 @@ BEGIN_MESSAGE_MAP(CMainStatusBar, CStatusBar)
 	//{{AFX_MSG_MAP(CMainStatusBar)
 	ON_WM_CREATE()
 	//}}AFX_MSG_MAP
-	ON_MESSAGE (WM_USERPROGRESSPOS, OnUserProgressPos)
+	ON_MESSAGE (WM_USERPROGRESSPOS, &CMainStatusBar::OnUserProgressPos)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // CMainStatusBar ÉNÉâÉXÇÃç\íz/è¡ñ≈
 
 CMainStatusBar::CMainStatusBar()
-{
-}
-
-CMainStatusBar::~CMainStatusBar()
 {
 }
 

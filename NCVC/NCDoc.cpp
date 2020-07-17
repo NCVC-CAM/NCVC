@@ -28,10 +28,18 @@ extern	CMagaDbg	g_dbg;
 //#define	_DEBUGOLD
 #undef	_DEBUGOLD
 
+using namespace boost;
+
 // 文字列検査用(TH_NCRead.cpp, NCMakeClass.cpp からも参照)
+extern	LPCTSTR	g_szLineDelimiter = "%N0123456789";	// 行番号とGｺｰﾄﾞの分別
 extern	LPCTSTR	g_szGdelimiter = "GSMOF";
 extern	LPCTSTR	g_szNdelimiter = "XYZUVWIJKRPLDH";
-extern	LPTSTR	g_pszDelimiter;		// g_szGdelimiter[] + g_szNdelimiter[] (NCVC.cppで生成)
+extern	LPTSTR	g_pszDelimiter;	// g_szGdelimiter[] + g_szNdelimiter[] (NCVC.cppで生成)
+extern	LPCTSTR	g_szNCcomment[] = {
+	"Endmill", "WorkRect",
+	"LatheView", "WireView",
+	"ToolPos"
+};
 
 // 指定された値のﾌﾗｸﾞ
 extern	const	DWORD	g_dwSetValFlags[] = {
@@ -44,6 +52,7 @@ extern	const	DWORD	g_dwSetValFlags[] = {
 
 // ｻﾑﾈｲﾙﾓｰﾄﾞのときに読み込む最大ﾌﾞﾛｯｸ数
 static	const INT_PTR	THUMBNAIL_MAXREADBLOCK = 5000;
+#define	IsThumbnail()	m_bDocFlg[NCDOC_THUMBNAIL]
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCDoc
@@ -52,14 +61,14 @@ IMPLEMENT_DYNCREATE(CNCDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(CNCDoc, CDocument)
 	//{{AFX_MSG_MAP(CNCDoc)
-	ON_UPDATE_COMMAND_UI(ID_FILE_NCINSERT, OnUpdateFileInsert)
-	ON_COMMAND(ID_FILE_NCINSERT, OnFileInsert)
-	ON_COMMAND(ID_FILE_NCD2DXF, OnFileNCD2DXF)
-	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, OnUpdateFileSave)
-	ON_UPDATE_COMMAND_UI(ID_NCVIEW_WORKRECT, OnUpdateWorkRect)
-	ON_COMMAND(ID_NCVIEW_WORKRECT, OnWorkRect)
-	ON_UPDATE_COMMAND_UI(ID_NCVIEW_MAXRECT, OnUpdateMaxRect)
-	ON_COMMAND(ID_NCVIEW_MAXRECT, OnMaxRect)
+	ON_UPDATE_COMMAND_UI(ID_FILE_NCINSERT, &CNCDoc::OnUpdateFileInsert)
+	ON_COMMAND(ID_FILE_NCINSERT, &CNCDoc::OnFileInsert)
+	ON_COMMAND(ID_FILE_NCD2DXF, &CNCDoc::OnFileNCD2DXF)
+	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, &CNCDoc::OnUpdateFileSave)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_WORKRECT, &CNCDoc::OnUpdateWorkRect)
+	ON_COMMAND(ID_NCVIEW_WORKRECT, &CNCDoc::OnWorkRect)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_MAXRECT, &CNCDoc::OnUpdateMaxRect)
+	ON_COMMAND(ID_NCVIEW_MAXRECT, &CNCDoc::OnMaxRect)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -73,8 +82,7 @@ CNCDoc::CNCDoc()
 #endif
 	int		i;
 
-	m_bNcDocFlg.reset();
-	m_bNcDocFlg.set(NCDOC_ERROR);	// 初期状態はｴﾗｰﾌﾗｸﾞだけ立てる
+	m_bDocFlg.set(NCDOC_ERROR);	// 初期状態はｴﾗｰﾌﾗｸﾞだけ立てる
 	m_dMove[0] = m_dMove[1] = 0.0;
 	m_dCutTime = -1.0;
 	m_nTraceStart = m_nTraceDraw = 0;
@@ -136,10 +144,8 @@ BOOL CNCDoc::RouteCmdToAllViews
 
 void CNCDoc::SetLatheViewMode(void)
 {
-	using namespace std;
-
-	if ( !m_bNcDocFlg[NCDOC_LATHE] ) {
-		m_bNcDocFlg.set(NCDOC_LATHE);	// NC旋盤ﾓｰﾄﾞ
+	if ( !m_bDocFlg[NCDOC_LATHE] ) {
+		m_bDocFlg.set(NCDOC_LATHE);	// NC旋盤ﾓｰﾄﾞ
 		// 座標系のXZを入れ替え
 		for ( int i=0; i<WORKOFFSET+1; i++ ) {
 			m_ptNcWorkOrg[i].x /= 2.0;
@@ -148,11 +154,6 @@ void CNCDoc::SetLatheViewMode(void)
 		m_ptNcLocalOrg.x /= 2.0;
 		swap(m_ptNcLocalOrg.x, m_ptNcLocalOrg.z);
 	}
-}
-
-void CNCDoc::SetWireViewMode(void)
-{
-	m_bNcDocFlg.set(NCDOC_WIRE);		// ﾜｲﾔ加工ﾓｰﾄﾞ
 }
 
 CNCdata* CNCDoc::DataOperation
@@ -167,9 +168,9 @@ CNCdata* CNCDoc::DataOperation
 	enMAKETYPE	enMakeType;
 
 	// 円弧補間用
-	if ( m_bNcDocFlg[NCDOC_LATHE] )
+	if ( m_bDocFlg[NCDOC_LATHE] )
 		enMakeType = NCMAKELATHE;
-	else if ( m_bNcDocFlg[NCDOC_WIRE] )
+	else if ( m_bDocFlg[NCDOC_WIRE] )
 		enMakeType = NCMAKEWIRE;
 	else
 		enMakeType = NCMAKEMILL;
@@ -183,14 +184,14 @@ CNCdata* CNCDoc::DataOperation
 			pDataResult = new CNCline(pData, lpArgv, GetOffsetOrig());
 			SetMaxRect(pDataResult);		// 最小・最大値の更新
 			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
-				m_bNcDocFlg.set(NCDOC_REVISEING);	// 補正ﾓｰﾄﾞ
+				m_bDocFlg.set(NCDOC_REVISEING);	// 補正ﾓｰﾄﾞ
 			break;
 		case 2:		// 円弧
 		case 3:
 			pDataResult = new CNCcircle(pData, lpArgv, GetOffsetOrig(), enMakeType);
 			SetMaxRect(pDataResult);
 			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
-				m_bNcDocFlg.set(NCDOC_REVISEING);
+				m_bDocFlg.set(NCDOC_REVISEING);
 			break;
 		case 4:		// ﾄﾞｳｪﾙ
 			if ( lpArgv->nc.dwValFlags & NCD_X ) {
@@ -216,12 +217,12 @@ CNCdata* CNCDoc::DataOperation
 			break;
 		case 10:	// ﾃﾞｰﾀ設定
 			if ( lpArgv->nc.dwValFlags & (NCD_P|NCD_R) ) {	// G10P_R_
-				if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
+				if ( !IsThumbnail() ) {
 					// 工具情報の追加
 					if ( !pOpt->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) ) {
 						i = lpArgv->nc.nLine;
-						if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
-							pBlock = GetNCblock(i);
+						if ( 0<=i && i<GetNCBlockSize() ) {	// 保険
+							pBlock = m_obBlock[i];
 							pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_G10ADDTOOL);
 						}
 						// このｴﾗｰはｽﾙｰ
@@ -248,8 +249,8 @@ CNCdata* CNCDoc::DataOperation
 			if ( !bResult ) {
 				// P値認識不能など
 				i = lpArgv->nc.nLine;
-				if ( 0<=i && i<m_obBlock.GetSize() ) {
-					pBlock = GetNCblock(i);
+				if ( 0<=i && i<GetNCBlockSize() ) {
+					pBlock = m_obBlock[i];
 					pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
 				}
 			}
@@ -264,7 +265,7 @@ CNCdata* CNCDoc::DataOperation
 			pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 			break;
 		case 92:
-			if ( !m_bNcDocFlg[NCDOC_LATHE] ) {
+			if ( !m_bDocFlg[NCDOC_LATHE] ) {
 				// ﾛｰｶﾙ座標系ｸﾘｱとG92値取得
 				for ( i=0; i<NCXYZ; i++ ) {
 					m_ptNcLocalOrg[i] = 0.0;
@@ -278,7 +279,7 @@ CNCdata* CNCDoc::DataOperation
 				m_nWorkOrg = WORKOFFSET;	// G92座標系選択
 				// ptOffset = m_ptNcWorkOrg[WORKOFFSET];
 			}
-			if ( m_bNcDocFlg[NCDOC_WIRE] ) {
+			if ( m_bDocFlg[NCDOC_WIRE] ) {
 				// ﾜｰｸ厚さとﾌﾟﾛｸﾞﾗﾑ面の指示
 				if ( lpArgv->nc.dwValFlags & NCD_I )
 					m_rcWorkCo.high = lpArgv->nc.dValue[NCA_I];
@@ -315,8 +316,8 @@ CNCdata* CNCDoc::DataOperation
 	UINT	nError = pDataResult->GetNCObjErrorCode();
 	if ( nError > 0 ) {
 		i = pDataResult->GetBlockLineNo();
-		if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
-			pBlock = GetNCblock(i);
+		if ( 0<=i && i<GetNCBlockSize() ) {	// 保険
+			pBlock = m_obBlock[i];
 			pBlock->SetNCBlkErrorCode(nError);
 		}
 	}
@@ -324,14 +325,10 @@ CNCdata* CNCDoc::DataOperation
 	return pDataResult;
 }
 
-void CNCDoc::StrOperation(LPCSTR pszTmp, int nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
+void CNCDoc::StrOperation(LPCTSTR pszTmp, int nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
 {
-	int	nBuf = (int)strcspn(pszTmp, g_pszDelimiter);
-	CString		str(pszTmp);
-	CNCblock*	pBlock = NULL;
-
 	// 例外ｽﾛｰは上位でｷｬｯﾁ
-	pBlock = new CNCblock(str.Left(nBuf).Trim(), str.Mid(nBuf).Trim());
+	CNCblock* pBlock = new CNCblock( CString(pszTmp) );
 	switch ( enOperation ) {
 	case NCADD:
 		m_obBlock.Add(pBlock);
@@ -373,7 +370,7 @@ void CNCDoc::RemoveAt(int nIndex, int nCnt)
 
 void CNCDoc::RemoveStr(int nIndex, int nCnt)
 {
-	nCnt = min(nCnt, m_obBlock.GetSize() - nIndex);
+	nCnt = min(nCnt, GetNCBlockSize() - nIndex);
 	for ( int i=nIndex; i<nIndex+nCnt; i++ )
 		delete	m_obBlock[i];
 	m_obBlock.RemoveAt(nIndex, nCnt);
@@ -381,9 +378,54 @@ void CNCDoc::RemoveStr(int nIndex, int nCnt)
 
 void CNCDoc::ClearBlockData(void)
 {
-	for ( int i=0; i<m_obBlock.GetSize(); i++ )
+	for ( int i=0; i<GetNCBlockSize(); i++ )
 		delete	m_obBlock[i];
 	m_obBlock.RemoveAll();
+}
+
+void CNCDoc::SetCommentStr(const CString& strComment)
+{
+	// 既存のｺﾒﾝﾄ行を検索(hoge=ddd.dd, ddd.d, ...にﾏｯﾁ)
+	CString	strKey(g_szNCcomment[m_bDocFlg[NCDOC_LATHE]?LATHEVIEW:WORKRECT]),
+			strDouble("[\\+\\-]?\\d+\\.?\\d*"),
+			strRegex(strKey+"\\s*=\\s*("+strDouble+")*(\\s*,\\s*"+strDouble+")*");
+
+	regex	r1(strRegex, regex::icase);
+	int		nIndex = SearchBlockRegex(r1), i;
+	BOOL	bInsert = TRUE;
+	
+	if ( nIndex >= 0 ) {
+		// 複数のｺﾒﾝﾄﾜｰﾄﾞが記述されている可能性があるので
+		// 該当部分を置換で除去する
+		std::string	strReplace(m_obBlock[nIndex]->GetStrBlock());
+		strReplace = regex_replace(strReplace, r1, "");
+		// ｶｯｺだけが残ったらｶｯｺも除去
+		regex	rc("\\(\\)");
+		strReplace = regex_replace(strReplace, rc, "");
+		if ( strReplace.empty() )
+			bInsert = FALSE;
+		else
+			StrOperation(strReplace.c_str(), nIndex, NCMOD);
+	}
+	if ( bInsert ) {
+		// ｺﾒﾝﾄ行を新規挿入
+		regex	r2("^%");
+		for ( i=0; i<GetNCBlockSize(); i++ ) {
+			// "%"の次行
+			if ( regex_search((LPCTSTR)(m_obBlock[i]->GetStrBlock()), r2) ) {
+				i++;
+				break;
+			}
+			// または最初のGｺｰﾄﾞの直前に挿入
+			if ( m_obBlock[i]->GetBlockToNCdata() )
+				break;
+		}
+		StrOperation(strComment, i, NCINS);
+	}
+	else
+		StrOperation(strComment, nIndex, NCMOD);
+
+	SetModifiedFlag();
 }
 
 void CNCDoc::DeleteMacroFile(void)
@@ -403,32 +445,27 @@ void CNCDoc::DeleteMacroFile(void)
 	m_obMacroFile.RemoveAll();
 }
 
-void CNCDoc::AllChangeFactor(double f) const
+void CNCDoc::AllChangeFactor(ENNCDRAWVIEW enType, double f) const
 {
+	typedef	void(CNCdata::*PFNDRAWPROC)(double);
+	PFNDRAWPROC	pfnDrawProc;
+	switch (enType) {
+	case NCDRAWVIEW_XY:
+		pfnDrawProc = &(CNCdata::DrawTuningXY);
+		break;
+	case NCDRAWVIEW_XZ:
+		pfnDrawProc = &(CNCdata::DrawTuningXZ);
+		break;
+	case NCDRAWVIEW_YZ:
+		pfnDrawProc = &(CNCdata::DrawTuningYZ);
+		break;
+	default:	// NCDRAWVIEW_XYZ
+		pfnDrawProc = &(CNCdata::DrawTuning);
+		break;
+	}
 	f *= LOMETRICFACTOR;
 	for ( int i=0; i<GetNCsize(); i++ )
-		GetNCdata(i)->DrawTuning(f);
-}
-
-void CNCDoc::AllChangeFactorXY(double f) const
-{
-	f *= LOMETRICFACTOR;
-	for ( int i=0; i<GetNCsize(); i++ )
-		GetNCdata(i)->DrawTuningXY(f);
-}
-
-void CNCDoc::AllChangeFactorXZ(double f) const
-{
-	f *= LOMETRICFACTOR;
-	for ( int i=0; i<GetNCsize(); i++ )
-		GetNCdata(i)->DrawTuningXZ(f);
-}
-
-void CNCDoc::AllChangeFactorYZ(double f) const
-{
-	f *= LOMETRICFACTOR;
-	for ( int i=0; i<GetNCsize(); i++ )
-		GetNCdata(i)->DrawTuningYZ(f);
+		(GetNCdata(i)->*pfnDrawProc)(f);
 }
 
 void CNCDoc::CreateCutcalcThread(void)
@@ -453,12 +490,12 @@ void CNCDoc::CreateCutcalcThread(void)
 	m_pCutcalcThread = AfxBeginThread(CuttimeCalc_Thread, pParam,
 			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 	if ( m_pCutcalcThread ) {
-		m_bNcDocFlg.set(NCDOC_CUTCALC);
+		m_bDocFlg.set(NCDOC_CUTCALC);
 		m_pCutcalcThread->m_bAutoDelete = FALSE;
 		m_pCutcalcThread->ResumeThread();
 	}
 	else {
-		m_bNcDocFlg.reset(NCDOC_CUTCALC);
+		m_bDocFlg.reset(NCDOC_CUTCALC);
 		delete	pParam;
 	}
 }
@@ -466,7 +503,7 @@ void CNCDoc::CreateCutcalcThread(void)
 void CNCDoc::WaitCalcThread(BOOL bWaitOnly/*=FALSE*/)
 {
 	if ( !bWaitOnly )
-		m_bNcDocFlg.reset(NCDOC_CUTCALC);	// 終了ﾌﾗｸﾞ
+		m_bDocFlg.reset(NCDOC_CUTCALC);	// 終了ﾌﾗｸﾞ
 
 	if ( m_pCutcalcThread ) {
 #ifdef _DEBUG
@@ -485,19 +522,19 @@ void CNCDoc::WaitCalcThread(BOOL bWaitOnly/*=FALSE*/)
 	}
 }
 
-int CNCDoc::SearchBlockRegex(boost::regex& r, int nStart/*=0*/, BOOL bReverse/*=FALSE*/)
+int CNCDoc::SearchBlockRegex(regex& r, int nStart/*=0*/, BOOL bReverse/*=FALSE*/)
 {
 	int		i;
 
 	if ( bReverse ) {
 		for (i=nStart; i>=0; i--) {
-			if ( regex_search((LPCTSTR)(GetNCblock(i)->GetStrGcode()), r) )
+			if ( regex_search((LPCTSTR)(m_obBlock[i]->GetStrBlock()), r) )
 				return i;
 		}
 	}
 	else {
 		for (i=nStart; i<GetNCBlockSize(); i++) {
-			if ( regex_search((LPCTSTR)(GetNCblock(i)->GetStrGcode()), r) )
+			if ( regex_search((LPCTSTR)(m_obBlock[i]->GetStrBlock()), r) )
 				return i;
 		}
 	}
@@ -509,14 +546,14 @@ void CNCDoc::ClearBreakPoint(void)
 {
 	CNCblock*	pBlock;
 	for (int i=0; i<GetNCBlockSize(); i++) {
-		pBlock = GetNCblock(i);
+		pBlock = m_obBlock[i];
 		pBlock->SetBlockFlag(pBlock->GetBlockFlag() & ~NCF_BREAK, FALSE);
 	}
 }
 
 BOOL CNCDoc::IncrementTrace(int& nTraceDraw)
 {
-	int			nMax = GetNCsize(), nLine1, nLine2;
+	size_t		nMax = GetNCsize(), nLine1, nLine2;
 	BOOL		bResult = FALSE, bBreakChk;
 	CNCdata*	pData;
 
@@ -569,7 +606,7 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 	int		i;
 
 	for ( i=nLine; i<GetNCBlockSize(); i++ ) {
-		if ( GetNCblock(i)->GetBlockToNCdata() )
+		if ( m_obBlock[i]->GetBlockToNCdata() )
 			break;
 	}
 	if ( i >= GetNCBlockSize() ) {
@@ -581,9 +618,9 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 		return FALSE;
 	}
 	m_csTraceDraw.Lock();
-	m_nTraceDraw = GetNCblock(i)->GetBlockToNCdataArrayNo();
+	m_nTraceDraw = m_obBlock[i]->GetBlockToNCdataArrayNo();
 	if ( bStart ) {
-		int n =m_nTraceDraw - 1;
+		int n = m_nTraceDraw - 1;
 		m_nTraceStart = max(0, n);
 	}
 	m_csTraceDraw.Unlock();
@@ -649,7 +686,7 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 	try {
 		// 各ｾｸｼｮﾝ生成(ENTITIESのｾｸｼｮﾝ名まで)
 		for ( i=SEC_HEADER; i<=SEC_ENTITIES; i++ ) {
-			pMake = new CDXFMake(i, this);
+			pMake = new CDXFMake((enSECNAME)i, this);
 			obDXFdata.Add(pMake);
 		}
 		// NCｵﾌﾞｼﾞｪｸﾄのDXF出力
@@ -668,7 +705,7 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 				pMake = new CDXFMake(pData);
 				obDXFdata.Add(pMake);
 				// 補正ｵﾌﾞｼﾞｪｸﾄ
-				if ( m_bNcDocFlg[NCDOC_REVISEING] && pDXFMake->GetFlag(MKDX_FLG_OUT_H) ) {
+				if ( m_bDocFlg[NCDOC_REVISEING] && pDXFMake->GetFlag(MKDX_FLG_OUT_H) ) {
 					pDataBase = pData;
 					nCorrect = pDataBase->GetCorrectArray()->GetSize();
 					for ( j=0; j<nCorrect; j++ ) {
@@ -682,7 +719,7 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 				pProgress->SetPos(i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
 		}
 		// ENTITIESｾｸｼｮﾝ終了とEOF出力
-		pMake = new CDXFMake(SEC_NOSECTION);
+		pMake = new CDXFMake(SEC_NOSECNAME);
 		obDXFdata.Add(pMake);
 		// 出力
 		CStdioFile	fp(m_strDXFFileName,
@@ -754,14 +791,14 @@ void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 
 	if ( !ValidDataCheck() ) {
 		m_rcMax.SetRectEmpty();
-		m_bNcDocFlg.set(NCDOC_ERROR);
+		m_bDocFlg.set(NCDOC_ERROR);
 		// error through
 	}
 	else {
 		// 占有矩形調整
 		m_rcMax.NormalizeRect();
 		// ｴﾗｰﾌﾗｸﾞ解除
-		m_bNcDocFlg.reset(NCDOC_ERROR);
+		m_bDocFlg.reset(NCDOC_ERROR);
 	}
 
 	// 変換後のﾃﾞｰﾀ設定
@@ -770,21 +807,6 @@ void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 	ClearBlockData();
 	DeleteMacroFile();
 }
-
-/////////////////////////////////////////////////////////////////////////////
-// CNCDoc クラスの診断
-
-#ifdef _DEBUG
-void CNCDoc::AssertValid() const
-{
-	__super::AssertValid();
-}
-
-void CNCDoc::Dump(CDumpContext& dc) const
-{
-	__super::Dump(dc);
-}
-#endif //_DEBUG
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCDoc クラスのオーバライド関数
@@ -820,17 +842,18 @@ BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		}
 	}
 
-	if ( bResult && !m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
+	if ( bResult && !IsThumbnail() ) {
 		// ﾌｧｲﾙ読み込み後のﾁｪｯｸ
 		bResult = SerializeAfterCheck();
 		if ( bResult ) {
 			// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 			POSITION	pos = GetFirstViewPosition();
+			ASSERT( pos );
 			OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());	// CDocBase
 		}
 	}
 
-	if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
+	if ( !IsThumbnail() ) {
 		// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
 		AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
 	}
@@ -844,7 +867,7 @@ BOOL CNCDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	OnCloseDocumentSP();	// CDocBase
 
 	if ( GetPathName().CompareNoCase(lpszPathName) != 0 ) {
-		CNCDoc* pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(lpszPathName);
+		CDocument* pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, lpszPathName);
 		if ( pDoc )
 			pDoc->OnCloseDocument();	// 既に開いているﾄﾞｷｭﾒﾝﾄを閉じる
 	}
@@ -855,8 +878,8 @@ BOOL CNCDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	if ( bResult ) {
 		POSITION	pos = GetFirstViewPosition();
-		CFrameWnd*	pFrame = GetNextView(pos)->GetParentFrame();
-		OnOpenDocumentSP(lpszPathName, pFrame);
+		ASSERT( pos );
+		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());
 	}
 
 	return bResult;
@@ -885,27 +908,9 @@ void CNCDoc::OnCloseDocument()
 	__super::OnCloseDocument();
 }
 
-void CNCDoc::ReportSaveLoadException
-	(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault) 
-{
-	if ( e->IsKindOf(RUNTIME_CLASS(CUserException)) ) {
-		AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
-		return;	// 標準ｴﾗｰﾒｯｾｰｼﾞを出さない
-	}
-	__super::ReportSaveLoadException(lpszPathName, e, bSaving, nIDPDefault);
-}
-
-void CNCDoc::SetModifiedFlag(BOOL bModified)
-{
-	CString	strTitle( GetTitle() );
-	if ( UpdateModifiedTitle(bModified, strTitle) )		// DocBase.cpp
-		SetTitle(strTitle);
-	__super::SetModifiedFlag(bModified);
-}
-
 void CNCDoc::SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU)
 {
-	if ( m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
+	if ( IsThumbnail() ) {
 		// 自前で用意しないとASSERT_VALIDに引っかかる
 		CString	strPath;
 		::Path_Name_From_FullPath(lpszPathName, strPath, m_strTitle);
@@ -915,6 +920,11 @@ void CNCDoc::SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU)
 		__super::SetPathName(lpszPathName, bAddToMRU);
 		// --> to be CNCVCApp::AddToRecentFileList()
 		m_pRecentViewInfo = AfxGetNCVCApp()->GetRecentViewInfo();
+		ASSERT( m_pRecentViewInfo );
+#ifdef _DEBUG
+		CMagaDbg	dbg("CNCDoc::SetPathName()");
+		dbg.printf("%s OK", lpszPathName);
+#endif
 	}
 }
 
@@ -922,7 +932,7 @@ void CNCDoc::OnChangedViewList()
 {
 	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞでﾋﾞｭｰを切り替えるとき、
 	// ﾄﾞｷｭﾒﾝﾄが delete this してしまうのを防止する
-	if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] )
+	if ( !IsThumbnail() )
 		__super::OnChangedViewList();
 }
 
@@ -941,7 +951,7 @@ void CNCDoc::Serialize(CArchive& ar)
 		pProgress->SetRange32(0, GetNCBlockSize());
 		pProgress->SetPos(0);
 		for ( int i=0; i<GetNCBlockSize(); i++ ) {
-			ar.WriteString(GetNCblock(i)->GetStrBlock()+"\r\n");
+			ar.WriteString(m_obBlock[i]->GetStrBlock()+"\r\n");
 			if ( (i & 0x003f) == 0 )		// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
 				pProgress->SetPos(i);
 		}
@@ -950,28 +960,24 @@ void CNCDoc::Serialize(CArchive& ar)
 	}
 
 	// ﾌｧｲﾙ読み込み
-	SerializeBlock(ar, m_obBlock, 0, !m_bNcDocFlg[NCDOC_THUMBNAIL]);
+	SerializeBlock(ar, m_obBlock, 0);
 }
 
 void CNCDoc::SerializeBlock
-	(CArchive& ar, CNCblockArray& obBlock, DWORD dwFlags, BOOL bProgress)
+	(CArchive& ar, CNCblockArray& obBlock, DWORD dwFlags)
 {
-	// 行番号とGｺｰﾄﾞの分別
-	static	LPCTSTR	ss_szLineDelimiter = "%N0123456789";
-
 #ifdef _DEBUG
 	CMagaDbg	dbg;
 #endif
-	CString		strBlock, strLine;
+	CString		strBlock;
 	CNCblock*	pBlock = NULL;
 	int			n, nCnt = 0;
 
 	ULONGLONG	dwSize = ar.GetFile()->GetLength();		// ﾌｧｲﾙｻｲｽﾞ取得
 	DWORD		dwPosition = 0;
-	CProgressCtrl* pProgress = NULL;
+	CProgressCtrl* pProgress = IsThumbnail() ? NULL : AfxGetNCVCMainWnd()->GetProgressCtrl();
 
-	if ( bProgress ) {
-		pProgress = AfxGetNCVCMainWnd()->GetProgressCtrl();
+	if ( pProgress ) {
 		// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ準備
 		pProgress->SetRange32(0, 100);
 		pProgress->SetPos(0);
@@ -979,26 +985,27 @@ void CNCDoc::SerializeBlock
 
 	try {
 		while ( ar.ReadString(strBlock) ) {
-			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの表示
-			dwPosition += strBlock.GetLength() + 2;	// 改行ｺｰﾄﾞ分
-			if ( bProgress && (++nCnt & 0x003f)==0 ) {	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
-				n = (int)(dwPosition*100/dwSize);
-				pProgress->SetPos(min(100, n));
+			if ( pProgress ) {
+				// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの表示
+				dwPosition += strBlock.GetLength() + 2;	// 改行ｺｰﾄﾞ分
+				if ( (++nCnt & 0x003f)==0 ) {	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
+					n = (int)(dwPosition*100/dwSize);
+					pProgress->SetPos(min(100, n));
+				}
 			}
 			// 行番号とGｺｰﾄﾞの分別(XYZ...含む)
-			strLine = strBlock.SpanIncluding(ss_szLineDelimiter);
-			pBlock = new CNCblock(strLine.Trim(), strBlock.Mid(strLine.GetLength()).Trim(), dwFlags);
+			pBlock = new CNCblock(strBlock, dwFlags);
 			obBlock.Add(pBlock);
 			// ｻﾑﾈｲﾙﾓｰﾄﾞで規程件数を超えたら、読み込みを中断
-			if ( m_bNcDocFlg[NCDOC_THUMBNAIL] && m_obBlock.GetSize()>=THUMBNAIL_MAXREADBLOCK )
+			if ( IsThumbnail() && GetNCBlockSize()>=THUMBNAIL_MAXREADBLOCK )
 				break;
 			pBlock = NULL;
 #ifdef _DEBUGOLD
 			dbg.printf("LineCnt=%d Line=%s Gcode=%s", nCnt,
-				strLine, strBlock.Mid(strLine.GetLength()) );
+				pBlock->GetStrLine(), pBlock->GetStrGcode() );
 #endif
 		}
-		if ( bProgress )
+		if ( pProgress )
 			pProgress->SetPos(100);
 	}
 	catch ( CMemoryException* e ) {
@@ -1018,7 +1025,7 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	// ﾃﾞｰﾀﾁｪｯｸ
 #ifdef _DEBUGOLD
 	for ( i=0; i<GetNCBlockSize(); i++ )
-		dbg.printf("%4d:%s", i, GetNCblock(i)->GetStrBlock());
+		dbg.printf("%4d:%s", i, m_obBlock[i]->GetStrBlock());
 #endif
 	if ( !ValidBlockCheck() ) {
 		AfxMessageBox(IDS_ERR_NCDATA, MB_OK|MB_ICONEXCLAMATION);
@@ -1031,14 +1038,14 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 		return FALSE;
 
 	// ﾜｲﾔﾓｰﾄﾞにおけるUV軸ｵﾌﾞｼﾞｪｸﾄの生成
-	if ( m_bNcDocFlg[NCDOC_WIRE] ) {
+	if ( m_bDocFlg[NCDOC_WIRE] ) {
 		CThreadDlg	dlg(IDS_UVTAPER_NCD, this);
 		if ( dlg.DoModal() != IDOK )
 			return FALSE;
 	}
 
 	// 補正座標計算
-	if ( m_bNcDocFlg[NCDOC_REVISEING] ) {
+	if ( m_bDocFlg[NCDOC_REVISEING] ) {
 		CThreadDlg	dlg(IDS_CORRECT_NCD, this);
 		if ( dlg.DoModal() != IDOK )
 			return FALSE;
@@ -1047,18 +1054,18 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	// 占有矩形調整
 	m_rcMax.NormalizeRect();
 	m_rcWork.NormalizeRect();
-	if ( m_bNcDocFlg[NCDOC_LATHE] ) {
-		if ( m_bNcDocFlg[NCDOC_COMMENTWORK_R] ) {
+	if ( m_bDocFlg[NCDOC_LATHE] ) {
+		if ( m_bDocFlg[NCDOC_COMMENTWORK_R] ) {
 			m_rcWork.high = m_rcWorkCo.high;
 			m_rcWork.low  = m_rcWorkCo.low;
 		}
-		if ( m_bNcDocFlg[NCDOC_COMMENTWORK_Z] ) {
+		if ( m_bDocFlg[NCDOC_COMMENTWORK_Z] ) {
 			m_rcWork.left  = m_rcWorkCo.left;
 			m_rcWork.right = m_rcWorkCo.right;
 		}
 	}
 	else {
-		if ( m_bNcDocFlg[NCDOC_COMMENTWORK] )
+		if ( m_bDocFlg[NCDOC_COMMENTWORK] )
 			m_rcWork = m_rcWorkCo;
 		else
 			m_rcWorkCo = m_rcWork;		// 指示がなければﾃﾞｰﾀを保存
@@ -1067,12 +1074,12 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	// 最終ﾁｪｯｸ
 	if ( !ValidDataCheck() ) {
 		AfxMessageBox(IDS_ERR_NCDATA, MB_OK|MB_ICONEXCLAMATION);
-		m_bNcDocFlg.set(NCDOC_ERROR);
+		m_bDocFlg.set(NCDOC_ERROR);
 		// error through
 	}
 	else {
 		// ｴﾗｰﾌﾗｸﾞ解除
-		m_bNcDocFlg.reset(NCDOC_ERROR);
+		m_bDocFlg.reset(NCDOC_ERROR);
 	}
 
 #ifdef _DEBUG
@@ -1100,7 +1107,7 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 BOOL CNCDoc::ValidBlockCheck(void)
 {
 	for ( int i=0; i<GetNCBlockSize(); i++ ) {
-		if ( GetNCblock(i)->GetStrGcode().GetLength() > 0 )
+		if ( m_obBlock[i]->GetStrGcode().GetLength() > 0 )
 			return TRUE;
 	}
 	return FALSE;
@@ -1116,7 +1123,7 @@ BOOL CNCDoc::ValidDataCheck(void)
 }
 
 BOOL CNCDoc::SerializeInsertBlock
-	(LPCTSTR lpszFileName, int nInsert, DWORD dwFlags/*=0*/, BOOL bProgress/*=TRUE*/)
+	(LPCTSTR lpszFileName, int nInsert, DWORD dwFlags/*=0*/)
 {
 /*
 	MFC\SRC\DOCCORE.CPP の __super::OnOpenDocument を参考
@@ -1136,7 +1143,7 @@ BOOL CNCDoc::SerializeInsertBlock
 		CNCblockArray	obBlock;	// 一時領域
 		obBlock.SetSize(0, 1024);
 		// ﾌｧｲﾙ読み込み
-		SerializeBlock(ar, obBlock, dwFlags, bProgress);
+		SerializeBlock(ar, obBlock, dwFlags);
 		// ﾌﾞﾛｯｸ挿入
 		m_obBlock.InsertAt(nInsert, &obBlock);
 	}
@@ -1185,12 +1192,12 @@ void CNCDoc::OnFileInsert()
 	for ( i=0; i<m_obGdata.GetSize(); i++ )
 		delete	m_obGdata[i];
 	m_obGdata.RemoveAll();
-	m_bNcDocFlg.reset(NCDOC_REVISEING); 
+	m_bDocFlg.reset(NCDOC_REVISEING); 
 	// ﾌﾞﾛｯｸﾃﾞｰﾀのﾌﾗｸﾞをｸﾘｱ
 	for ( i=0; i<GetNCBlockSize(); i++ )
-		GetNCblock(i)->SetNCBlkErrorCode(0);
+		m_obBlock[i]->SetNCBlkErrorCode(0);
 	// 変数初期化
-	m_bNcDocFlg.set(NCDOC_ERROR);
+	m_bDocFlg.set(NCDOC_ERROR);
 	m_nTraceDraw = 0;
 
 	// ﾌｧｲﾙ(NCﾌﾞﾛｯｸの挿入)
@@ -1253,13 +1260,13 @@ void CNCDoc::OnWorkRect()
 
 void CNCDoc::OnUpdateMaxRect(CCmdUI* pCmdUI) 
 {
-	pCmdUI->Enable(IsNCDocFlag(NCDOC_ERROR) ? FALSE : TRUE);
-	pCmdUI->SetCheck(m_bNcDocFlg[NCDOC_MAXRECT]);
+	pCmdUI->Enable(m_bDocFlg[NCDOC_ERROR] ? FALSE : TRUE);
+	pCmdUI->SetCheck(m_bDocFlg[NCDOC_MAXRECT]);
 }
 
 void CNCDoc::OnMaxRect() 
 {
-	m_bNcDocFlg.flip(NCDOC_MAXRECT);
+	m_bDocFlg.flip(NCDOC_MAXRECT);
 	// ﾋﾞｭｰの更新
 	UpdateAllViews(NULL, UAV_DRAWMAXRECT);
 }

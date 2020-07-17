@@ -13,7 +13,6 @@ class CMakeDXFDlg2 : public CPropertyPage
 // コンストラクション
 public:
 	CMakeDXFDlg2();
-	~CMakeDXFDlg2();
 
 // ダイアログ データ
 	//{{AFX_DATA(CMakeDXFDlg2)

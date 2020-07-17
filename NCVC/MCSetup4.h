@@ -11,7 +11,6 @@ class CMCSetup4 : public CPropertyPage
 // コンストラクション
 public:
 	CMCSetup4();
-	~CMCSetup4();
 
 // ダイアログ データ
 	//{{AFX_DATA(CMCSetup4)

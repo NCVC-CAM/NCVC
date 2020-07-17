@@ -10,7 +10,6 @@ class CMKWISetup1 : public CPropertyPage
 {
 public:
 	CMKWISetup1();
-	virtual ~CMKWISetup1();
 
 // ダイアログ データ
 	enum { IDD = IDD_MKWI_SETUP1 };

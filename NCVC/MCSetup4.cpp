@@ -15,9 +15,9 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMCSetup4, CPropertyPage)
 	//{{AFX_MSG_MAP(CMCSetup4)
-	ON_BN_CLICKED(IDC_MCST4_MACROFOLDER_BT, OnFolder)
-	ON_BN_CLICKED(IDC_MCST4_MACROIF_BT, OnMacroIF)
-	ON_EN_KILLFOCUS(IDC_MCST4_MACROCODE, OnKillFocusMacroCode)
+	ON_BN_CLICKED(IDC_MCST4_MACROFOLDER_BT, &CMCSetup4::OnFolder)
+	ON_BN_CLICKED(IDC_MCST4_MACROIF_BT, &CMCSetup4::OnMacroIF)
+	ON_EN_KILLFOCUS(IDC_MCST4_MACROCODE, &CMCSetup4::OnKillFocusMacroCode)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -33,10 +33,6 @@ CMCSetup4::CMCSetup4() : CPropertyPage(CMCSetup4::IDD)
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 	for ( int i=0; i<SIZEOF(m_strMacro); i++ )
 		m_strMacro[i] = pMCopt->m_strMacroOpt[i];
-}
-
-CMCSetup4::~CMCSetup4()
-{
 }
 
 void CMCSetup4::DoDataExchange(CDataExchange* pDX)

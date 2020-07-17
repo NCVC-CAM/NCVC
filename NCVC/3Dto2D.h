@@ -288,7 +288,8 @@ typedef	std::vector<CPoint3F>	VECPOINT3F;
 // 実数型の CRectｸﾗｽ
 
 template<class T>
-class CRectT
+class CRectT :
+	boost::operators< CRectT<T> >
 {
 public:
 	union {
@@ -303,12 +304,10 @@ public:
 		SetRectEmpty();
 	}
 	CRectT(T l, T t, T r, T b) {
-		left = l;			top = t;
-		right = r;			bottom = b;
+		SetRect(l, t, r, b);
 	}
 	CRectT(const CRect& rc) {
-		left = rc.left;		top = rc.top;
-		right = rc.right;	bottom = rc.bottom;
+		SetRect(rc.left, rc.top, rc.right, rc.bottom);
 	}
 	CRectT(const CPointT<T>& ptTopLeft, const CPointT<T>& ptBottomRight) {
 		TopLeft() = ptTopLeft;
@@ -318,9 +317,9 @@ public:
 	// 幅と高さの正規化
 	void	NormalizeRect() {
 		if ( left > right )
-			std::swap(left, right);
+			boost::swap(left, right);
 		if ( top > bottom )
-			std::swap(top, bottom);
+			boost::swap(top, bottom);
 	}
 	// 指定座標が矩形内にあるか(矩形線上を含める)
 	BOOL	PtInRect(const CPointT<T>& pt) const {
@@ -384,9 +383,6 @@ public:
 				right  == rc.right &&
 				bottom == rc.bottom;
 	}
-	BOOL	operator != (const CRectT<T>& rc) const {
-		return !operator ==(rc);
-	}
 	CRectT<T>&	operator /= (T d) {
 		left /= d;		right /= d;
 		top /= d;		bottom /= d;
@@ -406,6 +402,11 @@ public:
 	T		operator[] (size_t a) const {
 		ASSERT(a>=0 && a<SIZEOF(rect));
 		return rect[a];
+	}
+	// 代入関数
+	void	SetRect(T l, T t, T r, T b) {
+		left	= l;		top		= t;
+		right	= r;		bottom	= b;
 	}
 	// 変換関数
 	operator	CRect() const {
@@ -428,6 +429,7 @@ typedef	CRectT<float>	CRectF;
 
 template<class T>
 class CRect3T : public CRectT<T>
+//	, boost::operators< CRect3T<T> >
 {
 public:
 	T	high, low;		// 高さ
@@ -444,7 +446,7 @@ public:
 	void	NormalizeRect() {
 		CRectT<T>::NormalizeRect();
 		if ( low > high )
-			std::swap(low, high);
+			boost::swap(low, high);
 	}
 	// 中心座標...他
 	CPoint3T<T>	CenterPoint(void) const {
@@ -457,9 +459,6 @@ public:
 	void	OffsetRect(T x, T y, T z) {
 		CRectT<T>::OffsetRect(x, y);
 		high += z;		low += z;
-	}
-	void	OffsetRect(const CPointT<T>& pt) {
-		CRectT<T>::OffsetRect(pt);
 	}
 	void	OffsetRect(const CPoint3T<T>& pt) {
 		CRectT<T>::OffsetRect(pt.GetXY());
@@ -479,9 +478,9 @@ public:
 				high == rc.high &&
 				low  == rc.low;
 	}
-	BOOL	operator != (const CRect3T<T>& rc) const {
-		return !operator ==(rc);
-	}
+//	BOOL	operator != (const CRect3T<T> &rc) const {
+//		return !operator ==(rc);
+//	}
 	CRect3T<T>&	operator /= (T d) {
 		CRectT<T>::operator /= (d);
 		high /= d;		low /= d;
@@ -492,6 +491,11 @@ public:
 		if ( low  > rc.low )	low = rc.low;
 		if ( high < rc.high )	high = rc.high;
 		return *this;
+	}
+	// 代入関数
+	void	SetRect(T l, T t, T r, T b, T h, T w) {
+		CRectT<T>::SetRect(l, t, r, b);
+		high = h;		low = w;
 	}
 	// 初期化
 	void	SetRectEmpty(void) {

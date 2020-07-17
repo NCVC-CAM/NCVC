@@ -25,7 +25,7 @@ extern	CMagaDbg	g_dbg;
 using namespace boost;
 
 // 原点を示すﾃﾞﾌｫﾙﾄの半径
-static	const	double	dOrgR = 10.0;
+static	const	double	ORGRADIUS = 10.0;
 // ﾚｲﾔ情報の保存
 static	LPCTSTR	g_szLayerToInitComment[] = {
 	"##\n",
@@ -39,6 +39,10 @@ static	LPCTSTR	g_szLayerToInitComment[] = {
 static	int		LayerCompareFunc_CutNo(CLayerData*, CLayerData*);
 // ﾚｲﾔ名の並べ替え
 static	int		LayerCompareFunc_Name(CLayerData*, CLayerData*);
+// 結合時の面積順並び替え
+static	int		BindAreaCompareFunc(LPCADBINDINFO, LPCADBINDINFO);
+//
+#define	IsBindMode()	m_bDocFlg[DXFDOC_BIND]
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFDoc
@@ -47,23 +51,23 @@ IMPLEMENT_DYNCREATE(CDXFDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(CDXFDoc, CDocument)
 	//{{AFX_MSG_MAP(CDXFDoc)
-	ON_COMMAND(ID_FILE_SAVE, OnFileSave)
-	ON_COMMAND(ID_FILE_SAVE_AS, OnFileSaveAs)
-	ON_COMMAND(ID_EDIT_DXFORG, OnEditOrigin)
-	ON_COMMAND(ID_EDIT_DXFSHAPE, OnEditShape)
-	ON_COMMAND(ID_EDIT_SHAPE_AUTO, OnEditAutoShape)
-	ON_COMMAND(ID_EDIT_SHAPE_STRICTOFFSET, OnEditStrictOffset)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_DXFSHAPE, OnUpdateEditShape)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_SORTSHAPE, OnUpdateEditShaping)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_AUTO, OnUpdateEditShaping)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_STRICTOFFSET, OnUpdateEditShaping)
+	ON_COMMAND(ID_FILE_SAVE, &CDXFDoc::OnFileSave)
+	ON_COMMAND(ID_FILE_SAVE_AS, &CDXFDoc::OnFileSaveAs)
+	ON_COMMAND(ID_EDIT_DXFORG, &CDXFDoc::OnEditOrigin)
+	ON_COMMAND(ID_EDIT_DXFSHAPE, &CDXFDoc::OnEditShape)
+	ON_COMMAND(ID_EDIT_SHAPE_AUTO, &CDXFDoc::OnEditAutoShape)
+	ON_COMMAND(ID_EDIT_SHAPE_STRICTOFFSET, &CDXFDoc::OnEditStrictOffset)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_DXFSHAPE, &CDXFDoc::OnUpdateEditShape)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_SORTSHAPE, &CDXFDoc::OnUpdateEditShaping)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_AUTO, &CDXFDoc::OnUpdateEditShaping)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_STRICTOFFSET, &CDXFDoc::OnUpdateEditShaping)
 	//}}AFX_MSG_MAP
 	// NC生成ﾒﾆｭｰ
-	ON_UPDATE_COMMAND_UI_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_WIRE, OnUpdateFileDXF2NCD)
-	ON_COMMAND_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_WIRE, OnFileDXF2NCD)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_WIRE, &CDXFDoc::OnUpdateFileDXF2NCD)
+	ON_COMMAND_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_WIRE, &CDXFDoc::OnFileDXF2NCD)
 	// 形状加工指示
-	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, OnUpdateShapePattern)
-	ON_COMMAND_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, OnShapePattern)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, &CDXFDoc::OnUpdateShapePattern)
+	ON_COMMAND_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, &CDXFDoc::OnShapePattern)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -74,9 +78,8 @@ CDXFDoc::CDXFDoc()
 	int		i;
 
 	// ﾌﾗｸﾞ初期設定
-	m_bDxfDocFlg.reset();
-	m_bDxfDocFlg.set(DXFDOC_RELOAD);
-	m_bDxfDocFlg.set(DXFDOC_THREAD);
+	m_bDocFlg.set(DXFDOC_RELOAD);
+	m_bDocFlg.set(DXFDOC_THREAD);
 	m_nShapeProcessID = 0;
 	// ﾃﾞｰﾀ数初期化
 	for ( i=0; i<SIZEOF(m_nDataCnt); i++ )
@@ -104,6 +107,11 @@ CDXFDoc::~CDXFDoc()
 	}
 	for ( i=0; i<m_obLayer.GetSize(); i++ )
 		delete	m_obLayer[i];
+	for ( i=0; i<m_bindInfo.GetSize(); i++ ) {
+		m_bindInfo[i]->pParent->DestroyWindow();
+		delete	m_bindInfo[i]->pDoc;
+		delete	m_bindInfo[i];
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -390,7 +398,7 @@ void CDXFDoc::CreateCutterOrigin(const CPointD& pt, double r, BOOL bRedraw/*=FAL
 			delete	pCircle;
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
-		m_bDxfDocFlg.reset(DXFDOC_READY);
+		m_bDocFlg.reset(DXFDOC_READY);
 		return;
 	}
 
@@ -423,7 +431,7 @@ void CDXFDoc::CreateLatheLine(const CPointD& pts, const CPointD& pte)
 		}
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
-		m_bDxfDocFlg.reset(DXFDOC_LATHE);
+		m_bDocFlg.reset(DXFDOC_LATHE);
 		return;
 	}
 }
@@ -449,7 +457,7 @@ void CDXFDoc::CreateLatheLine(const CDXFline* pLine, LPCDXFBLOCK pBlock)
 		}
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
-		m_bDxfDocFlg.reset(DXFDOC_LATHE);
+		m_bDocFlg.reset(DXFDOC_LATHE);
 		return;
 	}
 }
@@ -522,20 +530,15 @@ tuple<CDXFshape*, CDXFdata*, double> CDXFDoc::GetSelectObject(const CPointD& pt,
 	return make_tuple(pShapeResult, pDataResult, dGapMin);
 }
 
+void CDXFDoc::SortBindInfo(void)
+{
+	m_bindInfo.Sort(BindAreaCompareFunc);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CDXFDoc 診断
 
 #ifdef _DEBUG
-void CDXFDoc::AssertValid() const
-{
-	__super::AssertValid();
-}
-
-void CDXFDoc::Dump(CDumpContext& dc) const
-{
-	__super::Dump(dc);
-}
-
 void CDXFDoc::DbgSerializeInfo(void)
 {
 	CMagaDbg	dbg("CDXFDoc::DbgSerializeInfo()");
@@ -563,6 +566,41 @@ void CDXFDoc::DbgSerializeInfo(void)
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFDoc クラスのオーバライド関数
+
+BOOL CDXFDoc::OnNewDocument()
+{
+	const CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
+	// CNCVCApp::OnFileCADbind() CADﾃﾞｰﾀの統合からのみ呼ばれる
+	// ﾒﾆｭｰｺﾏﾝﾄﾞの新規作成は無い
+	m_rcMax.left = m_rcMax.top = 0;		// zero clear
+	m_rcMax.right	= pOpt->GetBindSize(NCA_X);
+	m_rcMax.bottom	= pOpt->GetBindSize(NCA_Y);
+	// 原点処理
+	CPointD		pt;
+	switch ( pOpt->GetDxfFlag(DXFOPT_BINDORG) ) {
+	case 1:		// 右上
+		pt = m_rcMax.BottomRight();
+		break;
+	case 2:		// 右下
+		pt.x = m_rcMax.right;
+		pt.y = m_rcMax.top;
+		break;
+	case 3:		// 左上
+		pt.x = m_rcMax.left;
+		pt.y = m_rcMax.bottom;
+		break;
+	case 4:		// 左下
+		pt = m_rcMax.TopLeft();
+		break;
+	default:	// 中央(OnOpenDocumentとは並びが違う)
+		pt = m_rcMax.CenterPoint();
+		break;
+	}
+	CreateCutterOrigin(pt, ORGRADIUS);
+	SetDocFlag(DXFDOC_BINDPARENT);	// 統合ﾓｰﾄﾞ(親)に設定
+
+	return __super::OnNewDocument();
+}
 
 BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName) 
 {
@@ -592,15 +630,16 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		for ( i=nCnt=0; i<m_obLayer.GetSize(); i++ )
 			nCnt += m_obLayer[i]->GetDxfSize();
 		if ( nCnt < 1 ) {
-			AfxMessageBox(IDS_ERR_DXFDATACUT, MB_OK|MB_ICONEXCLAMATION);
+			if ( !IsBindMode() )
+				AfxMessageBox(IDS_ERR_DXFDATACUT, MB_OK|MB_ICONEXCLAMATION);
 			bResult = FALSE;
 		}
 		else if ( m_pCircle ) {
 			if ( !m_ptOrgOrig )		// ｼﾘｱﾙ情報に含まれている(CAMﾌｧｲﾙ)場合を除く
 				m_ptOrgOrig = m_pCircle->GetCenter();	// ﾌｧｲﾙからのｵﾘｼﾞﾅﾙ原点を保存
-			m_bDxfDocFlg.set(DXFDOC_READY);	// 生成OK!
+			m_bDocFlg.set(DXFDOC_READY);	// 生成OK!
 		}
-		else {
+		else if ( !IsBindMode() ) {
 			// 原点ﾃﾞｰﾀがないとき(矩形の上下に注意)
 			optional<CPointD>	pt;
 			CPointD				ptRC;	// optional型への代入用
@@ -630,56 +669,58 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 				break;
 			}
 			if ( pt ) {
-				CreateCutterOrigin(*pt, dOrgR);
-				m_bDxfDocFlg.set(DXFDOC_READY);	// 生成OK!
+				CreateCutterOrigin(*pt, ORGRADIUS);
+				m_bDocFlg.set(DXFDOC_READY);	// 生成OK!
 			}
 		}
 	}
 
-	if ( bResult && m_bDxfDocFlg[DXFDOC_READY] ) {
-		// 旋盤ﾃﾞｰﾀ生成可能かどうかのﾁｪｯｸ
-		if ( m_pLatheLine[0] && m_pLatheLine[1] ) {
-			m_bDxfDocFlg.set(DXFDOC_LATHE);
-			// 外径を表す線を[0]に、（最小X座標を持つｵﾌﾞｼﾞｪｸﾄ）
-			// 端面を表す線を[1]に
-			CPointD	pt1, pt2;
-			double	minX = DBL_MAX;
-			int		j, n = 0;
-			for ( i=0; i<SIZEOF(m_pLatheLine); i++ ) {
-				for ( j=0; j<2; j++ ) {
-					pt1 = m_pLatheLine[i]->GetNativePoint(j);
-					if ( pt1.x < minX ) {
-						minX = pt1.x;
-						n = 2*i+j;
+	if ( bResult && !IsBindMode() ) {
+		if ( m_bDocFlg[DXFDOC_READY] ) {
+			// 旋盤ﾃﾞｰﾀ生成可能かどうかのﾁｪｯｸ
+			if ( m_pLatheLine[0] && m_pLatheLine[1] ) {
+				m_bDocFlg.set(DXFDOC_LATHE);
+				// 外径を表す線を[0]に、（最小X座標を持つｵﾌﾞｼﾞｪｸﾄ）
+				// 端面を表す線を[1]に
+				CPointD	pt1, pt2;
+				double	minX = DBL_MAX;
+				int		j, n = 0;
+				for ( i=0; i<SIZEOF(m_pLatheLine); i++ ) {
+					for ( j=0; j<2; j++ ) {
+						pt1 = m_pLatheLine[i]->GetNativePoint(j);
+						if ( pt1.x < minX ) {
+							minX = pt1.x;
+							n = 2*i+j;
+						}
 					}
 				}
+				if ( n > 1 )
+					swap(m_pLatheLine[0], m_pLatheLine[1]);
+				// 外径ｵﾌﾞｼﾞｪｸﾄ調整(X値の大きい方を始点に)
+				pt1 = m_pLatheLine[0]->GetNativePoint(0);
+				pt2 = m_pLatheLine[0]->GetNativePoint(1);
+				if ( pt1.x < pt2.x )
+					m_pLatheLine[0]->SwapNativePt();
+				// 端面ｵﾌﾞｼﾞｪｸﾄ調整(Y値の大きい方を始点に)
+				pt1 = m_pLatheLine[1]->GetNativePoint(0);
+				pt2 = m_pLatheLine[1]->GetNativePoint(1);
+				if ( pt1.y < pt2.y )
+					m_pLatheLine[1]->SwapNativePt();
 			}
-			if ( n > 1 )
-				std::swap(m_pLatheLine[0], m_pLatheLine[1]);
-			// 外径ｵﾌﾞｼﾞｪｸﾄ調整(X値の大きい方を始点に)
-			pt1 = m_pLatheLine[0]->GetNativePoint(0);
-			pt2 = m_pLatheLine[0]->GetNativePoint(1);
-			if ( pt1.x < pt2.x )
-				m_pLatheLine[0]->SwapNativePt();
-			// 端面ｵﾌﾞｼﾞｪｸﾄ調整(Y値の大きい方を始点に)
-			pt1 = m_pLatheLine[1]->GetNativePoint(0);
-			pt2 = m_pLatheLine[1]->GetNativePoint(1);
-			if ( pt1.y < pt2.y )
-				m_pLatheLine[1]->SwapNativePt();
+			// ﾜｲﾔ加工機ﾃﾞｰﾀ生成可能かどうかのﾁｪｯｸ
+			if ( GetCutLayerCnt() <= 2 )
+				m_bDocFlg.set(DXFDOC_WIRE);
 		}
-		// ﾜｲﾔ加工機ﾃﾞｰﾀ生成可能かどうかのﾁｪｯｸ
-		if ( GetCutLayerCnt() <= 2 )
-			m_bDxfDocFlg.set(DXFDOC_WIRE);
-	}
-
-	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
-	if ( bResult ) {
+		// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 		POSITION	pos = GetFirstViewPosition();
+		ASSERT( pos );
 		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());	// CDocBase
 	}
 
-	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
-	AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
+	if ( !IsBindMode() ) {
+		// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
+		AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
+	}
 
 	return bResult;
 }
@@ -693,7 +734,7 @@ BOOL CDXFDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	OnCloseDocumentSP();	// CDocBase
 
 	if ( GetPathName().CompareNoCase(lpszPathName) != 0 ) {
-		CDXFDoc* pDoc = AfxGetNCVCApp()->GetAlreadyDXFDocument(lpszPathName);
+		CDocument* pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_DXF, lpszPathName);
 		if ( pDoc )
 			pDoc->OnCloseDocument();	// 既に開いているﾄﾞｷｭﾒﾝﾄを閉じる
 	}
@@ -704,8 +745,8 @@ BOOL CDXFDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	if ( bResult ) {
 		POSITION	pos = GetFirstViewPosition();
-		CFrameWnd*	pFrame = GetNextView(pos)->GetParentFrame();
-		OnOpenDocumentSP(lpszPathName, pFrame);
+		ASSERT( pos );
+		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());
 	}
 
 	return bResult;
@@ -725,7 +766,7 @@ void CDXFDoc::OnCloseDocument()
 	}
 	// 処理中のｽﾚｯﾄﾞを中断させる
 	OnCloseDocumentSP();	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
-	m_bDxfDocFlg.reset(DXFDOC_THREAD);
+	m_bDocFlg.reset(DXFDOC_THREAD);
 	m_csRestoreCircleType.Lock();
 	m_csRestoreCircleType.Unlock();
 #ifdef _DEBUG
@@ -733,23 +774,6 @@ void CDXFDoc::OnCloseDocument()
 #endif
 
 	__super::OnCloseDocument();
-}
-
-void CDXFDoc::ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault) 
-{
-	if ( e->IsKindOf(RUNTIME_CLASS(CUserException)) ) {
-		AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
-		return;	// 標準ｴﾗｰﾒｯｾｰｼﾞを出さない
-	}
-	__super::ReportSaveLoadException(lpszPathName, e, bSaving, nIDPDefault);
-}
-
-void CDXFDoc::SetModifiedFlag(BOOL bModified)
-{
-	CString	strTitle( GetTitle() );
-	if ( UpdateModifiedTitle(bModified, strTitle) )		// DocBase.cpp
-		SetTitle(strTitle);
-	__super::SetModifiedFlag(bModified);
 }
 
 BOOL CDXFDoc::SaveModified()
@@ -804,7 +828,7 @@ void CDXFDoc::Serialize(CArchive& ar)
 	extern	DWORD	g_dwCamVer;		// NCVC.cpp
 
 	// DxfSetupReloadのﾁｪｯｸOFF
-	m_bDxfDocFlg.reset(DXFDOC_RELOAD);
+	m_bDocFlg.reset(DXFDOC_RELOAD);
 
 	int			i, j, nLoopCnt;
 	BYTE		nCnt = 0;
@@ -818,8 +842,8 @@ void CDXFDoc::Serialize(CArchive& ar)
 
 	if ( ar.IsStoring() ) {
 		// 各種状態
-		bReady = m_bDxfDocFlg[DXFDOC_READY];
-		bShape = m_bDxfDocFlg[DXFDOC_SHAPE];
+		bReady = m_bDocFlg[DXFDOC_READY];
+		bShape = m_bDocFlg[DXFDOC_SHAPE];
 		ar << bReady << bShape;
 		ar << m_AutoWork.nSelect << m_AutoWork.dOffset << m_AutoWork.bAcuteRound <<
 			m_AutoWork.nLoopCnt << m_AutoWork.nScanLine << m_AutoWork.bCircleScroll;
@@ -857,8 +881,8 @@ void CDXFDoc::Serialize(CArchive& ar)
 
 	// 各種状態
 	ar >> bReady >> bShape;
-	m_bDxfDocFlg.set(DXFDOC_READY, bReady);
-	m_bDxfDocFlg.set(DXFDOC_SHAPE, bShape);
+	m_bDocFlg.set(DXFDOC_READY, bReady);
+	m_bDocFlg.set(DXFDOC_SHAPE, bShape);
 	if ( g_dwCamVer > NCVCSERIALVERSION_1600 ) {	// Ver1.70～
 		ar >> m_AutoWork.nSelect >> m_AutoWork.dOffset >> m_AutoWork.bAcuteRound >>
 			m_AutoWork.nLoopCnt >> m_AutoWork.nScanLine >> m_AutoWork.bCircleScroll;
@@ -987,8 +1011,8 @@ void CDXFDoc::OnEditOrigin()
 	}
 
 	if ( pt ) {
-		CreateCutterOrigin(*pt, dOrgR, TRUE);
-		m_bDxfDocFlg.set(DXFDOC_READY);	// 生成OK!
+		CreateCutterOrigin(*pt, ORGRADIUS, TRUE);
+		m_bDocFlg.set(DXFDOC_READY);	// 生成OK!
 	}
 }
 
@@ -997,7 +1021,7 @@ void CDXFDoc::OnEditShape()
 	// 状況案内ﾀﾞｲｱﾛｸﾞ(検索ｽﾚｯﾄﾞ生成)
 	CThreadDlg	dlgThread(ID_EDIT_DXFSHAPE, this);
 	if ( dlgThread.DoModal() == IDOK ) {
-		m_bDxfDocFlg.set(DXFDOC_SHAPE);
+		m_bDocFlg.set(DXFDOC_SHAPE);
 		// ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳを広げる + DXFView のﾌｨｯﾄﾒｯｾｰｼﾞ送信
 		static_cast<CDXFChild *>(AfxGetNCVCMainWnd()->MDIGetActive())->ShowShapeView();
 		// DXFShapeView更新
@@ -1071,13 +1095,12 @@ void CDXFDoc::OnEditStrictOffset()
 
 void CDXFDoc::OnUpdateEditShape(CCmdUI* pCmdUI) 
 {
-	pCmdUI->Enable(m_bDxfDocFlg[DXFDOC_LATHE] ? FALSE :
-					!m_bDxfDocFlg[DXFDOC_SHAPE]);
+	pCmdUI->Enable(m_bDocFlg[DXFDOC_LATHE] ? FALSE : !m_bDocFlg[DXFDOC_SHAPE]);
 }
 
 void CDXFDoc::OnUpdateEditShaping(CCmdUI* pCmdUI) 
 {
-	pCmdUI->Enable(m_bDxfDocFlg[DXFDOC_SHAPE]);
+	pCmdUI->Enable(m_bDocFlg[DXFDOC_SHAPE]);
 }
 
 void CDXFDoc::OnUpdateShapePattern(CCmdUI* pCmdUI)
@@ -1104,14 +1127,14 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 {
 	BOOL	bEnable = TRUE;
 	// ｴﾗｰﾃﾞｰﾀの場合はNC変換ﾒﾆｭｰを無効にする
-	if ( !m_bDxfDocFlg[DXFDOC_READY] || !m_pCircle )
+	if ( !m_bDocFlg[DXFDOC_READY] || !m_pCircle )
 		bEnable = FALSE;
 	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_SHAPE )
-		bEnable = m_bDxfDocFlg[DXFDOC_SHAPE];	// 形状処理が済んでいるか
+		bEnable = m_bDocFlg[DXFDOC_SHAPE];	// 形状処理が済んでいるか
 	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_LATHE )
-		bEnable = m_bDxfDocFlg[DXFDOC_LATHE];	// 旋盤用原点を読み込んだか
+		bEnable = m_bDocFlg[DXFDOC_LATHE];	// 旋盤用原点を読み込んだか
 	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_WIRE )
-		bEnable = m_bDxfDocFlg[DXFDOC_WIRE];	// ﾜｲﾔ加工機の条件を満たしているか
+		bEnable = m_bDocFlg[DXFDOC_WIRE];	// ﾜｲﾔ加工機の条件を満たしているか
 	else {
 		// 単一ﾚｲﾔの場合は拡張生成をoffにする
 		if ( pCmdUI->m_nID!=ID_FILE_DXF2NCD && GetCutLayerCnt()<=1 )
@@ -1188,10 +1211,10 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 	pOpt->SetViewFlag(bNCView);
 
 	BOOL		bAllOut;
-	CNCDoc*		pDoc;
+	CDocument*	pDoc;
 	// すでに開いているﾄﾞｷｭﾒﾝﾄなら閉じるｱﾅｳﾝｽ
 	if ( bSingle ) {
-		pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(m_strNCFileName);
+		pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, m_strNCFileName);
 		if ( pDoc )
 			pDoc->OnCloseDocument();
 		bAllOut = TRUE;
@@ -1202,7 +1225,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 			pLayer = m_obLayer[i];
 			if ( pLayer->IsMakeTarget() ) {
 				if ( pLayer->IsLayerFlag(LAYER_PART_OUT) ) {
-					pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(pLayer->GetNCFile());
+					pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, pLayer->GetNCFile());
 					if ( pDoc )
 						pDoc->OnCloseDocument();
 				}
@@ -1211,7 +1234,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 			}
 		}
 		if ( bAllOut ) {
-			pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(m_strNCFileName);
+			pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, m_strNCFileName);
 			if ( pDoc )
 				pDoc->OnCloseDocument();
 		}
@@ -1304,7 +1327,7 @@ UINT CDXFDoc::RestoreCircleTypeThread(LPVOID pParam)
 	pDoc->m_csRestoreCircleType.Lock();		// ｽﾚｯﾄﾞ終了までﾛｯｸ
 	for ( i=0; i<pDoc->m_obLayer.GetSize(); i++ ) {
 		pLayer = pDoc->m_obLayer[i];
-		for ( j=0; j<pLayer->GetDxfSize() && pDoc->m_bDxfDocFlg[DXFDOC_THREAD]; j++ ) {
+		for ( j=0; j<pLayer->GetDxfSize() && pDoc->m_bDocFlg[DXFDOC_THREAD]; j++ ) {
 			pData = pLayer->GetDxfData(j);
 			enType = pData->GetType();
 			if ( enType != pData->GetMakeType() )
@@ -1327,4 +1350,18 @@ int LayerCompareFunc_CutNo(CLayerData* pFirst, CLayerData* pSecond)
 int LayerCompareFunc_Name(CLayerData* pFirst, CLayerData* pSecond)
 {
 	return pFirst->GetStrLayer().Compare( pSecond->GetStrLayer() );
+}
+
+int BindAreaCompareFunc(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	CRect	rc1 = pFirst->pDoc->GetMaxRect(),
+			rc2 = pSecond->pDoc->GetMaxRect();
+	double	a1 = rc1.Width() * rc1.Height(),
+			a2 = rc2.Width() * rc2.Height();
+	if ( a1 > a2 )
+		return 1;
+	else if ( a1 < a2 )
+		return -1;
+	else
+		return 0;
 }

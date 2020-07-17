@@ -12,6 +12,7 @@ UINT MakeLathe_Thread(LPVOID);
 UINT MakeWire_Thread(LPVOID);
 UINT ShapeSearch_Thread(LPVOID);
 UINT AutoWorkingSet_Thread(LPVOID);
+UINT CADbind_Thread(LPVOID);
 
 class CThreadDlg;
 // ½Ú¯ÄŞ‚Ö‚Ìˆø”

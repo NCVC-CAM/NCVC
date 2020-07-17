@@ -14,13 +14,13 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CToolBarSetupDlg, CDialog)
 	//{{AFX_MSG_MAP(CToolBarSetupDlg)
-	ON_BN_CLICKED(IDC_TOOLBAR_C1, OnToolBarCustomize)
-	ON_BN_CLICKED(IDC_TOOLBAR_C2, OnToolBarCustomize)
-	ON_BN_CLICKED(IDC_TOOLBAR_C3, OnToolBarCustomize)
-	ON_BN_CLICKED(IDC_TOOLBAR_C4, OnToolBarCustomize)
-	ON_BN_CLICKED(IDC_TOOLBAR_C5, OnToolBarCustomize)
-	ON_BN_CLICKED(IDC_TOOLBAR_C6, OnToolBarCustomize)
-	ON_BN_CLICKED(IDC_TOOLBAR_C7, OnToolBarCustomize)
+	ON_BN_CLICKED(IDC_TOOLBAR_C1, &CToolBarSetupDlg::OnToolBarCustomize)
+	ON_BN_CLICKED(IDC_TOOLBAR_C2, &CToolBarSetupDlg::OnToolBarCustomize)
+	ON_BN_CLICKED(IDC_TOOLBAR_C3, &CToolBarSetupDlg::OnToolBarCustomize)
+	ON_BN_CLICKED(IDC_TOOLBAR_C4, &CToolBarSetupDlg::OnToolBarCustomize)
+	ON_BN_CLICKED(IDC_TOOLBAR_C5, &CToolBarSetupDlg::OnToolBarCustomize)
+	ON_BN_CLICKED(IDC_TOOLBAR_C6, &CToolBarSetupDlg::OnToolBarCustomize)
+	ON_BN_CLICKED(IDC_TOOLBAR_C7, &CToolBarSetupDlg::OnToolBarCustomize)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 

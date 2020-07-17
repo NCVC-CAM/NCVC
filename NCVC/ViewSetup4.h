@@ -9,8 +9,8 @@
 class CViewSetup4 : public CPropertyPage
 {
 	LOGFONT		m_lfFont;
-	COLORREF	m_colView[3];
-	CBrush		m_brColor[3];
+	COLORREF	m_colView[NCINFOCOL_NUMS];
+	CBrush		m_brColor[NCINFOCOL_NUMS];
 
 // コンストラクション
 public:
@@ -22,7 +22,7 @@ public:
 	enum { IDD = IDD_VIEW_SETUP4 };
 	CButton	m_ctFontButton;
 	//}}AFX_DATA
-	CStatic		m_ctColor[3];
+	CStatic		m_ctColor[NCINFOCOL_NUMS];
 	CIntEdit	m_nTraceSpeed[3];
 	BOOL		m_bTraceMarker;
 

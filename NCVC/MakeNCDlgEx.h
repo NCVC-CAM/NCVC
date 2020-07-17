@@ -17,7 +17,6 @@ class CMakeNCDlgEx : public CPropertySheet
 // コンストラクション
 public:
 	CMakeNCDlgEx(UINT, CDXFDoc*);
-	~CMakeNCDlgEx();
 
 // アトリビュート
 public:

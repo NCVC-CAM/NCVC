@@ -25,7 +25,7 @@ IMPLEMENT_SERIAL(CDXFmap, CMapPointToDXFarray, NCVCSERIALVERSION|VERSIONABLE_SCH
 IMPLEMENT_SERIAL(CDXFchain, CDXFlist, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFshape, CObject, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 
-using namespace std;
+using std::vector;
 using namespace boost;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2677,7 +2677,7 @@ void CDXFshape::DrawWorking(CDC* pDC) const
 	int		i = 0, j,
 			a = 0, b;
 	CPen*	pPen[] = {
-		AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER),
+		AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE),
 		AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL)
 	};
 	CPen*	pOldPen   = pDC->SelectObject(pPen[i]);

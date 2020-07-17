@@ -8,6 +8,7 @@
 #include "ViewSetup3.h"
 #include "ViewSetup4.h"
 #include "ViewSetup5.h"
+#include "ViewSetup6.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CViewSetup
@@ -26,6 +27,7 @@ public:
 	CViewSetup3	m_dlg3;
 	CViewSetup4	m_dlg4;
 	CViewSetup5	m_dlg5;
+	CViewSetup6	m_dlg6;
 
 // オペレーション
 public:
@@ -38,7 +40,6 @@ public:
 
 // インプリメンテーション
 public:
-	virtual ~CViewSetup();
 
 	// 生成されたメッセージ マップ関数
 protected:

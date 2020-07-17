@@ -32,10 +32,3 @@ CMakeDXFDlg::CMakeDXFDlg(CNCDoc* pDoc) : CPropertySheet(IDS_MAKE_DXF, NULL, 0)
 	AddPage(&m_dlg1);
 	AddPage(&m_dlg2);
 }
-
-CMakeDXFDlg::~CMakeDXFDlg()
-{
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// CMakeDXFDlg メッセージ ハンドラ

@@ -23,13 +23,13 @@ BEGIN_MESSAGE_MAP(CNCViewSplit, CSplitterWnd)
 	ON_WM_DESTROY()
 	ON_WM_LBUTTONDBLCLK()
 	// ’∞ªﬁ≤∆º¨Ÿèàóù
-	ON_MESSAGE (WM_USERINITIALUPDATE, OnUserInitialUpdate)
+	ON_MESSAGE (WM_USERINITIALUPDATE, &CNCViewSplit::OnUserInitialUpdate)
 	// Õﬂ∞ºﬁêÿë÷≤Õﬁ›ƒ
-	ON_MESSAGE (WM_USERACTIVATEPAGE, OnUserActivatePage)
+	ON_MESSAGE (WM_USERACTIVATEPAGE, &CNCViewSplit::OnUserActivatePage)
 	// äeÀﬁ≠∞Ç÷ÇÃÃ®Øƒ“Øæ∞ºﬁ
-	ON_MESSAGE (WM_USERVIEWFITMSG, OnUserViewFitMsg)
+	ON_MESSAGE (WM_USERVIEWFITMSG, &CNCViewSplit::OnUserViewFitMsg)
 	// ëSÇƒÇÃÕﬂ≤›ÇÃê}å`Ã®Øƒ
-	ON_COMMAND(ID_NCVIEW_ALLFIT, OnAllFitCmd)
+	ON_COMMAND(ID_NCVIEW_ALLFIT, &CNCViewSplit::OnAllFitCmd)
 END_MESSAGE_MAP()
 
 //////////////////////////////////////////////////////////////////////
@@ -41,10 +41,6 @@ CNCViewSplit::CNCViewSplit()
 #ifdef _DEBUG_FILEOPEN
 	g_dbg.printf("CNCViewSplit::CNCViewSplit() Start");
 #endif
-}
-
-CNCViewSplit::~CNCViewSplit()
-{
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -69,9 +65,9 @@ void CNCViewSplit::AllPane_PostMessage(int nID, UINT msg, WPARAM wParam, LPARAM 
 {
 	int		i, j;
 
-	if ( nID == NCVIEW_FOURSVIEW ) {	// ÇSñ -1
-		for ( i=0; i<GetRowCount(); i++ ) {			// çs
-			for ( j=0; j<GetColumnCount(); j++ ) {	// óÒ
+	if ( nID == NCDRAWVIEW_NUM ) {	// ÇSñ -1
+		for ( i=0; i<2; i++ ) {			// çs
+			for ( j=0; j<2; j++ ) {		// óÒ
 				GetPane(i, j)->PostMessage(msg, wParam, lParam);
 			}
 		}
@@ -80,7 +76,7 @@ void CNCViewSplit::AllPane_PostMessage(int nID, UINT msg, WPARAM wParam, LPARAM 
 	else {								// ÇSñ -2
 		GetPane(0, 1)->PostMessage(msg, wParam, lParam);	// XYZ
 		CSplitterWnd* pWnd = static_cast<CSplitterWnd *>(GetPane(0, 0));
-		for ( i=0; i<pWnd->GetRowCount(); i++ ) {
+		for ( i=0; i<3; i++ ) {
 			pWnd->GetPane(i, 0)->PostMessage(msg, wParam, lParam);	// YZ, XZ, XY
 		}
 		SetActivePane(0, 1);	// XYZï\é¶Ç±∏√®ÃﬁÇ…
@@ -98,7 +94,7 @@ void CNCViewSplit::CalcPane(int nID, BOOL bInitial/*=FALSE*/)
 	GetParent()->GetClientRect(rc);
 
 	// ΩÃﬂÿØ¿≥®›ƒﬁ≥ÇÃèâä˙ª≤Ωﬁê›íË
-	if ( nID == NCVIEW_FOURSVIEW ) {	// ÇSñ -1
+	if ( nID == NCDRAWVIEW_NUM ) {	// ÇSñ -1
 		nRow = (rc.Height() >> 1) - nCyEdge;
 		nCol = (rc.Width()  >> 1) - nCxEdge;
 		if ( bInitial ) {
@@ -140,48 +136,40 @@ LRESULT CNCViewSplit::OnUserInitialUpdate(WPARAM wParam, LPARAM lParam)
 	// ΩÃﬂÿØ¿≥®›ƒﬁ≥ÇÃèâä˙ª≤Ωﬁê›íË
 	CalcPane(wParam, TRUE);
 	// äeÕﬂ≤›Ç÷ê}å`Ã®Øƒ“Øæ∞ºﬁÇÃëóêM
-	if ( wParam == NCVIEW_FOURSVIEW ) {	// ÇSñ -1
-		// √ﬁ ﬁ≤Ω∫›√∑Ωƒ ›ƒﬁŸÇéÊìæ(XYZ, YZ, XZ, XY èá)
-		pDC = new CClientDC(GetPane(0, 0));		// XYZ
-		m_hDC[0] = pDC->GetSafeHdc();
-		delete	pDC;
-		pDC = new CClientDC(GetPane(1, 1));		// XY
-		m_hDC[1] = pDC->GetSafeHdc();
-		delete	pDC;
-		pDC = new CClientDC(GetPane(1, 0));		// XZ
-		m_hDC[2] = pDC->GetSafeHdc();
-		delete	pDC;
-		pDC = new CClientDC(GetPane(0, 1));		// YZ
-		m_hDC[3] = pDC->GetSafeHdc();
-		delete	pDC;
+	if ( wParam == NCDRAWVIEW_NUM ) {	// ÇSñ -1
+		// √ﬁ ﬁ≤Ω∫›√∑Ωƒ ›ƒﬁŸÇéÊìæ
+		for ( i=0; i<2; i++ ) {				// çs
+			for ( j=0; j<2; j++ ) {			// óÒ
+				pDC = new CClientDC(GetPane(i, j));
+				m_hDC[i*2+j] = pDC->GetSafeHdc();
+				delete	pDC;
+			}
+		}
 		if ( lParam ) {
-			for ( i=0; i<GetRowCount(); i++ ) {			// çs
-				for ( j=0; j<GetColumnCount(); j++ ) {	// óÒ
+			for ( i=0; i<2; i++ ) {
+				for ( j=0; j<2; j++ ) {
 					GetPane(i, j)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);
 				}
 			}
-			SetActivePane(0, 0);	// XYZï\é¶Ç±∏√®ÃﬁÇ…
+			SetActivePane(0, 0);
 		}
 	}
-	else {								// ÇSñ -2
-		pDC = new CClientDC(GetPane(0, 1));			// XYZ
-		m_hDC[0] = pDC->GetSafeHdc();
-		delete	pDC;
+	else {
+		// ÇSñ -2
 		CSplitterWnd* pWnd = static_cast<CSplitterWnd *>(GetPane(0, 0));
-		pDC = new CClientDC(pWnd->GetPane(2, 0));	// XY
-		m_hDC[1] = pDC->GetSafeHdc();
-		delete	pDC;
-		pDC = new CClientDC(pWnd->GetPane(1, 0));	// XZ
-		m_hDC[2] = pDC->GetSafeHdc();
-		delete	pDC;
-		pDC = new CClientDC(pWnd->GetPane(0, 0));	// YZ
-		m_hDC[3] = pDC->GetSafeHdc();
+		for ( i=0; i<3; i++ ) {
+			pDC = new CClientDC(pWnd->GetPane(i, 0));
+			m_hDC[i] = pDC->GetSafeHdc();
+			delete	pDC;
+		}
+		pDC = new CClientDC(GetPane(0, 1));
+		m_hDC[i] = pDC->GetSafeHdc();
 		delete	pDC;
 		if ( lParam ) {
-			for ( i=0; i<pWnd->GetRowCount(); i++ )
-				pWnd->GetPane(i, 0)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);	// YZ, XZ, XY
-			GetPane(0, 1)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);	// XYZ
-			SetActivePane(0, 1);	// XYZï\é¶Ç±∏√®ÃﬁÇ…
+			for ( i=0; i<3; i++ )
+				pWnd->GetPane(i, 0)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);
+			GetPane(0, 1)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);
+			SetActivePane(0, 1);
 		}
 	}
 

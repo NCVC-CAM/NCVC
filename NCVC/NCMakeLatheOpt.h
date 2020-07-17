@@ -6,37 +6,47 @@
 
 #include "NCMakeOption.h"
 
-#define	MKLA_NUM_SPINDLE		0
-#define	MKLA_NUM_MARGIN			1
-#define	MKLA_NUM_PROG			2
-#define	MKLA_NUM_LINEADD		3
-#define	MKLA_NUM_G90			4
-#define	MKLA_NUM_DOT			5
-#define	MKLA_NUM_FDOT			6
-#define	MKLA_NUM_CIRCLECODE		7
-#define	MKLA_NUM_IJ				8
-
-#define	MKLA_DBL_FEED			0
-#define	MKLA_DBL_XFEED			1
-#define	MKLA_DBL_CUT			2
-#define	MKLA_DBL_PULL_Z			3
-#define	MKLA_DBL_PULL_X			4
-#define	MKLA_DBL_MARGIN			5
-#define	MKLA_DBL_ELLIPSE		6
-
-#define	MKLA_FLG_PROG			0
-#define	MKLA_FLG_PROGAUTO		1
-#define	MKLA_FLG_LINEADD		2
-#define	MKLA_FLG_ZEROCUT		3
-#define	MKLA_FLG_GCLIP			4
-#define	MKLA_FLG_DISABLESPINDLE	5
-#define	MKLA_FLG_CIRCLEHALF		6
-#define	MKLA_FLG_ELLIPSE		7
-
-#define	MKLA_STR_LINEFORM		0
-#define	MKLA_STR_EOB			1
-#define	MKLA_STR_HEADER			2
-#define	MKLA_STR_FOOTER			3
+enum {
+	MKLA_NUM_SPINDLE = 0,
+	MKLA_NUM_MARGIN,
+	MKLA_NUM_PROG,
+	MKLA_NUM_LINEADD,
+	MKLA_NUM_G90,
+	MKLA_NUM_DOT,
+	MKLA_NUM_FDOT,
+	MKLA_NUM_CIRCLECODE,
+	MKLA_NUM_IJ,
+		MKLA_NUM_NUMS		// [9]
+};
+enum {
+	MKLA_DBL_FEED = 0,
+	MKLA_DBL_XFEED,
+	MKLA_DBL_CUT,
+	MKLA_DBL_PULL_Z,
+	MKLA_DBL_PULL_X,
+	MKLA_DBL_MARGIN,
+	MKLA_DBL_ELLIPSE,
+		MKLA_DBL_NUMS		// [7]
+};
+enum {
+	MKLA_FLG_PROG = 0,
+	MKLA_FLG_PROGAUTO,
+	MKLA_FLG_LINEADD,
+	MKLA_FLG_ZEROCUT,
+	MKLA_FLG_GCLIP,
+	MKLA_FLG_DISABLESPINDLE,
+	MKLA_FLG_CIRCLEHALF,
+	MKLA_FLG_ZEROCUT_IJ,
+	MKLA_FLG_ELLIPSE,
+		MKLA_FLG_NUMS		// [9]
+};
+enum {
+	MKLA_STR_LINEFORM = 0,
+	MKLA_STR_EOB,
+	MKLA_STR_HEADER,
+	MKLA_STR_FOOTER,
+		MKLA_STR_NUMS		// [4]
+};
 
 class CNCMakeLatheOpt : public CNCMakeOption
 {
@@ -59,7 +69,7 @@ friend class CMKNCSetup6;
 					m_nCircleCode,		// ‰~Øí(G2 or G3)
 					m_nIJ;				// ‰~ŒÊ•âŠÔ‚ÉR‚©I/J/K
 		};
-		int			m_unNums[9];
+		int			m_unNums[MKLA_NUM_NUMS];
 	};
 	// doubleŒ^µÌß¼®Ý
 	union {
@@ -73,7 +83,7 @@ friend class CMKNCSetup6;
 			// -----
 					m_dEllipse;			// ‘È‰~Œö·
 		};
-		double		m_udNums[7];
+		double		m_udNums[MKLA_DBL_NUMS];
 	};
 	// BOOLŒ^µÌß¼®Ý
 	union {
@@ -85,10 +95,11 @@ friend class CMKNCSetup6;
 					m_bGclip,			// Gº°ÄÞÈ—ªŒ`
 					m_bDisableSpindle,	// SÊß×Ò°À‚ð¶¬‚µ‚È‚¢
 					m_bCircleHalf,		// ‘S‰~‚Í•ªŠ„
+					m_bZeroCutIJ,		// [I|J]0‚ÍÈ—ª
 			// -----
 					m_bEllipse;			// ’·Œa‚Æ’ZŒa‚ª“™‚µ‚¢‘È‰~‚Í‰~‚Æ‚Ý‚È‚·
 		};
-		BOOL		m_ubFlags[8];
+		BOOL		m_ubFlags[MKLA_FLG_NUMS];
 	};
 	// CStringŒ^µÌß¼®Ý -> ŽÀ‘Ì‚ÍÍÞ°½¸×½‚Ö
 		// s”Ô†Ì«°Ï¯Ä, EOB, ¶½ÀÑÍ¯ÀÞ°C¶½ÀÑÌ¯À°

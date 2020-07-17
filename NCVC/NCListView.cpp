@@ -22,44 +22,34 @@ extern	CMagaDbg	g_dbg;
 using namespace boost;
 
 // ²Ò°¼Þ•\Ž¦²ÝÃÞ¯¸½
-#define	LISTIMG_NORMAL		0
-#define	LISTIMG_BREAK		1
-#define	LISTIMG_ERROR		2
-#define	LISTIMG_FOLDER		3
+enum {
+	LISTIMG_NORMAL=0, LISTIMG_BREAK, LISTIMG_ERROR, LISTIMG_FOLDER,
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCListView
 
 IMPLEMENT_DYNCREATE(CNCListView, CListView)
 
-CNCListView::CNCListView()
-{
-	m_bTraceSelect = FALSE;
-}
-
-CNCListView::~CNCListView()
-{
-}
-
 BEGIN_MESSAGE_MAP(CNCListView, CListView)
 	//{{AFX_MSG_MAP(CNCListView)
 	ON_WM_CREATE()
 	ON_WM_CONTEXTMENU()
-	ON_NOTIFY_REFLECT(LVN_KEYDOWN, OnKeyDown)
-	ON_NOTIFY_REFLECT(LVN_GETDISPINFO, OnGetDispInfo)
-	ON_NOTIFY_REFLECT(LVN_ITEMCHANGED, OnItemChanged)
-	ON_UPDATE_COMMAND_UI(ID_NCVIEW_TRACE_BREAK, OnUpdateTraceBreak)
-	ON_UPDATE_COMMAND_UI(ID_NCVIEW_JUMP, OnUpdateViewJump)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_FIND, OnUpdateViewFind)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  OnUpdateMoveRoundKey)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, OnUpdateMoveRoundKey)
-	ON_COMMAND(ID_NCVIEW_TRACE_BREAK, OnTraceBreak)
-	ON_COMMAND(ID_NCVIEW_TRACE_BREAKOFF, OnTraceBreakOFF)
-	ON_COMMAND(ID_NCVIEW_JUMP, OnViewJump)
-	ON_COMMAND(ID_EDIT_FIND, OnViewFind)
+	ON_NOTIFY_REFLECT(LVN_KEYDOWN, &CNCListView::OnKeyDown)
+	ON_NOTIFY_REFLECT(LVN_GETDISPINFO, &CNCListView::OnGetDispInfo)
+	ON_NOTIFY_REFLECT(LVN_ITEMCHANGED, &CNCListView::OnItemChanged)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_TRACE_BREAK, &CNCListView::OnUpdateTraceBreak)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_JUMP, &CNCListView::OnUpdateViewJump)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_FIND, &CNCListView::OnUpdateViewFind)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCListView::OnUpdateEditCopy)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCListView::OnUpdateMoveRoundKey)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCListView::OnUpdateMoveRoundKey)
+	ON_COMMAND(ID_NCVIEW_TRACE_BREAK, &CNCListView::OnTraceBreak)
+	ON_COMMAND(ID_NCVIEW_TRACE_BREAKOFF, &CNCListView::OnTraceBreakOFF)
+	ON_COMMAND(ID_NCVIEW_JUMP, &CNCListView::OnViewJump)
+	ON_COMMAND(ID_EDIT_FIND, &CNCListView::OnViewFind)
 	//}}AFX_MSG_MAP
-	ON_MESSAGE(WM_USERTRACESELECT, OnSelectTrace)
+	ON_MESSAGE(WM_USERTRACESELECT, &CNCListView::OnSelectTrace)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

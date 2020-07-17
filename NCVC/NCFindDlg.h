@@ -6,7 +6,6 @@ class CNCFindDlg : public CDialog
 {
 public:
 	CNCFindDlg(CWnd* pParent = NULL);   // 標準コンストラクタ
-	virtual ~CNCFindDlg();
 
 // ダイアログ データ
 	enum { IDD = IDD_NCVIEW_FIND };

@@ -363,6 +363,15 @@
     <ClCompile Include="ViewSetup5.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="ViewSetup6.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="CADbindDlg.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="TH_CADbind.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3Dto2D.h">
@@ -686,6 +695,12 @@
     <ClInclude Include="ViewSetup5.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="ViewSetup6.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="CADbindDlg.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="DXFdata.inl">
@@ -698,6 +713,9 @@
       <Filter>リソース ファイル</Filter>
     </None>
     <None Include="ClassDiagram1.cd" />
+    <None Include="DocBase.inl">
+      <Filter>ヘッダー ファイル</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\check.ico">

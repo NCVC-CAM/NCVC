@@ -32,7 +32,6 @@ public:
 
 // インプリメンテーション
 public:
-	~CDxfSetup();
 
 	// 生成されたメッセージ マップ関数
 protected:

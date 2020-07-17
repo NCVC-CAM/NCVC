@@ -7,80 +7,88 @@
 #include "NCVCdefine.h"
 #include "NCMakeOption.h"
 
-// -- 派生WireOption共通
-#define	MKNC_NUM_PROG				0
-#define	MKNC_NUM_LINEADD			1
-#define	MKNC_NUM_G90				2
-#define	MKNC_NUM_DOT				3
-#define	MKNC_NUM_FDOT				4
-#define	MKNC_NUM_CIRCLECODE			5
-// --
-#define	MKNC_NUM_SPINDLE			6
-#define	MKNC_NUM_ZRETURN			7
-#define	MKNC_NUM_IJ					8
-#define	MKNC_NUM_MAKEEND			9
-#define	MKNC_NUM_DEEPSPINDLE		10
-#define	MKNC_NUM_DEEPRETURN			11
-#define	MKNC_NUM_DEEPALL			12
-#define	MKNC_NUM_DEEPROUND			13
-#define	MKNC_NUM_DRILLSPINDLE		14
-#define	MKNC_NUM_DWELL				15
-#define	MKNC_NUM_DWELLFORMAT		16
-#define	MKNC_NUM_DRILLRETURN		17
-#define	MKNC_NUM_DRILLPROCESS		18
-#define	MKNC_NUM_DRILLSORT			19
-#define	MKNC_NUM_DRILLCIRCLEPROCESS	20
-#define	MKNC_NUM_MOVEZ				21
-#define	MKNC_NUM_TOLERANCE			22
-#define	MKNC_NUM_OPTIMAIZEDRILL		23
-
-#define	MKNC_DBL_FEED			0
-#define	MKNC_DBL_ZFEED			1
-#define	MKNC_DBL_ZG0STOP		2
-#define	MKNC_DBL_ZCUT			3
-#define	MKNC_DBL_G92X			4
-#define	MKNC_DBL_G92Y			5
-#define	MKNC_DBL_G92Z			6
-#define	MKNC_DBL_ELLIPSE		7
-#define	MKNC_DBL_MAKEEND		8
-#define	MKNC_DBL_MAKEENDFEED	9
-#define	MKNC_DBL_DEEP			10
-#define	MKNC_DBL_ZSTEP			11
-#define	MKNC_DBL_DEEPFEED		12
-#define	MKNC_DBL_DRILLFEED		13
-#define	MKNC_DBL_DRILLR			14
-#define	MKNC_DBL_DRILLZ			15
-#define	MKNC_DBL_DRILLCIRCLE	16
-#define	MKNC_DBL_TOLERANCE		17
-#define	MKNC_DBL_DRILLMARGIN	18
-
-// -- 派生WireOption共通
-#define	MKNC_FLG_PROG			0
-#define	MKNC_FLG_PROGAUTO		1
-#define	MKNC_FLG_LINEADD		2
-#define	MKNC_FLG_ZEROCUT		3
-#define	MKNC_FLG_GCLIP			4
-#define	MKNC_FLG_ELLIPSE		5
-// --
-#define	MKNC_FLG_XREV			6
-#define	MKNC_FLG_YREV			7
-#define	MKNC_FLG_DISABLESPINDLE	8
-#define	MKNC_FLG_CIRCLEHALF		9
-#define	MKNC_FLG_DEEP			10
-#define	MKNC_FLG_HELICAL		11
-#define	MKNC_FLG_DEEPFINISH		12
-#define	MKNC_FLG_DRILLMATCH		13
-#define	MKNC_FLG_DRILLCIRCLE	14
-#define	MKNC_FLG_DRILLBREAK		15
-#define	MKNC_FLG_LAYERCOMMENT	16
-#define	MKNC_FLG_L0CYCLE		17
-
-#define	MKNC_STR_LINEFORM		0
-#define	MKNC_STR_EOB			1
-#define	MKNC_STR_HEADER			2
-#define	MKNC_STR_FOOTER			3
-#define	MKNC_STR_CUSTMOVE_B		4
-#define	MKNC_STR_CUSTMOVE_A		5
+enum {
+	MKNC_NUM_PROG = 0,
+	MKNC_NUM_LINEADD,
+	MKNC_NUM_G90,
+	MKNC_NUM_DOT,
+	MKNC_NUM_FDOT,
+	MKNC_NUM_CIRCLECODE,
+	// -- ここまで派生WireOption共通
+	MKNC_NUM_SPINDLE,
+	MKNC_NUM_ZRETURN,
+	MKNC_NUM_IJ,
+	MKNC_NUM_MAKEEND,
+	MKNC_NUM_DEEPSPINDLE,
+	MKNC_NUM_DEEPRETURN,
+	MKNC_NUM_DEEPALL,
+	MKNC_NUM_DEEPROUND,
+	MKNC_NUM_DRILLSPINDLE,
+	MKNC_NUM_DWELL,
+	MKNC_NUM_DWELLFORMAT,
+	MKNC_NUM_DRILLRETURN,
+	MKNC_NUM_DRILLPROCESS,
+	MKNC_NUM_DRILLSORT,
+	MKNC_NUM_DRILLCIRCLEPROCESS,
+	MKNC_NUM_MOVEZ,
+	MKNC_NUM_TOLERANCE,
+	MKNC_NUM_OPTIMAIZEDRILL,
+		MKNC_NUM_NUMS		// [24]
+};
+enum {
+	MKNC_DBL_FEED = 0,
+	MKNC_DBL_ZFEED,
+	MKNC_DBL_ZG0STOP,
+	MKNC_DBL_ZCUT,
+	MKNC_DBL_G92X,
+	MKNC_DBL_G92Y,
+	MKNC_DBL_G92Z,
+	MKNC_DBL_ELLIPSE,
+	MKNC_DBL_MAKEEND,
+	MKNC_DBL_MAKEENDFEED,
+	MKNC_DBL_DEEP,
+	MKNC_DBL_ZSTEP,
+	MKNC_DBL_DEEPFEED,
+	MKNC_DBL_DRILLFEED,
+	MKNC_DBL_DRILLR,
+	MKNC_DBL_DRILLZ,
+	MKNC_DBL_DRILLCIRCLE,
+	MKNC_DBL_TOLERANCE,
+	MKNC_DBL_DRILLMARGIN,
+		MKNC_DBL_NUMS		// [19]
+};
+enum {
+	MKNC_FLG_PROG = 0,
+	MKNC_FLG_PROGAUTO,
+	MKNC_FLG_LINEADD,
+	MKNC_FLG_ZEROCUT,
+	MKNC_FLG_GCLIP,
+	MKNC_FLG_ELLIPSE,
+	// -- ここまで派生WireOption共通
+	MKNC_FLG_XREV,
+	MKNC_FLG_YREV,
+	MKNC_FLG_DISABLESPINDLE,
+	MKNC_FLG_CIRCLEHALF,
+	MKNC_FLG_ZEROCUT_IJ,
+	MKNC_FLG_DEEP,
+	MKNC_FLG_HELICAL,
+	MKNC_FLG_DEEPFINISH,
+	MKNC_FLG_DRILLMATCH,
+	MKNC_FLG_DRILLCIRCLE,
+	MKNC_FLG_DRILLBREAK,
+	MKNC_FLG_LAYERCOMMENT,
+	MKNC_FLG_L0CYCLE,
+		MKNC_FLG_NUMS		// [19]
+};
+enum {
+	MKNC_STR_LINEFORM = 0,
+	MKNC_STR_EOB,
+	MKNC_STR_HEADER,
+	MKNC_STR_FOOTER,
+	MKNC_STR_CUSTMOVE_B,
+	MKNC_STR_CUSTMOVE_A,
+		MKNC_STR_NUMS		// [6]
+};
 
 class CNCMakeMillOpt : public CNCMakeOption
 {
@@ -127,7 +135,7 @@ friend class CMKNCSetup8;
 					m_nTolerance,		// 許容差を超えたときの動作
 					m_nOptimaizeDrill;	// 穴加工の基準軸
 		};
-		int			m_unNums[24];
+		int			m_unNums[MKNC_NUM_NUMS];
 	};
 	// double型ｵﾌﾟｼｮﾝ
 	union {
@@ -154,7 +162,7 @@ friend class CMKNCSetup8;
 					m_dTolerance,		// 同一座標と見なす許容差
 					m_dDrillMargin;		// 基準軸に対する許容差
 		};
-		double		m_udNums[19];
+		double		m_udNums[MKNC_DBL_NUMS];
 	};
 	// BOOL型ｵﾌﾟｼｮﾝ
 	union {
@@ -170,6 +178,7 @@ friend class CMKNCSetup8;
 					m_bYrev,			// Y軸反転
 					m_bDisableSpindle,	// Sﾊﾟﾗﾒｰﾀを生成しない
 					m_bCircleHalf,		// 全円は分割
+					m_bZeroCutIJ,		// [I|J]0は省略
 			// -----
 					m_bDeep,			// 深彫切削を行う
 					m_bHelical,			// 円ﾃﾞｰﾀをﾍﾘｶﾙ切削
@@ -182,7 +191,7 @@ friend class CMKNCSetup8;
 					m_bLayerComment,	// ﾚｲﾔごとにｺﾒﾝﾄを埋め込む
 					m_bL0Cycle;			// 固定ｻｲｸﾙ中はL0出力
 		};
-		BOOL		m_ubFlags[18];
+		BOOL		m_ubFlags[MKNC_FLG_NUMS];
 	};
 	// CString型ｵﾌﾟｼｮﾝ -> 実体はﾍﾞｰｽｸﾗｽへ
 		// 行番号ﾌｫｰﾏｯﾄ, EOB, ｶｽﾀﾑﾍｯﾀﾞｰ，ｶｽﾀﾑﾌｯﾀｰ

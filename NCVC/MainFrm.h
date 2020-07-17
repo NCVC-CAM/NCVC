@@ -34,42 +34,48 @@ protected:
 // NCView NCｺｰﾄﾞ移動, NCView ﾜｰｸ矩形ﾀﾞｲｱﾛｸﾞ, DXFView ﾚｲﾔ表示切り替えﾀﾞｲｱﾛｸﾞ
 // NCView 検索
 enum	EN_MLD	{
-	MLD_NCJUMP=0, MLD_NCWORK=1, MLD_DXFLAYER=2,
-	MLD_NCFIND=3
+	MLD_NCJUMP=0, MLD_NCWORK, MLD_DXFLAYER, MLD_NCFIND,
+		MLD_NUMS	// [4]
 };
 
 // ﾂｰﾙﾊﾞｰ
 enum	EN_TOOLBAR {
-	TOOLBAR_MAIN=0, TOOLBAR_TRACE=1, TOOLBAR_MAKENCD=2, TOOLBAR_SHAPE=3,
-	TOOLBAR_ADDIN=4, TOOLBAR_EXEC=5,
-	TOOLBAR_MACHINE=6
+	TOOLBAR_MAIN=0, TOOLBAR_TRACE, TOOLBAR_MAKENCD, TOOLBAR_SHAPE,
+	TOOLBAR_ADDIN, TOOLBAR_EXEC,
+	TOOLBAR_MACHINE
 };
 // ﾂｰﾙﾊﾞｰｲﾒｰｼﾞ
 enum	EN_TOOLBARIMAGE {
-	TOOLIMAGE_ADDIN=0, TOOLIMAGE_EXEC=1
+	TOOLIMAGE_ADDIN=0, TOOLIMAGE_EXEC
 };
 
 // ﾍﾟﾝ
 enum	EN_COMPEN	{
-	COMPEN_RECT=0, COMPEN_SEL=1
+	COMPEN_RECT=0, COMPEN_SEL,
+		COMPEN_NUMS		// [2]
 };
 enum	EN_NCPEN	{
-	NCPEN_G0=0, NCPEN_G1=1, NCPEN_G1Z=2,
-	NCPEN_CORRECT=3,
-	NCPEN_CYCLE=4,
-	NCPEN_WORK=5, NCPEN_MAXCUT=6
+	NCPEN_G0=0, NCPEN_G1, NCPEN_G1Z,
+	NCPEN_CORRECT,
+	NCPEN_CYCLE,
+	NCPEN_WORK, NCPEN_MAXCUT,
+		NCPEN_NUMS		// [7]
 };
 enum	EN_DXFPEN	{
-	DXFPEN_ORIGIN=0, DXFPEN_CUTTER=1,
-	DXFPEN_START=2, DXFPEN_MOVE=3,
-	DXFPEN_WORKER=4
+	DXFPEN_ORIGIN=0, DXFPEN_CUTTER,
+	DXFPEN_START, DXFPEN_MOVE,
+	DXFPEN_OUTLINE,
+	DXFPEN_WORK,
+		DXFPEN_NUMS		// [6]
 };
 // ﾌﾞﾗｼ
 enum	EN_DXFBRUSH	{
-	DXFBRUSH_CUTTER=0, DXFBRUSH_START=1, DXFBRUSH_MOVE=2, DXFBRUSH_TEXT=3
+	DXFBRUSH_CUTTER=0, DXFBRUSH_START, DXFBRUSH_MOVE, DXFBRUSH_TEXT,
+		DXFBRUSH_NUMS	// [4]
 };
 enum	EN_NCBRUSH	{
-	NCBRUSH_CYCLEXY=0
+	NCBRUSH_CYCLEXY,
+		NCBRUSH_NUMS	// [1]
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -84,11 +90,11 @@ class CMainFrame : public CMDIFrameWnd
 	// NCVC共通属性
 	// CPen, CBrush の[2]はｸﾘｯﾌﾟﾎﾞｰﾄﾞへの描画用．白->黒変換
 	CPen		m_penOrg[2][NCXYZ],	// 中心線
-				m_penCom[2][2],		// 拡大縮小矩形, 選択
-				m_penNC[2][7],		// G0, G1, G1Z, 補正, Cycle, Work, MaxCut
-				m_penDXF[2][5];		// Origin, Cutter, Start, Move, Worker
-	CBrush		m_brushDXF[2][4],	// Text Point Brush
-				m_brushNC[2][1];	// Cycle(XY)
+				m_penCom[2][COMPEN_NUMS],	// 拡大縮小矩形, 選択
+				m_penNC[2][NCPEN_NUMS],		// G0, G1, G1Z, 補正, Cycle, Work, MaxCut
+				m_penDXF[2][DXFPEN_NUMS];	// Origin, Cutter, Start, Move, Outline, Work
+	CBrush		m_brushDXF[2][DXFBRUSH_NUMS],	// Text Point Brush
+				m_brushNC[2][NCBRUSH_NUMS];		// Cycle(XY)
 	CFont		m_cfText[2];	// Gｺｰﾄﾞ表示, DXFﾃｷｽﾄﾌｫﾝﾄ
 	int			m_nTextHeight,	// 　　〃　の高さ
 				m_nTextWidth,	// 　　〃　の幅
@@ -120,7 +126,7 @@ class CMainFrame : public CMDIFrameWnd
 	BOOL		m_bMenuSelect;
 
 	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞ管理用
-	CDialog*	m_pModelessDlg[4];
+	CDialog*	m_pModelessDlg[MLD_NUMS];
 
 	DECLARE_DYNAMIC(CMainFrame)
 public:
@@ -187,7 +193,6 @@ public:
 public:
 	BOOL	RestoreWindowState(void);	// CNCVCApp::InitInstance()からの呼び出し
 	void	ChangeViewOption(void);
-	BOOL	DrawBackGroundView(CDC*, CRect*, COLORREF, COLORREF);
 	void	ChangeMachine(void) {
 		m_wndToolBar_Machine.ChangeMachine();
 	}
@@ -215,7 +220,6 @@ protected:
 
 // 実装
 public:
-	virtual ~CMainFrame();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;

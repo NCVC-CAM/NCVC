@@ -7,15 +7,17 @@
 
 // ﾂﾘｰﾋﾞｭｰで選択されているﾀｲﾌﾟ
 typedef	boost::variant<DWORD, CLayerData*, CDXFshape*, CDXFworking*>	DXFTREETYPE;
-#define	DXFTREETYPE_MUSTER	0
-#define	DXFTREETYPE_LAYER	1
-#define	DXFTREETYPE_SHAPE	2
-#define	DXFTREETYPE_WORKING	3
+enum {
+	DXFTREETYPE_MUSTER = 0,
+	DXFTREETYPE_LAYER,
+	DXFTREETYPE_SHAPE,
+	DXFTREETYPE_WORKING
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFView ビュー
 
-class CDXFView : public CView, public CViewBase
+class CDXFView : public CViewBase
 {
 	CPointD		m_ptArraw[2][3],	// 一時的な始点終点の矢印座標
 				m_ptStart[4];		// 一時的な開始位置(円で最大4点)
@@ -24,6 +26,7 @@ class CDXFView : public CView, public CViewBase
 	int			m_nSelect;			// m_ptArraw[0|1] or -1
 	DXFTREETYPE	m_vSelect;			// 現在選択されているﾂﾘｰｵﾌﾞｼﾞｪｸﾄ
 	CDXFdata*	m_pSelData;			// 　〃　ｵﾌﾞｼﾞｪｸﾄ(OnLButtonUp)
+	CRect		m_rcDrawWork;		// ﾜｰｸ矩形(bind)
 
 	BOOL	OnUpdateShape(DXFTREETYPE[]);
 	BOOL	IsRootTree(DWORD);
@@ -65,17 +68,12 @@ public:
 	virtual void OnInitialUpdate();
 	protected:
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
 
 // インプリメンテーション
 protected:
 	virtual ~CDXFView();
-#ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
-#endif
 
 	// 生成されたメッセージ マップ関数
 protected:
@@ -100,6 +98,8 @@ protected:
 	afx_msg LRESULT OnUserViewFitMsg(WPARAM, LPARAM);
 	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰ表示更新(ｵﾌﾞｼﾞｪｸﾄIDがClassWizard一覧に載らないので手動ｺｰﾃﾞｨﾝｸﾞ)
 	afx_msg void OnUpdateMouseCursor(CCmdUI* pCmdUI);
+	// CADﾃﾞｰﾀの統合
+	afx_msg LRESULT OnBindInitMsg(WPARAM, LPARAM);
 	// 移動
 	afx_msg	void OnMoveKey(UINT);
 	afx_msg	void OnLensKey(UINT);

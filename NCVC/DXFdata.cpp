@@ -28,7 +28,6 @@ IMPLEMENT_SERIAL(CDXFellipse, CDXFarc, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFpolyline, CDXFline, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFtext, CDXFpoint, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 
-using namespace std;
 using namespace boost;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1523,7 +1522,7 @@ void CDXFarc::Draw(CDC* pDC) const
 #ifdef _DEBUGDRAW_DXF
 	CMagaDbg	dbg("CDXFarc::Draw()", DBG_RED);
 #endif
-	double	sq = m_sqDraw;
+	double	sq = m_sqDraw, st;
 
 	CPointD	pt(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
 	pDC->MoveTo(pt);
@@ -1531,13 +1530,17 @@ void CDXFarc::Draw(CDC* pDC) const
 	dbg.printf("pts.x=%d pts.y=%d", (int)pt.x, (int)pt.y);
 #endif
 	if ( m_bRoundOrig ) {
-		for ( sq+=ARCSTEP; sq<m_eqDraw; sq+=ARCSTEP ) {
+		st = (m_eqDraw - sq) / ARCCOUNT;
+//		for ( sq+=ARCSTEP; sq<m_eqDraw; sq+=ARCSTEP ) {
+		for ( sq+=st; sq<m_eqDraw; sq+=st ) {
 			pt.SetPoint(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
 			pDC->LineTo(pt);
 		}
 	}
 	else {
-		for ( sq-=ARCSTEP; sq>m_eqDraw; sq-=ARCSTEP ) {
+		st = (sq - m_eqDraw) / ARCCOUNT;
+//		for ( sq-=ARCSTEP; sq>m_eqDraw; sq-=ARCSTEP ) {
+		for ( sq-=st; sq>m_eqDraw; sq-=st ) {
 			pt.SetPoint(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
 			pDC->LineTo(pt);
 		}
@@ -2161,7 +2164,7 @@ void CDXFellipse::Draw(CDC* pDC) const
 #ifdef _DEBUGDRAW_DXF
 	CMagaDbg	dbg("CDXFellipse::Draw()", DBG_RED);
 #endif
-	double	sq = m_sqDraw,
+	double	sq = m_sqDraw, st,
 			dShort = m_dDrawLongLength * m_dShort;
 
 	CPointD	pt(m_dDrawLongLength * cos(sq), dShort * sin(sq));
@@ -2172,7 +2175,9 @@ void CDXFellipse::Draw(CDC* pDC) const
 	dbg.printf("pts.x=%d pts.y=%d", (int)pt.x, (int)pt.y);
 #endif
 	if ( m_bRoundOrig ) {
-		for ( sq+=ARCSTEP; sq<m_eqDraw; sq+=ARCSTEP ) {
+		st = (m_eqDraw - sq) / ARCCOUNT;
+//		for ( sq+=ARCSTEP; sq<m_eqDraw; sq+=ARCSTEP ) {
+		for ( sq+=st; sq<m_eqDraw; sq+=st ) {
 			pt.SetPoint(m_dDrawLongLength * cos(sq), dShort * sin(sq));
 			ptDraw.SetPoint(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin + m_ptDraw.x,
 							pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y);
@@ -2180,7 +2185,9 @@ void CDXFellipse::Draw(CDC* pDC) const
 		}
 	}
 	else {
-		for ( sq-=ARCSTEP; sq>m_eqDraw; sq-=ARCSTEP ) {
+		st = (sq - m_eqDraw) / ARCCOUNT;
+//		for ( sq-=ARCSTEP; sq>m_eqDraw; sq-=ARCSTEP ) {
+		for ( sq-=st; sq>m_eqDraw; sq-=st ) {
 			pt.SetPoint(m_dDrawLongLength * cos(sq), dShort * sin(sq));
 			ptDraw.SetPoint(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin + m_ptDraw.x,
 							pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y);

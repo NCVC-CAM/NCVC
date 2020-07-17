@@ -20,7 +20,7 @@ extern	CMagaDbg	g_dbg;
 // from ReadDXF.cpp
 // ∏ﬁŸ∞Ãﬂ∫∞ƒﬁ
 extern	LPCTSTR	g_szGroupCode[];
-	//	"0", "1", "2", "3", "6", "8", "9", "62", "70", "72", "73"
+	//		"0", "1", "2", "3", "6", "8", "9", "70"
 
 // æ∏ºÆ›ñº
 extern	LPCTSTR	g_szSection[];
@@ -57,7 +57,7 @@ PFNMAKEVALUECYCLE	CDXFMake::ms_pfnMakeValueCycle = NULL;
 //////////////////////////////////////////////////////////////////////
 // ç\íz/è¡ñ≈
 //////////////////////////////////////////////////////////////////////
-CDXFMake::CDXFMake(int nType, const CNCDoc* pDoc)
+CDXFMake::CDXFMake(enSECNAME nType, const CNCDoc* pDoc)
 {
 	m_strDXFarray.SetSize(0, 32);
 

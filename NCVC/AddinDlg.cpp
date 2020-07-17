@@ -14,7 +14,7 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CAddinDlg, CDialog)
 	//{{AFX_MSG_MAP(CAddinDlg)
-	ON_NOTIFY(LVN_ITEMCHANGED, IDC_ADDIN_LIST, OnItemChangedAddinList)
+	ON_NOTIFY(LVN_ITEMCHANGED, IDC_ADDIN_LIST, &CAddinDlg::OnItemChangedAddinList)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 

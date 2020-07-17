@@ -259,9 +259,9 @@ CString CNCMakeMill::GetValString(int xyz, double dVal, BOOL bSpecial)
 	case NCA_U:		// WireMode
 	case NCA_V:
 		break;			// ¾ÞÛ‚àÈ—ª‚¹‚¸‚Éo—Í
-	case NCA_I:
+	case NCA_I:		// [I|J]0‚ào—Í -> bSpecial==TRUE
 	case NCA_J:
-	case NCA_K:		// bSpecial==TRUE -> WireMode
+	case NCA_K:		// WireMode -> bSpecial==TRUE
 		if ( !bSpecial && fabs(dVal)<NCMIN )	// NC‚ÌŒ…—Ž‚¿Œë·–¢–ž‚È‚ç–³Ž‹
 			return strResult;
 		break;
@@ -383,6 +383,7 @@ void CNCMakeMill::SetStaticOption(const CNCMakeMillOpt* pNCMake)
 		ms_pfnMakeCircleSub	= &MakeCircleSub_IJ;
 		ms_pfnMakeArc		= &MakeArc_IJ;
 	}
+	ms_bIJValue = !GetFlg(MKNC_FLG_ZEROCUT_IJ);
 	// --- ‘È‰~Œö·
 	ms_dEllipse = GetDbl(MKNC_DBL_ELLIPSE);
 }

@@ -17,8 +17,8 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMakeDXFDlg1, CPropertyPage)
 	//{{AFX_MSG_MAP(CMakeDXFDlg1)
-	ON_BN_CLICKED(IDC_MKNC_NCFILEUP, OnMKDXFileUp)
-	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, OnKillFocusDXFFile)
+	ON_BN_CLICKED(IDC_MKNC_NCFILEUP, &CMakeDXFDlg1::OnMKDXFileUp)
+	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, &CMakeDXFDlg1::OnKillFocusDXFFile)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -42,10 +42,6 @@ CMakeDXFDlg1::CMakeDXFDlg1() : CPropertyPage(CMakeDXFDlg1::IDD)
 	m_bOut[2] = FALSE;
 	m_bOut[3] = FALSE;
 	//}}AFX_DATA_INIT
-}
-
-CMakeDXFDlg1::~CMakeDXFDlg1()
-{
 }
 
 void CMakeDXFDlg1::DoDataExchange(CDataExchange* pDX)

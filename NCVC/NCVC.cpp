@@ -21,6 +21,7 @@
 #include "ExtensionDlg.h"
 #include "ThreadDlg.h"
 #include "ThumbnailDlg.h"
+#include "CADbindDlg.h"
 #include "NCVCaddin.h"
 #include "NCVCaddinIF.h"
 #include "AddinDlg.h"
@@ -34,6 +35,7 @@ CTime	dbgtimeFileOpen;
 #endif
 #endif
 
+static	const int	MAXMRULSTCNT = 10;	// MRUｻｲｽﾞ
 extern	int		g_nProcesser = 1;		// ﾌﾟﾛｾｯｻ数(->検索ｽﾚｯﾄﾞ数)
 extern	LPTSTR	g_pszDelimiter = NULL;	// g_szGdelimiter[] + g_szNdelimiter[]
 extern	LPTSTR	g_pszExecDir = NULL;	// 実行ﾃﾞｨﾚｸﾄﾘ
@@ -65,26 +67,28 @@ extern	int		g_nLastPage_ViewSetup = 0;		// 表示系ｾｯﾄｱｯﾌﾟ
 // CNCVCApp
 
 BEGIN_MESSAGE_MAP(CNCVCApp, CWinAppEx)
-	ON_COMMAND(ID_APP_ABOUT, OnAppAbout)
-	ON_COMMAND(ID_FILE_OPEN, OnFileOpen)
-	ON_COMMAND(ID_FILE_THUMBNAIL, OnFileThumbnail)
-	ON_COMMAND(ID_FILE_CLANDOP, OnFileCloseAndOpen)
-	ON_COMMAND(ID_HELP_USING, OnHelp)
-	ON_COMMAND_RANGE(ID_HELP_USING2, ID_HELP_USING4, OnHelpUsing)
-	ON_COMMAND(ID_HELP_ADDIN, OnHelpAddin)
-	ON_COMMAND(ID_OPTION_MC, OnOptionMC)
-	ON_COMMAND(ID_OPTION_EDITMC, OnOptionEditMC)
-	ON_COMMAND(ID_OPTION_DXF, OnOptionDXF)
-	ON_COMMAND(ID_OPTION_MAKENC, OnOptionMakeNC)
-	ON_COMMAND(ID_OPTION_EDITNC, OnOptionEditNC)
-	ON_COMMAND(ID_OPTION_EXEC, OnOptionExec)
-	ON_COMMAND(ID_OPTION_EXT, OnOptionExt)
-	ON_COMMAND(ID_OPTION_VIEW_SETUP, OnViewSetup)
-	ON_COMMAND(ID_OPTION_VIEW_INPORT, OnViewSetupInport)
-	ON_COMMAND(ID_OPTION_VIEW_EXPORT, OnViewSetupExport)
-	ON_COMMAND(ID_WINDOW_ALLCLOSE, OnWindowAllClose)
-	ON_UPDATE_COMMAND_UI(ID_OPTION_EDITNC, OnUpdateOptionEdit)
-	ON_UPDATE_COMMAND_UI(ID_OPTION_EDITMC, OnUpdateOptionEdit)
+	ON_COMMAND(ID_APP_ABOUT, &CNCVCApp::OnAppAbout)
+	ON_COMMAND(ID_FILE_OPEN, &CNCVCApp::OnFileOpen)
+	ON_COMMAND(ID_FILE_THUMBNAIL, &CNCVCApp::OnFileThumbnail)
+	ON_COMMAND(ID_FILE_CADBIND, &CNCVCApp::OnFileCADbind)
+	ON_COMMAND(ID_FILE_CLANDOP, &CNCVCApp::OnFileCloseAndOpen)
+	ON_COMMAND(ID_HELP_USING, &CNCVCApp::OnHelp)
+	ON_COMMAND_RANGE(ID_HELP_USING2, ID_HELP_USING4, &CNCVCApp::OnHelpUsing)
+	ON_COMMAND(ID_HELP_ADDIN, &CNCVCApp::OnHelpAddin)
+	ON_COMMAND(ID_OPTION_MC, &CNCVCApp::OnOptionMC)
+	ON_COMMAND(ID_OPTION_EDITMC, &CNCVCApp::OnOptionEditMC)
+	ON_COMMAND(ID_OPTION_DXF, &CNCVCApp::OnOptionDXF)
+	ON_COMMAND(ID_OPTION_MAKENC, &CNCVCApp::OnOptionMakeNC)
+	ON_COMMAND(ID_OPTION_EDITNC, &CNCVCApp::OnOptionEditNC)
+	ON_COMMAND(ID_OPTION_EXEC, &CNCVCApp::OnOptionExec)
+	ON_COMMAND(ID_OPTION_EXT, &CNCVCApp::OnOptionExt)
+	ON_COMMAND(ID_OPTION_VIEW_SETUP, &CNCVCApp::OnViewSetup)
+	ON_COMMAND(ID_OPTION_VIEW_INPORT, &CNCVCApp::OnViewSetupInport)
+	ON_COMMAND(ID_OPTION_VIEW_EXPORT, &CNCVCApp::OnViewSetupExport)
+	ON_COMMAND(ID_WINDOW_ALLCLOSE, &CNCVCApp::OnWindowAllClose)
+	ON_UPDATE_COMMAND_UI(ID_OPTION_EDITNC, &CNCVCApp::OnUpdateOptionEdit)
+	ON_UPDATE_COMMAND_UI(ID_OPTION_EDITMC, &CNCVCApp::OnUpdateOptionEdit)
+	ON_UPDATE_COMMAND_UI(ID_FILE_CADBIND, &CNCVCApp::OnUpdateFileCADbind)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -134,6 +138,7 @@ CNCVCApp::~CNCVCApp()
 		delete[]	g_pszExecDir;
 }
 
+/////////////////////////////////////////////////////////////////////////////
 // 唯一の CNCVCApp オブジェクトです。
 
 CNCVCApp theApp;
@@ -168,7 +173,7 @@ BOOL CNCVCApp::InitInstance()
 	g_dbg.printf("Processer Count=%d", g_nProcesser);
 	g_dbg.printf("RegistryKey=%s", m_pszRegistryKey);
 #endif
-	LoadStdProfileSettings(10);	// 標準の INI ファイルのオプションをロードします (MRU を含む)
+	LoadStdProfileSettings(MAXMRULSTCNT);	// 標準の INI ファイルのオプションをロードします (MRU を含む)
 	InitialRecentViewList();	// MRUﾘｽﾄからCRecentViewInfo構築
 
 	// VC++2008SP1以降のコントロール初期化
@@ -190,7 +195,7 @@ BOOL CNCVCApp::InitInstance()
 		IDR_NCTYPE,
 		RUNTIME_CLASS(CNCDoc),
 		RUNTIME_CLASS(CNCChild),
-		RUNTIME_CLASS(CNCViewTab));	// CTabView
+		RUNTIME_CLASS(CNCViewTab));	// CTabViewBase
 	m_pDocTemplate[TYPE_DXF] = new CNCVCDocTemplate(	// DXFﾄﾞｷｭﾒﾝﾄ
 		IDR_DXFTYPE,
 		RUNTIME_CLASS(CDXFDoc),
@@ -283,8 +288,11 @@ int CNCVCApp::ExitInstance()
 
 	// MRUﾘｽﾄに準拠した描画情報を保存
 	WriteRecentViewList();
-	for ( pos=m_liRecentView.GetHeadPosition(); pos; )
-		delete	m_liRecentView.GetNext(pos);
+	for ( pos=m_liRecentView.GetHeadPosition(); pos; ) {
+		CRecentViewInfo* pInfo = m_liRecentView.GetNext(pos);
+		if ( pInfo )
+			delete	pInfo;
+	}
 	m_liRecentView.RemoveAll();
 
 	// ｵﾌﾟｼｮﾝ関連の削除
@@ -302,7 +310,7 @@ int CNCVCApp::ExitInstance()
 	// ｱﾄﾞｲﾝ情報削除
 	for ( i=0; i<m_obAddin.GetSize(); i++ )
 		delete	m_obAddin[i];
-	WORD		wKey;
+	WORD			wKey;
 	CNCVCaddinMap*	pAddin;
 	for ( pos=m_mpAddin.GetStartPosition(); pos; ) {
 		m_mpAddin.GetNextAssoc(pos, wKey, pAddin);
@@ -351,8 +359,6 @@ BOOL CNCVCApp::NCVCRegInit(void)
 	CMagaDbg	dbg("NCVCRegInit()\nStart");
 #endif
 	CString		strRegKey, strEntry;
-	CRecentViewInfo::VINFO*	bi;
-	UINT					n;
 
 	// 外部ｱﾌﾟﾘｹｰｼｮﾝの数(数勘定は下位互換のため)
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
@@ -385,6 +391,8 @@ BOOL CNCVCApp::NCVCRegInit(void)
 
 	try {
 		// OpenGL Default View Info
+		CRecentViewInfo::VINFO*	bi;
+		UINT					n;
 		VERIFY(strEntry.LoadString(IDS_REG_NCV_DEFGLINFO));
 		if ( GetProfileBinary(strRegKey, strEntry, (LPBYTE*)&bi, &n) ) {
 			ASSERT( n==sizeof(CRecentViewInfo::VINFO) );
@@ -521,19 +529,25 @@ void CNCVCApp::InitialRecentViewList(void)
 	CString		strRegKey, strEntry;
 	CRecentViewInfo*		pInfo;
 	CRecentViewInfo::VINFO*	bi;
+#ifdef _DEBUG
+	UINT					n = sizeof(CRecentViewInfo::VINFO);
+#else
 	UINT					n;
+#endif
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_RECENTVIEWINFO));
 
 	for ( int i=0; i<m_pRecentFileList->GetSize(); i++ ) {
-		pInfo = new CRecentViewInfo(m_pRecentFileList->operator[](i));
 		// Recent View List のﾚｼﾞｽﾄﾘ読み込み
 		strEntry.Format(m_pRecentFileList->m_strEntryFormat, i+1);	// File%d
 		if ( GetProfileBinary(strRegKey, strEntry, (LPBYTE*)&bi, &n) ) {
-			ASSERT( n==sizeof(CRecentViewInfo::VINFO) );
+			ASSERT( n == sizeof(CRecentViewInfo::VINFO) );
+			pInfo = new CRecentViewInfo(m_pRecentFileList->operator[](i));
 			pInfo->SetViewInfo(bi->objectXform, bi->rcView, bi->ptCenter);
 			delete	bi;		// GetProfileBinary() Specification
 		}
+		else
+			pInfo = NULL;
 		// ﾘｽﾄ登録
 		m_liRecentView.AddTail(pInfo);
 	}
@@ -548,16 +562,13 @@ void CNCVCApp::WriteRecentViewList(void)
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_RECENTVIEWINFO));
 
-	for ( pos=m_liRecentView.GetHeadPosition(); pos && nCnt<10; nCnt++) {
-		strEntry.Format(m_pRecentFileList->m_strEntryFormat, nCnt+1);
+	for ( pos=m_liRecentView.GetHeadPosition(); pos && nCnt<MAXMRULSTCNT; nCnt++) {
 		pInfo = m_liRecentView.GetNext(pos);
-		if ( pInfo->m_bInfo ) {
+		strEntry.Format(m_pRecentFileList->m_strEntryFormat, nCnt+1);
+		if ( pInfo && pInfo->m_bGLActivate )
 			WriteProfileBinary(strRegKey, strEntry, (LPBYTE)&(pInfo->m), sizeof(CRecentViewInfo::VINFO));
-		}
-		else {
-			// ｷｰの消去
+		else
 			WriteProfileString(strRegKey, strEntry, NULL);
-		}
 	}
 }
 
@@ -568,7 +579,7 @@ void CNCVCApp::AddToRecentViewList(LPCTSTR lpszPathName)
 
 	for ( pos1=m_liRecentView.GetHeadPosition(); (pos2=pos1); ) {
 		pInfo = m_liRecentView.GetNext(pos1);
-		if ( pInfo->m_strFile.CompareNoCase(lpszPathName) == 0 ) {
+		if ( pInfo && pInfo->m_strFile.CompareNoCase(lpszPathName) == 0 ) {
 			// 文字列があれば，それを消して先頭へ
 			m_liRecentView.RemoveAt(pos2);
 			m_liRecentView.AddHead(pInfo);
@@ -579,6 +590,13 @@ void CNCVCApp::AddToRecentViewList(LPCTSTR lpszPathName)
 	// なければ先頭に追加
 	pInfo = new CRecentViewInfo(lpszPathName);
 	m_liRecentView.AddHead(pInfo);
+
+	while ( m_liRecentView.GetSize() > MAXMRULSTCNT ) {
+		pInfo = m_liRecentView.GetTail();
+		if ( pInfo )
+			delete	pInfo;
+		m_liRecentView.RemoveTail();
+	}
 }
 
 void CNCVCApp::SetDefaultViewInfo(const GLdouble objectXform[4][4])
@@ -837,16 +855,16 @@ BOOL CNCVCApp::NCVCAddinMenu(void)
 		// 「ﾌｧｲﾙ」ﾒﾆｭｰの場合は，ﾒﾆｭｰ順番指定
 		switch ( i ) {
 		case NCVCADIN_ARY_APPFILE:	// ﾒｲﾝﾌﾚｰﾑの「ﾌｧｲﾙ」ﾒﾆｭｰ
-			pMenu->InsertMenu(2, MF_BYPOSITION|MF_SEPARATOR);
-			pMenu->InsertMenu(3, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->InsertMenu(4, MF_BYPOSITION|MF_SEPARATOR);
+			pMenu->InsertMenu(5, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
 			break;
 		case NCVCADIN_ARY_NCDFILE:	// NCD の「ﾌｧｲﾙ」ﾒﾆｭｰ
-			pMenu->InsertMenu(9,  MF_BYPOSITION|MF_SEPARATOR);
-			pMenu->InsertMenu(10, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->InsertMenu(12,  MF_BYPOSITION|MF_SEPARATOR);
+			pMenu->InsertMenu(13, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
 			break;
 		case NCVCADIN_ARY_DXFFILE:	// DXF の「ﾌｧｲﾙ」ﾒﾆｭｰ
-			pMenu->InsertMenu(7, MF_BYPOSITION|MF_SEPARATOR);
-			pMenu->InsertMenu(8, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->InsertMenu(12, MF_BYPOSITION|MF_SEPARATOR);
+			pMenu->InsertMenu(13, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
 			break;
 		default:	// それ以外は追加
 			pMenu->AppendMenu(MF_SEPARATOR);
@@ -936,28 +954,13 @@ BOOL CNCVCApp::GetDlgWindow(int nID, CPoint* lpt)
 	return TRUE;
 }
 
-CNCDoc* CNCVCApp::GetAlreadyNCDocument(LPCTSTR strPathName)
+CDocument* CNCVCApp::GetAlreadyDocument(DOCTYPE enType, LPCTSTR strPathName)
 {
-	CNCDoc*		pDoc;
-	for ( POSITION pos=m_pDocTemplate[TYPE_NCD]->GetFirstDocPosition(); pos; ) {
-		pDoc = (CNCDoc *)(m_pDocTemplate[TYPE_NCD]->GetNextDoc(pos));
+	CDocument*		pDoc;
+	for ( POSITION pos=m_pDocTemplate[enType]->GetFirstDocPosition(); pos; ) {
+		pDoc = m_pDocTemplate[enType]->GetNextDoc(pos);
 #ifdef _DEBUG
-		g_dbg.printf("GetAlreadyNCDocument() DocPathName=%s", pDoc->GetPathName());
-#endif
-		if ( !strPathName || pDoc->GetPathName().CompareNoCase(strPathName)==0 )
-			return pDoc;
-	}
-
-	return NULL;
-}
-
-CDXFDoc* CNCVCApp::GetAlreadyDXFDocument(LPCTSTR strPathName)
-{
-	CDXFDoc*	pDoc;
-	for ( POSITION pos=m_pDocTemplate[TYPE_DXF]->GetFirstDocPosition(); pos; ) {
-		pDoc = (CDXFDoc *)(m_pDocTemplate[TYPE_DXF]->GetNextDoc(pos));
-#ifdef _DEBUG
-		g_dbg.printf("GetAlreadyDXFDocument() DocPathName=%s", pDoc->GetPathName());
+		g_dbg.printf("GetAlreadyDocument() DocPathName=%s", pDoc->GetPathName());
 #endif
 		if ( !strPathName || pDoc->GetPathName().CompareNoCase(strPathName)==0 )
 			return pDoc;
@@ -986,8 +989,8 @@ void CNCVCApp::ReloadDXFDocument(void)
 	try {
 		// Reloadﾌﾗｸﾞのﾄﾞｷｭﾒﾝﾄを取得 from CDxfSetup::OnReload()
 		for ( pos=m_pDocTemplate[TYPE_DXF]->GetFirstDocPosition(); pos; ) {
-			pDoc = (CDXFDoc *)(m_pDocTemplate[TYPE_DXF]->GetNextDoc(pos));
-			if ( pDoc->IsDXFDocFlag(DXFDOC_RELOAD) )
+			pDoc = static_cast<CDXFDoc*>(m_pDocTemplate[TYPE_DXF]->GetNextDoc(pos));
+			if ( pDoc->IsDocFlag(DXFDOC_RELOAD) )
 				ltDoc.AddTail(pDoc);
 		}
 		// 必要な情報を取得後，閉じて開く
@@ -1109,13 +1112,15 @@ const CExecOption* CNCVCApp::GetLookupExecID(WORD wID)
 	return NULL;
 }
 
-BOOL CNCVCApp::DoPromptFileNameEx(CString& strFileName)
+BOOL CNCVCApp::DoPromptFileNameEx(CStringArray& aryFile, int nInitFilter/*=-1*/)
 {
 #ifdef _DEBUG_FILEOPEN
 	g_dbg.printf("CNCVCApp::DoPromptFileNameEx() Start");
 #endif
-	int		i, nResult, nExt;
-	CString	strAllFilter, strFilter[SIZEOF(m_pDocTemplate)], strExt[SIZEOF(m_pDocTemplate)], strTmp;
+	int			i, nResult, nExt;
+	CString		strAllFilter,
+				strFilter[SIZEOF(m_pDocTemplate)], strExt[SIZEOF(m_pDocTemplate)],
+				strTmp;
 
 	// NCVCﾌｨﾙﾀ設定
 	for ( i=0; i<SIZEOF(m_pDocTemplate); i++ ) {
@@ -1142,12 +1147,28 @@ BOOL CNCVCApp::DoPromptFileNameEx(CString& strFileName)
 		nExt = 1;
 
 	// ﾌｧｲﾙ開くﾀﾞｲｱﾛｸﾞ
-	CFileDialog	dlg(TRUE, strExt[nExt], strFileName,
-		OFN_FILEMUSTEXIST|OFN_HIDEREADONLY, strAllFilter);
+	if ( aryFile.IsEmpty() )
+		strTmp.Empty();
+	else
+		strTmp = aryFile[0];
+	CFileDialog	dlg(TRUE, strExt[nExt], strTmp,
+		OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_ALLOWMULTISELECT, strAllFilter);
+
+	// 複数のﾌｧｲﾙを選択するための準備
+	const int	MAX_CFileDialog_FILE_COUNT = 99;
+	const int	FILE_LIST_BUFFER_SIZE = MAX_CFileDialog_FILE_COUNT * (_MAX_PATH+1) + 1;
+	dlg.m_ofn.lpstrFile	= strTmp.GetBuffer(FILE_LIST_BUFFER_SIZE);
+	dlg.m_ofn.nMaxFile	= FILE_LIST_BUFFER_SIZE;
+	if ( nInitFilter >= 0 )
+		dlg.m_ofn.nFilterIndex= nInitFilter + 2;	// TYPE_NCD->2 or TYPE_DXF->3
 	// ﾀﾞｲｱﾛｸﾞ表示
 	nResult = dlg.DoModal();
-	if ( nResult == IDOK )
-		strFileName = dlg.GetPathName();
+	if ( nResult == IDOK ) {
+		aryFile.RemoveAll();
+		for (POSITION pos = dlg.GetStartPosition(); pos; )
+			aryFile.Add(dlg.GetNextPathName(pos));
+	}
+	strTmp.ReleaseBuffer();
 
 	return nResult == IDOK;
 }
@@ -1161,11 +1182,15 @@ void CNCVCApp::OnFileOpen()
 	g_dbg.printf("CNCVCApp::OnFileOpen() Start");
 #endif
 	// MRU最新ﾘｽﾄのﾊﾟｽを有効にする
-	CString	newName(GetRecentFileName());
-	if ( !DoPromptFileNameEx(newName) )		// ｶｽﾀﾑﾌｧｲﾙｵｰﾌﾟﾝ
+	CString			newFile(GetRecentFileName());
+	CStringArray	aryFile;
+	if ( !newFile.IsEmpty() )
+		aryFile.Add(newFile);
+	if ( !DoPromptFileNameEx(aryFile) )		// ｶｽﾀﾑﾌｧｲﾙｵｰﾌﾟﾝ
 		return;
 
-	OpenDocumentFile(newName);
+	for ( int i=0; i<aryFile.GetCount(); i++ )
+		OpenDocumentFile(aryFile[i]);
 }
 
 void CNCVCApp::OnFileThumbnail()
@@ -1185,17 +1210,58 @@ void CNCVCApp::OnFileThumbnail()
 	OpenDocumentFile(dlg.m_strFile);
 }
 
+void CNCVCApp::OnUpdateFileCADbind(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(FALSE);
+}
+
+void CNCVCApp::OnFileCADbind()
+{
+	CCADbindDlg	dlg;
+	if ( dlg.DoModal() != IDOK )
+		return;
+	// ｵﾌﾟｼｮﾝの保存
+	if ( !m_pOptDXF->SaveBindOption() )
+		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
+
+	// ﾜｰｸ矩形の新規ﾄﾞｷｭﾒﾝﾄ生成と -> CDXFDoc::OnNewDocument()
+	// ﾋﾞｭｰ, ﾌﾚｰﾑの生成
+	CDocument*	pDoc = m_pDocTemplate[TYPE_DXF]->OpenDocumentFile(NULL);
+	if ( !pDoc ) {
+		NCVC_ControlErrorMsg(__FILE__, __LINE__);
+		return;
+	}
+	POSITION	pos = pDoc->GetFirstViewPosition();
+	ASSERT( pos );
+	CView*		pView = pDoc->GetNextView(pos);	// 親のCDXFView
+	ASSERT( pView );
+	
+	// ﾘｽﾄｱｯﾌﾟﾌｧｲﾙの読み込みｽﾚｯﾄﾞ生成
+	CThreadDlg	dlgThread(ID_FILE_CADBIND, pDoc, (WPARAM)&dlg.m_aryFile, (LPARAM)pView);
+	if ( dlgThread.DoModal() != IDOK ) {
+		// 新規ﾄﾞｷｭﾒﾝﾄを閉じる
+		m_pDocTemplate[TYPE_DXF]->RemoveDocument(pDoc);
+	}
+
+	// 統合ﾃﾞｰﾀの配置処理
+	pView->PostMessage(WM_USERBINDINIT);
+}
+
 void CNCVCApp::OnFileCloseAndOpen() 
 {
-	CString		newName(GetRecentFileName());
-	if ( !DoPromptFileNameEx(newName) )
+	CString			newFile(GetRecentFileName());
+	CStringArray	aryFile;
+	if ( !newFile.IsEmpty() )
+		aryFile.Add(newFile);
+	if ( !DoPromptFileNameEx(aryFile) )
 		return;
 
 	CMDIChildWnd*	pChild = AfxGetNCVCMainWnd()->MDIGetActive();
 	CDocument*		pDoc   = pChild ? pChild->GetActiveDocument() : NULL;
 	if ( pDoc )
 		pDoc->OnCloseDocument();
-	OpenDocumentFile(newName);
+	for ( int i=0; i<aryFile.GetCount(); i++ )
+		OpenDocumentFile(aryFile[i]);
 }
 
 void CNCVCApp::OnViewSetup() 
@@ -1534,6 +1600,14 @@ void NCVC_CriticalErrorMsg(LPCTSTR lpszProg, int nLine)
 	ExitProcess(-1);
 }
 
+void NCVC_ControlErrorMsg(LPCTSTR lpszProg, int nLine)
+{
+	CString	strMsg, strPath, strName;
+	::Path_Name_From_FullPath(lpszProg, strPath, strName);
+	strMsg.Format(IDS_ERR_CONTROL, strName, nLine);
+	AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
+}
+
 // ﾌｧｲﾙの存在ﾁｪｯｸ
 BOOL IsFileExist(LPCTSTR lpszFile, BOOL bExist/*=TRUE*/, BOOL bMsg/*=TRUE*/)
 {
@@ -1610,7 +1684,7 @@ int NCVC_FileDlgCommon
 
 CRecentViewInfo::CRecentViewInfo(LPCTSTR lpszPathName)
 {
-	m_bInfo = FALSE;
+	m_bGLActivate = FALSE;
 	if ( lpszPathName && lstrlen(lpszPathName)>0 )
 		m_strFile = lpszPathName;
 	for ( int i=0; i<SIZEOF(m.objectXform); i++ ) {
@@ -1622,7 +1696,7 @@ CRecentViewInfo::CRecentViewInfo(LPCTSTR lpszPathName)
 void CRecentViewInfo::SetViewInfo
 	(const GLdouble objectXform[4][4], const CRect3D& rcView, const CPointD& ptCenter)
 {
-	m_bInfo = TRUE;
+	m_bGLActivate = TRUE;
 	for ( int i=0; i<SIZEOF(m.objectXform); i++ ) {
 		for ( int j=0; j<SIZEOF(m.objectXform[0]); j++ )
 			m.objectXform[i][j] = objectXform[i][j];
@@ -1633,8 +1707,7 @@ void CRecentViewInfo::SetViewInfo
 
 BOOL CRecentViewInfo::GetViewInfo(GLdouble objectXform[4][4], CRect3D& rcView, CPointD& ptCenter) const
 {
-	if ( m_bInfo ) {
-		// 値がｾｯﾄされているときだけ更新
+	if ( m_bGLActivate ) {
 		for ( int i=0; i<SIZEOF(m.objectXform); i++ ) {
 			for ( int j=0; j<SIZEOF(m.objectXform[0]); j++ )
 				objectXform[i][j] = m.objectXform[i][j];
@@ -1643,7 +1716,7 @@ BOOL CRecentViewInfo::GetViewInfo(GLdouble objectXform[4][4], CRect3D& rcView, C
 		ptCenter = m.ptCenter;
 	}
 
-	return m_bInfo;
+	return m_bGLActivate;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1716,7 +1789,7 @@ CDocTemplate::Confidence
 				LPVOID	pFunc;
 				if ( IsExtension(strExt.Mid(1), &pFunc) ) {
 					AfxGetNCVCApp()->SetSerializeFunc((PFNNCVCSERIALIZEFUNC)pFunc);
-					match = yesAttemptForeign;
+					match = yesAttemptNative;
 				}
 			}
 		}
@@ -1730,7 +1803,7 @@ CDocument* CNCVCDocTemplate::OpenDocumentFile(LPCTSTR lpszPathName, BOOL bMakeVi
 	g_dbg.printf("CNCVCDocTemplate::OpenDocumentFile() Start");
 
 	CTime	t1 = dbgtimeFileOpen = CTime::GetCurrentTime();
-	CDocument* pDoc = CMultiDocTemplate::OpenDocumentFile(lpszPathName, bMakeVisible);
+	CDocument* pDoc = __super::OpenDocumentFile(lpszPathName, bMakeVisible);
 	CTime	t2 = CTime::GetCurrentTime();
 
 	CTimeSpan ts = t2 - t1;

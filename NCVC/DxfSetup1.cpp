@@ -14,7 +14,7 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CDxfSetup1, CPropertyPage)
 	//{{AFX_MSG_MAP(CDxfSetup1)
-	ON_BN_CLICKED(IDC_DXF_RELOAD, OnReload)
+	ON_BN_CLICKED(IDC_DXF_RELOAD, &CDxfSetup1::OnReload)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -29,11 +29,7 @@ CDxfSetup1::CDxfSetup1() : CPropertyPage(CDxfSetup1::IDD)
 	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
 	m_strOrgLayer	= pOpt->m_strReadLayer[DXFORGLAYER];
 	m_strCamLayer	= pOpt->m_strReadLayer[DXFCAMLAYER];
-	m_nOrgType		= pOpt->m_nDXF[DXFOPT_ORGTYPE];
-}
-
-CDxfSetup1::~CDxfSetup1()
-{
+	m_nOrgType		= pOpt->m_nOrgType;
 }
 
 void CDxfSetup1::DoDataExchange(CDataExchange* pDX)
@@ -78,7 +74,7 @@ BOOL CDxfSetup1::OnApply()
 	pOpt->m_strReadLayer[DXFORGLAYER]	= m_strOrgLayer;
 	pOpt->m_strReadLayer[DXFCAMLAYER]	= m_strCamLayer;
 	pOpt->m_regCutter = m_strCamLayer;
-	pOpt->m_nDXF[DXFOPT_ORGTYPE] = m_nOrgType;
+	pOpt->m_nOrgType  = m_nOrgType;
 
 	return TRUE;
 }

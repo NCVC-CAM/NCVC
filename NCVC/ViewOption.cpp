@@ -49,7 +49,8 @@ extern	LPCTSTR	g_szDxfViewColDef[] = {
 	"0:255:0",		// 加工開始位置指示ﾚｲﾔ
 	"0:255:0",		// 強制移動指示ﾚｲﾔ
 	"255:255:0",	// ｺﾒﾝﾄ用ﾃｷｽﾄ文字
-	"0:255:255"		// 輪郭ｵﾌﾞｼﾞｪｸﾄ
+	"0:255:255",	// 輪郭ｵﾌﾞｼﾞｪｸﾄ
+	"255:255:0"		// ﾜｰｸ矩形(bind)
 };
 extern	const	int		g_nViewLineTypeDef[] = {
 	2, 0
@@ -59,7 +60,7 @@ extern	const	int		g_nNcViewLineTypeDef[] = {
 	2, 0, 0, 3, 2, 2
 };
 extern	const	int		g_nDxfViewLineTypeDef[] = {
-	2, 0, 2, 0, 0
+	2, 0, 2, 0, 0, 1
 };
 extern	const	PENSTYLE	g_penStyle[] = {
 	{"実線", PS_SOLID,
@@ -83,8 +84,15 @@ extern	const	PENSTYLE	g_penStyle[] = {
 			{20.0, -1.0, 0.0, -1.0, 0.0, -1.0},
 		0xf333 }
 };
-extern	const	int	g_nTraceSpeed[] = {
+extern	const	int		g_nTraceSpeed[] = {
 	10, 300, 600
+};
+extern	const	int		g_nForceView01[] = {
+	// 0:XYZ, 1:XY, 2:XZ, 3:YZ
+	0, 3, 2, 1		// 4面-1：左上, 右上, 左下, 右下
+};
+extern	const	int		g_nForceView02[] = {
+	3, 2, 1, 0		// 4面-2：左上, 左中, 左下, 右
 };
 extern	const	double	g_dDefaultGuideLength = 50.0;
 
@@ -215,6 +223,18 @@ CViewOption::CViewOption()
 	m_nMillType = AfxGetApp()->GetProfileInt(strRegKey, strEntry, m_nMillType);
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
 	m_strTexture = AfxGetApp()->GetProfileString(strRegKey, strEntry);
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW01));
+	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
+		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		m_nForceView01[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntryFormat,
+								m_nForceView01[i]);
+	}
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW02));
+	for ( i=0; i<SIZEOF(m_nForceView02); i++ ) {
+		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		m_nForceView02[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntryFormat,
+								m_nForceView02[i]);
+	}
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -254,6 +274,8 @@ void CViewOption::AllDefaultSetting(void)
 	ASSERT( SIZEOF(m_nTraceSpeed) == SIZEOF(g_nTraceSpeed) );
 	ASSERT( SIZEOF(m_lfFont) == SIZEOF(g_nFontSize) );
 	ASSERT( SIZEOF(m_bNCFlag) == SIZEOF(g_bDefaultSetting) );
+	ASSERT( SIZEOF(m_nForceView01) == SIZEOF(g_nForceView01) );
+	ASSERT( SIZEOF(m_nForceView02) == SIZEOF(g_nForceView02) );
 	//
 	int		i;
 	//
@@ -293,6 +315,10 @@ void CViewOption::AllDefaultSetting(void)
 	//
 	m_dDefaultEndmill = 0.5;	// ﾃﾞﾌｫﾙﾄｴﾝﾄﾞﾐﾙ径 1mm
 	m_nMillType = 0;			// ｽｸｳｪｱｴﾝﾄﾞﾐﾙ
+	for ( i=0; i<SIZEOF(m_nForceView01); i++ )
+		m_nForceView01[i] = g_nForceView01[i];
+	for ( i=0; i<SIZEOF(m_nForceView02); i++ )
+		m_nForceView02[i] = g_nForceView02[i];
 	//
 	for ( i=0; i<SIZEOF(m_colDXFView); i++ )
 		m_colDXFView[i] = ConvertSTRtoRGB(g_szDxfViewColDef[i]);
@@ -388,6 +414,18 @@ BOOL CViewOption::SaveViewOption(void)
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
 	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, m_strTexture) )
 		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW01));
+	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
+		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntryFormat, m_nForceView01[i]) )
+			return FALSE;
+	}
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW02));
+	for ( i=0; i<SIZEOF(m_nForceView02); i++ ) {
+		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntryFormat, m_nForceView02[i]) )
+			return FALSE;
+	}
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -503,6 +541,20 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
 	if ( !::WritePrivateProfileString(strRegKey, strEntry, m_strTexture, lpszFileName) )
 		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW01));
+	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
+		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strResult.Format("%d", m_nForceView01[i]);
+		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
+			return FALSE;
+	}
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW02));
+	for ( i=0; i<SIZEOF(m_nForceView02); i++ ) {
+		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strResult.Format("%d", m_nForceView02[i]);
+		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
+			return FALSE;
+	}
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -611,6 +663,18 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 			szResult, _MAX_PATH, lpszFileName);
 	if ( lstrlen(szResult) > 0 )
 		m_strTexture = szResult;
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW01));
+	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
+		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		m_nForceView01[i] = ::GetPrivateProfileInt(strRegKey, strEntryFormat,
+								m_nForceView01[i], lpszFileName);
+	}
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW02));
+	for ( i=0; i<SIZEOF(m_nForceView02); i++ ) {
+		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		m_nForceView02[i] = ::GetPrivateProfileInt(strRegKey, strEntryFormat,
+								m_nForceView02[i], lpszFileName);
+	}
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));

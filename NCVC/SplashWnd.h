@@ -34,7 +34,6 @@ public:
 
 // インプリメンテーション
 public:
-	virtual ~CSplashWnd();
 
 	// 生成されたメッセージ マップ関数
 protected:

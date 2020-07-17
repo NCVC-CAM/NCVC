@@ -129,12 +129,8 @@ CNCMakeWire::CNCMakeWire(int nCode, const CPointD& pt, double dFeed, double dTap
 	if ( dTaper != 0.0 ) {
 		if ( nCode == 0 )
 			strTaper = GetGString(50) + "T0";
-		else {
-			if ( dTaper > 0 )
-				strTaper = GetGString(51) + "T" + (*ms_pfnGetValDetail)(dTaper);
-			else
-				strTaper = GetGString(52) + "T" + (*ms_pfnGetValDetail)(fabs(dTaper));
-		}
+		else
+			strTaper = GetGString(dTaper>0 ? 51:52) + "T" + (*ms_pfnGetValDetail)(fabs(dTaper));
 	}
 	// ˆÚ“®º°ÄŞ
 	CString	strGcode(GetValString(NCA_X, pt.x, FALSE) +
@@ -222,6 +218,7 @@ void CNCMakeWire::SetStaticOption(const CNCMakeWireOpt* pNCMake)
 	ms_pfnMakeCircleSub	= &MakeCircleSub_IJ;
 	ms_pfnMakeHelical	= &MakeCircle_IJ_Helical;	// •ÛŒ¯(Ü²Ô‰ÁH‚É‚Í–³‚¢)
 	ms_pfnMakeArc		= &MakeArc_IJ;
+	ms_bIJValue			= FALSE;
 	// --- ‘È‰~Œö·
 	ms_dEllipse = GetDbl(MKWI_DBL_ELLIPSE);
 }

@@ -17,8 +17,9 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-using namespace std;
+using std::vector;
 using namespace boost;
+
 static	CThreadDlg*	g_pParent;
 #define	IsThread()	g_pParent->IsThreadContinue()
 
@@ -844,7 +845,7 @@ BOOL CheckOffsetIntersection
 		for ( i=0; i<SIZEOF(vInfo) && IsThread(); i++ ) {
 			for ( it=vInfo[i].begin(); it!=vInfo[i].end() && IsThread(); ++it ) {
 				pos1 = it->pos;
-				pos2 = next(it)!=vInfo[i].end() ? next(it)->pos : vInfo[i][0].pos;
+				pos2 = boost::next(it)!=vInfo[i].end() ? boost::next(it)->pos : vInfo[i][0].pos;
 				for ( n=0; pos1!=pos2 && IsThread(); ) {
 					pData1 = pChain1->GetNext(pos1);
 					if ( pData1 )
@@ -885,10 +886,10 @@ BOOL CheckOffsetIntersection
 			}
 			// 交点情報２個飛ばしで、その間のｵﾌﾞｼﾞｪｸﾄを消去
 			for ( it=vInfo[i].begin(); it!=vInfo[i].end(); it+=2 ) {
-				if ( next(it) == vInfo[i].end() )
+				if ( boost::next(it) == vInfo[i].end() )
 					break;	// 奇数分は除く
 				pos1 = it->pos;
-				pos2 = next(it)->pos;
+				pos2 = boost::next(it)->pos;
 				// pos1 が示すｵﾌﾞｼﾞｪｸﾄの終点を更新
 				pData1 = pChain1->GetNext(pos1);
 				if ( !pos1 )
@@ -912,7 +913,7 @@ BOOL CheckOffsetIntersection
 					}
 					pData1 = pChain1->GetAt(pos1);
 					d.pData	= pData1;
-					d.pt	= next(it)->pt;
+					d.pt	= boost::next(it)->pt;
 					d.n		= 0;	// 始点変更ﾏｰｸ
 					v.push_back(d);
 					pChain1->InsertBefore(pos1, (CDXFdata *)NULL);		// 分離ﾏｰｸ
@@ -923,7 +924,7 @@ BOOL CheckOffsetIntersection
 						// 円・楕円の場合は、円・楕円孤に変身
 						pData2 = pData1;	// delete用
 						pData1 = ChangeCircleToArc(static_cast<CDXFcircle *>(pData1),
-							it->pChain, it->pt, next(it)->pt);
+							it->pChain, it->pt, boost::next(it)->pt);
 						if ( pData1 ) {
 							pData2->SetDxfFlg(DXFFLG_OFFSET_EXCLUDE);
 							pChain1->AddTail(pData1);
@@ -931,7 +932,7 @@ BOOL CheckOffsetIntersection
 						}
 					}
 					else {
-						pData1 = CreateDxfOffsetObject(pData1, next(it)->pt, pt[0]);	// 次の交点と変更前終点(CDXFshape)
+						pData1 = CreateDxfOffsetObject(pData1, boost::next(it)->pt, pt[0]);	// 次の交点と変更前終点(CDXFshape)
 						pos = pChain1->InsertBefore(pos1, pData1);		// ｵﾌﾞｼﾞｪｸﾄ挿入
 						pChain1->InsertBefore(pos, (CDXFdata *)NULL);	// 分離ﾏｰｸ
 					}

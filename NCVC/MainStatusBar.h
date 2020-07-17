@@ -35,7 +35,6 @@ public:
 
 // インプリメンテーション
 public:
-	virtual ~CMainStatusBar();
 
 	// 生成されたメッセージ マップ関数
 protected:

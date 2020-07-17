@@ -15,7 +15,6 @@ class CMakeNCDlgEx3 : public CPropertyPage
 
 public:
 	CMakeNCDlgEx3();
-	virtual ~CMakeNCDlgEx3();
 
 // ダイアログ データ
 	enum { IDD = IDD_MAKENCD_EX3 };

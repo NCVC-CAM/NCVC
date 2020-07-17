@@ -81,7 +81,7 @@ public:
 		return m_pbFlags[n];
 	}
 	CString	GetStr(int n) const {		// •¶Žš—ñµÌß¼®Ý
-		ASSERT( n>=0 && n<m_strOption.GetSize() );
+		ASSERT( n>=0 && n<m_strOption.GetCount() );
 		return m_strOption[n];
 	}
 

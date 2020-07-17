@@ -231,6 +231,7 @@ void CNCMakeLathe::SetStaticOption(const CNCMakeLatheOpt* pNCMake)
 		ms_pfnMakeCircleSub	= &MakeCircleSub_IJ;
 		ms_pfnMakeArc		= &MakeArc_IJ;
 	}
+	ms_bIJValue = !GetFlg(MKLA_FLG_ZEROCUT_IJ);
 	// --- ë»â~åˆç∑
 	ms_dEllipse = GetDbl(MKLA_DBL_ELLIPSE);
 }

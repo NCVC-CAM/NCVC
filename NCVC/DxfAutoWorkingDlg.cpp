@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "MainFrm.h"
 #include "DXFDoc.h"
 #include "DxfAutoWorkingDlg.h"
 
@@ -14,8 +15,8 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CDxfAutoWorkingDlg, CDialog)
 	//{{AFX_MSG_MAP(CDxfAutoWorkingDlg)
-	ON_BN_CLICKED(IDC_AUTO_SELECT_OUTLINE, OnBnClickedSelect)
-	ON_BN_CLICKED(IDC_AUTO_SELECT_POCKET, OnBnClickedSelect)
+	ON_BN_CLICKED(IDC_AUTO_SELECT_OUTLINE, &CDxfAutoWorkingDlg::OnBnClickedSelect)
+	ON_BN_CLICKED(IDC_AUTO_SELECT_POCKET, &CDxfAutoWorkingDlg::OnBnClickedSelect)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 

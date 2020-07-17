@@ -33,6 +33,7 @@ protected:
 	static	int		ms_nCnt;		// ﾌｧｲﾙ出力時の行ﾅﾝﾊﾞｰ
 	static	int		ms_nMagni;		// 行番号倍率
 	static	int		ms_nCircleCode;	// 円ﾃﾞｰﾀの切削指示(2 or 3)
+	static	BOOL	ms_bIJValue;	// [I|J]0を生成するかどうか
 	static	double	ms_dEllipse;	// 楕円公差
 	static	CString	ms_strEOB;		// EOB
 

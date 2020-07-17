@@ -14,8 +14,8 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMKNCSetup4, CPropertyPage)
 	//{{AFX_MSG_MAP(CMKNCSetup4)
-	ON_CBN_SELCHANGE(IDC_MKNC4_DWELLFORMAT, OnSelchangeDwellFormat)
-	ON_BN_CLICKED(IDC_MKNC4_CIRCLE, OnCircle)
+	ON_CBN_SELCHANGE(IDC_MKNC4_DWELLFORMAT, &CMKNCSetup4::OnSelchangeDwellFormat)
+	ON_BN_CLICKED(IDC_MKNC4_CIRCLE, &CMKNCSetup4::OnCircle)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -36,10 +36,6 @@ CMKNCSetup4::CMKNCSetup4() : CPropertyPage(CMKNCSetup4::IDD),
 	m_nSort				= -1;
 	m_nCircleProcess	= -1;
 	//}}AFX_DATA_INIT
-}
-
-CMKNCSetup4::~CMKNCSetup4()
-{
 }
 
 void CMKNCSetup4::DoDataExchange(CDataExchange* pDX)

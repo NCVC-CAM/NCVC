@@ -333,18 +333,18 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 			str = szResult;
 			tok.assign(str);
 			tool.ClearOption();
-			for ( j=0, it=tok.begin(); j<MCTOOLINFOOPT && it!=tok.end(); j++, ++it ) {
+			for ( j=0, it=tok.begin(); j<MCTOOL_NUMS && it!=tok.end(); j++, ++it ) {
 				switch ( j ) {
-				case 0:		// ‚s”Ô†
+				case MCTOOL_T:		// ‚s”Ô†
 					tool.m_nTool = atoi(it->c_str());
 					break;
-				case 1:		// H‹ï–¼
+				case MCTOOL_NAME:	// H‹ï–¼
 					tool.m_strName = it->c_str();
 					break;
-				case 2:		// Œa•â³
+				case MCTOOL_D:		// Œa•â³
 					tool.m_dToolD = atof(it->c_str());
 					break;
-				case 3:		// ’·•â³
+				case MCTOOL_H:		// ’·•â³
 					tool.m_dToolH = atof(it->c_str());
 					break;
 				}

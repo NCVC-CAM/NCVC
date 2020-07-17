@@ -1,4 +1,4 @@
-// TabView.h: CTabView クラスのインターフェイス
+// TabView.h: CTabViewBase クラスのインターフェイス
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -7,14 +7,14 @@
 /////////////////////////////////////////////////////////////////////////////
 // Tabｺﾝﾄﾛｰﾙにﾋﾞｭｰｸﾗｽを載せる基本ｸﾗｽ
 
-class CTabView : public CCtrlView  
+class CTabViewBase : public CCtrlView  
 {
 	CTypedPtrArrayEx<CObArray, CWnd*> m_pPages;
 
 public:
-	CTabView() : CCtrlView(WC_TABCONTROL,
-		AFX_WS_DEFAULT_VIEW|WS_CLIPCHILDREN|WS_CLIPSIBLINGS) {}
-	DECLARE_DYNCREATE(CTabView)
+	CTabViewBase() : CCtrlView(WC_TABCONTROL,
+		AFX_WS_DEFAULT_VIEW|WS_CLIPCHILDREN|WS_CLIPSIBLINGS|TCS_FOCUSNEVER) {}
+	DECLARE_DYNCREATE(CTabViewBase)
 
 // アトリビュート
 public:
@@ -61,6 +61,7 @@ protected:
 // 生成されたメッセージ マップ関数
 	afx_msg	void	OnSize(UINT nType, int cx, int cy);
 	afx_msg	void	OnDestroy();
+	afx_msg BOOL	OnEraseBkgnd(CDC* pDC);
 	afx_msg	void	OnSelChanging(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg	void	OnSelChange(NMHDR* pNMHDR, LRESULT* pResult);
 

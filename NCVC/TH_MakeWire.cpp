@@ -13,7 +13,7 @@
 #include "MakeCustomCode.h"
 #include "ThreadDlg.h"
 
-using namespace std;
+using std::string;
 using namespace boost;
 
 #include "MagaDbgMac.h"
@@ -27,17 +27,17 @@ extern	CMagaDbg	g_dbg;
 //#define	_DBG_NCMAKE_TIME
 #endif
 
+// ｸﾞﾛｰﾊﾞﾙ変数定義
+static	CThreadDlg*			g_pParent;
+static	CDXFDoc*			g_pDoc;
+static	CNCMakeWireOpt*		g_pMakeOpt;
+
 // よく使う変数や呼び出しの簡略置換
 #define	IsThread()	g_pParent->IsThreadContinue()
 #define	GetFlg(a)	g_pMakeOpt->GetFlag(a)
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
 #define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
-
-// ｸﾞﾛｰﾊﾞﾙ変数定義
-static	CThreadDlg*			g_pParent;
-static	CDXFDoc*			g_pDoc;
-static	CNCMakeWireOpt*		g_pMakeOpt;
 
 // NC生成に必要なﾃﾞｰﾀ群
 static	CSortArray<CObArray, CDXFcircle*>
@@ -296,7 +296,7 @@ BOOL OutputWireCode(void)
 
 BOOL MakeWire_MainFunc(void)
 {
-	if ( !g_pDoc->IsDXFDocFlag(DXFDOC_SHAPE) ) {
+	if ( !g_pDoc->IsDocFlag(DXFDOC_SHAPE) ) {
 		// 形状認識処理を用いて図形集合を作成
 		if ( !CreateShapeThread() )
 			return FALSE;
@@ -382,8 +382,8 @@ int MakeLoopWireSearch(CDXFshape* pShapeBase, int nRef)
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	CShapeArray	obShape;	// 内側の形状集合一覧
-	CRectD	rc( pShapeBase->GetMaxRect() ),
-			rcBase(rc.TopLeft().RoundUp(), rc.BottomRight().RoundUp());
+	CRectD	rcBase(pShapeBase->GetMaxRect() ), rc;
+	rcBase.InflateRect(rcBase.Width()*0.05, rcBase.Height()*0.05);	// 計算誤差緩和のため10%拡大
 	int		i, j, nCnt = 0;
 	obShape.SetSize(0, 64);
 

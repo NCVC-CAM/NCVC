@@ -15,11 +15,11 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMKNCSetup3, CPropertyPage)
 	//{{AFX_MSG_MAP(CMKNCSetup3)
-	ON_CBN_SELCHANGE(IDC_MKNC3_MAKEEND, OnSelchangeMakeEnd)
-	ON_CBN_SELCHANGE(IDC_MKNC3_APROCESS, OnSelchangeProcess)
-	ON_CBN_SELCHANGE(IDC_MKNC3_CPROCESS, OnSelchangeProcess)
-	ON_BN_CLICKED(IDC_MKNC3_DEEP, OnDeep)
-	ON_BN_CLICKED(IDC_MKNC3_FINISH, OnDeepFinish)
+	ON_CBN_SELCHANGE(IDC_MKNC3_MAKEEND, &CMKNCSetup3::OnSelchangeMakeEnd)
+	ON_CBN_SELCHANGE(IDC_MKNC3_APROCESS, &CMKNCSetup3::OnSelchangeProcess)
+	ON_CBN_SELCHANGE(IDC_MKNC3_CPROCESS, &CMKNCSetup3::OnSelchangeProcess)
+	ON_BN_CLICKED(IDC_MKNC3_DEEP, &CMKNCSetup3::OnDeep)
+	ON_BN_CLICKED(IDC_MKNC3_FINISH, &CMKNCSetup3::OnDeepFinish)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -39,10 +39,6 @@ CMKNCSetup3::CMKNCSetup3() : CPropertyPage(CMKNCSetup3::IDD),
 	m_bHelical		= FALSE;
 	m_bFinish		= FALSE;
 	//}}AFX_DATA_INIT
-}
-
-CMKNCSetup3::~CMKNCSetup3()
-{
 }
 
 void CMKNCSetup3::DoDataExchange(CDataExchange* pDX)

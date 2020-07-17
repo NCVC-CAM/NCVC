@@ -10,16 +10,20 @@
 #include "NCVCdefine.h"
 
 class	CDXFBlockData;
+class	CDXFDoc;
+class	CDXFView;
 
 // CDXFDoc ﾌﾗｸﾞ
 enum DXFDOCFLG {
 	DXFDOC_READY = 0,	// NC生成可能かどうか(ｴﾗｰﾌﾗｸﾞ)
 	DXFDOC_RELOAD,		// 再読込ﾌﾗｸﾞ(from DXFSetup.cpp)
 	DXFDOC_THREAD,		// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
+	DXFDOC_BINDPARENT,	// 統合ﾓｰﾄﾞ
+	DXFDOC_BIND,		// 統合ﾓｰﾄﾞ(子)
 	DXFDOC_SHAPE,		// 形状処理を行ったか
 	DXFDOC_LATHE,		// 旋盤用の原点(ﾜｰｸ径と端面)を読み込んだか
 	DXFDOC_WIRE,		// ﾜｲﾔ加工機用の生成が可能かどうか
-		DXFDOC_FLGNUM		// ﾌﾗｸﾞの数[6]
+		DXFDOC_FLGNUM		// ﾌﾗｸﾞの数[7]
 };
 
 // 自動処理ﾃﾞｰﾀ受け渡し構造体
@@ -42,19 +46,27 @@ struct	AUTOWORKINGDATA
 	}
 };
 // 自動形状処理ﾀｲﾌﾟ
-#define	AUTOWORKING			0
-#define	AUTORECALCWORKING	1
-#define	AUTOSTRICTOFFSET	2
+enum {
+	AUTOWORKING = 0,
+	AUTORECALCWORKING,
+	AUTOSTRICTOFFSET
+};
+
+// 結合のための情報
+typedef	struct tagCADBINDINFO {
+	CStatic*	pParent;
+	CDXFDoc*	pDoc;
+	CDXFView*	pView;
+} CADBINDINFO, *LPCADBINDINFO;
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFDoc ドキュメント
 
-class CDXFDoc : public CDocument, public CDocBase
+class CDXFDoc : public CDocBase<DXFDOC_FLGNUM>
 {
-	std::bitset<DXFDOC_FLGNUM>	m_bDxfDocFlg;	// CDXFDocﾌﾗｸﾞ
 	UINT	m_nShapeProcessID;		// 形状加工指示ID
 	AUTOWORKINGDATA	m_AutoWork;		// 自動輪郭処理ﾃﾞｰﾀ
-	CRect3D		m_rcMax;			// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
+	CRect3D			m_rcMax;		// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
 	CDXFcircleEx*	m_pCircle;		// 切削原点
 	CDXFline*		m_pLatheLine[2];// 旋盤用原点([0]:外径, [1]:端面)
 	boost::optional<CPointD>	m_ptOrgOrig;	// ﾌｧｲﾙから読み込んだｵﾘｼﾞﾅﾙ原点
@@ -64,6 +76,7 @@ class CDXFDoc : public CDocument, public CDocBase
 				m_nLayerDataCnt[DXFLAYERSIZE-1];	// ﾚｲﾔ別のﾃﾞｰﾀｶｳﾝﾄ(ORIGIN除く)
 	CLayerArray	m_obLayer;			// ﾚｲﾔ情報配列
 	CLayerMap	m_mpLayer;			// ﾚｲﾔ名をｷｰにしたﾏｯﾌﾟ
+	CSortArray<CPtrArray, LPCADBINDINFO>	m_bindInfo;	// 結合情報
 
 	// DXFｵﾌﾞｼﾞｪｸﾄ delete
 	void	RemoveData(CLayerData*, int);
@@ -76,10 +89,10 @@ class CDXFDoc : public CDocument, public CDocBase
 	// 原点補正の文字列を数値に変換
 	BOOL	GetEditOrgPoint(LPCTSTR, CPointD&);
 
-/*
-	ｽﾚｯﾄﾞﾊﾝﾄﾞﾙによるWaitForSingleObject()の代わりに
-	ｸﾘﾃｨｶﾙｾｸｼｮﾝを用いることで，ｽﾚｯﾄﾞﾊﾝﾄﾞﾙに対する終了通知(初期化)が必要なくなる
-*/
+//	---
+//	ｽﾚｯﾄﾞﾊﾝﾄﾞﾙによるWaitForSingleObject()の代わりに
+//	ｸﾘﾃｨｶﾙｾｸｼｮﾝを用いることで，ｽﾚｯﾄﾞﾊﾝﾄﾞﾙに対する終了通知(初期化)が必要なくなる
+//	---
 	// CDXFCircleの穴加工対象ﾃﾞｰﾀを元に戻す
 	CCriticalSection	m_csRestoreCircleType;	// ｽﾚｯﾄﾞﾊﾝﾄﾞﾙの代わり
 	static	UINT	RestoreCircleTypeThread(LPVOID);
@@ -90,14 +103,20 @@ protected: // シリアライズ機能のみから作成します。
 
 // アトリビュート
 public:
-	BOOL	IsDXFDocFlag(DXFDOCFLG n) const {
-		return m_bDxfDocFlg[n];
-	}
 	UINT	GetShapeProcessID(void) const {
 		return m_nShapeProcessID;
 	}
 	CDXFcircleEx*	GetCircleObject(void) const {
 		return m_pCircle;
+	}
+	boost::optional<CPointD>	GetCutterOrigin(void) const {
+		boost::optional<CPointD>	ptResult;
+		if ( m_pCircle )
+			ptResult = m_pCircle->GetCenter();
+		return ptResult;
+	}
+	double	GetCutterOrgR(void) const {
+		return m_pCircle ? m_pCircle->GetR() : 0.0;
 	}
 	CDXFline*		GetLatheLine(size_t n) const {
 		ASSERT(0<=n && n<SIZEOF(m_pLatheLine));
@@ -130,6 +149,13 @@ public:
 		CLayerData*	pLayer = NULL;
 		return m_mpLayer.Lookup(lpszLayer, pLayer) ? pLayer : NULL;
 	}
+	INT_PTR	GetBindInfoCnt(void) const {
+		return m_bindInfo.GetSize();
+	}
+	LPCADBINDINFO GetBindInfoData(INT_PTR n) const {
+		ASSERT(n>=0 && n<GetBindInfoCnt());
+		return m_bindInfo[n];
+	}
 	CString GetNCFileName(void) const {
 		return m_strNCFileName;
 	}
@@ -141,12 +167,6 @@ public:
 public:
 	// ｶｽﾀﾑｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞ
 	BOOL	RouteCmdToAllViews(CView*, UINT, int, void*, AFX_CMDHANDLERINFO*);
-	void	SetReadyFlg(BOOL bReady) {
-		m_bDxfDocFlg.set(DXFDOC_READY, bReady);
-	}
-	void	SetReload(BOOL bReload) {
-		m_bDxfDocFlg.set(DXFDOC_RELOAD, bReload);
-	}
 	// DXFｵﾌﾞｼﾞｪｸﾄの操作
 	void	DataOperation(CDXFdata*, ENDXFOPERATION = DXFADD, int = -1);
 	void	RemoveAt(LPCTSTR, int, int);
@@ -160,35 +180,28 @@ public:
 	void	UpdateLayerSequence(void);
 	//
 	void	AllChangeFactor(double) const;	// 拡大率の更新
-
-	boost::optional<CPointD>	GetCutterOrigin(void) {
-		boost::optional<CPointD>	ptResult;
-		if ( m_pCircle )
-			ptResult = m_pCircle->GetCenter();
-		return ptResult;
-	}
+	//
 	void	CreateCutterOrigin(const CPointD&, double, BOOL = FALSE);
 	void	CreateLatheLine(const CPointD&, const CPointD&);
 	void	CreateLatheLine(const CDXFline*, LPCDXFBLOCK);
-	double	GetCutterOrgR(void) {
-		return m_pCircle ? m_pCircle->GetR() : 0.0;
-	}
-
 	// ﾏｳｽｸﾘｯｸの位置と該当ｵﾌﾞｼﾞｪｸﾄの最小距離を返す
 	boost::tuple<CDXFshape*, CDXFdata*, double>	GetSelectObject(const CPointD&, const CRectD&);
+	//
+	void	AddBindInfo(LPCADBINDINFO pInfo) {
+		m_bindInfo.Add(pInfo);
+	}
+	void	SortBindInfo(void);
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 	//{{AFX_VIRTUAL(CDXFDoc)
 	public:
 	virtual void Serialize(CArchive& ar);   // ドキュメント I/O に対してオーバーライドされます。
+	virtual BOOL OnNewDocument();
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
 	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
 	virtual void OnCloseDocument();
-	virtual void ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault);
 	//}}AFX_VIRTUAL
-	// 更新ﾏｰｸ付与
-	virtual void SetModifiedFlag(BOOL bModified = TRUE);
 	// 変更されたﾄﾞｷｭﾒﾝﾄが閉じられる前にﾌﾚｰﾑﾜｰｸが呼び出し
 	virtual BOOL SaveModified();
 	// ﾌﾚｰﾑが２つあるのでｳｨﾝﾄﾞｳﾀｲﾄﾙの「:1」を防ぐ
@@ -198,8 +211,6 @@ public:
 public:
 	virtual ~CDXFDoc();
 #ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
 	// Serialize()後のﾃﾞｰﾀ詳細
 	void	DbgSerializeInfo(void);
 #endif

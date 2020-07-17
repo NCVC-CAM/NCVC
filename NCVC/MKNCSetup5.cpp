@@ -14,7 +14,7 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMKNCSetup5, CPropertyPage)
 	//{{AFX_MSG_MAP(CMKNCSetup5)
-	ON_CBN_SELCHANGE(IDC_MKNC5_DRILL, OnSelchangeDrill)
+	ON_CBN_SELCHANGE(IDC_MKNC5_DRILL, &CMKNCSetup5::OnSelchangeDrill)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -28,10 +28,6 @@ CMKNCSetup5::CMKNCSetup5() : CPropertyPage(CMKNCSetup5::IDD)
 	m_nOptimaizeDrill	= 0;
 	m_nTolerance		= -1;
 	//}}AFX_DATA_INIT
-}
-
-CMKNCSetup5::~CMKNCSetup5()
-{
 }
 
 void CMKNCSetup5::DoDataExchange(CDataExchange* pDX)

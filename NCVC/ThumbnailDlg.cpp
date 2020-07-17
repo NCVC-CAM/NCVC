@@ -22,22 +22,23 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CThumbnailDlg, CDialog)
 	ON_WM_SIZE()
-	ON_NOTIFY(TVN_SELCHANGED, IDC_THUMBNAIL_TREE, &CThumbnailDlg::OnSelchanged)
 	ON_WM_VSCROLL()
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEWHEEL()
 	ON_WM_DESTROY()
+	ON_NOTIFY(TVN_SELCHANGED, IDC_THUMBNAIL_TREE, &CThumbnailDlg::OnSelchanged)
 	ON_CBN_SELCHANGE(IDC_THUMBNAIL_SORTNAME, &CThumbnailDlg::OnSelchangeSort)
-	ON_MESSAGE(WM_USERFINISH, OnUserDblClk)
 	ON_CBN_SELCHANGE(IDC_THUMBNAIL_PLANE, &CThumbnailDlg::OnSelchangePlane)
+	ON_MESSAGE(WM_USERFINISH, &CThumbnailDlg::OnUserDblClk)
 END_MESSAGE_MAP()
 
 BEGIN_MESSAGE_MAP(CThumbnailStatic, CStatic)
 	ON_WM_LBUTTONDOWN()
-	ON_MESSAGE(WM_USERFINISH, OnUserDblClk)
+	ON_MESSAGE(WM_USERFINISH, &CThumbnailStatic::OnUserDblClk)
 END_MESSAGE_MAP()
 
 // 並べ替え補助関数
+typedef	int	(*PFNSORTFUNC)(LPTHUMBNAILINFO, LPTHUMBNAILINFO);
 static int	FileNameCompareFunc1(LPTHUMBNAILINFO, LPTHUMBNAILINFO);		// ﾌｧｲﾙ名昇順ｿｰﾄ
 static int	FileNameCompareFunc2(LPTHUMBNAILINFO, LPTHUMBNAILINFO);		// ﾌｧｲﾙ名降順ｿｰﾄ
 static int	UpdateTimeCompareFunc1(LPTHUMBNAILINFO, LPTHUMBNAILINFO);	// 更新日付昇順ｿｰﾄ
@@ -61,11 +62,11 @@ CThumbnailDlg::CThumbnailDlg(int nSort, ENNCVPLANE nPlane, CWnd* pParent /*=NULL
 CThumbnailDlg::~CThumbnailDlg()
 {
 	// ﾋﾞｭｰは親が破棄されると同時に DestroyWindow() される
-	for ( int i=0; i<m_aInfo.GetSize(); i++ ) {
-		delete	m_aInfo[i]->pDoc;
-		delete	m_aInfo[i];
+	for ( int i=0; i<m_thumbInfo.GetSize(); i++ ) {
+		delete	m_thumbInfo[i]->pDoc;
+		delete	m_thumbInfo[i];
 	}
-	m_aInfo.RemoveAll();
+	m_thumbInfo.RemoveAll();
 }
 
 void CThumbnailDlg::DoDataExchange(CDataExchange* pDX)
@@ -110,11 +111,11 @@ void CThumbnailDlg::ResizeControl(int cx, int cy)
 		}
 	}
 	// ﾋﾞｭｰの調整
-	for ( i=m_ctScroll.GetScrollPos(), j=0; i<m_aInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
-		if ( m_aInfo[i]->pView ) {
+	for ( i=m_ctScroll.GetScrollPos(), j=0; i<m_thumbInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
+		if ( m_thumbInfo[i]->pView ) {
 			m_ctChild[j].GetClientRect(&rc);
-			m_aInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
-			m_aInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
+			m_thumbInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
+			m_thumbInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 		}
 	}
 }
@@ -130,28 +131,28 @@ void CThumbnailDlg::ChangeFolder(const CString& strPath)
 	::PathSetDlgItemPath(m_hWnd, IDC_THUMBNAIL_PATH, strPath);
 
 	// ｺﾝﾄﾛｰﾙのﾘｾｯﾄ
-	for ( i=0; i<m_aInfo.GetSize(); i++ ) {
-		if ( m_aInfo[i]->pView ) {
-			m_aInfo[i]->pDoc->RemoveView(m_aInfo[i]->pView);
-			m_aInfo[i]->pView->DestroyWindow();
+	for ( i=0; i<m_thumbInfo.GetSize(); i++ ) {
+		if ( m_thumbInfo[i]->pView ) {
+			m_thumbInfo[i]->pDoc->RemoveView(m_thumbInfo[i]->pView);
+			m_thumbInfo[i]->pView->DestroyWindow();
 		}
-		delete	m_aInfo[i]->pDoc;
-		delete	m_aInfo[i];
+		delete	m_thumbInfo[i]->pDoc;
+		delete	m_thumbInfo[i];
 	}
-	m_aInfo.RemoveAll();
+	m_thumbInfo.RemoveAll();
 
 	// ﾌｧｲﾙ一覧の取得
 	for ( i=0; i<m_aExt.GetSize(); i++ )
 		SetAllFileFromFolder(strPath, m_aExt[i]);
 
-	if ( m_aInfo.GetSize() <= 9 )
+	if ( m_thumbInfo.GetSize() <= 9 )
 		m_ctScroll.EnableScrollBar(ESB_DISABLE_BOTH);
 	else {
 		int	nRange;
-		if ( m_aInfo.GetSize() % 3 == 0 )
-			nRange = m_aInfo.GetSize() - 3;
+		if ( m_thumbInfo.GetSize() % 3 == 0 )
+			nRange = m_thumbInfo.GetSize() - 3;
 		else
-			nRange = m_aInfo.GetSize() / 3 * 3;
+			nRange = m_thumbInfo.GetSize() / 3 * 3;
 		m_ctScroll.SetScrollRange(0, nRange, FALSE);
 		m_ctScroll.EnableScrollBar(ESB_ENABLE_BOTH);
 		m_ctScroll.SetScrollPos(0);
@@ -186,7 +187,7 @@ void CThumbnailDlg::SetAllFileFromFolder
 				pInfo->fStatus = rStatus;
 				pInfo->pDoc  = NULL;
 				pInfo->pView = NULL;
-				m_aInfo.Add(pInfo);
+				m_thumbInfo.Add(pInfo);
 			}
 		}
 	}
@@ -198,26 +199,31 @@ void CThumbnailDlg::SetAllFileFromFolder
 
 void CThumbnailDlg::SortThumbnailInfo(void)
 {
+	PFNSORTFUNC		pfnSort = NULL;
+
 	switch ( m_nSort ) {
 	case 0:		// ﾌｧｲﾙ名(昇順)
-		m_aInfo.Sort(FileNameCompareFunc1);
+		pfnSort = FileNameCompareFunc1;
 		break;
 	case 1:		// ﾌｧｲﾙ名(降順)
-		m_aInfo.Sort(FileNameCompareFunc2);
+		pfnSort = FileNameCompareFunc2;
 		break;
 	case 2:		// 更新日付(昇順)
-		m_aInfo.Sort(UpdateTimeCompareFunc1);
+		pfnSort = UpdateTimeCompareFunc1;
 		break;
 	case 3:		// 更新日付(降順)
-		m_aInfo.Sort(UpdateTimeCompareFunc2);
+		pfnSort = UpdateTimeCompareFunc2;
 		break;
 	case 4:		// ｻｲｽﾞ(昇順)
-		m_aInfo.Sort(FileSizeCompareFunc1);
+		pfnSort = FileSizeCompareFunc1;
 		break;
 	case 5:		// ｻｲｽﾞ(降順)
-		m_aInfo.Sort(FileSizeCompareFunc2);
+		pfnSort = FileSizeCompareFunc2;
 		break;
 	}
+
+	if ( pfnSort )
+		m_thumbInfo.Sort(pfnSort);
 }
 
 void CThumbnailDlg::SetThumbnailDocument(void)
@@ -230,11 +236,11 @@ void CThumbnailDlg::SetThumbnailDocument(void)
 	CWnd*	pParent;
 
 	// ﾌｧｲﾙ列挙の数だけﾄﾞｷｭﾒﾝﾄとﾋﾞｭｰを生成
-	for ( i=0; i<m_aInfo.GetSize(); i++ ) {
+	for ( i=0; i<m_thumbInfo.GetSize(); i++ ) {
 		pDoc  = static_cast<CNCDoc*>(RUNTIME_CLASS(CNCDoc)->CreateObject());
 		if ( !pDoc ) {
-			m_aInfo[i]->pDoc  = NULL;
-			m_aInfo[i]->pView = NULL;
+			m_thumbInfo[i]->pDoc  = NULL;
+			m_thumbInfo[i]->pView = NULL;
 			continue;
 		}
 		pView = CreatePlaneView();
@@ -261,13 +267,13 @@ void CThumbnailDlg::SetThumbnailDocument(void)
 				pView = NULL;
 			}
 		}
-		pDoc->SetThumbnailMode();		// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞに設定
-		m_aInfo[i]->pDoc  = pDoc;
-		m_aInfo[i]->pView = pView;
+		pDoc->SetDocFlag(NCDOC_THUMBNAIL);	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞに設定
+		m_thumbInfo[i]->pDoc  = pDoc;
+		m_thumbInfo[i]->pView = pView;
 	}
 
-	// ﾌｧｲﾙ読み込み処理はﾏﾙﾁｽﾚｯﾄﾞで！
-	if ( !m_aInfo.IsEmpty() ) {
+	// ﾌｧｲﾙ読み込み処理は別ｽﾚｯﾄﾞで
+	if ( !m_thumbInfo.IsEmpty() ) {
 		m_pEnumDocThread = AfxBeginThread(CreateEnumDoc_Thread, this,
 				THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		if ( m_pEnumDocThread ) {
@@ -282,23 +288,26 @@ void CThumbnailDlg::SetThumbnailDocument(void)
 
 CView* CThumbnailDlg::CreatePlaneView(void)
 {
-	CView*	pView;
+	CRuntimeClass*	pClass;
+	CView*			pView = NULL;
 	switch ( m_enPlane ) {
 	case NC_XYZ_PLANE:
-		pView = static_cast<CView*>(RUNTIME_CLASS(CNCView)->CreateObject());
+		pClass = RUNTIME_CLASS(CNCView);
 		break;
 	case NC_XY_PLANE:
-		pView = static_cast<CView*>(RUNTIME_CLASS(CNCViewXY)->CreateObject());
+		pClass = RUNTIME_CLASS(CNCViewXY);
 		break;
 	case NC_XZ_PLANE:
-		pView = static_cast<CView*>(RUNTIME_CLASS(CNCViewXZ)->CreateObject());
+		pClass = RUNTIME_CLASS(CNCViewXZ);
 		break;
 	case NC_YZ_PLANE:
-		pView = static_cast<CView*>(RUNTIME_CLASS(CNCViewYZ)->CreateObject());
+		pClass = RUNTIME_CLASS(CNCViewYZ);
 		break;
 	default:
-		pView = NULL;
+		pClass = NULL;
 	}
+	if ( pClass )
+		pView = static_cast<CView*>(pClass->CreateObject());
 	return pView;
 }
 
@@ -350,9 +359,13 @@ BOOL CThumbnailDlg::OnInitDialog()
 
 	// CStatic生成
 	rc.SetRectEmpty();
-	for ( i=0; i<SIZEOF(m_ctChild); i++ )
-		m_ctChild[i].Create(NULL, WS_CHILD|WS_VISIBLE|SS_SUNKEN|SS_ENHMETAFILE|SS_NOTIFY,
-			rc, &m_ctParentView, i+1);
+	for ( i=0; i<SIZEOF(m_ctChild); i++ ) {
+		if ( !m_ctChild[i].Create(NULL, WS_CHILD|WS_VISIBLE|SS_SUNKEN|SS_ENHMETAFILE|SS_NOTIFY,
+					rc, &m_ctParentView, i+1) ) {
+			NCVC_ControlErrorMsg(__FILE__, __LINE__);
+			EndDialog(IDCANCEL);
+		}
+	}
 
 	// 現在登録されている拡張子を取得
 	LPVOID		pFunc;		// dummy
@@ -420,19 +433,19 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	case SB_LINEUP:
 		if ( nPosNow <= 0 )
 			break;
-		for ( i=nPosNow+6; i<nPosNow+9 && i<m_aInfo.GetSize(); i++ ) {
-			if ( m_aInfo[i]->pView ) {
-				m_aInfo[i]->pView->ShowWindow(SW_HIDE);
-				m_aInfo[i]->pView->SetParent(&m_ctParentView);
+		for ( i=nPosNow+6; i<nPosNow+9 && i<m_thumbInfo.GetSize(); i++ ) {
+			if ( m_thumbInfo[i]->pView ) {
+				m_thumbInfo[i]->pView->ShowWindow(SW_HIDE);
+				m_thumbInfo[i]->pView->SetParent(&m_ctParentView);
 			}
 		}
-		for ( i=nPosNow-3, j=0; i<m_aInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
-			if ( m_aInfo[i]->pView ) {
+		for ( i=nPosNow-3, j=0; i<m_thumbInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
+			if ( m_thumbInfo[i]->pView ) {
 				m_ctChild[j].GetClientRect(&rc);
-				m_aInfo[i]->pView->SetParent(&m_ctChild[j]);
-				m_aInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
-				m_aInfo[i]->pView->ShowWindow(SW_SHOWNA);
-				m_aInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
+				m_thumbInfo[i]->pView->SetParent(&m_ctChild[j]);
+				m_thumbInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
+				m_thumbInfo[i]->pView->ShowWindow(SW_SHOWNA);
+				m_thumbInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 			}
 		}
 		pScrollBar->SetScrollPos(nPosNow-3);
@@ -443,19 +456,19 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 		nCnt = nPosNow - 9;
 		if ( nCnt < 0 )
 			nCnt = 0;
-		for ( i=nPosNow; i<nPosNow+9 && i<m_aInfo.GetSize(); i++ ) {
-			if ( m_aInfo[i]->pView ) {
-				m_aInfo[i]->pView->ShowWindow(SW_HIDE);
-				m_aInfo[i]->pView->SetParent(&m_ctParentView);
+		for ( i=nPosNow; i<nPosNow+9 && i<m_thumbInfo.GetSize(); i++ ) {
+			if ( m_thumbInfo[i]->pView ) {
+				m_thumbInfo[i]->pView->ShowWindow(SW_HIDE);
+				m_thumbInfo[i]->pView->SetParent(&m_ctParentView);
 			}
 		}
-		for ( i=nCnt, j=0; i<m_aInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
-			if ( m_aInfo[i]->pView ) {
+		for ( i=nCnt, j=0; i<m_thumbInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
+			if ( m_thumbInfo[i]->pView ) {
 				m_ctChild[j].GetClientRect(&rc);
-				m_aInfo[i]->pView->SetParent(&m_ctChild[j]);
-				m_aInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
-				m_aInfo[i]->pView->ShowWindow(SW_SHOWNA);
-				m_aInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
+				m_thumbInfo[i]->pView->SetParent(&m_ctChild[j]);
+				m_thumbInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
+				m_thumbInfo[i]->pView->ShowWindow(SW_SHOWNA);
+				m_thumbInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 			}
 		}
 		pScrollBar->SetScrollPos(nCnt);
@@ -463,28 +476,28 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	case SB_LINEDOWN:
 	case SB_PAGEDOWN:
 		nCnt = nSBCode==SB_LINEDOWN ? 3 : 9;
-		if ( nPosNow+3 >= m_aInfo.GetSize() )
+		if ( nPosNow+3 >= m_thumbInfo.GetSize() )
 			break;
-		if ( nSBCode==SB_PAGEDOWN && nPosNow+nCnt>=m_aInfo.GetSize() ) {
-			if ( m_aInfo.GetSize() % 3 == 0 )
-				nCnt = m_aInfo.GetSize() - 3 - nPosNow;
+		if ( nSBCode==SB_PAGEDOWN && nPosNow+nCnt>=m_thumbInfo.GetSize() ) {
+			if ( m_thumbInfo.GetSize() % 3 == 0 )
+				nCnt = m_thumbInfo.GetSize() - 3 - nPosNow;
 			else
-				nCnt = m_aInfo.GetSize()/3*3 - nPosNow;
+				nCnt = m_thumbInfo.GetSize()/3*3 - nPosNow;
 		}
-		for ( i=nPosNow; i<nPosNow+nCnt && i<m_aInfo.GetSize(); i++ ) {
-			if ( m_aInfo[i]->pView ) {
-				m_aInfo[i]->pView->ShowWindow(SW_HIDE);
-				m_aInfo[i]->pView->SetParent(&m_ctParentView);
+		for ( i=nPosNow; i<nPosNow+nCnt && i<m_thumbInfo.GetSize(); i++ ) {
+			if ( m_thumbInfo[i]->pView ) {
+				m_thumbInfo[i]->pView->ShowWindow(SW_HIDE);
+				m_thumbInfo[i]->pView->SetParent(&m_ctParentView);
 			}
 		}
 		nPosNow = i;
-		for ( j=0; i<m_aInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
-			if ( m_aInfo[i]->pView ) {
+		for ( j=0; i<m_thumbInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
+			if ( m_thumbInfo[i]->pView ) {
 				m_ctChild[j].GetClientRect(&rc);
-				m_aInfo[i]->pView->SetParent(&m_ctChild[j]);
-				m_aInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
-				m_aInfo[i]->pView->ShowWindow(SW_SHOWNA);
-				m_aInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
+				m_thumbInfo[i]->pView->SetParent(&m_ctChild[j]);
+				m_thumbInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
+				m_thumbInfo[i]->pView->ShowWindow(SW_SHOWNA);
+				m_thumbInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 			}
 		}
 		pScrollBar->SetScrollPos(nPosNow);
@@ -494,19 +507,19 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 		nCnt = (int)nPos/3*3;
 		if ( nPosNow == nCnt )
 			break;
-		for ( i=nPosNow; i<nPosNow+9 && i<m_aInfo.GetSize(); i++ ) {
-			if ( m_aInfo[i]->pView ) {
-				m_aInfo[i]->pView->ShowWindow(SW_HIDE);
-				m_aInfo[i]->pView->SetParent(&m_ctParentView);
+		for ( i=nPosNow; i<nPosNow+9 && i<m_thumbInfo.GetSize(); i++ ) {
+			if ( m_thumbInfo[i]->pView ) {
+				m_thumbInfo[i]->pView->ShowWindow(SW_HIDE);
+				m_thumbInfo[i]->pView->SetParent(&m_ctParentView);
 			}
 		}
-		for ( i=nCnt, j=0; i<m_aInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
-			if ( m_aInfo[i]->pView ) {
+		for ( i=nCnt, j=0; i<m_thumbInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
+			if ( m_thumbInfo[i]->pView ) {
 				m_ctChild[j].GetClientRect(&rc);
-				m_aInfo[i]->pView->SetParent(&m_ctChild[j]);
-				m_aInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
-				m_aInfo[i]->pView->ShowWindow(SW_SHOWNA);
-				m_aInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
+				m_thumbInfo[i]->pView->SetParent(&m_ctChild[j]);
+				m_thumbInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
+				m_thumbInfo[i]->pView->ShowWindow(SW_SHOWNA);
+				m_thumbInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 			}
 		}
 		pScrollBar->SetScrollPos(nCnt);
@@ -546,6 +559,7 @@ void CThumbnailDlg::OnDestroy()
 	AfxGetNCVCApp()->SaveWindowState(strRegKey, wp);
 
 	__super::OnDestroy();
+	// 親が消えれば子(m_ctChild[])も消える（はず）
 }
 
 void CThumbnailDlg::OnSelchangeSort()
@@ -555,10 +569,10 @@ void CThumbnailDlg::OnSelchangeSort()
 	CRect	rc;
 
 	// 現在のｻﾑﾈｲﾙ表示を非表示に
-	for ( i=nPosNow; i<nPosNow+9 && i<m_aInfo.GetSize(); i++ ) {
-		if ( m_aInfo[i]->pView ) {
-			m_aInfo[i]->pView->ShowWindow(SW_HIDE);
-			m_aInfo[i]->pView->SetParent(&m_ctParentView);
+	for ( i=nPosNow; i<nPosNow+9 && i<m_thumbInfo.GetSize(); i++ ) {
+		if ( m_thumbInfo[i]->pView ) {
+			m_thumbInfo[i]->pView->ShowWindow(SW_HIDE);
+			m_thumbInfo[i]->pView->SetParent(&m_ctParentView);
 		}
 	}
 
@@ -566,13 +580,13 @@ void CThumbnailDlg::OnSelchangeSort()
 	SortThumbnailInfo();
 
 	// 再表示
-	for ( i=0; i<SIZEOF(m_ctChild) && i<m_aInfo.GetSize(); i++ ) {
-		if ( m_aInfo[i]->pView ) {
+	for ( i=0; i<SIZEOF(m_ctChild) && i<m_thumbInfo.GetSize(); i++ ) {
+		if ( m_thumbInfo[i]->pView ) {
 			m_ctChild[i].GetClientRect(&rc);
-			m_aInfo[i]->pView->SetParent(&m_ctChild[i]);
-			m_aInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
-			m_aInfo[i]->pView->ShowWindow(SW_SHOWNA);
-			m_aInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
+			m_thumbInfo[i]->pView->SetParent(&m_ctChild[i]);
+			m_thumbInfo[i]->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
+			m_thumbInfo[i]->pView->ShowWindow(SW_SHOWNA);
+			m_thumbInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 		}
 	}
 
@@ -595,10 +609,10 @@ void CThumbnailDlg::OnSelchangePlane()
 	CWnd*	pParent;
 
 	// 現在のﾋﾞｭｰをﾄﾞｷｭﾒﾝﾄから切り離して破棄
-	for ( i=0; i<m_aInfo.GetSize(); i++ ) {
-		if ( m_aInfo[i]->pView ) {
-			m_aInfo[i]->pDoc->RemoveView(m_aInfo[i]->pView);
-			m_aInfo[i]->pView->DestroyWindow();
+	for ( i=0; i<m_thumbInfo.GetSize(); i++ ) {
+		if ( m_thumbInfo[i]->pView ) {
+			m_thumbInfo[i]->pDoc->RemoveView(m_thumbInfo[i]->pView);
+			m_thumbInfo[i]->pView->DestroyWindow();
 		}
 	}
 
@@ -608,11 +622,11 @@ void CThumbnailDlg::OnSelchangePlane()
 	rc.SetRectEmpty();
 	dwStyle = AFX_WS_DEFAULT_VIEW & ~WS_VISIBLE;
 	pParent = &m_ctParentView;
-	for ( i=0; i<nPosNow && i<m_aInfo.GetSize(); i++ ) {
+	for ( i=0; i<nPosNow && i<m_thumbInfo.GetSize(); i++ ) {
 		pView = CreatePlaneView();
 		if ( pView ) {
 			if ( pView->Create(NULL, NULL, dwStyle, rc, pParent, AFX_IDW_PANE_FIRST) ) {
-				m_aInfo[i]->pDoc->AddView(pView);
+				m_thumbInfo[i]->pDoc->AddView(pView);
 				pView->OnInitialUpdate();
 			}
 			else {
@@ -620,17 +634,17 @@ void CThumbnailDlg::OnSelchangePlane()
 				pView = NULL;
 			}
 		}
-		m_aInfo[i]->pView = pView;
+		m_thumbInfo[i]->pView = pView;
 	}
 	// nPosNow -> SIZEOF(m_ctChild)-1
 	dwStyle = AFX_WS_DEFAULT_VIEW;
-	for ( j=0; i<m_aInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
+	for ( j=0; i<m_thumbInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
 		pView = CreatePlaneView();
 		if ( pView ) {
 			m_ctChild[j].GetClientRect(&rc);
 			pParent = &m_ctChild[j];
 			if ( pView->Create(NULL, NULL, dwStyle, rc, pParent, AFX_IDW_PANE_FIRST) ) {
-				m_aInfo[i]->pDoc->AddView(pView);
+				m_thumbInfo[i]->pDoc->AddView(pView);
 				pView->OnInitialUpdate();
 			}
 			else {
@@ -639,17 +653,17 @@ void CThumbnailDlg::OnSelchangePlane()
 			}
 		}
 		pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
-		m_aInfo[i]->pView = pView;
+		m_thumbInfo[i]->pView = pView;
 	}
 	// 残り
 	rc.SetRectEmpty();
 	dwStyle = AFX_WS_DEFAULT_VIEW & ~WS_VISIBLE;
 	pParent = &m_ctParentView;
-	for ( ; i<m_aInfo.GetSize(); i++ ) {
+	for ( ; i<m_thumbInfo.GetSize(); i++ ) {
 		pView = CreatePlaneView();
 		if ( pView ) {
 			if ( pView->Create(NULL, NULL, dwStyle, rc, pParent, AFX_IDW_PANE_FIRST) ) {
-				m_aInfo[i]->pDoc->AddView(pView);
+				m_thumbInfo[i]->pDoc->AddView(pView);
 				pView->OnInitialUpdate();
 			}
 			else {
@@ -657,7 +671,7 @@ void CThumbnailDlg::OnSelchangePlane()
 				pView = NULL;
 			}
 		}
-		m_aInfo[i]->pView = pView;
+		m_thumbInfo[i]->pView = pView;
 	}
 
 	m_ctChild[0].SetFocus();
@@ -695,12 +709,14 @@ UINT CThumbnailDlg::CreateEnumDoc_Thread(LPVOID pVoid)
 {
 	CThumbnailDlg*	pParent = reinterpret_cast<CThumbnailDlg*>(pVoid);
 	LPTHUMBNAILINFO pInfo;
+	CDocument*		dummy;
 
 	// 無理にﾏﾙﾁｽﾚｯﾄﾞで処理せず、ｼｰｹﾝｼｬﾙに1件ずつ
 	// → TH_NCRead.cpp で __declspec(thread) の外部変数が必要なくなる
-	for ( int i=0; i<pParent->m_aInfo.GetSize() && pParent->m_bEnumDoc; i++ ) {
-		pInfo = pParent->m_aInfo[i];
+	for ( int i=0; i<pParent->m_thumbInfo.GetSize() && pParent->m_bEnumDoc; i++ ) {
+		pInfo = pParent->m_thumbInfo[i];
 		// ﾌｧｲﾙを開くから一連の動作へ
+		AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->MatchDocType(pInfo->fStatus.m_szFullName, dummy);	// Serialize関数の決定
 		pInfo->pDoc->ReadThumbnail(pInfo->fStatus.m_szFullName);
 		// ﾋﾞｭｰへの通知
 		if ( pInfo->pView ) {
