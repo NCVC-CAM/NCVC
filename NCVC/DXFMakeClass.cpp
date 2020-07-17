@@ -403,8 +403,8 @@ void CDXFMake::MakeDXF_Arc(const CNCcircle* pData, BOOL bCorrect)
 	if ( nType == TYPE_ARC ) {
 		double	dVal[DXFMAXVALUESIZE];
 		// CNCcircle::AngleTuning() ‚É‚Äí‚É”½ŽžŒv‰ñ‚è
-		dVal[VALUE50] = pData->GetStartAngle() * DEG;
-		dVal[VALUE51] = pData->GetEndAngle() * DEG;
+		dVal[VALUE50] = DEG(pData->GetStartAngle());
+		dVal[VALUE51] = DEG(pData->GetEndAngle());
 		while ( dVal[VALUE50] > 360.0 )
 			dVal[VALUE50] -= 360.0;
 		while ( dVal[VALUE51] > 360.0 )

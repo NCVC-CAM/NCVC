@@ -1076,11 +1076,11 @@ CDXFdata* ChangeCircleToArc
 
 	// 回転方向（切り取り円弧）の決定
 	if ( (sq=atan2(pts.y-ptc.y, pts.x-ptc.x)) < 0.0 )
-		sq += 360.0*RAD;
+		sq += RAD(360.0);
 	if ( (eq=atan2(pte.y-ptc.y, pte.x-ptc.x)) < 0.0 )
-		eq += 360.0*RAD;
+		eq += RAD(360.0);
 	while ( sq > eq )
-		eq += 360.0*RAD;		// sq < eq => 基本の反時計回りに角度設定
+		eq += RAD(360.0);		// sq < eq => 基本の反時計回りに角度設定
 	q = (eq - sq) / 2.0 + sq;	// sqとeqのあいだ
 	pt.x = r * cos(q);		pt.y = r * sin(q);
 	pt += ptc;
@@ -1106,8 +1106,8 @@ CDXFdata* ChangeCircleToArc
 		dxfArc.pLayer = pDataSrc->GetParentLayer();
 		dxfArc.c = ptc;
 		dxfArc.r = r;
-		dxfArc.sq = sq * DEG;	// ARC登録はDEG
-		dxfArc.eq = eq * DEG;
+		dxfArc.sq = DEG(sq);	// ARC登録はDEG
+		dxfArc.eq = DEG(eq);
 		pData = new CDXFarc(&dxfArc);
 	}
 	else {
@@ -1127,13 +1127,13 @@ CDXFdata* ChangeCircleToArc
 			q = _copysign(1.0, q);	// -1.0 or 1.0
 		dxfEllipse.sq = _copysign(acos(q), pts.y);
 		if ( dxfEllipse.sq < 0.0 )
-			dxfEllipse.sq += 360.0*RAD;
+			dxfEllipse.sq += RAD(360.0);
 		q = pte.x / l;
 		if ( q < -1.0 || 1.0 < q )
 			q = _copysign(1.0, q);
 		dxfEllipse.eq = _copysign(acos(q), pte.y);
 		if ( dxfEllipse.eq < 0.0 )
-			dxfEllipse.eq += 360.0*RAD;
+			dxfEllipse.eq += RAD(360.0);
 		pData = new CDXFellipse(&dxfEllipse);
 	}
 

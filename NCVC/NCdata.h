@@ -7,9 +7,17 @@
 #include "MainFrm.h"
 #include "NCVCdefine.h"
 
+#ifdef _DEBUG
+#define	_DEBUG_DUMP
+#endif
+
 // 始点終点指示
 enum	ENPOINTORDER
 	{STARTPOINT, ENDPOINT};
+// 描画ﾋﾞｭｰ指定
+enum	EN_NCDRAWVIEW
+	{NCDRAWVIEW_XYZ=0, NCDRAWVIEW_XY=1, NCDRAWVIEW_XZ=2, NCDRAWVIEW_YZ=3};
+
 // 円弧補間ﾊﾟｽ座標
 typedef	std::vector<CPoint3D>	CVCircle;
 
@@ -22,6 +30,7 @@ public:
 	CPoint3D	m_ptValOrg,		// 回転・ｽｹｰﾙ等無視の純粋な加工終点
 				m_ptOffset;		// ﾜｰｸ座標系のｵﾌｾｯﾄ
 	G68ROUND	m_g68;			// G68座標回転情報
+	TAPER		m_taper;		// ﾃｰﾊﾟ加工情報
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -43,10 +52,11 @@ protected:
 	BOOL		m_bG98;			// G98,G98（主に旋盤ﾓｰﾄﾞで使用）
 	CTypedPtrArrayEx<CPtrArray, CNCdata*>
 				m_obCdata;		// 補正用ｵﾌﾞｼﾞｪｸﾄ
+	CNCdata*	m_pWireObj;		// ﾜｲﾔ加工用UV軸ｵﾌﾞｼﾞｪｸﾄ
 	//	固定ｻｲｸﾙでは，指定された座標が最終座標ではないので
 	//	m_nc.dValue[] ではない最終座標の保持が必要
 	// 他、座標回転(G68)でもｵﾘｼﾞﾅﾙ座標と計算座標を別に保管
-	CPoint3D	m_ptValS, m_ptValE;		// 開始,終了座標
+	CPoint3D	m_ptValS, m_ptValE;	// 開始,終了座標
 	CNCread*	m_pRead;		// 読み込み終了後に消去するﾃﾞｰﾀ群
 
 	// CPoint3Dから平面の2D座標を抽出
@@ -73,6 +83,7 @@ public:
 	int		GetBlockLineNo(void) const;
 	int		GetGtype(void) const;
 	int		GetGcode(void) const;
+	BOOL	IsCutCode(void) const;
 	ENPLANE	GetPlane(void) const;
 	DWORD	GetValFlags(void) const;
 	double	GetValue(size_t) const;
@@ -97,20 +108,30 @@ public:
 	void		AddCorrectObject(CNCdata*);
 	CTypedPtrArrayEx<CPtrArray, CNCdata*>*
 				GetCorrectArray(void);			// DXF出力用
+	void		SetWireObj(CNCdata*);			// from TH_UVWire.cpp
+	CNCdata*	GetWireObj(void) const;
 	const CNCread*	GetReadData(void) const;
 	void		DeleteReadData(void);
 
-	virtual	void	DrawTuning(const double);
-	virtual	void	DrawTuningXY(const double);
-	virtual	void	DrawTuningXZ(const double);
-	virtual	void	DrawTuningYZ(const double);
+	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuningXY(double);
+	virtual	void	DrawTuningXZ(double);
+	virtual	void	DrawTuningYZ(double);
 	virtual	void	Draw(CDC*, BOOL) const;
 	virtual	void	DrawXY(CDC*, BOOL) const;
 	virtual	void	DrawXZ(CDC*, BOOL) const;
 	virtual	void	DrawYZ(CDC*, BOOL) const;
-	virtual	void	DrawWire(void) const;
-	virtual	void	DrawLatheWire(void) const;
-	virtual	void	DrawBottomFace(void) const;
+	virtual	void	DrawWire(CDC*, BOOL) const;
+	virtual	void	DrawWireXY(CDC*, BOOL) const;
+	virtual	void	DrawWireXZ(CDC*, BOOL) const;
+	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawGLMillWire(void) const;
+	virtual	void	DrawGLWireWire(void) const;
+	virtual	void	DrawGLLatheFace(void) const;
+	virtual	void	DrawGLBottomFace(void) const;
+			int		AddGLWireFirstVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
+	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
+	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
 
 	// ｵﾌﾞｼﾞｪｸﾄ占有矩形(都度ｾｯﾄ)
 	virtual	CRect3D	GetMaxRect(void) const;
@@ -141,6 +162,8 @@ public:
 };
 
 typedef	CTypedPtrArrayEx<CPtrArray, CNCdata*>	CNCarray;
+typedef void (CNCdata::*PFNNCDRAWPROC)(CDC*, BOOL) const;
+typedef void (CNCdata::*PFNGLDRAWPROC)(void) const;
 
 /////////////////////////////////////////////////////////////////////////////
 // G0,G1 直線補間ｸﾗｽ
@@ -148,7 +171,8 @@ class CNCline : public CNCdata
 {
 	EN_NCPEN	GetPenType(void) const;
 	int			GetLineType(void) const;
-	void	DrawLine(CDC*, size_t, BOOL) const;
+	void	DrawLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
+	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
 	void	SetEndmillPath(CPointD*, CPointD*, CPointD*) const;
 
 protected:
@@ -163,17 +187,27 @@ public:
 	CNCline(const CNCdata*);
 
 public:
-	virtual	void	DrawTuning(const double);
-	virtual	void	DrawTuningXY(const double);
-	virtual	void	DrawTuningXZ(const double);
-	virtual	void	DrawTuningYZ(const double);
+	CPoint	GetDrawStartPoint(size_t) const;
+	CPoint	GetDrawEndPoint(size_t) const;
+
+	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuningXY(double);
+	virtual	void	DrawTuningXZ(double);
+	virtual	void	DrawTuningYZ(double);
 	virtual	void	Draw(CDC*, BOOL) const;
 	virtual	void	DrawXY(CDC*, BOOL) const;
 	virtual	void	DrawXZ(CDC*, BOOL) const;
 	virtual	void	DrawYZ(CDC*, BOOL) const;
-	virtual	void	DrawWire(void) const;
-	virtual	void	DrawLatheWire(void) const;
-	virtual	void	DrawBottomFace(void) const;
+	virtual	void	DrawWire(CDC*, BOOL) const;
+	virtual	void	DrawWireXY(CDC*, BOOL) const;
+	virtual	void	DrawWireXZ(CDC*, BOOL) const;
+	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawGLMillWire(void) const;
+	virtual	void	DrawGLWireWire(void) const;
+	virtual	void	DrawGLLatheFace(void) const;
+	virtual	void	DrawGLBottomFace(void) const;
+	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
+	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
 	virtual	CRect3D	GetMaxCutRect(void) const;
@@ -195,7 +229,7 @@ struct PTCYCLE
 	CPointD		ptI, ptR, ptC;	// ｲﾆｼｬﾙ点、R点、切り込み点
 	CPoint		ptDrawI, ptDrawR, ptDrawC;
 	CRect		rcDraw;			// 同一平面の丸印描画用
-	void	DrawTuning(const double f);
+	void	DrawTuning(double f);
 };
 struct PTCYCLE3D
 {
@@ -217,8 +251,8 @@ class CNCcycle : public CNCline
 				m_dCycleMove,		// 移動距離(切削距離はm_nc.dLength)
 				m_dDwell;			// ﾄﾞｳｪﾙ時間
 
-	void	DrawCyclePlane(CDC*, size_t, BOOL) const;
-	void	DrawCycle(CDC*, size_t, BOOL) const;
+	void	DrawCyclePlane(EN_NCDRAWVIEW, CDC*, BOOL) const;
+	void	DrawCycle(EN_NCDRAWVIEW, CDC*, BOOL) const;
 
 public:
 	CNCcycle(const CNCdata*, LPNCARGV, const CPoint3D&, BOOL);
@@ -232,17 +266,24 @@ public:
 	double	GetCycleMove(void) const;
 	double	GetDwell(void) const;
 
-	virtual	void	DrawTuning(const double);
-	virtual	void	DrawTuningXY(const double);
-	virtual	void	DrawTuningXZ(const double);
-	virtual	void	DrawTuningYZ(const double);
+	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuningXY(double);
+	virtual	void	DrawTuningXZ(double);
+	virtual	void	DrawTuningYZ(double);
 	virtual	void	Draw(CDC*, BOOL) const;
 	virtual	void	DrawXY(CDC*, BOOL) const;
 	virtual	void	DrawXZ(CDC*, BOOL) const;
 	virtual	void	DrawYZ(CDC*, BOOL) const;
-	virtual	void	DrawWire(void) const;
-	virtual	void	DrawLatheWire(void) const;
-	virtual	void	DrawBottomFace(void) const;
+	virtual	void	DrawWire(CDC*, BOOL) const;
+	virtual	void	DrawWireXY(CDC*, BOOL) const;
+	virtual	void	DrawWireXZ(CDC*, BOOL) const;
+	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawGLMillWire(void) const;
+	virtual	void	DrawGLWireWire(void) const;
+	virtual	void	DrawGLLatheFace(void) const;
+	virtual	void	DrawGLBottomFace(void) const;
+	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
+	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
 	virtual	CRect3D	GetMaxCutRect(void) const;
@@ -260,14 +301,11 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 // G2,G3 円弧補間ｸﾗｽ
 class	CNCcircle;
-enum	EN_NCCIRCLEDRAW
-	{NCCIRCLEDRAW_XYZ, NCCIRCLEDRAW_XY, NCCIRCLEDRAW_XZ, NCCIRCLEDRAW_YZ};
-typedef void (CNCcircle::*PFNCIRCLEDRAW)(EN_NCCIRCLEDRAW, CDC*) const;
+typedef void (CNCcircle::*PFNCIRCLEDRAW)(EN_NCDRAWVIEW, CDC*) const;
 
-class CNCcircle : public CNCdata  
+class CNCcircle : public CNCline  
 {
 	void		Constracter(void);
-	boost::tuple<double, double>	GetSqEq(void) const;
 
 	int			m_nG23;			// G02:0 G03:1
 	CPoint3D	m_ptOrg;		// 中心座標
@@ -280,10 +318,7 @@ class CNCcircle : public CNCdata
 				m_dFactorXZ,
 				m_dFactorYZ;
 	PFNCIRCLEDRAW	m_pfnCircleDraw;	// 平面別の描画関数
-	void	Draw_G17(EN_NCCIRCLEDRAW, CDC*) const;
-	void	Draw_G18(EN_NCCIRCLEDRAW, CDC*) const;
-	void	Draw_G19(EN_NCCIRCLEDRAW, CDC*) const;
-	void	DrawCircleWire(void) const;
+	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
 	void	DrawEndmillXYPath(void) const;
 	void	DrawEndmillPipe(void) const;
 	void	DrawEndmillBall(void) const;
@@ -295,7 +330,7 @@ class CNCcircle : public CNCdata
 	void	AngleTuning(const CPointD&, const CPointD&);
 
 public:
-	CNCcircle(const CNCdata*, LPNCARGV, const CPoint3D&);
+	CNCcircle(const CNCdata*, LPNCARGV, const CPoint3D&, BOOL bLathe = FALSE);
 	CNCcircle(const CNCdata*);
 
 	int		GetG23(void) const;
@@ -303,18 +338,31 @@ public:
 	double	GetR(void) const;
 	double	GetStartAngle(void) const;
 	double	GetEndAngle(void) const;
+	boost::tuple<double, double>	GetSqEq(void) const;
 
-	virtual	void	DrawTuning(const double);
-	virtual	void	DrawTuningXY(const double);
-	virtual	void	DrawTuningXZ(const double);
-	virtual	void	DrawTuningYZ(const double);
+	void	Draw_G17(EN_NCDRAWVIEW, CDC*) const;
+	void	Draw_G18(EN_NCDRAWVIEW, CDC*) const;
+	void	Draw_G19(EN_NCDRAWVIEW, CDC*) const;
+	void	DrawGLWire(void) const;
+
+	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuningXY(double);
+	virtual	void	DrawTuningXZ(double);
+	virtual	void	DrawTuningYZ(double);
 	virtual	void	Draw(CDC*, BOOL) const;
 	virtual	void	DrawXY(CDC*, BOOL) const;
 	virtual	void	DrawXZ(CDC*, BOOL) const;
 	virtual	void	DrawYZ(CDC*, BOOL) const;
-	virtual	void	DrawWire(void) const;
-	virtual	void	DrawLatheWire(void) const;
-	virtual	void	DrawBottomFace(void) const;
+	virtual	void	DrawWire(CDC*, BOOL) const;
+	virtual	void	DrawWireXY(CDC*, BOOL) const;
+	virtual	void	DrawWireXZ(CDC*, BOOL) const;
+	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawGLMillWire(void) const;
+	virtual	void	DrawGLWireWire(void) const;
+	virtual	void	DrawGLLatheFace(void) const;
+	virtual	void	DrawGLBottomFace(void) const;
+	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
+	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
 	virtual	CRect3D	GetMaxCutRect(void) const;

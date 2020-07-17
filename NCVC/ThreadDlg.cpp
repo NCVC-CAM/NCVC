@@ -68,6 +68,11 @@ BOOL CThreadDlg::OnInitDialog()
 			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		break;
 
+	case IDS_UVTAPER_NCD:		// ‹≤‘â¡çHópUVé≤µÃﬁºﬁ™∏ƒÇÃê∂ê¨
+		m_pThread = AfxBeginThread(UVWire_Thread, &m_paramThread,
+			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+		break;
+
 	case ID_FILE_DXF2NCD:		// NCê∂ê¨Ω⁄ØƒﬁäJén
 		if ( m_paramThread.wParam == ID_FILE_DXF2NCD_LATHE )
 			m_pThread = AfxBeginThread(MakeLathe_Thread, &m_paramThread,

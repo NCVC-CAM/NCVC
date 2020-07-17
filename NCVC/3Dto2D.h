@@ -9,12 +9,17 @@
 const double EPS = 0.0005;			// NCの計算誤差
 const double NCMIN = 0.001;			// NCの桁落ち誤差
 const double PI = 3.1415926535897932384626433832795;
-const double RAD = PI/180.0;
-const double DEG = 180.0/PI;
 
-const double RX = -60.0*RAD;		// ﾃﾞﾌｫﾙﾄの回転角度
-const double RY =   0.0*RAD;
-const double RZ = -35.0*RAD;
+// Radian変換
+inline	double	RAD(double dVal)
+{
+	return dVal * PI / 180.0;
+}
+// Degree変換
+inline	double	DEG(double dVal)
+{
+	return dVal * 180.0 / PI;
+}
 
 // 1/1000 四捨五入
 inline	double	RoundUp(double dVal)
@@ -27,268 +32,282 @@ inline	double	RoundCt(double dVal)
 	return _copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
 }
 
-//////////////////////////////////////////////////////////////////////
-// double型の CPointクラス
+// ﾃﾞﾌｫﾙﾄの回転角度
+const double RX = RAD(-60.0);
+const double RY = 0.0;
+const double RZ = RAD(-35.0);
 
-class CPointD :
+//////////////////////////////////////////////////////////////////////
+// 実数型 CPoint の雛形
+
+template<class T>
+class CPointT :
 	// +=, -=, *=, /= で +, -, * / も自動定義
-	boost::arithmetic			< CPointD,
-	boost::arithmetic			< CPointD, double,
-	boost::equality_comparable	< CPointD,
-	boost::equality_comparable	< CPointD, double
-	> > > >
+//	boost::arithmetic			< CPointT<T>,
+//	boost::arithmetic			< CPointT<T>, T,
+//	boost::equality_comparable	< CPointT<T>,
+//	boost::equality_comparable	< CPointT<T>, T
+//	> > > >
+	boost::operators< CPointT<T> >
 {
 public:
 	union {
 		struct {
-			double	x, y;
+			T	x, y;
 		};
-		double	xy[2];
+		T	xy[2];
 	};
 
 	// コンストラクタ
-	CPointD() {
+	CPointT() {
 		x = y = 0;
 	}
-	CPointD(double xy) {
+	CPointT(T xy) {
 		x = y = xy;
 	}
-	CPointD(double xx, double yy) {
+	CPointT(T xx, T yy) {
 		SetPoint(xx, yy);
 	}
-	CPointD(const CPoint& pt) {
+	CPointT(const CPoint& pt) {
 		SetPoint(pt.x, pt.y);
 	}
 	// 演算子定義
-	CPointD&	operator = (double xy) {
+	CPointT<T>&	operator = (T xy) {
 		x = y = xy;
 		return *this;
 	}
-	CPointD&	operator = (const CPoint& pt) {
+	CPointT<T>&	operator = (const CPoint& pt) {
 		SetPoint(pt.x, pt.y);
 		return *this;
 	}
-	CPointD&	operator += (double d) {
+	CPointT<T>&	operator += (T d) {
 		x += d;		y += d;
 		return *this;
 	}
-	CPointD&	operator += (const CPointD& pt) {
+	CPointT<T>&	operator += (const CPointT<T>& pt) {
 		x += pt.x;		y += pt.y;
 		return *this;
 	}
-	CPointD&	operator -= (double d) {
+	CPointT<T>&	operator -= (T d) {
 		x -= d;		y -= d;
 		return *this;
 	}
-	CPointD&	operator -= (const CPointD& pt) {
+	CPointT<T>&	operator -= (const CPointT<T>& pt) {
 		x -= pt.x;		y -= pt.y;
 		return *this;
 	}
-	CPointD&	operator *= (double d) {
+	CPointT<T>&	operator *= (T d) {
 		x *= d;		y *= d;
 		return *this;
 	}
-	CPointD&	operator *= (const CPointD& pt) {
+	CPointT<T>&	operator *= (const CPointT<T>& pt) {
 		x *= pt.x;		y *= pt.y;
 		return *this;
 	}
-	CPointD&	operator /= (double d) {
+	CPointT<T>&	operator /= (T d) {
 		x /= d;		y /= d;
 		return *this;
 	}
-	CPointD&	operator /= (const CPointD& pt) {
+	CPointT<T>&	operator /= (const CPointT<T>& pt) {
 		x /= pt.x;		y /= pt.y;
 		return *this;
 	}
-	BOOL		operator == (double pt) const {
+	BOOL		operator == (T pt) const {
 		return ( fabs(x-pt)<NCMIN && fabs(y-pt)<NCMIN );
 	}
-	BOOL		operator == (const CPointD& pt) const {
+	BOOL		operator == (const CPointT& pt) const {
 		return IsMatchPoint(&pt);
 	}
-	BOOL	IsMatchPoint(const CPointD* pt) const {
-		CPointD	ptw(x - pt->x, y - pt->y);
+	BOOL	IsMatchPoint(const CPointT* pt) const {
+		CPointT<T>	ptw(x - pt->x, y - pt->y);
 		return ptw.hypot() < NCMIN;
 	}
-	double&		operator[] (size_t a) {
+	T&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xy));
 		return xy[a];
 	}
-	double		operator[] (size_t a) const {
+	T		operator[] (size_t a) const {
 		ASSERT(a>=0 && a<SIZEOF(xy));
 		return xy[a];
 	}
-	double		hypot(void) const {
+	T		hypot(void) const {
 		return ::_hypot(x, y);
 	}
 	// 変換関数
 	operator CPoint() const {
 		return CPoint((int)x, (int)y);
 	}
-	CPointD	RoundUp(void) const {
-		return CPointD(::RoundUp(x), ::RoundUp(y));
+	CPointT<T>	RoundUp(void) const {
+		return CPointT<T>(::RoundUp(x), ::RoundUp(y));
 	}
 	// 代入関数
-	void	SetPoint(double xx, double yy) {
+	void	SetPoint(T xx, T yy) {
 		x = xx;		y = yy;
 	}
 	// 座標回転
-	void	RoundPoint(double q) {
-		double	cos_q = cos(q), sin_q = sin(q);
-		CPointD	pt(x, y);
+	void	RoundPoint(T q) {
+		T	cos_q = cos(q), sin_q = sin(q);
+		CPointT<T>	pt(x, y);
 		x = pt.x * cos_q - pt.y * sin_q;
 		y = pt.x * sin_q + pt.y * cos_q;
 	}
 };
+typedef	CPointT<double>		CPointD;
+typedef	CPointT<float>		CPointF;
 
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD クラス
 
-class CPoint3D :
-	boost::arithmetic			< CPoint3D,
-	boost::arithmetic			< CPoint3D, double,
-	boost::equality_comparable	< CPoint3D,
-	boost::equality_comparable	< CPoint3D, double
-	> > > >
+template<class T>
+class CPoint3T :
+//	boost::arithmetic			< CPoint3T<T>,
+//	boost::arithmetic			< CPoint3T<T>, T,
+//	boost::equality_comparable	< CPoint3T<T>,
+//	boost::equality_comparable	< CPoint3T<T>, T
+//	> > > >
+	boost::operators< CPoint3T<T> >
 {
-	static	double	ms_rx_cos, ms_rx_sin,		// 回転角度
-					ms_ry_cos, ms_ry_sin,
-					ms_rz_cos, ms_rz_sin;
+	static	T	ms_rx_cos, ms_rx_sin,		// 回転角度
+				ms_ry_cos, ms_ry_sin,
+				ms_rz_cos, ms_rz_sin;
 public:
 	union {
 		struct {
-			double	x, y, z;
+			T	x, y, z;
 		};
-		double	xyz[3];
+		T	xyz[3];
 	};
 
 	// コンストラクタ
-	CPoint3D() {
+	CPoint3T() {
 		x = y = z = 0;
 	}
-	CPoint3D(double xyz) {
+	CPoint3T(T xyz) {
 		x = y = z = xyz;
 	}
-	CPoint3D(double xx, double yy, double zz) {
+	CPoint3T(T xx, T yy, T zz) {
 		SetPoint(xx, yy, zz);
 	}
 	// 演算子定義
-	CPoint3D&	operator = (double xyz) {
+	CPoint3T<T>&	operator = (T xyz) {
 		x = y = z = xyz;
 		return *this;
 	}
-	CPoint3D&	operator += (double d) {
+	CPoint3T<T>&	operator += (T d) {
 		x += d;		y += d;		z += d;
 		return *this;
 	}
-	CPoint3D&	operator += (const CPoint3D& pt) {
+	CPoint3T<T>&	operator += (const CPoint3T<T>& pt) {
 		x += pt.x;		y += pt.y;		z += pt.z;
 		return *this;
 	}
-	CPoint3D&	operator -= (double d) {
+	CPoint3T<T>&	operator -= (T d) {
 		x -= d;		y -= d;		z -= d;
 		return *this;
 	}
-	CPoint3D&	operator -= (const CPoint3D& pt) {
+	CPoint3T<T>&	operator -= (const CPoint3T<T>& pt) {
 		x -= pt.x;		y -= pt.y;		z -= pt.z;
 		return *this;
 	}
-	CPoint3D&	operator *= (double d) {
+	CPoint3T<T>&	operator *= (T d) {
 		x *= d;		y *= d;		z *= d;
 		return *this;
 	}
-	CPoint3D&	operator *= (const CPoint3D& pt) {
+	CPoint3T<T>&	operator *= (const CPoint3T<T>& pt) {
 		x *= pt.x;	y *= pt.y;	z *= pt.z;
 		return *this;
 	}
-	CPoint3D&	operator /= (double d) {
+	CPoint3T<T>&	operator /= (T d) {
 		x /= d;		y /= d;		z /= d;
 		return *this;
 	}
-	CPoint3D&	operator /= (const CPoint3D& pt) {
+	CPoint3T<T>&	operator /= (const CPoint3T<T>& pt) {
 		x /= pt.x;	y /= pt.y;	z /= pt.z;
 		return *this;
 	}
-	BOOL		operator == (double pt) const {
+	BOOL		operator == (T pt) const {
 		return ( fabs(x-pt)<NCMIN && fabs(y-pt)<NCMIN && fabs(z-pt)<NCMIN );
 	}
-	BOOL		operator == (const CPoint3D& pt) const {
+	BOOL		operator == (const CPoint3T<T>& pt) const {
 		return IsMatchPoint(&pt);
 	}
-	BOOL	IsMatchPoint(const CPoint3D* pt) const {
-		CPoint3D	ptw(x - pt->x, y - pt->y, z - pt->z);
+	BOOL	IsMatchPoint(const CPoint3T<T>* pt) const {
+		CPoint3T<T>	ptw(x - pt->x, y - pt->y, z - pt->z);
 		return ptw.hypot() < NCMIN;
 	}
-	double&		operator[] (size_t a) {
+	T&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xyz));
 		return xyz[a];
 	}
-	double		operator[] (size_t a) const {
+	T		operator[] (size_t a) const {
 		ASSERT(a>=0 && a<SIZEOF(xyz));
 		return xyz[a];
 	}
-	double		hypot(void) const {
+	T		hypot(void) const {
 		return ::sqrt(x*x + y*y + z*z);
 	}
 	// 変換関数
-	CPointD		GetXY(void) const {
-		return CPointD(x, y);
+	CPointT<T>	GetXY(void) const {
+		return CPointT<T>(x, y);
 	}
-	CPointD		GetXZ(void) const {
-		return CPointD(x, z);
+	CPointT<T>	GetXZ(void) const {
+		return CPointT<T>(x, z);
 	}
-	CPointD		GetYZ(void) const {
-		return CPointD(y, z);
+	CPointT<T>	GetYZ(void) const {
+		return CPointT<T>(y, z);
 	}
-	operator CPointD() const {
-		return CPointD(x, y);
+	operator CPointT<T>() const {
+		return CPointT<T>(x, y);
 	}
 	// 代入関数
-	void	SetPoint(double xx, double yy, double zz) {
+	void	SetPoint(T xx, T yy, T zz) {
 		x = xx;		y = yy;		z = zz;
 	}
 	// 2D変換
-	CPointD		PointConvert(void) const {
+	CPointT<T>	PointConvert(void) const {
 		// Ｚ軸回りの回転変位
-		CPoint3D	pt1(x*ms_rz_cos-y*ms_rz_sin, x*ms_rz_sin+y*ms_rz_cos, z);
+		CPoint3T<T>	pt1(x*ms_rz_cos-y*ms_rz_sin, x*ms_rz_sin+y*ms_rz_cos, z);
 		// Ｘ軸回りの回転変位
-		CPoint3D	pt2(pt1.x, pt1.y*ms_rx_cos-pt1.z*ms_rx_sin, pt1.y*ms_rx_sin+pt1.z*ms_rx_cos);
+		CPoint3T<T>	pt2(pt1.x, pt1.y*ms_rx_cos-pt1.z*ms_rx_sin, pt1.y*ms_rx_sin+pt1.z*ms_rx_cos);
 		// Ｙ軸回りの回転変位(最終) // X-Z平面に投影
-		return CPointD(pt2.x*ms_ry_cos+pt2.z*ms_ry_sin, pt2.y);
+		return CPointT<T>(pt2.x*ms_ry_cos+pt2.z*ms_ry_sin, pt2.y);
 	}
-	static	void	ChangeAngle(double rx, double ry, double rz) {
+	static	void	ChangeAngle(T rx, T ry, T rz) {
 		ms_rx_cos = cos(rx);		ms_rx_sin = sin(rx);
 		ms_ry_cos = cos(ry);		ms_ry_sin = sin(ry);
 		ms_rz_cos = cos(rz);		ms_rz_sin = sin(rz);
 	}
 };
+typedef	CPoint3T<double>	CPoint3D;
+typedef	CPoint3T<float>		CPoint3F;
 
 //////////////////////////////////////////////////////////////////////
-// double型の CRectｸﾗｽ
+// 実数型の CRectｸﾗｽ
 
-class CRectD
+template<class T>
+class CRectT
 {
 public:
 	union {
 		struct {
-			double	left, top, right, bottom;
+			T	left, top, right, bottom;
 		};
-		double	rect[4];
+		T	rect[4];
 	};
 
 	// 初期化のためのｺﾝｽﾄﾗｸﾀ
-	CRectD() {
+	CRectT() {
 		SetRectEmpty();
 	}
-	CRectD(double l, double t, double r, double b) {
+	CRectT(T l, T t, T r, T b) {
 		left = l;			top = t;
 		right = r;			bottom = b;
 	}
-	CRectD(const CRect& rc) {
+	CRectT(const CRect& rc) {
 		left = rc.left;		top = rc.top;
 		right = rc.right;	bottom = rc.bottom;
 	}
-	CRectD(const CPointD& ptTopLeft, const CPointD& ptBottomRight) {
+	CRectT(const CPointT<T>& ptTopLeft, const CPointT<T>& ptBottomRight) {
 		TopLeft() = ptTopLeft;
 		BottomRight() = ptBottomRight;
 		NormalizeRect();
@@ -301,15 +320,15 @@ public:
 			std::swap(top, bottom);
 	}
 	// 指定座標が矩形内にあるか(矩形線上を含める)
-	BOOL	PtInRect(const CPointD& pt) const {
+	BOOL	PtInRect(const CPointT<T>& pt) const {
 		return left<=pt.x && pt.x<=right && top<=pt.y && pt.y<=bottom;
 	}
 	// 指定矩形が矩形内に完全に含まれるか
-	BOOL	PtInRect(const CRectD& rc) const {
+	BOOL	PtInRect(const CRectT<T>& rc) const {
 		return PtInRect(rc.TopLeft()) && PtInRect(rc.BottomRight());
 	}
 	// 2つの四角形が交わる部分に相当する四角形を設定
-	BOOL	CrossRect(const CRectD& rc1, const CRectD& rc2) {
+	BOOL	CrossRect(const CRectT<T>& rc1, const CRectT<T>& rc2) {
 		left	= max(rc1.left,		rc2.left);
 		top		= max(rc1.top,		rc2.top);
 		right	= min(rc1.right,	rc2.right);
@@ -320,68 +339,68 @@ public:
 		return FALSE;
 	}
 	// 中心座標...他
-	CPointD	CenterPoint(void) const {
-		return CPointD( (left+right)/2, (top+bottom)/2 );
+	CPointT<T>	CenterPoint(void) const {
+		return CPointT<T>( (left+right)/2, (top+bottom)/2 );
 	}
-	double	Width(void) const {
+	T	Width(void) const {
 		return right - left;
 	}
-	double	Height(void) const {
+	T	Height(void) const {
 		return bottom - top;
 	}
-	const CPointD&	TopLeft(void) const {
-		return *((CPointD *)rect);
+	const CPointT<T>&	TopLeft(void) const {
+		return *((CPointT<T> *)rect);
 	}
-	CPointD&	TopLeft(void) {
-		return *((CPointD *)rect);
+	CPointT<T>&	TopLeft(void) {
+		return *((CPointT<T> *)rect);
 	}
-	const CPointD&	BottomRight(void) const {
-		return *(((CPointD *)rect)+1);
+	const CPointT<T>&	BottomRight(void) const {
+		return *(((CPointT<T> *)rect)+1);
 	}
-	CPointD&	BottomRight(void) {
-		return *(((CPointD *)rect)+1);
+	CPointT<T>&	BottomRight(void) {
+		return *(((CPointT<T> *)rect)+1);
 	}
-	// 指定されたｵﾌｾｯﾄで CRectD を移動
-	void	OffsetRect(double x, double y) {
+	// 指定されたｵﾌｾｯﾄで CRectT を移動
+	void	OffsetRect(T x, T y) {
 		left	+= x;		right	+= x;
 		top		+= y;		bottom	+= y;
 	}
-	void	OffsetRect(const CPointD& pt) {
+	void	OffsetRect(const CPointT<T>& pt) {
 		left	+= pt.x;	right	+= pt.x;
 		top		+= pt.y;	bottom	+= pt.y;
 	}
 	// 各辺を中心から外側に向かって移動
-	void	InflateRect(double w, double h) {
+	void	InflateRect(T w, T h) {
 		left	-= w;		right	+= w;
 		top		-= h;		bottom	+= h;
 	}
 	// 演算子定義
-	BOOL	operator == (const CRectD& rc) const {
+	BOOL	operator == (const CRectT<T>& rc) const {
 		return	left   == rc.left &&
 				top    == rc.top &&
 				right  == rc.right &&
 				bottom == rc.bottom;
 	}
-	BOOL	operator != (const CRectD& rc) const {
+	BOOL	operator != (const CRectT<T>& rc) const {
 		return !operator ==(rc);
 	}
-	CRectD&	operator /= (double d) {
+	CRectT<T>&	operator /= (T d) {
 		left /= d;		right /= d;
 		top /= d;		bottom /= d;
 		return *this;
 	}
-	CRectD&	operator |= (const CRectD& rc) {	// 矩形を合わせる(合体)
+	CRectT<T>&	operator |= (const CRectT<T>& rc) {	// 矩形を合わせる(合体)
 		if ( left   > rc.left )		left = rc.left;
 		if ( top    > rc.top )		top = rc.top;
 		if ( right  < rc.right )	right = rc.right;
 		if ( bottom < rc.bottom )	bottom = rc.bottom;
 		return *this;
 	}
-	double&		operator[] (size_t a) {
+	T&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(rect));
 		return rect[a];
 	}
-	double		operator[] (size_t a) const {
+	T		operator[] (size_t a) const {
 		ASSERT(a>=0 && a<SIZEOF(rect));
 		return rect[a];
 	}
@@ -398,81 +417,92 @@ public:
 		right = bottom = -DBL_MAX;	// DBL_MIN==最小の正の値
 	}
 };
+typedef	CRectT<double>	CRectD;
+typedef	CRectT<float>	CRectF;
 
 //////////////////////////////////////////////////////////////////////
 // CRect３次元矩形ｸﾗｽ
 
-class CRect3D : public CRectD
+template<class T>
+class CRect3T : public CRectT<T>
 {
 public:
-	double	high, low;		// 高さ
+	T	high, low;		// 高さ
 	// 初期化のためのｺﾝｽﾄﾗｸﾀ
-	CRect3D() {
-		high = low = 0.0;	// CRectD::SetRectEmpty() はﾍﾞｰｽｸﾗｽで呼ばれる
+	CRect3T() : CRectT<T>() {
+		high = low = 0.0;	// CRectT::SetRectEmpty() はﾍﾞｰｽｸﾗｽで呼ばれる
 	}
-	CRect3D(double l, double t, double r, double b, double h, double w) :
-			CRectD(l, t, r, b) {
+	CRect3T(T l, T t, T r, T b, T h, T w) :
+			CRectT<T>(l, t, r, b) {
 		high = h;	low = w;
 	}
 	// 幅と高さの正規化
 	void	NormalizeRect() {
-		CRectD::NormalizeRect();
+		CRectT<T>::NormalizeRect();
 		if ( low > high )
 			std::swap(low, high);
 	}
 	// 中心座標...他
-	CPoint3D	CenterPoint(void) const {
-		return CPoint3D( (left+right)/2, (top+bottom)/2, (high+low)/2 );
+	CPoint3T<T>	CenterPoint(void) const {
+		return CPoint3T<T>( (left+right)/2, (top+bottom)/2, (high+low)/2 );
 	}
-	double	Depth(void) const {
+	T	Depth(void) const {
 		return high - low;
 	}
 	// 指定されたｵﾌｾｯﾄで CRectD を移動
-	void	OffsetRect(double x, double y, double z) {
-		CRectD::OffsetRect(x, y);
+	void	OffsetRect(T x, T y, T z) {
+		CRectT<T>::OffsetRect(x, y);
 		high += z;		low += z;
 	}
-	void	OffsetRect(const CPointD& pt) {
-		CRectD::OffsetRect(pt);
+	void	OffsetRect(const CPointT<T>& pt) {
+		CRectT<T>::OffsetRect(pt);
 	}
-	void	OffsetRect(const CPoint3D& pt) {
-		CRectD::OffsetRect(pt.GetXY());
+	void	OffsetRect(const CPoint3T<T>& pt) {
+		CRectT<T>::OffsetRect(pt.GetXY());
 		high += pt.z;	low += pt.z;
 	}
 	// 各辺を中心から外側に向かって移動
-	void	InflateRect(double w, double h) {
-		CRectD::InflateRect(w, h);
+	void	InflateRect(T w, T h) {
+		CRectT<T>::InflateRect(w, h);
 	}
-	void	InflateRect(double w, double h, double t) {
-		CRectD::InflateRect(w, h);
+	void	InflateRect(T w, T h, T t) {
+		CRectT<T>::InflateRect(w, h);
 		high += t;		low  -= t;
 	}
 	// 演算子定義
-	BOOL	operator == (const CRect3D& rc) const {
-		return	CRectD::operator ==(rc) &&
+	BOOL	operator == (const CRect3T<T>& rc) const {
+		return	CRectT<T>::operator ==(rc) &&
 				high == rc.high &&
 				low  == rc.low;
 	}
-	BOOL	operator != (const CRect3D& rc) const {
+	BOOL	operator != (const CRect3T<T>& rc) const {
 		return !operator ==(rc);
 	}
-	CRect3D&	operator |= (const CRect3D& rc) {
-		CRectD::operator |= (rc);
+	CRect3T<T>&	operator /= (T d) {
+		left /= d;		right /= d;
+		top /= d;		bottom /= d;
+		high /= d;		low /= d;
+		return *this;
+	}
+	CRect3T<T>&	operator |= (const CRect3T<T>& rc) {
+		CRectT<T>::operator |= (rc);
 		if ( low  > rc.low )	low = rc.low;
 		if ( high < rc.high )	high = rc.high;
 		return *this;
 	}
 	// 初期化
 	void	SetRectEmpty(void) {
-		CRectD::SetRectEmpty();
+		CRectT<T>::SetRectEmpty();
 		high = low = 0;
 	}
 	void	SetRectMinimum(void) {
-		CRectD::SetRectMinimum();
+		CRectT<T>::SetRectMinimum();
 		high  = -DBL_MAX;
 		low   =  DBL_MAX;
 	}
 };
+typedef	CRect3T<double>	CRect3D;
+typedef	CRect3T<float>	CRect3F;
 
 //////////////////////////////////////////////////////////////////////
 // NCVC数値演算共通関数
@@ -491,7 +521,7 @@ inline	double	GAPCALC(const CPointD& pt)
 //	ｵﾌｾｯﾄ符号(進行方向左側)
 inline int	CalcOffsetSign(const CPointD& pt)
 {
-	double	dAngle = RoundUp(atan2(pt.y, pt.x)*DEG);
+	double	dAngle = RoundUp( DEG(atan2(pt.y, pt.x)) );
 	return ( dAngle < -90.0 || 90.0 <= dAngle ) ? -1 : 1;
 }
 

@@ -5,6 +5,7 @@
 
 // ½Ú¯ÄŞŠÖ”
 UINT NCDtoXYZ_Thread(LPVOID);
+UINT UVWire_Thread(LPVOID);
 UINT CorrectCalc_Thread(LPVOID);
 UINT MakeNCD_Thread(LPVOID);
 UINT MakeLathe_Thread(LPVOID);

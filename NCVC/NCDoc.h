@@ -21,7 +21,8 @@ enum NCDOCFLG {
 	NCDOC_WRKRECT,		// ﾜｰｸ矩形の描画
 	NCDOC_THUMBNAIL,	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
 	NCDOC_LATHE,		// NC旋盤ﾓｰﾄﾞ
-		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[10]
+	NCDOC_WIRE,			// ﾜｲﾔ加工ﾓｰﾄﾞ
+		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[11]
 };
 
 // CNCDoc::DataOperation() の操作方法
@@ -35,6 +36,7 @@ class CNCDoc : public CDocument, public CDocBase
 	CWinThread*	m_pCutcalcThread;	// 切削時間計算ｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
 				m_strCurrentFile;	// 現在処理中のNCﾌｧｲﾙ名(FileInsert etc.)
+	CRecentViewInfo*	m_pRecentViewInfo;		// ﾌｧｲﾙごとの描画情報
 	// NCﾃﾞｰﾀ
 	int			m_nWorkOrg;						// 使用中のﾜｰｸ座標
 	CPoint3D	m_ptNcWorkOrg[WORKOFFSET+1],	// ﾜｰｸ座標系(G54～G59)とG92原点
@@ -86,6 +88,9 @@ public:
 	}
 	CString	GetCurrentFileName(void) const {
 		return m_strCurrentFile;
+	}
+	CRecentViewInfo*	GetRecentViewInfo(void) const {
+		return m_pRecentViewInfo;
 	}
 	INT_PTR		GetNCBlockSize(void) const {
 		return m_obBlock.GetSize();
@@ -164,7 +169,7 @@ public:
 	void	AllChangeFactorYZ(double) const;
 
 	void	CreateCutcalcThread(void);		// 切削時間計算ｽﾚｯﾄﾞの生成
-	void	WaitCalcThread(void);			// ｽﾚｯﾄﾞの終了
+	void	WaitCalcThread(BOOL = FALSE);	// ｽﾚｯﾄﾞの終了
 
 	// from TH_NCRead.cpp
 	BOOL	SerializeInsertBlock(LPCTSTR, int, DWORD = 0, BOOL = TRUE);	// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの挿入
@@ -186,7 +191,7 @@ public:
 		m_bNcDocFlg.set(NCDOC_COMMENTWORK_Z);
 	}
 	void	SetLatheViewMode(void);
-	void	ResetLatheViewMode(void);
+	void	SetWireViewMode(void);
 
 	// from NCWorkDlg.cpp
 	void	SetWorkRect(BOOL bShow, const CRect3D& rc) {

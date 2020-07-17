@@ -31,4 +31,10 @@ void CNCViewBase::OnInitialUpdate(int nTab)
 		VERIFY(strLathe.LoadString(IDCV_LATHE));
 		m_strGuide += strLathe;
 	}
+	else if ( pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
+		// (Wire Mode)•¶Žš—ñ‚ð’Ç‰Á
+		CString	strLathe;
+		VERIFY(strLathe.LoadString(IDCV_WIRE));
+		m_strGuide += strLathe;
+	}
 }

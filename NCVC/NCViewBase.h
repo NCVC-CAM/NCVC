@@ -13,7 +13,9 @@ protected:
 	virtual ~CNCViewBase() {}
 
 protected:
-	CString	m_strGuide;			// 平面案内文字
+	CString			m_strGuide;		// 平面案内文字
+	PFNNCDRAWPROC	m_pfnDrawProc;	// 描画関数ﾎﾟｲﾝﾀ
+
 	// XY, XZ, YZ 平面用 (XYZはCNCViewが独自に持つ)
 	CPoint	m_ptGuide[2][2];	// 軸のｶﾞｲﾄﾞ座標(始点・終点)
 	CRect	m_rcDrawWork;		// ﾜｰｸ矩形
@@ -28,13 +30,4 @@ protected:
 	}
 
 	void	OnInitialUpdate(int);
-
-public:
-/*
-	純粋仮想関数にして CTraceThread::InitInstance() から
-	動的に各ｵﾌﾞｼﾞｪｸﾄの DrawData() を呼び出したいが，
-	CView からの派生クラスは "動的生成(DECLARE_DYNCREATE)" のため
-	CNCViewBase がうまく見えない??
-*/
-//	virtual	void	DrawData(CDC*, CNCdata*) = 0;
 };

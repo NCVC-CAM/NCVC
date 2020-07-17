@@ -872,6 +872,8 @@ BOOL CDXFmap::CopyToChain(CDXFchain* pChain)
 			pData = pArray->GetAt(0);
 			break;
 		}
+		if ( !pData && pArray->GetSize()>0 )
+			pData = pArray->GetAt(0);
 	}
 	if ( !pData )
 		return FALSE;
@@ -2193,7 +2195,7 @@ BOOL CDXFshape::CreateScanLine_ScrollCircle(CDXFchain* pResult)
 	dxfArc.r	= r;
 	dxfArc.c.x	= pto.x + r;
 	dxfArc.c.y	= pto.y;
-	dxfArc.sq	= 180.0*RAD;
+	dxfArc.sq	= RAD(180.0);
 	dxfArc.eq	= 0.0;
 
 	while ( dMax - fabs(pte.x-pto.x) > NCMIN ) {
@@ -2206,12 +2208,12 @@ BOOL CDXFshape::CreateScanLine_ScrollCircle(CDXFchain* pResult)
 			dxfArc.c.x = pto.x;
 			pte.x = dxfArc.c.x - dxfArc.r;
 			dxfArc.sq = 0.0;
-			dxfArc.eq = -180.0*RAD;
+			dxfArc.eq = -RAD(180.0);
 		}
 		else {
 			dxfArc.c.x = pto.x + r;
 			pte.x = dxfArc.c.x + dxfArc.r;
-			dxfArc.sq = 180.0*RAD;
+			dxfArc.sq = RAD(180.0);
 			dxfArc.eq = 0.0;
 		}
 	}
@@ -2598,9 +2600,9 @@ CDXFdata* CreateDxfOffsetObject
 			dxfArc.c = pArc->GetCenter();
 			dxfArc.r = pArc->GetR() + dOffset * k;
 			if ( (dxfArc.sq=atan2(pts.y-dxfArc.c.y, pts.x-dxfArc.c.x)) < 0.0 )
-				dxfArc.sq += 360.0*RAD;
+				dxfArc.sq += RAD(360.0);
 			if ( (dxfArc.eq=atan2(pte.y-dxfArc.c.y, pte.x-dxfArc.c.x)) < 0.0 )
-				dxfArc.eq += 360.0*RAD;
+				dxfArc.eq += RAD(360.0);
 			// µØ¼ÞÅÙ‰~ŒÊ‚ÆµÌ¾¯Ä‰~ŒÊ‚Ì‰ñ“]•ûŒüÁª¯¸
 			if ( k != 0 ) {
 				optional<CPointD> ptResult = ::CalcIntersectionPoint_LL(
@@ -2612,17 +2614,17 @@ CDXFdata* CreateDxfOffsetObject
 			double	d;
 			if ( bRound ) {
 				// for CDXFarc::AngleTuning()
-				d = ::RoundUp(dxfArc.sq*DEG);
-				while ( d > ::RoundUp(dxfArc.eq*DEG) )
-					dxfArc.eq += 360.0*RAD;
+				d = ::RoundUp(DEG(dxfArc.sq));
+				while ( d > ::RoundUp(DEG(dxfArc.eq)) )
+					dxfArc.eq += RAD(360.0);
 				// ‰~Žü‚Ì’·‚³‚ªŠù’è’l–¢–ž‚È‚ç
 				if ( k!=0 && dxfArc.r * ( dxfArc.eq - dxfArc.sq ) < NCMIN )
 					bCreate = FALSE;
 			}
 			else {
-				d = ::RoundUp(dxfArc.eq*DEG);
-				while ( d > ::RoundUp(dxfArc.sq*DEG) )
-					dxfArc.sq += 360.0*RAD;
+				d = ::RoundUp(DEG(dxfArc.eq));
+				while ( d > ::RoundUp(DEG(dxfArc.sq)) )
+					dxfArc.sq += RAD(360.0);
 				if ( k!=0 && dxfArc.r * ( dxfArc.sq - dxfArc.eq ) < NCMIN )
 					bCreate = FALSE;
 			}
@@ -2654,13 +2656,13 @@ CDXFdata* CreateDxfOffsetObject
 					q = _copysign(1.0, q);	// -1.0 or 1.0
 				dxfEllipse.sq = _copysign(acos(q), pt1.y);
 				if ( dxfEllipse.sq < 0.0 )
-					dxfEllipse.sq += 360.0*RAD;
+					dxfEllipse.sq += RAD(360.0);
 				q = pt2.x / l;
 				if ( q < -1.0 || 1.0 < q )
 					q = _copysign(1.0, q);
 				dxfEllipse.eq = _copysign(acos(q), pt2.y);
 				if ( dxfEllipse.eq < 0.0 )
-					dxfEllipse.eq += 360.0*RAD;
+					dxfEllipse.eq += RAD(360.0);
 				if ( k != 0 ) {
 					optional<CPointD> ptResult = ::CalcIntersectionPoint_LL(
 							pts, pEllipse->GetNativePoint(0),
@@ -2671,14 +2673,14 @@ CDXFdata* CreateDxfOffsetObject
 					}
 				}
 				if ( dxfEllipse.bRound ) {
-					q = ::RoundUp(dxfEllipse.sq*DEG);
-					while ( q > ::RoundUp(dxfEllipse.eq*DEG) )
-						dxfEllipse.eq += 360.0*RAD;
+					q = ::RoundUp(DEG(dxfEllipse.sq));
+					while ( q > ::RoundUp(DEG(dxfEllipse.eq)) )
+						dxfEllipse.eq += RAD(360.0);
 				}
 				else {
-					q = ::RoundUp(dxfEllipse.eq*DEG);
-					while ( q > ::RoundUp(dxfEllipse.sq*DEG) )
-						dxfEllipse.sq += 360.0*RAD;
+					q = ::RoundUp(DEG(dxfEllipse.eq));
+					while ( q > ::RoundUp(DEG(dxfEllipse.sq)) )
+						dxfEllipse.sq += RAD(360.0);
 				}
 			}
 			else {
@@ -2732,8 +2734,8 @@ CDXFdata*	CreateDxfLatheObject(const CDXFdata* pData, double yd)
 			dxfEllipse.c	= pEllipse->GetCenter();
 			dxfEllipse.l	= pEllipse->GetLongPoint();
 			dxfEllipse.s	= pEllipse->GetShortMagni();
-			dxfEllipse.sq	= pEllipse->GetStartAngle() * DEG;
-			dxfEllipse.eq	= pEllipse->GetEndAngle() * DEG;
+			dxfEllipse.sq	= DEG(pEllipse->GetStartAngle());
+			dxfEllipse.eq	= DEG(pEllipse->GetEndAngle());
 			dxfEllipse.bRound = pEllipse->GetRoundOrig();
 			dxfEllipse.c.y += yd;
 			pDataResult = new CDXFellipse(&dxfEllipse);

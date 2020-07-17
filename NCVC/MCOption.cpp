@@ -14,7 +14,7 @@ extern	CMagaDbg	g_dbg;
 
 using namespace boost;
 
-extern	LPCTSTR	g_szNdelimiter;		// "XYZRIJKPLDH" from NCDoc.cpp
+extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 extern	LPCTSTR	gg_szComma;			// ","
 //
 extern	LPCTSTR	gg_szRegKey;

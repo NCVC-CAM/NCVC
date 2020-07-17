@@ -232,6 +232,7 @@ void CViewBase::OnMoveKey(UINT nID)
 {
 	ASSERT(m_pView);
 	CClientDC	dc(m_pView);
+
 	CRect		rc;
 	m_pView->GetClientRect(rc);
 	// ¸×²±İÄÀ•W‚Ì1/6‚ğˆÚ“®”ÍˆÍ‚Æ‚·‚é

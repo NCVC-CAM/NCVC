@@ -107,7 +107,7 @@ try {
 					continue;
 				}
 				pData1->AddCorrectObject(pData1c);
-				nCorrect = 1;	// break
+				nCorrect = 1;	// 補正ﾙｰﾌﾟへ(break)
 #ifdef _DEBUG
 				dbg.printf("Gcode=%d X=%.3f Y=%.3f Z=%.3f", pData1->GetGcode(),
 					pData1->GetEndValue(NCA_X),
@@ -118,16 +118,18 @@ try {
 		}
 
 		// 補正開始ﾌﾞﾛｯｸのﾁｪｯｸ
-		if ( pData1->GetGtype()==G_TYPE && pData1->GetType()!=NCDLINEDATA ) {
-			SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTSTART);
-			nCorrect = 0;	// 補正ﾙｰﾌﾟに入らない
-		}
-		else if ( i<nLoopCnt && IsThread() ) {
-			nSign1 = pData1->CalcOffsetSign();
-			if ( dwValFlags & NCD_CORRECT_R )
-				nSign1 = -nSign1;
-			if ( dToolD < 0 )
-				nSign1 = -nSign1;
+		if ( i<nLoopCnt && IsThread() ) {
+			if ( pData1->GetType() != NCDLINEDATA ) {
+				SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTSTART);
+				nCorrect = 0;	// 補正ﾙｰﾌﾟに入らない
+			}
+			else {
+				nSign1 = pData1->CalcOffsetSign();
+				if ( dwValFlags & NCD_CORRECT_R )
+					nSign1 = -nSign1;
+				if ( dToolD < 0 )
+					nSign1 = -nSign1;
+			}
 		}
 
 		// ----------
@@ -466,9 +468,8 @@ try {
 				ptDBG.x, ptDBG.y, ptDBG.z);
 #endif
 			// 次のﾙｰﾌﾟへ
-			if ( nCorrect > 0 )
-				nCorrect = 2;	// 1 -> 2
-			else {
+			switch ( nCorrect ) {
+			case 0:
 				// G40ｷｬﾝｾﾙで軸指定がない終点座標を補正
 				ptResult = SetCorrectCancel(pData1c, pData2c);
 				if ( ptResult ) {
@@ -496,6 +497,10 @@ try {
 						}
 					}
 				}
+				break;
+			case 1:
+				nCorrect++;		// 1 -> 2
+				break;
 			}
 			pData2->AddCorrectObject(pData2c);
 			pData1 = pData2;
@@ -634,7 +639,8 @@ int GetInsideOutside(const CNCdata* pData1, const CNCdata* pData2, DWORD dwValFl
 	int		nResult;
 
 	// ｵﾌﾞｼﾞｪｸﾄ間の角度を求める(-180°～180°)
-	double	dAngle = RoundUp(pData1->CalcBetweenAngle(pData2) * DEG);
+	// 精度よすぎてダメな場合が多いので、少数第１位で四捨五入
+	double	dAngle = RoundUp(DEG(pData1->CalcBetweenAngle(pData2)/100.0)) * 100.0;
 	
 	// 内側か外側(鋭角・鈍角)か？(180°では内側処理)
 	if ( fabs(dAngle) >= 180.0 ) {

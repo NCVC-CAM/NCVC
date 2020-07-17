@@ -127,7 +127,7 @@ CString	CNCMakeLathe::MakeSpindle(void)
 
 CString CNCMakeLathe::GetValString(int xyz, double dVal, BOOL)
 {
-	extern	LPCTSTR	g_szNdelimiter;		// "XYZRIJKPLDH" from NCDoc.cpp
+	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 	CString	strResult;
 
 	// ¬”“_ˆÈ‰º‚RŒ…(ˆÈ‰ºØ‚èã‚°)‚Å‚Ì’l‡’vÁª¯¸

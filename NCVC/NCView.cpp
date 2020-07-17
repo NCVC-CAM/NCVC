@@ -55,6 +55,7 @@ END_MESSAGE_MAP()
 
 CNCView::CNCView()
 {
+	m_pfnDrawProc = NULL;
 }
 
 CNCView::~CNCView()
@@ -75,10 +76,14 @@ BOOL CNCView::PreCreateWindow(CREATESTRUCT& cs)
 
 void CNCView::OnInitialUpdate() 
 {
-	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+	extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 	CView::OnInitialUpdate();
 	SetMaxRect2D();
+
+	// 描画関数の決定
+	m_pfnDrawProc = GetDocument()->IsNCDocFlag(NCDOC_WIRE) ?
+		&(CNCdata::DrawWire) : &(CNCdata::Draw);
 
 	// 平面案内文字列をｾｯﾄ
 	if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) ) {
@@ -322,12 +327,15 @@ void CNCView::OnDraw(CDC* pDC)
 		}
 	}
 	// NCﾃﾞｰﾀ描画
+	ASSERT( m_pfnDrawProc );
 	CNCdata*	pData;
-	int	nDraw = GetDocument()->GetTraceDraw();	// ｸﾘﾃｨｶﾙｾｸｼｮﾝによるﾛｯｸ
+	int	nDraw = GetDocument()->GetTraceDraw();		// ｸﾘﾃｨｶﾙｾｸｼｮﾝによるﾛｯｸ
 	for ( i=GetDocument()->GetTraceStart(); i<nDraw; i++ ) {
 		pData = GetDocument()->GetNCdata(i);
-		if ( pData->GetGtype() == G_TYPE )
-			pData->Draw(pDC, FALSE);
+		if ( pData->GetGtype() == G_TYPE ) {
+//			pData->Draw(pDC, FALSE);
+			(pData->*m_pfnDrawProc)(pDC, FALSE);
+		}
 	}
 	if ( !GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		// 最大切削矩形
@@ -466,7 +474,7 @@ int CNCView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	if ( CView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
-	// ﾏｯﾋﾟﾝｸﾞﾓｰﾄﾞの変更など
+	// ﾏｯﾋﾟﾝｸﾞﾓｰﾄﾞの変更、描画関数の決定
 	CViewBase::OnCreate(this);
 	// ｶﾞｲﾄﾞﾃﾞｰﾀ
 	SetGuideData();

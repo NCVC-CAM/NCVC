@@ -99,9 +99,9 @@ void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, double dFeed)
 		pt = pEllipse->GetStartCutterPoint() - pEllipse->GetMakeCenter();
 		sq = atan2(pt.y, pt.x) - pEllipse->GetMakeLean();	// 傾きを吸収
 		if ( pEllipse->GetRound() )
-			eq = sq + 360.0*RAD;
+			eq = sq + RAD(360.0);
 		else
-			eq = sq - 360.0*RAD;
+			eq = sq - RAD(360.0);
 	}
 
 	// 生成開始
@@ -198,7 +198,7 @@ void CNCMakeBase::MakePolylineCut(const CDXFpolyline* pPoly, double dFeed)
 CString CNCMakeBase::MakeCustomString
 	(int nCode, DWORD dwValFlags/*=0*/, double* dValue/*=NULL*/, BOOL bReflect/*=TRUE*/)
 {
-	extern	LPCTSTR	g_szNdelimiter;		// "XYZRIJKPLDH" from NCDoc.cpp
+	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 	extern	const	DWORD	g_dwSetValFlags[];
 
 	// 座標値を前回値に反映させない場合(G92など)は直接 ms_pfnGetValDetail を呼び出す
@@ -208,7 +208,7 @@ CString CNCMakeBase::MakeCustomString
 	if ( dValue ) {
 		for ( int i=0; i<VALUESIZE; i++ ) {
 			if ( dwValFlags & g_dwSetValFlags[i] )
-				strResult += bReflect || i>=NCA_P ?
+				strResult += bReflect || i>=GVALSIZE ?	// i>=NCA_P
 								(*ms_pfnGetValString)(i, dValue[i], FALSE) :
 								(g_szNdelimiter[i]+(*ms_pfnGetValDetail)(dValue[i]));
 		}

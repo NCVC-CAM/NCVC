@@ -283,6 +283,8 @@ BEGIN
             MENUITEM "表示属性の設定(&P)...",              ID_OPTION_VIEW_SETUP
             MENUITEM "表示属性のｲﾝﾎﾟｰﾄ(&I)",             ID_OPTION_VIEW_INPORT
             MENUITEM "表示属性のｴｸｽﾎﾟｰﾄ(&X)",            ID_OPTION_VIEW_EXPORT
+            MENUITEM SEPARATOR
+            MENUITEM "ﾃﾞﾌｫﾙﾄの回転角度として設定",            ID_OPTION_DEFVIEWINFO
         END
         MENUITEM SEPARATOR
         MENUITEM "外部ｱﾌﾟﾘｹｰｼｮﾝの設定(&E)...",       ID_OPTION_EXEC
@@ -514,6 +516,8 @@ BEGIN
             MENUITEM "表示属性の設定(&P)...",              ID_OPTION_VIEW_SETUP
             MENUITEM "表示属性のｲﾝﾎﾟｰﾄ(&I)",             ID_OPTION_VIEW_INPORT
             MENUITEM "表示属性のｴｸｽﾎﾟｰﾄ(&X)",            ID_OPTION_VIEW_EXPORT
+            MENUITEM SEPARATOR
+            MENUITEM "ﾃﾞﾌｫﾙﾄの回転角度として設定",            ID_OPTION_DEFVIEWINFO
         END
         MENUITEM SEPARATOR
         MENUITEM "工作機械の設定(&C)...",              ID_OPTION_MC
@@ -654,8 +658,8 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.01",IDC_STATIC,86,166,130,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 1997-2011 MNCT-S K.Magara",IDC_STATIC,86,182,130,8
+    LTEXT           "NCVC Version 3.20a",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 1997-2012 MNCT K.Magara",IDC_STATIC,86,182,123,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
 
@@ -1673,8 +1677,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,0,1,0
- PRODUCTVERSION 3,0,1,0
+ FILEVERSION 3,2,0,1
+ PRODUCTVERSION 3,2,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1690,16 +1694,16 @@ BEGIN
         BLOCK "041103a4"
         BEGIN
             VALUE "Comments", "NC Viewer and Converter"
-            VALUE "CompanyName", "MNCT-S"
+            VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NCVC MFC ｱﾌﾟﾘｹｰｼｮﾝ"
-            VALUE "FileVersion", "3.0.1.0"
+            VALUE "FileVersion", "3.2.0.1"
             VALUE "InternalName", "NCVC.exe"
-            VALUE "LegalCopyright", "Copyright (C) 1997-2011 MNCT-S K.Magara"
-            VALUE "LegalTrademarks", "MNCT-S"
+            VALUE "LegalCopyright", "Copyright (C) 1997-2012 MNCT K.Magara"
+            VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.0.1.0"
+            VALUE "ProductVersion", "3.2.0.1"
             VALUE "SpecialBuild", "VC++2008SP1 FeaturePack"
         END
     END
@@ -2424,6 +2428,7 @@ BEGIN
     IDS_REGISTRY_KEY        "MNCT-S"
     IDS_REGKEY_SETTINGS     "Settings"
     IDS_REGKEY_WINDOW       "Window"
+    IDS_REGKEY_RECENTVIEWINFO "Recent View Info"
     IDS_REGKEY_DXF          "DXF"
     IDS_REGKEY_NC           "NC"
     IDS_REGKEY_MAKEDXF      "MakeDXF"
@@ -2495,6 +2500,7 @@ BEGIN
     ID_OPTION_VIEW_EXPORT   "現在の表示属性をﾃｷｽﾄﾌｧｲﾙに出力します。自分の設定を保存するとき、また他人に自分の設定を渡すのに使います"
     ID_OPTION_EXEC          "外部ｱﾌﾟﾘｹｰｼｮﾝの設定を行います\n外部ｱﾌﾟﾘ"
     ID_OPTION_EXT           "NCVCで読み込む拡張子を登録します\n拡張子登録"
+    ID_OPTION_DEFVIEWINFO   "現在表示中の回転角度をデフォルトとして設定します"
 END
 
 STRINGTABLE 
@@ -2721,6 +2727,7 @@ BEGIN
     IDS_ANA_VALUECHANGE     "%s\nが変更されています。保存しますか？"
     IDS_ANA_OUTLINE         "輪郭加工指示が消去されますが続行しますか？"
     IDS_ANA_STRICTOFFSET    "この処理は手動で輪郭情報を変更したときにだけ必要です。\n実行しますか？"
+    IDS_ANA_DEFVIEWINFO     "ﾃﾞﾌｫﾙﾄ回転情報を保存しました。\n初期化は HOMEｷｰ後、これを再実行してください。"
 END
 
 STRINGTABLE 
@@ -2791,6 +2798,7 @@ BEGIN
     IDS_REG_NCV_FRAMEPANESIZE "FramePaneSize%d"
     IDS_REG_NCV_VIEWPANESIZE "View%dPaneSize%d"
     IDS_REG_NCV_TRACESPEED  "TraceSpeed"
+    IDS_REG_NCV_DEFGLINFO   "DefaultGLInfo"
 END
 
 STRINGTABLE 
@@ -2847,6 +2855,7 @@ BEGIN
     IDCV_CUTCALC            "計算中..."
     IDCV_FEEDERROR          "移動速度未設定"
     IDCV_LATHE              " (Lathe Mode)"
+    IDCV_WIRE               " (Wire Mode)"
     IDCV_VALFORMAT          "%#12.3f"
 END
 
@@ -2892,11 +2901,7 @@ BEGIN
     IDS_RECALC_NCD          "%s 切削時間再計算中 ..."
     IDS_SHAPESEARCH         "形状ﾃﾞｰﾀを検索中 ..."
     IDS_AUTOWORKING         "自動加工指示処理中..."
-    IDS_MAKENCD_TITLE_BASIC "標準NCﾃﾞｰﾀ生成"
-    IDS_MAKENCD_TITLE_EX1   "ﾚｲﾔごとの複数条件でNCﾃﾞｰﾀ生成"
-    IDS_MAKENCD_TITLE_EX2   "ﾚｲﾔごとのZ座標指定でNCﾃﾞｰﾀ生成"
-    IDS_MAKENCD_TITLE_SHAPE "形状加工によるNCﾃﾞｰﾀ生成"
-    IDS_MAKENCD_TITLE_LATHE "旋盤用NCﾃﾞｰﾀの生成"
+    IDS_UVTAPER_NCD         "UVﾃｰﾊﾟｵﾌﾞｼﾞｪｸﾄ生成中 ..."
 END
 
 STRINGTABLE 
@@ -2918,8 +2923,8 @@ STRINGTABLE
 BEGIN
     IDS_ERR_NCBLK_NOTLATHE  "旋盤ﾓｰﾄﾞではｻﾎﾟｰﾄされない"
     IDS_ERR_NCBLK_CORRECT   "補正情報がない"
-    IDS_ERR_NCBLK_CORRECTSTART "補正開始ｺｰﾄﾞは直線補間"
-    IDS_ERR_NCBLK_ENDCIRCLE "補正の最後が円弧補間"
+    IDS_ERR_NCBLK_CORRECTSTART "補正またはﾃｰﾊﾟ開始ｺｰﾄﾞは直線補間"
+    IDS_ERR_NCBLK_ENDCIRCLE "補正またはﾃｰﾊﾟ処理の最後が円弧補間"
     IDS_ERR_NCBLK_CORRECTOBJECT "補正ｵﾌﾞｼﾞｪｸﾄ生成ｴﾗｰ"
     IDS_ERR_NCBLK_G10ADDTOOL "G10ﾂｰﾙ仮登録で失敗"
     IDS_ERR_NCBLK_GTYPE     "切削ｺｰﾄﾞでない"
@@ -2962,6 +2967,15 @@ END
 STRINGTABLE 
 BEGIN
     ID_DXFST_MOUSE          "切削原点からの距離  x :            / y :           "
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_MAKENCD_TITLE_BASIC "標準NCﾃﾞｰﾀ生成"
+    IDS_MAKENCD_TITLE_EX1   "ﾚｲﾔごとの複数条件でNCﾃﾞｰﾀ生成"
+    IDS_MAKENCD_TITLE_EX2   "ﾚｲﾔごとのZ座標指定でNCﾃﾞｰﾀ生成"
+    IDS_MAKENCD_TITLE_SHAPE "形状加工によるNCﾃﾞｰﾀ生成"
+    IDS_MAKENCD_TITLE_LATHE "旋盤用NCﾃﾞｰﾀの生成"
 END
 
 #endif    // 日本語 resources

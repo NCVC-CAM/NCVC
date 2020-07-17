@@ -301,17 +301,17 @@ inline void CDXFcircle::GetQuarterPoint(const CPointD& ptClick, CPointD pt[]) co
 	// ¸Ø¯¸Îß²ÝÄ‚ÌŠp“x‚ðŽæ“¾
 	double	lq = atan2(ptClick.y - m_ct.y, ptClick.x - m_ct.x);
 	if ( lq < 0 )
-		lq += 360.0*RAD;
+		lq += RAD(360.0);
 	// Šp“x(ˆÊ’u)‚©‚ç1/4‚ÌŽn“_I“_À•W‚ðŽæ“¾(”½ŽžŒv‰ñ‚è‚Ål‚¦‚é)
-	if ( lq>=0 && lq<90.0*RAD ) {
+	if ( lq>=0 && lq<RAD(90.0) ) {
 		pt[0] = m_pt[0];
 		pt[1] = m_pt[1];
 	}
-	else if ( lq>=90.0*RAD && lq<180.0*RAD ) {
+	else if ( lq>=RAD(90.0) && lq<RAD(180.0) ) {
 		pt[0] = m_pt[1];
 		pt[1] = m_pt[2];
 	}
-	else if ( lq>=180.0*RAD && lq<270.0*RAD ) {
+	else if ( lq>=RAD(180.0) && lq<RAD(270.0) ) {
 		pt[0] = m_pt[2];
 		pt[1] = m_pt[3];
 	}
@@ -339,7 +339,7 @@ inline void CDXFcircle::SetEllipseArgv_Circle
 	lpArgv->eq = eq;
 	// ÌÞÛ¯¸‰ñ“]
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_R ) {
-		double	dRound = lpBlock->dRound * RAD;
+		double	dRound = RAD(lpBlock->dRound);
 		lpArgv->c.RoundPoint(dRound);
 		lpArgv->l.RoundPoint(dRound);
 	}
@@ -355,8 +355,8 @@ inline double CDXFcircle::GetSelectPointGap_Circle
 	CPointD	pt1(pt - m_ct);
 	double	q1, q2;
 	if ( (q1=atan2(pt1.y, pt1.x)) < 0.0 )
-		q1 += 360.0*RAD;
-	q2 = q1 + 360.0*RAD;
+		q1 += RAD(360.0);
+	q2 = q1 + RAD(360.0);
 	return (sq <= q1 && q1 <= eq) || (sq <= q2 && q2 <= eq) ?
 		fabs(m_r - pt1.hypot()) : HUGE_VAL;
 }
@@ -425,7 +425,7 @@ inline const CPointD CDXFcircle::GetMakeCenter(void) const
 
 inline void CDXFcircle::SetEllipseArgv(LPCDXFBLOCK lpBlock, LPCDXFEARGV lpArgv)
 {
-	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0, 360.0*RAD, TRUE);
+	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0, RAD(360.0), TRUE);
 }
 
 inline BOOL CDXFcircle::IsMakeTarget(void) const
@@ -544,7 +544,7 @@ inline const CPointD CDXFcircleEx::GetEndMakePoint(void) const
 inline void CDXFarc::SetRsign(void)
 {
 	// ‰ñ“]Šp“x‚ª 180‹‚ð‰z‚¦‚éÃÞ°À‚Í¶¬ÃÞ°À—p‚Ì”¼Œa‚ðÏ²Å½
-	if ( fabs(m_eqDraw-m_sqDraw)*DEG - 180.0 >= NCMIN )
+	if ( DEG(fabs(m_eqDraw-m_sqDraw)) - 180.0 >= NCMIN )
 		m_rMake = -m_rMake;
 }
 

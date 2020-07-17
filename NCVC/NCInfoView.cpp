@@ -19,7 +19,7 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 extern	LPCTSTR	gg_szDelimiter;	// ":"
-extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 static	LPCTSTR	g_szSpace = " ";
 
 // €∞∂Ÿã§í ä÷êî

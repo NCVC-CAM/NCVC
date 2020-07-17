@@ -50,29 +50,15 @@ CNCViewSplit::~CNCViewSplit()
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewSplit クラスのメンバ関数
 
-void CNCViewSplit::DrawData(const CNCdata* pData, BOOL bSelect, BOOL bErase)
+void CNCViewSplit::DrawData(CNCdata* pData, BOOL bSelect, BOOL bErase, PFNNCDRAWPROC pfnDrawProc[])
 {
 	CDC		dc;
-
-	if ( dc.Attach(m_hDC[0]) ) {
-		dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
-		pData->Draw(&dc, bSelect);
-		dc.Detach();
-	}
-	if ( dc.Attach(m_hDC[1]) ) {
-		dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
-		pData->DrawYZ(&dc, bSelect);
-		dc.Detach();
-	}
-	if ( dc.Attach(m_hDC[2]) ) {
-		dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
-		pData->DrawXZ(&dc, bSelect);
-		dc.Detach();
-	}
-	if ( dc.Attach(m_hDC[3]) ) {
-		dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
-		pData->DrawXY(&dc, bSelect);
-		dc.Detach();
+	for ( int i=0; i<SIZEOF(m_hDC); i++ ) {
+		if ( dc.Attach(m_hDC[i]) ) {
+			dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
+			(pData->*pfnDrawProc[i])(&dc, bSelect);
+			dc.Detach();
+		}
 	}
 }
 
@@ -152,35 +138,48 @@ LRESULT CNCViewSplit::OnUserInitialUpdate(WPARAM wParam, LPARAM lParam)
 	CalcPane(wParam, TRUE);
 	// 各ﾍﾟｲﾝへ図形ﾌｨｯﾄﾒｯｾｰｼﾞの送信
 	if ( wParam == NCVIEW_FOURSVIEW ) {	// ４面-1
-		for ( i=0; i<GetRowCount(); i++ ) {			// 行
-			for ( j=0; j<GetColumnCount(); j++ ) {	// 列
-				if ( (BOOL)lParam )
+		// ﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙを取得(XYZ, YZ, XZ, XY 順)
+		pDC = new CClientDC(GetPane(0, 0));		// XYZ
+		m_hDC[0] = pDC->GetSafeHdc();
+		delete	pDC;
+		pDC = new CClientDC(GetPane(1, 1));		// XY
+		m_hDC[1] = pDC->GetSafeHdc();
+		delete	pDC;
+		pDC = new CClientDC(GetPane(1, 0));		// XZ
+		m_hDC[2] = pDC->GetSafeHdc();
+		delete	pDC;
+		pDC = new CClientDC(GetPane(0, 1));		// YZ
+		m_hDC[3] = pDC->GetSafeHdc();
+		delete	pDC;
+		if ( lParam ) {
+			for ( i=0; i<GetRowCount(); i++ ) {			// 行
+				for ( j=0; j<GetColumnCount(); j++ ) {	// 列
 					GetPane(i, j)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);
-				// ﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙを取得(XYZ, YZ, XZ, XY 順)
-				pDC = new CClientDC(GetPane(i, j));
-				m_hDC[j+i*2] = pDC->GetSafeHdc();
-				delete	pDC;
+				}
 			}
-		}
-		if ( (BOOL)lParam )
 			SetActivePane(0, 0);	// XYZ表示をｱｸﾃｨﾌﾞに
+		}
 	}
 	else {								// ４面-2
-		if ( (BOOL)lParam )
-			GetPane(0, 1)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);	// XYZ
-		pDC = new CClientDC(GetPane(0, 1));
+		pDC = new CClientDC(GetPane(0, 1));			// XYZ
 		m_hDC[0] = pDC->GetSafeHdc();
 		delete	pDC;
 		CSplitterWnd* pWnd = static_cast<CSplitterWnd *>(GetPane(0, 0));
-		for ( i=0; i<pWnd->GetRowCount(); i++ ) {
-			if ( (BOOL)lParam )
+		pDC = new CClientDC(pWnd->GetPane(2, 0));	// XY
+		m_hDC[1] = pDC->GetSafeHdc();
+		delete	pDC;
+		pDC = new CClientDC(pWnd->GetPane(1, 0));	// XZ
+		m_hDC[2] = pDC->GetSafeHdc();
+		delete	pDC;
+		pDC = new CClientDC(pWnd->GetPane(0, 0));	// YZ
+		m_hDC[3] = pDC->GetSafeHdc();
+		delete	pDC;
+		if ( lParam ) {
+			for ( i=0; i<pWnd->GetRowCount(); i++ )
 				pWnd->GetPane(i, 0)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);	// YZ, XZ, XY
-			pDC = new CClientDC(pWnd->GetPane(i, 0));
-			m_hDC[i+1] = pDC->GetSafeHdc();
-			delete	pDC;
-		}
-		if ( (BOOL)lParam )
+			GetPane(0, 1)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);	// XYZ
 			SetActivePane(0, 1);	// XYZ表示をｱｸﾃｨﾌﾞに
+		}
 	}
 
 	return 0;

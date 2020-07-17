@@ -55,6 +55,7 @@ END_MESSAGE_MAP()
 
 CNCViewXY::CNCViewXY()
 {
+	m_pfnDrawProc = NULL;
 }
 
 CNCViewXY::~CNCViewXY()
@@ -75,9 +76,13 @@ BOOL CNCViewXY::PreCreateWindow(CREATESTRUCT& cs)
 
 void CNCViewXY::OnInitialUpdate() 
 {
-	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+	extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 	CView::OnInitialUpdate();
+
+	// •`‰æŠÖ”‚ÌŒˆ’è
+	m_pfnDrawProc = GetDocument()->IsNCDocFlag(NCDOC_WIRE) ?
+		&(CNCdata::DrawWireXY) : &(CNCdata::DrawXY);
 
 	// •½–ÊˆÄ“à•¶Žš—ñ‚ð¾¯Ä
 	if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) ) {
@@ -249,12 +254,15 @@ void CNCViewXY::OnDraw(CDC* pDC)
 			DrawGuideScale(pDC);	// –Ú·•\Ž¦
 	}
 	// NCÃÞ°À•`‰æ
+	ASSERT( m_pfnDrawProc );
 	CNCdata*	pData;
 	int	nDraw = GetDocument()->GetTraceDraw();	// ¸ØÃ¨¶Ù¾¸¼®Ý‚É‚æ‚éÛ¯¸
 	for ( i=GetDocument()->GetTraceStart(); i<nDraw; i++ ) {
 		pData = GetDocument()->GetNCdata(i);
-		if ( pData->GetGtype() == G_TYPE )
-			pData->DrawXY(pDC, FALSE);
+		if ( pData->GetGtype() == G_TYPE ) {
+//			pData->DrawXY(pDC, FALSE);
+			(pData->*m_pfnDrawProc)(pDC, FALSE);
+		}
 	}
 	if ( !GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		// Å‘åØí‹éŒ`

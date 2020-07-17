@@ -100,7 +100,7 @@ void CNCWorkDlg::SetValue(const CNCDoc* pDoc, const CRect3D& rc)
 
 BOOL CNCWorkDlg::OnInitDialog() 
 {
-	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+	extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 	CDialog::OnInitDialog();
 	int		i, j;

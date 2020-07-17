@@ -43,6 +43,7 @@
 #define IDCV_CUTCALC                    514
 #define IDCV_FEEDERROR                  515
 #define IDCV_LATHE                      516
+#define IDCV_WIRE                       517
 #define IDCV_VALFORMAT                  520
 #define IDS_MAKENCD_FORMAT              600
 #define IDS_MAKENCD_CIRCLEBREAK         601
@@ -59,11 +60,12 @@
 #define IDS_RECALC_NCD                  707
 #define IDS_SHAPESEARCH                 708
 #define IDS_AUTOWORKING                 709
-#define IDS_MAKENCD_TITLE_BASIC         710
-#define IDS_MAKENCD_TITLE_EX1           711
-#define IDS_MAKENCD_TITLE_EX2           712
-#define IDS_MAKENCD_TITLE_SHAPE         713
-#define IDS_MAKENCD_TITLE_LATHE         714
+#define IDS_UVTAPER_NCD                 710
+#define IDS_MAKENCD_TITLE_BASIC         720
+#define IDS_MAKENCD_TITLE_EX1           721
+#define IDS_MAKENCD_TITLE_EX2           722
+#define IDS_MAKENCD_TITLE_SHAPE         723
+#define IDS_MAKENCD_TITLE_LATHE         724
 #define IDS_COMMON_FORMAT               999
 #define IDD_THUMBNAIL                   1000
 #define ID_FILE_THUMBNAIL               1000
@@ -524,6 +526,7 @@
 #define IDC_EXE_DXFTYPE                 9010
 #define ID_OPTION_EXT                   9011
 #define IDC_EXE_ADD                     9012
+#define ID_OPTION_DEFVIEWINFO           9012
 #define IDC_EXE_MOD                     9013
 #define IDC_EXE_DEL                     9014
 #define IDC_EXE_FILE83                  9015
@@ -565,6 +568,7 @@
 #define IDS_REGISTRY_KEY                10000
 #define IDS_REGKEY_SETTINGS             10001
 #define IDS_REGKEY_WINDOW               10002
+#define IDS_REGKEY_RECENTVIEWINFO       10003
 #define IDS_REGKEY_DXF                  10004
 #define IDS_REGKEY_NC                   10005
 #define IDS_REGKEY_MAKEDXF              10010
@@ -615,6 +619,7 @@
 #define IDS_REG_NCV_FRAMEPANESIZE       10252
 #define IDS_REG_NCV_VIEWPANESIZE        10253
 #define IDS_REG_NCV_TRACESPEED          10254
+#define IDS_REG_NCV_DEFGLINFO           10255
 #define IDS_REG_NOTEPAD                 10900
 #define IDS_REG_CAD                     10901
 #define IDS_REG_EXEC                    10902
@@ -729,8 +734,10 @@
 #define IDS_ANA_VALUECHANGE             29014
 #define IDS_ANA_OUTLINE                 29015
 #define IDS_ANA_STRICTOFFSET            29016
+#define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
+#define ID_32792                        32792
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -740,9 +747,7 @@
 #define ID_INDICATOR_FACTOR             59206
 #define ID_NCDST_LINENO_F               59207
 #define ID_NCDST_LINENO                 59208
-#define ID_NCDST_COORDINATES_F          59209
 #define ID_NCDST_COORDINATE_MF          59209
-#define ID_NCDST_COORDINATES            59210
 #define ID_NCDST_COORDINATE_M           59210
 #define ID_NCDST_COORDINATE_LF          59211
 #define ID_NCDST_COORDINATE_L           59212
@@ -756,7 +761,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        153
-#define _APS_NEXT_COMMAND_VALUE         32792
+#define _APS_NEXT_COMMAND_VALUE         32793
 #define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

@@ -315,7 +315,7 @@ void CThumbnailDlg::WaitEnumDocThread(BOOL bStop/*=TRUE*/)
 		m_bEnumDoc = FALSE;
 	if ( m_pEnumDocThread ) {
 #ifdef _DEBUG
-		CMagaDbg	dbg("CNCDoc::WaitCalcThread()", DBG_BLUE);
+		CMagaDbg	dbg("CThumbnailDlg::WaitEnumDocThread()", DBG_BLUE);
 		if ( ::WaitForSingleObject(m_pEnumDocThread->m_hThread, INFINITE) == WAIT_FAILED ) {
 			dbg.printf("WaitForSingleObject() Fail!");
 			::NC_FormatMessage();

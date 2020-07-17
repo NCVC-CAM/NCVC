@@ -3204,8 +3204,9 @@ public:
 		case 3:		// G92X
 		case 4:		// G92Y
 		case 5:		// G92Z
-			dValue[nTestCode-2] = GetDbl(MKNC_DBL_G92X+nTestCode-2);
-			m_strResult += CNCMakeBase::MakeCustomString(-1, g_dwSetValFlags[nTestCode-2], dValue, FALSE);
+			nTestCode -= 3;
+			dValue[nTestCode] = GetDbl(MKNC_DBL_G92X+nTestCode);
+			m_strResult += CNCMakeBase::MakeCustomString(-1, g_dwSetValFlags[nTestCode], dValue, FALSE);
 			break;
 		case 6:		// SPINDLE
 			if ( m_pData )					// Header

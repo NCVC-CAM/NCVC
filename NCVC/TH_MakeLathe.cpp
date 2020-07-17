@@ -463,7 +463,7 @@ BOOL CreateRoughPass(void)
 		pData = g_obOutsideTemp[0];
 		ptChk[0] = pData->GetNativePoint(1) - pData->GetNativePoint(0);
 		if ( (qq=atan2(ptChk[0].y, ptChk[0].x)) < 0 )
-			qq += 360.0*RAD;
+			qq += RAD(360.0);
 	}
 
 	// 外径準備ﾃﾞｰﾀをﾙｰﾌﾟさせ荒加工ﾃﾞｰﾀを作成
@@ -581,7 +581,7 @@ BOOL CreateRoughPass(void)
 								pDataChain->GetNativePoint(0);
 				}
 				if ( (q=atan2(ptChk[0].y, ptChk[0].x)) < 0 )
-					q += 360.0*RAD;
+					q += RAD(360.0);
 				if ( q >= qq ) {
 					// 基準線より傾きが大きいときだけ
 					// 端数交点から外径終点まで生成

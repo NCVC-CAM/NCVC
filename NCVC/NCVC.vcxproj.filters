@@ -309,6 +309,9 @@
     <ClCompile Include="TH_ShapeSearch.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="TH_UVWire.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="ThreadDlg.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>

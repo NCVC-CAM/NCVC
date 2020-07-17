@@ -30,14 +30,16 @@ class CNCViewGL : public CView
 	CPoint		m_ptDownClick;	// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示用他
 	HGLRC		m_hRC;
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
+	PFNGLDRAWPROC	m_pfnDrawProc;	// 描画関数ﾎﾟｲﾝﾀ
 
 	GLuint		m_nVertexID,	// 頂点配列用
 				m_nNormalID,	// 法線ﾍﾞｸﾄﾙ用
 				m_nPictureID,	// ﾃｸｽﾁｬ画像用
 				m_nTextureID;	// ﾃｸｽﾁｬ座標用
 	GLuint*		m_pGenBuf;		// 頂点ｲﾝﾃﾞｯｸｽ用
-	std::vector<GLsizei>	m_vVertexWrk,	// ﾜｰｸ矩形用glDrawElements用頂点個数
+	std::vector<GLsizei>	m_vVertexWrk,	// ﾜｰｸ矩形用glDrawElements頂点個数
 							m_vVertexCut;	// 切削面用
+	std::vector<double>		m_vWireLength;	// 移動を伴わない切削集合長さ(ﾜｲﾔ表示用)
 
 	ENTRACKINGMODE	m_enTrackingMode;
 	GLdouble		m_objectXform[4][4];
@@ -45,9 +47,10 @@ class CNCViewGL : public CView
 	void	ClearObjectForm(void);
 	BOOL	SetupPixelFormat(CDC*);
 	void	UpdateViewOption(void);
-	void	CreateWire(void);
+	void	CreateDisplayList(void);
 	BOOL	CreateBoxel(void);
 	BOOL	CreateLathe(void);
+	BOOL	CreateWire(void);
 	BOOL	GetClipDepthMill(void);
 	BOOL	GetClipDepthLathe(void);
 	BOOL	CreateVBOMill(const GLfloat*, GLfloat*);
@@ -55,6 +58,7 @@ class CNCViewGL : public CView
 	BOOL	ReadTexture(LPCTSTR);
 	void	CreateTextureMill(void);
 	void	CreateTextureLathe(void);
+	void	CreateTextureWire(void);
 	void	CreateTexture(GLsizeiptr, const GLfloat*);
 	void	ClearVBO(void);
 	void	ClearTexture(void);
@@ -109,11 +113,12 @@ protected:
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	// CNCViewTab::OnActivatePage() から SendMessage()
 	afx_msg LRESULT OnUserActivatePage(WPARAM, LPARAM);
+	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
+	afx_msg LRESULT OnUserViewFitMsg(WPARAM, LPARAM);
 	// ﾒﾆｭｰｺﾏﾝﾄﾞ
 	afx_msg	void OnMoveKey(UINT);
 	afx_msg	void OnLensKey(UINT);
-	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
-	afx_msg LRESULT OnUserViewFitMsg(WPARAM, LPARAM);
+	afx_msg void OnDefViewInfo();
 
 	DECLARE_MESSAGE_MAP()
 };

@@ -606,6 +606,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\TH_UVWire.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ThreadDlg.cpp"
 				>
 			</File>

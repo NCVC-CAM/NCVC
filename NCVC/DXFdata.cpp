@@ -225,7 +225,7 @@ CDXFpoint::CDXFpoint(CLayerData* pLayer, const CDXFpoint* pData, LPCDXFBLOCK lpB
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_Y )
 		m_pt[0].y *= lpBlock->dMagni[NCA_Y];
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_R )
-		m_pt[0].RoundPoint(lpBlock->dRound*RAD);
+		m_pt[0].RoundPoint(RAD(lpBlock->dRound));
 	m_pt[0] += lpBlock->ptOrg;
 	SetMaxRect();
 }
@@ -353,7 +353,7 @@ CDXFline::CDXFline(CLayerData* pLayer, const CDXFline* pData, LPCDXFBLOCK lpBloc
 		m_pt[1].y *= lpBlock->dMagni[NCA_Y];
 	}
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_R ) {
-		double	dRound = lpBlock->dRound*RAD;
+		double	dRound = RAD(lpBlock->dRound);
 		m_pt[0].RoundPoint(dRound);
 		m_pt[1].RoundPoint(dRound);
 	}
@@ -447,7 +447,7 @@ double CDXFline::GetSelectPointGap(const CPointD& pt)
 BOOL CDXFline::GetDirectionArraw(const CPointD&, CPointD pt[][3]) const
 {
 	double	lqs = atan2(m_pt[1].y - m_pt[0].y, m_pt[1].x - m_pt[0].x),
-			lqe = lqs + 180.0*RAD;
+			lqe = lqs + RAD(180.0);
 	double	lq[][2] = { {lqs + ARRAWANGLE, lqs - ARRAWANGLE},
 						{lqe + ARRAWANGLE, lqe - ARRAWANGLE} };
 	for ( int i=0; i<GetPointNumber(); i++ ) {
@@ -684,7 +684,7 @@ CDXFcircle::CDXFcircle(CLayerData* pLayer, const CDXFcircle* pData, LPCDXFBLOCK 
 		m_r  *= lpBlock->dMagni[NCA_X];
 	}
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_R )
-		m_ct.RoundPoint(lpBlock->dRound*RAD);
+		m_ct.RoundPoint(RAD(lpBlock->dRound));
 	m_ct += lpBlock->ptOrg;
 	m_rMake = pData->GetMakeR();
 	m_bRound = pData->GetRound();
@@ -803,7 +803,7 @@ double CDXFcircle::OrgTuning(BOOL bCalc/*=TRUE*/)
 
 double CDXFcircle::GetSelectPointGap(const CPointD& pt)
 {
-	return GetSelectPointGap_Circle(pt, 0.0, 360.0*RAD);
+	return GetSelectPointGap_Circle(pt, 0.0, RAD(360.0));
 }
 
 BOOL CDXFcircle::GetDirectionArraw_Circle
@@ -829,7 +829,7 @@ BOOL CDXFcircle::GetDirectionArraw(const CPointD& ptClick, CPointD ptResult[][3]
 	GetQuarterPoint(ptClick, pt);
 	// ê⁄ê¸ÇÃåXÇ´ÇãÅÇﬂÇÈ -> ì_ptÇ…íºåÇ∑ÇÈê¸ÇÃåXÇ´
 	double	q[] = {
-		-atan2(pt[0].x - m_ct.x, pt[0].y - m_ct.y)+180.0*RAD,
+		-atan2(pt[0].x - m_ct.x, pt[0].y - m_ct.y)+RAD(180.0),
 		-atan2(pt[1].x - m_ct.x, pt[1].y - m_ct.y)
 	};
 	// ê⁄ê¸Ç©ÇÁñÓàÛç¿ïWÇÃåvéZ
@@ -1022,8 +1022,8 @@ CDXFarc::CDXFarc(LPCDXFAARGV lpArc) :
 	CDXFcircle(DXFARCDATA, lpArc->pLayer, lpArc->c, lpArc->r, TRUE, 2)
 {
 	m_bRoundOrig = m_bRound;
-	m_sq = lpArc->sq * RAD;
-	m_eq = lpArc->eq * RAD;
+	m_sq = RAD(lpArc->sq);
+	m_eq = RAD(lpArc->eq);
 	AngleTuning();
 	m_sqDraw = m_sq;
 	m_eqDraw = m_eq;
@@ -1070,7 +1070,7 @@ CDXFarc::CDXFarc(CLayerData* pLayer, const CDXFarc* pData, LPCDXFBLOCK lpBlock) 
 		m_rMake = ::RoundUp(m_r);
 	}
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_R ) {
-		double	dRound = lpBlock->dRound*RAD;
+		double	dRound = RAD(lpBlock->dRound);
 		m_ct.RoundPoint(dRound);
 		m_sq += dRound;		m_eq += dRound;
 		m_pt[0].RoundPoint(dRound);
@@ -1145,12 +1145,12 @@ void CDXFarc::SetMaxRect(void)
 
 	// äpìxÇÃí≤êÆÇ∆äJénèIóπè€å¿(i,j)ÇÃê›íË
 	int	i = 0, j = 0;
-	while ( sq >= 90.0*RAD ) {
-		sq -= 90.0*RAD;
+	while ( sq >= RAD(90.0) ) {
+		sq -= RAD(90.0);
 		i++;
 	}
-	while ( eq >= 90.0*RAD ) {
-		eq -= 90.0*RAD;
+	while ( eq >= RAD(90.0) ) {
+		eq -= RAD(90.0);
 		j++;
 	}
 	// i Ç©ÇÁå©Çƒ j Ç™âΩè€å¿êÊÇ…Ç†ÇÈÇ©
@@ -1208,8 +1208,8 @@ void CDXFarc::XRev(void)
 	// âÒì]ï˚å¸ÇÃîΩì]
 	SwapRound();
 	// äpìxÇÃí≤êÆ(SwapAngleÇ≈ÇÕÇ»Ç¢)
-	m_sq = 180.0*RAD - m_sq;
-	m_eq = 180.0*RAD - m_eq;
+	m_sq = RAD(180.0) - m_sq;
+	m_eq = RAD(180.0) - m_eq;
 	AngleTuning();
 }
 
@@ -1217,34 +1217,34 @@ void CDXFarc::YRev(void)
 {
 	CDXFcircle::YRev();
 	SwapRound();
-	m_sq = 360.0*RAD - m_sq;
-	m_eq = 360.0*RAD - m_eq;
+	m_sq = RAD(360.0) - m_sq;
+	m_eq = RAD(360.0) - m_eq;
 	AngleTuning();
 }
 
 void CDXFarc::AngleTuning(void)
 {
 	if ( m_sq<0.0 || m_eq<0.0 ) {
-		m_sq += 360.0*RAD;
-		m_eq += 360.0*RAD;
+		m_sq += RAD(360.0);
+		m_eq += RAD(360.0);
 	}
 	// î˜ñ≠Ç»åÎç∑ÇÃãzé˚(=>î˜ç◊â~å Ç™ëÂÇ´Ç»â~Ç…ïœÇÌÇ¡ÇƒÇµÇ‹Ç§)ÇÃÇΩÇﬂ
 	// ìx(deg)Ç≈îªíf
 	double	d;
 	if ( m_bRound ) {
-		d = ::RoundUp(m_sq*DEG);
-		while ( d > ::RoundUp(m_eq*DEG) )
-			m_eq += 360.0*RAD;
+		d = ::RoundUp(DEG(m_sq));
+		while ( d > ::RoundUp(DEG(m_eq)) )
+			m_eq += RAD(360.0);
 	}
 	else {
-		d = ::RoundUp(m_eq*DEG);
-		while ( d > ::RoundUp(m_sq*DEG) )
-			m_sq += 360.0*RAD;
+		d = ::RoundUp(DEG(m_eq));
+		while ( d > ::RoundUp(DEG(m_sq)) )
+			m_sq += RAD(360.0);
 	}
 	// ç∑Ç™360ÅãÇí¥Ç¶Ç»Ç¢ÇÊÇ§Ç…(ï€åØ)
-	if ( fabs(m_eq-m_sq)*DEG - 360.0 > NCMIN ) {
+	if ( DEG(fabs(m_eq-m_sq)) - 360.0 > NCMIN ) {
 		double&	q = m_bRound ? m_eq : m_sq;		// éQè∆å^
-		q -= 360.0*RAD;
+		q -= RAD(360.0);
 	}
 }
 
@@ -1253,20 +1253,20 @@ BOOL CDXFarc::IsRangeAngle(const CPointD& pt) const
 	CPointD	ptr( pt - m_ct );
 	double	q = atan2(ptr.y, ptr.x);
 	if ( q < 0 )
-		q += 360.0*RAD;
-	q = ::RoundUp(q*DEG);	// ìxÇ≈îªíf
+		q += RAD(360.0);
+	q = ::RoundUp(DEG(q));	// ìxÇ≈îªíf
 
 	// æﬁ€ìxã´äEÇ…íçà”
 	if ( m_bRoundOrig ) {
-		double	eq = m_eq*DEG;
-		if ( ::RoundUp(m_sq*DEG)<=q && q<=::RoundUp(eq) )
+		double	eq = DEG(m_eq);
+		if ( ::RoundUp(DEG(m_sq))<=q && q<=::RoundUp(eq) )
 			return TRUE;
 		if ( eq>360.0 && q<=::RoundUp(eq-360.0) )
 			return TRUE;
 	}
 	else {
-		double	sq = m_sq*DEG;
-		if ( ::RoundUp(sq)>=q && q>=::RoundUp(m_eq*DEG) )
+		double	sq = DEG(m_sq);
+		if ( ::RoundUp(sq)>=q && q>=::RoundUp(DEG(m_eq)) )
 			return TRUE;
 		if ( sq>360.0 && q<=::RoundUp(sq-360.0) )
 			return TRUE;
@@ -1356,7 +1356,7 @@ double CDXFarc::OrgTuning(BOOL bCalc/*=TRUE*/)
 	double	dResult = CDXFline::OrgTuning(bCalc);
 	CMagaDbg	dbg;
 	dbg.printf("   Round=%s cx=%f cy=%f", m_bRound ? "CCW" : "CW", m_ctTun.x, m_ctTun.y);
-	dbg.printf("   sq=%f eq=%f", m_sq*DEG, m_eq*DEG);
+	dbg.printf("   sq=%f eq=%f", DEG(m_sq), DEG(m_eq));
 	return dResult;
 #else
 	return CDXFline::OrgTuning(bCalc);
@@ -1389,7 +1389,7 @@ BOOL CDXFarc::GetDirectionArraw(const CPointD&, CPointD pt[][3]) const
 		-atan2(m_pt[1].x - m_ct.x, m_pt[1].y - m_ct.y)
 	};
 	// ñÓàÛÇ™èÌÇ…â~å ÇÃì‡ë§Ç…óàÇÈÇÊÇ§äpìxÇÃï‚ê≥
-	q[m_bRoundOrig ? 0 : 1] += 180.0*RAD;
+	q[m_bRoundOrig ? 0 : 1] += RAD(180.0);
 	// ê⁄ê¸Ç©ÇÁñÓàÛç¿ïWÇÃåvéZ
 	return GetDirectionArraw_Circle(q, m_pt, pt);
 }
@@ -1582,7 +1582,7 @@ CDXFellipse::CDXFellipse(CLayerData* pLayer, const CDXFellipse* pData, LPCDXFBLO
 		m_ptLong.y *= lpBlock->dMagni[NCA_Y];
 	}
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_R ) {
-		double	dRound = lpBlock->dRound*RAD;
+		double	dRound = RAD(lpBlock->dRound);
 		m_ct.RoundPoint(dRound);
 		// ë»â~ÇÃâÒì]ÇÕÅCåXÇ´(m_lq)Ç≈∂ ﬁ∞
 		m_ptLong.RoundPoint(dRound);
@@ -1637,10 +1637,10 @@ void CDXFellipse::Construct(void)
 	m_r = max(m_dLongLength, len);
 	m_rMake = ::RoundUp(m_r);
 	// ë»â~Ç©ë»â~å Ç©
-	m_bArc = fabs(m_eq-m_sq)*DEG+NCMIN < 360.0 ? TRUE : FALSE;
+	m_bArc = DEG(fabs(m_eq-m_sq))+NCMIN < 360.0 ? TRUE : FALSE;
 	if ( !m_bArc ) {
 		m_sqDraw = m_sq = 0;
-		m_eqDraw = m_eq = 360.0*RAD;
+		m_eqDraw = m_eq = RAD(360.0);
 	}
 }
 
@@ -1723,12 +1723,12 @@ void CDXFellipse::SetMaxRect(void)
 
 	// äpìxÇÃí≤êÆÇ∆äJénèIóπè€å¿(i,j)ÇÃê›íË
 	int	i = 0, j = 0;
-	while ( sq >= 90.0*RAD ) {
-		sq -= 90.0*RAD;
+	while ( sq >= RAD(90.0) ) {
+		sq -= RAD(90.0);
 		i++;
 	}
-	while ( eq >= 90.0*RAD ) {
-		eq -= 90.0*RAD;
+	while ( eq >= RAD(90.0) ) {
+		eq -= RAD(90.0);
 		j++;
 	}
 	// i Ç©ÇÁå©Çƒ j Ç™âΩè€å¿êÊÇ…Ç†ÇÈÇ©
@@ -1988,7 +1988,7 @@ double CDXFellipse::OrgTuning(BOOL bCalc/*=TRUE*/)
 	CMagaDbg	dbg;
 	dbg.printf("   lx=%f ly=%f LongLen=%f Short=%f",
 			m_ptLong.x, m_ptLong.y, m_dLongLength, m_dShort);
-	dbg.printf("   lq=%f", m_lq*DEG);
+	dbg.printf("   lq=%f", DEG(m_lq));
 #endif
 
 	return dResult;
@@ -2010,8 +2010,8 @@ double CDXFellipse::GetSelectPointGap(const CPointD& pt)
 	// ïŒïΩó¶ÇÃï‚ê≥å„ÅCäpìxåvéZ
 	pt1.y /= m_dShort;
 	if ( (q1=atan2(pt1.y, pt1.x)) < 0.0 )
-		q1 += 360.0*RAD;
-	q2 = q1 + 360.0*RAD;
+		q1 += RAD(360.0);
+	q2 = q1 + RAD(360.0);
 	// ∏ÿØ∏Œﬂ≤›ƒÇ™äpìxÇÃîÕàÕì‡Ç…Ç†ÇÈÇ©
 	return ( !m_bArc || (sq <= q1 && q1 <= eq) || (sq <= q2 && q2 <= eq) ) ?
 		fabs(m_dLongLength - pt1.hypot()) : HUGE_VAL;
@@ -2035,7 +2035,7 @@ BOOL CDXFellipse::GetDirectionArraw(const CPointD& ptClick, CPointD ptResult[][3
 			q[i] = atan2(pt1.y*m_dShort, pt1.x) + m_lq;
 		}
 		// ñÓàÛÇ™èÌÇ…â~å ÇÃì‡ë§Ç…óàÇÈÇÊÇ§äpìxÇÃï‚ê≥
-		q[m_bRoundOrig ? 0 : 1] += 180.0*RAD;
+		q[m_bRoundOrig ? 0 : 1] += RAD(180.0);
 	}
 	else {
 		// ∏ÿØ∏Œﬂ≤›ƒÇï‚ê≥
@@ -2046,7 +2046,7 @@ BOOL CDXFellipse::GetDirectionArraw(const CPointD& ptClick, CPointD ptResult[][3
 			pt1 += m_ct;
 		}
 		GetQuarterPoint(pt1, pt);
-		q[0] = -atan2(pt[0].x - m_ct.x, pt[0].y - m_ct.y)+180.0*RAD;	// GetQuarterPoint()Ç≈îΩéûåv
+		q[0] = -atan2(pt[0].x - m_ct.x, pt[0].y - m_ct.y)+RAD(180.0);	// GetQuarterPoint()Ç≈îΩéûåv
 		q[1] = -atan2(pt[1].x - m_ct.x, pt[1].y - m_ct.y);
 	}
 
@@ -2323,31 +2323,31 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, double dBow, const CPointD& pts
 	BOOL	bRound;
 	double	sq1, eq1, sq2, eq2;
 	if ( (sq1=atan2(pts.y - pt1.y, pts.x - pt1.x)) < 0.0 )
-		sq1 += 360.0*RAD;
+		sq1 += RAD(360.0);
 	if ( (eq1=atan2(lpArgv->c.y - pt1.y, lpArgv->c.x - pt1.x)) < 0.0 )
-		eq1 += 360.0*RAD;
+		eq1 += RAD(360.0);
 	if ( nResult == 1 ) {	// èdç™
 		sq2 = sq1;	eq2 = eq1;
 	}
 	else {
 		if ( (sq2=atan2(pts.y - pt2.y, pts.x - pt2.x)) < 0.0 )
-			sq2 += 360.0*RAD;
+			sq2 += RAD(360.0);
 		if ( (eq2=atan2(lpArgv->c.y - pt2.y, lpArgv->c.x - pt2.x)) < 0.0 )
-			eq2 += 360.0*RAD;
+			eq2 += RAD(360.0);
 	}
 #ifdef _DEBUG
 	dbg.printf("pts x=%f y=%f pte x=%f y=%f", pts.x, pts.y, lpArgv->c.x, lpArgv->c.y);
-	dbg.printf("q=%f d=%f r=%f", q*DEG, d/2, r);
-	dbg.printf("ptc1 x=%f y=%f sq1=%f eq1=%f", pt1.x, pt1.y, sq1*DEG, eq1*DEG);
-	dbg.printf("ptc2 x=%f y=%f sq2=%f eq2=%f", pt2.x, pt2.y, sq2*DEG, eq2*DEG);
+	dbg.printf("q=%f d=%f r=%f", DEG(q), d/2, r);
+	dbg.printf("ptc1 x=%f y=%f sq1=%f eq1=%f", pt1.x, pt1.y, DEG(sq1), DEG(eq1));
+	dbg.printf("ptc2 x=%f y=%f sq2=%f eq2=%f", pt2.x, pt2.y, DEG(sq2), DEG(eq2));
 #endif
 
 	if ( dBow > 0 ) {	// îΩéûåvâÒÇËéwíË
 		bRound = TRUE;
 		while ( sq1 > eq1 )
-			eq1 += 360.0*RAD;
+			eq1 += RAD(360.0);
 		while ( sq2 > eq2 )
-			eq2 += 360.0*RAD;
+			eq2 += RAD(360.0);
 		if ( fabs(eq1 - sq1 - q) < fabs(eq2 - sq2 - q) ) {
 			dxfArc.c	= pt1;
 			dxfArc.sq	= sq1;
@@ -2368,9 +2368,9 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, double dBow, const CPointD& pts
 	else {
 		bRound = FALSE;
 		while ( sq1 < eq1 )
-			sq1 += 360.0*RAD;
+			sq1 += RAD(360.0);
 		while ( sq2 < eq2 )
-			sq2 += 360.0*RAD;
+			sq2 += RAD(360.0);
 		if ( fabs(sq1 - eq1 - q) < fabs(sq2 - eq2 - q) ) {
 			dxfArc.c	= pt1;
 			dxfArc.sq	= sq1;
@@ -3034,7 +3034,7 @@ CDXFtext::CDXFtext(CLayerData* pLayer, const CDXFtext* pData, LPCDXFBLOCK lpBloc
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_Y )
 		m_pt[0].y *= lpBlock->dMagni[NCA_Y];
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_R )
-		m_pt[0].RoundPoint(lpBlock->dRound*RAD);
+		m_pt[0].RoundPoint(RAD(lpBlock->dRound));
 	m_pt[0] += lpBlock->ptOrg;
 	m_strValue = pData->GetStrValue();
 	SetMaxRect();

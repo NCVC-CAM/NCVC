@@ -23,7 +23,9 @@ inline void CNCdata::Constracter(LPNCARGV lpArgv)
 	m_bG98			= lpArgv->bG98;
 	m_dMove[NCA_X] = m_dMove[NCA_Y] = m_dMove[NCA_Z] = 0.0;
 	m_pRead = new CNCread;
-	memcpy(&(m_pRead->m_g68), &(lpArgv->g68), sizeof(G68ROUND));
+	memcpy(&(m_pRead->m_g68),   &(lpArgv->g68),   sizeof(G68ROUND));
+	memcpy(&(m_pRead->m_taper), &(lpArgv->taper), sizeof(TAPER));
+	m_pWireObj = NULL;
 }
 
 inline const CNCread* CNCdata::GetReadData(void) const
@@ -31,10 +33,14 @@ inline const CNCread* CNCdata::GetReadData(void) const
 	return m_pRead;
 }
 
-inline void CNCdata::DeleteReadData(void)
+inline void CNCdata::SetWireObj(CNCdata* pData)
 {
-	delete	m_pRead;
-	m_pRead = NULL;
+	m_pWireObj = pData;
+}
+
+inline CNCdata* CNCdata::GetWireObj(void) const
+{
+	return m_pWireObj;
 }
 
 inline void CNCdata::AddCorrectObject(CNCdata* pData)
@@ -65,6 +71,11 @@ inline int CNCdata::GetGtype(void) const
 inline int CNCdata::GetGcode(void) const
 {
 	return	m_nc.nGcode;
+}
+
+inline BOOL CNCdata::IsCutCode(void) const
+{
+	return 1<=m_nc.nGcode && m_nc.nGcode<=3;
 }
 
 inline ENPLANE CNCdata::GetPlane(void) const
@@ -99,7 +110,7 @@ inline double CNCdata::GetEndValue(size_t a) const
 	return m_ptValE[a];
 }
 
-inline const CPoint3D CNCdata::GetOriginalEndPoint(void) const
+inline const CPoint3D CNCdata::GetOriginalEndPoint() const
 {
 	ASSERT( m_pRead );
 	return m_pRead->m_ptValOrg;
@@ -279,6 +290,16 @@ inline CRect3D CNCline::GetMaxCutRect(void) const
 	return ( m_nc.nGcode == 1 ) ?
 		CNCline::GetMaxRect() :
 		CNCdata::GetMaxRect();
+}
+
+inline CPoint CNCline::GetDrawStartPoint(size_t n) const
+{
+	return m_ptDrawS[n];
+}
+
+inline CPoint CNCline::GetDrawEndPoint(size_t n) const
+{
+	return m_ptDrawE[n];
 }
 
 /////////////////////////////////////////////////////////////////////////////

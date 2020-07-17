@@ -490,7 +490,7 @@ tuple<CPointD, CPointD> CalcOffsetLine
 {
 	int		k = bLeft ? 1 : -1;	// 左:+, 右:- 90°
 	// 始点を原点にした傾き+90°
-	double	q = atan2(pte.y-pts.y, pte.x-pts.x) + 90.0*RAD * k,
+	double	q = atan2(pte.y-pts.y, pte.x-pts.x) + RAD(90.0) * k,
 			cos_q = r * cos(q),
 			sin_q = r * sin(q);
 

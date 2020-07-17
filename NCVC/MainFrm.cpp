@@ -935,6 +935,10 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	// Gº°ÄŞ•\¦Ã·½ÄÌ«İÄ‘¼
 	ChangeViewOption();
 
+	// GDI+ ‰Šú‰»
+	Gdiplus::GdiplusStartupInput	gdiplusInput;
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusInput, NULL);
+
 	return 0;
 }
 
@@ -991,6 +995,9 @@ void CMainFrame::OnDestroy()
 		if ( (HBRUSH)m_brushNC[1][i] )
 			m_brushNC[1][i].DeleteObject();
 	}
+
+	// GDI+ ”jŠü
+	Gdiplus::GdiplusShutdown(gdiplusToken);
 
 	CMDIFrameWnd::OnDestroy();
 }

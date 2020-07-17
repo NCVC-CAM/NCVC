@@ -18,6 +18,7 @@
 #include "ExecOption.h"
 #include "NCVCaddinIF.h"
 
+class	CNCVCApp;
 class	CNCDoc;
 class	CDXFDoc;
 
@@ -57,15 +58,36 @@ public:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// CRecentViewInfo: ﾌｧｲﾙごとの描画情報
+//
+
+class CRecentViewInfo
+{
+	friend	class	CNCVCApp;
+
+	BOOL		m_bInfo;
+
+	CString		m_strFile;
+	struct VINFO {		// ﾚｼﾞｽﾄﾘからﾊﾞｲﾅﾘで読み書きする単位
+		GLdouble	objectXform[4][4];	// OpenGL回転ﾏﾄﾘｸｽ
+		CRect3D		rcView;				// ﾓﾃﾞﾙ空間
+		CPointD		ptCenter;			// 中心座標
+	} m;
+
+public:
+	CRecentViewInfo(LPCTSTR);
+
+	void	SetViewInfo(const GLdouble[4][4], const CRect3D&, const CPointD&);
+	BOOL	GetViewInfo(GLdouble[4][4], CRect3D&, CPointD&) const;
+};
+typedef	CTypedPtrList<CPtrList, CRecentViewInfo*>	CRecentViewList;
+
+/////////////////////////////////////////////////////////////////////////////
 // CNCVCApp:
-// このクラスの実装については、NCVC.cpp を参照してください。
 //
 
 class CNCVCApp : public CWinAppEx
 {
-	// GDI+
-	ULONG_PTR	gdiplusToken;
-
 	// NCViewTab管理情報
 	UINT	m_nTraceSpeed;		// ﾄﾚｰｽ実行の速度
 	int		m_nNCTabPage;		// ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ情報
@@ -74,6 +96,9 @@ class CNCVCApp : public CWinAppEx
 	CMCOption*		m_pOptMC;		// MCｵﾌﾟｼｮﾝ
 	CDXFOption*		m_pOptDXF;		// DXFｵﾌﾟｼｮﾝ
 	CViewOption*	m_pOptView;		// Viewｵﾌﾟｼｮﾝ
+	//
+	CRecentViewList		m_liRecentView;	// 描画情報格納配列
+	CRecentViewInfo*	m_pDefViewInfo;	// ﾃﾞﾌｫﾙﾄ描画情報
 
 	// ﾄﾞｷｭﾒﾝﾄﾃﾝﾌﾟﾚｰﾄ
 	CNCVCDocTemplate*	m_pDocTemplate[2];	// NC,DXFﾄﾞｷｭﾒﾝﾄ
@@ -99,6 +124,10 @@ class CNCVCApp : public CWinAppEx
 	BOOL	NCVCRegInit_OldExec(CString&);
 	BOOL	NCVCRegInit_NewExec(CString&, int);
 	void	NCVCRegOld(void);		// 旧ﾚｼﾞｽﾄﾘﾃﾞｰﾀの削除
+	//
+	void	InitialRecentViewList(void);
+	void	WriteRecentViewList(void);
+	void	AddToRecentViewList(LPCTSTR);
 
 	// NCVCｶｽﾀﾑ
 	BOOL	DoPromptFileNameEx(CString&);	// ｶｽﾀﾑﾌｧｲﾙｵｰﾌﾟﾝ
@@ -174,8 +203,16 @@ public:
 		return m_pDocTemplate[enType];
 	}
 	CString		GetRecentFileName(void) {
-		return (*m_pRecentFileList)[0];
+		return m_pRecentFileList->operator[](0);
 	}
+	CRecentViewInfo*	GetRecentViewInfo(void) {
+		ASSERT( !m_liRecentView.IsEmpty() );
+		return m_liRecentView.GetHead();
+	}
+	CRecentViewInfo*	GetDefaultViewInfo(void) {
+		return m_pDefViewInfo;
+	}
+	void		SetDefaultViewInfo(const GLdouble[4][4]);
 	CNCDoc*		GetAlreadyNCDocument(LPCTSTR = NULL);
 	CDXFDoc*	GetAlreadyDXFDocument(LPCTSTR = NULL);
 	int			GetDXFOpenDocumentCount(void);
@@ -192,7 +229,8 @@ public:
 // オーバーライド
 public:
 	virtual BOOL InitInstance();
-	virtual int ExitInstance();
+	virtual int	 ExitInstance();
+	virtual void AddToRecentFileList(LPCTSTR);
 
 // 実装
 	afx_msg void OnAppAbout();

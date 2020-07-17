@@ -12,7 +12,7 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 extern	LPCTSTR	g_szViewColDef[] = {
 	"0:255:0",		// ägëÂèkè¨éwíËãÈå`

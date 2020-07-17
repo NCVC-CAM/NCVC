@@ -29,13 +29,14 @@ extern	CMagaDbg	g_dbg;
 
 // 文字列検査用(TH_NCRead.cpp, NCMakeClass.cpp からも参照)
 extern	LPCTSTR	g_szGdelimiter = "GSMOF";
-extern	LPCTSTR	g_szNdelimiter = "XYZRIJKPLDH";
+extern	LPCTSTR	g_szNdelimiter = "XYZUVWIJKRPLDH";
 extern	LPTSTR	g_pszDelimiter;		// g_szGdelimiter[] + g_szNdelimiter[] (NCVC.cppで生成)
 
 // 指定された値のﾌﾗｸﾞ
 extern	const	DWORD	g_dwSetValFlags[] = {
 	NCD_X, NCD_Y, NCD_Z, 
-	NCD_R, NCD_I, NCD_J, NCD_K,
+	NCD_U, NCD_V, NCD_W, 
+	NCD_I, NCD_J, NCD_K, NCD_R,
 	NCD_P, NCD_L,
 	NCD_D, NCD_H
 };
@@ -70,7 +71,8 @@ CNCDoc::CNCDoc()
 	m_dMove[0] = m_dMove[1] = 0.0;
 	m_dCutTime = -1.0;
 	m_nTraceStart = m_nTraceDraw = 0;
-	m_pCutcalcThread = NULL;
+	m_pCutcalcThread  = NULL;
+	m_pRecentViewInfo = NULL;
 	// ﾜｰｸ座標系取得
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
 	for ( i=0; i<WORKOFFSET; i++ )
@@ -138,17 +140,16 @@ void CNCDoc::SetLatheViewMode(void)
 	}
 }
 
-void CNCDoc::ResetLatheViewMode(void)
+void CNCDoc::SetWireViewMode(void)
 {
-	// --- TH_NCRead.cpp で保留 ---
-	m_bNcDocFlg.reset(NCDOC_LATHE);	// ﾌﾗｲｽ(Milling)ﾓｰﾄﾞ
+	m_bNcDocFlg.set(NCDOC_WIRE);		// ﾜｲﾔ加工ﾓｰﾄﾞ
 }
 
 CNCdata* CNCDoc::DataOperation
-	(const CNCdata* pDataSrc, LPNCARGV lpArgv, int nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
+	(const CNCdata* pData, LPNCARGV lpArgv, int nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
 {
 	CMCOption*	pOpt = AfxGetNCVCApp()->GetMCOption();
-	CNCdata*	pData = NULL;
+	CNCdata*	pDataResult = NULL;
 	CNCblock*	pBlock;
 	CPoint3D	pt( m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg );
 	int			i;
@@ -159,15 +160,15 @@ CNCdata* CNCDoc::DataOperation
 		case 0:		// 直線
 		case 1:
 			// ｵﾌﾞｼﾞｪｸﾄ生成
-			pData = new CNCline(pDataSrc, lpArgv, pt);
-			SetMaxRect(pData);		// 最小・最大値の更新
+			pDataResult = new CNCline(pData, lpArgv, pt);
+			SetMaxRect(pDataResult);		// 最小・最大値の更新
 			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
 				m_bNcDocFlg.set(NCDOC_REVISEING);	// 補正ﾓｰﾄﾞ
 			break;
 		case 2:		// 円弧
 		case 3:
-			pData = new CNCcircle(pDataSrc, lpArgv, pt);
-			SetMaxRect(pData);
+			pDataResult = new CNCcircle(pData, lpArgv, pt, m_bNcDocFlg[NCDOC_LATHE]);
+			SetMaxRect(pDataResult);
 			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
 				m_bNcDocFlg.set(NCDOC_REVISEING);
 			break;
@@ -180,15 +181,15 @@ CNCdata* CNCDoc::DataOperation
 		case 87:
 		case 88:
 		case 89:
-			pData = new CNCcycle(pDataSrc, lpArgv, pt, pOpt->GetFlag(MC_FLG_L0CYCLE));
-			SetMaxRect(pData);
+			pDataResult = new CNCcycle(pData, lpArgv, pt, pOpt->GetFlag(MC_FLG_L0CYCLE));
+			SetMaxRect(pDataResult);
 			break;
 		case 10:	// ﾃﾞｰﾀ設定
 			if ( lpArgv->nc.dwValFlags & (NCD_P|NCD_R) ) {	// G10P_R_
 				if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
 					// 工具情報の追加
 					if ( pOpt->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) )
-						pData = new CNCdata(pDataSrc, lpArgv, pt);
+						pDataResult = new CNCdata(pData, lpArgv, pt);
 					else {
 						i = lpArgv->nc.nLine;
 						if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
@@ -207,7 +208,7 @@ CNCdata* CNCDoc::DataOperation
 						if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
 							m_ptNcWorkOrg[nWork][i] += lpArgv->nc.dValue[i];
 					}
-					pData = new CNCdata(pDataSrc, lpArgv, pt);
+					pDataResult = new CNCdata(pData, lpArgv, pt);
 					break;
 				}
 			}
@@ -218,12 +219,14 @@ CNCdata* CNCDoc::DataOperation
 				pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
 			}
 			break;
-		case 52:	// ﾛｰｶﾙ座標設定
+		case 52:	// Mill
+		case 93:	// Wire
+			// ﾛｰｶﾙ座標設定
 			for ( i=0; i<NCXYZ; i++ ) {
 				if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
 					m_ptNcLocalOrg[i] = lpArgv->nc.dValue[i];
 			}
-			pData = new CNCdata(pDataSrc, lpArgv, pt);
+			pDataResult = new CNCdata(pData, lpArgv, pt);
 			break;
 		case 92:
 			if ( !m_bNcDocFlg[NCDOC_LATHE] ) {
@@ -233,7 +236,7 @@ CNCdata* CNCDoc::DataOperation
 					if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ) {
 						// 座標指定のあるところだけ、現在位置からの減算で
 						// G92座標系原点を計算
-						m_ptNcWorkOrg[WORKOFFSET][i] = pDataSrc->GetEndValue(i) - lpArgv->nc.dValue[i];
+						m_ptNcWorkOrg[WORKOFFSET][i] = pData->GetEndValue(i) - lpArgv->nc.dValue[i];
 					}
 				}
 				// 現在位置 - G92値 で、G92座標系原点を計算
@@ -242,39 +245,39 @@ CNCdata* CNCDoc::DataOperation
 			}
 			// through
 		default:	// G04 ...
-			pData = new CNCdata(pDataSrc, lpArgv, pt);
+			pDataResult = new CNCdata(pData, lpArgv, pt);
 		}
 	}	// end of G_TYPE
 	else {
 		// M_TYPE, O_TYPE, etc.
-		pData = new CNCdata(pDataSrc, lpArgv, pt);
+		pDataResult = new CNCdata(pData, lpArgv, pt);
 	}
 
 	// ｵﾌﾞｼﾞｪｸﾄ登録
 	switch ( enOperation ) {
 	case NCADD:
-		m_obGdata.Add(pData);
+		m_obGdata.Add(pDataResult);
 		break;
 	case NCINS:
-		m_obGdata.InsertAt(nIndex, pData);
+		m_obGdata.InsertAt(nIndex, pDataResult);
 		break;
 	case NCMOD:
 		RemoveAt(nIndex, 1);
-		m_obGdata.SetAt(nIndex, pData);
+		m_obGdata.SetAt(nIndex, pDataResult);
 		break;
 	}
 
 	// 行番号にﾘﾝｸしたｴﾗｰﾌﾗｸﾞの設定
-	UINT	nError = pData->GetNCObjErrorCode();
+	UINT	nError = pDataResult->GetNCObjErrorCode();
 	if ( nError > 0 ) {
-		i = pData->GetBlockLineNo();
+		i = pDataResult->GetBlockLineNo();
 		if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
 			pBlock = GetNCblock(i);
 			pBlock->SetNCBlkErrorCode(nError);
 		}
 	}
 
-	return pData;
+	return pDataResult;
 }
 
 void CNCDoc::StrOperation(LPCSTR pszTmp, int nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
@@ -416,9 +419,11 @@ void CNCDoc::CreateCutcalcThread(void)
 	}
 }
 
-void CNCDoc::WaitCalcThread(void)
+void CNCDoc::WaitCalcThread(BOOL bWaitOnly/*=FALSE*/)
 {
-	m_bNcDocFlg.reset(NCDOC_CUTCALC);
+	if ( !bWaitOnly )
+		m_bNcDocFlg.reset(NCDOC_CUTCALC);	// 終了ﾌﾗｸﾞ
+
 	if ( m_pCutcalcThread ) {
 #ifdef _DEBUG
 		CMagaDbg	dbg("CNCDoc::WaitCalcThread()", DBG_BLUE);
@@ -872,8 +877,11 @@ void CNCDoc::SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU)
 		::Path_Name_From_FullPath(lpszPathName, strPath, m_strTitle);
 		m_strPathName = lpszPathName;
 	}
-	else
+	else {
 		CDocument::SetPathName(lpszPathName, bAddToMRU);
+		// --> to be CNCVCApp::AddToRecentFileList()
+		m_pRecentViewInfo = AfxGetNCVCApp()->GetRecentViewInfo();
+	}
 }
 
 void CNCDoc::OnChangedViewList()
@@ -1025,6 +1033,13 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	dbg.printf("m_rcWork right=%f bottom=%f", m_rcWork.right, m_rcWork.bottom);
 	dbg.printf("m_rcWork low  =%f high  =%f", m_rcWork.low, m_rcWork.high);
 #endif
+
+	// ﾜｲﾔﾓｰﾄﾞにおけるUV軸ｵﾌﾞｼﾞｪｸﾄの生成
+	if ( m_bNcDocFlg[NCDOC_WIRE] ) {
+		CThreadDlg	dlg(IDS_UVTAPER_NCD, this);
+		if ( dlg.DoModal() != IDOK )
+			return FALSE;
+	}
 
 	// 補正座標計算
 	if ( m_bNcDocFlg[NCDOC_REVISEING] ) {

@@ -229,7 +229,7 @@ CString	CNCMakeMill::MakeSpindle(ENDXFTYPE enType, BOOL bDeep)
 
 CString CNCMakeMill::GetValString(int xyz, double dVal, BOOL bSpecial)
 {
-	extern	LPCTSTR	g_szNdelimiter;		// "XYZRIJKPLDH" from NCDoc.cpp
+	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 	CString	strResult;
 
 	// è¨êîì_à»â∫ÇRåÖ(à»â∫êÿÇËè„Ç∞)Ç≈ÇÃílçáív¡™Ø∏
@@ -250,6 +250,12 @@ CString CNCMakeMill::GetValString(int xyz, double dVal, BOOL bSpecial)
 			}
 		}
 		break;
+	case NCA_I:
+	case NCA_J:
+	case NCA_K:
+		if ( fabs(dVal) < NCMIN )	// NCÇÃåÖóéÇøåÎç∑ñ¢ñûÇ»ÇÁñ≥éã
+			return strResult;
+		break;
 	case NCA_R:
 		// îºåaRÇ≈ÇÕÇ»Ç≠å≈íËª≤∏ŸRì_ÇÃèÍçá
 		if ( bSpecial ) {
@@ -259,12 +265,6 @@ CString CNCMakeMill::GetValString(int xyz, double dVal, BOOL bSpecial)
 					return strResult;
 			}
 		}
-		break;
-	case NCA_I:
-	case NCA_J:
-	case NCA_K:
-		if ( fabs(dVal) < NCMIN )	// NCÇÃåÖóéÇøåÎç∑ñ¢ñûÇ»ÇÁñ≥éã
-			return strResult;
 		break;
 	case NCA_P:
 		if ( bSpecial )	{	// G8x å≈íËª≤∏Ÿ ƒﬁ≥™Ÿéûä‘

@@ -15,76 +15,78 @@ extern	CMagaDbg	g_dbg;
 
 using namespace std;
 using namespace boost;
-extern	const	PENSTYLE	g_penStyle[];		// ViewOption.cpp
+extern	const	PENSTYLE	g_penStyle[];	// ViewOption.cpp
+extern	double	_TABLECOS[ARCCOUNT],		// NCVC.cpp
+				_TABLESIN[ARCCOUNT];
 
 //////////////////////////////////////////////////////////////////////
 
-inline void _SetEndmillCircle(double d, const CPointD& ptOrg, CPointD* pt)
+inline void _SetEndmillCircle(double r, const CPointD& ptOrg, CPointD* pt)
 {
-	// 円座標をｾｯﾄ
-	int		i = 1;
-	double	q = ARCSTEP;
-	// -- ２回ﾙｰﾌﾟを減らす
-	pt[0].x = d + ptOrg.x;		// cos(0) == 1
-	pt[0].y = ptOrg.y;			// sin(0) == 0
-	for ( ; i<ARCCOUNT-1; i++, q+=ARCSTEP ) {
-		pt[i].x = d * cos(q) + ptOrg.x;
-		pt[i].y = d * sin(q) + ptOrg.y;
+	// 円座標をptc[]にｾｯﾄ
+	for ( int i=0; i<ARCCOUNT; i++ ) {
+		pt[i].x = r * _TABLECOS[i] + ptOrg.x;
+		pt[i].y = r * _TABLESIN[i] + ptOrg.y;
 	}
-	pt[i] = pt[0];
+	// 最後の閉座標は描画時に設定
 }
 
-inline void _SetEndmillSphere(double d, const CPoint3D& ptOrg, vector<CVCircle>& vSphere)
+inline void _SetEndmillSphere(double d, const CPoint3D& ptOrg,
+							  CPoint3D ptResult[ARCCOUNT/4][ARCCOUNT])
 {
-	// 半球座標、Z方向に輪切り
-	int		i = 0, j;
-	double	q = 0, x;
+	int		i, j, k = 0;
+	double	x, z;
 	CPointD	ptc[ARCCOUNT], ptOrgXY(ptOrg.GetXY());
-	CPoint3D	pt;
-	CVCircle	vc;
 
-	vc.reserve(ARCCOUNT);
-
+	// 半球座標、Z方向に輪切り
 	// 90°-1回分をZ方向に繰り返す
-	for ( ; i<ARCCOUNT/4-1; i++, q-=ARCSTEP ) {
-		x    = d * cos(q);		// このZ位置の半径
-		pt.z = d * sin(q) + d + ptOrg.z;
-		// この位置にXY平面の円座標を登録
+	// --- 0度
+	x = d;				// このZ位置の半径 cos(0)==1
+	z = d + ptOrg.z;	//                 sin(0)==0
+	_SetEndmillCircle(x, ptOrgXY, ptc);	// この位置にXY平面の円座標を登録
+	for ( j=0; j<ARCCOUNT; j++ ) {
+		ptResult[k][j].x = ptc[j].x;
+		ptResult[k][j].y = ptc[j].y;
+		ptResult[k][j].z = z;
+	}
+	// --- 残り270度手前まで
+	for ( i=ARCCOUNT-1, k++; i>ARCCOUNT-ARCCOUNT/4; i--, k++ ) {
+		x = d * _TABLECOS[i];
+		z = d * _TABLESIN[i] + d + ptOrg.z;
 		_SetEndmillCircle(x, ptOrgXY, ptc);
 		for ( j=0; j<ARCCOUNT; j++ ) {
-			pt.x = ptc[j].x;
-			pt.y = ptc[j].y;
-			vc.push_back(pt);	// pt.z は保持
+			ptResult[k][j].x = ptc[j].x;
+			ptResult[k][j].y = ptc[j].y;
+			ptResult[k][j].z = z;
 		}
-		vSphere.push_back(vc);
-		vc.clear();
 	}
-	// 最後の半球頂点
-	vc.push_back(ptOrg);
-	vSphere.push_back(vc);
+	// 270度頂点は別処理
 }
 
 inline void _SetEndmillSpherePath
-	(double d, double qp, const CPoint3D& ptOrg,
-		CPoint3D* ptResult)
+	(double d, double qp, const CPoint3D& ptOrg, CPoint3D* ptResult)
 {
-	int		i = 0;
-	double	q = 0,
+	int		i, j = 0;
+	double	x,
 			cos_qp = cos(qp),
-			sin_qp = sin(qp),
-			x;
+			sin_qp = sin(qp);
 	CPoint3D	pt;
 
 	// Z方向への半円掘り下げ
-	for ( ; i<ARCCOUNT/2; i++, q-=ARCSTEP ) {
-		// XZ平面で考える(y=0)
-		x    = d * cos(q);
-		pt.z = d * sin(q) + d;
-		// XY平面での回転
-		pt.x = x * cos_qp;	// - y * sin_qp;
-		pt.y = x * sin_qp;	// + y * cos_qp;
-		//
-		ptResult[i] = pt + ptOrg;
+	// --- 0度
+	// XZ平面で考える(y=0)
+	x = pt.z = d;
+	// XY平面での回転
+	pt.x = x * cos_qp;	// - y * sin_qp;
+	pt.y = x * sin_qp;	// + y * cos_qp;
+	ptResult[j++] = pt + ptOrg;
+	// --- 残り180度まで
+	for ( i=ARCCOUNT-1; i>=ARCCOUNT/2; i-- ) {
+		x    = d * _TABLECOS[i];
+		pt.z = d * _TABLESIN[i] + d;
+		pt.x = x * cos_qp;
+		pt.y = x * sin_qp;
+		ptResult[j++] = pt + ptOrg;
 	}
 }
 
@@ -98,40 +100,31 @@ inline void _DrawBottomFaceCircle(const CPoint3D& ptOrg, const CPointD* ptc)
 	::glEnd();
 }
 
-inline void _DrawBottomFaceSphere(const vector<CVCircle>& vSphere)
+inline void _DrawBottomFaceSphere(const CPoint3D ptSphere[ARCCOUNT/4][ARCCOUNT], const CPoint3D& ptVtx)
 {
-	size_t		i, j;
-	CPoint3D	pt1, pt2;
+	int		i, j;
 
-	for ( i=0; i<vSphere.size()-2; i++ ) {	// 半球頂点を除く
+	for ( i=0; i<ARCCOUNT/4-1; i++ ) {	// 半球頂点を除く
 		::glBegin(GL_TRIANGLE_STRIP);
-		for ( j=0; j<vSphere[i].size(); j++ ) {
-			pt1 = vSphere[i][j];
-			pt2 = vSphere[i+1][j];
-			::glVertex3d(pt1.x, pt1.y, pt1.z);
-			::glVertex3d(pt2.x, pt2.y, pt2.z);
+		for ( j=0; j<ARCCOUNT; j++ ) {
+			::glVertex3d(ptSphere[i  ][j].x, ptSphere[i  ][j].y, ptSphere[i  ][j].z);
+			::glVertex3d(ptSphere[i+1][j].x, ptSphere[i+1][j].y, ptSphere[i+1][j].z);
 		}
-		pt1 = vSphere[i][0];
-		pt2 = vSphere[i+1][0];
-		::glVertex3d(pt1.x, pt1.y, pt1.z);
-		::glVertex3d(pt2.x, pt2.y, pt2.z);
+		::glVertex3d(ptSphere[i  ][0].x, ptSphere[i  ][0].y, ptSphere[i  ][0].z);
+		::glVertex3d(ptSphere[i+1][0].x, ptSphere[i+1][0].y, ptSphere[i+1][0].z);
 		::glEnd();
 	}
-	pt2 = vSphere.back()[0];	// 半球頂点
 	::glBegin(GL_TRIANGLE_FAN);
-	::glVertex3d(pt2.x, pt2.y, pt2.z);
-	for ( j=0; j<vSphere[i].size(); j++ ) {
-		pt1 = vSphere[i][j];
-		::glVertex3d(pt1.x, pt1.y, pt1.z);
-	}
-	pt1 = vSphere[i][0];
-	::glVertex3d(pt1.x, pt1.y, pt1.z);
+	::glVertex3d(ptVtx.x, ptVtx.y, ptVtx.z);	// 半球頂点
+	for ( j=0; j<ARCCOUNT; j++ )
+		::glVertex3d(ptSphere[i][j].x, ptSphere[i][j].y, ptSphere[i][j].z);
+	::glVertex3d(ptSphere[i][0].x, ptSphere[i][0].y, ptSphere[i][0].z);
 	::glEnd();
 }
 
 inline void _DrawEndmillPipe(const vector<CVCircle>& vPipe)
 {
-	size_t	i, j;
+	size_t		i, j;
 	CPoint3D	pt1, pt2;
 
 	for ( i=0; i<vPipe.size()-1; i++ ) {
@@ -154,28 +147,81 @@ inline void _DrawEndmillPipe(const vector<CVCircle>& vPipe)
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀｸﾗｽ
 //////////////////////////////////////////////////////////////////////
 
-void CNCdata::DrawWire(void) const
+void CNCdata::DrawGLMillWire(void) const
 {
 	// 派生ｸﾗｽからの共通呼び出し
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawWire();
+		m_obCdata[i]->DrawGLMillWire();
 }
 
-void CNCdata::DrawLatheWire(void) const
+void CNCdata::DrawGLWireWire(void) const
 {
 }
 
-void CNCdata::DrawBottomFace(void) const
+void CNCdata::DrawGLLatheFace(void) const
+{
+}
+
+void CNCdata::DrawGLBottomFace(void) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawBottomFace();
+		m_obCdata[i]->DrawGLBottomFace();
+}
+
+int CNCdata::AddGLWireFirstVertex(vector<GLfloat>& vVertex, vector<GLfloat>& vNormal) const
+{
+	if ( !m_pWireObj )
+		return -1;
+
+	CPoint3D	pts(m_pWireObj->GetStartPoint());
+
+	// ｵﾌﾞｼﾞｪｸﾄ始点を登録
+	vVertex.push_back((GLfloat)m_ptValS.x);
+	vVertex.push_back((GLfloat)m_ptValS.y);
+	vVertex.push_back((GLfloat)m_ptValS.z);
+	vVertex.push_back((GLfloat)pts.x);
+	vVertex.push_back((GLfloat)pts.y);
+	vVertex.push_back((GLfloat)pts.z);
+
+	// 法線ﾍﾞｸﾄﾙ
+	optional<CPointD> ptResult = CalcPerpendicularPoint(STARTPOINT, 1.0, 1);
+	if ( ptResult ) {
+		CPointD	pt( *ptResult );
+		vNormal.push_back((GLfloat)pt.x);
+		vNormal.push_back((GLfloat)pt.y);
+		vNormal.push_back((GLfloat)m_ptValS.z);
+		vNormal.push_back((GLfloat)pt.x);
+		vNormal.push_back((GLfloat)pt.y);
+		vNormal.push_back((GLfloat)pts.z);
+	}
+	else {
+		// 保険
+		vNormal.push_back(1.0f);
+		vNormal.push_back(1.0f);
+		vNormal.push_back(1.0f);
+		vNormal.push_back(1.0f);
+		vNormal.push_back(1.0f);
+		vNormal.push_back(1.0f);
+	}
+
+	return 2;
+}
+
+int CNCdata::AddGLWireVertex(vector<GLfloat>&, vector<GLfloat>&) const
+{
+	return 0;
+}
+
+int CNCdata::AddGLWireTexture(int, double&, double, GLfloat*) const
+{
+	return 0;
 }
 
 //////////////////////////////////////////////////////////////////////
 // CNCline クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCline::DrawWire(void) const
+void CNCline::DrawGLMillWire(void) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -184,16 +230,41 @@ void CNCline::DrawWire(void) const
 			m_obCdata.IsEmpty() ? (GetPenType()+NCCOL_G0) : NCCOL_CORRECT);
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
 		::glBegin(GL_LINES);
-		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-		::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
-		::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
+			::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+			::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
+			::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
 		::glEnd();
 	}
 
-	CNCdata::DrawWire();
+	CNCdata::DrawGLMillWire();
 }
 
-void CNCline::DrawLatheWire(void) const
+void CNCline::DrawGLWireWire(void) const
+{
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	COLORREF col = pOpt->GetNcDrawColor( GetPenType()+NCCOL_G0 );
+	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
+	// XY
+	::glBegin(GL_LINES);
+		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+		::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
+		::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
+		if ( m_pWireObj ) {
+			// UV
+			CPoint3D	pts(m_pWireObj->GetStartPoint()),
+						pte(m_pWireObj->GetEndPoint());
+			::glVertex3d(pts.x,      pts.y,      pts.z);
+			::glVertex3d(pte.x,      pte.y,      pte.z);
+			// XYとUVの接続
+			::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
+			::glVertex3d(pts.x,      pts.y,      pts.z);
+			::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
+			::glVertex3d(pte.x,      pte.y,      pte.z);
+		}
+	::glEnd();
+}
+
+void CNCline::DrawGLLatheFace(void) const
 {
 	if ( m_nc.nGcode != 1 )
 		return;
@@ -204,16 +275,16 @@ void CNCline::DrawLatheWire(void) const
 	::glEnd();
 }
 
-void CNCline::DrawBottomFace(void) const
+void CNCline::DrawGLBottomFace(void) const
 {
-	int		i;
-
 	if ( m_nc.nGcode != 1 )
 		return;
 	if ( !m_obCdata.IsEmpty() ) {
-		CNCdata::DrawBottomFace();
+		CNCdata::DrawGLBottomFace();
 		return;
 	}
+
+	int		i;
 
 	if ( GetEndmillType() == 0 ) {
 		// ｽｸｳｪｱ座標計算
@@ -239,7 +310,7 @@ void CNCline::DrawBottomFace(void) const
 			else {
 				// XY平面の移動ﾊﾟｽは
 				// 始点終点を矩形でつなぐ
-				double	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+90.0*RAD,
+				double	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+RAD(90.0),
 						cos_q = cos(q) * m_dEndmill,
 						sin_q = sin(q) * m_dEndmill;
 				::glBegin(GL_TRIANGLE_STRIP);
@@ -255,36 +326,88 @@ void CNCline::DrawBottomFace(void) const
 	}
 	else {
 		// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ座標計算
-		vector<CVCircle>	vSphere;
-		vSphere.reserve(ARCCOUNT/4);
+		CPoint3D	ptSphere[ARCCOUNT/4][ARCCOUNT];
 		// 始点の半球座標計算
-		_SetEndmillSphere(m_dEndmill, m_ptValS, vSphere);
-		_DrawBottomFaceSphere(vSphere);
+		_SetEndmillSphere(m_dEndmill, m_ptValS, ptSphere);
+		_DrawBottomFaceSphere(ptSphere, m_ptValS);
 		if ( m_dMove[NCA_X]>0 || m_dMove[NCA_Y]>0 ) {
 			// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙの移動ﾊﾟｽ座標計算
-			CPoint3D	pts[ARCCOUNT/2], pte[ARCCOUNT/2];
-			double	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x) + 90.0*RAD;
+			CPoint3D	pts[ARCCOUNT/2+1], pte[ARCCOUNT/2+1];
+			double	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x) + RAD(90.0);
 			_SetEndmillSpherePath(m_dEndmill, q, m_ptValS, pts);
 			_SetEndmillSpherePath(m_dEndmill, q, m_ptValE, pte);
 			::glBegin(GL_TRIANGLE_STRIP);
-			for ( i=0; i<ARCCOUNT/2; i++ ) {
+			for ( i=0; i<=ARCCOUNT/2; i++ ) {
 				::glVertex3d(pts[i].x, pts[i].y, pts[i].z);
 				::glVertex3d(pte[i].x, pte[i].y, pte[i].z);
 			}
 			::glEnd();
 			// 終点の半球座標計算
-			vSphere.clear();
-			_SetEndmillSphere(m_dEndmill, m_ptValE, vSphere);
-			_DrawBottomFaceSphere(vSphere);
+			_SetEndmillSphere(m_dEndmill, m_ptValE, ptSphere);
+			_DrawBottomFaceSphere(ptSphere, m_ptValE);
 		}
 	}
+}
+
+int CNCline::AddGLWireVertex(vector<GLfloat>& vVertex, vector<GLfloat>& vNormal) const
+{
+	if ( m_nc.nGcode!=1 || !m_pWireObj )
+		return -1;		// 移動ｺｰﾄﾞ => ﾌﾞﾚｲｸ
+
+	CPoint3D	pte(m_pWireObj->GetEndPoint());
+
+	// ｵﾌﾞｼﾞｪｸﾄ終点を登録
+	vVertex.push_back((GLfloat)m_ptValE.x);
+	vVertex.push_back((GLfloat)m_ptValE.y);
+	vVertex.push_back((GLfloat)m_ptValE.z);
+	vVertex.push_back((GLfloat)pte.x);
+	vVertex.push_back((GLfloat)pte.y);
+	vVertex.push_back((GLfloat)pte.z);
+
+	// 法線ﾍﾞｸﾄﾙ
+	optional<CPointD> ptResult = CalcPerpendicularPoint(ENDPOINT, 1.0, 1);
+	if ( ptResult ) {
+		CPointD	pt( *ptResult );
+		vNormal.push_back((GLfloat)pt.x);
+		vNormal.push_back((GLfloat)pt.y);
+		vNormal.push_back((GLfloat)m_ptValE.z);
+		vNormal.push_back((GLfloat)pt.x);
+		vNormal.push_back((GLfloat)pt.y);
+		vNormal.push_back((GLfloat)pte.z);
+	}
+	else {
+		vNormal.push_back(1.0f);	// 保険
+		vNormal.push_back(1.0f);
+		vNormal.push_back(1.0f);
+		vNormal.push_back(1.0f);
+		vNormal.push_back(1.0f);
+		vNormal.push_back(1.0f);
+	}
+
+	return 2;	// 頂点数
+}
+
+int CNCline::AddGLWireTexture(int n, double& dAccuLength, double dAllLength, GLfloat* pfTEX) const
+{
+	if ( m_nc.nGcode!=1 || !m_pWireObj )
+		return -1;
+
+	dAccuLength += m_nc.dLength;
+	GLfloat	f = (GLfloat)(dAccuLength / dAllLength);
+
+	pfTEX[n++] = f;
+	pfTEX[n++] = 0.0;
+	pfTEX[n++] = f;
+	pfTEX[n++] = 1.0;
+
+	return 4;
 }
 
 //////////////////////////////////////////////////////////////////////
 // CNCcycle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcycle::DrawWire(void) const
+void CNCcycle::DrawGLMillWire(void) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	colG0 = pOpt->GetNcDrawColor( NCCOL_G0 ),
@@ -313,11 +436,15 @@ void CNCcycle::DrawWire(void) const
 	::glEnd();
 }
 
-void CNCcycle::DrawLatheWire(void) const
+void CNCcycle::DrawGLWireWire(void) const
 {
 }
 
-void CNCcycle::DrawBottomFace(void) const
+void CNCcycle::DrawGLLatheFace(void) const
+{
+}
+
+void CNCcycle::DrawGLBottomFace(void) const
 {
 	if ( GetPlane() != XY_PLANE )
 		return;
@@ -333,21 +460,83 @@ void CNCcycle::DrawBottomFace(void) const
 		}
 	}
 	else {
-		vector<CVCircle>	vSphere;
-		vSphere.reserve(ARCCOUNT/4);
+		CPoint3D	ptSphere[ARCCOUNT/4][ARCCOUNT];
 		for ( i=0; i<m_nDrawCnt; i++ ) {
-			_SetEndmillSphere(m_dEndmill, m_Cycle3D[i].ptC, vSphere);
-			_DrawBottomFaceSphere(vSphere);
-			vSphere.clear();
+			_SetEndmillSphere(m_dEndmill, m_Cycle3D[i].ptC, ptSphere);
+			_DrawBottomFaceSphere(ptSphere, m_Cycle3D[i].ptC);
 		}
 	}
+}
+
+int CNCcycle::AddGLWireVertex(vector<GLfloat>&, vector<GLfloat>&) const
+{
+	return 0;
+}
+
+int CNCcycle::AddGLWireTexture(int, double&, double, GLfloat*) const
+{
+	return 0;
 }
 
 //////////////////////////////////////////////////////////////////////
 // CNCcircle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcircle::DrawCircleWire(void) const
+void CNCcircle::DrawGLMillWire(void) const
+{
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+		COLORREF	col = pOpt->GetNcDrawColor(
+			m_obCdata.IsEmpty() ? NCCOL_G1 : NCCOL_CORRECT);
+		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
+		::glBegin(GL_LINE_STRIP);
+			::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+			DrawGLWire();	// 座標指示
+		::glEnd();
+	}
+
+	CNCdata::DrawGLMillWire();
+}
+
+void CNCcircle::DrawGLWireWire(void) const
+{
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	COLORREF	col = pOpt->GetNcDrawColor(NCCOL_G1);
+	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
+	// XY
+	::glBegin(GL_LINE_STRIP);
+		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+		DrawGLWire();
+	::glEnd();
+	// UV
+	if ( m_pWireObj ) {
+		::glBegin(GL_LINE_STRIP);
+			::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+			static_cast<CNCcircle*>(m_pWireObj)->DrawGLWire();
+		::glEnd();
+		// XYとUVの接続
+		CPoint3D	pts(m_pWireObj->GetStartPoint()),
+					pte(m_pWireObj->GetEndPoint());
+		::glBegin(GL_LINES);
+			::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+			::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
+			::glVertex3d(pts.x,      pts.y,      pts.z);
+			::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
+			::glVertex3d(pte.x,      pte.y,      pte.z);
+		::glEnd();
+	}
+}
+
+void CNCcircle::DrawGLLatheFace(void) const
+{
+	::glBegin(GL_LINE_STRIP);
+		DrawGLWire();
+	::glEnd();
+}
+
+void CNCcircle::DrawGLWire(void) const
 {
 	double		sq, eq, r = fabs(m_r);
 	tie(sq, eq) = GetSqEq();
@@ -421,31 +610,7 @@ void CNCcircle::DrawCircleWire(void) const
 	}
 }
 
-void CNCcircle::DrawWire(void) const
-{
-	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-
-	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
-		COLORREF	col = pOpt->GetNcDrawColor(
-			m_obCdata.IsEmpty() ? NCCOL_G1 : NCCOL_CORRECT);
-		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
-		::glBegin(GL_LINE_STRIP);
-			::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-			DrawCircleWire();	// 座標指示
-		::glEnd();
-	}
-
-	CNCdata::DrawWire();
-}
-
-void CNCcircle::DrawLatheWire(void) const
-{
-	::glBegin(GL_LINE_STRIP);
-		DrawCircleWire();
-	::glEnd();
-}
-
-//	--- CNCcircle::DrawBottomFace() サブ
+//	--- CNCcircle::DrawGLBottomFace() サブ
 inline void _SetEndmillPathXY
 	(const CPointD& pt, double q, double h, double r1, double r2,
 		vector<CPoint3D>& vt1, vector<CPoint3D>& vt2)
@@ -505,17 +670,15 @@ inline void _SetEndmillPathXZ_Sphere
 	(double d, double qp, const CPoint3D& ptOrg,
 		CPoint3D* ptResult)
 {
-	int		i = 0;
-	double	q = 0,
+	double	x,
 			cos_qp = cos(qp),
-			sin_qp = sin(qp),
-			x;
+			sin_qp = sin(qp);
 	CPoint3D	pt;
 
-	for ( ; i<ARCCOUNT; i++, q+=ARCSTEP ) {
+	for ( int i=0; i<ARCCOUNT; i++ ) {
 		// XY平面の円
-		x    = d * cos(q);
-		pt.y = d * sin(q);
+		x    = d * _TABLECOS[i];
+		pt.y = d * _TABLESIN[i];
 		// Zでの回転
 		pt.x = x * cos_qp;	// - z * sin_qp;
 		pt.z = x * sin_qp;	// + z * cos_qp;
@@ -546,17 +709,15 @@ inline void _SetEndmillPathYZ_Sphere
 	(double d, double qp, const CPoint3D& ptOrg,
 		CPoint3D* ptResult)
 {
-	int		i = 0;
-	double	q = 0,
+	double	y,
 			cos_qp = cos(qp),
-			sin_qp = sin(qp),
-			y;
+			sin_qp = sin(qp);
 	CPoint3D	pt;
 
-	for ( ; i<ARCCOUNT; i++, q+=ARCSTEP ) {
+	for ( int i=0; i<ARCCOUNT; i++ ) {
 		// XY平面の円
-		pt.x = d * cos(q);
-		y    = d * sin(q);
+		pt.x = d * _TABLECOS[i];
+		y    = d * _TABLESIN[i];
 		// Zでの回転
 		pt.y = y * cos_qp;	// - z * sin_qp;
 		pt.z = y * sin_qp;	// + z * cos_qp;
@@ -565,10 +726,10 @@ inline void _SetEndmillPathYZ_Sphere
 	}
 }
 //	---
-void CNCcircle::DrawBottomFace(void) const
+void CNCcircle::DrawGLBottomFace(void) const
 {
 	if ( !m_obCdata.IsEmpty() ) {
-		CNCdata::DrawBottomFace();
+		CNCdata::DrawGLBottomFace();
 		return;
 	}
 
@@ -590,15 +751,12 @@ void CNCcircle::DrawBottomFace(void) const
 		}
 	}
 	else {
-		vector<CVCircle>	vSphere;
-		vSphere.reserve(ARCCOUNT/4);
+		CPoint3D	ptSphere[ARCCOUNT/4][ARCCOUNT];
 		// 始点・終点のﾎﾞｰﾙｴﾝﾄﾞﾐﾙ球
-		_SetEndmillSphere(m_dEndmill, m_ptValS, vSphere);
-		_DrawBottomFaceSphere(vSphere);
-		vSphere.clear();
-		_SetEndmillSphere(m_dEndmill, m_ptValE, vSphere);
-		_DrawBottomFaceSphere(vSphere);
-		vSphere.clear();
+		_SetEndmillSphere(m_dEndmill, m_ptValS, ptSphere);
+		_DrawBottomFaceSphere(ptSphere, m_ptValS);
+		_SetEndmillSphere(m_dEndmill, m_ptValE, ptSphere);
+		_DrawBottomFaceSphere(ptSphere, m_ptValE);
 		// 軌跡ﾊﾟｽの座標計算
 		DrawEndmillBall();
 	}
@@ -736,7 +894,7 @@ void CNCcircle::DrawEndmillBall(void) const
 				pt.y = rr * sin(sq) + ptOrg.y;
 				pt.z = h;
 				_SetEndmillSpherePath(m_dEndmill, sq, pt, ptc);
-				for ( i=0; i<ARCCOUNT/2; i++ )	// 半円分だけ使用
+				for ( i=0; i<=ARCCOUNT/2; i++ )	// 半円分だけ使用
 					vc.push_back(ptc[i]);
 				vPath.push_back(vc);
 				vc.clear();
@@ -748,7 +906,7 @@ void CNCcircle::DrawEndmillBall(void) const
 				pt.y = rr * sin(sq) + ptOrg.y;
 				pt.z = h;
 				_SetEndmillSpherePath(m_dEndmill, sq, pt, ptc);
-				for ( i=0; i<ARCCOUNT/2; i++ )
+				for ( i=0; i<=ARCCOUNT/2; i++ )
 					vc.push_back(ptc[i]);
 				vPath.push_back(vc);
 				vc.clear();
@@ -758,7 +916,7 @@ void CNCcircle::DrawEndmillBall(void) const
 		pt.y = rr * sin(eq) + ptOrg.y;
 		pt.z = h;
 		_SetEndmillSpherePath(m_dEndmill, eq, pt, ptc);
-		for ( i=0; i<ARCCOUNT/2; i++ )
+		for ( i=0; i<=ARCCOUNT/2; i++ )
 			vc.push_back(ptc[i]);
 		vPath.push_back(vc);
 		break;
@@ -841,4 +999,132 @@ void CNCcircle::DrawEndmillBall(void) const
 
 	// 軌跡上に並ぶ半円または円をﾊﾟｲﾌﾟ状につなぐ
 	_DrawEndmillPipe(vPath);
+}
+
+int CNCcircle::AddGLWireVertex(vector<GLfloat>& vVertex, vector<GLfloat>& vNormal) const
+{
+	if ( !m_pWireObj )
+		return -1;
+
+	int			nCnt = 0;
+	CNCcircle*	pCircleUV = static_cast<CNCcircle*>(m_pWireObj);
+	double		sqxy, eqxy, squv, equv,
+				cxy, sxy, cuv, suv,
+				rxy = fabs(m_r), ruv = fabs(pCircleUV->GetR());
+	CPointD		ptOrgXY( m_ptOrg.GetXY() ),
+				ptOrgUV( pCircleUV->GetOrg().GetXY() );
+	CPoint3D	pt1, pt2;
+
+	tie(sqxy, eqxy) = GetSqEq();
+	tie(squv, equv) = pCircleUV->GetSqEq();
+	pt1.z = m_ptValS.z;
+	pt2.z = pCircleUV->GetStartPoint().z;
+
+	// 座標値を円筒状に登録
+	// 法線ﾍﾞｸﾄﾙは r - 1.0
+	if ( m_nG23 == 0 ) {
+		for ( ; sqxy>eqxy; sqxy-=ARCSTEP, squv-=ARCSTEP, nCnt+=2 ) {
+			cxy = cos(sqxy);	sxy = sin(sqxy);
+			cuv = cos(squv);	suv = sin(squv);
+			pt1.x = rxy * cxy + ptOrgXY.x;
+			pt1.y = rxy * sxy + ptOrgXY.y;
+			pt2.x = ruv * cuv + ptOrgUV.x;
+			pt2.y = ruv * suv + ptOrgUV.y;
+			vVertex.push_back((GLfloat)pt1.x);
+			vVertex.push_back((GLfloat)pt1.y);
+			vVertex.push_back((GLfloat)pt1.z);
+			vVertex.push_back((GLfloat)pt2.x);
+			vVertex.push_back((GLfloat)pt2.y);
+			vVertex.push_back((GLfloat)pt2.z);
+			pt1.x = (rxy-1.0) * cxy + ptOrgXY.x;
+			pt1.y = (rxy-1.0) * sxy + ptOrgXY.y;
+			pt2.x = (ruv-1.0) * cuv + ptOrgUV.x;
+			pt2.y = (ruv-1.0) * suv + ptOrgUV.y;
+			vNormal.push_back((GLfloat)pt1.x);
+			vNormal.push_back((GLfloat)pt1.y);
+			vNormal.push_back((GLfloat)pt1.z);
+			vNormal.push_back((GLfloat)pt2.x);
+			vNormal.push_back((GLfloat)pt2.y);
+			vNormal.push_back((GLfloat)pt2.z);
+		}
+	}
+	else {
+		for ( ; sqxy<eqxy; sqxy+=ARCSTEP, squv+=ARCSTEP, nCnt+=2 ) {
+			cxy = cos(sqxy);	sxy = sin(sqxy);
+			cuv = cos(squv);	suv = sin(squv);
+			pt1.x = rxy * cxy + ptOrgXY.x;
+			pt1.y = rxy * sxy + ptOrgXY.y;
+			pt2.x = ruv * cuv + ptOrgUV.x;
+			pt2.y = ruv * suv + ptOrgUV.y;
+			vVertex.push_back((GLfloat)pt1.x);
+			vVertex.push_back((GLfloat)pt1.y);
+			vVertex.push_back((GLfloat)pt1.z);
+			vVertex.push_back((GLfloat)pt2.x);
+			vVertex.push_back((GLfloat)pt2.y);
+			vVertex.push_back((GLfloat)pt2.z);
+			pt1.x = (rxy-1.0) * cxy + ptOrgXY.x;
+			pt1.y = (rxy-1.0) * sxy + ptOrgXY.y;
+			pt2.x = (ruv-1.0) * cuv + ptOrgUV.x;
+			pt2.y = (ruv-1.0) * suv + ptOrgUV.y;
+			vNormal.push_back((GLfloat)pt1.x);
+			vNormal.push_back((GLfloat)pt1.y);
+			vNormal.push_back((GLfloat)pt1.z);
+			vNormal.push_back((GLfloat)pt2.x);
+			vNormal.push_back((GLfloat)pt2.y);
+			vNormal.push_back((GLfloat)pt2.z);
+		}
+	}
+	cxy = cos(eqxy);	sxy = sin(eqxy);
+	cuv = cos(equv);	suv = sin(equv);
+	pt1.x = rxy * cxy + ptOrgXY.x;
+	pt1.y = rxy * sxy + ptOrgXY.y;
+	pt2.x = ruv * cuv + ptOrgUV.x;
+	pt2.y = ruv * suv + ptOrgUV.y;
+	vVertex.push_back((GLfloat)pt1.x);
+	vVertex.push_back((GLfloat)pt1.y);
+	vVertex.push_back((GLfloat)pt1.z);
+	vVertex.push_back((GLfloat)pt2.x);
+	vVertex.push_back((GLfloat)pt2.y);
+	vVertex.push_back((GLfloat)pt2.z);
+	pt1.x = (rxy-1.0) * cxy + ptOrgXY.x;
+	pt1.y = (rxy-1.0) * sxy + ptOrgXY.y;
+	pt2.x = (ruv-1.0) * cuv + ptOrgUV.x;
+	pt2.y = (ruv-1.0) * suv + ptOrgUV.y;
+	vNormal.push_back((GLfloat)pt1.x);
+	vNormal.push_back((GLfloat)pt1.y);
+	vNormal.push_back((GLfloat)pt1.z);
+	vNormal.push_back((GLfloat)pt2.x);
+	vNormal.push_back((GLfloat)pt2.y);
+	vNormal.push_back((GLfloat)pt2.z);
+
+	return nCnt+2;		// 頂点数
+}
+
+int CNCcircle::AddGLWireTexture(int n, double& dAccuLength, double dAllLength, GLfloat* pfTEX) const
+{
+	if ( !m_pWireObj )
+		return -1;
+
+	int		nCnt = 0;
+	GLfloat	f;
+	double	sq = m_sq, r = fabs(m_r);
+
+	// ﾃｸｽﾁｬ座標の登録は、回転方向は関係なく、長さの割合だけで良い
+	for ( ; sq<m_eq; sq+=ARCSTEP, nCnt+=4, dAccuLength+=r*ARCSTEP ) {
+		f = (GLfloat)(dAccuLength / dAllLength);
+		pfTEX[n++] = f;
+		pfTEX[n++] = 0.0;
+		pfTEX[n++] = f;
+		pfTEX[n++] = 1.0;
+	}
+	sq -= ARCSTEP;
+	dAccuLength -= r*ARCSTEP;
+	dAccuLength += r*(m_eq-sq);
+	f = (GLfloat)(dAccuLength / dAllLength);
+	pfTEX[n++] = f;
+	pfTEX[n++] = 0.0;
+	pfTEX[n++] = f;
+	pfTEX[n++] = 1.0;
+
+	return nCnt+4;
 }

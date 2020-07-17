@@ -226,6 +226,7 @@
     <ClCompile Include="TH_MakeNCD.cpp" />
     <ClCompile Include="TH_NCRead.cpp" />
     <ClCompile Include="TH_ShapeSearch.cpp" />
+    <ClCompile Include="TH_UVWire.cpp" />
     <ClCompile Include="ToolBarSetupDlg.cpp" />
     <ClCompile Include="ViewBase.cpp" />
     <ClCompile Include="ViewOption.cpp" />

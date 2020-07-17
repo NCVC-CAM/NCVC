@@ -20,7 +20,7 @@ public:
 
 // オペレーション
 public:
-	void	DrawData(const CNCdata *, BOOL, BOOL);	// from NCViewTab.cpp(CTraceThread)
+	void	DrawData(CNCdata *, BOOL, BOOL, PFNNCDRAWPROC[]);	// from NCViewTab.cpp(CTraceThread)
 
 // オーバーライド
 

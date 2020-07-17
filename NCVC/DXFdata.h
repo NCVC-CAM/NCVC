@@ -9,7 +9,7 @@ class	CLayerData;
 class	CDXFshape;
 
 // –îˆó‚ÌŠp“x‚Æ’·‚³
-#define	ARRAWANGLE		(15.0*RAD)
+#define	ARRAWANGLE		RAD(15.0)
 #define	ARRAWLENGTH		100
 
 // DXFó‘ÔÌ×¸Ş

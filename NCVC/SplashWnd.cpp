@@ -17,7 +17,7 @@ BEGIN_MESSAGE_MAP(CSplashWnd, CWnd)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-BOOL CSplashWnd::ms_bShowSplashWnd = TRUE;
+BOOL CSplashWnd::ms_bShowSplashWnd = FALSE;
 
 /////////////////////////////////////////////////////////////////////////////
 // CSplashWnd
@@ -46,6 +46,8 @@ BOOL CSplashWnd::PreTranslateMessage(MSG* pMsg)
 		 pMsg->message == WM_NCLBUTTONDOWN ||
 		 pMsg->message == WM_NCRBUTTONDOWN ||
 		 pMsg->message == WM_NCMBUTTONDOWN ) {
+		AfxGetMainWnd()->UpdateWindow();
+		KillTimer(IDC_SPLASH_TIMER);
 		DestroyWindow();
 		return TRUE;
 	}
@@ -84,6 +86,7 @@ void CSplashWnd::OnPaint()
 
 void CSplashWnd::OnTimer(UINT nIDEvent) 
 {
+	AfxGetMainWnd()->UpdateWindow();
 	KillTimer(IDC_SPLASH_TIMER);
 	DestroyWindow();
 }

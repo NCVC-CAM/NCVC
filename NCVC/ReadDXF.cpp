@@ -313,7 +313,7 @@ inline BOOL _SetDxfArgv(LPCDXFAARGV lpArc)
 		lpArc->eq  = g_dValue[VALUE51];
 #ifdef _DEBUG
 		dbg.printf("    cx=%f cy=%f r=%f sp=%f ep=%f", 
-			lpArc->c.x, lpArc->c.y, lpArc->r, lpArc->sq*DEG, lpArc->eq*DEG);
+			lpArc->c.x, lpArc->c.y, lpArc->r, DEG(lpArc->sq), DEG(lpArc->eq));
 #endif
 		return TRUE;
 	}
@@ -350,7 +350,7 @@ inline BOOL _SetDxfArgv(LPCDXFEARGV lpEllipse)
 		dbg.printf("        cx=%f cy=%f lx=%f ly=%f s=%f", 
 			lpEllipse->c.x, lpEllipse->c.y, lpEllipse->l.x, lpEllipse->l.y, lpEllipse->s);
 		dbg.printf("        sp=%f ep=%f",
-			lpEllipse->sq*DEG, lpEllipse->eq*DEG);
+			DEG(lpEllipse->sq), DEG(lpEllipse->eq));
 #endif
 		return TRUE;
 	}

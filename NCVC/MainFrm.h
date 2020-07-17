@@ -76,6 +76,9 @@ enum	EN_NCBRUSH	{
 
 class CMainFrame : public CMDIFrameWnd
 {
+	// GDI+ (NCVC.cpp‚©‚çˆÚ“®)
+	ULONG_PTR	gdiplusToken;
+
 	void	SaveWindowState(void);	// OnClose, OnEndSession ‚©‚ç‚ÌŒÄ‚Ño‚µ
 
 	// NCVC‹¤’Ê‘®«

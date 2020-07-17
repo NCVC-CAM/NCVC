@@ -46,6 +46,8 @@ BEGIN_MESSAGE_MAP(CNCViewTab, CTabView)
 	ON_UPDATE_COMMAND_UI(ID_NCVIEW_ALLFIT, OnUpdateAllFitCmd)
 	// 「直前の拡大率」ﾒﾆｭｰｺﾏﾝﾄﾞの使用許可
 	ON_UPDATE_COMMAND_UI(ID_VIEW_BEFORE, OnUpdateBeforeView)
+	//
+	ON_UPDATE_COMMAND_UI(ID_OPTION_DEFVIEWINFO, OnUpdateDefViewInfo)
 END_MESSAGE_MAP()
 
 //////////////////////////////////////////////////////////////////////
@@ -77,6 +79,19 @@ void CNCViewTab::OnInitialUpdate()
 {
 	CTabView::OnInitialUpdate();
 
+	// ﾄﾚｰｽ描画ｽﾚｯﾄﾞ生成
+	// --- OnCreateではIsNCDocFlag()が間に合わない
+	LPTRACETHREADPARAM	pParam = new TRACETHREADPARAM;
+	pParam->pMainFrame	= AfxGetNCVCMainWnd();
+	pParam->pParent		= this;
+	pParam->pListView	= static_cast<CNCChild *>(GetParentFrame())->GetListView();
+	m_pTraceThread = new CTraceThread(pParam);
+	if ( !m_pTraceThread->CreateThread() ) {
+		delete	m_pTraceThread;
+		delete	pParam;
+		::NCVC_CriticalErrorMsg(__FILE__, __LINE__);	// ExitProcess()
+	}
+
 	// ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ情報
 	int	nPage = AfxGetNCVCApp()->GetNCTabPage();
 	ActivatePage(nPage);
@@ -86,17 +101,17 @@ void CNCViewTab::OnInitialUpdate()
 	m_wndSplitter1.PostMessage(WM_USERINITIALUPDATE, NCVIEW_FOURSVIEW,   nPage==NCVIEW_FOURSVIEW);
 	m_wndSplitter2.PostMessage(WM_USERINITIALUPDATE, NCVIEW_FOURSVIEW+1, nPage==NCVIEW_FOURSVIEW+1);
 
-	if ( NCVIEW_FOURSVIEW<=nPage && nPage<NCVIEW_OPENGL ) {
-		// ｽﾌﾟﾘｯﾀ表示の場合は，拡大率の再更新
-		for ( int i=0; i<SIZEOF(m_bSplit); i++ )
-			m_bSplit[i] = TRUE;
-	}
-	else {
+	if ( nPage<NCVIEW_FOURSVIEW || nPage==NCVIEW_OPENGL ) {
 		// 図形ﾌｨｯﾄﾒｯｾｰｼﾞの送信
 		// 各ﾋﾞｭｰのOnInitialUpdate()関数内では，GetClientRect()のｻｲｽﾞが正しくない
 		CWnd*	pWnd = GetPage(nPage);
 		if ( pWnd )
 			pWnd->PostMessage(WM_USERVIEWFITMSG, 0, 1);
+	}
+	else {
+		// ｽﾌﾟﾘｯﾀ表示の場合は，拡大率の再更新
+		for ( int i=0; i<SIZEOF(m_bSplit); i++ )
+			m_bSplit[i] = TRUE;
 	}
 }
 
@@ -192,7 +207,7 @@ CNCDoc* CNCViewTab::GetDocument() // 非デバッグ バージョンはインラインです。
 
 int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	extern	LPCTSTR	g_szNdelimiter;		// "XYZRIJKPLDH" from NCDoc.cpp
+	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 	if ( CTabView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
@@ -256,18 +271,6 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 			m_hDC[i] = pDC->GetSafeHdc();
 			delete	pDC;
 		}
-
-		// ﾄﾚｰｽ描画ｽﾚｯﾄﾞ生成
-		LPTRACETHREADPARAM	pParam = new TRACETHREADPARAM;
-		pParam->pMainFrame	= AfxGetNCVCMainWnd();
-		pParam->pParent		= this;
-		pParam->pListView	= static_cast<CNCChild *>(GetParentFrame())->GetListView();
-		m_pTraceThread = new CTraceThread(pParam);
-		if ( !m_pTraceThread->CreateThread() ) {
-			delete	m_pTraceThread;
-			delete	pParam;
-			::NCVC_CriticalErrorMsg(__FILE__, __LINE__);	// ExitProcess()
-		}
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -284,23 +287,25 @@ void CNCViewTab::OnDestroy()
 	CMagaDbg	dbg("CNCViewTab::OnDestroy()", DBG_BLUE);
 #endif
 
-	// ﾄﾚｰｽ描画ｽﾚｯﾄﾞの終了指示
-	m_bTraceContinue = FALSE;
-	m_evTrace.SetEvent();
-	MSG		msg;
-	while ( ::PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) )
-		AfxGetApp()->PumpMessage();
+	if ( m_pTraceThread ) {
+		// ﾄﾚｰｽ描画ｽﾚｯﾄﾞの終了指示
+		m_bTraceContinue = FALSE;
+		m_evTrace.SetEvent();
+		MSG		msg;
+		while ( ::PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) )
+			AfxGetApp()->PumpMessage();
 #ifdef _DEBUG
-	if ( ::WaitForSingleObject(m_pTraceThread->m_hThread, INFINITE) == WAIT_FAILED ) {
-		dbg.printf("WaitForSingleObject() Fail!");
-		::NC_FormatMessage();
-	}
-	else
-		dbg.printf("WaitForSingleObject() OK");
+		if ( ::WaitForSingleObject(m_pTraceThread->m_hThread, INFINITE) == WAIT_FAILED ) {
+			dbg.printf("WaitForSingleObject() Fail!");
+			::NC_FormatMessage();
+		}
+		else
+			dbg.printf("WaitForSingleObject() OK");
 #else
-	::WaitForSingleObject(m_pTraceThread->m_hThread, INFINITE);
+		::WaitForSingleObject(m_pTraceThread->m_hThread, INFINITE);
 #endif
-	delete	m_pTraceThread;
+		delete	m_pTraceThread;
+	}
 
 	CTabView::OnDestroy();
 }
@@ -462,6 +467,12 @@ void CNCViewTab::OnUpdateBeforeView(CCmdUI* pCmdUI)
 	pCmdUI->Enable( nIndex < NCVIEW_OPENGL );
 }
 
+void CNCViewTab::OnUpdateDefViewInfo(CCmdUI *pCmdUI)
+{
+	int nIndex = GetActivePage();
+	pCmdUI->Enable( nIndex == NCVIEW_OPENGL );
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CTraceThread
 
@@ -478,6 +489,20 @@ BOOL CTraceThread::InitInstance()
 	CDC		dc;
 	int		nPage, nTraceDraw;
 	BOOL	bBreak, bSelect;
+	PFNNCDRAWPROC	pfnDrawProc[NCVIEW_FOURSVIEW];
+
+	if ( pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
+		pfnDrawProc[0] = &(CNCdata::DrawWire);
+		pfnDrawProc[1] = &(CNCdata::DrawWireXY);
+		pfnDrawProc[2] = &(CNCdata::DrawWireXZ);
+		pfnDrawProc[3] = &(CNCdata::DrawWireYZ);
+	}
+	else {
+		pfnDrawProc[0] = &(CNCdata::Draw);
+		pfnDrawProc[1] = &(CNCdata::DrawXY);
+		pfnDrawProc[2] = &(CNCdata::DrawXZ);
+		pfnDrawProc[3] = &(CNCdata::DrawYZ);
+	}
 
 	// ｽﾚｯﾄﾞのﾙｰﾌﾟ
 	while ( TRUE ) {
@@ -500,39 +525,17 @@ BOOL CTraceThread::InitInstance()
 					if ( nPage < NCVIEW_FOURSVIEW ) {
 						if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
 							::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-						switch ( nPage ) {
-						case 0:
-							dc.SetROP2(R2_XORPEN);
-							pData2->Draw(&dc, TRUE);
-							dc.SetROP2(R2_COPYPEN);
-							pData2->Draw(&dc, FALSE);
-							break;
-						case 1:
-							dc.SetROP2(R2_XORPEN);
-							pData2->DrawXY(&dc, TRUE);
-							dc.SetROP2(R2_COPYPEN);
-							pData2->DrawXY(&dc, FALSE);
-							break;
-						case 2:
-							dc.SetROP2(R2_XORPEN);
-							pData2->DrawXZ(&dc, TRUE);
-							dc.SetROP2(R2_COPYPEN);
-							pData2->DrawXZ(&dc, FALSE);
-							break;
-						case 3:
-							dc.SetROP2(R2_XORPEN);
-							pData2->DrawYZ(&dc, TRUE);
-							dc.SetROP2(R2_COPYPEN);
-							pData2->DrawYZ(&dc, FALSE);
-							break;
-						}
+						dc.SetROP2(R2_XORPEN);
+						(pData2->*pfnDrawProc[nPage])(&dc, TRUE);
+						dc.SetROP2(R2_COPYPEN);
+						(pData2->*pfnDrawProc[nPage])(&dc, FALSE);
 						dc.Detach();
 					}
 					else if ( nPage < NCVIEW_OPENGL ) {
 						pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
 						if ( pWnd ) {
-							pWnd->DrawData(pData2, TRUE,  TRUE);
-							pWnd->DrawData(pData2, FALSE, FALSE);
+							pWnd->DrawData(pData2, TRUE,  TRUE,  pfnDrawProc);
+							pWnd->DrawData(pData2, FALSE, FALSE, pfnDrawProc);
 						}
 					}
 				}
@@ -548,53 +551,22 @@ BOOL CTraceThread::InitInstance()
 			if ( nPage < NCVIEW_FOURSVIEW ) {
 				if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
 					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-				switch ( nPage ) {
-				case 0:
-					if ( bSelect && pData2 ) {
-						dc.SetROP2(R2_XORPEN);
-						pData2->Draw(&dc, TRUE);
-						dc.SetROP2(R2_COPYPEN);
-						pData2->Draw(&dc, FALSE);
-					}
-					pData1->Draw(&dc, bSelect);
-					break;
-				case 1:
-					if ( bSelect && pData2 ) {
-						dc.SetROP2(R2_XORPEN);
-						pData2->DrawXY(&dc, TRUE);
-						dc.SetROP2(R2_COPYPEN);
-						pData2->DrawXY(&dc, FALSE);
-					}
-					pData1->DrawXY(&dc, bSelect);
-					break;
-				case 2:
-					if ( bSelect && pData2 ) {
-						dc.SetROP2(R2_XORPEN);
-						pData2->DrawXZ(&dc, TRUE);
-						dc.SetROP2(R2_COPYPEN);
-						pData2->DrawXZ(&dc, FALSE);
-					}
-					pData1->DrawXZ(&dc, bSelect);
-					break;
-				case 3:
-					if ( bSelect && pData2 ) {
-						dc.SetROP2(R2_XORPEN);
-						pData2->DrawYZ(&dc, TRUE);
-						dc.SetROP2(R2_COPYPEN);
-						pData2->DrawYZ(&dc, FALSE);
-					}
-					pData1->DrawYZ(&dc, bSelect);
-					break;
+				if ( bSelect && pData2 ) {
+					dc.SetROP2(R2_XORPEN);
+					(pData2->*pfnDrawProc[nPage])(&dc, TRUE);
+					dc.SetROP2(R2_COPYPEN);
+					(pData2->*pfnDrawProc[nPage])(&dc, FALSE);
 				}
+				(pData1->*pfnDrawProc[nPage])(&dc, bSelect);
 				dc.Detach();
 			}
 			else if ( nPage < NCVIEW_OPENGL ) {
 				pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
 				if ( pWnd && bSelect && pData2 ) {
-					pWnd->DrawData(pData2, TRUE,  TRUE);	// XOR PEN
-					pWnd->DrawData(pData2, FALSE, FALSE);	// COPY PEN
+					pWnd->DrawData(pData2, TRUE,  TRUE,  pfnDrawProc);	// XOR PEN
+					pWnd->DrawData(pData2, FALSE, FALSE, pfnDrawProc);	// COPY PEN
 				}
-				pWnd->DrawData(pData1, bSelect, FALSE);
+				pWnd->DrawData(pData1, bSelect, FALSE, pfnDrawProc);
 			}
 			::GdiFlush();
 			if ( bBreak ) {
