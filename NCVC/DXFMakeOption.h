@@ -7,11 +7,13 @@
 #define	MKDX_NUM_LTYPE_O		0
 #define	MKDX_NUM_LTYPE_C		1
 #define	MKDX_NUM_LTYPE_M		2
-#define	MKDX_NUM_LCOL_O			3
-#define	MKDX_NUM_LCOL_C			4
-#define	MKDX_NUM_LCOL_M			5
-#define	MKDX_NUM_PLANE			6
-#define	MKDX_NUM_CYCLE			7
+#define	MKDX_NUM_LTYPE_H		3
+#define	MKDX_NUM_LCOL_O			4
+#define	MKDX_NUM_LCOL_C			5
+#define	MKDX_NUM_LCOL_M			6
+#define	MKDX_NUM_LCOL_H			7
+#define	MKDX_NUM_PLANE			8
+#define	MKDX_NUM_CYCLE			9
 
 #define	MKDX_DBL_ORGLENGTH		0
 #define	MKDX_DBL_CYCLER			1
@@ -22,6 +24,7 @@
 #define	MKDX_STR_ORIGIN			0
 #define	MKDX_STR_CAMLINE		1
 #define	MKDX_STR_MOVE			2
+#define	MKDX_STR_CORRECT		3
 
 class CDXFMakeOption  
 {
@@ -32,12 +35,12 @@ friend class CMakeDXFDlg2;
 	// int型ｵﾌﾟｼｮﾝ
 	union {
 		struct {
-			int		m_nLType[3],	// 各ﾚｲﾔの線種
-					m_nLColor[3],	// 　〃 の色
+			int		m_nLType[4],	// 各ﾚｲﾔの線種
+					m_nLColor[4],	// 　〃 の色
 					m_nPlane,		// 平面指定
 					m_nCycle;		// 固定ｻｲｸﾙ出力ﾀｲﾌﾟ
 		};
-		int			m_unNums[8];
+		int			m_unNums[10];
 	};
 	// double型ｵﾌﾟｼｮﾝ
 	union {
@@ -56,7 +59,7 @@ friend class CMakeDXFDlg2;
 		BOOL		m_ubFlags[2];
 	};
 	// CString型ｵﾌﾟｼｮﾝ
-	CString		m_strOption[3];		// 各種ﾚｲﾔ
+	CString		m_strOption[4];		// 各種ﾚｲﾔ
 
 public:
 	CDXFMakeOption();

@@ -56,20 +56,12 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 // ê∂ê¨¿ﬁ≤±€∏ﬁã§í ä÷êî
 
-void	SetFocusListCtrl(CListCtrl&, int);
 BOOL	CheckMakeDlgFileExt(DOCTYPE, CString&);
-BOOL	CheckMakeNCDlgExLayerState(CString&, CEdit&, CListCtrl&, BOOL);
 //
 CString	MakeDlgFileRefer(int, const CString&, CDialog*, int, CString&, CString&, BOOL);
 void	MakeNCDlgInitFileEdit(CString&, CString&, CDialog*, int, CComboBox&);
 int		MakeNCDlgSelChange(const CComboBox&, HWND, int, CString&, CString&);
 void	MakeDlgKillFocus(CString&, CString&, CDialog*, int nID);
 //
-int		GetMakeNCDlgExSortColumn(UINT);
-void	SetMakeNCDlgExSortColumn(UINT, int);
-CPoint	GetMakeNCDlgExLayerListState(const CListCtrl&);
-//
 void	CreateNCFile(const CDXFDoc*, CString&, CString&);
-void	CreateLayerFile(const CDXFDoc*, CString&, CString&);
 BOOL	InitialMakeNCDlgComboBox(const CStringList*, CComboBox&);
-BOOL	InitialMakeNCDlgExLayerListCtrl(CDXFDoc*, CListCtrl&);

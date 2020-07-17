@@ -76,6 +76,8 @@ CNCDoc::CNCDoc()
 		m_ptNcWorkOrg[i] = pMCopt->GetWorkOffset(i);
 	m_ptNcWorkOrg[i] = 0.0;		// G92の初期化
 	m_nWorkOrg = pMCopt->GetModalSetting(MODALGROUP2);		// G54～G59
+	if ( m_nWorkOrg<0 || SIZEOF(m_ptNcWorkOrg)<=m_nWorkOrg )
+		m_nWorkOrg = 0;
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
 	// 増分割り当てサイズ
@@ -208,7 +210,6 @@ CNCdata* CNCDoc::DataOperation
 			pData = new CNCdata(pDataSrc, lpArgv, pt);
 			break;
 		case 92:
-			pt = 0.0;
 			// ﾛｰｶﾙ座標系ｸﾘｱとG92値取得
 			for ( i=0; i<NCXYZ; i++ ) {
 				m_ptNcLocalOrg[i] = 0.0;
@@ -523,11 +524,13 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 	CTypedPtrArrayEx<CPtrArray, CDXFMake*>	obDXFdata;// DXF出力ｲﾒｰｼﾞ
 	CDXFMake*	pMake;
 	CNCdata*	pData;
-	int			i;
+	CNCdata*	pDataBase;
+	int			i, j, nLoop = m_obGdata.GetSize(), nCorrect;
 	BOOL		bOrigin = TRUE;
 	DWORD		dwValFlag;
 	CString		strMsg;
 
+	obDXFdata.SetSize(0, nLoop);
 	// 静的変数初期化
 	CDXFMake::SetStaticOption(pDXFMake);
 	// 平面指定による検査ﾌﾗｸﾞの設定
@@ -546,7 +549,7 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 
 	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ準備
 	pProgress = AfxGetNCVCMainWnd()->GetProgressCtrl();
-	pProgress->SetRange32(0, m_obGdata.GetSize());
+	pProgress->SetRange32(0, nLoop);
 	pProgress->SetPos(0);
 
 	// 下位の CMemoryException は全てここで集約
@@ -557,7 +560,7 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 			obDXFdata.Add(pMake);
 		}
 		// NCｵﾌﾞｼﾞｪｸﾄのDXF出力
-		for ( i=0; i<m_obGdata.GetSize(); i++ ) {
+		for ( i=0; i<nLoop; i++ ) {
 			pData = m_obGdata[i];
 			if ( pData->GetGtype()==G_TYPE && pData->GetType()!=NCDBASEDATA &&
 					pData->GetValFlags()&dwValFlag ) {
@@ -570,6 +573,16 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 				// ｵﾌﾞｼﾞｪｸﾄ生成
 				pMake = new CDXFMake(pData);
 				obDXFdata.Add(pMake);
+				// 補正ｵﾌﾞｼﾞｪｸﾄ
+				if ( m_bCorrect ) {
+					pDataBase = pData;
+					nCorrect = pDataBase->GetCorrectArray()->GetSize();
+					for ( j=0; j<nCorrect; j++ ) {
+						pData = pDataBase->GetCorrectArray()->GetAt(j);
+						pMake = new CDXFMake(pData, TRUE);
+						obDXFdata.Add(pMake);
+					}
+				}
 			}
 			if ( (i & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
 				pProgress->SetPos(i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ

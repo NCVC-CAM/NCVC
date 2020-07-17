@@ -68,23 +68,27 @@ public:
 	CString	GetCurrentFileName(void) const {
 		return m_strCurrentFile;
 	}
-	int		GetNCBlockSize(void) const {
+	INT_PTR		GetNCBlockSize(void) const {
 		return m_obBlock.GetSize();
 	}
-	CNCblock*	GetNCblock(int n) {
+	CNCblock*	GetNCblock(INT_PTR n) {
 		ASSERT(0<=n && n<GetNCBlockSize());
 		return m_obBlock[n];
 	}
-	int		GetNCsize(void) const {
+	INT_PTR		GetNCsize(void) const {
 		return m_obGdata.GetSize();
 	}
-	CNCdata*	GetNCdata(int n) const {
+	CNCdata*	GetNCdata(INT_PTR n) const {
 		ASSERT(0<=n && n<GetNCsize());
 		return m_obGdata[n];
 	}
 	double	GetMoveData(size_t a) const {
 		ASSERT(0<=a && a<SIZEOF(m_dMove));
 		return m_dMove[a];
+	}
+	CPoint3D	GetOffsetOrig(void) const {
+		ASSERT(0<=m_nWorkOrg && m_nWorkOrg<SIZEOF(m_ptNcWorkOrg));
+		return m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg;
 	}
 	double	GetCutTime(void) const {
 		return m_dCutTime;

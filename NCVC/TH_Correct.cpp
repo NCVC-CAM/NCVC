@@ -100,7 +100,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 					dToolD_abs = fabs(dToolD);
 					pData1c = pData1->NC_CopyObject();	// 複製
 					if ( !pData1c ) {
-						SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_UNKNOWN);
+						SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTOBJECT);
 						continue;
 					}
 					pData1->AddCorrectObject(pData1c);
@@ -174,7 +174,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 				// 補正座標計算
 				pData2c = pData2->NC_CopyObject();	// 複製
 				if ( !pData2c ) {
-					SetErrorCode(pDoc, pData2, IDS_ERR_NCBLK_UNKNOWN);
+					SetErrorCode(pDoc, pData2, IDS_ERR_NCBLK_CORRECTOBJECT);
 					pData1 = pData2;
 					continue;
 				}
@@ -259,14 +259,14 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 							pData1->AddCorrectObject(pDataResult);
 							pData = pDataResult;
 						}
+						else
+							pData = pData1c;
 						if ( pDataResult = CreateNCobj(pData, pt3) ) {		// pt2 -> pt3
 							pData1->AddCorrectObject(pDataResult);
 							pData = pDataResult;
 						}
-						if ( pDataResult = CreateNCobj(pData, pt4) ) {		// pt3 -> pt4
+						if ( pDataResult = CreateNCobj(pData, pt4) )		// pt3 -> pt4
 							pData2->AddCorrectObject(pDataResult);	// 次のｵﾌﾞｼﾞｪｸﾄに登録
-							pData = pDataResult;
-						}
 						// pData2の始点を補正
 						pData2c->SetCorrectPoint(STARTPOINT, pt4, dToolD_abs*nSign2);
 					}
@@ -348,6 +348,8 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 								pData1->AddCorrectObject(pDataResult);
 								pData = pDataResult;
 							}
+							else
+								pData = pData1c;
 							// 次が円弧の場合は
 							if ( pData2->GetType() == NCDARCDATA ) {
 								// 始点を垂直ｵﾌｾｯﾄ
@@ -359,10 +361,8 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 									break;
 								}
 								// ｵﾌｾｯﾄ交点からここまでｵﾌﾞｼﾞｪｸﾄ生成
-								if ( pDataResult = CreateNCobj(pData, pt3) ) {	// pt2 -> pt3
+								if ( pDataResult = CreateNCobj(pData, pt3) )	// pt2 -> pt3
 									pData1->AddCorrectObject(pDataResult);
-									pData = pDataResult;
-								}
 							}
 							else
 								pt3 = pt2;
@@ -396,6 +396,8 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 								pData1->AddCorrectObject(pDataResult);
 								pData = pDataResult;
 							}
+							else
+								pData = pData1c;
 						}
 						else {
 							// pData1の終点を補正
@@ -414,10 +416,8 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 								break;
 							}
 							// ｵﾌｾｯﾄ交点からここまでｵﾌﾞｼﾞｪｸﾄ生成
-							if ( pDataResult = CreateNCobj(pData, pt3) ) {
+							if ( pDataResult = CreateNCobj(pData, pt3) )
 								pData1->AddCorrectObject(pDataResult);
-								pData = pDataResult;
-							}
 							// pData2の始点を補正
 							pData2c->SetCorrectPoint(STARTPOINT, pt3, dToolD_abs*nSign1);
 						}
@@ -640,8 +640,8 @@ CNCdata* CreateNCobj
 	// 座標値のｾｯﾄ
 	switch ( pData->GetPlane() ) {
 	case XY_PLANE:
-		if ( pt == ptSrc.GetXY() ) {
-			bCreate = FALSE;
+		if ( sqrt(GAPCALC(pt-ptSrc.GetXY())) < NCMIN ) {
+			bCreate = FALSE;	// ｵﾌﾞｼﾞｪｸﾄ生成の必要なし
 			break;
 		}
 		ncArgv.nc.dValue[NCA_X] = pt.x;
@@ -653,7 +653,7 @@ CNCdata* CreateNCobj
 		}
 		break;
 	case XZ_PLANE:
-		if ( pt == ptSrc.GetXZ() ) {
+		if ( sqrt(GAPCALC(pt-ptSrc.GetXZ())) < NCMIN ) {
 			bCreate = FALSE;
 			break;
 		}
@@ -666,7 +666,7 @@ CNCdata* CreateNCobj
 		}
 		break;
 	case YZ_PLANE:
-		if ( pt == ptSrc.GetYZ() ) {
+		if ( sqrt(GAPCALC(pt-ptSrc.GetYZ())) < NCMIN ) {
 			bCreate = FALSE;
 			break;
 		}
@@ -683,7 +683,6 @@ CNCdata* CreateNCobj
 	if ( bCreate ) {
 		ncArgv.nc.dwValFlags |= (pData->GetValFlags() & NCD_CORRECT);
 		pDataResult = new CNCline(pData, &ncArgv, pData->GetOffsetPoint());
-		pData = pDataResult;
 	}
 
 	return pDataResult;

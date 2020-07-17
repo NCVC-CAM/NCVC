@@ -321,7 +321,7 @@ class CDXFshape : public CObject
 	BOOL	ChangeCreate_MapToChain(CDXFmap*);
 	BOOL	ChangeCreate_ChainToMap(CDXFchain*);
 	CDXFdata*	CreateOutlineTempObject_new(const CDXFdata*, const CPointD&, const CPointD&, int) const;
-	BOOL	SeparateOutlineIntersection(CDXFchain*, CTypedPtrArrayEx<CPtrArray, CDXFlist*>&);
+	BOOL	SeparateOutlineIntersection(CDXFchain*, CTypedPtrArrayEx<CPtrArray, CDXFlist*>&, BOOL = FALSE);
 	BOOL	CheckSeparateChain(CDXFlist*);
 	BOOL	CheckIntersectionCircle(const CPointD&);
 	void	RemoveExceptDirection(void);

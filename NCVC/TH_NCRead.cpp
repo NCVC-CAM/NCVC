@@ -700,7 +700,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	}
 
 	double	r1, r2, cr = fabs(atof(g_strComma.substr(1).c_str()));
-	CPointD	pts, pte, pto;
+	CPointD	pts, pte, pto, ptOffset(g_pDoc->GetOffsetOrig());
 	boost::optional<CPointD>	ptResult;
 	BOOL	bResult;
 
@@ -714,6 +714,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_INTERSECTION);
 			return;
 		}
+		pto -= ptOffset;
 	}
 
 	// pData1(前のｵﾌﾞｼﾞｪｸﾄ)の終点を補正
@@ -722,14 +723,14 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LENGTH);
 		return;
 	}
-	pts = *ptResult;
+	pts = *ptResult - ptOffset;
 	// pData2(次のｵﾌﾞｼﾞｪｸﾄ)の始点を補正
 	ptResult = pData2->SetChamferingPoint(TRUE, r2);
 	if ( !ptResult ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LENGTH);
 		return;
 	}
-	pte = *ptResult;
+	pte = *ptResult - ptOffset;
 
 #ifdef _DEBUG
 	dbg.printf("%c=%f, %f", cCham, r1, r2);

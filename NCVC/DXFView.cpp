@@ -697,8 +697,8 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 	CPointD	pt(point);
 	pt /= ( m_dFactor * LOMETRICFACTOR );
 	CRect	rc;
-	GetClientRect(&rc);
-	dc.DPtoLP(&rc);
+	GetClientRect(rc);
+	dc.DPtoLP(rc);
 	rc.NormalizeRect();
 	CRectD	rcView(rc);
 	rcView /= ( m_dFactor * LOMETRICFACTOR );
@@ -1055,8 +1055,8 @@ void CDXFView::OnMouseMove(UINT nFlags, CPoint point)
 	CPointD		pt(ptLog);
 	pt /= ( m_dFactor * LOMETRICFACTOR );
 	CRect	rc;
-	GetClientRect(&rc);
-	dc.DPtoLP(&rc);
+	GetClientRect(rc);
+	dc.DPtoLP(rc);
 	rc.NormalizeRect();
 	CRectD	rcView(rc);
 	rcView /= ( m_dFactor * LOMETRICFACTOR );
@@ -1217,7 +1217,7 @@ void CDXFView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 BOOL CDXFView::OnEraseBkgnd(CDC* pDC) 
 {
 	CRect	rc;
-	GetClientRect(&rc);
+	GetClientRect(rc);
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2),

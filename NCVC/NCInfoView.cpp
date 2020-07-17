@@ -315,7 +315,7 @@ void CNCInfoView1::OnContextMenu(CWnd* pWnd, CPoint point)
 BOOL CNCInfoView1::OnEraseBkgnd(CDC* pDC) 
 {
 	CRect	rc;
-	GetClientRect(&rc);
+	GetClientRect(rc);
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND1),
@@ -354,7 +354,7 @@ void CNCInfoView2::OnContextMenu(CWnd* pWnd, CPoint point)
 BOOL CNCInfoView2::OnEraseBkgnd(CDC* pDC) 
 {
 	CRect	rc;
-	GetClientRect(&rc);
+	GetClientRect(rc);
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND1),

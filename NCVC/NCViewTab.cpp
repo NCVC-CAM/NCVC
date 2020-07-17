@@ -30,7 +30,6 @@ BEGIN_MESSAGE_MAP(CNCViewTab, CTabView)
 	ON_WM_CREATE()
 	ON_WM_DESTROY()
 	ON_WM_SETFOCUS()
-	ON_WM_ERASEBKGND()
 	// ÀÌÞˆÚ“®
 	ON_COMMAND_RANGE(ID_TAB_NEXT, ID_TAB_PREV, OnMoveTab)
 	// ÄÚ°½
@@ -322,11 +321,6 @@ void CNCViewTab::OnSetFocus(CWnd*)
 {
 	if ( GetActivePage() > 0 )
 		GetActivePageWnd()->SetFocus();
-}
-
-BOOL CNCViewTab::OnEraseBkgnd(CDC* pDC) 
-{
-	return TRUE;
 }
 
 void CNCViewTab::OnMoveTab(UINT nID)

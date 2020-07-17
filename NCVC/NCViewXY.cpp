@@ -414,7 +414,7 @@ void CNCViewXY::OnLButtonDblClk(UINT nFlags, CPoint point)
 BOOL CNCViewXY::OnEraseBkgnd(CDC* pDC) 
 {
 	CRect	rc;
-	GetClientRect(&rc);
+	GetClientRect(rc);
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND2),

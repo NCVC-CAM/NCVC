@@ -3,11 +3,11 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
-#include "NCMakeOption.h"
 #include "Layer.h"
 #include "DXFDoc.h"
 #include "MakeNCDlg.h"
-#include "MakeNCDlgEx2.h"
+#include "MakeNCDlgEx.h"
+#include "MakeNCDlgEx11.h"
 #include "MakeNCDlgEx21.h"
 
 #include "MagaDbgMac.h"
@@ -16,20 +16,20 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-BEGIN_MESSAGE_MAP(CMakeNCDlgEx2, CDialog)
+#define	GetNCMakeParent()	static_cast<CMakeNCDlgEx *>(GetParent())
+#define	IsMakeEx1()	( GetNCMakeParent()->GetNCMakeID() == ID_FILE_DXF2NCD_EX1 )
+#define	IsMakeEx2()	( GetNCMakeParent()->GetNCMakeID() == ID_FILE_DXF2NCD_EX2 )
+
+BEGIN_MESSAGE_MAP(CMakeNCDlgEx2, CPropertyPage)
 	//{{AFX_MSG_MAP(CMakeNCDlgEx2)
+	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, OnKillFocusNCFile)
+	ON_CBN_SELCHANGE(IDC_MKNCEX_LAYERTOINITFILE, OnSelChangeLayerToInit)
+	ON_CBN_SELCHANGE(IDC_MKNC_INIT, OnSelChangeInit)
+	ON_CBN_KILLFOCUS(IDC_MKNC_INIT, OnKillFocusInit)
+	ON_CBN_KILLFOCUS(IDC_MKNCEX_LAYERTOINITFILE, OnKillFocusLayerToInit)
 	ON_BN_CLICKED(IDC_MKNC_NCFILEUP, OnMKNCFileUp)
 	ON_BN_CLICKED(IDC_MKNC_INITUP, OnMKNCInitUp)
 	ON_BN_CLICKED(IDC_MKNC_INITED, OnMKNCInitEdit)
-	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, OnKillFocusNCFile)
-	ON_CBN_KILLFOCUS(IDC_MKNC_INIT, OnKillFocusInit)
-	ON_CBN_KILLFOCUS(IDC_MKNCEX_LAYERTOINITFILE, OnKillFocusLayerToInit)
-	ON_NOTIFY(LVN_GETDISPINFO, IDC_MKNCEX_LAYERLIST, OnGetDispInfoLayerList)
-	ON_NOTIFY(NM_DBLCLK, IDC_MKNCEX_LAYERLIST, OnDblClkLayerList)
-	ON_NOTIFY(LVN_COLUMNCLICK, IDC_MKNCEX_LAYERLIST, OnColumnClickLayerList)
-	ON_NOTIFY(LVN_ENDSCROLL, IDC_MKNCEX_LAYERLIST, OnEndScrollLayerList)
-	ON_CBN_SELCHANGE(IDC_MKNCEX_LAYERTOINITFILE, OnSelChangeLayerToInit)
-	ON_CBN_SELCHANGE(IDC_MKNC_INIT, OnSelChangeInit)
 	ON_BN_CLICKED(IDC_MKNCEX_LAYERTOINIT_ED, OnMKNCLayerEdit)
 	ON_BN_CLICKED(IDC_MKNCEX_LAYERTOINIT_UP, OnMKNCLayerUp)
 	//}}AFX_MSG_MAP
@@ -38,48 +38,12 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCDlgEx2 ダイアログ
 
-CMakeNCDlgEx2::CMakeNCDlgEx2(CDXFDoc* pDoc)
-	: CDialog(CMakeNCDlgEx2::IDD, NULL)
+CMakeNCDlgEx2::CMakeNCDlgEx2() : CPropertyPage(CMakeNCDlgEx2::IDD)
 {
-	m_pDoc = pDoc;
+	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CMakeNCDlgEx2)
 	//}}AFX_DATA_INIT
-
-	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成
-	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);	// MakeNCDlg.cpp
-
-	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
-	m_bNCView = pOpt->GetDxfFlag(DXFOPT_VIEW);
-	// ｿｰﾄ列の取得
-	m_nSortLayer = GetMakeNCDlgExSortColumn(IDS_REG_DXF_SORTLAYER2);	// MakeNCDlg.cpp
-
-	// 条件ﾌｧｲﾙのｾｯﾄ
-	if ( pOpt->GetInitList()->GetCount() > 0 )
-		::Path_Name_From_FullPath(pOpt->GetInitList()->GetHead(), m_strInitPath, m_strInitFileName);
-
-	// ﾚｲﾔ情報のｾｯﾄ
-	CString		strFullPath, strPath, strFile;
-	CreateLayerFile(pDoc, strPath, strFile);	// ﾄﾞｷｭﾒﾝﾄﾌｧｲﾙと同じnclﾌｧｲﾙ名
-	strFullPath = strPath + strFile;
-	if ( ::IsFileExist(strFullPath, TRUE, FALSE) ) {
-		// ﾄﾞｷｭﾒﾝﾄﾌｧｲﾙと同じnclﾌｧｲﾙがあれば
-		pDoc->ReadLayerMap(strFullPath);
-		pOpt->AddLayerHistory(strFullPath);
-		m_strLayerToInitPath		= strPath;
-		m_strLayerToInitFileName	= strFile;
-	}
-/*
-	else if ( pOpt->GetLayerToInitList()->GetCount() > 0 ) {
-		// 履歴に有れば履歴ﾌｧｲﾙを読み込み
-		strFullPath = pOpt->GetLayerToInitList()->GetHead();
-		if ( ::IsFileExist(strFullPath, TRUE, FALSE) ) {
-			pDoc->ReadLayerMap(strFullPath);
-			::Path_Name_From_FullPath(strFullPath, m_strLayerToInitPath, m_strLayerToInitFileName);
-		}
-		else
-			pOpt->DelLayerHistory(strFullPath);	// 履歴削除
-	}
-*/
+	m_bNCView = FALSE;
 }
 
 CMakeNCDlgEx2::~CMakeNCDlgEx2()
@@ -88,18 +52,22 @@ CMakeNCDlgEx2::~CMakeNCDlgEx2()
 
 void CMakeNCDlgEx2::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	CPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMakeNCDlgEx2)
-	DDX_Control(pDX, IDOK, m_ctOK);
 	DDX_Control(pDX, IDC_MKNC_NCFILE, m_ctNCFileName);
 	DDX_Text(pDX, IDC_MKNC_NCFILE, m_strNCFileName);
 	DDX_Control(pDX, IDC_MKNC_INIT, m_ctInitFileName);
 	DDX_CBString(pDX, IDC_MKNC_INIT, m_strInitFileName);
 	DDX_Control(pDX, IDC_MKNCEX_LAYERTOINITFILE, m_ctLayerToInitFileName);
 	DDX_CBString(pDX, IDC_MKNCEX_LAYERTOINITFILE, m_strLayerToInitFileName);
-	DDX_Control(pDX, IDC_MKNCEX_LAYERLIST, m_ctLayerList);
 	DDX_Check(pDX, IDC_MKNC_VIEW, m_bNCView);
 	//}}AFX_DATA_MAP
+	int		i;
+	for ( i=0; i<SIZEOF(m_ctInit_st)-1; i++ )
+		DDX_Control(pDX, IDC_MKNCEX_INIT_CT1+i, m_ctInit_st[i]);
+	DDX_Control(pDX, IDC_MKNC_INITPATH, m_ctInit_st[i]);
+	for ( i=0; i<SIZEOF(m_ctInit_bt); i++ )
+		DDX_Control(pDX, IDC_MKNC_INITUP+i, m_ctInit_bt[i]);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -107,119 +75,98 @@ void CMakeNCDlgEx2::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMakeNCDlgEx2::OnInitDialog() 
 {
-	extern	LPCTSTR	g_szListHeader[];
+	CPropertyPage::OnInitDialog();
 
-	CDialog::OnInitDialog();
+	if ( IsMakeEx1() ) {
+		// ﾚｲﾔごとの複数条件で使わない切削条件ｺﾝﾄﾛｰﾙは非表示
+		int		i;
+		for ( i=0; i<SIZEOF(m_ctInit_st); i++ )
+			m_ctInit_st[i].ShowWindow(SW_HIDE);
+		for ( i=0; i<SIZEOF(m_ctInit_bt); i++ )
+			m_ctInit_bt[i].ShowWindow(SW_HIDE);
+		m_ctInitFileName.ShowWindow(SW_HIDE);
+	}
 
-	// ｺﾝｽﾄﾗｸﾀではできないｺﾝﾄﾛｰﾙの初期化
-	
-	// 切削条件ｺﾝﾎﾞﾎﾞｯｸｽにｱｲﾃﾑ追加
-	InitialMakeNCDlgComboBox(AfxGetNCVCApp()->GetDXFOption()->GetInitList(),
-			m_ctInitFileName);	// MakeNCDlg.cpp
-	// 関係ﾌｧｲﾙｺﾝﾎﾞﾎﾞｯｸｽにｱｲﾃﾑ追加
-	InitialMakeNCDlgComboBox(AfxGetNCVCApp()->GetDXFOption()->GetLayerToInitList(),
-			m_ctLayerToInitFileName);
-	m_ctLayerToInitFileName.SetCurSel(-1);	// 初期値は選択なし
+	// ｺﾝｽﾄﾗｸﾀでは GetNCMakeParent() が使えない
+	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
+	m_bNCView = pOpt->GetDxfFlag(DXFOPT_VIEW);
+
+	// 上位ﾀﾞｲｱﾛｸﾞ共通項からの設定値取得
+	::Path_Name_From_FullPath(GetNCMakeParent()->m_strNCFileName, m_strNCPath, m_strNCFileName);
+	if ( !GetNCMakeParent()->m_strLayerToInitFileName.IsEmpty() )
+		::Path_Name_From_FullPath(GetNCMakeParent()->m_strLayerToInitFileName,
+			m_strLayerToInitPath, m_strLayerToInitFileName);
+
 	// ﾊﾟｽ表示の最適化
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_NCPATH, m_strNCPath);
-	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, m_strInitPath);
-//	::PathSetDlgItemPath(m_hWnd, IDC_MKNCEX_LAYERTOINITPATH, m_strLayerToInitPath);
-	// ﾘｽﾄｺﾝﾄﾛｰﾙの列挿入
-	CRect	rc;
-	m_ctLayerList.GetClientRect(&rc);
-	int nWidth  = m_ctLayerList.GetStringWidth(CString('W',10));
-	m_ctLayerList.InsertColumn(0, g_szListHeader[0], LVCFMT_LEFT, nWidth-2);
-	m_ctLayerList.InsertColumn(1, g_szListHeader[3], LVCFMT_RIGHT, nWidth+2);
-	m_ctLayerList.InsertColumn(2, g_szListHeader[4], LVCFMT_LEFT, rc.Width()-nWidth*2-17);
-	// ﾘｽﾄｺﾝﾄﾛｰﾙの初期化
-	InitialMakeNCDlgExLayerListCtrl(m_pDoc, m_ctLayerList);
-	// ﾚｲﾔ名で並べ替え
-	m_ctLayerList.SortItems(CompareFunc, m_nSortLayer);
+	if ( IsMakeEx2() ) {
+		if ( !GetNCMakeParent()->m_strInitFileName.IsEmpty() )
+			::Path_Name_From_FullPath(GetNCMakeParent()->m_strInitFileName,
+				m_strInitPath, m_strInitFileName);
+		// 切削条件ｺﾝﾎﾞﾎﾞｯｸｽにｱｲﾃﾑ追加
+		InitialMakeNCDlgComboBox(pOpt->GetInitList(), m_ctInitFileName);
+		::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, m_strInitPath);
+	}
+	// 関係ﾌｧｲﾙｺﾝﾎﾞﾎﾞｯｸｽにｱｲﾃﾑ追加
+	InitialMakeNCDlgComboBox(pOpt->GetLayerToInitList(), m_ctLayerToInitFileName);
+	if ( !m_strLayerToInitPath.IsEmpty() )
+		::PathSetDlgItemPath(m_hWnd, IDC_MKNCEX_LAYERTOINITPATH, m_strLayerToInitPath);
+	if ( !m_strLayerToInitFileName.IsEmpty() )
+		m_ctLayerToInitFileName.SetCurSel(0);
+
+	UpdateData(FALSE);
 
 	return TRUE;  // コントロールにフォーカスを設定しないとき、戻り値は TRUE となります
 	              // 例外: OCX プロパティ ページの戻り値は FALSE となります
 }
 
-void CMakeNCDlgEx2::OnOK() 
+BOOL CMakeNCDlgEx2::OnSetActive()
 {
-	extern	LPCTSTR	gg_szCat;
+	// 「次へ」ﾎﾞﾀﾝのみ有効
+	GetNCMakeParent()->SetWizardButtons(PSWIZB_NEXT);
+	return TRUE;
+}
 
-	m_ctOK.SetFocus();
-	UpdateData();
-	CString	strInitPath(m_strInitPath+m_strInitFileName),
-			strNCPath(m_strNCPath+m_strNCFileName);
-	
-	// 最終明細ﾁｪｯｸ(詳細設定で切削対象外とし，ここで切削対象のﾁｪｯｸを入れられる可能性)
-	// 切削順とﾁｪｯｸﾌﾗｸﾞの状態を取得，切削条件ﾌｧｲﾙの最終ﾁｪｯｸ
-	if ( !CheckMakeNCDlgExLayerState(strNCPath, m_ctNCFileName, m_ctLayerList, FALSE) )
-		return;
-	// 重複ﾁｪｯｸ
-	CString	strResult( m_pDoc->CheckDuplexFile(strNCPath) );
-	if ( !strResult.IsEmpty() ) {
-		LVFINDINFO	infoFind;
-		infoFind.flags = LVFI_STRING;
-		infoFind.psz = strResult;
-		SetFocusListCtrl(m_ctLayerList, m_ctLayerList.FindItem(&infoFind));
-		return;
+LRESULT CMakeNCDlgEx2::OnWizardNext()
+{
+	CString	strInit(GetInitFileName()), strFile(GetNCFileName());
+
+	// NC生成ﾌｧｲﾙのﾁｪｯｸ(上書き確認は CMakeNCDlgEx2::OnWizardFinish() にて)
+	if ( !CheckMakeDlgFileExt(TYPE_NCD, strFile) ) {
+		m_ctNCFileName.SetFocus();
+		m_ctNCFileName.SetSel(0, -1);
+		return -1;
 	}
+
 	// 切削条件ﾌｧｲﾙのﾁｪｯｸ
-	if ( !::IsFileExist(strInitPath) ) {	// NCVC.cpp
+	if ( IsMakeEx2() && !::IsFileExist(strInit) ) {
 		m_ctInitFileName.SetEditSel(0, -1);
 		m_ctInitFileName.SetFocus();
-		return;
+		return -1;
 	}
-	// R点と強制Z座標のﾁｪｯｸ
-	CNCMakeOption	optMake(strInitPath);
-	CLayerData*	pLayer;
-	CString		strMiss;
-	int			i, nResult = -1, nLoop = m_pDoc->GetLayerCnt();
-	for ( i=0; i<nLoop; i++ ) {
-		pLayer = m_pDoc->GetLayerData(i);
-		if ( !pLayer->m_bCutTarget || optMake.GetDbl(MKNC_DBL_ZG0STOP) > pLayer->m_dZCut )
-			continue;
-		// ｴﾗｰﾒｯｾｰｼﾞの生成
-		if ( !strMiss.IsEmpty() )
-			strMiss += gg_szCat;
-		strMiss += pLayer->m_strLayer;
-		if ( nResult < 0 )
-			nResult = i;
-	}
-	if ( !strMiss.IsEmpty() ) {
-		CString	strMsg;
-		strMsg.Format(IDS_ERR_MAKEMULTILAYER_Z, strMiss);
-		AfxMessageBox(strMsg, MB_OK|MB_ICONEXCLAMATION);
-		SetFocusListCtrl(m_ctLayerList, nResult);
-		return;
-	}
-	m_strNCFileName = strNCPath;
-	// ｵﾌﾟｼｮﾝ状態保存
-	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
-	pOpt->SetViewFlag(m_bNCView);
-	// 切削条件履歴
-	pOpt->AddInitHistory(strInitPath);
-	// ﾚｲﾔ名と切削条件ﾌｧｲﾙの関係
-	if ( !m_strLayerToInitFileName.IsEmpty() ) {
-		// 保存前のﾊﾟｽ検査
-		if ( m_strLayerToInitPath.IsEmpty() )
-			m_strLayerToInitFileName = m_strInitPath + m_strLayerToInitFileName;
-		else
-			m_strLayerToInitFileName = m_strLayerToInitPath + m_strLayerToInitFileName;
-		// 拡張子検査(強制置換)
-		CString	strPath, strName, strExt;
-		::Path_Name_From_FullPath(m_strLayerToInitFileName, strPath, strName, FALSE);
-		VERIFY(strExt.LoadString(IDS_NCL_FILTER));
-		m_strLayerToInitFileName = strPath + strName + strExt.Right(4);		// .ncl
-		// 設定の保存
-		if ( m_pDoc->SaveLayerMap(m_strLayerToInitFileName) )
-			pOpt->AddLayerHistory(m_strLayerToInitFileName);
-	}
-	pOpt->SaveInitHistory();
 
-	// ｿｰﾄ列の保存
-	SetMakeNCDlgExSortColumn(IDS_REG_DXF_SORTLAYER2, m_nSortLayer);
+	// ﾀﾞｲｱﾛｸﾞ共通項のﾌｨｰﾄﾞﾊﾞｯｸ
+	GetNCMakeParent()->m_strNCFileName = strFile;
+	if ( IsMakeEx2() )
+		GetNCMakeParent()->m_strInitFileName = strInit;
+	if ( m_strLayerToInitFileName.IsEmpty() )
+		GetNCMakeParent()->m_strLayerToInitFileName.Empty();
+	else {
+		strFile = m_strLayerToInitPath + m_strLayerToInitFileName;
+		GetNCMakeParent()->m_strLayerToInitFileName	= strFile;
+		// ﾃﾞｰﾀの反映，ﾚｲﾔﾘｽﾄﾃﾞｰﾀの変更
+		if ( ::IsFileExist(strFile, TRUE, FALSE) ) {
+			if ( !GetNCMakeParent()->GetDocument()->ReadLayerMap(strFile) ) {
+				// 履歴削除(ｺﾝﾎﾞﾎﾞｯｸｽからも削除)
+				AfxGetNCVCApp()->GetDXFOption()->DelLayerHistory(strFile);
+				int	nIndex = m_ctLayerToInitFileName.FindString(-1, m_strLayerToInitFileName);
+				if ( nIndex != CB_ERR )
+					m_ctLayerToInitFileName.DeleteString(nIndex);
+			}
+		}
+	}
 
-	// CDialog::OnOK()を呼ぶとUpdateData()されm_strNCFileNameが上書きされる
-	EndDialog(IDOK);
+	return 0;	// 次のﾍﾟｰｼﾞへ
 }
 
 void CMakeNCDlgEx2::OnMKNCFileUp() 
@@ -240,8 +187,23 @@ void CMakeNCDlgEx2::OnMKNCInitUp()
 	MakeDlgFileRefer(IDS_OPTION_INIT, strFilter, this, IDC_MKNC_INITPATH,
 			m_strInitPath, m_strInitFileName, TRUE);
 	// 文字選択状態
-	m_ctInitFileName.SetEditSel(0, -1);
 	m_ctInitFileName.SetFocus();
+	m_ctInitFileName.SetEditSel(0, -1);
+}
+
+void CMakeNCDlgEx2::OnMKNCLayerUp() 
+{
+	UpdateData();
+	CString	strFilter;
+	VERIFY(strFilter.LoadString(IDS_NCL_FILTER));
+	CString	strResult( MakeDlgFileRefer(IDS_OPTION_LAYER2INIT, strFilter,
+				this, IDC_MKNCEX_LAYERTOINITPATH, 
+				m_strLayerToInitPath, m_strLayerToInitFileName, TRUE) );
+	if ( strResult.IsEmpty() )
+		return;
+	// 文字選択状態
+	m_ctLayerToInitFileName.SetFocus();
+	m_ctLayerToInitFileName.SetEditSel(0, -1);
 }
 
 void CMakeNCDlgEx2::OnMKNCInitEdit() 
@@ -249,7 +211,56 @@ void CMakeNCDlgEx2::OnMKNCInitEdit()
 	UpdateData();
 	MakeNCDlgInitFileEdit(m_strInitPath, m_strInitFileName,
 		this, IDC_MKNC_INITPATH, m_ctInitFileName);
-	m_ctOK.SetFocus();
+}
+
+void CMakeNCDlgEx2::OnMKNCLayerEdit() 
+{
+	UpdateData();
+	CLayerArray*	pArray;
+
+	// 詳細設定用ﾀﾞｲｱﾛｸﾞの呼び出し
+	if ( IsMakeEx1() ) {
+		CMakeNCDlgEx11	dlg(GetNCMakeParent(), 0);
+		if ( dlg.DoModal() != IDOK )
+			return;
+		pArray = &(dlg.m_obLayer);
+	}
+	else {
+		CMakeNCDlgEx21	dlg(GetNCMakeParent(), 0);
+		if ( dlg.DoModal() != IDOK )
+			return;
+		pArray = &(dlg.m_obLayer);
+	}
+
+	// 結果の反映
+	if ( ::IsWindow(GetNCMakeParent()->m_dlg2.m_hWnd) ) {
+		// CMakeNCDlgEx3 へ向けたﾒｯｾｰｼﾞ送信だが、
+		// ﾍﾟｰｼﾞがｱｸﾃｨﾌﾞにされないと、ﾒｯｾｰｼﾞ送信されない
+		QuerySiblings(0, (LPARAM)pArray);
+	}
+	else {
+		CLayerData*	pLayer1;
+		CLayerData*	pLayer2;
+		CDXFDoc*	pDoc = GetNCMakeParent()->GetDocument();
+		int			i, j, nLoop = pDoc->GetLayerCnt();
+		for ( i=0, j=0; i<nLoop; i++ ) {
+			pLayer1 = pDoc->GetLayerData(i);
+			if ( pLayer1->IsCutType() ) {
+				pLayer2 = pArray->GetAt(j++);
+				pLayer1->m_bCutTarget	= pLayer2->m_bCutTarget;
+				if ( IsMakeEx1() )
+					pLayer1->m_strInitFile	= pLayer2->m_strInitFile;
+				else {
+					pLayer1->m_dZCut		= pLayer2->m_dZCut;
+					pLayer1->m_bDrillZ		= pLayer2->m_bDrillZ;
+				}
+				pLayer1->m_strLayerComment	= pLayer2->m_strLayerComment;
+				pLayer1->m_strLayerCode		= pLayer2->m_strLayerCode;
+				pLayer1->m_bPartOut		= pLayer2->m_bPartOut;
+				pLayer1->m_strNCFile	= pLayer2->m_strNCFile;
+			}
+		}
+	}
 }
 
 void CMakeNCDlgEx2::OnSelChangeInit() 
@@ -264,166 +275,41 @@ void CMakeNCDlgEx2::OnSelChangeInit()
 	}
 }
 
-void CMakeNCDlgEx2::OnMKNCLayerUp() 
-{
-	UpdateData();
-	CString	strFilter;
-	VERIFY(strFilter.LoadString(IDS_NCL_FILTER));
-	CString	strResult( MakeDlgFileRefer(IDS_OPTION_LAYER2INIT, strFilter,
-				this, IDC_MKNCEX_LAYERTOINITPATH, 
-				m_strLayerToInitPath, m_strLayerToInitFileName, TRUE) );
-	if ( strResult.IsEmpty() )
-		return;
-	// 文字選択状態
-	m_ctLayerToInitFileName.SetEditSel(0, -1);
-	m_ctLayerToInitFileName.SetFocus();
-	// ﾃﾞｰﾀの反映，ﾚｲﾔﾘｽﾄﾃﾞｰﾀの変更
-	m_pDoc->ReadLayerMap(strResult);
-	// ﾘｽﾄｺﾝﾄﾛｰﾙ再描画
-	m_ctLayerList.Invalidate();
-}
-
-void CMakeNCDlgEx2::OnMKNCLayerEdit() 
-{
-	// 詳細設定
-	OnLayerEdit(0);
-}
-
 void CMakeNCDlgEx2::OnSelChangeLayerToInit() 
 {
 	int nIndex	= MakeNCDlgSelChange(m_ctLayerToInitFileName,
 			m_hWnd, IDC_MKNCEX_LAYERTOINITPATH, m_strLayerToInitPath, m_strLayerToInitFileName);
-
-	CString	strFullPath(m_strLayerToInitPath+m_strLayerToInitFileName);
-	// ﾃﾞｰﾀの反映，ﾚｲﾔﾘｽﾄﾃﾞｰﾀの変更
-	if ( !m_pDoc->ReadLayerMap(strFullPath) ) {
-		// 履歴削除(ｺﾝﾎﾞﾎﾞｯｸｽからも削除)
-		AfxGetNCVCApp()->GetDXFOption()->DelLayerHistory(strFullPath);
-		m_ctLayerToInitFileName.DeleteString(nIndex);
-	}
-	else {
-		// ﾘｽﾄｺﾝﾄﾛｰﾙ再描画
-		m_ctLayerList.Invalidate();
-	}
 }
 
 void CMakeNCDlgEx2::OnKillFocusNCFile() 
 {
 	UpdateData();
-	MakeDlgKillFocus(m_strNCPath, m_strNCFileName, this, IDC_MKNC_NCPATH);
+	if ( !m_strNCFileName.IsEmpty() )
+		MakeDlgKillFocus(m_strNCPath, m_strNCFileName, this, IDC_MKNC_NCPATH);
 }
 
 void CMakeNCDlgEx2::OnKillFocusInit() 
 {
 	UpdateData();
-	MakeDlgKillFocus(m_strInitPath, m_strInitFileName, this, IDC_MKNC_INITPATH);
+	if ( !m_strInitFileName.IsEmpty() )
+		MakeDlgKillFocus(m_strInitPath, m_strInitFileName, this, IDC_MKNC_INITPATH);
 }
 
 void CMakeNCDlgEx2::OnKillFocusLayerToInit() 
 {
 	UpdateData();
-	MakeDlgKillFocus(m_strLayerToInitPath, m_strLayerToInitFileName,
-		this, IDC_MKNCEX_LAYERTOINITPATH);
-}
-
-void CMakeNCDlgEx2::OnGetDispInfoLayerList(NMHDR* pNMHDR, LRESULT* pResult) 
-{
-	NMLVDISPINFO* pDispInfo = reinterpret_cast<NMLVDISPINFO*>(pNMHDR);
-	CString	strBuf;
-
-	if ( pDispInfo->item.mask & LVIF_TEXT ) {
-		CLayerData* pLayer = reinterpret_cast<CLayerData *>(pDispInfo->item.lParam);
-		switch ( pDispInfo->item.iSubItem ) {
-		case 0:		// ﾚｲﾔ名
-			lstrcpy(pDispInfo->item.pszText, pLayer->m_strLayer);
-			break;
-		case 1:		// 強制最深Z座標
-			strBuf.Format(IDS_MAKENCD_FORMAT, pLayer->m_dZCut);
-			lstrcpy(pDispInfo->item.pszText, strBuf);
-			break;
-		case 2:		// 個別出力ﾌｧｲﾙ
-			if ( pLayer->m_bPartOut )
-				lstrcpy(pDispInfo->item.pszText, pLayer->m_strNCFile);
-			else
-				pDispInfo->item.pszText[0] = '\0';
-			break;
+	if ( !m_strLayerToInitFileName.IsEmpty() )
+		MakeDlgKillFocus(m_strLayerToInitPath, m_strLayerToInitFileName,
+			this, IDC_MKNCEX_LAYERTOINITPATH);
+	// ﾚｲﾔ情報に限り拡張子検査(強制置換)
+	if ( !m_strLayerToInitFileName.IsEmpty() ) {
+		CString	strName, strExt;
+		::Path_Name_From_FullPath(m_strLayerToInitFileName, strExt, strName, FALSE);
+		VERIFY(strExt.LoadString(IDS_NCL_FILTER));
+		strName += strExt.Right(4);		// .ncl
+		if ( m_strLayerToInitFileName.CompareNoCase(strName) != 0 ) {
+			m_strLayerToInitFileName = strName;
+			UpdateData(FALSE);
 		}
 	}
-	*pResult = 0;
-}
-
-void CMakeNCDlgEx2::OnDblClkLayerList(NMHDR* pNMHDR, LRESULT* pResult) 
-{
-	// ﾀﾞﾌﾞﾙｸﾘｯｸされた項目を調べ，詳細設定ﾀﾞｲｱﾛｸﾞへ
-	OnLayerEdit(m_ctLayerList.HitTest(GetMakeNCDlgExLayerListState(m_ctLayerList)));
-	*pResult = 0;
-}
-
-void CMakeNCDlgEx2::OnColumnClickLayerList(NMHDR* pNMHDR, LRESULT* pResult) 
-{
-	LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-	m_nSortLayer = pNMListView->iSubItem;
-	m_ctLayerList.SortItems(CompareFunc, m_nSortLayer);
-	*pResult = 0;
-}
-
-int CALLBACK CMakeNCDlgEx2::CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lSubItem)
-{
-	CLayerData*	pData1 = reinterpret_cast<CLayerData *>(lParam1);
-	CLayerData*	pData2 = reinterpret_cast<CLayerData *>(lParam2);
-	int nResult = 0;
-
-	switch ( lSubItem ) {
-	case 0:	// ﾚｲﾔ名
-		nResult = pData1->m_strLayer.CompareNoCase(pData2->m_strLayer);
-		break;
-	case 1:	// 強制最深Z座標(降順)
-		nResult = (int)(pData2->m_dZCut * 1000.0 - pData1->m_dZCut * 1000.0);
-		break;
-	}
-	return nResult;
-}
-
-void CMakeNCDlgEx2::OnLayerEdit(int nIndex)
-{
-	UpdateData();
-
-	// 詳細設定用ﾀﾞｲｱﾛｸﾞの呼び出し
-	CString	strFullPath(m_strLayerToInitPath+m_strLayerToInitFileName);
-	CMakeNCDlgEx21	dlg(this, nIndex, strFullPath);
-	int	nResult = dlg.DoModal();
-	// ﾃﾞﾌｫﾙﾄﾎﾞﾀﾝにﾌｫｰｶｽを移してから
-	m_ctOK.SetFocus();
-	if ( nResult != IDOK )
-		return;
-
-	// 結果の反映
-	CLayerData*	pData1;
-	CLayerData*	pData2;
-	for ( int i=0; i<m_ctLayerList.GetItemCount()/*dlg.GetLayerArray()->GetSize()*/; i++ ) {
-		pData1 = reinterpret_cast<CLayerData *>(m_ctLayerList.GetItemData(i));
-		pData2 = dlg.m_obLayer[i];
-		pData1->m_bCutTarget= pData2->m_bCutTarget;
-		pData1->m_dZCut		= pData2->m_dZCut;
-		pData1->m_bDrillZ	= pData2->m_bDrillZ;
-		pData1->m_bPartOut	= pData2->m_bPartOut;
-		pData1->m_strNCFile	= pData2->m_strNCFile;
-		m_ctLayerList.SetCheck(i, pData1->m_bCutTarget);
-	}
-
-	// 新規保存されていたらｺﾝﾎﾞﾎﾞｯｸｽの表示更新
-	if ( strFullPath.CompareNoCase(dlg.m_strLayerFile) != 0 ) {
-		::Path_Name_From_FullPath(dlg.m_strLayerFile, m_strLayerToInitPath, m_strLayerToInitFileName);
-		::PathSetDlgItemPath(m_hWnd, IDC_MKNCEX_LAYERTOINITPATH, m_strLayerToInitPath);
-		UpdateData(FALSE);
-	}
-
-	// ﾘｽﾄｺﾝﾄﾛｰﾙ再描画
-	m_ctLayerList.Invalidate();
-}
-
-void CMakeNCDlgEx2::OnEndScrollLayerList(NMHDR *, LRESULT *)
-{
-	// 強制再描画させることで罫線が消えることを防ぐ
-	m_ctLayerList.Invalidate();
 }

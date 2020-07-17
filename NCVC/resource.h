@@ -58,7 +58,9 @@
 #define IDS_SHAPESEARCH                 708
 #define IDS_AUTOWORKING                 709
 #define IDS_MAKENCD_TITLE_BASIC         710
-#define IDS_MAKENCD_TITLE_SHAPE         711
+#define IDS_MAKENCD_TITLE_EX1           711
+#define IDS_MAKENCD_TITLE_EX2           712
+#define IDS_MAKENCD_TITLE_SHAPE         713
 #define IDS_COMMON_FORMAT               999
 #define ID_FILE_DXF2NCD                 1003
 #define ID_FILE_DXF2NCD_EX1             1004
@@ -66,11 +68,11 @@
 #define ID_FILE_DXF2NCD_SHAPE           1006
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
-#define IDC_EDIT1                       1011
 #define ID_FILE_CLANDOP                 1090
 #define IDD_DXF_SETUP1                  1200
 #define IDC_DXF_CAMLINE                 1201
 #define IDC_DXF_ORIGIN                  1202
+#define IDC_DXF_CORRECT                 1203
 #define IDC_DXF_ORGTYPE                 1205
 #define IDC_DXF_RELOAD                  1206
 #define IDD_DXF_SETUP_RELOAD            1250
@@ -114,6 +116,9 @@
 #define IDC_MKNC_INITUP                 1406
 #define IDC_MKNC_INITED                 1407
 #define IDC_MKNC_VIEW                   1408
+#define IDC_MKNCEX_INIT_CT1             1410
+#define IDC_MKNCEX_INIT_CT2             1411
+#define IDC_MKNCEX_INIT_CT3             1412
 #define IDC_MKNCEX_LAYERLIST            1420
 #define IDC_MKNCEX_LAYERTOINITPATH      1421
 #define IDC_MKNCEX_LAYERTOINITFILE      1422
@@ -126,18 +131,21 @@
 #define IDC_MKNCEX_CHECK                1451
 #define IDC_MKNCEX_COPY                 1452
 #define IDC_MKNCEX_PARTOUT              1453
+#define IDC_MKNCEX_LAYERCOMMENT         1454
+#define IDC_MKNCEX_LAYERCODE            1455
 #define IDC_MKNCEX_NEW                  1459
-#define IDD_MAKENCD_EX1                 1500
 #define IDD_MAKENCD_EX1_1               1550
 #define IDD_MAKENCD_EX2                 1600
 #define IDD_MAKENCD_EX2_1               1650
 #define IDC_MKNCEX21_DRILL              1651
 #define IDC_MKNCEX21_STEP               1652
+#define IDD_MAKENCD_EX3                 1680
 #define IDD_MAKEDXF1                    1700
 #define IDC_MKDX1_PLANE                 1701
 #define IDC_MKDX1_COLOR_O               1702
 #define IDC_MKDX1_COLOR_C               1703
 #define IDC_MKDX1_COLOR_M               1704
+#define IDC_MKDX1_COLOR_H               1705
 #define IDD_MAKEDXF2                    1800
 #define IDC_MKDX2_LENGTH                1801
 #define IDC_MKDX2_CIRCLE                1802
@@ -568,7 +576,7 @@
 #define IDS_REG_VIEW_NC_DRAWCENTERCIRCLE 10960
 #define IDS_REG_VIEW_NC_GUIDE           10961
 #define IDS_REG_VIEW_NC_INFOCOL         10962
-#define ID_REG_VIEW_NC_TRACEMARK        10963
+#define IDS_REG_VIEW_NC_TRACEMARK       10963
 #define IDS_REG_CONVERT                 10999
 #define IDS_REG_WINFLAGS                11900
 #define IDS_REG_ICONIC                  11901
@@ -633,7 +641,8 @@
 #define IDS_ERR_NCBLK_CORRECT           25010
 #define IDS_ERR_NCBLK_CORRECTSTART      25011
 #define IDS_ERR_NCBLK_ENDCIRCLE         25012
-#define IDS_ERR_NCBLK_G10ADDTOOL        25013
+#define IDS_ERR_NCBLK_CORRECTOBJECT     25013
+#define IDS_ERR_NCBLK_G10ADDTOOL        25014
 #define IDS_ERR_NCBLK_GTYPE             25020
 #define IDS_ERR_NCBLK_PLANE             25021
 #define IDS_ERR_NCBLK_INTERSECTION      25100
@@ -668,9 +677,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        146
+#define _APS_NEXT_RESOURCE_VALUE        148
 #define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1012
+#define _APS_NEXT_CONTROL_VALUE         1013
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

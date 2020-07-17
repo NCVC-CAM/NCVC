@@ -101,13 +101,9 @@ void CMakeNCDlg::OnOK()
 		m_ctNCFileName.SetSel(0, -1);
 		return;
 	}
-	m_strNCFileName = strNCPath;
 
-	// 条件履歴更新
-	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
-	pOpt->SetViewFlag(m_bNCView);
-	pOpt->AddInitHistory(strInitPath);
-	pOpt->SaveInitHistory();
+	m_strInitFileName = strInitPath;
+	m_strNCFileName   = strNCPath;
 
 	// CDialog::OnOK()を呼ぶとUpdateData()されm_strNCFileNameが上書きされる
 	EndDialog(IDOK);
@@ -158,26 +154,19 @@ void CMakeNCDlg::OnSelChangeInit()
 void CMakeNCDlg::OnKillFocusNCFile() 
 {
 	UpdateData();
-	MakeDlgKillFocus(m_strNCPath, m_strNCFileName, this, IDC_MKNC_NCPATH);
+	if ( !m_strNCFileName.IsEmpty() )
+		MakeDlgKillFocus(m_strNCPath, m_strNCFileName, this, IDC_MKNC_NCPATH);
 }
 
 void CMakeNCDlg::OnKillFocusInit() 
 {
 	UpdateData();
-	MakeDlgKillFocus(m_strInitPath, m_strInitFileName, this, IDC_MKNC_INITPATH);
+	if ( !m_strInitFileName.IsEmpty() )
+		MakeDlgKillFocus(m_strInitPath, m_strInitFileName, this, IDC_MKNC_INITPATH);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // NC生成ﾀﾞｲｱﾛｸﾞ共通関数
-
-void SetFocusListCtrl(CListCtrl& ctListCtrl, int nIndex)
-{
-	if ( nIndex < 0 )
-		nIndex = 0;
-	ctListCtrl.SetFocus();
-	ctListCtrl.SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
-	ctListCtrl.EnsureVisible(nIndex, FALSE);
-}
 
 void CreateNCFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
 {
@@ -189,15 +178,6 @@ void CreateNCFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
 	}
 	else
 		::Path_Name_From_FullPath(strNCFile, strPath, strFile);
-}
-
-void CreateLayerFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
-{
-	// ﾄﾞｷｭﾒﾝﾄ名からﾚｲﾔﾌｧｲﾙ名を作成
-	::Path_Name_From_FullPath(pDoc->GetPathName(), strPath, strFile, FALSE);
-	CString	strExt;
-	VERIFY(strExt.LoadString(IDS_NCL_FILTER));
-	strFile += strExt.Right(4);		// .ncl
 }
 
 BOOL CheckMakeDlgFileExt(DOCTYPE enType, CString& strFile)
@@ -225,75 +205,6 @@ BOOL CheckMakeDlgFileExt(DOCTYPE enType, CString& strFile)
 			VERIFY(strFilter.LoadString(IDS_DXF_FILTER));
 			strFile += '.' + strFilter.Left(3);	// .dxf
 		}
-	}
-
-	return TRUE;
-}
-
-// CLayerData friend 関数
-BOOL CheckMakeNCDlgExLayerState
-	(CString& strNCFile, CEdit& ctNCFile, CListCtrl& ctLayerList, BOOL bIniCheck)
-{
-	CLayerData*	pLayer;
-	CString		strFile;
-	BOOL		bCutFlg, bMainCheck = TRUE, bFirstCheck = TRUE, bCutCheck = FALSE;
-
-	// ﾘｽﾄｺﾝﾄﾛｰﾙからCLayerData*を取得し，明細のﾁｪｯｸ
-	for ( int i=0; i<ctLayerList.GetItemCount(); i++ ) {
-		pLayer = reinterpret_cast<CLayerData *>(ctLayerList.GetItemData(i));
-		// 切削対象か否か
-		bCutFlg = ctLayerList.GetCheck(i);
-		pLayer->SetCutTargetFlg(bCutFlg);
-		// ﾒｲﾝ出力ﾌｧｲﾙのﾁｪｯｸ(個別出力ﾌﾗｸﾞが設定されていないとき)
-		if ( bMainCheck && bCutFlg && !pLayer->IsPartOut() ) {
-			bMainCheck = FALSE;	// ﾒｲﾝ出力ﾌｧｲﾙのﾁｪｯｸは一度だけ
-			if ( !CheckMakeDlgFileExt(TYPE_NCD, strNCFile) ||
-					!::IsFileExist(strNCFile, FALSE) ) {
-				ctNCFile.SetFocus();
-				ctNCFile.SetSel(0, -1);
-				return FALSE;
-			}
-		}
-		// 以下切削対象のみ
-		if ( !bCutFlg )
-			continue;
-		bCutCheck = TRUE;	// 切削対象あり！
-		// 個別出力順の設定
-		if ( pLayer->IsPartOut() ) {
-			// 個別出力ﾌｧｲﾙのﾁｪｯｸ
-			strFile = pLayer->GetNCFile();
-			if ( !CheckMakeDlgFileExt(TYPE_NCD, strFile) ) {
-				SetFocusListCtrl(ctLayerList, i);
-				return FALSE;
-			}
-			// 拡張子付加されてればﾚｲﾔ情報に再設定
-			if ( strFile.CompareNoCase(pLayer->GetNCFile()) )
-				pLayer->SetNCFile(strFile);
-			// 上書き確認
-			if ( bFirstCheck ) {
-				bFirstCheck = FALSE;	// 先頭だけ上書き判定
-				if ( !::IsFileExist(strFile, FALSE) ) {
-					SetFocusListCtrl(ctLayerList, i);
-					return FALSE;
-				}
-			}
-			// 個別出力が先頭になるようﾘｽﾄ№を設定
-			pLayer->SetListNo(-1);
-		}
-		else
-			pLayer->SetListNo(i);
-		// 切削条件ﾌｧｲﾙのﾁｪｯｸ(CMakeNCDlgEx1のみ)
-		if ( bIniCheck && !::IsFileExist(pLayer->GetInitFile()) ) {	// NCVC.cpp
-			SetFocusListCtrl(ctLayerList, i);
-			return FALSE;
-		}
-	}
-
-	// 切削対象が１つもない
-	if ( !bCutCheck ) {
-		AfxMessageBox(IDS_ERR_MAKEMULTILAYER, MB_OK|MB_ICONEXCLAMATION);
-		SetFocusListCtrl(ctLayerList, 0);
-		return FALSE;
 	}
 
 	return TRUE;
@@ -368,84 +279,17 @@ void MakeDlgKillFocus
 		::PathSetDlgItemPath(pDlg->m_hWnd, nID, strPath);
 		pDlg->UpdateData(FALSE);
 	}
-/*
-	::Path_Name_From_FullPath(strFile, strPath, strFile);
-	if ( !strPath.IsEmpty() )
-		::PathSetDlgItemPath(pDlg->m_hWnd, nID, strPath);
-	else {
-		HWND hWnd = ::GetDlgItem(pDlg->m_hWnd, nID);
-		if ( hWnd )
-			::SetWindowText(hWnd, "");
-	}
-	pDlg->UpdateData(FALSE);
-*/
-}
-
-int GetMakeNCDlgExSortColumn(UINT nID)
-{
-	CString		strRegKey, strEntry;
-	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-	VERIFY(strEntry.LoadString(nID));
-	return (int)(AfxGetApp()->GetProfileInt(strRegKey, strEntry, 0));
-}
-
-void SetMakeNCDlgExSortColumn(UINT nID, int nSort)
-{
-	CString		strRegKey, strEntry;
-	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-	VERIFY(strEntry.LoadString(nID));
-	AfxGetApp()->WriteProfileInt(strRegKey, strEntry, nSort);
-}
-
-CPoint GetMakeNCDlgExLayerListState(const CListCtrl& ctLayerList)
-{
-	// ﾀﾞﾌﾞﾙｸﾘｯｸされた項目を調べる
-	DWORD	dwPos = ::GetMessagePos();
-	CPoint	pt((int)LOWORD(dwPos), (int)HIWORD(dwPos));
-	ctLayerList.ScreenToClient(&pt);
-	return pt;
 }
 
 BOOL InitialMakeNCDlgComboBox(const CStringList* pList, CComboBox& ctCombo)
 {
-	CString		strPath, strFile;
-	LPCTSTR		pszFullPath;
+	CString	strPath, strFile;
+	LPCTSTR	pszFullPath;
 	// ｺﾝﾎﾞﾎﾞｯｸｽにﾌﾙﾊﾟｽ文字列へのﾎﾟｲﾝﾀを割り当てる
 	for ( POSITION pos = pList->GetHeadPosition(); pos; ) {
 		pszFullPath = pList->GetNext(pos);
 		::Path_Name_From_FullPath(pszFullPath, strPath, strFile);
 		ctCombo.SetItemDataPtr( ctCombo.AddString(strFile), (LPVOID)pszFullPath );
-	}
-	return TRUE;
-}
-
-BOOL InitialMakeNCDlgExLayerListCtrl(CDXFDoc* pDoc, CListCtrl& ctLayerList)
-{
-	// ﾘｽﾄｺﾝﾄﾛｰﾙの拡張ｽﾀｲﾙ
-	DWORD	dwStyle = ctLayerList.GetExtendedStyle();
-	dwStyle |= LVS_EX_FULLROWSELECT|LVS_EX_CHECKBOXES|LVS_EX_GRIDLINES;
-	ctLayerList.SetExtendedStyle(dwStyle);
-	// ﾚｲﾔﾘｽﾄｺﾝﾄﾛｰﾙへの登録
-	LV_ITEM		lvi;
-	lvi.mask = LVIF_TEXT | LVIF_PARAM;
-	lvi.iSubItem = 0;
-	lvi.pszText = LPSTR_TEXTCALLBACK;
-	CLayerData*	pLayer;
-	int		i, nCnt, nLoop = pDoc->GetLayerCnt();
-
-	for ( i=0, nCnt=0; i<nLoop; i++ ) {
-		pLayer = pDoc->GetLayerData(i);
-		if ( pLayer->IsCutType() ) {
-			lvi.iItem = nCnt;
-			lvi.lParam = (LPARAM)pLayer;
-			if ( ctLayerList.InsertItem(&lvi) < 0 ) {
-				CString	strMsg;
-				strMsg.Format(IDS_ERR_ADDITEM, nCnt+1);
-				AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
-				return FALSE;
-			}
-			ctLayerList.SetCheck(nCnt++, pLayer->IsViewLayer());
-		}
 	}
 	return TRUE;
 }

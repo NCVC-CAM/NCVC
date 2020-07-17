@@ -80,7 +80,7 @@ CDXFMake::CDXFMake(int nType, const CNCDoc* pDoc)
 	}
 }
 
-CDXFMake::CDXFMake(const CNCdata* pData)
+CDXFMake::CDXFMake(const CNCdata* pData, BOOL bCorrect/*=FALSE*/)
 {
 	m_strDXFarray.SetSize(0, 32);
 
@@ -88,13 +88,13 @@ CDXFMake::CDXFMake(const CNCdata* pData)
 	// ｵﾌﾞｼﾞｪｸﾄ種別
 	switch ( pData->GetType() ) {
 	case NCDLINEDATA:	// 直線補間
-		MakeDXF_Line(static_cast<const CNCline*>(pData));
+		MakeDXF_Line(static_cast<const CNCline*>(pData), bCorrect);
 		break;
 	case NCDCYCLEDATA:	// 固定ｻｲｸﾙ
 		MakeDXF_Cycle(static_cast<const CNCcycle*>(pData));
 		break;
 	case NCDARCDATA:	// 円弧補間
-		MakeDXF_Arc(static_cast<const CNCcircle*>(pData));
+		MakeDXF_Arc(static_cast<const CNCcircle*>(pData), bCorrect);
 		break;
 	}
 }
@@ -286,10 +286,10 @@ void CDXFMake::MakeSection_Tables(const CNCDoc* pDoc)
 	m_strDXFarray.Add(strENDTAB);
 
 	// TABLESｾｸｼｮﾝ値(ﾚｲﾔ情報)
-	CString	strLayer[3];
+	CString	strLayer[4];	// SIZEOF(CDXFMakeOption::m_strOption)
 	// 等しいﾚｲﾔ名は統合
 	strLayer[0] = GetStr(MKDX_STR_ORIGIN);
-	for ( i=1; i<3; i++ ) {
+	for ( i=1; i<SIZEOF(strLayer); i++ ) {
 		for ( j=0; j<nLayer; j++ ) {
 			if ( strLayer[j].CompareNoCase(GetStr(i+MKDX_STR_ORIGIN)) == 0 )
 				break;	// 等しいﾚｲﾔ名があれば中断
@@ -341,11 +341,12 @@ void CDXFMake::MakeSection_EOF(void)
 
 //////////////////////////////////////////////////////////////////////
 
-void CDXFMake::MakeDXF_Line(const CNCline* pData)
+void CDXFMake::MakeDXF_Line(const CNCline* pData, BOOL bCorrect)
 {
 	// ｵﾌﾞｼﾞｪｸﾄ情報(早送り or 切削送り)
 	m_strDXFarray.Add( MakeDxfInfo(TYPE_LINE,
-		pData->GetGcode() == 0 ? MKDX_STR_MOVE : MKDX_STR_CAMLINE) );
+		bCorrect ? MKDX_STR_CORRECT :
+		(pData->GetGcode() == 0 ? MKDX_STR_MOVE : MKDX_STR_CAMLINE)) );
 	// 座標値
 	m_strDXFarray.Add( (*ms_pfnMakeValueLine)(pData) );
 }
@@ -360,7 +361,7 @@ inline int SetDXFtype(ENPLANE enPlane, const CNCdata* pData)
 	return nType;
 }
 
-void CDXFMake::MakeDXF_Arc(const CNCcircle* pData)
+void CDXFMake::MakeDXF_Arc(const CNCcircle* pData, BOOL bCorrect)
 {
 	int		nType;
 
@@ -377,7 +378,8 @@ void CDXFMake::MakeDXF_Arc(const CNCcircle* pData)
 		break;
 	}
 	// ｵﾌﾞｼﾞｪｸﾄ情報
-	m_strDXFarray.Add( MakeDxfInfo(nType, MKDX_STR_CAMLINE) );
+	m_strDXFarray.Add( MakeDxfInfo(nType,
+		bCorrect ? MKDX_STR_CORRECT : MKDX_STR_CAMLINE) );
 	// 座標値
 	if ( nType == TYPE_LINE )
 		m_strDXFarray.Add( (*ms_pfnMakeValueCircleToLine)(pData) );

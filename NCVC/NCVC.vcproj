@@ -344,7 +344,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MakeNCDlgEx1.cpp"
+				RelativePath=".\MakeNCDlgEx.cpp"
 				>
 			</File>
 			<File
@@ -357,6 +357,10 @@
 			</File>
 			<File
 				RelativePath=".\MakeNCDlgEx21.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MakeNCDlgEx3.cpp"
 				>
 			</File>
 			<File
@@ -758,7 +762,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MakeNCDlgEx1.h"
+				RelativePath=".\MakeNCDlgEx.h"
 				>
 			</File>
 			<File
@@ -771,6 +775,10 @@
 			</File>
 			<File
 				RelativePath=".\MakeNCDlgEx21.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MakeNCDlgEx3.h"
 				>
 			</File>
 			<File

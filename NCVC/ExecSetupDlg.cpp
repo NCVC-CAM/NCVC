@@ -110,14 +110,15 @@ BOOL CExecSetupDlg::CheckData(void)
 void CExecSetupDlg::SwapObject(int nList1, int nList2)
 {
 	// µÌŞ¼Şª¸Ä‚Ì“ü‚ê‘Ö‚¦
-	CExecOption* pExec1 = (CExecOption *)(m_ctList.GetItemData(nList1));
-	CExecOption* pExec2 = (CExecOption *)(m_ctList.GetItemData(nList2));
-	m_ctList.SetItemData(nList1, (DWORD)pExec2);
-	m_ctList.SetItemData(nList2, (DWORD)pExec1);
+	CExecOption* pExec1 = reinterpret_cast<CExecOption *>(m_ctList.GetItemData(nList1));
+	CExecOption* pExec2 = reinterpret_cast<CExecOption *>(m_ctList.GetItemData(nList2));
+	m_ctList.SetItemData(nList1, reinterpret_cast<DWORD_PTR>(pExec2));
+	m_ctList.SetItemData(nList2, reinterpret_cast<DWORD_PTR>(pExec1));
 
 	// Ä•`‰æw¦
 	m_ctList.RedrawItems(min(nList1, nList2), max(nList1, nList2));
 	m_ctList.SetItemState(nList1, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
+	m_ctList.EnsureVisible(nList1, FALSE);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -135,7 +136,7 @@ BOOL CExecSetupDlg::OnInitDialog()
 	m_ctList.SetImageList(&m_ilExec, LVSIL_SMALL);
 	// Ø½ÄºİÄÛ°Ù‚Ì—ñ‘}“ü
 	CRect	rc;
-	m_ctList.GetClientRect(&rc);
+	m_ctList.GetClientRect(rc);
 	m_ctList.InsertColumn(0, "", LVCFMT_LEFT, rc.Width());
 	// Ø½ÄºİÄÛ°Ù‚Ö‚Ì“o˜^
 	LV_ITEM	lvi;
@@ -184,7 +185,7 @@ void CExecSetupDlg::OnOK()
 	// ÀŞ²±Û¸Şî•ñ‚ğ”½‰f
 	pExeList->RemoveAll();
 	for ( int i=0; i<m_ctList.GetItemCount(); i++ )
-		pExeList->AddTail( (CExecOption *)(m_ctList.GetItemData(i)) );
+		pExeList->AddTail( reinterpret_cast<CExecOption *>(m_ctList.GetItemData(i)) );
 
 	CDialog::OnOK();
 }
@@ -322,7 +323,7 @@ void CExecSetupDlg::OnMod()
 	CExecList*	pExeList = AfxGetNCVCApp()->GetExecList();
 
 	// ÃŞ°À’uŠ· -> íœÌ×¸Ş‚ğ—§‚Ä‚ÄV‚½‚É“o˜^
-	CExecOption* pExec = (CExecOption *)(m_ctList.GetItemData(nIndex));
+	CExecOption* pExec = reinterpret_cast<CExecOption *>(m_ctList.GetItemData(nIndex));
 	pExec->m_bDlgDel = TRUE;
 	pos = NULL;
 	pExec = NULL;
@@ -341,7 +342,7 @@ void CExecSetupDlg::OnMod()
 		}
 		pExec->SetImageNo(nImage);
 		// Ø½ÄºİÄÛ°Ù‚ÌŠY“–ÃŞ°À‚ğ’uŠ·
-		if ( !m_ctList.SetItemData(nIndex, (DWORD)pExec) ) {
+		if ( !m_ctList.SetItemData(nIndex, reinterpret_cast<DWORD_PTR>(pExec)) ) {
 			strMsg.Format(IDS_ERR_ADDITEM, nIndex+1);
 			AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 			delete	pExec;
@@ -375,7 +376,7 @@ void CExecSetupDlg::OnDel()
 
 	// Îß²İÀ‚ğíœ‚·‚é‚Æ·¬İ¾Ù‚Å‚«‚È‚­‚È‚é‚Ì‚Å”z—ñ‚Ìíœ‚ÍÀŞ²±Û¸ŞOKŒã
 	// ²Ò°¼ŞØ½Ä‚àíœ‚·‚é‚Æ‚±‚ê‚É‘±‚­²Ò°¼Ş‚Ì‡˜‚ª•Ï‚í‚é‚Ì‚Åíœ‚µ‚È‚¢
-	((CExecOption *)(m_ctList.GetItemData(nIndex)))->m_bDlgDel = TRUE;
+	reinterpret_cast<CExecOption *>(m_ctList.GetItemData(nIndex))->m_bDlgDel = TRUE;
 
 	m_ctList.DeleteItem(nIndex);
 }
@@ -397,7 +398,7 @@ void CExecSetupDlg::OnDown()
 	if ( !(pos=m_ctList.GetFirstSelectedItemPosition()) )
 		return;
 	nIndex = m_ctList.GetNextSelectedItem(pos);
-	if ( nIndex<0 || nIndex>=m_ctList.GetItemCount() )
+	if ( nIndex<0 || nIndex>=m_ctList.GetItemCount()-1 )
 		return;
 	SwapObject(nIndex+1, nIndex);
 }

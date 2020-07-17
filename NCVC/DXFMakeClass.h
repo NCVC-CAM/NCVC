@@ -91,9 +91,13 @@ class CDXFMake
 			nLType = MKDX_NUM_LTYPE_C;
 			nLCol  = MKDX_NUM_LCOL_C;
 			break;
-		default:
+		case MKDX_STR_MOVE:
 			nLType = MKDX_NUM_LTYPE_M;
 			nLCol  = MKDX_NUM_LCOL_M;
+			break;
+		case MKDX_STR_CORRECT:
+			nLType = MKDX_NUM_LTYPE_H;
+			nLCol  = MKDX_NUM_LCOL_H;
 			break;
 		}
 		strResult = GROUPCODE(g_szGroupCode[GROUP0])+
@@ -113,8 +117,8 @@ class CDXFMake
 	void	MakeSection_Entities(void);
 	void	MakeSection_EOF(void);
 	// µÃﬁºﬁ™∏ƒê∂ê¨
-	void	MakeDXF_Line(const CNCline*);
-	void	MakeDXF_Arc(const CNCcircle*);
+	void	MakeDXF_Line(const CNCline*, BOOL);
+	void	MakeDXF_Arc(const CNCcircle*, BOOL);
 	void	MakeDXF_Cycle(const CNCcycle*);
 
 	// ê√ìIïœêî
@@ -145,7 +149,7 @@ public:
 	// äeæ∏ºÆ›èÓïÒ
 	CDXFMake(int, const CNCDoc* = NULL);
 	// ENTITIES√ﬁ∞¿
-	CDXFMake(const CNCdata*);
+	CDXFMake(const CNCdata*, BOOL = FALSE);
 	// å¥ì_èÓïÒ
 	CDXFMake(const CPoint3D&);
 

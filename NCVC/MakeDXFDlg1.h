@@ -23,9 +23,9 @@ public:
 	CString	m_strDXFFileName;
 	int		m_nPlane;
 	//}}AFX_DATA
-	CString			m_strLayer[3];
-	CComboBox		m_cbLineType[3];
-	CColComboBox	m_ctColor[3];
+	CString			m_strLayer[4];
+	CComboBox		m_cbLineType[4];
+	CColComboBox	m_ctColor[4];
 
 	CString	GetDXFFileName(void) {
 		return m_strDXFPath + m_strDXFFileName;

@@ -440,7 +440,7 @@ BOOL CMainFrame::DrawBackGroundView(CDC* pDC, CRect* pRect, COLORREF col1, COLOR
 		GRADIENT_RECT	rcGrad;
 		rcGrad.UpperLeft	= 0;
 		rcGrad.LowerRight	= 1;
-		pDC->GradientFill(tv, 2, &rcGrad, 1, GRADIENT_FILL_RECT_V);
+		VERIFY( pDC->GradientFill(tv, 2, &rcGrad, 1, GRADIENT_FILL_RECT_V) );
 	}
 
 	return TRUE;

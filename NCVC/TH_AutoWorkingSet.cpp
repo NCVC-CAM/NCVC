@@ -388,6 +388,9 @@ void CreateAutoWorking(CThreadDlg* pParent, CLayerData* pLayer, BOOL)
 			if ( !ltOutline[j].IsEmpty() ) {
 				pWork = new CDXFworkingOutline(pShape, &ltOutline[j], DXFWORKFLG_AUTO);
 				pShape->AddWorkingData(pWork, j);
+#ifdef _DEBUG
+				g_dbg.printf("Select OutLine = %d", j);
+#endif
 			}
 			// Select•ª‚ÍCDXFworkingOutline‚ÌÃÞ½Ä×¸À‚É‚Ädelete
 			n = 1 - j;	// 1->0, 0->1

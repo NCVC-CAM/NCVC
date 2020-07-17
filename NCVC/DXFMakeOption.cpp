@@ -15,12 +15,14 @@ extern	CMagaDbg	g_dbg;
 
 // intŒ^–½—ß
 static	LPCTSTR	g_szNOrder[] = {
-	"LTypeO", "LTypeC", "LTypeM", "LColorO", "LColorC", "LColorM",
+	"LTypeO", "LTypeC", "LTypeM", "LTypeH",
+	"LColorO", "LColorC", "LColorM", "LColorH",
 	"Plane", "Cycle"
 };
 static	const	int		g_dfNOrder[] = {
-	1, 0, 2, 4, 6, 2,	// ”jü, Àü, “_ü, Â, ”’, —Î
-	0, 0				// XY•½–Ê, ŒÅ’è»²¸Ù‰~o—Í
+	1, 0, 2, 0,		// ”jü, Àü, “_ü, Àü
+	4, 6, 2, 3,		// Â, ”’, —Î, …
+	0, 0			// XY•½–Ê, ŒÅ’è»²¸Ù‰~o—Í
 };
 
 // doubleŒ^–½—ß
@@ -41,10 +43,11 @@ static	const	BOOL	g_dfBOrder[] = {
 
 // CStringŒ^–½—ß
 static	LPCTSTR	g_szSOrder[] = {
-	"LayerO", "LayerC", "LayerM"
+	"LayerO", "LayerC", "LayerM", "LayerH"
 };
 extern	LPCTSTR	g_szDefaultLayer[];		// from DXFOption.cpp
-//	"ORIGIN", "CAM", "MOVE"
+//	"ORIGIN", "CAM",
+//	"MOVE", "CORRECT"
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFMakeOption ƒNƒ‰ƒX‚Ì\’z/Á–Å

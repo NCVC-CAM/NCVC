@@ -63,7 +63,7 @@ CDXFChild::~CDXFChild()
 BOOL CDXFChild::OnCreateClient(LPCREATESTRUCT /*lpcs*/, CCreateContext* pContext) 
 {
 	CRect	rc;
-	GetParentFrame()->GetClientRect(&rc);
+	GetParentFrame()->GetClientRect(rc);
 	//	Ã“I½ÌßØ¯Àì¬
 	if ( !m_wndSplitter.CreateStatic(this, 1, 2) ||
 			!m_wndSplitter.CreateView(0, 0, RUNTIME_CLASS(CDXFView),
@@ -150,7 +150,7 @@ void CDXFChild::ShowShapeView(void)
 {
 	// 40•¶Žš•ª‚©³¨ÝÄÞ³»²½Þ‚Ì1/4C‚Ç‚¿‚ç‚©¬‚³‚¢•û‚ðÂØ°ËÞ­°‚ÌÍß²Ý‚É
 	CRect	rc;
-	GetClientRect(&rc);
+	GetClientRect(rc);
 	int		nInfo,
 			n1 = AfxGetNCVCMainWnd()->GetNCTextWidth() * 40,
 			n2 = rc.Width() / 4;

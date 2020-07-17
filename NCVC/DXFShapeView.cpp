@@ -898,7 +898,7 @@ void CDXFShapeView::UpdateSequence(void)
 			hTree = hLayerTree;
 			for ( int j=0; hTree; j++ ) {
 				pLayer = reinterpret_cast<CLayerData *>(GetTreeCtrl().GetItemData(hTree));
-				pLayer->SetListNo(j);
+				pLayer->SetLayerListNo(j);
 				hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
 			}
 			// Ú²Ô‡‚ğXV

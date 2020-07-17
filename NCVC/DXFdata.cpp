@@ -132,7 +132,7 @@ CPen* CDXFdata::GetDrawPen(void) const
 		AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_CUTTER),
 		AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL)
 	};
-	return pDrawPen[ m_dwSelect & DXFSEL_SELECT ? 1 : 0];
+	return pDrawPen[ m_dwSelect & DXFSEL_SELECT ? 1 : 0 ];
 }
 
 void CDXFdata::XRev(void)		// X軸の符号反転
@@ -418,11 +418,11 @@ double CDXFline::GetSelectPointGap_Line
 	CPointD	pt1, pt2;
 
 	// 水平垂直の場合，PtInRect() ＮＧ
-	if ( fabs(pts.x-pte.x) < EPS ) {
+	if ( fabs(pts.x-pte.x) < NCMIN ) {
 		if ( min(pts.y, pte.y)<=pt.y && pt.y<=max(pts.y, pte.y) )
 			dResult = fabs(pt.x - pts.x);
 	}
-	else if ( fabs(pts.y-pte.y) < EPS ) {
+	else if ( fabs(pts.y-pte.y) < NCMIN ) {
 		if ( min(pts.x, pte.x)<=pt.x && pt.x<=max(pts.x, pte.x) )
 			dResult = fabs(pt.y - pts.y);
 	}
@@ -439,7 +439,7 @@ double CDXFline::GetSelectPointGap_Line
 	if ( dResult == HUGE_VAL ) {
 		// 範囲外の場合，端点からの距離計算
 		double	d1 = GAPCALC(pts-pt), d2 = GAPCALC(pte-pt);
-		dResult = sqrt(d1<d2 ? d1 : d2);	// 近い方の距離を返す
+		dResult = sqrt( min(d1, d2) );	// 近い方の距離を返す
 	}
 
 	return dResult;
@@ -469,8 +469,8 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEd
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
 		if ( bEdge &&
-			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			(sqrt(GAPCALC(pt1-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt1-m_pt[1])) < NCMIN ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt2-m_pt[1])) < NCMIN) ) {
 			break;
 		}
 		ptResult = ::CalcIntersectionPoint_LL(m_pt[0], m_pt[1], pt1, pt2);
@@ -481,8 +481,8 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEd
 		break;
 	case DXFARCDATA:
 		if ( bEdge &&
-			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			(sqrt(GAPCALC(pt1-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt1-m_pt[1])) < NCMIN ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt2-m_pt[1])) < NCMIN) ) {
 			break;
 		}
 		// through
@@ -511,8 +511,8 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEd
 	case DXFELLIPSEDATA:
 		pEllipse = static_cast<const CDXFellipse*>(pData);
 		if ( bEdge && pEllipse->IsArc() &&
-			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			(sqrt(GAPCALC(pt1-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt1-m_pt[1])) < NCMIN ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt2-m_pt[1])) < NCMIN) ) {
 			break;
 		}
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LE(m_pt[0], m_pt[1],
@@ -544,7 +544,8 @@ optional<CPointD>
 CDXFline::CalcOffsetIntersectionPoint
 	(const CDXFdata* pNext, double r, BOOL bLeft) const
 {
-	CPointD	pto( GetNativePoint(1) ), p1, p2, pts( GetNativePoint(0) ), pt;
+	CPointD	pto( GetNativePoint(1) ), pts( GetNativePoint(0) ),
+			p1, p2, pt;
 	int		k1, k2, nRound;
 	BOOL	bResult;
 	const CDXFarc*		pArc;
@@ -600,9 +601,16 @@ int CDXFline::CheckIntersectionCircle(const CPointD& ptc, double r) const
 	int	nResult;
 	CPointD	pt1, pt2;
 	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(m_pt[0], m_pt[1], ptc, r);
+
 	// 「接する」場合の厳密ﾁｪｯｸ
 	if ( nResult==1 && pt1!=pt2 )
 		nResult = 2;	// 交点ありに解を変更
+	else if ( nResult == 0 ) {
+		// 交点が無くても端点が円の内側ならNG
+		if ( sqrt(GAPCALC(m_pt[0]-ptc))<=r || sqrt(GAPCALC(m_pt[1]-ptc))<=r )
+			nResult = 2;
+	}
+
 	return nResult;
 }
 
@@ -1161,19 +1169,58 @@ void CDXFarc::YRev(void)
 	SwapRound();
 }
 
+void CDXFarc::AngleTuning(void)
+{
+	if ( m_sq < 0.0 )
+		m_sq += 360.0*RAD;
+	if ( m_eq < 0.0 )
+		m_eq += 360.0*RAD;
+	// 微妙な誤差の吸収(=>微細円弧が大きな円に変わってしまう)のため
+	// 度(deg)で判断
+	double	d;
+	if ( m_bRound ) {
+		// 開始角度で既に360°を超えている場合は先に引いておく
+		if ( m_sq > 360.0*RAD )
+			m_sq -= 360.0*RAD;
+		d = ::RoundUp(m_sq*DEG);
+		while ( d > ::RoundUp(m_eq*DEG) )
+			m_eq += 360.0*RAD;
+	}
+	else {
+		if ( m_eq > 360.0*RAD )
+			m_eq -= 360.0*RAD;
+		d = ::RoundUp(m_eq*DEG);
+		while ( d > ::RoundUp(m_sq*DEG) )
+			m_sq += 360.0*RAD;
+	}
+	// 差が360°を超えないように(保険)
+	if ( fabs(m_eq-m_sq) > 360.0*RAD ) {
+		double&	q = m_bRound ? m_eq : m_sq;		// 参照型
+		q -= 360.0*RAD;
+	}
+}
+
 BOOL CDXFarc::IsRangeAngle(const CPointD& pt) const
 {
 	CPointD	ptr( pt - m_ct );
 	double	q = atan2(ptr.y, ptr.x);
 	if ( q < 0 )
 		q += 360.0*RAD;
+	q = RoundUp(q*DEG);		// 度で判断
 
+	// ｾﾞﾛ度境界に注意
 	if ( m_bRoundOrig ) {
-		if ( m_sq <= q && q <= m_eq )
+		double	eq = m_eq*DEG;
+		if ( RoundUp(m_sq*DEG)<=q && q<=RoundUp(eq) )
+			return TRUE;
+		if ( eq>360.0 && q<=RoundUp(eq-360.0) )
 			return TRUE;
 	}
 	else {
-		if ( m_sq >= q && q >= m_eq )
+		double	sq = m_sq*DEG;
+		if ( RoundUp(sq)>=q && q>=RoundUp(m_eq*DEG) )
+			return TRUE;
+		if ( sq>360.0 && q<=RoundUp(sq-360.0) )
 			return TRUE;
 	}
 
@@ -1288,16 +1335,16 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdg
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
 		if ( bEdge &&
-			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			(sqrt(GAPCALC(pt1-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt1-m_pt[1])) < NCMIN ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt2-m_pt[1])) < NCMIN) ) {
 			break;
 		}
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(pt1, pt2, m_ct, m_r);
 		break;
 	case DXFARCDATA:
 		if ( bEdge &&
-			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			(sqrt(GAPCALC(pt1-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt1-m_pt[1])) < NCMIN ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt2-m_pt[1])) < NCMIN) ) {
 			break;
 		}
 		// through
@@ -1308,8 +1355,8 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdg
 	case DXFELLIPSEDATA:
 		pEllipse = static_cast<const CDXFellipse*>(pData);
 		if ( bEdge && pEllipse->IsArc() &&
-			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			(sqrt(GAPCALC(pt1-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt1-m_pt[1])) < NCMIN ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt2-m_pt[1])) < NCMIN) ) {
 			break;
 		}
 		// 数値計算完了後、再ｺｰﾃﾞｨﾝｸﾞ
@@ -1374,8 +1421,12 @@ CDXFarc::CalcOffsetIntersectionPoint
 		}
 		tie(nResult, p1, p2) = ::CalcIntersectionPoint_CC(m_ct, pArc->GetCenter(),
 				m_r+r*k1, pArc->GetR()+r*k2);
-		if ( nResult > 0 ) {
+		if ( nResult > 1 ) {
 			ptResult = GAPCALC(p1-pto) < GAPCALC(p2-pto) ? p1 : p2;
+			bResult = TRUE;
+		}
+		else if ( nResult > 0 ) {
+			ptResult = p1;
 			bResult = TRUE;
 		}
 		else
@@ -1391,11 +1442,13 @@ int CDXFarc::CheckIntersectionCircle(const CPointD& ptc, double r) const
 	int	nResult;
 	CPointD	pt1, pt2;
 	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(m_ct, ptc, m_r, r);
-	// 交点を厳密に求めるわけではない
-	if ( nResult > 1 && !IsRangeAngle(pt2) )
-		nResult--;
-	if ( nResult > 0 && !IsRangeAngle(pt1) )
-		nResult--;
+
+	// 明確に交点がある場合だけ角度の範囲ﾁｪｯｸ
+	if ( nResult>1 && !IsRangeAngle(pt1) && !IsRangeAngle(pt2) )
+		nResult = 0;
+	// 交点が無くても端点が円の内側ならNG(CDXFlineのように else if ではﾀﾞﾒ)
+	if ( nResult==0 && (sqrt(GAPCALC(m_pt[0]-ptc))<=r || sqrt(GAPCALC(m_pt[1]-ptc))<=r) )
+		nResult = 2;
 
 	return nResult;
 }
@@ -1923,8 +1976,8 @@ int CDXFellipse::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL 
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
 		if ( bEdge && m_bArc &&
-			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			(sqrt(GAPCALC(pt1-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt1-m_pt[1])) < NCMIN ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt2-m_pt[1])) < NCMIN) ) {
 			break;
 		}
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LE(pt1, pt2,
@@ -1932,8 +1985,8 @@ int CDXFellipse::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL 
 		break;
 	case DXFARCDATA:
 		if ( bEdge && m_bArc &&
-			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			(sqrt(GAPCALC(pt1-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt1-m_pt[1])) < NCMIN ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < NCMIN || sqrt(GAPCALC(pt2-m_pt[1])) < NCMIN) ) {
 			break;
 		}
 		// through

@@ -96,13 +96,13 @@ public:
 		return *this;
 	}
 	BOOL		operator == (double pt) const {
-		return ( fabs(x-pt)<EPS && fabs(y-pt)<EPS );
+		return ( fabs(x-pt)<NCMIN && fabs(y-pt)<NCMIN );
 	}
 	BOOL		operator == (const CPointD& pt) const {
 		return IsMatchPoint(&pt);
 	}
 	BOOL	IsMatchPoint(const CPointD* pt) const {
-		return ( fabs(x-pt->x)<EPS && fabs(y-pt->y)<EPS );
+		return ( fabs(x-pt->x)<NCMIN && fabs(y-pt->y)<NCMIN );
 	}
 	double&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xy));
@@ -204,13 +204,13 @@ public:
 		return *this;
 	}
 	BOOL		operator == (double pt) const {
-		return ( fabs(x-pt)<EPS && fabs(y-pt)<EPS && fabs(z-pt)<EPS );
+		return ( fabs(x-pt)<NCMIN && fabs(y-pt)<NCMIN && fabs(z-pt)<NCMIN );
 	}
 	BOOL		operator == (const CPoint3D& pt) const {
 		return IsMatchPoint(&pt);
 	}
 	BOOL	IsMatchPoint(const CPoint3D* pt) const {
-		return ( fabs(x-pt->x)<EPS && fabs(y-pt->y)<EPS && fabs(z-pt->z)<EPS );
+		return ( fabs(x-pt->x)<NCMIN && fabs(y-pt->y)<NCMIN && fabs(z-pt->z)<NCMIN );
 	}
 	double&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xyz));

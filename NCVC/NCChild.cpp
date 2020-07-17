@@ -271,7 +271,7 @@ LRESULT CNCFrameSplit::OnUserInitialUpdate(WPARAM wParam, LPARAM)
 
 	// 40•¶Žš•ª‚©³¨ÝÄÞ³»²½Þ‚Ì1/4C‚Ç‚¿‚ç‚©¬‚³‚¢•û‚ð¶‘¤‚ÌÍß²Ý‚É
 	CRect	rc;
-	GetParentFrame()->GetClientRect(&rc);
+	GetParentFrame()->GetClientRect(rc);
 	int		nInfo,
 			n1 = AfxGetNCVCMainWnd()->GetNCTextWidth() * 40,
 			n2 = rc.Width() / 4;

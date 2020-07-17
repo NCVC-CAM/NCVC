@@ -1405,6 +1405,7 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult)
 		return FALSE;
 
 	CTypedPtrArrayEx<CPtrArray, CDXFlist*>	obSepArray;
+	obSepArray.SetSize(0, 32);
 
 	int			k = bLeft ? -1 : 1;
 	BOOL		bResult = TRUE;
@@ -1417,32 +1418,36 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult)
 		pData = pChain->GetHead();
 		switch ( pData->GetType() ) {
 		case DXFCIRCLEDATA:
-			// ｵﾌｾｯﾄ半径のﾏｲﾅｽﾁｪｯｸ
-			if ( static_cast<CDXFcircle*>(pData)->GetR()+m_dOffset*k < EPS )
-				return TRUE;	// ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄを生成しない
-			pData = CreateOutlineTempObject_new(pData, pte, pte, k);	// pte is dummy
-			if ( pData ) {
-				pResult->AddTail(pData);
-				pResult->SetMaxRect(pData);
+			{
+				CDXFcircle*		pCircle = static_cast<CDXFcircle*>(pData);
+				// ｵﾌｾｯﾄ半径のﾏｲﾅｽﾁｪｯｸ
+				if ( pCircle->GetR()+m_dOffset*k < NCMIN )
+					return TRUE;	// ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄを生成しない
+				pData = CreateOutlineTempObject_new(pData, pte, pte, k);	// pte is dummy
+				if ( pData ) {
+					pResult->AddTail(pData);
+					pResult->SetMaxRect(pData);
+				}
 				return TRUE;
 			}
 			break;
 		case DXFELLIPSEDATA:
 			{
 				CDXFellipse*	pEllipse = static_cast<CDXFellipse*>(pData);
-				if ( pEllipse->GetLongLength()+m_dOffset*k < EPS ||
-						pEllipse->GetShortLength()+m_dOffset*k < EPS )
+				if ( pEllipse->IsArc() ||
+						pEllipse->GetLongLength() +m_dOffset*k < NCMIN ||
+						pEllipse->GetShortLength()+m_dOffset*k < NCMIN )
 					return TRUE;
-			}
-			pData = CreateOutlineTempObject_new(pData, pte, pte, k);
-			if ( pData ) {
-				pResult->AddTail(pData);
-				pResult->SetMaxRect(pData);
+				pData = CreateOutlineTempObject_new(pData, pte, pte, k);
+				if ( pData ) {
+					pResult->AddTail(pData);
+					pResult->SetMaxRect(pData);
+				}
 				return TRUE;
 			}
 			break;
 		}
-		return FALSE;	// 円・楕円ﾃﾞｰﾀ以外はｴﾗｰ
+		return FALSE;	// 円・楕円ﾃﾞｰﾀ以外はｴﾗｰ(!!ﾎﾟﾘﾗｲﾝの閉ﾙｰﾌﾟを追加!!)
 	}
 
 	// 輪郭ｵﾌﾞｼﾞｪｸﾄﾙｰﾌﾟ準備
@@ -1483,55 +1488,56 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult)
 					break;
 				}
 			}
-			else {
-				bResult = FALSE;
-				break;
-			}
 		}
 		else
 			pte = pt;		// 最初の輪郭ｵﾌﾞｼﾞｪｸﾄの終点
 		pts = pt;
 		pData1 = pData2;
 	}
-	if ( !bResult ) {
-		// ｴﾗｰﾘｶﾊﾞﾘ
-		for ( k=0; k<obSepArray.GetSize(); k++ ) {
-			for ( pos=obSepArray[k]->GetHeadPosition(); pos; )
-				delete	obSepArray[k]->GetNext(pos);
-			delete	obSepArray[k];
-		}
-		return FALSE;
-	}
 
-	// 残りの輪郭ｵﾌﾞｼﾞｪｸﾄ生成(最後のｵﾌﾞｼﾞｪｸﾄと先頭のｵﾌﾞｼﾞｪｸﾄ)
-	pData2 = pChain->GetHead();
+	if ( bResult ) {
+		// 残りの輪郭ｵﾌﾞｼﾞｪｸﾄ生成(最後のｵﾌﾞｼﾞｪｸﾄと先頭のｵﾌﾞｼﾞｪｸﾄ)
+		pData2 = pChain->GetHead();
 #ifdef _DEBUG
-	ptDbg1 = pData1->GetNativePoint(0);
-	ptDbg2 = pData1->GetNativePoint(1);
-	ptDbg3 = pData2->GetNativePoint(1);
-	dbg.printf("p1=(%.3f, %.3f) p2=(%.3f, %.3f) p3=(%.3f, %.3f)",
-		ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y, ptDbg3.x, ptDbg3.y);
+		ptDbg1 = pData1->GetNativePoint(0);
+		ptDbg2 = pData1->GetNativePoint(1);
+		ptDbg3 = pData2->GetNativePoint(1);
+		dbg.printf("p1=(%.3f, %.3f) p2=(%.3f, %.3f) p3=(%.3f, %.3f)",
+			ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y, ptDbg3.x, ptDbg3.y);
 #endif
-	ptResult = pData1->CalcOffsetIntersectionPoint(pData2, m_dOffset, bLeft);
-	if ( ptResult ) {
-		pt = *ptResult;
+		ptResult = pData1->CalcOffsetIntersectionPoint(pData2, m_dOffset, bLeft);
+		if ( ptResult ) {
+			pt = *ptResult;
 #ifdef _DEBUG
-		dbg.printf("Offset=(%.3f, %.3f)", pt.x, pt.y);
+			dbg.printf("Offset=(%.3f, %.3f)", pt.x, pt.y);
 #endif
-		pData = CreateOutlineTempObject_new(pData1, *pts, pt, k);
-		if ( pData ) {
-			pResult->AddTail(pData);
-			pResult->SetMaxRect(pData);
-			if ( !SeparateOutlineIntersection(pResult, obSepArray) )
-				bResult = FALSE;
+			pData = CreateOutlineTempObject_new(pData1, *pts, pt, k);
+			if ( pData ) {
+				pResult->AddTail(pData);
+				pResult->SetMaxRect(pData);
+				if ( !SeparateOutlineIntersection(pResult, obSepArray) )
+					bResult = FALSE;
+			}
+			// 最初のｵﾌﾞｼﾞｪｸﾄ(の終点で)
+			if ( bResult ) {
+				pData = CreateOutlineTempObject_new(pData2, pt, pte, k);
+				if ( pData ) {
+					pResult->AddTail(pData);
+					pResult->SetMaxRect(pData);
+					if ( !SeparateOutlineIntersection(pResult, obSepArray, TRUE) )
+						bResult = FALSE;
+				}
+			}
 		}
 		else
 			bResult = FALSE;
 	}
-	else
-		bResult = FALSE;
+
+	int	nLoop = obSepArray.GetSize();
+
 	if ( !bResult ) {
-		for ( k=0; k<obSepArray.GetSize(); k++ ) {
+		// ｴﾗｰﾘｶﾊﾞﾘ
+		for ( k=0; k<nLoop; k++ ) {
 			for ( pos=obSepArray[k]->GetHeadPosition(); pos; )
 				delete	obSepArray[k]->GetNext(pos);
 			delete	obSepArray[k];
@@ -1539,31 +1545,25 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult)
 		return FALSE;
 	}
 
-	// 最初のｵﾌﾞｼﾞｪｸﾄ(の終点で)
-	pData = CreateOutlineTempObject_new(pData2, pt, pte, k);
-	if ( pData ) {
-		pResult->AddTail(pData);
-		pResult->SetMaxRect(pData);
-		if ( !SeparateOutlineIntersection(pResult, obSepArray) )
-			bResult = FALSE;
-	}
-	else
-		bResult = FALSE;
-	if ( !bResult ) {
-		for ( k=0; k<obSepArray.GetSize(); k++ ) {
-			for ( pos=obSepArray[k]->GetHeadPosition(); pos; )
-				delete	obSepArray[k]->GetNext(pos);
-			delete	obSepArray[k];
-		}
-		return FALSE;
-	}
-
+#ifdef _DEBUG
+	dbg.printf("Result member = %d", pResult->GetCount());
+#endif
 	// 本集合の検査
 	CheckSeparateChain(pResult);
+#ifdef _DEBUG
+	dbg.printf("CheckSeparateChain() -> Result member = %d", pResult->GetCount());
+	dbg.printf("obSepArray.GetSize()=%d", nLoop);
+#endif
 
 	// 分離集合の検査
-	for ( k=0; k<obSepArray.GetSize(); k++ ) {
+	for ( k=0; k<nLoop; k++ ) {
+#ifdef _DEBUG
+		dbg.printf("Separate member = %d", obSepArray[k]->GetCount()); 
+#endif
 		CheckSeparateChain(obSepArray[k]);
+#ifdef _DEBUG
+		dbg.printf("CheckSeparateChain() -> Separate member = %d", obSepArray[k]->GetCount()); 
+#endif
 		// 分離集合を末尾に結合
 		if ( !obSepArray[k]->IsEmpty() ) {
 			if ( !pResult->IsEmpty() )
@@ -1587,6 +1587,8 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 
 	switch ( pDataSrc->GetType() ) {
 	case DXFLINEDATA:
+		if ( k!=0 && sqrt(GAPCALC(pts-pte)) < NCMIN )
+			break;
 		dxfLine.pLayer = pDataSrc->GetParentLayer();
 		dxfLine.s = pts;
 		dxfLine.e = pte;
@@ -1603,7 +1605,7 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 	case DXFARCDATA:
 		{
 			const CDXFarc* pArc = static_cast<const CDXFarc*>(pDataSrc);
-			BOOL	bRound = pArc->GetRoundOrig();
+			BOOL	bRound = pArc->GetRoundOrig(), bCreate = TRUE;
 			if ( !bRound && k!=0 )	// 左方向を基準
 				k = -k;
 			dxfArc.c = pArc->GetCenter();
@@ -1624,15 +1626,21 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 			if ( bRound ) {
 				// for CDXFarc::AngleTuning()
 				d = ::RoundUp(dxfArc.sq*DEG);
-				while ( d >= ::RoundUp(dxfArc.eq*DEG) )
+				while ( d > ::RoundUp(dxfArc.eq*DEG) )
 					dxfArc.eq += 360.0*RAD;
+				// 円周の長さが既定値未満なら
+				if ( k!=0 && dxfArc.r * ( dxfArc.eq - dxfArc.sq ) < NCMIN )
+					bCreate = FALSE;
 			}
 			else {
 				d = ::RoundUp(dxfArc.eq*DEG);
-				while ( d >= ::RoundUp(dxfArc.sq*DEG) )
+				while ( d > ::RoundUp(dxfArc.sq*DEG) )
 					dxfArc.sq += 360.0*RAD;
+				if ( k!=0 && dxfArc.r * ( dxfArc.sq - dxfArc.eq ) < NCMIN )
+					bCreate = FALSE;
 			}
-			pData = new CDXFarc(&dxfArc, bRound, pts, pte);
+			if ( bCreate )
+				pData = new CDXFarc(&dxfArc, bRound, pts, pte);
 		}
 		break;
 	case DXFELLIPSEDATA:
@@ -1651,16 +1659,16 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 				CPointD	pt1(pts - dxfEllipse.c), pt2(pte - dxfEllipse.c);
 				pt1.RoundPoint(-pEllipse->GetLean());
 				pt2.RoundPoint(-pEllipse->GetLean());
-				// 楕円の角度は atan2() で計算できない
+				// 楕円の角度は atan2() ではない
 				double	d = pt1.x / l;
-				if ( d < -1 || 1 < d )
-					d = _copysign(1.0, d);	// -1 or 1
+				if ( d < -1.0 || 1.0 < d )
+					d = _copysign(1.0, d);	// -1.0 or 1.0
 				dxfEllipse.sq = _copysign(acos(d), pt1.y);
 				if ( dxfEllipse.sq < 0.0 )
 					dxfEllipse.sq += 360.0*RAD;
 				d = pt2.x / l;
-				if ( d < -1 || 1 < d )
-					d = _copysign(1.0, d);	// -1 or 1
+				if ( d < -1.0 || 1.0 < d )
+					d = _copysign(1.0, d);	// -1.0 or 1.0
 				dxfEllipse.eq = _copysign(acos(d), pt2.y);
 				if ( dxfEllipse.eq < 0.0 )
 					dxfEllipse.eq += 360.0*RAD;
@@ -1675,12 +1683,12 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 				}
 				if ( dxfEllipse.bRound ) {
 					d = ::RoundUp(dxfEllipse.sq*DEG);
-					while ( d >= ::RoundUp(dxfEllipse.eq*DEG) )
+					while ( d > ::RoundUp(dxfEllipse.eq*DEG) )
 						dxfEllipse.eq += 360.0*RAD;
 				}
 				else {
 					d = ::RoundUp(dxfEllipse.eq*DEG);
-					while ( d >= ::RoundUp(dxfEllipse.sq*DEG) )
+					while ( d > ::RoundUp(dxfEllipse.sq*DEG) )
 						dxfEllipse.sq += 360.0*RAD;
 				}
 			}
@@ -1697,16 +1705,20 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 }
 
 BOOL CDXFshape::SeparateOutlineIntersection
-	(CDXFchain* pOffset, CTypedPtrArrayEx<CPtrArray, CDXFlist*>& obSepList)
+	(CDXFchain* pOffset, CTypedPtrArrayEx<CPtrArray, CDXFlist*>& obSepList, BOOL bFinish/*=FALSE*/)
 {
+#ifdef _DEBUG
+	CMagaDbg	dbg("SeparateOutlineIntersection()", DBG_MAGENTA);
+	CPointD		ptDbg1, ptDbg2, ptDbg3;
+#endif
 	POSITION	pos1 = pOffset->GetTailPosition(), pos2, pos;
 	CDXFdata*	pData;
 	CDXFdata*	pData1;
 	CDXFdata*	pData2;
 	CDXFlist*	pSepList = NULL;
-	CPointD		pt[4];	// 最大４交点
+	CPointD		pt[4];	// 交点は最大４つ
 	int			nCnt, nLoop = 0;
-	BOOL		bResult = TRUE;
+	BOOL		bResult = TRUE, bUpdate;
 
 	if ( pos1 )
 		pData1 = pOffset->GetPrev(pos1);	// 検索対象ﾃﾞｰﾀ
@@ -1715,41 +1727,78 @@ BOOL CDXFshape::SeparateOutlineIntersection
 
 	for ( ; (pos2=pos1); nLoop++ ) {
 		pData2 = pOffset->GetPrev(pos1);		// さかのぼって検索
+		if ( nLoop == 0 ) {
+			// １つ目は必ず pData1 の始点と pData2 の終点が等しい
+			continue;
+		}
 		// ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄ同士の交点ﾁｪｯｸ(端点含む)
-		nCnt = pData1->GetIntersectionPoint(pData2, pt, nLoop==0);	// 最初のﾙｰﾌﾟだけTRUE
+		nCnt = pData1->GetIntersectionPoint(pData2, pt, FALSE);
+		ASSERT( nCnt <= 1 );	// 交点２個以上あればどうする？
 		if ( nCnt <= 0 )
 			continue;
+		else if ( bFinish && !pos1 ) {
+			// 最後のﾙｰﾌﾟは必ず pData1 の終点と pData2 の始点が等しい
+			continue;
+		}
 		// --- 交点あり！！
+#ifdef _DEBUG
+		dbg.printf("pData1 type=%d pData2 type=%d", pData1->GetType(), pData2->GetType());
+		dbg.printf("pt=(%.3f, %.3f)", pt[0].x, pt[0].y);
+#endif
 		pSepList = new CDXFlist;
 		// 1) 交点から pData2 の終点までｵﾌﾞｼﾞｪｸﾄ生成
-		pData = CreateOutlineTempObject_new(pData2, pt[0], pData2->GetNativePoint(1), 0);
-		if ( !pData ) {
-			bResult = FALSE;
-			break;
+		if ( sqrt(GAPCALC(pData2->GetNativePoint(1)-pt[0])) < NCMIN ) {
+			// pData2 の終点と交点が等しい場合、
+			// ｵﾌﾞｼﾞｪｸﾄ作らないが、次(next)のﾃﾞｰﾀから pSepList へ移動
+			bUpdate = TRUE;
 		}
-		pSepList->AddTail(pData);
-		// 2) pData2 の次から pData1 の手前まで分離集合に移動
+		else if ( sqrt(GAPCALC(pData2->GetNativePoint(0)-pt[0])) < NCMIN ) {
+			// pData2 の始点と交点が等しい場合、
+			// ｵﾌﾞｼﾞｪｸﾄ作らない代わりに pData2 自身が pSepList へ移動
+			bUpdate = FALSE;
+		}
+		else {
+			pData = CreateOutlineTempObject_new(pData2, pt[0], pData2->GetNativePoint(1), 0);
+			if ( pData ) {
+				pSepList->AddTail(pData);
+				// 1-2) pData2 の終点を更新
+				pData2->SetNativePoint(1, pt[0]);
+			}
+			bUpdate = TRUE;
+		}
+		// 2) pData2 または その次から pData1 の手前まで分離集合に移動
 		pos = pos2;
-		pOffset->GetNext(pos);		// １つ進める
+		if ( bUpdate )
+			pOffset->GetNext(pos);		// posを１つ進める
 		while ( (pos2=pos) ) {
 			pData = pOffset->GetNext(pos);
-			if ( pData1 == pData )
+			if ( !pos )		// pData1 == pData
 				break;
 			pSepList->AddTail(pData);
 			pOffset->RemoveAt(pos2);
 		}
-		// 3) pData1 の始点から交点までｵﾌﾞｼﾞｪｸﾄ生成(pData1上書き禁止)
-		pData = CreateOutlineTempObject_new(pData1, pData1->GetNativePoint(0), pt[0], 0);
-		if ( !pData ) {
-			bResult = FALSE;
-			break;
+		// 3) pData1 の始点から交点までｵﾌﾞｼﾞｪｸﾄ生成
+		if ( sqrt(GAPCALC(pData1->GetNativePoint(1)-pt[0])) < NCMIN ) {
+			// pData1の終点と交点が等しい場合
+			bUpdate = FALSE;
+			// pSepList へ移動
+			pSepList->AddTail(pData1);
+			pOffset->RemoveTail();		// RemoveAt(pos2);
 		}
-		pSepList->AddTail(pData);
-		// 4) pData1/pData2 の始点/終点を更新
-		pData1->SetNativePoint(0, pt[0]);
-		pData2->SetNativePoint(1, pt[0]);
-		// 5) 分離集合に追加
-		obSepList.Add(pSepList);
+		// pData1の始点と交点が等しい場合は何もしなくて良い
+		else if ( sqrt(GAPCALC(pData1->GetNativePoint(0)-pt[0])) >= NCMIN ) {
+			pData = CreateOutlineTempObject_new(pData1, pData1->GetNativePoint(0), pt[0], 0);
+			if ( pData ) {
+				pSepList->AddTail(pData);
+				// 3-1) pData1 の始点を更新
+				pData1->SetNativePoint(0, pt[0]);
+			}
+		}
+		// 4) 分離集合に追加
+		if ( pSepList->IsEmpty() )
+			delete	pSepList;
+		else
+			obSepList.Add(pSepList);
 		pSepList = NULL;
 	}
 
@@ -1764,30 +1813,30 @@ BOOL CDXFshape::SeparateOutlineIntersection
 
 BOOL CDXFshape::CheckSeparateChain(CDXFlist* pResult)
 {
-	BOOL	bDelete  = TRUE;
-	int		nCnt = 0;
-	POSITION	pos1, pos2, pos;
-	CDXFdata*	pData;
+	int				nCnt = 0;
+	POSITION		pos1, pos2, pos;
+	CDXFdata*		pData;
 	CMapPtrToPtr	mp, mpDel;		// NG点のﾎﾟｼﾞｼｮﾝｷｰ
 
-	// NG点検査
+	// NG点検査(終点で検索)
 	for ( pos1=pResult->GetHeadPosition(); (pos2=pos1); ) {
 		pData = pResult->GetNext(pos1);
 		if ( CheckIntersectionCircle(pData->GetNativePoint(1)) )
 			mp.SetAt(pos2, pData);		// １つでもNG点含む
-		else {
-			bDelete = FALSE;	// 全部NG点でない=>削除対象ではない
-			nCnt++;				// OK点ｶｳﾝﾄ
-		}
+		else
+			nCnt++;						// OK点ｶｳﾝﾄ
 	}
 
 	// 分離集合の削除対象検査
-	if ( nCnt<=2 || bDelete ) {	// OK点2個以下もｱｳﾄ
+	if ( nCnt <= 2 ) {		// OK点2個以下もｱｳﾄ
 		for ( pos1=pResult->GetHeadPosition(); pos1; )
 			delete	pResult->GetNext(pos1);
 		pResult->RemoveAll();
 		return TRUE;
 	}
+
+	if ( mp.IsEmpty() )
+		return TRUE;
 
 	// --- NG点の除去
 	LPVOID		pKey, pVoid;		// dummy
@@ -1826,26 +1875,28 @@ BOOL CDXFshape::CheckSeparateChain(CDXFlist* pResult)
 		if ( !pos2 )
 			pos2 = pResult->GetHeadPosition();
 		pData2 = pResult->GetNext(pos2);
-		// NG点を持つｵﾌﾞｼﾞｪｸﾄの長さﾁｪｯｸ
-		if ( pData1->GetLength() <= pData2->GetLength() ) {
-			// pData1の前とpData2の交点を計算
-			pos2 = (POSITION)pKey;
-			pData = pResult->GetPrev(pos2);		// pData1
-			if ( !pos2 )
-				pos2 = pResult->GetTailPosition();
-			pData = pResult->GetPrev(pos2);
-			ptResult = pData2->CalcExpandPoint(pData);
-		}
-		else {
-			// pData2の次とpData1の交点を計算
-			if ( !pos2 )
-				pos2 = pResult->GetHeadPosition();
-			pData = pResult->GetNext(pos2);
-			ptResult = pData1->CalcExpandPoint(pData);
-		}
-		if ( ptResult ) {
-			pData1->SetNativePoint(1, *ptResult);
-			pData2->SetNativePoint(0, *ptResult);
+		if ( pData1->GetType() == DXFLINEDATA ) {
+			// NG点を持つｵﾌﾞｼﾞｪｸﾄの長さﾁｪｯｸ
+			if ( pData1->GetLength() <= pData2->GetLength() ) {
+				// pData1の前とpData2の交点を計算
+				pos2 = (POSITION)pKey;
+				pData = pResult->GetPrev(pos2);		// pData1
+				if ( !pos2 )
+					pos2 = pResult->GetTailPosition();
+				pData = pResult->GetPrev(pos2);
+				ptResult = pData2->CalcExpandPoint(pData);
+			}
+			else {
+				// pData2の次とpData1の交点を計算
+				if ( !pos2 )
+					pos2 = pResult->GetHeadPosition();
+				pData = pResult->GetNext(pos2);
+				ptResult = pData1->CalcExpandPoint(pData);
+			}
+			if ( ptResult ) {
+				pData1->SetNativePoint(1, *ptResult);
+				pData2->SetNativePoint(0, *ptResult);
+			}
 		}
 	}
 

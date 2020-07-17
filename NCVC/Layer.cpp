@@ -18,7 +18,7 @@ extern	CMagaDbg	g_dbg;
 using namespace boost;
 
 // ﾚｲﾔ情報の保存
-#define	LAYERTOINITORDER	7
+#define	LAYERTOINITORDER	10
 
 IMPLEMENT_SERIAL(CLayerData, CObject, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 
@@ -178,7 +178,7 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 
 	int		i;
 	TCHAR	szFile[_MAX_PATH];
-	std::string	str( strBuf ), strFile;
+	std::string	str( strBuf ), strTemp;
 	tokenizer	tok( str, sep );
 	tokenizer::iterator it;
 
@@ -189,12 +189,12 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 			m_bCutTarget = atoi(it->c_str()) ? TRUE : FALSE;
 			break;
 		case 1:		// 切削条件ﾌｧｲﾙ
-			strFile = ::Trim(*it);	// CustomClass.h
+			strTemp = ::Trim(*it);	// CustomClass.h
 			// 相対ﾊﾟｽなら絶対ﾊﾟｽに
-			if ( ::PathIsRelative(strFile.c_str()) &&
-					::PathSearchAndQualify(strFile.c_str(), szFile, _MAX_PATH) )
-				strFile = szFile;
-			SetInitFile(strFile.c_str());
+			if ( ::PathIsRelative(strTemp.c_str()) &&
+					::PathSearchAndQualify(strTemp.c_str(), szFile, _MAX_PATH) )
+				strTemp = szFile;
+			SetInitFile(strTemp.c_str());
 			break;
 		case 2:		// 強制最深Z
 			m_dZCut = atof(it->c_str());
@@ -206,11 +206,22 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 			m_bPartOut = atoi(it->c_str()) ? TRUE : FALSE;
 			break;
 		case 5:		// 個別出力ﾌｧｲﾙ名
-			strFile = ::Trim(*it);
-			if ( ::PathIsRelative(strFile.c_str()) &&
-					::PathSearchAndQualify(strFile.c_str(), szFile, _MAX_PATH) )
-				strFile = szFile;
-			m_strNCFile = strFile.c_str();
+			strTemp = ::Trim(*it);
+			if ( ::PathIsRelative(strTemp.c_str()) &&
+					::PathSearchAndQualify(strTemp.c_str(), szFile, _MAX_PATH) )
+				strTemp = szFile;
+			m_strNCFile = strTemp.c_str();
+			break;
+		case 6:		// 出力ｼｰｹﾝｽ
+			strTemp = ::Trim(*it);
+			if ( !strTemp.empty() )
+				m_nListNo = atoi(strTemp.c_str());
+			break;
+		case 7:		// 出力ｺﾒﾝﾄ
+			m_strLayerComment = ::Trim(*it).c_str();
+			break;
+		case 8:		// 出力ｺｰﾄﾞ
+			m_strLayerCode = ::Trim(*it).c_str();
 			break;
 		}
 	}
@@ -219,6 +230,7 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 	g_dbg.printf("--- Check=%d InitFile=%s", m_bCutTarget, m_strInitFile);
 	g_dbg.printf("--- Z=%f Drill=%d", m_dZCut, m_bDrillZ );
 	g_dbg.printf("--- PartOut=%d NCFile=%s", m_bPartOut, m_strNCFile);
+	g_dbg.printf("--- Seq=%d, Comment=%s Code=%s", m_nListNo, m_strLayerComment, m_strLayerCode);
 #endif
 }
 
@@ -239,10 +251,17 @@ CString CLayerData::FormatLayerInfo(LPCTSTR lpszBase)
 	else
 		strNCFile = m_strNCFile;
 
-	strBuf.Format("%s, %d, %s, %.3f, %d, %d, %s\n", m_strLayer,
-		m_bCutTarget ? 1 : 0, strInitFile,
-		m_dZCut, m_bDrillZ ? 1 : 0, 
-		m_bPartOut ? 1 : 0, strNCFile);
+	strBuf.Format("%s, %d, %s, %.3f, %d, %d, %s, %d, %s, %s\n",
+		m_strLayer,
+		m_bCutTarget ? 1 : 0,
+		strInitFile,
+		m_dZCut,
+		m_bDrillZ ? 1 : 0, 
+		m_bPartOut ? 1 : 0,
+		strNCFile,
+		m_nListNo,
+		m_strLayerComment,
+		m_strLayerCode);
 	return strBuf;
 }
 

@@ -89,8 +89,10 @@ public:
 	double	GetFeed(void) const;
 	double	GetMove(size_t) const;
 	const CRect3D	GetMaxRect(void) const;
-	CNCdata*	NC_CopyObject(void);	// from TH_Correct.cpp
+	CNCdata*	NC_CopyObject(void);			// from TH_Correct.cpp
 	void		AddCorrectObject(CNCdata*);
+	CTypedPtrArrayEx<CPtrArray, CNCdata*>*
+				GetCorrectArray(void);			// DXFèoóÕóp
 	const CNCread*	GetReadData(void) const;
 	void		DeleteReadData(void);
 

@@ -8,7 +8,6 @@
 
 class CMakeNCDlgEx11 : public CDialog
 {
-	CString		m_strCaption;	// 元のｳｨﾝﾄﾞｳﾀｲﾄﾙ
 	int			m_nIndex;	// ﾌｫｰｶｽを得たときのﾚｲﾔ配列番号
 	// ｽﾀﾃｨｯｸｺﾝﾄﾛｰﾙに表示する前の省略形文字列
 	CString		m_strNCPath,	// 本物のﾊﾟｽ名
@@ -20,29 +19,30 @@ class CMakeNCDlgEx11 : public CDialog
 
 // コンストラクション
 public:
-	CMakeNCDlgEx11(CMakeNCDlgEx1*, int, const CString&);
+	CMakeNCDlgEx11(CMakeNCDlgEx*, int);
 	virtual ~CMakeNCDlgEx11();
 
 // ダイアログ データ
 	//{{AFX_DATA(CMakeNCDlgEx11)
 	enum { IDD = IDD_MAKENCD_EX1_1 };
-	CButton	m_ctOK;
-	CStatic	m_ctPartEnable3;
-	CStatic	m_ctPartEnable2;
-	CButton	m_ctPartEnable1;
-	CComboBox	m_ctLayer;
-	CButton	m_ctPartEnable4;
+	CStatic	m_ctNCPath,
+			m_ctInitPath,
+			m_ctPartEnable2,
+			m_ctPartEnable3;
+	CButton	m_ctOK,
+			m_ctPartEnable1,
+			m_ctPartEnable4;
+	CComboBox	m_ctLayer,
+				m_ctInitFileName;
 	CEdit	m_ctNCFileName;
-	CStatic	m_ctNCPath;
-	CStatic	m_ctInitPath;
-	CComboBox	m_ctInitFileName;
-	CString	m_strInitFileName;
-	CString	m_strNCFileName;
-	BOOL	m_bCheck;
-	BOOL	m_bPartOut;
+	BOOL	m_bCheck,
+			m_bPartOut;
+	CString	m_strInitFileName,
+			m_strNCFileName,
+			m_strLayerComment,
+			m_strLayerCode;
 	//}}AFX_DATA
-	CString		m_strLayerFile;	// ﾚｲﾔﾌｧｲﾙ
-	CLayerArray	m_obLayer;	// ﾚｲﾔ情報一時待避(上位ﾘｽﾄｺﾝﾄﾛｰﾙ順)
+	CLayerArray	m_obLayer;		// ﾚｲﾔ情報一時待避(上位ﾘｽﾄｺﾝﾄﾛｰﾙ順)
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
@@ -68,7 +68,6 @@ protected:
 	afx_msg void OnPartOut();
 	afx_msg void OnSelChangeLayer();
 	afx_msg void OnSetFocusLayer();
-	afx_msg void OnNewLayerFile();
 	//}}AFX_MSG
 
 	DECLARE_MESSAGE_MAP()

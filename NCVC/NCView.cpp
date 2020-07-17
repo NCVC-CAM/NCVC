@@ -514,15 +514,20 @@ void CNCView::OnLButtonDblClk(UINT nFlags, CPoint point)
 
 BOOL CNCView::OnEraseBkgnd(CDC* pDC) 
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCView::OnEraseBkgnd()\nStart");
-#endif
 	CRect	rc;
-	GetClientRect(&rc);
+	GetClientRect(rc);
+#ifdef _DEBUG
+	CMagaDbg	dbg("CNCView::OnEraseBkgnd()", DBG_RED);
+	dbg.printf("Start MapMode=%d", pDC->GetMapMode());
+	dbg.printf("rc=(%d, %d)", rc.Width(), rc.Height());
+#endif
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND2),
 				col2 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND1);
 
+
 	return AfxGetNCVCMainWnd()->DrawBackGroundView(pDC, &rc, col1, col2);
+//	CClientDC		dc(this);
+//	return AfxGetNCVCMainWnd()->DrawBackGroundView(&dc, &rc, col1, col2);
 }

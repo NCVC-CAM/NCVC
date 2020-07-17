@@ -45,6 +45,8 @@ END_MESSAGE_MAP()
 
 //	ｳｨﾝﾄﾞｳﾒｯｾｰｼﾞを受信し、OpenGL命令を操作するときは
 //	::wglMakeCurrent( pDC->GetSafeHdc(), m_hRC );
+//	-- OpenGL命令 --
+//	::wglMakeCurrent( NULL, NULL );
 //	を必ず入れておく
 
 /////////////////////////////////////////////////////////////////////////////
@@ -614,14 +616,16 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	::glFrontFace(GL_CCW);
 	::glCullFace(GL_BACK);
 	::glEnable(GL_CULL_FACE);
-/*
-#ifdef _DEBUG
+
+#ifdef _DEBUGOLD
 	g_dbg.printf("GetDeviceCaps([HORZSIZE|VERTSIZE])=%d, %d",
 		dc.GetDeviceCaps(HORZSIZE), dc.GetDeviceCaps(VERTSIZE) );
 	g_dbg.printf("GetDeviceCaps([LOGPIXELSX|LOGPIXELSY])=%d, %d",
 		dc.GetDeviceCaps(LOGPIXELSX), dc.GetDeviceCaps(LOGPIXELSY) );
 #endif
-*/
+
+	::wglMakeCurrent( NULL, NULL );
+
 	return 0;
 }
 
@@ -661,7 +665,7 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 {
 	if ( bActivate ) {
 #ifdef _DEBUG
-		g_dbg.printf("OnActivateView() %s", GetDocument()->GetTitle());
+		g_dbg.printf("CNCViewGL::OnActivateView()");
 #endif
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
 		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dRate/LOGPIXEL);

@@ -81,7 +81,7 @@ public:
 	INT_PTR	GetLayerCnt(void) const {
 		return m_obLayer.GetSize();
 	}
-	CLayerData*	GetLayerData(int n) const {
+	CLayerData*	GetLayerData(INT_PTR n) const {
 		ASSERT(n>=0 && n<GetLayerCnt());
 		return m_obLayer[n];
 	}

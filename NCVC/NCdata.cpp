@@ -511,7 +511,7 @@ optional<CPointD> CNCline::SetChamferingPoint(BOOL bStart, double c)
 		return optional<CPointD>();
 
 	CPointD		pt, pto, pte;
-	CPoint3D&	ptValS = bStart ? m_ptValS : m_ptValE;	// 参照
+	CPoint3D&	ptValS = bStart ? m_ptValS : m_ptValE;	// 代入もあるので参照型(別名)
 	CPoint3D&	ptValE = bStart ? m_ptValE : m_ptValS;
 	
 	pto = GetPlaneValue(ptValS);
@@ -571,10 +571,16 @@ int CNCline::CalcOffsetSign(void) const
 optional<CPointD> CNCline::CalcPerpendicularPoint
 	(ENPOINTORDER enPoint, double r, int nSign) const
 {
-	const CPoint3D&	pts = enPoint==STARTPOINT ? m_ptValS : m_ptValE;
-	const CPoint3D&	pte = enPoint==STARTPOINT ? m_ptValE : m_ptValS;
-	if ( enPoint == ENDPOINT )
+	CPoint3D	pts, pte;
+	if ( enPoint == STARTPOINT ) {
+		pts = m_ptValS;
+		pte = m_ptValE;
+	}
+	else {
+		pts = m_ptValE;
+		pte = m_ptValS;
 		nSign = -nSign;		// 終点では-90°
+	}
 	// 線の傾きを計算して90°回転
 	CPointD	pt( GetPlaneValueOrg(pte, pts) );
 	double	q = atan2(pt.y, pt.x);
@@ -588,7 +594,7 @@ optional<CPointD> CNCline::CalcPerpendicularPoint
 optional<CPointD> CNCline::CalcOffsetIntersectionPoint
 	(const CNCdata* pNext, double r, int k1, int k2) const
 {
-	BOOL	bResult;
+	BOOL	bResult = FALSE;
 	// ２線の交点(自身の終点)が原点になるように補正
 	CPointD		pt, pt1( GetPlaneValueOrg(m_ptValS, m_ptValE) ), pt2;
 
@@ -606,8 +612,6 @@ optional<CPointD> CNCline::CalcOffsetIntersectionPoint
 			bResult = TRUE;
 			pt = *ptResult;
 		}
-		else
-			bResult = FALSE;
 	}
 
 	// 原点補正
@@ -650,12 +654,12 @@ optional<CPointD> CNCline::CalcOffsetIntersectionPoint2
 	return ptResult;
 }
 
-void CNCline::SetCorrectPoint(ENPOINTORDER enPoint, const CPointD& pt, double)
+void CNCline::SetCorrectPoint(ENPOINTORDER enPoint, const CPointD& ptSrc, double)
 {
-	CPoint3D&	ptVal    = enPoint==STARTPOINT ? m_ptValS : m_ptValE;
-	CPointD&	ptResult = enPoint==STARTPOINT ? m_pt2Ds : m_pt2D;
+	CPoint3D&	ptVal    = enPoint==STARTPOINT ? m_ptValS : m_ptValE;	// 参照型
+	CPointD&	ptResult = enPoint==STARTPOINT ? m_pt2Ds  : m_pt2D;
 
-	SetPlaneValue(pt, ptVal);
+	SetPlaneValue(ptSrc, ptVal);
 	ptResult = ptVal.PointConvert();
 }
 
@@ -1148,11 +1152,11 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOf
 	Constracter();
 
 #ifdef _DEBUG
-	dbg.printf("gcode=%d", m_nG23);
-	dbg.printf("sx=%.3f sy=%.3f sz=%.3f ex=%.3f ey=%.3f ez=%.3f r=%.3f",
+//	dbg.printf("gcode=%d", m_nG23);
+	dbg.printf("sx=%.3f sy=%.3f sz=%.3f / ex=%.3f ey=%.3f ez=%.3f / r=%.3f",
 		m_ptValS.x, m_ptValS.y, m_ptValS.z,
 		m_ptValE.x, m_ptValE.y, m_ptValE.z, m_r);
-	dbg.printf("px=%.3f py=%.3f pz=%.3f sq=%f eq=%f",
+	dbg.printf("px=%.3f py=%.3f pz=%.3f / sq=%f eq=%f",
 		m_ptOrg.x, m_ptOrg.y, m_ptOrg.z, m_sq*DEG, m_eq*DEG);
 #endif
 	// 空間占有矩形
@@ -1221,9 +1225,10 @@ BOOL CNCcircle::CalcCenter(const CPointD& pts, const CPointD& pte)
 
 	// どちらの解を採用するか
 	AngleTuning(pts-pt1, pte-pt1);	// まず一方の中心座標から角度を求める
+	double	q = ::RoundUp((m_eq-m_sq)*DEG);
 	if ( nResult==1 ||
-		(m_r>0.0 && m_eq-m_sq<180.0*RAD) ||
-		(m_r<0.0 && m_eq-m_sq>180.0*RAD) ) {
+		(m_r>0.0 && q<=180.0) ||	// 180°以下
+		(m_r<0.0 && q> 180.0) ) {	// 180°超える
 		SetCenter(pt1);
 	}
 	else {
@@ -1895,7 +1900,7 @@ void CNCcircle::SetMaxRect(void)
 		break;
 	}
 	m_rcMax.NormalizeRect();
-#ifdef _DEBUG
+#ifdef _DEBUGOLD
 	dbg.printf("m_rcMax(left, top   )=(%f, %f)", m_rcMax.left, m_rcMax.top);
 	dbg.printf("m_rcMax(right,bottom)=(%f, %f)", m_rcMax.right, m_rcMax.bottom);
 	dbg.printf("m_rcMax(high, low   )=(%f, %f)", m_rcMax.high, m_rcMax.low);
@@ -1942,10 +1947,10 @@ tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint
 		}
 		// 解の選択
 		double	sx = fabs(pts.x), sy = fabs(pts.y), ex = fabs(pte.x), ey = fabs(pte.y);
-		if ( (sx<EPS && ex<EPS) || (sy<EPS && ey<EPS) ||
-				(sx>EPS && ex>EPS && fabs(pts.y/pts.x - pte.y/pte.x)<EPS) ) {
+		if ( (sx<NCMIN && ex<NCMIN) || (sy<NCMIN && ey<NCMIN) ||
+				(sx>NCMIN && ex>NCMIN && fabs(pts.y/pts.x - pte.y/pte.x)<NCMIN) ) {
 			// 中心が同一線上にあるとき，接線と符号が同じ方を選択
-			if ( sy < EPS )
+			if ( sy < NCMIN )
 				pt = (m_nG23==0 ? -pts.x : pts.x) * p1.y > 0 ? p1 : p2;
 			else
 				pt = (m_nG23==0 ? pts.y : -pts.y) * p1.x > 0 ? p1 : p2;
@@ -2163,7 +2168,7 @@ int CNCcircle::CalcOffsetSign(void) const
 optional<CPointD> CNCcircle::CalcPerpendicularPoint
 	(ENPOINTORDER enPoint, double r, int nSign) const
 {
-	const CPoint3D&	pts = (enPoint==STARTPOINT) ? m_ptValS : m_ptValE;
+	const CPoint3D	pts( enPoint==STARTPOINT ? m_ptValS : m_ptValE );
 	// 始点終点関係なく 回転方向ｘ補正符号
 	// ptsと中心の傾きを計算して半径±r
 	CPointD	pt( GetPlaneValueOrg(pts, m_ptOrg) );
@@ -2177,25 +2182,38 @@ optional<CPointD> CNCcircle::CalcPerpendicularPoint
 optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint
 	(const CNCdata* pNext, double r, int k1, int k2) const
 {
-	BOOL	bResult;
+	BOOL	bResult = FALSE;
 	// ２線の交点(自身の終点)が原点になるように補正
 	CPointD	pt;
 
 	if ( pNext->GetType() == NCDARCDATA ) {
 		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
 		CPointD	pto1( GetPlaneValueOrg(m_ptOrg, m_ptValE) ),
-				pto2( GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE) );
-		// ｵﾌｾｯﾄ分半径を調節して２つの円の交点を求める
-		CPointD	p1, p2;
-		int		nResult;
-		tie(nResult, p1, p2) = ::CalcIntersectionPoint_CC(pto1, pto2, fabs(m_r)+r*k1, fabs(pCircle->GetR())+r*k2);
-		// 解の選択
-		if ( nResult > 0 ) {
-			pt = GAPCALC(p1) < GAPCALC(p2) ? p1 : p2;
+				pto2( GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE) ),
+				p1, p2;
+		double	r1 = fabs(m_r)+r*k1, r2 = fabs(pCircle->GetR())+r*k2;
+		// 同一円か判断
+		if ( sqrt(GAPCALC(pto1-pto2))<NCMIN && fabs(r1-r2)<NCMIN ) {
+			// 円の交点は求められないので、単純ｵﾌｾｯﾄ座標計算
+			double	q = (m_nG23==0) ? m_sq : m_eq;	// 終点角度
+			pt.x = r1 * cos(q);
+			pt.y = r1 * sin(q);
 			bResult = TRUE;
 		}
-		else
-			bResult = FALSE;
+		else {
+			// ｵﾌｾｯﾄ分半径を調節して２つの円の交点を求める
+			int		nResult;
+			tie(nResult, p1, p2) = ::CalcIntersectionPoint_CC(pto1, pto2, r1, r2);
+			// 解の選択
+			if ( nResult > 1 ) {
+				pt = GAPCALC(p1) < GAPCALC(p2) ? p1 : p2;
+				bResult = TRUE;
+			}
+			else if ( nResult > 0 ) {
+				pt = p1;
+				bResult = TRUE;
+			}
+		}
 	}
 	else {
 		// ｵﾌｾｯﾄ分平行移動させた交点を求める
@@ -2254,38 +2272,25 @@ optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint2
 
 void CNCcircle::SetCorrectPoint(ENPOINTORDER enPoint, const CPointD& ptSrc, double rr)
 {
-	CPoint3D&	ptVal = enPoint==STARTPOINT ? m_ptValS : m_ptValE;
-	CPointD		pt, ptOrg;
-	switch ( GetPlane() ) {
-	case XY_PLANE:
-		ptVal.x = ptSrc.x;
-		ptVal.y = ptSrc.y;
-		pt = ptVal.GetXY();
-		ptOrg = m_ptOrg.GetXY();
-		break;
-	case XZ_PLANE:
-		ptVal.x = ptSrc.x;
-		ptVal.z = ptSrc.y;
-		pt = ptVal.GetXZ();
-		ptOrg = m_ptOrg.GetXZ();
-		break;
-	case YZ_PLANE:
-		ptVal.y = ptSrc.x;
-		ptVal.z = ptSrc.y;
-		pt = ptVal.GetYZ();
-		ptOrg = m_ptOrg.GetYZ();
-		break;
-	}
+#ifdef _DEBUG
+	CMagaDbg	dbg("SetCorrectPoint", DBG_MAGENTA);
+#endif
+	CPoint3D&	ptVal = enPoint==STARTPOINT ? m_ptValS : m_ptValE;	// 参照型
+	CPointD		pt;
 
+	SetPlaneValue(ptSrc, ptVal);
+	pt = GetPlaneValueOrg(ptVal, m_ptOrg);
+
+	// 角度調整
 	if ( enPoint == STARTPOINT ) {
-		double&	q = m_nG23==0 ? m_eq : m_sq;
-		if ( (q=atan2(pt.y-ptOrg.y, pt.x-ptOrg.x)) < 0.0 )
+		double&	q = m_nG23==0 ? m_eq : m_sq;	// 参照型
+		if ( (q=atan2(pt.y, pt.x)) < 0.0 )
 			q += 360.0*RAD;
 	}
 	else {
 		m_r = _copysign(fabs(m_r)+rr, m_r);		// 終点の時だけ半径補正
 		double&	q = m_nG23==0 ? m_sq : m_eq;
-		if ( (q=atan2(pt.y-ptOrg.y, pt.x-ptOrg.x)) < 0.0 )
+		if ( (q=atan2(pt.y, pt.x)) < 0.0 )
 			q += 360.0*RAD;
 		m_pt2D = m_ptValE.PointConvert();
 	}
@@ -2305,9 +2310,9 @@ optional<double> CalcRoundPoint_CircleInOut
 	int		k1 = nG23==0 ? -1 : 1, k2 = nG23next==0 ? -1 : 1;
 
 	// 特殊解の判断
-	if ( (sx<EPS && ex<EPS && pts.y*pte.y>0) ||
-			(sy<EPS && ey<EPS && pts.x*pte.x>0) ||
-			(sx>EPS && ex>EPS && fabs(pts.y/pts.x - pte.y/pte.x)<EPS && pts.x*pte.x>0) ) {
+	if ( (sx<NCMIN && ex<NCMIN && pts.y*pte.y>0) ||
+			(sy<NCMIN && ey<NCMIN && pts.x*pte.x>0) ||
+			(sx>NCMIN && ex>NCMIN && fabs(pts.y/pts.x - pte.y/pte.x)<NCMIN && pts.x*pte.x>0) ) {
 		// 中心が同一線上にあり，かつ，x,y の符号が同じとき
 		double	l1 = pts.x*pts.x + pts.y*pts.y;
 		double	l2 = pte.x*pte.x + pte.y*pte.y;
@@ -2323,9 +2328,9 @@ optional<double> CalcRoundPoint_CircleInOut
 	pto.y =  pte.x*k2;	// G03:+90°
 
 	// 線と円弧の場合と考え方(処理方法)は同じ
-	if ( fabs(pto.x) < EPS && sy < EPS )
+	if ( fabs(pto.x) < NCMIN && sy < NCMIN )
 		rr = _copysign(r, pto.y*pts.x*k1);
-	else if ( fabs(pto.y) < EPS && sx < EPS )
+	else if ( fabs(pto.y) < NCMIN && sx < NCMIN )
 		rr = _copysign(r, -pto.x*pts.y*k1);
 	else
 		rr = _copysign(r, -(pto.x*pts.x + pto.y*pts.y));

@@ -23,7 +23,8 @@ static	const	int		g_nDxfDef[] = {
 	1, 0
 };
 extern	LPCTSTR	g_szDefaultLayer[] = {
-	"ORIGIN", "CAM", "MOVE"
+	"ORIGIN", "CAM",
+	"MOVE", "CORRECT"		// DXF出力におけるﾃﾞﾌｫﾙﾄﾚｲﾔ名にのみ使用
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -37,7 +38,7 @@ CDXFOption::CDXFOption()
 	CString	strRegKey, strEntry, strTmp, strResult;
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-	for ( i=0; i<DXFLAYERSIZE; i++ ) {
+	for ( i=0; i<DXFLAYERSIZE; i++ ) {	// DXF[ORG|CAM|STR|MOV|COM]LAYER
 		VERIFY(strEntry.LoadString(IDS_REG_DXF_ORGLAYER+i));
 		m_strReadLayer[i] = AfxGetApp()->GetProfileString(strRegKey, strEntry,
 			i<=DXFCAMLAYER ? g_szDefaultLayer[i] : strTmp );	// ﾃﾞﾌｫﾙﾄﾊﾟﾗﾒｰﾀ は，原点と切削ﾚｲﾔのみ

@@ -149,6 +149,11 @@ inline const CRect3D CNCdata::GetMaxRect(void) const
 	return m_rcMax;
 }
 
+inline CNCarray* CNCdata::GetCorrectArray(void)
+{
+	return &m_obCdata;
+}
+
 inline boost::tuple<BOOL, CPointD, double, double> CNCdata::CalcRoundPoint(const CNCdata*, double) const
 {
 	BOOL	bResult = FALSE;

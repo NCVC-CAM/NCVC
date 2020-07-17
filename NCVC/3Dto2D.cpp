@@ -67,8 +67,8 @@ optional<CPointD> CalcIntersectionPoint_LL
 	}
 
 	// 岎揰寁嶼
-	if ( fabs(xa) < EPS ) {
-		if ( fabs(xb) >= EPS ) {
+	if ( fabs(xa) < NCMIN ) {
+		if ( fabs(xb) >= NCMIN ) {
 			pt.x = pts1.x;
 			pt.y = yb * (pts1.x - pts2.x) / xb + pts2.y;
 			bResult = TRUE;
@@ -76,7 +76,7 @@ optional<CPointD> CalcIntersectionPoint_LL
 		// 椉曽偲傕悅捈慄偱偼夝側偟
 	}
 	else {
-		if ( fabs(xb) < EPS ) {
+		if ( fabs(xb) < NCMIN ) {
 			pt.x = pts2.x;
 			pt.y = ya * (pts2.x - pts1.x) / xa + pts1.y;
 			bResult = TRUE;
@@ -84,8 +84,8 @@ optional<CPointD> CalcIntersectionPoint_LL
 		else {
 			double	yaxa = ya / xa,
 					ybxb = yb / xb;
-			if ( fabs(ya) < EPS ) {
-				if ( fabs(yb) >= EPS ) {
+			if ( fabs(ya) < NCMIN ) {
+				if ( fabs(yb) >= NCMIN ) {
 					pt.x = (pts1.y - pts2.y) / ybxb + pts2.x;
 					pt.y = pts1.y;
 					bResult = TRUE;
@@ -93,12 +93,12 @@ optional<CPointD> CalcIntersectionPoint_LL
 				// 椉曽悈暯慄偱偼夝側偟
 			}
 			else {
-				if ( fabs(yb) < EPS ) {
+				if ( fabs(yb) < NCMIN ) {
 					pt.x = (pts2.y - pts1.y) / yaxa + pts1.x;
 					pt.y = pts2.y;
 				}
 				else {
-					if ( fabs(yaxa-ybxb) < EPS ) {
+					if ( fabs(yaxa-ybxb) < NCMIN ) {
 						optional<CPointD>	pt1, pt2;
 						// 悈暯丒悅捈埲奜偱孹偒偑摨偠(巨蹚湈Z杊巭)
 						if ( minX2<=pts1.x && pts1.x<=maxX2 && minY2<=pts1.y && pts1.y<=maxY2 )
@@ -140,12 +140,12 @@ optional<CPointD> CalcIntersectionPoint_LL
 
 	// 専嶼(斖埻联)
 	if ( bRangeChk && bResult ) {	// 慄侾
-		if ( fabs(ya) < EPS ) {
+		if ( fabs(ya) < NCMIN ) {
 			// 悈暯慄偱偼 x 偺斖埻联偺傒
 			if ( pt.x<minX1 || maxX1<pt.x )
 				bResult = FALSE;
 		}
-		else if ( fabs(xa) < EPS ) {
+		else if ( fabs(xa) < NCMIN ) {
 			// 悅捈慄偱偼 y 偺斖埻联偺傒
 			if ( pt.y<minY1 || maxY1<pt.y )
 				bResult = FALSE;
@@ -156,11 +156,11 @@ optional<CPointD> CalcIntersectionPoint_LL
 		}
 	}
 	if ( bRangeChk && bResult ) {	// 慄俀
-		if ( fabs(yb) < EPS ) {
+		if ( fabs(yb) < NCMIN ) {
 			if ( pt.x<minX2 || maxX2<pt.x )
 				bResult = FALSE;
 		}
-		else if ( fabs(xb) < EPS ) {
+		else if ( fabs(xb) < NCMIN ) {
 			if ( pt.y<minY2 || maxY2<pt.y )
 				bResult = FALSE;
 		}
@@ -189,12 +189,12 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LC
 	double	y = fabs(pto.y);
 
 	// 岎揰偑側偄忦審
-	if ( y - r > EPS )
+	if ( y - r > NCMIN )
 		return make_tuple(nResult, pr1, pr2);
 
 	pt.RoundPoint(-q);	// pt偑昁偢惓曽岦偵
 
-	if ( fabs(y-r) <= EPS ) {
+	if ( fabs(y-r) <= NCMIN ) {
 		// 愙偡傞
 		pr1.x = pto.x;
 		// 斖埻联
@@ -236,31 +236,31 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LC
 tuple<int, CPointD, CPointD> CalcIntersectionPoint_CC
 	(const CPointD& pts, const CPointD& pte, double r1, double r2)
 {
+	r1 = fabs(r1);
+	r2 = fabs(r2);
+
 	int		nResult = 0;
 	CPointD	pr1, pr2,
 			pt(pte-pts);			// 巒揰俽偑尨揰偲側傞傛偆暯峴堏摦
 	double	l,
+			r1r2 = r1 + r2,			// 巊梡昿搙偺崅偄寁嶼
 			q = atan2(pt.y, pt.x);	// 夞揮妏搙
-	r1 = fabs(r1);
-	r2 = fabs(r2);
 
 	// 墌偺曽掱幃傛傝丆(s.x, s.y)丆(e.x, e.y) 傪拞怱偲偟偨
 	// 俀偮偺墌偺岎揰傪媮傔傞
 
-	// 媡夞揮偟偨傕偺偲偟偰峫偊傞偲丄偙傟偱OK偩偑抶偄(偲巚偆)
-//	l = pt.hypot();
 	// 懠曽(pte)偺拞怱嵗昗偑x幉忋偵側傞傛偆媡夞揮
 	pt.RoundPoint(-q);
 	l = RoundUp(fabs(pt.x));	// 俀墌偺拞怱偺嫍棧
 
 	// 岎揰偑側偄忦審(摨怱墌{嫍棧巨踼, 俀墌偺敿宎傛傝嫍棧偑戝偒偄, 彫偝偄
-	if ( l < EPS || l > RoundUp(r1+r2) || l < RoundUp(fabs(r1-r2)) )
+	if ( l < NCMIN || l > RoundUp(r1r2)+NCMIN || l < RoundUp(fabs(r1-r2))-NCMIN )
 		return make_tuple(nResult, pr1, pr2);
 
 	// 岎揰寁嶼
-	if ( fabs(l-(r1+r2)) <= EPS || fabs(r1-(r2-l)) <= EPS || fabs(r1-(r2+l)) <= EPS ) {
-		// 愙偡傞忦審(y=0)
-		pr1.x = _copysign(r1, r1-r2);	// r2偺曽偑戝偒偄偲喜沤
+	if ( RoundUp(fabs(l-r1r2)) <= NCMIN || RoundUp(fabs(l-fabs(r1-r2))) <= NCMIN ) {
+		// 愙偡傞忦審(y=0)偲喜沤忦審
+		pr1.x = ( r1 < r2 && l-r2 < 0 ) ? -r1 : r1;
 		// 夞揮傪暅尦
 		pr1.RoundPoint(q);
 		pr2 = pr1;
@@ -269,8 +269,9 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_CC
 	}
 	else {
 		// 岎揰俀偮
-		pr1.x = pr2.x = (r1*r1 - r2*r2 + l*l) / (2.0*l);
-		pr1.y = sqrt( r1*r1 - pr1.x*pr1.x );
+		r1 *= r1;	// r1*r1傪俀夞巊偆偺偱愭偵寁嶼
+		pr1.x = pr2.x = (r1 - r2*r2 + l*l) / (2.0*l);
+		pr1.y = sqrt(r1 - pr1.x*pr1.x);
 		pr2.y = -pr1.y;
 		// 夞揮傪暅尦
 		pr1.RoundPoint(q);
@@ -316,9 +317,9 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LE
 		minY = pt2.y;	maxY = pt1.y;
 	}
 	// 岎揰寁嶼
-	if ( fabs(xa) < EPS ) {
+	if ( fabs(xa) < NCMIN ) {
 		// 悅捈慄
-		if ( fabs(ya) < EPS )
+		if ( fabs(ya) < NCMIN )
 			return make_tuple(nResult, pr1, pr2);
 		pr1.x = pr2.x = pt1.x;
 		pr1.y = b * sqrt(1 - (pt1.x*pt1.x)/(a*a));
@@ -333,7 +334,7 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LE
 				std::swap(pr1, pr2);
 		}
 	}
-	else if ( fabs(ya) < EPS ) {
+	else if ( fabs(ya) < NCMIN ) {
 		// 悈暯慄
 		pr1.y = pr2.y = pt1.y;
 		pr1.x = a * sqrt(1 - (pt1.y*pt1.y)/(b*b));
@@ -395,11 +396,11 @@ CPointD	CalcIntersectionPoint_TC
 	CPointD	pt;
 
 	// ptOrg 傪拞怱偲偟偨墌偲 ptSrc 偺岎揰
-	if ( fabs( ptSrc.x - ptOrg.x ) < EPS ) {
+	if ( fabs( ptSrc.x - ptOrg.x ) < NCMIN ) {
 		pt.x = ptOrg.x;
 		pt.y = ptOrg.y + _copysign(r, ptSrc.y - ptOrg.y);
 	}
-	else if ( fabs( ptSrc.y - ptOrg.y ) < EPS ) {
+	else if ( fabs( ptSrc.y - ptOrg.y ) < NCMIN ) {
 		pt.x = ptOrg.x + _copysign(r, ptSrc.x - ptOrg.x);
 		pt.y = ptOrg.y;
 	}
@@ -459,7 +460,7 @@ inline CPointD CalcOffsetIntersectionPoint_V
 	CPointD	pt;
 	// pt1偑悅捈
 	pt.x = _copysign(r, k1==0?pt2.x:k1);		// pt1偺嵍塃(亇)
-	if ( fabs(pt2.y) < EPS )
+	if ( fabs(pt2.y) < NCMIN )
 		pt.y = _copysign(r, k2==0?pt1.y:k2);	// pt2偺忋壓(亇)
 	else {
 		double a = pt2.y / pt2.x;
@@ -475,7 +476,7 @@ inline CPointD CalcOffsetIntersectionPoint_H
 	CPointD	pt;
 	// pt1偑悈暯
 	pt.y = _copysign(r, k1==0?pt2.y:k1);		// pt1偺忋壓(亇)
-	if ( fabs(pt2.x) < EPS )
+	if ( fabs(pt2.x) < NCMIN )
 		pt.x = _copysign(r, k2==0?pt1.x:k2);	// pt2偺嵍塃(亇)
 	else {
 		double a = pt2.y / pt2.x;
@@ -493,9 +494,9 @@ optional<CPointD> CalcOffsetIntersectionPoint_LL
 	double	sx = fabs(pts.x), sy = fabs(pts.y), ex = fabs(pte.x), ey = fabs(pte.y);
 
 	// 俀慄偺愙墌寁嶼偐傜媮傔傞
-	if ( sx < EPS || ex < EPS ) {
-		if ( sx < EPS && ex < EPS ) {		// 椉曽悅捈慄丠
-			if ( k1!=0 && k1==k2 ) {		// 晞崋偑摍偟偄偲偒偩偗
+	if ( sx < NCMIN || ex < NCMIN ) {
+		if ( sx < NCMIN && ex < NCMIN ) {		// 椉曽悅捈慄丠
+			if ( k1!=0 && k1==k2 ) {			// 晞崋偑摍偟偄偲偒偩偗
 				pt.x = _copysign(r, k1);
 				pt.y = 0;
 			}
@@ -503,13 +504,13 @@ optional<CPointD> CalcOffsetIntersectionPoint_LL
 				bResult = FALSE;
 		}
 		else {
-			pt = sx < EPS ?
+			pt = sx < NCMIN ?
 				CalcOffsetIntersectionPoint_V(pts, pte, k1, k2, r) :
 				CalcOffsetIntersectionPoint_V(pte, pts, k2, k1, r);
 		}
 	}
-	else if ( sy < EPS || ey < EPS ) {
-		if ( sy < EPS && ey < EPS ) {		// 椉曽悈暯慄丠
+	else if ( sy < NCMIN || ey < NCMIN ) {
+		if ( sy < NCMIN && ey < NCMIN ) {		// 椉曽悈暯慄丠
 			if ( k1!=0 && k1==k2 ) {
 				pt.x = 0;
 				pt.y = _copysign(r, k1);
@@ -518,7 +519,7 @@ optional<CPointD> CalcOffsetIntersectionPoint_LL
 				bResult = FALSE;
 		}
 		else {
-			pt = sy < EPS ?
+			pt = sy < NCMIN ?
 				CalcOffsetIntersectionPoint_H(pts, pte, k1, k2, r) :
 				CalcOffsetIntersectionPoint_H(pte, pts, k2, k1, r);
 		}
@@ -526,7 +527,7 @@ optional<CPointD> CalcOffsetIntersectionPoint_LL
 	else {
 		double a1 = pts.y / pts.x;
 		double a2 = pte.y / pte.x;
-		if ( fabs(a1-a2) > EPS ) {	// 孹偒(巨蹚湈Z)联
+		if ( fabs(a1-a2) > NCMIN ) {	// 孹偒(巨蹚湈Z)联
 			double b1 = _copysign(r*sqrt(1+a1*a1), k1==0?(a2-a1)*pte.x:k1);
 			double b2 = _copysign(r*sqrt(1+a2*a2), k2==0?(a1-a2)*pts.x:k2);
 			pt.x = (b2 - b1) / (a1 - a2);
@@ -562,10 +563,10 @@ tuple<BOOL, CPointD, double> CalcOffsetIntersectionPoint_LC
 	int		nResult;
 	BOOL	bResult = TRUE;
 
-	if ( fabs(pts.x) < EPS ) {
+	if ( fabs(pts.x) < NCMIN ) {
 		a = 0;
 		o1 = pto.y;	o2 = pto.x;
-		if ( fabs(pto.y) < EPS ) {
+		if ( fabs(pto.y) < NCMIN ) {
 			b  = _copysign(rr, k1==0?pto.x:k1);
 			rr = _copysign(rr, k2==0?pts.y*pto.x*nRound:k2);
 			ro += rr;
@@ -576,10 +577,10 @@ tuple<BOOL, CPointD, double> CalcOffsetIntersectionPoint_LC
 			ro += rr;
 		}
 	}
-	else if ( fabs(pts.y) < EPS ) {
+	else if ( fabs(pts.y) < NCMIN ) {
 		a = 0;
 		o1 = pto.x;	o2 = pto.y;
-		if ( fabs(pto.x) < EPS ) {
+		if ( fabs(pto.x) < NCMIN ) {
 			b  = _copysign(rr, k1==0?pto.y:k1);
 			rr = _copysign(rr, k2==0?-pts.x*pto.y*nRound:k2);
 			ro += rr;
@@ -602,7 +603,7 @@ tuple<BOOL, CPointD, double> CalcOffsetIntersectionPoint_LC
 	tie(nResult, p1.x, p2.x) = GetKon(1.0+a*a, 2.0*(a*z-o1), o1*o1+z*z-ro*ro);
 	switch ( nResult ) {
 	case 1:
-		if ( fabs(pts.x) < EPS ) {
+		if ( fabs(pts.x) < NCMIN ) {
 			pt.y = p1.x;
 			pt.x = b;
 		}
@@ -612,7 +613,7 @@ tuple<BOOL, CPointD, double> CalcOffsetIntersectionPoint_LC
 		}
 		break;
 	case 2:
-		if ( fabs(pts.x) < EPS ) {
+		if ( fabs(pts.x) < NCMIN ) {
 			p1.y = p1.x;	p2.y = p2.x;
 			p1.x = p2.x = b;
 		}
@@ -673,8 +674,8 @@ tuple<int, double, double>	GetKon(double a, double b, double c)
 	int		nResult;
 	double	x1 = 0.0, x2 = 0.0;
 
-	if ( fabs(a) < EPS ) {
-		if ( fabs(b) < EPS )
+	if ( fabs(a) < NCMIN ) {
+		if ( fabs(b) < NCMIN )
 			nResult = 0;
 		else {
 			x1 = x2 = -c / b;		// bx + c = 0
@@ -684,13 +685,13 @@ tuple<int, double, double>	GetKon(double a, double b, double c)
 	else {
 		b /= a;		c /= a;
 		double d = b*b - 4.0*c;
-		if ( d > EPS ) {
+		if ( d > NCMIN ) {
 			d = sqrt(d);
 			x1 = (b > 0.0 ? (-b - d) : (-b + d)) / 2.0;
 			x2 = c / x1;
 			nResult = 2;
 		}
-		else if ( fabs(d) < EPS ) {
+		else if ( fabs(d) < NCMIN ) {
 			x1 = x2 = -b / 2.0;
 			nResult = 1;
 		}

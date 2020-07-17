@@ -55,12 +55,15 @@ void CMakeDXFDlg1::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_DXF_ORIGIN,  m_strLayer[0]);
 	DDX_Text(pDX, IDC_DXF_CAMLINE, m_strLayer[1]);
 	DDX_Text(pDX, IDC_DXF_MOVE,    m_strLayer[2]);
-	DDX_Control(pDX, IDC_VIEWSETUP3_CB_ORIGIN, m_cbLineType[0]);
-	DDX_Control(pDX, IDC_VIEWSETUP3_CB_CUTTER, m_cbLineType[1]);
-	DDX_Control(pDX, IDC_VIEWSETUP3_CB_MOVE,   m_cbLineType[2]);
+	DDX_Text(pDX, IDC_DXF_CORRECT, m_strLayer[3]);
+	DDX_Control(pDX, IDC_VIEWSETUP3_CB_ORIGIN,  m_cbLineType[0]);
+	DDX_Control(pDX, IDC_VIEWSETUP3_CB_CUTTER,  m_cbLineType[1]);
+	DDX_Control(pDX, IDC_VIEWSETUP3_CB_MOVE,    m_cbLineType[2]);
+	DDX_Control(pDX, IDC_VIEWSETUP3_CB_OUTLINE, m_cbLineType[3]);
 	DDX_Control(pDX, IDC_MKDX1_COLOR_O, m_ctColor[0]);
 	DDX_Control(pDX, IDC_MKDX1_COLOR_C, m_ctColor[1]);
 	DDX_Control(pDX, IDC_MKDX1_COLOR_M, m_ctColor[2]);
+	DDX_Control(pDX, IDC_MKDX1_COLOR_H, m_ctColor[3]);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -84,9 +87,9 @@ BOOL CMakeDXFDlg1::OnInitDialog()
 		VERIFY(strFilter.LoadString(IDS_DXF_FILTER));
 		m_strDXFFileName += '.' + strFilter.Left(3);	// .dxf
 	}
-	else {
+	else
 		::Path_Name_From_FullPath(strDXFFile, m_strDXFPath, m_strDXFFileName);
-	}
+
 	// ⁄≤‘èÓïÒÅCê¸ëÆê´¿≤ÃﬂÇÃëIëéàìoò^
 	extern	const	PENSTYLE	g_penStyle[];		// ViewOption.cpp
 	for ( i=0; i<SIZEOF(m_strLayer); i++ ) {

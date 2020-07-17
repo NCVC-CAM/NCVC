@@ -55,7 +55,7 @@ void CViewBase::OnViewFit(const CRectD& rcMax)
 
 	// ‰æ–Ê‚Ì•\¦—Ìˆæ‚ğ 1mm’PˆÊ‚Åæ“¾
 	CRect		rc;
-	m_pView->GetClientRect(&rc);
+	m_pView->GetClientRect(rc);
 	CSize	sz(rc.Width(), rc.Height());
 	dc.DPtoLP(&sz);
 	double	cx = sz.cx / LOMETRICFACTOR;
@@ -106,7 +106,7 @@ void CViewBase::OnViewLensP(void)
 
 	// Œ»İ‚Ì¸×²±İÄ—Ìˆæ‚Ì‘å‚«‚³
 	CRect		rc;
-	m_pView->GetClientRect(&rc);
+	m_pView->GetClientRect(rc);
 	CSize	sz(rc.Width(), rc.Height());
 	dc.DPtoLP(&sz);
 
@@ -177,7 +177,7 @@ void CViewBase::OnViewLensN(void)
 
 	// Œ»İ‚Ì¸×²±İÄ—Ìˆæ‚Ì‘å‚«‚³
 	CRect		rc;
-	m_pView->GetClientRect(&rc);
+	m_pView->GetClientRect(rc);
 	CSize	sz(rc.Width(), rc.Height());
 	dc.DPtoLP(&sz);
 
@@ -233,7 +233,7 @@ void CViewBase::OnMoveKey(UINT nID)
 	ASSERT(m_pView);
 	CClientDC	dc(m_pView);
 	CRect		rc;
-	m_pView->GetClientRect(&rc);
+	m_pView->GetClientRect(rc);
 	// ¸×²±İÄÀ•W‚Ì1/6‚ğˆÚ“®”ÍˆÍ‚Æ‚·‚é
 	CSize	sz(rc.Width()/6, rc.Height()/6);
 	dc.DPtoLP(&sz);

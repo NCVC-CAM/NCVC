@@ -33,7 +33,7 @@ int CTabView::AddPage
 	ct.m_pNewDocTemplate = pDoc->GetDocTemplate();
 	ct.m_pNewViewClass = pClass;
 
-	CWnd*	pWnd = (CWnd *)(pClass->CreateObject());
+	CWnd*	pWnd = static_cast<CWnd *>(pClass->CreateObject());
 	if ( !pWnd )
 		return -1;
 	if ( !pWnd->Create(NULL, NULL, AFX_WS_DEFAULT_VIEW,
@@ -57,11 +57,6 @@ int CTabView::AddPage(LPCTSTR pszTitle, CWnd* pWnd)
 		return -1;
 
 	m_pPages.Add(pWnd);
-
-	CRect rc;
-	GetClientRect (&rc);
-	if ( rc.Width()>0 && rc.Height()>0 )
-		ResizePage(nIndex, rc.Width(), rc.Height());
 
 	return nIndex;
 }
@@ -144,7 +139,7 @@ void CTabView::ActivatePage(int nIndex)
 		OnDeactivatePage(nOldIndex);
 		pWnd = m_pPages[nOldIndex];
 		if ( pWnd ) {
-			pWnd->EnableWindow(FALSE);
+//			pWnd->EnableWindow(FALSE);
 			pWnd->ShowWindow(SW_HIDE);
 		}
 	}
@@ -153,10 +148,8 @@ void CTabView::ActivatePage(int nIndex)
 	GetTabCtrl().SetCurSel(nIndex);
 	pWnd = m_pPages[nIndex];
 	if ( pWnd ) {
-		CRect rc;
-		GetClientRect(&rc);
-		ResizePage(nIndex, rc.Width(), rc.Height());
-		pWnd->EnableWindow(TRUE);
+		ResizePage(pWnd);
+//		pWnd->EnableWindow(TRUE);
 		pWnd->ShowWindow(SW_SHOW);
 	}
 	OnActivatePage(nIndex);
@@ -180,33 +173,12 @@ int CTabView::PrevActivatePage(void)
 	return nIndex;
 }
 
-void CTabView::ResizePage(int nIndex, int cx, int cy)
+void CTabView::ResizePage(CWnd* pWnd)
 {
-	CWnd* pWnd = GetPage(nIndex);
-	if ( !pWnd )
-		return;
-
-	CRect rc;
-	GetTabCtrl().GetItemRect(nIndex, &rc);
-
-	int		x, y, nWidth, nHeight;
-	DWORD	dwStyle = GetTabCtrl().GetStyle();
-
-	if ( dwStyle & TCS_VERTICAL ) { // Vertical tabs
-		int nTabWidth = rc.Width() * GetTabCtrl().GetRowCount();
-		x = (dwStyle & TCS_RIGHT) ? 4 : nTabWidth + 4;
-		y = 4;
-		nWidth = cx - nTabWidth - 8;
-		nHeight = cy - 8;
-	}
-	else { // Horizontal tabs
-		int nTabHeight = rc.Height() * GetTabCtrl().GetRowCount();
-		x = 4;
-		y = (dwStyle & TCS_BOTTOM) ? 4 : nTabHeight + 4;
-		nWidth = cx - 8;
-		nHeight = cy - nTabHeight - 8;
-	}
-	pWnd->SetWindowPos(NULL, x, y, nWidth, nHeight, SWP_NOZORDER);
+	CRect	rc;
+	GetTabCtrl().GetClientRect(rc);
+	GetTabCtrl().AdjustRect(FALSE, rc);
+	pWnd->MoveWindow(rc);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -218,7 +190,7 @@ void CTabView::OnSize(UINT nType, int cx, int cy)
 	// view to prevent the dialog from clipping the view's inside border.
 	CCtrlView::OnSize (nType, cx, cy);
 	if ( GetPageCount() > 0 )
-		ResizePage(GetActivePage(), cx, cy);
+		ResizePage(GetActivePageWnd());
 }
 
 void CTabView::OnDestroy() 
@@ -239,7 +211,7 @@ void CTabView::OnSelChanging(NMHDR* pNMHDR, LRESULT* pResult)
 	// Save the input focus and hide the old page.
 	CWnd* pWnd = m_pPages[nIndex];
 	if ( pWnd ) {
-		pWnd->EnableWindow(FALSE);
+//		pWnd->EnableWindow(FALSE);
 		pWnd->ShowWindow(SW_HIDE);
 	}
 	*pResult = 0;
@@ -254,10 +226,8 @@ void CTabView::OnSelChange(NMHDR* pNMHDR, LRESULT* pResult)
 	// Show the new page.
 	CWnd* pWnd = m_pPages[nIndex];
 	if ( pWnd ) {
-		CRect rc;
-		GetClientRect(&rc);
-		ResizePage(nIndex, rc.Width(), rc.Height());
-		pWnd->EnableWindow(TRUE);
+		ResizePage(pWnd);
+//		pWnd->EnableWindow(TRUE);
 		pWnd->ShowWindow(SW_SHOW);
 	}
 

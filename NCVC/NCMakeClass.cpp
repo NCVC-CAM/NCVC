@@ -340,7 +340,7 @@ CString CNCMake::GetValString(int xyz, double dVal, BOOL bSpecial/*=FALSE*/)
 	case NCA_X:
 	case NCA_Y:
 	case NCA_Z:
-		if ( GetFlg(MKNC_FLG_GCLIP) && fabs(ms_xyz[xyz]-dVal)<EPS )
+		if ( GetFlg(MKNC_FLG_GCLIP) && fabs(ms_xyz[xyz]-dVal)<NCMIN )
 			return strResult;
 		else {
 			if ( GetNum(MKNC_NUM_G90) == 0 ) {	// ±ÌÞ¿Ø­°Ä

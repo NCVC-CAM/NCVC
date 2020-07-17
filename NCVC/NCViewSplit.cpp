@@ -21,7 +21,6 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CNCViewSplit, CSplitterWnd)
 	ON_WM_DESTROY()
-	ON_WM_ERASEBKGND()
 	ON_WM_LBUTTONDBLCLK()
 	// Õ°»Ş²Æ¼¬Ùˆ—
 	ON_MESSAGE (WM_USERINITIALUPDATE, OnUserInitialUpdate)
@@ -107,7 +106,7 @@ void CNCViewSplit::CalcPane(int nID, BOOL bInitial/*=FALSE*/)
 	int		nCyEdge = ::GetSystemMetrics(SM_CYEDGE) * 2;
 	int		nCol, nRow, nRow2;
 	CRect	rc;
-	GetParent()->GetClientRect(&rc);
+	GetParent()->GetClientRect(rc);
 
 	// ½ÌßØ¯À³¨İÄŞ³‚Ì‰Šú»²½Şİ’è
 	if ( nID == NCVIEW_FOURSVIEW ) {	// ‚S–Ê-1
@@ -233,11 +232,6 @@ void CNCViewSplit::OnDestroy()
 			}
 		}
 	}
-}
-
-BOOL CNCViewSplit::OnEraseBkgnd(CDC* pDC)
-{
-	return TRUE;
 }
 
 void CNCViewSplit::OnLButtonDblClk(UINT nFlags, CPoint point) 

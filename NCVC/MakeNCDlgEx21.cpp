@@ -6,7 +6,7 @@
 #include "Layer.h"
 #include "DXFDoc.h"
 #include "MakeNCDlg.h"
-#include "MakeNCDlgEx2.h"
+#include "MakeNCDlgEx.h"
 #include "MakeNCDlgEx21.h"
 
 #include "MagaDbgMac.h"
@@ -15,41 +15,60 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+#define	GetNCMakeParent()	static_cast<CMakeNCDlgEx *>(GetParent())
+
 BEGIN_MESSAGE_MAP(CMakeNCDlgEx21, CDialog)
 	//{{AFX_MSG_MAP(CMakeNCDlgEx21)
-	ON_BN_CLICKED(IDC_MKNCEX21_STEP, OnStep)
+	ON_CBN_SELCHANGE(IDC_MKNCEX_LAYER, OnSelChangeLayer)
+	ON_CBN_SETFOCUS(IDC_MKNCEX_LAYER, OnSetFocusLayer)
 	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, OnKillFocusNCFile)
 	ON_BN_CLICKED(IDC_MKNC_NCFILEUP, OnMKNCFileUp)
 	ON_BN_CLICKED(IDC_MKNCEX_COPY, OnCopy)
 	ON_BN_CLICKED(IDC_MKNCEX_PARTOUT, OnPartOut)
-	ON_CBN_SELCHANGE(IDC_MKNCEX_LAYER, OnSelChangeLayer)
-	ON_CBN_SETFOCUS(IDC_MKNCEX_LAYER, OnSetFocusLayer)
-	ON_BN_CLICKED(IDC_MKNCEX_NEW, OnNewLayerFile)
+	ON_BN_CLICKED(IDC_MKNCEX21_STEP, OnStep)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCDlgEx21 ダイアログ
 
-CMakeNCDlgEx21::CMakeNCDlgEx21(CMakeNCDlgEx2* pParent, int nIndex, const CString& strLayerFile)
+CMakeNCDlgEx21::CMakeNCDlgEx21(CMakeNCDlgEx* pParent, int nIndex)
 	: CDialog(CMakeNCDlgEx21::IDD, pParent)
 {
-	m_strLayerFile = strLayerFile;
+	// ｺﾝｽﾄﾗｸﾀでは GetNCMakeParent() は使えません
+
 	//{{AFX_DATA_INIT(CMakeNCDlgEx21)
 	//}}AFX_DATA_INIT
 
 	// ﾚｲﾔ情報のｾｯﾄ(上位ﾀﾞｲｱﾛｸﾞの表示順)
-	CLayerData*		pData;
+	int		i, nLoop;
+	CLayerData*		pLayer;
 	try {
-		const CListCtrl& Layer = pParent->m_ctLayerList;
-		for ( int i=0; i<Layer.GetItemCount(); i++ ) {
-			pData = new CLayerData(reinterpret_cast<const CLayerData *>(Layer.GetItemData(i)), Layer.GetCheck(i));
-			m_obLayer.Add(pData);
+		if ( ::IsWindow(pParent->m_dlg2.m_hWnd) ) {
+			// ﾚｲﾔﾀﾌﾞが有効な場合は、その明細から
+			const CListCtrl& ctLayer = pParent->m_dlg2.m_ctLayerList;
+			nLoop = ctLayer.GetItemCount();
+			for ( i=0; i<nLoop; i++ ) {
+				pLayer = new CLayerData(reinterpret_cast<const CLayerData *>(ctLayer.GetItemData(i)), ctLayer.GetCheck(i));
+				m_obLayer.Add(pLayer);
+			}
+		}
+		else {
+			// 現在のﾄﾞｷｭﾒﾝﾄから取得
+			CDXFDoc*	pDoc = pParent->GetDocument();
+			nLoop = pDoc->GetLayerCnt();
+			for ( i=0; i<nLoop; i++ ) {
+				pLayer = pDoc->GetLayerData(i);
+				if ( pLayer->IsCutType() ) {
+					pLayer = new CLayerData(pLayer, pLayer->m_bCutTarget);
+					m_obLayer.Add(pLayer);
+				}
+			}
 		}
 	}
 	catch (CMemoryException* e) {
-		if ( pData )
-			delete	pData;
+		if ( pLayer )
+			delete	pLayer;
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
 		m_nIndex = -1;
@@ -58,13 +77,15 @@ CMakeNCDlgEx21::CMakeNCDlgEx21(CMakeNCDlgEx2* pParent, int nIndex, const CString
 
 	// 初期表示ﾃﾞｰﾀは nIndex から取得
 	m_nIndex = nIndex<0 || nIndex>m_obLayer.GetUpperBound() ? 0 : nIndex;
-	pData = m_obLayer[m_nIndex];
-	::Path_Name_From_FullPath(pData->m_strNCFile, m_strNCPath, m_strNCFileName);
-	m_bDrill	= pData->m_bDrillZ;
-	m_bPartOut	= m_strNCFileName.IsEmpty() ? FALSE : pData->m_bPartOut;
-	m_bCheck	= pData->m_bCutTarget;
+	pLayer = m_obLayer[m_nIndex];
+	::Path_Name_From_FullPath(pLayer->m_strNCFile, m_strNCPath, m_strNCFileName);
+	m_bDrill	= pLayer->m_bDrillZ;
+	m_bPartOut	= m_strNCFileName.IsEmpty() ? FALSE : pLayer->m_bPartOut;
+	m_bCheck	= pLayer->m_bCutTarget;
+	m_strLayerComment	= pLayer->m_strLayerComment;
+	m_strLayerCode		= pLayer->m_strLayerCode;
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙの初期化は CDialog::OnInitDialog() 以降でないとｱｻｰﾄｴﾗｰ
-//	m_dZCut = pData->m_dZCut;
+//	m_dZCut = pLayer->m_dZCut;
 }
 
 CMakeNCDlgEx21::~CMakeNCDlgEx21()
@@ -88,6 +109,8 @@ void CMakeNCDlgEx21::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKNC3_ZSTEP, m_dZStep);
 	DDX_Control(pDX, IDC_MKNC1_ZCUT, m_dZCut);
 	DDX_Text(pDX, IDC_MKNC_NCFILE, m_strNCFileName);
+	DDX_Text(pDX, IDC_MKNCEX_LAYERCOMMENT, m_strLayerComment);
+	DDX_Text(pDX, IDC_MKNCEX_LAYERCODE, m_strLayerCode);
 	DDX_Check(pDX, IDC_MKNCEX21_DRILL, m_bDrill);
 	DDX_Check(pDX, IDC_MKNCEX_CHECK, m_bCheck);
 	DDX_Check(pDX, IDC_MKNCEX_PARTOUT, m_bPartOut);
@@ -96,24 +119,28 @@ void CMakeNCDlgEx21::DoDataExchange(CDataExchange* pDX)
 
 void CMakeNCDlgEx21::GetNowState(void)
 {
-	CLayerData* pData = m_obLayer[m_nIndex];
+	CLayerData* pLayer = m_obLayer[m_nIndex];
 	UpdateData();
-	pData->m_bCutTarget	= m_bCheck;
-	pData->m_bDrillZ	= m_bDrill;
-	pData->m_bPartOut	= m_bPartOut;
-	pData->m_dZCut		= m_dZCut;
-	pData->m_strNCFile	= m_strNCPath + m_strNCFileName;
+	pLayer->m_bCutTarget	= m_bCheck;
+	pLayer->m_bDrillZ	= m_bDrill;
+	pLayer->m_bPartOut	= m_bPartOut;
+	pLayer->m_dZCut		= m_dZCut;
+	pLayer->m_strNCFile	= m_strNCPath + m_strNCFileName;
+	pLayer->m_strLayerComment	= m_strLayerComment;
+	pLayer->m_strLayerCode		= m_strLayerCode;
 }
 
 void CMakeNCDlgEx21::SetNowState(int nIndex)
 {
 	m_nIndex = nIndex;
-	CLayerData* pData = m_obLayer[m_nIndex];
-	m_bCheck	= pData->m_bCutTarget;
-	m_bDrill	= pData->m_bDrillZ;
-	m_bPartOut	= pData->m_bPartOut;
-	m_dZCut		= pData->m_dZCut;
-	::Path_Name_From_FullPath(pData->m_strNCFile, m_strNCPath, m_strNCFileName);
+	CLayerData* pLayer = m_obLayer[m_nIndex];
+	m_bCheck	= pLayer->m_bCutTarget;
+	m_bDrill	= pLayer->m_bDrillZ;
+	m_bPartOut	= pLayer->m_bPartOut;
+	m_dZCut		= pLayer->m_dZCut;
+	m_strLayerComment	= pLayer->m_strLayerComment;
+	m_strLayerCode		= pLayer->m_strLayerCode;
+	::Path_Name_From_FullPath(pLayer->m_strNCFile, m_strNCPath, m_strNCFileName);
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_NCPATH, m_strNCPath);
 	UpdateData(FALSE);
 	EnablePartOut();
@@ -130,7 +157,7 @@ void CMakeNCDlgEx21::EnablePartOut(void)
 		m_ctNCFileName.EnableWindow(TRUE);
 		if ( m_strNCFileName.IsEmpty() ) {
 			// 親ﾀﾞｲｱﾛｸﾞからNCﾌｧｲﾙ名取得
-			::Path_Name_From_FullPath(((CMakeNCDlgEx2 *)m_pParentWnd)->GetNCFileName(),
+			::Path_Name_From_FullPath(GetNCMakeParent()->m_dlg1.GetNCFileName(),
 					m_strNCPath, m_strNCFileName, FALSE);
 			m_strNCFileName += "_" + m_obLayer[m_nIndex]->m_strLayer +
 				AfxGetNCVCApp()->GetDocExtString(TYPE_NCD);
@@ -160,11 +187,6 @@ BOOL CMakeNCDlgEx21::OnInitDialog()
 		return TRUE;
 	}
 
-	// ﾀｲﾄﾙ設定
-	GetWindowText(m_strCaption);	// 元のｳｨﾝﾄﾞｳﾀｲﾄﾙを取得
-	if ( !m_strLayerFile.IsEmpty() )
-		SetWindowText(::AddDialogTitle2File(m_strCaption, m_strLayerFile));
-
 	m_dZCut = m_obLayer[m_nIndex]->m_dZCut;
 	// ﾚｲﾔﾘｽﾄの初期化
 	for ( int i=0; i<m_obLayer.GetSize(); i++ )
@@ -191,28 +213,27 @@ void CMakeNCDlgEx21::OnOK()
 	GetNowState();
 
 	// 各ﾌｧｲﾙのﾁｪｯｸ
-	CLayerData* pData;
+	CLayerData* pLayer;
 	for ( int i=0; i<m_obLayer.GetSize(); i++ ) {
-		pData = m_obLayer[i];
-		if ( !pData->m_bCutTarget )
+		pLayer = m_obLayer[i];
+		if ( !pLayer->m_bCutTarget )
 			continue;
 		// 個別ﾌｧｲﾙ名のﾁｪｯｸ
-		if ( pData->m_bPartOut ) {
-			strNCFile = pData->m_strNCFile;
+		if ( pLayer->m_bPartOut ) {
+			strNCFile = pLayer->m_strNCFile;
 			if ( !CheckMakeDlgFileExt(TYPE_NCD, strNCFile) ) {
 				m_ctNCFileName.SetFocus();
 				m_ctNCFileName.SetSel(0, -1);
 				SetNowState(i);
 				return;
 			}
-			if ( strNCFile.CompareNoCase(pData->m_strNCFile) )
-				pData->m_strNCFile = strNCFile;
+			if ( strNCFile.CompareNoCase(pLayer->m_strNCFile) )
+				pLayer->m_strNCFile = strNCFile;
 		}
 	}
 
 	// 個別ﾌｧｲﾙの重複ﾁｪｯｸ(上位ﾌｧｲﾙとの重複ﾁｪｯｸはなし)
-	CMakeNCDlgEx2*	pParent = (CMakeNCDlgEx2 *)m_pParentWnd;
-	CString	strResult( pParent->GetDocument()->CheckDuplexFile(CString(), &m_obLayer) );
+	CString	strResult( GetNCMakeParent()->GetDocument()->CheckDuplexFile(CString(), &m_obLayer) );
 	if ( !strResult.IsEmpty() ) {
 		int	nResult = m_ctLayer.FindString(-1, strResult);
 		m_ctLayer.SetCurSel(nResult);
@@ -269,23 +290,27 @@ void CMakeNCDlgEx21::OnCopy()
 	// 現在の情報を取得
 	GetNowState();
 	// 現在位置以降にﾃﾞｰﾀをｺﾋﾟｰ
-	CLayerData* pData = m_obLayer[m_nIndex];
-	BOOL	bCheck		= pData->m_bCutTarget;
-	double	dZCut		= pData->m_dZCut;
-	BOOL	bDrill		= pData->m_bDrillZ;
-	BOOL	bPartOut	= pData->m_bPartOut;
+	CLayerData* pLayer = m_obLayer[m_nIndex];
+	BOOL	bCheck		= pLayer->m_bCutTarget,
+			bDrill		= pLayer->m_bDrillZ,
+			bPartOut	= pLayer->m_bPartOut;
+	double	dZCut		= pLayer->m_dZCut;
+	CString	strComment	= pLayer->m_strLayerComment,
+			strCode		= pLayer->m_strLayerCode;
 	CString	strPath, strFile, strNCFile;
-	::Path_Name_From_FullPath(((CMakeNCDlgEx2 *)m_pParentWnd)->GetNCFileName(),
+	::Path_Name_From_FullPath(GetNCMakeParent()->m_dlg1.GetNCFileName(),
 			strPath, strFile, FALSE);
 	strNCFile = strPath + strFile + "_";
 	for ( int i=m_nIndex+1; i<m_obLayer.GetSize(); i++ ) {
-		pData = m_obLayer[i];
-		pData->m_bCutTarget	= bCheck;
-		pData->m_dZCut		= dZCut;
-		pData->m_bDrillZ	= bDrill;
-		pData->m_bPartOut	= bPartOut;
-		if ( bPartOut && pData->m_strNCFile.IsEmpty() )
-			pData->m_strNCFile = strNCFile + pData->m_strLayer + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD);
+		pLayer = m_obLayer[i];
+		pLayer->m_bCutTarget	= bCheck;
+		pLayer->m_bPartOut		= bPartOut;
+		pLayer->m_dZCut			= dZCut;
+		pLayer->m_bDrillZ		= bDrill;
+		pLayer->m_strLayerComment	= strComment;
+		pLayer->m_strLayerCode		= strCode;
+		if ( bPartOut && pLayer->m_strNCFile.IsEmpty() )
+			pLayer->m_strNCFile = strNCFile + pLayer->m_strLayer + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD);
 	}
 	m_ctLayer.SetFocus();
 }
@@ -316,24 +341,5 @@ void CMakeNCDlgEx21::OnPartOut()
 	else {
 		UpdateData();
 		EnablePartOut();
-	}
-}
-
-void CMakeNCDlgEx21::OnNewLayerFile() 
-{
-	CDXFDoc*	pDoc = ((CMakeNCDlgEx2 *)m_pParentWnd)->GetDocument();
-	CString		strPath, strFile;
-	if ( m_strLayerFile.IsEmpty() )
-		CreateLayerFile(pDoc, strPath, strFile);
-	else
-		::Path_Name_From_FullPath(m_strLayerFile, strPath, strFile);
-
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_LAYER2INITSAVE, IDS_NCL_FILTER,
-				strFile, strPath, FALSE, OFN_HIDEREADONLY|OFN_OVERWRITEPROMPT) == IDOK ) {
-		pDoc->SaveLayerMap(strFile);
-		if ( m_strLayerFile.CompareNoCase(strFile) != 0 ) {
-			m_strLayerFile = strFile;
-			SetWindowText(::AddDialogTitle2File(m_strCaption, m_strLayerFile));
-		}
 	}
 }

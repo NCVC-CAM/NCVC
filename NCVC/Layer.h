@@ -23,6 +23,7 @@ class CLayerData : public CObject
 friend	class	CLayerDlg;
 friend	class	CMakeNCDlgEx1;
 friend	class	CMakeNCDlgEx2;
+friend	class	CMakeNCDlgEx3;
 friend	class	CMakeNCDlgEx11;
 friend	class	CMakeNCDlgEx21;
 
@@ -42,7 +43,9 @@ friend	class	CMakeNCDlgEx21;
 			m_bDrillZ,		// 最深Z座標を穴加工にも適用するか
 			m_bPartOut;		// 個別出力ﾌﾗｸﾞ
 	CString	m_strInitFile,	// 切削条件ﾌｧｲﾙ
-			m_strNCFile;	// 個別出力ﾌｧｲﾙ名
+			m_strNCFile,	// 個別出力ﾌｧｲﾙ名
+			m_strLayerComment,	// ﾚｲﾔごとのｺﾒﾝﾄ
+			m_strLayerCode;		// ﾚｲﾔごとの特殊ｺｰﾄﾞ
 	double	m_dInitZCut,	// 切削条件ﾌｧｲﾙに設定された最深Z座標(CMakeNCDlgEx1::表示)
 			m_dZCut;		// 最深Z座標(CMakeNCDlgEx2::入力)
 
@@ -63,15 +66,15 @@ public:
 	INT_PTR	GetShapeSize(void) const {
 		return m_obShapeArray.GetSize();
 	}
-	CDXFdata* GetDxfData(int n) const {
+	CDXFdata* GetDxfData(INT_PTR n) const {
 		ASSERT(n>=0 && n<GetDxfSize());
 		return m_obDXFArray[n];
 	}
-	CDXFtext* GetDxfTextData(int n) const {
+	CDXFtext* GetDxfTextData(INT_PTR n) const {
 		ASSERT(n>=0 && n<GetDxfTextSize());
 		return m_obDXFTextArray[n];
 	}
-	CDXFshape*	GetShapeData(int n) {
+	CDXFshape*	GetShapeData(INT_PTR n) {
 		ASSERT(n>=0 && n<GetShapeSize());
 		return m_obShapeArray[n];
 	}
@@ -113,10 +116,10 @@ public:
 	BOOL	IsPartOut(void) const {
 		return m_bPartOut;
 	}
-	int		GetListNo(void) const {
+	int		GetLayerListNo(void) const {
 		return m_nListNo;
 	}
-	void	SetListNo(int n) {
+	void	SetLayerListNo(int n) {
 		m_nListNo = n;
 	}
 	DWORD	GetLayerFlags(void) const {
@@ -137,6 +140,12 @@ public:
 	}
 	double	GetZCut(void) const {
 		return m_dZCut;
+	}
+	CString	GetLayerComment(void) const {
+		return m_strLayerComment;
+	}
+	CString	GetLayerOutputCode(void) const {
+		return m_strLayerCode;
 	}
 
 // ｵﾍﾟﾚｰｼｮﾝ

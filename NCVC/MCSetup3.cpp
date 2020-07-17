@@ -123,7 +123,7 @@ BOOL CMCSetup3::OnInitDialog()
 			g_ToolHeader[i].lpszName, g_ToolHeader[i].nFormat);
 	}
 	// 列幅
-	m_ctToolList.GetClientRect(&rc);
+	m_ctToolList.GetClientRect(rc);
 	m_ctToolList.SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
 	m_ctToolList.SetColumnWidth(2, LVSCW_AUTOSIZE_USEHEADER);
 	m_ctToolList.SetColumnWidth(3, m_ctToolList.GetColumnWidth(2));
@@ -329,7 +329,7 @@ void CMCSetup3::OnMod()
 	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	// ﾃﾞｰﾀ置換 -> 削除ﾌﾗｸﾞを立てて新たに登録
-	CMCTOOLINFO*	pToolInfo = (CMCTOOLINFO *)(m_ctToolList.GetItemData(nIndex));
+	CMCTOOLINFO*	pToolInfo = reinterpret_cast<CMCTOOLINFO *>(m_ctToolList.GetItemData(nIndex));
 	pToolInfo->m_bDlgDel = TRUE;
 	pos = NULL;
 	pToolInfo = NULL;
@@ -337,7 +337,7 @@ void CMCSetup3::OnMod()
 		pToolInfo = new CMCTOOLINFO(m_nToolNo, m_strToolName, m_dToolD, m_dToolH, TRUE);
 		pos = pMCopt->m_ltTool.AddTail(pToolInfo);
 		// ﾘｽﾄｺﾝﾄﾛｰﾙの該当ﾃﾞｰﾀを置換
-		if ( !m_ctToolList.SetItemData(nIndex, (DWORD)pToolInfo) ) {
+		if ( !m_ctToolList.SetItemData(nIndex, reinterpret_cast<DWORD_PTR>(pToolInfo)) ) {
 			CString	strMsg;
 			strMsg.Format(IDS_ERR_ADDITEM, nIndex+1);
 			AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
@@ -371,7 +371,7 @@ void CMCSetup3::OnDel()
 		return;
 
 	// ﾎﾟｲﾝﾀを削除するとｷｬﾝｾﾙできなくなるので配列の削除はﾀﾞｲｱﾛｸﾞOK後
-	((CMCTOOLINFO *)(m_ctToolList.GetItemData(nIndex)))->m_bDlgDel = TRUE;
+	reinterpret_cast<CMCTOOLINFO *>(m_ctToolList.GetItemData(nIndex))->m_bDlgDel = TRUE;
 
 	m_ctToolList.DeleteItem(nIndex);
 	m_nToolNo.SetFocus();

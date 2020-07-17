@@ -160,10 +160,11 @@
     <ClCompile Include="MakeDXFDlg1.cpp" />
     <ClCompile Include="MakeDXFDlg2.cpp" />
     <ClCompile Include="MakeNCDlg.cpp" />
-    <ClCompile Include="MakeNCDlgEx1.cpp" />
+    <ClCompile Include="MakeNCDlgEx.cpp" />
     <ClCompile Include="MakeNCDlgEx11.cpp" />
     <ClCompile Include="MakeNCDlgEx2.cpp" />
     <ClCompile Include="MakeNCDlgEx21.cpp" />
+    <ClCompile Include="MakeNCDlgEx3.cpp" />
     <ClCompile Include="MCOption.cpp" />
     <ClCompile Include="MCSetup.cpp" />
     <ClCompile Include="MCSetup1.cpp" />
@@ -262,10 +263,11 @@
     <ClInclude Include="MakeDXFDlg1.h" />
     <ClInclude Include="MakeDXFDlg2.h" />
     <ClInclude Include="MakeNCDlg.h" />
-    <ClInclude Include="MakeNCDlgEx1.h" />
+    <ClInclude Include="MakeNCDlgEx.h" />
     <ClInclude Include="MakeNCDlgEx11.h" />
     <ClInclude Include="MakeNCDlgEx2.h" />
     <ClInclude Include="MakeNCDlgEx21.h" />
+    <ClInclude Include="MakeNCDlgEx3.h" />
     <ClInclude Include="MCOption.h" />
     <ClInclude Include="MCSetup.h" />
     <ClInclude Include="MCSetup1.h" />

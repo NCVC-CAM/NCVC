@@ -559,7 +559,7 @@ BOOL MultiLayer(int nID)
 		// 生成開始
 #ifdef _DEBUG
 		dbg.printf("No.%d ID=%d Name=%s Cut=%f", i+1,
-			pLayer->GetListNo(), pLayer->GetStrLayer(), g_dZCut);
+			pLayer->GetLayerListNo(), pLayer->GetStrLayer(), g_dZCut);
 #endif
 		if ( !MakeNCD_MainFunc(pLayer) ) {
 #ifdef _DEBUG
@@ -804,7 +804,7 @@ void SetGlobalMapToLayer(const CLayerData* pLayer)
 		if ( pData->GetType() == DXFELLIPSEDATA ) {
 			pEllipse = static_cast<CDXFellipse*>(pData);
 			if ( GetFlg(MKNC_FLG_ELLIPSE) &&
-					fabs( RoundUp(pEllipse->GetLongLength()) - RoundUp(pEllipse->GetShortLength()) ) < EPS ) {
+					fabs( RoundUp(pEllipse->GetLongLength()) - RoundUp(pEllipse->GetShortLength()) ) < NCMIN ) {
 				// 長径短径が等しい楕円なら円弧か円ﾃﾞｰﾀに変身
 				pData->ChangeMakeType( pEllipse->IsArc() ? DXFARCDATA : DXFCIRCLEDATA);
 			}
@@ -1093,10 +1093,23 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer
 			AddMoveGdata(0, g_dZReturn, -1.0);
 		}
 	}
-	// ﾚｲﾔごとのｺﾒﾝﾄ
-	if ( !strLayer.IsEmpty() && GetFlg(MKNC_FLG_LAYERCOMMENT) ) {
-		strBuf.Format(IDS_MAKENCD_LAYERBREAK, strLayer);
-		AddMakeGdataStr(strBuf);
+	// ﾚｲﾔごとのｺﾒﾝﾄと出力ｺｰﾄﾞ
+	if ( !strLayer.IsEmpty() ) {
+		// ｺﾒﾝﾄ処理
+		if ( GetFlg(MKNC_FLG_LAYERCOMMENT) ) {
+			strBuf = pLayer->GetLayerComment();
+			if ( strBuf.IsEmpty() )
+				strBuf.Format(IDS_MAKENCD_LAYERBREAK, strLayer);
+			else
+				strBuf = "(" + strBuf + ")";
+			AddMakeGdataStr(strBuf);
+		}
+		// 出力ｺｰﾄﾞ
+		strBuf = pLayer->GetLayerOutputCode();
+		if ( !strBuf.IsEmpty() ) {
+			strBuf.Replace("\\n", "\n");
+			AddMakeGdataStr(strBuf);
+		}
 		// 同じｺﾒﾝﾄを入れないようにﾚｲﾔ名をｸﾘｱ
 		strLayer.Empty();
 	}
@@ -1850,7 +1863,7 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 		dGap2 = GAPCALC(pData->GetEndCutterPoint()   - ptNow);
 		if ( pDataFix ) {
 			CPointD	ptFix( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
-			if ( GAPCALC(pDataFix->GetEndCutterPoint() - ptFix) > EPS ) {
+			if ( sqrt(GAPCALC(pDataFix->GetEndCutterPoint()-ptFix)) > NCMIN ) {
 				bReverse = TRUE;
 				// 開始ｵﾌﾞｼﾞｪｸﾄの終点(bReverseなので始点で判断)
 				// の方が近い場合は、次のｵﾌﾞｼﾞｪｸﾄから開始
@@ -2059,7 +2072,7 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bE
 				}
 				else {
 					CPointD	ptFix( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
-					if ( GAPCALC(pData->GetEndCutterPoint() - ptFix) > EPS )
+					if ( sqrt(GAPCALC(pData->GetEndCutterPoint()-ptFix)) > NCMIN )
 						bReverse = TRUE;
 				}
 				break;
@@ -2593,7 +2606,7 @@ int MakeLoopDrillPoint_SeqChk(int nMatch, int nAxis, CDXFsort* pAxis)
 
 	double	dGap = fabs(pts[nAxis]-ptNow[nAxis]) - fabs(pte[nAxis]-ptNow[nAxis]);
 
-	if ( fabs(dGap) < EPS ) {
+	if ( fabs(dGap) < NCMIN ) {
 		// 前後の距離が等しいので残り件数の多い方へ
 		if ( nCntF > nCntL ) {
 			pAxis->Reverse();

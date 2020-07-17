@@ -14,8 +14,7 @@
 #include "NCDoc.h"
 #include "NCMakeOption.h"
 #include "MakeNCDlg.h"
-#include "MakeNCDlgEx1.h"
-#include "MakeNCDlgEx2.h"
+#include "MakeNCDlgEx.h"
 #include "ThreadDlg.h"
 
 #include "MagaDbgMac.h"
@@ -34,7 +33,8 @@ static	LPCTSTR	g_szLayerToInitComment[] = {
 	"## NCVC:ﾚｲﾔ名と切削条件ﾌｧｲﾙの関係情報ﾌｧｲﾙ\n",
 	"## ﾚｲﾔ名，切削対象ﾌﾗｸﾞ(1:対象 0:除外)，切削条件ﾌｧｲﾙ,\n",
 	"##\t強制最深Z, 強制最深Zを穴加工にも適用(1:する 0:しない),\n",
-	"##\t個別出力(1:する 0:しない), 個別出力ﾌｧｲﾙ名\n"
+	"##\t個別出力(1:する 0:しない), 個別出力ﾌｧｲﾙ名,\n"
+	"##\t出力ｼｰｹﾝｽ, 出力ｺﾒﾝﾄ, 出力ｺｰﾄﾞ\n"
 };
 // ﾚｲﾔの切削順
 static	int		LayerCompareFunc_CutNo(CLayerData*, CLayerData*);
@@ -225,6 +225,7 @@ CString CDXFDoc::CheckDuplexFile(const CString& strOrgFile, const CLayerArray* p
 		strFile = pLayer->GetNCFile();
 		if ( !pLayer->IsCutTarget() || !pLayer->IsPartOut() || strFile.IsEmpty() )
 			continue;
+		strLayer = pLayer->GetStrLayer();
 		// ｵﾘｼﾞﾅﾙﾌｧｲﾙとの重複ﾁｪｯｸ(上位ﾀﾞｲｱﾛｸﾞのみ)
 		if ( !strOrgFile.IsEmpty() ) {
 			if ( strOrgFile.CompareNoCase(strFile) == 0 ) {
@@ -304,7 +305,9 @@ BOOL CDXFDoc::SaveLayerMap(LPCTSTR lpszFile)
 	int		i;
 
 	try {
-		m_obLayer.Sort(LayerCompareFunc_Name);
+		CLayerArray	obLayer;
+		obLayer.Copy( m_obLayer );
+		obLayer.Sort(LayerCompareFunc_Name);	// 保存のためだけに名前順ｿｰﾄ
 		//
 		CStdioFile	fp(lpszFile,
 				CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive | CFile::typeText);
@@ -323,6 +326,11 @@ BOOL CDXFDoc::SaveLayerMap(LPCTSTR lpszFile)
 		CString	strMsg;
 		strMsg.Format(IDS_ERR_DXF2NCDINIT_EX, lpszFile);
 		AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		return FALSE;
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
 		return FALSE;
 	}
@@ -943,6 +951,8 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 	int		i;
 	BOOL	bNCView;
 	CLayerData* pLayer;
+	CString	strInit, strLayerFile;
+	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
 
 	if ( nID == ID_FILE_DXF2NCD_SHAPE ) {
 		// 全ﾚｲﾔを対象に
@@ -957,45 +967,52 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 
 	switch ( nID ) {
 	case ID_FILE_DXF2NCD:		// 標準生成
-	{
-		CMakeNCDlg		dlg(IDS_MAKENCD_TITLE_BASIC, this);
-		if ( dlg.DoModal() != IDOK )
-			return;
-		m_strNCFileName	= dlg.m_strNCFileName;
-		bNCView = dlg.m_bNCView;
-	}
+		{
+			CMakeNCDlg		dlg(IDS_MAKENCD_TITLE_BASIC, this);
+			if ( dlg.DoModal() != IDOK )
+				return;
+			m_strNCFileName	= dlg.m_strNCFileName;
+			strInit = dlg.m_strInitFileName;
+			bNCView = dlg.m_bNCView;
+		}
 		break;
 
 	case ID_FILE_DXF2NCD_EX1:	// ﾚｲﾔごとの複数条件
-	{
-		CMakeNCDlgEx1	dlg(this);
-		if ( dlg.DoModal() != IDOK )
-			return;
-		m_strNCFileName	= dlg.m_strNCFileName;
-		bNCView = dlg.m_bNCView;
-	}
-		break;
-
 	case ID_FILE_DXF2NCD_EX2:	// ﾚｲﾔごとのZ座標
-	{
-		CMakeNCDlgEx2	dlg(this);
-		if ( dlg.DoModal() != IDOK )
-			return;
-		m_strNCFileName	= dlg.m_strNCFileName;
-		bNCView = dlg.m_bNCView;
-	}
+		{
+			CMakeNCDlgEx	ps(nID, this);
+			ps.SetWizardMode();
+			if ( ps.DoModal() != ID_WIZFINISH )
+				return;
+			m_strNCFileName	= ps.m_strNCFileName;
+			strInit = ps.m_strInitFileName;
+			strLayerFile = ps.m_strLayerToInitFileName;
+			bNCView = ps.m_dlg1.m_bNCView;
+		}
 		break;
 
 	case ID_FILE_DXF2NCD_SHAPE:	// 形状処理
-	{
-		CMakeNCDlg	dlg(IDS_MAKENCD_TITLE_SHAPE, this);
-		if ( dlg.DoModal() != IDOK )
-			return;
-		m_strNCFileName	= dlg.m_strNCFileName;
-		bNCView = dlg.m_bNCView;
-	}
+		{
+			CMakeNCDlg	dlg(IDS_MAKENCD_TITLE_SHAPE, this);
+			if ( dlg.DoModal() != IDOK )
+				return;
+			m_strNCFileName	= dlg.m_strNCFileName;
+			strInit = dlg.m_strInitFileName;
+			bNCView = dlg.m_bNCView;
+		}
 		break;
 	}
+
+	// 設定の保存
+	if ( !strInit.IsEmpty() ) {
+		pOpt->AddInitHistory(strInit);
+	}
+	if ( !strLayerFile.IsEmpty() ) {
+		if ( SaveLayerMap(strLayerFile) )
+			pOpt->AddLayerHistory(strLayerFile);
+	}
+	pOpt->SetViewFlag(bNCView);
+	pOpt->SaveInitHistory();
 
 	BOOL		bAllOut;
 	CNCDoc*		pDoc;
@@ -1009,7 +1026,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		bAllOut = FALSE;
 		for ( i=0; i<m_obLayer.GetSize(); i++ ) {
 			pLayer = m_obLayer[i];
-			if ( pLayer->IsCutType() && pLayer->IsViewLayer() ) {
+			if ( pLayer->IsMakeTarget() ) {
 				if ( pLayer->IsPartOut() ) {
 					pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(pLayer->GetNCFile());
 					if ( pDoc )
@@ -1053,7 +1070,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		bAllOut = FALSE;	// m_strNCFileName も開くかどうか
 		for ( i=0; i<m_obLayer.GetSize(); i++ ) {
 			pLayer = m_obLayer[i];
-			if ( pLayer->IsCutType() && pLayer->IsViewLayer() && pLayer->GetLayerFlags()==0 ) {
+			if ( pLayer->IsMakeTarget() && pLayer->GetLayerFlags()==0 ) {
 				if ( pLayer->IsPartOut() )
 					AfxGetNCVCApp()->OpenDocumentFile(pLayer->GetNCFile());
 				else
@@ -1121,7 +1138,7 @@ UINT CDXFDoc::RestoreCircleTypeThread(LPVOID pParam)
 
 int LayerCompareFunc_CutNo(CLayerData* pFirst, CLayerData* pSecond)
 {
-	return pFirst->GetListNo() - pSecond->GetListNo();
+	return pFirst->GetLayerListNo() - pSecond->GetLayerListNo();
 }
 
 int LayerCompareFunc_Name(CLayerData* pFirst, CLayerData* pSecond)

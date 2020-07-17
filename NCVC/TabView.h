@@ -12,7 +12,8 @@ class CTabView : public CCtrlView
 	CTypedPtrArrayEx<CObArray, CWnd*> m_pPages;
 
 public:
-	CTabView() : CCtrlView(_T("SysTabControl32"), AFX_WS_DEFAULT_VIEW) {}
+	CTabView() : CCtrlView(WC_TABCONTROL,
+		AFX_WS_DEFAULT_VIEW|WS_CLIPCHILDREN|WS_CLIPSIBLINGS) {}
 	DECLARE_DYNCREATE(CTabView)
 
 // アトリビュート
@@ -46,7 +47,7 @@ public:
 	}
 
 protected:
-	void	ResizePage(int nIndex, int cx, int cy);
+	void	ResizePage(CWnd*);
 
 // オーバーライド
 protected:

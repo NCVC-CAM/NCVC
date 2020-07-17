@@ -554,28 +554,8 @@ inline const CPointD CDXFcircleEx::GetEndMakePoint(void) const
 inline void CDXFarc::SetRsign(void)
 {
 	// ‰ñ“]Šp“x‚ª 180‹‚ğ‰z‚¦‚éÃŞ°À‚Í¶¬ÃŞ°À—p‚Ì”¼Œa‚ğÏ²Å½
-	if ( fabs(m_eqDraw-m_sqDraw)*DEG - 180.0 > EPS )
+	if ( fabs(m_eqDraw-m_sqDraw)*DEG - 180.0 >= NCMIN )
 		m_rMake = -m_rMake;
-}
-
-inline void CDXFarc::AngleTuning(void)
-{
-	if ( m_sq < 0.0 )
-		m_sq += 360.0*RAD;
-	if ( m_eq < 0.0 )
-		m_eq += 360.0*RAD;
-	double	d;
-	if ( m_bRound ) {
-		// ”÷–­‚ÈŒë·‚Ì‹zû(=>”÷×‰~ŒÊ‚ª‘å‚«‚È‰~‚É•Ï‚í‚Á‚Ä‚µ‚Ü‚¤)
-		d = ::RoundUp(m_sq*DEG);
-		while ( d >= ::RoundUp(m_eq*DEG) )
-			m_eq += 360.0*RAD;
-	}
-	else {
-		d = ::RoundUp(m_eq*DEG);
-		while ( d >= ::RoundUp(m_sq*DEG) )
-			m_sq += 360.0*RAD;
-	}
 }
 
 inline BOOL CDXFarc::GetRoundOrig(void) const
@@ -623,11 +603,10 @@ inline void CDXFarc::SwapPt(int n)	// Îß²İÄ‚Ì“ü‚ê‘Ö‚¦(+‰ñ“]•ûŒü‚Ì”½“])
 inline void CDXFarc::SetNativePoint(size_t a, const CPointD& pt)
 {
 	CDXFdata::SetNativePoint(a, pt);
+	// Šp“x‚ÌÄŒvZ
+	double&	q = a==0 ? m_sq : m_eq;		// QÆŒ^
+	q = atan2(m_pt[a].y-m_ct.y, m_pt[a].x-m_ct.x);
 	// Šp“x‚Ì’²®
-	if ( a == 0 )
-		m_sq = atan2(m_pt[0].y-m_ct.y, m_pt[0].x-m_ct.x);
-	else
-		m_eq = atan2(m_pt[1].y-m_ct.y, m_pt[1].x-m_ct.x);
 	AngleTuning();
 	m_sqDraw = m_sq;
 	m_eqDraw = m_eq;

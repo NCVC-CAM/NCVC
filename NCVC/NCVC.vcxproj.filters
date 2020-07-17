@@ -123,7 +123,7 @@
     <ClCompile Include="MakeNCDlg.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MakeNCDlgEx1.cpp">
+    <ClCompile Include="MakeNCDlgEx.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="MakeNCDlgEx11.cpp">
@@ -133,6 +133,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="MakeNCDlgEx21.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="MakeNCDlgEx3.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="MCOption.cpp">
@@ -416,7 +419,7 @@
     <ClInclude Include="MakeNCDlg.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MakeNCDlgEx1.h">
+    <ClInclude Include="MakeNCDlgEx.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="MakeNCDlgEx11.h">
@@ -426,6 +429,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="MakeNCDlgEx21.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="MakeNCDlgEx3.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="MCOption.h">
