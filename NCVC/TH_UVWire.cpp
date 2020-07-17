@@ -515,9 +515,9 @@ BOOL SetArgvCornerRobject
 	else {
 		// ‹‚ß‚½º°Å°R‚Ì’†S(pto)‚©‚ç‰ñ“]•ûŒü‚ğŒvZ
 		pts -= pto;		pte -= pto;
-		if ( (pa=atan2(pts.y, pts.x)) < 0.0f )
+		if ( (pa=pts.arctan()) < 0.0f )
 			pa += PI2;
-		if ( (pb=atan2(pte.y, pte.x)) < 0.0f )
+		if ( (pb=pte.arctan()) < 0.0f )
 			pb += PI2;
 		if ( fabs(pa-pb) > PI ) {
 			if ( pa > pb )

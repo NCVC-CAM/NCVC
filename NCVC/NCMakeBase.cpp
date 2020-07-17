@@ -108,7 +108,7 @@ void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, float dFeed)
 	}
 	else {
 		pt = pEllipse->GetStartCutterPoint() - pEllipse->GetMakeCenter();
-		sq = atan2(pt.y, pt.x) - pEllipse->GetMakeLean();	// ŒX‚«‚ð‹zŽû
+		sq = pt.arctan() - pEllipse->GetMakeLean();	// ŒX‚«‚ð‹zŽû
 		if ( pEllipse->GetRound() )
 			eq = sq + PI2;
 		else
@@ -261,7 +261,7 @@ CString	CNCMakeBase::GetSpindleString_Clip(int)
 CString	CNCMakeBase::GetFeedString(float dFeed)
 {
 	CString		strResult;
-	if ( dFeed!=0.0 && ms_dFeed!=dFeed ) {
+	if ( dFeed!=0.0f && ms_dFeed!=dFeed ) {
 		ms_dFeed = dFeed;
 		strResult = g_szGdelimiter[F_TYPE] + (*ms_pfnGetFeed)(dFeed);
 	}
@@ -405,9 +405,9 @@ CString	CNCMakeBase::MakeCircle_IJHALF(const CDXFcircle* pCircle, float dFeed)
 	else 			// XŽ²ÍÞ°½
 		ij.x = pCircle->GetIJK(NCA_I);
 	CString	strGcode;
-	CString	strBuf1( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(b), ij, 0.0) );
+	CString	strBuf1( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(b), ij, 0.0f) );
 	ij *= -1.0;		// ij = -ij;
-	CString	strBuf2( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(a), ij, 0.0) );
+	CString	strBuf2( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(a), ij, 0.0f) );
 	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() )
 		strGcode = (*ms_pfnGetLineNo)() + strBuf1 + GetFeedString(dFeed) + ms_strEOB +
 						(*ms_pfnGetLineNo)() + strBuf2 + ms_strEOB;
@@ -481,7 +481,7 @@ CString	CNCMakeBase::MakeArc_IJ(const CDXFarc* pArc, float dFeed)
 {
 	CPointF	ij(pArc->GetIJK(NCA_I), pArc->GetIJK(NCA_J));
 	CString	strGcode,
-			strBuf( (*ms_pfnMakeCircleSub)(pArc->GetG(), pArc->GetEndMakePoint(), ij, 0.0) );
+			strBuf( (*ms_pfnMakeCircleSub)(pArc->GetG(), pArc->GetEndMakePoint(), ij, 0.0f) );
 	if ( !strBuf.IsEmpty() )
 		strGcode = (*ms_pfnGetLineNo)() + strBuf + GetFeedString(dFeed) + ms_strEOB;
 	return strGcode;

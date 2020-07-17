@@ -199,7 +199,7 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 	else if ( GetDocument()->IsDocFlag(NCDOC_CUTCALC) )
 		VERIFY(strFormat.LoadString(IDCV_CUTCALC));
 	else {
-		float	dMove = 0.0, dTime = GetDocument()->GetCutTime();
+		float	dMove = 0.0f, dTime = GetDocument()->GetCutTime();
 		for ( i=0; i<2; i++ ) {
 			strFormat.Format(IDCV_VALFORMAT, GetDocument()->GetMoveData(i));
 			rc.SetRect(X, i*nHeight, W, (i+1)*nHeight);
@@ -330,7 +330,7 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 	int		i;
 	int		ZX[] = {NCA_Z, NCA_X},
 			XZ[] = {NCA_X, NCA_Z};
-	float	dMove = 0.0, dTime = pDoc->GetCutTime(),
+	float	dMove = 0.0f, dTime = pDoc->GetCutTime(),
 			dResult[2];
 
 	VERIFY(strBuf.LoadString(IDCV_MILI));

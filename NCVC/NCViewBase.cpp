@@ -287,14 +287,14 @@ void CNCViewBase::SetDataMaxRect(void)
 	float	dLength;
 	if ( m_rcDataMax.Width() <= NCMIN ) {
 		dLength = pOpt->GetGuideLength(x);
-		if ( dLength == 0.0 )
+		if ( dLength == 0.0f )
 			dLength = g_dDefaultGuideLength;
 		m_rcDataMax.left  = -dLength;
 		m_rcDataMax.right =  dLength;
 	}
 	if ( m_rcDataMax.Height() <= NCMIN ) {
 		dLength = pOpt->GetGuideLength(y);
-		if ( dLength == 0.0 )
+		if ( dLength == 0.0f )
 			dLength = g_dDefaultGuideLength;
 		m_rcDataMax.top    = -dLength;
 		m_rcDataMax.bottom =  dLength;
@@ -475,7 +475,7 @@ LRESULT CNCViewBase::OnUserViewFitMsg(WPARAM, LPARAM lParam)
 
 LRESULT CNCViewBase::OnUserActivatePage(WPARAM, LPARAM lParam)
 {
-	if ( m_dFactor == 0.0 ) {
+	if ( m_dFactor == 0.0f ) {
 		// OnUserInitialUpdate() Ç™é¿çsÇ≥ÇÍÇƒÇ¢Ç»Ç¢Ç∆Ç´
 		OnLensKey(ID_VIEW_FIT);
 	}

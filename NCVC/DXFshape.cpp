@@ -1987,13 +1987,13 @@ BOOL CDXFshape::LinkShape(CDXFshape* pShape)
 	return bResult;
 }
 
-BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dOffset/*=0.0*/)
+BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dOffset/*=0.0f*/)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CreateOutlineTempObject()", DBG_MAGENTA);
 	CPointF		ptDbg1, ptDbg2, ptDbg3;
 #endif
-	if ( dOffset <= 0.0 )
+	if ( dOffset <= 0.0f )
 		dOffset = m_dOffset;	// ÃÞÌ«ÙÄµÌ¾¯Ä’l
 
 	// è—L‹éŒ`—Ìˆæ‚Ì‰Šú‰»
@@ -2406,7 +2406,7 @@ BOOL CDXFshape::CreateScanLine_ScrollCircle(CDXFchain* pResult)
 	dxfArc.c.x	= pto.x + r;
 	dxfArc.c.y	= pto.y;
 	dxfArc.sq	= PI;	// RAD(180.0)
-	dxfArc.eq	= 0.0;
+	dxfArc.eq	= 0.0f;
 
 	while ( dMax - fabs(pte.x-pto.x) > NCMIN ) {
 		pData = new CDXFarc(&dxfArc, FALSE, pts, pte);
@@ -2417,14 +2417,14 @@ BOOL CDXFshape::CreateScanLine_ScrollCircle(CDXFchain* pResult)
 		if ( nCnt++ & 0x01 ) {
 			dxfArc.c.x = pto.x;
 			pte.x = dxfArc.c.x - dxfArc.r;
-			dxfArc.sq = 0.0;
+			dxfArc.sq = 0.0f;
 			dxfArc.eq = -PI;
 		}
 		else {
 			dxfArc.c.x = pto.x + r;
 			pte.x = dxfArc.c.x + dxfArc.r;
 			dxfArc.sq = PI;
-			dxfArc.eq = 0.0;
+			dxfArc.eq = 0.0f;
 		}
 	}
 
@@ -2809,9 +2809,9 @@ CDXFdata* CreateDxfOffsetObject
 			dxfArc.pLayer = pArc->GetParentLayer();
 			dxfArc.c = pArc->GetCenter();
 			dxfArc.r = pArc->GetR() + dOffset * k;
-			if ( (dxfArc.sq=atan2(pts.y-dxfArc.c.y, pts.x-dxfArc.c.x)) < 0.0 )
+			if ( (dxfArc.sq=dxfArc.c.arctan(pts)) < 0.0f )
 				dxfArc.sq += PI2;
-			if ( (dxfArc.eq=atan2(pte.y-dxfArc.c.y, pte.x-dxfArc.c.x)) < 0.0 )
+			if ( (dxfArc.eq=dxfArc.c.arctan(pte)) < 0.0f )
 				dxfArc.eq += PI2;
 			// µØ¼ÞÅÙ‰~ŒÊ‚ÆµÌ¾¯Ä‰~ŒÊ‚Ì‰ñ“]•ûŒüÁª¯¸
 			if ( k != 0 ) {
@@ -2865,13 +2865,13 @@ CDXFdata* CreateDxfOffsetObject
 				if ( q < -1.0f || 1.0f < q )
 					q = copysign(1.0f, q);	// -1.0 or 1.0
 				dxfEllipse.sq = copysign(acos(q), pt1.y);
-				if ( dxfEllipse.sq < 0.0 )
+				if ( dxfEllipse.sq < 0.0f )
 					dxfEllipse.sq += PI2;
 				q = pt2.x / l;
 				if ( q < -1.0f || 1.0f < q )
 					q = copysign(1.0f, q);
 				dxfEllipse.eq = copysign(acos(q), pt2.y);
-				if ( dxfEllipse.eq < 0.0 )
+				if ( dxfEllipse.eq < 0.0f )
 					dxfEllipse.eq += PI2;
 				if ( k != 0 ) {
 					optional<CPointF> ptResult = ::CalcIntersectionPoint_LL(

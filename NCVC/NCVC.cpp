@@ -1760,7 +1760,7 @@ CRecentViewInfo::CRecentViewInfo(LPCTSTR lpszPathName)
 		m_strFile = lpszPathName;
 	for ( int i=0; i<SIZEOF(m.objectXform); i++ ) {
 		for ( int j=0; j<SIZEOF(m.objectXform[0]); j++ )
-			m.objectXform[i][j] = 0.0;
+			m.objectXform[i][j] = 0.0f;
 	}
 }
 

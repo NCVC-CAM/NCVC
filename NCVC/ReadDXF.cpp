@@ -190,13 +190,13 @@ static inline void _ArbitraryAxis(CPointF& pt)	// ”CˆÓ‚ÌŽ²‚Ì±ÙºÞØ½ÞÑ
 
 	if ( fabs(g_dValue[VALUE210])<(1.0/64.0) && fabs(g_dValue[VALUE220])<(1.0/64.0) ) {
 		ax[NCA_X] =  g_dValue[VALUE230];
-		ax[NCA_Y] =  0.0;
+		ax[NCA_Y] =  0.0f;
 		ax[NCA_Z] = -g_dValue[VALUE210];
 	}
 	else {
 		ax[NCA_X] = -g_dValue[VALUE220];
 		ax[NCA_Y] =  g_dValue[VALUE210];
-		ax[NCA_Z] =  0.0;
+		ax[NCA_Z] =  0.0f;
 	}
 	ay[NCA_X] = g_dValue[VALUE220]*ax[NCA_Z] - g_dValue[VALUE230]*ax[NCA_Y];
 	ay[NCA_Y] = g_dValue[VALUE230]*ax[NCA_X] - g_dValue[VALUE210]*ax[NCA_Z];
@@ -399,21 +399,21 @@ static inline BOOL _SetBlockArgv(LPCDXFBLOCK lpBlock)
 			lpBlock->dwBlockFlg |= DXFBLFLG_X;
 		}
 		else {
-			lpBlock->dMagni[NCA_X] = 1.0;
+			lpBlock->dMagni[NCA_X] = 1.0f;
 		}
 		if ( g_dwValueFlg & VALFLG42 ) {
 			lpBlock->dMagni[NCA_Y] = g_dValue[VALUE42];
 			lpBlock->dwBlockFlg |= DXFBLFLG_Y;
 		}
 		else {
-			lpBlock->dMagni[NCA_Y] = 1.0;
+			lpBlock->dMagni[NCA_Y] = 1.0f;
 		}
 		if ( g_dwValueFlg & VALFLG50 ) {
 			lpBlock->dRound = g_dValue[VALUE50];
 			lpBlock->dwBlockFlg |= DXFBLFLG_R;
 		}
 		else {
-			lpBlock->dRound = 0.0;
+			lpBlock->dRound = 0.0f;
 		}
 		return TRUE;
 	}
@@ -453,7 +453,7 @@ static inline void _NotsupportList(void)
 static inline void _InitialVariable(void)
 {
 	g_bVertex = g_bPuff = FALSE;
-	g_ptPuff = g_dPuff = 0.0;
+	g_ptPuff = g_dPuff = 0.0f;
 	g_nType = TYPE_NOTSUPPORT;
 	g_nBlock = g_nLayer = -1;
 	g_strLayer.Empty();
@@ -1131,7 +1131,7 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 	case 0:		// VERTEX
 		g_bVertex = TRUE;
 		g_dPuff = g_dValue[VALUE42];
-		g_bPuff = g_dValue[VALUE42] == 0.0 ? FALSE : TRUE;
+		g_bPuff = g_dValue[VALUE42] == 0.0f ? FALSE : TRUE;
 		_ClearValue();
 		break;
 
@@ -1171,7 +1171,7 @@ BOOL PolylineEndProcedure(CDXFDoc* pDoc)
 		dxfPoint.c = g_pPolyline->GetFirstPoint();	// Å‰‚ÌÀ•W‚ªI“_
 		// ÅŒã‚É‚Ó‚­‚ç‚Ýî•ñ‚ª‚È‚¢ê‡‚ÍCDXFpoint“o˜^
 		// ‚ ‚éê‡‚ÍCDXFarc“o˜^
-		if ( !(g_dValue[VALUE42]==0.0 ?
+		if ( !(g_dValue[VALUE42]==0.0f ?
 				g_pPolyline->SetVertex(&dxfPoint) :
 				g_pPolyline->SetVertex(&dxfPoint, g_dValue[VALUE42], g_ptPuff)) ) {
 			AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
@@ -1225,8 +1225,8 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc, BOOL bEnd)
 	// ŽŸ‚ÌÃÞ°À‚É”õ‚¦‚é
 	g_ptPuff = dxfPoint.c;
 	g_dPuff = g_dValue[VALUE42];
-	g_bPuff = g_dValue[VALUE42] == 0.0 ? FALSE : TRUE;
-	g_dValue[VALUE42] = 0.0;
+	g_bPuff = g_dValue[VALUE42] == 0.0f ? FALSE : TRUE;
+	g_dValue[VALUE42] = 0.0f;
 
 	return TRUE;
 }

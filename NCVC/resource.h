@@ -317,7 +317,6 @@
 #define IDC_VIEWSETUP5_TEXTURE          2413
 #define IDC_VIEWSETUP5_TEXTUREFILE      2414
 #define IDC_VIEWSETUP5_TEXTUREFIND      2415
-#define IDC_VIEWSETUP5_SOLIDVIEW2       2416
 #define IDC_VIEWSETUP5_NOACTIVETRACEGL  2416
 #define IDC_VIEWSETUP5_ST_WORK          2420
 #define IDC_VIEWSETUP5_ST_CUT           2421
@@ -688,6 +687,7 @@
 #define IDS_REG_DXF_XREV                10198
 #define IDS_REG_NCV_MCFILE              10210
 #define IDS_REG_NCV_MCTOOLSORT          10211
+#define IDS_REG_NCV_FINDSTR             10212
 #define IDS_REG_NCV_INPUT               10213
 #define IDS_REG_NCV_MOVE                10214
 #define IDS_REG_NCV_DEFFEED             10215

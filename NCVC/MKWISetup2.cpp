@@ -78,7 +78,7 @@ BOOL CMKWISetup2::OnKillActive()
 	if ( !__super::OnKillActive() )
 		return FALSE;
 
-	if ( m_dAWFcircleLo<0 || m_dAWFcircleHi<0.0 ) {
+	if ( m_dAWFcircleLo<0 || m_dAWFcircleHi<0.0f ) {
 		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
 		m_dAWFcircleLo.SetFocus();
 		m_dAWFcircleLo.SetSel(0, -1);

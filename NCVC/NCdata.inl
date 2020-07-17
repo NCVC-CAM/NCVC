@@ -25,7 +25,7 @@ inline void CNCdata::Constracter(LPNCARGV lpArgv)
 	m_nc.nGcode		= lpArgv->nc.nGcode;
 	m_nc.enPlane	= lpArgv->nc.enPlane;
 	m_nc.dwValFlags	= lpArgv->nc.dwValFlags;
-	m_nc.dLength	= 0.0;
+	m_nc.dLength	= 0.0f;
 	m_nSpindle		= lpArgv->nSpindle;
 	m_dFeed			= (float)lpArgv->dFeed;
 	m_dEndmill		= (float)lpArgv->dEndmill;
@@ -249,7 +249,7 @@ inline CNCarray* CNCdata::GetCorrectArray(void)
 inline boost::tuple<BOOL, CPointF, float, float> CNCdata::CalcRoundPoint(const CNCdata*, float) const
 {
 	BOOL	bResult = FALSE;
-	float	rr1 = 0.0, rr2 = 0.0;
+	float	rr1 = 0.0f, rr2 = 0.0f;
 	return boost::make_tuple(bResult, CPointF(), rr1, rr2);
 }
 
@@ -260,7 +260,7 @@ inline boost::optional<CPointF> CNCdata::SetChamferingPoint(BOOL, float)
 
 inline float CNCdata::CalcBetweenAngle(const CNCdata*) const
 {
-	return 0.0;
+	return 0.0f;
 }
 
 inline int CNCdata::CalcOffsetSign(void) const
@@ -290,8 +290,8 @@ inline void CNCdata::SetCorrectPoint(ENPOINTORDER, const CPointF&, float)
 inline float CNCdata::SetCalcLength(void)
 {
 	ZEROCLR(m_dMove);
-	m_nc.dLength = 0.0;
-	return 0.0;
+	m_nc.dLength = 0.0f;
+	return 0.0f;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -423,7 +423,7 @@ inline CRect3F CNCcycle::GetMaxCutRect(void) const
 inline boost::tuple<BOOL, CPointF, float, float> CNCcycle::CalcRoundPoint(const CNCdata*, float) const
 {
 	BOOL	bResult = FALSE;
-	float	rr1 = 0.0, rr2 = 0.0;
+	float	rr1 = 0.0f, rr2 = 0.0f;
 	return boost::make_tuple(bResult, CPointF(), rr1, rr2);
 }
 
@@ -434,7 +434,7 @@ inline boost::optional<CPointF> CNCcycle::SetChamferingPoint(BOOL, float)
 
 inline float CNCcycle::CalcBetweenAngle(const CNCdata*) const
 {
-	return 0.0;
+	return 0.0f;
 }
 
 inline int CNCcycle::CalcOffsetSign(void) const

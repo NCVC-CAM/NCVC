@@ -74,19 +74,19 @@ void CNCView::SetGuideData(void)
 
 	// Ｘ軸のガイド初期化（左から右へ）
 	dLength = pOpt->GetGuideLength(NCA_X);
-	pt.SetPoint(-dLength, 0.0, 0.0);
+	pt.SetPoint(-dLength, 0.0f, 0.0f);
 	m_ptGuide[NCA_X][0] = pt.PointConvert() * dSrc;
 	pt.x = dLength;
 	m_ptGuide[NCA_X][1] = pt.PointConvert() * dSrc;
 	// Ｙ軸のガイド初期化（奥から手前へ）
 	dLength = pOpt->GetGuideLength(NCA_Y);
-	pt.SetPoint(0.0, dLength, 0.0);
+	pt.SetPoint(0.0f, dLength, 0.0f);
 	m_ptGuide[NCA_Y][0] = pt.PointConvert() * dSrc;
 	pt.y = -dLength;
 	m_ptGuide[NCA_Y][1] = pt.PointConvert() * dSrc;
 	// Ｚ軸のガイド初期化（上から下へ）
 	dLength = pOpt->GetGuideLength(NCA_Z);
-	pt.SetPoint(0.0, 0.0, dLength);
+	pt.SetPoint(0.0f, 0.0f, dLength);
 	m_ptGuide[NCA_Z][0] = pt.PointConvert() * dSrc;
 	pt.z = -dLength;
 	m_ptGuide[NCA_Z][1] = pt.PointConvert() * dSrc;
@@ -101,21 +101,21 @@ void CNCView::SetDataMaxRect(void)
 	float	dLength;
 	if ( rc.Width() <= NCMIN ) {
 		dLength = pOpt->GetGuideLength(NCA_X);
-		if ( dLength == 0.0 )
+		if ( dLength == 0.0f )
 			dLength = g_dDefaultGuideLength;
 		rc.left  = -dLength;
 		rc.right =  dLength;
 	}
 	if ( rc.Height() <= NCMIN ) {
 		dLength = pOpt->GetGuideLength(NCA_Y);
-		if ( dLength == 0.0 )
+		if ( dLength == 0.0f )
 			dLength = g_dDefaultGuideLength;
 		rc.top    = -dLength;
 		rc.bottom =  dLength;
 	}
 	if ( rc.Depth() <= NCMIN ) {
 		dLength = pOpt->GetGuideLength(NCA_Z);
-		if ( dLength == 0.0 )
+		if ( dLength == 0.0f )
 			dLength = g_dDefaultGuideLength;
 		rc.low  = -dLength;
 		rc.high =  dLength;

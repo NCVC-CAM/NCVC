@@ -126,7 +126,7 @@ CNCMakeWire::CNCMakeWire(int nCode, const CPointF& pt, float dFeed, float dTaper
 {
 	// Ã°ÊßŽwŽ¦º°ÄÞ
 	CString	strTaper;
-	if ( dTaper != 0.0 ) {
+	if ( dTaper != 0.0f ) {
 		if ( nCode == 0 )
 			strTaper = GetGString(50) + "T0";
 		else

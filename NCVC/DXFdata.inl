@@ -269,7 +269,7 @@ inline float CDXFline::GetLength(void) const
 inline void CDXFcircle::GetQuarterPoint(const CPointF& ptClick, CPointF pt[]) const
 {
 	// ｸﾘｯｸﾎﾟｲﾝﾄの角度を取得
-	float	lq = atan2(ptClick.y - m_ct.y, ptClick.x - m_ct.x);
+	float	lq = m_ct.arctan(ptClick);
 	if ( lq < 0 )
 		lq += PI2;
 	// 角度(位置)から1/4の始点終点座標を取得(反時計回りで考える)
@@ -324,7 +324,7 @@ inline float CDXFcircle::GetSelectPointGap_Circle
 {
 	CPointF	pt1(pt - m_ct);
 	float	q1, q2;
-	if ( (q1=atan2(pt1.y, pt1.x)) < 0.0 )
+	if ( (q1=pt1.arctan()) < 0.0f )
 		q1 += PI2;
 	q2 = q1 + PI2;
 	return (sq <= q1 && q1 <= eq) || (sq <= q2 && q2 <= eq) ?
@@ -368,7 +368,7 @@ inline float CDXFcircle::GetIJK(int nType) const
 	else if ( nType == NCA_J )
 		return ::RoundUp( m_ctTun.y - m_ptTun[m_nArrayExt].y );
 	// NCA_K 無視
-	return 0.0;
+	return 0.0f;
 }
 
 inline const CPointF CDXFcircle::GetCenter(void) const
@@ -383,7 +383,7 @@ inline const CPointF CDXFcircle::GetMakeCenter(void) const
 
 inline void CDXFcircle::SetEllipseArgv(LPCDXFBLOCK lpBlock, LPCDXFEARGV lpArgv)
 {
-	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0, PI2, TRUE);
+	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0f, PI2, TRUE);
 }
 
 inline BOOL CDXFcircle::IsMakeTarget(void) const
@@ -550,7 +550,7 @@ inline void CDXFarc::SetNativePoint(size_t a, const CPointF& pt)
 	CDXFdata::SetNativePoint(a, pt);
 	// 角度の再計算
 	float&	q = a==0 ? m_sq : m_eq;		// 参照型
-	q = atan2(m_pt[a].y-m_ct.y, m_pt[a].x-m_ct.x);
+	q = m_ct.arctan(m_pt[a]);
 	// 角度の調整
 	AngleTuning();
 	m_sqDraw = m_sq;

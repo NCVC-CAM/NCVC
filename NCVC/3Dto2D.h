@@ -69,10 +69,10 @@ inline double RoundCt(double dVal)
 	return copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
 }
 
+template<typename T> class	CPoint3T;
+
 //////////////////////////////////////////////////////////////////////
 // 実数型 CPoint の雛形
-
-template<typename T> class	CPoint3T;
 
 template<typename T>
 class CPointT :
@@ -167,7 +167,10 @@ public:
 		ASSERT(a>=0 && a<SIZEOF(xy));
 		return xy[a];
 	}
-	T	hypot(void) const;	// 特殊化のためここでは宣言のみ
+//	T		hypot(void) const;	// 特殊化のためここでは宣言のみ
+	T		hypot(void) const {
+		return ::sqrt(x*x + y*y);
+	}
 	// 変換関数
 	operator CPoint() const {
 		return CPoint((int)x, (int)y);
@@ -189,20 +192,30 @@ public:
 		x = pt.x * cos_q - pt.y * sin_q;
 		y = pt.x * sin_q + pt.y * cos_q;
 	}
+	// 角度（atan2(pt.y, pt.x)書く手間省略）
+	T		arctan(void) const {
+		return atan2(y, x);
+	}
+	// 自分を基点とした指定点への角度
+	T		arctan(const CPointT<T> e) const {
+		return atan2(e.y-y, e.x-x);
+	}
 };
 typedef	CPointT<double>			CPointD;
 typedef	CPointT<float>			CPointF;
 typedef	std::vector<CPointF>	CVPointF;
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointF, float,  cs::cartesian, x, y)
-template<typename T> T CPointT<T>::hypot(void) const
+//BOOST_GEOMETRY_REGISTER_POINT_2D(CPointD, double, cs::cartesian, x, y)
+/*
+template<typename T> inline T CPointT<T>::hypot(void) const
 {
-	return ::hypotf(x, y);
+	return ::hypotf(x, y);	// hypot()はなぜかfloatとdoubleで区別
 }
-template<> double CPointT<double>::hypot(void) const
+template<> inline double CPointT<double>::hypot(void) const
 {
 	return ::hypot(x, y);
 }
-
+*/
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD クラス
 
@@ -318,6 +331,14 @@ public:
 	void	SetPoint(T xx, T yy, T zz) {
 		x = xx;		y = yy;		z = zz;
 	}
+	// 角度（atan2(pt.y, pt.x)書く手間省略 2D only）
+	T		arctan(void) const {
+		return atan2(y, x);
+	}
+	// 自分を基点とした指定点への角度(2D only)
+	T		arctan(const CPoint3T<T> e) const {
+		return atan2(e.y-y, e.x-x);
+	}
 	// 2D変換
 	CPointT<T>	PointConvert(void) const {
 		// Ｚ軸回りの回転変位
@@ -337,6 +358,7 @@ typedef	CPoint3T<double>	CPoint3D;
 typedef	CPoint3T<float>		CPoint3F;
 typedef	std::vector<CPoint3F>	CVPoint3F;
 //BOOST_GEOMETRY_REGISTER_POINT_3D(CPoint3F, float,  cs::cartesian, x, y, z)
+//BOOST_GEOMETRY_REGISTER_POINT_3D(CPoint3D, double, cs::cartesian, x, y, z)
 
 //////////////////////////////////////////////////////////////////////
 // 実数型の CRectｸﾗｽ
@@ -497,13 +519,14 @@ public:
 };
 typedef	CRectT<double>	CRectD;
 typedef	CRectT<float>	CRectF;
+//BOOST_GEOMETRY_REGISTER_BOX_2D_4VALUES(CRectF, CPointF, left, top, right, bottom)
 //BOOST_GEOMETRY_REGISTER_BOX_2D_4VALUES(CRectD, CPointD, left, top, right, bottom)
-template<typename T> void CRectT<T>::SetRectMinimum(void)
+template<typename T> inline void CRectT<T>::SetRectMinimum(void)
 {
 	left  = top    =  FLT_MAX;
 	right = bottom = -FLT_MAX;
 }
-template<> void CRectT<double>::SetRectMinimum(void)
+template<> inline void CRectT<double>::SetRectMinimum(void)
 {
 	left  = top    =  DBL_MAX;
 	right = bottom = -DBL_MAX;
@@ -596,13 +619,13 @@ public:
 };
 typedef	CRect3T<double>	CRect3D;
 typedef	CRect3T<float>	CRect3F;
-template<typename T> void CRect3T<T>::SetRectMinimum(void)
+template<typename T> inline void CRect3T<T>::SetRectMinimum(void)
 {
 	CRectT<T>::SetRectMinimum();
 	high  = -FLT_MAX;
 	low   =  FLT_MAX;
 }
-template<> void CRect3T<double>::SetRectMinimum(void)
+template<> inline void CRect3T<double>::SetRectMinimum(void)
 {
 	CRectD::SetRectMinimum();
 	high  = -DBL_MAX;
@@ -636,10 +659,19 @@ inline	double	GAPCALC(const CPointD& pt)
 //	ｵﾌｾｯﾄ符号(進行方向左側)
 inline int	CalcOffsetSign(const CPointF& pt)
 {
-	float	dAngle = RoundUp( DEG(atan2(pt.y, pt.x)) );
+	float	dAngle = RoundUp( DEG(pt.arctan()) );
 	return ( dAngle < -90.0f || 90.0f <= dAngle ) ? -1 : 1;
 }
-
+/*
+// (sx,sy)-(ex,ey) から ax+by+c=0 の係数を求める
+inline boost::tuple<float, float, float> CalcLineABC(const CPointF& pts, const CPointF& pte)
+{
+	float	a = pte.y - pts.y,
+			b = pte.x - pts.x,
+			c = pte.x*pts.y - pts.x*pte.y;
+	boost::make_tuple(a, b, c);
+}
+*/
 //	２線の交点を求める
 boost::optional<CPointF>	CalcIntersectionPoint_LL
 	(const CPointF&, const CPointF&, const CPointF&, const CPointF&, BOOL = TRUE);

@@ -529,8 +529,8 @@ float CDXFline::GetSelectPointGap(const CPointF& pt)
 		CPointF	pt1 = pt      - m_pt[0],	// 始点を原点に
 				pt2 = m_pt[1] - m_pt[0];
 		float	l  = pt1.hypot(),
-				qp = atan2(pt1.y, pt1.x),
-				qs = atan2(pt2.y, pt2.x);
+				qp = pt1.arctan(),
+				qs = pt2.arctan();
 		dResult = l * fabs( sin(qp - qs) );
 	}
 
@@ -545,7 +545,7 @@ float CDXFline::GetSelectPointGap(const CPointF& pt)
 
 BOOL CDXFline::GetDirectionArraw(const CPointF&, CPointF pt[][3])
 {
-	float	lqs = atan2(m_pt[1].y - m_pt[0].y, m_pt[1].x - m_pt[0].x),
+	float	lqs = m_pt[0].arctan(m_pt[1]),
 			lqe = lqs + PI;		// + RAD(180.0)
 	float	lq[][2] = { {lqs + ARRAWANGLE, lqs - ARRAWANGLE},
 						{lqe + ARRAWANGLE, lqe - ARRAWANGLE} };
@@ -635,20 +635,20 @@ int CDXFline::GetIntersectionPoint(const CPointF& pts, const CPointF& pte, CPoin
 
 	int		nResult = 0;
 	CPointF	pto(m_pt[1]-m_pt[0]), ptc;
-	float	q = atan2(pto.y, pto.x);
-	pto.RoundPoint(-q);
+	float	q = -pto.arctan();
+	pto.RoundPoint(q);
 	optional<CPointF>	ptResult;
 
 	// 線上ﾁｪｯｸ
 	ptc = pts - m_pt[0];
-	ptc.RoundPoint(-q);
+	ptc.RoundPoint(q);
 	if ( 0<=ptc.x+NCMIN && ptc.x-NCMIN<=pto.x && fabs(ptc.y)<=NCMIN ) {
 		// 解は線上にあり
 		pt[0] = pts;
 		return 1;
 	}
 	ptc = pte - m_pt[0];
-	ptc.RoundPoint(-q);
+	ptc.RoundPoint(q);
 	if ( 0<=ptc.x+NCMIN && ptc.x-NCMIN<=pto.x && fabs(ptc.y)<=NCMIN ) {
 		pt[0] = pte;
 		return 1;
@@ -736,7 +736,7 @@ int CDXFline::CheckIntersectionCircle(const CPointF& ptc, float r) const
 
 size_t CDXFline::SetVectorPoint(CVPointF& vpt, float k) const
 {
-	if ( k == 0.0 )
+	if ( k == 0.0f )
 		return CDXFpoint::SetVectorPoint(vpt);
 
 	vpt.push_back(GetEndMakePoint());
@@ -746,8 +746,8 @@ size_t CDXFline::SetVectorPoint(CVPointF& vpt, float k) const
 void CDXFline::SetVectorPoint(CVPointF& vpt, size_t n) const
 {
 	CPointF	pts(GetStartMakePoint()), pte(GetEndMakePoint()),
-			pto(pte - pts), pt;
-	float	q = atan2(pto.y, pto.x),
+			pt;
+	float	q = pts.arctan(pte),
 			s = GetLength() / n,	// 刻み回数から刻み幅を求める
 			r = s;
 	for ( size_t i=0; i<n-1; i++, r+=s ) {	// 終点分
@@ -1015,7 +1015,7 @@ BOOL CDXFcircle::GetDirectionArraw(const CPointF& ptClick, CPointF ptResult[][3]
 	GetQuarterPoint(ptClick, pt);
 	// 接線の傾きを求める -> 点ptに直交する線の傾き
 	float	q[] = {
-		-atan2(pt[0].x - m_ct.x, pt[0].y - m_ct.y)+PI,
+		-atan2(pt[0].x - m_ct.x, pt[0].y - m_ct.y)+PI,		// XとYが逆？
 		-atan2(pt[1].x - m_ct.x, pt[1].y - m_ct.y)
 	};
 	// 接線から矢印座標の計算
@@ -1181,7 +1181,7 @@ void CDXFcircle::SetWireHeteroData(const CDXFdata*, CVPointF&, CVPointF&, float)
 // ＤＸＦデータのCircleExクラス
 //////////////////////////////////////////////////////////////////////
 
-CDXFcircleEx::CDXFcircleEx() : CDXFcircle(DXFCIRCLEDATA, NULL, CPointF(), 0.0, FALSE, 0, 0)
+CDXFcircleEx::CDXFcircleEx() : CDXFcircle(DXFCIRCLEDATA, NULL, CPointF(), 0.0f, FALSE, 0, 0)
 {
 }
 
@@ -1262,14 +1262,14 @@ float CDXFcircleEx::OrgTuning(BOOL/*=TRUE*/)
 	m_ctTun = m_ct - ms_ptOrg;
 	m_ctMake = m_ctTun.RoundUp();
 	OrgTuningBase();
-	return 0.0;		// dummy
+	return 0.0f;	// dummy
 }
 
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのArcクラス
 //////////////////////////////////////////////////////////////////////
 
-CDXFarc::CDXFarc() : CDXFcircle(DXFARCDATA, NULL, CPointF(), 0.0, TRUE, 2, 0)
+CDXFarc::CDXFarc() : CDXFcircle(DXFARCDATA, NULL, CPointF(), 0.0f, TRUE, 2, 0)
 {
 }
 
@@ -1509,7 +1509,7 @@ size_t CDXFarc::SetVectorPoint(CVPointF& vpt, float k) const
 	CPointF	ptOrg;
 
 	// k が指定されているときは挙動が違う
-	if ( k == 0.0 ) {
+	if ( k == 0.0f ) {
 		bRound	= m_bRoundOrig;
 		sq		= m_sqDraw;
 		eq		= m_eqDraw;
@@ -1525,7 +1525,7 @@ size_t CDXFarc::SetVectorPoint(CVPointF& vpt, float k) const
 	}
 
 	// 円弧微細線分を vector<> に登録
-	if ( k == 0.0 ) {
+	if ( k == 0.0f ) {
 		// 始点登録は k==0.0 のときのみ
 		CPointF	pt(m_r * cos(sq) + ptOrg.x, m_r * sin(sq) + ptOrg.y);
 		vpt.push_back(pt);
@@ -1598,7 +1598,7 @@ void CDXFarc::YRev(void)
 
 void CDXFarc::AngleTuning(void)
 {
-	if ( m_sq<0.0 || m_eq<0.0 ) {
+	if ( m_sq<0.0f || m_eq<0.0f ) {
 		m_sq += PI2;
 		m_eq += PI2;
 	}
@@ -1624,8 +1624,7 @@ void CDXFarc::AngleTuning(void)
 
 BOOL CDXFarc::IsRangeAngle(const CPointF& pt) const
 {
-	CPointF	ptr( pt - m_ct );
-	float	q = atan2(ptr.y, ptr.x);
+	float	q = m_ct.arctan(pt);
 	if ( q < 0 )
 		q += PI2;
 	q = ::RoundUp(DEG(q));	// 度で判断
@@ -1736,7 +1735,7 @@ BOOL CDXFarc::GetDirectionArraw(const CPointF&, CPointF pt[][3])
 {
 	// 接線の傾きを求める -> 点ptに直交する線の傾き
 	float	q[] = {
-		-atan2(m_pt[0].x - m_ct.x, m_pt[0].y - m_ct.y),
+		-atan2(m_pt[0].x - m_ct.x, m_pt[0].y - m_ct.y),		// XとYが逆？
 		-atan2(m_pt[1].x - m_ct.x, m_pt[1].y - m_ct.y)
 	};
 	// 矢印が常に円弧の内側に来るよう角度の補正
@@ -1906,12 +1905,12 @@ CDXFellipse::CDXFellipse() : CDXFarc(DXFELLIPSEDATA, NULL, CPointF(), 0, 0, 0, T
 
 CDXFellipse::CDXFellipse(LPCDXFEARGV lpEllipse, DWORD dwFlags) :
 	CDXFarc(DXFELLIPSEDATA, lpEllipse->pLayer,
-		lpEllipse->c, 0.0, lpEllipse->sq, lpEllipse->eq, lpEllipse->bRound, 4, dwFlags)
+		lpEllipse->c, 0.0f, lpEllipse->sq, lpEllipse->eq, lpEllipse->bRound, 4, dwFlags)
 {
 	m_ptLong = lpEllipse->l;
 	m_dShort = lpEllipse->s;
 	// 楕円の傾きを計算
-	m_lqMake = m_lq = atan2(m_ptLong.y, m_ptLong.x);
+	m_lqMake = m_lq = m_ptLong.arctan();
 	// 初期化処理
 	Construct();
 	// 各種計算
@@ -1945,7 +1944,7 @@ CDXFellipse::CDXFellipse(CLayerData* pLayer, const CDXFellipse* pData, LPCDXFBLO
 		float	len = m_dLongLength * m_dShort;
 		m_r = max(m_dLongLength, len);
 		m_rMake = ::RoundUp(m_r);
-		m_lqMake = m_lq = atan2(m_ptLong.y, m_ptLong.x);
+		m_lqMake = m_lq = m_ptLong.arctan();
 		EllipseCalc();
 	}
 	else {
@@ -2044,10 +2043,10 @@ void CDXFellipse::EllipseCalc(void)
 	}
 	else {
 		// 円と同等(各軸４点使用)
-		m_pt[0].SetPoint( m_dLongLength,     0.0 );	//   0°
-		m_pt[1].SetPoint(           0.0,  dShort );	//  90°
-		m_pt[2].SetPoint(-m_dLongLength,     0.0 );	// 180°
-		m_pt[3].SetPoint(           0.0, -dShort );	// 270°
+		m_pt[0].SetPoint( m_dLongLength,    0.0f );	//   0°
+		m_pt[1].SetPoint(          0.0f,  dShort );	//  90°
+		m_pt[2].SetPoint(-m_dLongLength,    0.0f );	// 180°
+		m_pt[3].SetPoint(          0.0f, -dShort );	// 270°
 		CPointF	pt;
 		for ( i=0; i<m_nPoint; i++ ) {
 			pt = m_pt[i];
@@ -2082,14 +2081,14 @@ void CDXFellipse::SetMaxRect(void)
 	}
 	else {
 		pte.x = pts.x = m_dLongLength;
-		pte.y = pts.y = 0.0;
+		pte.y = pts.y = 0.0f;
 	}
 
 	// 各象限の軸最大値
-	ptc[0].SetPoint(  m_dLongLength,       0 );
-	ptc[1].SetPoint(              0,  dShort );
-	ptc[2].SetPoint( -m_dLongLength,       0 );
-	ptc[3].SetPoint(              0, -dShort );
+	ptc[0].SetPoint(  m_dLongLength,    0.0f );
+	ptc[1].SetPoint(           0.0f,  dShort );
+	ptc[2].SetPoint( -m_dLongLength,    0.0f );
+	ptc[3].SetPoint(           0.0f, -dShort );
 
 	// ２点の矩形は必ず通るので，
 	// 初期値として最大値・最小値を代入
@@ -2278,8 +2277,8 @@ void CDXFellipse::XYRev(const CPointF& pts, const CPointF& pte)
 	// 回転方向の反転
 	SwapRound();
 	// 角度の再計算
-	m_sq = atan2(pts.y, pts.x);
-	m_eq = atan2(pte.y, pte.x);
+	m_sq = pts.arctan();
+	m_eq = pte.arctan();
 	AngleTuning();
 	// (角度再計算後)偏平率の反映
 	CPointF	pt1[2], pt;
@@ -2406,11 +2405,11 @@ float CDXFellipse::GetSelectPointGap(const CPointF& pt)
 	}
 	CPointF	pt1(pt - m_ct);
 	// 傾きが無い状態で判定するようｸﾘｯｸﾎﾟｲﾝﾄを補正
-	if ( fabs(m_lq) > 0.0 )
+	if ( fabs(m_lq) > 0.0f )
 		pt1.RoundPoint(-m_lq);
 	// 偏平率の補正後，角度計算
 	pt1.y /= m_dShort;
-	if ( (q1=atan2(pt1.y, pt1.x)) < 0.0 )
+	if ( (q1=pt1.arctan()) < 0.0f )
 		q1 += PI2;
 	q2 = q1 + PI2;
 	// ｸﾘｯｸﾎﾟｲﾝﾄが角度の範囲内にあるか
@@ -2436,9 +2435,9 @@ BOOL CDXFellipse::GetDirectionArraw(const CPointF& ptClick, CPointF ptResult[][3
 		for ( int i=0; i<SIZEOF(q); i++ ) {
 			pt1 = pt[i] = m_pt[i];
 			pt1 -= m_ct;
-			if ( fabs(m_lq) > 0.0 )
+			if ( fabs(m_lq) > 0.0f )
 				pt1.RoundPoint(-m_lq);
-			q[i] = -atan2(pt1.x, pt1.y);
+			q[i] = -atan2(pt1.x, pt1.y);		// XとYが逆？
 			pt1.x = cos(q[i]);
 			pt1.y = sin(q[i]);
 			q[i] = atan2(pt1.y*m_dShort, pt1.x) + m_lq;
@@ -2449,7 +2448,7 @@ BOOL CDXFellipse::GetDirectionArraw(const CPointF& ptClick, CPointF ptResult[][3
 	else {
 		// ｸﾘｯｸﾎﾟｲﾝﾄを補正
 		pt1 = ptClick;
-		if ( fabs(m_lq) > 0.0 ) {
+		if ( fabs(m_lq) > 0.0f ) {
 			pt1 -= m_ct;
 			pt1.RoundPoint(-m_lq);
 			pt1 += m_ct;
@@ -2832,17 +2831,17 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 	// どちらの解を採用するか
 	BOOL	bRound;
 	float	sq1, eq1, sq2, eq2;
-	if ( (sq1=atan2(pts.y - pt1.y, pts.x - pt1.x)) < 0.0 )
+	if ( (sq1=pt1.arctan(pts)) < 0.0f )
 		sq1 += PI2;
-	if ( (eq1=atan2(lpArgv->c.y - pt1.y, lpArgv->c.x - pt1.x)) < 0.0 )
+	if ( (eq1=pt1.arctan(lpArgv->c)) < 0.0f )
 		eq1 += PI2;
 	if ( nResult == 1 ) {	// 重根
 		sq2 = sq1;	eq2 = eq1;
 	}
 	else {
-		if ( (sq2=atan2(pts.y - pt2.y, pts.x - pt2.x)) < 0.0 )
+		if ( (sq2=pt2.arctan(pts)) < 0.0f )
 			sq2 += PI2;
-		if ( (eq2=atan2(lpArgv->c.y - pt2.y, lpArgv->c.x - pt2.x)) < 0.0 )
+		if ( (eq2=pt2.arctan(lpArgv->c)) < 0.0f )
 			eq2 += PI2;
 	}
 #ifdef _DEBUG

@@ -97,7 +97,7 @@ static inline	void	AddAWFcut(void)
 static inline	void	AddMoveAWFpoint(CDXFcircle* pCircle)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(0, pCircle->GetMakeCenter(),
-			0.0, GetDbl(MKWI_DBL_TAPER));
+			0.0f, GetDbl(MKWI_DBL_TAPER));
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 	pCircle->SetMakeFlg();
@@ -206,7 +206,7 @@ UINT MakeWire_Thread(LPVOID pVoid)
 		// NC生成のﾙｰﾌﾟ前に必要な初期化
 		{
 			optional<CPointF>	ptResult = g_pDoc->GetCutterOrigin();
-			CDXFdata::ms_ptOrg = ptResult ? *ptResult : 0.0;
+			CDXFdata::ms_ptOrg = ptResult ? *ptResult : 0.0f;
 		}
 		g_pDoc->GetCircleObject()->OrgTuning(FALSE);	// 結果的に原点がｾﾞﾛになる
 		InitialVariable();
@@ -274,9 +274,9 @@ void SetStaticOption(void)
 	CDXFdata::ms_fXRev = CDXFdata::ms_fYRev = FALSE;
 
 	// CNCMakeWireの静的変数初期化
-	CNCMakeWire::ms_xyz[NCA_X] = 0.0;
-	CNCMakeWire::ms_xyz[NCA_Y] = 0.0;
-	CNCMakeWire::ms_xyz[NCA_Z] = 0.0;
+	CNCMakeWire::ms_xyz[NCA_X] = 0.0f;
+	CNCMakeWire::ms_xyz[NCA_Y] = 0.0f;
+	CNCMakeWire::ms_xyz[NCA_Z] = 0.0f;
 
 	// 生成ｵﾌﾟｼｮﾝによる静的変数の初期化
 	CNCMakeWire::SetStaticOption(g_pMakeOpt);

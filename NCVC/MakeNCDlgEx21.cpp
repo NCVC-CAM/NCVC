@@ -285,7 +285,7 @@ void CMakeNCDlgEx21::OnSelChangeLayer()
 		m_ctNCPath.SetWindowText("");
 		m_strNCFileName.Empty();
 		m_bCheck = m_bDrill = m_bPartOut = FALSE;
-		m_dZCut = 0.0;
+		m_dZCut = 0.0f;
 		UpdateData(FALSE);
 		EnablePartOut();
 	}

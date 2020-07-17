@@ -480,7 +480,7 @@ float CNCline::SetCalcLength(void)
 	}
 	else {
 		CNCdata*	pData;
-		m_nc.dLength = 0.0;
+		m_nc.dLength = 0.0f;
 		ZEROCLR(m_dMove);
 		// Še•â³—v‘f‚Ì‡Œv
 		for ( int i=0; i<m_obCdata.GetSize(); i++ ) {
@@ -684,10 +684,10 @@ tuple<BOOL, CPointF, float, float> CNCline::CalcRoundPoint(const CNCdata* pNext,
 		pts = GetPlaneValueOrg(m_ptValS, m_ptValE);
 		CPointF	pte( GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE) );
 		// pts ‚ğ X²ã‚É‰ñ“]
-		float	q = atan2(pts.y, pts.x);
+		float	q = pts.arctan();
 		pte.RoundPoint(-q);
 		// ‚Q‚Â‚Ìü‚ÌŠp“x€‚Q
-		float	p = atan2(pte.y, pte.x) / 2.0f,
+		float	p = pte.arctan() / 2.0f,
 				pp = fabs(p);
 		if ( pp < RAD(90.0f) ) {
 			pt.x = rr1 = rr2 = r / tan(pp);	// –Êæ‚è‚É‘Š“–‚·‚éC’l‚Í‰ñ“]•œŒ³‘O‚ÌXÀ•W‚Æ“¯‚¶
@@ -784,7 +784,7 @@ optional<CPointF> CNCline::CalcPerpendicularPoint
 	}
 	// ü‚ÌŒX‚«‚ğŒvZ‚µ‚Ä90‹‰ñ“]
 	CPointF	pt( GetPlaneValueOrg(pte, pts) );
-	float	q = atan2(pt.y, pt.x);
+	float	q = pt.arctan();
 	CPointF	pt1(r*cos(q), r*sin(q));
 	CPointF	pt2(-pt1.y*nSign, pt1.x*nSign);
 	pt2 += GetPlaneValue(pts);
@@ -1414,8 +1414,8 @@ BOOL CNCcircle::CalcCenter(const CPointF& pts, const CPointF& pte)
 	AngleTuning(pts-pt1, pte-pt1);	// ‚Ü‚¸ˆê•û‚Ì’†SÀ•W‚©‚çŠp“x‚ğ‹‚ß‚é
 	float	q = ::RoundUp(DEG(m_eq-m_sq));
 	if ( nResult==1 ||
-			(m_r>0.0 && q<=180.0) ||	// 180‹ˆÈ‰º
-			(m_r<0.0 && q> 180.0) ) {	// 180‹’´‚¦‚é
+			(m_r>0.0f && q<=180.0f) ||	// 180‹ˆÈ‰º
+			(m_r<0.0f && q> 180.0f) ) {	// 180‹’´‚¦‚é
 		SetCenter(pt1);
 	}
 	else {
@@ -1449,9 +1449,9 @@ void CNCcircle::SetCenter(const CPointF& pt)
 
 void CNCcircle::AngleTuning(const CPointF& pts, const CPointF& pte)
 {
-	if ( (m_sq=atan2(pts.y, pts.x)) < 0.0 )
+	if ( (m_sq=pts.arctan()) < 0.0f )
 		m_sq += PI2;
-	if ( (m_eq=atan2(pte.y, pte.x)) < 0.0 )
+	if ( (m_eq=pte.arctan()) < 0.0f )
 		m_eq += PI2;
 
 	// í‚É s<e (”½Œv‰ñ‚è) ‚Æ‚·‚é
@@ -1462,7 +1462,7 @@ void CNCcircle::AngleTuning(const CPointF& pts, const CPointF& pte)
 		m_eq += PI2;
 
 	// Šp“x’²®
-	if ( sq>=360.0 && ::RoundUp(DEG(m_eq))>=360.0 ) {
+	if ( sq>=360.0f && ::RoundUp(DEG(m_eq))>=360.0f ) {
 		m_sq -= PI2;
 		m_eq -= PI2;
 	}
@@ -1476,13 +1476,13 @@ float CNCcircle::SetCalcLength(void)
 	if ( m_obCdata.IsEmpty() )
 		m_nc.dLength = fabs(m_r * (m_eq - m_sq));
 	else {
-		m_nc.dLength = 0.0;
+		m_nc.dLength = 0.0f;
 		// Še•â³—v‘f‚Ì‡Œv
 		for ( int i=0; i<m_obCdata.GetSize(); i++ )
 			m_nc.dLength += m_obCdata[i]->SetCalcLength();
 	}
 
-	float	dResult = 0;
+	float	dResult = 0.0f;
 	if ( m_pWireObj )
 		dResult = m_pWireObj->SetCalcLength();
 
@@ -2324,9 +2324,9 @@ optional<CPointF> CNCcircle::SetChamferingPoint(BOOL bStart, float c)
 
 	// ‰ğ‚Ì‘I‘ğ
 	ps = bStart ? m_sq : m_eq;
-	if ( (pa=atan2(pt1.y-ptOrg1.y, pt1.x-ptOrg1.x)) < 0.0 )
+	if ( (pa=ptOrg1.arctan(pt1)) < 0.0f )
 		pa += PI2;
-	if ( (pb=atan2(pt2.y-ptOrg1.y, pt2.x-ptOrg1.x)) < 0.0 )
+	if ( (pb=ptOrg1.arctan(pt2)) < 0.0f )
 		pb += PI2;
 	// 180“xˆÈã‚Ì·‚Í•â³
 	if ( fabs(ps-pa) > PI ) {
@@ -2441,7 +2441,8 @@ optional<CPointF> CNCcircle::CalcPerpendicularPoint
 	// n“_I“_ŠÖŒW‚È‚­ ‰ñ“]•ûŒü‚˜•â³•„†
 	// pts‚Æ’†S‚ÌŒX‚«‚ğŒvZ‚µ‚Ä”¼Œa}r
 	CPointF	pt( GetPlaneValueOrg(pts, m_ptOrg) );
-	float	q = atan2(pt.y, pt.x), rr = fabs(m_r) + r * CalcOffsetSign() * nSign;
+	float	q = pt.arctan(),
+			rr = fabs(m_r) + r * CalcOffsetSign() * nSign;
 	CPointF	pt1(rr*cos(q), rr*sin(q));
 	pt1 += GetPlaneValue(m_ptOrg);
 
@@ -2563,13 +2564,13 @@ void CNCcircle::SetCorrectPoint(ENPOINTORDER enPoint, const CPointF& ptSrc, floa
 	// Šp“x’²®
 	if ( enPoint == STARTPOINT ) {
 		float&	q = GetG03() ? m_sq : m_eq;	// QÆŒ^
-		if ( (q=atan2(pt.y, pt.x)) < 0.0 )
+		if ( (q=pt.arctan()) < 0.0f )
 			q += PI2;
 	}
 	else {
 		m_r = copysign(fabs(m_r)+rr, m_r);		// I“_‚Ì‚¾‚¯”¼Œa•â³
 		float&	q = GetG03() ? m_eq : m_sq;
-		if ( (q=atan2(pt.y, pt.x)) < 0.0 )
+		if ( (q=pt.arctan()) < 0.0f )
 			q += PI2;
 		m_pt2D = m_ptValE.PointConvert();
 	}
@@ -2587,7 +2588,7 @@ int _CalcRoundPoint_OffsetFlag(const CPointF& pts, const CPointF& pto, BOOL bG03
 	// ‰ñ“]•„†
 	int		k = bG03 ? -1 : 1;		// G02:+90‹,G03:-90‹
 	// ’¼ü‚ÌŠp“x
-	float	q = atan2(pts.y, pts.x);
+	float	q = pts.arctan();
 	// ‰~‚ÌÚü
 	CPointF	pte(-pto.y*k, pto.x);
 	// ’¼ü‚ÌŠp“x‚Å•â³
@@ -2595,7 +2596,7 @@ int _CalcRoundPoint_OffsetFlag(const CPointF& pts, const CPointF& pto, BOOL bG03
 	// y ‚Ì•„†‚ÅµÌ¾¯Ä•ûŒü‚ğ”»’f
 	if ( fabs(pte.y) < NCMIN )
 		k = 0;		// ‰ğ‚È‚µ
-	else if ( pte.y > 0.0 )
+	else if ( pte.y > 0.0f )
 		k = -1;		// ‰E‘¤
 	else
 		k = 1;		// ¶‘¤

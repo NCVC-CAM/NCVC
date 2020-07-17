@@ -189,7 +189,7 @@ void SetStaticOption(void)
 	// CNCMakeLathe‚ÌÃ“I•Ï”‰Šú‰»
 	CPointF	ptOrg(g_pDoc->GetCircleObject()->GetStartMakePoint());
 	CNCMakeLathe::ms_xyz[NCA_X] = ptOrg.y;
-	CNCMakeLathe::ms_xyz[NCA_Y] = 0.0;
+	CNCMakeLathe::ms_xyz[NCA_Y] = 0.0f;
 	CNCMakeLathe::ms_xyz[NCA_Z] = ptOrg.x;
 
 	// ¶¬µÌß¼®İ‚É‚æ‚éÃ“I•Ï”‚Ì‰Šú‰»
@@ -444,7 +444,7 @@ BOOL CreateRoughPass(void)
 	if ( !g_obOutsideTemp.IsEmpty() ) {
 		pData = g_obOutsideTemp[0];
 		ptChk[0] = pData->GetNativePoint(1) - pData->GetNativePoint(0);
-		if ( (qq=atan2(ptChk[0].y, ptChk[0].x)) < 0 )
+		if ( (qq=ptChk[0].arctan()) < 0.0f )
 			qq += PI2;
 	}
 
@@ -561,7 +561,7 @@ BOOL CreateRoughPass(void)
 					ptChk[0] = pDataChain->GetNativePoint(1) -
 								pDataChain->GetNativePoint(0);
 				}
-				if ( (q=atan2(ptChk[0].y, ptChk[0].x)) < 0 )
+				if ( (q=ptChk[0].arctan()) < 0.0f )
 					q += PI2;
 				if ( q >= qq ) {
 					// Šî€ü‚æ‚èŒX‚«‚ª‘å‚«‚¢‚Æ‚«‚¾‚¯

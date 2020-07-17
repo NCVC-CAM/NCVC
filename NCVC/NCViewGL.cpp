@@ -151,7 +151,7 @@ CNCViewGL::CNCViewGL()
 #endif
 	m_bActive = m_bSizeChg = FALSE;
 	m_cx = m_cy = m_icx = m_icy = 0;
-	m_dRate = m_dRoundAngle = m_dRoundStep = 0.0;
+	m_dRate = m_dRoundAngle = m_dRoundStep = 0.0f;
 	m_hRC = NULL;
 	m_glCode = 0;
 
@@ -442,7 +442,7 @@ BOOL CNCViewGL::SetupPixelFormat(CDC* pDC)
 
 void CNCViewGL::ClearObjectForm(void)
 {
-	m_ptCenter = 0.0;
+	m_ptCenter = 0.0f;
 	m_objXform[0][0] = 1.0; m_objXform[0][1] = 0.0; m_objXform[0][2] = 0.0; m_objXform[0][3] = 0.0;
 	m_objXform[1][0] = 0.0; m_objXform[1][1] = 1.0; m_objXform[1][2] = 0.0; m_objXform[1][3] = 0.0;
 	m_objXform[2][0] = 0.0; m_objXform[2][1] = 0.0; m_objXform[2][2] = 1.0; m_objXform[2][3] = 0.0;
@@ -759,12 +759,12 @@ BOOL CNCViewGL::GetClipDepthMill(BOOL bDepthKeep)
 				m_pfXYZ[nnu+NCA_Z] = min((float)wz2, m_rcDraw.high);	// è„ñ Çí¥Ç¶Ç»Ç¢
 				m_pfXYZ[nnd+NCA_Z] = m_rcDraw.low;	// íÍñ ÇÕm_rcDraw.lowç¿ïWÇ≈ï~Ç´ãlÇﬂÇÈ
 				// √ﬁÃ´ŸƒÇÃñ@ê¸Õﬁ∏ƒŸ
-				m_pfNOR[nnu+NCA_X] = 0.0;
-				m_pfNOR[nnu+NCA_Y] = 0.0;
-				m_pfNOR[nnu+NCA_Z] = 1.0;
-				m_pfNOR[nnd+NCA_X] = 0.0;
-				m_pfNOR[nnd+NCA_Y] = 0.0;
-				m_pfNOR[nnd+NCA_Z] = -1.0;
+				m_pfNOR[nnu+NCA_X] =  0.0f;
+				m_pfNOR[nnu+NCA_Y] =  0.0f;
+				m_pfNOR[nnu+NCA_Z] =  1.0f;
+				m_pfNOR[nnd+NCA_X] =  0.0f;
+				m_pfNOR[nnd+NCA_Y] =  0.0f;
+				m_pfNOR[nnd+NCA_Z] = -1.0f;
 			}
 		}
 	}
@@ -800,7 +800,7 @@ BOOL CNCViewGL::GetClipDepthMill(BOOL bDepthKeep)
 		s.Empty();
 		sx.Empty();	sy.Empty();	sz.Empty();
 		for ( i=0; i<m_icx; i++, n++ ) {
-//			if ( m_pfDepth[n] != 0.0 ) {
+//			if ( m_pfDepth[n] != 0.0f ) {
 				if ( !s.IsEmpty() ) {
 					s  += gg_szCat;
 //				if ( !sx.IsEmpty() ) {
@@ -1694,12 +1694,12 @@ BOOL CNCViewGL::GetClipDepthCylinder(BOOL bDepthKeep)
 				m_pfXYZ[nnu+NCA_Z] = min((float)wz2, m_rcDraw.high);	// è„ñ Çí¥Ç¶Ç»Ç¢
 				m_pfXYZ[nnd+NCA_Z] = m_rcDraw.low;	// íÍñ ÇÕm_rcDraw.lowç¿ïWÇ≈ï~Ç´ãlÇﬂÇÈ
 				// √ﬁÃ´ŸƒÇÃñ@ê¸Õﬁ∏ƒŸ
-				m_pfNOR[nnu+NCA_X] = 0.0;
-				m_pfNOR[nnu+NCA_Y] = 0.0;
-				m_pfNOR[nnu+NCA_Z] = 1.0;
-				m_pfNOR[nnd+NCA_X] = 0.0;
-				m_pfNOR[nnd+NCA_Y] = 0.0;
-				m_pfNOR[nnd+NCA_Z] = -1.0;
+				m_pfNOR[nnu+NCA_X] =  0.0f;
+				m_pfNOR[nnu+NCA_Y] =  0.0f;
+				m_pfNOR[nnu+NCA_Z] =  1.0f;
+				m_pfNOR[nnd+NCA_X] =  0.0f;
+				m_pfNOR[nnd+NCA_Y] =  0.0f;
+				m_pfNOR[nnd+NCA_Z] = -1.0f;
 			}
 			// â~Çï¬Ç∂ÇÈçÏã∆
 			for ( j=0; j<NCXYZ; j++ ) {
@@ -1900,7 +1900,7 @@ BOOL CNCViewGL::GetClipDepthLathe(BOOL bDepthKeep)
 		::gluUnProject(i+wx1, wy1, m_pfDepth[i],
 				mvMatrix, pjMatrix, viewPort,
 				&wx2, &wy2, &wz2);	// ÇªÇÍÇŸÇ«íxÇ≠Ç»Ç¢ÇÃÇ≈é©çÏïœä∑ÇÕíÜé~
-		fz = (GLfloat)fabs( m_pfDepth[i]==0.0 ?	// √ﬁÃﬂΩílÇ™èâä˙íl(ãÈå`îÕàÕì‡Ç≈êÿçÌñ Ç≈Ç»Ç¢)Ç»ÇÁ
+		fz = (GLfloat)fabs( m_pfDepth[i]==0.0f ?	// √ﬁÃﬂΩílÇ™èâä˙íl(ãÈå`îÕàÕì‡Ç≈êÿçÌñ Ç≈Ç»Ç¢)Ç»ÇÁ
 				m_rcDraw.high :				// ‹∞∏îºåaíl
 				min(wz2, m_rcDraw.high) );	// ïœä∑ç¿ïW(==îºåa)Ç©‹∞∏îºåaÇÃè¨Ç≥Ç¢ï˚
 		ii = i * (ARCCOUNT+1);
@@ -1982,7 +1982,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 			vElement.push_back(n0);
 			vElement.push_back(n1);
 		}
-		if ( m_pfDepth[i+1] == 0.0 )	// êÿçÌñ Ç©‹∞∏ñ Ç©
+		if ( m_pfDepth[i+1] == 0.0f )	// êÿçÌñ Ç©‹∞∏ñ Ç©
 			vvElementWrk.push_back(vElement);
 		else
 			vvElementCut.push_back(vElement);
@@ -2168,7 +2168,7 @@ BOOL CNCViewGL::CreateWire(void)
 			wl.vel.clear();
 		}
 		// ñ å`ê¨ÅiêÿçÌ√ﬁ∞¿Åj
-		dLength = 0.0;
+		dLength = 0.0f;
 		wl.col = pOpt->GetNcDrawColor(NCCOL_G1);
 		wl.pattern = g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern;
 		bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
@@ -2199,7 +2199,7 @@ BOOL CNCViewGL::CreateWire(void)
 			m_WireDraw.vwl.push_back(wl);
 			wl.vel.clear();
 		}
-		if ( dLength > 0.0 )
+		if ( dLength > 0.0f )
 			m_WireDraw.vLen.push_back(dLength);
 		if ( i < nLoop ) 
 			bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
@@ -2475,14 +2475,14 @@ void CNCViewGL::CreateTextureWire(void)
 				if ( !pData->GetWireObj() )
 					continue;
 				// énì_ìoò^
-				pfTEX[n++] = 0.0;	// XY
-				pfTEX[n++] = 0.0;
-				pfTEX[n++] = 0.0;	// UV
-				pfTEX[n++] = 1.0;
+				pfTEX[n++] = 0.0f;	// XY
+				pfTEX[n++] = 0.0f;
+				pfTEX[n++] = 0.0f;	// UV
+				pfTEX[n++] = 1.0f;
 				break;
 			}
 		}
-		dAccuLength = 0.0;
+		dAccuLength = 0.0f;
 		// äeµÃﬁºﬁ™∏ƒÇ≤Ç∆ÇÃ√∏Ω¡¨ç¿ïWÇìoò^
 		for ( ; i<nLoop; i++ ) {
 			pData = GetDocument()->GetNCdata(i);
@@ -3141,7 +3141,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CNCViewGL::OnDestroy()
 {
-	if ( m_dRoundStep != 0.0 )
+	if ( m_dRoundStep != 0.0f )
 		KillTimer(IDC_OPENGL_DRAGROUND);
 
 	// âÒì]çsóÒìôÇï€ë∂
@@ -3283,21 +3283,21 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 		const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 		if ( dW <= NCMIN ) {
 			dLength = pOpt->GetGuideLength(NCA_X);
-			if ( dLength == 0.0 )
+			if ( dLength == 0.0f )
 				dLength = g_dDefaultGuideLength;
 			m_rcView.left  = -dLength;
 			m_rcView.right =  dLength;
 		}
 		if ( dH <= NCMIN ) {
 			dLength = pOpt->GetGuideLength(NCA_Y);
-			if ( dLength == 0.0 )
+			if ( dLength == 0.0f )
 				dLength = g_dDefaultGuideLength;
 			m_rcView.top    = -dLength;
 			m_rcView.bottom =  dLength;
 		}
 		if ( dZ <= NCMIN ) {
 			dLength = pOpt->GetGuideLength(NCA_Z);
-			if ( dLength == 0.0 )
+			if ( dLength == 0.0f )
 				dLength = g_dDefaultGuideLength;
 			m_rcView.low  = -dLength;
 			m_rcView.high =  dLength;
@@ -3528,25 +3528,25 @@ void CNCViewGL::OnMoveKey(UINT nID)
 
 void CNCViewGL::OnRoundKey(UINT nID)
 {
-	if ( m_dRoundStep == 0.0 )
+	if ( m_dRoundStep == 0.0f )
 		SetTimer(IDC_OPENGL_DRAGROUND, 150, NULL);
 
 	switch (nID) {
 	case ID_VIEW_RUP:
-		m_ptRoundBase.SetPoint(1.0, 0.0, 0.0);
-		m_dRoundAngle = m_dRoundStep = -1.0;
+		m_ptRoundBase.SetPoint(1.0f, 0.0f, 0.0f);
+		m_dRoundAngle = m_dRoundStep = -1.0f;
 		break;
 	case ID_VIEW_RDW:
-		m_ptRoundBase.SetPoint(1.0, 0.0, 0.0);
-		m_dRoundAngle = m_dRoundStep = 1.0;
+		m_ptRoundBase.SetPoint(1.0f, 0.0f, 0.0f);
+		m_dRoundAngle = m_dRoundStep = 1.0f;
 		break;
 	case ID_VIEW_RLT:
 		m_ptRoundBase.SetPoint(0.0, 1.0, 0.0);
-		m_dRoundAngle = m_dRoundStep = -1.0;
+		m_dRoundAngle = m_dRoundStep = -1.0f;
 		break;
 	case ID_VIEW_RRT:
-		m_ptRoundBase.SetPoint(0.0, 1.0, 0.0);
-		m_dRoundAngle = m_dRoundStep = 1.0;
+		m_ptRoundBase.SetPoint(0.0f, 1.0f, 0.0f);
+		m_dRoundAngle = m_dRoundStep = 1.0f;
 		break;
 	}
 }
@@ -3555,9 +3555,9 @@ void CNCViewGL::OnLensKey(UINT nID)
 {
 	switch ( nID ) {
 	case ID_VIEW_FIT:
-		if ( m_dRoundStep != 0.0 ) {
+		if ( m_dRoundStep != 0.0f ) {
 			KillTimer(IDC_OPENGL_DRAGROUND);
-			m_dRoundStep = 0.0;
+			m_dRoundStep = 0.0f;
 		}
 		OnUserViewFitMsg(0, 0);
 		{
@@ -3596,9 +3596,9 @@ void CNCViewGL::OnContextMenu(CWnd* pWnd, CPoint point)
 
 void CNCViewGL::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	if ( m_dRoundStep != 0.0 ) {
+	if ( m_dRoundStep != 0.0f ) {
 		KillTimer(IDC_OPENGL_DRAGROUND);
-		m_dRoundStep = 0.0;		// KillTimer()Ç≈Ç‡“Øæ∞ºﬁ∑≠∞ÇÕè¡Ç¶Ç»Ç¢
+		m_dRoundStep = 0.0f;	// KillTimer()Ç≈Ç‡“Øæ∞ºﬁ∑≠∞ÇÕè¡Ç¶Ç»Ç¢
 	}
 	BeginTracking( point, TM_SPIN );
 }
@@ -3606,9 +3606,9 @@ void CNCViewGL::OnLButtonDown(UINT nFlags, CPoint point)
 void CNCViewGL::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	EndTracking();
-	if ( m_dRoundStep != 0.0 ) {
+	if ( m_dRoundStep != 0.0f ) {
 		KillTimer(IDC_OPENGL_DRAGROUND);	// KillTimer() òAî≠ÇµÇƒÇ‡ÉGÉGÇÃÇ©Ç»...
-		m_dRoundStep = 0.0;
+		m_dRoundStep = 0.0f;
 	}
 }
 
@@ -3623,7 +3623,7 @@ void CNCViewGL::OnLButtonDblClk(UINT nFlags, CPoint point)
 
 void CNCViewGL::OnRButtonDown(UINT nFlags, CPoint point)
 {
-	if ( m_dRoundStep != 0.0 )
+	if ( m_dRoundStep != 0.0f )
 		KillTimer(IDC_OPENGL_DRAGROUND);	// òAë±âÒì]àÍéûí‚é~
 
 	m_ptDownClick = point;
@@ -3633,7 +3633,7 @@ void CNCViewGL::OnRButtonDown(UINT nFlags, CPoint point)
 void CNCViewGL::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	EndTracking();
-	if ( m_dRoundStep != 0.0 )
+	if ( m_dRoundStep != 0.0f )
 		SetTimer(IDC_OPENGL_DRAGROUND, 150, NULL);	// òAë±âÒì]çƒäJ
 
 	if ( m_ptDownClick == point )
@@ -3642,9 +3642,9 @@ void CNCViewGL::OnRButtonUp(UINT nFlags, CPoint point)
 
 void CNCViewGL::OnMButtonDown(UINT nFlags, CPoint point)
 {
-	if ( m_dRoundStep != 0.0 ) {
+	if ( m_dRoundStep != 0.0f ) {
 		KillTimer(IDC_OPENGL_DRAGROUND);
-		m_dRoundStep = 0.0;
+		m_dRoundStep = 0.0f;
 	}
 	BeginTracking( point, TM_SPIN );
 }
@@ -3657,7 +3657,7 @@ void CNCViewGL::OnMButtonUp(UINT nFlags, CPoint point)
 	g_dbg.printf("OnMButtonUp() Angle=%f (%f, %f, %f)", m_dRoundStep,
 		m_ptRoundBase.x, m_ptRoundBase.y, m_ptRoundBase.z);
 #endif
-	if ( m_dRoundStep != 0.0 ) {
+	if ( m_dRoundStep != 0.0f ) {
 		m_dRoundAngle = m_dRoundStep;
 		SetTimer(IDC_OPENGL_DRAGROUND, 150, NULL);
 	}
@@ -3711,7 +3711,7 @@ BOOL CNCViewGL::OnEraseBkgnd(CDC* pDC)
 
 void CNCViewGL::OnTimer(UINT_PTR nIDEvent) 
 {
-	if ( m_dRoundStep != 0.0 ) {
+	if ( m_dRoundStep != 0.0f ) {
 #ifdef _DEBUG
 		g_dbg.printf("CNCViewGL::OnTimer()");
 #endif

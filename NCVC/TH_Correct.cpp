@@ -552,7 +552,7 @@ CPointF	CalcPerpendicularPoint
 		pt = ptVal.GetYZ() - pto;
 		break;
 	}
-	float	q = atan2(pt.y, pt.x);
+	float	q = pt.arctan();
 	CPointF	pt1(r*cos(q), r*sin(q));
 	CPointF	pt2(-pt1.y*k, pt1.x*k);
 	pt2 += pto;

@@ -1204,7 +1204,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 
 	// ŒvŽZŠJŽn
 	if ( cr < NCMIN ) {
-		r1 = r2 = 0.0;
+		r1 = r2 = 0.0f;
 		cCham = 'C';		// nGcode = 1
 	}
 	else if ( cCham == 'C' )
@@ -1311,9 +1311,9 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 		// º°Å°R‚Ìê‡‚ÍC‹‚ß‚½º°Å°R‚Ì’†S(pto)‚©‚ç‰ñ“]•ûŒü‚ðŒvŽZ
 		float	pa, pb;
 		pts -= pto;		pte -= pto;
-		if ( (pa=atan2(pts.y, pts.x)) < 0.0 )
+		if ( (pa=pts.arctan()) < 0.0f )
 			pa += PI2;
-		if ( (pb=atan2(pte.y, pte.x)) < 0.0 )
+		if ( (pb=pte.arctan()) < 0.0f )
 			pb += PI2;
 		if ( fabs(pa-pb) > PI ) {
 			if ( pa > pb )
@@ -1373,7 +1373,7 @@ int SetTaperAngle(const string& str)
 	float	dTaper  = (float)atof(str.c_str());
 
 	if ( g_ncArgv.taper.nTaper == 0 ) {
-		if ( dTaper == 0.0 )
+		if ( dTaper == 0.0f )
 			g_ncArgv.taper.dTaper = 0.0;
 		else
 			nResult = IDS_ERR_NCBLK_TAPER;

@@ -23,6 +23,12 @@ CNCFindDlg::CNCFindDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CNCFindDlg::IDD, pParent)
 {
 	m_nUpDown = 1;		// ‰º‚Ö
+
+	// ŒŸõ•¶Žš—ñ‚ðŽæ“¾
+	CString	strSection(GetSubTreeRegKey(IDS_REGKEY_WINDOW, IDS_REGKEY_WINDOW_FINDDLG)),
+			strEntry;
+	VERIFY(strEntry.LoadString(IDS_REG_NCV_FINDSTR));
+	m_strFind = AfxGetApp()->GetProfileString(strSection, strEntry);
 }
 
 void CNCFindDlg::DoDataExchange(CDataExchange* pDX)
@@ -78,6 +84,15 @@ void CNCFindDlg::OnOK()
 
 void CNCFindDlg::OnCancel() 
 {
+	UpdateData();
+	// ŒŸõ•¶Žš—ñ‚ð•Û‘¶
+	if ( !m_strFind.IsEmpty() ) {
+		CString	strSection(GetSubTreeRegKey(IDS_REGKEY_WINDOW, IDS_REGKEY_WINDOW_FINDDLG)),
+				strEntry;
+		VERIFY(strEntry.LoadString(IDS_REG_NCV_FINDSTR));
+		AfxGetApp()->WriteProfileString(strSection, strEntry, m_strFind);
+	}
+
 	// ³¨ÝÄÞ³ˆÊ’u•Û‘¶
 	AfxGetNCVCApp()->SaveDlgWindow(IDS_REGKEY_WINDOW_FINDDLG, this);
 

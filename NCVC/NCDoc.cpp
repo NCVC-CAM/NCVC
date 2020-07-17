@@ -92,7 +92,7 @@ CNCDoc::CNCDoc()
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
 	for ( i=0; i<WORKOFFSET; i++ )
 		m_ptNcWorkOrg[i] = pMCopt->GetWorkOffset(i);
-	m_ptNcWorkOrg[i] = 0.0;		// G92の初期化
+	m_ptNcWorkOrg[i] = 0.0f;		// G92の初期化
 	m_nWorkOrg = pMCopt->GetModalSetting(MODALGROUP2);		// G54～G59
 	if ( m_nWorkOrg<0 || SIZEOF(m_ptNcWorkOrg)<=m_nWorkOrg )
 		m_nWorkOrg = 0;
@@ -197,7 +197,7 @@ CNCdata* CNCDoc::DataOperation
 			if ( lpArgv->nc.dwValFlags & NCD_X ) {
 				// 移動ｺｰﾄﾞを考慮し、Ｐ値に強制変換
 				lpArgv->nc.dValue[NCA_P] = lpArgv->nc.dValue[NCA_X] * 1000.0;	// sec -> msec
-				lpArgv->nc.dValue[NCA_X] = 0.0;
+				lpArgv->nc.dValue[NCA_X] = 0.0f;
 				lpArgv->nc.dwValFlags &= ~NCD_X;
 				lpArgv->nc.dwValFlags |=  NCD_P;
 			}
@@ -268,7 +268,7 @@ CNCdata* CNCDoc::DataOperation
 			if ( !m_bDocFlg[NCDOC_LATHE] ) {
 				// ﾛｰｶﾙ座標系ｸﾘｱとG92値取得
 				for ( i=0; i<NCXYZ; i++ ) {
-					m_ptNcLocalOrg[i] = 0.0;
+					m_ptNcLocalOrg[i] = 0.0f;
 					if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ) {
 						// 座標指定のあるところだけ、現在位置からの減算で
 						// G92座標系原点を計算

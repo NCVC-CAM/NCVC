@@ -25,7 +25,7 @@ END_MESSAGE_MAP()
 
 CViewBase::CViewBase()
 {
-	m_dFactor = 0.0;
+	m_dFactor = 0.0f;
 	m_enLstate = m_enRstate = MS_UP;
 	m_nBoth = 0;
 	m_bMagRect = FALSE;

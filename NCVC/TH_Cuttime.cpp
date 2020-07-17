@@ -78,7 +78,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 		return 0;
 	}
 
-	pDoc->m_dCutTime = 0.0;
+	pDoc->m_dCutTime = 0.0f;
 	boost::function<float (const CNCdata*)>	pfnGetCutTime =
 		pDoc->IsDocFlag(NCDOC_LATHE) ?
 		GetCutTime_Lathe : GetCutTime_Milling;
@@ -90,7 +90,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 		// º°ÄŞ‚²‚Æ‚ÌŠÔŒvZ
 		switch ( pData->GetGcode() ) {
 		case 0:	// ‘‘—‚è
-			dTmp = 0.0;
+			dTmp = 0.0f;
 			for ( j=0; j<NCXYZ; j++ ) {
 				dd = pData->GetMove(j) / pMCopt->GetG0Speed(j);
 				dTmp += (dd * dd);
@@ -116,7 +116,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 		case 86:
 		case 89:
 			// ‘‘—‚è•ª
-			dTmp = 0.0;
+			dTmp = 0.0f;
 			for ( j=0; j<NCXYZ; j++ ) {
 				dd = pData->GetMove(j) / pMCopt->GetG0Speed(j);
 				dTmp += (dd * dd);
@@ -157,7 +157,7 @@ float GetCutTime_Lathe(const CNCdata* pData)
 	// G99–ˆ‰ñ“]‘—‚è‚È‚ç
 	if ( !pData->GetG98() ) {	
 		if ( pData->GetSpindle() == 0 )	// å²‰ñ“]”‚Í•K{
-			dResult = 0.0;
+			dResult = 0.0f;
 		else
 			dResult /= pData->GetSpindle();		// ‚P‰ñ“]‚ ‚½‚è‚ÌŠÔ[min]‚ğŠ|‚¯‚é
 												// *= (1.0/pData->GetSpindle());

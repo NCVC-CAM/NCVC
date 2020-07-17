@@ -37,7 +37,7 @@ CLayerData::CLayerData()
 	m_nType		= -1;
 	m_bLayerFlg.reset();
 	m_nListNo	= -1;
-	m_dInitZCut	= m_dZCut = 0.0;
+	m_dInitZCut	= m_dZCut = 0.0f;
 	m_obDXFArray.SetSize(0, 1024);
 	m_obDXFTextArray.SetSize(0, 64);
 	m_obShapeArray.SetSize(0, 64);
@@ -52,7 +52,7 @@ CLayerData::CLayerData(const CString& strLayer, int nType)
 	m_bLayerFlg.set(LAYER_CUT_TARGET);
 	m_bLayerFlg.set(LAYER_DRILL_Z);
 	m_nListNo	= -1;
-	m_dInitZCut	= m_dZCut = 0.0;
+	m_dInitZCut	= m_dZCut = 0.0f;
 	m_obDXFArray.SetSize(0, 1024);
 	m_obDXFTextArray.SetSize(0, 64);
 	m_obShapeArray.SetSize(0, 64);
@@ -164,7 +164,7 @@ void CLayerData::SetInitFile(LPCTSTR lpszInitFile)
 {
 	if ( !lpszInitFile || lstrlen(lpszInitFile)<=0 ) {
 		m_strInitFile.Empty();
-		m_dInitZCut = 0.0;
+		m_dInitZCut = 0.0f;
 	}
 	else {
 		m_strInitFile = lpszInitFile;
@@ -299,9 +299,9 @@ int AreaCompareFunc1(CDXFshape* pFirst, CDXFshape* pSecond)
 	int		nResult;
 	CRectF	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
 	float	dResult = rc1.Width() * rc1.Height() - rc2.Width() * rc2.Height();
-	if ( dResult == 0.0 )
+	if ( dResult == 0.0f )
 		nResult = 0;
-	else if ( dResult > 0.0 )
+	else if ( dResult > 0.0f )
 		nResult = 1;
 	else
 		nResult = -1;
@@ -313,9 +313,9 @@ int AreaCompareFunc2(CDXFshape* pFirst, CDXFshape* pSecond)
 	int		nResult;
 	CRectF	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
 	float	dResult = rc2.Width() * rc2.Height() - rc1.Width() * rc1.Height();
-	if ( dResult == 0.0 )
+	if ( dResult == 0.0f )
 		nResult = 0;
-	else if ( dResult > 0.0 )
+	else if ( dResult > 0.0f )
 		nResult = 1;
 	else
 		nResult = -1;

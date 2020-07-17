@@ -522,7 +522,7 @@ CDXFMake::CDXFMake(const CPoint3F& pt, float r)
 
 	// 原点(ｸﾛｽ)情報出力
 	if ( r==0.0f && GetFlg(MKDX_FLG_ORGCROSS) ) {
-		float	d1 = GetDbl(MKDX_DBL_ORGLENGTH), d2 = 0.0;
+		float	d1 = GetDbl(MKDX_DBL_ORGLENGTH), d2 = 0.0f;
 		for ( int i=0; i<2; i++ ) {
 			// ｵﾌﾞｼﾞｪｸﾄ情報
 			m_strDXFarray.Add( MakeDXF_Figure(TYPE_LINE, MKDX_STR_ORIGIN) );
@@ -543,7 +543,7 @@ CDXFMake::CDXFMake(const CPoint3F& pt, float r)
 			}
 			m_strDXFarray.Add( _MakeValue(VALFLG_LINE, dVal) );
 			// 始点終点調整座標入れ替え
-			d1 = 0.0;	d2 = GetDbl(MKDX_DBL_ORGLENGTH);
+			d1 = 0.0f;	d2 = GetDbl(MKDX_DBL_ORGLENGTH);
 		}
 	}
 }

@@ -1083,9 +1083,9 @@ CDXFdata* ChangeCircleToArc
 	float		sq, eq, q, r = pDataSrc->GetR();
 
 	// 回転方向（切り取り円弧）の決定
-	if ( (sq=atan2(pts.y-ptc.y, pts.x-ptc.x)) < 0.0 )
+	if ( (sq=ptc.arctan(pts)) < 0.0f )
 		sq += PI2;
-	if ( (eq=atan2(pte.y-ptc.y, pte.x-ptc.x)) < 0.0 )
+	if ( (eq=ptc.arctan(pte)) < 0.0f )
 		eq += PI2;
 	while ( sq > eq )
 		eq += PI2;		// sq < eq => 基本の反時計回りに角度設定
@@ -1134,13 +1134,13 @@ CDXFdata* ChangeCircleToArc
 		if ( q < -1.0f || 1.0f < q )
 			q = copysign(1.0f, q);	// -1.0 or 1.0
 		dxfEllipse.sq = copysign(acos(q), pts.y);
-		if ( dxfEllipse.sq < 0.0 )
+		if ( dxfEllipse.sq < 0.0f )
 			dxfEllipse.sq += PI2;
 		q = pte.x / l;
 		if ( q < -1.0f || 1.0f < q )
 			q = copysign(1.0f, q);
 		dxfEllipse.eq = copysign(acos(q), pte.y);
-		if ( dxfEllipse.eq < 0.0 )
+		if ( dxfEllipse.eq < 0.0f )
 			dxfEllipse.eq += PI2;
 		pData = new CDXFellipse(&dxfEllipse);
 	}

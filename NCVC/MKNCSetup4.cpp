@@ -190,7 +190,7 @@ BOOL CMKNCSetup4::OnKillActive()
 		m_dFeed.SetSel(0, -1);
 		return FALSE;
 	}
-	if ( m_bCircle && m_dCircleR<=0.0 ) {
+	if ( m_bCircle && m_dCircleR<=0.0f ) {
 		AfxMessageBox(IDS_ERR_SETTING, MB_OK|MB_ICONEXCLAMATION);
 		m_dCircleR.SetFocus();
 		m_dCircleR.SetSel(0, -1);

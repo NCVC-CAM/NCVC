@@ -510,7 +510,7 @@ public:
 	BOOL	ChangeCreate_MapToChain(CDXFmap* = NULL);
 	BOOL	ChangeCreate_ChainToMap(CDXFchain* = NULL);
 	//
-	BOOL	CreateOutlineTempObject(BOOL, CDXFchain*, float = 0.0);
+	BOOL	CreateOutlineTempObject(BOOL, CDXFchain*, float = 0.0f);
 	BOOL	CheckIntersectionCircle(const CPointF&, const float dOffset);
 	BOOL	CreateScanLine_X(CDXFchain*);
 	BOOL	CreateScanLine_Y(CDXFchain*);

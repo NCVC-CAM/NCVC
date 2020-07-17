@@ -383,27 +383,29 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 		if ( GetValFlags() & (NCD_X|NCD_Y) ) {
 			// ÎÞ°Ù´ÝÄÞÐÙ‚ÌˆÚ“®Êß½•`‰æ
 			float	x,
-					q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+RAD(90.0f),
+					q = m_ptValS.arctan(m_ptValE)+RAD(90.0f),
 					cos_qp = cos(q),
 					sin_qp = sin(q);
 			CPoint3F	pt1, pt2;
+			auto		bt1 = begin(pt1.xyz), et1 = end(pt1.xyz),
+						bt2 = begin(pt2.xyz), et2 = end(pt2.xyz);
 			for ( int i=ARCCOUNT/2; i<ARCCOUNT; i++ ) {
 				x = m_dEndmill * _TABLECOS[i];
 				pt1.z = pt2.z = m_dEndmill * _TABLESIN[i] + m_dEndmill;
 				pt1.x = pt2.x = x * cos_qp;
-				pt1.y = pt2.x = x * sin_qp;
+				pt1.y = pt2.y = x * sin_qp;
 				pt1 += m_ptValS;
 				pt2 += m_ptValE;
-				bd.vpt.insert(bd.vpt.end(), begin(pt1.xyz), end(pt1.xyz));
-				bd.vpt.insert(bd.vpt.end(), begin(pt2.xyz), end(pt2.xyz));
+				bd.vpt.insert(bd.vpt.end(), bt1, et1);
+				bd.vpt.insert(bd.vpt.end(), bt2, et2);
 			}
 			x = pt1.z = pt2.z = m_dEndmill;
 			pt1.x = pt2.x = x * cos_qp;
-			pt1.y = pt2.x = x * sin_qp;
+			pt1.y = pt2.y = x * sin_qp;
 			pt1 += m_ptValS;
 			pt2 += m_ptValE;
-			bd.vpt.insert(bd.vpt.end(), begin(pt1.xyz), end(pt1.xyz));
-			bd.vpt.insert(bd.vpt.end(), begin(pt2.xyz), end(pt2.xyz));
+			bd.vpt.insert(bd.vpt.end(), bt1, et1);
+			bd.vpt.insert(bd.vpt.end(), bt2, et2);
 			bd.mode = GL_TRIANGLE_STRIP;
 			bd.re = 0;	// glDrawArrays()•`‰æ
 			vBD.push_back(bd);
@@ -439,7 +441,7 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 			bd.mode = GL_TRIANGLE_STRIP;
 			bd.vpt.clear();
 			bd.vel.clear();
-			float	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+RAD(90.0f),
+			float	q = m_ptValS.arctan(m_ptValE)+RAD(90.0f),
 					cos_q = cos(q) * m_dEndmill,
 					sin_q = sin(q) * m_dEndmill,
 					ptsz = m_ptValS.z + m_dEndmill,
@@ -501,7 +503,7 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 				bd.vel.clear();
 				// XY•½–Ê‚ÌˆÚ“®Êß½‚Í
 				// Žn“_I“_‚ð‹éŒ`‚Å‚Â‚È‚®
-				float	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+RAD(90.0f),
+				float	q = m_ptValS.arctan(m_ptValE)+RAD(90.0f),
 						cos_q = cos(q) * m_dEndmill,
 						sin_q = sin(q) * m_dEndmill;
 				CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, m_ptValS.z),
@@ -586,9 +588,9 @@ int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GL
 	GLfloat	f = dAccuLength / dAllLength;
 
 	pfTEX[n++] = f;
-	pfTEX[n++] = 0.0;
+	pfTEX[n++] = 0.0f;
 	pfTEX[n++] = f;
-	pfTEX[n++] = 1.0;
+	pfTEX[n++] = 1.0f;
 
 	return 4;
 }
@@ -1201,6 +1203,7 @@ void CNCcircle::SetEndmillSpherePathCircle(float q, const CPoint3F& ptOrg, CVflo
 				cos_qp = cos(q),
 				sin_qp = sin(q);
 	CPoint3F	pt;
+	auto		b = begin(pt.xyz), e = end(pt.xyz);
 
 	// Z•ûŒü‚Ö‚Ì”¼‰~Œ@‚è‰º‚°(180“x`360“x‚ÌŽè‘O)
 	for ( int i=ARCCOUNT/2; i<ARCCOUNT; i++ ) {
@@ -1209,14 +1212,14 @@ void CNCcircle::SetEndmillSpherePathCircle(float q, const CPoint3F& ptOrg, CVflo
 		pt.x = x * cos_qp;	// - y * sin_qp;
 		pt.y = x * sin_qp;	// + y * cos_qp;
 		pt += ptOrg;
-		v.insert(v.end(), begin(pt.xyz), end(pt.xyz));
+		v.insert(v.end(), b, e);
 	}
 	// 360(0)“x•ª
 	x = pt.z = m_dEndmill;
 	pt.x = x * cos_qp;
 	pt.y = x * sin_qp;
 	pt += ptOrg;
-	v.insert(v.end(), begin(pt.xyz), end(pt.xyz));
+	v.insert(v.end(), b, e);
 }
 
 void CNCcircle::SetEndmillPathXZ_Sphere(float qp, const CPoint3F& ptOrg,
@@ -1226,6 +1229,7 @@ void CNCcircle::SetEndmillPathXZ_Sphere(float qp, const CPoint3F& ptOrg,
 				cos_qp = cos(qp),
 				sin_qp = sin(qp);
 	CPoint3F	pt;
+	auto		b = begin(pt.xyz), e = end(pt.xyz);
 
 	for ( int i=0; i<ARCCOUNT; i++ ) {
 		// XY•½–Ê‚Ì‰~
@@ -1236,7 +1240,7 @@ void CNCcircle::SetEndmillPathXZ_Sphere(float qp, const CPoint3F& ptOrg,
 		pt.z = x * sin_qp;	// + z * cos_qp;
 		//
 		pt += ptOrg;
-		v.insert(v.end(), begin(pt.xyz), end(pt.xyz));
+		v.insert(v.end(), b, e);
 	}
 }
 
@@ -1247,6 +1251,7 @@ void CNCcircle::SetEndmillPathYZ_Sphere(float qp, const CPoint3F& ptOrg,
 				cos_qp = cos(qp),
 				sin_qp = sin(qp);
 	CPoint3F	pt;
+	auto		b = begin(pt.xyz), e = end(pt.xyz);
 
 	for ( int i=0; i<ARCCOUNT; i++ ) {
 		// XY•½–Ê‚Ì‰~
@@ -1257,7 +1262,7 @@ void CNCcircle::SetEndmillPathYZ_Sphere(float qp, const CPoint3F& ptOrg,
 		pt.z = y * sin_qp;	// + z * cos_qp;
 		//
 		pt += ptOrg;
-		v.insert(v.end(), begin(pt.xyz), end(pt.xyz));
+		v.insert(v.end(), b, e);
 	}
 }
 
@@ -1326,7 +1331,8 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 	CPointF		ptOrgXY( m_ptOrg.GetXY() ),
 				ptOrgUV;
 	CPoint3F	pt1, pt2;
-
+	auto		bt1 = begin(pt1.xyz), et1 = end(pt1.xyz),
+				bt2 = begin(pt2.xyz), et2 = end(pt2.xyz);
 
 	if ( bStart )
 		CNCdata::AddGLWireVertex(vpt, vnr, vef, wl, TRUE);
@@ -1359,19 +1365,19 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 			sxy = sin(min(sqxy, eqxy));
 			pt1.x = rxy * cxy + ptOrgXY.x;
 			pt1.y = rxy * sxy + ptOrgXY.y;
-			vpt.insert(vpt.end(), begin(pt1.xyz), end(pt1.xyz));
+			vpt.insert(vpt.end(), bt1, et1);
 			pt1.x = (rxy-1.0f) * cxy + ptOrgXY.x;
 			pt1.y = (rxy-1.0f) * sxy + ptOrgXY.y;
-			vnr.insert(vnr.end(), begin(pt1.xyz), end(pt1.xyz));
+			vnr.insert(vnr.end(), bt1, et1);
 			if ( m_pWireObj ) {
 				cuv = cos(min(squv, equv));
 				suv = sin(min(squv, equv));
 				pt2.x = ruv * cuv + ptOrgUV.x;
 				pt2.y = ruv * suv + ptOrgUV.y;
-				vpt.insert(vpt.end(), begin(pt2.xyz), end(pt2.xyz));
+				vpt.insert(vpt.end(), bt2, et2);
 				pt2.x = (ruv-1.0f) * cuv + ptOrgUV.x;
 				pt2.y = (ruv-1.0f) * suv + ptOrgUV.y;
-				vnr.insert(vnr.end(), begin(pt2.xyz), end(pt2.xyz));
+				vnr.insert(vnr.end(), bt2, et2);
 			}
 		}
 	}
@@ -1381,19 +1387,19 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 			sxy = sin(max(sqxy, eqxy));
 			pt1.x = rxy * cxy + ptOrgXY.x;
 			pt1.y = rxy * sxy + ptOrgXY.y;
-			vpt.insert(vpt.end(), begin(pt1.xyz), end(pt1.xyz));
+			vpt.insert(vpt.end(), bt1, et1);
 			pt1.x = (rxy-1.0f) * cxy + ptOrgXY.x;
 			pt1.y = (rxy-1.0f) * sxy + ptOrgXY.y;
-			vnr.insert(vnr.end(), begin(pt1.xyz), end(pt1.xyz));
+			vnr.insert(vnr.end(), bt1, et1);
 			if ( m_pWireObj ) {
 				cuv = cos(max(squv, equv));
 				suv = sin(max(squv, equv));
 				pt2.x = ruv * cuv + ptOrgUV.x;
 				pt2.y = ruv * suv + ptOrgUV.y;
-				vpt.insert(vpt.end(), begin(pt2.xyz), end(pt2.xyz));
+				vpt.insert(vpt.end(), bt2, et2);
 				pt2.x = (ruv-1.0f) * cuv + ptOrgUV.x;
 				pt2.y = (ruv-1.0f) * suv + ptOrgUV.y;
-				vnr.insert(vnr.end(), begin(pt2.xyz), end(pt2.xyz));
+				vnr.insert(vnr.end(), bt2, et2);
 			}
 		}
 	}
@@ -1401,20 +1407,20 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 	sxy = sin(eqxy);
 	pt1.x = rxy * cxy + ptOrgXY.x;
 	pt1.y = rxy * sxy + ptOrgXY.y;
-	vpt.insert(vpt.end(), begin(pt1.xyz), end(pt1.xyz));
+	vpt.insert(vpt.end(), bt1, et1);
 	pt1.x = (rxy-1.0f) * cxy + ptOrgXY.x;
 	pt1.y = (rxy-1.0f) * sxy + ptOrgXY.y;
-	vnr.insert(vnr.end(), begin(pt1.xyz), end(pt1.xyz));
+	vnr.insert(vnr.end(), bt1, et1);
 	nCnt++;
 	if ( m_pWireObj ) {
 		cuv = cos(equv);
 		suv = sin(equv);
 		pt2.x = ruv * cuv + ptOrgUV.x;
 		pt2.y = ruv * suv + ptOrgUV.y;
-		vpt.insert(vpt.end(), begin(pt2.xyz), end(pt2.xyz));
+		vpt.insert(vpt.end(), bt2, et2);
 		pt2.x = (ruv-1.0f) * cuv + ptOrgUV.x;
 		pt2.y = (ruv-1.0f) * suv + ptOrgUV.y;
-		vnr.insert(vnr.end(), begin(pt2.xyz), end(pt2.xyz));
+		vnr.insert(vnr.end(), bt2, et2);
 	}
 
 	// ‹OÕ‚Ì’¸“_²ÝÃÞ¯¸½
@@ -1458,16 +1464,16 @@ int CNCcircle::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, 
 	for ( ; sqxy<eqxy || squv<equv; sqxy+=ARCSTEP, squv+=ARCSTEP, nCnt+=4 ) {
 		f = dAccuLength / dAllLength;
 		pfTEX[n++] = f;
-		pfTEX[n++] = 0.0;
+		pfTEX[n++] = 0.0f;
 		pfTEX[n++] = f;
-		pfTEX[n++] = 1.0;
+		pfTEX[n++] = 1.0f;
 		dAccuLength += rxy*ARCSTEP;	// 2ƒÎr * ARCSTEP/2ƒÎ
 	}
 	f = dAccuLength / dAllLength;
 	pfTEX[n++] = f;
-	pfTEX[n++] = 0.0;
+	pfTEX[n++] = 0.0f;
 	pfTEX[n++] = f;
-	pfTEX[n  ] = 1.0;
+	pfTEX[n  ] = 1.0f;
 
 	return nCnt+4;
 }

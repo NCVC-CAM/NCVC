@@ -91,7 +91,7 @@ CFloatEdit& CFloatEdit::operator =(float d)
 	CString	strBuf;
 	if ( m_bIntFormat ) {
 		float	integer;
-		if ( fabs(modf(d, &integer)) == 0.0 )
+		if ( fabs(modf(d, &integer)) == 0.0f )
 			strBuf = lexical_cast<string>((int)integer).c_str();
 		else
 			strBuf.Format(IDS_MAKENCD_FORMAT, d);

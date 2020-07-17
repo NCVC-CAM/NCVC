@@ -268,7 +268,7 @@ tuple<int, CPointF, CPointF> CalcIntersectionPoint_LC
 	int		nResult = 0;
 	CPointF	pr1, pr2,
 			pt(pte-pts), pto(ptc-pts);	// 始点を中心に
-	float	q = atan2(pt.y, pt.x);		// 線の傾き
+	float	q = pt.arctan();			// 線の傾き
 	pto.RoundPoint(-q);					// 円の中心を線の傾き分逆回転
 	float	y  = fabs(pto.y),			// 円の中心とX軸(直線)との距離
 			yr = RoundUp(y-r);
@@ -326,11 +326,11 @@ tuple<int, CPointF, CPointF> CalcIntersectionPoint_CC
 
 	int		nResult = 0;
 	CPointF	pr1, pr2,
-			pt(pte-pts);			// 始点Ｓが原点となるよう平行移動
+			pt(pte-pts);		// 始点Ｓが原点となるよう平行移動
 	float	l,
-			r1r2p = r1 + r2,		// 使用頻度の高い計算
+			r1r2p = r1 + r2,	// 使用頻度の高い計算
 			r1r2n = fabs(r1 - r2),
-			q = atan2(pt.y, pt.x);	// 回転角度
+			q = pt.arctan();	// 回転角度
 
 	// 他方(pte)の中心座標がx軸上になるよう逆回転
 	pt.RoundPoint(-q);
@@ -496,7 +496,7 @@ tuple<CPointF, CPointF> CalcOffsetLine
 {
 	float	k = bLeft ? 1.0f : -1.0f;	// 左:+, 右:- 90°
 	// 始点を原点にした傾き+90°
-	float	q = atan2(pte.y-pts.y, pte.x-pts.x) + copysign(RAD(90.0f), k),
+	float	q = pts.arctan(pte) + copysign(RAD(90.0f), k),
 			cos_q = r * cos(q),
 			sin_q = r * sin(q);
 
@@ -514,9 +514,9 @@ float CalcBetweenAngle(const CPointF& pts, const CPointF& pte)
 	// pto(２線の共通点)を原点に
 	CPointF	pt(pte);
 	// ptsの角度でpteをｱﾌｨﾝ変換
-	pt.RoundPoint(-atan2(pts.y, pts.x));
+	pt.RoundPoint(-pts.arctan());
 	// ptsが0度扱いなのでptの角度が２線間の角度(-180～180°で返す)
-	return atan2(pt.y, pt.x);
+	return pt.arctan();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -638,8 +638,7 @@ BOOL IsPointInPolygon(const CPointF& ptTarget, const CVPointF& pt)
 float CalcLineDistancePt(const CPointF& pts, const CPointF& pte, const CPointF& ptc)
 {
 	CPointF	pt(pte-pts), pto(ptc-pts);
-	float	q = atan2(pt.y, pt.x);
-	pto.RoundPoint(-q);
+	pto.RoundPoint(-pt.arctan());
 	return fabs(pto.y);
 }
 
@@ -666,7 +665,7 @@ tuple<int, float, float>	GetKon(float a, float b, float c)
 		float d = b*b - 4.0f*c;
 		if ( d > NCMIN ) {
 			d = sqrt(d);
-			x1 = (b > 0.0 ? (-b - d) : (-b + d)) / 2.0f;
+			x1 = (b > 0.0f ? (-b - d) : (-b + d)) / 2.0f;
 			x2 = c / x1;
 			nResult = 2;
 		}

@@ -358,7 +358,7 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 		// NC生成のﾙｰﾌﾟ前に必要な初期化
 		{
 			optional<CPointF>	ptResult = g_pDoc->GetCutterOrigin();
-			CDXFdata::ms_ptOrg = ptResult ? *ptResult : 0.0;
+			CDXFdata::ms_ptOrg = ptResult ? *ptResult : 0.0f;
 		}
 		g_pDoc->GetCircleObject()->OrgTuning(FALSE);	// 結果的に原点がｾﾞﾛになる
 		InitialVariable();
@@ -3352,9 +3352,9 @@ int CircleSizeCompareFunc1(CDXFcircle* pFirst, CDXFcircle* pSecond)
 {
 	int		nResult;
 	float	dResult = pFirst->GetMakeR() - pSecond->GetMakeR();
-	if ( dResult == 0.0 )
+	if ( dResult == 0.0f )
 		nResult = 0;
-	else if ( dResult > 0.0 )
+	else if ( dResult > 0.0f )
 		nResult = 1;
 	else
 		nResult = -1;
@@ -3365,9 +3365,9 @@ int CircleSizeCompareFunc2(CDXFcircle* pFirst, CDXFcircle* pSecond)
 {
 	int		nResult;
 	float	dResult = pSecond->GetMakeR() - pFirst->GetMakeR();
-	if ( dResult == 0.0 )
+	if ( dResult == 0.0f )
 		nResult = 0;
-	else if ( dResult > 0.0 )
+	else if ( dResult > 0.0f )
 		nResult = 1;
 	else
 		nResult = -1;
@@ -3378,9 +3378,9 @@ int DrillOptimaizeCompareFuncX(CDXFdata* pFirst, CDXFdata* pSecond)
 {
 	int		nResult;
 	float	dResult = pFirst->GetEndCutterPoint().x - pSecond->GetEndCutterPoint().x;
-	if ( dResult == 0.0 )
+	if ( dResult == 0.0f )
 		nResult = 0;
-	else if ( dResult > 0.0 )
+	else if ( dResult > 0.0f )
 		nResult = 1;
 	else
 		nResult = -1;
@@ -3391,9 +3391,9 @@ int DrillOptimaizeCompareFuncY(CDXFdata* pFirst, CDXFdata* pSecond)
 {
 	int		nResult;
 	float	dResult = pFirst->GetEndCutterPoint().y - pSecond->GetEndCutterPoint().y;
-	if ( dResult == 0.0 )
+	if ( dResult == 0.0f )
 		nResult = 0;
-	else if ( dResult > 0.0 )
+	else if ( dResult > 0.0f )
 		nResult = 1;
 	else
 		nResult = -1;
@@ -3405,9 +3405,9 @@ int AreaSizeCompareFunc(CDXFchain* pFirst, CDXFchain* pSecond)
 	int		nResult;
 	CRectF	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
 	float	dResult = rc1.Width() * rc1.Height() - rc2.Width() * rc2.Height();
-	if ( dResult == 0.0 )
+	if ( dResult == 0.0f )
 		nResult = 0;
-	else if ( dResult > 0.0 )
+	else if ( dResult > 0.0f )
 		nResult = 1;
 	else
 		nResult = -1;
