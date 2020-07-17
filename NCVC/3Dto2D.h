@@ -20,16 +20,26 @@ const float	ARCSTEP  = PI/32.0f;	// 2ƒÎ[rad]€ARCCOUNT
 //////////////////////////////////////////////////////////////////////
 
 // Radian•ÏŠ·
-//template<typename T> inline	T	RAD(T dVal)
-inline	float	RAD(float dVal)
+//template<typename T> inline	T RAD(T dVal)
+//template<> inline double RAD(double dVal)
+inline float RAD(float dVal)
 {
 	return dVal * PI / 180.0f;
 }
+inline double RAD(double dVal)
+{
+	return dVal * PI / 180.0;
+}
 // Degree•ÏŠ·
 //template<typename T> inline	T	DEG(T dVal)
+//template<> inline	double	DEG(double dVal)
 inline	float	DEG(float dVal)
 {
 	return dVal * 180.0f / PI;
+}
+inline	double	DEG(double dVal)
+{
+	return dVal * 180.0 / PI;
 }
 // ÃŞÌ«ÙÄ‚Ì‰ñ“]Šp“x
 const float RX = RAD(-60.0f);
@@ -38,15 +48,25 @@ const float RZ = RAD(-35.0f);
 
 // 1/1000 lÌŒÜ“ü
 //template<typename T> inline	T RoundUp(T dVal)
-inline	float	RoundUp(float dVal)
+//template<> inline double RoundUp(double dVal)
+inline float RoundUp(float dVal)
 {
 	return copysign( floor(fabs(dVal) * 1000.0f + 0.5f) / 1000.0f, dVal );
 }
+inline double RoundUp(double dVal)
+{
+	return copysign( floor(fabs(dVal) * 1000.0 + 0.5) / 1000.0, dVal );
+}
 // 1/1000 Ø‚èÌ‚Ä
 //template<typename T> inline	T RoundCt(T dVal)
-inline	float	RoundCt(float dVal)
+//template<> inline double RoundCt(double dVal)
+inline float RoundCt(float dVal)
 {
 	return copysign( floor(fabs(dVal) * 1000.0f) / 1000.0f, dVal );
+}
+inline double RoundCt(double dVal)
+{
+	return copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -147,9 +167,7 @@ public:
 		ASSERT(a>=0 && a<SIZEOF(xy));
 		return xy[a];
 	}
-	T	hypot(void) const {
-		return ::_hypotf(x, y);
-	}
+	T	hypot(void) const;	// “Áê‰»‚Ì‚½‚ß‚±‚±‚Å‚ÍéŒ¾‚Ì‚İ
 	// •ÏŠ·ŠÖ”
 	operator CPoint() const {
 		return CPoint((int)x, (int)y);
@@ -176,6 +194,14 @@ typedef	CPointT<double>			CPointD;
 typedef	CPointT<float>			CPointF;
 typedef	std::vector<CPointF>	CVPointF;
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointF, float,  cs::cartesian, x, y)
+template<typename T> T CPointT<T>::hypot(void) const
+{
+	return ::hypotf(x, y);
+}
+template<> double CPointT<double>::hypot(void) const
+{
+	return ::hypot(x, y);
+}
 
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD ƒNƒ‰ƒX
@@ -467,14 +493,21 @@ public:
 	void	SetRectEmpty(void) {
 		left = top = right = bottom = 0;
 	}
-	void	SetRectMinimum(void) {
-		left  = top    =  FLT_MAX;
-		right = bottom = -FLT_MAX;
-	}
+	void	SetRectMinimum(void);
 };
 typedef	CRectT<double>	CRectD;
 typedef	CRectT<float>	CRectF;
 //BOOST_GEOMETRY_REGISTER_BOX_2D_4VALUES(CRectD, CPointD, left, top, right, bottom)
+template<typename T> void CRectT<T>::SetRectMinimum(void)
+{
+	left  = top    =  FLT_MAX;
+	right = bottom = -FLT_MAX;
+}
+template<> void CRectT<double>::SetRectMinimum(void)
+{
+	left  = top    =  DBL_MAX;
+	right = bottom = -DBL_MAX;
+}
 
 //////////////////////////////////////////////////////////////////////
 // CRect‚RŸŒ³‹éŒ`¸×½
@@ -559,26 +592,43 @@ public:
 		CRectT<T>::SetRectEmpty();
 		high = low = 0;
 	}
-	void	SetRectMinimum(void) {
-		CRectT<T>::SetRectMinimum();
-		high  = -FLT_MAX;
-		low   =  FLT_MAX;
-	}
+	void	SetRectMinimum(void);
 };
 typedef	CRect3T<double>	CRect3D;
 typedef	CRect3T<float>	CRect3F;
+template<typename T> void CRect3T<T>::SetRectMinimum(void)
+{
+	CRectT<T>::SetRectMinimum();
+	high  = -FLT_MAX;
+	low   =  FLT_MAX;
+}
+template<> void CRect3T<double>::SetRectMinimum(void)
+{
+	CRectD::SetRectMinimum();
+	high  = -DBL_MAX;
+	low   =  DBL_MAX;
+}
 
 //////////////////////////////////////////////////////////////////////
 // NCVC”’l‰‰Z‹¤’ÊŠÖ”
 
 //	·Ş¬¯ÌßŒvZ‚Ì²İ×²İŠÖ”
 //template<typename T> inline	T	GAPCALC(T x, T y)
+//template<> inline	double	GAPCALC(double x, double y)
 inline	float	GAPCALC(float x, float y)
 {
 //	return	_hypot(x, y);	// ŠÔ‚ª‚©‚©‚è‚·‚¬
 	return	x*x + y*y;		// •½•ûª‚ğæ‚ç‚¸‚Qæ‚Åˆ—
 }
+inline	double	GAPCALC(double x, double y)
+{
+	return	x*x + y*y;
+}
 inline	float	GAPCALC(const CPointF& pt)
+{
+	return GAPCALC(pt.x, pt.y);
+}
+inline	double	GAPCALC(const CPointD& pt)
 {
 	return GAPCALC(pt.x, pt.y);
 }

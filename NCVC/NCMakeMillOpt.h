@@ -25,7 +25,7 @@ enum {
 	MKNC_NUM_DRILLSPINDLE,		// 穴あけ回転数
 	MKNC_NUM_DWELL,				// ﾄﾞｳｪﾙ時間
 	MKNC_NUM_DWELLFORMAT,		// ﾄﾞｳｪﾙ時間の表記
-	MKNC_NUM_DRILLRETURN,		// 穴あけのZ軸復帰
+	MKNC_NUM_DRILLRETURN,		// 穴あけの加工ｺｰﾄﾞ
 	MKNC_NUM_DRILLPROCESS,		// 穴あけの仕方
 	MKNC_NUM_DRILLSORT,			// 穴あけのｸﾞﾙｰﾋﾟﾝｸﾞ順序
 	MKNC_NUM_DRILLCIRCLEPROCESS,// 円ﾃﾞｰﾀを含むときの穴あけ順序
@@ -51,10 +51,11 @@ enum {
 	MKNC_DBL_DRILLFEED,			// 穴あけ送り
 	MKNC_DBL_DRILLR,			// 穴加工R点
 	MKNC_DBL_DRILLZ,			// 穴加工切り込み
+	MKNC_DBL_DRILLQ,			// 深穴Q値
 	MKNC_DBL_DRILLCIRCLE,		// 穴加工に見立てる円ﾃﾞｰﾀの半径
 	MKNC_DBL_TOLERANCE,			// 同一座標と見なす許容差
 	MKNC_DBL_DRILLMARGIN,		// 基準軸に対する許容差
-		MKNC_DBL_NUMS		// [19]
+		MKNC_DBL_NUMS		// [20]
 };
 enum {
 	MKNC_FLG_PROG = 0,			// O番号付与
@@ -130,6 +131,7 @@ enum {
 #define	MIL_D_DRILLFEED				m_pDblOpt[MKNC_DBL_DRILLFEED]
 #define	MIL_D_DRILLR				m_pDblOpt[MKNC_DBL_DRILLR]
 #define	MIL_D_DRILLZ				m_pDblOpt[MKNC_DBL_DRILLZ]
+#define	MIL_D_DRILLQ				m_pDblOpt[MKNC_DBL_DRILLQ]
 #define	MIL_D_DRILLCIRCLE			m_pDblOpt[MKNC_DBL_DRILLCIRCLE]
 #define	MIL_D_TOLERANCE				m_pDblOpt[MKNC_DBL_TOLERANCE]
 #define	MIL_D_DRILLMARGIN			m_pDblOpt[MKNC_DBL_DRILLMARGIN]

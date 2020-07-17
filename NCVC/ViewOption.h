@@ -37,7 +37,8 @@ enum {
 	NCVIEWFLG_WIREPATH,
 	NCVIEWFLG_DRAGRENDER,
 	NCVIEWFLG_TEXTURE,
-		NCVIEWFLG_NUMS		// [9]
+	NCVIEWFLG_NOACTIVETRACEGL,
+		NCVIEWFLG_NUMS		// [10]
 };
 enum {
 	COMCOL_RECT = 0,
@@ -113,7 +114,8 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 					m_bSolidView,		// OpenGLｿﾘｯﾄﾞ表示
 					m_bWirePath,		// ﾜｲﾔﾊﾟｽ表示
 					m_bDragRender,		// ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ
-					m_bTexture;			// ﾃｸｽﾁｬの貼り付け
+					m_bTexture,			// ﾃｸｽﾁｬの貼り付け
+					m_bNoActiveTraceGL;	// 非ｱｸﾃｨﾌﾞでもﾄﾚｰｽ
 		};
 		BOOL		m_bNCFlag[NCVIEWFLG_NUMS];
 	};

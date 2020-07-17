@@ -448,7 +448,8 @@ void InitialCycleBaseVariable(void)
 {
 	CNCMakeMill::ms_dCycleZ[1] =
 	CNCMakeMill::ms_dCycleR[1] =
-	CNCMakeMill::ms_dCycleP[1] = HUGE_VALF;
+	CNCMakeMill::ms_dCycleP[1] =
+	CNCMakeMill::ms_dCycleQ[1] = HUGE_VALF;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -471,6 +472,7 @@ BOOL SingleLayer(int nID)
 	// ŒÅ’è»²¸Ù‚ÌØ‚è‚İÀ•W¾¯Ä
 	CNCMakeMill::ms_dCycleZ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLZ));
 	CNCMakeMill::ms_dCycleR[0] = RoundUp(GetDbl(MKNC_DBL_DRILLR));
+	CNCMakeMill::ms_dCycleQ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLQ));
 	CNCMakeMill::ms_dCycleP[0] = (float)GetNum(MKNC_NUM_DWELL);
 	InitialCycleBaseVariable();
 	// ¸ŞÛ°ÊŞÙ•Ï”‚É¶¬‘ÎÛµÌŞ¼Şª¸Ä‚ÌºËß°
@@ -572,6 +574,7 @@ BOOL MultiLayer(int nID)
 		}
 		// ŒÅ’è»²¸Ù‚»‚Ì‘¼‚ÌÀ•W¾¯Ä
 		CNCMakeMill::ms_dCycleR[0] = RoundUp(GetDbl(MKNC_DBL_DRILLR));
+		CNCMakeMill::ms_dCycleQ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLQ));
 		CNCMakeMill::ms_dCycleP[0] = (float)GetNum(MKNC_NUM_DWELL);
 		InitialCycleBaseVariable();
 		// ¸ŞÛ°ÊŞÙ•Ï”‚É¶¬‘ÎÛµÌŞ¼Şª¸Ä‚ÌºËß°

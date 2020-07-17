@@ -14,8 +14,8 @@ class CNCMakeMill : public CNCMakeBase
 {
 	// 生成中は変化のないｵﾌﾟｼｮﾝに対する動作
 	static	PFNGETCYCLESTRING	ms_pfnGetCycleString;	// Gｺｰﾄﾞﾓｰﾀﾞﾙ(固定ｻｲｸﾙ)
-	static	int		ms_nCycleCode;	// 固定ｻｲｸﾙの切削指示(81,82,85,89)
-	static	int		ms_nCycleReturn;// 固定ｻｲｸﾙの復帰指示(88,89)
+	static	int		ms_nCycleCode;	// 固定ｻｲｸﾙの切削指示(81,82,83,85,89)
+	static	int		ms_nCycleReturn;// 固定ｻｲｸﾙの復帰指示(98,99)
 	// Gｺｰﾄﾞﾓｰﾀﾞﾙ(固定ｻｲｸﾙ)
 	static	CString	GetCycleString(void);
 	static	CString	GetCycleString_Clip(void);
@@ -45,9 +45,10 @@ public:
 	static	void	SetStaticOption(const CNCMakeMillOpt*);
 
 	// TH_MakeNCD.cpp で初期化
-	static	float	ms_dCycleZ[2];	// 固定ｻｲｸﾙの切り込みZ座標
-	static	float	ms_dCycleR[2];	// 固定ｻｲｸﾙのR点
-	static	float	ms_dCycleP[2];	// 固定ｻｲｸﾙのﾄﾞｳｪﾙ時間
+	static	float	ms_dCycleZ[2],	// 固定ｻｲｸﾙの切り込みZ座標
+					ms_dCycleR[2],	// 固定ｻｲｸﾙのR点
+					ms_dCycleP[2],	// 固定ｻｲｸﾙのﾄﾞｳｪﾙ時間
+					ms_dCycleQ[2];	// G83深穴Q値
 
 	// TH_MakeNCD.cpp から参照
 	static	CString	MakeSpindle(ENDXFTYPE enType, BOOL bDeep = FALSE);

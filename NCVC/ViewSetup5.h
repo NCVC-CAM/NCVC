@@ -25,7 +25,8 @@ public:
 	BOOL	m_bSolid,
 			m_bWirePath,
 			m_bDrag,
-			m_bTexture;
+			m_bTexture,
+			m_bNoActiveTraceGL;
 	int		m_nMillType;
 	CButton m_ctG00View,
 			m_ctDrag,

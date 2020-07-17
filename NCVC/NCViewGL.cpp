@@ -3196,7 +3196,8 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 		DoScale(0);		// MDIŽqÌÚ°Ñ‚Ì½Ã°À½ÊÞ°‚Éî•ñ•\Ž¦(‚¾‚¯)
 	}
 	else {
-		if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_RUN ) {
+		if ( GetDocument()->GetTraceMode()==ID_NCVIEW_TRACE_RUN &&
+			!AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_NOACTIVETRACEGL) ) {
 			// ÄÚ°½ˆêŽž’âŽ~
 			static_cast<CNCChild *>(GetParentFrame())->GetMainView()->OnUserTracePause();
 		}

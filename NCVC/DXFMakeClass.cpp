@@ -485,32 +485,43 @@ CDXFMake::CDXFMake(const CDXFdata* pData, const CPointF& pt)
 	m_strDXFarray.Add( strResult );
 }
 
-CDXFMake::CDXFMake(const CPoint3F& pt)
+CDXFMake::CDXFMake(const CPoint3F& pt, float r)
 {
+	// r!=0.0f <- CDXFDoc::MakeDXF()
+	// r==0.0f <- CNCDoc::MakeDXF()
 	float	dVal[DXFMAXVALUESIZE];
 
 	// 原点(円)情報出力
-	if ( GetFlg(MKDX_FLG_ORGCIRCLE) ) {
+	if ( r!=0.0f || GetFlg(MKDX_FLG_ORGCIRCLE) ) {
 		// ｵﾌﾞｼﾞｪｸﾄ情報
-		m_strDXFarray.Add( MakeDXF_Figure(TYPE_CIRCLE, MKDX_STR_ORIGIN) );
+		m_strDXFarray.Add(
+			_MakeFigure(TYPE_CIRCLE, AfxGetNCVCApp()->GetDXFOption()->GetReadLayer(DXFORGLAYER))
+		);
 		// 座標値
-		switch ( GetNum(MKDX_NUM_PLANE) ) {
-		case 1:		// XZ
+		if ( r != 0.0f ) {
 			dVal[VALUE10] = pt.x;	dVal[VALUE20] = pt.z;
-			break;
-		case 2:		// YZ
-			dVal[VALUE10] = pt.y;	dVal[VALUE20] = pt.z;
-			break;
-		default:	// XY
-			dVal[VALUE10] = pt.x;	dVal[VALUE20] = pt.y;
-			break;
+			dVal[VALUE40] = r;
 		}
-		dVal[VALUE40] = GetDbl(MKDX_DBL_ORGLENGTH);
+		else {
+			m_strDXFarray.Add( MakeDXF_Figure(TYPE_CIRCLE, MKDX_STR_ORIGIN) );
+			switch ( GetNum(MKDX_NUM_PLANE) ) {
+			case 1:		// XZ
+				dVal[VALUE10] = pt.x;	dVal[VALUE20] = pt.z;
+				break;
+			case 2:		// YZ
+				dVal[VALUE10] = pt.y;	dVal[VALUE20] = pt.z;
+				break;
+			default:	// XY
+				dVal[VALUE10] = pt.x;	dVal[VALUE20] = pt.y;
+				break;
+			}
+			dVal[VALUE40] = GetDbl(MKDX_DBL_ORGLENGTH);
+		}
 		m_strDXFarray.Add( _MakeValue(VALFLG_CIRCLE, dVal) );
 	}
 
 	// 原点(ｸﾛｽ)情報出力
-	if ( GetFlg(MKDX_FLG_ORGCROSS) ) {
+	if ( r==0.0f && GetFlg(MKDX_FLG_ORGCROSS) ) {
 		float	d1 = GetDbl(MKDX_DBL_ORGLENGTH), d2 = 0.0;
 		for ( int i=0; i<2; i++ ) {
 			// ｵﾌﾞｼﾞｪｸﾄ情報

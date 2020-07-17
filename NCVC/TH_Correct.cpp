@@ -646,7 +646,7 @@ int GetInsideOutside(const CNCdata* pData1, const CNCdata* pData2, DWORD dwValFl
 	int		nResult;
 
 	// ｵﾌﾞｼﾞｪｸﾄ間の角度を求める(-180°～180°)
-	// 精度よすぎてダメな場合が多いので、少数第１位で四捨五入
+	// 精度よすぎてダメな場合が多いので、小数第１位で四捨五入
 	float	dAngle = RoundUp(DEG(pData1->CalcBetweenAngle(pData2)/100.0f)) * 100.0f;
 	
 	// 内側か外側(鋭角・鈍角)か？(180°では内側処理)

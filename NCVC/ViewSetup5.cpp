@@ -36,12 +36,13 @@ CViewSetup5::CViewSetup5() : CPropertyPage(CViewSetup5::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	m_bSolid		= pOpt->m_bSolidView;
-	m_bWirePath		= pOpt->m_bWirePath;
-	m_bDrag			= pOpt->m_bDragRender;
-	m_bTexture		= pOpt->m_bTexture;
-	m_strTexture	= pOpt->m_strTexture;
-	m_nMillType		= pOpt->m_nMillType;
+	m_bSolid			= pOpt->m_bSolidView;
+	m_bWirePath			= pOpt->m_bWirePath;
+	m_bDrag				= pOpt->m_bDragRender;
+	m_bTexture			= pOpt->m_bTexture;
+	m_bNoActiveTraceGL	= pOpt->m_bNoActiveTraceGL;
+	m_strTexture		= pOpt->m_strTexture;
+	m_nMillType			= pOpt->m_nMillType;
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
 		m_colView[i] = pOpt->m_colNCView[i+NCCOL_GL_WRK];
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
@@ -67,6 +68,7 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_VIEWSETUP5_G00VIEW, m_bWirePath);
 	DDX_Check(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_bDrag);
 	DDX_Check(pDX, IDC_VIEWSETUP5_TEXTURE, m_bTexture);
+	DDX_Check(pDX, IDC_VIEWSETUP5_NOACTIVETRACEGL, m_bNoActiveTraceGL);
 	DDX_Text(pDX, IDC_VIEWSETUP5_TEXTUREFILE, m_strTexture);
 	DDX_CBIndex(pDX, IDC_VIEWSETUP5_MILL_TYPE, m_nMillType);
 	for ( int i=0; i<SIZEOF(m_ctColor); i++ )
@@ -118,12 +120,13 @@ BOOL CViewSetup5::OnApply()
 	if ( pOpt->m_bTexture != m_bTexture ||
 			pOpt->m_strTexture != m_strTexture )
 		pOpt->m_dwUpdateFlg |= VIEWUPDATE_TEXTURE;
-	pOpt->m_bSolidView	= m_bSolid;
-	pOpt->m_bWirePath	= m_bWirePath;
-	pOpt->m_bDragRender	= m_bDrag;
-	pOpt->m_bTexture	= m_bTexture;
-	pOpt->m_strTexture	= m_strTexture;
-	pOpt->m_nMillType	= m_nMillType;
+	pOpt->m_bSolidView		= m_bSolid;
+	pOpt->m_bWirePath		= m_bWirePath;
+	pOpt->m_bDragRender		= m_bDrag;
+	pOpt->m_bTexture		= m_bTexture;
+	pOpt->m_bNoActiveTraceGL= m_bNoActiveTraceGL;
+	pOpt->m_strTexture		= m_strTexture;
+	pOpt->m_nMillType		= m_nMillType;
 	pOpt->m_dDefaultEndmill = m_dEndmill / 2.0f;
 
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {

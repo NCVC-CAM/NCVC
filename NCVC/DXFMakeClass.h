@@ -66,7 +66,7 @@ public:
 	CDXFMake(const CNCdata*,  BOOL = FALSE);
 	CDXFMake(const CDXFdata*, const CPointF&);
 	// 原点情報、ﾜｰｸ矩形
-	CDXFMake(const CPoint3F&);
+	CDXFMake(const CPoint3F&, float = 0.0f);
 	CDXFMake(const CRectF&);
 
 	// 静的変数初期化

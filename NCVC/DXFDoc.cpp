@@ -632,6 +632,12 @@ void CDXFDoc::MakeDXF(const CString& strFile)
 			pMake = new CDXFMake((enSECNAME)i, this);
 			obDXFdata.Add(pMake);
 		}
+		// 原点情報出力
+		if ( m_pCircle ) {
+			CPoint3F	ptOrg = m_pCircle->GetCenter();
+			pMake = new CDXFMake(ptOrg, m_pCircle->GetR());
+			obDXFdata.Add(pMake);
+		}
 		// 図形情報出力
 		if ( IsBindParent() ) {
 			pMake = new CDXFMake(GetMaxRect());	// ﾜｰｸ矩形
@@ -780,8 +786,11 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		DbgSerializeInfo();
 #endif
 		// 切削ﾃﾞｰﾀがないとき
-		for ( i=nCnt=0; i<m_obLayer.GetSize(); i++ )
-			nCnt += m_obLayer[i]->GetDxfSize();
+		for ( i=nCnt=0; i<m_obLayer.GetSize(); i++ ) {
+			CLayerData* pLayer = m_obLayer[i];
+			nCnt += pLayer->GetDxfSize();	// CAMレイヤの単独テキストの扱い
+//			nCnt += pLayer->GetDxfSize() + pLayer->GetDxfTextSize();
+		}
 		if ( nCnt < 1 ) {
 			if ( !IsBindMode() )
 				AfxMessageBox(IDS_ERR_DXFDATACUT, MB_OK|MB_ICONEXCLAMATION);

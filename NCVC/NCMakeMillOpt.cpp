@@ -42,7 +42,7 @@ static	LPCTSTR	g_szMilDOrder[] = {
 	"ZG0Stop", "ZCut", "G92X", "G92Y", "G92Z",
 	"Ellipse",
 	"MakeEndValue", "MakeEndFeed", "DeepFinal", "ZStep", "FinishFeed",
-	"DrillFeed", "DrillR", "DrillZ", "DrillCircleR",
+	"DrillFeed", "DrillR", "DrillZ", "DrillQ", "DrillCircleR",
 	"Tolerance", "DrillMargin"
 };
 static	const	float	g_dfMilDOrder[] = {
@@ -50,7 +50,7 @@ static	const	float	g_dfMilDOrder[] = {
 	1.0, -12.0, 0.0, 0.0, 10.0,
 	0.5,
 	0.0, 1000.0, -20.0, -2.0, 100.0,
-	60.0, -9.0, -12.0, 10.0,
+	60.0, -9.0, -12.0, 1.0, 10.0,
 	NCMIN, 1.0
 };
 
@@ -157,7 +157,8 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKNC_NUM_DWELL,			"ƒﬁ≥™Ÿéûä‘"},
 	{NC_NUM,	MKNC_NUM_DWELLFORMAT,	"ƒﬁ≥™Ÿéûä‘ï\ãL(0:è¨êîì_,1:êÆêî)"},
 	{NC_NUM,	MKNC_NUM_DRILLPROCESS,	"åäâ¡çHéËèá(0:êÊ,1:å„,2:ÇÃÇ›)"},
-	{NC_NUM,	MKNC_NUM_DRILLRETURN,	"Zé≤ïúãA(0:G81|G82,1:G85|G89)"},
+	{NC_NUM,	MKNC_NUM_DRILLRETURN,	"â¡çH¿≤Ãﬂ(0:G81|G82,1:G85|G89, 2:G83)"},
+	{NC_DBL,	MKNC_DBL_DRILLQ,		"G83ê[åäQíl"},
 	{NC_FLG,	MKNC_FLG_DRILLCIRCLE,	"â~√ﬁ∞¿Ç‡åäâ¡çH"},
 	{NC_DBL,	MKNC_DBL_DRILLCIRCLE,	"ëŒè€îºåa"},
 	{NC_NUM,	MKNC_NUM_DRILLSORT,		"∏ﬁŸ∞Àﬂ›∏ﬁ(0:è∏èá,1:ç~èá)"},
@@ -374,6 +375,7 @@ void CNCMakeMillOpt::DbgDump(void) const
 	dbg.printf("  DwellFormat  =%d", MIL_I_DWELLFORMAT);
 	dbg.printf("  DrillProcess =%d", MIL_I_DRILLPROCESS);
 	dbg.printf("  DrillZProcess=%d", MIL_I_DRILLRETURN);
+	dbg.printf("  DrillQ       =%f", MIL_D_DRILLQ);
 	dbg.printf("----------");
 	dbg.printf("  DrillCircle  =%d", MIL_F_DRILLCIRCLE);
 	dbg.printf("  DrillCircleR =%f", MIL_D_DRILLCIRCLE);

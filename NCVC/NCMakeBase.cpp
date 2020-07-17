@@ -20,6 +20,8 @@ extern	CMagaDbg	g_dbg;
 using std::string;
 using namespace boost;
 
+extern	LPCTSTR	g_szGdelimiter;	// "GSMOF" from NCDoc.cpp
+
 /////////////////////////////////////////////////////////////////////////////
 // ê√ìIïœêîÇÃèâä˙âª
 const	CNCMakeOption*	CNCMakeBase::ms_pMakeOpt = NULL;
@@ -244,7 +246,7 @@ CString	CNCMakeBase::GetSpindleString(int nSpindle)
 {
 	CString	strResult;
 	if ( ms_nSpindle != nSpindle ) {
-		strResult = ("S" + lexical_cast<string>(nSpindle)).c_str();
+		strResult = (g_szGdelimiter[S_TYPE] + lexical_cast<string>(nSpindle)).c_str();
 		ms_nSpindle = nSpindle;
 	}
 	return strResult;
@@ -261,7 +263,7 @@ CString	CNCMakeBase::GetFeedString(float dFeed)
 	CString		strResult;
 	if ( dFeed!=0.0 && ms_dFeed!=dFeed ) {
 		ms_dFeed = dFeed;
-		strResult = "F" + (*ms_pfnGetFeed)(dFeed);
+		strResult = g_szGdelimiter[F_TYPE] + (*ms_pfnGetFeed)(dFeed);
 	}
 	return strResult;
 }

@@ -28,8 +28,9 @@ using namespace boost;
 float	CNCMakeMill::ms_dCycleZ[] = {HUGE_VALF, HUGE_VALF};
 float	CNCMakeMill::ms_dCycleR[] = {HUGE_VALF, HUGE_VALF};
 float	CNCMakeMill::ms_dCycleP[] = {HUGE_VALF, HUGE_VALF};
-int		CNCMakeMill::ms_nCycleCode = 81;
-int		CNCMakeMill::ms_nCycleReturn = 88;
+float	CNCMakeMill::ms_dCycleQ[] = {HUGE_VALF, HUGE_VALF};
+int		CNCMakeMill::ms_nCycleCode = NCMAKECYCLECODE;	// 81
+int		CNCMakeMill::ms_nCycleReturn = 98;
 PFNGETCYCLESTRING	CNCMakeMill::ms_pfnGetCycleString = &CNCMakeMill::GetCycleString;
 
 //////////////////////////////////////////////////////////////////////
@@ -63,6 +64,10 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, float dFeed, const float* pdHeli
 				(!GetFlg(MKNC_FLG_GCLIP) || ms_dCycleP[0]!=ms_dCycleP[1]) ) {
 			strGcode += GetValString(NCA_P, ms_dCycleP[0], TRUE);
 			ms_dCycleP[1] = ms_dCycleP[0];
+		}
+		if ( !GetFlg(MKNC_FLG_GCLIP) || ms_dCycleQ[0]!=ms_dCycleQ[1] ) {
+			strGcode += "Q" + (*ms_pfnGetValDetail)(ms_dCycleQ[0]);
+			ms_dCycleQ[1] = ms_dCycleQ[0];
 		}
 		if ( !strGcode.IsEmpty() )
 			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetCycleString)() +
@@ -361,10 +366,15 @@ void CNCMakeMill::SetStaticOption(const CNCMakeMillOpt* pNCMake)
 		gg_szReturn : GetStr(MKNC_STR_EOB) + gg_szReturn;
 	// --- å≈íËª≤∏Ÿéwé¶
 	ms_nCycleReturn = GetNum(MKNC_NUM_ZRETURN) == 0 ? 98 : 99;
-	if ( GetNum(MKNC_NUM_DWELL) > 0 )
-		ms_nCycleCode = GetNum(MKNC_NUM_DRILLRETURN) == 0 ? 82 : 89;
-	else
-		ms_nCycleCode = GetNum(MKNC_NUM_DRILLRETURN) == 0 ? 81 : 85;
+	if ( GetNum(MKNC_NUM_DRILLRETURN) == 2 ) {
+		ms_nCycleCode = 83;
+	}
+	else {
+		if ( GetNum(MKNC_NUM_DWELL) > 0 )
+			ms_nCycleCode = GetNum(MKNC_NUM_DRILLRETURN) == 0 ? 82 : 89;
+		else
+			ms_nCycleCode = GetNum(MKNC_NUM_DRILLRETURN) == 0 ? 81 : 85;
+	}
 	// --- â~√ﬁ∞¿ÇÃêÿçÌéwé¶
 	ms_nCircleCode = GetNum(MKNC_NUM_CIRCLECODE) == 0 ? 2 : 3;
 	// --- â~,â~å √ﬁ∞¿ÇÃê∂ê¨

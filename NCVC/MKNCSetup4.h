@@ -10,6 +10,7 @@ class CMKNCSetup4 : public CPropertyPage
 {
 	void	EnableControl_Dwell(void);
 	void	EnableControl_Circle(void);
+	void	EnableControl_DrillQ(void);
 
 // コンストラクション
 public:
@@ -26,6 +27,7 @@ public:
 	CFloatEdit	m_dDrillZ;
 	CFloatEdit	m_dDrillR;
 	CFloatEdit	m_dCircleR;
+	CFloatEdit	m_dDrillQ;
 	CIntEdit	m_nDwell;
 	CIntEdit	m_nSpindle;
 	int		m_nProcess;
@@ -55,6 +57,7 @@ protected:
 	//{{AFX_MSG(CMKNCSetup4)
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSelchangeDwellFormat();
+	afx_msg void OnSelchangeZProcess();
 	afx_msg void OnCircle();
 	//}}AFX_MSG
 

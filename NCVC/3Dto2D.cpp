@@ -190,15 +190,16 @@ optional<CPointF> CalcIntersectionPoint_LL
 						}
 						if ( pt1 && pt2 ) {
 							// Œ³‚Ì’¼ü‚ÆŒX‚«‚ª“¯‚¶‚©‚ðÁª¯¸‚µ‚Ä‚©‚ç
-							xa = RoundUp((*pt2).x - (*pt1).x);
-							ya = RoundUp((*pt2).y - (*pt1).y);
-							if ( fabs(xa)>=NCMIN && RoundCt(fabs(ya/xa-yaxa))<=NCMIN ) {
+							// -- Œµ‚µ‚·‚¬‚éHH
+//							xa = RoundUp((*pt2).x - (*pt1).x);
+//							ya = RoundUp((*pt2).y - (*pt1).y);
+//							if ( fabs(xa)>=NCMIN && RoundCt(fabs(ya/xa-yaxa))<=NCMIN ) {
 								xa = (*pt1).x;	xb = (*pt2).x;
 								ya = (*pt1).y;	yb = (*pt2).y;
 								pt.x = ( xb - xa ) / 2.0f + xa;
 								pt.y = ( yb - ya ) / 2.0f + ya;
 								return pt;
-							}
+//							}
 						}
 						// else ‚É‚·‚é‚ÆuŒX‚«‚ª“¯‚¶Áª¯¸v‚Ì‹U‚ªˆø‚Á‚©‚©‚ç‚È‚¢
 						if ( RoundCt(sqrt(GAPCALC(pts2-pts1)))<=NCMIN || RoundCt(sqrt(GAPCALC(pte2-pts1)))<=NCMIN )
@@ -549,12 +550,12 @@ optional<CPointF> CalcOffsetIntersectionPoint_LC
 	if ( !bLeft )
 		k = -k;
 	ro += t2 * k;
-	if ( ro > 0 ) {
+//	if ( ro > 0 ) {		// ‚±‚ÌðŒ‚àOK
 		// µÌ¾¯ÄŒã‚Ì’¼ü‚Æ‰~‚ÌŒð“_
 		tie(nResult, pr1, pr2) = CalcIntersectionPoint_LC(pt1, pt2, pto, ro, FALSE);
 		if ( nResult>1 && GAPCALC(pr1)>GAPCALC(pr2) )
 			pr1 = pr2;
-	}
+//	}
 
 	return nResult > 0 ? pr1 : optional<CPointF>();
 }
