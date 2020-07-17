@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "ViewOption.h"
-#include "ViewSetup2.h"
+#include "ViewSetup.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -134,19 +134,27 @@ BOOL CViewSetup2::OnApply()
 {
 	int		i;
 	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+
 	pOpt->m_bDrawCircleCenter = m_bDrawCircleCenter;
 	pOpt->m_bScale = m_bGuide[0];
 	pOpt->m_bGuide = m_bGuide[1];
-	for ( i=0; i<SIZEOF(m_colView); i++ )
+	for ( i=0; i<SIZEOF(m_colView); i++ ) {
+		if ( pOpt->m_colNCView[i] != m_colView[i] )
+			pOpt->m_dwUpdateFlg |= VIEWUPDATE_DISPLAYLIST;
 		pOpt->m_colNCView[i] = m_colView[i];
-	for ( i=0; i<SIZEOF(m_cbLineType); i++ )
+	}
+	for ( i=0; i<SIZEOF(m_cbLineType); i++ ) {
+		if ( pOpt->m_nNCLineType[i] != m_cbLineType[i].GetCurSel() )
+			pOpt->m_dwUpdateFlg |= VIEWUPDATE_DISPLAYLIST;
 		pOpt->m_nNCLineType[i] = m_cbLineType[i].GetCurSel();
-	for ( i=0; i<NCXYZ; i++ )
+	}
+	for ( i=0; i<NCXYZ; i++ ) {
+		if ( pOpt->m_dGuide[i] != m_dGuide[i] )
+			pOpt->m_dwUpdateFlg |= VIEWUPDATE_REDRAW;
 		pOpt->m_dGuide[i] = m_dGuide[i];
+	}
 
 	SetModified(FALSE);
-	// ﾒｲﾝﾌﾚｰﾑ，各ﾋﾞｭｰへの更新通知
-	AfxGetNCVCApp()->ChangeViewOption();
 
 	return TRUE;
 }
@@ -172,7 +180,7 @@ HBRUSH CViewSetup2::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
 	if ( nCtlColor == CTLCOLOR_STATIC ) {
 		int	nID = pWnd->GetDlgCtrlID();
-		if ( nID>=IDC_VIEWSETUP2_ST_BACKGROUND1 && nID<=IDC_VIEWSETUP2_ST_CORRECT )
+		if ( IDC_VIEWSETUP2_ST_BACKGROUND1<=nID && nID<=IDC_VIEWSETUP2_ST_CORRECT )
 			return m_brColor[nID-IDC_VIEWSETUP2_ST_BACKGROUND1];
 	}
 	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
@@ -208,7 +216,7 @@ void CViewSetup2::OnScale()
 
 void CViewSetup2::OnDefColor() 
 {
-	extern	LPCTSTR	g_szNcViewColDef[];
+	extern	LPCTSTR			g_szNcViewColDef[];
 	extern	const	int		g_nNcViewLineTypeDef[];
 	int		i;
 	COLORREF	clr;

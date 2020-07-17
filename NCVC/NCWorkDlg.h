@@ -10,11 +10,7 @@
 
 class CNCWorkDlg : public CDialog
 {
-	void	EnableButton(BOOL bEnable) {
-		m_ctOK.EnableWindow(bEnable);
-		m_ctHide.EnableWindow(bEnable);
-	}
-	void	SaveValue(void);
+	void	EnableButton(BOOL bEnable);
 
 // コンストラクション
 public:
@@ -23,8 +19,9 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CNCWorkDlg)
 	enum { IDD = IDD_NCVIEW_WORK };
-	CButton	m_ctHide;
 	CButton	m_ctOK;
+	CButton	m_ctHide;
+	CButton m_ctRecover;
 	//}}AFX_DATA
 	CFloatEdit	m_ctWork[2][NCXYZ];
 
@@ -45,7 +42,7 @@ protected:
 	// 生成されたメッセージ マップ関数
 	//{{AFX_MSG(CNCWorkDlg)
 	afx_msg void OnHide();
-	afx_msg void OnDestroy();
+	afx_msg void OnRecover();
 	//}}AFX_MSG
 	afx_msg LRESULT OnUserSwitchDocument(WPARAM, LPARAM);
 

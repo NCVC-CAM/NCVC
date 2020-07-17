@@ -1040,6 +1040,7 @@ void CNCVCApp::OnViewSetup()
 	// ｵﾌﾟｼｮﾝの保存
 	if ( !m_pOptView->SaveViewOption() )
 		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
+
 	// ﾒｲﾝﾌﾚｰﾑ，各ﾋﾞｭｰへの更新通知
 	ChangeViewOption();
 }

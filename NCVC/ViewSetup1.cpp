@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "ViewOption.h"
-#include "ViewSetup1.h"
+#include "ViewSetup.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -106,8 +106,6 @@ BOOL CViewSetup1::OnApply()
 		pOpt->m_nLineType[i] = m_cbLineType[i].GetCurSel();
 
 	SetModified(FALSE);
-	// ﾒｲﾝﾌﾚｰﾑ，各ﾋﾞｭｰへの更新通知
-	AfxGetNCVCApp()->ChangeViewOption();
 
 	return TRUE;
 }
@@ -116,7 +114,7 @@ HBRUSH CViewSetup1::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
 	if ( nCtlColor == CTLCOLOR_STATIC ) {
 		int	nID = pWnd->GetDlgCtrlID();
-		if ( nID>=IDC_VIEWSETUP1_ST_RECT && nID<=IDC_VIEWSETUP1_ST_SEL )
+		if ( IDC_VIEWSETUP1_ST_RECT<=nID && nID<=IDC_VIEWSETUP1_ST_SEL )
 			return m_brColor[nID-IDC_VIEWSETUP1_ST_RECT];
 	}
 	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
@@ -152,7 +150,7 @@ void CViewSetup1::OnColorButton()
 
 void CViewSetup1::OnDefColor() 
 {
-	extern	LPCTSTR	g_szViewColDef[];
+	extern	LPCTSTR			g_szViewColDef[];
 	extern	const	int		g_nViewLineTypeDef[];
 	int		i;
 	COLORREF	clr;

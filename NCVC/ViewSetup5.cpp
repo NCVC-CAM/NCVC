@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "ViewOption.h"
-#include "ViewSetup5.h"
+#include "ViewSetup.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -13,13 +13,15 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CViewSetup5, CPropertyPage)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, OnDefColor)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_WORK, OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_CUT, OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_SOLIDVIEW, OnSolidClick)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_G00VIEW, OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_DRAGRENDER, OnChange)
-	ON_BN_CLICKED(IDC_VIEWSETUP5_MILL_T, OnChange)
-	ON_BN_CLICKED(IDC_VIEWSETUP5_MILL_C, OnChange)
 	ON_CBN_SELCHANGE(IDC_VIEWSETUP5_MILL_TYPE, OnChange)
 	ON_EN_CHANGE(IDC_VIEWSETUP5_DEFAULTENDMILL, OnChange)
+	ON_WM_CTLCOLOR()
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -33,13 +35,17 @@ CViewSetup5::CViewSetup5() : CPropertyPage(CViewSetup5::IDD)
 	m_bSolid	= pOpt->m_bSolidView;
 	m_bG00View	= pOpt->m_bG00View;
 	m_bDrag		= pOpt->m_bDragRender;
-	m_bMillT	= pOpt->m_bMillT;
-	m_bMillC	= pOpt->m_bMillC;
 	m_nMillType	= pOpt->m_nMillType;
+	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
+		m_colView[i] = pOpt->m_colNCView[i+NCCOL_GL_WRK];
+		m_brColor[i].CreateSolidBrush( m_colView[i] );
+	}
 }
 
 CViewSetup5::~CViewSetup5()
 {
+	for ( int i=0; i<SIZEOF(m_brColor); i++ )
+		m_brColor[i].DeleteObject();
 }
 
 void CViewSetup5::DoDataExchange(CDataExchange* pDX)
@@ -51,9 +57,9 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_VIEWSETUP5_SOLIDVIEW, m_bSolid);
 	DDX_Check(pDX, IDC_VIEWSETUP5_G00VIEW, m_bG00View);
 	DDX_Check(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_bDrag);
-	DDX_Check(pDX, IDC_VIEWSETUP5_MILL_T, m_bMillT);
-	DDX_Check(pDX, IDC_VIEWSETUP5_MILL_C, m_bMillC);
 	DDX_CBIndex(pDX, IDC_VIEWSETUP5_MILL_TYPE, m_nMillType);
+	for ( int i=0; i<SIZEOF(m_ctColor); i++ )
+		DDX_Control(pDX, i + IDC_VIEWSETUP5_ST_WORK, m_ctColor[i]);
 }
 
 void CViewSetup5::EnableControl(void)
@@ -80,17 +86,27 @@ BOOL CViewSetup5::OnInitDialog()
 BOOL CViewSetup5::OnApply()
 {
 	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	// 更新情報を pOpt->m_dwUpdateFlg にｾｯﾄ
+	if ( pOpt->m_bSolidView != m_bSolid ||
+			pOpt->m_nMillType != m_nMillType ||
+			pOpt->m_dDefaultEndmill != (m_dEndmill/2.0) )
+		pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
+	if ( pOpt->m_bG00View != m_bG00View )
+		pOpt->m_dwUpdateFlg |= VIEWUPDATE_REDRAW;
 	pOpt->m_bSolidView	= m_bSolid;
 	pOpt->m_bG00View	= m_bG00View;
 	pOpt->m_bDragRender	= m_bDrag;
-	pOpt->m_bMillT		= m_bMillT;
-	pOpt->m_bMillC		= m_bMillC;
 	pOpt->m_nMillType	= m_nMillType;
 	pOpt->m_dDefaultEndmill = m_dEndmill / 2.0;
 
+	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
+		if ( pOpt->m_colNCView[i+NCCOL_GL_WRK] != m_colView[i] )
+			pOpt->m_dwUpdateFlg |= VIEWUPDATE_LIGHT;
+		pOpt->m_colNCView[i+NCCOL_GL_WRK] = m_colView[i];
+	}
+
 	SetModified(FALSE);
-	// ﾒｲﾝﾌﾚｰﾑ，各ﾋﾞｭｰへの更新通知
-	AfxGetNCVCApp()->ChangeViewOption();
 
 	return TRUE;
 }
@@ -110,6 +126,32 @@ BOOL CViewSetup5::OnKillActive()
 	return TRUE;
 }
 
+HBRUSH CViewSetup5::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
+{
+	if ( nCtlColor == CTLCOLOR_STATIC ) {
+		int	nID = pWnd->GetDlgCtrlID();
+		if ( nID>=IDC_VIEWSETUP5_ST_WORK && nID<=IDC_VIEWSETUP5_ST_CUT )
+			return m_brColor[nID-IDC_VIEWSETUP5_ST_WORK];
+	}
+	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
+}
+
+void CViewSetup5::OnColorButton() 
+{
+	int	nIndex = GetFocus()->GetDlgCtrlID() - IDC_VIEWSETUP5_BT_WORK;
+	if ( 0<=nIndex && nIndex<SIZEOF(m_colView) ) {
+		CColorDialog	dlg(m_colView[nIndex]);
+		dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
+		if ( dlg.DoModal() == IDOK ) {
+			m_colView[nIndex] = dlg.GetColor();
+			m_brColor[nIndex].DeleteObject();
+			m_brColor[nIndex].CreateSolidBrush( m_colView[nIndex] );
+			m_ctColor[nIndex].Invalidate();
+			SetModified();
+		}
+	}
+}
+
 void CViewSetup5::OnSolidClick()
 {
 	UpdateData();
@@ -120,4 +162,23 @@ void CViewSetup5::OnSolidClick()
 void CViewSetup5::OnChange()
 {
 	SetModified();
+}
+
+void CViewSetup5::OnDefColor()
+{
+	extern	LPCTSTR		g_szNcViewColDef[];
+	int			i;
+	COLORREF	clr;
+
+	for ( i=0; i<SIZEOF(m_colView); i++ ) {
+		clr = ConvertSTRtoRGB(g_szNcViewColDef[i+NCCOL_GL_WRK]);
+		if ( m_colView[i] != clr ) {
+			m_colView[i] = clr;
+			m_brColor[i].DeleteObject();
+			m_brColor[i].CreateSolidBrush( m_colView[i] );
+			m_ctColor[i].Invalidate();
+			SetModified();
+		}
+	}
+
 }

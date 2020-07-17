@@ -43,6 +43,7 @@ protected:
 	//	m_nc.dValue[] ではない最終座標の保持が必要
 	// 他、座標回転(G68)でもｵﾘｼﾞﾅﾙ座標と計算座標を別に保管
 	CPoint3D	m_ptValS, m_ptValE;		// 開始,終了座標
+	CRect3D		m_rcMax;		// 空間占有矩形
 	CNCread*	m_pRead;		// 読み込み終了後に消去するﾃﾞｰﾀ群
 
 	// CPoint3Dから平面の2D座標を抽出
@@ -69,6 +70,7 @@ public:
 	int		GetBlockLineNo(void) const;
 	int		GetGtype(void) const;
 	int		GetGcode(void) const;
+	BOOL	IsCutter(void) const;
 	ENPLANE	GetPlane(void) const;
 	DWORD	GetValFlags(void) const;
 	double	GetValue(size_t) const;
@@ -86,6 +88,7 @@ public:
 	double	GetMove(size_t) const;
 	double	GetEndmill(void) const;
 	int		GetEndmillType(void) const;
+	const CRect3D	GetMaxRect(void) const;
 	CNCdata*	NC_CopyObject(void);			// from TH_Correct.cpp
 	void		AddCorrectObject(CNCdata*);
 	CTypedPtrArrayEx<CPtrArray, CNCdata*>*
@@ -101,13 +104,10 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawGL(void) const;
-	virtual	void	DrawBottomFace(void) const;
+	virtual	void	DrawGL(BOOL = FALSE) const;
+	virtual	void	DrawSideFace(double) const;
+	virtual	void	DrawBottomFace(boost::optional<double>&) const;
 
-	// ｵﾌﾞｼﾞｪｸﾄ占有矩形(都度ｾｯﾄ)
-	virtual	CRect3D	GetMaxRect(void) const;
-	// 切削占有矩形
-	virtual	CRect3D	GetMaxCutRect(void) const;
 	// 移動長，切削長の計算
 	virtual	double	SetCalcLength(void);
 	// 丸め(ｺｰﾅｰR)の座標計算
@@ -126,6 +126,9 @@ public:
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const;
 	// 補正座標の設定
 	virtual	void	SetCorrectPoint(ENPOINTORDER, const CPointD&, double);
+
+	// OpenGL 関連
+	GLuint		m_glList;		// 描画用ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 
 #ifdef _DEBUG_DUMP
 	void	DbgDump(void);
@@ -147,6 +150,7 @@ protected:
 	CPointD		m_pt2Ds;				// 2次元変換後の始点(XYZ平面用)
 	CPoint		m_ptDrawS[1+NCXYZ],		// 拡大係数込みの描画始点終点
 				m_ptDrawE[1+NCXYZ];
+	void	SetMaxRect(void);
 
 	CNCline(ENNCDTYPE enType, const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset) :	// 派生ｸﾗｽ用
 		CNCdata(enType, pData, lpArgv, ptOffset) {}
@@ -163,11 +167,10 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawGL(void) const;
-	virtual	void	DrawBottomFace(void) const;
+	virtual	void	DrawGL(BOOL = FALSE) const;
+	virtual	void	DrawSideFace(double) const;
+	virtual	void	DrawBottomFace(boost::optional<double>&) const;
 
-	virtual	CRect3D	GetMaxRect(void) const;
-	virtual	CRect3D	GetMaxCutRect(void) const;
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
 	virtual	boost::optional<CPointD>	SetChamferingPoint(BOOL, double);
@@ -197,16 +200,16 @@ class CNCcycle : public CNCline
 {
 	int			m_nDrawCnt;			// ｵﾌﾞｼﾞｪｸﾄ座標値生成数==描画用繰り返し数
 	PTCYCLE*	m_Cycle[1+NCXYZ];	// XYZとXY,XZ,YZ
-	PTCYCLE3D*	m_Cycle3D;			// 実際の3D座標(兼OpenGL)
+	PTCYCLE3D*	m_Cycle3D;			// OpenGL用
 
-	CPoint3D	m_ptValI,			// 前回位置と１点目の穴加工座標
+	CPoint3D	m_ptValI,		// 前回位置と１点目の穴加工座標
 				m_ptValR;
-	CPoint		m_ptDrawI[1+NCXYZ],	// 拡大係数
+	CPoint		m_ptDrawI[1+NCXYZ],		// 拡大係数
 				m_ptDrawR[1+NCXYZ];
 
-	double		m_dInitial,			// ｲﾆｼｬﾙ点の記憶
-				m_dCycleMove,		// 移動距離(切削距離はm_nc.dLength)
-				m_dDwell;			// ﾄﾞｳｪﾙ時間
+	double		m_dInitial,		// ｲﾆｼｬﾙ点の記憶
+				m_dCycleMove,	// 移動距離(切削距離はm_nc.dLength)
+				m_dDwell;		// ﾄﾞｳｪﾙ時間
 
 	void	DrawCyclePlane(CDC*, size_t, BOOL) const;
 	void	DrawCycle(CDC*, size_t, BOOL) const;
@@ -232,11 +235,10 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawGL(void) const;
-	virtual	void	DrawBottomFace(void) const;
+	virtual	void	DrawGL(BOOL = FALSE) const;
+	virtual	void	DrawSideFace(double) const;
+	virtual	void	DrawBottomFace(boost::optional<double>&) const;
 
-	virtual	CRect3D	GetMaxRect(void) const;
-	virtual	CRect3D	GetMaxCutRect(void) const;
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
 	virtual	boost::optional<CPointD>	SetChamferingPoint(BOOL, double);
@@ -273,13 +275,17 @@ class CNCcircle : public CNCdata
 	void	Draw_G17(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G18(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G19(EN_NCCIRCLEDRAW, CDC*) const;
-	void	SetEndmillPath(std::vector<CPoint3D>&, std::vector<CPoint3D>&, CPointD*, CPointD*) const;
+	void	SetEndmillPath(std::vector<CPointD>&, std::vector<CPointD>&, CPointD*) const;
 
 	// IJK指定なしの時，円の方程式から中心の算出
 	BOOL	CalcCenter(const CPointD&, const CPointD&);
 	void	SetCenter(const CPointD&);
 	// 平面座標からの角度計算と調整
 	void	AngleTuning(const CPointD&, const CPointD&);
+
+protected:
+	// 外接する四角形
+	void	SetMaxRect(void);
 
 public:
 	CNCcircle(const CNCdata*, LPNCARGV, const CPoint3D&);
@@ -299,11 +305,10 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawGL(void) const;
-	virtual	void	DrawBottomFace(void) const;
+	virtual	void	DrawGL(BOOL = FALSE) const;
+	virtual	void	DrawSideFace(double) const;
+	virtual	void	DrawBottomFace(boost::optional<double>&) const;
 
-	virtual	CRect3D	GetMaxRect(void) const;
-	virtual	CRect3D	GetMaxCutRect(void) const;
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
 	virtual	boost::optional<CPointD>	SetChamferingPoint(BOOL, double);

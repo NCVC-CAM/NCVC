@@ -62,7 +62,8 @@
 #include "boost/tuple/tuple.hpp"		// Šg’£ÃŞ°À
 #include "boost/optional.hpp"
 #include "boost/variant.hpp"
-#include "boost/spirit.hpp"				// \•¶‰ğÍ
+#include "boost/spirit/include/classic.hpp"	// \•¶‰ğÍ(‹Œ”Å)
+#include "boost/spirit/include/classic_parser.hpp"
 #include "boost/utility.hpp"			// Õ°Ã¨ØÃ¨
 #include "boost/algorithm/minmax.hpp"
 

@@ -32,7 +32,9 @@ extern	LPCTSTR	g_szNcViewColDef[] = {
 	"255:255:0",	// 円弧補間の中心
 	"255:255:255",	// ﾜｰｸ矩形
 	"0:0:255",		// 最大切削矩形
-	"255:255:0"		// 補正表示
+	"255:255:0",	// 補正表示
+	"255:255:128",	// OpenGL ﾜｰｸ矩形
+	"255:128:128"	// OpenGL 切削面
 };
 extern	LPCTSTR	g_szNcInfoViewColDef[] = {
 	"0:0:255",		// 背景1
@@ -97,8 +99,6 @@ static	const	BOOL	g_bDefaultSetting[] = {
 	FALSE,		// m_bSolidView
 	FALSE,		// m_bG00View
 	FALSE,		// m_bDragRender
-	TRUE,		// m_bMillT
-	TRUE		// m_bMillC
 };
 static	const	UINT	g_nFlagID[] = {
 	IDS_REG_VIEW_NC_TRACEMARK,
@@ -107,7 +107,9 @@ static	const	UINT	g_nFlagID[] = {
 	IDS_REG_VIEW_NC_GUIDE,
 	IDS_REG_VIEW_NC_SOLIDVIEW,
 	IDS_REG_VIEW_NC_G00VIEW,
-	IDS_REG_VIEW_NC_DRAGRENDER,
+	IDS_REG_VIEW_NC_DRAGRENDER
+};
+static	const	UINT	g_nDelFlagID[] = {
 	IDS_REG_VIEW_NC_MILL_T,
 	IDS_REG_VIEW_NC_MILL_C
 };
@@ -121,6 +123,7 @@ CViewOption::CViewOption()
 	int		i;
 	CString	strRegKey, strEntry, strEntryFormat, strResult;
 	//
+	m_dwUpdateFlg = 0;
 	AllDefaultSetting();
 	// NCVC.exe と同じﾌｫﾙﾀﾞに「NCVCcolor.ini」があればｲﾝﾎﾟｰﾄ
 	strResult  = g_pszExecDir;
@@ -333,6 +336,10 @@ BOOL CViewOption::SaveViewOption(void)
 		VERIFY(strEntry.LoadString(g_nFlagID[i]));
 		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_bNCFlag[i]) )
 			return FALSE;
+	}
+	for ( i=0; i<SIZEOF(g_nDelFlagID); i++ ) {
+		VERIFY(strEntry.LoadString(g_nDelFlagID[i]));
+		AfxGetApp()->WriteProfileInt(strRegKey, strEntry, NULL);	// 不要ｷｰの削除
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {

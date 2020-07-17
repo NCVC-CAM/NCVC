@@ -73,7 +73,6 @@ CNCdata::CNCdata(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset
 			lpArgv->nc.dValue[i] : pData->GetValue(i);
 	// 前回の計算値を引き継ぎ
 	m_pt2D   = pData->Get2DPoint();
-	m_rcMax  = pData->GetMaxRect();
 	m_enType = NCDBASEDATA;
 
 #ifdef _DEBUG_DUMP
@@ -104,7 +103,7 @@ CNCdata::CNCdata
 		m_nc.dValue[i] = m_nc.dwValFlags & g_dwSetValFlags[i] ?
 			lpArgv->nc.dValue[i] : 0.0;
 	// ---------------------------------------------------------------
-	// m_ptValS, m_ptValE, m_ptValOrg, m_pt2D, m_rcMax は派生ｸﾗｽで代入
+	// m_ptValS, m_ptValE, m_ptValOrg, m_pt2D は派生ｸﾗｽで代入
 	// m_nc.dLength は TH_Cuttime.cpp にてセット
 	// ---------------------------------------------------------------
 	m_enType = enType;
@@ -317,9 +316,6 @@ CNCline::CNCline(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset
 		CalcG68Round(&(lpArgv->g68), m_ptValE);
 	// 描画終点を計算し保存
 	m_pt2D = m_ptValE.PointConvert();
-
-	// 空間占有矩形
-	SetMaxRect();
 
 #ifdef _DEBUG_DUMP
 	DbgDump();
@@ -819,10 +815,8 @@ CNCcycle::CNCcycle
 	dbg.printf("m_nDrawCnt=%d", m_nDrawCnt);
 #endif
 
-	if ( m_nDrawCnt <= 0 ) {
-		SetMaxRect();
+	if ( m_nDrawCnt <= 0 )
 		return;		// bL0Cycle でもここまで
-	}
 
 	// 座標格納領域確保
 	for ( i=0; i<SIZEOF(m_Cycle); i++ )
@@ -891,9 +885,6 @@ CNCcycle::CNCcycle
 	DbgDump();
 	Dbg_sep();
 #endif
-
-	// 空間占有矩形
-	SetMaxRect();
 }
 
 CNCcycle::~CNCcycle()
@@ -1128,8 +1119,6 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOf
 	dbg.printf("px=%.3f py=%.3f pz=%.3f / sq=%f eq=%f",
 		m_ptOrg.x, m_ptOrg.y, m_ptOrg.z, m_sq*DEG, m_eq*DEG);
 #endif
-	// 空間占有矩形
-	SetMaxRect();
 
 	if ( fError )
 		m_nc.nErrorCode = IDS_ERR_NCBLK_CIRCLECENTER;
@@ -1381,7 +1370,6 @@ void CNCcircle::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 
 // CDC::Arc() を使うとどうしても表示がズレる．
 // 同一平面であっても微細線分による近似を行う
-// 違う平面のときは，空間占有矩形 m_rcMax を利用して線分出力
 void CNCcircle::Draw_G17(EN_NCCIRCLEDRAW enType, CDC* pDC) const	// XY_PLANE
 {
 	double		sq, eq, dHelical = m_dHelicalStep, r = fabs(m_r);
@@ -1771,11 +1759,13 @@ void CNCcircle::Draw_G19(EN_NCCIRCLEDRAW enType, CDC* pDC) const	// YZ_PLANE
 	}
 }
 
-void CNCcircle::SetMaxRect(void)
+CRect3D CNCcircle::GetMaxRect(void) const
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetMaxRect()", DBG_RED);
+	CMagaDbg	dbg("GetMaxRect()", DBG_RED);
 #endif
+
+	CRect3D	rcResult;
 	// 外接する四角形
 	double	r = fabs(m_r), sq = m_sq, eq = m_eq;
 	CRectD	rcMax;
@@ -1833,38 +1823,41 @@ void CNCcircle::SetMaxRect(void)
 	switch ( GetPlane() ) {
 	case XY_PLANE:
 		rcMax.OffsetRect(m_ptOrg.GetXY());
-		m_rcMax.left	= rcMax.left;
-		m_rcMax.top		= rcMax.top;
-		m_rcMax.right	= rcMax.right;
-		m_rcMax.bottom	= rcMax.bottom;
-		m_rcMax.low		= m_ptValS.z;
-		m_rcMax.high	= m_ptValE.z;
+		rcResult.left	= rcMax.left;
+		rcResult.top	= rcMax.top;
+		rcResult.right	= rcMax.right;
+		rcResult.bottom	= rcMax.bottom;
+		rcResult.low	= m_ptValS.z;
+		rcResult.high	= m_ptValE.z;
 		break;
 	case XZ_PLANE:
 		rcMax.OffsetRect(m_ptOrg.GetXZ());
-		m_rcMax.left	= rcMax.left;
-		m_rcMax.top		= m_ptValS.y;
-		m_rcMax.right	= rcMax.right;
-		m_rcMax.bottom	= m_ptValE.y;
-		m_rcMax.low		= rcMax.top;
-		m_rcMax.high	= rcMax.bottom;
+		rcResult.left	= rcMax.left;
+		rcResult.top	= m_ptValS.y;
+		rcResult.right	= rcMax.right;
+		rcResult.bottom	= m_ptValE.y;
+		rcResult.low	= rcMax.top;
+		rcResult.high	= rcMax.bottom;
 		break;
 	case YZ_PLANE:
 		rcMax.OffsetRect(m_ptOrg.GetYZ());
-		m_rcMax.left	= m_ptValS.x;
-		m_rcMax.top		= rcMax.left;
-		m_rcMax.right	= m_ptValE.x;
-		m_rcMax.bottom	= rcMax.right;
-		m_rcMax.low		= rcMax.top;
-		m_rcMax.high	= rcMax.bottom;
+		rcResult.left	= m_ptValS.x;
+		rcResult.top	= rcMax.left;
+		rcResult.right	= m_ptValE.x;
+		rcResult.bottom	= rcMax.right;
+		rcResult.low	= rcMax.top;
+		rcResult.high	= rcMax.bottom;
 		break;
 	}
-	m_rcMax.NormalizeRect();
+	rcResult.NormalizeRect();
+
 #ifdef _DEBUGOLD
-	dbg.printf("m_rcMax(left, top   )=(%f, %f)", m_rcMax.left, m_rcMax.top);
-	dbg.printf("m_rcMax(right,bottom)=(%f, %f)", m_rcMax.right, m_rcMax.bottom);
-	dbg.printf("m_rcMax(high, low   )=(%f, %f)", m_rcMax.high, m_rcMax.low);
+	dbg.printf("rcResult(left, top   )=(%f, %f)", rcResult.left, rcResult.top);
+	dbg.printf("rcResult(right,bottom)=(%f, %f)", rcResult.right, rcResult.bottom);
+	dbg.printf("rcResult(high, low   )=(%f, %f)", rcResult.high, rcResult.low);
 #endif
+
+	return rcResult;
 }
 
 tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint

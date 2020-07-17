@@ -20,6 +20,7 @@ class CNCDoc : public CDocument, public CDocBase
 	CWinThread*	m_pCutcalcThread;	// 切削時間計算ｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ
 	BOOL		m_bCutcalc,			// 　　〃　　継続ﾌﾗｸﾞ
 				m_bCorrect,			// 補正計算行うかどうか
+				m_bMaxCut,			// ｺﾒﾝﾄでﾜｰｸ矩形が指示された
 				m_bThumbnail;		// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
 				m_strCurrentFile;	// 現在処理中のNCﾌｧｲﾙ名(FileInsert etc.)
@@ -33,13 +34,16 @@ class CNCDoc : public CDocument, public CDocBase
 	CStringArray	m_obMacroFile;	// ﾏｸﾛ展開一時ﾌｧｲﾙ
 	double		m_dMove[2],		// 移動距離, 切削移動距離
 				m_dCutTime;		// 切削時間
-	CRect3D		m_rcMax,		// 最大ｵﾌﾞｼﾞｪｸﾄ矩形
-				m_rcWork;		// ﾜｰｸ矩形
-	CPoint3D	m_ptWorkOffset;	// ﾜｰｸ矩形ｵﾌｾｯﾄ
-	BOOL		m_bMaxRect,		// 最大切削矩形の描画
+	CRect3D		m_rcMax,		// 最大ｵﾌﾞｼﾞｪｸﾄ(移動)矩形
+				m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
+				m_rcWorkOrg;
+	BOOL		m_bMaxRect,		// 最大移動矩形の描画
 				m_bWorkRect;	// ﾜｰｸ矩形の描画
-	void		SetMaxRect(const CNCdata* pData) {
-		m_rcMax |= pData->GetMaxRect();	// 最大矩形ﾃﾞｰﾀｾｯﾄ
+	void	SetMaxRect(const CNCdata* pData) {
+		// 最大ｵﾌﾞｼﾞｪｸﾄ矩形ﾃﾞｰﾀｾｯﾄ
+		m_rcMax    |= pData->GetMaxRect();
+		if ( !m_bMaxCut )
+			m_rcWorkOrg |= pData->GetMaxCutRect();
 	}
 
 	// ﾄﾚｰｽ中のｵﾌﾞｼﾞｪｸﾄ
@@ -107,7 +111,7 @@ public:
 		return m_bCutcalc;
 	}
 
-	void	GetWorkRectPP(int a, double dTmp[]);	// from NCInfoView.cpp
+	void	GetWorkRectPP(int a, double []);	// from NCInfoView.cpp
 
 	int		SearchBlockRegex(boost::regex&, int = 0, BOOL = FALSE);
 	void	CheckBreakPoint(int a) {	// ﾌﾞﾚｰｸﾎﾟｲﾝﾄの設定
@@ -140,8 +144,8 @@ public:
 	CRect3D	GetWorkRect(void) const {
 		return m_rcWork;
 	}
-	CPoint3D GetWorkRectOffset(void) const {
-		return m_ptWorkOffset;
+	CRect3D	GetWorkRectOrg(void) const {
+		return m_rcWorkOrg;
 	}
 
 // オペレーション
@@ -169,13 +173,16 @@ public:
 	// from TH_NCRead.cpp
 	BOOL	SerializeInsertBlock(LPCTSTR, int, DWORD = 0, BOOL = TRUE);	// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの挿入
 	void	AddMacroFile(const CString&);	// ﾄﾞｷｭﾒﾝﾄ破棄後に消去する一時ﾌｧｲﾙ
+	void	SetWorkRectOrg(const CRect3D& rc) {
+		// ｺﾒﾝﾄで指定されたﾜｰｸ矩形
+		m_rcWorkOrg = rc;
+		m_bMaxCut = TRUE;	// 以降、ﾃﾞｰﾀでの更新はしない
+	}
 
-	// from NCChild.cpp <- NCWorkDlg.cpp
-	void	SetWorkRect(BOOL bShow, const CRect3D& rc, const CPoint3D& pt) {
-		if ( bShow ) {
+	// from NCWorkDlg.cpp
+	void	SetWorkRect(BOOL bShow, const CRect3D& rc) {
+		if ( bShow )
 			m_rcWork = rc;
-			m_ptWorkOffset = pt;
-		}
 		UpdateAllViews(NULL, UAV_DRAWWORKRECT,
 			reinterpret_cast<CObject *>(bShow));
 		m_bWorkRect = bShow;

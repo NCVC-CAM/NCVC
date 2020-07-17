@@ -71,7 +71,7 @@ CNCDoc::CNCDoc()
 	m_nTraceStart = m_nTraceDraw = 0;
 	m_bWorkRect = m_bMaxRect = FALSE;
 	m_pCutcalcThread = NULL;
-	m_bCutcalc = m_bCorrect = m_bThumbnail = FALSE;
+	m_bCutcalc = m_bCorrect = m_bMaxCut = m_bThumbnail = FALSE;
 	// ﾜｰｸ座標系取得
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
 	for ( i=0; i<WORKOFFSET; i++ )
@@ -82,6 +82,7 @@ CNCDoc::CNCDoc()
 		m_nWorkOrg = 0;
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
+	m_rcWorkOrg.SetRectMinimum();
 	// 増分割り当てサイズ
 	m_obBlock.SetSize(0, 1024);
 	m_obGdata.SetSize(0, 1024);
@@ -518,21 +519,21 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 	return TRUE;
 }
 
-void CNCDoc::GetWorkRectPP(int a, double dTmp[])
+void CNCDoc::GetWorkRectPP(int a, double dResult[])
 {
 	ASSERT(a>=NCA_X && a<=NCA_Z);
 	switch (a) {
 	case NCA_X:
-		dTmp[0] = m_rcMax.left;
-		dTmp[1] = m_rcMax.right;
+		dResult[0] = m_rcMax.left;
+		dResult[1] = m_rcMax.right;
 		break;
 	case NCA_Y:
-		dTmp[0] = m_rcMax.top;
-		dTmp[1] = m_rcMax.bottom;
+		dResult[0] = m_rcMax.top;
+		dResult[1] = m_rcMax.bottom;
 		break;
 	case NCA_Z:
-		dTmp[0] = m_rcMax.high;
-		dTmp[1] = m_rcMax.low;
+		dResult[0] = m_rcMax.high;
+		dResult[1] = m_rcMax.low;
 		break;
 	}
 }
@@ -963,20 +964,27 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	if ( ValidDataCheck() ) {
 		AfxMessageBox(IDS_ERR_NCDATA, MB_OK|MB_ICONEXCLAMATION);
 		m_rcMax.SetRectEmpty();
+		m_rcWorkOrg.SetRectEmpty();
 		m_fError = TRUE;
 		// error through
 	}
 	else {
 		// 占有矩形調整
 		m_rcMax.NormalizeRect();
+		m_rcWorkOrg.NormalizeRect();
 		// ｴﾗｰﾌﾗｸﾞ解除
 		m_fError = FALSE;
 	}
+	m_rcWork = m_rcWorkOrg;
 
 #ifdef _DEBUG
 	dbg.printf("m_rcMax left =%f top   =%f", m_rcMax.left, m_rcMax.top);
 	dbg.printf("m_rcMax right=%f bottom=%f", m_rcMax.right, m_rcMax.bottom);
 	dbg.printf("m_rcMax.low  =%f high  =%f", m_rcMax.low, m_rcMax.high);
+	dbg.printf("--- cut");
+	dbg.printf("m_rcMax left =%f top   =%f", m_rcWork.left, m_rcWork.top);
+	dbg.printf("m_rcMax right=%f bottom=%f", m_rcWork.right, m_rcWork.bottom);
+	dbg.printf("m_rcMax.low  =%f high  =%f", m_rcWork.low, m_rcWork.high);
 #endif
 
 	// 補正座標計算

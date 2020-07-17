@@ -65,11 +65,6 @@ inline int CNCdata::GetGcode(void) const
 	return	m_nc.nGcode;
 }
 
-inline BOOL CNCdata::IsCutter(void) const
-{
-	return GetGtype()!=NCDBASEDATA && GetGcode()>0;
-}
-
 inline ENPLANE CNCdata::GetPlane(void) const
 {
 	ASSERT(m_nc.enPlane==XY_PLANE || m_nc.enPlane==XZ_PLANE || m_nc.enPlane==YZ_PLANE);
@@ -161,9 +156,16 @@ inline int CNCdata::GetEndmillType(void) const
 	return m_nEndmillType;
 }
 
-inline const CRect3D CNCdata::GetMaxRect(void) const
+inline CRect3D CNCdata::GetMaxRect(void) const
 {
-	return m_rcMax;
+	CRect3D	rcResult;
+	rcResult.SetRectMinimum();
+	return rcResult;
+}
+
+inline CRect3D CNCdata::GetMaxCutRect(void) const
+{
+	return CNCdata::GetMaxRect();
 }
 
 inline CNCarray* CNCdata::GetCorrectArray(void)
@@ -240,13 +242,24 @@ inline int CNCline::GetLineType(void) const
 		return NCCOLLINE_G0;
 }
 
-inline void CNCline::SetMaxRect(void)
+inline CRect3D CNCline::GetMaxRect(void) const
 {
-	m_rcMax.TopLeft()		= m_ptValS.GetXY();
-	m_rcMax.BottomRight()	= m_ptValE.GetXY();
-	m_rcMax.high	= m_ptValS.z;
-	m_rcMax.low		= m_ptValE.z;
-	m_rcMax.NormalizeRect();
+	CRect3D	rcResult;
+	
+	rcResult.TopLeft()		= m_ptValS.GetXY();
+	rcResult.BottomRight()	= m_ptValE.GetXY();
+	rcResult.high			= m_ptValS.z;
+	rcResult.low			= m_ptValE.z;
+	rcResult.NormalizeRect();
+
+	return rcResult;
+}
+
+inline CRect3D CNCline::GetMaxCutRect(void) const
+{
+	return ( m_nc.nGcode == 1 ) ?
+		CNCline::GetMaxRect() :
+		CNCdata::GetMaxRect();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -294,6 +307,34 @@ inline double CNCcycle::GetCycleMove(void) const
 inline double CNCcycle::GetDwell(void) const
 {
 	return m_dDwell;
+}
+
+inline CRect3D CNCcycle::GetMaxRect(void) const
+{
+	CRect3D	rcResult(CNCline::GetMaxRect());
+	rcResult |= CNCcycle::GetMaxCutRect();
+	return rcResult;
+}
+
+inline CRect3D CNCcycle::GetMaxCutRect(void) const
+{
+	CRect3D	rcResult;
+	rcResult.SetRectMinimum();
+
+	if ( m_nDrawCnt > 0 ) {
+		CRect3D	rc(
+			m_Cycle3D[0].ptR.x,				// left
+			m_Cycle3D[0].ptR.y,				// top
+			m_Cycle3D[m_nDrawCnt-1].ptC.x,	// right
+			m_Cycle3D[m_nDrawCnt-1].ptC.y,	// bottom
+			m_Cycle3D[0].ptR.z,				// high
+			m_Cycle3D[m_nDrawCnt-1].ptC.z	// low
+		);
+		rc.NormalizeRect();
+		rcResult |= rc;
+	}
+
+	return rcResult;
 }
 
 inline boost::tuple<BOOL, CPointD, double, double> CNCcycle::CalcRoundPoint(const CNCdata*, double) const
@@ -369,6 +410,11 @@ inline double CNCcircle::GetStartAngle(void) const
 inline double CNCcircle::GetEndAngle(void) const
 {
 	return m_eq;
+}
+
+inline CRect3D CNCcircle::GetMaxCutRect(void) const
+{
+	return CNCcircle::GetMaxRect();
 }
 
 /////////////////////////////////////////////////////////////////////////////

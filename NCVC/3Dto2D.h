@@ -351,6 +351,15 @@ public:
 		top		-= h;		bottom	+= h;
 	}
 	// 演算子定義
+	BOOL	operator == (const CRectD& rc) const {
+		return	left   == rc.left &&
+				top    == rc.top &&
+				right  == rc.right &&
+				bottom == rc.bottom;
+	}
+	BOOL	operator != (const CRectD& rc) const {
+		return !operator ==(rc);
+	}
 	CRectD&	operator /= (double d) {
 		left /= d;		right /= d;
 		top /= d;		bottom /= d;
@@ -434,6 +443,14 @@ public:
 		high += t;		low  -= t;
 	}
 	// 演算子定義
+	BOOL	operator == (const CRect3D& rc) const {
+		return	CRectD::operator ==(rc) &&
+				high == rc.high &&
+				low  == rc.low;
+	}
+	BOOL	operator != (const CRect3D& rc) const {
+		return !operator ==(rc);
+	}
 	CRect3D&	operator |= (const CRect3D& rc) {
 		CRectD::operator |= (rc);
 		if ( low  > rc.low )	low = rc.low;
@@ -463,7 +480,7 @@ inline	double	GAPCALC(double x, double y)
 }
 inline	double	GAPCALC(const CPointD& pt)
 {
-	return pt.x * pt.x + pt.y * pt.y;
+	return GAPCALC(pt.x, pt.y);
 }
 
 //	ｵﾌｾｯﾄ符号(進行方向左側)

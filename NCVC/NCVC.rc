@@ -246,7 +246,7 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "補助矩形(&E)"
         BEGIN
-            MENUITEM "最大加工矩形(&M)\tCtrl+M",          ID_NCVIEW_MAXRECT
+            MENUITEM "最大移動矩形(&M)\tCtrl+M",          ID_NCVIEW_MAXRECT
             MENUITEM "ﾜｰｸ矩形(&W)...\tCtrl+W",        ID_NCVIEW_WORKRECT
         END
         MENUITEM SEPARATOR
@@ -483,7 +483,7 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "補助矩形(&E)"
         BEGIN
-            MENUITEM "最大加工矩形(&M)\tCtrl+M",          ID_NCVIEW_MAXRECT
+            MENUITEM "最大移動矩形(&M)\tCtrl+M",          ID_NCVIEW_MAXRECT
             MENUITEM "ﾜｰｸ矩形(&W)...\tCtrl+W",        ID_NCVIEW_WORKRECT
         END
         MENUITEM SEPARATOR
@@ -649,8 +649,8 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 1.74d",IDC_STATIC,86,166,130,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 1997-2009 MNCT-S K.Magara",IDC_STATIC,86,182,130,8
+    LTEXT           "NCVC Version 2.00",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 1997-2010 MNCT-S K.Magara",IDC_STATIC,86,182,130,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
 
@@ -1327,7 +1327,7 @@ BEGIN
     DEFPUSHBUTTON   "移動(&J)",IDOK,33,28,41,16
 END
 
-IDD_NCVIEW_WORK DIALOGEX 0, 0, 255, 115
+IDD_NCVIEW_WORK DIALOGEX 0, 0, 255, 140
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
 CAPTION "ﾜｰｸ矩形の表示"
@@ -1353,8 +1353,9 @@ BEGIN
     EDITTEXT        IDC_WORK_ZO,178,62,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,229,64,18,8
     GROUPBOX        "原点からのｵﾌｾｯﾄ",IDC_STATIC,130,7,118,76,WS_GROUP
-    DEFPUSHBUTTON   "表示(&V)",IDOK,48,92,71,16
-    PUSHBUTTON      "非表示(&C)",IDC_WORK_HIDE,135,92,71,16
+    PUSHBUTTON      "元の大きさに戻す(&R)",IDC_WORK_RECOVER,83,92,88,16
+    DEFPUSHBUTTON   "表示(&V)",IDOK,48,117,71,16
+    PUSHBUTTON      "非表示(&C)",IDC_WORK_HIDE,135,117,71,16
 END
 
 IDD_SHAPE_PROP DIALOGEX 0, 0, 207, 155
@@ -1581,19 +1582,22 @@ STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "NCD-3"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
-    CONTROL         "ソリッド描画(&S)",IDC_VIEWSETUP5_SOLIDVIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,21,57,10
-    CONTROL         "G00移動軌跡ﾊﾟｽも表示(&0)",IDC_VIEWSETUP5_G00VIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,40,93,10
-    CONTROL         "ﾄﾞﾗｯｸﾞ中にもﾚﾝﾀﾞﾘﾝｸﾞ(&R)",IDC_VIEWSETUP5_DRAGRENDER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,61,86,10
-    GROUPBOX        "OpenGL表示属性",IDC_STATIC,7,7,157,78,WS_GROUP
+    LTEXT           "",IDC_VIEWSETUP5_ST_WORK,13,20,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "ﾜｰｸ矩形",IDC_VIEWSETUP5_BT_WORK,32,19,46,16
+    LTEXT           "",IDC_VIEWSETUP5_ST_CUT,90,20,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "切削面",IDC_VIEWSETUP5_BT_CUT,109,19,46,16
+    CONTROL         "ソリッド描画(&S)",IDC_VIEWSETUP5_SOLIDVIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,40,57,10
+    CONTROL         "ﾜｲﾔｰﾊﾟｽも表示(&W)",IDC_VIEWSETUP5_G00VIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,59,73,10
+    CONTROL         "ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ(&R)",IDC_VIEWSETUP5_DRAGRENDER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,80,81,10
+    LTEXT           "テクスチャ画像",IDC_STATIC,13,100,39,8,WS_DISABLED
+    GROUPBOX        "OpenGL表示属性",IDC_STATIC,7,7,157,150,WS_GROUP
     LTEXT           "ﾃﾞﾌｫﾙﾄ工具径(&D)",IDC_STATIC,177,22,52,8
     EDITTEXT        IDC_VIEWSETUP5_DEFAULTENDMILL,235,20,40,12,ES_RIGHT | ES_AUTOHSCROLL
     LTEXT           "mm",IDC_STATIC,279,22,11,8
-    CONTROL         "Ｔ番号で認識(&T)",IDC_VIEWSETUP5_MILL_T,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,177,40,62,10
-    CONTROL         "コメントで認識(&M)",IDC_VIEWSETUP5_MILL_C,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,247,40,64,10
-    LTEXT           "工具タイプ(&E)",IDC_STATIC,177,62,38,8
-    COMBOBOX        IDC_VIEWSETUP5_MILL_TYPE,233,60,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "工具属性",IDC_STATIC,170,7,157,78,WS_GROUP
-    LTEXT           "テクスチャ画像",IDC_STATIC,7,101,39,8
+    LTEXT           "工具タイプ(&E)",IDC_STATIC,177,40,38,8
+    COMBOBOX        IDC_VIEWSETUP5_MILL_TYPE,233,38,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "工具属性",IDC_STATIC,170,7,157,58,WS_GROUP
+    PUSHBUTTON      "色と線種属性を初期設定に戻す",IDC_VIEWSETUP1_DEFCOLOR,107,189,120,16
 END
 
 IDD_THUMBNAIL DIALOGEX 0, 0, 455, 379
@@ -1618,8 +1622,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,7,4,4
- PRODUCTVERSION 1,7,4,4
+ FILEVERSION 2,0,0,0
+ PRODUCTVERSION 2,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1637,14 +1641,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT-S"
             VALUE "FileDescription", "NCVC MFC ｱﾌﾟﾘｹｰｼｮﾝ"
-            VALUE "FileVersion", "1.7.4.4"
+            VALUE "FileVersion", "2.0.0.0"
             VALUE "InternalName", "NCVC.exe"
-            VALUE "LegalCopyright", "Copyright (C) 1997-2009 MNCT-S K.Magara"
+            VALUE "LegalCopyright", "Copyright (C) 1997-2010 MNCT-S K.Magara"
             VALUE "LegalTrademarks", "MNCT-S"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "1.7.4.4"
+            VALUE "ProductVersion", "2.0.0.0"
             VALUE "SpecialBuild", "VC++2008SP1 FeaturePack"
         END
     END
@@ -1892,7 +1896,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 248
         TOPMARGIN, 7
-        BOTTOMMARGIN, 108
+        BOTTOMMARGIN, 133
     END
 
     IDD_SHAPE_PROP, DIALOG
@@ -2405,6 +2409,8 @@ BEGIN
     IDS_ERR_WRITESETTING    "%s\n設定ﾌｧｲﾙの書き出しに失敗しました"
     IDS_ERR_CLIPBOARD       "ｸﾘｯﾌﾟﾎﾞｰﾄﾞの操作に失敗しました"
     IDS_ERR_MAXADD          "登録数の上限に達しました。これ以上は登録できません"
+    IDS_ERR_OPENGLVER       "OpenGLのﾊﾞｰｼﾞｮﾝが古くｿﾘｯﾄﾞ表示ができません。少なくとも1.4(拡張)以上のｻﾎﾟｰﾄが必要です。\nこのマシンのOpenGLﾊﾞｰｼﾞｮﾝは %s です。"
+    IDS_ERR_OUTOFVRAM       "ﾋﾞﾃﾞｵﾒﾓﾘが確保できませんでした。"
 END
 
 STRINGTABLE 
@@ -2513,7 +2519,7 @@ END
 
 STRINGTABLE 
 BEGIN
-    ID_NCVIEW_MAXRECT       "最大加工矩形の表示"
+    ID_NCVIEW_MAXRECT       "最大移動矩形の表示"
     ID_NCVIEW_WORKRECT      "ﾜｰｸ矩形表示"
     ID_NCVIEW_ALLFIT        "全てのﾍﾟｲﾝを現在のｳｨﾝﾄﾞｳ領域に合うように表示します\n全て図形ﾌｨｯﾄ(Shift+Home)"
     ID_NCVIEW_JUMP          "指定されたNCｺｰﾄﾞの行を表示\nｼﾞｬﾝﾌﾟ"
@@ -2587,12 +2593,12 @@ BEGIN
     IDCV_FOLDER             "フォルダ"
     IDCV_UPDATE             "更新日時"
     IDCV_CUTTIME2           "加工時間"
-    IDCV_G0MOVESPEED        "G0移動速度"
+    IDCV_G0MOVESPEED        "G00移動速度"
     IDCV_G0LENGTH           "移 動 長"
     IDCV_G1LENGTH           "切 削 長"
     IDCV_SUMLENGTH          "合 　 計"
     IDCV_CUTTIME            "ﾄｰﾀﾙ加工時間"
-    IDCV_MAXRECT            "最大加工矩形"
+    IDCV_MAXRECT            "最大移動矩形"
     IDCV_KARA               "～"
     IDCV_MILI               "mm"
     IDCV_MILIpMIN           "/min"

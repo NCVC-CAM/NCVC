@@ -44,8 +44,8 @@ protected:
 	//{{AFX_MSG(CViewSetup1)
 	virtual BOOL OnInitDialog();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
-	afx_msg void OnColorButton();
 	afx_msg void OnChange();
+	afx_msg void OnColorButton();
 	afx_msg void OnWheel();
 	afx_msg void OnDefColor();
 	//}}AFX_MSG

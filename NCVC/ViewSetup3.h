@@ -42,9 +42,9 @@ protected:
 	virtual BOOL OnInitDialog();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnChange();
-	afx_msg void OnDefColor();
 	afx_msg void OnColorButton();
 	afx_msg void OnFontChange();
+	afx_msg void OnDefColor();
 	//}}AFX_MSG
 
 	DECLARE_MESSAGE_MAP()

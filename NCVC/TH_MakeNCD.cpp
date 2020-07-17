@@ -1260,9 +1260,7 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 			continue;
 		for ( i=0; i<pLayer->GetDxfSize() && IsThread(); i++, nCnt++ ) {
 			pData = pLayer->GetDxfData(i);
-			if ( !pData->IsMakeTarget() )	// ’·‚³‚Ì’Z‚¢ÃÞ°À‚Í‚±‚±‚Åœ‹Ž
-				continue;
-			if ( pData->GetMakeType() != DXFPOINTDATA ) {
+			if ( pData->GetMakeType()!=DXFPOINTDATA && pData->IsMakeTarget() ) {	// ’·‚³‚Ì’Z‚¢ÃÞ°À‚Í‚±‚±‚Åœ‹Ž
 				// Œ´“_’²®‚Æ‹——£ŒvŽZ + NC¶¬Ì×¸Þ‚Ì‰Šú‰»
 				dGap = pData->OrgTuning(bCalc);
 				if ( !bCalc )
@@ -3029,12 +3027,12 @@ CDXFdata* GetNearPointCutter(const CLayerData* pLayerTarget, const CDXFdata* pDa
 			continue;
 		for ( i=0; i<pLayer->GetDxfSize() && IsThread(); i++ ) {
 			pData = pLayer->GetDxfData(i);
-			if ( pData->IsMakeFlg() || !pData->IsMakeTarget() || pData->GetMakeType()==DXFPOINTDATA )
-				continue;
-			dGap = pData->GetEdgeGap(pDataTarget);
-			if ( dGap < dGapMin ) {
-				pDataResult = pData;
-				dGapMin = dGap;
+			if ( !pData->IsMakeFlg() && pData->GetMakeType()!=DXFPOINTDATA && pData->IsMakeTarget() ) {
+				dGap = pData->GetEdgeGap(pDataTarget);
+				if ( dGap < dGapMin ) {
+					pDataResult = pData;
+					dGapMin = dGap;
+				}
 			}
 		}
 	}
@@ -3249,7 +3247,7 @@ struct CMakeCustomCode	// parse() ‚©‚çŒÄ‚Ño‚µ
 
 void AddCustomCode(const CString& strFileName, const CDXFdata* pData)
 {
-	using namespace boost::spirit;
+	using namespace boost::spirit::classic;
 
 	CString	strBuf;
 	string	strResult;

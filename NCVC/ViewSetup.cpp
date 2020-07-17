@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "resource.h"
+#include "NCVC.h"
 #include "ViewSetup.h"
 
 #include "MagaDbgMac.h"
@@ -17,6 +17,7 @@ BEGIN_MESSAGE_MAP(CViewSetup, CPropertySheet)
 	//{{AFX_MSG_MAP(CViewSetup)
 	ON_WM_DESTROY()
 	//}}AFX_MSG_MAP
+	ON_BN_CLICKED (ID_APPLY_NOW, OnApplyNow)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -47,6 +48,26 @@ void CViewSetup::OnDestroy()
 
 	// ﾗｽﾄﾍﾟｰｼﾞのｾｯﾄ
 	g_nLastPage_ViewSetup = GetActiveIndex();
+}
+
+void CViewSetup::OnApplyNow()
+{
+	// 現ｱｸﾃｨﾌﾞﾍﾟｰｼﾞのﾃﾞｰﾀﾁｪｯｸ
+	if ( !GetActivePage()->OnKillActive() )
+		return;
+
+	// 各ﾍﾟｰｼﾞのﾃﾞｰﾀ格納
+	CPropertyPage*	pPage;
+	for ( int i=0; i<GetPageCount(); i++ ) {
+		pPage = GetPage(i);
+		if ( ::IsWindow(pPage->GetSafeHwnd()) )
+			if ( !pPage->OnApply() )
+				return;
+	}
+
+	// 各ﾍﾟｰｼﾞ代表して
+	// ﾒｲﾝﾌﾚｰﾑ，各ﾋﾞｭｰへの更新通知
+	AfxGetNCVCApp()->ChangeViewOption();
 }
 
 CString CViewSetup::GetChangeFontButtonText(LOGFONT* plfFont)

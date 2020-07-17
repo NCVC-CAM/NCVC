@@ -45,6 +45,7 @@ protected:
 	//{{AFX_MSG(CViewSetup)
 	afx_msg void OnDestroy();
 	//}}AFX_MSG
+	afx_msg void OnApplyNow();
 
 	DECLARE_MESSAGE_MAP()
 };

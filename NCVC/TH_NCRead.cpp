@@ -18,7 +18,7 @@ extern	CMagaDbg	g_dbg;
 
 using namespace std;
 using namespace boost;
-using namespace boost::spirit;
+using namespace boost::spirit::classic;
 
 #define	IsThread()	g_pParent->IsThreadContinue()
 //	ｻﾑﾈｲﾙ表示でのﾏﾙﾁｽﾚｯﾄﾞ対応
@@ -110,6 +110,8 @@ static	PFNFEEDANALYZE	g_pfnFeedAnalyze;
 static	void	SetEndmillDiameter(const string&);
 static	void	SetEndmillDiameter_fromComment(double);
 static	void	SetEndmillType(char);
+// ﾜｰｸ矩形情報設定
+static	void	SetWorkRect_fromComment(vector<double>&);
 // ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの検索
 static	CString	g_strSearchFolder[2];	// ｶﾚﾝﾄと指定ﾌｫﾙﾀﾞ
 static	CString	SearchFolder(regex&);
@@ -210,8 +212,8 @@ struct CGcodeParser : grammar<CGcodeParser>
 		rule_t	rr;
 		definition( const CGcodeParser& self ) {
 			// 未知ｺｰﾄﾞにも対応するため「全ての英大文字に続く数値」で解析
-			rr = +( +( upper_p >> real_p )[append(self.vResult)]
-					>> !( ch_p(',') >> ((ch_p('R')|'C') >> real_p) )[append(self.vResult)] )
+			rr = +( +( upper_p >> real_p )[push_back_a(self.vResult)]
+					>> !( ch_p(',') >> ((ch_p('R')|'C') >> real_p) )[push_back_a(self.vResult)] )
 				>> *(anychar_p - alnum_p)	// EOFなど
 				>> end_p;	// 終端(これを入れないと parse()関数で full を返さない)
 		}
@@ -241,20 +243,26 @@ struct CSkipParser : grammar<CSkipParser>
 //	ｺﾒﾝﾄ文字列解析
 struct CCommentParser : grammar<CCommentParser>
 {
+	vector<double>&	vResult;
+	CCommentParser(vector<double>& v) : vResult(v) {}
+
 	template<typename T>
 	struct definition
 	{
 		typedef	rule<T>	rule_t;
-		rule_t	rr, r1, r2;
+		rule_t	rr, rs1, rs2, rr1, rr2;
 		definition( const CCommentParser& self )
 		{
-			r1 = !(ch_p('c')|ch_p('m')) >> ch_p('m');		// 長さ[m],[cm],[mm]
-			r2 = ch_p(',') >> digit_p[&SetEndmillType];		// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ
-			// SetEndmillDiameter() 関数
-			// 曖昧で多重定義ではｺﾝﾊﾟｲﾙｴﾗｰとなる
-			rr = confix_p('(', *anychar_p, as_lower_d[str_p("endmill")] >> '=') >>
-					real_p[&SetEndmillDiameter_fromComment] >>
-					!r1 >> !r2;
+			// Endmill ｷｰﾜｰﾄﾞ
+			rs1 = as_lower_d[str_p("endmill")]  >> ch_p('=');
+			rr1 = real_p[&SetEndmillDiameter_fromComment] >> !str_p("mm") >>
+					!(ch_p(',') >> digit_p[&SetEndmillType]);	// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ
+			// WorkRect ｷｰﾜｰﾄﾞ
+			rs2 = as_lower_d[str_p("workrect")] >> ch_p('=');
+			rr2 = real_p[push_back_a(self.vResult)] % ch_p(',');
+			//
+			rr = ch_p('(') >> *(anychar_p-(rs1|rs2)) >>
+					+( rs1>>rr1 | rs2>>rr2 );
 		}
 		const rule_t& start() const {
 			return rr;
@@ -270,7 +278,9 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	extern	const	DWORD	g_dwSetValFlags[];
 	vector<string>	vResult;
 	vector<string>::iterator	it;
+	vector<double>	dResult;
 	CGcodeParser	gr(vResult);
+	CCommentParser	comment_p(dResult);
 	CSkipParser		skip_p;
 
 	int			i, nCode,
@@ -296,10 +306,11 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
 	(*g_pfnSearchAutoBreak)(pBlock);
 
-	// ｺﾒﾝﾄ解析
-	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_MILL_C) ) {
-		CCommentParser	comment_p;
+	// ｺﾒﾝﾄ解析(ｴﾝﾄﾞﾐﾙ径, ﾜｰｸ矩形情報の取得)
+	if ( !g_pDoc->IsThumbnail() ) {		// ｻﾑﾈｲﾙ表示のときは処理しない
 		parse((LPCTSTR)(pBlock->GetStrGcode()), comment_p, space_p);
+		if ( !dResult.empty() )
+			SetWorkRect_fromComment(dResult);
 	}
 
 	// ﾏｸﾛ置換解析
@@ -413,8 +424,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			g_ncArgv.dFeed = (*g_pfnFeedAnalyze)(it->substr(1));
 			break;
 		case 'T':
-			if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_MILL_T) )
-				SetEndmillDiameter(it->substr(1));
+			SetEndmillDiameter(it->substr(1));
 			break;
 		case ',':
 			strComma = ::Trim(it->substr(1));	// ｶﾝﾏ以降を取得
@@ -941,6 +951,48 @@ void SetEndmillType(char c)
 	if ( !g_pDoc->IsThumbnail() ) {
 		CMagaDbg	dbg("SetEndmillType()\nStart", DBG_MAGENTA);
 		dbg.printf("EndmillType=%d from CommentParser", g_ncArgv.nEndmillType);
+	}
+#endif
+}
+
+void SetWorkRect_fromComment(vector<double>& vWork)
+{
+	CRect3D		rc;
+	CPoint3D	pt;
+
+	// 不細工やけどvWorkの数が不定なので有効なﾃﾞｰﾀだけ取り出し
+	for ( size_t i=0; i<vWork.size() && i<6; i++ ) {
+		switch ( i ) {
+		case 0:		// 幅
+			rc.right = vWork[0];
+			break;
+		case 1:		// 奥行
+			rc.bottom = vWork[1];
+			break;
+		case 2:		// 高さ
+			rc.high = vWork[2];
+			break;
+		case 3:		// Xｵﾌｾｯﾄ
+			pt.x = vWork[3];
+			break;
+		case 4:		// Yｵﾌｾｯﾄ
+			pt.y = vWork[4];
+			break;
+		case 5:		// Zｵﾌｾｯﾄ
+			pt.z = vWork[5];
+			break;
+		}
+	}
+	rc.OffsetRect(pt);
+
+	// ﾄﾞｷｭﾒﾝﾄが保持するﾜｰｸ矩形の更新
+	g_pDoc->SetWorkRectOrg(rc);
+
+#ifdef _DEBUG
+	if ( !g_pDoc->IsThumbnail() ) {
+		CMagaDbg	dbg("SetWorkRect_fromComment()\nStart", DBG_MAGENTA);
+		dbg.printf("(%f,%f)-(%f,%f)", rc.left, rc.top, rc.right, rc.bottom);
+		dbg.printf("(%f,%f)", rc.low, rc.high);
 	}
 #endif
 }

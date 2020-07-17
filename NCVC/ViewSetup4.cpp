@@ -97,8 +97,6 @@ BOOL CViewSetup4::OnApply()
 	pOpt->m_bTraceMarker = m_bTraceMarker;
 
 	SetModified(FALSE);
-	// ﾒｲﾝﾌﾚｰﾑ，各ﾋﾞｭｰへの更新通知
-	AfxGetNCVCApp()->ChangeViewOption();
 
 	return TRUE;
 }
@@ -124,7 +122,7 @@ HBRUSH CViewSetup4::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
 	if ( nCtlColor == CTLCOLOR_STATIC ) {
 		int	nID = pWnd->GetDlgCtrlID();
-		if ( nID>=IDC_VIEWSETUP4_ST_BACKGROUND1 && nID<=IDC_VIEWSETUP4_ST_TEXT )
+		if ( IDC_VIEWSETUP4_ST_BACKGROUND1<=nID && nID<=IDC_VIEWSETUP4_ST_TEXT )
 			return m_brColor[nID-IDC_VIEWSETUP4_ST_BACKGROUND1];
 	}
 	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
@@ -165,8 +163,8 @@ void CViewSetup4::OnChange()
 
 void CViewSetup4::OnDefColor() 
 {
-	extern	LPCTSTR	g_szNcInfoViewColDef[];
-	extern	const	int	g_nTraceSpeed[];
+	extern	LPCTSTR			g_szNcInfoViewColDef[];
+	extern	const	int		g_nTraceSpeed[];
 	int			i;
 	COLORREF	clr;
 	BOOL		bChange = FALSE;

@@ -15,8 +15,24 @@
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
+//#define	_DEBUG_FILEOUT_		// Depth File out
 extern	CMagaDbg	g_dbg;
+#include <mmsystem.h>			// timeGetTime()
 #endif
+
+// 頂点配列生成ｽﾚｯﾄﾞ用
+typedef	std::vector<GLuint>	CVElement;
+typedef struct tagCREATEELEMENTPARAM {
+	std::vector<GLfloat>*	pfXYZ;
+	std::vector<GLfloat>*	pfNOR;
+	std::vector<CVElement>*	pElement;
+	int		cx, cy;
+	GLfloat	h, l;
+} CREATEELEMENTPARAM, *LPCREATEELEMENTPARAM;
+
+static	DWORD WINAPI CreateElement_WrkThread(LPVOID);
+static	DWORD WINAPI CreateElement_CutThread(LPVOID);
+static	void		 CreateElement_Side(LPCREATEELEMENTPARAM);
 
 //	拡大率表示のための変換単位
 //	1ｲﾝﾁあたりのﾋﾟｸｾﾙ数 GetDeviceCaps(LOGPIXELS[X|Y]) = 96dpi
@@ -58,12 +74,14 @@ END_MESSAGE_MAP()
 
 CNCViewGL::CNCViewGL()
 {
+	m_bActive = FALSE;
 	m_cx = m_cy = 0;
 	m_dRate = 0.0;
 	m_hRC = NULL;
-	m_glCode = m_glWork = 0;
+	m_glCode = 0;
 
-//	m_pfDepth = NULL;
+	m_nVertexID = m_nNormalID = 0;
+	m_pGenBuf = NULL;
 
 	m_enTrackingMode = TM_NONE;
 	ClearObjectForm();
@@ -71,8 +89,6 @@ CNCViewGL::CNCViewGL()
 
 CNCViewGL::~CNCViewGL()
 {
-//	if ( m_pfDepth )
-//		delete	m_pfDepth;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -89,65 +105,108 @@ void CNCViewGL::OnInitialUpdate()
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCViewGL::OnInitialUpdate()\nStart", DBG_CYAN);
 #endif
-	// ﾜｰｸ矩形の描画用座標
-	// 上下左右1%ずつ大きく、深さを1%小さくする
-	m_rcDraw = GetDocument()->GetMaxRect();
-	m_rcDraw.InflateRect(m_rcDraw.Width()*0.01, m_rcDraw.Height()*0.01, -m_rcDraw.Depth()*0.01);
-
-	CClientDC	dc(this);
-	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-
-	// 視点座標変換
-	::glMatrixMode( GL_MODELVIEW );
-	::glLoadIdentity();
-
-	// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
-	// ｵﾌﾞｼﾞｪｸﾄ数が多いとﾒﾓﾘ消費量が多すぎる(かも知れない)ので
-	// 10,000を閾値とする
-	if ( GetDocument()->GetNCsize() <= 10000 ) {
-		m_glCode = ::glGenLists(1);
-		if( m_glCode > 0 ) {
-			// NCﾃﾞｰﾀ描画のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
-			::glNewList( m_glCode, GL_COMPILE );
-				RenderCode(TRUE);
-			::glEndList();
-		}
-	}
-/*
-	// ﾜｰｸ矩形のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
-	m_glWork = ::glGenLists(1);
-	if( m_glWork > 0 ) {
-		::glNewList( m_glWork, GL_COMPILE );
-			RenderWork();
-		::glEndList();
-	}
-*/
-	::wglMakeCurrent( NULL, NULL );
+	// まだｳｨﾝﾄﾞｳがｱｸﾃｨﾌﾞでない可能性があるので
+	// ここでの OpenGLｺﾏﾝﾄﾞ は使用しない
 }
 
 void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
 {
+	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+
 	switch ( lHint ) {
 	case UAV_STARTSTOPTRACE:
 	case UAV_TRACECURSOR:
-	case UAV_DRAWWORKRECT:
 	case UAV_DRAWMAXRECT:
-		return;				// 無視
-	case UAV_FILEINSERT:
-		OnLensKey(ID_VIEW_FIT);
-		// ﾌﾟﾘﾐﾃｨﾌﾞ再構成
-		// ...
-		return;
-		Invalidate(FALSE);
-		return;
-	case UAV_CHANGEFONT:	// 色の変更
-		Invalidate(FALSE);
+		return;		// 無視
+	case UAV_FILEINSERT:	// 占有矩形の変更
+		pOpt->m_dwUpdateFlg = VIEWUPDATE_DISPLAYLIST | VIEWUPDATE_BOXEL;
+		// through
+	case UAV_DRAWWORKRECT:	// ﾜｰｸ矩形変更
+		if ( m_rcDraw != GetDocument()->GetWorkRect() )
+			pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
+		// through
+	case UAV_CHANGEFONT:	// 色の変更 etc.
+		if ( m_bActive ) {
+			// 各ﾍﾟｰｼﾞごとに更新情報がｾｯﾄされている
+			UpdateViewOption();
+			Invalidate(FALSE);
+		}
+		pOpt->m_dwUpdateFlg = 0;
 		return;
 	case UAV_ADDINREDRAW:
 		Invalidate(FALSE);
 		return;
 	}
 	CView::OnUpdate(pSender, lHint, pHint);
+}
+
+void CNCViewGL::UpdateViewOption(void)
+{
+	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	// 初期視点に戻す
+	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL )
+		OnLensKey(ID_VIEW_FIT);
+
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
+	// 光源の色設定
+	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_LIGHT ) {
+		COLORREF	col;
+		GLfloat light_Wrk[] = {0.0, 0.0, 0.0, 1.0};
+		GLfloat light_Cut[] = {0.0, 0.0, 0.0, 1.0};
+		GLfloat light_Position0[] = {-1.0, -1.0, -1.0,  0.0};
+		GLfloat light_Position1[] = { 1.0,  1.0,  1.0,  0.0};
+		col = pOpt->GetNcDrawColor(NCCOL_GL_WRK);
+		light_Wrk[0] = (GLfloat)GetRValue(col) / 255;	// 255 -> 1.0
+		light_Wrk[1] = (GLfloat)GetGValue(col) / 255;
+		light_Wrk[2] = (GLfloat)GetBValue(col) / 255;
+		col = pOpt->GetNcDrawColor(NCCOL_GL_CUT);
+		light_Cut[0] = (GLfloat)GetRValue(col) / 255;
+		light_Cut[1] = (GLfloat)GetGValue(col) / 255;
+		light_Cut[2] = (GLfloat)GetBValue(col) / 255;
+		::glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_Wrk);
+		::glLightfv(GL_LIGHT1, GL_DIFFUSE,  light_Wrk);
+		::glLightfv(GL_LIGHT2, GL_DIFFUSE,  light_Cut);
+		::glLightfv(GL_LIGHT3, GL_DIFFUSE,  light_Cut);
+		if ( !m_bActive ) {
+			::glLightfv(GL_LIGHT0, GL_POSITION, light_Position0);
+			::glLightfv(GL_LIGHT1, GL_POSITION, light_Position1);
+			::glLightfv(GL_LIGHT2, GL_POSITION, light_Position0);
+			::glLightfv(GL_LIGHT3, GL_POSITION, light_Position1);
+		}
+	}
+
+	// ﾜｲﾔｰ(ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ)
+	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_DISPLAYLIST ) {
+		if ( m_glCode > 0 )
+			::glDeleteLists(m_glCode, 1);
+		CreateWire();
+	}
+
+	// ﾎﾞｸｾﾙ生成
+	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
+		ClearElement();
+		// ﾜｰｸ矩形の描画用座標
+		m_rcDraw = GetDocument()->GetWorkRect();	// 切削領域
+		if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
+			if ( GLEW_ARB_vertex_buffer_object )	// OpenGL拡張ｻﾎﾟｰﾄ
+				CreateBoxel();
+			else {
+				CString	strErr;
+				strErr.Format(IDS_ERR_OPENGLVER, ::glGetString(GL_VERSION));
+				AfxMessageBox(strErr, MB_OK|MB_ICONEXCLAMATION);
+				pOpt->m_bSolidView  = FALSE;	// ﾌﾗｸﾞ強制OFF
+				pOpt->m_bG00View    = FALSE;
+				pOpt->m_bDragRender = FALSE;
+				if ( !pOpt->SaveViewOption() )
+					AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
+			}
+		}
+	}
+
+	::wglMakeCurrent( NULL, NULL );
 }
 
 BOOL CNCViewGL::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
@@ -174,8 +233,8 @@ BOOL CNCViewGL::SetupPixelFormat(CDC* pDC)
 		0,
 		0,
 		0, 0, 0, 0,
-		32,
-		32,		// Stencil Buffer
+		32,		// Depth   Buffer
+		0,		// Stencil Buffer(32)
 		0,
 		PFD_MAIN_PLANE,
 		0,
@@ -204,68 +263,769 @@ void CNCViewGL::ClearObjectForm(void)
 	m_objectXform[2][0]	= 0.0; m_objectXform[2][1] = 0.0; m_objectXform[2][2] = 1.0; m_objectXform[2][3] = 0.0;
 	m_objectXform[3][0]	= 0.0; m_objectXform[3][1] = 0.0; m_objectXform[3][2] = 0.0; m_objectXform[3][3] = 1.0;
 }
-/*
-void CNCViewGL::ClipDepth(void)
-{
-	::glDisable( GL_STENCIL_TEST );
-	::glDisable( GL_LIGHTING );
 
-	int			nResult;
-	CRect3D		rcMax(GetDocument()->GetMaxRect());
+void CNCViewGL::CreateWire(void)
+{
+	::glGetError();		// ｴﾗｰをﾌﾗｯｼｭ
+
+	// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
+	// ｵﾌﾞｼﾞｪｸﾄ数が多いとﾒﾓﾘ消費量が多すぎる(かも知れない)ので
+	// 10,000を閾値とする
+	if ( GetDocument()->GetNCsize() <= 10000 ) {
+		m_glCode = ::glGenLists(1);
+		if( m_glCode > 0 ) {
+			// NCﾃﾞｰﾀ描画のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
+			::glNewList( m_glCode, GL_COMPILE );
+				RenderCode();
+			::glEndList();
+			if ( ::glGetError() != GL_NO_ERROR ) {
+				::glDeleteLists(m_glCode, 1);
+				m_glCode = 0;
+			}
+		}
+	}
+}
+
+void CNCViewGL::CreateBoxel(void)
+{
+	int			i;
+	CPoint3D	pt(m_rcView.CenterPoint());
+
+	// ﾎﾞｸｾﾙ生成のための初期設定
+	::glEnable(GL_DEPTH_TEST);
+	::glClearDepth(0.0);		// 遠い方を先に優先させるための値
+	::glDepthFunc(GL_GREATER);	// 遠い方を優先
+	::glClear(GL_DEPTH_BUFFER_BIT);		// ﾃﾞﾌﾟｽﾊﾞｯﾌｧのみｸﾘｱ
+	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);	// ｶﾗｰﾏｽｸOFF
+
+	// 画面いっぱいに描画
+	::glMatrixMode(GL_PROJECTION);
+	::glPushMatrix();
+	::glLoadIdentity();
+	::glOrtho(m_rcDraw.left, m_rcDraw.right, m_rcDraw.top, m_rcDraw.bottom,
+		m_rcView.low, m_rcView.high);	// m_rcDraw ではｷﾞﾘｷﾞﾘなので m_rcView を使う
+
+	::glMatrixMode(GL_MODELVIEW);
+
+	// 切削底面描画
+	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
+		GetDocument()->GetNCdata(i)->DrawBottomFace();
+//	ASSERT( ::glGetError() == GL_NO_ERROR );
+//	GLenum glError = ::glGetError();
+
+	::glFinish();
+
+	// ﾃﾞﾌﾟｽ値の取得
+	GetClipDepth();
+
+	::glMatrixMode(GL_PROJECTION);
+	::glPopMatrix();
+	::glMatrixMode(GL_MODELVIEW);
+
+	// 通常設定に戻す
+	::glClearDepth(1.0);
+	::glDepthFunc(GL_LESS);		// 近い方を優先(通常描画)
+	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+}
+
+void CNCViewGL::GetClipDepth(void)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("GetClipDepth()");
+#endif
+	int			i, j, n;
 	GLint		viewPort[4];
 	GLdouble	mvMatrix[16], pjMatrix[16],
 				wx1, wy1, wz1, wx2, wy2, wz2;
-	GLsizei		cx, cy;
+	GLfloat		fx, fy, fz;
+	GLfloat*	pfDepth;			// ﾃﾞﾌﾟｽ値取得配列一時領域
+	std::vector<GLfloat>	vfXYZ,	// 変換されたﾜｰﾙﾄﾞ座標
+							vfNOR;	// 法線ﾍﾞｸﾄﾙ
 
 	::glGetIntegerv(GL_VIEWPORT, viewPort);
 	::glGetDoublev (GL_MODELVIEW_MATRIX,  mvMatrix);
 	::glGetDoublev (GL_PROJECTION_MATRIX, pjMatrix);
 
 	// 矩形領域をﾋﾟｸｾﾙ座標に変換
-	nResult = ::gluProject(rcMax.left,  rcMax.top,    0.0, mvMatrix, pjMatrix, viewPort,
-					&wx1, &wy1, &wz1);
-	nResult = ::gluProject(rcMax.right, rcMax.bottom, 0.0, mvMatrix, pjMatrix, viewPort,
-					&wx2, &wy2, &wz2);
-	cx = (GLsizei)(wx2 - wx1);
-	cy = (GLsizei)(wy2 - wy1);
+	::gluProject(m_rcDraw.left,  m_rcDraw.top,    0.0, mvMatrix, pjMatrix, viewPort,
+		&wx1, &wy1, &wz1);
+	::gluProject(m_rcDraw.right, m_rcDraw.bottom, 0.0, mvMatrix, pjMatrix, viewPort,
+		&wx2, &wy2, &wz2);
+#ifdef _DEBUG
+	dbg.printf("left,  top   =(%f, %f)", m_rcDraw.left,  m_rcDraw.top);
+	dbg.printf("right, bottom=(%f, %f)", m_rcDraw.right, m_rcDraw.bottom);
+	dbg.printf("wx1,   wy1   =(%f, %f)", wx1, wy1);
+	dbg.printf("wx2,   wy2   =(%f, %f)", wx2, wy2);
+#endif
 
-	// 矩形領域のﾃﾞﾌﾟｽ値を取得（ﾋﾟｸｾﾙ単位）
-	m_pfDepth = new GLfloat[cx*cy];
-	::glReadPixels((GLint)wx1, (GLint)wy1, cx, cy,
-			GL_DEPTH_COMPONENT, GL_FLOAT, m_pfDepth);
+	m_icx = (int)(wx2 - wx1);
+	m_icy = (int)(wy2 - wy1);
+
+	// vector大きさを指示
+	vfXYZ.reserve(m_icx*m_icy*NCXYZ*2);
+	vfNOR.reserve(m_icx*m_icy*NCXYZ*2);
+
+	// ｸﾗｲｱﾝﾄ領域のﾃﾞﾌﾟｽ値を取得（ﾋﾟｸｾﾙ単位）
+#ifdef _DEBUG
+	DWORD	t1 = ::timeGetTime();
+#endif
+	pfDepth = new GLfloat [m_icx*m_icy];
+	::glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	::glReadPixels((GLint)wx1, (GLint)wy1, m_icx, m_icy,
+					GL_DEPTH_COMPONENT, GL_FLOAT, pfDepth);
+//	ASSERT( ::glGetError() == GL_NO_ERROR );
+//	GLenum glError = ::glGetError();
+#ifdef _DEBUG
+	DWORD	t2 = ::timeGetTime();
+	dbg.printf( "glReadPixels()=%d[ms]", t2 - t1 );
+#endif
+
+	// ﾜｰｸ上面と切削面の座標登録
+	for ( j=0, n=0; j<m_icy; j++ ) {
+		for ( i=0; i<m_icx; i++, n++ ) {
+//			n = j*m_icx+i;
+			::gluUnProject(i+wx1, j+wy1, pfDepth[n],
+					mvMatrix, pjMatrix, viewPort,
+					&wx2, &wy2, &wz2);	// それほど遅くないので自作変換は中止
+			fx = (GLfloat)wx2;
+			fy = (GLfloat)wy2;
+			fz = (GLfloat)( (pfDepth[n]==0.0) ?	// ﾃﾞﾌﾟｽ値が初期値(矩形範囲内で切削面でない)なら
+				m_rcDraw.high :		// ﾜｰｸ矩形上面座標
+				wz2 );				// 変換座標
+			vfXYZ.push_back(fx);
+			vfXYZ.push_back(fy);
+			vfXYZ.push_back(fz);
+			vfNOR.push_back(0.0);
+			vfNOR.push_back(0.0);
+			vfNOR.push_back(1.0);	// ﾃﾞﾌｫﾙﾄの法線ﾍﾞｸﾄﾙ
+		}
+	}
+#ifdef _DEBUG
+	DWORD	t3 = ::timeGetTime();
+	dbg.printf( "AddMatrix1=%d[ms]", t3 - t2 );
+#endif
+
+	// 底面用座標の登録
+	fz = (GLfloat)m_rcDraw.low;	// m_rcDraw.low座標で敷き詰める
+	for ( j=0; j<m_icy; j++ ) {
+		for ( i=0; i<m_icx; i++ ) {
+			n = (j*m_icx+i) * NCXYZ;
+			fx = vfXYZ[n+NCA_X];
+			fy = vfXYZ[n+NCA_Y];
+			vfXYZ.push_back(fx);
+			vfXYZ.push_back(fy);
+			vfXYZ.push_back(fz);
+			vfNOR.push_back(0.0);
+			vfNOR.push_back(0.0);
+			vfNOR.push_back(-1.0);
+		}
+	}
+#ifdef _DEBUG
+	DWORD	t4 = ::timeGetTime();
+	dbg.printf( "AddMatrix2=%d[ms]", t4 - t3 );
+#endif
 
 #ifdef _DEBUG
 #ifdef _DEBUG_FILEOUT_
-	GLsizei		i, j;
-	CStdioFile	f("D:\\tmp\\depth.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
-	CString		s, r;
-	for ( j=0; j<cy; j++ ) {
+	CStdioFile	dbg_f ("C:\\Users\\magara\\Documents\\tmp\\depth_f.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
+	CStdioFile	dbg_fx("C:\\Users\\magara\\Documents\\tmp\\depth_x.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
+	CStdioFile	dbg_fy("C:\\Users\\magara\\Documents\\tmp\\depth_y.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
+	CStdioFile	dbg_fz("C:\\Users\\magara\\Documents\\tmp\\depth_z.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
+	CString		r,
+				s, sx, sy, sz;
+	for ( j=0; j<m_icy; j++ ) {
 		s.Empty();
-		for ( i=0; i<cx; i++ ) {
-			if ( !s.IsEmpty() )
-				s += ", ";
-			r.Format(IDS_MAKENCD_FORMAT, m_pfDepth[j*cy+i]);
-			s += r;
+		sx.Empty();	sy.Empty();	sz.Empty();
+		for ( i=0; i<m_icx; i++ ) {
+			n = j*m_icx+i;
+//			if ( pfDepth[n] != 0.0 ) {
+				if ( !s.IsEmpty() ) {
+					s  += ", ";
+//				if ( !sx.IsEmpty() ) {
+					sx += ", ";	sy += ", ";	sz += ", ";
+				}
+				r.Format(IDS_MAKENCD_FORMAT, pfDepth[n]);
+				s += r;
+				r.Format(IDS_MAKENCD_FORMAT, vfXYZ[n*NCXYZ+NCA_X]);
+				sx += r;
+				r.Format(IDS_MAKENCD_FORMAT, vfXYZ[n*NCXYZ+NCA_Y]);
+				sy += r;
+				r.Format(IDS_MAKENCD_FORMAT, vfXYZ[n*NCXYZ+NCA_Z]);
+				sz += r;
+			}
+//		}
+		if ( !s.IsEmpty() ) {
+			dbg_f.WriteString (s +"\n");
+//		if ( !sx.IsEmpty() ) {
+			dbg_fx.WriteString(sx+"\n");
+			dbg_fy.WriteString(sy+"\n");
+			dbg_fz.WriteString(sz+"\n");
 		}
-		f.WriteString(s+"\n");
 	}
 #endif	// _DEBUG_FILEOUT_
 //	double	znr = pjMatrix[14]/(pjMatrix[10]-1.0),
 //			zfr = pjMatrix[14]/(pjMatrix[10]+1.0);
 //	g_dbg.printf("near=%f far=%f", znr, zfr);
 //	g_dbg.printf("depth=%f", zfr*znr/(0.515*(zfr-znr)-zfr));
-	nResult = ::gluUnProject(wx1, wy1, 0.515, mvMatrix, pjMatrix, viewPort,
-					&wx2, &wy2, &wz2);
-	g_dbg.printf("0.515 => %f", wz2);
-	nResult = ::gluUnProject(wx1, wy1, 0.482, mvMatrix, pjMatrix, viewPort,
-					&wx2, &wy2, &wz2);
-	g_dbg.printf("0.482 => %f", wz2);
+//	---
+//	::gluUnProject(0, 0, 0.515, mvMatrix, pjMatrix, viewPort,
+//					&wx2, &wy2, &wz2);
+//	g_dbg.printf("0.515 => %f", wz2);
+//	::gluUnProject(0, 0, 0.482, mvMatrix, pjMatrix, viewPort,
+//					&wx2, &wy2, &wz2);
+//	g_dbg.printf("0.482 => %f", wz2);
 #endif
 
-	::glEnable ( GL_LIGHTING );
-	::glEnable ( GL_STENCIL_TEST );
+	delete	pfDepth;
+
+	// 頂点配列ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄ生成	
+	CreateElement(vfXYZ, vfNOR);
 }
-*/
+
+void CNCViewGL::CreateElement(std::vector<GLfloat>& vfXYZ, std::vector<GLfloat>& vfNOR)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("CreateElement()", DBG_BLUE);
+	dbg.printf("m_icx=%d m_icy=%d", m_icx, m_icy);
+#endif
+
+	std::vector<CVElement>	vElementWrk,	// 頂点配列ｲﾝﾃﾞｯｸｽ(可変長２次元配列)
+							vElementCut;
+	vElementWrk.reserve(m_icy*2);
+	vElementCut.reserve(m_icy);
+
+	// ﾜｰｸ上面と切削面を２つのｽﾚｯﾄﾞで処理
+	HANDLE	hThread[2];
+	CREATEELEMENTPARAM	param[2];
+	for ( int i=0; i<SIZEOF(hThread); i++ ) {
+		param[i].pfXYZ = &vfXYZ;
+		param[i].pfNOR = &vfNOR;
+		param[i].cx = m_icx;
+		param[i].cy = m_icy;
+		param[i].h  = (GLfloat)m_rcDraw.high;
+		param[i].l  = (GLfloat)m_rcDraw.low;
+	}
+	// 切削面処理の方が相対的に時間がかかるため先にスレッド実行
+	param[0].pElement = &vElementCut;
+	param[1].pElement = &vElementWrk;
+	hThread[0] = ::CreateThread(NULL, 0, CreateElement_CutThread, &param[0], 0, NULL);
+	hThread[1] = ::CreateThread(NULL, 0, CreateElement_WrkThread, &param[1], 0, NULL);
+	::WaitForMultipleObjects(SIZEOF(hThread), hThread, TRUE, INFINITE);
+	::CloseHandle(hThread[0]);
+	::CloseHandle(hThread[1]);
+
+	// ﾜｰｸ側面は法線ﾍﾞｸﾄﾙの更新があり
+	// 切削面処理との排他制御を考慮
+	CreateElement_Side(&param[0]);
+
+	::glGetError();		// ｴﾗｰをﾌﾗｯｼｭ
+
+	// 頂点配列をGPUﾒﾓﾘに転送
+	if ( m_nVertexID > 0 )
+		::glDeleteBuffersARB(1, &m_nVertexID);
+	::glGenBuffersARB(1, &m_nVertexID);
+	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID);
+	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
+			vfXYZ.size()*sizeof(GLfloat), &vfXYZ[0],
+			GL_STATIC_DRAW_ARB);
+	if ( ::glGetError() != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
+		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		ClearElement();
+		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+		return;
+	}
+
+	// 法線ﾍﾞｸﾄﾙをGPUﾒﾓﾘに転送
+	if ( m_nNormalID > 0 )
+		::glDeleteBuffersARB(1, &m_nNormalID);
+	::glGenBuffersARB(1, &m_nNormalID);
+	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nNormalID);
+	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
+			vfNOR.size()*sizeof(GLfloat), &vfNOR[0],
+			GL_STATIC_DRAW_ARB);
+	if ( ::glGetError() != GL_NO_ERROR ) {
+		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		ClearElement();
+		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+		return;
+	}
+	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+	// 頂点ｲﾝﾃﾞｯｸｽをGPUﾒﾓﾘに転送
+	if ( m_pGenBuf ) {
+		::glDeleteBuffersARB(m_vVertexWrk.size()+m_vVertexCut.size(), m_pGenBuf);
+		delete	m_pGenBuf;
+	}
+	m_vVertexWrk.clear();
+	m_vVertexCut.clear();
+	m_pGenBuf = new GLuint[vElementWrk.size()+vElementCut.size()];
+	::glGenBuffersARB(vElementWrk.size()+vElementCut.size(), m_pGenBuf);
+
+	size_t	ii, jj;		// 警告防止
+#ifdef _DEBUG
+	int		dbgTriangleWrk = 0, dbgTriangleCut = 0;
+#endif
+
+	// ﾜｰｸ矩形用
+	m_vVertexWrk.reserve(vElementWrk.size());
+	for ( ii=jj=0; ii<vElementWrk.size(); ii++ ) {
+		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[jj++]);
+		::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
+			vElementWrk[ii].size()*sizeof(GLuint), &vElementWrk[ii][0],
+			GL_STATIC_DRAW_ARB);
+		if ( ::glGetError() != GL_NO_ERROR ) {
+			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+			ClearElement();
+			AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+			return;
+		}
+		m_vVertexWrk.push_back(vElementWrk[ii].size());
+#ifdef _DEBUG
+		dbgTriangleWrk += vElementWrk[ii].size();
+#endif
+	}
+	// 切削面用
+	m_vVertexCut.reserve(vElementCut.size());
+	for ( ii=0; ii<vElementCut.size(); ii++ ) {
+		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[jj++]);
+		::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
+			vElementCut[ii].size()*sizeof(GLuint), &vElementCut[ii][0],
+			GL_STATIC_DRAW_ARB);
+		if ( ::glGetError() != GL_NO_ERROR ) {
+			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+			ClearElement();
+			AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+			return;
+		}
+		m_vVertexCut.push_back(vElementCut[ii].size());
+#ifdef _DEBUG
+		dbgTriangleCut += vElementCut[ii].size();
+#endif
+	}
+	::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+
+#ifdef _DEBUG
+	dbg.printf("VertexCount/3=%d size=%d(*2)", vfXYZ.size()/3, vfXYZ.size()*sizeof(GLfloat));
+	dbg.printf("Work IndexCount=%d Triangle=%d", vElementWrk.size(), dbgTriangleWrk/3);
+	dbg.printf("Cut  IndexCount=%d Triangle=%d", vElementCut.size(), dbgTriangleCut/3);
+#endif
+}
+
+DWORD WINAPI CreateElement_WrkThread(LPVOID pVoid)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("CreateElement_WrkThread()\nStart", DBG_BLUE);
+#endif
+
+	LPCREATEELEMENTPARAM pParam = reinterpret_cast<LPCREATEELEMENTPARAM>(pVoid);
+	int			i, j, cxcy = pParam->cx * pParam->cy;
+	BOOL		bReverse, bSingle;
+	GLuint		n0, n1,	nn;
+	UINT		k0, k1;
+	CVElement	vElement;
+
+	vElement.reserve(pParam->cx * 2);
+
+	// ﾜｰｸ上面
+	// 切削面以外は m_rcDraw.high を代入しているので
+	// 等しいか否かの判断でOK
+	for ( j=0; j<pParam->cy-1; j++ ) {
+		bReverse = bSingle = FALSE;
+		vElement.clear();
+		for ( i=0; i<pParam->cx; i++ ) {
+			n0 =  j   *pParam->cx+i;
+			n1 = (j+1)*pParam->cx+i;
+			k0 = n0*NCXYZ + NCA_Z;
+			k1 = n1*NCXYZ + NCA_Z;
+			if ( pParam->pfXYZ->operator[](k0) != pParam->h ) {
+				if ( pParam->pfXYZ->operator[](k1) != pParam->h ) {
+					// k0:×, k1:×
+					if ( vElement.size() > 3 )
+						pParam->pElement->push_back(vElement);
+					bReverse = bSingle = FALSE;
+					vElement.clear();
+				}
+				else {
+					// k0:×, k1:○
+					if ( bSingle ) {
+						// 片方だけが連続するならそこでbreak
+						if ( vElement.size() > 3 )
+							pParam->pElement->push_back(vElement);
+						bReverse = bSingle = FALSE;
+						vElement.clear();
+					}
+					else {
+						vElement.push_back(n1);
+						bReverse = FALSE;	// 次はn0から登録
+						bSingle  = TRUE;
+					}
+				}
+			}
+			else if ( pParam->pfXYZ->operator[](k1) != pParam->h ) {
+				// k0:○, k1:×
+				if ( bSingle ) {
+					if ( vElement.size() > 3 )
+						pParam->pElement->push_back(vElement);
+					bReverse = bSingle = FALSE;
+					vElement.clear();
+				}
+				else {
+					vElement.push_back(n0);
+					bReverse = TRUE;		// 次はn1から登録
+					bSingle  = TRUE;
+				}
+			}
+			else {
+				// k0:○, k1:○
+				if ( bSingle ) {	// 前回が片方だけ
+					// 凹形状防止
+					if ( vElement.size() > 3 ) {
+						pParam->pElement->push_back(vElement);
+						// 前回の座標を再登録
+						nn = vElement.back();
+						vElement.clear();
+						vElement.push_back(nn);
+					}
+				}
+				bSingle = FALSE;
+				if ( bReverse ) {
+					vElement.push_back(n1);
+					vElement.push_back(n0);
+				}
+				else {
+					vElement.push_back(n0);
+					vElement.push_back(n1);
+				}
+			}
+		}
+		// Ｘ方向のﾙｰﾌﾟが終了
+		if ( vElement.size() > 3 )
+			pParam->pElement->push_back(vElement);
+	}
+
+	// ﾜｰｸ底面
+	for ( j=0; j<pParam->cy-1; j++ ) {
+		bReverse = bSingle = FALSE;
+		vElement.clear();
+		for ( i=0; i<pParam->cx; i++ ) {
+			n0 =  j   *pParam->cx+i;
+			n1 = (j+1)*pParam->cx+i;
+			k0 = n0*NCXYZ + NCA_Z;	// ﾜｰｸ上面のZ値で描画判断
+			k1 = n1*NCXYZ + NCA_Z;
+			n0 += cxcy;				// 底面座標番号
+			n1 += cxcy;
+			if ( pParam->pfXYZ->operator[](k0) < pParam->l ) {
+				if ( pParam->pfXYZ->operator[](k1) < pParam->l ) {
+					// k0:×, k1:×
+					if ( vElement.size() > 3 )
+						pParam->pElement->push_back(vElement);
+					bReverse = bSingle = FALSE;
+					vElement.clear();
+				}
+				else {
+					// k0:×, k1:○
+					if ( bSingle ) {
+						// 片方だけが連続するならそこでbreak
+						if ( vElement.size() > 3 )
+							pParam->pElement->push_back(vElement);
+						bReverse = bSingle = FALSE;
+						vElement.clear();
+					}
+					else {
+						vElement.push_back(n1);
+						bReverse = FALSE;	// 次はn0から登録
+						bSingle  = TRUE;
+					}
+				}
+			}
+			else if ( pParam->pfXYZ->operator[](k1) < pParam->l ) {
+				// k0:○, k1:×
+				if ( bSingle ) {
+					if ( vElement.size() > 3 )
+						pParam->pElement->push_back(vElement);
+					bReverse = bSingle = FALSE;
+					vElement.clear();
+				}
+				else {
+					vElement.push_back(n0);
+					bReverse = TRUE;		// 次はn1から登録
+					bSingle  = TRUE;
+				}
+			}
+			else {
+				// k0:○, k1:○
+				if ( bSingle ) {	// 前回が片方だけ
+					// 凹形状防止
+					if ( vElement.size() > 3 ) {
+						pParam->pElement->push_back(vElement);
+						// 前回の座標を再登録
+						nn = vElement.back();
+						vElement.clear();
+						vElement.push_back(nn);
+					}
+				}
+				bSingle = FALSE;
+				if ( bReverse ) {
+					vElement.push_back(n1);
+					vElement.push_back(n0);
+				}
+				else {
+					vElement.push_back(n0);
+					vElement.push_back(n1);
+				}
+			}
+		}
+		// Ｘ方向のﾙｰﾌﾟが終了
+		if ( vElement.size() > 3 )
+			pParam->pElement->push_back(vElement);
+	}
+
+#ifdef _DEBUG
+	dbg.printf("end");
+#endif
+
+	return 0;
+}
+
+DWORD WINAPI CreateElement_CutThread(LPVOID pVoid)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("CreateElement_CutThread()\nStart", DBG_BLUE);
+#endif
+
+	LPCREATEELEMENTPARAM pParam = reinterpret_cast<LPCREATEELEMENTPARAM>(pVoid);
+	int			i, j;
+	BOOL		bWorkrct,	// 前回××かどうかを判断するﾌﾗｸﾞ
+				bThrough;	// 前回△△　　〃
+	GLuint		n0, n1;
+	UINT		k0, k1, kk0, kk1;
+	CVElement	vElement;
+
+	vElement.reserve(pParam->cx * 2);
+
+	// 切削面（上面・側面兼用）
+	// ○：切削面，△：貫通，×：ﾜｰｸ上面
+	for ( j=0; j<pParam->cy-1; j++ ) {
+		bWorkrct = bThrough = FALSE;
+		vElement.clear();
+		for ( i=0; i<pParam->cx; i++ ) {
+			n0 =  j   *pParam->cx+i;
+			n1 = (j+1)*pParam->cx+i;
+			k0 = n0*NCXYZ;
+			k1 = n1*NCXYZ;
+			if ( pParam->pfXYZ->operator[](k0+NCA_Z) >= pParam->h ) {
+				if ( pParam->pfXYZ->operator[](k1+NCA_Z) >= pParam->h ) {
+					// k0:×, k1:×
+					if ( bWorkrct ) {
+						// 前回も k0:×, k1:×
+						if ( vElement.size() > 3 ) {
+							// break
+							pParam->pElement->push_back(vElement);
+							// 前回の法線を左向き(終点)に変更
+							pParam->pfNOR->operator[](kk0+NCA_X) = -1.0;
+							pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
+							pParam->pfNOR->operator[](kk1+NCA_X) = -1.0;
+							pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
+						}
+						vElement.clear();
+					}
+					bWorkrct = TRUE;
+				}
+				else {
+					// k0:×, k1:△
+					// k0:×, k1:○
+					if ( bWorkrct ) {
+						// 前回 k0:×, k1:× なら
+						// 前回の法線を右向き(始点)に変更
+						pParam->pfNOR->operator[](kk0+NCA_X) = 1.0;
+						pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
+						pParam->pfNOR->operator[](kk1+NCA_X) = 1.0;
+						pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
+					}
+					bWorkrct = FALSE;
+					// 今回を上向きの法線
+					pParam->pfNOR->operator[](k0+NCA_Y) = 1.0;
+					pParam->pfNOR->operator[](k0+NCA_Z) = 0;
+					if ( pParam->pfXYZ->operator[](k1+NCA_Z) < pParam->l ) {
+						// k1（切れ目側）を下向きの法線
+						pParam->pfNOR->operator[](k1+NCA_Y) = -1.0;
+						pParam->pfNOR->operator[](k1+NCA_Z) = 0;
+					}
+				}
+				bThrough = FALSE;
+			}
+			else if ( pParam->pfXYZ->operator[](k0+NCA_Z) < pParam->l ) {
+				// k0:△
+				if ( bWorkrct ) {
+					// 前回 k0:×, k1:×
+					// 前回の法線を右向き(始点)に変更
+					pParam->pfNOR->operator[](kk0+NCA_X) = 1.0;
+					pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
+					pParam->pfNOR->operator[](kk1+NCA_X) = 1.0;
+					pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
+				}
+				bWorkrct = FALSE;
+				if ( pParam->pfXYZ->operator[](k1+NCA_Z) < pParam->l ) {
+					// k0:△, k1:△
+					if ( bThrough ) {
+						// 前回も k0:△, k1:△
+						if ( vElement.size() > 3 ) {
+							// break
+							pParam->pElement->push_back(vElement);
+							// 前回の法線を左向き(切れ目)に変更
+							pParam->pfNOR->operator[](kk0+NCA_X) = -1.0;
+							pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
+							pParam->pfNOR->operator[](kk1+NCA_X) = -1.0;
+							pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
+						}
+						vElement.clear();
+					}
+					bThrough = TRUE;
+				}
+				else {
+					// k0:△, k1:×
+					// k0:△, k1:○
+					bThrough = FALSE;
+					// k0を下向き, k1を上向きの法線
+					pParam->pfNOR->operator[](k0+NCA_Y) = -1.0;
+					pParam->pfNOR->operator[](k0+NCA_Z) = 0;
+					pParam->pfNOR->operator[](k1+NCA_Y) = 1.0;
+					pParam->pfNOR->operator[](k1+NCA_Z) = 0;
+				}
+			}
+			else {
+				// k0:○
+				if ( bWorkrct ) {
+					// 前回 k0:×, k1:×
+					// 前回の法線を右向きに変更
+					pParam->pfNOR->operator[](kk0+NCA_X) = 1.0;
+					pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
+					pParam->pfNOR->operator[](kk1+NCA_X) = 1.0;
+					pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
+				}
+				if ( bThrough ) {
+					// 前回 k0:△, k1:△
+					// 前回の法線を左向きに変更
+					pParam->pfNOR->operator[](kk0+NCA_X) = -1.0;
+					pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
+					pParam->pfNOR->operator[](kk1+NCA_X) = -1.0;
+					pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
+				}
+				bWorkrct = bThrough = FALSE;
+				if ( pParam->pfXYZ->operator[](k1+NCA_Z) >= pParam->h ) {
+					// k0:○, k1:×
+					pParam->pfNOR->operator[](k1+NCA_Y) = -1.0;		// 下向きの法線
+					pParam->pfNOR->operator[](k1+NCA_Z) = 0;
+				}
+				else if ( pParam->pfXYZ->operator[](k1+NCA_Z) < pParam->l ) {
+					// k0:○, k1:△
+					pParam->pfNOR->operator[](k1+NCA_Y) = 1.0;		// 上向きの法線
+					pParam->pfNOR->operator[](k1+NCA_Z) = 0;
+				}
+				// k0:○, k1:○ はそのまま
+			}
+			// 全座標をつなぐ
+			// ××|△△が連続する所だけclear
+			vElement.push_back(n1);
+			vElement.push_back(n0);
+			// 
+			kk0 = k0;
+			kk1 = k1;
+		}
+		// Ｘ方向のﾙｰﾌﾟが終了
+		if ( vElement.size() > 3 )
+			pParam->pElement->push_back(vElement);
+	}
+
+#ifdef _DEBUG
+	dbg.printf("end");
+#endif
+
+	return 0;
+}
+
+void CreateElement_Side(LPCREATEELEMENTPARAM pParam)
+{
+	int			i, j;
+	GLuint		n0, n1,
+				nn = pParam->cy * pParam->cx;	// 底面座標へのｵﾌｾｯﾄ
+	UINT		k0, k1;
+	GLfloat		nor = -1.0;
+	CVElement	vElement;
+
+	vElement.reserve(pParam->cx * 2);
+
+	// ﾜｰｸ矩形側面（X方向手前と奥）
+	for ( j=0; j<pParam->cy; j+=pParam->cy-1 ) {	// 0とm_icy-1
+		vElement.clear();
+		for ( i=0; i<pParam->cx; i++ ) {
+			n0 = j*pParam->cx+i;	// 上面座標
+			n1 = nn + n0;			// 底面座標
+			k0 = n0*NCXYZ;
+			k1 = n1*NCXYZ;
+			if ( pParam->l >= pParam->pfXYZ->operator[](k0+NCA_Z) ) {
+				if ( vElement.size() > 3 )
+					pParam->pElement->push_back(vElement);
+				vElement.clear();
+			}
+			else {
+				vElement.push_back(n0);
+				vElement.push_back(n1);
+			}
+			// 法線ﾍﾞｸﾄﾙの修正
+			pParam->pfNOR->operator[](k0+NCA_Y) = nor;	// 上or下向きの法線
+			pParam->pfNOR->operator[](k0+NCA_Z) = 0;
+			pParam->pfNOR->operator[](k1+NCA_Y) = nor;
+			pParam->pfNOR->operator[](k1+NCA_Z) = 0;
+		}
+		if ( vElement.size() > 3 )
+			pParam->pElement->push_back(vElement);
+		nor *= -1.0;	// 符号反転
+	}
+	// ﾜｰｸ矩形側面（Y方向左と右）
+	for ( i=0; i<pParam->cx; i+=pParam->cx-1 ) {
+		vElement.clear();
+		for ( j=0; j<pParam->cy; j++ ) {
+			n0 = j*pParam->cx+i;
+			n1 = nn + n0;
+			k0 = n0*NCXYZ;
+			k1 = n1*NCXYZ;
+			if ( pParam->l >= pParam->pfXYZ->operator[](k0+NCA_Z) ) {
+				if ( vElement.size() > 3 )
+					pParam->pElement->push_back(vElement);
+				vElement.clear();
+			}
+			else {
+				vElement.push_back(n0);
+				vElement.push_back(n1);
+			}
+			pParam->pfNOR->operator[](k0+NCA_X) = nor;	// 左or右向きの法線
+			pParam->pfNOR->operator[](k0+NCA_Z) = 0;
+			pParam->pfNOR->operator[](k1+NCA_X) = nor;
+			pParam->pfNOR->operator[](k1+NCA_Z) = 0;
+		}
+		if ( vElement.size() > 3 )
+			pParam->pElement->push_back(vElement);
+		nor *= -1.0;
+	}
+}
+
+void CNCViewGL::ClearElement(void)
+{
+	if ( m_nVertexID > 0 )
+		::glDeleteBuffersARB(1, &m_nVertexID);
+	if ( m_nNormalID > 0 )
+		::glDeleteBuffersARB(1, &m_nNormalID);
+	m_nVertexID = m_nNormalID = 0;
+	if ( m_pGenBuf ) {
+		::glDeleteBuffersARB(m_vVertexWrk.size()+m_vVertexCut.size(), m_pGenBuf);
+		delete	m_pGenBuf;
+		m_pGenBuf = NULL;
+	}
+	m_vVertexWrk.clear();
+	m_vVertexCut.clear();
+}
+
 void CNCViewGL::RenderBack(void)
 {
 	// 背景ﾎﾟﾘｺﾞﾝの描画
@@ -287,7 +1047,7 @@ void CNCViewGL::RenderBack(void)
 	// 左上
 	dVertex[0] = m_rcView.left;
 	dVertex[1] = m_rcView.bottom;
-	dVertex[2] = m_rcView.low+NCMIN;	// 最背面より少し手前
+	dVertex[2] = m_rcView.low;		// ﾃﾞﾌﾟｽﾃｽﾄ無効で描画
 	::glColor3ubv(col1v);
 	::glVertex3dv(dVertex);
 	// 左下
@@ -346,130 +1106,12 @@ void CNCViewGL::RenderAxis(void)
 	::glPopAttrib();
 }
 
-void CNCViewGL::RenderWork(void)
+void CNCViewGL::RenderCode(void)
 {
-	::glBegin(GL_QUADS);
-	// 上面
-	::glNormal3d(0.0, 0.0, 1.0);
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.high);
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.high);
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.high);
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.high);
-/*
-	// 前面
-	::glNormal3d(0.0, 1.0, 0.0);
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.high);
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.low );
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.low );
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.high);
-	// 底面
-	::glNormal3d(0.0, 0.0, -1.0);
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.low );
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.low );
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.low );
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.low );
-	// 奥面
-	::glNormal3d(0.0, -1.0, 0.0);
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.high);
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.low );
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.low );
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.high);
-	// 左側面
-	::glNormal3d(-1.0, 0.0, 0.0);
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.high);
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.low );
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.low );
-	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.high);
-	// 右側面
-	::glNormal3d(1.0, 0.0, 0.0);
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.high);
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.high);
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.low );
-	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.low );
-*/
-	::glEnd();
-
-/*
-	// 側面をｸﾞﾘｯﾄﾞで表現
-	int		i;
-	double	d, s=rc.Height() / 1000;	// 1000分割
-	::glBegin(GL_QUADS);
-	::glNormal3d(0.0, 1.0, 0.0);
-	for ( i=0, d=0; i<=1000; i++, d+=s ) {
-		::glVertex3d(rc.left,	rc.top+d,	rc.high);
-		::glVertex3d(rc.left,	rc.top+d,	rc.low );
-		::glVertex3d(rc.right,	rc.top+d,	rc.low );
-		::glVertex3d(rc.right,	rc.top+d,	rc.high);
-	}
-	::glNormal3d(-1.0, 0.0, 0.0);
-	s = rc.Width() / 1000;
-	for ( i=0, d=0; i<=1000; i++, d+=s ) {
-		::glVertex3d(rc.left+d,	rc.bottom,	rc.high);
-		::glVertex3d(rc.left+d,	rc.bottom,	rc.low );
-		::glVertex3d(rc.left+d,	rc.top,		rc.low );
-		::glVertex3d(rc.left+d,	rc.top,		rc.high);
-	}
-	::glEnd();
-*/
-/*
-	// 100x100 ﾃﾞｸｾﾙ表示
-	int		i, j;
-	double	dx, sx = rc.Width()  / 100,
-			dy, sy = rc.Height() / 100;
-	::glBegin(GL_QUADS);
-	for ( i=0, dx=rc.left; i<100; i++, dx+=sx ) {
-		for ( j=0, dy=rc.top; j<100; j++, dy+=sy ) {
-			// 上面
-			::glNormal3d(0.0, 0.0, 1.0);
-			::glVertex3d(dx,	dy,		rc.high);
-			::glVertex3d(dx+sx,	dy,		rc.high);
-			::glVertex3d(dx+sx,	dy+sy,	rc.high);
-			::glVertex3d(dx,	dy+sy,	rc.high);
-			// 底面
-			::glNormal3d(0.0, 0.0, -1.0);
-			::glVertex3d(dx,	dy,		rc.low );
-			::glVertex3d(dx,	dy+sy,	rc.low );
-			::glVertex3d(dx+sx,	dy+sy,	rc.low );
-			::glVertex3d(dx+sx,	dy,		rc.low );
-			// 前面
-			::glNormal3d(0.0, 1.0, 0.0);
-			::glVertex3d(dx,	dy,		rc.high);
-			::glVertex3d(dx,	dy,		rc.low );
-			::glVertex3d(dx+sx,	dy,		rc.low );
-			::glVertex3d(dx+sx,	dy,		rc.high);
-			// 奥面
-			::glNormal3d(0.0, -1.0, 0.0);
-			::glVertex3d(dx,	dy+sy,	rc.high);
-			::glVertex3d(dx+sx,	dy+sy,	rc.high);
-			::glVertex3d(dx+sx,	dy+sy,	rc.low );
-			::glVertex3d(dx,	dy+sy,	rc.low );
-			// 左側面
-			::glNormal3d(-1.0, 0.0, 0.0);
-			::glVertex3d(dx,	dy,		rc.high);
-			::glVertex3d(dx,	dy+sy,	rc.high);
-			::glVertex3d(dx,	dy+sy,	rc.low );
-			::glVertex3d(dx,	dy,		rc.low );
-			// 右側面
-			::glNormal3d(1.0, 0.0, 0.0);
-			::glVertex3d(dx+sx,	dy,		rc.high);
-			::glVertex3d(dx+sx,	dy,		rc.low );
-			::glVertex3d(dx+sx,	dy+sy,	rc.low );
-			::glVertex3d(dx+sx,	dy+sy,	rc.high);
-		}
-	}
-	::glEnd();
-*/
-}
-
-void CNCViewGL::RenderCode(BOOL bInitial)
-{
-	BOOL	bG00 = bInitial ? FALSE :
-				AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_G00VIEW);
-
 	::glEnable( GL_LINE_STIPPLE );
 	// NCﾃﾞｰﾀ描画
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
-		GetDocument()->GetNCdata(i)->DrawGL(bG00);
+		GetDocument()->GetNCdata(i)->DrawGL();
 	::glDisable( GL_LINE_STIPPLE );
 }
 
@@ -597,174 +1239,90 @@ void CNCViewGL::SetupViewingTransform(void)
 
 void CNCViewGL::OnDraw(CDC* pDC)
 {
+#ifdef _DEBUG
+	CMagaDbg	dbg("OnDraw()");
+#endif
 	ASSERT_VALID(GetDocument());
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	int		i;
 
 	// ｶﾚﾝﾄｺﾝﾃｷｽﾄの割り当て
 	::wglMakeCurrent( pDC->GetSafeHdc(), m_hRC );
 
-	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	::glDisable(GL_DEPTH_TEST);
 
-	::glDisable( GL_LIGHTING );
-
-	::glDepthMask(GL_FALSE);
-	::glStencilMask(0);
 	// 背景の描画
 	RenderBack();
 	// 軸の描画
+	::glEnable(GL_DEPTH_TEST);
 	RenderAxis();
 
-	::glStencilMask(~0);
-	::glDepthMask(GL_TRUE);
-	::glDepthFunc(GL_LESS);
-/*
-	if ( m_enTrackingMode==TM_NONE || pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) ) {
-		::glEnable(GL_LIGHT0);  
-		::glEnable(GL_LIGHT1);
-		::glDisable(GL_LIGHT2);  
-		::glDisable(GL_LIGHT3);
-		::glEnable ( GL_LIGHTING );
-		// ﾜｰｸ矩形(ﾃﾞｸｾﾙ)を描画 => ﾃﾞﾌﾟｽﾊﾞｯﾌｧ更新
-		::glCallList(m_glWork);
-		// 切削ﾊﾟｽのｿﾘｯﾄﾞ描画
-		::glDepthFunc( GL_GEQUAL );
-		::glDisable(GL_LIGHT0);  
-		::glDisable(GL_LIGHT1);
-		::glEnable(GL_LIGHT2);  
-		::glEnable(GL_LIGHT3);
-		for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
-			GetDocument()->GetNCdata(i)->DrawMill();
-		::glDepthFunc( GL_LESS );
-		// 移動ﾊﾟｽのﾜｲﾔｰ描画
-		::glDisable( GL_LIGHTING );
-		if ( pOpt->GetNCViewFlg(NCVIEWFLG_G00VIEW) ) {
-			if ( m_glCode > 0 )
-				::glCallList( m_glCode );
-			else
-				RenderCode(TRUE);
+	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && m_nVertexID > 0 &&
+		(pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
+		::glEnable(GL_LIGHTING);
+		// 線画が正しく表示されるためにﾎﾟﾘｺﾞﾝｵﾌｾｯﾄ
+		::glEnable(GL_POLYGON_OFFSET_FILL);
+		::glPolygonOffset(1.0f, 1.0f);
+		// 頂点ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄによるﾎﾞｸｾﾙ描画
+		::glEnableClientState(GL_VERTEX_ARRAY);
+		::glEnableClientState(GL_NORMAL_ARRAY);
+		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID);
+		if ( ::glIsBufferARB(m_nVertexID) == GL_TRUE ) {
+			::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);
+			::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nNormalID);
+			::glNormalPointer(GL_FLOAT, 0, NULL);
+			// ﾜｰｸ矩形
+			::glEnable (GL_LIGHT0);
+			::glEnable (GL_LIGHT1);
+			::glDisable(GL_LIGHT2);  
+			::glDisable(GL_LIGHT3);
+			size_t	i, j;
+			for ( i=j=0; i<m_vVertexWrk.size(); i++, j++ ) {
+				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[j]);
+				if ( ::glIsBufferARB(m_pGenBuf[j]) == GL_TRUE )
+					::glDrawElements(GL_TRIANGLE_STRIP, m_vVertexWrk[i], GL_UNSIGNED_INT, NULL);
+			}
+			// 切削面
+			::glDisable(GL_LIGHT0);
+			::glDisable(GL_LIGHT1);
+			::glEnable (GL_LIGHT2);
+			::glEnable (GL_LIGHT3);
+			for ( i=0; i<m_vVertexCut.size(); i++, j++ ) {
+				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[j]);
+				if ( ::glIsBufferARB(m_pGenBuf[j]) == GL_TRUE )
+					::glDrawElements(GL_TRIANGLE_STRIP, m_vVertexCut[i], GL_UNSIGNED_INT, NULL);
+			}
 		}
+		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		::glDisableClientState(GL_NORMAL_ARRAY);
+		::glDisableClientState(GL_VERTEX_ARRAY);
+		::glDisable(GL_POLYGON_OFFSET_FILL);
+		::glDisable(GL_LIGHTING);
 	}
-	else {
+
+#ifdef _DEBUG_PATH
+	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
+		GetDocument()->GetNCdata(i)->DrawBottomFace();
+//	COLORREF col = pOpt->GetNcDrawColor(NCCOL_GL_WRK);
+//	::glBegin(GL_QUADS);
+//	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+//	::glVertex3d(m_rcDraw.left,  m_rcDraw.bottom, m_rcDraw.low);
+//	::glVertex3d(m_rcDraw.left,  m_rcDraw.top,    m_rcDraw.low);
+//	::glVertex3d(m_rcDraw.right, m_rcDraw.top,    m_rcDraw.low);
+//	::glVertex3d(m_rcDraw.right, m_rcDraw.bottom, m_rcDraw.low);
+//	::glEnd();
+#endif
+
+	if ( !pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ||
+			(pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && pOpt->GetNCViewFlg(NCVIEWFLG_G00VIEW)) ||
+			(!pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
 		// 線画
 		if ( m_glCode > 0 )
 			::glCallList( m_glCode );
 		else
-			RenderCode(TRUE);
+			RenderCode();
 	}
-*/
-/*
-	// 切削底面描画（ｽﾃﾝｼﾙﾋﾞｯﾄON）
-	::glEnable(GL_STENCIL_TEST);
-	::glStencilOp(GL_INCR, GL_INCR, GL_INCR);
-	::glStencilFunc(GL_ALWAYS, 1, ~0);
-//	::glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-//	::glStencilFunc(GL_ALWAYS, 2, ~0);
-//	::glStencilOpSeparate(GL_FRONT_AND_BACK, GL_REPLACE, GL_REPLACE, GL_REPLACE);
-//	::glStencilOpSeparate(GL_FRONT_AND_BACK, GL_INCR, GL_INCR, GL_INCR);
-//	::glStencilFuncSeparate(GL_FRONT_AND_BACK, GL_ALWAYS, 1, ~0);
-	::glDisable(GL_LIGHT0);
-	::glDisable(GL_LIGHT1);
-	::glEnable (GL_LIGHT2);
-	::glEnable (GL_LIGHT3);
-	::glDisable(GL_LIGHT4);
-	::glDisable(GL_LIGHT5);
-	::glEnable(GL_LIGHTING);
-	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
-		GetDocument()->GetNCdata(i)->DrawBottomFace();
-
-	// 切削側面描画
-	// おもて面はｽﾃﾝｼﾙﾋﾞｯﾄON，ただしすでにｽﾃﾝｼﾙﾋﾞｯﾄがONの所には描画しない
-	// 裏面はﾃﾞﾌﾟｽﾃｽﾄにﾊﾟｽしたところだけｽﾃﾝｼﾙﾋﾞｯﾄOFF
-//	::glStencilOpSeparate(GL_FRONT, GL_INCR, GL_KEEP, GL_INCR);
-//	::glStencilFuncSeparate(GL_FRONT, GL_EQUAL, 0, ~0);
-//	::glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_DECR);
-//	::glStencilFuncSeparate(GL_BACK, GL_ALWAYS, 1, ~0);
-	::glDisable(GL_LIGHT2); 
-	::glDisable(GL_LIGHT3);
-	::glEnable (GL_LIGHT4);
-	::glEnable (GL_LIGHT5);
-	// ①表面だけ描画
-	::glCullFace(GL_BACK);
-	::glEnable(GL_CULL_FACE);
-	::glStencilOp(GL_INCR, GL_KEEP, GL_INCR);	// fail, zfail, pass
-	::glStencilFunc(GL_EQUAL, 0, ~0);
-//	::glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-//	::glStencilFunc(GL_LESS, 1, ~0);
-	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
-		GetDocument()->GetNCdata(i)->DrawSideFace(m_rcDraw.high);
-	// ②ｶﾗｰﾏｽｸを設定し裏面を描画（実際にはｽﾃﾝｼﾙﾊﾞｯﾌｧの調整のみ）
-	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	::glCullFace(GL_FRONT);
-	::glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
-	::glStencilFunc(GL_ALWAYS, 1, ~0);
-//	::glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-//	::glStencilFunc(GL_GREATER, 0, ~0);
-	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
-		GetDocument()->GetNCdata(i)->DrawSideFace(m_rcDraw.high);
-	::glDisable(GL_CULL_FACE);
-	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-
-	// ｽﾃﾝｼﾙﾋﾞｯﾄがOFFの所にﾜｰｸ矩形上面を描画
-	::glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	::glStencilFunc(GL_EQUAL, 0, ~0);
-//	::glStencilOpSeparate(GL_FRONT_AND_BACK, GL_KEEP, GL_KEEP, GL_KEEP);
-//	::glStencilFuncSeparate(GL_FRONT_AND_BACK, GL_EQUAL, 0, ~0);
-	::glEnable (GL_LIGHT0); 
-	::glEnable (GL_LIGHT1);
-	::glDisable(GL_LIGHT4);
-	::glDisable(GL_LIGHT5);
-	RenderWork();
-*/
-/*
-	// 切削底面を「深さ優先」で描画
-	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
-		GetDocument()->GetNCdata(i)->DrawBottomFace();	// ﾃﾞﾌﾟｽ値だけ更新
-	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	::glDepthFunc(GL_GEQUAL);
-	::glDisable(GL_LIGHT0);
-	::glDisable(GL_LIGHT1);
-	::glEnable(GL_LIGHT2);
-	::glEnable(GL_LIGHT3);
-	::glDisable(GL_LIGHT4);
-	::glDisable(GL_LIGHT5);
-	::glEnable(GL_LIGHTING);
-	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
-		GetDocument()->GetNCdata(i)->DrawBottomFace();
-	::glDepthFunc(GL_LESS);
-*/
-/*
-	// ﾃﾞｰﾀを逆順に描画
-	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	::glEnable(GL_STENCIL_TEST);
-	::glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
-	::glStencilFunc(GL_ALWAYS, 1, ~0);
-	for ( i=GetDocument()->GetNCsize()-1; i>=0; i-- )
-		GetDocument()->GetNCdata(i)->DrawBottomFace();
-	::glDisable(GL_LIGHT0);
-	::glDisable(GL_LIGHT1);
-	::glEnable(GL_LIGHT2);
-	::glEnable(GL_LIGHT3);
-	::glDisable(GL_LIGHT4);
-	::glDisable(GL_LIGHT5);
-	::glEnable(GL_LIGHTING);
-	::glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	::glStencilFunc(GL_LEQUAL, 1, ~0);
-	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	for ( i=GetDocument()->GetNCsize()-1; i>=0; i-- )
-		GetDocument()->GetNCdata(i)->DrawBottomFace();
-*/
-//	::glDisable( GL_STENCIL_TEST );
-//	::glDisable( GL_LIGHTING );
-
-
-	// 線画
-	if ( m_glCode > 0 )
-		::glCallList( m_glCode );
-	else
-		RenderCode(TRUE);
 
 //	::glFinish();		// SwapBuffers() に含まれる
 	::SwapBuffers( pDC->GetSafeHdc() );
@@ -808,6 +1366,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// OpenGL初期化処理
 	CClientDC	dc(this);
+	HDC	hDC = dc.GetSafeHdc();
 
 	// OpenGL pixel format の設定
     if( !SetupPixelFormat(&dc) ) {
@@ -816,13 +1375,13 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 
 	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄの作成
-	if( !(m_hRC = ::wglCreateContext(dc.GetSafeHdc())) ) {
+	if( !(m_hRC = ::wglCreateContext(hDC)) ) {
 		TRACE0("wglCreateContext failed\n");
 		return -1;
 	}
 
 	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄをｶﾚﾝﾄのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄに設定
-	if( !::wglMakeCurrent(dc.GetSafeHdc(), m_hRC) ) {
+	if( !::wglMakeCurrent(hDC, m_hRC) ) {
 		TRACE0("wglMakeCurrent failed\n");
 		return -1;
 	}
@@ -834,48 +1393,10 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 	}
 
-	// Enable two OpenGL lights
-    GLfloat light_diffuse_red[] = {1.0, 0.0, 0.0, 1.0};		// Red diffuse light
-    GLfloat light_diffuse_yellow[] = {1.0, 1.0, 0.0, 1.0};	// Yellow diffuse light
-    GLfloat light_diffuse_green[] = {0.0, 1.0, 0.5, 1.0};	// Green diffuse light
-    GLfloat light_position0[] = {-1.0, -1.0, -1.0, 0.0};	// Infinite light location
-    GLfloat light_position1[] = {1.0, 1.0, 1.0, 0.0};		// Infinite light location
-
-	::glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse_red);
-	::glLightfv(GL_LIGHT0, GL_POSITION, light_position0);
-	::glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse_red);
-	::glLightfv(GL_LIGHT1, GL_POSITION, light_position1);
-	::glLightfv(GL_LIGHT2, GL_DIFFUSE, light_diffuse_yellow);
-	::glLightfv(GL_LIGHT2, GL_POSITION, light_position0);
-	::glLightfv(GL_LIGHT3, GL_DIFFUSE, light_diffuse_yellow);
-	::glLightfv(GL_LIGHT3, GL_POSITION, light_position1);
-	::glLightfv(GL_LIGHT4, GL_DIFFUSE, light_diffuse_green);
-	::glLightfv(GL_LIGHT4, GL_POSITION, light_position0);
-	::glLightfv(GL_LIGHT5, GL_DIFFUSE, light_diffuse_green);
-	::glLightfv(GL_LIGHT5, GL_POSITION, light_position1);
-//	::glEnable(GL_LIGHTING);
 	::glEnable(GL_NORMALIZE);
+	::glClearColor( 0, 0, 0, 0 );
 
-	// ｸﾘｱｶﾗｰの設定
-	::glClearColor( 0, 0, 0, 0 );	// 黒
-
-	// ﾃﾞﾌﾟｽ・ｽﾃﾝｼﾙﾊﾞｯﾌｧのｸﾘｱ
-	::glClearDepth( 1.0 );
-	::glClearStencil(0);
-
-	// ﾃﾞﾌﾟｽ・ｽﾃﾝｼﾙﾃｽﾄ
-	::glEnable( GL_DEPTH_TEST );
-//	::glEnable( GL_STENCIL_TEST );
-
-	// ﾃﾞﾌﾟｽﾌｧﾝｸ（手前にあるもので上描いていく）
-//	::glDepthFunc( GL_LESS );
-
-	// 裏面は描かない設定(Debug)
-//	::glFrontFace(GL_CCW);
-//	::glCullFace(GL_BACK);
-//	::glEnable(GL_CULL_FACE);
-
-#ifdef _DEBUGOLD
+#ifdef _DEBUG
 	g_dbg.printf("GetDeviceCaps([HORZSIZE|VERTSIZE])=%d, %d",
 		dc.GetDeviceCaps(HORZSIZE), dc.GetDeviceCaps(VERTSIZE) );
 	g_dbg.printf("GetDeviceCaps([LOGPIXELSX|LOGPIXELSY])=%d, %d",
@@ -899,19 +1420,12 @@ void CNCViewGL::OnDestroy()
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
-	// NCﾃﾞｰﾀ各ｵﾌﾞｼﾞｪｸﾄのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ消去
-	CNCdata*	pData;
-	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
-		pData = GetDocument()->GetNCdata(i);
-		if ( pData->m_glList > 0 )
-			::glDeleteLists(pData->m_glList, 1);
-	}
-
 	// 全体の切削パスを示すﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ消去
 	if ( m_glCode > 0 )
 		::glDeleteLists(m_glCode, 1);
-	if ( m_glWork > 0 )
-		::glDeleteLists(m_glWork, 1);
+
+	// 頂点ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄの削除
+	ClearElement();
 
 	::wglMakeCurrent(NULL, NULL);
 	::wglDeleteContext( m_hRC );
@@ -949,8 +1463,19 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 
 LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 {
-	if ( m_dRate == 0 )
-		OnLensKey(ID_VIEW_FIT);
+	if ( !m_bActive ) {
+		CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+		pOpt->m_dwUpdateFlg = VIEWUPDATE_ALL;
+		// 描画初期設定
+		UpdateViewOption();
+		//
+		pOpt->m_dwUpdateFlg = 0;
+	}
+
+	// OpenGLｺﾏﾝﾄﾞを発行するにあたり、
+	// 一度でもｱｸﾃｨﾌﾞになっていないと危険なため
+	m_bActive = TRUE;
+
 	// 他のﾋﾞｭｰとは違って、拡大率を更新する必要は無い
 	// ｽﾃｰﾀｽﾊﾞｰへの表示も OnActivateView() で行う
 	return 0;
@@ -962,7 +1487,10 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM, LPARAM)
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCViewGL::OnUserViewFitMsg()\nStart");
 #endif
-	m_rcView = GetDocument()->GetMaxRect();
+
+	m_rcView  = GetDocument()->GetMaxRect();
+	m_rcView |= GetDocument()->GetWorkRect();
+
 	// 占有矩形の補正(不正表示の防止)
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	double	dLength;
@@ -1015,8 +1543,12 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM, LPARAM)
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 	::glMatrixMode( GL_PROJECTION );
 	::glLoadIdentity();
+	// !!! Homeキー処理で GL_INVALID_OPERATION が発生する !!!
+	// !!! 当面無視で... !!!
 	::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
 		m_rcView.low, m_rcView.high);
+//	ASSERT( ::glGetError() == GL_NO_ERROR );
+//	GLenum glError = ::glGetError();
 	::glMatrixMode( GL_MODELVIEW );
 	::wglMakeCurrent(NULL, NULL);
 

@@ -119,8 +119,6 @@ BOOL CViewSetup3::OnApply()
 		pOpt->m_nDXFLineType[i] = m_cbLineType[i].GetCurSel();
 
 	SetModified(FALSE);
-	// ﾒｲﾝﾌﾚｰﾑ，各ﾋﾞｭｰへの更新通知
-	AfxGetNCVCApp()->ChangeViewOption();
 
 	return TRUE;
 }
@@ -129,7 +127,7 @@ HBRUSH CViewSetup3::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
 	if ( nCtlColor == CTLCOLOR_STATIC ) {
 		int	nID = pWnd->GetDlgCtrlID();
-		if ( nID>=IDC_VIEWSETUP3_ST_BACKGROUND1 && nID<=IDC_VIEWSETUP3_ST_OUTLINE )
+		if ( IDC_VIEWSETUP3_ST_BACKGROUND1<=nID && nID<=IDC_VIEWSETUP3_ST_OUTLINE )
 			return m_brColor[nID-IDC_VIEWSETUP3_ST_BACKGROUND1];
 	}
 	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
@@ -170,7 +168,7 @@ void CViewSetup3::OnChange()
 
 void CViewSetup3::OnDefColor() 
 {
-	extern	LPCTSTR	g_szDxfViewColDef[];
+	extern	LPCTSTR			g_szDxfViewColDef[];
 	extern	const	int		g_nDxfViewLineTypeDef[];
 	int		i;
 	COLORREF	clr;

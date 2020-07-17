@@ -77,6 +77,7 @@
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
 #define IDC_CHECK1                      1038
+#define IDC_BUTTON1                     1040
 #define ID_FILE_CLANDOP                 1090
 #define IDD_DXF_SETUP1                  1200
 #define IDC_DXF_CAMLINE                 1201
@@ -270,12 +271,14 @@
 #define IDC_VIEWSETUP4_TRACEMARK        2354
 #define IDD_VIEW_SETUP5                 2400
 #define IDC_VIEWSETUP5_DEFAULTENDMILL   2401
-#define IDC_VIEWSETUP5_MILL_T           2402
-#define IDC_VIEWSETUP5_MILL_C           2403
 #define IDC_VIEWSETUP5_MILL_TYPE        2404
 #define IDC_VIEWSETUP5_SOLIDVIEW        2410
 #define IDC_VIEWSETUP5_G00VIEW          2411
 #define IDC_VIEWSETUP5_DRAGRENDER       2412
+#define IDC_VIEWSETUP5_ST_WORK          2420
+#define IDC_VIEWSETUP5_ST_CUT           2421
+#define IDC_VIEWSETUP5_BT_WORK          2430
+#define IDC_VIEWSETUP5_BT_CUT           2431
 #define IDD_NCVIEW_WORK                 2500
 #define IDC_WORK_X                      2501
 #define IDC_WORK_Y                      2502
@@ -284,12 +287,7 @@
 #define IDC_WORK_YO                     2505
 #define IDC_WORK_ZO                     2506
 #define IDC_WORK_HIDE                   2510
-#define IDC_WORK_XSPIN                  2511
-#define IDC_WORK_YSPIN                  2512
-#define IDC_WORK_ZSPIN                  2513
-#define IDC_WORK_XOSPIN                 2514
-#define IDC_WORK_YOSPIN                 2515
-#define IDC_WORK_ZOSPIN                 2516
+#define IDC_WORK_RECOVER                2511
 #define IDD_NCVIEW_JUMP                 2550
 #define IDC_JUMP                        2551
 #define IDD_NCVIEW_FIND                 2560
@@ -625,6 +623,8 @@
 #define IDS_ERR_WRITESETTING            21003
 #define IDS_ERR_CLIPBOARD               21004
 #define IDS_ERR_MAXADD                  21005
+#define IDS_ERR_OPENGLVER               21006
+#define IDS_ERR_OUTOFVRAM               21007
 #define IDS_ERR_FILEPATH                21010
 #define IDS_ERR_UNDERZERO               21011
 #define IDS_ERR_SETTING                 21012
@@ -717,7 +717,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         1039
+#define _APS_NEXT_CONTROL_VALUE         1041
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

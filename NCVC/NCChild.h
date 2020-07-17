@@ -66,7 +66,6 @@ public:
 
 // オペレーション
 public:
-	void	SetWorkRect(BOOL, const CRect3D&, const CPoint3D&);	// from NCWorkDlg.cpp
 	void	SetJumpList(int);					// from NCJumpDlg.cpp
 	void	SetFindList(int, const CString&);	// from NCFindDlg.cpp
 	void	SetFactorInfo(ENNCVPLANE, double);

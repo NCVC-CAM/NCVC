@@ -20,6 +20,12 @@ typedef	struct	tagPENSTYLE {
 } PENSTYLE;
 #define	MAXPENSTYLE		5
 
+#define	VIEWUPDATE_REDRAW			0x0001
+#define	VIEWUPDATE_DISPLAYLIST		0x0002
+#define	VIEWUPDATE_LIGHT			0x0004
+#define	VIEWUPDATE_BOXEL			0x0008
+#define	VIEWUPDATE_ALL				0x000f
+
 #define	COMCOL_RECT			0
 #define	COMCOL_SELECT		1
 #define	NCCOL_BACKGROUND1	0
@@ -36,6 +42,8 @@ typedef	struct	tagPENSTYLE {
 #define	NCCOL_WORK			11
 #define	NCCOL_MAXCUT		12
 #define	NCCOL_CORRECT		13
+#define	NCCOL_GL_WRK		14
+#define	NCCOL_GL_CUT		15
 #define	NCCOLLINE_G0		3
 #define	NCCOLLINE_G1		4
 #define	NCCOLLINE_G1Z		5
@@ -52,8 +60,6 @@ typedef	struct	tagPENSTYLE {
 #define	NCVIEWFLG_SOLIDVIEW			4
 #define	NCVIEWFLG_G00VIEW			5
 #define	NCVIEWFLG_DRAGRENDER		6
-#define	NCVIEWFLG_MILL_T			7
-#define	NCVIEWFLG_MILL_C			8
 #define	DXFCOL_BACKGROUND1	0
 #define	DXFCOL_BACKGROUND2	1
 #define	DXFCOL_ORIGIN		2
@@ -70,24 +76,25 @@ friend	class	CViewSetup2;
 friend	class	CViewSetup3;
 friend	class	CViewSetup4;
 friend	class	CViewSetup5;
+friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 
-	BOOL	m_bMouseWheel;			// 拡大縮小にﾏｳｽﾎｲｰﾙを使うか
+	DWORD	m_dwUpdateFlg;		// ViewSetupによる直前の更新状況
+
+	BOOL	m_bMouseWheel;				// 拡大縮小にﾏｳｽﾎｲｰﾙを使うか
 	union {
 		struct {
-			BOOL	m_bTraceMarker,			// ﾄﾚｰｽ中の現在位置表示
-					m_bDrawCircleCenter,	// 円弧補間の中心を描画
-					m_bScale,				// TRUE:ｶﾞｲﾄﾞに目盛
-					m_bGuide,				// TRUE:拡大率に同期
-					m_bSolidView,			// OpenGLｿﾘｯﾄﾞ表示
-					m_bG00View,				// G00移動表示
-					m_bDragRender,			// ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ
-					m_bMillT,				// Ｔ番号認識
-					m_bMillC;				// ｺﾒﾝﾄでの工具径指定を認識
+			BOOL	m_bTraceMarker,		// ﾄﾚｰｽ中の現在位置表示
+					m_bDrawCircleCenter,// 円弧補間の中心を描画
+					m_bScale,			// TRUE:ｶﾞｲﾄﾞに目盛
+					m_bGuide,			// TRUE:拡大率に同期
+					m_bSolidView,		// OpenGLｿﾘｯﾄﾞ表示
+					m_bG00View,			// G00移動表示
+					m_bDragRender;		// ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ
 		};
-		BOOL		m_bNCFlag[9];
+		BOOL		m_bNCFlag[7];
 	};
 	COLORREF	m_colView[2],			// ﾋﾞｭｰの各色
-				m_colNCView[14],
+				m_colNCView[16],
 				m_colNCInfoView[3],
 				m_colDXFView[8],
 				m_colCustom[16];

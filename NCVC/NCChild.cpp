@@ -130,13 +130,6 @@ void CNCChild::Dump(CDumpContext& dc) const
 /////////////////////////////////////////////////////////////////////////////
 // CNCChild ÉNÉâÉXÇÃ“› ﬁä÷êî
 
-void CNCChild::SetWorkRect(BOOL bShow, const CRect3D& rc, const CPoint3D& pt)
-{
-	CNCDoc* pDoc = static_cast<CNCDoc *>(GetActiveDocument());
-	if ( pDoc )
-		pDoc->SetWorkRect(bShow, rc, pt);
-}
-
 void CNCChild::SetJumpList(int nJump)
 {
 	GetListView()->SetJumpList(nJump);
