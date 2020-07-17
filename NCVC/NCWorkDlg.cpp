@@ -14,8 +14,6 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
-
 BEGIN_MESSAGE_MAP(CNCWorkDlg, CDialog)
 	//{{AFX_MSG_MAP(CNCWorkDlg)
 	ON_BN_CLICKED(IDC_WORK_HIDE, OnHide)
@@ -46,21 +44,55 @@ void CNCWorkDlg::DoDataExchange(CDataExchange* pDX)
 	for ( i=0; i<SIZEOF(m_ctWork); i++ ) {
 		for ( j=0; j<NCXYZ; j++ ) {
 			n = i * NCXYZ + j;
-			DDX_Control(pDX, n+IDC_WORK_X, m_ctWork[i][j]);
+			DDX_Control(pDX, n+IDC_WORK_X,  m_ctWork[i][j]);
+			DDX_Control(pDX, n+IDC_WORK_XS, m_ctLabel[i][j]);
 		}
 	}
 }
 
-void CNCWorkDlg::EnableButton(BOOL bEnable)
+void CNCWorkDlg::EnableButton(BOOL bEnable, BOOL bLathe)
 {
-	int		i, j;
+	static	LPCTSTR	szLabel[][NCXYZ] = {
+		{"幅(&W)", "奥行(&D)", "高さ(&H)"},
+		{"径(&D)", "Zmin(&L)", "Zmax(&R)"}
+	};
+	int		i, n = (bEnable & bLathe) ? 1 : 0;
+
 	m_ctOK.EnableWindow(bEnable);
 	m_ctHide.EnableWindow(bEnable);
 	m_ctRecover.EnableWindow(bEnable);
-	for ( i=0; i<SIZEOF(m_ctWork); i++ ) {
-		for ( j=0; j<NCXYZ; j++ )
-			m_ctWork[i][j].EnableWindow(bEnable);
+
+	for ( i=0; i<NCXYZ; i++ ) {
+		// 大きさ指示は bEnable
+		m_ctWork[0][i].EnableWindow(bEnable);
+		// ｵﾌｾｯﾄ指示は bEnable & !bLathe
+		m_ctWork[1][i].EnableWindow(bEnable & !bLathe);
+		// ｵﾌｾｯﾄﾗﾍﾞﾙは !bLathe
+		m_ctLabel[1][i].EnableWindow(!bLathe);
+		// ﾗﾍﾞﾙ変更
+		m_ctLabel[0][i].SetWindowText(szLabel[n][i]);
 	}
+}
+
+void CNCWorkDlg::SetValue(const CNCDoc* pDoc, const CRect3D& rc)
+{
+	if ( pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+		m_ctWork[0][NCA_X] = rc.high * 2.0;		// 直径表示
+		m_ctWork[0][NCA_Y] = rc.left;
+		m_ctWork[0][NCA_Z] = rc.right;
+		m_ctWork[1][NCA_X] = 0;
+		m_ctWork[1][NCA_Y] = 0;
+		m_ctWork[1][NCA_Z] = 0;
+	}
+	else {
+		m_ctWork[0][NCA_X] = rc.Width();
+		m_ctWork[0][NCA_Y] = rc.Height();
+		m_ctWork[0][NCA_Z] = rc.Depth();
+		m_ctWork[1][NCA_X] = rc.left;
+		m_ctWork[1][NCA_Y] = rc.top;
+		m_ctWork[1][NCA_Z] = rc.low;
+	}
+	UpdateData(FALSE);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -68,6 +100,8 @@ void CNCWorkDlg::EnableButton(BOOL bEnable)
 
 BOOL CNCWorkDlg::OnInitDialog() 
 {
+	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+
 	CDialog::OnInitDialog();
 	int		i, j;
 
@@ -105,11 +139,18 @@ void CNCWorkDlg::OnOK()
 	if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {
 		CNCDoc*	pDoc = static_cast<CNCDoc *>(pFrame->GetActiveDocument());
 		if ( pDoc && pDoc->IsKindOf(RUNTIME_CLASS(CNCDoc)) ) {
-			CRect3D		rc(0, 0,
-				m_ctWork[0][NCA_X], m_ctWork[0][NCA_Y],	// 幅(r), 奥行(b),
-				m_ctWork[0][NCA_Z], 0);					// 高さ(w)
-			CPoint3D	pt(m_ctWork[1][NCA_X], m_ctWork[1][NCA_Y], m_ctWork[1][NCA_Z]);	// X, Y, Z ｵﾌｾｯﾄ
-			rc.OffsetRect(pt);
+			CRect3D	rc;
+			if ( pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+				rc.high   = m_ctWork[0][NCA_X] / 2.0;	// 径
+				rc.left   = m_ctWork[0][NCA_Y];			// Zmin
+				rc.right  = m_ctWork[0][NCA_Z];			// Zmax
+			}
+			else {
+				rc.left   = m_ctWork[0][NCA_X];			// 幅
+				rc.bottom = m_ctWork[0][NCA_Y];			// 奥行
+				rc.high   = m_ctWork[0][NCA_Z];			// 高さ
+				rc.OffsetRect(m_ctWork[1][NCA_X], m_ctWork[1][NCA_Y], m_ctWork[1][NCA_Z]);	// X, Y, Z ｵﾌｾｯﾄ
+			}
 			// 情報更新
 			pDoc->SetWorkRect(TRUE, rc);
 		}
@@ -131,15 +172,8 @@ void CNCWorkDlg::OnRecover()
 	CMDIChildWnd* pFrame = AfxGetNCVCMainWnd()->MDIGetActive();
 	if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {
 		CNCDoc*	pDoc = static_cast<CNCDoc *>(pFrame->GetActiveDocument());
-		if ( pDoc && pDoc->IsKindOf(RUNTIME_CLASS(CNCDoc)) ) {
-			CRect3D	rc(pDoc->GetWorkRectOrg());
-			m_ctWork[0][NCA_X] = rc.Width();
-			m_ctWork[0][NCA_Y] = rc.Height();
-			m_ctWork[0][NCA_Z] = rc.Depth();
-			m_ctWork[1][NCA_X] = rc.left;
-			m_ctWork[1][NCA_Y] = rc.top;
-			m_ctWork[1][NCA_Z] = rc.low;
-		}
+		if ( pDoc && pDoc->IsKindOf(RUNTIME_CLASS(CNCDoc)) )
+			SetValue(pDoc, pDoc->GetWorkRectOrg());		// Org
 	}
 }
 
@@ -168,19 +202,12 @@ LRESULT CNCWorkDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 	if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {
 		CNCDoc*	pDoc = static_cast<CNCDoc *>(pFrame->GetActiveDocument());
 		if ( pDoc && pDoc->IsKindOf(RUNTIME_CLASS(CNCDoc)) ) {
-			EnableButton(TRUE);
-			CRect3D		rc(pDoc->GetWorkRect());
-			m_ctWork[0][NCA_X] = rc.Width();
-			m_ctWork[0][NCA_Y] = rc.Height();
-			m_ctWork[0][NCA_Z] = rc.Depth();
-			m_ctWork[1][NCA_X] = rc.left;
-			m_ctWork[1][NCA_Y] = rc.top;
-			m_ctWork[1][NCA_Z] = rc.low;
+			EnableButton(TRUE, pDoc->IsNCDocFlag(NCDOC_LATHE));
+			SetValue(pDoc, pDoc->GetWorkRect());
+			return 0;
 		}
-		else
-			EnableButton(FALSE);
 	}
-	else
-		EnableButton(FALSE);
+
+	EnableButton(FALSE, FALSE);
 	return 0;
 }

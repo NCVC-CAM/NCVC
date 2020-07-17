@@ -154,21 +154,28 @@ inline void _DrawEndmillPipe(const vector<CVCircle>& vPipe)
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀｸﾗｽ
 //////////////////////////////////////////////////////////////////////
 
-void CNCdata::DrawGL(void) const
+void CNCdata::DrawWire(void) const
 {
+	// 派生ｸﾗｽからの共通呼び出し
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawGL();
+		m_obCdata[i]->DrawWire();
+}
+
+void CNCdata::DrawLatheWire(void) const
+{
 }
 
 void CNCdata::DrawBottomFace(void) const
 {
+	for ( int i=0; i<m_obCdata.GetSize(); i++ )
+		m_obCdata[i]->DrawBottomFace();
 }
 
 //////////////////////////////////////////////////////////////////////
 // CNCline クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCline::DrawGL(void) const
+void CNCline::DrawWire(void) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -183,7 +190,18 @@ void CNCline::DrawGL(void) const
 		::glEnd();
 	}
 
-	CNCdata::DrawGL();
+	CNCdata::DrawWire();
+}
+
+void CNCline::DrawLatheWire(void) const
+{
+	if ( m_nc.nGcode != 1 )
+		return;
+
+	::glBegin(GL_LINES);
+	::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
+	::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
+	::glEnd();
 }
 
 void CNCline::DrawBottomFace(void) const
@@ -193,8 +211,7 @@ void CNCline::DrawBottomFace(void) const
 	if ( m_nc.nGcode != 1 )
 		return;
 	if ( !m_obCdata.IsEmpty() ) {
-		for ( i=0; i<m_obCdata.GetSize(); i++ )
-			m_obCdata[i]->DrawBottomFace();
+		CNCdata::DrawBottomFace();
 		return;
 	}
 
@@ -267,7 +284,7 @@ void CNCline::DrawBottomFace(void) const
 // CNCcycle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcycle::DrawGL(void) const
+void CNCcycle::DrawWire(void) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	colG0 = pOpt->GetNcDrawColor( NCCOL_G0 ),
@@ -294,6 +311,10 @@ void CNCcycle::DrawGL(void) const
 		::glVertex3d(m_Cycle3D[i].ptC.x, m_Cycle3D[i].ptC.y, m_Cycle3D[i].ptC.z);
 	}
 	::glEnd();
+}
+
+void CNCcycle::DrawLatheWire(void) const
+{
 }
 
 void CNCcycle::DrawBottomFace(void) const
@@ -326,92 +347,104 @@ void CNCcycle::DrawBottomFace(void) const
 // CNCcircle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcircle::DrawGL(void) const
+void CNCcircle::DrawCircleWire(void) const
+{
+	double		sq, eq, r = fabs(m_r);
+	tie(sq, eq) = GetSqEq();
+	CPoint3D	pt;
+
+	switch ( GetPlane() ) {
+	case XY_PLANE:
+		// ARCSTEP づつ微細線分で描画
+		if ( m_nG23 == 0 ) {
+			for ( pt.z=m_ptValS.z; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
+				pt.x = r * cos(sq) + m_ptOrg.x;
+				pt.y = r * sin(sq) + m_ptOrg.y;
+				::glVertex3d(pt.x, pt.y, pt.z);
+			}
+		}
+		else {
+			for ( pt.z=m_ptValS.z; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
+				pt.x = r * cos(sq) + m_ptOrg.x;
+				pt.y = r * sin(sq) + m_ptOrg.y;
+				::glVertex3d(pt.x, pt.y, pt.z);
+			}
+		}
+		// 端数分描画
+		pt.x = r * cos(eq) + m_ptOrg.x;
+		pt.y = r * sin(eq) + m_ptOrg.y;
+		pt.z = m_ptValE.z;		// ﾍﾘｶﾙ終了座標
+		::glVertex3d(pt.x, pt.y, pt.z);
+		break;
+
+	case XZ_PLANE:
+		if ( m_nG23 == 0 ) {
+			for ( pt.y=m_ptValS.y; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
+				pt.x = r * cos(sq) + m_ptOrg.x;
+				pt.z = r * sin(sq) + m_ptOrg.z;
+				::glVertex3d(pt.x, pt.y, pt.z);
+			}
+		}
+		else {
+			for ( pt.y=m_ptValS.y; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
+				pt.x = r * cos(sq) + m_ptOrg.x;
+				pt.z = r * sin(sq) + m_ptOrg.z;
+				::glVertex3d(pt.x, pt.y, pt.z);
+			}
+		}
+		pt.x = r * cos(eq) + m_ptOrg.x;
+		pt.y = m_ptValE.y;
+		pt.z = r * sin(eq) + m_ptOrg.z;
+		::glVertex3d(pt.x, pt.y, pt.z);
+		break;
+
+	case YZ_PLANE:
+		if ( m_nG23 == 0 ) {
+			for ( pt.x=m_ptValS.x; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
+				pt.y = r * cos(sq) + m_ptOrg.y;
+				pt.z = r * sin(sq) + m_ptOrg.z;
+				::glVertex3d(pt.x, pt.y, pt.z);
+			}
+		}
+		else {
+			for ( pt.x=m_ptValS.x; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
+				pt.y = r * cos(sq) + m_ptOrg.y;
+				pt.z = r * sin(sq) + m_ptOrg.z;
+				::glVertex3d(pt.x, pt.y, pt.z);
+			}
+		}
+		pt.x = m_ptValE.x;
+		pt.y = r * cos(eq) + m_ptOrg.y;
+		pt.z = r * sin(eq) + m_ptOrg.z;
+		::glVertex3d(pt.x, pt.y, pt.z);
+		break;
+	}
+}
+
+void CNCcircle::DrawWire(void) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
-		double		sq, eq, r = fabs(m_r);
-		CPoint3D	pt;
-		tie(sq, eq) = GetSqEq();
 		COLORREF	col = pOpt->GetNcDrawColor(
 			m_obCdata.IsEmpty() ? NCCOL_G1 : NCCOL_CORRECT);
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
 		::glBegin(GL_LINE_STRIP);
-		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-
-		switch ( GetPlane() ) {
-		case XY_PLANE:
-			// ARCSTEP づつ微細線分で描画
-			if ( m_nG23 == 0 ) {
-				for ( pt.z=m_ptValS.z; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
-					pt.x = r * cos(sq) + m_ptOrg.x;
-					pt.y = r * sin(sq) + m_ptOrg.y;
-					::glVertex3d(pt.x, pt.y, pt.z);
-				}
-			}
-			else {
-				for ( pt.z=m_ptValS.z; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
-					pt.x = r * cos(sq) + m_ptOrg.x;
-					pt.y = r * sin(sq) + m_ptOrg.y;
-					::glVertex3d(pt.x, pt.y, pt.z);
-				}
-			}
-			// 端数分描画
-			pt.x = r * cos(eq) + m_ptOrg.x;
-			pt.y = r * sin(eq) + m_ptOrg.y;
-			pt.z = m_ptValE.z;		// ﾍﾘｶﾙ終了座標
-			::glVertex3d(pt.x, pt.y, pt.z);
-			break;
-
-		case XZ_PLANE:
-			if ( m_nG23 == 0 ) {
-				for ( pt.y=m_ptValS.y; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
-					pt.x = r * cos(sq) + m_ptOrg.x;
-					pt.z = r * sin(sq) + m_ptOrg.z;
-					::glVertex3d(pt.x, pt.y, pt.z);
-				}
-			}
-			else {
-				for ( pt.y=m_ptValS.y; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
-					pt.x = r * cos(sq) + m_ptOrg.x;
-					pt.z = r * sin(sq) + m_ptOrg.z;
-					::glVertex3d(pt.x, pt.y, pt.z);
-				}
-			}
-			pt.x = r * cos(eq) + m_ptOrg.x;
-			pt.y = m_ptValE.y;
-			pt.z = r * sin(eq) + m_ptOrg.z;
-			::glVertex3d(pt.x, pt.y, pt.z);
-			break;
-
-		case YZ_PLANE:
-			if ( m_nG23 == 0 ) {
-				for ( pt.x=m_ptValS.x; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
-					pt.y = r * cos(sq) + m_ptOrg.y;
-					pt.z = r * sin(sq) + m_ptOrg.z;
-					::glVertex3d(pt.x, pt.y, pt.z);
-				}
-			}
-			else {
-				for ( pt.x=m_ptValS.x; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
-					pt.y = r * cos(sq) + m_ptOrg.y;
-					pt.z = r * sin(sq) + m_ptOrg.z;
-					::glVertex3d(pt.x, pt.y, pt.z);
-				}
-			}
-			pt.x = m_ptValE.x;
-			pt.y = r * cos(eq) + m_ptOrg.y;
-			pt.z = r * sin(eq) + m_ptOrg.z;
-			::glVertex3d(pt.x, pt.y, pt.z);
-			break;
-		}
-
+			::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+			DrawCircleWire();	// 座標指示
 		::glEnd();
 	}
 
-	CNCdata::DrawGL();
+	CNCdata::DrawWire();
 }
+
+void CNCcircle::DrawLatheWire(void) const
+{
+	::glBegin(GL_LINE_STRIP);
+		DrawCircleWire();
+	::glEnd();
+}
+
 //	--- CNCcircle::DrawBottomFace() サブ
 inline void _SetEndmillPathXY
 	(const CPointD& pt, double q, double h, double r1, double r2,
@@ -535,8 +568,7 @@ inline void _SetEndmillPathYZ_Sphere
 void CNCcircle::DrawBottomFace(void) const
 {
 	if ( !m_obCdata.IsEmpty() ) {
-		for ( int i=0; i<m_obCdata.GetSize(); i++ )
-			m_obCdata[i]->DrawBottomFace();
+		CNCdata::DrawBottomFace();
 		return;
 	}
 

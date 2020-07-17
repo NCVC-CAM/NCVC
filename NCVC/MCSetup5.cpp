@@ -22,6 +22,7 @@ CMCSetup5::CMCSetup5() : CPropertyPage(CMCSetup5::IDD)
 {
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
+	m_bLathe		= pMCopt->m_bLathe;
 	m_bL0Cycle		= pMCopt->m_bL0Cycle;
 	m_strAutoBreak	= pMCopt->m_strAutoBreak;
 }
@@ -33,6 +34,7 @@ CMCSetup5::~CMCSetup5()
 void CMCSetup5::DoDataExchange(CDataExchange* pDX)
 {
 	CPropertyPage::DoDataExchange(pDX);
+	DDX_Check(pDX, IDC_MCST5_LATHE, m_bLathe);
 	DDX_Check(pDX, IDC_MCST5_L0CYCLE, m_bL0Cycle);
 	DDX_Text(pDX, IDC_MCST5_AUTOBREAK, m_strAutoBreak);
 }
@@ -46,9 +48,13 @@ BOOL CMCSetup5::OnApply()
 	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	// 再読込ﾁｪｯｸ
+	if ( pMCopt->m_bLathe != m_bLathe ) {
+		pMCopt->m_bLathe = m_bLathe;
+		pParent->m_bReload = TRUE;		// 再読込が必要
+	}
 	if ( pMCopt->m_bL0Cycle != m_bL0Cycle ) {
 		pMCopt->m_bL0Cycle = m_bL0Cycle;
-		pParent->m_bReload = TRUE;		// 再読込が必要
+		pParent->m_bReload = TRUE;
 	}
 	if ( pMCopt->m_strAutoBreak != m_strAutoBreak ) {
 		pMCopt->m_strAutoBreak = m_strAutoBreak;

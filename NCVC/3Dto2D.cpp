@@ -36,8 +36,8 @@ optional<CPointD> CalcIntersectionPoint_LL
 	optional<CPointD>	pt1, pt2;
 	double	minX1, minY1, maxX1, maxY1,
 			minX2, minY2, maxX2, maxY2,
-			xa = pte1.x - pts1.x,	ya = pte1.y - pts1.y,
-			xb = pte2.x - pts2.x,	yb = pte2.y - pts2.y;
+			xa = RoundUp(pte1.x - pts1.x),	ya = RoundUp(pte1.y - pts1.y),
+			xb = RoundUp(pte2.x - pts2.x),	yb = RoundUp(pte2.y - pts2.y);
 
 	// ŒvZ‘O€”õ
 	tie(minX1, maxX1) = minmax(pts1.x, pte1.x);		// boost/algorithm
@@ -83,9 +83,10 @@ optional<CPointD> CalcIntersectionPoint_LL
 			}
 			else {
 				// ’[“_‚ª‹ß‚¢ê‡‚È‚ÇA‚È‚é‚×‚­“š‚¦‚ğ•Ô‚·
-				if ( fabs(pts2.y-pts1.y)<NCMIN || fabs(pte2.y-pts1.y)<NCMIN )
+				// RoundCt() ‚ğg—p‚µ <= NCMIN ‚ÅğŒŠÉ˜a
+				if ( RoundCt(fabs(pts2.y-pts1.y))<=NCMIN || RoundCt(fabs(pte2.y-pts1.y))<=NCMIN )
 					return pts1;
-				if ( fabs(pts2.y-pte1.y)<NCMIN || fabs(pte2.y-pte1.y)<NCMIN )
+				if ( RoundCt(fabs(pts2.y-pte1.y))<=NCMIN || RoundCt(fabs(pte2.y-pte1.y))<=NCMIN )
 					return pte1;
 			}
 		}
@@ -98,8 +99,8 @@ optional<CPointD> CalcIntersectionPoint_LL
 			bResult = TRUE;
 		}
 		else {
-			double	yaxa = ya / xa,
-					ybxb = yb / xb;
+			double	yaxa = RoundUp(ya / xa),
+					ybxb = RoundUp(yb / xb);
 			if ( fabs(ya) < NCMIN ) {
 				if ( fabs(yb) >= NCMIN ) {
 					pt.x = (pts1.y - pts2.y) / ybxb + pts2.x;
@@ -135,9 +136,9 @@ optional<CPointD> CalcIntersectionPoint_LL
 						return pt;
 					}
 					else {
-						if ( fabs(pts2.x-pts1.x)<NCMIN || fabs(pte2.x-pts1.x)<NCMIN )
+						if ( RoundCt(fabs(pts2.x-pts1.x))<=NCMIN || RoundCt(fabs(pte2.x-pts1.x))<=NCMIN )
 							return pts1;
-						if ( fabs(pts2.x-pte1.x)<NCMIN || fabs(pte2.x-pte1.x)<NCMIN )
+						if ( RoundCt(fabs(pts2.x-pte1.x))<=NCMIN || RoundCt(fabs(pte2.x-pte1.x))<=NCMIN )
 							return pte1;
 					}
 				}
@@ -151,8 +152,8 @@ optional<CPointD> CalcIntersectionPoint_LL
 				}
 				else {
 					if ( fabs(yaxa-ybxb) < NCMIN ) {
+						// …•½E‚’¼ˆÈŠO‚ÅŒX‚«‚ª“¯‚¶(¾ŞÛœZ–h~)‚Æ‚«
 						if ( bRangeChk ) {
-							// …•½E‚’¼ˆÈŠO‚ÅŒX‚«‚ª“¯‚¶(¾ŞÛœZ–h~)‚Æ‚«‚Í
 							// ‘Šè‚ÌÀ•W”ÍˆÍ“à‚É‚ ‚é‚©‚Ç‚¤‚©
 							if ( minX2<=pts1.x && pts1.x<=maxX2 && minY2<=pts1.y && pts1.y<=maxY2 )
 								pt1 = pts1;
@@ -184,9 +185,9 @@ optional<CPointD> CalcIntersectionPoint_LL
 						}
 						if ( pt1 && pt2 ) {
 							// Œ³‚Ì’¼ü‚ÆŒX‚«‚ª“¯‚¶‚©‚ğÁª¯¸‚µ‚Ä‚©‚ç
-							xa = (*pt2).x - (*pt1).x;
-							ya = (*pt2).y - (*pt1).y;
-							if ( fabs(xa)>=NCMIN && fabs(ya/xa-yaxa)<NCMIN ) {
+							xa = RoundUp((*pt2).x - (*pt1).x);
+							ya = RoundUp((*pt2).y - (*pt1).y);
+							if ( fabs(xa)>=NCMIN && RoundCt(fabs(ya/xa-yaxa))<=NCMIN ) {
 								xa = (*pt1).x;	xb = (*pt2).x;
 								ya = (*pt1).y;	yb = (*pt2).y;
 								pt.x = ( xb - xa ) / 2.0 + xa;
@@ -195,9 +196,9 @@ optional<CPointD> CalcIntersectionPoint_LL
 							}
 						}
 						// else ‚É‚·‚é‚ÆuŒX‚«‚ª“¯‚¶Áª¯¸v‚Ì‹U‚ªˆø‚Á‚©‚©‚ç‚È‚¢
-						if ( sqrt(GAPCALC(pts2-pts1))<NCMIN || sqrt(GAPCALC(pte2-pts1))<NCMIN )
+						if ( RoundCt(sqrt(GAPCALC(pts2-pts1)))<=NCMIN || RoundCt(sqrt(GAPCALC(pte2-pts1)))<=NCMIN )
 							return pts1;
-						if ( sqrt(GAPCALC(pts2-pte1))<NCMIN || sqrt(GAPCALC(pte2-pte1))<NCMIN )
+						if ( RoundCt(sqrt(GAPCALC(pts2-pte1)))<=NCMIN || RoundCt(sqrt(GAPCALC(pte2-pte1)))<=NCMIN )
 							return pte1;
 					}
 					else {
@@ -330,7 +331,7 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_CC
 		return make_tuple(nResult, pr1, pr2);
 
 	// Œğ“_ŒvZ
-	if ( RoundUp(fabs(l-r1r2p)) <= NCMIN || RoundUp(fabs(l-r1r2n)) <= NCMIN ) {
+	if ( RoundCt(fabs(l-r1r2p)) <= NCMIN || RoundCt(fabs(l-r1r2n)) <= NCMIN ) {
 		// Ú‚·‚éğŒ(y=0)‚ÆÏ²Å½ğŒ
 		pr1.x = ( r1 < r2 && l-r2 < 0 ) ? -r1 : r1;
 		// ‰ñ“]‚ğ•œŒ³

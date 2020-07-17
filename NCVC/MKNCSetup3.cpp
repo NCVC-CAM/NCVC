@@ -75,13 +75,13 @@ void CMKNCSetup3::DoDataExchange(CDataExchange* pDX)
 
 void CMKNCSetup3::EnableControl_MakeEnd(void)
 {
-	static	LPCTSTR	g_szMakeLabel[] = {
+	static	LPCTSTR	szMakeLabel[] = {
 		"-----", "µÌ¾¯Ä’l(&V)", "ŒÅ’èZ’l(&V)"
 	};
 
 	if ( m_nMakeEnd<0 || m_nMakeEnd>2 )
 		m_nMakeEnd = 0;
-	m_ctMakeLabel1.SetWindowText(g_szMakeLabel[m_nMakeEnd]);
+	m_ctMakeLabel1.SetWindowText(szMakeLabel[m_nMakeEnd]);
 	m_dMakeValue.EnableWindow(m_nMakeEnd == 0 ? FALSE : TRUE);
 }
 

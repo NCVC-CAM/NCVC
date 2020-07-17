@@ -276,17 +276,17 @@ void CMakeNCDlgEx2::OnMKNCLayerEdit()
 			pLayer1 = pDoc->GetLayerData(i);
 			if ( pLayer1->IsCutType() ) {
 				pLayer2 = pArray->GetAt(j++);
-				pLayer1->m_bCutTarget		= pLayer2->m_bCutTarget;
+				pLayer1->m_bLayerFlg.set(LAYER_CUTTARGET, pLayer2->m_bLayerFlg[LAYER_CUTTARGET]);
 				if ( IsMakeEx1() )
 					pLayer1->m_strInitFile	= pLayer2->m_strInitFile;
 				else {
 					pLayer1->m_dZCut		= pLayer2->m_dZCut;
-					pLayer1->m_bDrillZ		= pLayer2->m_bDrillZ;
+					pLayer1->m_bLayerFlg.set(LAYER_DRILLZ, pLayer2->m_bLayerFlg[LAYER_DRILLZ]);
 				}
 				pLayer1->m_strLayerComment	= pLayer2->m_strLayerComment;
 				pLayer1->m_strLayerCode		= pLayer2->m_strLayerCode;
-				pLayer1->m_bPartOut			= pLayer2->m_bPartOut;
 				pLayer1->m_strNCFile		= pLayer2->m_strNCFile;
+				pLayer1->m_bLayerFlg.set(LAYER_PARTOUT, pLayer2->m_bLayerFlg[LAYER_PARTOUT]);
 			}
 		}
 	}

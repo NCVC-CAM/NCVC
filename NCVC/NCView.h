@@ -4,13 +4,11 @@
 
 #pragma once
 
-//#include "NCViewBase.h"
-#include "ViewBase.h"
+#include "NCViewBase.h"
 
-//class CNCView : public CView, public CNCViewBase
-class CNCView : public CView, public CViewBase
+class CNCView : public CView, public CNCViewBase
 {
-	CPoint		m_ptGuid[NCXYZ][2];		// XYZ軸のｶﾞｲﾄﾞ座標(始点・終点)
+	CPoint		m_ptGuide[NCXYZ][2];	// XYZ軸のｶﾞｲﾄﾞ座標(始点・終点)
 	// ﾜｰｸ矩形
 	CPointD		m_ptdWorkRect[2][4];	// ﾜｰｸ矩形[Zmin/Zmax][矩形] ４角(from CNCDoc::m_rcWork)
 	CPoint		m_ptDrawWorkRect[2][4];	// ﾜｰｸ矩形の描画用座標

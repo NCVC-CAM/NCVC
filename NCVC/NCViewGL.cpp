@@ -79,7 +79,7 @@ END_MESSAGE_MAP()
 CNCViewGL::CNCViewGL()
 {
 	m_bActive = FALSE;
-	m_cx = m_cy = 0;
+	m_cx = m_cy = m_icx = m_icy = 0;
 	m_dRate = 0.0;
 	m_hRC = NULL;
 	m_glCode = 0;
@@ -107,9 +107,23 @@ BOOL CNCViewGL::PreCreateWindow(CREATESTRUCT& cs)
 
 void CNCViewGL::OnInitialUpdate() 
 {
+	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCViewGL::OnInitialUpdate()\nStart", DBG_CYAN);
 #endif
+	CView::OnInitialUpdate();
+
+	if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) ) {
+		m_strGuide  = g_szNdelimiter[NCA_Z];	// [ZYX]
+		m_strGuide += g_szNdelimiter[NCA_Y];
+		m_strGuide += g_szNdelimiter[NCA_X];
+	}
+	else {
+		m_strGuide = g_szNdelimiter;
+		m_strGuide.Delete(NCXYZ, 999);			// [XYZ]
+	}
+
 	// まだｳｨﾝﾄﾞｳがｱｸﾃｨﾌﾞでない可能性があるので
 	// ここでの OpenGLｺﾏﾝﾄﾞ は使用しない
 }
@@ -167,7 +181,10 @@ void CNCViewGL::UpdateViewOption(void)
 			if ( ReadTexture(pOpt->GetTextureFile()) &&	// m_nPictureID値ｾｯﾄ
 					!(pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL) ) {
 				// 画像だけ変更
-				CreateTexture();
+				if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) )
+					CreateTextureLathe();
+				else
+					CreateTextureMill();
 			}
 		}
 	}
@@ -180,9 +197,8 @@ void CNCViewGL::UpdateViewOption(void)
 		GLfloat light_Position1[] = { 1.0,  1.0,  1.0,  0.0};
 		if ( m_nPictureID > 0 ) {
 			// ﾃｸｽﾁｬ色を有効にするため白色光源
-			for ( int i=0; i<NCXYZ; i++ ) {
+			for ( int i=0; i<NCXYZ; i++ )
 				light_Wrk[i] = light_Cut[i] = 1.0;
-			}
 		}
 		else {
 			// 表示設定に基づく光源
@@ -215,19 +231,28 @@ void CNCViewGL::UpdateViewOption(void)
 		CreateWire();
 	}
 
-	// ﾎﾞｸｾﾙ生成
+	// ソリッドモデルの表示
 	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
-		ClearElement();
+		ClearVBO();
 		// ﾜｰｸ矩形の描画用座標
 		if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
 			if ( GLEW_ARB_vertex_buffer_object ) {	// OpenGL拡張ｻﾎﾟｰﾄ
+				BOOL	bResult;
 				// 切削領域の設定
 				m_rcDraw = GetDocument()->GetWorkRect();
-				// ﾎﾞｸｾﾙの生成
-				BOOL bResult = CreateBoxel();
-				if ( bResult && m_nPictureID > 0 ) {
-					// ﾃｸｽﾁｬ座標の生成
-					CreateTexture();
+				if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) ) {
+					// 旋盤用回転モデルの生成
+					bResult = CreateLathe();
+					if ( bResult && m_nPictureID > 0 ) {
+						// ﾃｸｽﾁｬ座標の生成
+						CreateTextureLathe();
+					}
+				}
+				else {
+					// ﾌﾗｲｽ用ﾎﾞｸｾﾙの生成
+					bResult = CreateBoxel();
+					if ( bResult && m_nPictureID > 0 )
+						CreateTextureMill();
 				}
 			}
 			else {
@@ -306,74 +331,53 @@ void CNCViewGL::CreateWire(void)
 {
 	::glGetError();		// ｴﾗｰをﾌﾗｯｼｭ
 
-	// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
-	// ｵﾌﾞｼﾞｪｸﾄ数が多いとﾒﾓﾘ消費量が多すぎる(かも知れない)ので
-	// 10,000を閾値とする
-	if ( GetDocument()->GetNCsize() <= 10000 ) {
-		m_glCode = ::glGenLists(1);
-		if( m_glCode > 0 ) {
-			// NCﾃﾞｰﾀ描画のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
-			::glNewList( m_glCode, GL_COMPILE );
-				RenderCode();
-			::glEndList();
-			if ( ::glGetError() != GL_NO_ERROR ) {
-				::glDeleteLists(m_glCode, 1);
-				m_glCode = 0;
-			}
+	m_glCode = ::glGenLists(1);
+	if( m_glCode > 0 ) {
+		// NCﾃﾞｰﾀ描画のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
+		::glNewList( m_glCode, GL_COMPILE );
+			RenderCode();
+		::glEndList();
+		if ( ::glGetError() != GL_NO_ERROR ) {
+			::glDeleteLists(m_glCode, 1);
+			m_glCode = 0;
 		}
 	}
 }
 
 BOOL CNCViewGL::CreateBoxel(void)
 {
-	int			i;
-	CPoint3D	pt(m_rcView.CenterPoint());
-
 	// ﾎﾞｸｾﾙ生成のための初期設定
-	::glEnable(GL_DEPTH_TEST);
-	::glClearDepth(0.0);		// 遠い方を先に優先させるための値
-	::glDepthFunc(GL_GREATER);	// 遠い方を優先
-	::glClear(GL_DEPTH_BUFFER_BIT);		// ﾃﾞﾌﾟｽﾊﾞｯﾌｧのみｸﾘｱ
-	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);	// ｶﾗｰﾏｽｸOFF
-
+	InitialBoxel();
 	// 画面いっぱいに描画
 	::glMatrixMode(GL_PROJECTION);
 	::glPushMatrix();
 	::glLoadIdentity();
 	::glOrtho(m_rcDraw.left, m_rcDraw.right, m_rcDraw.top, m_rcDraw.bottom,
 		m_rcView.low, m_rcView.high);	// m_rcDraw ではｷﾞﾘｷﾞﾘなので m_rcView を使う
-
 	::glMatrixMode(GL_MODELVIEW);
-
+	
 	// 切削底面描画
-	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
+	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
 		GetDocument()->GetNCdata(i)->DrawBottomFace();
 //	ASSERT( ::glGetError() == GL_NO_ERROR );
 //	GLenum glError = ::glGetError();
-
 	::glFinish();
 
 	// ﾃﾞﾌﾟｽ値の取得
-	BOOL	bResult = GetClipDepth();
+	BOOL	bResult = GetClipDepthMill();
 	if ( !bResult )
-		ClearElement();
+		ClearVBO();
 
-	::glMatrixMode(GL_PROJECTION);
-	::glPopMatrix();
-	::glMatrixMode(GL_MODELVIEW);
-
-	// 通常設定に戻す
-	::glClearDepth(1.0);
-	::glDepthFunc(GL_LESS);		// 近い方を優先(通常描画)
-	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	// 終了処理
+	FinalBoxel();
 
 	return bResult;
 }
 
-BOOL CNCViewGL::GetClipDepth(void)
+BOOL CNCViewGL::GetClipDepthMill(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("GetClipDepth()");
+	CMagaDbg	dbg("GetClipDepthMill()");
 #endif
 	int			i, j, n, nn, nSize;
 	GLint		viewPort[4];
@@ -396,6 +400,8 @@ BOOL CNCViewGL::GetClipDepth(void)
 
 	m_icx = (int)(wx2 - wx1);
 	m_icy = (int)(wy2 - wy1);
+	if ( m_icx<=0 || m_icy<=0 )
+		return FALSE;
 
 #ifdef _DEBUG
 	dbg.printf("left,  top   =(%f, %f)", m_rcDraw.left,  m_rcDraw.top);
@@ -522,7 +528,7 @@ BOOL CNCViewGL::GetClipDepth(void)
 	delete	pfDepth;
 
 	// 頂点配列ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄ生成
-	BOOL	bResult = CreateElement(pfXYZ, pfNOR);
+	BOOL	bResult = CreateVBOMill(pfXYZ, pfNOR);
 
 	delete	pfXYZ;
 	delete	pfNOR;
@@ -530,10 +536,10 @@ BOOL CNCViewGL::GetClipDepth(void)
 	return bResult;
 }
 
-BOOL CNCViewGL::CreateElement(GLfloat* pfXYZ, GLfloat* pfNOR)
+BOOL CNCViewGL::CreateVBOMill(const GLfloat* pfXYZ, GLfloat* pfNOR)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CreateElement()", DBG_BLUE);
+	CMagaDbg	dbg("CreateVBOMill()", DBG_BLUE);
 #endif
 
 	std::vector<CVElement>	vElementWrk,	// 頂点配列ｲﾝﾃﾞｯｸｽ(可変長２次元配列)
@@ -581,7 +587,7 @@ BOOL CNCViewGL::CreateElement(GLfloat* pfXYZ, GLfloat* pfNOR)
 			GL_STATIC_DRAW_ARB);
 	if ( ::glGetError() != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		ClearElement();
+		ClearVBO();
 		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
 		return FALSE;
 	}
@@ -596,7 +602,7 @@ BOOL CNCViewGL::CreateElement(GLfloat* pfXYZ, GLfloat* pfNOR)
 			GL_STATIC_DRAW_ARB);
 	if ( ::glGetError() != GL_NO_ERROR ) {
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		ClearElement();
+		ClearVBO();
 		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
 		return FALSE;
 	}
@@ -619,7 +625,6 @@ BOOL CNCViewGL::CreateElement(GLfloat* pfXYZ, GLfloat* pfNOR)
 #ifdef _DEBUG
 		int		dbgTriangleWrk = 0, dbgTriangleCut = 0;
 #endif
-
 		// ﾜｰｸ矩形用
 		m_vVertexWrk.reserve(vElementWrk.size());
 		for ( ii=jj=0; ii<vElementWrk.size(); ii++ ) {
@@ -629,7 +634,7 @@ BOOL CNCViewGL::CreateElement(GLfloat* pfXYZ, GLfloat* pfNOR)
 				GL_STATIC_DRAW_ARB);
 			if ( ::glGetError() != GL_NO_ERROR ) {
 				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-				ClearElement();
+				ClearVBO();
 				AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
 				return FALSE;
 			}
@@ -647,7 +652,7 @@ BOOL CNCViewGL::CreateElement(GLfloat* pfXYZ, GLfloat* pfNOR)
 				GL_STATIC_DRAW_ARB);
 			if ( ::glGetError() != GL_NO_ERROR ) {
 				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-				ClearElement();
+				ClearVBO();
 				AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
 				return FALSE;
 			}
@@ -1123,6 +1128,292 @@ BOOL CreateElement_Side(LPCREATEELEMENTPARAM pParam)
 	return TRUE;
 }
 
+BOOL CNCViewGL::CreateLathe(void)
+{
+	// ﾎﾞｸｾﾙ生成のための初期設定
+	InitialBoxel();
+	// 画面いっぱいに描画
+	::glMatrixMode(GL_PROJECTION);
+	::glPushMatrix();
+	::glLoadIdentity();
+	::glOrtho(m_rcDraw.left, m_rcDraw.right,
+		m_rcView.low, m_rcView.high,	// top と bottom は使用不可
+		m_rcView.low, m_rcView.high);	// m_rcDraw ではｷﾞﾘｷﾞﾘなので m_rcView を使う
+	::glMatrixMode(GL_MODELVIEW);
+
+	// 旋盤用ZXﾜｲﾔｰの描画
+	::glPushAttrib( GL_LINE_BIT );
+	::glLineWidth( 3.0 );	// 1Pixelではﾃﾞﾌﾟｽ値を拾えないかもしれないので
+	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
+		GetDocument()->GetNCdata(i)->DrawLatheWire();
+	::glPopAttrib();
+	::glFinish();
+
+	// ﾃﾞﾌﾟｽ値の取得
+	BOOL	bResult = GetClipDepthLathe();
+	if ( !bResult )
+		ClearVBO();
+
+	// 終了処理
+	FinalBoxel();
+
+	return bResult;
+}
+
+BOOL CNCViewGL::GetClipDepthLathe(void)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("GetClipDepthLathe()");
+#endif
+	int			i, j, ii, jj;
+	double		q;
+	GLint		viewPort[4];
+	GLdouble	mvMatrix[16], pjMatrix[16],
+				wx1, wy1, wz1, wx2, wy2, wz2;
+	GLfloat		fz, fx, fxb;
+	boost::optional<GLfloat>	fzb;
+	GLfloat*	pfDepth = NULL;		// ﾃﾞﾌﾟｽ値取得配列一時領域
+	GLfloat*	pfCylinder = NULL;	// 円筒形座標
+	GLfloat*	pfNOR = NULL;		// 法線ﾍﾞｸﾄﾙ
+
+	::glGetIntegerv(GL_VIEWPORT, viewPort);
+	::glGetDoublev (GL_MODELVIEW_MATRIX,  mvMatrix);
+	::glGetDoublev (GL_PROJECTION_MATRIX, pjMatrix);
+
+	// 矩形領域(left/right)をﾋﾟｸｾﾙ座標に変換
+	::gluProject(m_rcDraw.left,  0.0, 0.0, mvMatrix, pjMatrix, viewPort,
+		&wx1, &wy1, &wz1);
+	::gluProject(m_rcDraw.right, 0.0, 0.0, mvMatrix, pjMatrix, viewPort,
+		&wx2, &wy2, &wz2);
+
+	m_icx = (int)(wx2 - wx1);
+	m_icy = 0;
+	if ( m_icx <= 0 )
+		return FALSE;
+
+#ifdef _DEBUG
+	dbg.printf("left  -> wx1 = %f -> %f", m_rcDraw.left, wx1);
+	dbg.printf("right -> wx2 = %f -> %f", m_rcDraw.right, wx2);
+	dbg.printf("wy1 = %f", wy1);
+	dbg.printf("m_icx=%d", m_icx);
+#endif
+
+	try {
+		// 領域確保
+		pfDepth    = new GLfloat[m_icx];
+		pfCylinder = new GLfloat[m_icx*(ARCCOUNT+1)*NCXYZ];
+		pfNOR      = new GLfloat[m_icx*(ARCCOUNT+1)*NCXYZ];
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		if ( pfDepth )
+			delete	pfDepth;
+		if ( pfCylinder )
+			delete	pfCylinder;
+		if ( pfNOR )
+			delete	pfNOR;
+		return FALSE;
+	}
+
+	// ｸﾗｲｱﾝﾄ領域のﾃﾞﾌﾟｽ値を取得（ﾋﾟｸｾﾙ単位）
+#ifdef _DEBUG
+	DWORD	t1 = ::timeGetTime();
+#endif
+	::glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	::glReadPixels((GLint)wx1, (GLint)wy1, m_icx, 1,
+					GL_DEPTH_COMPONENT, GL_FLOAT, pfDepth);
+//	ASSERT( ::glGetError() == GL_NO_ERROR );
+//	GLenum glError = ::glGetError();
+#ifdef _DEBUG
+	DWORD	t2 = ::timeGetTime();
+	dbg.printf( "glReadPixels()=%d[ms]", t2 - t1 );
+#endif
+
+	// 外径切削面の座標登録
+	for ( i=0; i<m_icx; i++ ) {
+		::gluUnProject(i+wx1, wy1, pfDepth[i],
+				mvMatrix, pjMatrix, viewPort,
+				&wx2, &wy2, &wz2);	// それほど遅くないので自作変換は中止
+		fz = (GLfloat)fabs( (pfDepth[i]==0.0) ?	// ﾃﾞﾌﾟｽ値が初期値(矩形範囲内で切削面でない)なら
+				m_rcDraw.high :				// ﾜｰｸ半径値
+				min(wz2, m_rcDraw.high) );	// 変換座標(==半径)かﾜｰｸ半径の小さい方
+		ii = i * (ARCCOUNT+1);
+		// ﾃｰﾊﾟｰ状の法線ﾍﾞｸﾄﾙを計算
+		if ( fzb && fz != *fzb ) {
+			q = fz - *fzb;
+			fx = cos( atan2(q, wx2 - fxb) + 90.0*RAD );
+		}
+		else
+			fx = 0;
+		// fz を半径に円筒形の座標を生成
+		for ( j=0, q=0; j<=ARCCOUNT; j++, q+=ARCSTEP ) {
+			jj = (ii + j) * NCXYZ;
+			// ﾃﾞﾌｫﾙﾄの法線ﾍﾞｸﾄﾙ
+			pfNOR[jj+NCA_X] = fx;
+			pfNOR[jj+NCA_Y] = cos(q);
+			pfNOR[jj+NCA_Z] = sin(q);
+			// ﾜｰﾙﾄﾞ座標
+			pfCylinder[jj+NCA_X] = wx2;
+			pfCylinder[jj+NCA_Y] = fz * pfNOR[jj+NCA_Y];
+			pfCylinder[jj+NCA_Z] = fz * pfNOR[jj+NCA_Z];
+		}
+		// 前回値を保存
+		fzb = fz;
+		fxb = wx2;
+	}
+#ifdef _DEBUG
+	DWORD	t3 = ::timeGetTime();
+	dbg.printf( "AddMatrix1=%d[ms]", t3 - t2 );
+#endif
+
+	// 頂点配列ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄ生成
+	BOOL	bResult = CreateVBOLathe(pfDepth, pfCylinder, pfNOR);
+
+	delete	pfDepth;
+	delete	pfCylinder;
+	delete	pfNOR;
+
+	return bResult;
+}
+
+BOOL CNCViewGL::CreateVBOLathe
+	(const GLfloat* pfDepth, const GLfloat* pfCylinder, const GLfloat* pfNOR)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("CreateVBOLathe()", DBG_BLUE);
+#endif
+	int		i, j;
+	GLuint	n0, n1;
+	std::vector<CVElement>	vElementWrk,	// 頂点配列ｲﾝﾃﾞｯｸｽ(可変長２次元配列)
+							vElementCut;
+	CVElement	vElement;
+
+	vElement.reserve((ARCCOUNT+1)*2);
+	vElementWrk.reserve(m_icx);
+	vElementCut.reserve(m_icx);
+
+	// iとi+1の座標を円筒形につなげる
+	for ( i=0; i<m_icx-1; i++ ) {
+		vElement.clear();
+		for ( j=0; j<=ARCCOUNT; j++ ) {
+			n0 =  i    * (ARCCOUNT+1) + j;
+			n1 = (i+1) * (ARCCOUNT+1) + j;
+			vElement.push_back(n0);
+			vElement.push_back(n1);
+		}
+		if ( pfDepth[i+1] == 0.0 )	// 切削面かﾜｰｸ面か
+			vElementWrk.push_back(vElement);
+		else
+			vElementCut.push_back(vElement);
+	}
+
+	::glGetError();		// ｴﾗｰをﾌﾗｯｼｭ
+
+	// 頂点配列をGPUﾒﾓﾘに転送
+	if ( m_nVertexID > 0 )
+		::glDeleteBuffersARB(1, &m_nVertexID);
+	::glGenBuffersARB(1, &m_nVertexID);
+	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID);
+	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
+			m_icx*(ARCCOUNT+1)*NCXYZ*sizeof(GLfloat), pfCylinder,
+			GL_STATIC_DRAW_ARB);
+	if ( ::glGetError() != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
+		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		ClearVBO();
+		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+
+	// 法線ﾍﾞｸﾄﾙをGPUﾒﾓﾘに転送
+	if ( m_nNormalID > 0 )
+		::glDeleteBuffersARB(1, &m_nNormalID);
+	::glGenBuffersARB(1, &m_nNormalID);
+	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nNormalID);
+	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
+			m_icx*(ARCCOUNT+1)*NCXYZ*sizeof(GLfloat), pfNOR,
+			GL_STATIC_DRAW_ARB);
+	if ( ::glGetError() != GL_NO_ERROR ) {
+		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		ClearVBO();
+		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+	// 頂点ｲﾝﾃﾞｯｸｽをGPUﾒﾓﾘに転送
+	if ( m_pGenBuf ) {
+		::glDeleteBuffersARB(m_vVertexWrk.size()+m_vVertexCut.size(), m_pGenBuf);
+		delete	m_pGenBuf;
+	}
+
+	m_vVertexWrk.clear();
+	m_vVertexCut.clear();
+
+	try {
+		m_pGenBuf = new GLuint[vElementWrk.size()+vElementCut.size()];
+		::glGenBuffersARB(vElementWrk.size()+vElementCut.size(), m_pGenBuf);
+
+		size_t	ii, jj;		// 警告防止
+#ifdef _DEBUG
+		int		dbgTriangleWrk = 0, dbgTriangleCut = 0;
+#endif
+		// ﾜｰｸ矩形用
+		m_vVertexWrk.reserve(vElementWrk.size());
+		for ( ii=jj=0; ii<vElementWrk.size(); ii++ ) {
+			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[jj++]);
+			::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
+				vElementWrk[ii].size()*sizeof(GLuint), &vElementWrk[ii][0],
+				GL_STATIC_DRAW_ARB);
+			if ( ::glGetError() != GL_NO_ERROR ) {
+				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+				ClearVBO();
+				AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+				return FALSE;
+			}
+			m_vVertexWrk.push_back(vElementWrk[ii].size());
+#ifdef _DEBUG
+			dbgTriangleWrk += vElementWrk[ii].size();
+#endif
+		}
+		// 切削面用
+		m_vVertexCut.reserve(vElementCut.size());
+		for ( ii=0; ii<vElementCut.size(); ii++ ) {
+			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[jj++]);
+			::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
+				vElementCut[ii].size()*sizeof(GLuint), &vElementCut[ii][0],
+				GL_STATIC_DRAW_ARB);
+			if ( ::glGetError() != GL_NO_ERROR ) {
+				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+				ClearVBO();
+				AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+				return FALSE;
+			}
+			m_vVertexCut.push_back(vElementCut[ii].size());
+#ifdef _DEBUG
+			dbgTriangleCut += vElementCut[ii].size();
+#endif
+		}
+		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+
+#ifdef _DEBUG
+		dbg.printf("VertexCount(/3)=%d size=%d",
+			m_icx*(ARCCOUNT+1), m_icx*(ARCCOUNT+1)*NCXYZ*sizeof(GLfloat));
+		dbg.printf("Work IndexCount=%d Triangle=%d",
+			vElementWrk.size(), dbgTriangleWrk/3);
+		dbg.printf("Cut  IndexCount=%d Triangle=%d",
+			vElementCut.size(), dbgTriangleCut/3);
+#endif
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 BOOL CNCViewGL::ReadTexture(LPCTSTR szFileName)
 {
 	// ﾌｧｲﾙ名のUNICODE変換
@@ -1148,34 +1439,25 @@ BOOL CNCViewGL::ReadTexture(LPCTSTR szFileName)
 	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-//	::glBindTexture(GL_TEXTURE_CUBE_MAP, m_nPictureID);
-//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_REPEAT);
-//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_REPEAT);
-//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_REPEAT);
 	// ﾃｸｽﾁｬにﾋﾟｸｾﾙを書き込む(2^n サイズ以外の対応)
 	::gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, bmpdata.Width, bmpdata.Height,
 		GL_BGRA_EXT, GL_UNSIGNED_BYTE, bmpdata.Scan0);
-//	for ( int i=0; i<6; i++ ) {
-//		::gluBuild2DMipmaps(GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, GL_RGBA,
-//			bmpdata.Width, bmpdata.Height,
-//			GL_BGRA_EXT, GL_UNSIGNED_BYTE, bmpdata.Scan0);
-//	}
 
 	// 後始末
 	::glBindTexture(GL_TEXTURE_2D, 0);
-//	::glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	bmp.UnlockBits(&bmpdata);
 
 	return TRUE;
 }
 
-void CNCViewGL::CreateTexture(void)
+void CNCViewGL::CreateTextureMill(void)
 {
 	int			i, j, n;
 	GLfloat		ft;
 	GLfloat*	pfTEX;
+
+	if ( m_icx<=0 || m_icy<=0 )
+		return;
 
 	try {
 		pfTEX = new GLfloat[m_icx*m_icy*2*2];	// (X,Y) 上面と底面
@@ -1183,6 +1465,7 @@ void CNCViewGL::CreateTexture(void)
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
+		ClearTexture();
 		return;
 	}
 
@@ -1206,28 +1489,64 @@ void CNCViewGL::CreateTexture(void)
 	}
 
 	// ﾃｸｽﾁｬ座標をGPUﾒﾓﾘに転送
+	CreateTexture(m_icx*m_icy*2*2, pfTEX);
+
+	delete	pfTEX;
+}
+
+void CNCViewGL::CreateTextureLathe(void)
+{
+	int			i, j, n;
+	GLfloat		ft;
+	GLfloat*	pfTEX;
+
+	if ( m_icx<=0 )
+		return;
+
+	try {
+		pfTEX = new GLfloat[m_icx*(ARCCOUNT+1)*2];	// Xと円筒座標分
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		ClearTexture();
+		return;
+	}
+
+	// ﾃｸｽﾁｬ座標の割り当て
+	for ( i=0, n=0; i<m_icx; i++ ) {
+		ft = (GLfloat)i/(m_icx-1);
+		for ( j=0; j<=ARCCOUNT; j++, n+=2 ) {
+			// ﾃｸｽﾁｬ座標(0.0～1.0)
+			pfTEX[n]   = (GLfloat)j/ARCCOUNT;
+			pfTEX[n+1] = ft;
+		}
+	}
+
+	// ﾃｸｽﾁｬ座標をGPUﾒﾓﾘに転送
+	CreateTexture(m_icx*(ARCCOUNT+1)*2, pfTEX);
+
+	delete	pfTEX;
+}
+
+void  CNCViewGL::CreateTexture(GLsizeiptr n, const GLfloat* pfTEX)
+{
+	// ﾃｸｽﾁｬ座標をGPUﾒﾓﾘに転送
 	if ( m_nTextureID > 0 )
 		::glDeleteBuffersARB(1, &m_nTextureID);
 	::glGenBuffersARB(1, &m_nTextureID);
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nTextureID);
 	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-			m_icx*m_icy*2*2*sizeof(GLfloat), pfTEX,
+			n*sizeof(GLfloat), pfTEX,
 			GL_STATIC_DRAW_ARB);
 	if ( ::glGetError() != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
 		ClearTexture();
 		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
 	}
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-
-	delete	pfTEX;
-/*
-	::glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_NORMAL_MAP);
-	::glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_NORMAL_MAP);
-	::glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_NORMAL_MAP);
-*/
 }
 
-void CNCViewGL::ClearElement(void)
+void CNCViewGL::ClearVBO(void)
 {
 	if ( m_nVertexID > 0 )
 		::glDeleteBuffersARB(1, &m_nVertexID);
@@ -1250,6 +1569,28 @@ void CNCViewGL::ClearTexture(void)
 	if ( m_nTextureID > 0 )
 		::glDeleteBuffersARB(1, &m_nTextureID);
 	m_nPictureID = m_nTextureID = 0;
+}
+
+void CNCViewGL::InitialBoxel(void)
+{
+	// ﾎﾞｸｾﾙ生成のための初期設定
+	::glEnable(GL_DEPTH_TEST);
+	::glClearDepth(0.0);		// 遠い方を優先させるためのﾃﾞﾌﾟｽ初期値
+	::glDepthFunc(GL_GREATER);	// 遠い方を優先
+	::glClear(GL_DEPTH_BUFFER_BIT);		// ﾃﾞﾌﾟｽﾊﾞｯﾌｧのみｸﾘｱ
+	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);	// ｶﾗｰﾏｽｸOFF
+}
+
+void CNCViewGL::FinalBoxel(void)
+{
+	::glMatrixMode(GL_PROJECTION);
+	::glPopMatrix();
+	::glMatrixMode(GL_MODELVIEW);
+
+	// 通常設定に戻す
+	::glClearDepth(1.0);
+	::glDepthFunc(GL_LESS);		// 近い方を優先(通常描画)
+	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
 
 void CNCViewGL::RenderBack(void)
@@ -1300,7 +1641,7 @@ void CNCViewGL::RenderAxis(void)
 	double		dLength;
 	COLORREF	col;
 
-	::glPushAttrib( GL_CURRENT_BIT | GL_LINE_BIT );	// 色 | 線情報
+	::glPushAttrib( GL_LINE_BIT );	// 線情報
 	::glLineWidth( 2.0 );
 	::glEnable( GL_LINE_STIPPLE );
 	::glBegin( GL_LINES );
@@ -1328,8 +1669,8 @@ void CNCViewGL::RenderAxis(void)
 	::glVertex3d(0.0, 0.0,  dLength);
 
 	::glEnd();
-	::glDisable( GL_LINE_STIPPLE );
-	::glPopAttrib();
+
+	::glPopAttrib();	//	::glDisable(GL_LINE_STIPPLE)は popにより不要
 }
 
 void CNCViewGL::RenderCode(void)
@@ -1337,7 +1678,7 @@ void CNCViewGL::RenderCode(void)
 	::glEnable( GL_LINE_STIPPLE );
 	// NCﾃﾞｰﾀ描画
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
-		GetDocument()->GetNCdata(i)->DrawGL();
+		GetDocument()->GetNCdata(i)->DrawWire();
 	::glDisable( GL_LINE_STIPPLE );
 }
 
@@ -1438,7 +1779,7 @@ void CNCViewGL::DoScale(int nRate)
 	::wglMakeCurrent( NULL, NULL );
 
 	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-	static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dRate/LOGPIXEL);
+	static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dRate/LOGPIXEL, m_strGuide);
 }
 
 void CNCViewGL::DoRotation(double dAngle, const CPoint3D& pt)
@@ -1527,17 +1868,11 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nNormalID);
 		::glNormalPointer(GL_FLOAT, 0, NULL);
 		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nTextureID > 0 ) {
-//		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nPictureID > 0 ) {
 			::glBindTexture(GL_TEXTURE_2D, m_nPictureID);
-//			::glBindTexture(GL_TEXTURE_CUBE_MAP, m_nPictureID);
 			::glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 			::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nTextureID);
 			::glTexCoordPointer(2, GL_FLOAT, 0, NULL);
-//			::glEnable(GL_TEXTURE_GEN_S);
-//			::glEnable(GL_TEXTURE_GEN_T);
-//			::glEnable(GL_TEXTURE_GEN_R);
 			::glEnable(GL_TEXTURE_2D);
-//			::glEnable(GL_TEXTURE_CUBE_MAP);
 		}
 		// ﾜｰｸ矩形
 		::glEnable (GL_LIGHT0);
@@ -1561,14 +1896,8 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nTextureID > 0 ) {
-//		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nPictureID > 0 ) {
 			::glBindTexture(GL_TEXTURE_2D, 0);
 			::glDisable(GL_TEXTURE_2D);
-//			::glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-//			::glDisable(GL_TEXTURE_GEN_S);
-//			::glDisable(GL_TEXTURE_GEN_T);
-//			::glDisable(GL_TEXTURE_GEN_R);
-//			::glDisable(GL_TEXTURE_CUBE_MAP);
 			::glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		}
 		::glDisableClientState(GL_NORMAL_ARRAY);
@@ -1689,7 +2018,7 @@ void CNCViewGL::OnDestroy()
 		::glDeleteLists(m_glCode, 1);
 
 	// ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄ関連の削除
-	ClearElement();
+	ClearVBO();
 	ClearTexture();
 
 	::wglMakeCurrent(NULL, NULL);
@@ -1721,7 +2050,7 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 		g_dbg.printf("CNCViewGL::OnActivateView()");
 #endif
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dRate/LOGPIXEL);
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dRate/LOGPIXEL, m_strGuide);
 	}
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
 }
@@ -1754,7 +2083,7 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM, LPARAM)
 #endif
 
 	m_rcView  = GetDocument()->GetMaxRect();
-	m_rcView |= GetDocument()->GetWorkRect();
+//	m_rcView |= GetDocument()->GetWorkRect();
 
 	// 占有矩形の補正(不正表示の防止)
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
@@ -1867,7 +2196,7 @@ void CNCViewGL::OnLensKey(UINT nID)
 		}
 		Invalidate(FALSE);
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dRate/LOGPIXEL);
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dRate/LOGPIXEL, m_strGuide);
 		break;
 	case ID_VIEW_LENSP:
 		DoScale(-1);

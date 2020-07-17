@@ -65,13 +65,11 @@ CNCDoc::CNCDoc()
 {
 	int		i;
 
-	m_fError = TRUE;	// 初期状態はｴﾗｰ
+	m_bNcDocFlg.set(NCDOC_ERROR);	// 初期状態はｴﾗｰﾌﾗｸﾞだけ立てる
 	m_dMove[0] = m_dMove[1] = 0.0;
 	m_dCutTime = -1.0;
 	m_nTraceStart = m_nTraceDraw = 0;
-	m_bWorkRect = m_bMaxRect = FALSE;
 	m_pCutcalcThread = NULL;
-	m_bCutcalc = m_bCorrect = m_bMaxCut = m_bThumbnail = FALSE;
 	// ﾜｰｸ座標系取得
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
 	for ( i=0; i<WORKOFFSET; i++ )
@@ -82,7 +80,7 @@ CNCDoc::CNCDoc()
 		m_nWorkOrg = 0;
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
-	m_rcWorkOrg.SetRectMinimum();
+	m_rcWork.SetRectMinimum();
 	// 増分割り当てサイズ
 	m_obBlock.SetSize(0, 1024);
 	m_obGdata.SetSize(0, 1024);
@@ -123,6 +121,28 @@ BOOL CNCDoc::RouteCmdToAllViews
 	return FALSE;
 }
 
+void CNCDoc::SetLatheViewMode(void)
+{
+	using namespace std;
+
+	if ( !m_bNcDocFlg[NCDOC_LATHE] ) {
+		m_bNcDocFlg.set(NCDOC_LATHE);	// NC旋盤ﾓｰﾄﾞ
+		// 座標系のXZを入れ替え
+		for ( int i=0; i<WORKOFFSET+1; i++ ) {
+			m_ptNcWorkOrg[i].x /= 2.0;
+			swap(m_ptNcWorkOrg[i].x, m_ptNcWorkOrg[i].z);
+		}
+		m_ptNcLocalOrg.x /= 2.0;
+		swap(m_ptNcLocalOrg.x, m_ptNcLocalOrg.z);
+	}
+}
+
+void CNCDoc::ResetLatheViewMode(void)
+{
+	// --- TH_NCRead.cpp で保留 ---
+	m_bNcDocFlg.reset(NCDOC_LATHE);	// ﾌﾗｲｽ(Milling)ﾓｰﾄﾞ
+}
+
 CNCdata* CNCDoc::DataOperation
 	(const CNCdata* pDataSrc, LPNCARGV lpArgv, int nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
 {
@@ -141,14 +161,14 @@ CNCdata* CNCDoc::DataOperation
 			pData = new CNCline(pDataSrc, lpArgv, pt);
 			SetMaxRect(pData);		// 最小・最大値の更新
 			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
-				m_bCorrect = TRUE;
+				m_bNcDocFlg.set(NCDOC_REVISEING);	// 補正ﾓｰﾄﾞ
 			break;
 		case 2:		// 円弧
 		case 3:
 			pData = new CNCcircle(pDataSrc, lpArgv, pt);
 			SetMaxRect(pData);
 			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
-				m_bCorrect = TRUE;
+				m_bNcDocFlg.set(NCDOC_REVISEING);
 			break;
 		case 81:	// 固定ｻｲｸﾙ
 		case 82:
@@ -164,7 +184,7 @@ CNCdata* CNCDoc::DataOperation
 			break;
 		case 10:	// ﾃﾞｰﾀ設定
 			if ( lpArgv->nc.dwValFlags & (NCD_P|NCD_R) ) {	// G10P_R_
-				if ( !m_bThumbnail ) {
+				if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
 					// 工具情報の追加
 					if ( pOpt->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) )
 						pData = new CNCdata(pDataSrc, lpArgv, pt);
@@ -205,18 +225,20 @@ CNCdata* CNCDoc::DataOperation
 			pData = new CNCdata(pDataSrc, lpArgv, pt);
 			break;
 		case 92:
-			// ﾛｰｶﾙ座標系ｸﾘｱとG92値取得
-			for ( i=0; i<NCXYZ; i++ ) {
-				m_ptNcLocalOrg[i] = 0.0;
-				if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ) {
-					// 座標指定のあるところだけ、現在位置からの減算で
-					// G92座標系原点を計算
-					m_ptNcWorkOrg[WORKOFFSET][i] = pDataSrc->GetEndValue(i) - lpArgv->nc.dValue[i];
+			if ( !m_bNcDocFlg[NCDOC_LATHE] ) {
+				// ﾛｰｶﾙ座標系ｸﾘｱとG92値取得
+				for ( i=0; i<NCXYZ; i++ ) {
+					m_ptNcLocalOrg[i] = 0.0;
+					if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ) {
+						// 座標指定のあるところだけ、現在位置からの減算で
+						// G92座標系原点を計算
+						m_ptNcWorkOrg[WORKOFFSET][i] = pDataSrc->GetEndValue(i) - lpArgv->nc.dValue[i];
+					}
 				}
+				// 現在位置 - G92値 で、G92座標系原点を計算
+				m_nWorkOrg = WORKOFFSET;	// G92座標系選択
+				pt = m_ptNcWorkOrg[WORKOFFSET];
 			}
-			// 現在位置 - G92値 で、G92座標系原点を計算
-			m_nWorkOrg = WORKOFFSET;	// G92座標系選択
-			pt = m_ptNcWorkOrg[WORKOFFSET];
 			// through
 		default:	// G04 ...
 			pData = new CNCdata(pDataSrc, lpArgv, pt);
@@ -383,19 +405,19 @@ void CNCDoc::CreateCutcalcThread(void)
 	m_pCutcalcThread = AfxBeginThread(CuttimeCalc_Thread, pParam,
 			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 	if ( m_pCutcalcThread ) {
-		m_bCutcalc = TRUE;
+		m_bNcDocFlg.set(NCDOC_CUTCALC);
 		m_pCutcalcThread->m_bAutoDelete = FALSE;
 		m_pCutcalcThread->ResumeThread();
 	}
 	else {
-		m_bCutcalc = FALSE;
+		m_bNcDocFlg.reset(NCDOC_CUTCALC);
 		delete	pParam;
 	}
 }
 
 void CNCDoc::WaitCalcThread(void)
 {
-	m_bCutcalc = FALSE;
+	m_bNcDocFlg.reset(NCDOC_CUTCALC);
 	if ( m_pCutcalcThread ) {
 #ifdef _DEBUG
 		CMagaDbg	dbg("CNCDoc::WaitCalcThread()", DBG_BLUE);
@@ -596,7 +618,7 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 				pMake = new CDXFMake(pData);
 				obDXFdata.Add(pMake);
 				// 補正ｵﾌﾞｼﾞｪｸﾄ
-				if ( m_bCorrect && pDXFMake->GetFlag(MKDX_FLG_OUT_H) ) {
+				if ( m_bNcDocFlg[NCDOC_REVISEING] && pDXFMake->GetFlag(MKDX_FLG_OUT_H) ) {
 					pDataBase = pData;
 					nCorrect = pDataBase->GetCorrectArray()->GetSize();
 					for ( j=0; j<nCorrect; j++ ) {
@@ -700,14 +722,14 @@ void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 
 	if ( ValidDataCheck() ) {
 		m_rcMax.SetRectEmpty();
-		m_fError = TRUE;
+		m_bNcDocFlg.set(NCDOC_ERROR);
 		// error through
 	}
 	else {
 		// 占有矩形調整
 		m_rcMax.NormalizeRect();
 		// ｴﾗｰﾌﾗｸﾞ解除
-		m_fError = FALSE;
+		m_bNcDocFlg.reset(NCDOC_ERROR);
 	}
 
 	// 変換後のﾃﾞｰﾀ設定
@@ -758,7 +780,7 @@ BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		}
 	}
 
-	if ( bResult && !m_bThumbnail ) {
+	if ( bResult && !m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
 		// ﾌｧｲﾙ読み込み後のﾁｪｯｸ
 		bResult = SerializeAfterCheck();
 		if ( bResult ) {
@@ -768,7 +790,7 @@ BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		}
 	}
 
-	if ( !m_bThumbnail ) {
+	if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
 		// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
 		AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
 	}
@@ -843,7 +865,7 @@ void CNCDoc::SetModifiedFlag(BOOL bModified)
 
 void CNCDoc::SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU)
 {
-	if ( m_bThumbnail ) {
+	if ( m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
 		// 自前で用意しないとASSERT_VALIDに引っかかる
 		CString	strPath;
 		::Path_Name_From_FullPath(lpszPathName, strPath, m_strTitle);
@@ -857,7 +879,7 @@ void CNCDoc::OnChangedViewList()
 {
 	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞでﾋﾞｭｰを切り替えるとき、
 	// ﾄﾞｷｭﾒﾝﾄが delete this してしまうのを防止する
-	if ( !m_bThumbnail )
+	if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] )
 		CDocument::OnChangedViewList();
 }
 
@@ -885,7 +907,7 @@ void CNCDoc::Serialize(CArchive& ar)
 	}
 
 	// ﾌｧｲﾙ読み込み
-	SerializeBlock(ar, m_obBlock, 0, !m_bThumbnail);
+	SerializeBlock(ar, m_obBlock, 0, !m_bNcDocFlg[NCDOC_THUMBNAIL]);
 }
 
 void CNCDoc::SerializeBlock
@@ -961,34 +983,50 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	CThreadDlg	dlg(IDS_READ_NCD, this);
 	if ( dlg.DoModal() != IDOK )
 		return FALSE;
+
+	// 占有矩形調整
+	m_rcMax.NormalizeRect();
+	m_rcWork.NormalizeRect();
+	if ( m_bNcDocFlg[NCDOC_LATHE] ) {
+		if ( m_bNcDocFlg[NCDOC_COMMENTWORK_R] ) {
+			m_rcWork.high = m_rcWorkCo.high;
+			m_rcWork.low  = m_rcWorkCo.low;
+		}
+		if ( m_bNcDocFlg[NCDOC_COMMENTWORK_Z] ) {
+			m_rcWork.left  = m_rcWorkCo.left;
+			m_rcWork.right = m_rcWorkCo.right;
+		}
+	}
+	else {
+		if ( m_bNcDocFlg[NCDOC_COMMENTWORK] )
+			m_rcWork = m_rcWorkCo;
+		else
+			m_rcWorkCo = m_rcWork;		// 指示がなければﾃﾞｰﾀを保存
+	}
+
+	// 最終ﾁｪｯｸ
 	if ( ValidDataCheck() ) {
 		AfxMessageBox(IDS_ERR_NCDATA, MB_OK|MB_ICONEXCLAMATION);
-		m_rcMax.SetRectEmpty();
-		m_rcWorkOrg.SetRectEmpty();
-		m_fError = TRUE;
+		m_bNcDocFlg.set(NCDOC_ERROR);
 		// error through
 	}
 	else {
-		// 占有矩形調整
-		m_rcMax.NormalizeRect();
-		m_rcWorkOrg.NormalizeRect();
 		// ｴﾗｰﾌﾗｸﾞ解除
-		m_fError = FALSE;
+		m_bNcDocFlg.reset(NCDOC_ERROR);
 	}
-	m_rcWork = m_rcWorkOrg;
 
 #ifdef _DEBUG
-	dbg.printf("m_rcMax left =%f top   =%f", m_rcMax.left, m_rcMax.top);
-	dbg.printf("m_rcMax right=%f bottom=%f", m_rcMax.right, m_rcMax.bottom);
-	dbg.printf("m_rcMax.low  =%f high  =%f", m_rcMax.low, m_rcMax.high);
+	dbg.printf("m_rcMax  left =%f top   =%f", m_rcMax.left, m_rcMax.top);
+	dbg.printf("m_rcMax  right=%f bottom=%f", m_rcMax.right, m_rcMax.bottom);
+	dbg.printf("m_rcMax  low  =%f high  =%f", m_rcMax.low, m_rcMax.high);
 	dbg.printf("--- cut");
-	dbg.printf("m_rcMax left =%f top   =%f", m_rcWork.left, m_rcWork.top);
-	dbg.printf("m_rcMax right=%f bottom=%f", m_rcWork.right, m_rcWork.bottom);
-	dbg.printf("m_rcMax.low  =%f high  =%f", m_rcWork.low, m_rcWork.high);
+	dbg.printf("m_rcWork left =%f top   =%f", m_rcWork.left, m_rcWork.top);
+	dbg.printf("m_rcWork right=%f bottom=%f", m_rcWork.right, m_rcWork.bottom);
+	dbg.printf("m_rcWork low  =%f high  =%f", m_rcWork.low, m_rcWork.high);
 #endif
 
 	// 補正座標計算
-	if ( m_bCorrect ) {
+	if ( m_bNcDocFlg[NCDOC_REVISEING] ) {
 		CThreadDlg	dlg(IDS_CORRECT_NCD, this);
 		if ( dlg.DoModal() != IDOK )
 			return FALSE;
@@ -1094,12 +1132,12 @@ void CNCDoc::OnFileInsert()
 	for ( i=0; i<m_obGdata.GetSize(); i++ )
 		delete	m_obGdata[i];
 	m_obGdata.RemoveAll();
-	m_bCorrect = FALSE; 
+	m_bNcDocFlg.reset(NCDOC_REVISEING); 
 	// ﾌﾞﾛｯｸﾃﾞｰﾀのﾌﾗｸﾞをｸﾘｱ
 	for ( i=0; i<GetNCBlockSize(); i++ )
 		GetNCblock(i)->SetNCBlkErrorCode(0);
 	// 変数初期化
-	m_fError = TRUE;
+	m_bNcDocFlg.set(NCDOC_ERROR);
 	m_nTraceDraw = 0;
 
 	// ﾌｧｲﾙ(NCﾌﾞﾛｯｸの挿入)
@@ -1162,13 +1200,13 @@ void CNCDoc::OnWorkRect()
 
 void CNCDoc::OnUpdateMaxRect(CCmdUI* pCmdUI) 
 {
-	pCmdUI->Enable(IsNCDocError() ? FALSE : TRUE);
-	pCmdUI->SetCheck(m_bMaxRect);
+	pCmdUI->Enable(IsNCDocFlag(NCDOC_ERROR) ? FALSE : TRUE);
+	pCmdUI->SetCheck(m_bNcDocFlg[NCDOC_MAXRECT]);
 }
 
 void CNCDoc::OnMaxRect() 
 {
-	m_bMaxRect = !m_bMaxRect;
+	m_bNcDocFlg.flip(NCDOC_MAXRECT);
 	// ﾋﾞｭｰの更新
 	UpdateAllViews(NULL, UAV_DRAWMAXRECT);
 }

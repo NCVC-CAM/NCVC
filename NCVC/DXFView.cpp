@@ -98,7 +98,7 @@ void CDXFView::OnInitialUpdate()
 
 	// ¼Ø±Ù‰»Œã‚Ì}Œ`Ì¨¯ÄÒ¯¾°¼Þ‚Ì‘—M
 	// OnInitialUpdate()ŠÖ”“à‚Å‚ÍCGetClientRect()‚Ì»²½Þ‚ª³‚µ‚­‚È‚¢
-	if ( GetDocument()->IsShape() )
+	if ( GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) )
 		GetParentFrame()->PostMessage(WM_USERINITIALUPDATE);
 	else
 		PostMessage(WM_USERVIEWFITMSG);
@@ -382,7 +382,7 @@ void CDXFView::OnDraw(CDC* pDC)
 	nLayerCnt = GetDocument()->GetLayerCnt();
 	for ( i=0; i<nLayerCnt; i++ ) {
 		pLayer = GetDocument()->GetLayerData(i);
-		if ( !pLayer->IsViewLayer() )
+		if ( !pLayer->IsLayerFlag(LAYER_VIEW) )
 			continue;
 		switch ( pLayer->GetLayerType() ) {
 		case DXFCAMLAYER:
@@ -702,7 +702,7 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 		return;
 	}
 	// ‰ÁHŽwŽ¦[‚µ‚È‚¢|‚Å‚«‚È‚¢]ðŒ
-	if ( !bSelect || m_bMagRect || !GetDocument()->IsShape() )
+	if ( !bSelect || m_bMagRect || !GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) )
 		return;
 
 	// --- ‰ÁHŽwŽ¦
@@ -1200,7 +1200,7 @@ void CDXFView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	switch ( nChar ) {
 	case VK_TAB:
-		if ( GetDocument()->IsShape() )
+		if ( GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) )
 			static_cast<CDXFChild *>(GetParentFrame())->GetTreeView()->SetFocus();
 		break;
 	case VK_ESCAPE:

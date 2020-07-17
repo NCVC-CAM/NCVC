@@ -42,6 +42,7 @@
 #define IDCV_MINUTE                     513
 #define IDCV_CUTCALC                    514
 #define IDCV_FEEDERROR                  515
+#define IDCV_LATHE                      516
 #define IDCV_VALFORMAT                  520
 #define IDS_MAKENCD_FORMAT              600
 #define IDS_MAKENCD_CIRCLEBREAK         601
@@ -76,8 +77,6 @@
 #define IDC_THUMBNAIL_PATH              1006
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
-#define IDC_CHECK1                      1038
-#define IDC_BUTTON1                     1040
 #define ID_FILE_CLANDOP                 1090
 #define IDD_DXF_SETUP1                  1200
 #define IDC_DXF_CAMLINE                 1201
@@ -294,6 +293,12 @@
 #define IDC_WORK_ZO                     2506
 #define IDC_WORK_HIDE                   2510
 #define IDC_WORK_RECOVER                2511
+#define IDC_WORK_XS                     2521
+#define IDC_WORK_YS                     2522
+#define IDC_WORK_ZS                     2523
+#define IDC_WORK_XOS                    2524
+#define IDC_WORK_YOS                    2525
+#define IDC_WORK_ZOS                    2526
 #define IDD_NCVIEW_JUMP                 2550
 #define IDC_JUMP                        2551
 #define IDD_NCVIEW_FIND                 2560
@@ -392,6 +397,7 @@
 #define IDD_MC_SETUP5                   3700
 #define IDC_MCST5_L0CYCLE               3700
 #define IDC_MCST5_AUTOBREAK             3701
+#define IDC_MCST5_LATHE                 3702
 #define IDD_MKNC_SETUP1                 4000
 #define IDC_MKNC1_SPINDLE               4001
 #define IDC_MKNC1_FEED                  4002
@@ -684,6 +690,7 @@
 #define IDS_ERR_NCBLK_M98               25003
 #define IDS_ERR_NCBLK_M98L              25004
 #define IDS_ERR_NCBLK_CHAMFERING        25005
+#define IDS_ERR_NCBLK_NOTLATHE          25009
 #define IDS_ERR_NCBLK_CORRECT           25010
 #define IDS_ERR_NCBLK_CORRECTSTART      25011
 #define IDS_ERR_NCBLK_ENDCIRCLE         25012
@@ -727,7 +734,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         1042
+#define _APS_NEXT_CONTROL_VALUE         1043
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

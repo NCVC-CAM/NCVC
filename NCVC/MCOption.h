@@ -24,7 +24,8 @@
 #define	MCMACHINEFILE		5	// Œ»İ‚Ì‹@ŠBî•ñÌ§²Ù–¼
 #define	MCCURRENTFOLDER		6	// Œ»İ‚ÌNCÌ§²ÙÌ«ÙÀŞ
 // BOOLŒ^
-#define	MC_FLG_L0CYCLE		0
+#define	MC_FLG_LATHE		0
+#define	MC_FLG_L0CYCLE		1
 // H‹ï•â³À²Ìß
 #define	MC_TYPE_A			0
 #define	MC_TYPE_B			1
@@ -96,9 +97,10 @@ friend	class	CMCSetup5;
 	// BOOLŒ^µÌß¼®İ
 	union {
 		struct {
-			BOOL	m_bL0Cycle;		// ŒÅ’è»²¸Ù’†‚ÌL0“®ì
+			BOOL	m_bLathe,		// ‹­§ù”ÕÓ°ÄŞ
+					m_bL0Cycle;		// ŒÅ’è»²¸Ù’†‚ÌL0“®ì
 		};
-		BOOL		m_ubFlgs[1];
+		BOOL		m_ubFlgs[2];
 	};
 	// CStringŒ^µÌß¼®İ
 	CString		m_strMCname,	// ‹@ŠB–¼

@@ -75,8 +75,22 @@ BOOL CNCView::PreCreateWindow(CREATESTRUCT& cs)
 
 void CNCView::OnInitialUpdate() 
 {
+	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
+
 	CView::OnInitialUpdate();
 	SetMaxRect2D();
+
+	// 平面案内文字列をｾｯﾄ
+	if ( GetDocument()->IsNCDocFlag(NCDOC_LATHE) ) {
+		m_strGuide  = g_szNdelimiter[NCA_Z];	// NCViewBase.h
+		m_strGuide += g_szNdelimiter[NCA_Y];
+		m_strGuide += g_szNdelimiter[NCA_X];	// [ZYX]
+	}
+	else {
+		m_strGuide = g_szNdelimiter;
+		m_strGuide.Delete(NCXYZ, 999);			// [XYZ]
+	}
+	CNCViewBase::OnInitialUpdate(0);
 }
 
 void CNCView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
@@ -95,7 +109,7 @@ void CNCView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		{
 			CClientDC	dc(this);
 			// 前回の描画を消去
-			if ( GetDocument()->IsWorkRect() ) {
+			if ( GetDocument()->IsNCDocFlag(NCDOC_WRKRECT) ) {
 				dc.SetROP2(R2_XORPEN);
 				DrawWorkRect(&dc);
 				dc.SetROP2(R2_COPYPEN);
@@ -112,7 +126,7 @@ void CNCView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 	case UAV_DRAWMAXRECT:
 		{
 			CClientDC	dc(this);
-			dc.SetROP2(GetDocument()->IsMaxRect() ? R2_COPYPEN : R2_XORPEN);
+			dc.SetROP2(GetDocument()->IsNCDocFlag(NCDOC_MAXRECT) ? R2_COPYPEN : R2_XORPEN);
 			DrawMaxRect(&dc);
 			dc.SetROP2(R2_COPYPEN);
 		}
@@ -148,21 +162,21 @@ void CNCView::SetGuideData(void)
 	// Ｘ軸のガイド初期化（左から右へ）
 	dLength = pOpt->GetGuideLength(NCA_X);
 	pt.SetPoint(-dLength, 0.0, 0.0);
-	m_ptGuid[NCA_X][0] = pt.PointConvert() * dSrc;
+	m_ptGuide[NCA_X][0] = pt.PointConvert() * dSrc;
 	pt.x = dLength;
-	m_ptGuid[NCA_X][1] = pt.PointConvert() * dSrc;
+	m_ptGuide[NCA_X][1] = pt.PointConvert() * dSrc;
 	// Ｙ軸のガイド初期化（奥から手前へ）
 	dLength = pOpt->GetGuideLength(NCA_Y);
 	pt.SetPoint(0.0, dLength, 0.0);
-	m_ptGuid[NCA_Y][0] = pt.PointConvert() * dSrc;
+	m_ptGuide[NCA_Y][0] = pt.PointConvert() * dSrc;
 	pt.y = -dLength;
-	m_ptGuid[NCA_Y][1] = pt.PointConvert() * dSrc;
+	m_ptGuide[NCA_Y][1] = pt.PointConvert() * dSrc;
 	// Ｚ軸のガイド初期化（上から下へ）
 	dLength = pOpt->GetGuideLength(NCA_Z);
 	pt.SetPoint(0.0, 0.0, dLength);
-	m_ptGuid[NCA_Z][0] = pt.PointConvert() * dSrc;
+	m_ptGuide[NCA_Z][0] = pt.PointConvert() * dSrc;
 	pt.z = -dLength;
-	m_ptGuid[NCA_Z][1] = pt.PointConvert() * dSrc;
+	m_ptGuide[NCA_Z][1] = pt.PointConvert() * dSrc;
 }
 
 void CNCView::SetMaxRect2D(void)
@@ -273,7 +287,6 @@ void CNCView::ConvertMaxRect(void)
 
 void CNCView::OnDraw(CDC* pDC)
 {
-	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	ASSERT_VALID(GetDocument());
@@ -287,24 +300,24 @@ void CNCView::OnDraw(CDC* pDC)
 		pDC->DPtoLP(&pt);
 		pDC->SetTextAlign(TA_LEFT|TA_TOP);
 		pDC->SetTextColor(pOpt->GetNcDrawColor(NCCOL_PANE));
-		if ( GetDocument()->IsThumbnail() ) {
+		if ( GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 			CGdiObject* pFontOld = pDC->SelectStockObject(SYSTEM_FIXED_FONT);
 			pDC->TextOut(pt.x, pt.y, GetDocument()->GetTitle());
 			pDC->SelectObject(pFontOld);
 		}
 		else
-			pDC->TextOut(pt.x, pt.y, g_szNdelimiter, NCXYZ);
+			pDC->TextOut(pt.x, pt.y, m_strGuide);
 	}
 	// ｶﾞｲﾄﾞ表示
-	if ( !GetDocument()->IsThumbnail() ) {
+	if ( !GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		pDC->SetTextAlign(TA_CENTER|TA_BOTTOM);
-		for ( i=0; i<SIZEOF(m_ptGuid); i++ ) {
+		for ( i=0; i<SIZEOF(m_ptGuide); i++ ) {
 			if ( pOpt->GetGuideLength(i) > 0 ) {
 				pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenOrg(i));
-				pDC->MoveTo(m_ptGuid[i][0]);
-				pDC->LineTo(m_ptGuid[i][1]);
+				pDC->MoveTo(m_ptGuide[i][0]);
+				pDC->LineTo(m_ptGuide[i][1]);
 				pDC->SetTextColor(pOpt->GetNcDrawColor(i+NCCOL_GUIDEX));
-				pDC->TextOut(m_ptGuid[i][0].x, m_ptGuid[i][0].y, g_szNdelimiter+i, 1);
+				pDC->TextOut(m_ptGuide[i][0].x, m_ptGuide[i][0].y, m_strGuide.Mid(i, 1));
 			}
 		}
 	}
@@ -316,12 +329,12 @@ void CNCView::OnDraw(CDC* pDC)
 		if ( pData->GetGtype() == G_TYPE )
 			pData->Draw(pDC, FALSE);
 	}
-	if ( !GetDocument()->IsThumbnail() ) {
+	if ( !GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		// 最大切削矩形
-		if ( GetDocument()->IsMaxRect() )
+		if ( GetDocument()->IsNCDocFlag(NCDOC_MAXRECT) )
 			DrawMaxRect(pDC);
 		// ﾜｰｸ矩形
-		if ( GetDocument()->IsWorkRect() )
+		if ( GetDocument()->IsNCDocFlag(NCDOC_WRKRECT) )
 			DrawWorkRect(pDC);
 		// 現在の拡大矩形を描画(ViewBase.cpp)
 		if ( m_bMagRect )
@@ -430,16 +443,16 @@ void CNCView::OnViewLensComm(void)
 {
 	// 拡大率による描画情報の更新
 	GetDocument()->AllChangeFactor(m_dFactor);
-	if ( !GetDocument()->IsThumbnail() ) {
+	if ( !GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		// ｶﾞｲﾄﾞ軸
 		if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) )
 			SetGuideData();
 		// 各矩形情報の更新
-		if ( GetDocument()->IsWorkRect() )
+		if ( GetDocument()->IsNCDocFlag(NCDOC_WRKRECT) )
 			ConvertWorkRect();
 		ConvertMaxRect();
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dFactor);
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dFactor, m_strGuide.Left(3));
 	}
 	// ﾋﾞｭｰの再描画
 	Invalidate();
@@ -463,10 +476,10 @@ int CNCView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CNCView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView) 
 {
-	if ( bActivate && !GetDocument()->IsThumbnail() ) {
+	if ( bActivate && !GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		// CNCViewSplit::SetActivePane() からのｱｸﾃｨﾌﾞ設定に対応
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dFactor);
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dFactor, m_strGuide.Left(3));
 	}
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
 }
@@ -526,7 +539,7 @@ void CNCView::OnRButtonUp(UINT nFlags, CPoint point)
 		break;
 	case 2:		// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示
 		// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞでｺﾝﾃｷｽﾄﾒﾆｭｰは表示させない
-		if ( !GetDocument()->IsThumbnail() )
+		if ( !GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) )
 			CView::OnRButtonUp(nFlags, point);
 		break;
 	}
@@ -547,7 +560,7 @@ BOOL CNCView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 
 void CNCView::OnLButtonDblClk(UINT nFlags, CPoint point) 
 {
-	if ( GetDocument()->IsThumbnail() ) {
+	if ( GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		// ｻﾑﾈｲﾙｺﾝﾄﾛｰﾙに通知
 		GetParent()->SendMessage(WM_USERFINISH, (WPARAM)this);
 	}
@@ -562,7 +575,7 @@ void CNCView::OnLButtonDblClk(UINT nFlags, CPoint point)
 
 void CNCView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	if ( !GetDocument()->IsThumbnail() ) {
+	if ( !GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		if ( nChar == VK_TAB ) {
 			CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
 			if ( ::GetKeyState(VK_SHIFT) < 0 )
@@ -579,7 +592,7 @@ int CNCView::OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message)
 {
 	// 基底ｸﾗｽを呼び出すと、CFrameWnd関連が呼ばれるので
 	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞでは不具合(ASSERT)が発生する
-	if ( GetDocument()->IsThumbnail() ) {
+	if ( GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		SetFocus();		// 自力でﾌｫｰｶｽを取得
 		return MA_ACTIVATE;
 	}

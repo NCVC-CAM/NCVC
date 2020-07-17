@@ -15,7 +15,11 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-#define	IsThread()	pDoc->IsCalcContinue()
+#define	IsThread()	pDoc->IsNCDocFlag(NCDOC_CUTCALC)
+
+typedef	double	(*PFNCUTTIME)(const CNCdata*);
+static	double	GetCutTime_Milling(const CNCdata*);
+static	double	GetCutTime_Lathe(const CNCdata*);
 
 //////////////////////////////////////////////////////////////////////
 //	ØíŽžŠÔ‚ÌŒvŽZ½Ú¯ÄÞ
@@ -33,7 +37,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	ASSERT(pView);
 	delete	pVoid;	// Š®‘SÊÞ¯¸¸Þ×³ÝÄÞˆ—
 
-	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();	// G0ˆÊ’uŒˆ‚ßˆÚ“®‘¬“xŽæ“¾—p
+	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();	// G00ˆÊ’uŒˆ‚ßˆÚ“®‘¬“xŽæ“¾—p
 	int			i, j, nLoopCnt = pDoc->GetNCsize();
 	double		dTmp, dd;
 	DWORD		dwValFlags;
@@ -74,7 +78,11 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 		pView->PostMessage(WM_USERPROGRESSPOS);
 		return 0;
 	}
+
 	pDoc->m_dCutTime = 0.0;
+	PFNCUTTIME	pfnGetCutTime = pDoc->IsNCDocFlag(NCDOC_LATHE) ?
+		GetCutTime_Lathe : GetCutTime_Milling;
+
 	for ( i=0; i<nLoopCnt && IsThread(); i++ ) {
 		pData = pDoc->GetNCdata(i);
 		if ( pData->GetGtype() != G_TYPE )
@@ -93,7 +101,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 		case 2:		// ‰~ŒÊ•âŠÔ
 		case 3:
 			if ( pData->GetFeed() != 0 )
-				pDoc->m_dCutTime += pData->GetCutLength() / pData->GetFeed();
+				pDoc->m_dCutTime += (*pfnGetCutTime)(pData);
 			break;
 		case 4:		// ÄÞ³ªÙ
 			dwValFlags = pData->GetValFlags();
@@ -132,4 +140,28 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 #endif
 
 	return 0;	// AfxEndThread(0);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double GetCutTime_Milling(const CNCdata* pData)
+{
+	return pData->GetCutLength() / pData->GetFeed();
+}
+
+double GetCutTime_Lathe(const CNCdata* pData)
+{
+	// –ˆ•ª‘—‚èŒvŽZ
+	double	dResult = GetCutTime_Milling(pData);
+
+	// G99–ˆ‰ñ“]‘—‚è‚È‚ç
+	if ( !pData->GetG98() ) {	
+		if ( pData->GetSpindle() == 0 )	// ŽåŽ²‰ñ“]”‚Í•K{
+			dResult = 0.0;
+		else
+		//	dResult *= (1.0/pData->GetSpindle());
+			dResult /= pData->GetSpindle();		// ‚P‰ñ“]‚ ‚½‚è‚ÌŽžŠÔ[min]‚ðŠ|‚¯‚é
+	}
+
+	return dResult;
 }

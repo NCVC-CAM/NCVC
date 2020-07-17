@@ -115,7 +115,7 @@ void CDXFShapeView::OnInitialUpdate()
 	}
 
 	// ¼Ø±Ù‰»Œã‚Ìˆ—
-	if ( GetDocument()->IsShape() ) {
+	if ( GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) ) {
 		// Œ`óî•ñ‚ð“o˜^
 		SetShapeTree();
 		// ‰ÁHŽwŽ¦‚ð“o˜^
@@ -987,7 +987,7 @@ void CDXFShapeView::OnUpdateWorkingDel(CCmdUI* pCmdUI)
 {
 	HTREEITEM hTree = GetTreeCtrl().GetSelectedItem();
 	BOOL	bEnable = FALSE;
-	if ( GetDocument()->IsShape() && hTree && !IsRootTree(hTree) ) {
+	if ( GetDocument()->IsDXFDocFlag(DXFDOC_SHAPE) && hTree && !IsRootTree(hTree) ) {
 		CDXFworking* pWork = reinterpret_cast<CDXFworking *>(GetTreeCtrl().GetItemData(hTree));
 		bEnable = pWork && pWork->IsKindOf(RUNTIME_CLASS(CDXFworking));
 	}

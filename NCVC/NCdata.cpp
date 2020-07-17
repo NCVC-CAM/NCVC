@@ -740,7 +740,7 @@ CNCcycle::CNCcycle
 			m_nc.dValue[z] = dR + lpArgv->nc.dValue[z];
 		m_nDrawCnt = nH = nV;	// ≤›∏ÿ“›¿ŸÇ»ÇÁâ°Ç÷Ç‡åJÇËï‘Çµ
 	}
-	dI = lpArgv->bInitial ? m_dInitial : dR;
+	dI = lpArgv->bG98 ? m_dInitial : dR;
 
 	// åJÇËï‘Çµêîæﬁ€Ç»ÇÁ
 	if ( m_nDrawCnt <= 0 ) {
@@ -871,7 +871,7 @@ CNCcycle::CNCcycle
 	case 87:
 	case 88:
 	case 89:
-		if ( lpArgv->bInitial ) {
+		if ( lpArgv->bG98 ) {
 			dResult = dRLength * nV;
 			m_nc.dLength += dZLength * nV;
 			m_dMove[z] += dResult;

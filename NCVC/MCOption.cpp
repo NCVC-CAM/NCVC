@@ -53,10 +53,10 @@ static	const	double	g_dfDOrder[] = {
 
 // BOOLå^ñΩóﬂ
 static	LPCTSTR	g_szBOrder[] = {
-	"L0Cycle"
+	"Lathe", "L0Cycle"
 };
 static	const	BOOL	g_dfBOrder[] = {
-	FALSE
+	FALSE, FALSE
 };
 
 // CStringå^ñΩóﬂ

@@ -8,6 +8,16 @@
 #include "DXFdata.h"
 #include "DXFshape.h"
 
+// CLayerData ﾌﾗｸﾞ
+enum LAYERFLG {
+	LAYER_VIEW = 0,		// 表示対象
+	LAYER_CUTTARGET,	// 切削対象
+	LAYER_DRILLZ,		// 最深Z座標を穴加工にも適用するか
+	LAYER_PARTOUT,		// 個別出力ﾌﾗｸﾞ
+	LAYER_PARTERROR,	// 個別出力でのｴﾗｰ
+		LAYER_FLGNUM		// ﾌﾗｸﾞの数[5]
+};
+
 // CLayerData::DataOperation() の操作方法
 enum	ENDXFOPERATION	{
 	DXFADD, DXFINS, DXFMOD
@@ -21,15 +31,14 @@ class	CNCMakeOption;
 class CLayerData : public CObject
 {
 friend	class	CLayerDlg;
-friend	class	CMakeNCDlgEx1;
 friend	class	CMakeNCDlgEx2;
 friend	class	CMakeNCDlgEx3;
 friend	class	CMakeNCDlgEx11;
 friend	class	CMakeNCDlgEx21;
 
+	std::bitset<LAYER_FLGNUM>	m_bLayerFlg;	// CLayerDataﾌﾗｸﾞ
 	CString	m_strLayer;		// ﾚｲﾔ名
 	int		m_nType;		// ﾚｲﾔﾀｲﾌﾟ(DXFORGLAYER～DXFCOMLAYER)
-	BOOL	m_bView;		// 表示対象
 	CDXFarray	m_obDXFArray;		// 切削ﾃﾞｰﾀ(CDXFdata)
 	CTypedPtrArrayEx<CObArray, CDXFtext*>
 				m_obDXFTextArray;	// 切削ﾃﾞｰﾀ(CDXFtext only)
@@ -38,15 +47,11 @@ friend	class	CMakeNCDlgEx21;
 	CDXFshape*	m_pActiveShape;	// CDXFworkingｼﾘｱﾗｲｽﾞ参照用
 	// 以下「複数ﾚｲﾔの一括処理」にて使用
 	int		m_nListNo;		// 切削順
-	DWORD	m_dwFlags;		// 状態ﾌﾗｸﾞ(複数ﾚｲﾔの個別出力処理でのｴﾗｰ判断)
-	BOOL	m_bCutTarget,	// 切削対象
-			m_bDrillZ,		// 最深Z座標を穴加工にも適用するか
-			m_bPartOut;		// 個別出力ﾌﾗｸﾞ
 	CString	m_strInitFile,	// 切削条件ﾌｧｲﾙ
 			m_strNCFile,	// 個別出力ﾌｧｲﾙ名
 			m_strLayerComment,	// ﾚｲﾔごとのｺﾒﾝﾄ
 			m_strLayerCode;		// ﾚｲﾔごとの特殊ｺｰﾄﾞ
-	double	m_dInitZCut,	// 切削条件ﾌｧｲﾙに設定された最深Z座標(CMakeNCDlgEx1::表示)
+	double	m_dInitZCut,	// 切削条件ﾌｧｲﾙに設定された最深Z座標(CMakeNCDlgEx::表示)
 			m_dZCut;		// 最深Z座標(CMakeNCDlgEx2::入力)
 
 protected:
@@ -57,6 +62,9 @@ public:
 	virtual	~CLayerData();
 
 // ｱﾄﾘﾋﾞｭｰﾄ
+	BOOL	IsLayerFlag(LAYERFLG n) const {
+		return m_bLayerFlg[n];
+	}
 	INT_PTR	GetDxfSize(void) const {
 		return m_obDXFArray.GetSize();
 	}
@@ -95,26 +103,14 @@ public:
 	BOOL	IsCutType(void) const {
 		return m_nType == DXFCAMLAYER;
 	}
-	BOOL	IsViewLayer(void) const {
-		return m_bView;
-	}
-	BOOL	IsCutTarget(void) const {
-		return m_bCutTarget;
-	}
 	BOOL	IsMakeTarget(void) const {
-		return IsCutType() && IsCutTarget();
+		return IsCutType() && IsLayerFlag(LAYER_CUTTARGET);
 	}
 	void	SetCutTargetFlg(BOOL bCut) {
-		m_bCutTarget = bCut;
+		m_bLayerFlg.set(LAYER_CUTTARGET, bCut);
 	}
 	void	SetCutTargetFlg_fromView(void) {
-		m_bCutTarget = m_bView;
-	}
-	BOOL	IsDrillZ(void) const {
-		return m_bDrillZ;
-	}
-	BOOL	IsPartOut(void) const {
-		return m_bPartOut;
+		m_bLayerFlg.set(LAYER_CUTTARGET, m_bLayerFlg[LAYER_VIEW]);
 	}
 	int		GetLayerListNo(void) const {
 		return m_nListNo;
@@ -122,11 +118,8 @@ public:
 	void	SetLayerListNo(int n) {
 		m_nListNo = n;
 	}
-	DWORD	GetLayerFlags(void) const {
-		return m_dwFlags;
-	}
-	void	SetLayerFlags(DWORD dwFlags = 0) {
-		m_dwFlags = dwFlags;
+	void	SetLayerPartFlag(BOOL bError = FALSE) {
+		m_bLayerFlg.set(LAYER_PARTERROR, bError);
 	}
 	CString	GetInitFile(void) const {
 		return m_strInitFile;

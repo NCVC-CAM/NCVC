@@ -16,9 +16,11 @@ inline void CNCdata::Constracter(LPNCARGV lpArgv)
 	m_nc.enPlane	= lpArgv->nc.enPlane;
 	m_nc.dwValFlags	= lpArgv->nc.dwValFlags;
 	m_nc.dLength	= 0.0;
+	m_nSpindle		= lpArgv->nSpindle;
 	m_dFeed			= lpArgv->dFeed;
 	m_dEndmill		= lpArgv->dEndmill;
 	m_nEndmillType	= lpArgv->nEndmillType;
+	m_bG98			= lpArgv->bG98;
 	m_dMove[NCA_X] = m_dMove[NCA_Y] = m_dMove[NCA_Z] = 0.0;
 	m_pRead = new CNCread;
 	memcpy(&(m_pRead->m_g68), &(lpArgv->g68), sizeof(G68ROUND));
@@ -135,6 +137,11 @@ inline double CNCdata::GetCutLength(void) const
 	return	m_nc.dLength;
 }
 
+inline int CNCdata::GetSpindle(void) const
+{
+	return m_nSpindle;
+}
+
 inline double CNCdata::GetFeed(void) const
 {
 	return m_dFeed;
@@ -161,6 +168,11 @@ inline double CNCdata::GetEndmill(void) const
 inline int CNCdata::GetEndmillType(void) const
 {
 	return m_nEndmillType;
+}
+
+inline BOOL CNCdata::GetG98(void) const
+{
+	return m_bG98;
 }
 
 inline CRect3D CNCdata::GetMaxRect(void) const

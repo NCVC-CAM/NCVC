@@ -649,7 +649,7 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 2.11",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 2.20",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2010 MNCT-S K.Magara",IDC_STATIC,86,182,130,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1333,23 +1333,23 @@ EXSTYLE WS_EX_TOOLWINDOW
 CAPTION "ﾜｰｸ矩形の表示"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
-    LTEXT           "幅(&W)",IDC_STATIC,14,22,25,8
+    LTEXT           "幅(&W)",IDC_WORK_XS,14,22,25,8
     EDITTEXT        IDC_WORK_X,54,20,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,103,22,18,8
-    LTEXT           "奥行(&D)",IDC_STATIC,14,43,25,8
+    LTEXT           "奥行(&D)",IDC_WORK_YS,14,43,25,8
     EDITTEXT        IDC_WORK_Y,54,41,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,103,43,18,8
-    LTEXT           "高さ(&H)",IDC_STATIC,14,64,25,8
+    LTEXT           "高さ(&H)",IDC_WORK_ZS,14,64,25,8
     EDITTEXT        IDC_WORK_Z,54,62,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,103,64,18,8
     GROUPBOX        "矩形の大きさ",IDC_STATIC,7,7,118,76,WS_GROUP
-    LTEXT           "ｵﾌｾｯﾄ(&X)",IDC_STATIC,138,22,34,8
+    LTEXT           "ｵﾌｾｯﾄ(&X)",IDC_WORK_XOS,138,22,34,8
     EDITTEXT        IDC_WORK_XO,178,20,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,229,22,18,8
-    LTEXT           "ｵﾌｾｯﾄ(&Y)",IDC_STATIC,138,43,34,8
+    LTEXT           "ｵﾌｾｯﾄ(&Y)",IDC_WORK_YOS,138,43,34,8
     EDITTEXT        IDC_WORK_YO,178,41,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,229,43,18,8
-    LTEXT           "ｵﾌｾｯﾄ(&Z)",IDC_STATIC,138,64,34,8
+    LTEXT           "ｵﾌｾｯﾄ(&Z)",IDC_WORK_ZOS,138,64,34,8
     EDITTEXT        IDC_WORK_ZO,178,62,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,229,64,18,8
     GROUPBOX        "原点からのｵﾌｾｯﾄ",IDC_STATIC,130,7,118,76,WS_GROUP
@@ -1563,9 +1563,10 @@ STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "CNC"
 FONT 9, "MS UI Gothic", 400, 0, 0x80
 BEGIN
-    CONTROL         "固定ｻｲｸﾙの&L0指定は移動",IDC_MCST5_L0CYCLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,7,92,10
-    LTEXT           "自動ﾌﾞﾚｲｸ設定ｺｰﾄﾞ(&B)",IDC_STATIC,7,30,68,8
-    EDITTEXT        IDC_MCST5_AUTOBREAK,84,28,152,12,ES_AUTOHSCROLL
+    CONTROL         "この機械情報を選択したときは強制的に旋盤ﾓｰﾄﾞ(&L)",IDC_MCST5_LATHE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,7,159,10
+    CONTROL         "固定ｻｲｸﾙのL0指定は移動(&M)",IDC_MCST5_L0CYCLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,30,102,10
+    LTEXT           "自動ﾌﾞﾚｲｸ設定ｺｰﾄﾞ(&B)",IDC_STATIC,7,53,68,8
+    EDITTEXT        IDC_MCST5_AUTOBREAK,84,51,152,12,ES_AUTOHSCROLL
 END
 
 IDD_MAKENCD_EX3 DIALOGEX 0, 0, 299, 234
@@ -1625,8 +1626,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,1,1,0
- PRODUCTVERSION 2,1,1,0
+ FILEVERSION 2,2,0,0
+ PRODUCTVERSION 2,2,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1644,14 +1645,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT-S"
             VALUE "FileDescription", "NCVC MFC ｱﾌﾟﾘｹｰｼｮﾝ"
-            VALUE "FileVersion", "2.1.1.0"
+            VALUE "FileVersion", "2.2.0.0"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2010 MNCT-S K.Magara"
             VALUE "LegalTrademarks", "MNCT-S"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "2.1.1.0"
+            VALUE "ProductVersion", "2.2.0.0"
             VALUE "SpecialBuild", "VC++2008SP1 FeaturePack"
         END
     END
@@ -2711,7 +2712,7 @@ BEGIN
     ID_INDICATOR_DATE_F     "%m/%d"
     ID_INDICATOR_DATE_F2    "%Y/%m/%d"
     ID_INDICATOR_TIME_F     "%H:%M"
-    ID_INDICATOR_FACTOR_F   "拡大率%s : %#6.3f"
+    ID_INDICATOR_FACTOR_F   "拡大率(%s) : %#6.3f"
     ID_INDICATOR_FACTOR     "拡大率(XYZ) : 999999.999"
     ID_NCDST_LINENO_F       "LineNo. : %#6d / %#6d"
     ID_NCDST_LINENO         "LineNo. : 999999 / 999999"
@@ -2785,6 +2786,7 @@ BEGIN
     IDCV_MINUTE             "分"
     IDCV_CUTCALC            "計算中..."
     IDCV_FEEDERROR          "移動速度未設定"
+    IDCV_LATHE              " (Lathe Mode)"
     IDCV_VALFORMAT          "%#12.3f"
 END
 
@@ -2853,6 +2855,7 @@ END
 
 STRINGTABLE 
 BEGIN
+    IDS_ERR_NCBLK_NOTLATHE  "旋盤ﾓｰﾄﾞではｻﾎﾟｰﾄされない"
     IDS_ERR_NCBLK_CORRECT   "補正情報がない"
     IDS_ERR_NCBLK_CORRECTSTART "補正開始ｺｰﾄﾞは直線補間"
     IDS_ERR_NCBLK_ENDCIRCLE "補正の最後が円弧補間"

@@ -833,7 +833,7 @@ void CNCVCApp::ReloadDXFDocument(void)
 		// Reloadﾌﾗｸﾞのﾄﾞｷｭﾒﾝﾄを取得 from CDxfSetup::OnReload()
 		for ( pos=m_pDocTemplate[TYPE_DXF]->GetFirstDocPosition(); pos; ) {
 			pDoc = (CDXFDoc *)(m_pDocTemplate[TYPE_DXF]->GetNextDoc(pos));
-			if ( pDoc->IsReload() )
+			if ( pDoc->IsDXFDocFlag(DXFDOC_RELOAD) )
 				ltDoc.AddTail(pDoc);
 		}
 		// 必要な情報を取得後，閉じて開く

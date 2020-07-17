@@ -21,6 +21,11 @@ inline	double	RoundUp(double dVal)
 {
 	return _copysign( floor(fabs(dVal) * 1000.0 + 0.5) / 1000.0, dVal );
 }
+// 1/1000 Ø‚èÌ‚Ä
+inline	double	RoundCt(double dVal)
+{
+	return _copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
+}
 
 //////////////////////////////////////////////////////////////////////
 // doubleŒ^‚Ì CPointƒNƒ‰ƒX

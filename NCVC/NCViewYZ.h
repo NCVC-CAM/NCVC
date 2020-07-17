@@ -31,6 +31,7 @@ public:
 	//{{AFX_VIRTUAL(CNCViewYZ)
 	public:
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
+	virtual void OnInitialUpdate();
 	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	protected:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);

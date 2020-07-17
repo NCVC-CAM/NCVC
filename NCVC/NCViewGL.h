@@ -17,6 +17,7 @@ class CNCViewGL : public CView
 {
 	DECLARE_DYNCREATE(CNCViewGL)
 
+	CString		m_strGuide;
 	BOOL		m_bActive;
 	int			m_cx,  m_cy,	// ³¨ÝÄÞ³»²½Þ(½¸Ø°Ý)
 				m_icx, m_icy;
@@ -46,12 +47,19 @@ class CNCViewGL : public CView
 	void	UpdateViewOption(void);
 	void	CreateWire(void);
 	BOOL	CreateBoxel(void);
-	BOOL	GetClipDepth(void);
-	BOOL	CreateElement(GLfloat*, GLfloat*);
+	BOOL	CreateLathe(void);
+	BOOL	GetClipDepthMill(void);
+	BOOL	GetClipDepthLathe(void);
+	BOOL	CreateVBOMill(const GLfloat*, GLfloat*);
+	BOOL	CreateVBOLathe(const GLfloat*, const GLfloat*, const GLfloat*);
 	BOOL	ReadTexture(LPCTSTR);
-	void	CreateTexture(void);
-	void	ClearElement(void);
+	void	CreateTextureMill(void);
+	void	CreateTextureLathe(void);
+	void	CreateTexture(GLsizeiptr, const GLfloat*);
+	void	ClearVBO(void);
 	void	ClearTexture(void);
+	void	InitialBoxel(void);
+	void	FinalBoxel(void);
 
 	void	RenderBack(void);
 	void	RenderAxis(void);

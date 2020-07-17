@@ -534,7 +534,7 @@ BOOL MultiLayer(int nID)
 		// 切削ﾚｲﾔで対象のﾚｲﾔだけ
 		if ( !pLayer->IsMakeTarget() )
 			continue;
-		pLayer->SetLayerFlags();
+		pLayer->SetLayerPartFlag();
 		// 処理ﾚｲﾔ名をﾀﾞｲｱﾛｸﾞに表示
 		g_nFase = 1;
 		SendFaseMessage(-1, g_szWait, pLayer->GetStrLayer());
@@ -555,7 +555,7 @@ BOOL MultiLayer(int nID)
 			// 強制Z座標補正
 			g_dZCut = g_dDeep = RoundUp(pLayer->GetZCut());
 			// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
-			CNCMake::ms_dCycleZ[0] = pLayer->IsDrillZ() ?
+			CNCMake::ms_dCycleZ[0] = pLayer->IsLayerFlag(LAYER_DRILLZ) ?
 						g_dZCut : RoundUp(GetDbl(MKNC_DBL_DRILLZ));
 		}
 		// 固定ｻｲｸﾙその他の座標ｾｯﾄ
@@ -585,7 +585,7 @@ BOOL MultiLayer(int nID)
 		}
 
 		// 個別出力でないなら(並べ替えしているので途中に割り込むことはない)
-		if ( !pLayer->IsPartOut() ) {
+		if ( !pLayer->IsLayerFlag(LAYER_PARTOUT) ) {
 			bNotPart = TRUE;
 			continue;
 		}
@@ -614,7 +614,7 @@ BOOL MultiLayer(int nID)
 			dbg.printf("Layer=%s CDXFdata::ms_pData NULL", pLayer->GetStrLayer());
 #endif
 			// 該当ﾚｲﾔのﾃﾞｰﾀなし
-			pLayer->SetLayerFlags(1);
+			pLayer->SetLayerPartFlag(TRUE);
 		}
 	}	// End of for main loop (Layer)
 
@@ -634,8 +634,8 @@ BOOL MultiLayer(int nID)
 				// 個別出力以外のﾚｲﾔ情報を取得し，ﾜｰﾆﾝｸﾞﾒｯｾｰｼﾞ出力へ
 				for ( i=0; i<nLayerCnt; i++ ) {
 					pLayer = g_pDoc->GetLayerData(i);
-					if ( !pLayer->IsPartOut() )
-						pLayer->SetLayerFlags(1);
+					if ( !pLayer->IsLayerFlag(LAYER_PARTOUT) )
+						pLayer->SetLayerPartFlag(TRUE);
 				}
 			}
 			else {
@@ -650,11 +650,11 @@ BOOL MultiLayer(int nID)
 	CString	strMiss;
 	for ( i=0; i<nLayerCnt; i++ ) {
 		pLayer = g_pDoc->GetLayerData(i);
-		if ( pLayer->GetLayerFlags() == 0 )
-			continue;
-		if ( !strMiss.IsEmpty() )
-			strMiss += gg_szCat;
-		strMiss += pLayer->GetStrLayer();
+		if ( pLayer->IsLayerFlag(LAYER_PARTERROR) ) {
+			if ( !strMiss.IsEmpty() )
+				strMiss += gg_szCat;
+			strMiss += pLayer->GetStrLayer();
+		}
 	}
 	if ( !strMiss.IsEmpty() ) {
 		CString	strMsg;
@@ -728,7 +728,7 @@ BOOL SetStartData(void)
 
 	for ( i=0; i<g_pDoc->GetLayerCnt() && IsThread(); i++ ) {
 		pLayer = g_pDoc->GetLayerData(i);
-		if ( !pLayer->IsCutTarget() || pLayer->GetLayerType()!=DXFSTRLAYER )
+		if ( !pLayer->IsLayerFlag(LAYER_CUTTARGET) || pLayer->GetLayerType()!=DXFSTRLAYER )
 			continue;
 		// 加工開始位置指示ﾚｲﾔのﾃｷｽﾄ情報原点調整
 		for ( j=0; j<pLayer->GetDxfTextSize() && IsThread(); j++ ) {
@@ -871,7 +871,7 @@ void SetGlobalMapToOther(void)
 
 	for ( i=0; i<g_pDoc->GetLayerCnt() && IsThread(); i++ ) {
 		pLayer = g_pDoc->GetLayerData(i);
-		if ( !pLayer->IsCutTarget() )
+		if ( !pLayer->IsLayerFlag(LAYER_CUTTARGET) )
 			continue;
 		nType = pLayer->GetLayerType();
 		if ( nType == DXFMOVLAYER ) {
@@ -3157,10 +3157,10 @@ CDXFdata* GetMatchPointMove(const CDXFdata* pDataTarget)
 // ｶｽﾀﾑﾍｯﾀﾞｰ, ﾌｯﾀﾞｰ処理
 struct CMakeCustomCode	// parse() から呼び出し
 {
-	string&	m_strResult;
+	CString&		m_strResult;
 	const CDXFdata*	m_pData;
 
-	CMakeCustomCode(string& r, const CDXFdata* pData) : m_strResult(r), m_pData(pData) {}
+	CMakeCustomCode(CString& r, const CDXFdata* pData) : m_strResult(r), m_pData(pData) {}
 
 	void operator()(const char* s, const char* e) const
 	{
@@ -3174,7 +3174,7 @@ struct CMakeCustomCode	// parse() から呼び出し
 		static	LPCTSTR	szReplaceErr = "???";
 
 		if ( *s != '{' ) {
-			m_strResult += string(s, e);
+			m_strResult += string(s, e).c_str();
 			return;
 		}
 
@@ -3250,18 +3250,18 @@ void AddCustomCode(const CString& strFileName, const CDXFdata* pData)
 	using namespace boost::spirit::classic;
 
 	CString	strBuf;
-	string	strResult;
-	CMakeCustomCode		custom(strResult, pData);
+	CString	strResult;
+	CMakeCustomCode	custom(strResult, pData);
 
 	try {
 		CStdioFile	fp(strFileName,
 			CFile::modeRead | CFile::shareDenyWrite | CFile::typeText);
 		while ( fp.ReadString(strBuf) && IsThread() ) {
 			// 構文解析
-			strResult.clear();
+			strResult.Empty();
 			if ( parse((LPCTSTR)strBuf, *( *(anychar_p - '{')[custom] >> comment_p('{', '}')[custom] ) ).hit ) {
-				if ( !strResult.empty() )
-					AddMakeGdataStr( strResult.c_str() );
+				if ( !strResult.IsEmpty() )
+					AddMakeGdataStr( strResult );
 			}
 			else
 				AddMakeGdataStr( strBuf );

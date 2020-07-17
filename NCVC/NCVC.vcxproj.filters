@@ -231,6 +231,9 @@
     <ClCompile Include="NCView.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="NCViewBase.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="NCViewGL.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>

@@ -14,7 +14,8 @@ public:
 
 // ダイアログ データ
 	enum { IDD = IDD_MC_SETUP5 };
-	BOOL	m_bL0Cycle;
+	BOOL	m_bLathe,
+			m_bL0Cycle;
 	CString	m_strAutoBreak;
 
 public:

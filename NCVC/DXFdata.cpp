@@ -589,7 +589,7 @@ int CDXFline::CheckIntersectionCircle(const CPointD& ptc, double r) const
 	switch ( nResult ) {
 	case 0:
 		// 交点が無くても端点が円の内側ならNG
-		if ( RoundUp(sqrt(GAPCALC(m_pt[0]-ptc)))<r || RoundUp(sqrt(GAPCALC(m_pt[1]-ptc)))<r )
+		if ( ::RoundUp(sqrt(GAPCALC(m_pt[0]-ptc)))<r || ::RoundUp(sqrt(GAPCALC(m_pt[1]-ptc)))<r )
 			nResult = 2;
 		break;
 	case 1:
@@ -1208,21 +1208,21 @@ BOOL CDXFarc::IsRangeAngle(const CPointD& pt) const
 	double	q = atan2(ptr.y, ptr.x);
 	if ( q < 0 )
 		q += 360.0*RAD;
-	q = RoundUp(q*DEG);		// 度で判断
+	q = ::RoundUp(q*DEG);	// 度で判断
 
 	// ｾﾞﾛ度境界に注意
 	if ( m_bRoundOrig ) {
 		double	eq = m_eq*DEG;
-		if ( RoundUp(m_sq*DEG)<=q && q<=RoundUp(eq) )
+		if ( ::RoundUp(m_sq*DEG)<=q && q<=::RoundUp(eq) )
 			return TRUE;
-		if ( eq>360.0 && q<=RoundUp(eq-360.0) )
+		if ( eq>360.0 && q<=::RoundUp(eq-360.0) )
 			return TRUE;
 	}
 	else {
 		double	sq = m_sq*DEG;
-		if ( RoundUp(sq)>=q && q>=RoundUp(m_eq*DEG) )
+		if ( ::RoundUp(sq)>=q && q>=::RoundUp(m_eq*DEG) )
 			return TRUE;
-		if ( sq>360.0 && q<=RoundUp(sq-360.0) )
+		if ( sq>360.0 && q<=::RoundUp(sq-360.0) )
 			return TRUE;
 	}
 
@@ -1489,7 +1489,7 @@ int CDXFarc::CheckIntersectionCircle(const CPointD& ptc, double r) const
 	if ( nResult>1 && !IsRangeAngle(pt1) && !IsRangeAngle(pt2) )
 		nResult = 0;
 	// 交点が無くても(接していても)端点が円の内側ならNG
-	if ( nResult<2 && (RoundUp(sqrt(GAPCALC(m_pt[0]-ptc)))<r || RoundUp(sqrt(GAPCALC(m_pt[1]-ptc)))<r) )
+	if ( nResult<2 && (::RoundUp(sqrt(GAPCALC(m_pt[0]-ptc)))<r || ::RoundUp(sqrt(GAPCALC(m_pt[1]-ptc)))<r) )
 		nResult = 2;
 
 	return nResult;

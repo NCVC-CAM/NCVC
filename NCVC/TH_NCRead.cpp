@@ -43,12 +43,58 @@ struct	CYCLE_INTERPOLATE
 __declspec(thread)	static	CYCLE_INTERPOLATE	g_Cycle;
 static	void	CycleInterpolate(void);
 
+// IsGcodeObject() 戻り値
+static	enum	ENGCODEOBJ {NOOBJ, MAKEOBJ, MAKEOBJ_NOTMODAL};
+
 // G68座標回転
 static	void	G68RoundCheck(CNCblock*);
 static	void	G68RoundClear(void);
-
 //
 static	void		InitialVariable(void);
+// 解析関数
+static	int			NC_GSeparater(int, CNCdata*&);
+static	CNCdata*	AddGcode(CNCblock*, CNCdata*, int);
+static	CNCdata*	AddM98code(CNCblock*, CNCdata*, int);
+static	int			CallSubProgram(CNCblock*, CNCdata*&);
+typedef	ENGCODEOBJ	(*PFNCHECKGCODE)(int);
+static	ENGCODEOBJ	IsGcodeObject_Milling(int);
+static	ENGCODEOBJ	IsGcodeObject_Lathe(int);
+__declspec(thread)	static	PFNCHECKGCODE	g_pfnIsGcode;
+static	ENGCODEOBJ	CheckGcodeOther_Milling(int);
+static	ENGCODEOBJ	CheckGcodeOther_Lathe(int);
+__declspec(thread)	static	PFNCHECKGCODE	g_pfnCheckGcodeOther;
+// 面取り・ｺｰﾅｰR処理
+static	void	MakeChamferingObject(CNCblock*, CNCdata*, CNCdata*);
+// Fﾊﾟﾗﾒｰﾀ, ﾄﾞｳｪﾙ時間の解釈
+typedef double (*PFNFEEDANALYZE)(const string&);
+static	double	FeedAnalyze_Dot(const string&);
+static	double	FeedAnalyze_Int(const string&);
+__declspec(thread)	static	PFNFEEDANALYZE	g_pfnFeedAnalyze;
+// 工具径解析
+static	void	SetEndmillDiameter(const string&);
+static	void	SetEndmillDiameter_fromComment(double);
+static	void	SetEndmillType(char);
+// ﾜｰｸ矩形情報設定
+static	void	SetWorkRect_fromComment(vector<double>&);
+static	void	SetLatheRect_fromComment(vector<double>&);
+// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの検索
+static	CString	g_strSearchFolder[2];	// ｶﾚﾝﾄと指定ﾌｫﾙﾀﾞ
+static	CString	SearchFolder(regex&);
+static	CString	SearchFolder_Sub(int, LPCTSTR, regex&);
+static	BOOL	SearchProgNo(LPCTSTR, regex&);
+static	regex	g_reMacroStr;		// __declspec(thread)は不要
+static	int		NC_SearchSubProgram(int*);
+typedef	int		(*PFNBLOCKPROCESS)(CNCblock*);
+static	int		NC_SearchMacroProgram(CNCblock*);
+static	int		NC_NoSearch(CNCblock*);
+__declspec(thread)	static	PFNBLOCKPROCESS	g_pfnSearchMacro;
+// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
+static	regex	g_reAutoBreak;		// __declspec(thread)は不要
+static	int		NC_SearchAutoBreak(CNCblock*);
+__declspec(thread)	static	PFNBLOCKPROCESS	g_pfnSearchAutoBreak;
+
+//////////////////////////////////////////////////////////////////////
+
 // 数値変換( 1/1000 ﾃﾞｰﾀを判断する)
 inline	double		GetNCValue(const string& str)
 {
@@ -56,29 +102,6 @@ inline	double		GetNCValue(const string& str)
 	if ( str.find('.') == string::npos )
 		dResult /= 1000.0;		// 小数点がなければ 1/1000
 	return dResult;
-}
-// G00～G03, G04, G10, G52, G8x, G92
-// ｵﾌﾞｼﾞｪｸﾄ生成するＧｺｰﾄﾞﾁｪｯｸ
-static	enum	ENGCODEOBJ {NOOBJ, MAKEOBJ, MAKEOBJ_NOTMODAL};
-inline	ENGCODEOBJ	IsGcodeObject(int nCode)
-{
-	ENGCODEOBJ	enResult;
-
-	if ( 0<=nCode && nCode<=3 ) {
-		g_Cycle.bCycle = FALSE;
-		enResult = MAKEOBJ;
-	}
-	else if ( nCode==4 || nCode==10 || nCode==52 || nCode==68 || nCode==92 ) {
-		enResult = MAKEOBJ_NOTMODAL;
-	}
-	else if ( 81<=nCode && nCode<=89 ) {
-		g_Cycle.bCycle = TRUE;
-		enResult = MAKEOBJ;
-	}
-	else
-		enResult = NOOBJ;
-
-	return enResult;
 }
 // g_lpstrComma にﾃﾞｰﾀを代入
 inline	void	SetStrComma(const string& strComma)
@@ -92,41 +115,6 @@ inline	void	SetStrComma(const string& strComma)
 		lstrcpy(g_lpstrComma, strComma.c_str());
 	}
 }
-
-// 解析関数
-static	int			NC_GSeparater(int, CNCdata*&);
-static	CNCdata*	AddGcode(CNCblock*, CNCdata*, int);
-static	CNCdata*	AddM98code(CNCblock*, CNCdata*, int);
-static	int			CallSubProgram(CNCblock*, CNCdata*&);
-static	void		CheckGcodeOther(int);
-// 面取り・ｺｰﾅｰR処理
-static	void	MakeChamferingObject(CNCblock*, CNCdata*, CNCdata*);
-// Fﾊﾟﾗﾒｰﾀ, ﾄﾞｳｪﾙ時間の解釈
-typedef double (*PFNFEEDANALYZE)(const string&);
-static	double	FeedAnalyze_Dot(const string&);
-static	double	FeedAnalyze_Int(const string&);
-static	PFNFEEDANALYZE	g_pfnFeedAnalyze;
-// 工具径解析
-static	void	SetEndmillDiameter(const string&);
-static	void	SetEndmillDiameter_fromComment(double);
-static	void	SetEndmillType(char);
-// ﾜｰｸ矩形情報設定
-static	void	SetWorkRect_fromComment(vector<double>&);
-// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの検索
-static	CString	g_strSearchFolder[2];	// ｶﾚﾝﾄと指定ﾌｫﾙﾀﾞ
-static	CString	SearchFolder(regex&);
-static	CString	SearchFolder_Sub(int, LPCTSTR, regex&);
-static	BOOL	SearchProgNo(LPCTSTR, regex&);
-static	regex	g_reMacroStr;
-static	int		NC_SearchSubProgram(int*);
-typedef	int		(*PFNBLOCKPROCESS)(CNCblock*);
-static	int		NC_SearchMacroProgram(CNCblock*);
-static	int		NC_NoSearch(CNCblock*);
-static	PFNBLOCKPROCESS	g_pfnSearchMacro;
-// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
-static	regex	g_reAutoBreak;
-static	int		NC_SearchAutoBreak(CNCblock*);
-static	PFNBLOCKPROCESS	g_pfnSearchAutoBreak;
 
 //////////////////////////////////////////////////////////////////////
 //	NCｺｰﾄﾞのｵﾌﾞｼﾞｪｸﾄ生成ｽﾚｯﾄﾞ
@@ -160,7 +148,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		g_pParent->m_ctReadProgress.SetRange32(0, nLoopCnt);
 	}
 #ifdef _DEBUG
-	if ( !g_pDoc->IsThumbnail() )
+	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
 		dbg.printf("LoopCount=%d", nLoopCnt);
 #endif
 
@@ -243,14 +231,15 @@ struct CSkipParser : grammar<CSkipParser>
 //	ｺﾒﾝﾄ文字列解析
 struct CCommentParser : grammar<CCommentParser>
 {
-	vector<double>&	vResult;
-	CCommentParser(vector<double>& v) : vResult(v) {}
+	vector<double>&	vRect;
+	vector<double>&	vLathe;
+	CCommentParser(vector<double>& v1, vector<double>& v2) : vRect(v1), vLathe(v2) {}
 
 	template<typename T>
 	struct definition
 	{
 		typedef	rule<T>	rule_t;
-		rule_t	rr, rs1, rs2, rr1, rr2;
+		rule_t	rr, rs1, rs2, rs3, rr1, rr2, rr3;
 		definition( const CCommentParser& self )
 		{
 			// Endmill ｷｰﾜｰﾄﾞ
@@ -259,10 +248,13 @@ struct CCommentParser : grammar<CCommentParser>
 					!(ch_p(',') >> digit_p[&SetEndmillType]);	// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ
 			// WorkRect ｷｰﾜｰﾄﾞ
 			rs2 = as_lower_d[str_p("workrect")] >> ch_p('=');
-			rr2 = real_p[push_back_a(self.vResult)] % ch_p(',');
+			rr2 = real_p[push_back_a(self.vRect)] % ch_p(',');
+			// ViewMode
+			rs3 = as_lower_d[str_p("latheview")] >> ch_p('=');
+			rr3 = real_p[push_back_a(self.vLathe)] % ch_p(',');
 			//
-			rr = ch_p('(') >> *(anychar_p-(rs1|rs2)) >>
-					+( rs1>>rr1 | rs2>>rr2 );
+			rr = ch_p('(') >> *(anychar_p-(rs1|rs2|rs3)) >>
+					+( rs1>>rr1 | rs2>>rr2 | rs3>>rr3 );
 		}
 		const rule_t& start() const {
 			return rr;
@@ -278,9 +270,9 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	extern	const	DWORD	g_dwSetValFlags[];
 	vector<string>	vResult;
 	vector<string>::iterator	it;
-	vector<double>	dResult;
+	vector<double>	dRect, dLathe;
 	CGcodeParser	gr(vResult);
-	CCommentParser	comment_p(dResult);
+	CCommentParser	comment_p(dRect, dLathe);
 	CSkipParser		skip_p;
 
 	int			i, nCode,
@@ -299,19 +291,21 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 #ifdef _DEBUG
 	CMagaDbg	dbg("NC_Gseparate()", DBG_BLUE);
 	CMagaDbg	dbg1(DBG_GREEN);
-	if ( !g_pDoc->IsThumbnail() )
+	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
 		dbg.printf("No.%004d Line=%s", nLine+1, pBlock->GetStrGcode());
 #endif
 
-	// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
-	(*g_pfnSearchAutoBreak)(pBlock);
-
-	// ｺﾒﾝﾄ解析(ｴﾝﾄﾞﾐﾙ径, ﾜｰｸ矩形情報の取得)
-	if ( !g_pDoc->IsThumbnail() ) {		// ｻﾑﾈｲﾙ表示のときは処理しない
-		parse((LPCTSTR)(pBlock->GetStrGcode()), comment_p, space_p);
-		if ( !dResult.empty() )
-			SetWorkRect_fromComment(dResult);
+	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {	// ｻﾑﾈｲﾙ表示のときは処理しない
+		// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
+		(*g_pfnSearchAutoBreak)(pBlock);
 	}
+
+	// ｺﾒﾝﾄ解析(解析ﾓｰﾄﾞ, ｴﾝﾄﾞﾐﾙ径, ﾜｰｸ矩形情報の取得)
+	parse((LPCTSTR)(pBlock->GetStrGcode()), comment_p, space_p);
+	if ( !dRect.empty() )
+		SetWorkRect_fromComment(dRect);
+	if ( !dLathe.empty() )
+		SetLatheRect_fromComment(dLathe);
 
 	// ﾏｸﾛ置換解析
 	if ( (nIndex=(*g_pfnSearchMacro)(pBlock)) >= 0 ) {
@@ -346,7 +340,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		if ( g_pParent && !IsThread() )
 			break;
 #ifdef _DEBUG
-		if ( !g_pDoc->IsThumbnail() )
+		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
 			dbg1.printf("G Cut=%s", it->c_str());
 #endif
 		switch ( it->at(0) ) {
@@ -393,9 +387,9 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		case 'G':
 			// 先に現在のｺｰﾄﾞ種別をﾁｪｯｸ
 			nCode = atoi(it->substr(1).c_str());
-			enGcode = IsGcodeObject(nCode);
+			enGcode = (*g_pfnIsGcode)(nCode);	// IsGcodeObject_～
 			if ( enGcode == NOOBJ ) {
-				CheckGcodeOther(nCode);
+				(*g_pfnCheckGcodeOther)(nCode);
 				break;
 			}
 			// 前回のｺｰﾄﾞで登録ｵﾌﾞｼﾞｪｸﾄがあるなら
@@ -423,13 +417,16 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		case 'F':
 			g_ncArgv.dFeed = (*g_pfnFeedAnalyze)(it->substr(1));
 			break;
+		case 'S':
+			g_ncArgv.nSpindle = abs(atoi(it->substr(1).c_str()));
+			break;
 		case 'T':
 			SetEndmillDiameter(it->substr(1));
 			break;
 		case ',':
 			strComma = ::Trim(it->substr(1));	// ｶﾝﾏ以降を取得
 #ifdef _DEBUG
-			if ( !g_pDoc->IsThumbnail() )
+			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
 				dbg1.printf("strComma=%s", strComma.c_str());
 #endif
 			break;
@@ -439,7 +436,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		case 'D':	case 'H':
 			nCode = (int)(strchr(g_szNdelimiter, it->at(0)) - g_szNdelimiter);
 			// 値取得
-			if ( 81<=g_ncArgv.nc.nGcode && g_ncArgv.nc.nGcode<=89 ) {
+			if ( g_Cycle.bCycle ) {		// 81～89
 				// 固定ｻｲｸﾙの特別処理
 				if ( nCode == NCA_K )		// Kはﾈｲﾃｨﾌﾞで
 					g_ncArgv.nc.dValue[NCA_K] = atoi(it->substr(1).c_str());
@@ -468,8 +465,13 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		}
 	} // End of for() iterator
 
-	// NCﾃﾞｰﾀ登録処理
-	if ( bNCobj || bNCval ) {
+	if ( bNCsub ) {
+		// Mｺｰﾄﾞ後処理
+		if ( CallSubProgram(pBlock, pDataResult) == 30 )
+			return 30;	// 終了ｺｰﾄﾞ
+	}
+	else if ( bNCobj || bNCval ) {
+		// NCﾃﾞｰﾀ登録処理
 		pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 		if ( g_lpstrComma )
 			MakeChamferingObject(pBlock, pDataResult, pData);
@@ -477,12 +479,6 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		SetStrComma(strComma);
 		// ﾌﾞﾛｯｸ情報の更新
 		pBlock->SetBlockToNCdata(pDataResult, g_pDoc->GetNCsize());
-	}
-
-	// Mｺｰﾄﾞ後処理
-	if ( bNCsub ) {
-		if ( CallSubProgram(pBlock, pDataResult) == 30 )
-			return 30;	// 終了ｺｰﾄﾞ
 	}
 
 	return 0;
@@ -503,17 +499,51 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 	}
 	g_dwValFlags = 0;
 
-	// NCﾃﾞｰﾀの登録前処理
-	if ( g_ncArgv.nc.nGtype == G_TYPE ) {
-		// G68座標回転指示のﾁｪｯｸ
-		if ( nNotModalCode == 68 ) {
-			G68RoundCheck(pBlock);
-			if ( !g_ncArgv.g68.bG68 )
-				return pDataResult;
+	if ( g_pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+		// 旋盤ﾓｰﾄﾞでの座標入れ替え
+		boost::optional<double>	x, z, i, k;
+		if ( g_ncArgv.nc.dwValFlags & NCD_X )
+			x = g_ncArgv.nc.dValue[NCA_X] / 2.0;
+		if ( g_ncArgv.nc.dwValFlags & NCD_Z )
+			z = g_ncArgv.nc.dValue[NCA_Z];
+		if ( g_ncArgv.nc.dwValFlags & NCD_I )
+			i = g_ncArgv.nc.dValue[NCA_I];
+		if ( g_ncArgv.nc.dwValFlags & NCD_K )
+			k = g_ncArgv.nc.dValue[NCA_K];
+		g_ncArgv.nc.dwValFlags &= ~(NCD_X|NCD_Y|NCD_Z|NCD_I|NCD_J|NCD_K);
+		if ( x ) {
+			g_ncArgv.nc.dValue[NCA_Z] = *x;
+			g_ncArgv.nc.dwValFlags |=  NCD_Z;
 		}
-		// 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間
-		if ( g_Cycle.bCycle )
-			CycleInterpolate();
+		if ( z ) {
+			g_ncArgv.nc.dValue[NCA_X] = *z;
+			g_ncArgv.nc.dwValFlags |=  NCD_X;
+		}
+		if ( i ) {
+			g_ncArgv.nc.dValue[NCA_K] = *i;
+			g_ncArgv.nc.dwValFlags |=  NCD_K;
+		}
+		if ( k ) {
+			g_ncArgv.nc.dValue[NCA_I] = *k;
+			g_ncArgv.nc.dwValFlags |=  NCD_I;
+		}
+		// G02/G03 を入れ替え
+		if ( 2<=g_ncArgv.nc.nGcode && g_ncArgv.nc.nGcode<=3 )
+			g_ncArgv.nc.nGcode = 1 - (g_ncArgv.nc.nGcode-2) + 2;
+	}
+	else {
+		// NCﾃﾞｰﾀの登録前処理
+		if ( g_ncArgv.nc.nGtype == G_TYPE ) {
+			// G68座標回転指示のﾁｪｯｸ
+			if ( nNotModalCode == 68 ) {
+				G68RoundCheck(pBlock);
+				if ( !g_ncArgv.g68.bG68 )
+					return pDataResult;
+			}
+			// 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間
+			if ( g_Cycle.bCycle )
+				CycleInterpolate();
+		}
 	}
 
 	// NCﾃﾞｰﾀの登録
@@ -595,9 +625,51 @@ int CallSubProgram(CNCblock* pBlock, CNCdata*& pDataResult)
 //////////////////////////////////////////////////////////////////////
 // 補助関数
 
-// 切削ｺｰﾄﾞ以外の重要なGｺｰﾄﾞ検査
-void CheckGcodeOther(int nCode)
+ENGCODEOBJ	IsGcodeObject_Milling(int nCode)
 {
+	// G00～G03, G04, G10, G52, G8x, G92
+	// ｵﾌﾞｼﾞｪｸﾄ生成するＧｺｰﾄﾞﾁｪｯｸ
+	ENGCODEOBJ	enResult;
+
+	if ( 0<=nCode && nCode<=3 ) {
+		g_Cycle.bCycle = FALSE;
+		enResult = MAKEOBJ;
+	}
+	else if ( nCode==4 || nCode==10 || nCode==52 || nCode==68 || nCode==92 ) {
+		enResult = MAKEOBJ_NOTMODAL;
+	}
+	else if ( 81<=nCode && nCode<=89 ) {
+		g_Cycle.bCycle = TRUE;
+		enResult = MAKEOBJ;
+	}
+	else
+		enResult = NOOBJ;
+
+	return enResult;
+}
+
+ENGCODEOBJ	IsGcodeObject_Lathe(int nCode)
+{
+	ENGCODEOBJ	enResult;
+
+	if ( 0<=nCode && nCode<=3 ) {
+		g_Cycle.bCycle = FALSE;
+		enResult = MAKEOBJ;
+	}
+	else if ( nCode==4 || nCode==10 ) {
+		enResult = MAKEOBJ_NOTMODAL;
+	}
+	else
+		enResult = NOOBJ;
+
+	return enResult;
+}
+
+// 切削ｺｰﾄﾞ以外の重要なGｺｰﾄﾞ検査
+ENGCODEOBJ CheckGcodeOther_Milling(int nCode)
+{
+	ENGCODEOBJ	enResult = NOOBJ;
+
 	switch ( nCode ) {
 	// ﾍﾘｶﾙ平面指定
 	case 17:
@@ -645,12 +717,58 @@ void CheckGcodeOther(int nCode)
 		break;
 	// 固定ｻｲｸﾙ復帰
 	case 98:
-		g_ncArgv.bInitial = TRUE;
+		g_ncArgv.bG98 = TRUE;
 		break;
 	case 99:
-		g_ncArgv.bInitial = FALSE;
+		g_ncArgv.bG98 = FALSE;
 		break;
 	}
+
+	return enResult;
+}
+
+ENGCODEOBJ CheckGcodeOther_Lathe(int nCode)
+{
+	ENGCODEOBJ	enResult = NOOBJ;
+
+	switch ( nCode ) {
+	// 刃先Ｒ補正
+//	case 40:
+//		g_ncArgv.nc.dwValFlags &= ~NCD_CORRECT;
+//		break;
+//	case 41:
+//		g_ncArgv.nc.dwValFlags |= NCD_CORRECT_L;
+//		break;
+//	case 42:
+//		g_ncArgv.nc.dwValFlags |= NCD_CORRECT_R;
+//		break;
+	// ﾜｰｸ座標系
+	case 54:
+	case 55:
+	case 56:
+	case 57:
+	case 58:
+	case 59:
+		g_pDoc->SelectWorkOffset(nCode - 54);
+		break;
+	// ｱﾌﾞｿﾘｭｰﾄ, ｲﾝｸﾘﾒﾝﾄ
+	case 90:
+		g_ncArgv.bAbs = TRUE;
+		break;
+	case 91:
+		g_ncArgv.bAbs = FALSE;
+		break;
+	// 毎分送り
+	case 98:
+		g_ncArgv.bG98 = TRUE;
+		break;
+	// 毎回転送り
+	case 99:
+		g_ncArgv.bG98 = FALSE;
+		break;
+	}
+
+	return enResult;
 }
 
 // ｻﾌﾞﾌﾟﾛｸﾞﾗﾑの検索
@@ -790,6 +908,11 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	CMagaDbg	dbg("MakeChamferingObject()", DBG_BLUE);
 #endif
 	// ﾃﾞｰﾀﾁｪｯｸ
+	if ( g_pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+		// 旋盤ﾓｰﾄﾞではｻﾎﾟｰﾄされない
+		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_NOTLATHE);
+		return;
+	}
 	if ( pData1->GetGtype() != G_TYPE || pData2->GetGtype() != G_TYPE ||
 			pData1->GetGcode() < 1 || pData1->GetGcode() > 3 ||
 			pData2->GetGcode() < 1 || pData2->GetGcode() > 3 ) {
@@ -840,7 +963,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	pte = *ptResult - ptOffset;
 
 #ifdef _DEBUG
-	if ( !g_pDoc->IsThumbnail() ) {
+	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		dbg.printf("%c=%f, %f", cCham, r1, r2);
 		dbg.printf("pts=(%f, %f)", pts.x, pts.y);
 		dbg.printf("pte=(%f, %f)", pte.x, pte.y);
@@ -851,9 +974,11 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	NCARGV	ncArgv;
 	ZeroMemory(&ncArgv, sizeof(NCARGV));
 	ncArgv.bAbs			= TRUE;
+	ncArgv.nSpindle		= pData1->GetSpindle();
 	ncArgv.dFeed		= pData1->GetFeed();
 	ncArgv.dEndmill		= pData1->GetEndmill();
 	ncArgv.nEndmillType	= pData1->GetEndmillType();
+	ncArgv.bG98			= pData1->GetG98();
 	ncArgv.nc.nLine		= pData1->GetBlockLineNo();
 	ncArgv.nc.nGtype	= G_TYPE;
 	ncArgv.nc.enPlane	= pData1->GetPlane();
@@ -920,13 +1045,13 @@ void SetEndmillDiameter(const string& str)
 	if ( dResult ) {
 		g_ncArgv.dEndmill = *dResult;	// ｵﾌｾｯﾄは半径なので、そのまま使用
 #ifdef _DEBUG
-		if ( !g_pDoc->IsThumbnail() )
+		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
 			dbg.printf("Endmill=%f from T-No.%d", g_ncArgv.dEndmill, atoi(str.c_str()));
 #endif
 	}
 #ifdef _DEBUG
 	else {
-		if ( !g_pDoc->IsThumbnail() )
+		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
 			dbg.printf("Endmill T-No.%d nothing", atoi(str.c_str()));
 	}
 #endif
@@ -937,7 +1062,7 @@ void SetEndmillDiameter_fromComment(double d)
 	// CCommentParser 解析ｱｸｼｮﾝからの呼び出し
 	g_ncArgv.dEndmill = d / 2.0;
 #ifdef _DEBUG
-	if ( !g_pDoc->IsThumbnail() ) {
+	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		CMagaDbg	dbg("SetEndmillDiameter()\nStart", DBG_MAGENTA);
 		dbg.printf("Endmill=%f from CommentParser", g_ncArgv.dEndmill);
 	}
@@ -948,7 +1073,7 @@ void SetEndmillType(char c)
 {
 	g_ncArgv.nEndmillType = c - '0';	// １文字を数値に変換
 #ifdef _DEBUG
-	if ( !g_pDoc->IsThumbnail() ) {
+	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		CMagaDbg	dbg("SetEndmillType()\nStart", DBG_MAGENTA);
 		dbg.printf("EndmillType=%d from CommentParser", g_ncArgv.nEndmillType);
 	}
@@ -989,12 +1114,47 @@ void SetWorkRect_fromComment(vector<double>& vWork)
 	g_pDoc->SetWorkRectOrg(rc);
 
 #ifdef _DEBUG
-	if ( !g_pDoc->IsThumbnail() ) {
+	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		CMagaDbg	dbg("SetWorkRect_fromComment()\nStart", DBG_MAGENTA);
 		dbg.printf("(%f,%f)-(%f,%f)", rc.left, rc.top, rc.right, rc.bottom);
 		dbg.printf("(%f,%f)", rc.low, rc.high);
 	}
 #endif
+}
+
+void SetLatheRect_fromComment(vector<double>& vLathe)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("SetLatheRect_fromComment()\nStart", DBG_MAGENTA);
+#endif
+	// 旋盤ﾓｰﾄﾞのﾌﾗｸﾞON
+	g_pDoc->SetLatheViewMode();
+	// 呼び出す関数の指定
+	g_pfnIsGcode = &IsGcodeObject_Lathe;
+	g_pfnCheckGcodeOther = &CheckGcodeOther_Lathe;
+	// ﾃﾞﾌｫﾙﾄ平面：XZ_PLANE
+	g_ncArgv.nc.enPlane = XZ_PLANE;
+
+	// ﾃﾞｰﾀの取り出し
+	for ( size_t i=0; i<vLathe.size() && i<3; i++ ) {
+		switch ( i ) {
+		case 0:		// ﾜｰｸ径
+			g_pDoc->SetWorkLatheR( vLathe[0] / 2.0 );	// 半径で保管
+#ifdef _DEBUG
+			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+				dbg.printf("r=%f", vLathe[0]/2);
+#endif
+			break;
+		case 2:		// z1, z2
+			// z2 があるときだけ
+			g_pDoc->SetWorkLatheZ( vLathe[1], vLathe[2] );
+#ifdef _DEBUG
+			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+				dbg.printf("(%f)-(%f)", vLathe[1], vLathe[2]);
+#endif
+			break;
+		}
+	}
 }
 
 CString SearchFolder(regex& r)
@@ -1121,6 +1281,12 @@ void CycleInterpolate(void)
 
 void G68RoundCheck(CNCblock* pBlock)
 {
+	if ( g_pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+		// 旋盤ﾓｰﾄﾞではｻﾎﾟｰﾄされない
+		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_NOTLATHE);
+		return;
+	}
+
 	// 各指示座標のﾁｪｯｸ
 	g_ncArgv.g68.dOrg[NCA_X] =
 	g_ncArgv.g68.dOrg[NCA_Y] =
@@ -1201,14 +1367,26 @@ void InitialVariable(void)
 	}
 	g_ncArgv.nc.nErrorCode = 0;
 	g_ncArgv.nc.dwValFlags = 0;
-	for ( i=0; i<NCXYZ; i++ ) {
-		g_ncArgv.nc.dValue[i] = pMCopt->GetInitialXYZ(i);
-		g_dValue[i] = 0.0;
+	if ( pMCopt->GetFlag(MC_FLG_LATHE) ) {	// pDoc->IsNCDocFlag(NCDOC_LATHE)
+		vector<double>	dDummy;
+		SetLatheRect_fromComment(dDummy);	// 旋盤ﾓｰﾄﾞへ強制切替
+		g_ncArgv.nc.dValue[NCA_X] = pMCopt->GetInitialXYZ(NCA_Z);
+		g_ncArgv.nc.dValue[NCA_Y] = 0.0;
+		g_ncArgv.nc.dValue[NCA_Z] = pMCopt->GetInitialXYZ(NCA_X) / 2.0;
 	}
+	else {
+		g_pfnIsGcode = &IsGcodeObject_Milling;
+		g_pfnCheckGcodeOther = &CheckGcodeOther_Milling;
+		for ( i=0; i<NCXYZ; i++ )
+			g_ncArgv.nc.dValue[i] = pMCopt->GetInitialXYZ(i);
+	}
+	for ( i=0; i<NCXYZ; i++ )
+		g_dValue[i] = 0.0;
 	for ( ; i<VALUESIZE; i++ )
 		g_ncArgv.nc.dValue[i] = 0.0;
 	g_ncArgv.bAbs		= pMCopt->GetModalSetting(MODALGROUP3) == 0 ? TRUE : FALSE;
-	g_ncArgv.bInitial	= pMCopt->GetModalSetting(MODALGROUP4) == 0 ? TRUE : FALSE;;
+	g_ncArgv.bG98		= pMCopt->GetModalSetting(MODALGROUP4) == 0 ? TRUE : FALSE;
+	g_ncArgv.nSpindle	= 0;
 	g_ncArgv.dFeed		= pMCopt->GetFeed();
 	g_ncArgv.dEndmill	= pVopt->GetDefaultEndmill();
 	g_ncArgv.nEndmillType	= pVopt->GetDefaultEndmillType();
@@ -1220,18 +1398,23 @@ void InitialVariable(void)
 	g_nSubprog = 0;
 	g_lpstrComma = NULL;
 
-	if ( pMCopt->GetMacroStr(MCMACROCODE).IsEmpty() || pMCopt->GetMacroStr(MCMACROIF).IsEmpty() )
+	if ( g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		g_pfnSearchMacro = &NC_NoSearch;
-	else {
-		g_reMacroStr = pMCopt->GetMacroStr(MCMACROCODE);
-		g_pfnSearchMacro = &NC_SearchMacroProgram;
-	}
-
-	if ( pMCopt->GetAutoBreakStr().IsEmpty() )
 		g_pfnSearchAutoBreak = &NC_NoSearch;
+	}
 	else {
-		g_reAutoBreak = pMCopt->GetAutoBreakStr();
-		g_pfnSearchAutoBreak = &NC_SearchAutoBreak;
+		if ( pMCopt->GetMacroStr(MCMACROCODE).IsEmpty() || pMCopt->GetMacroStr(MCMACROIF).IsEmpty() )
+			g_pfnSearchMacro = &NC_NoSearch;
+		else {
+			g_reMacroStr = pMCopt->GetMacroStr(MCMACROCODE);
+			g_pfnSearchMacro = &NC_SearchMacroProgram;
+		}
+		if ( pMCopt->GetAutoBreakStr().IsEmpty() )
+			g_pfnSearchAutoBreak = &NC_NoSearch;
+		else {
+			g_reAutoBreak = pMCopt->GetAutoBreakStr();
+			g_pfnSearchAutoBreak = &NC_SearchAutoBreak;
+		}
 	}
 
 	// ｶﾚﾝﾄと指定ﾌｫﾙﾀﾞの初期化

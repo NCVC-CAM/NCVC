@@ -66,7 +66,7 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx* pParent, int nIndex)
 			for ( i=0; i<nLoop; i++ ) {
 				pLayer = pDoc->GetLayerData(i);
 				if ( pLayer->IsCutType() ) {
-					pLayer = new CLayerData(pLayer, pLayer->m_bCutTarget);
+					pLayer = new CLayerData(pLayer, pLayer->m_bLayerFlg[LAYER_CUTTARGET]);
 					m_obLayer.Add(pLayer);
 				}
 			}
@@ -90,8 +90,8 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx* pParent, int nIndex)
 	else if ( pList->GetCount() > 0 )
 		::Path_Name_From_FullPath(pList->GetHead(), m_strInitPath, m_strInitFileName);
 	::Path_Name_From_FullPath(pLayer->m_strNCFile, m_strNCPath, m_strNCFileName);
-	m_bPartOut			= m_strNCFileName.IsEmpty() ? FALSE : pLayer->m_bPartOut;
-	m_bCheck			= pLayer->m_bCutTarget;
+	m_bPartOut			= m_strNCFileName.IsEmpty() ? FALSE : pLayer->m_bLayerFlg[LAYER_PARTOUT];
+	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUTTARGET];
 	m_strLayerComment	= pLayer->m_strLayerComment;
 	m_strLayerCode		= pLayer->m_strLayerCode;
 }
@@ -129,8 +129,8 @@ void CMakeNCDlgEx11::GetNowState(void)
 {
 	CLayerData* pLayer = m_obLayer[m_nIndex];
 	UpdateData();
-	pLayer->m_bCutTarget		= m_bCheck;
-	pLayer->m_bPartOut			= m_bPartOut;
+	pLayer->m_bLayerFlg.set(LAYER_CUTTARGET, m_bCheck);
+	pLayer->m_bLayerFlg.set(LAYER_PARTOUT,   m_bPartOut);
 	pLayer->m_strNCFile			= m_strNCPath + m_strNCFileName;
 	pLayer->m_strInitFile		= m_strInitPath + m_strInitFileName;
 	pLayer->m_strLayerComment	= m_strLayerComment;
@@ -141,8 +141,8 @@ void CMakeNCDlgEx11::SetNowState(int nIndex)
 {
 	m_nIndex = nIndex;
 	CLayerData* pLayer = m_obLayer[m_nIndex];
-	m_bCheck			= pLayer->m_bCutTarget;
-	m_bPartOut			= pLayer->m_bPartOut;
+	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUTTARGET];
+	m_bPartOut			= pLayer->m_bLayerFlg[LAYER_PARTOUT];
 	m_strLayerComment	= pLayer->m_strLayerComment;
 	m_strLayerCode		= pLayer->m_strLayerCode;
 	const CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetInitList();
@@ -235,7 +235,7 @@ void CMakeNCDlgEx11::OnOK()
 	CLayerData* pLayer;
 	for ( int i=0; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
-		if ( !pLayer->m_bCutTarget )
+		if ( !pLayer->m_bLayerFlg[LAYER_CUTTARGET] )
 			continue;
 		// ðŒÌ§²Ù‚ª‹ó—“‚È‚ç‹­§“I‚ÉÝ’è
 		if ( pLayer->m_strInitFile.IsEmpty() ) {
@@ -256,7 +256,7 @@ void CMakeNCDlgEx11::OnOK()
 			return;
 		}
 		// ŒÂ•ÊÌ§²Ù–¼‚ÌÁª¯¸
-		if ( pLayer->m_bPartOut ) {
+		if ( pLayer->m_bLayerFlg[LAYER_PARTOUT] ) {
 			strNCFile = pLayer->m_strNCFile;
 			if ( !CheckMakeDlgFileExt(TYPE_NCD, strNCFile) ) {
 				SetNowState(i);
@@ -389,8 +389,8 @@ void CMakeNCDlgEx11::OnCopy()
 	GetNowState();
 	// Œ»ÝˆÊ’uˆÈ~‚ÉÃÞ°À‚ðºËß°
 	CLayerData* pLayer = m_obLayer[m_nIndex];
-	BOOL	bCheck		= pLayer->m_bCutTarget,
-			bPartOut	= pLayer->m_bPartOut;
+	BOOL	bCheck		= pLayer->m_bLayerFlg[LAYER_CUTTARGET],
+			bPartOut	= pLayer->m_bLayerFlg[LAYER_PARTOUT];
 	CString	strInit		= pLayer->m_strInitFile,
 			strComment	= pLayer->m_strLayerComment,
 			strCode		= pLayer->m_strLayerCode;
@@ -400,8 +400,8 @@ void CMakeNCDlgEx11::OnCopy()
 	strNCFile = strPath + strFile + "_";
 	for ( int i=m_nIndex+1; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
-		pLayer->m_bCutTarget		= bCheck;
-		pLayer->m_bPartOut			= bPartOut;
+		pLayer->m_bLayerFlg.set(LAYER_CUTTARGET, bCheck);
+		pLayer->m_bLayerFlg.set(LAYER_PARTOUT,   bPartOut);
 		pLayer->m_strInitFile		= strInit;
 		pLayer->m_strLayerComment	= strComment;
 		pLayer->m_strLayerCode		= strCode;

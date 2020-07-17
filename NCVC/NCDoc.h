@@ -9,41 +9,49 @@
 #include "DXFMakeOption.h"
 #include "MCOption.h"
 
+// CNCDoc ﾌﾗｸﾞ
+enum NCDOCFLG {
+	NCDOC_ERROR = 0,	// ﾄﾞｷｭﾒﾝﾄ読み込みｴﾗｰ
+	NCDOC_CUTCALC,		// 切削時間計算ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
+	NCDOC_REVISEING,	// 補正計算行うかどうか
+	NCDOC_COMMENTWORK,	// ｺﾒﾝﾄでﾜｰｸ矩形が指示された
+		NCDOC_COMMENTWORK_R,
+		NCDOC_COMMENTWORK_Z,
+	NCDOC_MAXRECT,		// 最大移動矩形の描画
+	NCDOC_WRKRECT,		// ﾜｰｸ矩形の描画
+	NCDOC_THUMBNAIL,	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
+	NCDOC_LATHE,		// NC旋盤ﾓｰﾄﾞ
+		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[10]
+};
+
 // CNCDoc::DataOperation() の操作方法
-enum	ENNCOPERATION	{
+enum ENNCOPERATION {
 	NCADD, NCINS, NCMOD
 };
 
 class CNCDoc : public CDocument, public CDocBase
 {
-	BOOL		m_fError;			// ﾄﾞｷｭﾒﾝﾄ全体
+	std::bitset<NCDOC_FLGNUM>	m_bNcDocFlg;	// CNCDocﾌﾗｸﾞ
 	CWinThread*	m_pCutcalcThread;	// 切削時間計算ｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ
-	BOOL		m_bCutcalc,			// 　　〃　　継続ﾌﾗｸﾞ
-				m_bCorrect,			// 補正計算行うかどうか
-				m_bMaxCut,			// ｺﾒﾝﾄでﾜｰｸ矩形が指示された
-				m_bThumbnail;		// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
 				m_strCurrentFile;	// 現在処理中のNCﾌｧｲﾙ名(FileInsert etc.)
 	// NCﾃﾞｰﾀ
 	int			m_nWorkOrg;						// 使用中のﾜｰｸ座標
 	CPoint3D	m_ptNcWorkOrg[WORKOFFSET+1],	// ﾜｰｸ座標系(G54～G59)とG92原点
 				m_ptNcLocalOrg;					// ﾛｰｶﾙ座標系(G52)原点
-	CNCblockArray	m_obBlock;	// ﾌｧｲﾙｲﾒｰｼﾞﾌﾞﾛｯｸﾃﾞｰﾀ
+	CNCblockArray	m_obBlock;		// ﾌｧｲﾙｲﾒｰｼﾞﾌﾞﾛｯｸﾃﾞｰﾀ
 	CTypedPtrArrayEx<CPtrArray, CNCdata*>
-				m_obGdata;		// Gｺｰﾄﾞ描画ｵﾌﾞｼﾞｪｸﾄ
+					m_obGdata;		// Gｺｰﾄﾞ描画ｵﾌﾞｼﾞｪｸﾄ
 	CStringArray	m_obMacroFile;	// ﾏｸﾛ展開一時ﾌｧｲﾙ
 	double		m_dMove[2],		// 移動距離, 切削移動距離
 				m_dCutTime;		// 切削時間
 	CRect3D		m_rcMax,		// 最大ｵﾌﾞｼﾞｪｸﾄ(移動)矩形
 				m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
-				m_rcWorkOrg;
-	BOOL		m_bMaxRect,		// 最大移動矩形の描画
-				m_bWorkRect;	// ﾜｰｸ矩形の描画
+				m_rcWorkCo;		// ｺﾒﾝﾄ指示
 	void	SetMaxRect(const CNCdata* pData) {
 		// 最大ｵﾌﾞｼﾞｪｸﾄ矩形ﾃﾞｰﾀｾｯﾄ
-		m_rcMax    |= pData->GetMaxRect();
-		if ( !m_bMaxCut )
-			m_rcWorkOrg |= pData->GetMaxCutRect();
+		m_rcMax  |= pData->GetMaxRect();
+		m_rcWork |= pData->GetMaxCutRect();
 	}
 
 	// ﾄﾚｰｽ中のｵﾌﾞｼﾞｪｸﾄ
@@ -70,11 +78,8 @@ protected: // シリアライズ機能のみから作成します。
 
 // アトリビュート
 public:
-	BOOL	IsNCDocError(void) const {
-		return m_fError;
-	}
-	BOOL	IsThumbnail(void) const {
-		return m_bThumbnail;
+	BOOL	IsNCDocFlag(NCDOCFLG n) const {
+		return m_bNcDocFlg[n];
 	}
 	CString	GetDXFFileName(void) const {
 		return m_strDXFFileName;
@@ -107,9 +112,6 @@ public:
 	double	GetCutTime(void) const {
 		return m_dCutTime;
 	}
-	BOOL	IsCalcContinue(void) const {
-		return m_bCutcalc;
-	}
 
 	void	GetWorkRectPP(int a, double []);	// from NCInfoView.cpp
 
@@ -132,12 +134,6 @@ public:
 		return m_nTraceStart;
 	}
 
-	BOOL	IsMaxRect(void) const {
-		return m_bMaxRect;
-	}
-	BOOL	IsWorkRect(void) const {
-		return m_bWorkRect;
-	}
 	CRect3D	GetMaxRect(void) const {
 		return m_rcMax;
 	}
@@ -145,7 +141,7 @@ public:
 		return m_rcWork;
 	}
 	CRect3D	GetWorkRectOrg(void) const {
-		return m_rcWorkOrg;
+		return m_rcWorkCo;
 	}
 
 // オペレーション
@@ -174,10 +170,23 @@ public:
 	BOOL	SerializeInsertBlock(LPCTSTR, int, DWORD = 0, BOOL = TRUE);	// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの挿入
 	void	AddMacroFile(const CString&);	// ﾄﾞｷｭﾒﾝﾄ破棄後に消去する一時ﾌｧｲﾙ
 	void	SetWorkRectOrg(const CRect3D& rc) {
-		// ｺﾒﾝﾄで指定されたﾜｰｸ矩形
-		m_rcWorkOrg = rc;
-		m_bMaxCut = TRUE;	// 以降、ﾃﾞｰﾀでの更新はしない
+		m_rcWorkCo = rc;	// ｺﾒﾝﾄで指定されたﾜｰｸ矩形
+		m_rcWorkCo.NormalizeRect();
+		m_bNcDocFlg.set(NCDOC_COMMENTWORK);
 	}
+	void	SetWorkLatheR(double r) {
+		m_rcWorkCo.high = r;
+		m_rcWorkCo.low  = 0;
+		m_bNcDocFlg.set(NCDOC_COMMENTWORK_R);
+	}
+	void	SetWorkLatheZ(double z1, double z2) {
+		m_rcWorkCo.left  = z1;
+		m_rcWorkCo.right = z2;
+		m_rcWorkCo.NormalizeRect();
+		m_bNcDocFlg.set(NCDOC_COMMENTWORK_Z);
+	}
+	void	SetLatheViewMode(void);
+	void	ResetLatheViewMode(void);
 
 	// from NCWorkDlg.cpp
 	void	SetWorkRect(BOOL bShow, const CRect3D& rc) {
@@ -185,7 +194,7 @@ public:
 			m_rcWork = rc;
 		UpdateAllViews(NULL, UAV_DRAWWORKRECT,
 			reinterpret_cast<CObject *>(bShow));
-		m_bWorkRect = bShow;
+		m_bNcDocFlg.set(NCDOC_WRKRECT, bShow);
 	}
 
 	// from NCViewTab.cpp
@@ -207,7 +216,7 @@ public:
 
 	// from ThumbnailDlg.cpp
 	void	SetThumbnailMode(void) {
-		m_bThumbnail = TRUE;
+		m_bNcDocFlg.set(NCDOC_THUMBNAIL);
 	}
 	void	ReadThumbnail(LPCTSTR);
 

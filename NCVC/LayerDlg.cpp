@@ -119,7 +119,7 @@ void CLayerDlg::OnOK()
 			do {
 				pLayer = reinterpret_cast<CLayerData *>(m_ctLayerTree.GetItemData(hChild));
 				ASSERT( pLayer );
-				pLayer->m_bView = m_ctLayerTree.GetCheck(hChild);
+				pLayer->m_bLayerFlg.set(LAYER_VIEW, m_ctLayerTree.GetCheck(hChild));
 			} while ( hChild = m_ctLayerTree.GetNextItem(hChild, TVGN_NEXT) );
 		}
 	}
@@ -181,14 +181,14 @@ LRESULT CLayerDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 		nType = pLayer->GetLayerType();
 #ifdef _DEBUG
 		dbg.printf("Layer=\"%s\",%d, %d",
-			pLayer->GetStrLayer(), nType, pLayer->m_bView);
+			pLayer->GetStrLayer(), nType, pLayer->m_bLayerFlg[LAYER_VIEW]);
 #endif
 		if ( nType>=DXFCAMLAYER && nType<=DXFCOMLAYER ) {
 			hChild = m_ctLayerTree.InsertItem(TVIF_TEXT|TVIF_PARAM, LPSTR_TEXTCALLBACK,
 							-1, -1, 0, 0, (LPARAM)pLayer,
 							m_hTree[nType - DXFCAMLAYER], TVI_LAST);
 			ASSERT( hChild );
-			m_ctLayerTree.SetCheck(hChild, pLayer->m_bView);
+			m_ctLayerTree.SetCheck(hChild, pLayer->m_bLayerFlg[LAYER_VIEW]);
 		}
 	}
 	// q‚ğ‚ÂÚ²Ô‚É‚ÍCe‚É‚àÁª¯¸

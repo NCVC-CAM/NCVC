@@ -140,15 +140,12 @@ void CNCChild::SetFindList(int nUpDown, const CString& strFind)
 	GetListView()->SetFindList(nUpDown, strFind);
 }
 
-void CNCChild::SetFactorInfo(ENNCVPLANE enView, double dFactor)
+void CNCChild::SetFactorInfo(double dFactor, const CString& strGuide)
 {
-	static	LPCTSTR	szView[] = {
-		"(XYZ)", "(XY)", "(XZ)", "(YZ)"
-	};
-	CString		str;
-	str.Format(ID_INDICATOR_FACTOR_F, szView[enView], dFactor);
+	CString		strFmt;
+	strFmt.Format(ID_INDICATOR_FACTOR_F, strGuide, dFactor);
 	m_wndStatusBar.SetPaneText(
-		m_wndStatusBar.CommandToIndex(ID_INDICATOR_FACTOR), str);
+		m_wndStatusBar.CommandToIndex(ID_INDICATOR_FACTOR), strFmt);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -212,7 +209,7 @@ LRESULT CNCChild::OnUserFileChangeNotify(WPARAM, LPARAM)
 	return 0;
 }
 
-LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM, LPARAM)
+LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM wParam, LPARAM)
 {
 	CString		strInfo;
 	CNCdata*	pData = NULL;
@@ -243,6 +240,8 @@ LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM, LPARAM)
 
 	if ( pData ) {
 		CPoint3D	pt(pData->GetEndCorrectPoint());
+		if ( reinterpret_cast<CNCDoc *>(wParam)->IsNCDocFlag(NCDOC_LATHE) )
+			std::swap(pt.x, pt.z);
 		strInfo.Format(ID_NCDST_COORDINATES_F, pt.x, pt.y, pt.z);
 	}
 	else if ( strInfo.IsEmpty() )

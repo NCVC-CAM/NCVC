@@ -10,7 +10,8 @@
 
 class CNCWorkDlg : public CDialog
 {
-	void	EnableButton(BOOL bEnable);
+	void	EnableButton(BOOL, BOOL);
+	void	SetValue(const CNCDoc*, const CRect3D&);
 
 // コンストラクション
 public:
@@ -23,6 +24,7 @@ public:
 	CButton	m_ctHide;
 	CButton m_ctRecover;
 	//}}AFX_DATA
+	CStatic		m_ctLabel[2][NCXYZ];
 	CFloatEdit	m_ctWork[2][NCXYZ];
 
 // オーバーライド

@@ -11,6 +11,15 @@
 
 class	CDXFBlockData;
 
+// CDXFDoc ﾌﾗｸﾞ
+enum DXFDOCFLG {
+	DXFDOC_READY = 0,		// NC生成可能かどうか(ｴﾗｰﾌﾗｸﾞ)
+	DXFDOC_RELOAD,			// 再読込ﾌﾗｸﾞ(from DXFSetup.cpp)
+	DXFDOC_THREAD,			// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
+	DXFDOC_SHAPE,			// 形状処理を行ったか
+		DXFDOC_FLGNUM			// ﾌﾗｸﾞの数[4]
+};
+
 // 自動処理ﾃﾞｰﾀ受け渡し構造体
 struct	AUTOWORKINGDATA
 {
@@ -40,10 +49,7 @@ struct	AUTOWORKINGDATA
 
 class CDXFDoc : public CDocument, public CDocBase
 {
-	BOOL	m_bReady,		// NC生成可能かどうか(ｴﾗｰﾌﾗｸﾞ)
-			m_bThread,		// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
-			m_bReload,		// 再読込ﾌﾗｸﾞ(from DXFSetup.cpp)
-			m_bShape;		// 形状処理を行ったか
+	std::bitset<DXFDOC_FLGNUM>	m_bDxfDocFlg;	// CDXFDocﾌﾗｸﾞ
 	UINT	m_nShapeProcessID;	// 形状加工指示ID
 	AUTOWORKINGDATA	m_AutoWork;	// 自動輪郭処理ﾃﾞｰﾀ
 	CRect3D		m_rcMax;			// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
@@ -81,11 +87,8 @@ protected: // シリアライズ機能のみから作成します。
 
 // アトリビュート
 public:
-	BOOL	IsReload(void) const {
-		return m_bReload;
-	}
-	BOOL	IsShape(void) const {
-		return m_bShape;
+	BOOL	IsDXFDocFlag(DXFDOCFLG n) const {
+		return m_bDxfDocFlg[n];
 	}
 	UINT	GetShapeProcessID(void) const {
 		return m_nShapeProcessID;
@@ -124,10 +127,10 @@ public:
 	// ｶｽﾀﾑｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞ
 	BOOL	RouteCmdToAllViews(CView*, UINT, int, void*, AFX_CMDHANDLERINFO*);
 	void	SetReadyFlg(BOOL bReady) {
-		m_bReady = bReady;
+		m_bDxfDocFlg.set(DXFDOC_READY, bReady);
 	}
 	void	SetReload(BOOL bReload) {
-		m_bReload = bReload;
+		m_bDxfDocFlg.set(DXFDOC_RELOAD, bReload);
 	}
 	// DXFｵﾌﾞｼﾞｪｸﾄの操作
 	void	DataOperation(CDXFdata*, ENDXFOPERATION = DXFADD, int = -1);

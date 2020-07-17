@@ -486,6 +486,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\NCViewBase.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\NCViewGL.cpp"
 				>
 			</File>

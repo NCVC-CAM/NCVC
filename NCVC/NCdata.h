@@ -35,10 +35,12 @@ class CNCdata
 protected:
 	NCDATA		m_nc;			// NC基礎ﾃﾞｰﾀ -> NCVCdefine.h
 	CPointD		m_pt2D;			// ２次元変換後の座標計算結果(終点)
+	int			m_nSpindle;		// 主軸回転数（主に旋盤ﾓｰﾄﾞで使用）
 	double		m_dFeed,		// このｵﾌﾞｼﾞｪｸﾄの切削送り速度
 				m_dMove[NCXYZ],	// 各軸ごとの移動距離(早送りの時間計算用)
 				m_dEndmill;		// ｴﾝﾄﾞﾐﾙ径
 	int			m_nEndmillType;	// ｴﾝﾄﾞﾐﾙﾀｲﾌﾟ
+	BOOL		m_bG98;			// G98,G98（主に旋盤ﾓｰﾄﾞで使用）
 	CTypedPtrArrayEx<CPtrArray, CNCdata*>
 				m_obCdata;		// 補正用ｵﾌﾞｼﾞｪｸﾄ
 	//	固定ｻｲｸﾙでは，指定された座標が最終座標ではないので
@@ -84,11 +86,13 @@ public:
 	CNCdata*	GetEndCorrectObject(void);
 	const CPointD	Get2DPoint(void) const;
 	double	GetCutLength(void) const;
+	int		GetSpindle(void) const;
 	double	GetFeed(void) const;
 	double	GetMove(size_t) const;
 	double	SetMove(size_t, double);
 	double	GetEndmill(void) const;
 	int		GetEndmillType(void) const;
+	BOOL	GetG98(void) const;
 	CNCdata*	NC_CopyObject(void);			// from TH_Correct.cpp
 	void		AddCorrectObject(CNCdata*);
 	CTypedPtrArrayEx<CPtrArray, CNCdata*>*
@@ -104,7 +108,8 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL) const;
 	virtual	void	DrawXZ(CDC*, BOOL) const;
 	virtual	void	DrawYZ(CDC*, BOOL) const;
-	virtual	void	DrawGL(void) const;
+	virtual	void	DrawWire(void) const;
+	virtual	void	DrawLatheWire(void) const;
 	virtual	void	DrawBottomFace(void) const;
 
 	// ｵﾌﾞｼﾞｪｸﾄ占有矩形(都度ｾｯﾄ)
@@ -166,7 +171,8 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL) const;
 	virtual	void	DrawXZ(CDC*, BOOL) const;
 	virtual	void	DrawYZ(CDC*, BOOL) const;
-	virtual	void	DrawGL(void) const;
+	virtual	void	DrawWire(void) const;
+	virtual	void	DrawLatheWire(void) const;
 	virtual	void	DrawBottomFace(void) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
@@ -234,7 +240,8 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL) const;
 	virtual	void	DrawXZ(CDC*, BOOL) const;
 	virtual	void	DrawYZ(CDC*, BOOL) const;
-	virtual	void	DrawGL(void) const;
+	virtual	void	DrawWire(void) const;
+	virtual	void	DrawLatheWire(void) const;
 	virtual	void	DrawBottomFace(void) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
@@ -276,7 +283,7 @@ class CNCcircle : public CNCdata
 	void	Draw_G17(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G18(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G19(EN_NCCIRCLEDRAW, CDC*) const;
-
+	void	DrawCircleWire(void) const;
 	void	DrawEndmillXYPath(void) const;
 	void	DrawEndmillPipe(void) const;
 	void	DrawEndmillBall(void) const;
@@ -305,7 +312,8 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL) const;
 	virtual	void	DrawXZ(CDC*, BOOL) const;
 	virtual	void	DrawYZ(CDC*, BOOL) const;
-	virtual	void	DrawGL(void) const;
+	virtual	void	DrawWire(void) const;
+	virtual	void	DrawLatheWire(void) const;
 	virtual	void	DrawBottomFace(void) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;

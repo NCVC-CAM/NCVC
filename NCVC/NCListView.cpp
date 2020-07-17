@@ -84,7 +84,7 @@ void CNCListView::OnInitialUpdate()
 	CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
 	pFrame->SetStatusMaxLine(nSize);
 	pFrame->SetStatusInfo(0, (CNCdata *)NULL);
-	pFrame->SendMessage(WM_USERSTATUSLINENO);
+	pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
 }
 
 void CNCListView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
@@ -365,7 +365,7 @@ void CNCListView::OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult)
 		pFrame->SetStatusInfo(nItem+1,
 			nItem<0 || nItem>=GetDocument()->GetNCBlockSize() ?
 			(CNCblock *)NULL : GetDocument()->GetNCblock(nItem) );
-		pFrame->SendMessage(WM_USERSTATUSLINENO);
+		pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
 	}
 	*pResult = 0;
 }
@@ -382,7 +382,7 @@ LRESULT CNCListView::OnSelectTrace(WPARAM wParam, LPARAM)
 	// Ω√∞¿Ω ﬁ∞çXêV
 	CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
 	pFrame->SetStatusInfo(nIndex+1, pData);
-	pFrame->SendMessage(WM_USERSTATUSLINENO);
+	pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
 	// ã≠êßΩ∏€∞ŸÇÃâ¬î\ê´Ç‡Ç†ÇÈÇÃÇ≈Update()Ç≈ÇÕNG
 	GetListCtrl().EnsureVisible(nIndex, FALSE);
 

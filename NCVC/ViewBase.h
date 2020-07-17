@@ -8,6 +8,7 @@
 
 class CViewBase
 {
+	friend class CNCViewBase;
 	CView*		m_pView;		// îhê∂Àﬁ≠∞
 
 	int			m_nBoth;		// óºŒﬁ¿›èàóù∂≥›¿

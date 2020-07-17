@@ -13,8 +13,9 @@ protected:
 	virtual ~CNCViewBase() {}
 
 protected:
+	CString	m_strGuide;			// 平面案内文字
 	// XY, XZ, YZ 平面用 (XYZはCNCViewが独自に持つ)
-	CPoint	m_ptGuid[2][2];		// 軸のｶﾞｲﾄﾞ座標(始点・終点)
+	CPoint	m_ptGuide[2][2];	// 軸のｶﾞｲﾄﾞ座標(始点・終点)
 	CRect	m_rcDrawWork;		// ﾜｰｸ矩形
 	CRect	m_rcDrawMax;		// ﾃﾞｰﾀ矩形
 	void	DrawWorkRect(CDC* pDC) {
@@ -25,6 +26,8 @@ protected:
 		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_MAXCUT));
 		pDC->Rectangle(m_rcDrawMax);
 	}
+
+	void	OnInitialUpdate(int);
 
 public:
 /*

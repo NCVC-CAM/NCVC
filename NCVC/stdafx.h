@@ -53,6 +53,7 @@
 // STL
 #include <string>
 #include <vector>
+#include <bitset>
 #include <algorithm>
 
 // BOOST Libraries

@@ -58,7 +58,7 @@ BOOL CDxfSetupReload::OnInitDialog()
 		::PathSetDlgItemPath(m_hWnd, IDC_DXF_RELOADLIST_ST, pDoc->GetPathName());
 		// ‚»‚ÌÃ·½Ä‚ðŽæ“¾‚µ‚ÄØ½ÄºÝÄÛ°Ù‚É¾¯Ä
 		pStatic->GetWindowText(strPath);
-		m_ctReloadList.SetCheck(m_ctReloadList.AddString(strPath), pDoc->IsReload());
+		m_ctReloadList.SetCheck(m_ctReloadList.AddString(strPath), pDoc->IsDXFDocFlag(DXFDOC_RELOAD));
 	}
 	m_ctReloadList.SendMessage(WM_SETREDRAW, TRUE);
 	m_ctReloadList.SetCurSel(0);

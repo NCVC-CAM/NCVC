@@ -73,9 +73,10 @@ END_MESSAGE_MAP()
 CDXFDoc::CDXFDoc()
 {
 	int		i;
-	// 初期状態はｴﾗｰ, ｽﾚｯﾄﾞは継続
-	m_bShape = m_bReady = FALSE;
-	m_bThread = m_bReload = TRUE;
+
+	// ﾌﾗｸﾞ初期設定
+	m_bDxfDocFlg.set(DXFDOC_RELOAD);
+	m_bDxfDocFlg.set(DXFDOC_THREAD);
 	m_nShapeProcessID = 0;
 	// ﾃﾞｰﾀ数初期化
 	for ( i=0; i<SIZEOF(m_nDataCnt); i++ )
@@ -225,7 +226,7 @@ CString CDXFDoc::CheckDuplexFile(const CString& strOrgFile, const CLayerArray* p
 	for ( i=0; i<nLoop; i++ ) {
 		pLayer = pArray->GetAt(i);
 		strFile = pLayer->GetNCFile();
-		if ( !pLayer->IsCutTarget() || !pLayer->IsPartOut() || strFile.IsEmpty() )
+		if ( !pLayer->IsLayerFlag(LAYER_CUTTARGET) || !pLayer->IsLayerFlag(LAYER_PARTOUT) || strFile.IsEmpty() )
 			continue;
 		strLayer = pLayer->GetStrLayer();
 		// ｵﾘｼﾞﾅﾙﾌｧｲﾙとの重複ﾁｪｯｸ(上位ﾀﾞｲｱﾛｸﾞのみ)
@@ -239,7 +240,7 @@ CString CDXFDoc::CheckDuplexFile(const CString& strOrgFile, const CLayerArray* p
 		for ( j=i+1; j<nLoop; j++ ) {
 			pLayerCmp = pArray->GetAt(j);
 			strCmp = pLayerCmp->GetNCFile();
-			if ( !pLayerCmp->IsCutTarget() || !pLayerCmp->IsPartOut() || strCmp.IsEmpty() )
+			if ( !pLayerCmp->IsLayerFlag(LAYER_CUTTARGET) || !pLayerCmp->IsLayerFlag(LAYER_PARTOUT) || strCmp.IsEmpty() )
 				continue;
 			if ( strFile.CompareNoCase(strCmp) == 0 ) {
 				AfxMessageBox(IDS_ERR_OVERLAPPINGFILE, MB_OK|MB_ICONEXCLAMATION);
@@ -376,7 +377,7 @@ void CDXFDoc::CreateCutterOrigin(const CPointD& pt, double r, BOOL bRedraw/*=FAL
 		}
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
-		m_bReady = FALSE;
+		m_bDxfDocFlg.reset(DXFDOC_READY);
 		return;
 	}
 	SetMaxRect(m_pCircle);
@@ -433,7 +434,7 @@ tuple<CDXFshape*, CDXFdata*, double> CDXFDoc::GetSelectObject(const CPointD& pt,
 	// 全ての切削ｵﾌﾞｼﾞｪｸﾄから一番近い集合と距離を取得
 	for ( i=0; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
-		if ( !pLayer->IsCutType() || !pLayer->IsViewLayer() )
+		if ( !pLayer->IsCutType() || !pLayer->IsLayerFlag(LAYER_VIEW) )
 			continue;
 		for ( j=0; j<pLayer->GetShapeSize(); j++ ) {
 			pShape = pLayer->GetShapeData(j);
@@ -527,7 +528,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		else if ( m_pCircle ) {
 			if ( !m_ptOrgOrig )		// ｼﾘｱﾙ情報に含まれている(CAMﾌｧｲﾙ)場合を除く
 				m_ptOrgOrig = m_pCircle->GetCenter();	// ﾌｧｲﾙからのｵﾘｼﾞﾅﾙ原点を保存
-			m_bReady = TRUE;	// 生成OK!
+			m_bDxfDocFlg.set(DXFDOC_READY);	// 生成OK!
 		}
 		else {
 			// 原点ﾃﾞｰﾀがないとき(矩形の上下に注意)
@@ -560,7 +561,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 			}
 			if ( pt ) {
 				CreateCutterOrigin(*pt, dOrgR);
-				m_bReady = TRUE;	// 生成OK!
+				m_bDxfDocFlg.set(DXFDOC_READY);	// 生成OK!
 			}
 		}
 	}
@@ -618,7 +619,7 @@ void CDXFDoc::OnCloseDocument()
 	}
 	// 処理中のｽﾚｯﾄﾞを中断させる
 	CDocBase::OnCloseDocument();	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
-	m_bThread = FALSE;
+	m_bDxfDocFlg.reset(DXFDOC_THREAD);
 	m_csRestoreCircleType.Lock();
 	m_csRestoreCircleType.Unlock();
 #ifdef _DEBUG
@@ -697,9 +698,10 @@ void CDXFDoc::Serialize(CArchive& ar)
 	extern	DWORD	g_dwCamVer;		// NCVC.cpp
 
 	// DxfSetupReloadのﾁｪｯｸOFF
-	m_bReload = FALSE;
+	m_bDxfDocFlg.reset(DXFDOC_RELOAD);
 
 	int			i, j, nLoopCnt;
+	BOOL		bReady, bShape;
 	CPointD		pt;
 	CLayerData*	pLayer;
 
@@ -709,7 +711,9 @@ void CDXFDoc::Serialize(CArchive& ar)
 
 	if ( ar.IsStoring() ) {
 		// 各種状態
-		ar << m_bReady << m_bShape;
+		bReady = m_bDxfDocFlg[DXFDOC_READY];
+		bShape = m_bDxfDocFlg[DXFDOC_SHAPE];
+		ar << bReady << bShape;
 		ar << m_AutoWork.nSelect << m_AutoWork.dOffset << m_AutoWork.bAcuteRound <<
 			m_AutoWork.nLoopCnt << m_AutoWork.nScanLine << m_AutoWork.bCircleScroll;
 		// NC生成ﾌｧｲﾙ名
@@ -735,7 +739,9 @@ void CDXFDoc::Serialize(CArchive& ar)
 	}
 
 	// 各種状態
-	ar >> m_bReady >> m_bShape;
+	ar >> bReady >> bShape;
+	m_bDxfDocFlg.set(DXFDOC_READY, bReady);
+	m_bDxfDocFlg.set(DXFDOC_READY, bShape);
 	if ( g_dwCamVer > NCVCSERIALVERSION_1600 ) {	// Ver1.70～
 		ar >> m_AutoWork.nSelect >> m_AutoWork.dOffset >> m_AutoWork.bAcuteRound >>
 			m_AutoWork.nLoopCnt >> m_AutoWork.nScanLine >> m_AutoWork.bCircleScroll;
@@ -857,7 +863,7 @@ void CDXFDoc::OnEditOrigin()
 
 	if ( pt ) {
 		CreateCutterOrigin(*pt, dOrgR, TRUE);
-		m_bReady = TRUE;	// 生成OK!
+		m_bDxfDocFlg.set(DXFDOC_READY);	// 生成OK!
 	}
 }
 
@@ -866,7 +872,7 @@ void CDXFDoc::OnEditShape()
 	// 状況案内ﾀﾞｲｱﾛｸﾞ(検索ｽﾚｯﾄﾞ生成)
 	CThreadDlg	dlgThread(ID_EDIT_DXFSHAPE, this);
 	if ( dlgThread.DoModal() == IDOK ) {
-		m_bShape = TRUE;
+		m_bDxfDocFlg.set(DXFDOC_SHAPE);
 		// ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳを広げる + DXFView のﾌｨｯﾄﾒｯｾｰｼﾞ送信
 		static_cast<CDXFChild *>(AfxGetNCVCMainWnd()->MDIGetActive())->ShowShapeView();
 		// DXFShapeView更新
@@ -940,12 +946,12 @@ void CDXFDoc::OnEditStrictOffset()
 
 void CDXFDoc::OnUpdateEditShape(CCmdUI* pCmdUI) 
 {
-	pCmdUI->Enable(!m_bShape);
+	pCmdUI->Enable(!m_bDxfDocFlg[DXFDOC_SHAPE]);
 }
 
 void CDXFDoc::OnUpdateEditShaping(CCmdUI* pCmdUI) 
 {
-	pCmdUI->Enable(m_bShape);
+	pCmdUI->Enable(m_bDxfDocFlg[DXFDOC_SHAPE]);
 }
 
 void CDXFDoc::OnUpdateShapePattern(CCmdUI* pCmdUI)
@@ -972,10 +978,10 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 {
 	BOOL	bEnable = TRUE;
 	// ｴﾗｰﾃﾞｰﾀの場合はNC変換ﾒﾆｭｰを無効にする
-	if ( !m_bReady || !m_pCircle )
+	if ( !m_bDxfDocFlg[DXFDOC_READY] || !m_pCircle )
 		bEnable = FALSE;
 	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_SHAPE )
-		bEnable = m_bShape;	// 形状処理が済んでいるか
+		bEnable = m_bDxfDocFlg[DXFDOC_SHAPE];	// 形状処理が済んでいるか
 	else {
 		int		i = 0, nCnt = 0;
 		// 単一ﾚｲﾔの場合は拡張生成をoffにする
@@ -1072,7 +1078,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		for ( i=0; i<m_obLayer.GetSize(); i++ ) {
 			pLayer = m_obLayer[i];
 			if ( pLayer->IsMakeTarget() ) {
-				if ( pLayer->IsPartOut() ) {
+				if ( pLayer->IsLayerFlag(LAYER_PARTOUT) ) {
 					pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(pLayer->GetNCFile());
 					if ( pDoc )
 						pDoc->OnCloseDocument();
@@ -1124,8 +1130,8 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		bAllOut = FALSE;	// m_strNCFileName も開くかどうか
 		for ( i=0; i<m_obLayer.GetSize(); i++ ) {
 			pLayer = m_obLayer[i];
-			if ( pLayer->IsMakeTarget() && pLayer->GetLayerFlags()==0 ) {
-				if ( pLayer->IsPartOut() )
+			if ( pLayer->IsMakeTarget() && !pLayer->IsLayerFlag(LAYER_PARTERROR) ) {
+				if ( pLayer->IsLayerFlag(LAYER_PARTOUT) )
 					AfxGetNCVCApp()->OpenDocumentFile(pLayer->GetNCFile());
 				else
 					bAllOut = TRUE;
@@ -1175,7 +1181,7 @@ UINT CDXFDoc::RestoreCircleTypeThread(LPVOID pParam)
 	pDoc->m_csRestoreCircleType.Lock();		// ｽﾚｯﾄﾞ終了までﾛｯｸ
 	for ( i=0; i<pDoc->m_obLayer.GetSize(); i++ ) {
 		pLayer = pDoc->m_obLayer[i];
-		for ( j=0; j<pLayer->GetDxfSize() && pDoc->m_bThread; j++ ) {
+		for ( j=0; j<pLayer->GetDxfSize() && pDoc->m_bDxfDocFlg[DXFDOC_THREAD]; j++ ) {
 			pData = pLayer->GetDxfData(j);
 			enType = pData->GetType();
 			if ( enType != pData->GetMakeType() )
