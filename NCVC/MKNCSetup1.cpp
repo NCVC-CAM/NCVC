@@ -23,6 +23,8 @@ BEGIN_MESSAGE_MAP(CMKNCSetup1, CPropertyPage)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CMKNCSetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMKNCSetup1 プロパティ ページ
 
@@ -38,7 +40,7 @@ CMKNCSetup1::CMKNCSetup1() : CPropertyPage(CMKNCSetup1::IDD),
 
 void CMKNCSetup1::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMKNCSetup1)
 	DDX_Control(pDX, IDC_MKNC1_ZFEED, m_dZFeed);
 	DDX_Control(pDX, IDC_MKNC1_FEED, m_dFeed);
@@ -63,11 +65,11 @@ void CMKNCSetup1::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMKNCSetup1::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
-	// + GetParent() ﾎﾟｲﾝﾀを取得できない
-	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
+	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	m_nSpindle	= pOpt->m_nSpindle;
 	m_dFeed		= pOpt->m_dFeed;
 	m_dZFeed	= pOpt->m_dZFeed;
@@ -150,7 +152,7 @@ BOOL CMKNCSetup1::OnApply()
 	int		nMakeEnd;
 	BOOL	bDeep;
 	double	dDeep, dMakeValue;
-	CMKNCSetup*	pParent = static_cast<CMKNCSetup *>(GetParent());
+	CMKNCSetup*	pParent = GetParentSheet();
 	CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
 
 	if ( ::IsWindow(pParent->m_dlg3.m_hWnd) ) {
@@ -204,7 +206,7 @@ BOOL CMKNCSetup1::OnApply()
 
 BOOL CMKNCSetup1::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_dFeed <= 0 ) {

@@ -21,6 +21,8 @@ enum	ENNCDRAWVIEW
 	NCDRAWVIEW_XYZ=0, NCDRAWVIEW_XY, NCDRAWVIEW_XZ, NCDRAWVIEW_YZ,
 		NCDRAWVIEW_NUM		// [4]
 };
+//
+typedef	std::vector<GLfloat>	CVfloat;
 
 /////////////////////////////////////////////////////////////////////////////
 // NC√ﬁ∞¿Çì«Ç›çûÇﬁéûÇ…ÇæÇØïKóvÇ»√ﬁ∞¿
@@ -131,8 +133,8 @@ public:
 	virtual	void	DrawGLWireWire(void) const;
 	virtual	void	DrawGLLatheFace(void) const;
 	virtual	void	DrawGLBottomFace(void) const;
-			int		AddGLWireFirstVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
-	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
+			int		AddGLWireFirstVertex(CVfloat&, CVfloat&) const;
+	virtual	int		AddGLWireVertex(CVfloat&, CVfloat&) const;
 	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
@@ -208,7 +210,7 @@ public:
 	virtual	void	DrawGLWireWire(void) const;
 	virtual	void	DrawGLLatheFace(void) const;
 	virtual	void	DrawGLBottomFace(void) const;
-	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
+	virtual	int		AddGLWireVertex(CVfloat&, CVfloat&) const;
 	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
@@ -288,7 +290,7 @@ public:
 	virtual	void	DrawGLWireWire(void) const;
 	virtual	void	DrawGLLatheFace(void) const;
 	virtual	void	DrawGLBottomFace(void) const;
-	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
+	virtual	int		AddGLWireVertex(CVfloat&, CVfloat&) const;
 	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
@@ -366,7 +368,7 @@ public:
 	virtual	void	DrawGLWireWire(void) const;
 	virtual	void	DrawGLLatheFace(void) const;
 	virtual	void	DrawGLBottomFace(void) const;
-	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
+	virtual	int		AddGLWireVertex(CVfloat&, CVfloat&) const;
 	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
 	//
 	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;

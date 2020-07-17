@@ -21,6 +21,8 @@ BEGIN_MESSAGE_MAP(CMKLASetup1, CPropertyPage)
 	ON_BN_CLICKED(IDC_MKNC1_FOOTER_EDIT, &CMKLASetup1::OnFooterEdit)
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CMKLASetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMKLASetup1 プロパティ ページ
 
@@ -56,8 +58,8 @@ BOOL CMKLASetup1::OnInitDialog()
 	CPropertyPage::OnInitDialog();
 
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
-	// + GetParent() ﾎﾟｲﾝﾀを取得できない
-	CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(GetParent())->GetNCMakeOption();
+	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
+	CNCMakeLatheOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	m_nSpindle	= pOpt->m_nSpindle;
 	m_dFeed		= pOpt->m_dFeed;
 	m_dXFeed	= pOpt->m_dXFeed;
@@ -133,7 +135,7 @@ void CMKLASetup1::OnFooterEdit()
 
 BOOL CMKLASetup1::OnApply() 
 {
-	CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeLatheOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	pOpt->m_nSpindle	= m_nSpindle;
 	pOpt->m_dFeed		= m_dFeed;
 	pOpt->m_dXFeed		= m_dXFeed;

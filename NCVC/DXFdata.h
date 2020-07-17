@@ -182,9 +182,9 @@ public:
 	virtual	const CPointD	GetStartMakePoint(void) const = 0;
 	virtual	const CPointD	GetEndCutterPoint(void) const = 0;	// â¡çHèIóπà íu(â¡çHèIì_)
 	virtual	const CPointD	GetEndMakePoint(void) const = 0;
-	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const = 0;	// from CDXFchain::IsPointInPolygon()
-	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const = 0;
-	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const = 0;
+	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const = 0;	// from CDXFchain::IsPointInPolygon()
+	virtual	void	SetVectorPoint(CVPointD&, size_t) const = 0;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const = 0;
 	virtual	double	GetLength(void) const = 0;
 	//
 	virtual	void	DrawTuning(const double) = 0;
@@ -237,9 +237,9 @@ public:
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
-	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
+	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
 
 	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
@@ -290,9 +290,9 @@ public:
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
-	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
+	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
 
 	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
@@ -344,7 +344,7 @@ protected:
 	void	SetEllipseArgv_Circle(LPCDXFBLOCK, LPCDXFEARGV, double, double, BOOL);
 	double	GetSelectPointGap_Circle(const CPointD&, double, double) const;
 	BOOL	GetDirectionArraw_Circle(const double[], const CPointD[], CPointD[][3]) const;
-	size_t	SetVectorPointSub(BOOL, double, double, double, const CPointD&, VECPOINTD&) const;
+	size_t	SetVectorPointSub(BOOL, double, double, double, const CPointD&, CVPointD&) const;
 
 	CDXFcircle();
 	CDXFcircle(ENDXFTYPE, CLayerData*, const CPointD&, double, BOOL, int);
@@ -380,9 +380,9 @@ public:
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
-	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
+	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
@@ -491,9 +491,9 @@ public:
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
-	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
+	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
@@ -569,9 +569,9 @@ public:
 	virtual	const CPointD	GetStartMakePoint(void) const;
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
-	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
+	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
@@ -636,9 +636,9 @@ public:
 	void	EndSeq(void);
 	void	CheckPolylineIntersection(void);
 
-	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
+	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);

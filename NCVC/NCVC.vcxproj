@@ -46,15 +46,15 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_57_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_57_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_58_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_58_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_57_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_57_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_58_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_58_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -230,6 +230,8 @@
     <ClCompile Include="NCViewXZ.cpp" />
     <ClCompile Include="NCViewYZ.cpp" />
     <ClCompile Include="NCWorkDlg.cpp" />
+    <ClCompile Include="NCWorkDlg1.cpp" />
+    <ClCompile Include="NCWorkDlg2.cpp" />
     <ClCompile Include="ReadDXF.cpp" />
     <ClCompile Include="ShapePropDlg.cpp" />
     <ClCompile Include="SplashWnd.cpp" />
@@ -352,6 +354,8 @@
     <ClInclude Include="NCViewXZ.h" />
     <ClInclude Include="NCViewYZ.h" />
     <ClInclude Include="NCWorkDlg.h" />
+    <ClInclude Include="NCWorkDlg1.h" />
+    <ClInclude Include="NCWorkDlg2.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ShapePropDlg.h" />
     <ClInclude Include="SplashWnd.h" />

@@ -314,7 +314,7 @@ void CViewBase::OnLButtonDown(const CPoint& pt)
 	m_rcMagnify.TopLeft() = ptLog;
 }
 
-int CViewBase::OnLButtonUp(const CPoint& pt)
+int CViewBase::OnLButtonUp(CPoint& pt)
 {
 	int nResult = OnMouseButtonUp(m_nLState, pt);
 	m_nLState = -1;
@@ -341,7 +341,7 @@ void CViewBase::OnRButtonDown(const CPoint& pt)
 	dc.DPtoLP(&m_ptMovOrg);
 }
 
-int CViewBase::OnRButtonUp(const CPoint& pt)
+int CViewBase::OnRButtonUp(CPoint& pt)
 {
 	int nResult = OnMouseButtonUp(m_nRState, pt);
 	switch ( nResult ) {
@@ -357,7 +357,7 @@ int CViewBase::OnRButtonUp(const CPoint& pt)
 	return nResult;
 }
 
-int CViewBase::OnMouseButtonUp(int nState, const CPoint& pt)
+int CViewBase::OnMouseButtonUp(int nState, CPoint& pt)
 {
 	if ( m_nBoth-1 <= 0 )
 		ReleaseCapture();
@@ -384,6 +384,7 @@ int CViewBase::OnMouseButtonUp(int nState, const CPoint& pt)
 	if ( --m_nBoth < 0 )
 		m_nBoth = 0;
 
+	pt = ptLog;		// ˜_—À•W‚ð•Ô‚·
 	return nResult;
 }
 

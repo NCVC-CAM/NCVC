@@ -16,8 +16,8 @@ class CViewBase : public CView
 	CRect		m_rcMagnify;	// Šg‘å‹éŒ`(ƒˆ‚È˜_—À•W)
 	double		m_dBeforeFactor;// ’¼‘O‚ÌŠg‘å—¦
 
-	int		OnMouseButtonUp(int, const CPoint&);	// ÎŞÀİ‚ğ—£‚µ‚½‚Æ‚«‚Ì‹¤’Êˆ—
-	CSize	OnViewLens(CClientDC&);					// Šg‘åk¬‹¤’Êˆ—
+	int		OnMouseButtonUp(int, CPoint&);	// ÎŞÀİ‚ğ—£‚µ‚½‚Æ‚«‚Ì‹¤’Êˆ—
+	CSize	OnViewLens(CClientDC&);			// Šg‘åk¬‹¤’Êˆ—
 
 protected:
 	CViewBase();
@@ -62,9 +62,9 @@ protected:
 
 	int		OnCreate(LPCREATESTRUCT, BOOL bDC = TRUE);
 	void	OnLButtonDown(const CPoint&);
-	int		OnLButtonUp(const CPoint&);
+	int		OnLButtonUp( CPoint&);
 	void	OnRButtonDown(const CPoint&);
-	int		OnRButtonUp(const CPoint&);
+	int		OnRButtonUp(CPoint&);
 	BOOL	OnMouseMove(UINT, const CPoint&);
 	BOOL	OnMouseWheel(UINT, short, const CPoint&);
 	void	OnContextMenu(CPoint pt, UINT nID);

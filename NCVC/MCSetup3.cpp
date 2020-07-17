@@ -56,7 +56,7 @@ CMCSetup3::CMCSetup3() : CPropertyPage(CMCSetup3::IDD)
 
 void CMCSetup3::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMCSetup3)
 	DDX_Control(pDX, IDC_MCST3_H, m_dToolH);
 	DDX_Control(pDX, IDC_MCST3_D, m_dToolD);
@@ -131,7 +131,7 @@ void CMCSetup3::SetHeaderMark(int nNewColumn)
 
 BOOL CMCSetup3::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	int			i;
 	POSITION	pos;
@@ -207,7 +207,7 @@ BOOL CMCSetup3::OnApply()
 
 	// çƒì«çû¡™Ø∏
 	if ( m_bChange )
-		static_cast<CMCSetup *>(GetParent())->m_bReload = TRUE;
+		static_cast<CMCSetup *>(GetParentSheet())->m_bReload = TRUE;
 
 	return TRUE;
 }
@@ -216,7 +216,7 @@ void CMCSetup3::OnCancel()
 {
 	// ¿ﬁ≤±€∏ﬁÇ≈ìoò^Ç≥ÇÍÇΩçHãÔèÓïÒÇçÌèú
 	AfxGetNCVCApp()->GetMCOption()->ReductionTools(TRUE);
-	CPropertyPage::OnCancel();
+	__super::OnCancel();
 }
 
 void CMCSetup3::OnItemChangedToolList(NMHDR* pNMHDR, LRESULT* pResult) 

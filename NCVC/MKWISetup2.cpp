@@ -15,6 +15,8 @@ extern	CMagaDbg	g_dbg;
 BEGIN_MESSAGE_MAP(CMKWISetup2, CPropertyPage)
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CMKWISetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMKWISetup1 プロパティ ページ
 
@@ -27,7 +29,7 @@ CMKWISetup2::CMKWISetup2() : CPropertyPage(CMKWISetup2::IDD)
 
 void CMKWISetup2::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_MKWI2_RL, m_dAWFcircleLo);
 	DDX_Control(pDX, IDC_MKWI2_RH, m_dAWFcircleHi);
 	DDX_Check(pDX, IDC_MKWI2_AWFSTART, m_bAWFstart);
@@ -41,11 +43,11 @@ void CMKWISetup2::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMKWISetup2::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
-	// + GetParent() ﾎﾟｲﾝﾀを取得できない
-	CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(GetParent())->GetNCMakeOption();
+	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
+	CNCMakeWireOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	m_dAWFcircleLo	= pOpt->m_dAWFcircleLo;
 	m_dAWFcircleHi	= pOpt->m_dAWFcircleHi;
 	m_bAWFstart		= pOpt->m_bAWFstart;
@@ -60,7 +62,7 @@ BOOL CMKWISetup2::OnInitDialog()
 
 BOOL CMKWISetup2::OnApply() 
 {
-	CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeWireOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	pOpt->m_dAWFcircleLo= m_dAWFcircleLo;
 	pOpt->m_dAWFcircleHi= m_dAWFcircleHi;
 	pOpt->m_bAWFstart	= m_bAWFstart;
@@ -73,7 +75,7 @@ BOOL CMKWISetup2::OnApply()
 
 BOOL CMKWISetup2::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_dAWFcircleLo<0 || m_dAWFcircleHi<0.0 ) {

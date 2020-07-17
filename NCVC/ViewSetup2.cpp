@@ -78,7 +78,7 @@ CViewSetup2::~CViewSetup2()
 
 void CViewSetup2::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CViewSetup2)
 	DDX_Control(pDX, IDC_VIEWSETUP2_GUIDE, m_ctGuide);
 	//}}AFX_DATA_MAP
@@ -111,7 +111,7 @@ void CViewSetup2::EnableControl(void)
 
 BOOL CViewSetup2::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ê¸ëÆê´¿≤ÃﬂÇÃëIëéàìoò^
 	extern	const	PENSTYLE	g_penStyle[];
@@ -169,7 +169,7 @@ BOOL CViewSetup2::OnApply()
 
 BOOL CViewSetup2::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	for ( int i=0; i<NCXYZ; i++ ) {
@@ -191,7 +191,7 @@ HBRUSH CViewSetup2::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		if ( IDC_VIEWSETUP2_ST_BACKGROUND1<=nID && nID<=IDC_VIEWSETUP2_ST_CORRECT )
 			return m_brColor[nID-IDC_VIEWSETUP2_ST_BACKGROUND1];
 	}
-	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
+	return __super::OnCtlColor(pDC, pWnd, nCtlColor);
 }
 
 void CViewSetup2::OnColorButton() 

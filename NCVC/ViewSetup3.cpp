@@ -35,6 +35,8 @@ BEGIN_MESSAGE_MAP(CViewSetup3, CPropertyPage)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CViewSetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CViewSetup3 プロパティ ページ
 
@@ -66,7 +68,7 @@ CViewSetup3::~CViewSetup3()
 
 void CViewSetup3::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CViewSetup3)
 	DDX_Control(pDX, IDC_VIEWSETUP3_FONT, m_ctFontButton);
 	//}}AFX_DATA_MAP
@@ -82,11 +84,11 @@ void CViewSetup3::DoDataExchange(CDataExchange* pDX)
 
 BOOL CViewSetup3::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ﾎﾞﾀﾝﾃｷｽﾄの変更
 	m_ctFontButton.SetWindowText(
-		static_cast<CViewSetup *>(GetParent())->GetChangeFontButtonText(&m_lfFont) );
+		GetParentSheet()->GetChangeFontButtonText(&m_lfFont) );
 
 	// 線属性ﾀｲﾌﾟの選択肢登録
 	extern	const	PENSTYLE	g_penStyle[];
@@ -132,7 +134,7 @@ HBRUSH CViewSetup3::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		if ( IDC_VIEWSETUP3_ST_BACKGROUND1<=nID && nID<=IDC_VIEWSETUP3_ST_WORK )
 			return m_brColor[nID-IDC_VIEWSETUP3_ST_BACKGROUND1];
 	}
-	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
+	return __super::OnCtlColor(pDC, pWnd, nCtlColor);
 }
 
 void CViewSetup3::OnColorButton() 
@@ -157,7 +159,7 @@ void CViewSetup3::OnFontChange()
 	if ( fontDlg.DoModal() == IDOK ) {
 		memcpy(&m_lfFont, fontDlg.m_cf.lpLogFont, sizeof(m_lfFont));
 		m_ctFontButton.SetWindowText(
-			static_cast<CViewSetup *>(GetParent())->GetChangeFontButtonText(&m_lfFont) );
+			GetParentSheet()->GetChangeFontButtonText(&m_lfFont) );
 		// 適用ﾎﾞﾀﾝを有効に
 		SetModified();
 	}

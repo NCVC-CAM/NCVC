@@ -34,7 +34,7 @@ CDxfSetup2::CDxfSetup2() : CPropertyPage(CDxfSetup2::IDD)
 
 void CDxfSetup2::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CDxfSetup2)
 	DDX_Control(pDX, IDC_DXF_RELOAD, m_ctReload);
 	DDX_Control(pDX, IDC_DXF_START, m_ctStartLayer);
@@ -60,7 +60,7 @@ void CDxfSetup2::EnableReloadButton(void)
 
 BOOL CDxfSetup2::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// DXFÄÞ·­ÒÝÄ‚ªŠJ‚©‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©
 	EnableReloadButton();
@@ -83,8 +83,7 @@ void CDxfSetup2::OnReload()
 {
 	UpdateData();
 	OnApply();
-	CDxfSetup*	pParent = static_cast<CDxfSetup *>(GetParent());
-	if ( pParent->OnReload(this) ) {
+	if ( static_cast<CDxfSetup *>(GetParentSheet())->OnReload(this) ) {
 		m_ctStartLayer.SetFocus();
 		m_ctStartLayer.SetSel(0, -1);
 		EnableReloadButton();
@@ -94,5 +93,5 @@ void CDxfSetup2::OnReload()
 BOOL CDxfSetup2::OnSetActive() 
 {
 	EnableReloadButton();
-	return CPropertyPage::OnSetActive();
+	return __super::OnSetActive();
 }

@@ -55,7 +55,7 @@ CViewSetup5::~CViewSetup5()
 
 void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_VIEWSETUP5_DEFAULTENDMILL, m_dEndmill);
 	DDX_Control(pDX, IDC_VIEWSETUP5_G00VIEW, m_ctG00View);
 	DDX_Control(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_ctDrag);
@@ -92,7 +92,7 @@ void CViewSetup5::EnableTextureControl(void)
 
 BOOL CViewSetup5::OnInitDialog()
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	m_dEndmill = pOpt->m_dDefaultEndmill * 2.0;
@@ -138,7 +138,7 @@ BOOL CViewSetup5::OnApply()
 
 BOOL CViewSetup5::OnKillActive()
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_dEndmill < 0 ) {
@@ -158,7 +158,7 @@ HBRUSH CViewSetup5::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		if ( nID>=IDC_VIEWSETUP5_ST_WORK && nID<=IDC_VIEWSETUP5_ST_CUT )
 			return m_brColor[nID-IDC_VIEWSETUP5_ST_WORK];
 	}
-	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
+	return __super::OnCtlColor(pDC, pWnd, nCtlColor);
 }
 
 void CViewSetup5::OnColorButton() 

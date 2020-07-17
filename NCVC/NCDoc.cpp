@@ -36,7 +36,8 @@ extern	LPCTSTR	g_szGdelimiter = "GSMOF";
 extern	LPCTSTR	g_szNdelimiter = "XYZUVWIJKRPLDH";
 extern	LPTSTR	g_pszDelimiter;	// g_szGdelimiter[] + g_szNdelimiter[] (NCVC.cppÇ≈ê∂ê¨)
 extern	LPCTSTR	g_szNCcomment[] = {
-	"Endmill", "WorkRect", "WorkCylinder",
+	"Endmill", "Drill", "Tap", "Reamer",
+	"WorkRect", "WorkCylinder",
 	"LatheView", "WireView",
 	"ToolPos"
 };
@@ -383,10 +384,45 @@ void CNCDoc::ClearBlockData(void)
 	m_obBlock.RemoveAll();
 }
 
+void CNCDoc::SetWorkRect(BOOL bShow, const CRect3D& rc)
+{
+	m_bDocFlg.set(NCDOC_WRKRECT, bShow);
+	if ( bShow ) {
+		m_rcWork = rc;
+		m_bDocFlg.reset(NCDOC_CYLINDER);
+	}
+	UpdateAllViews(NULL, UAV_DRAWWORKRECT,
+			reinterpret_cast<CObject *>(bShow));
+}
+
+void CNCDoc::SetWorkCylinder(BOOL bShow, double d, double h, const CPoint3D& ptOffset)
+{
+	m_bDocFlg.set(NCDOC_CYLINDER, bShow);
+	if ( bShow ) {
+		d /= 2.0;
+		CRect3D	rc(-d, -d, d, d, h, 0);
+		rc.OffsetRect(ptOffset);
+		m_rcWork = rc;
+		m_bDocFlg.reset(NCDOC_WRKRECT);
+	}
+	UpdateAllViews(NULL, UAV_DRAWWORKRECT,
+			reinterpret_cast<CObject *>(bShow));
+}
+
 void CNCDoc::SetCommentStr(const CString& strComment)
 {
 	// ä˘ë∂ÇÃ∫“›ƒçsÇåüçı(hoge=ddd.dd, ddd.d, ...Ç…œØ¡)
-	CString	strKey(g_szNCcomment[m_bDocFlg[NCDOC_LATHE]?LATHEVIEW:WORKRECT]),
+	size_t	n;
+	if ( m_bDocFlg[NCDOC_LATHE] )
+		n = LATHEVIEW;
+	else if ( m_bDocFlg[NCDOC_CYLINDER] )
+		n = WORKCYLINDER;
+	else if ( m_bDocFlg[NCDOC_WRKRECT] )
+		n = WORKRECT;
+	else
+		return;
+
+	CString	strKey(g_szNCcomment[n]),
 			strDouble("[\\+\\-]?\\d+\\.?\\d*"),
 			strRegex(strKey+"\\s*=\\s*("+strDouble+")*(\\s*,\\s*"+strDouble+")*");
 
@@ -975,7 +1011,8 @@ void CNCDoc::SerializeBlock
 
 	ULONGLONG	dwSize = ar.GetFile()->GetLength();		// Ãß≤Ÿª≤ΩﬁéÊìæ
 	DWORD		dwPosition = 0;
-	CProgressCtrl* pProgress = IsThumbnail() ? NULL : AfxGetNCVCMainWnd()->GetProgressCtrl();
+	CProgressCtrl* pProgress = IsThumbnail() || dwFlags&NCF_AUTOREAD ?
+						NULL : AfxGetNCVCMainWnd()->GetProgressCtrl();
 
 	if ( pProgress ) {
 		// “≤›Ã⁄∞—ÇÃÃﬂ€∏ﬁ⁄Ω ﬁ∞èÄîı
@@ -1248,8 +1285,8 @@ void CNCDoc::OnWorkRect()
 		return;
 	}
 	try {
-		CNCWorkDlg*	pDlg = new CNCWorkDlg;
-		pDlg->Create(IDD_NCVIEW_WORK);
+		CNCWorkDlg*	pDlg = new CNCWorkDlg(ID_NCVIEW_WORKRECT, m_bDocFlg[NCDOC_CYLINDER] ? 1 : 0);
+		pDlg->Create(AfxGetMainWnd());
 		AfxGetNCVCMainWnd()->SetModelessDlg(MLD_NCWORK, pDlg);
 	}
 	catch ( CMemoryException* e ) {

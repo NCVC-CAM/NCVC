@@ -14,7 +14,7 @@ public:
 	// ã‰ºˆÙŒ`ó‚ÌØíÃŞ°À
 	CNCMakeWire(const CDXFdata*, const CDXFdata*, double);
 	// ã‰ºˆÙŒ`ó‚ğ”÷×ü•ª‚Å¶¬
-	CNCMakeWire(const VECPOINTD&, const VECPOINTD&, double);
+	CNCMakeWire(const CVPointD&, const CVPointD&, double);
 	// XY‚ÌG[0|1]ˆÚ“®
 	CNCMakeWire(int, const CPointD&, double, double);
 	// XY/UV‚ÌG01ˆÚ“®

@@ -95,23 +95,21 @@ void CNCViewBase::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		UpdateWindow();
 		return;
 	case UAV_DRAWWORKRECT:
-		{
+		if ( pHint ) {
 			CClientDC	dc(this);
-			// 前回の描画を消去
-			if ( GetDocument()->IsDocFlag(NCDOC_WRKRECT) ) {
-				dc.SetROP2(R2_XORPEN);
-				DrawWorkRect(&dc);
-				dc.SetROP2(R2_COPYPEN);
+			dc.SetROP2(R2_COPYPEN);
+			if ( GetDocument()->IsDocFlag(NCDOC_CYLINDER) ) {
+				SetWorkCylinder();
+				ConvertWorkCylinder();
+				DrawWorkCylinder(&dc);
 			}
-			// 描画用にﾃﾞｰﾀ更新
-			if ( pHint ) {
+			else if ( GetDocument()->IsDocFlag(NCDOC_WRKRECT) ) {
 				SetWorkRect();
 				ConvertWorkRect();
-				dc.SetROP2(R2_COPYPEN);
 				DrawWorkRect(&dc);
 			}
 		}
-		return;
+		break;
 	case UAV_DRAWMAXRECT:
 		{
 			CClientDC	dc(this);
@@ -132,9 +130,6 @@ void CNCViewBase::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 
 void CNCViewBase::OnDraw(CDC* pDC)
 {
-//	if ( !IsWindowVisible() )	// ﾀﾌﾞｺﾝﾄﾛｰﾙによる非表示
-//		return;
-
 	ASSERT_VALID(GetDocument());
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -258,8 +253,10 @@ void CNCViewBase::DrawSupportRect(CDC* pDC)
 		// 最大切削矩形
 		if ( GetDocument()->IsDocFlag(NCDOC_MAXRECT) )
 			DrawMaxRect(pDC);
-		// ﾜｰｸ矩形
-		if ( GetDocument()->IsDocFlag(NCDOC_WRKRECT) )
+		// ﾜｰｸ
+		if ( GetDocument()->IsDocFlag(NCDOC_CYLINDER) )
+			DrawWorkCylinder(pDC);
+		else if ( GetDocument()->IsDocFlag(NCDOC_WRKRECT) )
 			DrawWorkRect(pDC);
 		// 現在の拡大矩形を描画(ViewBase.cpp)
 		if ( m_bMagRect )
@@ -316,9 +313,11 @@ void CNCViewBase::OnViewLensComm(void)
 		if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) )
 			SetGuideData();
 		// 各矩形情報の更新
-		if ( GetDocument()->IsDocFlag(NCDOC_WRKRECT) )
-			ConvertWorkRect();
 		ConvertMaxRect();
+		if ( GetDocument()->IsDocFlag(NCDOC_CYLINDER) )
+			ConvertWorkCylinder();
+		else if ( GetDocument()->IsDocFlag(NCDOC_WRKRECT) )
+			ConvertWorkRect();
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
 		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dFactor,
 			m_strGuide.Left(m_enView==NCDRAWVIEW_XYZ ? 3 : 2));

@@ -348,17 +348,17 @@ int CDXFpoint::CheckIntersectionCircle(const CPointD&, double) const
 	return 0;
 }
 
-size_t CDXFpoint::SetVectorPoint(VECPOINTD& vpt, double) const
+size_t CDXFpoint::SetVectorPoint(CVPointD& vpt, double) const
 {
 	vpt.push_back(GetNativePoint(0));
 	return 1;
 }
 
-void CDXFpoint::SetVectorPoint(VECPOINTD& vpt, size_t) const
+void CDXFpoint::SetVectorPoint(CVPointD& vpt, size_t) const
 {
 }
 
-void CDXFpoint::SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const
+void CDXFpoint::SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const
 {
 }
 
@@ -687,7 +687,7 @@ int CDXFline::CheckIntersectionCircle(const CPointD& ptc, double r) const
 	return nResult;
 }
 
-size_t CDXFline::SetVectorPoint(VECPOINTD& vpt, double k) const
+size_t CDXFline::SetVectorPoint(CVPointD& vpt, double k) const
 {
 	if ( k == 0.0 )
 		return CDXFpoint::SetVectorPoint(vpt);
@@ -696,7 +696,7 @@ size_t CDXFline::SetVectorPoint(VECPOINTD& vpt, double k) const
 	return 1;
 }
 
-void CDXFline::SetVectorPoint(VECPOINTD& vpt, size_t n) const
+void CDXFline::SetVectorPoint(CVPointD& vpt, size_t n) const
 {
 	CPointD	pts(GetStartMakePoint()), pte(GetEndMakePoint()),
 			pto(pte - pts), pt;
@@ -711,7 +711,7 @@ void CDXFline::SetVectorPoint(VECPOINTD& vpt, size_t n) const
 	vpt.push_back(pte);
 }
 
-void CDXFline::SetWireHeteroData(const CDXFdata* pDataUV, VECPOINTD& vptXY, VECPOINTD& vptUV, double k) const
+void CDXFline::SetWireHeteroData(const CDXFdata* pDataUV, CVPointD& vptXY, CVPointD& vptUV, double k) const
 {
 	if ( pDataUV->GetMakeType() == DXFARCDATA ) {
 		// â~å ÇçèÇ›ïùÇ≈ç¿ïWìoò^Çµ
@@ -1030,43 +1030,43 @@ int CDXFcircle::CheckIntersectionCircle(const CPointD&, double) const
 	return 0;
 }
 
-size_t CDXFcircle::SetVectorPoint(VECPOINTD& vpt, double k) const
+size_t CDXFcircle::SetVectorPoint(CVPointD& vpt, double k) const
 {
 	double	sq, eq;
 	switch (m_nArrayExt) {
-	case 1:		sq = RAD(180);		break;
-	case 2:		sq = RAD(90);		break;
-	case 3:		sq = RAD(270);		break;
+	case 1:		sq = RAD(180.0);	break;
+	case 2:		sq = RAD(90.0);		break;
+	case 3:		sq = RAD(270.0);	break;
 	default:	sq = 0;
 	}
 	if ( m_bRound )
-		eq = sq + RAD(360);
+		eq = sq + RAD(360.0);
 	else
-		eq = sq - RAD(360);
+		eq = sq - RAD(360.0);
 
 	return SetVectorPointSub(m_bRound, sq, eq, k/m_r, m_ctTun, vpt);
 }
 
-void CDXFcircle::SetVectorPoint(VECPOINTD& vpt, size_t n) const
+void CDXFcircle::SetVectorPoint(CVPointD& vpt, size_t n) const
 {
 	double	sq, eq;
 	switch (m_nArrayExt) {
-	case 1:		sq = RAD(180);		break;
-	case 2:		sq = RAD(90);		break;
-	case 3:		sq = RAD(270);		break;
+	case 1:		sq = RAD(180.0);	break;
+	case 2:		sq = RAD(90.0);		break;
+	case 3:		sq = RAD(270.0);	break;
 	default:	sq = 0;
 	}
 	if ( m_bRound )
-		eq = sq + RAD(360);
+		eq = sq + RAD(360.0);
 	else
-		eq = sq - RAD(360);
+		eq = sq - RAD(360.0);
 	
-	size_t m = SetVectorPointSub(m_bRound, sq, eq, RAD(360)/n, m_ctTun, vpt);
+	size_t m = SetVectorPointSub(m_bRound, sq, eq, RAD(360.0)/n, m_ctTun, vpt);
 	while ( n < m-- )
 		vpt.pop_back();
 }
 
-size_t CDXFcircle::SetVectorPointSub(BOOL bRound, double s, double e, double k, const CPointD& ptOrg, VECPOINTD& vpt) const
+size_t CDXFcircle::SetVectorPointSub(BOOL bRound, double s, double e, double k, const CPointD& ptOrg, CVPointD& vpt) const
 {
 	size_t	nCnt = 0;
 	CPointD	pt;
@@ -1090,7 +1090,7 @@ size_t CDXFcircle::SetVectorPointSub(BOOL bRound, double s, double e, double k, 
 	return nCnt+1;
 }
 
-void CDXFcircle::SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const
+void CDXFcircle::SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const
 {
 }
 
@@ -1394,7 +1394,7 @@ void CDXFarc::RoundObjPoint(const CPointD& ptOrg, double dRound)
 	CDXFdata::RoundObjPoint(ptOrg, dRound);
 }
 
-size_t CDXFarc::SetVectorPoint(VECPOINTD& vpt, double k) const
+size_t CDXFarc::SetVectorPoint(CVPointD& vpt, double k) const
 {
 	BOOL	bRound;
 	double	sq, eq, dStep;
@@ -1426,7 +1426,7 @@ size_t CDXFarc::SetVectorPoint(VECPOINTD& vpt, double k) const
 	return SetVectorPointSub(bRound, sq, eq, dStep, ptOrg, vpt);
 }
 
-void CDXFarc::SetVectorPoint(VECPOINTD& vpt, size_t n) const
+void CDXFarc::SetVectorPoint(CVPointD& vpt, size_t n) const
 {
 	// äpìxîÕàÕÇ nâÒ ìoò^
 	double	sq, eq, dStep;
@@ -1444,7 +1444,7 @@ void CDXFarc::SetVectorPoint(VECPOINTD& vpt, size_t n) const
 		vpt.pop_back();
 }
 
-void CDXFarc::SetWireHeteroData(const CDXFdata* pDataUV, VECPOINTD& vptXY, VECPOINTD& vptUV, double k) const
+void CDXFarc::SetWireHeteroData(const CDXFdata* pDataUV, CVPointD& vptXY, CVPointD& vptUV, double k) const
 {
 	if ( pDataUV->GetMakeType() == DXFLINEDATA ) {
 		// é©êgÇÃçèÇ›ïùÇäÓèÄÇ…
@@ -2060,7 +2060,7 @@ void CDXFellipse::RoundObjPoint(const CPointD& ptOrg, double dRound)
 	CDXFarc::RoundObjPoint(ptOrg, dRound);
 }
 
-size_t CDXFellipse::SetVectorPoint(VECPOINTD& vpt, double) const
+size_t CDXFellipse::SetVectorPoint(CVPointD& vpt, double) const
 {
 	double	sq = m_sqDraw,
 			dShort = m_dLongLength * m_dShort;
@@ -2093,11 +2093,11 @@ size_t CDXFellipse::SetVectorPoint(VECPOINTD& vpt, double) const
 	return 0;
 }
 
-void CDXFellipse::SetVectorPoint(VECPOINTD& vpt, size_t n) const
+void CDXFellipse::SetVectorPoint(CVPointD& vpt, size_t n) const
 {
 }
 
-void CDXFellipse::SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const
+void CDXFellipse::SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const
 {
 }
 
@@ -2596,7 +2596,7 @@ void CDXFpolyline::RoundObjPoint(const CPointD& ptOrg, double dRound)
 	}
 }
 
-size_t CDXFpolyline::SetVectorPoint(VECPOINTD& vpt, double k) const
+size_t CDXFpolyline::SetVectorPoint(CVPointD& vpt, double k) const
 {
 	CDXFdata*	pData;
 
@@ -2609,11 +2609,11 @@ size_t CDXFpolyline::SetVectorPoint(VECPOINTD& vpt, double k) const
 	return 0;
 }
 
-void CDXFpolyline::SetVectorPoint(VECPOINTD& vpt, size_t) const
+void CDXFpolyline::SetVectorPoint(CVPointD& vpt, size_t) const
 {
 }
 
-void CDXFpolyline::SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const
+void CDXFpolyline::SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const
 {
 }
 

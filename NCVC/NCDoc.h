@@ -27,10 +27,20 @@ enum NCDOCFLG {
 };
 
 enum NCCOMMENT {		// g_szNCcomment[]
-	ENDMILL = 0, WORKRECT, WORKCYLINDER,
+	ENDMILL = 0, DRILL, TAP, REAMER, 
+	WORKRECT, WORKCYLINDER,
 	LATHEVIEW, WIREVIEW,
 	TOOLPOS
 };
+#define	ENDMILL_S		g_szNCcomment[ENDMILL]
+#define	DRILL_S			g_szNCcomment[DRILL]
+#define	TAP_S			g_szNCcomment[TAP]
+#define	REAMER_S		g_szNCcomment[REAMER]
+#define	WORKRECT_S		g_szNCcomment[WORKRECT]
+#define	WORKCYLINDER_S	g_szNCcomment[WORKCYLINDER]
+#define	LATHEVIEW_S		g_szNCcomment[LATHEVIEW]
+#define	WIREVIEW_S		g_szNCcomment[WIREVIEW]
+#define	TOOLPOS_S		g_szNCcomment[TOOLPOS]
 
 // CNCDoc::DataOperation() の操作方法
 enum ENNCOPERATION {
@@ -56,9 +66,6 @@ class CNCDoc : public CDocBase<NCDOC_FLGNUM>
 	CRect3D		m_rcMax,		// 最大ｵﾌﾞｼﾞｪｸﾄ(移動)矩形
 				m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
 				m_rcWorkCo;		// ｺﾒﾝﾄ指示
-	double		m_dCylinderD,	// 円柱表示直径
-				m_dCylinderH;	// 円柱表示高さ
-	CPointD		m_ptCylinderOffset;
 	//
 	void	SetMaxRect(const CNCdata* pData) {
 		// 最大ｵﾌﾞｼﾞｪｸﾄ矩形ﾃﾞｰﾀｾｯﾄ
@@ -155,9 +162,6 @@ public:
 	CRect3D	GetWorkRectOrg(void) const {
 		return m_rcWorkCo;
 	}
-	boost::tuple<double, double, CPointD>	GetCylinderData(void) const {
-		return boost::make_tuple(m_dCylinderD, m_dCylinderH, m_ptCylinderOffset);
-	}
 
 // オペレーション
 public:
@@ -181,23 +185,20 @@ public:
 	// from TH_NCRead.cpp
 	BOOL	SerializeInsertBlock(LPCTSTR, int, DWORD = 0);	// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの挿入
 	void	AddMacroFile(const CString&);	// ﾄﾞｷｭﾒﾝﾄ破棄後に消去する一時ﾌｧｲﾙ
-	void	SetWorkRectOrg(const CRect3D& rc, BOOL bUpdate = TRUE) {
+	void	SetWorkRectComment(const CRect3D& rc, BOOL bUpdate = TRUE) {
 		m_rcWorkCo = rc;	// ｺﾒﾝﾄで指定されたﾜｰｸ矩形
 		if ( bUpdate ) {
 			m_rcWorkCo.NormalizeRect();
 			m_bDocFlg.set(NCDOC_COMMENTWORK);
 		}
 	}
-	void	SetWorkCylinder(double d, double h, const CPointD& ptOffset) {
-		m_dCylinderD = d;
-		m_dCylinderH = h;
-		m_ptCylinderOffset = ptOffset;
+	void	SetWorkCylinderComment(double d, double h, const CPoint3D& ptOffset) {
 		m_bDocFlg.set(NCDOC_CYLINDER);
 		// 外接四角形 -> m_rcWorkCo
 		d /= 2.0;
 		CRect3D	rc(-d, -d, d, d, h, 0);
 		rc.OffsetRect(ptOffset);
-		SetWorkRectOrg(rc);
+		SetWorkRectComment(rc);
 	}
 	void	SetWorkLatheR(double r) {
 		m_rcWorkCo.high = r;
@@ -213,13 +214,8 @@ public:
 	void	SetLatheViewMode(void);
 
 	// from NCWorkDlg.cpp
-	void	SetWorkRect(BOOL bShow, const CRect3D& rc) {
-		if ( bShow )
-			m_rcWork = rc;
-		UpdateAllViews(NULL, UAV_DRAWWORKRECT,
-			reinterpret_cast<CObject *>(bShow));
-		m_bDocFlg.set(NCDOC_WRKRECT, bShow);
-	}
+	void	SetWorkRect(BOOL, const CRect3D&);
+	void	SetWorkCylinder(BOOL, double, double, const CPoint3D&);
 	void	SetCommentStr(const CString&);
 
 	// from NCViewTab.cpp

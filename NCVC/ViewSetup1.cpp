@@ -51,7 +51,7 @@ CViewSetup1::~CViewSetup1()
 
 void CViewSetup1::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CViewSetup1)
 	DDX_Check(pDX, IDC_VIEWSETUP1_WHEEL, m_bMouseWheel);
 	DDX_Radio(pDX, IDC_VIEWSETUP1_PtoN, m_nWheelType);
@@ -76,7 +76,7 @@ void CViewSetup1::EnableControl(void)
 
 BOOL CViewSetup1::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ê¸ëÆê´¿≤ÃﬂÇÃëIëéàìoò^
 	extern	const	PENSTYLE	g_penStyle[];
@@ -117,7 +117,7 @@ HBRUSH CViewSetup1::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		if ( IDC_VIEWSETUP1_ST_RECT<=nID && nID<=IDC_VIEWSETUP1_ST_SEL )
 			return m_brColor[nID-IDC_VIEWSETUP1_ST_RECT];
 	}
-	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
+	return __super::OnCtlColor(pDC, pWnd, nCtlColor);
 }
 
 void CViewSetup1::OnChange() 

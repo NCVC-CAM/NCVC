@@ -17,6 +17,8 @@ BEGIN_MESSAGE_MAP(CMKNCSetup8, CPropertyPage)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CMKNCSetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMKNCSetup8 プロパティ ページ
 
@@ -34,7 +36,7 @@ CMKNCSetup8::CMKNCSetup8() : CPropertyPage(CMKNCSetup8::IDD)
 
 void CMKNCSetup8::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMKNCSetup8)
 	DDX_Check(pDX, IDC_MKNC8_LAYERCOMMENT, m_bLayerComment);
 	DDX_Check(pDX, IDC_MKNC8_L0CYCLE, m_bL0Cycle);
@@ -49,11 +51,11 @@ void CMKNCSetup8::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMKNCSetup8::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
-	// + GetParent() ﾎﾟｲﾝﾀを取得できない
-	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
+	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	m_bLayerComment	= pOpt->m_bLayerComment;
 	m_bL0Cycle		= pOpt->m_bL0Cycle;
 	m_nMoveZ		= pOpt->m_nMoveZ;
@@ -68,7 +70,7 @@ BOOL CMKNCSetup8::OnInitDialog()
 
 BOOL CMKNCSetup8::OnApply() 
 {
-	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	pOpt->m_bLayerComment	= m_bLayerComment;
 	pOpt->m_bL0Cycle		= m_bL0Cycle;
 	pOpt->m_nMoveZ			= m_nMoveZ;

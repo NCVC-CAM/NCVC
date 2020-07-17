@@ -64,6 +64,7 @@
 #pragma	warning( disable : 4819 )		// codepage
 //#include "boost/geometry.hpp"			// ŒvZŠô‰½
 //#include "boost/geometry/geometries/register/point.hpp"
+//#include "boost/geometry/geometries/register/box.hpp"
 #include "boost/regex.hpp"				// ³‹K•\Œ»
 #include "boost/tokenizer.hpp"			// •¶š—ñ•ªŠ„
 #include "boost/tuple/tuple.hpp"		// Šg’£ÃŞ°À
@@ -91,9 +92,6 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 #define	AfxGetNCVCApp()			( static_cast<CNCVCApp *>(AfxGetApp()) )
 #define	AfxGetNCVCMainWnd()		( static_cast<CMainFrame *>(AfxGetMainWnd()) )
 #define	LOMETRICFACTOR			10.0
-// ‰~‚ğ64(360“x/64à5.6“x)•ªŠ„‚Å•`‰æ from NCdata.cpp, DXFdata.cpp
-#define	ARCCOUNT				64
-#define	ARCSTEP					(PI/32)		// 2ƒÎ[rad]€ARCCOUNT
 
 // Timer Event
 #define	IDC_SPLASH_TIMER		100

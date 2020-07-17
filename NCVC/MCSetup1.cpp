@@ -33,7 +33,7 @@ CMCSetup1::CMCSetup1() : CPropertyPage(CMCSetup1::IDD),
 
 void CMCSetup1::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMCSetup1)
 	DDX_Control(pDX, IDC_MCST1_FSPEED, m_dFspeed);
 	DDX_Control(pDX, IDC_MCST1_BLOCK, m_dBlock);
@@ -52,7 +52,7 @@ void CMCSetup1::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMCSetup1::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	int			i;
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
@@ -74,7 +74,7 @@ BOOL CMCSetup1::OnInitDialog()
 BOOL CMCSetup1::OnApply() 
 {
 	int		i;
-	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParent());
+	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParentSheet());
 	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	pMCopt->m_strMCname = m_strName;
@@ -110,7 +110,7 @@ BOOL CMCSetup1::OnApply()
 
 BOOL CMCSetup1::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_dFspeed <= 0 ) {

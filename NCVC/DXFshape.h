@@ -181,8 +181,8 @@ public:
 	double	GetLength(void) const;
 	void	AllChainObject_ClearSearchFlg(void);
 	double	GetSelectObjectFromShape(const CPointD&, const CRectD* = NULL, CDXFdata** = NULL);
-	void	SetVectorPoint(POSITION, VECPOINTD&, double);
-	void	SetVectorPoint(POSITION, VECPOINTD&, size_t);
+	void	SetVectorPoint(POSITION, CVPointD&, double);
+	void	SetVectorPoint(POSITION, CVPointD&, size_t);
 	void	SetShapeSwitch(BOOL);
 	void	RemoveObject(const CDXFdata*);
 	void	DrawShape(CDC*) const;

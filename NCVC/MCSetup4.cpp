@@ -37,7 +37,7 @@ CMCSetup4::CMCSetup4() : CPropertyPage(CMCSetup4::IDD)
 
 void CMCSetup4::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMCSetup4)
 	//}}AFX_DATA_MAP
 	for ( int i=0; i<SIZEOF(m_strMacro); i++ ) {
@@ -89,7 +89,7 @@ void CMCSetup4::OnKillFocusMacroCode()
 
 BOOL CMCSetup4::OnApply() 
 {
-	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParent());
+	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParentSheet());
 	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	// 再読込ﾁｪｯｸ
@@ -105,7 +105,7 @@ BOOL CMCSetup4::OnApply()
 
 BOOL CMCSetup4::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	// ﾏｸﾛ呼び出し関連はﾌｫﾙﾀﾞ以外全ての項目が必要

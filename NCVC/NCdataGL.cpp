@@ -349,31 +349,31 @@ void CNCdata::DrawGLBottomFace(void) const
 		m_obCdata[i]->DrawGLBottomFace();
 }
 
-int CNCdata::AddGLWireFirstVertex(vector<GLfloat>& vVertex, vector<GLfloat>& vNormal) const
+int CNCdata::AddGLWireFirstVertex(CVfloat& vVertex, CVfloat& vNormal) const
 {
 	if ( !m_pWireObj )
 		return -1;
 
-	CPoint3D	pts(m_pWireObj->GetStartPoint());
+	CPoint3F	pts(m_pWireObj->GetStartPoint());
 
 	// µÃﬁºﬁ™∏ƒénì_Çìoò^
 	vVertex.push_back((GLfloat)m_ptValS.x);
 	vVertex.push_back((GLfloat)m_ptValS.y);
 	vVertex.push_back((GLfloat)m_ptValS.z);
-	vVertex.push_back((GLfloat)pts.x);
-	vVertex.push_back((GLfloat)pts.y);
-	vVertex.push_back((GLfloat)pts.z);
+	vVertex.push_back(pts.x);
+	vVertex.push_back(pts.y);
+	vVertex.push_back(pts.z);
 
 	// ñ@ê¸Õﬁ∏ƒŸ
 	optional<CPointD> ptResult = CalcPerpendicularPoint(STARTPOINT, 1.0, 1);
 	if ( ptResult ) {
-		CPointD	pt( *ptResult );
-		vNormal.push_back((GLfloat)pt.x);
-		vNormal.push_back((GLfloat)pt.y);
+		CPointF	pt( *ptResult );
+		vNormal.push_back(pt.x);
+		vNormal.push_back(pt.y);
 		vNormal.push_back((GLfloat)m_ptValS.z);
-		vNormal.push_back((GLfloat)pt.x);
-		vNormal.push_back((GLfloat)pt.y);
-		vNormal.push_back((GLfloat)pts.z);
+		vNormal.push_back(pt.x);
+		vNormal.push_back(pt.y);
+		vNormal.push_back(pts.z);
 	}
 	else {
 		// ï€åØ
@@ -383,7 +383,7 @@ int CNCdata::AddGLWireFirstVertex(vector<GLfloat>& vVertex, vector<GLfloat>& vNo
 	return 2;
 }
 
-int CNCdata::AddGLWireVertex(vector<GLfloat>&, vector<GLfloat>&) const
+int CNCdata::AddGLWireVertex(CVfloat&, CVfloat&) const
 {
 	return 0;
 }
@@ -517,31 +517,31 @@ void CNCline::DrawGLBottomFace(void) const
 	}
 }
 
-int CNCline::AddGLWireVertex(vector<GLfloat>& vVertex, vector<GLfloat>& vNormal) const
+int CNCline::AddGLWireVertex(CVfloat& vVertex, CVfloat& vNormal) const
 {
 	if ( m_nc.nGcode!=1 || !m_pWireObj )
 		return -1;		// à⁄ìÆ∫∞ƒﬁ => Ãﬁ⁄≤∏
 
-	CPoint3D	pte(m_pWireObj->GetEndPoint());
+	CPoint3F	pte(m_pWireObj->GetEndPoint());
 
 	// µÃﬁºﬁ™∏ƒèIì_Çìoò^
 	vVertex.push_back((GLfloat)m_ptValE.x);
 	vVertex.push_back((GLfloat)m_ptValE.y);
 	vVertex.push_back((GLfloat)m_ptValE.z);
-	vVertex.push_back((GLfloat)pte.x);
-	vVertex.push_back((GLfloat)pte.y);
-	vVertex.push_back((GLfloat)pte.z);
+	vVertex.push_back(pte.x);
+	vVertex.push_back(pte.y);
+	vVertex.push_back(pte.z);
 
 	// ñ@ê¸Õﬁ∏ƒŸ
 	optional<CPointD> ptResult = CalcPerpendicularPoint(ENDPOINT, 1.0, 1);
 	if ( ptResult ) {
-		CPointD	pt( *ptResult );
-		vNormal.push_back((GLfloat)pt.x);
-		vNormal.push_back((GLfloat)pt.y);
+		CPointF	pt( *ptResult );
+		vNormal.push_back(pt.x);
+		vNormal.push_back(pt.y);
 		vNormal.push_back((GLfloat)m_ptValE.z);
-		vNormal.push_back((GLfloat)pt.x);
-		vNormal.push_back((GLfloat)pt.y);
-		vNormal.push_back((GLfloat)pte.z);
+		vNormal.push_back(pt.x);
+		vNormal.push_back(pt.y);
+		vNormal.push_back(pte.z);
 	}
 	else {
 		// ï€åØ
@@ -642,7 +642,7 @@ void CNCcycle::DrawGLBottomFace(void) const
 	}
 }
 
-int CNCcycle::AddGLWireVertex(vector<GLfloat>&, vector<GLfloat>&) const
+int CNCcycle::AddGLWireVertex(CVfloat&, CVfloat&) const
 {
 	return 0;
 }
@@ -721,10 +721,8 @@ void CNCcircle::DrawGLWire(void) const
 
 	switch ( GetPlane() ) {
 	case XY_PLANE:
-		// ARCSTEP Ç√Ç¬î˜ç◊ê¸ï™Ç≈ï`âÊ
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( pt.z=m_ptValS.z; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
 			for ( pt.z=m_ptValS.z; sq>eq; sq-=st, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.y = r * sin(sq) + m_ptOrg.y;
@@ -736,7 +734,6 @@ void CNCcircle::DrawGLWire(void) const
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( pt.z=m_ptValS.z; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
 			for ( pt.z=m_ptValS.z; sq<eq; sq+=st, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.y = r * sin(sq) + m_ptOrg.y;
@@ -759,7 +756,6 @@ void CNCcircle::DrawGLWire(void) const
 	case XZ_PLANE:
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( pt.y=m_ptValS.y; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
 			for ( pt.y=m_ptValS.y; sq>eq; sq-=st, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.z = r * sin(sq) + m_ptOrg.z;
@@ -768,7 +764,6 @@ void CNCcircle::DrawGLWire(void) const
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( pt.y=m_ptValS.y; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
 			for ( pt.y=m_ptValS.y; sq<eq; sq+=st, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.z = r * sin(sq) + m_ptOrg.z;
@@ -784,7 +779,6 @@ void CNCcircle::DrawGLWire(void) const
 	case YZ_PLANE:
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( pt.x=m_ptValS.x; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
 			for ( pt.x=m_ptValS.x; sq>eq; sq-=st, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(sq) + m_ptOrg.y;
 				pt.z = r * sin(sq) + m_ptOrg.z;
@@ -793,7 +787,6 @@ void CNCcircle::DrawGLWire(void) const
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( pt.x=m_ptValS.x; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
 			for ( pt.x=m_ptValS.x; sq<eq; sq+=st, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(sq) + m_ptOrg.y;
 				pt.z = r * sin(sq) + m_ptOrg.z;
@@ -962,7 +955,6 @@ int CNCcircle::SetEndmillXYPath(CPoint3D* lptStrip) const
 		r1 = rr + m_dEndmill;	// êiçsï˚å¸ç∂ë§
 		r2 = rr - m_dEndmill;	// êiçsï˚å¸âEë§
 		st = (sq - eq) / ARCCOUNT;
-//		for ( h=m_ptValS.z; i<ARCCOUNT*2&&sq>eq; i+=2, sq-=ARCSTEP, h+=m_dHelicalStep )
 		for ( h=m_ptValS.z; i<ARCCOUNT*2&&sq>eq; i+=2, sq-=st, h+=m_dHelicalStep )
 			_SetEndmillPathXY(ptOrg, sq, h, r1, r2, i, lptStrip);
 	}
@@ -970,7 +962,6 @@ int CNCcircle::SetEndmillXYPath(CPoint3D* lptStrip) const
 		r1 = rr - m_dEndmill;
 		r2 = rr + m_dEndmill;
 		st = (eq - sq) / ARCCOUNT;
-//		for ( h=m_ptValS.z; i<ARCCOUNT*2&&sq<eq; i+=2, sq+=ARCSTEP, h+=m_dHelicalStep )
 		for ( h=m_ptValS.z; i<ARCCOUNT*2&&sq<eq; i+=2, sq+=st, h+=m_dHelicalStep )
 			_SetEndmillPathXY(ptOrg, sq, h, r1, r2, i, lptStrip);
 	}
@@ -994,13 +985,11 @@ void CNCcircle::SetEndmillPipe(void) const
 	case XY_PLANE:
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( h=m_ptValS.z; i<ARCCOUNT&&sq>eq; i++, sq-=ARCSTEP, h+=m_dHelicalStep )
 			for ( h=m_ptValS.z; i<ARCCOUNT&&sq>eq; i++, sq-=st, h+=m_dHelicalStep )
 				_SetEndmillPathXY_Pipe(ptOrg, sq, rr, h, m_dEndmill, ptPipe[i]);
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( h=m_ptValS.z; i<ARCCOUNT&&sq<eq; i++, sq+=ARCSTEP, h+=m_dHelicalStep )
 			for ( h=m_ptValS.z; i<ARCCOUNT&&sq<eq; i++, sq+=st, h+=m_dHelicalStep )
 				_SetEndmillPathXY_Pipe(ptOrg, sq, rr, h, m_dEndmill, ptPipe[i]);
 		}
@@ -1010,13 +999,11 @@ void CNCcircle::SetEndmillPipe(void) const
 	case XZ_PLANE:
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( h=m_ptValS.y; i<ARCCOUNT&&sq>eq; i++, sq-=ARCSTEP, h+=m_dHelicalStep )
 			for ( h=m_ptValS.y; i<ARCCOUNT&&sq>eq; i++, sq-=st, h+=m_dHelicalStep )
 				_SetEndmillPathXZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, ptPipe[i]);
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( h=m_ptValS.y; i<ARCCOUNT&&sq<eq; i++, sq+=ARCSTEP, h+=m_dHelicalStep )
 			for ( h=m_ptValS.y; i<ARCCOUNT&&sq<eq; i++, sq+=st, h+=m_dHelicalStep )
 				_SetEndmillPathXZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, ptPipe[i]);
 		}
@@ -1026,13 +1013,11 @@ void CNCcircle::SetEndmillPipe(void) const
 	case YZ_PLANE:
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( h=m_ptValS.x; i<ARCCOUNT&&sq>eq; i++, sq-=ARCSTEP, h+=m_dHelicalStep )
 			for ( h=m_ptValS.x; i<ARCCOUNT&&sq>eq; i++, sq-=st, h+=m_dHelicalStep )
 				_SetEndmillPathYZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, ptPipe[i]);
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( h=m_ptValS.x; i<ARCCOUNT&&sq<eq; i++, sq+=ARCSTEP, h+=m_dHelicalStep )
 			for ( h=m_ptValS.x; i<ARCCOUNT&&sq<eq; i++, sq+=st, h+=m_dHelicalStep )
 				_SetEndmillPathYZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, ptPipe[i]);
 		}
@@ -1058,7 +1043,6 @@ void CNCcircle::SetEndmillBall(void) const
 		// â~å ãOê’è„Ç…Zï˚å¸ÇÃîºâ~ç¿ïWÇåvéZÅiíºê¸ï‚ä‘Ç∆ìØÇ∂ï`âÊÇ≈ÇnÇjÅj
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( h=m_ptValS.z; i<ARCCOUNT&&sq>eq; i++, sq-=ARCSTEP, h+=m_dHelicalStep ) {
 			for ( h=m_ptValS.z; i<ARCCOUNT&&sq>eq; i++, sq-=st, h+=m_dHelicalStep ) {
 				pt.x = rr * cos(sq) + ptOrg.x;
 				pt.y = rr * sin(sq) + ptOrg.y;
@@ -1068,7 +1052,6 @@ void CNCcircle::SetEndmillBall(void) const
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( h=m_ptValS.z; i<ARCCOUNT&&sq<eq; i++, sq+=ARCSTEP, h+=m_dHelicalStep ) {
 			for ( h=m_ptValS.z; i<ARCCOUNT&&sq<eq; i++, sq+=st, h+=m_dHelicalStep ) {
 				pt.x = rr * cos(sq) + ptOrg.x;
 				pt.y = rr * sin(sq) + ptOrg.y;
@@ -1087,7 +1070,6 @@ void CNCcircle::SetEndmillBall(void) const
 		// â~å ãOê’è„Ç…â~å ãOê’ÇÃíÜêSÇ…åXÇ¢ÇΩâ~ç¿ïWÇåvéZ
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( h=m_ptValS.y; i<ARCCOUNT&&sq>eq; i++, sq-=ARCSTEP, h+=m_dHelicalStep ) {
 			for ( h=m_ptValS.y; i<ARCCOUNT&&sq>eq; i++, sq-=st, h+=m_dHelicalStep ) {
 				pt.x = rr * cos(sq) + ptOrg.x;
 				pt.y = h;
@@ -1098,7 +1080,6 @@ void CNCcircle::SetEndmillBall(void) const
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( h=m_ptValS.y; i<ARCCOUNT&&sq<eq; i++, sq+=ARCSTEP, h+=m_dHelicalStep ) {
 			for ( h=m_ptValS.y; i<ARCCOUNT&&sq<eq; i++, sq+=st, h+=m_dHelicalStep ) {
 				pt.x = rr * cos(sq) + ptOrg.x;
 				pt.y = h;
@@ -1118,7 +1099,6 @@ void CNCcircle::SetEndmillBall(void) const
 	case YZ_PLANE:
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( h=m_ptValS.x; i<ARCCOUNT&&sq>eq; i++, sq-=ARCSTEP, h+=m_dHelicalStep ) {
 			for ( h=m_ptValS.x; i<ARCCOUNT&&sq>eq; i++, sq-=st, h+=m_dHelicalStep ) {
 				pt.x = h;
 				pt.y = rr * cos(sq) + ptOrg.x;
@@ -1129,7 +1109,6 @@ void CNCcircle::SetEndmillBall(void) const
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( h=m_ptValS.x; i<ARCCOUNT&&sq<eq; i++, sq+=ARCSTEP, h+=m_dHelicalStep ) {
 			for ( h=m_ptValS.x; i<ARCCOUNT&&sq<eq; i++, sq+=st, h+=m_dHelicalStep ) {
 				pt.x = h;
 				pt.y = rr * cos(sq) + ptOrg.x;
@@ -1151,7 +1130,7 @@ void CNCcircle::SetEndmillBall(void) const
 	_DrawEndmillPipe(i+1, j, ptPipe);
 }
 
-int CNCcircle::AddGLWireVertex(vector<GLfloat>& vVertex, vector<GLfloat>& vNormal) const
+int CNCcircle::AddGLWireVertex(CVfloat& vVertex, CVfloat& vNormal) const
 {
 	if ( !m_pWireObj )
 		return -1;
@@ -1161,17 +1140,17 @@ int CNCcircle::AddGLWireVertex(vector<GLfloat>& vVertex, vector<GLfloat>& vNorma
 #endif
 	int			nCnt = 0;
 	CNCcircle*	pCircleUV = static_cast<CNCcircle*>(m_pWireObj);
-	double		sqxy, eqxy, squv, equv, stxy, stuv,
-				cxy, sxy, cuv, suv,
-				rxy = fabs(m_r), ruv = fabs(pCircleUV->GetR());
-	CPointD		ptOrgXY( m_ptOrg.GetXY() ),
+	double		sqxy, eqxy, squv, equv, stxy, stuv;
+	float		cxy, sxy, cuv, suv,
+				rxy = (float)fabs(m_r), ruv = (float)fabs(pCircleUV->GetR());
+	CPointF		ptOrgXY( m_ptOrg.GetXY() ),
 				ptOrgUV( pCircleUV->GetOrg().GetXY() );
-	CPoint3D	pt1, pt2;
+	CPoint3F	pt1, pt2;
 
 	tie(sqxy, eqxy) = GetSqEq();
 	tie(squv, equv) = pCircleUV->GetSqEq();
-	pt1.z = m_ptValS.z;
-	pt2.z = pCircleUV->GetStartPoint().z;
+	pt1.z = (GLfloat)m_ptValS.z;
+	pt2.z = (GLfloat)pCircleUV->GetStartPoint().z;
 
 	// ç¿ïWílÇâ~ìõèÛÇ…ìoò^
 	// ñ@ê¸Õﬁ∏ƒŸÇÕ r - 1.0
@@ -1179,83 +1158,81 @@ int CNCcircle::AddGLWireVertex(vector<GLfloat>& vVertex, vector<GLfloat>& vNorma
 	if ( m_nG23 == 0 ) {
 		stxy = (sqxy - eqxy) / ARCCOUNT;
 		stuv = (squv - equv) / ARCCOUNT;
-//		for ( ; sqxy>eqxy || squv>equv; sqxy-=ARCSTEP, squv-=ARCSTEP, nCnt+=2 ) {
 		for ( ; sqxy>eqxy || squv>equv; sqxy-=stxy, squv-=stuv, nCnt+=2 ) {
-			cxy = cos(max(sqxy, eqxy));	sxy = sin(max(sqxy, eqxy));
-			cuv = cos(max(squv, equv));	suv = sin(max(squv, equv));
+			cxy = (float)cos(max(sqxy, eqxy));	sxy = (float)sin(max(sqxy, eqxy));
+			cuv = (float)cos(max(squv, equv));	suv = (float)sin(max(squv, equv));
 			pt1.x = rxy * cxy + ptOrgXY.x;
 			pt1.y = rxy * sxy + ptOrgXY.y;
 			pt2.x = ruv * cuv + ptOrgUV.x;
 			pt2.y = ruv * suv + ptOrgUV.y;
-			vVertex.push_back((GLfloat)pt1.x);
-			vVertex.push_back((GLfloat)pt1.y);
-			vVertex.push_back((GLfloat)pt1.z);
-			vVertex.push_back((GLfloat)pt2.x);
-			vVertex.push_back((GLfloat)pt2.y);
-			vVertex.push_back((GLfloat)pt2.z);
-			pt1.x = (rxy-1.0) * cxy + ptOrgXY.x;
-			pt1.y = (rxy-1.0) * sxy + ptOrgXY.y;
-			pt2.x = (ruv-1.0) * cuv + ptOrgUV.x;
-			pt2.y = (ruv-1.0) * suv + ptOrgUV.y;
-			vNormal.push_back((GLfloat)pt1.x);
-			vNormal.push_back((GLfloat)pt1.y);
-			vNormal.push_back((GLfloat)pt1.z);
-			vNormal.push_back((GLfloat)pt2.x);
-			vNormal.push_back((GLfloat)pt2.y);
-			vNormal.push_back((GLfloat)pt2.z);
+			vVertex.push_back(pt1.x);
+			vVertex.push_back(pt1.y);
+			vVertex.push_back(pt1.z);
+			vVertex.push_back(pt2.x);
+			vVertex.push_back(pt2.y);
+			vVertex.push_back(pt2.z);
+			pt1.x = (rxy-1.0f) * cxy + ptOrgXY.x;
+			pt1.y = (rxy-1.0f) * sxy + ptOrgXY.y;
+			pt2.x = (ruv-1.0f) * cuv + ptOrgUV.x;
+			pt2.y = (ruv-1.0f) * suv + ptOrgUV.y;
+			vNormal.push_back(pt1.x);
+			vNormal.push_back(pt1.y);
+			vNormal.push_back(pt1.z);
+			vNormal.push_back(pt2.x);
+			vNormal.push_back(pt2.y);
+			vNormal.push_back(pt2.z);
 		}
 	}
 	else {
 		stxy = (eqxy - sqxy) / ARCCOUNT;
 		stuv = (equv - squv) / ARCCOUNT;
-//		for ( ; sqxy<eqxy || squv<equv; sqxy+=ARCSTEP, squv+=ARCSTEP, nCnt+=2 ) {
 		for ( ; sqxy<eqxy || squv<equv; sqxy+=stxy, squv+=stuv, nCnt+=2 ) {
-			cxy = cos(min(sqxy, eqxy));	sxy = sin(min(sqxy, eqxy));
-			cuv = cos(min(squv, equv));	suv = sin(min(squv, equv));
+			cxy = (float)cos(min(sqxy, eqxy));	sxy = (float)sin(min(sqxy, eqxy));
+			cuv = (float)cos(min(squv, equv));	suv = (float)sin(min(squv, equv));
 			pt1.x = rxy * cxy + ptOrgXY.x;
 			pt1.y = rxy * sxy + ptOrgXY.y;
 			pt2.x = ruv * cuv + ptOrgUV.x;
 			pt2.y = ruv * suv + ptOrgUV.y;
-			vVertex.push_back((GLfloat)pt1.x);
-			vVertex.push_back((GLfloat)pt1.y);
-			vVertex.push_back((GLfloat)pt1.z);
-			vVertex.push_back((GLfloat)pt2.x);
-			vVertex.push_back((GLfloat)pt2.y);
-			vVertex.push_back((GLfloat)pt2.z);
-			pt1.x = (rxy-1.0) * cxy + ptOrgXY.x;
-			pt1.y = (rxy-1.0) * sxy + ptOrgXY.y;
-			pt2.x = (ruv-1.0) * cuv + ptOrgUV.x;
-			pt2.y = (ruv-1.0) * suv + ptOrgUV.y;
-			vNormal.push_back((GLfloat)pt1.x);
-			vNormal.push_back((GLfloat)pt1.y);
-			vNormal.push_back((GLfloat)pt1.z);
-			vNormal.push_back((GLfloat)pt2.x);
-			vNormal.push_back((GLfloat)pt2.y);
-			vNormal.push_back((GLfloat)pt2.z);
+			vVertex.push_back(pt1.x);
+			vVertex.push_back(pt1.y);
+			vVertex.push_back(pt1.z);
+			vVertex.push_back(pt2.x);
+			vVertex.push_back(pt2.y);
+			vVertex.push_back(pt2.z);
+			pt1.x = (rxy-1.0f) * cxy + ptOrgXY.x;
+			pt1.y = (rxy-1.0f) * sxy + ptOrgXY.y;
+			pt2.x = (ruv-1.0f) * cuv + ptOrgUV.x;
+			pt2.y = (ruv-1.0f) * suv + ptOrgUV.y;
+			vNormal.push_back(pt1.x);
+			vNormal.push_back(pt1.y);
+			vNormal.push_back(pt1.z);
+			vNormal.push_back(pt2.x);
+			vNormal.push_back(pt2.y);
+			vNormal.push_back(pt2.z);
 		}
 	}
-	cxy = cos(eqxy);	sxy = sin(eqxy);
-	cuv = cos(equv);	suv = sin(equv);
+	cxy = (float)cos(eqxy);	sxy = (float)sin(eqxy);
+	cuv = (float)cos(equv);	suv = (float)sin(equv);
 	pt1.x = rxy * cxy + ptOrgXY.x;
 	pt1.y = rxy * sxy + ptOrgXY.y;
 	pt2.x = ruv * cuv + ptOrgUV.x;
 	pt2.y = ruv * suv + ptOrgUV.y;
-	vVertex.push_back((GLfloat)pt1.x);
-	vVertex.push_back((GLfloat)pt1.y);
-	vVertex.push_back((GLfloat)pt1.z);
-	vVertex.push_back((GLfloat)pt2.x);
-	vVertex.push_back((GLfloat)pt2.y);
-	vVertex.push_back((GLfloat)pt2.z);
-	pt1.x = (rxy-1.0) * cxy + ptOrgXY.x;
-	pt1.y = (rxy-1.0) * sxy + ptOrgXY.y;
-	pt2.x = (ruv-1.0) * cuv + ptOrgUV.x;
-	pt2.y = (ruv-1.0) * suv + ptOrgUV.y;
-	vNormal.push_back((GLfloat)pt1.x);
-	vNormal.push_back((GLfloat)pt1.y);
-	vNormal.push_back((GLfloat)pt1.z);
-	vNormal.push_back((GLfloat)pt2.x);
-	vNormal.push_back((GLfloat)pt2.y);
-	vNormal.push_back((GLfloat)pt2.z);
+	vVertex.push_back(pt1.x);
+	vVertex.push_back(pt1.y);
+	vVertex.push_back(pt1.z);
+	vVertex.push_back(pt2.x);
+	vVertex.push_back(pt2.y);
+	vVertex.push_back(pt2.z);
+	pt1.x = (rxy-1.0f) * cxy + ptOrgXY.x;
+	pt1.y = (rxy-1.0f) * sxy + ptOrgXY.y;
+	pt2.x = (ruv-1.0f) * cuv + ptOrgUV.x;
+	pt2.y = (ruv-1.0f) * suv + ptOrgUV.y;
+	vNormal.push_back(pt1.x);
+	vNormal.push_back(pt1.y);
+	vNormal.push_back(pt1.z);
+	vNormal.push_back(pt2.x);
+	vNormal.push_back(pt2.y);
+	vNormal.push_back(pt2.z);
 
 #ifdef _DEBUGOLD
 	dbg.printf("DrawCnt=%d", nCnt/2+1);
@@ -1279,7 +1256,6 @@ int CNCcircle::AddGLWireTexture(int n, double& dAccuLength, double dAllLength, G
 				rxy = fabs(m_r), ruv = fabs(pCircleUV->GetR());
 
 	// √∏Ω¡¨ç¿ïWÇÃìoò^ÇÕÅAâÒì]ï˚å¸ÇÕä÷åWÇ»Ç≠ÅAí∑Ç≥ÇÃäÑçáÇæÇØÇ≈ó«Ç¢
-//	for ( ; sqxy<eqxy || squv<equv; sqxy+=ARCSTEP, squv+=ARCSTEP, nCnt+=4 ) {
 	for ( ; sqxy<eqxy || squv<equv; sqxy+=stxy, squv+=stuv, nCnt+=4 ) {
 		f = (GLfloat)(dAccuLength / dAllLength);
 		pfTEX[n++] = f;

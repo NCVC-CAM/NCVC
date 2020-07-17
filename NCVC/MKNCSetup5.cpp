@@ -18,6 +18,8 @@ BEGIN_MESSAGE_MAP(CMKNCSetup5, CPropertyPage)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CMKNCSetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMKNCSetup5 プロパティ ページ
 
@@ -32,7 +34,7 @@ CMKNCSetup5::CMKNCSetup5() : CPropertyPage(CMKNCSetup5::IDD)
 
 void CMKNCSetup5::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMKNCSetup5)
 	DDX_Control(pDX, IDC_MKNC5_TOLERANCE, m_dTolerance);
 	DDX_Control(pDX, IDC_MKNC5_DRILLMARGIN, m_dDrillMargin);
@@ -51,11 +53,11 @@ void CMKNCSetup5::EnableControl_Drill(void)
 
 BOOL CMKNCSetup5::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 	
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
-	// + GetParent() ﾎﾟｲﾝﾀを取得できない
-	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
+	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	m_dTolerance		= pOpt->m_dTolerance;
 	m_nTolerance		= pOpt->m_nTolerance;
 	m_nOptimaizeDrill	= pOpt->m_nOptimaizeDrill;
@@ -76,7 +78,7 @@ void CMKNCSetup5::OnSelchangeDrill()
 
 BOOL CMKNCSetup5::OnApply() 
 {
-	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	pOpt->m_dTolerance		= fabs((double)m_dTolerance);
 	if ( pOpt->m_dTolerance < NCMIN )
 		pOpt->m_dTolerance = NCMIN;

@@ -17,7 +17,7 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-#define	GetNCMakeParent()	static_cast<CMakeNCDlgEx *>(GetParent())
+#define	GetNCMakeParent()	static_cast<CMakeNCDlgEx *>(GetParentSheet())
 #define	IsMakeEx1()	( GetNCMakeParent()->GetNCMakeID() == ID_FILE_DXF2NCD_EX1 )
 #define	IsMakeEx2()	( GetNCMakeParent()->GetNCMakeID() == ID_FILE_DXF2NCD_EX2 )
 
@@ -50,7 +50,7 @@ CMakeNCDlgEx2::CMakeNCDlgEx2() : CPropertyPage(CMakeNCDlgEx2::IDD)
 
 void CMakeNCDlgEx2::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMakeNCDlgEx2)
 	DDX_Control(pDX, IDC_MKNC_NCFILE, m_ctNCFileName);
 	DDX_Text(pDX, IDC_MKNC_NCFILE, m_strNCFileName);
@@ -84,7 +84,7 @@ void CMakeNCDlgEx2::CheckNewLayer(void)
 
 BOOL CMakeNCDlgEx2::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	if ( IsMakeEx1() ) {
 		// Ú²Ô‚²‚Æ‚Ì•¡”ğŒ‚Åg‚í‚È‚¢ØíğŒºİÄÛ°Ù‚Í”ñ•\¦

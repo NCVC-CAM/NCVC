@@ -541,9 +541,13 @@ void CNCVCApp::InitialRecentViewList(void)
 		// Recent View List のﾚｼﾞｽﾄﾘ読み込み
 		strEntry.Format(m_pRecentFileList->m_strEntryFormat, i+1);	// File%d
 		if ( GetProfileBinary(strRegKey, strEntry, (LPBYTE*)&bi, &n) ) {
-			ASSERT( n == sizeof(CRecentViewInfo::VINFO) );
-			pInfo = new CRecentViewInfo(m_pRecentFileList->operator[](i));
-			pInfo->SetViewInfo(bi->objectXform, bi->rcView, bi->ptCenter);
+//			ASSERT( n == sizeof(CRecentViewInfo::VINFO) );
+			if ( n == sizeof(CRecentViewInfo::VINFO) ) {
+				pInfo = new CRecentViewInfo(m_pRecentFileList->operator[](i));
+				pInfo->SetViewInfo(bi->objectXform, bi->rcView, bi->ptCenter);
+			}
+			else
+				pInfo = NULL;
 			delete	bi;		// GetProfileBinary() Specification
 		}
 		else
@@ -1237,8 +1241,9 @@ void CNCVCApp::OnFileCADbind()
 	ASSERT( pViewParent );
 
 	// ﾌｧｲﾙ個数分のｲﾝｽﾀﾝｽ生成
-	BOOL		bResult;
+	BOOL		bResult, bWire = TRUE;
 	CStatic*	pFrame;
+	CDocument*	dummy;
 	CDXFDoc*	pDoc;
 	CDXFView*	pView;
 	CRect		rc;
@@ -1247,25 +1252,21 @@ void CNCVCApp::OnFileCADbind()
 		// 子のﾄﾞｷｭﾒﾝﾄ
 		pDoc  = static_cast<CDXFDoc*>(RUNTIME_CLASS(CDXFDoc)->CreateObject());
 		if ( pDoc ) {
+			m_pDocTemplate[TYPE_DXF]->MatchDocType(dlg.m_aryFile[i], dummy);	// Serialize関数の決定
 			pDoc->SetDocFlag(DXFDOC_BIND);
-			CDocument*	dummy;
-#ifdef _DEBUG
-			if ( m_pDocTemplate[TYPE_DXF]->MatchDocType(dlg.m_aryFile[i], dummy) == CDocTemplate::yesAttemptNative )
-				bResult = pDoc->OnOpenDocument(dlg.m_aryFile[i]);	// break用
-			else
-				bResult = FALSE;
-#else
-			bResult = m_pDocTemplate[TYPE_DXF]->MatchDocType(dlg.m_aryFile[i], dummy) == CDocTemplate::yesAttemptNative ?
-						pDoc->OnOpenDocument(dlg.m_aryFile[i]) : FALSE;
-#endif
-			pDoc->SetPathName(dlg.m_aryFile[i], FALSE);
+			bResult = pDoc->OnOpenDocument(dlg.m_aryFile[i]);
+			if ( bResult ) {
+				pDoc->SetPathName(dlg.m_aryFile[i], FALSE);
+				if ( pDoc->GetCutLayerCnt() > 2 )
+					bWire = FALSE;	// ﾜｲﾔ生成はNG
+			}
 		}
 		else
 			bResult = FALSE;
 		// 子のﾌﾚｰﾑ生成
 		if ( bResult ) {
 			pFrame = new CStatic;
-			bResult = pFrame->CreateEx(WS_EX_TRANSPARENT, NULL, NULL, WS_CHILD|WS_VISIBLE|SS_SUNKEN|SS_ENHMETAFILE,//|SS_NOTIFY,
+			bResult = pFrame->CreateEx(WS_EX_TRANSPARENT, NULL, NULL, WS_CHILD|WS_VISIBLE|SS_SUNKEN|SS_ENHMETAFILE,
 						rc, pViewParent, 0xffff);
 		}
 		else
@@ -1301,10 +1302,19 @@ void CNCVCApp::OnFileCADbind()
 		}
 	}
 
-	// 面積で並べ替え
-	pDocParent->SortBindInfo();
-	// 統合ﾃﾞｰﾀの配置処理
-	pViewParent->PostMessage(WM_USERBINDINIT);
+	if ( pDocParent->GetBindInfoCnt() > 0 ) {
+		// 面積で並べ替え
+		pDocParent->SortBindInfo();
+		// 統合ﾃﾞｰﾀの配置処理
+		pViewParent->PostMessage(WM_USERBINDINIT);
+		// 生成OKﾌﾗｸﾞ
+		pDocParent->SetDocFlag(DXFDOC_READY);
+		pDocParent->SetDocFlag(DXFDOC_WIRE, bWire);
+	}
+	else {
+		AfxMessageBox(IDS_ERR_CADBIND, MB_OK|MB_ICONSTOP);
+		pDocParent->OnCloseDocument();
+	}
 }
 
 void CNCVCApp::OnFileCloseAndOpen() 

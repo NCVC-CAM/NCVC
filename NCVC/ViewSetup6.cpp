@@ -41,7 +41,7 @@ CViewSetup6::CViewSetup6() : CPropertyPage(CViewSetup6::IDD)
 
 void CViewSetup6::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	int		i;
 	for ( i=0; i<SIZEOF(m_nForceView01); i++ )
 		DDX_CBIndex(pDX, IDC_VIEWSETUP6_LT+i, m_nForceView01[i]);

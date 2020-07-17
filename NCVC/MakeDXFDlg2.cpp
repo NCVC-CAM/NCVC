@@ -18,6 +18,8 @@ BEGIN_MESSAGE_MAP(CMakeDXFDlg2, CPropertyPage)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CMakeDXFDlg *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMakeDXFDlg2 プロパティ ページ
 
@@ -33,7 +35,7 @@ CMakeDXFDlg2::CMakeDXFDlg2() : CPropertyPage(CMakeDXFDlg2::IDD)
 
 void CMakeDXFDlg2::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMakeDXFDlg2)
 	DDX_Control(pDX, IDC_MKDX2_CYCLE_R, m_dCycleR);
 	DDX_Control(pDX, IDC_MKDX2_LENGTH, m_dLength);
@@ -53,9 +55,9 @@ void CMakeDXFDlg2::EnableControl_CycleR(void)
 
 BOOL CMakeDXFDlg2::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
-	CDXFMakeOption*	pDXFMake = static_cast<CMakeDXFDlg *>(GetParent())->GetDXFMakeOption();
+	CDXFMakeOption*	pDXFMake = GetParentSheet()->GetDXFMakeOption();
 	m_dLength		= pDXFMake->m_dOrgLength;
 	m_bOrgCircle	= pDXFMake->m_bOrgCircle;
 	m_bOrgCross		= pDXFMake->m_bOrgCross;
@@ -77,7 +79,7 @@ void CMakeDXFDlg2::OnSelchangeCycle()
 
 BOOL CMakeDXFDlg2::OnApply() 
 {
-	CDXFMakeOption*	pDXFMake = static_cast<CMakeDXFDlg *>(GetParent())->GetDXFMakeOption();
+	CDXFMakeOption*	pDXFMake = GetParentSheet()->GetDXFMakeOption();
 	pDXFMake->m_dOrgLength	= m_dLength;
 	pDXFMake->m_bOrgCircle	= m_bOrgCircle;
 	pDXFMake->m_bOrgCross	= m_bOrgCross;
@@ -89,7 +91,7 @@ BOOL CMakeDXFDlg2::OnApply()
 
 BOOL CMakeDXFDlg2::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_dLength <= 0 ) {

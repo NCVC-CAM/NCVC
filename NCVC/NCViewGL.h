@@ -18,7 +18,8 @@ class CNCViewGL : public CView
 	DECLARE_DYNCREATE(CNCViewGL)
 
 	CString		m_strGuide;
-	BOOL		m_bActive;
+	BOOL		m_bActive,
+				m_bSolidViewTemp;	// Ü°¸•\¦‚ÌˆêÌ×¸Ş
 	int			m_cx,  m_cy,	// ³¨İÄŞ³»²½Ş(½¸Ø°İ)
 				m_icx, m_icy;
 	double		m_dRate,		// Šî€Šg‘å—¦

@@ -30,7 +30,7 @@ CMCSetup2::CMCSetup2() : CPropertyPage(CMCSetup2::IDD)
 
 void CMCSetup2::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMCSetup2)
 		// メモ - ClassWizard はこの位置にマッピング用のマクロを追加または削除します。
 	//}}AFX_DATA_MAP
@@ -49,7 +49,7 @@ void CMCSetup2::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMCSetup2::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	int			i, j;
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
@@ -70,7 +70,7 @@ BOOL CMCSetup2::OnInitDialog()
 BOOL CMCSetup2::OnApply() 
 {
 	int		i, j;
-	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParent());
+	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParentSheet());
 	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	// 再読込ﾁｪｯｸ

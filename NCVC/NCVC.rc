@@ -264,7 +264,7 @@ BEGIN
         POPUP "補助矩形(&E)"
         BEGIN
             MENUITEM "最大移動矩形(&M)\tCtrl+M",          ID_NCVIEW_MAXRECT
-            MENUITEM "ﾜｰｸ矩形(&W)...\tCtrl+W",        ID_NCVIEW_WORKRECT
+            MENUITEM "ﾜｰｸの表示(&W)...\tCtrl+W",       ID_NCVIEW_WORKRECT
         END
         MENUITEM SEPARATOR
         POPUP "ﾄﾚｰｽ(&T)"
@@ -526,7 +526,7 @@ BEGIN
         POPUP "補助矩形(&E)"
         BEGIN
             MENUITEM "最大移動矩形(&M)\tCtrl+M",          ID_NCVIEW_MAXRECT
-            MENUITEM "ﾜｰｸ矩形(&W)...\tCtrl+W",        ID_NCVIEW_WORKRECT
+            MENUITEM "ﾜｰｸの表示(&W)...\tCtrl+W",       ID_NCVIEW_WORKRECT
         END
         MENUITEM SEPARATOR
         POPUP "ﾄﾚｰｽ(&T)"
@@ -700,7 +700,7 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.51d",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 3.52a",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2015 MNCT K.Magara",IDC_STATIC,86,182,123,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1382,10 +1382,9 @@ BEGIN
     DEFPUSHBUTTON   "移動(&J)",IDOK,33,28,41,16
 END
 
-IDD_NCVIEW_WORK DIALOGEX 0, 0, 255, 140
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-EXSTYLE WS_EX_TOOLWINDOW
-CAPTION "ﾜｰｸ矩形の表示"
+IDD_NCVIEW_WORK1 DIALOGEX 0, 0, 255, 139
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "直方体"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
     LTEXT           "幅(&W)",IDC_WORK_XS,14,22,25,8
@@ -1410,8 +1409,8 @@ BEGIN
     GROUPBOX        "原点からのｵﾌｾｯﾄ",IDC_STATIC,130,7,118,76,WS_GROUP
     PUSHBUTTON      "この情報をｺﾒﾝﾄで埋め込む(&I)",IDC_WORK_COMMENT,32,92,86,16
     PUSHBUTTON      "元の大きさに戻す(&R)",IDC_WORK_RECOVER,135,92,86,16
-    DEFPUSHBUTTON   "表示(&V)",IDOK,32,117,86,16
-    PUSHBUTTON      "非表示(&C)",IDC_WORK_HIDE,135,117,86,16
+    DEFPUSHBUTTON   "表示(&V)",IDC_WORK_SHOW,32,116,86,16
+    PUSHBUTTON      "非表示(&C)",IDC_WORK_HIDE,135,116,86,16
 END
 
 IDD_SHAPE_PROP DIALOGEX 0, 0, 207, 155
@@ -1830,6 +1829,34 @@ BEGIN
     PUSHBUTTON      "ｷｬﾝｾﾙ(&C)",IDCANCEL,162,159,50,14
 END
 
+IDD_NCVIEW_WORK2 DIALOGEX 0, 0, 255, 139
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "円柱"
+FONT 9, "MS UI Gothic", 0, 0, 0x1
+BEGIN
+    LTEXT           "直径(&D)",IDC_WORK_XS,14,22,25,8
+    EDITTEXT        IDC_WORK_X,54,20,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",-1,103,22,18,8
+    LTEXT           "高さ(&H)",IDC_WORK_ZS,14,43,25,8
+    EDITTEXT        IDC_WORK_Z,54,41,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",-1,103,43,18,8
+    GROUPBOX        "矩形の大きさ",-1,7,7,118,76,WS_GROUP
+    LTEXT           "ｵﾌｾｯﾄ(&X)",IDC_WORK_XOS,138,22,34,8
+    EDITTEXT        IDC_WORK_XO,178,20,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",-1,229,22,18,8
+    LTEXT           "ｵﾌｾｯﾄ(&Y)",IDC_WORK_YOS,138,43,34,8
+    EDITTEXT        IDC_WORK_YO,178,41,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",-1,229,43,18,8
+    LTEXT           "ｵﾌｾｯﾄ(&Z)",IDC_WORK_ZOS,138,64,34,8
+    EDITTEXT        IDC_WORK_ZO,178,62,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",-1,229,64,18,8
+    GROUPBOX        "原点からのｵﾌｾｯﾄ",-1,130,7,118,76,WS_GROUP
+    PUSHBUTTON      "この情報をｺﾒﾝﾄで埋め込む(&I)",IDC_WORK_COMMENT,32,92,86,16
+    PUSHBUTTON      "元の大きさに戻す(&R)",IDC_WORK_RECOVER,135,92,86,16
+    DEFPUSHBUTTON   "表示(&V)",IDC_WORK_SHOW,32,116,86,16
+    PUSHBUTTON      "非表示(&C)",IDC_WORK_HIDE,135,116,86,16
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1837,8 +1864,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,5,1,4
- PRODUCTVERSION 3,5,1,4
+ FILEVERSION 3,5,2,1
+ PRODUCTVERSION 3,5,2,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1856,15 +1883,15 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.5.1.4"
+            VALUE "FileVersion", "3.5.2.1"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2015 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.5.1.4"
-            VALUE "SpecialBuild", "VC++2012"
+            VALUE "ProductVersion", "3.5.2.1"
+            VALUE "SpecialBuild", "VC++2012, Boost C++ 1.58"
         END
     END
     BLOCK "VarFileInfo"
@@ -2106,12 +2133,12 @@ BEGIN
         BOTTOMMARGIN, 44
     END
 
-    IDD_NCVIEW_WORK, DIALOG
+    IDD_NCVIEW_WORK1, DIALOG
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 248
         TOPMARGIN, 7
-        BOTTOMMARGIN, 133
+        BOTTOMMARGIN, 132
     END
 
     IDD_SHAPE_PROP, DIALOG
@@ -2248,6 +2275,14 @@ BEGIN
         RIGHTMARGIN, 301
         TOPMARGIN, 7
         BOTTOMMARGIN, 173
+    END
+
+    IDD_NCVIEW_WORK2, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 248
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 132
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -2883,7 +2918,7 @@ END
 STRINGTABLE
 BEGIN
     ID_NCVIEW_MAXRECT       "最大移動矩形の表示"
-    ID_NCVIEW_WORKRECT      "ﾜｰｸ矩形表示"
+    ID_NCVIEW_WORKRECT      "ﾜｰｸの表示"
     ID_NCVIEW_ALLFIT        "全てのﾍﾟｲﾝを現在のｳｨﾝﾄﾞｳ領域に合うように表示します\n全て図形ﾌｨｯﾄ(Shift+Home)"
     ID_NCVIEW_JUMP          "指定されたNCｺｰﾄﾞの行を表示\nｼﾞｬﾝﾌﾟ"
 END
@@ -3041,7 +3076,9 @@ BEGIN
     IDS_ERR_DXFBLOCK        "以下のﾌﾞﾛｯｸ名\n%s\nが見つかりませんでした"
     IDS_ERR_DXFMISSING      "\nﾃﾞｰﾀが欠落している可能性があります"
     IDS_ERR_DXFPOLYLINE     "POLYLINEの頂点処理でｴﾗｰが発生しました。CADｿﾌﾄでﾃﾞｰﾀを確認して下さい"
+    IDS_ERR_CADBIND         "有効なCADﾃﾞｰﾀがありませんでした。統合処理を中断します。"
     IDS_ERR_DXFLAYER        "ﾚｲﾔ名を省略できません"
+    IDS_ERR_BINDAREAOVER    "ﾜｰｸ矩形をはみ出しました。手動で削除/移動させるか、ﾜｰｸ矩形を大きくして再設定してください。"
 END
 
 STRINGTABLE
@@ -3210,10 +3247,12 @@ END
 STRINGTABLE
 BEGIN
     IDS_ERR_NCBLK_NOTLATHE  "旋盤ﾓｰﾄﾞではｻﾎﾟｰﾄされない"
-    IDS_ERR_NCBLK_CORRECT   "補正情報がない"
-    IDS_ERR_NCBLK_CORRECTSTART "補正またはﾃｰﾊﾟ開始ｺｰﾄﾞは直線補間"
-    IDS_ERR_NCBLK_ENDCIRCLE "補正またはﾃｰﾊﾟ処理の最後が円弧補間"
+    IDS_ERR_NCBLK_CORRECT   "選択されている工作機械設定に工具情報がない"
+    IDS_ERR_NCBLK_CORRECTSTART "工具情報がなく補正開始できない"
+    IDS_ERR_NCBLK_CORRECTLINE "補正またはﾃｰﾊﾟ開始ｺｰﾄﾞは直線補間限定"
     IDS_ERR_NCBLK_CORRECTOBJECT "補正またはﾃｰﾊﾟｵﾌﾞｼﾞｪｸﾄ生成ｴﾗｰ"
+    IDS_ERR_NCBLK_CORRECTING "補正処理中の補正値変更には対応していない"
+    IDS_ERR_NCBLK_ENDCIRCLE "補正またはﾃｰﾊﾟ処理の最後が円弧補間では計算出来ない"
     IDS_ERR_NCBLK_G10ADDTOOL "G10ﾂｰﾙ仮登録で失敗"
     IDS_ERR_NCBLK_TAPER     "ﾃｰﾊﾟｰﾓｰﾄﾞでない"
     IDS_ERR_NCBLK_GTYPE     "切削ｺｰﾄﾞでない"

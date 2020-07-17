@@ -39,8 +39,8 @@ static	LPCTSTR	g_szLayerToInitComment[] = {
 static	int		LayerCompareFunc_CutNo(CLayerData*, CLayerData*);
 // ﾚｲﾔ名の並べ替え
 static	int		LayerCompareFunc_Name(CLayerData*, CLayerData*);
-// 結合時の面積順並び替え
-static	int		BindAreaCompareFunc(LPCADBINDINFO, LPCADBINDINFO);
+// 結合時の並び替え
+static	int		BindHeightCompareFunc(LPCADBINDINFO, LPCADBINDINFO);
 //
 #define	IsBindMode()	m_bDocFlg[DXFDOC_BIND]
 
@@ -174,7 +174,7 @@ void CDXFDoc::DataOperation
 	}
 	pLayer->DataOperation(pData, enOperation, nIndex);
 	m_nLayerDataCnt[nLayerType-1]++;
-	if ( nLayerType == DXFCAMLAYER )
+	if ( nLayerType==DXFCAMLAYER || (IsBindMode()&&nLayerType!=DXFORGLAYER) )
 		SetMaxRect(pData);
 }
 
@@ -554,7 +554,15 @@ tuple<CDXFshape*, CDXFdata*, double> CDXFDoc::GetSelectObject(const CPointD& pt,
 
 void CDXFDoc::SortBindInfo(void)
 {
-	m_bindInfo.Sort(BindAreaCompareFunc);
+	m_bindInfo.Sort(BindHeightCompareFunc);
+#ifdef _DEBUG
+	for ( int i=0; i<m_bindInfo.GetCount(); i++ ) {
+		CDXFDoc* pDoc = m_bindInfo[i]->pDoc;
+		CRectD	rc( pDoc->GetMaxRect() );
+		g_dbg.printf("No.%d=%s", i+1, pDoc->GetPathName() );
+		g_dbg.printf("  area=%f", rc.Width() * rc.Height() );
+	}
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1130,6 +1138,9 @@ void CDXFDoc::OnUpdateShapePattern(CCmdUI* pCmdUI)
 	if ( pCmdUI->m_nID == ID_EDIT_SHAPE_POC )	// ﾎﾟｹｯﾄ処理は未実装
 		pCmdUI->Enable(FALSE);
 	else
+		pCmdUI->Enable(m_bDocFlg[DXFDOC_SHAPE]);
+
+	if ( m_bDocFlg[DXFDOC_SHAPE] )
 		pCmdUI->SetCheck( pCmdUI->m_nID == m_nShapeProcessID );
 }
 
@@ -1151,16 +1162,24 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 	// ｴﾗｰﾃﾞｰﾀの場合はNC変換ﾒﾆｭｰを無効にする
 	if ( !m_bDocFlg[DXFDOC_READY] || !m_pCircle )
 		bEnable = FALSE;
-	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_SHAPE )
-		bEnable = m_bDocFlg[DXFDOC_SHAPE];	// 形状処理が済んでいるか
-	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_LATHE )
-		bEnable = m_bDocFlg[DXFDOC_LATHE];	// 旋盤用原点を読み込んだか
-	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_WIRE )
-		bEnable = m_bDocFlg[DXFDOC_WIRE];	// ﾜｲﾔ加工機の条件を満たしているか
 	else {
-		// 単一ﾚｲﾔの場合は拡張生成をoffにする
-		if ( pCmdUI->m_nID!=ID_FILE_DXF2NCD && GetCutLayerCnt()<=1 )
-			bEnable = FALSE;
+		switch ( pCmdUI->m_nID ){
+		case ID_FILE_DXF2NCD:
+			break;		// OK
+		case ID_FILE_DXF2NCD_SHAPE:
+			bEnable = m_bDocFlg[DXFDOC_SHAPE];	// 形状処理が済んでいるか
+			break;
+		case ID_FILE_DXF2NCD_LATHE:
+			bEnable = m_bDocFlg[DXFDOC_LATHE];	// 旋盤用原点を読み込んだか
+			break;
+		case ID_FILE_DXF2NCD_WIRE:
+			bEnable = m_bDocFlg[DXFDOC_WIRE];	// ﾜｲﾔ加工機の条件を満たしているか
+			break;
+		default:	// 拡張生成
+			if ( GetCutLayerCnt() <= 1 )		// 単一ﾚｲﾔの場合はoff
+				bEnable = FALSE;
+			break;
+		}
 	}
 
 	pCmdUI->Enable(bEnable);
@@ -1374,16 +1393,21 @@ int LayerCompareFunc_Name(CLayerData* pFirst, CLayerData* pSecond)
 	return pFirst->GetStrLayer().Compare( pSecond->GetStrLayer() );
 }
 
-int BindAreaCompareFunc(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+int BindHeightCompareFunc(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
 {
-	CRect	rc1 = pFirst->pDoc->GetMaxRect(),
-			rc2 = pSecond->pDoc->GetMaxRect();
-	double	a1 = rc1.Width() * rc1.Height(),
-			a2 = rc2.Width() * rc2.Height();
-	if ( a1 > a2 )
-		return 1;
-	else if ( a1 < a2 )
+	CRectD	rc1( pFirst->pDoc->GetMaxRect() ),
+			rc2( pSecond->pDoc->GetMaxRect() );
+	double	h1 = rc1.Height(), h2 = rc2.Height(),
+			w1 = rc1.Width(),  w2 = rc2.Width();
+	if ( h1 > h2 )
 		return -1;
-	else
-		return 0;
+	else if ( h1 < h2 )
+		return 1;
+	else {
+		if ( w1 > w2 )
+			return -1;
+		else if ( w1 < w2 )
+			return 1;
+	}
+	return 0;
 }

@@ -16,7 +16,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
-//#define	_DEBUG_GSPIRIT
+#define	_DEBUG_GSPIRIT
 #endif
 
 using std::string;
@@ -286,25 +286,25 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 		using qi::double_;
 
 		// Endmill
-		rs1 = no_case[ g_szNCcomment[ENDMILL] ] >> '=';
+		rs1 = no_case[ ascii::string(ENDMILL_S) | DRILL_S | TAP_S | REAMER_S ] >> '=';
 		r11 = double_[_SetEndmill()] >> -no_case["mm"] >>
 						-(',' >> qi::digit[_SetEndmillType()]);
 		r12 = (char_('R')|'r') >> double_[_SetBallEndmill()] >>	// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
 						-no_case["mm"];
 		rr1 = r11 | r12;
 		// WorkRect
-		rs2 = no_case[ g_szNCcomment[WORKRECT] ] >> '=';
+		rs2 = no_case[ WORKRECT_S ] >> '=';
 		rr2 = double_[_SetWorkRect()] % ',';
 		// WorkCylinder
-		rs3 = no_case[ g_szNCcomment[WORKCYLINDER] ] >> '=';
+		rs3 = no_case[ WORKCYLINDER_S ] >> '=';
 		rr3 = double_[_SetWorkCylinder()] % ',';
 		// ViewMode
-		rs4 = no_case[ g_szNCcomment[LATHEVIEW] ] >> '=';
+		rs4 = no_case[ LATHEVIEW_S ] >> '=';
 		rr4 = double_[_SetLatheView()] % ',';
-		rs5 = no_case[ g_szNCcomment[WIREVIEW] ] >> '=';
+		rs5 = no_case[ WIREVIEW_S ] >> '=';
 		rr5 = double_[_SetWireView()];
 		// ToolPos
-		rs6 = no_case[ g_szNCcomment[TOOLPOS] ] >> '=';
+		rs6 = no_case[ TOOLPOS_S ] >> '=';
 		rr6 = -double_[_ToolPosX()] >>
 				-(',' >> -double_[_ToolPosY()] >> -(',' >> -double_[_ToolPosZ()]));
 		//
@@ -489,7 +489,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		strBlock = regex_replace(strBlock, reComment, "");
 #ifdef _DEBUG_GSPIRIT
 		if ( !IsThumbnail() )
-			dbg.printf("--- [%s] --- Comment remove OK", strBlock);
+			dbg.printf("--- [%s] --- Comment remove OK", strBlock.c_str());
 #endif
 	}
 
@@ -530,7 +530,8 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		switch ( strWord[0] ) {
 		case 'M':
 			// 前回のｺｰﾄﾞで登録ｵﾌﾞｼﾞｪｸﾄがあるなら
-			if ( bNCobj || bNCval ) {
+//			if ( bNCobj || bNCval ) {
+			if ( bNCobj ) {
 				// ｵﾌﾞｼﾞｪｸﾄ生成
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 				// 面取りｵﾌﾞｼﾞｪｸﾄの登録
@@ -539,7 +540,8 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 				pDataResult = pData;
 				_SetStrComma(strComma);
 				nNotModalCode = -1;
-				bNCobj = bNCval = FALSE;
+//				bNCobj = bNCval = FALSE;
+				bNCobj = FALSE;
 			}
 			// 前回のｺｰﾄﾞでｻﾌﾞﾌﾟﾛ呼び出しがあれば
 			if ( bNCsub ) {
@@ -581,14 +583,15 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 				break;
 			}
 			// 前回のｺｰﾄﾞで登録ｵﾌﾞｼﾞｪｸﾄがあるなら
-			if ( bNCobj || bNCval ) {
+//			if ( bNCobj || bNCval ) {
+			if ( bNCobj ) {
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 				if ( g_lpstrComma )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
 				_SetStrComma(strComma);
 				nNotModalCode = -1;
-				bNCval = FALSE;		// bNCobj ｸﾘｱ不要
+//				bNCval = FALSE;		// bNCobj ｸﾘｱ不要
 			}
 			if ( bNCsub ) {
 				bNCsub = FALSE;
@@ -679,13 +682,14 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		g_ncArgv.taper.bTonly = TRUE;	// TH_UVWire.cpp での処理目印
 		bNCobj = TRUE;			// dummy object の生成
 	}
-
-	if ( bNCsub ) {
-		// Mｺｰﾄﾞ後処理
-		if ( CallSubProgram(pBlock, pDataResult) == 30 )
-			return 30;	// 終了ｺｰﾄﾞ
+	//
+	if ( bNCsub && bNCval ) {
+		// M98での[P_|L_]のｵﾌﾞｼﾞｪｸﾄ生成を抑制
+		if ( !(g_ncArgv.nc.dwValFlags & ~(NCD_P|NCD_L)) )
+			bNCval = FALSE;
 	}
-	else if ( bNCobj || bNCval ) {
+	//
+	if ( bNCobj || bNCval ) {
 		// NCﾃﾞｰﾀ登録処理
 		pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 		if ( g_lpstrComma )
@@ -694,6 +698,11 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		_SetStrComma(strComma);
 		// ﾌﾞﾛｯｸ情報の更新
 		pBlock->SetBlockToNCdata(pDataResult, g_pDoc->GetNCsize());
+	}
+	if ( bNCsub ) {
+		// Mｺｰﾄﾞ後処理
+		if ( CallSubProgram(pBlock, pDataResult) == 30 )
+			return 30;	// 終了ｺｰﾄﾞ
 	}
 
 	return 0;
@@ -1437,7 +1446,7 @@ void SetWorkRect_fromComment(void)
 	rc.OffsetRect(pt);
 
 	// ﾄﾞｷｭﾒﾝﾄが保持するﾜｰｸ矩形の更新
-	g_pDoc->SetWorkRectOrg(rc);
+	g_pDoc->SetWorkRectComment(rc);
 
 #ifdef _DEBUG
 	if ( !IsThumbnail() ) {
@@ -1476,7 +1485,7 @@ void SetWorkCylinder_fromComment(void)
 	}
 
 	// ﾄﾞｷｭﾒﾝﾄが保持する円柱情報の更新
-	g_pDoc->SetWorkCylinder(d, h, pt);
+	g_pDoc->SetWorkCylinderComment(d, h, pt);
 
 #ifdef _DEBUG
 	if ( !IsThumbnail() ) {
@@ -1535,7 +1544,7 @@ void SetWireRect_fromComment(void)
 	// ﾜｰｸ厚さ指示
 	CRect3D		rc;
 	rc.high = g_dWireView;
-	g_pDoc->SetWorkRectOrg(rc, FALSE);	// 描画領域を更新しない(CNCDoc::SerializeAfterCheck)
+	g_pDoc->SetWorkRectComment(rc, FALSE);	// 描画領域を更新しない(CNCDoc::SerializeAfterCheck)
 #ifdef _DEBUG
 	if ( !IsThumbnail() )
 		dbg.printf("t=%f", rc.high);

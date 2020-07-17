@@ -42,6 +42,9 @@ void CCADbindDlg::DoDataExchange(CDataExchange* pDX)
 
 void CCADbindDlg::PathOptimizeAdd(const CString& strPath)
 {
+	if ( strPath.IsEmpty() )
+		return;
+
 	// èdï°¡™Ø∏
 	for ( int i=0; i<m_aryFile.GetCount(); i++ ) {
 		if ( strPath.CompareNoCase(m_aryFile[i]) == 0 )
@@ -49,16 +52,16 @@ void CCADbindDlg::PathOptimizeAdd(const CString& strPath)
 	}
 	// ìoò^ägí£éq¡™Ø∏
 	CDocument*	dummy;
-	if ( AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->MatchDocType(strPath, dummy) != CDocTemplate::yesAttemptNative )
-		return;
-
-	m_aryFile.Add(strPath);
-	// àÍíUΩ¿√®Ø∏∫›ƒ€∞ŸÇ…æØƒÇµÇƒ ﬂΩï\é¶ÇÃç≈ìKâª(shlwapi.h)
-	::PathSetDlgItemPath(m_hWnd, IDC_BIND_LIST_ST, strPath);
-	// ÇªÇÃ√∑ΩƒÇéÊìæÇµÇƒÿΩƒ∫›ƒ€∞ŸÇ…æØƒ
-	CString	strFile;
-	GetDlgItem(IDC_BIND_LIST_ST)->GetWindowText(strFile);
-	m_ctBindList.AddString(strFile);
+	CDocTemplate::Confidence result = AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->MatchDocType(strPath, dummy);
+	if ( result==CDocTemplate::yesAttemptNative || result==CDocTemplate::yesAlreadyOpen ) {
+		m_aryFile.Add(strPath);
+		// àÍíUΩ¿√®Ø∏∫›ƒ€∞ŸÇ…æØƒÇµÇƒ ﬂΩï\é¶ÇÃç≈ìKâª(shlwapi.h)
+		::PathSetDlgItemPath(m_hWnd, IDC_BIND_LIST_ST, strPath);
+		// ÇªÇÃ√∑ΩƒÇéÊìæÇµÇƒÿΩƒ∫›ƒ€∞ŸÇ…æØƒ
+		CString	strFile;
+		GetDlgItem(IDC_BIND_LIST_ST)->GetWindowText(strFile);
+		m_ctBindList.AddString(strFile);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////

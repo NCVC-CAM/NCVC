@@ -1157,7 +1157,7 @@ BOOL CDXFchain::IsPointInPolygon(const CPointD& ptTarget) const
 	CDXFdata*	pData;
 	POSITION	pos;
 	CPointD		pt;
-	VECPOINTD	vpt;
+	CVPointD	vpt;
 
 	if ( GetCount() == 1 ) {
 		pData = GetHead();
@@ -1334,7 +1334,7 @@ double CDXFchain::GetSelectObjectFromShape
 	return dGapMin;
 }
 
-void CDXFchain::SetVectorPoint(POSITION pos1, VECPOINTD& vpt, double k)
+void CDXFchain::SetVectorPoint(POSITION pos1, CVPointD& vpt, double k)
 {
 	POSITION	pos2 = pos1;
 	CDXFdata*	pData;
@@ -1347,7 +1347,7 @@ void CDXFchain::SetVectorPoint(POSITION pos1, VECPOINTD& vpt, double k)
 	} while ( pos1 != pos2 );
 }
 
-void CDXFchain::SetVectorPoint(POSITION pos1, VECPOINTD& vpt, size_t n)
+void CDXFchain::SetVectorPoint(POSITION pos1, CVPointD& vpt, size_t n)
 {
 	POSITION	pos2 = pos1;
 	CDXFdata*	pData;

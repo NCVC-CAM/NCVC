@@ -6,40 +6,52 @@
 
 #include "boost/operators.hpp"		// 演算子の手抜き定義
 
+//////////////////////////////////////////////////////////////////////
+
+// 一般定義
 const double NCMIN = 0.001;			// NCの桁落ち誤差
 const double PI = 3.1415926535897932384626433832795;
 
+// 円を64(360度/64≒5.6度)分割で描画
+const int		ARCCOUNT = 64;
+const double	ARCSTEP  = PI/32.0;		// 2π[rad]÷ARCCOUNT
+
+//////////////////////////////////////////////////////////////////////
+
 // Radian変換
+//template<typename T> inline	T	RAD(T dVal)
 inline	double	RAD(double dVal)
 {
 	return dVal * PI / 180.0;
 }
 // Degree変換
+//template<typename T> inline	T	DEG(T dVal)
 inline	double	DEG(double dVal)
 {
 	return dVal * 180.0 / PI;
 }
-
-// 1/1000 四捨五入
-inline	double	RoundUp(double dVal)
-{
-	return _copysign( floor(fabs(dVal) * 1000.0 + 0.5) / 1000.0, dVal );
-}
-// 1/1000 切り捨て
-inline	double	RoundCt(double dVal)
-{
-	return _copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
-}
-
 // ﾃﾞﾌｫﾙﾄの回転角度
 const double RX = RAD(-60.0);
 const double RY = 0.0;
 const double RZ = RAD(-35.0);
 
-template<class T> class	CPoint3T;
+// 1/1000 四捨五入
+//template<typename T> inline	T RoundUp(T dVal)
+inline	double	RoundUp(double dVal)
+{
+	return _copysign( floor(fabs(dVal) * 1000.0 + 0.5) / 1000.0, dVal );
+}
+// 1/1000 切り捨て
+//template<typename T> inline	T RoundCt(T dVal)
+inline	double	RoundCt(double dVal)
+{
+	return _copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
+}
 
 //////////////////////////////////////////////////////////////////////
 // 実数型 CPoint の雛形
+
+template<class T> class	CPoint3T;
 
 template<class T>
 class CPointT :
@@ -66,6 +78,10 @@ public:
 	}
 	CPointT(const CPoint& pt) {
 		SetPoint(pt.x, pt.y);
+	}
+	CPointT(const CPointT<double>& pt) {
+		// double -> float 初期化
+		SetPoint((T)pt.x, (T)pt.y);
 	}
 	// 演算子定義
 	CPointT<T>&	operator = (T xy) {
@@ -153,8 +169,9 @@ public:
 };
 typedef	CPointT<double>			CPointD;
 typedef	CPointT<float>			CPointF;
-typedef	std::vector<CPointD>	VECPOINTD;
+typedef	std::vector<CPointD>	CVPointD;
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointD, double, cs::cartesian, x, y)
+//BOOST_GEOMETRY_REGISTER_POINT_2D(CPointF, float,  cs::cartesian, x, y)
 
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD クラス
@@ -183,6 +200,10 @@ public:
 	}
 	CPoint3T(T xx, T yy, T zz) {
 		SetPoint(xx, yy, zz);
+	}
+	CPoint3T(const CPoint3T<double>& pt) {
+		// double -> float 初期化
+		SetPoint((T)pt.x, (T)pt.y, (T)pt.z);
 	}
 	// 演算子定義
 	CPoint3T<T>&	operator = (T xyz) {
@@ -257,7 +278,7 @@ public:
 		return CPointT<T>(y, z);
 	}
 	operator CPointT<T>() const {
-		return CPointT<T>(x, y);
+		return GetXY();
 	}
 	// 代入関数
 	void	SetPoint(T xx, T yy, T zz) {
@@ -278,11 +299,10 @@ public:
 		ms_rz_cos = cos(rz);		ms_rz_sin = sin(rz);
 	}
 };
-typedef	CPoint3T<double>		CPoint3D;
-typedef	CPoint3T<float>			CPoint3F;
-typedef	std::vector<CPoint3D>	VECPOINT3D;	// 主にOpenGL描画用
-typedef	std::vector<CPoint3F>	VECPOINT3F;
+typedef	CPoint3T<double>	CPoint3D;
+typedef	CPoint3T<float>		CPoint3F;
 //BOOST_GEOMETRY_REGISTER_POINT_3D(CPoint3D, double, cs::cartesian, x, y, z)
+//BOOST_GEOMETRY_REGISTER_POINT_3D(CPoint3F, float,  cs::cartesian, x, y, z)
 
 //////////////////////////////////////////////////////////////////////
 // 実数型の CRectｸﾗｽ
@@ -423,13 +443,14 @@ public:
 };
 typedef	CRectT<double>	CRectD;
 typedef	CRectT<float>	CRectF;
+//BOOST_GEOMETRY_REGISTER_BOX_2D_4VALUES(CRectD, CPointD, left, top, right, bottom)
 
 //////////////////////////////////////////////////////////////////////
 // CRect３次元矩形ｸﾗｽ
 
 template<class T>
-class CRect3T : public CRectT<T>
-//	, boost::operators< CRect3T<T> >
+class CRect3T : public CRectT<T>,
+		boost::operators< CRect3T<T> >
 {
 public:
 	T	high, low;		// 高さ
@@ -478,9 +499,6 @@ public:
 				high == rc.high &&
 				low  == rc.low;
 	}
-//	BOOL	operator != (const CRect3T<T> &rc) const {
-//		return !operator ==(rc);
-//	}
 	CRect3T<T>&	operator /= (T d) {
 		CRectT<T>::operator /= (d);
 		high /= d;		low /= d;
@@ -515,10 +533,11 @@ typedef	CRect3T<float>	CRect3F;
 // NCVC数値演算共通関数
 
 //	ｷﾞｬｯﾌﾟ計算のｲﾝﾗｲﾝ関数
+//template<typename T> inline	T	GAPCALC(T x, T y)
 inline	double	GAPCALC(double x, double y)
 {
-//	return	_hypot(x, y);		// 時間がかかりすぎ
-	return	x * x + y * y;		// 平方根を取らず２乗で処理
+//	return	_hypot(x, y);	// 時間がかかりすぎ
+	return	x*x + y*y;		// 平方根を取らず２乗で処理
 }
 inline	double	GAPCALC(const CPointD& pt)
 {
@@ -560,7 +579,7 @@ boost::optional<CPointD>	CalcOffsetIntersectionPoint_LC
 boost::optional<CPointD>	CalcOffsetIntersectionPoint_LE
 	(const CPointD&, const CPointD&, double, double, double, double, BOOL, BOOL);
 //	点が多角形の内側か否か
-BOOL IsPointInPolygon(const CPointD&, const VECPOINTD&);
+BOOL IsPointInPolygon(const CPointD&, const CVPointD&);
 //	点と直線の距離を求める
 double	CalcLineDistancePt(const CPointD&, const CPointD&, const CPointD&);
 

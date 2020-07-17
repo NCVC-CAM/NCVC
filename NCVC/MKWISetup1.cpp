@@ -21,6 +21,8 @@ BEGIN_MESSAGE_MAP(CMKWISetup1, CPropertyPage)
 	ON_BN_CLICKED(IDC_MKNC1_FOOTER_EDIT, &CMKWISetup1::OnFooterEdit)
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CMKWISetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMKWISetup1 プロパティ ページ
 
@@ -31,7 +33,7 @@ CMKWISetup1::CMKWISetup1() : CPropertyPage(CMKWISetup1::IDD)
 
 void CMKWISetup1::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_MKNC1_FOOTER_EDIT, m_ctButton2);
 	DDX_Control(pDX, IDC_MKNC1_HEADER_EDIT, m_ctButton1);
 	DDX_Control(pDX, IDC_MKNC1_HEADER, m_ctHeader);
@@ -51,11 +53,11 @@ void CMKWISetup1::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMKWISetup1::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
-	// + GetParent() ﾎﾟｲﾝﾀを取得できない
-	CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(GetParent())->GetNCMakeOption();
+	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
+	CNCMakeWireOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	m_dDepth		= pOpt->m_dDepth;
 	m_dTaper		= pOpt->m_dTaper;
 	m_strTaperMode	= pOpt->m_strOption[MKWI_STR_TAPERMODE];
@@ -129,7 +131,7 @@ void CMKWISetup1::OnFooterEdit()
 
 BOOL CMKWISetup1::OnApply() 
 {
-	CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeWireOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	pOpt->m_dDepth		= m_dDepth;
 	pOpt->m_dTaper		= m_dTaper;
 	pOpt->m_dFeed		= m_dFeed;
@@ -144,7 +146,7 @@ BOOL CMKWISetup1::OnApply()
 
 BOOL CMKWISetup1::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_dDepth < 0 ) {

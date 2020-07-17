@@ -126,7 +126,7 @@ class CMainFrame : public CMDIFrameWnd
 	BOOL		m_bMenuSelect;
 
 	// ”∞ƒﬁ⁄Ω¿ﬁ≤±€∏ﬁä«óùóp
-	CDialog*	m_pModelessDlg[MLD_NUMS];
+	CWnd*	m_pModelessDlg[MLD_NUMS];
 
 	DECLARE_DYNAMIC(CMainFrame)
 public:
@@ -182,10 +182,10 @@ public:
 	CProgressCtrl*	GetProgressCtrl(void) {
 		return m_wndStatusBar.GetProgressCtrl();
 	}
-	CDialog*	GetModelessDlg(EN_MLD n) {
+	CWnd*	GetModelessDlg(EN_MLD n) {
 		return m_pModelessDlg[n];
 	}
-	void		SetModelessDlg(EN_MLD n, CDialog* pDlg) {
+	void		SetModelessDlg(EN_MLD n, CWnd* pDlg) {
 		m_pModelessDlg[n] = pDlg;
 	}
 

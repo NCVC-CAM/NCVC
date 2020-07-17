@@ -29,6 +29,8 @@ static	const	COLORREF	g_dwColor[] = {
 	RGB(255,255,255)								// 白
 };
 
+#define	GetParentSheet()	static_cast<CMakeDXFDlg *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMakeDXFDlg1 プロパティ ページ
 
@@ -46,7 +48,7 @@ CMakeDXFDlg1::CMakeDXFDlg1() : CPropertyPage(CMakeDXFDlg1::IDD)
 
 void CMakeDXFDlg1::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMakeDXFDlg1)
 	DDX_Control(pDX, IDC_MKNC_NCFILE, m_ctDXFFileName);
 	DDX_Text(pDX, IDC_MKNC_NCFILE, m_strDXFFileName);
@@ -75,14 +77,14 @@ void CMakeDXFDlg1::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMakeDXFDlg1::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	int		i, j;
-	CMakeDXFDlg*	pParent = static_cast<CMakeDXFDlg *>(GetParent());
+	CMakeDXFDlg*	pParent = GetParentSheet();
 	// ｺﾝｽﾄﾗｸﾀではできないｺﾝﾄﾛｰﾙの初期化
 	CDXFMakeOption*	pDXFMake = pParent->GetDXFMakeOption();
 
-	// ﾄﾞｷｭﾒﾝﾄ名からDXFﾌｧｲﾙ名を作成(GetParent()はｺﾝｽﾄﾗｸﾀで使えない)
+	// ﾄﾞｷｭﾒﾝﾄ名からDXFﾌｧｲﾙ名を作成(GetParentSheet()はｺﾝｽﾄﾗｸﾀで使えない)
 	CString	strDXFFile(pParent->GetDoc()->GetDXFFileName());
 	if ( strDXFFile.IsEmpty() ) {
 		::Path_Name_From_FullPath(pParent->GetDoc()->GetPathName(),
@@ -142,7 +144,7 @@ void CMakeDXFDlg1::OnMKDXFileUp()
 
 BOOL CMakeDXFDlg1::OnApply() 
 {
-	CDXFMakeOption*	pDXFMake = static_cast<CMakeDXFDlg *>(GetParent())->GetDXFMakeOption();
+	CDXFMakeOption*	pDXFMake = GetParentSheet()->GetDXFMakeOption();
 	for ( int i=0; i<SIZEOF(m_strLayer); i++ ) {
 		pDXFMake->m_bOut[i]			= m_bOut[i];
 		pDXFMake->m_strOption[i]	= m_strLayer[i];
@@ -156,7 +158,7 @@ BOOL CMakeDXFDlg1::OnApply()
 
 BOOL CMakeDXFDlg1::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	BOOL	bCheck = TRUE;

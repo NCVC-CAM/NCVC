@@ -181,11 +181,21 @@ void CNCView::SetWorkRect(void)
 	m_ptdWorkRect[1][3] = pt.PointConvert();
 }
 
-void CNCView::ConvertWorkRect(void)
+void CNCView::SetWorkCylinder(void)
 {
-	for ( int i=0; i<SIZEOF(m_ptDrawWorkRect); i++ ) {
-		for ( int j=0; j<SIZEOF(m_ptDrawWorkRect[0]); j++ )
-			m_ptDrawWorkRect[i][j] = DrawConvert(m_ptdWorkRect[i][j]);
+	CRect3D		rc(GetDocument()->GetWorkRect());
+	CPointD		ptc(rc.CenterPoint());
+	CPoint3D	pt;
+	int			i;
+	double		r = rc.Width()/2.0, q;
+
+	for ( i=0, q=0; i<ARCCOUNT; i++, q+=ARCSTEP ) {
+		pt.x = r * cos(q) + ptc.x;
+		pt.y = r * sin(q) + ptc.y;
+		pt.z = rc.high;
+		m_ptdWorkCylinder[0][i] = pt.PointConvert();
+		pt.z = rc.low;
+		m_ptdWorkCylinder[1][i] = pt.PointConvert();
 	}
 }
 
@@ -197,14 +207,27 @@ void CNCView::ConvertMaxRect(void)
 	}
 }
 
+void CNCView::ConvertWorkRect(void)
+{
+	for ( int i=0; i<SIZEOF(m_ptDrawWorkRect); i++ ) {
+		for ( int j=0; j<SIZEOF(m_ptDrawWorkRect[0]); j++ )
+			m_ptDrawWorkRect[i][j] = DrawConvert(m_ptdWorkRect[i][j]);
+	}
+}
+
+void CNCView::ConvertWorkCylinder(void)
+{
+	for ( int i=0; i<SIZEOF(m_ptDrawWorkCylinder); i++ ) {
+		for ( int j=0; j<SIZEOF(m_ptDrawWorkCylinder[0]); j++ )
+			m_ptDrawWorkCylinder[i][j] = DrawConvert(m_ptdWorkCylinder[i][j]);
+	}
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CNCView ƒNƒ‰ƒX‚Ì•`‰æ
 
 void CNCView::OnDraw(CDC* pDC)
 {
-//	if ( !IsWindowVisible() )	// ÀÌÞºÝÄÛ°Ù‚É‚æ‚é”ñ•\Ž¦
-//		return;
-
 	ASSERT_VALID(GetDocument());
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	pDC->SetROP2(R2_COPYPEN);
@@ -255,5 +278,23 @@ void CNCView::DrawWorkRect(CDC* pDC)
 	for ( int i=0; i<SIZEOF(m_ptDrawWorkRect[0]); i++ ) {
 		pDC->MoveTo(m_ptDrawWorkRect[0][i]);
 		pDC->LineTo(m_ptDrawWorkRect[1][i]);
+	}
+}
+
+void CNCView::DrawWorkCylinder(CDC* pDC)
+{
+	int		i, n;
+
+	pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_WORK));
+
+	for ( n=0; n<SIZEOF(m_ptDrawWorkCylinder); n++ ) {
+		pDC->MoveTo(m_ptDrawWorkCylinder[n][0]);
+		for ( i=1; i<SIZEOF(m_ptDrawWorkCylinder[0]); i++ )
+			pDC->LineTo(m_ptDrawWorkCylinder[n][i]);
+		pDC->LineTo(m_ptDrawWorkCylinder[n][0]);
+	}
+	for ( i=0; i<ARCCOUNT; i+=ARCCOUNT/4 ) {
+		pDC->MoveTo(m_ptDrawWorkCylinder[0][i]);
+		pDC->LineTo(m_ptDrawWorkCylinder[1][i]);
 	}
 }

@@ -82,6 +82,8 @@ void CNCListView::OnInitialUpdate()
 void CNCListView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
 {
 	switch ( lHint ) {
+	case UAV_DRAWWORKRECT:
+		break;		// ｺﾒﾝﾄ更新の可能性があるので再描画
 	case UAV_STARTSTOPTRACE:	// 選択解除
 		{
 			POSITION pos = GetListCtrl().GetFirstSelectedItemPosition();
@@ -93,7 +95,6 @@ void CNCListView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		}
 		// through
 	case UAV_TRACECURSOR:
-	case UAV_DRAWWORKRECT:
 	case UAV_DRAWMAXRECT:
 		return;		// 再描画不要
 	case UAV_FILEINSERT:	// ﾘｽﾄ再読込(ｶｰｿﾙ位置に読み込み)

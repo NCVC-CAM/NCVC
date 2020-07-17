@@ -37,24 +37,33 @@ protected:
 	CRectD			m_rcDataMax;		// 補填後のGetDocument()->GetMaxRect()
 	CPoint			m_ptGuide[NCXYZ][2];// XYZ軸のｶﾞｲﾄﾞ座標(始点・終点)
 	// XY, XZ, YZ 平面用 (XYZはCNCViewが独自に持つ)
-	CRect	m_rcDrawWork;		// ﾜｰｸ矩形
-	CRect	m_rcDrawMax;		// ﾃﾞｰﾀ矩形
+	CRect	m_rcDrawMax,		// ﾃﾞｰﾀ矩形
+			m_rcDrawWork,		// ﾜｰｸ矩形
+			m_rcDrawCylinder;	// ﾜｰｸ円柱(XZ, YZのみ)
 	//
 	virtual	void	SetDataMaxRect(void);
-	virtual	void	SetWorkRect(void) {}	// CNCViewのみ
+	virtual	void	SetWorkRect(void) {}		// XY, XYZは、各ｸﾗｽで実装
+	virtual	void	SetWorkCylinder(void) {}	// 〃
+	virtual	void	ConvertMaxRect(void) {
+		m_rcDrawMax = DrawConvert(m_rcDataMax);
+	}
 	virtual	void	ConvertWorkRect(void) {
 		m_rcDrawWork = DrawConvert(ConvertRect(GetDocument()->GetWorkRect()));
 	}
-	virtual	void	ConvertMaxRect(void) {
-		m_rcDrawMax = DrawConvert(m_rcDataMax);
+	virtual	void	ConvertWorkCylinder(void) {// XY, XYZは、各ｸﾗｽで実装
+		m_rcDrawCylinder = DrawConvert(ConvertRect(GetDocument()->GetWorkRect()));
+	}
+	virtual	void	DrawMaxRect(CDC* pDC) {
+		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_MAXCUT));
+		pDC->Rectangle(m_rcDrawMax);
 	}
 	virtual	void	DrawWorkRect(CDC* pDC) {
 		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_WORK));
 		pDC->Rectangle(m_rcDrawWork);
 	}
-	virtual	void	DrawMaxRect(CDC* pDC) {
-		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_MAXCUT));
-		pDC->Rectangle(m_rcDrawMax);
+	virtual	void	DrawWorkCylinder(CDC* pDC) {
+		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_WORK));
+		pDC->Rectangle(m_rcDrawCylinder);
 	}
 	void	DrawGuideDivi(CDC*, size_t, size_t);
 	void	DrawInfo(CDC*);

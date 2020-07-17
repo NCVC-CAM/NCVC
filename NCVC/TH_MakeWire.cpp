@@ -140,7 +140,7 @@ static inline	void	AddMakeGdata(CDXFdata* pDataXY, CDXFdata* pDataUV)
 	pDataUV->SetMakeFlg();
 }
 // 切削ﾃﾞｰﾀ（上下異形状微細線分）
-static inline	void	AddMakeGdata(const VECPOINTD& vptXY, const VECPOINTD& vptUV)
+static inline	void	AddMakeGdata(const CVPointD& vptXY, const CVPointD& vptUV)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(vptXY, vptUV, GetDbl(MKWI_DBL_FEED));
 	ASSERT( pNCD );
@@ -525,7 +525,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 	CDXFchain*	pChainUV = pShapeUV->GetShapeChain();
 	CDXFdata*	pDataXY;
 	CDXFdata*	pDataUV;
-	VECPOINTD	vptXY, vptUV;
+	CVPointD	vptXY, vptUV;
 	size_t		nCntXY = pChainXY->GetObjectCount(),
 				nCntUV = pChainUV->GetObjectCount();
 	int			nXYUV;		// 1:XY処理で終了, 2:UV処理で終了, 0:両方同時

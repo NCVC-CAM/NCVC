@@ -28,6 +28,8 @@ BEGIN_MESSAGE_MAP(CViewSetup4, CPropertyPage)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CViewSetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CViewSetup4 プロパティ ページ
 
@@ -53,7 +55,7 @@ CViewSetup4::~CViewSetup4()
 
 void CViewSetup4::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CViewSetup4)
 	DDX_Control(pDX, IDC_VIEWSETUP4_FONT, m_ctFontButton);
 	//}}AFX_DATA_MAP
@@ -70,11 +72,11 @@ void CViewSetup4::DoDataExchange(CDataExchange* pDX)
 
 BOOL CViewSetup4::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ﾎﾞﾀﾝﾃｷｽﾄの変更
 	m_ctFontButton.SetWindowText(
-		static_cast<CViewSetup *>(GetParent())->GetChangeFontButtonText(&m_lfFont) );
+		GetParentSheet()->GetChangeFontButtonText(&m_lfFont) );
 
 	// ﾄﾚｰｽｽﾋﾟｰﾄﾞ
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
@@ -103,7 +105,7 @@ BOOL CViewSetup4::OnApply()
 
 BOOL CViewSetup4::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	for ( int i=0; i<SIZEOF(m_nTraceSpeed); i++ ) {
@@ -125,7 +127,7 @@ HBRUSH CViewSetup4::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		if ( IDC_VIEWSETUP4_ST_BACKGROUND1<=nID && nID<=IDC_VIEWSETUP4_ST_TEXT )
 			return m_brColor[nID-IDC_VIEWSETUP4_ST_BACKGROUND1];
 	}
-	return CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
+	return __super::OnCtlColor(pDC, pWnd, nCtlColor);
 }
 
 void CViewSetup4::OnColorButton() 
@@ -150,7 +152,7 @@ void CViewSetup4::OnFontChange()
 	if ( fontDlg.DoModal() == IDOK ) {
 		memcpy(&m_lfFont, fontDlg.m_cf.lpLogFont, sizeof(m_lfFont));
 		m_ctFontButton.SetWindowText(
-			static_cast<CViewSetup *>(GetParent())->GetChangeFontButtonText(&m_lfFont) );
+			GetParentSheet()->GetChangeFontButtonText(&m_lfFont) );
 		// 適用ﾎﾞﾀﾝを有効に
 		SetModified();
 	}

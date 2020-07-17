@@ -43,7 +43,7 @@ CMKNCSetup6::CMKNCSetup6() : CPropertyPage(CMKNCSetup6::IDD)
 
 void CMKNCSetup6::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMKNCSetup6)
 	DDX_Control(pDX, IDC_MKNC6_KOUSA, m_dEllipse);
 	DDX_Control(pDX, IDC_MKNC6_CGRP, m_ctCircleGroup);
@@ -67,11 +67,11 @@ void CMKNCSetup6::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMKNCSetup6::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 	
 	// ∂Ω¿—∫›ƒ€∞ŸÇÕ∫›Ωƒ◊∏¿Ç≈èâä˙âªÇ≈Ç´Ç»Ç¢
-	// + GetParent() Œﬂ≤›¿ÇéÊìæÇ≈Ç´Ç»Ç¢
-	CWnd*	pParent = GetParent();
+	// + GetParentSheet() Œﬂ≤›¿ÇéÊìæÇ≈Ç´Ç»Ç¢
+	CWnd*	pParent = GetParentSheet();
 	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
 		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
 		m_nDot			= pOpt->m_nDot;
@@ -86,7 +86,7 @@ BOOL CMKNCSetup6::OnInitDialog()
 	}
 	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMKLASetup)) ) {
 		// ê˘î’”∞ƒﬁ
-		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(GetParent())->GetNCMakeOption();
+		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(pParent)->GetNCMakeOption();
 		m_nDot			= pOpt->m_nDot;
 		m_nFDot			= pOpt->m_nFDot;
 		m_bZeroCut		= pOpt->m_bZeroCut;
@@ -103,7 +103,7 @@ BOOL CMKNCSetup6::OnInitDialog()
 		m_ctCircleIJ.ShowWindow(SW_HIDE);
 		m_ctCircleHalf.ShowWindow(SW_HIDE);
 		m_ctZeroCutIJ.ShowWindow(SW_HIDE);
-		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(GetParent())->GetNCMakeOption();
+		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(pParent)->GetNCMakeOption();
 		m_nDot			= pOpt->m_nDot;
 		m_nFDot			= pOpt->m_nFDot;
 		m_bZeroCut		= pOpt->m_bZeroCut;
@@ -135,7 +135,7 @@ void CMKNCSetup6::OnCircleIJ()
 
 BOOL CMKNCSetup6::OnApply() 
 {
-	CWnd*	pParent = GetParent();
+	CWnd*	pParent = GetParentSheet();
 	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
 		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
 		pOpt->m_nDot		= m_nDot;
@@ -149,7 +149,7 @@ BOOL CMKNCSetup6::OnApply()
 		pOpt->m_bEllipse	= m_bEllipse;
 	}
 	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMKLASetup)) ) {
-		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(GetParent())->GetNCMakeOption();
+		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(pParent)->GetNCMakeOption();
 		pOpt->m_nDot		= m_nDot;
 		pOpt->m_nFDot		= m_nFDot;
 		pOpt->m_bZeroCut	= m_bZeroCut;
@@ -161,7 +161,7 @@ BOOL CMKNCSetup6::OnApply()
 		pOpt->m_bEllipse	= m_bEllipse;
 	}
 	else {
-		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(GetParent())->GetNCMakeOption();
+		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(pParent)->GetNCMakeOption();
 		pOpt->m_nDot		= m_nDot;
 		pOpt->m_nFDot		= m_nFDot;
 		pOpt->m_bZeroCut	= m_bZeroCut;
@@ -175,7 +175,7 @@ BOOL CMKNCSetup6::OnApply()
 
 BOOL CMKNCSetup6::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_dEllipse < NCMIN ) {

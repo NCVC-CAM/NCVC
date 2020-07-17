@@ -75,12 +75,12 @@ BOOL CMKNCSetup::OnInitDialog()
 	GetDlgItem(ID_APPLY_NOW)->SetWindowText(strTitle);
 	GetDlgItem(ID_APPLY_NOW)->EnableWindow();
 
-	return CPropertySheet::OnInitDialog();
+	return __super::OnInitDialog();
 }
 
 void CMKNCSetup::OnDestroy() 
 {
-	CPropertySheet::OnDestroy();
+	__super::OnDestroy();
 
 	// ×½ÄÍß°¼Þ‚Ì¾¯Ä
 	g_nLastPage_NCMake = GetActiveIndex();

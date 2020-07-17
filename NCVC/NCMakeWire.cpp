@@ -92,7 +92,7 @@ CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, doubl
 }
 
 // ã‰ºˆÙŒ`ó‚ğ”÷×ü•ª‚Å¶¬
-CNCMakeWire::CNCMakeWire(const VECPOINTD& vptXY, const VECPOINTD& vptUV, double dFeed)
+CNCMakeWire::CNCMakeWire(const CVPointD& vptXY, const CVPointD& vptUV, double dFeed)
 {
 	ASSERT( vptXY.size() == vptUV.size() );
 

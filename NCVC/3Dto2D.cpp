@@ -22,6 +22,12 @@ double	CPoint3D::ms_ry_cos = 0.0;
 double	CPoint3D::ms_ry_sin = 0.0;
 double	CPoint3D::ms_rz_cos = 0.0;
 double	CPoint3D::ms_rz_sin = 0.0;
+float	CPoint3F::ms_rx_cos = 0.0;
+float	CPoint3F::ms_rx_sin = 0.0;
+float	CPoint3F::ms_ry_cos = 0.0;
+float	CPoint3F::ms_ry_sin = 0.0;
+float	CPoint3F::ms_rz_cos = 0.0;
+float	CPoint3F::ms_rz_sin = 0.0;
 
 //////////////////////////////////////////////////////////////////////
 //	ÇQê¸ÇÃåì_ÇãÅÇﬂÇÈ
@@ -585,7 +591,7 @@ optional<CPointD> CalcOffsetIntersectionPoint_LE
 //////////////////////////////////////////////////////////////////////
 //	ì_Ç™ëΩäpå`ÇÃì‡ë§Ç©î€Ç©
 
-BOOL IsPointInPolygon(const CPointD& ptTarget, const VECPOINTD& pt)
+BOOL IsPointInPolygon(const CPointD& ptTarget, const CVPointD& pt)
 {
 	int		iCountCrossing = 0;
 	UINT	ui, uiCountPoint = pt.size();

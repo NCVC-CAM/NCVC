@@ -19,6 +19,8 @@ BEGIN_MESSAGE_MAP(CMKNCSetup4, CPropertyPage)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CMKNCSetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMKNCSetup4 プロパティ ページ
 
@@ -40,7 +42,7 @@ CMKNCSetup4::CMKNCSetup4() : CPropertyPage(CMKNCSetup4::IDD),
 
 void CMKNCSetup4::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMKNCSetup4)
 	DDX_Control(pDX, IDC_MKNC4_FEED, m_dFeed);
 	DDX_Control(pDX, IDC_MKNC4_CIRCLEGROUP, m_ctCircleGroup);
@@ -87,11 +89,11 @@ void CMKNCSetup4::EnableControl_Circle(void)
 
 BOOL CMKNCSetup4::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
-	// + GetParent() ﾎﾟｲﾝﾀを取得できない
-	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
+	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	m_nSpindle		= pOpt->m_nDrillSpindle;
 	m_dFeed			= pOpt->m_dDrillFeed;
 	m_nDwell		= pOpt->m_nDwell;
@@ -130,7 +132,7 @@ void CMKNCSetup4::OnCircle()
 
 BOOL CMKNCSetup4::OnApply() 
 {
-	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	pOpt->m_nDrillSpindle	= m_nSpindle;
 	pOpt->m_dDrillFeed		= m_dFeed;
 	pOpt->m_bDrillMatch		= m_bDrillMatch;
@@ -152,7 +154,7 @@ BOOL CMKNCSetup4::OnApply()
 
 BOOL CMKNCSetup4::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( (double)m_dDrillZ > (double)m_dDrillR ) {

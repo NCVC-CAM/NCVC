@@ -7,11 +7,18 @@
 
 class CNCViewXY : public CNCViewBase
 {
+	// ﾜｰｸ円柱
+	CPointD		m_ptdWorkCylinder[ARCCOUNT];
+	CPoint		m_ptDrawWorkCylinder[ARCCOUNT];
+
 protected:
 	CNCViewXY();           // 動的生成に使用されるプロテクト コンストラクタ
 	DECLARE_DYNCREATE(CNCViewXY)
 
 	virtual	void	SetGuideData(void);
+	virtual	void	SetWorkCylinder(void);
+	virtual	void	ConvertWorkCylinder(void);
+	virtual	void	DrawWorkCylinder(CDC*);
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

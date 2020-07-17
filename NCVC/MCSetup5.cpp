@@ -30,7 +30,7 @@ CMCSetup5::CMCSetup5() : CPropertyPage(CMCSetup5::IDD)
 
 void CMCSetup5::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	DDX_CBIndex(pDX, IDC_MCST5_VIEWMODE, m_nForceViewMode);
 	DDX_Control(pDX, IDC_MCST5_WIREDEPTH, m_dDefWireDepth);
 	DDX_Check(pDX, IDC_MCST5_L0CYCLE, m_bL0Cycle);
@@ -58,7 +58,7 @@ void CMCSetup5::EnableControl_ViewMode(void)
 
 BOOL CMCSetup5::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
@@ -72,7 +72,7 @@ BOOL CMCSetup5::OnInitDialog()
 
 BOOL CMCSetup5::OnApply() 
 {
-	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParent());
+	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParentSheet());
 	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	// Ä“ÇÁª¯¸

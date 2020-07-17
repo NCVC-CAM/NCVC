@@ -625,7 +625,7 @@ tuple<BOOL, CPointD, double, double> CNCline::CalcRoundPoint(const CNCdata* pNex
 		// ‚Q‚Â‚Ìü‚ÌŠp“x€‚Q
 		double	p = atan2(pte.y, pte.x) / 2.0,
 				pp = fabs(p);
-		if ( pp < RAD(90) ) {
+		if ( pp < RAD(90.0) ) {
 			pt.x = rr1 = rr2 = r / tan(pp);	// –Êæ‚è‚É‘Š“–‚·‚éC’l‚Í‰ñ“]•œŒ³‘O‚ÌXÀ•W‚Æ“¯‚¶
 			pt.y = _copysign(r, p);			// y(‚‚³) = rA•„†‚ÍŠp“x‚É‚æ‚é
 			// ‰ñ“]‚ğ•œŒ³
@@ -936,6 +936,8 @@ CNCcycle::CNCcycle
 	m_ptValI += ptOffset;
 	m_ptValR += ptOffset;
 	m_dInitial += ptOffset[z];
+	dI += ptOffset[z];
+	dR += ptOffset[z];
 	m_pt2D = m_ptValE.PointConvert();
 
 	// Ø‚è‚İ’l‚ªw’è‚³‚ê‚Ä‚¢‚È‚¯‚ê‚Î´×°(•âŠÔ‚ÍTH_NCRead.cpp‚É‚Ä)
@@ -950,7 +952,7 @@ CNCcycle::CNCcycle
 #ifdef _DEBUG_DUMP
 	dbg.printf("StartPoint x=%.3f y=%.3f z=%.3f",
 		m_ptValS.x, m_ptValS.y, m_ptValS.z);
-	dbg.printf("           R-Point=%.3f C-Point=%.3f", dR, GetValue(z));
+	dbg.printf("           R-Point=%.3f C-Point=%.3f", dR, GetValue(z)+ptOffset[z]);
 	dbg.printf("FinalPoint x=%.3f y=%.3f z=%.3f",
 		m_ptValE.x, m_ptValE.y, m_ptValE.z);
 	dbg.printf("m_nDrawCnt=%d", m_nDrawCnt);
@@ -983,7 +985,7 @@ CNCcycle::CNCcycle
 		m_Cycle[1][i].ptR = pt.GetXY();
 		m_Cycle[2][i].ptR = pt.GetXZ();
 		m_Cycle[3][i].ptR = pt.GetYZ();
-		pt[z] = GetValue(z);
+		pt[z] = GetValue(z) + ptOffset[z];
 		m_Cycle3D[i].ptC  = pt;
 		m_Cycle[0][i].ptC = pt.PointConvert();
 		m_Cycle[1][i].ptC = pt.GetXY();

@@ -23,6 +23,8 @@ BEGIN_MESSAGE_MAP(CMKNCSetup3, CPropertyPage)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+#define	GetParentSheet()	static_cast<CMKNCSetup *>(GetParentSheet())
+
 /////////////////////////////////////////////////////////////////////////////
 // CMKNCSetup3 プロパティ ページ
 
@@ -43,7 +45,7 @@ CMKNCSetup3::CMKNCSetup3() : CPropertyPage(CMKNCSetup3::IDD),
 
 void CMKNCSetup3::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMKNCSetup3)
 	DDX_Control(pDX, IDC_MKNC3_FEED, m_dFeed);
 	DDX_Control(pDX, IDC_MKNC3_MAKEEND_FEED, m_dMakeFeed);
@@ -110,11 +112,11 @@ void CMKNCSetup3::EnableControl_Finish(void)
 
 BOOL CMKNCSetup3::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
-	// + GetParent() ﾎﾟｲﾝﾀを取得できない
-	CMKNCSetup*	pParent = static_cast<CMKNCSetup *>(GetParent());
+	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
+	CMKNCSetup*	pParent = GetParentSheet();
 	CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
 	m_nMakeEnd		= pOpt->m_nMakeEnd;
 	m_dMakeValue	= pOpt->m_dMakeValue;
@@ -174,7 +176,7 @@ void CMKNCSetup3::OnDeepFinish()
 
 BOOL CMKNCSetup3::OnSetActive() 
 {
-	CMKNCSetup*	pParent = static_cast<CMKNCSetup *>(GetParent());
+	CMKNCSetup*	pParent = GetParentSheet();
 	// 基本ﾍﾟｰｼﾞから「切り込み」ﾃﾞｰﾀを取得
 	if ( ::IsWindow(pParent->m_dlg1.m_hWnd) ) {
 		m_dZCut		= (double)(pParent->m_dlg1.m_dZCut);
@@ -185,7 +187,7 @@ BOOL CMKNCSetup3::OnSetActive()
 		m_dZCut		= pOpt->m_dZCut;
 		m_dZG0Stop	= pOpt->m_dZG0Stop;
 	}
-	return CPropertyPage::OnSetActive();
+	return __super::OnSetActive();
 }
 
 BOOL CMKNCSetup3::OnApply() 
@@ -213,7 +215,7 @@ BOOL CMKNCSetup3::OnApply()
 		return FALSE;
 	}
 
-	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
 	pOpt->m_nMakeEnd		= m_nMakeEnd;
 	pOpt->m_dMakeValue		= m_dMakeValue;
 	pOpt->m_dMakeFeed		= m_dMakeFeed;
@@ -233,7 +235,7 @@ BOOL CMKNCSetup3::OnApply()
 
 BOOL CMKNCSetup3::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_nMakeEnd == 1 ) {	// Offset

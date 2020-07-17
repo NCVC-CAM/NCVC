@@ -44,7 +44,7 @@ CMKNCSetup2::CMKNCSetup2() : CPropertyPage(CMKNCSetup2::IDD)
 
 void CMKNCSetup2::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMKNCSetup2)
 	DDX_Control(pDX, IDC_MKNC2_PROGAUTO, m_ctProgAuto);
 	DDX_Control(pDX, IDC_MKNC2_PROGNO, m_nProg);
@@ -83,11 +83,11 @@ void CMKNCSetup2::EnableControl_LineAdd(void)
 
 BOOL CMKNCSetup2::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ∂Ω¿—∫›ƒ€∞ŸÇÕ∫›Ωƒ◊∏¿Ç≈èâä˙âªÇ≈Ç´Ç»Ç¢
-	// + GetParent() Œﬂ≤›¿ÇéÊìæÇ≈Ç´Ç»Ç¢
-	CWnd*	pParent = GetParent();
+	// + GetParentSheet() Œﬂ≤›¿ÇéÊìæÇ≈Ç´Ç»Ç¢
+	CWnd*	pParent = GetParentSheet();
 	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
 		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
 		m_bProg				= pOpt->m_bProg;
@@ -106,7 +106,7 @@ BOOL CMKNCSetup2::OnInitDialog()
 		// ê˘î’”∞ƒﬁ
 		m_ctZReturnS.ShowWindow(SW_HIDE);
 		m_ctZReturn.ShowWindow(SW_HIDE);
-		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(GetParent())->GetNCMakeOption();
+		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(pParent)->GetNCMakeOption();
 		m_bProg				= pOpt->m_bProg;
 		m_nProg				= pOpt->m_nProg;
 		m_bProgAuto			= pOpt->m_bProgAuto;
@@ -123,7 +123,7 @@ BOOL CMKNCSetup2::OnInitDialog()
 		m_ctZReturnS.ShowWindow(SW_HIDE);
 		m_ctZReturn.ShowWindow(SW_HIDE);
 		m_ctDisableSpindle.ShowWindow(SW_HIDE);
-		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(GetParent())->GetNCMakeOption();
+		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(pParent)->GetNCMakeOption();
 		m_bProg				= pOpt->m_bProg;
 		m_nProg				= pOpt->m_nProg;
 		m_bProgAuto			= pOpt->m_bProgAuto;
@@ -157,7 +157,7 @@ void CMKNCSetup2::OnLineAdd()
 
 BOOL CMKNCSetup2::OnApply() 
 {
-	CWnd*	pParent = GetParent();
+	CWnd*	pParent = GetParentSheet();
 	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
 		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
 		pOpt->m_bProg			= m_bProg;
@@ -173,7 +173,7 @@ BOOL CMKNCSetup2::OnApply()
 		pOpt->m_strOption[MKNC_STR_EOB] = m_strEOB;
 	}
 	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMKLASetup)) ) {
-		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(GetParent())->GetNCMakeOption();
+		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(pParent)->GetNCMakeOption();
 		pOpt->m_bProg			= m_bProg;
 		pOpt->m_nProg			= m_nProg;
 		pOpt->m_bProgAuto		= m_bProgAuto;
@@ -186,7 +186,7 @@ BOOL CMKNCSetup2::OnApply()
 		pOpt->m_strOption[MKLA_STR_EOB] = m_strEOB;
 	}
 	else {
-		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(GetParent())->GetNCMakeOption();
+		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(pParent)->GetNCMakeOption();
 		pOpt->m_bProg			= m_bProg;
 		pOpt->m_nProg			= m_nProg;
 		pOpt->m_bProgAuto		= m_bProgAuto;
@@ -203,7 +203,7 @@ BOOL CMKNCSetup2::OnApply()
 
 BOOL CMKNCSetup2::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_bProg && (int)m_nProg <= 0 ) {

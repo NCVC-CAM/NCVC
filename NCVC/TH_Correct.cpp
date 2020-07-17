@@ -51,6 +51,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 				nSign1, nSign2,
 				k,			// 90°回転させる方向(始点を基準)
 				nResult = IDOK;
+	BOOL		bFirst;
 	double		dToolD, dToolD_abs;
 	optional<double>	dToolResult;
 	CPointD		pt1, pt2, pt3, pt4;
@@ -79,34 +80,39 @@ try {
 	while ( i<nLoopCnt && IsThread() ) {
 
 		// 補正処理が必要なｵﾌﾞｼﾞｪｸﾄを検索(第１ループはそこまで読み飛ばし)
-		for ( ; i<nLoopCnt && nCorrect==0 && IsThread(); i++ ) {
+		for ( dToolD=HUGE_VAL, bFirst=TRUE; i<nLoopCnt && nCorrect==0 && IsThread(); i++ ) {
 			if ( (i & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
 				pParent->m_ctReadProgress.SetPos(i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
 			pData1 = pDoc->GetNCdata(i);
+			dwValFlags = pData1->GetValFlags();
+			// 工具情報の取得
+			if ( dwValFlags & NCD_D ) {
+				dToolResult = pMCopt->GetToolD( (int)(pData1->GetValue(NCA_D)) );
+				if ( dToolResult )
+					dToolD = *dToolResult;
+				else {
+					SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECT);
+					continue;
+				}
+			}
 			if ( pData1->GetGtype() != G_TYPE )
 				continue;
-			dwValFlags = pData1->GetValFlags();
+			//
 			if ( dwValFlags & NCD_CORRECT ) {
-				// 工具情報の取得
-				if ( dwValFlags & NCD_D ) {
-					dToolResult = pMCopt->GetToolD( (int)(pData1->GetValue(NCA_D)) );
-					if ( dToolResult )
-						dToolD = *dToolResult;
-					else {
-						SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECT);
-						continue;
+				if ( dToolD == HUGE_VAL ) {
+					if ( bFirst ) {
+						SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTSTART);
+						bFirst = FALSE;
 					}
+					continue;
 				}
-				else
-					continue;	// 工具情報無ければ読み飛ばし
-				//
-				dToolD_abs = fabs(dToolD);
 				pData1c = pData1->NC_CopyObject();	// 複製
 				if ( !pData1c ) {
 					SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTOBJECT);
 					continue;
 				}
 				pData1->AddCorrectObject(pData1c);
+				dToolD_abs = fabs(dToolD);
 				nCorrect = 1;	// 補正ﾙｰﾌﾟへ(break)
 #ifdef _DEBUG
 				dbg.printf("Gcode=%d X=%.3f Y=%.3f Z=%.3f", pData1->GetGcode(),
@@ -120,7 +126,7 @@ try {
 		// 補正開始ﾌﾞﾛｯｸのﾁｪｯｸ
 		if ( i<nLoopCnt && IsThread() ) {
 			if ( pData1->GetType() != NCDLINEDATA ) {
-				SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTSTART);
+				SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTLINE);
 				nCorrect = 0;	// 補正ﾙｰﾌﾟに入らない
 			}
 			else {
@@ -144,6 +150,8 @@ try {
 			// 補正処理ｷｬﾝｾﾙﾓｰﾄﾞ
 			if ( !(pData2->GetValFlags() & NCD_CORRECT) )
 				nCorrect = 0;	// 次のﾃﾞｰﾀ(pData2)で終了
+			if ( pData2->GetValFlags() & NCD_D )
+				SetErrorCode(pDoc, pData2, IDS_ERR_NCBLK_CORRECTING);
 			// 補正ﾃﾞｰﾀﾁｪｯｸ
 			k = IsCorrectCheck(pData1, pData2, nCorrect);
 			if ( k ) {

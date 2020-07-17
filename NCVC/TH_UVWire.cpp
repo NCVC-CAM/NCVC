@@ -113,7 +113,7 @@ try {
 				else {
 					// Ã°ÊßŠJŽnµÌÞ¼Þª¸Ä´×°
 					pBlock = pDoc->GetNCblock(pData1->GetBlockLineNo());
-					pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_CORRECTSTART);
+					pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_CORRECTLINE);
 				}
 			}
 			else {

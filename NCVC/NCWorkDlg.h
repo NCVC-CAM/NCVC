@@ -3,54 +3,34 @@
 
 #pragma once
 
-#include "NCVCdefine.h"
-
-class CNCDoc;
+#include "NCWorkDlg1.h"
+#include "NCWorkDlg2.h"
 
 /////////////////////////////////////////////////////////////////////////////
-// CNCWorkDlg ダイアログ
+// CNCWorkDlg
 
-class CNCWorkDlg : public CDialog
+class CNCWorkDlg : public CPropertySheet
 {
-	void	EnableButton(BOOL, BOOL);
-	void	SetValue(const CNCDoc*, const CRect3D&);
+	DECLARE_DYNAMIC(CNCWorkDlg)
+
+public:
+	CNCWorkDlg(UINT nIDCaption, UINT iSelectPage);
+	virtual ~CNCWorkDlg();
+	virtual BOOL OnInitDialog();
+
+	// 内部ﾍﾟｰｼﾞﾀﾞｲｱﾛｸﾞ
+	CNCWorkDlg1	m_dlg1;
+	CNCWorkDlg2	m_dlg2;
+
 	CNCDoc*	GetNCDocument(void);
 
-// コンストラクション
-public:
-	CNCWorkDlg(CWnd* pParent = NULL);   // 標準のコンストラクタ
-
-// ダイアログ データ
-	//{{AFX_DATA(CNCWorkDlg)
-	enum { IDD = IDD_NCVIEW_WORK };
-	CButton	m_ctOK, m_ctHide,
-			m_ctRecover, m_ctComment;
-
-	//}}AFX_DATA
-	CStatic		m_ctLabel[2][NCXYZ];
-	CFloatEdit	m_ctWork[2][NCXYZ];
-
-// オーバーライド
-	// ClassWizard は仮想関数のオーバーライドを生成します。
-	//{{AFX_VIRTUAL(CNCWorkDlg)
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
-	virtual void PostNcDestroy();
-	virtual BOOL OnInitDialog();
-	virtual void OnCancel();
-	virtual void OnOK();
-	//}}AFX_VIRTUAL
-
-// インプリメンテーション
 protected:
+	virtual void PostNcDestroy();
 
-	// 生成されたメッセージ マップ関数
-	//{{AFX_MSG(CNCWorkDlg)
-	afx_msg void OnHide();
-	afx_msg void OnRecover();
-	afx_msg void OnComment();
-	//}}AFX_MSG
+	afx_msg void OnDestroy();
 	afx_msg LRESULT OnUserSwitchDocument(WPARAM, LPARAM);
 
 	DECLARE_MESSAGE_MAP()
 };
+
+

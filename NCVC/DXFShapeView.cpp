@@ -171,7 +171,7 @@ void CDXFShapeView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		OnUpdateShape( reinterpret_cast<LPDXFADDSHAPE>(pHint) );
 		break;
 	}
-	CView::OnUpdate(pSender, lHint, pHint);
+	CTreeView::OnUpdate(pSender, lHint, pHint);
 }
 
 BOOL CDXFShapeView::PreTranslateMessage(MSG* pMsg) 

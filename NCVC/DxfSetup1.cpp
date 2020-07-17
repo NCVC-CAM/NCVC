@@ -34,7 +34,7 @@ CDxfSetup1::CDxfSetup1() : CPropertyPage(CDxfSetup1::IDD)
 
 void CDxfSetup1::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CDxfSetup1)
 	DDX_Control(pDX, IDC_DXF_CAMLINE, m_ctCamLayer);
 	DDX_Control(pDX, IDC_DXF_ORIGIN, m_ctOrgLayer);
@@ -59,7 +59,7 @@ void CDxfSetup1::EnableReloadButton(void)
 
 BOOL CDxfSetup1::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// DXFÄÞ·­ÒÝÄ‚ªŠJ‚©‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©
 	EnableReloadButton();
@@ -82,12 +82,12 @@ BOOL CDxfSetup1::OnApply()
 BOOL CDxfSetup1::OnSetActive() 
 {
 	EnableReloadButton();
-	return CPropertyPage::OnSetActive();
+	return __super::OnSetActive();
 }
 
 BOOL CDxfSetup1::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_strCamLayer.IsEmpty() ) {
@@ -109,8 +109,7 @@ void CDxfSetup1::OnReload()
 	if ( !OnKillActive() )	// UpdateData() & ÃÞ°ÀÁª¯¸
 		return;
 	OnApply();
-	CDxfSetup*	pParent = static_cast<CDxfSetup *>(GetParent());
-	if ( pParent->OnReload(this) ) {
+	if ( static_cast<CDxfSetup *>(GetParentSheet())->OnReload(this) ) {
 		m_ctCamLayer.SetFocus();
 		m_ctCamLayer.SetSel(0, -1);
 		EnableReloadButton();

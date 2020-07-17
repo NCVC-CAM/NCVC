@@ -904,7 +904,6 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM, LPARAM)
 
 		// 幅にもすき間にも入らない
 		if ( !bResult ) {
-			ASSERT( !Y.empty() );
 			pt = Y.back();
 			_OnBindInitMsgPost(dc, pInfo, pt, dFactor);
 			Y.pop_back();
@@ -1346,11 +1345,12 @@ void CDXFView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	if ( SendParentMessage(WM_MOUSEMOVE, nFlags, point) )
 		return;
-	if ( CViewBase::OnMouseMove(nFlags, point) ||
-			!m_pSelData || m_vSelect.which()!=DXFTREETYPE_SHAPE )
-		return;
-//	if ( m_nRState>0 && IsBindParent() )
-//		BindMove(FALSE);
+	if ( CViewBase::OnMouseMove(nFlags, point) ) {
+		if ( m_nRState>0 && IsBindParent() )
+			BindMove(FALSE);
+		if ( !m_pSelData || m_vSelect.which()!=DXFTREETYPE_SHAPE )
+			return;
+	}
 
 	// CViewBase::OnMouseMove() で処理がなければ
 	// ここで論理座標に変換する必要がある
