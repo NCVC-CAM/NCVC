@@ -19,8 +19,11 @@ BEGIN_MESSAGE_MAP(CViewSetup5, CPropertyPage)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_SOLIDVIEW, OnSolidClick)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_G00VIEW, OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_DRAGRENDER, OnChange)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_TEXTURE, OnTextureClick)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_TEXTUREFIND, OnTextureFind)
 	ON_CBN_SELCHANGE(IDC_VIEWSETUP5_MILL_TYPE, OnChange)
 	ON_EN_CHANGE(IDC_VIEWSETUP5_DEFAULTENDMILL, OnChange)
+	ON_EN_CHANGE(IDC_VIEWSETUP5_TEXTUREFILE, OnChange)
 	ON_WM_CTLCOLOR()
 END_MESSAGE_MAP()
 
@@ -32,10 +35,12 @@ CViewSetup5::CViewSetup5() : CPropertyPage(CViewSetup5::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	m_bSolid	= pOpt->m_bSolidView;
-	m_bG00View	= pOpt->m_bG00View;
-	m_bDrag		= pOpt->m_bDragRender;
-	m_nMillType	= pOpt->m_nMillType;
+	m_bSolid		= pOpt->m_bSolidView;
+	m_bG00View		= pOpt->m_bG00View;
+	m_bDrag			= pOpt->m_bDragRender;
+	m_bTexture		= pOpt->m_bTexture;
+	m_strTexture	= pOpt->m_strTexture;
+	m_nMillType		= pOpt->m_nMillType;
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
 		m_colView[i] = pOpt->m_colNCView[i+NCCOL_GL_WRK];
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
@@ -54,18 +59,32 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_VIEWSETUP5_DEFAULTENDMILL, m_dEndmill);
 	DDX_Control(pDX, IDC_VIEWSETUP5_G00VIEW, m_ctG00View);
 	DDX_Control(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_ctDrag);
+	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTURE, m_ctTexture);
+	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTUREFILE, m_ctTextureFile);
+	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTUREFIND, m_ctTextureFind);
 	DDX_Check(pDX, IDC_VIEWSETUP5_SOLIDVIEW, m_bSolid);
 	DDX_Check(pDX, IDC_VIEWSETUP5_G00VIEW, m_bG00View);
 	DDX_Check(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_bDrag);
+	DDX_Check(pDX, IDC_VIEWSETUP5_TEXTURE, m_bTexture);
+	DDX_Text(pDX, IDC_VIEWSETUP5_TEXTUREFILE, m_strTexture);
 	DDX_CBIndex(pDX, IDC_VIEWSETUP5_MILL_TYPE, m_nMillType);
 	for ( int i=0; i<SIZEOF(m_ctColor); i++ )
 		DDX_Control(pDX, i + IDC_VIEWSETUP5_ST_WORK, m_ctColor[i]);
 }
 
-void CViewSetup5::EnableControl(void)
+void CViewSetup5::EnableSolidControl(void)
 {
 	m_ctG00View.EnableWindow(m_bSolid);
 	m_ctDrag.EnableWindow(m_bSolid);
+	m_ctTexture.EnableWindow(m_bSolid);
+	m_ctTextureFile.EnableWindow(m_bSolid);
+	m_ctTextureFind.EnableWindow(m_bSolid);
+}
+
+void CViewSetup5::EnableTextureControl(void)
+{
+	m_ctTextureFile.EnableWindow(m_bTexture);
+	m_ctTextureFind.EnableWindow(m_bTexture);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -77,7 +96,8 @@ BOOL CViewSetup5::OnInitDialog()
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	m_dEndmill = pOpt->m_dDefaultEndmill * 2.0;
-	EnableControl();
+	EnableSolidControl();
+	EnableTextureControl();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 例外 : OCX プロパティ ページは必ず FALSE を返します。
@@ -94,9 +114,14 @@ BOOL CViewSetup5::OnApply()
 		pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
 	if ( pOpt->m_bG00View != m_bG00View )
 		pOpt->m_dwUpdateFlg |= VIEWUPDATE_REDRAW;
+	if ( pOpt->m_bTexture != m_bTexture ||
+			pOpt->m_strTexture != m_strTexture )
+		pOpt->m_dwUpdateFlg |= VIEWUPDATE_TEXTURE;
 	pOpt->m_bSolidView	= m_bSolid;
 	pOpt->m_bG00View	= m_bG00View;
 	pOpt->m_bDragRender	= m_bDrag;
+	pOpt->m_bTexture	= m_bTexture;
+	pOpt->m_strTexture	= m_strTexture;
 	pOpt->m_nMillType	= m_nMillType;
 	pOpt->m_dDefaultEndmill = m_dEndmill / 2.0;
 
@@ -155,8 +180,39 @@ void CViewSetup5::OnColorButton()
 void CViewSetup5::OnSolidClick()
 {
 	UpdateData();
-	EnableControl();
+	EnableSolidControl();
 	SetModified();
+}
+
+void CViewSetup5::OnTextureClick()
+{
+	UpdateData();
+	EnableTextureControl();
+	SetModified();
+}
+
+void CViewSetup5::OnTextureFind()
+{
+	extern	LPTSTR	g_pszExecDir;
+
+	UpdateData();
+	CString		strPath, strFile;
+	::Path_Name_From_FullPath(m_strTexture, strPath, strFile);
+	if ( strFile.IsEmpty() ) {
+		VERIFY(strPath.LoadString(IDS_REG_VIEW_NC_TEXTURE));
+		strPath = g_pszExecDir + strPath;
+	}
+	else
+		strFile = m_strTexture;
+	if ( ::NCVC_FileDlgCommon(IDS_VIEW_TEXTURE, IDS_TEXTURE_FILTER, strFile, strPath) == IDOK ) {
+		SetModified();
+		// ﾃﾞｰﾀの反映
+		m_strTexture = strFile;
+		UpdateData(FALSE);
+		// 文字選択状態
+		m_ctTextureFile.SetFocus();
+		m_ctTextureFile.SetSel(0, -1);
+	}
 }
 
 void CViewSetup5::OnChange()

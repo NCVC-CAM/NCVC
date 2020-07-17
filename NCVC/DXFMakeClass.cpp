@@ -367,7 +367,7 @@ void CDXFMake::MakeDXF_Line(const CNCline* pData, BOOL bCorrect)
 	}
 }
 
-inline int SetDXFtype(ENPLANE enPlane, const CNCdata* pData)
+inline int _SetDXFtype(ENPLANE enPlane, const CNCdata* pData)
 {
 	int		nType;
 	if ( pData->GetPlane() != enPlane )
@@ -384,13 +384,13 @@ void CDXFMake::MakeDXF_Arc(const CNCcircle* pData, BOOL bCorrect)
 	// ╣лч╪ч╙╦д▌М∙й
 	switch ( GetNum(MKDX_NUM_PLANE) ) {
 	case 1:		// XZ
-		nType = ::SetDXFtype(XZ_PLANE, pData);	// │╙
+		nType = _SetDXFtype(XZ_PLANE, pData);	// │╙
 		break;
 	case 2:		// YZ
-		nType = ::SetDXFtype(YZ_PLANE, pData);
+		nType = _SetDXFtype(YZ_PLANE, pData);
 		break;
 	default:	// XY
-		nType = ::SetDXFtype(XY_PLANE, pData);
+		nType = _SetDXFtype(XY_PLANE, pData);
 		break;
 	}
 	// ╣лч╪ч╙╦д▐Н∙Я

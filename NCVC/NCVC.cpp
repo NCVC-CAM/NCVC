@@ -118,6 +118,10 @@ CNCVCApp theApp;
 
 BOOL CNCVCApp::InitInstance()
 {
+	// GDI+ 初期化
+	Gdiplus::GdiplusStartupInput	gdiplusInput;
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusInput, NULL);
+
 	// アプリケーション マニフェストが visual スタイルを有効にするために、
 	// ComCtl32.dll Version 6 以降の使用を指定する場合は、
 	// Windows XP に InitCommonControlsEx() が必要です。さもなければ、ウィンドウ作成はすべて失敗します。
@@ -293,6 +297,9 @@ int CNCVCApp::ExitInstance()
 	}
 	m_obAddin.RemoveAll();
 	m_mpAddin.RemoveAll();
+
+	// GDI+ 破棄
+	Gdiplus::GdiplusShutdown(gdiplusToken);
 
 	return CWinAppEx::ExitInstance();
 }

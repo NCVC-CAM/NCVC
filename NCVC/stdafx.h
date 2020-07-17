@@ -30,6 +30,7 @@
 #include <afxmt.h>			// ｽﾚｯﾄﾞ関連
 #include <afxcview.h>		// CListView, CTreeView
 #include <afxdlgs.h>
+#include <gdiplus.h>
 
 #ifndef _AFX_NO_OLE_SUPPORT
 #include <afxdtctl.h>		// MFC の Internet Explorer 4 コモン コントロール サポート
@@ -87,7 +88,7 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 #define	LOMETRICFACTOR			10.0
 // 円を64(2π/64≒5.6度)分割で描画 from NCdata.cpp, DXFdata.cpp
 #define	ARCCOUNT				64
-#define	ARCSTEP					(PI/32)
+#define	ARCSTEP					(PI/32)		// 2π[rad](360°)÷ARCCOUNT
 
 // Timer Event
 #define	IDC_SPLASH_TIMER		100

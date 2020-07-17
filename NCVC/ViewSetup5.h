@@ -11,7 +11,8 @@ class CViewSetup5 : public CPropertyPage
 	COLORREF	m_colView[2];
 	CBrush		m_brColor[2];
 
-	void	EnableControl(void);
+	void	EnableSolidControl(void);
+	void	EnableTextureControl(void);
 
 // コンストラクション
 public:
@@ -23,11 +24,16 @@ public:
 	CStatic	m_ctColor[2];
 	BOOL	m_bSolid,
 			m_bG00View,
-			m_bDrag;
+			m_bDrag,
+			m_bTexture;
 	int		m_nMillType;
 	CButton m_ctG00View,
-			m_ctDrag;
+			m_ctDrag,
+			m_ctTexture,
+			m_ctTextureFind;
+	CEdit	m_ctTextureFile;
 	CFloatEdit	m_dEndmill;
+	CString	m_strTexture;
 
 // オーバーライド
 public:
@@ -44,6 +50,8 @@ protected:
 	afx_msg void OnChange();
 	afx_msg void OnColorButton();
 	afx_msg void OnSolidClick();
+	afx_msg void OnTextureClick();
+	afx_msg void OnTextureFind();
 	afx_msg void OnDefColor();
 
 	DECLARE_MESSAGE_MAP()

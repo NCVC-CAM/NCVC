@@ -649,7 +649,7 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 2.00",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 2.10",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2010 MNCT-S K.Magara",IDC_STATIC,86,182,130,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1587,9 +1587,11 @@ BEGIN
     LTEXT           "",IDC_VIEWSETUP5_ST_CUT,90,20,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
     PUSHBUTTON      "切削面",IDC_VIEWSETUP5_BT_CUT,109,19,46,16
     CONTROL         "ソリッド描画(&S)",IDC_VIEWSETUP5_SOLIDVIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,40,57,10
-    CONTROL         "ﾜｲﾔｰﾊﾟｽも表示(&W)",IDC_VIEWSETUP5_G00VIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,59,73,10
+    CONTROL         "ﾜｲﾔｰﾊﾟｽも表示(&W)",IDC_VIEWSETUP5_G00VIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,60,73,10
     CONTROL         "ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ(&R)",IDC_VIEWSETUP5_DRAGRENDER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,80,81,10
-    LTEXT           "テクスチャ画像",IDC_STATIC,13,100,39,8,WS_DISABLED
+    CONTROL         "ﾃｸｽﾁｬ画像(&T)",IDC_VIEWSETUP5_TEXTURE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,100,58,10
+    PUSHBUTTON      "参照...",IDC_VIEWSETUP5_TEXTUREFIND,90,98,35,14
+    EDITTEXT        IDC_VIEWSETUP5_TEXTUREFILE,23,120,130,12,ES_AUTOHSCROLL
     GROUPBOX        "OpenGL表示属性",IDC_STATIC,7,7,157,150,WS_GROUP
     LTEXT           "ﾃﾞﾌｫﾙﾄ工具径(&D)",IDC_STATIC,177,22,52,8
     EDITTEXT        IDC_VIEWSETUP5_DEFAULTENDMILL,235,20,40,12,ES_RIGHT | ES_AUTOHSCROLL
@@ -1622,8 +1624,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,0,0,0
- PRODUCTVERSION 2,0,0,0
+ FILEVERSION 2,1,0,0
+ PRODUCTVERSION 2,1,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1641,14 +1643,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT-S"
             VALUE "FileDescription", "NCVC MFC ｱﾌﾟﾘｹｰｼｮﾝ"
-            VALUE "FileVersion", "2.0.0.0"
+            VALUE "FileVersion", "2.1.0.0"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2010 MNCT-S K.Magara"
             VALUE "LegalTrademarks", "MNCT-S"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "2.0.0.0"
+            VALUE "ProductVersion", "2.1.0.0"
             VALUE "SpecialBuild", "VC++2008SP1 FeaturePack"
         END
     END
@@ -2439,6 +2441,7 @@ END
 
 STRINGTABLE 
 BEGIN
+    IDS_TEXTURE_FILTER      "ﾃｸｽﾁｬ画像ﾌｧｲﾙ (*.bmp; *.png; *.gif; *.jpeg; *.tiff)|*.bmp;*.png;*.gif;*.jpg;*.jpeg;*.tif;*.tiff"
     IDS_NCVC_FILTER         "NCVC files (%s)|%s"
     IDS_NCD_FILTER          "ncd\nNC data (%s)|%s"
 END
@@ -2681,6 +2684,7 @@ END
 
 STRINGTABLE 
 BEGIN
+    IDS_ERR_TEXTURE         "ﾃｸｽﾁｬ画像の読み込みに失敗しました"
     IDS_ERR_FILEPATH        "有効なﾌｧｲﾙﾊﾟｽを指示してください"
     IDS_ERR_UNDERZERO       "指定の項目にﾏｲﾅｽ(またはｾﾞﾛ)値を設定できません"
     IDS_ERR_SETTING         "ﾃﾞｰﾀを設定してください"
@@ -2749,6 +2753,8 @@ BEGIN
     IDS_REG_VIEW_NC_MILL_T  "MillT"
     IDS_REG_VIEW_NC_MILL_C  "MillC"
     IDS_REG_VIEW_NC_MILLTYPE "MillType"
+    IDS_REG_VIEW_NC_TEXTURE "Texture"
+    IDS_REG_VIEW_NC_TEXTUREFILE "TextureFile"
 END
 
 STRINGTABLE 
@@ -2762,6 +2768,7 @@ BEGIN
     IDS_VIEW_SETUP          "画面表示属性"
     IDS_VIEW_SETUP_INPORT   "表示属性のｲﾝﾎﾟｰﾄﾌｧｲﾙ指定"
     IDS_VIEW_SETUP_EXPORT   "表示属性のｴｸｽﾎﾟｰﾄﾌｧｲﾙ指定"
+    IDS_VIEW_TEXTURE        "ﾃｸｽﾁｬ画像の選択"
 END
 
 STRINGTABLE 

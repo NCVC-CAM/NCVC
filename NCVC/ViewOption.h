@@ -24,7 +24,8 @@ typedef	struct	tagPENSTYLE {
 #define	VIEWUPDATE_DISPLAYLIST		0x0002
 #define	VIEWUPDATE_LIGHT			0x0004
 #define	VIEWUPDATE_BOXEL			0x0008
-#define	VIEWUPDATE_ALL				0x000f
+#define	VIEWUPDATE_TEXTURE			0x0010
+#define	VIEWUPDATE_ALL				0x001f
 
 #define	COMCOL_RECT			0
 #define	COMCOL_SELECT		1
@@ -60,6 +61,7 @@ typedef	struct	tagPENSTYLE {
 #define	NCVIEWFLG_SOLIDVIEW			4
 #define	NCVIEWFLG_G00VIEW			5
 #define	NCVIEWFLG_DRAGRENDER		6
+#define	NCVIEWFLG_TEXTURE			7
 #define	DXFCOL_BACKGROUND1	0
 #define	DXFCOL_BACKGROUND2	1
 #define	DXFCOL_ORIGIN		2
@@ -89,9 +91,10 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 					m_bGuide,			// TRUE:拡大率に同期
 					m_bSolidView,		// OpenGLｿﾘｯﾄﾞ表示
 					m_bG00View,			// G00移動表示
-					m_bDragRender;		// ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ
+					m_bDragRender,		// ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ
+					m_bTexture;			// ﾃｸｽﾁｬの貼り付け
 		};
-		BOOL		m_bNCFlag[7];
+		BOOL		m_bNCFlag[8];
 	};
 	COLORREF	m_colView[2],			// ﾋﾞｭｰの各色
 				m_colNCView[16],
@@ -107,6 +110,7 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 	double		m_dGuide[NCXYZ],		// ｶﾞｲﾄﾞ軸の長さ
 				m_dDefaultEndmill;		// ﾃﾞﾌｫﾙﾄｴﾝﾄﾞﾐﾙ径(半径)
 	LOGFONT		m_lfFont[2];			// NC/DXFで使用するﾌｫﾝﾄ情報
+	CString		m_strTexture;			// ﾃｸｽﾁｬ画像ﾌｧｲﾙ
 
 	void	AllDefaultSetting(void);
 
@@ -171,6 +175,9 @@ public:
 	}
 	const	LPLOGFONT	GetLogFont(DOCTYPE enType) {
 		return &m_lfFont[enType];
+	}
+	CString	GetTextureFile(void) const {
+		return m_strTexture;
 	}
 
 	// ｴｸｽﾎﾟｰﾄ，ｲﾝﾎﾟｰﾄ

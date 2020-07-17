@@ -63,6 +63,9 @@ public:
 
 class CNCVCApp : public CWinAppEx
 {
+	// GDI+
+	ULONG_PTR	gdiplusToken;
+
 	// NCViewTabŠÇ—î•ñ
 	UINT	m_nTraceSpeed;		// ÄÚ°½Às‚Ì‘¬“x
 	int		m_nNCTabPage;		// ±¸Ã¨ÌŞÍß°¼Şî•ñ

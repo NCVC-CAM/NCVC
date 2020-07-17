@@ -82,7 +82,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>MagaDbg.lib;version.lib;opengl32.lib;glu32.lib;glew32sd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MagaDbg.lib;version.lib;opengl32.lib;glu32.lib;glew32sd.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
@@ -116,7 +116,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>version.lib;opengl32.lib;glu32.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>version.lib;opengl32.lib;glu32.lib;glew32s.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>

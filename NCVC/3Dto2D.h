@@ -129,10 +129,10 @@ public:
 	}
 	// ç¿ïWâÒì]
 	void	RoundPoint(double q) {
-		double	cosq = cos(q), sinq = sin(q);
+		double	cos_q = cos(q), sin_q = sin(q);
 		CPointD	pt(x, y);
-		x = pt.x * cosq - pt.y * sinq;
-		y = pt.x * sinq + pt.y * cosq;
+		x = pt.x * cos_q - pt.y * sin_q;
+		y = pt.x * sin_q + pt.y * cos_q;
 	}
 };
 

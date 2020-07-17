@@ -961,7 +961,7 @@ void SetWorkRect_fromComment(vector<double>& vWork)
 	CPoint3D	pt;
 
 	// 不細工やけどvWorkの数が不定なので有効なﾃﾞｰﾀだけ取り出し
-	for ( size_t i=0; i<vWork.size() && i<6; i++ ) {
+	for ( size_t i=0; i<vWork.size() && i<NCXYZ*2; i++ ) {
 		switch ( i ) {
 		case 0:		// 幅
 			rc.right = vWork[0];

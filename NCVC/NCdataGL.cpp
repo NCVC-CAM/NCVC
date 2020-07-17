@@ -18,6 +18,139 @@ using namespace boost;
 extern	const	PENSTYLE	g_penStyle[];		// ViewOption.cpp
 
 //////////////////////////////////////////////////////////////////////
+
+inline void _SetEndmillCircle(double d, const CPointD& ptOrg, CPointD* pt)
+{
+	// 円座標をｾｯﾄ
+	int		i = 1;
+	double	q = ARCSTEP;
+	// -- ２回ﾙｰﾌﾟを減らす
+	pt[0].x = d + ptOrg.x;		// cos(0) == 1
+	pt[0].y = ptOrg.y;			// sin(0) == 0
+	for ( ; i<ARCCOUNT-1; i++, q+=ARCSTEP ) {
+		pt[i].x = d * cos(q) + ptOrg.x;
+		pt[i].y = d * sin(q) + ptOrg.y;
+	}
+	pt[i] = pt[0];
+}
+
+inline void _SetEndmillSphere(double d, const CPoint3D& ptOrg, vector<CVCircle>& vSphere)
+{
+	// 半球座標、Z方向に輪切り
+	int		i = 0, j;
+	double	q = 0, x;
+	CPointD	ptc[ARCCOUNT], ptOrgXY(ptOrg.GetXY());
+	CPoint3D	pt;
+	CVCircle	vc;
+
+	vc.reserve(ARCCOUNT);
+
+	// 90°-1回分をZ方向に繰り返す
+	for ( ; i<ARCCOUNT/4-1; i++, q-=ARCSTEP ) {
+		x    = d * cos(q);		// このZ位置の半径
+		pt.z = d * sin(q) + d + ptOrg.z;
+		// この位置にXY平面の円座標を登録
+		_SetEndmillCircle(x, ptOrgXY, ptc);
+		for ( j=0; j<ARCCOUNT; j++ ) {
+			pt.x = ptc[j].x;
+			pt.y = ptc[j].y;
+			vc.push_back(pt);	// pt.z は保持
+		}
+		vSphere.push_back(vc);
+		vc.clear();
+	}
+	// 最後の半球頂点
+	vc.push_back(ptOrg);
+	vSphere.push_back(vc);
+}
+
+inline void _SetEndmillSpherePath
+	(double d, double qp, const CPoint3D& ptOrg,
+		CPoint3D* ptResult)
+{
+	int		i = 0;
+	double	q = 0,
+			cos_qp = cos(qp),
+			sin_qp = sin(qp),
+			x;
+	CPoint3D	pt;
+
+	// Z方向への半円掘り下げ
+	for ( ; i<ARCCOUNT/2; i++, q-=ARCSTEP ) {
+		// XZ平面で考える(y=0)
+		x    = d * cos(q);
+		pt.z = d * sin(q) + d;
+		// XY平面での回転
+		pt.x = x * cos_qp;	// - y * sin_qp;
+		pt.y = x * sin_qp;	// + y * cos_qp;
+		//
+		ptResult[i] = pt + ptOrg;
+	}
+}
+
+inline void _DrawBottomFaceCircle(const CPoint3D& ptOrg, const CPointD* ptc)
+{
+	::glBegin(GL_TRIANGLE_FAN);
+	::glVertex3d(ptOrg.x, ptOrg.y, ptOrg.z);
+	for ( int i=0; i<ARCCOUNT; i++ )
+		::glVertex3d(ptc[i].x, ptc[i].y, ptOrg.z);
+	::glVertex3d(ptc[0].x, ptc[0].y, ptOrg.z);
+	::glEnd();
+}
+
+inline void _DrawBottomFaceSphere(const vector<CVCircle>& vSphere)
+{
+	size_t		i, j;
+	CPoint3D	pt1, pt2;
+
+	for ( i=0; i<vSphere.size()-2; i++ ) {	// 半球頂点を除く
+		::glBegin(GL_TRIANGLE_STRIP);
+		for ( j=0; j<vSphere[i].size(); j++ ) {
+			pt1 = vSphere[i][j];
+			pt2 = vSphere[i+1][j];
+			::glVertex3d(pt1.x, pt1.y, pt1.z);
+			::glVertex3d(pt2.x, pt2.y, pt2.z);
+		}
+		pt1 = vSphere[i][0];
+		pt2 = vSphere[i+1][0];
+		::glVertex3d(pt1.x, pt1.y, pt1.z);
+		::glVertex3d(pt2.x, pt2.y, pt2.z);
+		::glEnd();
+	}
+	pt2 = vSphere.back()[0];	// 半球頂点
+	::glBegin(GL_TRIANGLE_FAN);
+	::glVertex3d(pt2.x, pt2.y, pt2.z);
+	for ( j=0; j<vSphere[i].size(); j++ ) {
+		pt1 = vSphere[i][j];
+		::glVertex3d(pt1.x, pt1.y, pt1.z);
+	}
+	pt1 = vSphere[i][0];
+	::glVertex3d(pt1.x, pt1.y, pt1.z);
+	::glEnd();
+}
+
+inline void _DrawEndmillPipe(const vector<CVCircle>& vPipe)
+{
+	size_t	i, j;
+	CPoint3D	pt1, pt2;
+
+	for ( i=0; i<vPipe.size()-1; i++ ) {
+		::glBegin(GL_TRIANGLE_STRIP);
+		for ( j=0; j<vPipe[i].size(); j++ ) {
+			pt1 = vPipe[i+1][j];
+			pt2 = vPipe[i][j];
+			::glVertex3d(pt1.x, pt1.y, pt1.z);
+			::glVertex3d(pt2.x, pt2.y, pt2.z);
+		}
+		pt1 = vPipe[i+1][0];
+		pt2 = vPipe[i][0];
+		::glVertex3d(pt1.x, pt1.y, pt1.z);
+		::glVertex3d(pt2.x, pt2.y, pt2.z);
+		::glEnd();
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀｸﾗｽ
 //////////////////////////////////////////////////////////////////////
 
@@ -35,11 +168,13 @@ void CNCdata::DrawBottomFace(void) const
 
 void CNCline::DrawGL(void) const
 {
-	if ( m_obCdata.GetCount() > 0 ) {
+	if ( m_obCdata.GetSize() > 0 ) {
+		// 工具径補正の表示
 		for ( int i=0; i<m_obCdata.GetSize(); i++ )
 			m_obCdata[i]->DrawGL();
 		return;
 	}
+
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col = pOpt->GetNcDrawColor(GetPenType()+NCCOL_G0);
 	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
@@ -50,58 +185,81 @@ void CNCline::DrawGL(void) const
 	::glEnd();
 }
 
-void CNCline::SetEndmillPath(CPointD* pt1, CPointD* pt2, CPointD* pt3) const
-{
-	int		i;
-	double	qs = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x) + 90.0*RAD,
-			qe = atan2(m_ptValS.y-m_ptValE.y, m_ptValS.x-m_ptValE.x) - 90.0*RAD;
-
-	// 始点凸面，終点凹面の座標計算
-	for ( i=0; i<=ARCCOUNT/2; i++, qs+=ARCSTEP, qe+=ARCSTEP ) {
-		// 始点凸側は +90°から反時計回りに
-		pt1[i].x = m_dEndmill * cos(qs) + m_ptValS.x;
-		pt1[i].y = m_dEndmill * sin(qs) + m_ptValS.y;
-		// 終点凹側は -90°から反時計回り
-		pt2[i].x = m_dEndmill * cos(qe) + m_ptValE.x;
-		pt2[i].y = m_dEndmill * sin(qe) + m_ptValE.y;
-	}
-	// 終点○面残りの半円座標計算
-	for ( i=0; i<ARCCOUNT/2; i++, qe+=ARCSTEP ) {
-		pt3[i].x = m_dEndmill * cos(qe) + m_ptValE.x;
-		pt3[i].y = m_dEndmill * sin(qe) + m_ptValE.y;
-	}
-}
-
 void CNCline::DrawBottomFace(void) const
 {
+	int		i;
+
+	if ( m_obCdata.GetSize() > 0 ) {
+		for ( i=0; i<m_obCdata.GetSize(); i++ )
+			m_obCdata[i]->DrawBottomFace();
+		return;
+	}
 	if ( m_nc.nGcode != 1 )
 		return;
 
-	int		i;
-	CPointD	pt1[ARCCOUNT/2+1], pt2[ARCCOUNT/2+1], pt3[ARCCOUNT/2];
-
-	// 座標計算
-	SetEndmillPath(pt1, pt2, pt3);
-
-	if ( m_dMove[NCA_X]>0 || m_dMove[NCA_Y]>0 ) {
-		// 底面描画
-		::glBegin(GL_TRIANGLE_STRIP);
-		for ( i=0; i<=ARCCOUNT/2; i++ ) {
-			::glVertex3d(pt2[i].x, pt2[i].y, m_ptValS.z);
-			::glVertex3d(pt1[i].x, pt1[i].y, m_ptValE.z);
+	if ( GetEndmillType() == 0 ) {
+		// ｽｸｳｪｱ座標計算
+		CPointD	pte[ARCCOUNT];
+		_SetEndmillCircle(m_dEndmill, m_ptValE, pte);
+		if ( m_dMove[NCA_X]>0 || m_dMove[NCA_Y]>0 ) {
+			// 始点○の描画
+			CPointD	pts[ARCCOUNT];
+			_SetEndmillCircle(m_dEndmill, m_ptValS, pts);
+			_DrawBottomFaceCircle(m_ptValS, pts);
+			if ( m_dMove[NCA_Z]>0 ) {
+				// XZ, YZ もしくは 3軸移動のときは
+				// pts と pte の円をﾊﾟｲﾌﾟ状につなぐ
+				::glBegin(GL_TRIANGLE_STRIP);
+				for ( i=0; i<ARCCOUNT; i++ ) {
+					::glVertex3d(pts[i].x, pts[i].y, m_ptValS.z);
+					::glVertex3d(pte[i].x, pte[i].y, m_ptValE.z);
+				}
+				::glVertex3d(pts[0].x, pts[0].y, m_ptValS.z);
+				::glVertex3d(pte[0].x, pte[0].y, m_ptValE.z);
+				::glEnd();
+			}
+			else {
+				// XY平面の移動ﾊﾟｽは
+				// 始点終点を矩形でつなぐ
+				double	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+90.0*RAD,
+						cos_q = cos(q) * m_dEndmill,
+						sin_q = sin(q) * m_dEndmill;
+				::glBegin(GL_TRIANGLE_STRIP);
+				::glVertex3d( cos_q+m_ptValS.x, sin_q+m_ptValS.y, m_ptValS.z);
+				::glVertex3d(-cos_q+m_ptValS.x,-sin_q+m_ptValS.y, m_ptValS.z);
+				::glVertex3d( cos_q+m_ptValE.x, sin_q+m_ptValE.y, m_ptValE.z);
+				::glVertex3d(-cos_q+m_ptValE.x,-sin_q+m_ptValE.y, m_ptValE.z);
+				::glEnd();
+			}
 		}
-		::glEnd();
+		// 終点○の描画
+		_DrawBottomFaceCircle(m_ptValE, pte);
 	}
-
-	// 終点○面の描画
-	::glBegin(GL_TRIANGLE_FAN);
-	::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
-	for ( i=0; i<=ARCCOUNT/2; i++ )
-		::glVertex3d(pt2[i].x, pt2[i].y, m_ptValE.z);
-	for ( i=0; i< ARCCOUNT/2; i++ )
-		::glVertex3d(pt3[i].x, pt3[i].y, m_ptValE.z);
-	::glVertex3d(pt2[0].x, pt2[0].y, m_ptValE.z);
-	::glEnd();
+	else {
+		// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ座標計算
+		vector<CVCircle>	vSphere;
+		vSphere.reserve(ARCCOUNT/4);
+		// 始点の半球座標計算
+		_SetEndmillSphere(m_dEndmill, m_ptValS, vSphere);
+		_DrawBottomFaceSphere(vSphere);
+		if ( m_dMove[NCA_X]>0 || m_dMove[NCA_Y]>0 ) {
+			// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙの移動ﾊﾟｽ座標計算
+			CPoint3D	pts[ARCCOUNT/2], pte[ARCCOUNT/2];
+			double	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x) + 90.0*RAD;
+			_SetEndmillSpherePath(m_dEndmill, q, m_ptValS, pts);
+			_SetEndmillSpherePath(m_dEndmill, q, m_ptValE, pte);
+			::glBegin(GL_TRIANGLE_STRIP);
+			for ( i=0; i<ARCCOUNT/2; i++ ) {
+				::glVertex3d(pts[i].x, pts[i].y, pts[i].z);
+				::glVertex3d(pte[i].x, pte[i].y, pte[i].z);
+			}
+			::glEnd();
+			// 終点の半球座標計算
+			vSphere.clear();
+			_SetEndmillSphere(m_dEndmill, m_ptValE, vSphere);
+			_DrawBottomFaceSphere(vSphere);
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -137,38 +295,29 @@ void CNCcycle::DrawGL(void) const
 	::glEnd();
 }
 
-void CNCcycle::SetEndmillPath(const CPointD& ptOrg, CPointD* pt) const
-{
-	int		i;
-	double	q;
-
-	// 円座標をｾｯﾄ（閉じた面を保証）
-	pt[0].x = m_dEndmill + ptOrg.x;		// cos(0) == 1
-	pt[0].y = ptOrg.y;					// sin(0) == 0
-	for ( i=1, q=ARCSTEP; i<ARCCOUNT; i++, q+=ARCSTEP ) {
-		pt[i].x = m_dEndmill * cos(q) + ptOrg.x;
-		pt[i].y = m_dEndmill * sin(q) + ptOrg.y;
-	}
-	pt[i] = pt[0];
-}
-
 void CNCcycle::DrawBottomFace(void) const
 {
 	if ( GetPlane() != XY_PLANE )
 		return;
 
-	int		i, j;
-	CPointD	pt[ARCCOUNT+1];
+	int		i;
 
-	for ( i=0; i<m_nDrawCnt; i++ ) {
-		// 座標計算
-		SetEndmillPath(m_Cycle3D[i].ptC, pt);
-		// 底面描画
-		::glBegin(GL_TRIANGLE_FAN);
-		::glVertex3d(m_Cycle3D[i].ptC.x, m_Cycle3D[i].ptC.y, m_Cycle3D[i].ptC.z);	// 中心
-		for	( j=0; j<=ARCCOUNT; j++ )
-			::glVertex3d(pt[j].x, pt[j].y, m_Cycle3D[i].ptC.z);
-		::glEnd();
+	if ( GetEndmillType() == 0 ) {
+		CPointD	ptc[ARCCOUNT];
+		for ( i=0; i<m_nDrawCnt; i++ ) {
+			// 座標計算と描画
+			_SetEndmillCircle(m_dEndmill, m_Cycle3D[i].ptC.GetXY(), ptc);
+			_DrawBottomFaceCircle(m_Cycle3D[i].ptC, ptc);
+		}
+	}
+	else {
+		vector<CVCircle>	vSphere;
+		vSphere.reserve(ARCCOUNT/4);
+		for ( i=0; i<m_nDrawCnt; i++ ) {
+			_SetEndmillSphere(m_dEndmill, m_Cycle3D[i].ptC, vSphere);
+			_DrawBottomFaceSphere(vSphere);
+			vSphere.clear();
+		}
 	}
 }
 
@@ -187,14 +336,7 @@ void CNCcircle::DrawGL(void) const
 	double		sq, eq, r = fabs(m_r);
 	CPoint3D	pt;
 
-	if ( m_nG23 == 0 ) {
-		sq = m_eq;
-		eq = m_sq;
-	}
-	else {
-		sq = m_sq;
-		eq = m_eq;
-	}
+	tie(sq, eq) = GetSqEq();
 
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col = pOpt->GetNcDrawColor(NCCOL_G1);
@@ -204,17 +346,16 @@ void CNCcircle::DrawGL(void) const
 
 	switch ( GetPlane() ) {
 	case XY_PLANE:
-		pt.z = m_ptValS.z;	// ﾍﾘｶﾙ開始座標
 		// ARCSTEP づつ微細線分で描画
 		if ( m_nG23 == 0 ) {
-			for ( ; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
+			for ( pt.z=m_ptValS.z; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.y = r * sin(sq) + m_ptOrg.y;
 				::glVertex3d(pt.x, pt.y, pt.z);
 			}
 		}
 		else {
-			for ( ; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
+			for ( pt.z=m_ptValS.z; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.y = r * sin(sq) + m_ptOrg.y;
 				::glVertex3d(pt.x, pt.y, pt.z);
@@ -228,16 +369,15 @@ void CNCcircle::DrawGL(void) const
 		break;
 
 	case XZ_PLANE:
-		pt.y = m_ptValS.y;
 		if ( m_nG23 == 0 ) {
-			for ( ; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
+			for ( pt.y=m_ptValS.y; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.z = r * sin(sq) + m_ptOrg.z;
 				::glVertex3d(pt.x, pt.y, pt.z);
 			}
 		}
 		else {
-			for ( ; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
+			for ( pt.y=m_ptValS.y; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.z = r * sin(sq) + m_ptOrg.z;
 				::glVertex3d(pt.x, pt.y, pt.z);
@@ -250,16 +390,15 @@ void CNCcircle::DrawGL(void) const
 		break;
 
 	case YZ_PLANE:
-		pt.x = m_ptValS.x;
 		if ( m_nG23 == 0 ) {
-			for ( ; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
+			for ( pt.x=m_ptValS.x; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(sq) + m_ptOrg.y;
 				pt.z = r * sin(sq) + m_ptOrg.z;
 				::glVertex3d(pt.x, pt.y, pt.z);
 			}
 		}
 		else {
-			for ( ; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
+			for ( pt.x=m_ptValS.x; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(sq) + m_ptOrg.y;
 				pt.z = r * sin(sq) + m_ptOrg.z;
 				::glVertex3d(pt.x, pt.y, pt.z);
@@ -274,8 +413,8 @@ void CNCcircle::DrawGL(void) const
 
 	::glEnd();
 }
-
-inline void SetEndmillPath_XY_Path
+//	--- CNCcircle::DrawBottomFace() サブ
+inline void _SetEndmillPathXY
 	(const CPointD& pt, double q, double h, double r1, double r2,
 		vector<CPoint3D>& vt1, vector<CPoint3D>& vt2)
 {
@@ -284,224 +423,391 @@ inline void SetEndmillPath_XY_Path
 	vt1.push_back( CPoint3D(
 		r1 * cos_q + pt.x,
 		r1 * sin_q + pt.y,
-		h )
+		h)
 	);
 	vt2.push_back( CPoint3D(
 		r2 * cos_q + pt.x,
 		r2 * sin_q + pt.y,
-		h )
+		h)
 	);
 }
 
-inline void SetEndmillPath_XZ_Path
-	(const CPointD& pt, double q, double rr, double r1, double r2, double d,
-		vector<CPoint3D>& vt1, vector<CPoint3D>& vt2)
+inline void _SetEndmillPathXY_Pipe
+	(const CPointD& ptOrg, double q, double rr, double h, double d,
+		CVCircle& vc)
 {
-	CPoint3D	pt1, pt2;
-	double	cos_q = cos(q);
-	double	sin_q = sin(q);
-	pt1.x = rr * cos_q;
-	if ( cos_q > 0 )
-		pt1.x = max(pt1.x-d, 0) + pt.x;
-	else
-		pt1.x = min(pt1.x+d, 0) + pt.x;
-	pt1.y = r1;		// h + r1
-	pt1.z = rr * sin_q + pt.y;
-	pt2.x = pt1.x;
-	pt2.y = r2;		// h + r2
-	pt2.z = pt1.z;
-	vt1.push_back(pt1);
-	vt2.push_back(pt2);
+	CPoint3D	pt(
+		rr * cos(q) + ptOrg.x,
+		rr * sin(q) + ptOrg.y,
+		h
+	);
+	// この位置にXY平面の円を座標登録
+	CPointD		ptc[ARCCOUNT];
+	_SetEndmillCircle(d, pt.GetXY(), ptc);
+	for ( int i=0; i<ARCCOUNT; i++ ) {
+		pt.x = ptc[i].x;
+		pt.y = ptc[i].y;
+		vc.push_back(pt);	// Z座標は変化なし
+	}
 }
 
-inline void SetEndmillPath_YZ_Path
-	(const CPointD& pt, double q, double rr, double r1, double r2, double d,
-		vector<CPoint3D>& vt1, vector<CPoint3D>& vt2)
+inline void _SetEndmillPathXZ_Pipe
+	(const CPointD& ptOrg, double q, double rr, double h, double d,
+		CVCircle& vc)
 {
-	CPoint3D	pt1, pt2;
-	double	cos_q = cos(q);
-	double	sin_q = sin(q);
-	pt1.x = r1;		// h + r1
-	pt1.y = rr * cos_q;
-	if ( cos_q > 0 )
-		pt1.y = max(pt1.y-d, 0) + pt.x;
-	else
-		pt1.y = min(pt1.y+d, 0) + pt.x;
-	pt1.z = rr * sin_q + pt.y;
-	pt2.x = r2;		// h + r2
-	pt2.y = pt1.y;
-	pt2.z = pt1.z;
-	vt1.push_back(pt1);
-	vt2.push_back(pt2);
+	CPoint3D	pt(
+		rr * cos(q) + ptOrg.x,
+		h,
+		rr * sin(q) + ptOrg.y
+	);
+	CPointD		ptc[ARCCOUNT];
+	_SetEndmillCircle(d, pt.GetXY(), ptc);
+	for ( int i=0; i<ARCCOUNT; i++ ) {
+		pt.x = ptc[i].x;
+		pt.y = ptc[i].y;
+		vc.push_back(pt);
+	}
 }
 
-inline double SetEndmillPath_XZYZ_Start
-	(const CPoint3D& pts, const CPoint3D& pte, double d,
-		vector<CPoint3D>& vt1, vector<CPoint3D>& vt2)
+inline void _SetEndmillPathXZ_Sphere
+	(double d, double qp, const CPoint3D& ptOrg,
+		CPoint3D* ptResult)
 {
-	double	h = atan2(pte.y-pte.y, pte.x-pts.x) + 90.0*RAD,	// ﾍﾘｶﾙの傾き
-			hResult = h,
-			cos_q = d * cos(h),
-			sin_q = d * sin(h);
-	CPoint3D	pt1, pt2;
-	pt1.x = cos_q + pts.x;
-	pt1.y = sin_q + pts.y;
-	pt1.z = pts.z;
-	pt2.x = -cos_q + pts.x;	// 180°反転
-	pt2.y = -sin_q + pts.y;
-	pt2.z = pts.z;
-	vt1.push_back(pt1);
-	vt2.push_back(pt2);
-	h -= 90.0*RAD;
-	cos_q = d * cos(h);
-	sin_q = d * sin(h);
-	pt1.x += cos_q;
-	pt1.y += sin_q;
-	pt2.x += cos_q;
-	pt2.y += sin_q;
-	vt1.push_back(pt1);
-	vt2.push_back(pt2);
+	int		i = 0;
+	double	q = 0,
+			cos_qp = cos(qp),
+			sin_qp = sin(qp),
+			x;
+	CPoint3D	pt;
 
-	return hResult;
+	for ( ; i<ARCCOUNT; i++, q+=ARCSTEP ) {
+		// XY平面の円
+		x    = d * cos(q);
+		pt.y = d * sin(q);
+		// Zでの回転
+		pt.x = x * cos_qp;	// - z * sin_qp;
+		pt.z = x * sin_qp;	// + z * cos_qp;
+		//
+		ptResult[i] = pt + ptOrg;
+	}
 }
 
-void CNCcircle::SetEndmillPath
-	(vector<CPoint3D>& vt1, vector<CPoint3D>& vt2, CPointD* pts, CPointD* pte) const
+inline void _SetEndmillPathYZ_Pipe
+	(const CPointD& ptOrg, double q, double rr, double h, double d,
+		CVCircle& vc)
 {
-	int			i;
-	double		sq, eq, h, hs, cos_q, sin_q, r1, r2, rr = fabs(m_r);
-	CPointD		ptOrg(GetPlaneValue(m_ptOrg));
-	CPoint3D	pt1, pt2;
+	CPoint3D	pt(
+		h,
+		rr * cos(q) + ptOrg.x,
+		rr * sin(q) + ptOrg.y
+	);
+	CPointD		ptc[ARCCOUNT];
+	_SetEndmillCircle(d, pt.GetXY(), ptc);
+	for ( int i=0; i<ARCCOUNT; i++ ) {
+		pt.x = ptc[i].x;
+		pt.y = ptc[i].y;
+		vc.push_back(pt);
+	}
+}
 
-	if ( m_nG23 == 0 ) {
-		sq = m_eq;
-		eq = m_sq;
+inline void _SetEndmillPathYZ_Sphere
+	(double d, double qp, const CPoint3D& ptOrg,
+		CPoint3D* ptResult)
+{
+	int		i = 0;
+	double	q = 0,
+			cos_qp = cos(qp),
+			sin_qp = sin(qp),
+			y;
+	CPoint3D	pt;
+
+	for ( ; i<ARCCOUNT; i++, q+=ARCSTEP ) {
+		// XY平面の円
+		pt.x = d * cos(q);
+		y    = d * sin(q);
+		// Zでの回転
+		pt.y = y * cos_qp;	// - z * sin_qp;
+		pt.z = y * sin_qp;	// + z * cos_qp;
+		//
+		ptResult[i] = pt + ptOrg;
+	}
+}
+//	---
+void CNCcircle::DrawBottomFace(void) const
+{
+	if ( m_obCdata.GetSize() > 0 ) {
+		for ( int i=0; i<m_obCdata.GetSize(); i++ )
+			m_obCdata[i]->DrawBottomFace();
+		return;
+	}
+
+	if ( GetEndmillType() == 0 ) {
+		CPointD	pts[ARCCOUNT], pte[ARCCOUNT];
+		// 始点・終点のｴﾝﾄﾞﾐﾙ円
+		_SetEndmillCircle(m_dEndmill, m_ptValS.GetXY(), pts);
+		_SetEndmillCircle(m_dEndmill, m_ptValE.GetXY(), pte);
+		_DrawBottomFaceCircle(m_ptValS, pts);
+		_DrawBottomFaceCircle(m_ptValE, pte);
+		// 軌跡ﾊﾟｽの座標計算
+		if ( GetPlane()==XY_PLANE && m_dHelicalStep==0 ) {
+			// XY単純矩形座標計算
+			DrawEndmillXYPath();
+		}
+		else {
+			// 軌跡上の円をﾊﾟｲﾌﾟ状につなぐ
+			DrawEndmillPipe();
+		}
 	}
 	else {
-		sq = m_sq;
-		eq = m_eq;
+		vector<CVCircle>	vSphere;
+		vSphere.reserve(ARCCOUNT/4);
+		// 始点・終点のﾎﾞｰﾙｴﾝﾄﾞﾐﾙ球
+		_SetEndmillSphere(m_dEndmill, m_ptValS, vSphere);
+		_DrawBottomFaceSphere(vSphere);
+		vSphere.clear();
+		_SetEndmillSphere(m_dEndmill, m_ptValE, vSphere);
+		_DrawBottomFaceSphere(vSphere);
+		vSphere.clear();
+		// 軌跡ﾊﾟｽの座標計算
+		DrawEndmillBall();
 	}
+}
+
+void CNCcircle::DrawEndmillXYPath(void) const
+{
+	double	sq, eq, h, r1, r2, rr = fabs(m_r);
+	CPointD	ptOrg(m_ptOrg.GetXY());
+	vector<CPoint3D>	vt1, vt2;
+
+	vt1.reserve(ARCCOUNT);
+	vt2.reserve(ARCCOUNT);
+	tie(sq, eq) = GetSqEq();
+
+	// 円弧補間切削ﾊﾟｽ座標
+	if ( m_nG23 == 0 ) {
+		r1 = rr + m_dEndmill;	// 進行方向左側
+		r2 = rr - m_dEndmill;	// 進行方向右側
+		for ( h=m_ptValS.z; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
+			_SetEndmillPathXY(ptOrg, sq, h, r1, r2, vt1, vt2);
+	}
+	else {
+		r1 = rr - m_dEndmill;
+		r2 = rr + m_dEndmill;
+		for ( h=m_ptValS.z; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
+			_SetEndmillPathXY(ptOrg, sq, h, r1, r2, vt1, vt2);
+	}
+	// 端数分
+	_SetEndmillPathXY(ptOrg, eq, m_ptValE.z, r1, r2, vt1, vt2);
+
+	// 描画（ｴﾝﾄﾞﾐﾙ中心から長方形ﾊﾟｽ）
+	::glBegin(GL_TRIANGLE_STRIP);
+	for ( size_t i=0; i<vt1.size(); i++ ) {
+		::glVertex3d(vt1[i].x, vt1[i].y, vt1[i].z);
+		::glVertex3d(vt2[i].x, vt2[i].y, vt2[i].z);
+	}
+	::glEnd();
+}
+
+void CNCcircle::DrawEndmillPipe(void) const
+{
+	double		sq, eq, h, rr = fabs(m_r);
+	CPointD		ptOrg(GetPlaneValue(m_ptOrg));
+	CVCircle	vc;
+	vector<CVCircle>	vPath;
+
+	vc.reserve(ARCCOUNT);
+	vPath.reserve(ARCCOUNT);
+	tie(sq, eq) = GetSqEq();
 
 	// 円弧補間切削ﾊﾟｽ座標
 	switch ( GetPlane() ) {
 	case XY_PLANE:
 		if ( m_nG23 == 0 ) {
-			r1 = rr + m_dEndmill;	// 進行方向左側
-			r2 = rr - m_dEndmill;	// 進行方向右側
-			for ( h=m_ptValS.z; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
-				SetEndmillPath_XY_Path(ptOrg, sq, h, r1, r2, vt1, vt2);
+			for ( h=m_ptValS.z; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep ) {
+				_SetEndmillPathXY_Pipe(ptOrg, sq, rr, h, m_dEndmill, vc);
+				vPath.push_back(vc);
+				vc.clear();
+			}
 		}
 		else {
-			r1 = rr - m_dEndmill;
-			r2 = rr + m_dEndmill;
-			for ( h=m_ptValS.z; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
-				SetEndmillPath_XY_Path(ptOrg, sq, h, r1, r2, vt1, vt2);
+			for ( h=m_ptValS.z; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep ) {
+				_SetEndmillPathXY_Pipe(ptOrg, sq, rr, h, m_dEndmill, vc);
+				vPath.push_back(vc);
+				vc.clear();
+			}
 		}
-		// 端数分
-		SetEndmillPath_XY_Path(ptOrg, eq, m_ptValE.z, r1, r2, vt1, vt2);
+		_SetEndmillPathXY_Pipe(ptOrg, eq, rr, h, m_dEndmill, vc);
+		vPath.push_back(vc);
 		break;
 
 	case XZ_PLANE:
 		if ( m_nG23 == 0 ) {
-			r1 = m_dEndmill;
-			r2 = m_dEndmill * -1.0;
+			for ( h=m_ptValS.y; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep ) {
+				_SetEndmillPathXZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, vc);
+				vPath.push_back(vc);
+				vc.clear();
+			}
 		}
 		else {
-			r1 = m_dEndmill * -1.0;
-			r2 = m_dEndmill;
+			for ( h=m_ptValS.y; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep ) {
+				_SetEndmillPathXZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, vc);
+				vPath.push_back(vc);
+				vc.clear();
+			}
 		}
-		// 始点○とかぶる部分の矩形
-		hs = SetEndmillPath_XZYZ_Start(m_ptValS, m_ptValE, m_dEndmill, vt1, vt2);
-		// 移動ﾊﾟｽ
-		if ( m_nG23 == 0 ) {
-			for ( h=m_ptValS.y+m_dHelicalStep, sq-=ARCSTEP; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
-				SetEndmillPath_XZ_Path(ptOrg, sq, rr, h+r1, h+r2, m_dEndmill, vt1, vt2);
-		}
-		else {
-			for ( h=m_ptValS.y+m_dHelicalStep, sq+=ARCSTEP; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
-				SetEndmillPath_XZ_Path(ptOrg, sq, rr, h+r1, h+r2, m_dEndmill, vt1, vt2);
-		}
-		SetEndmillPath_XZ_Path(ptOrg, eq, rr, m_ptValE.y+r1, m_ptValE.y+r2, m_dEndmill, vt1, vt2);
+		_SetEndmillPathXZ_Pipe(ptOrg, eq, rr, h, m_dEndmill, vc);
+		vPath.push_back(vc);
 		break;
-	
+
 	case YZ_PLANE:
 		if ( m_nG23 == 0 ) {
-			r1 = m_dEndmill * -1.0;
-			r2 = m_dEndmill;
+			for ( h=m_ptValS.x; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep ) {
+				_SetEndmillPathYZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, vc);
+				vPath.push_back(vc);
+				vc.clear();
+			}
 		}
 		else {
-			r1 = m_dEndmill;
-			r2 = m_dEndmill * -1.0;
+			for ( h=m_ptValS.x; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep ) {
+				_SetEndmillPathYZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, vc);
+				vPath.push_back(vc);
+				vc.clear();
+			}
 		}
-		hs = SetEndmillPath_XZYZ_Start(m_ptValS, m_ptValE, m_dEndmill, vt1, vt2);
-		if ( m_nG23 == 0 ) {
-			for ( h=m_ptValS.x+m_dHelicalStep, sq-=ARCSTEP; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
-				SetEndmillPath_YZ_Path(ptOrg, sq, rr, h+r1, h+r2, m_dEndmill, vt1, vt2);
-		}
-		else {
-			for ( h=m_ptValS.x+m_dHelicalStep, sq+=ARCSTEP; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
-				SetEndmillPath_YZ_Path(ptOrg, sq, rr, h+r1, h+r2, m_dEndmill, vt1, vt2);
-		}
-		SetEndmillPath_YZ_Path(ptOrg, eq, rr, m_ptValE.x+r1, m_ptValE.x+r2, m_dEndmill, vt1, vt2);
+		_SetEndmillPathYZ_Pipe(ptOrg, eq, rr, h, m_dEndmill, vc);
+		vPath.push_back(vc);
 		break;
 	}
 
-	// 終点の○とかぶる部分の矩形(XZ_PLANE, YZ_PLANE)
-	if ( GetPlane() != XY_PLANE ) {
-		cos_q = m_dEndmill * cos(hs);
-		sin_q = m_dEndmill * sin(hs);
-		pt1.x = cos_q + m_ptValE.x;
-		pt1.y = sin_q + m_ptValE.y;
-		pt1.z = m_ptValE.z;
-		pt2.x = -cos_q + m_ptValE.x;	// 180°反転
-		pt2.y = -sin_q + m_ptValE.y;
-		pt2.z = m_ptValE.z;
-	}
-	vt1.push_back(pt1);
-	vt2.push_back(pt2);
-
-	// 始点側○
-	for ( i=0, sq=0; i<ARCCOUNT; i++, sq+=ARCSTEP ) {
-		pts[i].x = m_dEndmill * cos(sq) + m_ptValS.x;
-		pts[i].y = m_dEndmill * sin(sq) + m_ptValS.y;
-	}
-	pts[i] = pts[0];
-	// 終点側○
-	for ( i=0, eq=0; i<ARCCOUNT; i++, eq+=ARCSTEP ) {
-		pte[i].x = m_dEndmill * cos(eq) + m_ptValE.x;
-		pte[i].y = m_dEndmill * sin(eq) + m_ptValE.y;
-	}
-	pte[i] = pte[0];
+	// 軌跡上に並ぶ円をﾊﾟｲﾌﾟ状につなぐ
+	_DrawEndmillPipe(vPath);
 }
 
-void CNCcircle::DrawBottomFace(void) const
+void CNCcircle::DrawEndmillBall(void) const
 {
-	size_t	i;
-	vector<CPoint3D>	vt1, vt2;
-	CPointD	pts[ARCCOUNT+1], pte[ARCCOUNT+1];
+	int			i;
+	double		sq, eq, qp, h, rr = fabs(m_r);
+	CPointD		ptOrg(GetPlaneValue(m_ptOrg));
+	CPoint3D	pt, ptc[ARCCOUNT];
+	CVCircle	vc;
+	vector<CVCircle>	vPath;
 
-	// 座標計算
-	SetEndmillPath(vt1, vt2, pts, pte);
+	vc.reserve(ARCCOUNT);
+	vPath.reserve(ARCCOUNT);
+	tie(sq, eq) = GetSqEq();
 
-	// 始点・終点のｴﾝﾄﾞﾐﾙ円
-	// --始点側
-	::glBegin(GL_TRIANGLE_FAN);
-	::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptOrg.z);
-	for ( i=0; i<=ARCCOUNT; i++ )
-		::glVertex3d(pts[i].x, pts[i].y, m_ptOrg.z);
-	::glEnd();
-	// --終点側
-	::glBegin(GL_TRIANGLE_FAN);
-	::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
-	for ( i=0; i<=ARCCOUNT; i++ )
-		::glVertex3d(pte[i].x, pte[i].y, m_ptValE.z);
-	::glEnd();
+	switch ( GetPlane() ) {
+	case XY_PLANE:
+		// 円弧軌跡上にZ方向の半円座標を計算（直線補間と同じ描画でＯＫ）
+		if ( m_nG23 == 0 ) {
+			for ( h=m_ptValS.z; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep ) {
+				pt.x = rr * cos(sq) + ptOrg.x;
+				pt.y = rr * sin(sq) + ptOrg.y;
+				pt.z = h;
+				_SetEndmillSpherePath(m_dEndmill, sq, pt, ptc);
+				for ( i=0; i<ARCCOUNT/2; i++ )	// 半円分だけ使用
+					vc.push_back(ptc[i]);
+				vPath.push_back(vc);
+				vc.clear();
+			}
+		}
+		else {
+			for ( h=m_ptValS.z; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep ) {
+				pt.x = rr * cos(sq) + ptOrg.x;
+				pt.y = rr * sin(sq) + ptOrg.y;
+				pt.z = h;
+				_SetEndmillSpherePath(m_dEndmill, sq, pt, ptc);
+				for ( i=0; i<ARCCOUNT/2; i++ )
+					vc.push_back(ptc[i]);
+				vPath.push_back(vc);
+				vc.clear();
+			}
+		}
+		pt.x = rr * cos(eq) + ptOrg.x;
+		pt.y = rr * sin(eq) + ptOrg.y;
+		pt.z = h;
+		_SetEndmillSpherePath(m_dEndmill, eq, pt, ptc);
+		for ( i=0; i<ARCCOUNT/2; i++ )
+			vc.push_back(ptc[i]);
+		vPath.push_back(vc);
+		break;
 
-	// 底面（ｴﾝﾄﾞﾐﾙ中心から長方形ﾊﾟｽ）
-	::glBegin(GL_TRIANGLE_STRIP);
-	for ( i=0; i<vt1.size(); i++ ) {
-		::glVertex3d(vt1[i].x, vt1[i].y, vt1[i].z);
-		::glVertex3d(vt2[i].x, vt2[i].y, vt2[i].z);
+	case XZ_PLANE:
+		// 円弧軌跡上に円弧軌跡の中心に傾いた円座標を計算
+		if ( m_nG23 == 0 ) {
+			for ( h=m_ptValS.y; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep ) {
+				pt.x = rr * cos(sq) + ptOrg.x;
+				pt.y = h;
+				pt.z = rr * sin(sq) + ptOrg.y + m_dEndmill;
+				qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.x-pt.x);	// 円がXY平面に対して傾く角度
+				_SetEndmillPathXZ_Sphere(m_dEndmill, qp, pt, ptc);
+				for ( i=0; i<ARCCOUNT; i++ )
+					vc.push_back(ptc[i]);
+				vPath.push_back(vc);
+				vc.clear();
+			}
+		}
+		else {
+			for ( h=m_ptValS.y; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep ) {
+				pt.x = rr * cos(sq) + ptOrg.x;
+				pt.y = h;
+				pt.z = rr * sin(sq) + ptOrg.y + m_dEndmill;
+				qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.x-pt.x);
+				_SetEndmillPathXZ_Sphere(m_dEndmill, qp, pt, ptc);
+				for ( i=0; i<ARCCOUNT; i++ )
+					vc.push_back(ptc[i]);
+				vPath.push_back(vc);
+				vc.clear();
+			}
+		}
+		pt.x = rr * cos(eq) + ptOrg.x;
+		pt.y = h;
+		pt.z = rr * sin(eq) + ptOrg.y + m_dEndmill;
+		qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.x-pt.x);
+		_SetEndmillPathXZ_Sphere(m_dEndmill, qp, pt, ptc);
+		for ( i=0; i<ARCCOUNT; i++ )
+			vc.push_back(ptc[i]);
+		vPath.push_back(vc);
+		break;
+
+	case YZ_PLANE:
+		if ( m_nG23 == 0 ) {
+			for ( h=m_ptValS.x; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep ) {
+				pt.x = h;
+				pt.y = rr * cos(sq) + ptOrg.x;
+				pt.z = rr * sin(sq) + ptOrg.y + m_dEndmill;
+				qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.y-pt.y);
+				_SetEndmillPathYZ_Sphere(m_dEndmill, qp, pt, ptc);
+				for ( i=0; i<ARCCOUNT; i++ )
+					vc.push_back(ptc[i]);
+				vPath.push_back(vc);
+				vc.clear();
+			}
+		}
+		else {
+			for ( h=m_ptValS.x; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep ) {
+				pt.x = h;
+				pt.y = rr * cos(sq) + ptOrg.x;
+				pt.z = rr * sin(sq) + ptOrg.y + m_dEndmill;
+				qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.y-pt.y);
+				_SetEndmillPathYZ_Sphere(m_dEndmill, qp, pt, ptc);
+				for ( i=0; i<ARCCOUNT; i++ )
+					vc.push_back(ptc[i]);
+				vPath.push_back(vc);
+				vc.clear();
+			}
+		}
+		pt.x = h;
+		pt.y = rr * cos(eq) + ptOrg.x;
+		pt.z = rr * sin(eq) + ptOrg.y + m_dEndmill;
+		qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.y-pt.y);
+		_SetEndmillPathYZ_Sphere(m_dEndmill, qp, pt, ptc);
+		for ( i=0; i<ARCCOUNT; i++ )
+			vc.push_back(ptc[i]);
+		vPath.push_back(vc);
+		break;
 	}
-	::glEnd();
+
+	// 軌跡上に並ぶ半円または円をﾊﾟｲﾌﾟ状につなぐ
+	_DrawEndmillPipe(vPath);
 }

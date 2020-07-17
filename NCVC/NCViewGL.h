@@ -22,7 +22,7 @@ class CNCViewGL : public CView
 				m_icx, m_icy;
 	double		m_dRate;		// 基準拡大率
 	CRect3D		m_rcView,		// ﾓﾃﾞﾙ空間
-				m_rcDraw;		// ﾜｰｸ矩形
+				m_rcDraw;		// ﾜｰｸ矩形(ｿﾘｯﾄﾞ表示用)
 	CPointD		m_ptCenter,		// 描画中心
 				m_ptLastMove;	// 移動前座標
 	CPoint3D	m_ptLastRound;	// 回転前座標
@@ -30,7 +30,9 @@ class CNCViewGL : public CView
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 
 	GLuint		m_nVertexID,	// 頂点配列用
-				m_nNormalID;	// 法線ﾍﾞｸﾄﾙ用
+				m_nNormalID,	// 法線ﾍﾞｸﾄﾙ用
+				m_nPictureID,	// ﾃｸｽﾁｬ画像用
+				m_nTextureID;	// ﾃｸｽﾁｬ座標用
 	GLuint*		m_pGenBuf;		// 頂点ｲﾝﾃﾞｯｸｽ用
 	std::vector<GLsizei>	m_vVertexWrk,	// ﾜｰｸ矩形用glDrawElements用頂点個数
 							m_vVertexCut;	// 切削面用
@@ -42,10 +44,13 @@ class CNCViewGL : public CView
 	BOOL	SetupPixelFormat(CDC*);
 	void	UpdateViewOption(void);
 	void	CreateWire(void);
-	void	CreateBoxel(void);
-	void	GetClipDepth(void);
-	void	CreateElement(std::vector<GLfloat>&, std::vector<GLfloat>&);
+	BOOL	CreateBoxel(void);
+	BOOL	GetClipDepth(void);
+	BOOL	CreateElement(GLfloat*, GLfloat*);
+	BOOL	ReadTexture(LPCTSTR);
+	void	CreateTexture(void);
 	void	ClearElement(void);
+	void	ClearTexture(void);
 
 	void	RenderBack(void);
 	void	RenderAxis(void);

@@ -118,7 +118,7 @@ static	BOOL	LWPolylineProcedure(CDXFDoc*, BOOL);
 //	ReadDXF() ï‚èïä÷êî
 //		inlineÇÕ staticêÈåæå¯â Ç‡ä‹Ç‹ÇÍÇÈ
 
-inline BOOL DubleRead(CStdioFile& fp)
+inline BOOL _DubleRead(CStdioFile& fp)
 {
 	CString	strBuf;
 	BOOL	bResult = fp.ReadString(strBuf);
@@ -138,14 +138,14 @@ inline BOOL DubleRead(CStdioFile& fp)
 	return bResult;
 }
 
-inline void ClearValue(void)
+inline void _ClearValue(void)
 {
 	for ( int i=0; i<SIZEOF(g_dValue); i++ )
 		g_dValue[i] = 0.0;
 	g_dwValueFlg = 0;
 }
 
-inline int SetValue(void)
+inline int _SetValue(void)
 {
 	int		i;
 	for ( i=0; i<SIZEOF(g_dValue); i++ ) {
@@ -162,7 +162,7 @@ inline int SetValue(void)
 	return -1;
 }
 
-inline int SectionCheck(void)
+inline int _SectionCheck(void)
 {
 	if ( g_strGroup != g_szGroupCode[GROUP0] )
 		return SEC_NOSECTION;
@@ -174,7 +174,7 @@ inline int SectionCheck(void)
 	return SEC_NOSECTION;
 }
 
-inline int SectionNameCheck(void)
+inline int _SectionNameCheck(void)
 {
 	if ( g_strGroup != g_szGroupCode[GROUP2] )
 		return SEC_NOSECTION;
@@ -185,7 +185,7 @@ inline int SectionNameCheck(void)
 	return SEC_NOSECTION;	// -1
 }
 
-inline void SetDxfArgv(LPDXFPARGV lpPoint)
+inline void _SetDxfArgv(LPDXFPARGV lpPoint)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -198,7 +198,7 @@ inline void SetDxfArgv(LPDXFPARGV lpPoint)
 #endif
 }
 
-inline void SetDxfArgv(LPDXFLARGV lpLine)
+inline void _SetDxfArgv(LPDXFLARGV lpLine)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -214,7 +214,7 @@ inline void SetDxfArgv(LPDXFLARGV lpLine)
 #endif
 }
 
-inline void SetDxfArgv(LPDXFCARGV lpCircle)
+inline void _SetDxfArgv(LPDXFCARGV lpCircle)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -229,7 +229,7 @@ inline void SetDxfArgv(LPDXFCARGV lpCircle)
 #endif
 }
 
-inline void SetDxfArgv(LPDXFAARGV lpArc)
+inline void _SetDxfArgv(LPDXFAARGV lpArc)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -246,7 +246,7 @@ inline void SetDxfArgv(LPDXFAARGV lpArc)
 #endif
 }
 
-inline void SetDxfArgv(LPDXFEARGV lpEllipse)
+inline void _SetDxfArgv(LPDXFEARGV lpEllipse)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -268,7 +268,7 @@ inline void SetDxfArgv(LPDXFEARGV lpEllipse)
 #endif
 }
 
-inline void SetDxfArgv(LPDXFTARGV lpText)
+inline void _SetDxfArgv(LPDXFTARGV lpText)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -283,7 +283,7 @@ inline void SetDxfArgv(LPDXFTARGV lpText)
 #endif
 }
 
-inline void SetBlockArgv(LPDXFBLOCK lpBlock)
+inline void _SetBlockArgv(LPDXFBLOCK lpBlock)
 {
 	lpBlock->ptOrg.x = g_dValue[VALUE10];
 	lpBlock->ptOrg.y = g_dValue[VALUE20];
@@ -311,7 +311,7 @@ inline void SetBlockArgv(LPDXFBLOCK lpBlock)
 	}
 }
 
-inline void CreatePolyline(void)
+inline void _CreatePolyline(void)
 {
 	if ( !g_pPolyline ) {
 		// ó·äOèàóùÇÕ“≤›Ÿ∞ÃﬂÇ≈
@@ -323,7 +323,7 @@ inline void CreatePolyline(void)
 	}
 }
 
-inline void DeletePolyline(void)
+inline void _DeletePolyline(void)
 {
 #ifdef _DEBUG
 	g_dbg.printf("DeletePolyline()");
@@ -333,14 +333,14 @@ inline void DeletePolyline(void)
 	g_bVertex = g_bPuff = FALSE;
 }
 
-inline void NotsupportList(void)
+inline void _NotsupportList(void)
 {
 	// ó·äOèàóùÇÕ“≤›Ÿ∞ÃﬂÇ≈
 	g_strMissEntiMap.SetAt(g_strMissOrder, NULL);
 	g_strMissOrder.Empty();
 }
 
-inline void InitialVariable(void)
+inline void _InitialVariable(void)
 {
 	g_bVertex = g_bPuff = FALSE;
 	g_ptPuff = g_dPuff = 0.0;
@@ -348,13 +348,13 @@ inline void InitialVariable(void)
 	g_strLayer.Empty();
 	g_strBlock.Empty();
 	g_strMissOrder.Empty();
-	ClearValue();
+	_ClearValue();
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //	Headeræ∏ºÆ› ï‚èïä÷êî
 
-inline int HeaderVariableCheck(void)
+inline int _HeaderVariableCheck(void)
 {
 /*	--- ÕØ¿ﬁ∞ì«Ç›çûÇ›ÇÕîpé~
 	if ( g_strGroup != g_szGroupCode[GROUP9] )
@@ -374,7 +374,7 @@ BOOL HeaderProcedure(void)
 #ifdef _DEBUG
 	CMagaDbg	dbg("HeaderProcedure()", DBG_GREEN);
 #endif
-	int nResult = HeaderVariableCheck();
+	int nResult = _HeaderVariableCheck();
 	
 	switch ( nResult ) {
 	case -2:	// Headerïœêî∏ﬁŸ∞Ãﬂ∫∞ƒﬁÇ≈Ç»Ç¢
@@ -393,7 +393,7 @@ BOOL HeaderProcedure(void)
 /////////////////////////////////////////////////////////////////////////////
 //	Entitiesæ∏ºÆ› ï‚èïä÷êî
 
-inline int EntitiesKeywordCheck(void)
+inline int _EntitiesKeywordCheck(void)
 {
 	if ( g_strGroup != g_szGroupCode[GROUP0] )
 		return -2;
@@ -404,7 +404,7 @@ inline int EntitiesKeywordCheck(void)
 	return -1;
 }
 
-inline int EntitiesLayerCheck(void)
+inline int _EntitiesLayerCheck(void)
 {
 	if ( g_strGroup != g_szGroupCode[GROUP8] )
 		return -2;
@@ -440,7 +440,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 	CPointD		pt;
 	DXFEARGV	dxfEllipse;
 	DXFBLOCK	argvBlock;
-	SetBlockArgv(&argvBlock);
+	_SetBlockArgv(&argvBlock);
 #ifdef _DEBUG
 	dbg.printf("InsertOrg x=%f y=%f", argvBlock.ptOrg.x, argvBlock.ptOrg.y);
 	if ( argvBlock.dwBlockFlg & DXFBLFLG_X )
@@ -562,7 +562,7 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 	case TYPE_POINT:
 		if ( g_nLayer == DXFCAMLAYER ) {
 			dxfPoint.pLayer = pDoc->AddLayerMap(g_strLayer);
-			SetDxfArgv(&dxfPoint);
+			_SetDxfArgv(&dxfPoint);
 			pData = new CDXFpoint(&dxfPoint);
 		}
 		break;
@@ -570,7 +570,7 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 	case TYPE_LINE:
 		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
 			dxfLine.pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
-			SetDxfArgv(&dxfLine);
+			_SetDxfArgv(&dxfLine);
 			pData = new CDXFline(&dxfLine);
 		}
 		break;
@@ -586,7 +586,7 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 			break;
 		case DXFCAMLAYER:
 			dxfCircle.pLayer = pDoc->AddLayerMap(g_strLayer);
-			SetDxfArgv(&dxfCircle);
+			_SetDxfArgv(&dxfCircle);
 			pData = new CDXFcircle(&dxfCircle);
 			break;
 		case DXFSTRLAYER:
@@ -603,7 +603,7 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 	case TYPE_ARC:
 		if ( g_nLayer == DXFCAMLAYER ) {
 			dxfArc.pLayer = pDoc->AddLayerMap(g_strLayer);
-			SetDxfArgv(&dxfArc);
+			_SetDxfArgv(&dxfArc);
 			pData = new CDXFarc(&dxfArc);
 		}
 		break;
@@ -611,20 +611,20 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 	case TYPE_ELLIPSE:
 		if ( g_nLayer == DXFCAMLAYER ) {
 			dxfEllipse.pLayer = pDoc->AddLayerMap(g_strLayer);
-			SetDxfArgv(&dxfEllipse);
+			_SetDxfArgv(&dxfEllipse);
 			pData = new CDXFellipse(&dxfEllipse);
 		}
 		break;
 
 	case TYPE_POLYLINE:
 		if ( g_pPolyline )
-			DeletePolyline();	// SEQENDÇ≈ìoò^Ç∑ÇÈÇÕÇ∏Ç»ÇÃÇ≈è¡ãé
+			_DeletePolyline();	// SEQENDÇ≈ìoò^Ç∑ÇÈÇÕÇ∏Ç»ÇÃÇ≈è¡ãé
 		break;
 
 	case TYPE_TEXT:
 		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFCOMLAYER ) {
 			dxfText.pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
-			SetDxfArgv(&dxfText);
+			_SetDxfArgv(&dxfText);
 			pData = new CDXFtext(&dxfText);
 		}
 		break;
@@ -646,7 +646,7 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 			g_pPolyline = NULL;
 		}
 		else
-			DeletePolyline();
+			_DeletePolyline();
 		break;
 	}
 
@@ -659,7 +659,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 #ifdef _DEBUG
 	CMagaDbg	dbg("EntitiesProcedure()", DBG_GREEN);
 #endif
-	int		nResultType = EntitiesKeywordCheck();
+	int		nResultType = _EntitiesKeywordCheck();
 	int		nResultLayer;
 	BOOL	bResult = TRUE;
 	
@@ -675,13 +675,13 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			break;
 		}
 		// ⁄≤‘¡™Ø∏
-		nResultLayer = EntitiesLayerCheck();
+		nResultLayer = _EntitiesLayerCheck();
 		switch ( nResultLayer ) {
 		case -2:	// ⁄≤‘∫∞ƒﬁÇ≈Ç‡Ç»Ç¢
 			if ( g_nType >= 0 ) {
 				if ( g_nType == TYPE_LWPOLYLINE )
 					LWPolylineProcedure(pDoc, FALSE);
-				SetValue();				// ílæØƒ
+				_SetValue();				// ílæØƒ
 			}
 			break;
 		case -1:	// à·Ç§⁄≤‘
@@ -690,19 +690,19 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 				g_strLayer.Empty();
 				g_strBlock.Empty();
 				g_strMissOrder.Empty();
-				ClearValue();
+				_ClearValue();
 			}
 			break;
 		default:	// Hit Layer!
 			if ( g_nType < 0 ) {
 				if ( !g_strMissOrder.IsEmpty() )
-					NotsupportList();	// ñ¢ªŒﬂ∞ƒ∑∞‹∞ƒﬁÇÃìoò^
+					_NotsupportList();	// ñ¢ªŒﬂ∞ƒ∑∞‹∞ƒﬁÇÃìoò^
 			}
 			else {
 				g_nLayer = nResultLayer;
 				g_strLayer = g_strOrder;
 				if ( g_nType==TYPE_POLYLINE || g_nType==TYPE_LWPOLYLINE )
-					CreatePolyline();		// Polyline√ﬁ∞¿ÇÃêÊçsê∂ê¨
+					_CreatePolyline();		// Polyline√ﬁ∞¿ÇÃêÊçsê∂ê¨
 			}
 			break;
 		}
@@ -718,7 +718,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 		// Ç∑Ç≈Ç…èàóùíÜÇÃéûÇÕìoò^èàóù
 		if ( g_nType>=0 && g_nLayer>=0 ) {
 			SetEntitiesInfo(pDoc);
-			ClearValue();
+			_ClearValue();
 		}
 		if ( nResultType >= 0 )		// nResult==-1 à»äO
 			g_strMissOrder.Empty();
@@ -735,7 +735,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 /////////////////////////////////////////////////////////////////////////////
 //	Blocksæ∏ºÆ› ï‚èïä÷êî
 
-inline int BlocksKeywordCheck(void)
+inline int _BlocksKeywordCheck(void)
 {
 	if ( g_strGroup != g_szGroupCode[GROUP0] )
 		return -2;
@@ -764,31 +764,31 @@ BOOL SetBlockData(void)
 	switch ( g_nType ) {
 	case TYPE_POINT:
 		dxfPoint.pLayer = NULL;
-		SetDxfArgv(&dxfPoint);
+		_SetDxfArgv(&dxfPoint);
 		g_pBkData->AddData(&dxfPoint);
 		break;
 
 	case TYPE_LINE:
 		dxfLine.pLayer = NULL;
-		SetDxfArgv(&dxfLine);
+		_SetDxfArgv(&dxfLine);
 		g_pBkData->AddData(&dxfLine);
 		break;
 
 	case TYPE_CIRCLE:
 		dxfCircle.pLayer = NULL;
-		SetDxfArgv(&dxfCircle);
+		_SetDxfArgv(&dxfCircle);
 		g_pBkData->AddData(&dxfCircle);
 		break;
 
 	case TYPE_ARC:
 		dxfArc.pLayer = NULL;
-		SetDxfArgv(&dxfArc);
+		_SetDxfArgv(&dxfArc);
 		g_pBkData->AddData(&dxfArc);
 		break;
 
 	case TYPE_ELLIPSE:
 		dxfEllipse.pLayer = NULL;
-		SetDxfArgv(&dxfEllipse);
+		_SetDxfArgv(&dxfEllipse);
 		g_pBkData->AddData(&dxfEllipse);
 		break;
 
@@ -799,14 +799,14 @@ BOOL SetBlockData(void)
 
 	case TYPE_TEXT:
 		dxfText.pLayer = NULL;
-		SetDxfArgv(&dxfText);
+		_SetDxfArgv(&dxfText);
 		g_pBkData->AddData(&dxfText);
 		break;
 
 	case TYPE_INSERT:	// BlockÇÃ»Ωƒ
 		if ( g_strBlockMap.Lookup(g_strBlock, pBlock) ) {
 			DXFBLOCK	argvBlock;
-			SetBlockArgv(&argvBlock);
+			_SetBlockArgv(&argvBlock);
 			g_pBkData->CopyBlock(pBlock, &argvBlock);
 		}
 		else
@@ -830,7 +830,7 @@ BOOL SetBlockData(void)
 	return TRUE;
 }
 
-inline void SetBlockMap(void)
+inline void _SetBlockMap(void)
 {
 	CDXFBlockData*	pBlock;
 	// èdï°Ãﬁ€Ø∏ñºÇ™Ç†ÇÈÇ∆ÅCSetAt()Ç≈íuä∑Ç≥ÇÍÇÈÇÃÇ≈êÊÇ…åüçıÇµÇƒè¡ãé
@@ -845,7 +845,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 #ifdef _DEBUG
 	CMagaDbg	dbg("BlocksProcedure()", DBG_GREEN);
 #endif
-	int		nResultBlock = BlocksKeywordCheck();
+	int		nResultBlock = _BlocksKeywordCheck();
 
 	if ( nResultBlock < 0 && g_nBlock < 0 )	// BLOCKèàóùíÜÇ≈Ç»ÇØÇÍÇŒ
 		return TRUE;
@@ -882,7 +882,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 			if ( g_nType>=0 || g_nBlock==0 ) {
 				if ( g_nType == TYPE_LWPOLYLINE )
 					LWPolylineProcedure(pDoc, FALSE);
-				SetValue();
+				_SetValue();
 			}
 		}
 		break;
@@ -902,19 +902,19 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		if ( g_nType>=0 && g_pBkData ) {
 			// èàóùíÜÇÃÃﬁ€Ø∏óvëfìoò^
 			bResult = SetBlockData();
-			ClearValue();
+			_ClearValue();
 		}
 		// ENTITIES∑∞‹∞ƒﬁ¡™Ø∏
-		nResultEntities = EntitiesKeywordCheck();
+		nResultEntities = _EntitiesKeywordCheck();
 		if ( nResultEntities < 0 ) {
 			g_strMissOrder = g_strOrder;
-			NotsupportList();
+			_NotsupportList();
 			g_nType = -1;
 		}
 		else {
 			g_nType = nResultEntities;
 			if ( g_nType==TYPE_POLYLINE || g_nType==TYPE_LWPOLYLINE )
-				CreatePolyline();	// Polyline√ﬁ∞¿ÇÃêÊçsê∂ê¨(⁄≤‘èÓïÒñ≥éã)
+				_CreatePolyline();	// Polyline√ﬁ∞¿ÇÃêÊçsê∂ê¨(⁄≤‘èÓïÒñ≥éã)
 		}
 		break;
 	case 0:		// BLOCK∑∞‹∞ƒﬁ
@@ -924,7 +924,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 			g_pBkData = NULL;
 		}
 		if ( g_pPolyline )
-			DeletePolyline();
+			_DeletePolyline();
 		g_nBlock = 0;
 		break;
 	case 1:		// ENDBLK∑∞‹∞ƒﬁ
@@ -934,9 +934,9 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 				bResult = SetBlockData();
 			}
 			if ( bResult )
-				SetBlockMap();	// BLOCKSœØÃﬂÇ…ìoò^
+				_SetBlockMap();	// BLOCKSœØÃﬂÇ…ìoò^
 		}
-		ClearValue();
+		_ClearValue();
 		g_nType = g_nBlock = -1;
 		break;
 	default:	// ???
@@ -950,7 +950,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 /////////////////////////////////////////////////////////////////////////////
 //	POLYLINE ï‚èïä÷êî
 
-inline int PolylineKeywordCheck(void)
+inline int _PolylineKeywordCheck(void)
 {
 	// ∏ﬁŸ∞Ãﬂ∫∞ƒﬁ" 0" ÇÕ¡™Ø∏çœÇ›
 //	if ( g_strGroup != g_szGroupCode[GROUP0] )
@@ -971,7 +971,7 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 	if ( g_bVertex ) {
 		DXFPARGV	dxfPoint;
 		dxfPoint.pLayer = g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
-		SetDxfArgv(&dxfPoint);
+		_SetDxfArgv(&dxfPoint);
 		if ( g_nBlock >= 0 )	// BlockèàóùíÜ
 			dxfPoint.c -= g_pBkData->GetBlockOrigin();	// å¥ì_ï‚ê≥
 		if ( !(g_bPuff ?
@@ -984,12 +984,12 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 		g_bVertex = FALSE;
 	}
 
-	switch ( PolylineKeywordCheck() ) {
+	switch ( _PolylineKeywordCheck() ) {
 	case 0:		// VERTEX
 		g_bVertex = TRUE;
 		g_dPuff = g_dValue[VALUE42];
 		g_bPuff = g_dValue[VALUE42] == 0.0 ? FALSE : TRUE;
-		ClearValue();
+		_ClearValue();
 		break;
 
 	case 1:		// SEQEND
@@ -1000,13 +1000,13 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 			return FALSE;
 		g_pPolyline = NULL;
 		g_nType = -1;
-		ClearValue();
+		_ClearValue();
 		g_bPuff = FALSE;
 		break;
 
 	default:
 		g_strMissOrder = g_strOrder;
-		NotsupportList();
+		_NotsupportList();
 		break;
 	}
 
@@ -1065,7 +1065,7 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc, BOOL bEnd)
 
 	DXFPARGV	dxfPoint;
 	dxfPoint.pLayer = !pDoc || g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
-	SetDxfArgv(&dxfPoint);
+	_SetDxfArgv(&dxfPoint);
 	if ( g_nBlock >= 0 )	// BlockèàóùíÜ
 		dxfPoint.c -= g_pBkData->GetBlockOrigin();	// å¥ì_ï‚ê≥
 	if ( !(g_bPuff ?
@@ -1127,11 +1127,11 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	g_strMissBlckMap.RemoveAll();
 	g_pBkData = NULL;
 	g_pPolyline = NULL;
-	InitialVariable();
+	_InitialVariable();
 
 	// “≤›Ÿ∞Ãﬂ
 	try {
-		while ( DubleRead(fp) && bResult ) {
+		while ( _DubleRead(fp) && bResult ) {
 			// Ãﬂ€∏ﬁ⁄Ω ﬁ∞ÇÃçXêV
 			dwPosition += g_strGroup.GetLength() + 2 +	// +2 = â¸çs∫∞ƒﬁï™
 						  g_strOrder.GetLength() + 2;
@@ -1141,7 +1141,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 				pProgress->SetPos(min(100, n));
 			}
 			// æ∏ºÆ›ÇÃ¡™Ø∏ == DXFÃß≤ŸÇÃÃ´∞œØƒ¡™Ø∏
-			switch ( SectionCheck() ) {
+			switch ( _SectionCheck() ) {
 			case SEC_SECTION:
 				if ( !bSection ) {
 					bSection = TRUE;
@@ -1164,10 +1164,10 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 					g_pBkData = NULL;
 				}
 				if ( g_pPolyline )		// SEQENDÇ≈ìoò^Ç∑ÇÈÇΩÇﬂ
-					DeletePolyline();		// Ç±Ç±Ç≈ÇÕè¡ãé
+					_DeletePolyline();		// Ç±Ç±Ç≈ÇÕè¡ãé
 				// èâä˙âª
 				nSectionName = SEC_NOSECTION;
-				InitialVariable();
+				_InitialVariable();
 				continue;
 			}
 
@@ -1184,7 +1184,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 				break;
 			default:
 				if ( bSection ) {
-					nSectionName = SectionNameCheck();
+					nSectionName = _SectionNameCheck();
 #ifdef _DEBUG
 					if ( nSectionName >= 0 )
 						dbg.printf("SectionName=%s", g_strOrder);

@@ -16,6 +16,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 //#define	_DEBUG_FILEOUT_		// Depth File out
+//#define	_DEBUG_DRAWTEST_
 extern	CMagaDbg	g_dbg;
 #include <mmsystem.h>			// timeGetTime()
 #endif
@@ -23,16 +24,17 @@ extern	CMagaDbg	g_dbg;
 // 頂点配列生成ｽﾚｯﾄﾞ用
 typedef	std::vector<GLuint>	CVElement;
 typedef struct tagCREATEELEMENTPARAM {
-	std::vector<GLfloat>*	pfXYZ;
-	std::vector<GLfloat>*	pfNOR;
+	const GLfloat*	pfXYZ;
+	GLfloat*		pfNOR;
 	std::vector<CVElement>*	pElement;
 	int		cx, cy;
 	GLfloat	h, l;
+	BOOL	bResult;
 } CREATEELEMENTPARAM, *LPCREATEELEMENTPARAM;
 
 static	DWORD WINAPI CreateElement_WrkThread(LPVOID);
 static	DWORD WINAPI CreateElement_CutThread(LPVOID);
-static	void		 CreateElement_Side(LPCREATEELEMENTPARAM);
+static	BOOL		 CreateElement_Side(LPCREATEELEMENTPARAM);
 
 //	拡大率表示のための変換単位
 //	1ｲﾝﾁあたりのﾋﾟｸｾﾙ数 GetDeviceCaps(LOGPIXELS[X|Y]) = 96dpi
@@ -80,7 +82,8 @@ CNCViewGL::CNCViewGL()
 	m_hRC = NULL;
 	m_glCode = 0;
 
-	m_nVertexID = m_nNormalID = 0;
+	m_nVertexID = m_nNormalID =
+		m_nPictureID = m_nTextureID = 0;
 	m_pGenBuf = NULL;
 
 	m_enTrackingMode = TM_NONE;
@@ -122,7 +125,9 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		pOpt->m_dwUpdateFlg = VIEWUPDATE_DISPLAYLIST | VIEWUPDATE_BOXEL;
 		// through
 	case UAV_DRAWWORKRECT:	// ﾜｰｸ矩形変更
-		if ( m_rcDraw != GetDocument()->GetWorkRect() )
+		if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) &&
+				GLEW_ARB_vertex_buffer_object &&	// OpenGL拡張ｻﾎﾟｰﾄ
+				m_rcDraw != GetDocument()->GetWorkRect() )
 			pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
 		// through
 	case UAV_CHANGEFONT:	// 色の変更 etc.
@@ -151,21 +156,44 @@ void CNCViewGL::UpdateViewOption(void)
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
+	// ﾃｸｽﾁｬ画像の読み込み
+	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) &&
+			pOpt->m_dwUpdateFlg & VIEWUPDATE_TEXTURE &&
+			GLEW_ARB_vertex_buffer_object ) {	// OpenGL拡張ｻﾎﾟｰﾄ
+		ClearTexture();
+		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) ) {
+			if ( ReadTexture(pOpt->GetTextureFile()) &&	// m_nPictureID値ｾｯﾄ
+					!(pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL) ) {
+				// 画像だけ変更
+				CreateTexture();
+			}
+		}
+	}
+
 	// 光源の色設定
-	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_LIGHT ) {
-		COLORREF	col;
+	if ( pOpt->m_dwUpdateFlg & (VIEWUPDATE_LIGHT|VIEWUPDATE_TEXTURE) ) {
 		GLfloat light_Wrk[] = {0.0, 0.0, 0.0, 1.0};
 		GLfloat light_Cut[] = {0.0, 0.0, 0.0, 1.0};
 		GLfloat light_Position0[] = {-1.0, -1.0, -1.0,  0.0};
 		GLfloat light_Position1[] = { 1.0,  1.0,  1.0,  0.0};
-		col = pOpt->GetNcDrawColor(NCCOL_GL_WRK);
-		light_Wrk[0] = (GLfloat)GetRValue(col) / 255;	// 255 -> 1.0
-		light_Wrk[1] = (GLfloat)GetGValue(col) / 255;
-		light_Wrk[2] = (GLfloat)GetBValue(col) / 255;
-		col = pOpt->GetNcDrawColor(NCCOL_GL_CUT);
-		light_Cut[0] = (GLfloat)GetRValue(col) / 255;
-		light_Cut[1] = (GLfloat)GetGValue(col) / 255;
-		light_Cut[2] = (GLfloat)GetBValue(col) / 255;
+		if ( m_nPictureID > 0 ) {
+			// ﾃｸｽﾁｬ色を有効にするため白色光源
+			for ( int i=0; i<NCXYZ; i++ ) {
+				light_Wrk[i] = light_Cut[i] = 1.0;
+			}
+		}
+		else {
+			// 表示設定に基づく光源
+			COLORREF	col;
+			col = pOpt->GetNcDrawColor(NCCOL_GL_WRK);
+			light_Wrk[0] = (GLfloat)GetRValue(col) / 255;	// 255 -> 1.0
+			light_Wrk[1] = (GLfloat)GetGValue(col) / 255;
+			light_Wrk[2] = (GLfloat)GetBValue(col) / 255;
+			col = pOpt->GetNcDrawColor(NCCOL_GL_CUT);
+			light_Cut[0] = (GLfloat)GetRValue(col) / 255;
+			light_Cut[1] = (GLfloat)GetGValue(col) / 255;
+			light_Cut[2] = (GLfloat)GetBValue(col) / 255;
+		}
 		::glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_Wrk);
 		::glLightfv(GL_LIGHT1, GL_DIFFUSE,  light_Wrk);
 		::glLightfv(GL_LIGHT2, GL_DIFFUSE,  light_Cut);
@@ -189,11 +217,19 @@ void CNCViewGL::UpdateViewOption(void)
 	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
 		ClearElement();
 		// ﾜｰｸ矩形の描画用座標
-		m_rcDraw = GetDocument()->GetWorkRect();	// 切削領域
 		if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
-			if ( GLEW_ARB_vertex_buffer_object )	// OpenGL拡張ｻﾎﾟｰﾄ
-				CreateBoxel();
+			if ( GLEW_ARB_vertex_buffer_object ) {	// OpenGL拡張ｻﾎﾟｰﾄ
+				// 切削領域の設定
+				m_rcDraw = GetDocument()->GetWorkRect();
+				// ﾎﾞｸｾﾙの生成
+				BOOL bResult = CreateBoxel();
+				if ( bResult && m_nPictureID > 0 ) {
+					// ﾃｸｽﾁｬ座標の生成
+					CreateTexture();
+				}
+			}
 			else {
+				ClearTexture();		// 一応ｸﾘｱしておく
 				CString	strErr;
 				strErr.Format(IDS_ERR_OPENGLVER, ::glGetString(GL_VERSION));
 				AfxMessageBox(strErr, MB_OK|MB_ICONEXCLAMATION);
@@ -286,7 +322,7 @@ void CNCViewGL::CreateWire(void)
 	}
 }
 
-void CNCViewGL::CreateBoxel(void)
+BOOL CNCViewGL::CreateBoxel(void)
 {
 	int			i;
 	CPoint3D	pt(m_rcView.CenterPoint());
@@ -316,7 +352,9 @@ void CNCViewGL::CreateBoxel(void)
 	::glFinish();
 
 	// ﾃﾞﾌﾟｽ値の取得
-	GetClipDepth();
+	BOOL	bResult = GetClipDepth();
+	if ( !bResult )
+		ClearElement();
 
 	::glMatrixMode(GL_PROJECTION);
 	::glPopMatrix();
@@ -326,21 +364,23 @@ void CNCViewGL::CreateBoxel(void)
 	::glClearDepth(1.0);
 	::glDepthFunc(GL_LESS);		// 近い方を優先(通常描画)
 	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+	return bResult;
 }
 
-void CNCViewGL::GetClipDepth(void)
+BOOL CNCViewGL::GetClipDepth(void)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("GetClipDepth()");
 #endif
-	int			i, j, n;
+	int			i, j, n, nn, nSize;
 	GLint		viewPort[4];
 	GLdouble	mvMatrix[16], pjMatrix[16],
 				wx1, wy1, wz1, wx2, wy2, wz2;
-	GLfloat		fx, fy, fz;
-	GLfloat*	pfDepth;			// ﾃﾞﾌﾟｽ値取得配列一時領域
-	std::vector<GLfloat>	vfXYZ,	// 変換されたﾜｰﾙﾄﾞ座標
-							vfNOR;	// 法線ﾍﾞｸﾄﾙ
+	GLfloat		fz;
+	GLfloat*	pfDepth = NULL;		// ﾃﾞﾌﾟｽ値取得配列一時領域
+	GLfloat*	pfXYZ = NULL;		// 変換されたﾜｰﾙﾄﾞ座標
+	GLfloat*	pfNOR = NULL;		// 法線ﾍﾞｸﾄﾙ
 
 	::glGetIntegerv(GL_VIEWPORT, viewPort);
 	::glGetDoublev (GL_MODELVIEW_MATRIX,  mvMatrix);
@@ -351,25 +391,42 @@ void CNCViewGL::GetClipDepth(void)
 		&wx1, &wy1, &wz1);
 	::gluProject(m_rcDraw.right, m_rcDraw.bottom, 0.0, mvMatrix, pjMatrix, viewPort,
 		&wx2, &wy2, &wz2);
+
+	m_icx = (int)(wx2 - wx1);
+	m_icy = (int)(wy2 - wy1);
+
 #ifdef _DEBUG
 	dbg.printf("left,  top   =(%f, %f)", m_rcDraw.left,  m_rcDraw.top);
 	dbg.printf("right, bottom=(%f, %f)", m_rcDraw.right, m_rcDraw.bottom);
 	dbg.printf("wx1,   wy1   =(%f, %f)", wx1, wy1);
 	dbg.printf("wx2,   wy2   =(%f, %f)", wx2, wy2);
+	dbg.printf("m_icx=%d m_icy=%d", m_icx, m_icy);
 #endif
 
-	m_icx = (int)(wx2 - wx1);
-	m_icy = (int)(wy2 - wy1);
-
-	// vector大きさを指示
-	vfXYZ.reserve(m_icx*m_icy*NCXYZ*2);
-	vfNOR.reserve(m_icx*m_icy*NCXYZ*2);
+	try {
+		// 領域確保
+		nSize = m_icx * m_icy;
+		pfDepth = new GLfloat[nSize];
+		nSize *= NCXYZ;
+		pfXYZ   = new GLfloat[nSize*2];
+		pfNOR   = new GLfloat[nSize*2];
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		if ( pfDepth )
+			delete	pfDepth;
+		if ( pfXYZ )
+			delete	pfXYZ;
+		if ( pfNOR )
+			delete	pfNOR;
+		return FALSE;
+	}
 
 	// ｸﾗｲｱﾝﾄ領域のﾃﾞﾌﾟｽ値を取得（ﾋﾟｸｾﾙ単位）
 #ifdef _DEBUG
 	DWORD	t1 = ::timeGetTime();
 #endif
-	pfDepth = new GLfloat [m_icx*m_icy];
 	::glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	::glReadPixels((GLint)wx1, (GLint)wy1, m_icx, m_icy,
 					GL_DEPTH_COMPONENT, GL_FLOAT, pfDepth);
@@ -381,23 +438,22 @@ void CNCViewGL::GetClipDepth(void)
 #endif
 
 	// ﾜｰｸ上面と切削面の座標登録
-	for ( j=0, n=0; j<m_icy; j++ ) {
-		for ( i=0; i<m_icx; i++, n++ ) {
-//			n = j*m_icx+i;
+	for ( j=0, n=0, nn=0; j<m_icy; j++ ) {
+		for ( i=0; i<m_icx; i++, n++, nn=n*NCXYZ ) {
 			::gluUnProject(i+wx1, j+wy1, pfDepth[n],
 					mvMatrix, pjMatrix, viewPort,
 					&wx2, &wy2, &wz2);	// それほど遅くないので自作変換は中止
-			fx = (GLfloat)wx2;
-			fy = (GLfloat)wy2;
 			fz = (GLfloat)( (pfDepth[n]==0.0) ?	// ﾃﾞﾌﾟｽ値が初期値(矩形範囲内で切削面でない)なら
 				m_rcDraw.high :		// ﾜｰｸ矩形上面座標
 				wz2 );				// 変換座標
-			vfXYZ.push_back(fx);
-			vfXYZ.push_back(fy);
-			vfXYZ.push_back(fz);
-			vfNOR.push_back(0.0);
-			vfNOR.push_back(0.0);
-			vfNOR.push_back(1.0);	// ﾃﾞﾌｫﾙﾄの法線ﾍﾞｸﾄﾙ
+			// ﾜｰﾙﾄﾞ座標
+			pfXYZ[nn+NCA_X] = (GLfloat)wx2;
+			pfXYZ[nn+NCA_Y] = (GLfloat)wy2;
+			pfXYZ[nn+NCA_Z] = fz;
+			// ﾃﾞﾌｫﾙﾄの法線ﾍﾞｸﾄﾙ
+			pfNOR[nn+NCA_X] = 0.0;
+			pfNOR[nn+NCA_Y] = 0.0;
+			pfNOR[nn+NCA_Z] = 1.0;
 		}
 	}
 #ifdef _DEBUG
@@ -409,15 +465,14 @@ void CNCViewGL::GetClipDepth(void)
 	fz = (GLfloat)m_rcDraw.low;	// m_rcDraw.low座標で敷き詰める
 	for ( j=0; j<m_icy; j++ ) {
 		for ( i=0; i<m_icx; i++ ) {
-			n = (j*m_icx+i) * NCXYZ;
-			fx = vfXYZ[n+NCA_X];
-			fy = vfXYZ[n+NCA_Y];
-			vfXYZ.push_back(fx);
-			vfXYZ.push_back(fy);
-			vfXYZ.push_back(fz);
-			vfNOR.push_back(0.0);
-			vfNOR.push_back(0.0);
-			vfNOR.push_back(-1.0);
+			n  = (j*m_icx+i) * NCXYZ;
+			nn = nSize + n;
+			pfXYZ[nn+NCA_X] = pfXYZ[n+NCA_X];
+			pfXYZ[nn+NCA_Y] = pfXYZ[n+NCA_Y];
+			pfXYZ[nn+NCA_Z] = fz;
+			pfNOR[nn+NCA_X] = 0.0;
+			pfNOR[nn+NCA_Y] = 0.0;
+			pfNOR[nn+NCA_Z] = -1.0;
 		}
 	}
 #ifdef _DEBUG
@@ -425,7 +480,6 @@ void CNCViewGL::GetClipDepth(void)
 	dbg.printf( "AddMatrix2=%d[ms]", t4 - t3 );
 #endif
 
-#ifdef _DEBUG
 #ifdef _DEBUG_FILEOUT_
 	CStdioFile	dbg_f ("C:\\Users\\magara\\Documents\\tmp\\depth_f.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
 	CStdioFile	dbg_fx("C:\\Users\\magara\\Documents\\tmp\\depth_x.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
@@ -433,11 +487,10 @@ void CNCViewGL::GetClipDepth(void)
 	CStdioFile	dbg_fz("C:\\Users\\magara\\Documents\\tmp\\depth_z.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
 	CString		r,
 				s, sx, sy, sz;
-	for ( j=0; j<m_icy; j++ ) {
+	for ( j=0, n=0; j<m_icy; j++ ) {
 		s.Empty();
 		sx.Empty();	sy.Empty();	sz.Empty();
-		for ( i=0; i<m_icx; i++ ) {
-			n = j*m_icx+i;
+		for ( i=0; i<m_icx; i++, n++ ) {
 //			if ( pfDepth[n] != 0.0 ) {
 				if ( !s.IsEmpty() ) {
 					s  += ", ";
@@ -446,11 +499,11 @@ void CNCViewGL::GetClipDepth(void)
 				}
 				r.Format(IDS_MAKENCD_FORMAT, pfDepth[n]);
 				s += r;
-				r.Format(IDS_MAKENCD_FORMAT, vfXYZ[n*NCXYZ+NCA_X]);
+				r.Format(IDS_MAKENCD_FORMAT, pfXYZ[n*NCXYZ+NCA_X]);
 				sx += r;
-				r.Format(IDS_MAKENCD_FORMAT, vfXYZ[n*NCXYZ+NCA_Y]);
+				r.Format(IDS_MAKENCD_FORMAT, pfXYZ[n*NCXYZ+NCA_Y]);
 				sy += r;
-				r.Format(IDS_MAKENCD_FORMAT, vfXYZ[n*NCXYZ+NCA_Z]);
+				r.Format(IDS_MAKENCD_FORMAT, pfXYZ[n*NCXYZ+NCA_Z]);
 				sz += r;
 			}
 //		}
@@ -463,30 +516,22 @@ void CNCViewGL::GetClipDepth(void)
 		}
 	}
 #endif	// _DEBUG_FILEOUT_
-//	double	znr = pjMatrix[14]/(pjMatrix[10]-1.0),
-//			zfr = pjMatrix[14]/(pjMatrix[10]+1.0);
-//	g_dbg.printf("near=%f far=%f", znr, zfr);
-//	g_dbg.printf("depth=%f", zfr*znr/(0.515*(zfr-znr)-zfr));
-//	---
-//	::gluUnProject(0, 0, 0.515, mvMatrix, pjMatrix, viewPort,
-//					&wx2, &wy2, &wz2);
-//	g_dbg.printf("0.515 => %f", wz2);
-//	::gluUnProject(0, 0, 0.482, mvMatrix, pjMatrix, viewPort,
-//					&wx2, &wy2, &wz2);
-//	g_dbg.printf("0.482 => %f", wz2);
-#endif
 
 	delete	pfDepth;
 
-	// 頂点配列ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄ生成	
-	CreateElement(vfXYZ, vfNOR);
+	// 頂点配列ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄ生成
+	BOOL	bResult = CreateElement(pfXYZ, pfNOR);
+
+	delete	pfXYZ;
+	delete	pfNOR;
+
+	return bResult;
 }
 
-void CNCViewGL::CreateElement(std::vector<GLfloat>& vfXYZ, std::vector<GLfloat>& vfNOR)
+BOOL CNCViewGL::CreateElement(GLfloat* pfXYZ, GLfloat* pfNOR)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CreateElement()", DBG_BLUE);
-	dbg.printf("m_icx=%d m_icy=%d", m_icx, m_icy);
 #endif
 
 	std::vector<CVElement>	vElementWrk,	// 頂点配列ｲﾝﾃﾞｯｸｽ(可変長２次元配列)
@@ -498,12 +543,13 @@ void CNCViewGL::CreateElement(std::vector<GLfloat>& vfXYZ, std::vector<GLfloat>&
 	HANDLE	hThread[2];
 	CREATEELEMENTPARAM	param[2];
 	for ( int i=0; i<SIZEOF(hThread); i++ ) {
-		param[i].pfXYZ = &vfXYZ;
-		param[i].pfNOR = &vfNOR;
+		param[i].pfXYZ = pfXYZ;		// const
+		param[i].pfNOR = pfNOR;
 		param[i].cx = m_icx;
 		param[i].cy = m_icy;
 		param[i].h  = (GLfloat)m_rcDraw.high;
 		param[i].l  = (GLfloat)m_rcDraw.low;
+		param[i].bResult = TRUE;
 	}
 	// 切削面処理の方が相対的に時間がかかるため先にスレッド実行
 	param[0].pElement = &vElementCut;
@@ -513,10 +559,13 @@ void CNCViewGL::CreateElement(std::vector<GLfloat>& vfXYZ, std::vector<GLfloat>&
 	::WaitForMultipleObjects(SIZEOF(hThread), hThread, TRUE, INFINITE);
 	::CloseHandle(hThread[0]);
 	::CloseHandle(hThread[1]);
+	if ( !param[0].bResult || !param[1].bResult )
+		return FALSE;
 
 	// ﾜｰｸ側面は法線ﾍﾞｸﾄﾙの更新があり
 	// 切削面処理との排他制御を考慮
-	CreateElement_Side(&param[0]);
+	if ( !CreateElement_Side(&param[0]) )
+		return FALSE;
 
 	::glGetError();		// ｴﾗｰをﾌﾗｯｼｭ
 
@@ -526,13 +575,13 @@ void CNCViewGL::CreateElement(std::vector<GLfloat>& vfXYZ, std::vector<GLfloat>&
 	::glGenBuffersARB(1, &m_nVertexID);
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID);
 	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-			vfXYZ.size()*sizeof(GLfloat), &vfXYZ[0],
+			m_icx*m_icy*NCXYZ*2*sizeof(GLfloat), pfXYZ,
 			GL_STATIC_DRAW_ARB);
 	if ( ::glGetError() != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		ClearElement();
 		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
-		return;
+		return FALSE;
 	}
 
 	// 法線ﾍﾞｸﾄﾙをGPUﾒﾓﾘに転送
@@ -541,13 +590,13 @@ void CNCViewGL::CreateElement(std::vector<GLfloat>& vfXYZ, std::vector<GLfloat>&
 	::glGenBuffersARB(1, &m_nNormalID);
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nNormalID);
 	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-			vfNOR.size()*sizeof(GLfloat), &vfNOR[0],
+			m_icx*m_icy*NCXYZ*2*sizeof(GLfloat), pfNOR,
 			GL_STATIC_DRAW_ARB);
 	if ( ::glGetError() != GL_NO_ERROR ) {
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		ClearElement();
 		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
-		return;
+		return FALSE;
 	}
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
@@ -556,65 +605,80 @@ void CNCViewGL::CreateElement(std::vector<GLfloat>& vfXYZ, std::vector<GLfloat>&
 		::glDeleteBuffersARB(m_vVertexWrk.size()+m_vVertexCut.size(), m_pGenBuf);
 		delete	m_pGenBuf;
 	}
+
 	m_vVertexWrk.clear();
 	m_vVertexCut.clear();
-	m_pGenBuf = new GLuint[vElementWrk.size()+vElementCut.size()];
-	::glGenBuffersARB(vElementWrk.size()+vElementCut.size(), m_pGenBuf);
 
-	size_t	ii, jj;		// 警告防止
+	try {
+		m_pGenBuf = new GLuint[vElementWrk.size()+vElementCut.size()];
+		::glGenBuffersARB(vElementWrk.size()+vElementCut.size(), m_pGenBuf);
+
+		size_t	ii, jj;		// 警告防止
 #ifdef _DEBUG
-	int		dbgTriangleWrk = 0, dbgTriangleCut = 0;
+		int		dbgTriangleWrk = 0, dbgTriangleCut = 0;
 #endif
 
-	// ﾜｰｸ矩形用
-	m_vVertexWrk.reserve(vElementWrk.size());
-	for ( ii=jj=0; ii<vElementWrk.size(); ii++ ) {
-		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[jj++]);
-		::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-			vElementWrk[ii].size()*sizeof(GLuint), &vElementWrk[ii][0],
-			GL_STATIC_DRAW_ARB);
-		if ( ::glGetError() != GL_NO_ERROR ) {
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-			ClearElement();
-			AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
-			return;
-		}
-		m_vVertexWrk.push_back(vElementWrk[ii].size());
+		// ﾜｰｸ矩形用
+		m_vVertexWrk.reserve(vElementWrk.size());
+		for ( ii=jj=0; ii<vElementWrk.size(); ii++ ) {
+			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[jj++]);
+			::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
+				vElementWrk[ii].size()*sizeof(GLuint), &vElementWrk[ii][0],
+				GL_STATIC_DRAW_ARB);
+			if ( ::glGetError() != GL_NO_ERROR ) {
+				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+				ClearElement();
+				AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+				return FALSE;
+			}
+			m_vVertexWrk.push_back(vElementWrk[ii].size());
 #ifdef _DEBUG
-		dbgTriangleWrk += vElementWrk[ii].size();
+			dbgTriangleWrk += vElementWrk[ii].size();
+#endif
+		}
+		// 切削面用
+		m_vVertexCut.reserve(vElementCut.size());
+		for ( ii=0; ii<vElementCut.size(); ii++ ) {
+			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[jj++]);
+			::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
+				vElementCut[ii].size()*sizeof(GLuint), &vElementCut[ii][0],
+				GL_STATIC_DRAW_ARB);
+			if ( ::glGetError() != GL_NO_ERROR ) {
+				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+				ClearElement();
+				AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+				return FALSE;
+			}
+			m_vVertexCut.push_back(vElementCut[ii].size());
+#ifdef _DEBUG
+			dbgTriangleCut += vElementCut[ii].size();
+#endif
+		}
+		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+
+#ifdef _DEBUG
+		dbg.printf("VertexCount(/3)=%d size(*2)=%d",
+			m_icx*m_icy*2, m_icx*m_icy*NCXYZ*2*sizeof(GLfloat));
+		dbg.printf("Work IndexCount=%d Triangle=%d",
+			vElementWrk.size(), dbgTriangleWrk/3);
+		dbg.printf("Cut  IndexCount=%d Triangle=%d",
+			vElementCut.size(), dbgTriangleCut/3);
 #endif
 	}
-	// 切削面用
-	m_vVertexCut.reserve(vElementCut.size());
-	for ( ii=0; ii<vElementCut.size(); ii++ ) {
-		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[jj++]);
-		::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-			vElementCut[ii].size()*sizeof(GLuint), &vElementCut[ii][0],
-			GL_STATIC_DRAW_ARB);
-		if ( ::glGetError() != GL_NO_ERROR ) {
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-			ClearElement();
-			AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
-			return;
-		}
-		m_vVertexCut.push_back(vElementCut[ii].size());
-#ifdef _DEBUG
-		dbgTriangleCut += vElementCut[ii].size();
-#endif
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		return FALSE;
 	}
-	::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 
-#ifdef _DEBUG
-	dbg.printf("VertexCount/3=%d size=%d(*2)", vfXYZ.size()/3, vfXYZ.size()*sizeof(GLfloat));
-	dbg.printf("Work IndexCount=%d Triangle=%d", vElementWrk.size(), dbgTriangleWrk/3);
-	dbg.printf("Cut  IndexCount=%d Triangle=%d", vElementCut.size(), dbgTriangleCut/3);
-#endif
+	return TRUE;
 }
 
 DWORD WINAPI CreateElement_WrkThread(LPVOID pVoid)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CreateElement_WrkThread()\nStart", DBG_BLUE);
+	DWORD	t1 = ::timeGetTime();
 #endif
 
 	LPCREATEELEMENTPARAM pParam = reinterpret_cast<LPCREATEELEMENTPARAM>(pVoid);
@@ -626,162 +690,169 @@ DWORD WINAPI CreateElement_WrkThread(LPVOID pVoid)
 
 	vElement.reserve(pParam->cx * 2);
 
-	// ﾜｰｸ上面
-	// 切削面以外は m_rcDraw.high を代入しているので
-	// 等しいか否かの判断でOK
-	for ( j=0; j<pParam->cy-1; j++ ) {
-		bReverse = bSingle = FALSE;
-		vElement.clear();
-		for ( i=0; i<pParam->cx; i++ ) {
-			n0 =  j   *pParam->cx+i;
-			n1 = (j+1)*pParam->cx+i;
-			k0 = n0*NCXYZ + NCA_Z;
-			k1 = n1*NCXYZ + NCA_Z;
-			if ( pParam->pfXYZ->operator[](k0) != pParam->h ) {
-				if ( pParam->pfXYZ->operator[](k1) != pParam->h ) {
-					// k0:×, k1:×
-					if ( vElement.size() > 3 )
-						pParam->pElement->push_back(vElement);
-					bReverse = bSingle = FALSE;
-					vElement.clear();
-				}
-				else {
-					// k0:×, k1:○
-					if ( bSingle ) {
-						// 片方だけが連続するならそこでbreak
+	try {
+		// ﾜｰｸ上面
+		// 切削面以外は m_rcDraw.high を代入しているので
+		// 等しいか否かの判断でOK
+		for ( j=0; j<pParam->cy-1; j++ ) {
+			bReverse = bSingle = FALSE;
+			vElement.clear();
+			for ( i=0; i<pParam->cx; i++ ) {
+				n0 =  j   *pParam->cx+i;
+				n1 = (j+1)*pParam->cx+i;
+				k0 = n0*NCXYZ + NCA_Z;
+				k1 = n1*NCXYZ + NCA_Z;
+				if ( pParam->pfXYZ[k0] != pParam->h ) {
+					if ( pParam->pfXYZ[k1] != pParam->h ) {
+						// k0:×, k1:×
 						if ( vElement.size() > 3 )
 							pParam->pElement->push_back(vElement);
 						bReverse = bSingle = FALSE;
 						vElement.clear();
 					}
 					else {
-						vElement.push_back(n1);
-						bReverse = FALSE;	// 次はn0から登録
-						bSingle  = TRUE;
+						// k0:×, k1:○
+						if ( bSingle ) {
+							// 片方だけが連続するならそこでbreak
+							if ( vElement.size() > 3 )
+								pParam->pElement->push_back(vElement);
+							bReverse = bSingle = FALSE;
+							vElement.clear();
+						}
+						else {
+							vElement.push_back(n1);
+							bReverse = FALSE;	// 次はn0から登録
+							bSingle  = TRUE;
+						}
 					}
 				}
-			}
-			else if ( pParam->pfXYZ->operator[](k1) != pParam->h ) {
-				// k0:○, k1:×
-				if ( bSingle ) {
-					if ( vElement.size() > 3 )
-						pParam->pElement->push_back(vElement);
-					bReverse = bSingle = FALSE;
-					vElement.clear();
-				}
-				else {
-					vElement.push_back(n0);
-					bReverse = TRUE;		// 次はn1から登録
-					bSingle  = TRUE;
-				}
-			}
-			else {
-				// k0:○, k1:○
-				if ( bSingle ) {	// 前回が片方だけ
-					// 凹形状防止
-					if ( vElement.size() > 3 ) {
-						pParam->pElement->push_back(vElement);
-						// 前回の座標を再登録
-						nn = vElement.back();
-						vElement.clear();
-						vElement.push_back(nn);
-					}
-				}
-				bSingle = FALSE;
-				if ( bReverse ) {
-					vElement.push_back(n1);
-					vElement.push_back(n0);
-				}
-				else {
-					vElement.push_back(n0);
-					vElement.push_back(n1);
-				}
-			}
-		}
-		// Ｘ方向のﾙｰﾌﾟが終了
-		if ( vElement.size() > 3 )
-			pParam->pElement->push_back(vElement);
-	}
-
-	// ﾜｰｸ底面
-	for ( j=0; j<pParam->cy-1; j++ ) {
-		bReverse = bSingle = FALSE;
-		vElement.clear();
-		for ( i=0; i<pParam->cx; i++ ) {
-			n0 =  j   *pParam->cx+i;
-			n1 = (j+1)*pParam->cx+i;
-			k0 = n0*NCXYZ + NCA_Z;	// ﾜｰｸ上面のZ値で描画判断
-			k1 = n1*NCXYZ + NCA_Z;
-			n0 += cxcy;				// 底面座標番号
-			n1 += cxcy;
-			if ( pParam->pfXYZ->operator[](k0) < pParam->l ) {
-				if ( pParam->pfXYZ->operator[](k1) < pParam->l ) {
-					// k0:×, k1:×
-					if ( vElement.size() > 3 )
-						pParam->pElement->push_back(vElement);
-					bReverse = bSingle = FALSE;
-					vElement.clear();
-				}
-				else {
-					// k0:×, k1:○
+				else if ( pParam->pfXYZ[k1] != pParam->h ) {
+					// k0:○, k1:×
 					if ( bSingle ) {
-						// 片方だけが連続するならそこでbreak
 						if ( vElement.size() > 3 )
 							pParam->pElement->push_back(vElement);
 						bReverse = bSingle = FALSE;
 						vElement.clear();
 					}
 					else {
-						vElement.push_back(n1);
-						bReverse = FALSE;	// 次はn0から登録
+						vElement.push_back(n0);
+						bReverse = TRUE;		// 次はn1から登録
 						bSingle  = TRUE;
 					}
 				}
-			}
-			else if ( pParam->pfXYZ->operator[](k1) < pParam->l ) {
-				// k0:○, k1:×
-				if ( bSingle ) {
-					if ( vElement.size() > 3 )
-						pParam->pElement->push_back(vElement);
-					bReverse = bSingle = FALSE;
-					vElement.clear();
-				}
 				else {
-					vElement.push_back(n0);
-					bReverse = TRUE;		// 次はn1から登録
-					bSingle  = TRUE;
-				}
-			}
-			else {
-				// k0:○, k1:○
-				if ( bSingle ) {	// 前回が片方だけ
-					// 凹形状防止
-					if ( vElement.size() > 3 ) {
-						pParam->pElement->push_back(vElement);
-						// 前回の座標を再登録
-						nn = vElement.back();
-						vElement.clear();
-						vElement.push_back(nn);
+					// k0:○, k1:○
+					if ( bSingle ) {	// 前回が片方だけ
+						// 凹形状防止
+						if ( vElement.size() > 3 ) {
+							pParam->pElement->push_back(vElement);
+							// 前回の座標を再登録
+							nn = vElement.back();
+							vElement.clear();
+							vElement.push_back(nn);
+						}
+					}
+					bSingle = FALSE;
+					if ( bReverse ) {
+						vElement.push_back(n1);
+						vElement.push_back(n0);
+					}
+					else {
+						vElement.push_back(n0);
+						vElement.push_back(n1);
 					}
 				}
-				bSingle = FALSE;
-				if ( bReverse ) {
-					vElement.push_back(n1);
-					vElement.push_back(n0);
+			}
+			// Ｘ方向のﾙｰﾌﾟが終了
+			if ( vElement.size() > 3 )
+				pParam->pElement->push_back(vElement);
+		}
+
+		// ﾜｰｸ底面
+		for ( j=0; j<pParam->cy-1; j++ ) {
+			bReverse = bSingle = FALSE;
+			vElement.clear();
+			for ( i=0; i<pParam->cx; i++ ) {
+				n0 =  j   *pParam->cx+i;
+				n1 = (j+1)*pParam->cx+i;
+				k0 = n0*NCXYZ + NCA_Z;	// ﾜｰｸ上面のZ値で描画判断
+				k1 = n1*NCXYZ + NCA_Z;
+				n0 += cxcy;				// 底面座標番号
+				n1 += cxcy;
+				if ( pParam->pfXYZ[k0] < pParam->l ) {
+					if ( pParam->pfXYZ[k1] < pParam->l ) {
+						// k0:×, k1:×
+						if ( vElement.size() > 3 )
+							pParam->pElement->push_back(vElement);
+						bReverse = bSingle = FALSE;
+						vElement.clear();
+					}
+					else {
+						// k0:×, k1:○
+						if ( bSingle ) {
+							// 片方だけが連続するならそこでbreak
+							if ( vElement.size() > 3 )
+								pParam->pElement->push_back(vElement);
+							bReverse = bSingle = FALSE;
+							vElement.clear();
+						}
+						else {
+							vElement.push_back(n1);
+							bReverse = FALSE;	// 次はn0から登録
+							bSingle  = TRUE;
+						}
+					}
+				}
+				else if ( pParam->pfXYZ[k1] < pParam->l ) {
+					// k0:○, k1:×
+					if ( bSingle ) {
+						if ( vElement.size() > 3 )
+							pParam->pElement->push_back(vElement);
+						bReverse = bSingle = FALSE;
+						vElement.clear();
+					}
+					else {
+						vElement.push_back(n0);
+						bReverse = TRUE;		// 次はn1から登録
+						bSingle  = TRUE;
+					}
 				}
 				else {
-					vElement.push_back(n0);
-					vElement.push_back(n1);
+					// k0:○, k1:○
+					if ( bSingle ) {	// 前回が片方だけ
+						// 凹形状防止
+						if ( vElement.size() > 3 ) {
+							pParam->pElement->push_back(vElement);
+							// 前回の座標を再登録
+							nn = vElement.back();
+							vElement.clear();
+							vElement.push_back(nn);
+						}
+					}
+					bSingle = FALSE;
+					if ( bReverse ) {
+						vElement.push_back(n1);
+						vElement.push_back(n0);
+					}
+					else {
+						vElement.push_back(n0);
+						vElement.push_back(n1);
+					}
 				}
 			}
+			// Ｘ方向のﾙｰﾌﾟが終了
+			if ( vElement.size() > 3 )
+				pParam->pElement->push_back(vElement);
 		}
-		// Ｘ方向のﾙｰﾌﾟが終了
-		if ( vElement.size() > 3 )
-			pParam->pElement->push_back(vElement);
 	}
-
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		pParam->bResult = FALSE;
+	}
 #ifdef _DEBUG
-	dbg.printf("end");
+	DWORD	t2 = ::timeGetTime();
+	dbg.printf("end %d[ms]", t2 - t1);
 #endif
 
 	return 0;
@@ -791,6 +862,7 @@ DWORD WINAPI CreateElement_CutThread(LPVOID pVoid)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CreateElement_CutThread()\nStart", DBG_BLUE);
+	DWORD	t1 = ::timeGetTime();
 #endif
 
 	LPCREATEELEMENTPARAM pParam = reinterpret_cast<LPCREATEELEMENTPARAM>(pVoid);
@@ -799,152 +871,183 @@ DWORD WINAPI CreateElement_CutThread(LPVOID pVoid)
 				bThrough;	// 前回△△　　〃
 	GLuint		n0, n1;
 	UINT		k0, k1, kk0, kk1;
+	GLfloat		k0z, k1z;
+	float		q;
 	CVElement	vElement;
 
 	vElement.reserve(pParam->cx * 2);
 
-	// 切削面（上面・側面兼用）
-	// ○：切削面，△：貫通，×：ﾜｰｸ上面
-	for ( j=0; j<pParam->cy-1; j++ ) {
-		bWorkrct = bThrough = FALSE;
-		vElement.clear();
-		for ( i=0; i<pParam->cx; i++ ) {
-			n0 =  j   *pParam->cx+i;
-			n1 = (j+1)*pParam->cx+i;
-			k0 = n0*NCXYZ;
-			k1 = n1*NCXYZ;
-			if ( pParam->pfXYZ->operator[](k0+NCA_Z) >= pParam->h ) {
-				if ( pParam->pfXYZ->operator[](k1+NCA_Z) >= pParam->h ) {
-					// k0:×, k1:×
-					if ( bWorkrct ) {
-						// 前回も k0:×, k1:×
-						if ( vElement.size() > 3 ) {
-							// break
-							pParam->pElement->push_back(vElement);
-							// 前回の法線を左向き(終点)に変更
-							pParam->pfNOR->operator[](kk0+NCA_X) = -1.0;
-							pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
-							pParam->pfNOR->operator[](kk1+NCA_X) = -1.0;
-							pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
+	try {
+		// 切削面（上面・側面兼用）
+		// ○：切削面，△：貫通，×：ﾜｰｸ上面
+		for ( j=0; j<pParam->cy-1; j++ ) {
+			bWorkrct = bThrough = FALSE;
+			vElement.clear();
+			for ( i=0; i<pParam->cx; i++ ) {
+				n0  =  j   *pParam->cx+i;
+				n1  = (j+1)*pParam->cx+i;
+				k0  = n0*NCXYZ;
+				k1  = n1*NCXYZ;
+				k0z = pParam->pfXYZ[k0+NCA_Z];
+				k1z = pParam->pfXYZ[k1+NCA_Z];
+				if ( k0z >= pParam->h ) {
+					if ( k1z >= pParam->h ) {
+						// k0:×, k1:×
+						if ( bWorkrct ) {
+							// 前回も k0:×, k1:×
+							if ( vElement.size() > 3 ) {
+								// break
+								pParam->pElement->push_back(vElement);
+								// 前回の法線を左向き(終点)に変更
+								pParam->pfNOR[kk0+NCA_X] = -1.0;
+								pParam->pfNOR[kk0+NCA_Z] = 0;
+								pParam->pfNOR[kk1+NCA_X] = -1.0;
+								pParam->pfNOR[kk1+NCA_Z] = 0;
+							}
+							vElement.clear();
 						}
-						vElement.clear();
+						bWorkrct = TRUE;
 					}
-					bWorkrct = TRUE;
+					else {
+						// k0:×, k1:△
+						// k0:×, k1:○
+						if ( bWorkrct ) {
+							// 前回 k0:×, k1:× なら
+							// 前回の法線を右向き(始点)に変更
+							pParam->pfNOR[kk0+NCA_X] = 1.0;
+							pParam->pfNOR[kk0+NCA_Z] = 0;
+							pParam->pfNOR[kk1+NCA_X] = 1.0;
+							pParam->pfNOR[kk1+NCA_Z] = 0;
+						}
+						// k0をY方向上向きの法線に
+						pParam->pfNOR[k0+NCA_Y] = 1.0;
+						pParam->pfNOR[k0+NCA_Z] = 0;
+						if ( k1z < pParam->l ) {
+							// k1（△：切れ目側）をY方向下向きの法線
+							pParam->pfNOR[k1+NCA_Y] = -1.0;
+							pParam->pfNOR[k1+NCA_Z] = 0;
+						}
+						bWorkrct = FALSE;
+					}
+					bThrough = FALSE;
 				}
-				else {
-					// k0:×, k1:△
-					// k0:×, k1:○
+				else if ( k0z < pParam->l ) {
+					// k0:△
 					if ( bWorkrct ) {
-						// 前回 k0:×, k1:× なら
+						// 前回 k0:×, k1:×
 						// 前回の法線を右向き(始点)に変更
-						pParam->pfNOR->operator[](kk0+NCA_X) = 1.0;
-						pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
-						pParam->pfNOR->operator[](kk1+NCA_X) = 1.0;
-						pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
+						pParam->pfNOR[kk0+NCA_X] = 1.0;
+						pParam->pfNOR[kk0+NCA_Z] = 0;
+						pParam->pfNOR[kk1+NCA_X] = 1.0;
+						pParam->pfNOR[kk1+NCA_Z] = 0;
 					}
 					bWorkrct = FALSE;
-					// 今回を上向きの法線
-					pParam->pfNOR->operator[](k0+NCA_Y) = 1.0;
-					pParam->pfNOR->operator[](k0+NCA_Z) = 0;
-					if ( pParam->pfXYZ->operator[](k1+NCA_Z) < pParam->l ) {
-						// k1（切れ目側）を下向きの法線
-						pParam->pfNOR->operator[](k1+NCA_Y) = -1.0;
-						pParam->pfNOR->operator[](k1+NCA_Z) = 0;
-					}
-				}
-				bThrough = FALSE;
-			}
-			else if ( pParam->pfXYZ->operator[](k0+NCA_Z) < pParam->l ) {
-				// k0:△
-				if ( bWorkrct ) {
-					// 前回 k0:×, k1:×
-					// 前回の法線を右向き(始点)に変更
-					pParam->pfNOR->operator[](kk0+NCA_X) = 1.0;
-					pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
-					pParam->pfNOR->operator[](kk1+NCA_X) = 1.0;
-					pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
-				}
-				bWorkrct = FALSE;
-				if ( pParam->pfXYZ->operator[](k1+NCA_Z) < pParam->l ) {
-					// k0:△, k1:△
-					if ( bThrough ) {
-						// 前回も k0:△, k1:△
-						if ( vElement.size() > 3 ) {
-							// break
-							pParam->pElement->push_back(vElement);
-							// 前回の法線を左向き(切れ目)に変更
-							pParam->pfNOR->operator[](kk0+NCA_X) = -1.0;
-							pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
-							pParam->pfNOR->operator[](kk1+NCA_X) = -1.0;
-							pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
+					if ( k1z < pParam->l ) {
+						// k0:△, k1:△
+						if ( bThrough ) {
+							// 前回も k0:△, k1:△
+							if ( vElement.size() > 3 ) {
+								// break
+								pParam->pElement->push_back(vElement);
+								// 前回の法線を左向き(切れ目)に変更
+								pParam->pfNOR[kk0+NCA_X] = -1.0;
+								pParam->pfNOR[kk0+NCA_Z] = 0;
+								pParam->pfNOR[kk1+NCA_X] = -1.0;
+								pParam->pfNOR[kk1+NCA_Z] = 0;
+							}
+							vElement.clear();
 						}
-						vElement.clear();
+						bThrough = TRUE;
 					}
-					bThrough = TRUE;
+					else {
+						// k0:△, k1:×
+						// k0:△, k1:○
+						bThrough = FALSE;
+						// k0を下向き, k1を上向きの法線
+						pParam->pfNOR[k0+NCA_Y] = -1.0;
+						pParam->pfNOR[k0+NCA_Z] = 0;
+						pParam->pfNOR[k1+NCA_Y] = 1.0;
+						pParam->pfNOR[k1+NCA_Z] = 0;
+					}
 				}
 				else {
-					// k0:△, k1:×
-					// k0:△, k1:○
-					bThrough = FALSE;
-					// k0を下向き, k1を上向きの法線
-					pParam->pfNOR->operator[](k0+NCA_Y) = -1.0;
-					pParam->pfNOR->operator[](k0+NCA_Z) = 0;
-					pParam->pfNOR->operator[](k1+NCA_Y) = 1.0;
-					pParam->pfNOR->operator[](k1+NCA_Z) = 0;
+					// k0:○
+					if ( bWorkrct ) {
+						// 前回 k0:×, k1:×
+						// 前回の法線を右向きに変更
+						pParam->pfNOR[kk0+NCA_X] = 1.0;
+						pParam->pfNOR[kk0+NCA_Z] = 0;
+						pParam->pfNOR[kk1+NCA_X] = 1.0;
+						pParam->pfNOR[kk1+NCA_Z] = 0;
+					}
+					if ( bThrough ) {
+						// 前回 k0:△, k1:△
+						// 前回の法線を左向きに変更
+						pParam->pfNOR[kk0+NCA_X] = -1.0;
+						pParam->pfNOR[kk0+NCA_Z] = 0;
+						pParam->pfNOR[kk1+NCA_X] = -1.0;
+						pParam->pfNOR[kk1+NCA_Z] = 0;
+					}
+					bWorkrct = bThrough = FALSE;
+					if ( k1z >= pParam->h ) {
+						// k0:○, k1:×
+						pParam->pfNOR[k1+NCA_Y] = -1.0;		// 下向きの法線
+						pParam->pfNOR[k1+NCA_Z] = 0;
+					}
+					else if ( k1z < pParam->l ) {
+						// k0:○, k1:△
+						pParam->pfNOR[k1+NCA_Y] = 1.0;		// 上向きの法線
+						pParam->pfNOR[k1+NCA_Z] = 0;
+					}
+					else {
+						// YZ平面での法線ﾍﾞｸﾄﾙ計算
+						q = atan2f(k1z - k0z, 
+							pParam->pfXYZ[k1+NCA_Y] - pParam->pfXYZ[k0+NCA_Y]);
+					//	CPointD	pt(0, 1);
+					//	pt.RoundPoint(q);
+					//	pParam->pfNOR[k0+NCA_X] = pt.x;
+					//	pParam->pfNOR[k0+NCA_Z] = pt.y;
+						pParam->pfNOR[k1+NCA_Y] = -sinf(q);	// 式の簡略化
+						pParam->pfNOR[k1+NCA_Z] =  cosf(q);
+					}
+					// k0に対する法線計算
+					if ( i>0 && pParam->pfXYZ[kk0+NCA_Z] >= pParam->l ) {
+						// 前回の座標との角度を求め
+						// XZ平面での法線ﾍﾞｸﾄﾙを計算
+						q = atan2f(k0z - pParam->pfXYZ[kk0+NCA_Z],
+							pParam->pfXYZ[k0+NCA_X] - pParam->pfXYZ[kk0+NCA_X]);
+						pParam->pfNOR[k0+NCA_X] = -sinf(q);
+						pParam->pfNOR[k0+NCA_Z] =  cosf(q);
+					}
 				}
+				// 全座標をつなぐ
+				// ××|△△が連続する所だけclear
+				vElement.push_back(n1);
+				vElement.push_back(n0);
+				// 
+				kk0 = k0;
+				kk1 = k1;
 			}
-			else {
-				// k0:○
-				if ( bWorkrct ) {
-					// 前回 k0:×, k1:×
-					// 前回の法線を右向きに変更
-					pParam->pfNOR->operator[](kk0+NCA_X) = 1.0;
-					pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
-					pParam->pfNOR->operator[](kk1+NCA_X) = 1.0;
-					pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
-				}
-				if ( bThrough ) {
-					// 前回 k0:△, k1:△
-					// 前回の法線を左向きに変更
-					pParam->pfNOR->operator[](kk0+NCA_X) = -1.0;
-					pParam->pfNOR->operator[](kk0+NCA_Z) = 0;
-					pParam->pfNOR->operator[](kk1+NCA_X) = -1.0;
-					pParam->pfNOR->operator[](kk1+NCA_Z) = 0;
-				}
-				bWorkrct = bThrough = FALSE;
-				if ( pParam->pfXYZ->operator[](k1+NCA_Z) >= pParam->h ) {
-					// k0:○, k1:×
-					pParam->pfNOR->operator[](k1+NCA_Y) = -1.0;		// 下向きの法線
-					pParam->pfNOR->operator[](k1+NCA_Z) = 0;
-				}
-				else if ( pParam->pfXYZ->operator[](k1+NCA_Z) < pParam->l ) {
-					// k0:○, k1:△
-					pParam->pfNOR->operator[](k1+NCA_Y) = 1.0;		// 上向きの法線
-					pParam->pfNOR->operator[](k1+NCA_Z) = 0;
-				}
-				// k0:○, k1:○ はそのまま
-			}
-			// 全座標をつなぐ
-			// ××|△△が連続する所だけclear
-			vElement.push_back(n1);
-			vElement.push_back(n0);
-			// 
-			kk0 = k0;
-			kk1 = k1;
+			// Ｘ方向のﾙｰﾌﾟが終了
+			if ( vElement.size() > 3 )
+				pParam->pElement->push_back(vElement);
 		}
-		// Ｘ方向のﾙｰﾌﾟが終了
-		if ( vElement.size() > 3 )
-			pParam->pElement->push_back(vElement);
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		pParam->bResult = FALSE;
 	}
 
 #ifdef _DEBUG
-	dbg.printf("end");
+	DWORD	t2 = ::timeGetTime();
+	dbg.printf("end %d[ms]", t2 - t1);
 #endif
 
 	return 0;
 }
 
-void CreateElement_Side(LPCREATEELEMENTPARAM pParam)
+BOOL CreateElement_Side(LPCREATEELEMENTPARAM pParam)
 {
 	int			i, j;
 	GLuint		n0, n1,
@@ -955,59 +1058,171 @@ void CreateElement_Side(LPCREATEELEMENTPARAM pParam)
 
 	vElement.reserve(pParam->cx * 2);
 
-	// ﾜｰｸ矩形側面（X方向手前と奥）
-	for ( j=0; j<pParam->cy; j+=pParam->cy-1 ) {	// 0とm_icy-1
-		vElement.clear();
-		for ( i=0; i<pParam->cx; i++ ) {
-			n0 = j*pParam->cx+i;	// 上面座標
-			n1 = nn + n0;			// 底面座標
-			k0 = n0*NCXYZ;
-			k1 = n1*NCXYZ;
-			if ( pParam->l >= pParam->pfXYZ->operator[](k0+NCA_Z) ) {
-				if ( vElement.size() > 3 )
-					pParam->pElement->push_back(vElement);
-				vElement.clear();
+	try {
+		// ﾜｰｸ矩形側面（X方向手前と奥）
+		for ( j=0; j<pParam->cy; j+=pParam->cy-1 ) {	// 0とm_icy-1
+			vElement.clear();
+			for ( i=0; i<pParam->cx; i++ ) {
+				n0 = j*pParam->cx+i;	// 上面座標
+				n1 = nn + n0;			// 底面座標
+				k0 = n0*NCXYZ;
+				k1 = n1*NCXYZ;
+				if ( pParam->l >= pParam->pfXYZ[k0+NCA_Z] ) {
+					if ( vElement.size() > 3 )
+						pParam->pElement->push_back(vElement);
+					vElement.clear();
+				}
+				else {
+					vElement.push_back(n0);
+					vElement.push_back(n1);
+				}
+				// 法線ﾍﾞｸﾄﾙの修正
+				pParam->pfNOR[k0+NCA_Y] = nor;	// 上or下向きの法線
+				pParam->pfNOR[k0+NCA_Z] = 0;
+				pParam->pfNOR[k1+NCA_Y] = nor;
+				pParam->pfNOR[k1+NCA_Z] = 0;
 			}
-			else {
-				vElement.push_back(n0);
-				vElement.push_back(n1);
-			}
-			// 法線ﾍﾞｸﾄﾙの修正
-			pParam->pfNOR->operator[](k0+NCA_Y) = nor;	// 上or下向きの法線
-			pParam->pfNOR->operator[](k0+NCA_Z) = 0;
-			pParam->pfNOR->operator[](k1+NCA_Y) = nor;
-			pParam->pfNOR->operator[](k1+NCA_Z) = 0;
+			if ( vElement.size() > 3 )
+				pParam->pElement->push_back(vElement);
+			nor *= -1.0;	// 符号反転
 		}
-		if ( vElement.size() > 3 )
-			pParam->pElement->push_back(vElement);
-		nor *= -1.0;	// 符号反転
-	}
-	// ﾜｰｸ矩形側面（Y方向左と右）
-	for ( i=0; i<pParam->cx; i+=pParam->cx-1 ) {
-		vElement.clear();
-		for ( j=0; j<pParam->cy; j++ ) {
-			n0 = j*pParam->cx+i;
-			n1 = nn + n0;
-			k0 = n0*NCXYZ;
-			k1 = n1*NCXYZ;
-			if ( pParam->l >= pParam->pfXYZ->operator[](k0+NCA_Z) ) {
-				if ( vElement.size() > 3 )
-					pParam->pElement->push_back(vElement);
-				vElement.clear();
+		// ﾜｰｸ矩形側面（Y方向左と右）
+		for ( i=0; i<pParam->cx; i+=pParam->cx-1 ) {
+			vElement.clear();
+			for ( j=0; j<pParam->cy; j++ ) {
+				n0 = j*pParam->cx+i;
+				n1 = nn + n0;
+				k0 = n0*NCXYZ;
+				k1 = n1*NCXYZ;
+				if ( pParam->l >= pParam->pfXYZ[k0+NCA_Z] ) {
+					if ( vElement.size() > 3 )
+						pParam->pElement->push_back(vElement);
+					vElement.clear();
+				}
+				else {
+					vElement.push_back(n0);
+					vElement.push_back(n1);
+				}
+				pParam->pfNOR[k0+NCA_X] = nor;	// 左or右向きの法線
+				pParam->pfNOR[k0+NCA_Z] = 0;
+				pParam->pfNOR[k1+NCA_X] = nor;
+				pParam->pfNOR[k1+NCA_Z] = 0;
 			}
-			else {
-				vElement.push_back(n0);
-				vElement.push_back(n1);
-			}
-			pParam->pfNOR->operator[](k0+NCA_X) = nor;	// 左or右向きの法線
-			pParam->pfNOR->operator[](k0+NCA_Z) = 0;
-			pParam->pfNOR->operator[](k1+NCA_X) = nor;
-			pParam->pfNOR->operator[](k1+NCA_Z) = 0;
+			if ( vElement.size() > 3 )
+				pParam->pElement->push_back(vElement);
+			nor *= -1.0;
 		}
-		if ( vElement.size() > 3 )
-			pParam->pElement->push_back(vElement);
-		nor *= -1.0;
 	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		return FALSE;
+	}
+	return TRUE;
+}
+
+BOOL CNCViewGL::ReadTexture(LPCTSTR szFileName)
+{
+	// ﾌｧｲﾙ名のUNICODE変換
+	WCHAR	wszFileName[_MAX_PATH];
+	::MultiByteToWideChar(CP_ACP, 0, szFileName, -1, wszFileName, _MAX_PATH);
+
+	// 画像の読み込み
+	Gdiplus::Bitmap	bmp(wszFileName);
+	if ( bmp.GetLastStatus() != Gdiplus::Ok ) {
+		ClearTexture();
+		AfxMessageBox(IDS_ERR_TEXTURE, MB_OK|MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+	// 画像のﾋﾟｸｾﾙを取得
+	Gdiplus::BitmapData	bmpdata;
+	bmp.LockBits(NULL, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bmpdata);
+
+	// ﾃｸｽﾁｬの生成
+	::glGenTextures(1, &m_nPictureID);
+	::glBindTexture(GL_TEXTURE_2D, m_nPictureID);
+	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+//	::glBindTexture(GL_TEXTURE_CUBE_MAP, m_nPictureID);
+//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//	::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_REPEAT);
+	// ﾃｸｽﾁｬにﾋﾟｸｾﾙを書き込む(2^n サイズ以外の対応)
+	::gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, bmpdata.Width, bmpdata.Height,
+		GL_BGRA_EXT, GL_UNSIGNED_BYTE, bmpdata.Scan0);
+//	for ( int i=0; i<6; i++ ) {
+//		::gluBuild2DMipmaps(GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, GL_RGBA,
+//			bmpdata.Width, bmpdata.Height,
+//			GL_BGRA_EXT, GL_UNSIGNED_BYTE, bmpdata.Scan0);
+//	}
+
+	// 後始末
+	::glBindTexture(GL_TEXTURE_2D, 0);
+//	::glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	bmp.UnlockBits(&bmpdata);
+
+	return TRUE;
+}
+
+void CNCViewGL::CreateTexture(void)
+{
+	int			i, j, n;
+	GLfloat		ft;
+	GLfloat*	pfTEX;
+
+	try {
+		pfTEX = new GLfloat[m_icx*m_icy*2*2];	// (X,Y) 上面と底面
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		return;
+	}
+
+	// 上面用ﾃｸｽﾁｬ座標
+	for ( j=0, n=0; j<m_icy; j++ ) {
+		ft = (GLfloat)(m_icy-j)/(m_icy-1);
+		for ( i=0; i<m_icx; i++, n+=2 ) {
+			// ﾃｸｽﾁｬ座標(0.0～1.0)
+			pfTEX[n]   = (GLfloat)i/(m_icx-1);
+			pfTEX[n+1] = ft;
+		}
+	}
+
+	// 底面用ﾃｸｽﾁｬ座標
+	for ( j=0; j<m_icy; j++ ) {
+		ft = (GLfloat)j/(m_icy-1);
+		for ( i=0; i<m_icx; i++, n+=2 ) {
+			pfTEX[n]   = (GLfloat)i/(m_icx-1);
+			pfTEX[n+1] = ft;
+		}
+	}
+
+	// ﾃｸｽﾁｬ座標をGPUﾒﾓﾘに転送
+	if ( m_nTextureID > 0 )
+		::glDeleteBuffersARB(1, &m_nTextureID);
+	::glGenBuffersARB(1, &m_nTextureID);
+	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nTextureID);
+	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
+			m_icx*m_icy*2*2*sizeof(GLfloat), pfTEX,
+			GL_STATIC_DRAW_ARB);
+	if ( ::glGetError() != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
+		ClearTexture();
+		AfxMessageBox(IDS_ERR_OUTOFVRAM, MB_OK|MB_ICONEXCLAMATION);
+	}
+	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+	delete	pfTEX;
+/*
+	::glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_NORMAL_MAP);
+	::glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_NORMAL_MAP);
+	::glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_NORMAL_MAP);
+*/
 }
 
 void CNCViewGL::ClearElement(void)
@@ -1024,6 +1239,15 @@ void CNCViewGL::ClearElement(void)
 	}
 	m_vVertexWrk.clear();
 	m_vVertexCut.clear();
+}
+
+void CNCViewGL::ClearTexture(void)
+{
+	if ( m_nPictureID > 0 )
+		::glDeleteTextures(1, &m_nPictureID);
+	if ( m_nTextureID > 0 )
+		::glDeleteBuffersARB(1, &m_nTextureID);
+	m_nPictureID = m_nTextureID = 0;
 }
 
 void CNCViewGL::RenderBack(void)
@@ -1257,6 +1481,36 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	::glEnable(GL_DEPTH_TEST);
 	RenderAxis();
 
+#ifdef _DEBUG_DRAWTEST_
+//	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
+//		GetDocument()->GetNCdata(i)->DrawBottomFace();
+//		GetDocument()->GetNCdata(1)->DrawBottomFace();
+	if ( m_nPictureID > 0 ) {
+//		COLORREF col = pOpt->GetNcDrawColor(NCCOL_GL_WRK);
+		::glEnable(GL_LIGHTING);
+		::glEnable (GL_LIGHT0);
+		::glEnable (GL_LIGHT1);
+		::glDisable(GL_LIGHT2);
+		::glDisable(GL_LIGHT3);
+		::glEnable(GL_TEXTURE_2D);
+		::glBindTexture(GL_TEXTURE_2D, m_nPictureID);
+		::glBegin(GL_QUADS);
+//		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+//		::glColor3ub( 255, 255, 255 );
+		::glTexCoord2d(0, 0);
+		::glVertex3d(m_rcDraw.left,  m_rcDraw.bottom, m_rcDraw.low);
+		::glTexCoord2d(0, 1);
+		::glVertex3d(m_rcDraw.left,  m_rcDraw.top,    m_rcDraw.low);
+		::glTexCoord2d(1, 1);
+		::glVertex3d(m_rcDraw.right, m_rcDraw.top,    m_rcDraw.low);
+		::glTexCoord2d(1, 0);
+		::glVertex3d(m_rcDraw.right, m_rcDraw.bottom, m_rcDraw.low);
+		::glEnd();
+		::glBindTexture(GL_TEXTURE_2D, 0);
+		::glDisable(GL_TEXTURE_2D);
+		::glDisable(GL_LIGHTING);
+	}
+#else
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && m_nVertexID > 0 &&
 		(pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
 		::glEnable(GL_LIGHTING);
@@ -1267,51 +1521,59 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glEnableClientState(GL_VERTEX_ARRAY);
 		::glEnableClientState(GL_NORMAL_ARRAY);
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID);
-		if ( ::glIsBufferARB(m_nVertexID) == GL_TRUE ) {
-			::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);
-			::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nNormalID);
-			::glNormalPointer(GL_FLOAT, 0, NULL);
-			// ﾜｰｸ矩形
-			::glEnable (GL_LIGHT0);
-			::glEnable (GL_LIGHT1);
-			::glDisable(GL_LIGHT2);  
-			::glDisable(GL_LIGHT3);
-			size_t	i, j;
-			for ( i=j=0; i<m_vVertexWrk.size(); i++, j++ ) {
-				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[j]);
-				if ( ::glIsBufferARB(m_pGenBuf[j]) == GL_TRUE )
-					::glDrawElements(GL_TRIANGLE_STRIP, m_vVertexWrk[i], GL_UNSIGNED_INT, NULL);
-			}
-			// 切削面
-			::glDisable(GL_LIGHT0);
-			::glDisable(GL_LIGHT1);
-			::glEnable (GL_LIGHT2);
-			::glEnable (GL_LIGHT3);
-			for ( i=0; i<m_vVertexCut.size(); i++, j++ ) {
-				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[j]);
-				if ( ::glIsBufferARB(m_pGenBuf[j]) == GL_TRUE )
-					::glDrawElements(GL_TRIANGLE_STRIP, m_vVertexCut[i], GL_UNSIGNED_INT, NULL);
-			}
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);
+		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nNormalID);
+		::glNormalPointer(GL_FLOAT, 0, NULL);
+		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nTextureID > 0 ) {
+//		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nPictureID > 0 ) {
+			::glBindTexture(GL_TEXTURE_2D, m_nPictureID);
+//			::glBindTexture(GL_TEXTURE_CUBE_MAP, m_nPictureID);
+			::glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nTextureID);
+			::glTexCoordPointer(2, GL_FLOAT, 0, NULL);
+//			::glEnable(GL_TEXTURE_GEN_S);
+//			::glEnable(GL_TEXTURE_GEN_T);
+//			::glEnable(GL_TEXTURE_GEN_R);
+			::glEnable(GL_TEXTURE_2D);
+//			::glEnable(GL_TEXTURE_CUBE_MAP);
+		}
+		// ﾜｰｸ矩形
+		::glEnable (GL_LIGHT0);
+		::glEnable (GL_LIGHT1);
+		::glDisable(GL_LIGHT2);
+		::glDisable(GL_LIGHT3);
+		size_t	i, j;
+		for ( i=j=0; i<m_vVertexWrk.size(); i++, j++ ) {
+			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[j]);
+			::glDrawElements(GL_TRIANGLE_STRIP, m_vVertexWrk[i], GL_UNSIGNED_INT, NULL);
+		}
+		// 切削面
+		::glDisable(GL_LIGHT0);
+		::glDisable(GL_LIGHT1);
+		::glEnable (GL_LIGHT2);
+		::glEnable (GL_LIGHT3);
+		for ( i=0; i<m_vVertexCut.size(); i++, j++ ) {
+			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pGenBuf[j]);
+			::glDrawElements(GL_TRIANGLE_STRIP, m_vVertexCut[i], GL_UNSIGNED_INT, NULL);
 		}
 		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nTextureID > 0 ) {
+//		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nPictureID > 0 ) {
+			::glBindTexture(GL_TEXTURE_2D, 0);
+			::glDisable(GL_TEXTURE_2D);
+//			::glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+//			::glDisable(GL_TEXTURE_GEN_S);
+//			::glDisable(GL_TEXTURE_GEN_T);
+//			::glDisable(GL_TEXTURE_GEN_R);
+//			::glDisable(GL_TEXTURE_CUBE_MAP);
+			::glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		}
 		::glDisableClientState(GL_NORMAL_ARRAY);
 		::glDisableClientState(GL_VERTEX_ARRAY);
 		::glDisable(GL_POLYGON_OFFSET_FILL);
 		::glDisable(GL_LIGHTING);
 	}
-
-#ifdef _DEBUG_PATH
-	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
-		GetDocument()->GetNCdata(i)->DrawBottomFace();
-//	COLORREF col = pOpt->GetNcDrawColor(NCCOL_GL_WRK);
-//	::glBegin(GL_QUADS);
-//	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-//	::glVertex3d(m_rcDraw.left,  m_rcDraw.bottom, m_rcDraw.low);
-//	::glVertex3d(m_rcDraw.left,  m_rcDraw.top,    m_rcDraw.low);
-//	::glVertex3d(m_rcDraw.right, m_rcDraw.top,    m_rcDraw.low);
-//	::glVertex3d(m_rcDraw.right, m_rcDraw.bottom, m_rcDraw.low);
-//	::glEnd();
 #endif
 
 	if ( !pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ||
@@ -1424,8 +1686,9 @@ void CNCViewGL::OnDestroy()
 	if ( m_glCode > 0 )
 		::glDeleteLists(m_glCode, 1);
 
-	// 頂点ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄの削除
+	// ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄ関連の削除
 	ClearElement();
+	ClearTexture();
 
 	::wglMakeCurrent(NULL, NULL);
 	::wglDeleteContext( m_hRC );

@@ -92,12 +92,10 @@ BOOL CMKNCSetup1::OnInitDialog()
 void CMKNCSetup1::OnHeaderLoopup() 
 {
 	UpdateData();
-	CString		strPath, strFile, strInitialDir;
+	CString		strPath, strFile;
 	::Path_Name_From_FullPath(m_strHeader, strPath, strFile);
 	if ( !strFile.IsEmpty() )
 		strFile = m_strHeader;
-	else
-		strInitialDir = strPath;
 	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, strFile, strPath) == IDOK ) {
 		// ÃÞ°À‚Ì”½‰f
 		m_strHeader = strFile;
@@ -111,12 +109,10 @@ void CMKNCSetup1::OnHeaderLoopup()
 void CMKNCSetup1::OnFooterLoopup() 
 {
 	UpdateData();
-	CString		strPath, strFile, strInitialDir;
-	::Path_Name_From_FullPath(m_strHeader, strPath, strFile);
+	CString		strPath, strFile;
+	::Path_Name_From_FullPath(m_strFooter, strPath, strFile);
 	if ( !strFile.IsEmpty() )
-		strFile = m_strHeader;
-	else
-		strInitialDir = strPath;
+		strFile = m_strFooter;
 	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, strFile, strPath) == IDOK ) {
 		// ÃÞ°À‚Ì”½‰f
 		m_strFooter = strFile;

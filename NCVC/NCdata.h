@@ -10,6 +10,8 @@
 // 始点終点指示
 enum	ENPOINTORDER
 	{STARTPOINT, ENDPOINT};
+// 円弧補間ﾊﾟｽ座標
+typedef	std::vector<CPoint3D>	CVCircle;
 
 /////////////////////////////////////////////////////////////////////////////
 // NCﾃﾞｰﾀを読み込む時にだけ必要なﾃﾞｰﾀ
@@ -210,7 +212,6 @@ class CNCcycle : public CNCline
 
 	void	DrawCyclePlane(CDC*, size_t, BOOL) const;
 	void	DrawCycle(CDC*, size_t, BOOL) const;
-	void	SetEndmillPath(const CPointD&, CPointD*) const;
 
 public:
 	CNCcycle(const CNCdata*, LPNCARGV, const CPoint3D&, BOOL);
@@ -258,6 +259,7 @@ typedef void (CNCcircle::*PFNCIRCLEDRAW)(EN_NCCIRCLEDRAW, CDC*) const;
 class CNCcircle : public CNCdata  
 {
 	void		Constracter(void);
+	boost::tuple<double, double>	GetSqEq(void) const;
 
 	int			m_nG23;			// G02:0 G03:1
 	CPoint3D	m_ptOrg;		// 中心座標
@@ -273,7 +275,10 @@ class CNCcircle : public CNCdata
 	void	Draw_G17(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G18(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G19(EN_NCCIRCLEDRAW, CDC*) const;
-	void	SetEndmillPath(std::vector<CPoint3D>&, std::vector<CPoint3D>&, CPointD*, CPointD*) const;
+
+	void	DrawEndmillXYPath(void) const;
+	void	DrawEndmillPipe(void) const;
+	void	DrawEndmillBall(void) const;
 
 	// IJK指定なしの時，円の方程式から中心の算出
 	BOOL	CalcCenter(const CPointD&, const CPointD&);

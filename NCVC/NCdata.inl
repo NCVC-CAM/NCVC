@@ -392,6 +392,14 @@ inline int CNCcircle::GetG23(void) const
 	return m_nG23;
 }
 
+inline boost::tuple<double, double> CNCcircle::GetSqEq(void) const
+{
+	using namespace boost;
+	return ( m_nG23 == 0 ) ?
+		make_tuple(m_eq, m_sq) :
+		make_tuple(m_sq, m_eq);
+}
+
 inline const CPoint3D CNCcircle::GetOrg(void) const
 {
 	return m_ptOrg;

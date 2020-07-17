@@ -99,6 +99,7 @@ static	const	BOOL	g_bDefaultSetting[] = {
 	FALSE,		// m_bSolidView
 	FALSE,		// m_bG00View
 	FALSE,		// m_bDragRender
+	FALSE		// m_bTexture
 };
 static	const	UINT	g_nFlagID[] = {
 	IDS_REG_VIEW_NC_TRACEMARK,
@@ -107,7 +108,8 @@ static	const	UINT	g_nFlagID[] = {
 	IDS_REG_VIEW_NC_GUIDE,
 	IDS_REG_VIEW_NC_SOLIDVIEW,
 	IDS_REG_VIEW_NC_G00VIEW,
-	IDS_REG_VIEW_NC_DRAGRENDER
+	IDS_REG_VIEW_NC_DRAGRENDER,
+	IDS_REG_VIEW_NC_TEXTURE
 };
 static	const	UINT	g_nDelFlagID[] = {
 	IDS_REG_VIEW_NC_MILL_T,
@@ -209,6 +211,8 @@ CViewOption::CViewOption()
 		m_dDefaultEndmill = fabs(atof(strResult)) / 2.0;	// ÒÓØã‚Í”¼Œa
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
 	m_nMillType = AfxGetApp()->GetProfileInt(strRegKey, strEntry, m_nMillType);
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
+	m_strTexture = AfxGetApp()->GetProfileString(strRegKey, strEntry);
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -379,6 +383,9 @@ BOOL CViewOption::SaveViewOption(void)
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
 	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nMillType) )
 		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
+	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, m_strTexture) )
+		return FALSE;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -491,6 +498,9 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	strResult.Format("%d", m_nMillType);
 	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
 		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
+	if ( !::WritePrivateProfileString(strRegKey, strEntry, m_strTexture, lpszFileName) )
+		return FALSE;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -514,7 +524,7 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 void CViewOption::Inport(LPCTSTR lpszFileName)
 {
 	int		i;
-	TCHAR	szResult[256];
+	TCHAR	szResult[_MAX_PATH];
 	CString	strRegKey, strEntry, strEntryFormat, strResult;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
@@ -528,7 +538,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	for ( i=0; i<SIZEOF(m_colCustom); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
 		::GetPrivateProfileString(strRegKey, strEntryFormat, "",
-				szResult, 256, lpszFileName);
+				szResult, _MAX_PATH, lpszFileName);
 		if ( lstrlen(szResult) > 0 )
 			m_colCustom[i] = ConvertSTRtoRGB(szResult);
 	}
@@ -536,7 +546,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	for ( i=0; i<SIZEOF(m_colView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
 		::GetPrivateProfileString(strRegKey, strEntryFormat, "",
-				szResult, 256, lpszFileName);
+				szResult, _MAX_PATH, lpszFileName);
 		if ( lstrlen(szResult) > 0 )
 			m_colView[i] = ConvertSTRtoRGB(szResult);
 	}
@@ -557,7 +567,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
 		::GetPrivateProfileString(strRegKey, strEntryFormat, "",
-				szResult, 256, lpszFileName);
+				szResult, _MAX_PATH, lpszFileName);
 		if ( lstrlen(szResult) > 0 )
 			m_colNCView[i] = ConvertSTRtoRGB(szResult);
 	}
@@ -565,7 +575,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	for ( i=0; i<SIZEOF(m_colNCInfoView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
 		::GetPrivateProfileString(strRegKey, strEntryFormat, "",
-				szResult, 256, lpszFileName);
+				szResult, _MAX_PATH, lpszFileName);
 		if ( lstrlen(szResult) > 0 )
 			m_colNCInfoView[i] = ConvertSTRtoRGB(szResult);
 	}
@@ -577,7 +587,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	}
 	for ( i=0; i<NCXYZ; i++ ) {
 		::GetPrivateProfileString(strRegKey, strEntry+g_szNdelimiter[i], "",
-				szResult, 256, lpszFileName);
+				szResult, _MAX_PATH, lpszFileName);
 		if ( lstrlen(szResult) > 0 )
 			m_dGuide[i] = atof(szResult);
 	}
@@ -589,18 +599,23 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DEFAULTENDMILL));
 	::GetPrivateProfileString(strRegKey, strEntry, "",
-			szResult, 256, lpszFileName);
+			szResult, _MAX_PATH, lpszFileName);
 	if ( lstrlen(szResult) > 0 )
 		m_dDefaultEndmill = fabs(atof(szResult)) / 2.0;	// ÒÓØã‚Í”¼Œa
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
 	m_nMillType = ::GetPrivateProfileInt(strRegKey, strEntry, m_nMillType, lpszFileName);
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
+	::GetPrivateProfileString(strRegKey, strEntry, "",
+			szResult, _MAX_PATH, lpszFileName);
+	if ( lstrlen(szResult) > 0 )
+		m_strTexture = szResult;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colDXFView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
 		::GetPrivateProfileString(strRegKey, strEntryFormat, "",
-				szResult, 256, lpszFileName);
+				szResult, _MAX_PATH, lpszFileName);
 		if ( lstrlen(szResult) > 0 )
 			m_colDXFView[i] = ConvertSTRtoRGB(szResult);
 	}

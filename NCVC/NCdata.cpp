@@ -1376,14 +1376,7 @@ void CNCcircle::Draw_G17(EN_NCCIRCLEDRAW enType, CDC* pDC) const	// XY_PLANE
 	CPoint3D	pt3D, ptDrawOrg(m_ptOrg);
 	CPointD		ptDraw;
 
-	if ( m_nG23 == 0 ) {
-		sq = m_eq;
-		eq = m_sq;
-	}
-	else {
-		sq = m_sq;
-		eq = m_eq;
-	}
+	tie(sq, eq) = GetSqEq();
 
 	switch ( enType ) {
 	case NCCIRCLEDRAW_XYZ:
@@ -1507,14 +1500,7 @@ void CNCcircle::Draw_G18(EN_NCCIRCLEDRAW enType, CDC* pDC) const	// XZ_PLANE
 	CPoint3D	pt3D, ptDrawOrg(m_ptOrg);
 	CPointD		ptDraw;
 
-	if ( m_nG23 == 0 ) {
-		sq = m_eq;
-		eq = m_sq;
-	}
-	else {
-		sq = m_sq;
-		eq = m_eq;
-	}
+	tie(sq, eq) = GetSqEq();
 
 	switch ( enType ) {
 	case NCCIRCLEDRAW_XYZ:
@@ -1636,14 +1622,7 @@ void CNCcircle::Draw_G19(EN_NCCIRCLEDRAW enType, CDC* pDC) const	// YZ_PLANE
 	CPoint3D	pt3D, ptDrawOrg(m_ptOrg);
 	CPointD		ptDraw;
 
-	if ( m_nG23 == 0 ) {
-		sq = m_eq;
-		eq = m_sq;
-	}
-	else {
-		sq = m_sq;
-		eq = m_eq;
-	}
+	tie(sq, eq) = GetSqEq();
 
 	switch ( enType ) {
 	case NCCIRCLEDRAW_XYZ:

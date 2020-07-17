@@ -483,20 +483,16 @@ CPointD	CalcIntersectionPoint_TC
 tuple<CPointD, CPointD> CalcOffsetLine
 	(const CPointD& pts, const CPointD& pte, double r, BOOL bLeft)
 {
-	CPointD	pt1(pte-pts),	// 始点を原点に
-			pt2(pts-pte);	// 終点を原点に
 	int		k = bLeft ? 1 : -1;	// 左:+, 右:- 90°
-	double	q1 = atan2(pt1.y, pt1.x) + 90.0*RAD * k,
-			q2 = atan2(pt2.y, pt2.x) - 90.0*RAD * k;
+	// 始点を原点にした傾き+90°
+	double	q = atan2(pte.y-pts.y, pte.x-pts.x) + 90.0*RAD * k,
+			cos_q = r * cos(q),
+			sin_q = r * sin(q);
 
-	// 始点側のｵﾌｾｯﾄﾎﾟｲﾝﾄ
-	pt1.x = r * cos(q1) + pts.x;
-	pt1.y = r * sin(q1) + pts.y;
-	// 終点側のｵﾌｾｯﾄﾎﾟｲﾝﾄ
-	pt2.x = r * cos(q2) + pte.x;
-	pt2.y = r * sin(q2) + pte.y;
-
-	return make_tuple(pt1, pt2);
+	return make_tuple(
+		CPointD(cos_q+pts.x, sin_q+pts.y),	// 始点側のｵﾌｾｯﾄﾎﾟｲﾝﾄ
+		CPointD(cos_q+pte.x, sin_q+pte.y)	// 終点側のｵﾌｾｯﾄﾎﾟｲﾝﾄ
+	);
 }
 
 //////////////////////////////////////////////////////////////////////

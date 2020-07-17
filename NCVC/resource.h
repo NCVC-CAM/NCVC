@@ -106,6 +106,8 @@
 #define IDS_VIEW_SETUP                  1313
 #define IDS_VIEW_SETUP_INPORT           1314
 #define IDS_VIEW_SETUP_EXPORT           1315
+#define IDS_VIEW_TEXTURE                1316
+#define IDS_TEXTURE_FILTER              1389
 #define IDS_NCVC_FILTER                 1390
 #define IDS_NCD_FILTER                  1391
 #define IDS_CAM_FILTER                  1392
@@ -275,6 +277,9 @@
 #define IDC_VIEWSETUP5_SOLIDVIEW        2410
 #define IDC_VIEWSETUP5_G00VIEW          2411
 #define IDC_VIEWSETUP5_DRAGRENDER       2412
+#define IDC_VIEWSETUP5_TEXTURE          2413
+#define IDC_VIEWSETUP5_TEXTUREFILE      2414
+#define IDC_VIEWSETUP5_TEXTUREFIND      2415
 #define IDC_VIEWSETUP5_ST_WORK          2420
 #define IDC_VIEWSETUP5_ST_CUT           2421
 #define IDC_VIEWSETUP5_BT_WORK          2430
@@ -610,6 +615,8 @@
 #define IDS_REG_VIEW_NC_MILL_T          10968
 #define IDS_REG_VIEW_NC_MILL_C          10969
 #define IDS_REG_VIEW_NC_MILLTYPE        10970
+#define IDS_REG_VIEW_NC_TEXTURE         10971
+#define IDS_REG_VIEW_NC_TEXTUREFILE     10972
 #define IDS_REG_CONVERT                 10999
 #define IDS_REG_WINFLAGS                11900
 #define IDS_REG_ICONIC                  11901
@@ -625,6 +632,7 @@
 #define IDS_ERR_MAXADD                  21005
 #define IDS_ERR_OPENGLVER               21006
 #define IDS_ERR_OUTOFVRAM               21007
+#define IDS_ERR_TEXTURE                 21008
 #define IDS_ERR_FILEPATH                21010
 #define IDS_ERR_UNDERZERO               21011
 #define IDS_ERR_SETTING                 21012
@@ -717,7 +725,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         1041
+#define _APS_NEXT_CONTROL_VALUE         1042
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
