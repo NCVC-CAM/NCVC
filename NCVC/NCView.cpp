@@ -417,6 +417,16 @@ int CNCView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
+void CNCView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView) 
+{
+	if ( bActivate ) {
+		// CNCViewSplit::SetActivePane() からのｱｸﾃｨﾌﾞ設定に対応
+		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dFactor);
+	}
+	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
+}
+
 LRESULT CNCView::OnUserActivatePage(WPARAM, LPARAM lParam)
 {
 	if ( m_dFactor == 0.0 ) {
@@ -429,6 +439,7 @@ LRESULT CNCView::OnUserActivatePage(WPARAM, LPARAM lParam)
 			OnViewLensComm();
 		}
 	}
+
 	return 0;
 }
 
@@ -442,15 +453,6 @@ LRESULT CNCView::OnUserViewFitMsg(WPARAM, LPARAM lParam)
 	if ( lParam )		// 再描画ﾌﾗｸﾞ == 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ
 		OnViewLensComm();
 	return 0;
-}
-
-void CNCView::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView) 
-{
-	if ( bActivate ) {
-		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dFactor);
-	}
-	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
 }
 
 void CNCView::OnContextMenu(CWnd* pWnd, CPoint point) 

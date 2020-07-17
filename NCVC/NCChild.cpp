@@ -130,11 +130,11 @@ void CNCChild::Dump(CDumpContext& dc) const
 /////////////////////////////////////////////////////////////////////////////
 // CNCChild クラスのﾒﾝﾊﾞ関数
 
-void CNCChild::SetWorkRect(BOOL bHide, CRect3D& rc)
+void CNCChild::SetWorkRect(BOOL bShow, CRect3D& rc)
 {
 	CNCDoc* pDoc = static_cast<CNCDoc *>(GetActiveDocument());
 	if ( pDoc )
-		pDoc->SetWorkRect(bHide, rc);
+		pDoc->SetWorkRect(bShow, rc);
 }
 
 void CNCChild::SetJumpList(int nJump)
@@ -173,7 +173,7 @@ int CNCChild::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // 作成に失敗
 	}
 
-	// 各ﾍﾟｲﾝの調整
+	// 各ﾍﾟｲﾝの調整(->CNCFrameSplit)
 	m_wndSplitter1.PostMessage(WM_USERINITIALUPDATE, TRUE);
 
 	return 0;

@@ -61,7 +61,8 @@ CDXFMakeOption::CDXFMakeOption()
 
 	// з╪ч╫дь┌╘┌Г▐Н∙Я⌠г┌щ█·┌щ
 	int		i;
-	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_NC, IDS_REGKEY_MAKEDXF)), strResult;
+	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_NC, IDS_REGKEY_MAKEDXF)),	// StdAfx.h
+			strResult;
 
 	// int▄^√╫≈ъ⌠г┌щ█·┌щ
 	for ( i=0; i<SIZEOF(g_szNOrder); i++ )
@@ -99,7 +100,8 @@ BOOL CDXFMakeOption::SaveDXFMakeOption(void)
 {
 	// з╪ч╫дь┌ж┌л∙ш▒╤
 	int		i;
-	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_NC, IDS_REGKEY_MAKEDXF)), strResult;
+	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_NC, IDS_REGKEY_MAKEDXF)),
+			strResult;
 
 	// int▄^√╫≈ъ┌л∙ш▒╤
 	for ( i=0; i<SIZEOF(g_szNOrder); i++ ) {

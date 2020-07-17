@@ -43,10 +43,12 @@
 #include <afxadv.h>			// NCVC.cpp にて CRecentFileList を扱う
 #include <afxmt.h>			// ｽﾚｯﾄﾞ関連
 #include <afxcview.h>		// CListView, CTreeView
+#include <afxdlgs.h>
 
-#include <gl\gl.h>			// OpenGL
-#include <gl\glu.h>
-#include <gl\glaux.h>
+#include <gl/gl.h>			// OpenGL
+#include <gl/glu.h>
+//#include <gl/glut.h>		// Use glut32.dll
+#include <gl/glaux.h>
 
 #ifndef _AFX_NO_OLE_SUPPORT
 #include <afxdtctl.h>		// MFC の Internet Explorer 4 コモン コントロール サポート
@@ -73,7 +75,6 @@
 #include "3Dto2D.h"
 #include "CustomClass.h"
 #include "CustomControl.h"
-#include <afxdlgs.h>
 
 enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 

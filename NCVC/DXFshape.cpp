@@ -473,8 +473,8 @@ DWORD CDXFmap::GetMapTypeFlag(void) const
 	// åì_Ç‚í[ì_Ç™Ç†ÇÍÇŒ
 	//		DXFMAPFLG_CANNOTOUTLINE -> ï˚å¸éwé¶ÇÕâ¬î\ÅCó÷äsÅEŒﬂπØƒâ¡çHÇ™Ç≈Ç´Ç»Ç¢
 
-	// èäëÆµÃﬁºﬁ™∏ƒÇ™ÇPÇ¬ Ç©Ç¬ ÇªÇÍÇ™â~Ç»ÇÁ
-	if ( GetObjectCount()==1 && GetFirstObject()->GetType()==DXFCIRCLEDATA )
+	// èäëÆµÃﬁºﬁ™∏ƒÇ™ÇPÇ¬ Ç©Ç¬ ï¬Ÿ∞ÃﬂÇ»ÇÁ
+	if ( GetObjectCount()==1 && GetFirstObject()->IsStartEqEnd() )	// ÅIÅIDXFPOLYDATAÇÃåì_¡™Ø∏Ç™ïKóvÅIÅI
 		return 0;
 
 	int			i, j, nLoop;
@@ -1412,21 +1412,37 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult)
 	CPointD		pt, pte;
 	optional<CPointD>	ptResult, pts;
 
-	// óBàÍÇÃµÃﬁºﬁ™∏ƒÇ™â~√ﬁ∞¿Ç»ÇÁ
+	// óBàÍÇÃµÃﬁºﬁ™∏ƒÇ™ï¬Ÿ∞ÃﬂÇ»ÇÁ
 	if ( pChain->GetCount() == 1 ) {
 		pData = pChain->GetHead();
-		if ( pData->GetType() == DXFCIRCLEDATA ) {
+		switch ( pData->GetType() ) {
+		case DXFCIRCLEDATA:
 			// µÃæØƒîºåaÇÃœ≤≈Ω¡™Ø∏
 			if ( static_cast<CDXFcircle*>(pData)->GetR()+m_dOffset*k < EPS )
 				return TRUE;	// µÃæØƒµÃﬁºﬁ™∏ƒÇê∂ê¨ÇµÇ»Ç¢
+			pData = CreateOutlineTempObject_new(pData, pte, pte, k);	// pte is dummy
+			if ( pData ) {
+				pResult->AddTail(pData);
+				pResult->SetMaxRect(pData);
+				return TRUE;
+			}
+			break;
+		case DXFELLIPSEDATA:
+			{
+				CDXFellipse*	pEllipse = static_cast<CDXFellipse*>(pData);
+				if ( pEllipse->GetLongLength()+m_dOffset*k < EPS ||
+						pEllipse->GetShortLength()+m_dOffset*k < EPS )
+					return TRUE;
+			}
 			pData = CreateOutlineTempObject_new(pData, pte, pte, k);
 			if ( pData ) {
 				pResult->AddTail(pData);
 				pResult->SetMaxRect(pData);
 				return TRUE;
 			}
+			break;
 		}
-		return FALSE;	// â~√ﬁ∞¿à»äOÇÕ¥◊∞
+		return FALSE;	// â~ÅEë»â~√ﬁ∞¿à»äOÇÕ¥◊∞
 	}
 
 	// ó÷äsµÃﬁºﬁ™∏ƒŸ∞ÃﬂèÄîı
@@ -1567,6 +1583,7 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 	DXFLARGV	dxfLine;
 	DXFCARGV	dxfCircle;
 	DXFAARGV	dxfArc;
+	DXFEARGV	dxfEllipse;
 
 	switch ( pDataSrc->GetType() ) {
 	case DXFLINEDATA:
@@ -1576,22 +1593,24 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 		pData = new CDXFline(&dxfLine);
 		break;
 	case DXFCIRCLEDATA:
-		pData = const_cast<CDXFdata*>(pDataSrc);
-		dxfCircle.c = static_cast<CDXFcircle*>(pData)->GetCenter();
-		dxfCircle.r = static_cast<CDXFcircle*>(pData)->GetR() + m_dOffset * k;
-		pData = new CDXFcircle(&dxfCircle);
+		{
+			const CDXFcircle* pCircle = static_cast<const CDXFcircle*>(pDataSrc);
+			dxfCircle.c = pCircle->GetCenter();
+			dxfCircle.r = pCircle->GetR() + m_dOffset * k;
+			pData = new CDXFcircle(&dxfCircle);
+		}
 		break;
 	case DXFARCDATA:
 		{
 			const CDXFarc* pArc = static_cast<const CDXFarc*>(pDataSrc);
-			BOOL	bRound = pArc->GetRound();
+			BOOL	bRound = pArc->GetRoundOrig();
 			if ( !bRound && k!=0 )	// ç∂ï˚å¸ÇäÓèÄ
 				k = -k;
 			dxfArc.c = pArc->GetCenter();
 			dxfArc.r = pArc->GetR() + m_dOffset * k;
-			if ( (dxfArc.sq=atan2(pts.y - dxfArc.c.y, pts.x - dxfArc.c.x)) < 0.0 )
+			if ( (dxfArc.sq=atan2(pts.y-dxfArc.c.y, pts.x-dxfArc.c.x)) < 0.0 )
 				dxfArc.sq += 360.0*RAD;
-			if ( (dxfArc.eq=atan2(pte.y - dxfArc.c.y, pte.x - dxfArc.c.x)) < 0.0 )
+			if ( (dxfArc.eq=atan2(pte.y-dxfArc.c.y, pte.x-dxfArc.c.x)) < 0.0 )
 				dxfArc.eq += 360.0*RAD;
 			// µÿºﬁ≈Ÿâ~å Ç∆µÃæØƒâ~å ÇÃâÒì]ï˚å¸¡™Ø∏
 			if ( k != 0 ) {
@@ -1601,16 +1620,75 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 				if ( ptResult )		// µÿºﬁ≈Ÿâ~å Ç∆µÃæØƒâ~å ÇÃâÒì]ï˚å¸Ç™à·Ç§
 					bRound = !bRound;
 			}
+			double	d;
 			if ( bRound ) {
 				// for CDXFarc::AngleTuning()
-				while ( ::RoundUp(dxfArc.sq*DEG) > ::RoundUp(dxfArc.eq*DEG) )
+				d = ::RoundUp(dxfArc.sq*DEG);
+				while ( d >= ::RoundUp(dxfArc.eq*DEG) )
 					dxfArc.eq += 360.0*RAD;
 			}
 			else {
-				while ( ::RoundUp(dxfArc.eq*DEG) > ::RoundUp(dxfArc.sq*DEG) )
+				d = ::RoundUp(dxfArc.eq*DEG);
+				while ( d >= ::RoundUp(dxfArc.sq*DEG) )
 					dxfArc.sq += 360.0*RAD;
 			}
 			pData = new CDXFarc(&dxfArc, bRound, pts, pte);
+		}
+		break;
+	case DXFELLIPSEDATA:
+		{
+			const CDXFellipse* pEllipse = static_cast<const CDXFellipse*>(pDataSrc);
+			if ( !pEllipse->GetRoundOrig() && k!=0 )	// ç∂ï˚å¸ÇäÓèÄ
+				k = -k;
+			dxfEllipse.c	= pEllipse->GetCenter();
+			double	l		= pEllipse->GetLongLength() + m_dOffset * k;
+			dxfEllipse.l.x	= l * pEllipse->GetLeanCos();
+			dxfEllipse.l.y	= l * pEllipse->GetLeanSin();
+			dxfEllipse.s	=(pEllipse->GetShortLength() + m_dOffset * k) / l;
+			dxfEllipse.bRound = pEllipse->GetRoundOrig();
+			if ( pEllipse->IsArc() ) {
+				// äpìxåvéZÇÕí∑é≤ÇÃåXÇ´Ççló∂ÇµÇƒåvéZ
+				CPointD	pt1(pts - dxfEllipse.c), pt2(pte - dxfEllipse.c);
+				pt1.RoundPoint(-pEllipse->GetLean());
+				pt2.RoundPoint(-pEllipse->GetLean());
+				// ë»â~ÇÃäpìxÇÕ atan2() Ç≈åvéZÇ≈Ç´Ç»Ç¢
+				double	d = pt1.x / l;
+				if ( d < -1 || 1 < d )
+					d = _copysign(1.0, d);	// -1 or 1
+				dxfEllipse.sq = _copysign(acos(d), pt1.y);
+				if ( dxfEllipse.sq < 0.0 )
+					dxfEllipse.sq += 360.0*RAD;
+				d = pt2.x / l;
+				if ( d < -1 || 1 < d )
+					d = _copysign(1.0, d);	// -1 or 1
+				dxfEllipse.eq = _copysign(acos(d), pt2.y);
+				if ( dxfEllipse.eq < 0.0 )
+					dxfEllipse.eq += 360.0*RAD;
+				if ( k != 0 ) {
+					optional<CPointD> ptResult = ::CalcIntersectionPoint_LL(
+							pts, pEllipse->GetNativePoint(0),
+							pte, pEllipse->GetNativePoint(1) );
+					if ( ptResult ) {
+						dxfEllipse.bRound = !dxfEllipse.bRound;
+						std::swap(dxfEllipse.sq, dxfEllipse.eq);
+					}
+				}
+				if ( dxfEllipse.bRound ) {
+					d = ::RoundUp(dxfEllipse.sq*DEG);
+					while ( d >= ::RoundUp(dxfEllipse.eq*DEG) )
+						dxfEllipse.eq += 360.0*RAD;
+				}
+				else {
+					d = ::RoundUp(dxfEllipse.eq*DEG);
+					while ( d >= ::RoundUp(dxfEllipse.sq*DEG) )
+						dxfEllipse.sq += 360.0*RAD;
+				}
+			}
+			else {
+				dxfEllipse.sq = pEllipse->GetStartAngle();
+				dxfEllipse.eq = pEllipse->GetEndAngle();
+			}
+			pData = new CDXFellipse(&dxfEllipse);
 		}
 		break;
 	}

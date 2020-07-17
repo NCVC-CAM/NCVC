@@ -81,7 +81,7 @@ void CNCViewSplit::AllPane_PostMessage(int nID, UINT msg, WPARAM wParam, LPARAM 
 {
 	int		i, j;
 
-	if ( nID == NCVIEW_SINGLEPANE ) {	// ４面-1
+	if ( nID == NCVIEW_FOURSVIEW ) {	// ４面-1
 		for ( i=0; i<GetRowCount(); i++ ) {			// 行
 			for ( j=0; j<GetColumnCount(); j++ ) {	// 列
 				GetPane(i, j)->PostMessage(msg, wParam, lParam);
@@ -110,7 +110,7 @@ void CNCViewSplit::CalcPane(int nID, BOOL bInitial/*=FALSE*/)
 	GetParent()->GetClientRect(&rc);
 
 	// ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳの初期ｻｲｽﾞ設定
-	if ( nID == NCVIEW_SINGLEPANE ) {	// ４面-1
+	if ( nID == NCVIEW_FOURSVIEW ) {	// ４面-1
 		nRow = (rc.Height() >> 1) - nCyEdge;
 		nCol = (rc.Width()  >> 1) - nCxEdge;
 		if ( bInitial ) {
@@ -152,7 +152,7 @@ LRESULT CNCViewSplit::OnUserInitialUpdate(WPARAM wParam, LPARAM lParam)
 	// ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳの初期ｻｲｽﾞ設定
 	CalcPane(wParam, TRUE);
 	// 各ﾍﾟｲﾝへ図形ﾌｨｯﾄﾒｯｾｰｼﾞの送信
-	if ( wParam == NCVIEW_SINGLEPANE ) {	// ４面-1
+	if ( wParam == NCVIEW_FOURSVIEW ) {	// ４面-1
 		for ( i=0; i<GetRowCount(); i++ ) {			// 行
 			for ( j=0; j<GetColumnCount(); j++ ) {	// 列
 				if ( (BOOL)lParam )
@@ -189,7 +189,7 @@ LRESULT CNCViewSplit::OnUserInitialUpdate(WPARAM wParam, LPARAM lParam)
 
 LRESULT CNCViewSplit::OnUserActivatePage(WPARAM wParam, LPARAM)
 {
-	// 各ﾍﾟｲﾝへｱｸﾃｨﾌﾞﾒｯｾｰｼﾞの送信
+	// 各ﾍﾟｲﾝへｱｸﾃｨﾌﾞﾒｯｾｰｼﾞの送信(常に拡大率更新)
 	AllPane_PostMessage(wParam, WM_USERACTIVATEPAGE, NULL, TRUE);
 	return 0;
 }

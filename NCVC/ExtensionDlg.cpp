@@ -119,19 +119,18 @@ void CExtensionDlg::OnExtAdd()
 	UpdateData();
 	int	nID = GetFocus()->GetDlgCtrlID() - IDC_EXT_NCD_ADD;
 	ASSERT( nID>=0 && nID<SIZEOF(m_strExtTxt) );
-	m_strExtTxt[nID].TrimLeft();	m_strExtTxt[nID].TrimRight();
-	m_strExtTxt[nID].MakeUpper();
+	CString	strTmp(m_strExtTxt[nID]);
+	m_strExtTxt[nID] = strTmp.Trim().MakeUpper();
 	if ( m_strExtTxt[nID].IsEmpty() ) {
 		::MessageBeep(MB_ICONASTERISK);
 		return;
 	}
 	int		i, j, nCnt;
-	CString	strList;
 	for ( i=0; i<SIZEOF(m_ctExtList); i++ ) {
 		nCnt = m_ctExtList[i].GetCount();
 		for ( j=0; j<nCnt; j++ ) {
-			m_ctExtList[i].GetText(j, strList);
-			if ( m_strExtTxt[nID] == strList ) {
+			m_ctExtList[i].GetText(j, strTmp);
+			if ( m_strExtTxt[nID] == strTmp ) {
 				::MessageBeep(MB_ICONASTERISK);
 				return;
 			}

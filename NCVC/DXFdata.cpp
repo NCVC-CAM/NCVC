@@ -462,6 +462,7 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEd
 	int		nResult = 0;
 	CPointD	pt1(pData->GetNativePoint(0)), pt2(pData->GetNativePoint(1));
 	const CDXFcircle*	pCircle;
+	const CDXFellipse*	pEllipse;
 	optional<CPointD>	ptResult;
 
 	// bEdge==TRUE : 端点が同じ場合は交点なしとする
@@ -488,7 +489,7 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEd
 	case DXFCIRCLEDATA:
 		pCircle = static_cast<const CDXFcircle*>(pData);
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(m_pt[0], m_pt[1],
-						pCircle->GetCenter(), pCircle->GetR());
+				pCircle->GetCenter(), pCircle->GetR());
 		if ( pData->GetType() == DXFARCDATA ) {
 			if ( nResult > 1 ) {
 				if ( !pCircle->IsRangeAngle(pt2) )
@@ -496,6 +497,33 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEd
 			}
 			if ( nResult > 0 ) {
 				if ( !pCircle->IsRangeAngle(pt1) ) {
+					nResult--;
+					if ( nResult > 0 )
+						std::swap(pt1, pt2);
+				}
+			}
+		}
+		if ( nResult > 1 )
+			pt[1] = pt2;
+		if ( nResult > 0 )
+			pt[0] = pt1;
+		break;
+	case DXFELLIPSEDATA:
+		pEllipse = static_cast<const CDXFellipse*>(pData);
+		if ( bEdge && pEllipse->IsArc() &&
+			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			break;
+		}
+		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LE(m_pt[0], m_pt[1],
+				pEllipse->GetCenter(), pEllipse->GetLongLength(), pEllipse->GetShortLength(), pEllipse->GetLean());
+		if ( pEllipse->IsArc() ) {
+			if ( nResult > 1 ) {
+				if ( !pEllipse->IsRangeAngle(pt2) )
+					nResult--;
+			}
+			if ( nResult > 0 ) {
+				if ( !pEllipse->IsRangeAngle(pt1) ) {
 					nResult--;
 					if ( nResult > 0 )
 						std::swap(pt1, pt2);
@@ -516,11 +544,11 @@ optional<CPointD>
 CDXFline::CalcOffsetIntersectionPoint
 	(const CDXFdata* pNext, double r, BOOL bLeft) const
 {
-	// 交点計算にはｵﾌﾞｼﾞｪｸﾄが持つ真座標(NativePoint)を使用
 	CPointD	pto( GetNativePoint(1) ), p1, p2, pts( GetNativePoint(0) ), pt;
 	int		k1, k2, nRound;
 	BOOL	bResult;
 	const CDXFarc*		pArc;
+	const CDXFellipse*	pEllipse;
 	optional<CPointD>	ptResult;
 
 	// 交点を原点に
@@ -543,20 +571,20 @@ CDXFline::CalcOffsetIntersectionPoint
 	case DXFARCDATA:
 		pArc = static_cast<const CDXFarc*>(pNext);
 		p2 = pArc->GetCenter() - pto;
-		if ( pArc->GetRound() ) {
-			nRound = -1;	// 反時計はﾏｲﾅｽ符号
-			k2 = -1;
-		}
-		else {
-			nRound = 1;
-			k2 = 1;
-		}
+		k2 = nRound = pArc->GetRoundOrig() ? -1 : 1;	// 反時計はﾏｲﾅｽ符号
 		if ( !bLeft )
 			k2 = -k2;
 		tie(bResult, pt, r) = ::CalcOffsetIntersectionPoint_LC(p1, p2,
 				pArc->GetR(), r, nRound, k1, k2);
 		if ( bResult )
 			ptResult = pt;
+		break;
+	case DXFELLIPSEDATA:
+		pEllipse = static_cast<const CDXFellipse*>(pNext);
+		p2 = pEllipse->GetCenter() - pto;
+		ptResult = ::CalcOffsetIntersectionPoint_LE(p1, p2,
+			pEllipse->GetLongLength(), pEllipse->GetShortLength(), pEllipse->GetLean(), r,
+			pEllipse->GetRoundOrig(), bLeft);
 		break;
 	}
 
@@ -831,6 +859,10 @@ int CDXFcircle::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL) 
 			}
 		}
 		break;
+	case DXFELLIPSEDATA:
+		// 数値計算完了後、再ｺｰﾃﾞｨﾝｸﾞ
+		pt[0] = pt[1] = 0;
+		return 2;	// とりあえず交点があることにしておく
 	}
 
 	if ( nResult > 1 )
@@ -985,7 +1017,7 @@ CDXFarc::CDXFarc(LPDXFAARGV lpArc, BOOL bRound, const CPointD& pts, const CPoint
 }
 
 CDXFarc::CDXFarc(CLayerData* pLayer, const CDXFarc* pData, LPDXFBLOCK lpBlock) :
-	CDXFcircle(DXFARCDATA, pLayer, pData->GetCenter(), pData->GetR(), pData->GetRound(), 2)
+	CDXFcircle(DXFARCDATA, pLayer, pData->GetCenter(), pData->GetR(), pData->GetRoundOrig(), 2)
 {
 	m_bRoundOrig = m_bRound;
 	m_sq	= pData->GetStartAngle();
@@ -1136,7 +1168,7 @@ BOOL CDXFarc::IsRangeAngle(const CPointD& pt) const
 	if ( q < 0 )
 		q += 360.0*RAD;
 
-	if ( m_bRound ) {
+	if ( m_bRoundOrig ) {
 		if ( m_sq <= q && q <= m_eq )
 			return TRUE;
 	}
@@ -1250,6 +1282,7 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdg
 	int		nResult = 0;
 	CPointD	pt1(pData->GetNativePoint(0)), pt2(pData->GetNativePoint(1));
 	const CDXFcircle*	pCircle;
+	const CDXFellipse*	pEllipse;
 
 	// bEdge==TRUE : 端点が同じ場合は交点なしとする
 	switch ( pData->GetType() ) {
@@ -1272,6 +1305,16 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdg
 		pCircle = static_cast<const CDXFcircle*>(pData);
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(m_ct, pCircle->GetCenter(), m_r, pCircle->GetR());
 		break;
+	case DXFELLIPSEDATA:
+		pEllipse = static_cast<const CDXFellipse*>(pData);
+		if ( bEdge && pEllipse->IsArc() &&
+			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			break;
+		}
+		// 数値計算完了後、再ｺｰﾃﾞｨﾝｸﾞ
+		pt[0] = pt[1] = 0;
+		return 2;	// とりあえず交点があることにしておく
 	}
 
 	if ( nResult > 1 ) {
@@ -1300,7 +1343,6 @@ optional<CPointD>
 CDXFarc::CalcOffsetIntersectionPoint
 	(const CDXFdata* pNext, double r, BOOL bLeft) const
 {
-	// 交点計算にはｵﾌﾞｼﾞｪｸﾄが持つ真座標(NativePoint)を使用
 	CPointD	pto( GetNativePoint(1) ), p1, p2, ptResult;
 	int		k1, k2, nResult, nRound;
 	BOOL	bResult = FALSE;
@@ -1310,20 +1352,13 @@ CDXFarc::CalcOffsetIntersectionPoint
 	case DXFLINEDATA:
 		// 直線ｽﾀｰﾄで考えるため、回転方向などを反対にする
 		p1 = pNext->GetNativePoint(1) - pto;
-		k1 = -(::CalcOffsetSign(p1));		// 始点終点が逆なのでﾏｲﾅｽ符号
-		if ( m_bRound ) {
-			nRound = 1;		// 反時計はﾌﾟﾗｽ符号
-			k2 = 1;
-		}
-		else {
-			nRound = -1;
-			k2 = -1;
-		}
+		p2 = m_ct - pto;
+		k1 = -(::CalcOffsetSign(p1));			// 始点終点が逆なのでﾏｲﾅｽ符号
+		k2 = nRound = m_bRoundOrig ? 1 : -1;	// 反時計はﾌﾟﾗｽ符号
 		if ( bLeft ) {		// 進行方向が逆
 			k1 = -k1;
 			k2 = -k2;
 		}
-		p2 = m_ct - pto;
 		tie(bResult, ptResult, r) = ::CalcOffsetIntersectionPoint_LC(p1, p2, m_r, r,
 				nRound, k1, k2);
 		if ( bResult )
@@ -1331,8 +1366,8 @@ CDXFarc::CalcOffsetIntersectionPoint
 		break;
 	case DXFARCDATA:
 		pArc = static_cast<const CDXFarc*>(pNext);
-		k1 = m_bRound ? -1 : 1;
-		k2 = pArc->GetRound() ? -1 : 1;
+		k1 = m_bRoundOrig ? -1 : 1;
+		k2 = pArc->GetRoundOrig() ? -1 : 1;
 		if ( !bLeft ) {
 			k1 = -k1;
 			k2 = -k2;
@@ -1357,16 +1392,11 @@ int CDXFarc::CheckIntersectionCircle(const CPointD& ptc, double r) const
 	CPointD	pt1, pt2;
 	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(m_ct, ptc, m_r, r);
 	// 交点を厳密に求めるわけではない
-	switch ( nResult ) {
-	case 1:		// 「接する」
-		if ( !IsRangeAngle(pt1) )
-			nResult = 0;
-		break;
-	case 2:
-		if ( !IsRangeAngle(pt1) && !IsRangeAngle(pt2) )
-			nResult = 0;
-		break;
-	}
+	if ( nResult > 1 && !IsRangeAngle(pt2) )
+		nResult--;
+	if ( nResult > 0 && !IsRangeAngle(pt1) )
+		nResult--;
+
 	return nResult;
 }
 
@@ -1424,9 +1454,9 @@ CDXFellipse::CDXFellipse(LPDXFEARGV lpEllipse) :
 
 CDXFellipse::CDXFellipse(CLayerData* pLayer, const CDXFellipse* pData, LPDXFBLOCK lpBlock) :
 	CDXFarc(DXFELLIPSEDATA, pLayer, pData->GetCenter(), pData->GetR(),
-		pData->GetStartAngle(), pData->GetEndAngle(), pData->GetRound(), 4 )
+		pData->GetStartAngle(), pData->GetEndAngle(), pData->GetRoundOrig(), 4 )
 {
-	m_bArc   = pData->GetArc();
+	m_bArc   = pData->IsArc();
 	m_ptLong = pData->GetLongPoint();
 	m_dShort = pData->GetShortMagni();
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_X ) {
@@ -1883,15 +1913,83 @@ void CDXFellipse::SetDirectionFixed(const CPointD& pts)
 	// 楕円の場合は円同様、座標入れ替え不要
 }
 
-int CDXFellipse::GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL) const
+int CDXFellipse::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdge/*=TRUE*/) const
 {
-	return 0;
+	int		nResult = 0;
+	CPointD	pt1(pData->GetNativePoint(0)), pt2(pData->GetNativePoint(1));
+	const CDXFcircle*	pCircle;
+
+	// bEdge==TRUE : 端点が同じ場合は交点なしとする
+	switch ( pData->GetType() ) {
+	case DXFLINEDATA:
+		if ( bEdge && m_bArc &&
+			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			break;
+		}
+		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LE(pt1, pt2,
+				m_ct, m_dLongLength, m_dLongLength*m_dShort, m_lq);
+		break;
+	case DXFARCDATA:
+		if ( bEdge && m_bArc &&
+			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
+			break;
+		}
+		// through
+	case DXFCIRCLEDATA:
+		pCircle = static_cast<const CDXFcircle*>(pData);
+		// 数値計算完了後、再ｺｰﾃﾞｨﾝｸﾞ
+		pt[0] = pt[1] = 0;
+		return 2;	// とりあえず交点があることにしておく
+	}
+
+	if ( m_bArc ) {
+		if ( nResult > 1 ) {
+			if ( !IsRangeAngle(pt2) ||
+					(pData->GetType()==DXFARCDATA && !pCircle->IsRangeAngle(pt2)) )
+				nResult--;
+		}
+		if ( nResult > 0 ) {
+			if ( !IsRangeAngle(pt1) ||
+					(pData->GetType()==DXFARCDATA && !pCircle->IsRangeAngle(pt1)) ) {
+				nResult--;
+				if ( nResult > 0 )
+					std::swap(pt1, pt2);
+			}
+		}
+	}
+
+	if ( nResult > 1 )
+		pt[1] = pt2;
+	if ( nResult > 0 )
+		pt[0] = pt1;
+
+	return nResult;
 }
 
 optional<CPointD>
-CDXFellipse::CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const
+CDXFellipse::CalcOffsetIntersectionPoint
+	(const CDXFdata* pNext, double r, BOOL bLeft) const
 {
-	return optional<CPointD>();
+	CPointD	pto( GetNativePoint(1) ), p1, p2, pt;
+	optional<CPointD>	ptResult;
+
+	switch ( pNext->GetMakeType() ) {
+	case DXFLINEDATA:
+		p1 = pNext->GetNativePoint(1) - pto;
+		p2 = m_ct - pto;
+		ptResult = ::CalcOffsetIntersectionPoint_LE(p1, p2,
+			m_dLongLength, m_dLongLength*m_dShort, m_lq, r,
+			!m_bRoundOrig, !bLeft);
+		break;
+	}
+
+	if ( ptResult ) {
+		pt = *ptResult + pto;
+		return pt;
+	}
+	return ptResult;
 }
 
 int CDXFellipse::CheckIntersectionCircle(const CPointD&, double) const

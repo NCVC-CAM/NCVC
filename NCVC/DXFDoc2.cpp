@@ -117,14 +117,21 @@ static	BOOL	PolylineProcedure(CDXFDoc*);
 
 inline BOOL DubleRead(CStdioFile& fp)
 {
-	BOOL	bResult = fp.ReadString(g_strGroup);
+	CString	strBuf;
+	BOOL	bResult = fp.ReadString(strBuf);
 	if ( bResult ) {
-		g_strGroup.TrimLeft();	// ç∂ãl¡™Ø∏
+		g_strGroup = strBuf.Trim();		// ç∂ãl¡™Ø∏
 		// ñΩóﬂÇ…ë±Ç≠ílÇì«Ç›çûÇ›
-		bResult = fp.ReadString(g_strOrder);
+		bResult = fp.ReadString(strBuf);
+		if ( bResult )
+			g_strOrder = strBuf.Trim();
+		else
+			g_strOrder.Empty();
 	}
-	else
+	else {
+		g_strGroup.Empty();
 		g_strOrder.Empty();
+	}
 	return bResult;
 }
 

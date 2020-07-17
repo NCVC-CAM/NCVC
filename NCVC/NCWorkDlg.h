@@ -14,6 +14,7 @@ class CNCWorkDlg : public CDialog
 		m_ctOK.EnableWindow(bEnable);
 		m_ctHide.EnableWindow(bEnable);
 	}
+	void	SaveValue(void);
 
 // コンストラクション
 public:
@@ -34,6 +35,9 @@ public:
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
 	virtual void PostNcDestroy();
+	virtual BOOL OnInitDialog();
+	virtual void OnCancel();
+	virtual void OnOK();
 	//}}AFX_VIRTUAL
 
 // インプリメンテーション
@@ -41,10 +45,8 @@ protected:
 
 	// 生成されたメッセージ マップ関数
 	//{{AFX_MSG(CNCWorkDlg)
-	virtual BOOL OnInitDialog();
-	virtual void OnCancel();
-	virtual void OnOK();
 	afx_msg void OnHide();
+	afx_msg void OnDestroy();
 	//}}AFX_MSG
 	afx_msg LRESULT OnUserSwitchDocument(WPARAM, LPARAM);
 

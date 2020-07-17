@@ -472,7 +472,7 @@ BOOL SingleLayer(int nID)
 	}
 
 	// 最終ﾁｪｯｸ
-	if ( g_obMakeGdata.GetSize() == 0 ) {
+	if ( !g_bData ) {
 		AfxMessageBox(IDS_ERR_MAKENC, MB_OK|MB_ICONSTOP);
 		return FALSE;
 	}
@@ -495,7 +495,8 @@ BOOL MultiLayer(int nID)
 #endif
 	extern	LPCTSTR	gg_szCat;
 	int		i, j, nLayerCnt = g_pDoc->GetLayerCnt();
-	BOOL	bPartOut = FALSE;	// １回でも個別出力があればTRUE
+	BOOL	bPartOut = FALSE,	// １回でも個別出力があればTRUE
+			bNotPart = FALSE;	// 全体出力でﾙｰﾌﾟ終了なら  TRUE
 	CLayerData*	pLayer;
 
 	if ( nID == ID_FILE_DXF2NCD_EX2 ) {
@@ -568,8 +569,10 @@ BOOL MultiLayer(int nID)
 		}
 
 		// 個別出力でないなら(並べ替えしているので途中に割り込むことはない)
-		if ( !pLayer->IsPartOut() )
+		if ( !pLayer->IsPartOut() ) {
+			bNotPart = TRUE;
 			continue;
+		}
 
 		// --- 以下個別出力のみの処理
 		if ( g_bData ) {	// NC生成ｱﾘ？
@@ -600,8 +603,17 @@ BOOL MultiLayer(int nID)
 	}	// End of for main loop (Layer)
 
 	// --- 最終ﾁｪｯｸ
-	if ( g_bData ) {	// ﾙｰﾌﾟが全体出力で終了
-		if ( g_obMakeGdata.GetSize() == 0 ) {
+	if ( bNotPart ) {	// ﾙｰﾌﾟが全体出力で終了
+		if ( g_bData ) {	// NC生成ｱﾘ？
+			// MakeNCD_FinalFunc(終了ｺｰﾄﾞ，ﾌｧｲﾙの出力)の実行
+			if ( !MakeNCD_FinalFunc() ) {
+#ifdef _DEBUG
+				dbgE.printf("MakeNCD_FinalFunc()");
+#endif
+				return FALSE;
+			}
+		}
+		else {				// 出力ﾅｼ
 			if ( bPartOut ) {	// 個別出力があれば
 				// 個別出力以外のﾚｲﾔ情報を取得し，ﾜｰﾆﾝｸﾞﾒｯｾｰｼﾞ出力へ
 				for ( i=0; i<nLayerCnt; i++ ) {
@@ -613,15 +625,6 @@ BOOL MultiLayer(int nID)
 			else {
 				// ｴﾗｰﾒｯｾｰｼﾞ
 				AfxMessageBox(IDS_ERR_MAKENC, MB_OK|MB_ICONEXCLAMATION);
-				return FALSE;
-			}
-		}
-		else {
-			// 終了ｺｰﾄﾞ，ﾌｧｲﾙの出力など
-			if ( !MakeNCD_FinalFunc() ) {
-#ifdef _DEBUG
-				dbgE.printf("MakeNCD_FinalFunc()");
-#endif
 				return FALSE;
 			}
 		}
@@ -803,7 +806,7 @@ void SetGlobalMapToLayer(const CLayerData* pLayer)
 			if ( GetFlg(MKNC_FLG_ELLIPSE) &&
 					fabs( RoundUp(pEllipse->GetLongLength()) - RoundUp(pEllipse->GetShortLength()) ) < EPS ) {
 				// 長径短径が等しい楕円なら円弧か円ﾃﾞｰﾀに変身
-				pData->ChangeMakeType( pEllipse->GetArc() ? DXFARCDATA : DXFCIRCLEDATA);
+				pData->ChangeMakeType( pEllipse->IsArc() ? DXFARCDATA : DXFCIRCLEDATA);
 			}
 		}
 		// 各ｵﾌﾞｼﾞｪｸﾄﾀｲﾌﾟごとの処理
@@ -983,6 +986,8 @@ BOOL MakeNCD_ShapeFunc(void)
 		nMapCnt += g_pDoc->GetLayerData(i)->AllShape_OrgTuning();
 	if ( !IsThread() )
 		return FALSE;
+	if ( nMapCnt <= 0 )
+		return TRUE;
 
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 	AddCustomCode(g_pMakeOpt->GetStr(MKNC_STR_HEADER), NULL);
@@ -1000,6 +1005,8 @@ BOOL MakeNCD_ShapeFunc(void)
 	if ( !pShape )
 		return TRUE;
 
+	// ﾃﾞｰﾀ生成
+	g_bData = TRUE;
 	// ﾌｪｰｽﾞ2
 	SendFaseMessage(nMapCnt);
 
@@ -1197,7 +1204,7 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 				// 楕円ﾃﾞｰﾀの調整
 				if ( pData->GetMakeType() == DXFELLIPSEDATA ) {
 					pEllipse = static_cast<CDXFellipse*>(pData);
-					if ( !pEllipse->GetArc() && pEllipse->GetRound()!=bRound ) {
+					if ( !pEllipse->IsArc() && pEllipse->GetRound()!=bRound ) {
 						// 楕円の切削方向を設定
 						pEllipse->SetRoundFixed(bRound);
 					}

@@ -519,7 +519,7 @@ public:
 	double	GetLean(void) const;
 	double	GetLeanCos(void) const;
 	double	GetLeanSin(void) const;
-	BOOL	GetArc(void) const;
+	BOOL	IsArc(void) const;
 	void	SetRoundFixed(BOOL);
 
 	virtual	BOOL	IsMatchPoint(const CPointD&);

@@ -154,11 +154,11 @@ public:
 	void	AddMacroFile(const CString&);	// ÄŞ·­ÒİÄ”jŠüŒã‚ÉÁ‹‚·‚éˆêÌ§²Ù
 
 	// from NCChild.cpp <- NCWorkDlg.cpp
-	void	SetWorkRect(BOOL bHide, CRect3D& rc) {
-		if ( bHide )
+	void	SetWorkRect(BOOL bShow, CRect3D& rc) {
+		if ( bShow )
 			m_rcWork = rc;
-		UpdateAllViews(NULL, UAV_DRAWWORKRECT, (CObject *)bHide);
-		m_bWorkRect = bHide;
+		UpdateAllViews(NULL, UAV_DRAWWORKRECT, (CObject *)bShow);
+		m_bWorkRect = bShow;
 	}
 
 	// from NCViewTab.cpp

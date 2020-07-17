@@ -253,29 +253,27 @@ BOOL CDXFDoc::ReadLayerMap(LPCTSTR lpszFile)
 	extern	LPCTSTR		gg_szComma;		// StdAfx.cpp
 	int		n;
 	BOOL	bResult = TRUE;
-	CString	strBuf, strName;
+	CString	strTmp, strBuf;
 	TCHAR	szCurrent[_MAX_PATH];
 	CLayerData*	pLayer;
 
 	// ¶ÚÝÄÃÞ¨Ú¸ÄØ‚ð lpszFile ‚É -> PathSearchAndQualify()
 	::GetCurrentDirectory(_MAX_PATH, szCurrent);
-	::Path_Name_From_FullPath(lpszFile, strBuf/*strPath*/, strName/*dummy*/);
-	::SetCurrentDirectory(strBuf);
+	::Path_Name_From_FullPath(lpszFile, strTmp/*strPath*/, strBuf/*dummy*/);
+	::SetCurrentDirectory(strTmp);
 
 	try {
 		CStdioFile	fp(lpszFile,
 			CFile::modeRead | CFile::shareDenyWrite | CFile::typeText);
 		// “Ç‚Ýž‚ÝÙ°Ìß
-		while ( fp.ReadString(strBuf) ) {
-			strBuf.TrimLeft();
+		while ( fp.ReadString(strTmp) ) {
+			strBuf = strTmp.Trim();
 			if ( ::NC_IsNullLine(strBuf) )
 				continue;
 			// Ú²Ô–¼‚¾‚¯ŒŸõ
 			n = strBuf.Find(gg_szComma);
 			if ( n > 0 ) {
-				strName = strBuf.Left(n);
-				strName.TrimRight();
-				pLayer = GetLayerData(strName);
+				pLayer = GetLayerData(strBuf.Left(n).Trim());
 				if ( pLayer ) {
 					// ‚ ‚Æ‚ÍCLayerData‚ÌŽdŽ–
 					pLayer->SetLayerInfo(strBuf.Mid(n+1));

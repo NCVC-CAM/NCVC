@@ -9,38 +9,42 @@ enum ENTRACKINGMODE
 {
 	TM_NONE = 0,
 	TM_SPIN,
-	TM_PAN,
-	TM_ZOOM,
+	TM_PAN
 };
 
 class CNCViewGL : public CView
 {
 	DECLARE_DYNCREATE(CNCViewGL)
 
-	int		m_cx, m_cy;
-	CRect3D	m_rcMax;
-	CDC*	m_pDC;
-	HGLRC	m_hRC;
-	GLuint	m_uiDisplayListIndex;
+	int			m_cx, m_cy;		// ≥®›ƒﬁ≥ª≤Ωﬁ(Ω∏ÿ∞›)
+	double		m_dRate;		// äÓèÄägëÂó¶
+	CRect3D		m_rcView;		// ”√ﬁŸãÛä‘
+	CPointD		m_ptCenter,		// ï`âÊíÜêS
+				m_ptLastMove;	// à⁄ìÆëOç¿ïW
+	CPoint3D	m_ptLastRound;	// âÒì]ëOç¿ïW
+	HGLRC		m_hRC;
+	GLuint		m_uiAxis,		// é≤√ﬁ®ΩÃﬂ⁄≤ÿΩƒ
+				m_uiBack,		// îwåi
+				m_uiWork,		// ‹∞∏ãÈå`
+				m_uiCode;		// êÿçÌ ﬂΩ
 
 	ENTRACKINGMODE	m_enTrackingMode;
-	CPoint			m_ptLast;
-	GLfloat			m_f3LastPos[3];
-	GLfloat			m_f3RenderingCenter[3];		// ï`âÊíÜêS
-	GLfloat			m_fRenderingRate;			// ägëÂó¶
-	GLfloat			m_objectXform[4][4];
+	GLdouble		m_objectXform[4][4];
 
-	BOOL	SetupPixelFormat(void);
+	void	ClearObjectForm(void);
+	BOOL	SetupPixelFormat(CDC*);
 	void	RenderAxis(void);
+	void	RenderBack(void);
+	void	RenderWork(void);
 	void	RenderCode(void);
 
-	void	ptov(const CPoint& pt, GLfloat v[3]);
+	CPoint3D	PtoR(const CPoint& pt);
 	void	BeginTracking(const CPoint&, ENTRACKINGMODE);
 	void	EndTracking(void);
 	void	DoTracking(const CPoint&);
-	void	DoRotation(float, float, float, float);
+	void	DoScale(int);
+	void	DoRotation(double, const CPoint3D&);
 	void	SetupViewingTransform(void);
-	void	SetupViewingFrustum(void);
 
 protected:
 	CNCViewGL();
@@ -52,6 +56,8 @@ public:
 	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 protected:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
+	virtual void OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView);
 
 public:
 	virtual ~CNCViewGL();
@@ -71,6 +77,11 @@ protected:
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+	// CNCViewTab::OnActivatePage() Ç©ÇÁ SendMessage()
+	afx_msg LRESULT OnUserActivatePage(WPARAM, LPARAM);
+	// “∆≠∞∫œ›ƒﬁ
+	afx_msg	void OnMoveKey(UINT);
+	afx_msg	void OnLensKey(UINT);
 	// äeÀﬁ≠∞Ç÷ÇÃÃ®Øƒ“Øæ∞ºﬁ
 	afx_msg LRESULT OnUserViewFitMsg(WPARAM, LPARAM);
 

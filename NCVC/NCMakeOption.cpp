@@ -264,7 +264,7 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 	std::string	str, strOrder, strResult;
 	tokenizer	tok( str, sep );
 
-	CString	strBuf;
+	CString	strTmp, strBuf;
 	TCHAR	szCurrent[_MAX_PATH], szFile[_MAX_PATH];
 	INT_PTR	n;
 	BOOL	bResult = TRUE;
@@ -274,14 +274,14 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 
 	// ¶ÚÝÄÃÞ¨Ú¸ÄØ‚ð lpszFile ‚É -> PathSearchAndQualify()
 	::GetCurrentDirectory(_MAX_PATH, szCurrent);
-	::Path_Name_From_FullPath(m_strInitFile, strBuf, CString());
-	::SetCurrentDirectory(strBuf);
+	::Path_Name_From_FullPath(m_strInitFile, strTmp/*strPath*/, strBuf/*dummy*/);
+	::SetCurrentDirectory(strTmp);
 
 	try {
 		CStdioFile	fp(m_strInitFile,
 			CFile::modeRead | CFile::shareDenyWrite | CFile::typeText);
-		while ( fp.ReadString(strBuf) ) {
-			strBuf.TrimLeft();
+		while ( fp.ReadString(strTmp) ) {
+			strBuf = strTmp.Trim();
 			if ( ::NC_IsNullLine(strBuf) )
 				continue;
 			// •ªŠ„•¶Žš—ñ¾¯Ä

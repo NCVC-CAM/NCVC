@@ -189,7 +189,7 @@ struct CGcode : grammar<CGcode>
 			// 未知ｺｰﾄﾞにも対応するため「全ての英大文字に続く数値」で解析
 			rr = +( +( upper_p >> real_p )[append(a.vResult)]
 					>> !( ch_p(',') >> ((ch_p('R')|'C') >> real_p) )[append(a.vResult)] )
-				>> *( graph_p );	// EOFなど
+				>> *( graph_p|space_p );	// EOFなど
 		}
 		const rule_t& start() const { return rr; }
 	};
@@ -343,7 +343,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		case 'D':	case 'H':
 			nCode = (int)(strchr(g_szNdelimiter, it->at(0)) - g_szNdelimiter);
 			// 値取得
-			if ( g_ncArgv.nc.nGcode>=81 && g_ncArgv.nc.nGcode<=89 ) {
+			if ( 81<=g_ncArgv.nc.nGcode && g_ncArgv.nc.nGcode<=89 ) {
 				// 固定ｻｲｸﾙの特別処理
 				if ( nCode == NCA_K )		// Kはﾈｲﾃｨﾌﾞで
 					g_ncArgv.nc.dValue[NCA_K] = atoi(it->substr(1).c_str());

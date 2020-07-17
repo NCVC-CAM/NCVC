@@ -641,7 +641,7 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 1.20",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 1.50",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2007 MNCT-S K.Magara",IDC_STATIC,86,182,130,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1585,8 +1585,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,2,0,0
- PRODUCTVERSION 1,2,0,0
+ FILEVERSION 1,5,0,1
+ PRODUCTVERSION 1,5,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1604,14 +1604,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT-S"
             VALUE "FileDescription", "NCVC MFC ±ÌßØ¹°¼®Ý"
-            VALUE "FileVersion", "1.2.0.0"
+            VALUE "FileVersion", "1.5.0.1"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2007 MNCT-S K.Magara"
             VALUE "LegalTrademarks", "MNCT-S"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "1.2.0.0"
+            VALUE "ProductVersion", "1.5.0.1"
             VALUE "SpecialBuild", "VC++.NET2005 with MFC"
         END
     END

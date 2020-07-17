@@ -263,8 +263,10 @@ void CNCdata::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 		m_obCdata[i]->DrawYZ(pDC, bSelect, bCorrect);
 }
 
-void CNCdata::DrawGL(void) const
+void CNCdata::DrawGL(BOOL bCorrect) const
 {
+	for ( int i=0; i<m_obCdata.GetSize(); i++ )
+		m_obCdata[i]->DrawGL(bCorrect);
 }
 
 #ifdef _DEBUG
@@ -337,7 +339,7 @@ double CNCline::SetCalcLength(void)
 		m_dMove[NCA_Y] = fabs(pt.y);
 		m_dMove[NCA_Z] = fabs(pt.z);
 		// ˆÚ“®’·
-		m_nc.dLength = sqrt( pt.x*pt.x + pt.y*pt.y + pt.z*pt.z );
+		m_nc.dLength = pt.hypot();
 	}
 	else {
 		m_nc.dLength = m_dMove[NCA_X] = m_dMove[NCA_Y] = m_dMove[NCA_Z] = 0.0;
@@ -347,7 +349,7 @@ double CNCline::SetCalcLength(void)
 			m_dMove[NCA_X] += fabs(pt.x);
 			m_dMove[NCA_Y] += fabs(pt.y);
 			m_dMove[NCA_Z] += fabs(pt.z);
-			m_nc.dLength += sqrt( pt.x*pt.x + pt.y*pt.y + pt.z*pt.z );
+			m_nc.dLength += pt.hypot();
 		}
 	}
 
@@ -435,16 +437,17 @@ void CNCline::DrawLine(CDC* pDC, size_t n, BOOL bSelect, BOOL bCorrect) const
 	pDC->SelectObject(pOldPen);
 }
 
-void CNCline::DrawGL(void) const
+void CNCline::DrawGL(BOOL bCorrect) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetNcDrawColor( GetPenType() + NCCOL_G0 );
+	COLORREF	col = pOpt->GetNcDrawColor(bCorrect ? NCCOL_CORRECT : (GetPenType()+NCCOL_G0));
 	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
 	::glBegin(GL_LINES);
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
 	::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
 	::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
 	::glEnd();
+	CNCdata::DrawGL(TRUE);
 }
 
 tuple<BOOL, CPointD, double, double> CNCline::CalcRoundPoint
@@ -556,7 +559,7 @@ double CNCline::CalcBetweenAngle(const CNCdata* pNext) const
 	}
 	
 	// ‚Qü(‚Ü‚½‚Í‰~ŒÊ‚ÌÚü)‚ª‚È‚·Šp“x‚ğ‹‚ß‚é
-	return ::CalcBetweenAngle_LL(pt1, pt2);
+	return ::CalcBetweenAngle(pt1, pt2);
 }
 
 int CNCline::CalcOffsetSign(void) const
@@ -1034,7 +1037,7 @@ void CNCcycle::DrawCycle(CDC* pDC, size_t n, BOOL bSelect) const
 	pDC->SelectObject(pOldPen);
 }
 
-void CNCcycle::DrawGL(void) const
+void CNCcycle::DrawGL(BOOL) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	colG0 = pOpt->GetNcDrawColor( NCCOL_G0 ),
@@ -1283,7 +1286,7 @@ double CNCcircle::SetCalcLength(void)
 			switch ( pData->GetType() ) {
 			case NCDLINEDATA:
 				pt = pData->GetEndPoint() - pData->GetStartPoint();
-				m_nc.dLength += sqrt( pt.x*pt.x + pt.y*pt.y + pt.z*pt.z );
+				m_nc.dLength += pt.hypot();
 				break;
 			case NCDARCDATA:
 				pCircle = static_cast<CNCcircle *>(pData);
@@ -1688,7 +1691,7 @@ void CNCcircle::Draw_G19(EN_NCCIRCLEDRAW enType, CDC* pDC) const	// YZ_PLANE
 	}
 }
 
-void CNCcircle::DrawGL(void) const
+void CNCcircle::DrawGL(BOOL bCorrect) const
 {
 	double		sq, eq, r = fabs(m_r), dFinalVal;
 	CPoint3D	pt;
@@ -1703,9 +1706,9 @@ void CNCcircle::DrawGL(void) const
 	}
 
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetNcDrawColor( NCCOL_G1 );
+	COLORREF	col = pOpt->GetNcDrawColor(bCorrect ? NCCOL_CORRECT : NCCOL_G1);
 	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
-	::glBegin(GL_LINES);
+	::glBegin(GL_LINE_STRIP);
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
 
 	switch ( GetPlane() ) {
@@ -1789,7 +1792,7 @@ void CNCcircle::DrawGL(void) const
 				::glVertex3d(pt.x, pt.y, pt.z);
 			}
 		}
-		pt.x = m_nG23==0 ? m_ptOrg.y : dFinalVal;
+		pt.x = m_nG23==0 ? m_ptOrg.x : dFinalVal;
 		pt.y = r * cos(eq) + m_ptOrg.y;
 		pt.z = r * sin(eq) + m_ptOrg.z;
 		::glVertex3d(pt.x, pt.y, pt.z);
@@ -1797,6 +1800,8 @@ void CNCcircle::DrawGL(void) const
 	}
 
 	::glEnd();
+
+	CNCdata::DrawGL(TRUE);
 }
 
 void CNCcircle::SetMaxRect(void)
@@ -1918,7 +1923,7 @@ tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint
 			r1 = *dResult;
 		else {
 			bResult = FALSE;
-			goto CalcRoundPoint_End;
+			return make_tuple(bResult, pt, rr1, rr2);
 		}
 		// ‘¼•û‚Ì‰~‚Æ©g‚ÌÚü‚Å‘¼•û‚Ì}r•„†‚ğŒvZ
 		dResult = CalcRoundPoint_CircleInOut(pte, pts, nG23next, m_nG23, r);
@@ -1926,14 +1931,14 @@ tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint
 			r2 = *dResult;
 		else {
 			bResult = FALSE;
-			goto CalcRoundPoint_End;
+			return make_tuple(bResult, pt, rr1, rr2);
 		}
 		// ‚Q‚Â‚Ì‰~‚ÌŒğ“_‚ğ‹‚ß‚é -> ‰ğ‚ª‚Q‚Â‚È‚¢‚Æ–Êæ‚èo—ˆ‚È‚¢‚Æ”»’f‚·‚é
 		rr1 = r0 + r1;		rr2 = rn + r2;
 		tie(nResult, p1, p2) = ::CalcIntersectionPoint_CC(pts, pte, rr1, rr2);
 		if ( nResult != 2 ) {
 			bResult = FALSE;
-			goto CalcRoundPoint_End;
+			return make_tuple(bResult, pt, rr1, rr2);
 		}
 		// ‰ğ‚Ì‘I‘ğ
 		double	sx = fabs(pts.x), sy = fabs(pts.y), ex = fabs(pte.x), ey = fabs(pte.y);
@@ -1975,7 +1980,7 @@ tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint
 		tie(bResult, pt, r) = ::CalcOffsetIntersectionPoint_LC(pte, pts,// ’¼ü‚©‚ç‚Ì±ÌßÛ°Á‚Å
 								r0, r, -CalcOffsetSign(), 0, 0);		// ‰ñ“]•ûŒü‚ğ”½“]
 		if ( !bResult )
-			goto CalcRoundPoint_End;
+			return make_tuple(bResult, pt, rr1, rr2);
 		// –Êæ‚è‚É‘Š“–‚·‚éC’l‚ÌŒvZ
 		rr1 = r0 + r;
 		if ( r > 0 ) {
@@ -1996,7 +2001,6 @@ tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint
 	// Œ´“_•â³
 	pt += GetPlaneValue(m_ptValE);
 
-CalcRoundPoint_End:
 	return make_tuple(bResult, pt, rr1, rr2);
 }
 
@@ -2147,7 +2151,7 @@ double CNCcircle::CalcBetweenAngle(const CNCdata* pNext) const
 	}
 
 	// ‚Qü(‚Ü‚½‚Í‰~ŒÊ‚ÌÚü)‚ª‚È‚·Šp“x‚ğ‹‚ß‚é
-	return ::CalcBetweenAngle_LL(pt1, pt2);
+	return ::CalcBetweenAngle(pt1, pt2);
 }
 
 int CNCcircle::CalcOffsetSign(void) const

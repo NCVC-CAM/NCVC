@@ -3,9 +3,11 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "NCChild.h"
 #include "NCdata.h"
 #include "NCDoc.h"
 #include "NCViewGL.h"
+#include "ViewOption.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -13,8 +15,12 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-// CNCViewGL
+// 拡大率表示のための変換単位
+// 1ｲﾝﾁあたりのﾋﾟｸｾﾙ数 GetDeviceCaps(LOGPIXELS[X|Y]) = 96dpi
+// 1ｲﾝﾁ == 25.4mm
+static	const double	LOGPIXEL = 96 / 25.4;	
 
+// CNCViewGL
 IMPLEMENT_DYNCREATE(CNCViewGL, CView)
 
 BEGIN_MESSAGE_MAP(CNCViewGL, CView)
@@ -28,9 +34,18 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CView)
 	ON_WM_RBUTTONUP()
 	ON_WM_MOUSEMOVE()
 	ON_WM_MOUSEWHEEL()
+	// ﾍﾟｰｼﾞ切替ｲﾍﾞﾝﾄ
+	ON_MESSAGE (WM_USERACTIVATEPAGE, OnUserActivatePage)
 	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
 	ON_MESSAGE (WM_USERVIEWFITMSG, OnUserViewFitMsg)
+	// ﾒﾆｭｰｺﾏﾝﾄﾞ
+	ON_COMMAND_RANGE(ID_VIEW_UP, ID_VIEW_RT, OnMoveKey)
+	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, OnLensKey)
 END_MESSAGE_MAP()
+
+//	ｳｨﾝﾄﾞｳﾒｯｾｰｼﾞを受信し、OpenGL命令を操作するときは
+//	::wglMakeCurrent( pDC->GetSafeHdc(), m_hRC );
+//	を必ず入れておく
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewGL クラスの構築/消滅
@@ -38,19 +53,12 @@ END_MESSAGE_MAP()
 CNCViewGL::CNCViewGL()
 {
 	m_cx = m_cy = 0;
-	m_pDC = NULL;
+	m_dRate = 0.0;
 	m_hRC = NULL;
-	m_uiDisplayListIndex = 0;
+	m_uiAxis = m_uiBack = m_uiWork = m_uiCode = 0;
 
 	m_enTrackingMode = TM_NONE;
-	m_fRenderingRate = 10;
-	m_f3RenderingCenter[0]	= 0.0;
-	m_f3RenderingCenter[1]	= 0.0;
-	m_f3RenderingCenter[2]	= 0.0;
-	m_objectXform[0][0]	= 1.0f; m_objectXform[0][1] = 0.0f; m_objectXform[0][2] = 0.0f; m_objectXform[0][3] = 0.0f;
-	m_objectXform[1][0]	= 0.0f; m_objectXform[1][1] = 1.0f; m_objectXform[1][2] = 0.0f; m_objectXform[1][3] = 0.0f;
-	m_objectXform[2][0]	= 0.0f; m_objectXform[2][1] = 0.0f; m_objectXform[2][2] = 1.0f; m_objectXform[2][3] = 0.0f;
-	m_objectXform[3][0]	= 0.0f; m_objectXform[3][1] = 0.0f; m_objectXform[3][2] = 0.0f; m_objectXform[3][3] = 1.0f;
+	ClearObjectForm();
 }
 
 CNCViewGL::~CNCViewGL()
@@ -68,26 +76,81 @@ BOOL CNCViewGL::PreCreateWindow(CREATESTRUCT& cs)
 
 void CNCViewGL::OnInitialUpdate() 
 {
-	// ｵﾌﾞｼﾞｪｸﾄ矩形を5%大きく
-	m_rcMax = GetDocument()->GetMaxRect();
-	m_rcMax.InflateRect(m_rcMax.Width()*0.05, m_rcMax.Height()*0.05);
-	m_rcMax.NormalizeRect();
-
 	// 視点座標変換
 	::glMatrixMode( GL_MODELVIEW );
 	::glLoadIdentity();
 
-	m_uiDisplayListIndex = ::glGenLists(2);
-	if( m_uiDisplayListIndex <= 0 )
+	// 各種ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
+	m_uiAxis = ::glGenLists(1);
+	if( m_uiAxis > 0 ) {
+		::glNewList( m_uiAxis, GL_COMPILE );
+			RenderAxis();
+		::glEndList();
+	}
+	m_uiBack = ::glGenLists(1);
+	if( m_uiBack > 0 ) {
+		::glNewList( m_uiBack, GL_COMPILE );
+			RenderBack();
+		::glEndList();
+	}
+
+	// ｵﾌﾞｼﾞｪｸﾄ数が多いとﾒﾓﾘ消費量が多すぎる(かも知れない)ので
+	// 10,000を閾値とする
+	if ( GetDocument()->GetNCsize() > 10000 )
 		return;
-	// 軸描画のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
-	::glNewList( m_uiDisplayListIndex, GL_COMPILE );
-		RenderAxis();
-	::glEndList();
-	// NCﾃﾞｰﾀ描画のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
-	::glNewList( m_uiDisplayListIndex+1, GL_COMPILE );
-		RenderCode();
-	::glEndList();
+
+	m_uiCode = ::glGenLists(1);
+	if( m_uiCode > 0 ) {
+		// NCﾃﾞｰﾀ描画のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
+		::glNewList( m_uiCode, GL_COMPILE );
+			RenderCode();
+		::glEndList();
+	}
+}
+
+void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
+{
+	switch ( lHint ) {
+	case UAV_FILEINSERT:
+		OnLensKey(ID_VIEW_FIT);
+		return;
+	case UAV_DRAWWORKRECT:
+		if ( m_uiWork > 0 )
+			::glDeleteLists(m_uiWork, 1);
+		m_uiWork = ::glGenLists(1);
+		if( m_uiWork > 0 ) {
+			::glNewList( m_uiWork, GL_COMPILE );
+				RenderWork();
+			::glEndList();
+		}
+		Invalidate(FALSE);
+		return;
+	case UAV_CHANGEFONT:
+		// ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ再生成
+		if ( m_uiAxis > 0 )
+			::glDeleteLists(m_uiAxis, 1);
+		if ( m_uiBack > 0 )
+			::glDeleteLists(m_uiBack, 1);
+		if ( m_uiCode > 0 )
+			::glDeleteLists(m_uiCode, 1);
+		OnInitialUpdate();
+		if ( GetDocument()->IsWorkRect() ) {
+			if ( m_uiWork > 0 )
+				::glDeleteLists(m_uiWork, 1);
+			m_uiWork = ::glGenLists(1);
+			if( m_uiWork > 0 ) {
+				::glNewList( m_uiWork, GL_COMPILE );
+					RenderWork();
+				::glEndList();
+			}
+		}
+		Invalidate(FALSE);
+		return;
+	case UAV_ADDINREDRAW:
+		Invalidate(FALSE);
+		return;
+	}
+	CView::OnUpdate(pSender, lHint, pHint);
 }
 
 BOOL CNCViewGL::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
@@ -100,7 +163,7 @@ BOOL CNCViewGL::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewGL クラスのメンバ関数
 
-BOOL CNCViewGL::SetupPixelFormat(void)
+BOOL CNCViewGL::SetupPixelFormat(CDC* pDC)
 {
 	static PIXELFORMATDESCRIPTOR pfd =
 	{
@@ -123,12 +186,12 @@ BOOL CNCViewGL::SetupPixelFormat(void)
 	};
 
 	int	iPixelFormat;
-	if( !(iPixelFormat = ::ChoosePixelFormat(m_pDC->GetSafeHdc(), &pfd)) ) {
+	if( !(iPixelFormat = ::ChoosePixelFormat(pDC->GetSafeHdc(), &pfd)) ) {
 		TRACE0( "ChoosePixelFormat is failed" );
 		return FALSE;
 	}
 
-	if( !::SetPixelFormat(m_pDC->GetSafeHdc(), iPixelFormat, &pfd) ) {
+	if( !::SetPixelFormat(pDC->GetSafeHdc(), iPixelFormat, &pfd) ) {
 		TRACE0( "SetPixelFormat is failed" );
 		return FALSE;
 	}
@@ -136,95 +199,216 @@ BOOL CNCViewGL::SetupPixelFormat(void)
     return TRUE;
 }
 
+void CNCViewGL::ClearObjectForm(void)
+{
+	m_ptCenter = 0.0;
+	m_objectXform[0][0]	= 1.0; m_objectXform[0][1] = 0.0; m_objectXform[0][2] = 0.0; m_objectXform[0][3] = 0.0;
+	m_objectXform[1][0]	= 0.0; m_objectXform[1][1] = 1.0; m_objectXform[1][2] = 0.0; m_objectXform[1][3] = 0.0;
+	m_objectXform[2][0]	= 0.0; m_objectXform[2][1] = 0.0; m_objectXform[2][2] = 1.0; m_objectXform[2][3] = 0.0;
+	m_objectXform[3][0]	= 0.0; m_objectXform[3][1] = 0.0; m_objectXform[3][2] = 0.0; m_objectXform[3][3] = 1.0;
+}
+
 void CNCViewGL::RenderAxis(void)
 {
 	extern	const	PENSTYLE	g_penStyle[];	// ViewOption.cpp
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	CPoint3D	pt1, pt2;
 	double		dLength;
 	COLORREF	col;
 
 	::glPushAttrib( GL_CURRENT_BIT | GL_LINE_BIT );	// 色 | 線情報
-
 	::glLineWidth( 2.0 );
 	::glEnable( GL_LINE_STIPPLE );
 
 	// X軸のｶﾞｲﾄﾞ
 	dLength = pOpt->GetGuideLength(NCA_X);
-	pt1.SetPoint(-dLength, 0.0, 0.0);
-	pt2.SetPoint( dLength, 0.0, 0.0);
 	col = pOpt->GetNcDrawColor(NCCOL_GUIDEX);
 	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_X)].nGLpattern);
 	::glBegin( GL_LINES );
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3d(pt1.x, pt1.y, pt1.z);
-	::glVertex3d(pt2.x, pt2.y, pt2.z);
+	::glVertex3d(-dLength, 0.0, 0.0);
+	::glVertex3d( dLength, 0.0, 0.0);
 	::glEnd();
 	// Y軸のｶﾞｲﾄﾞ
 	dLength = pOpt->GetGuideLength(NCA_Y);
-	pt1.SetPoint(0.0, -dLength, 0.0);
-	pt2.SetPoint(0.0,  dLength, 0.0);
 	col = pOpt->GetNcDrawColor(NCCOL_GUIDEY);
 	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Y)].nGLpattern);
 	::glBegin( GL_LINES );
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3d(pt1.x, pt1.y, pt1.z);
-	::glVertex3d(pt2.x, pt2.y, pt2.z);
+	::glVertex3d(0.0, -dLength, 0.0);
+	::glVertex3d(0.0,  dLength, 0.0);
 	::glEnd();
 	// Z軸のｶﾞｲﾄﾞ
 	dLength = pOpt->GetGuideLength(NCA_Z);
-	pt1.SetPoint(0.0, 0.0, -dLength);
-	pt2.SetPoint(0.0, 0.0,  dLength);
 	col = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
 	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Z)].nGLpattern);
 	::glBegin( GL_LINES );
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3d(pt1.x, pt1.y, pt1.z);
-	::glVertex3d(pt2.x, pt2.y, pt2.z);
+	::glVertex3d(0.0, 0.0, -dLength);
+	::glVertex3d(0.0, 0.0,  dLength);
 	::glEnd();
 
+	::glDisable( GL_LINE_STIPPLE );
+	::glPopAttrib();
+}
+
+void CNCViewGL::RenderBack(void)
+{
+	// 背景ﾎﾟﾘｺﾞﾝの描画
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	COLORREF	col1 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND1),
+				col2 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND2);
+	::glPushMatrix();
+	::glLoadIdentity();
+	::glBegin(GL_QUADS);
+	// 左上
+	::glColor3ub( GetRValue(col1), GetGValue(col1), GetBValue(col1) );
+	::glVertex3d(m_rcView.left,  m_rcView.bottom, m_rcView.low);
+	// 左下
+	::glColor3ub( GetRValue(col2), GetGValue(col2), GetBValue(col2) );
+	::glVertex3d(m_rcView.left,  m_rcView.top,    m_rcView.low);
+	// 右下
+	::glColor3ub( GetRValue(col2), GetGValue(col2), GetBValue(col2) );
+	::glVertex3d(m_rcView.right, m_rcView.top,    m_rcView.low);
+	// 右上
+	::glColor3ub( GetRValue(col1), GetGValue(col1), GetBValue(col1) );
+	::glVertex3d(m_rcView.right, m_rcView.bottom, m_rcView.low);
+	//
+	::glEnd();
+	::glPopMatrix();
+}
+
+void CNCViewGL::RenderWork(void)
+{
+	// ﾜｰｸ矩形の描画
+	CRect3D		rc(GetDocument()->GetWorkRect());
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	COLORREF	col = pOpt->GetNcDrawColor(NCCOL_WORK);
+	GLfloat		materialCol[4], lightPos[4];
+	materialCol[0] = (GLfloat)GetRValue(col) / 255;
+	materialCol[1] = (GLfloat)GetGValue(col) / 255;
+	materialCol[2] = (GLfloat)GetBValue(col) / 255;
+	materialCol[3] = 1.0f;
+
+	::glPushAttrib( GL_LIGHTING_BIT );		// 照明処理
+	// 照明位置設定
+//	lightPos[0] = (GLfloat)m_rcView.left;
+//	lightPos[1] = (GLfloat)m_rcView.top;
+//	lightPos[2] = (GLfloat)m_rcView.high;
+	lightPos[0] = (GLfloat)(m_rcView.Width()/2  + m_rcView.left);
+	lightPos[1] = (GLfloat)(m_rcView.Height()/2 + m_rcView.top);
+	lightPos[2] = (GLfloat)(m_rcView.high + max(max(m_rcView.Width(), m_rcView.Height()), m_rcView.Depth()));
+	lightPos[3] = 1.0f;
+//	::glMatrixMode( GL_PROJECTION );
+	::glPushMatrix();
+	::glLoadIdentity();
+	::glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+	::glPopMatrix();
+//	::glMatrixMode( GL_MODELVIEW );
+/*
+	// 両面照光モードに設定する
+	::glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	// 光源に関係しない環境光を設定
+	GLfloat model_ambient[] = {0.4f,0.4f,0.4f,1.0f};
+	::glLightModelfv(GL_LIGHT_MODEL_AMBIENT, model_ambient);
+	// 光源の環境光(ambient),拡散光(diffuse),鏡面光(specular)を設定
+	GLfloat light0_ambient[]  = {0.5f,0.5f,0.5f,1.0f};
+	GLfloat light0_diffuse[]  = {1.0f,1.0f,1.0f,1.0f};
+	GLfloat light0_specular[] = {1.0f,1.0f,1.0f,1.0f};
+	::glLightfv(GL_LIGHT0, GL_AMBIENT,  light0_ambient);
+	::glLightfv(GL_LIGHT0, GL_DIFFUSE,  light0_diffuse);
+	::glLightfv(GL_LIGHT0, GL_SPECULAR, light0_specular);
+*/
+	// 質感設定
+//	::glMaterialfv(GL_FRONT, GL_DIFFUSE, materialCol);
+//	::glMaterialfv(GL_FRONT, GL_AMBIENT, materialCol);
+	// 照明オン
+//	::glEnable( GL_NORMALIZE );
+	::glEnable( GL_LIGHTING );
+	::glEnable( GL_LIGHT0 );
+	::glEnable( GL_COLOR_MATERIAL );	// glColor3ub() で質感(色)を指定
+	::glBegin(GL_QUADS);
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+	// 上面
+	::glNormal3d(rc.left,	rc.bottom,	rc.high+1.0);
+	::glVertex3d(rc.left,	rc.bottom,	rc.high);
+	::glVertex3d(rc.right,	rc.bottom,	rc.high);
+	::glVertex3d(rc.right,	rc.top,		rc.high);
+	::glVertex3d(rc.left,	rc.top,		rc.high);
+	// 前面
+	::glNormal3d(rc.left,	rc.top+1.0,	rc.high);
+	::glVertex3d(rc.left,	rc.top,		rc.high);
+	::glVertex3d(rc.right,	rc.top,		rc.high);
+	::glVertex3d(rc.right,	rc.top,		rc.low );
+	::glVertex3d(rc.left,	rc.top,		rc.low );
+	// 底面
+	::glNormal3d(rc.left,	rc.bottom,	rc.low-1.0 );
+	::glVertex3d(rc.left,	rc.bottom,	rc.low );
+	::glVertex3d(rc.left,	rc.top,		rc.low );
+	::glVertex3d(rc.right,	rc.top,		rc.low );
+	::glVertex3d(rc.right,	rc.bottom,	rc.low );
+	// 奥面
+	::glNormal3d(rc.left,	rc.bottom-1.0,rc.high);
+	::glVertex3d(rc.left,	rc.bottom,	rc.high);
+	::glVertex3d(rc.left,	rc.bottom,	rc.low );
+	::glVertex3d(rc.right,	rc.bottom,	rc.low );
+	::glVertex3d(rc.right,	rc.bottom,	rc.high);
+	// 左側面
+	::glNormal3d(rc.left-1.0,rc.bottom,	rc.high);
+	::glVertex3d(rc.left,	rc.bottom,	rc.high);
+	::glVertex3d(rc.left,	rc.top,		rc.high);
+	::glVertex3d(rc.left,	rc.top,		rc.low );
+	::glVertex3d(rc.left,	rc.bottom,	rc.low);
+	// 右側面
+	::glNormal3d(rc.right+1.0,rc.bottom,rc.high);
+	::glVertex3d(rc.right,	rc.bottom,	rc.high);
+	::glVertex3d(rc.right,	rc.bottom,	rc.low );
+	::glVertex3d(rc.right,	rc.top,		rc.low );
+	::glVertex3d(rc.right,	rc.top,		rc.high);
+	//
+	::glEnd();
+	::glDisable( GL_COLOR_MATERIAL );
+	::glDisable( GL_LIGHT0 );
+	::glDisable( GL_LIGHTING );
+//	::glDisable( GL_NORMALIZE );
 	::glPopAttrib();
 }
 
 void CNCViewGL::RenderCode(void)
 {
-	::glPushAttrib( GL_CURRENT_BIT | GL_LINE_BIT );	// 色 | 線情報
 	::glEnable( GL_LINE_STIPPLE );
 	// NCﾃﾞｰﾀ描画
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
 		GetDocument()->GetNCdata(i)->DrawGL();
-	::glPopAttrib();
+	::glDisable( GL_LINE_STIPPLE );
 }
 
-void CNCViewGL::ptov( const CPoint& pt, GLfloat v[3] )
+CPoint3D CNCViewGL::PtoR(const CPoint& pt)
 {
-	GLfloat	d, a;
-	v[0] = ( 2.0f * pt.x - m_cx ) / m_cx * 0.5f;
-	v[1] = ( m_cy - 2.0f * pt.y ) / m_cy * 0.5f;
-	d = (GLfloat)_hypot( v[0], v[1] );
-	v[2] = (GLfloat)cos( (PI/2.0) * ( ( d < 1.0 ) ? d : 1.0 ) );
+	CPoint3D	ptResult;
+	// ﾓﾃﾞﾙ空間の回転
+	ptResult.x = ( 2.0 * pt.x - m_cx ) / m_cx * 0.5;
+	ptResult.y = ( m_cy - 2.0 * pt.y ) / m_cy * 0.5;
+	double	d  = _hypot( ptResult.x, ptResult.y );
+	ptResult.z = cos( (PI/2.0) * ( ( d < 1.0 ) ? d : 1.0 ) );
 
-	a = 1.0f / (GLfloat)sqrt( v[0]*v[0] + v[1]*v[1] + v[2]*v[2] );
-	v[0] *= a;
-	v[1] *= a;
-	v[2] *= a;
+	ptResult *= 1.0 / ptResult.hypot();
+
+	return ptResult;
 }
 
 void CNCViewGL::BeginTracking(const CPoint& pt, ENTRACKINGMODE enTrackingMode)
 {
+	::ShowCursor(FALSE);
 	SetCapture();
 	m_enTrackingMode = enTrackingMode;
 	switch( m_enTrackingMode ) {
 	case TM_NONE:
 		break;
 	case TM_SPIN:
-		ptov( pt, m_f3LastPos );
+		m_ptLastRound = PtoR(pt);
 		break;
 	case TM_PAN:
-		m_ptLast = pt;
-		break;
-	case TM_ZOOM:
-		m_ptLast = pt;
+		m_ptLastMove = pt;
 		break;
 	}
 }
@@ -232,94 +416,89 @@ void CNCViewGL::BeginTracking(const CPoint& pt, ENTRACKINGMODE enTrackingMode)
 void CNCViewGL::EndTracking(void)
 {
 	ReleaseCapture();
+	::ShowCursor(TRUE);
 	m_enTrackingMode = TM_NONE;
 }
 
 void CNCViewGL::DoTracking( const CPoint& pt )
 {
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
 	switch( m_enTrackingMode ) {
 	case TM_NONE:
 		break;
 	case TM_SPIN:
 	{
-		GLfloat f3CurPos[3];
-		ptov( pt, f3CurPos );
-		GLfloat dx = f3CurPos[0] - m_f3LastPos[0];
-		GLfloat dy = f3CurPos[1] - m_f3LastPos[1];
-		GLfloat dz = f3CurPos[2] - m_f3LastPos[2];
-		float fAngle = 180.0f * (GLfloat)sqrt( dx*dx + dy*dy + dz *dz );
-		float fX = m_f3LastPos[1]*f3CurPos[2] - m_f3LastPos[2]*f3CurPos[1];
-		float fY = m_f3LastPos[2]*f3CurPos[0] - m_f3LastPos[0]*f3CurPos[2];
-		float fZ = m_f3LastPos[0]*f3CurPos[1] - m_f3LastPos[1]*f3CurPos[0];
-		m_f3LastPos[0] = f3CurPos[0];
-		m_f3LastPos[1] = f3CurPos[1];
-		m_f3LastPos[2] = f3CurPos[2];
-		DoRotation( fAngle, fX, fY, fZ );
+		CPoint3D	ptRound( PtoR(pt) );
+		CPoint3D	ptw( ptRound - m_ptLastRound );
+		CPoint3D	ptr(
+			m_ptLastRound.y*ptRound.z - m_ptLastRound.z*ptRound.y,
+			m_ptLastRound.z*ptRound.x - m_ptLastRound.x*ptRound.z,
+			m_ptLastRound.x*ptRound.y - m_ptLastRound.y*ptRound.x );
+		DoRotation( 180.0 * ptw.hypot(), ptr );
 		Invalidate( FALSE );
+		m_ptLastRound = ptRound;
 	}
 		break;
 	case TM_PAN:
-		m_f3RenderingCenter[0] -= ( pt.x - m_ptLast.x ) / m_fRenderingRate;
-		m_f3RenderingCenter[1] += ( pt.y - m_ptLast.y ) / m_fRenderingRate;
-		m_ptLast = pt;
-		// モデリング＆ビューイング変換行列
-		::glMatrixMode( GL_MODELVIEW );
-		::glLoadIdentity();
+		m_ptCenter.x += ( pt.x - m_ptLastMove.x ) / m_dRate;
+		m_ptCenter.y -= ( pt.y - m_ptLastMove.y ) / m_dRate;
+		m_ptLastMove = pt;
+		// ﾓﾃﾞﾘﾝｸﾞ&ﾋﾞｭｰｲﾝｸﾞ変換行列
 		SetupViewingTransform();
 		Invalidate( FALSE );
 		break;
-	case TM_ZOOM:
-		// 拡大・縮小による描画倍率操作
-		// +500で倍率2倍に、+250で倍率1.5倍に、
-		// -500で倍率0.5倍に、-1000で倍率0.25倍に
-		m_fRenderingRate *= (float)pow( 2, ( m_ptLast.y - pt.y ) * 0.002 );
-		m_ptLast = pt;
-		//視野角錐台の設定
-		::glMatrixMode( GL_PROJECTION );
-		::glLoadIdentity();
-		SetupViewingFrustum();
-		::glMatrixMode( GL_MODELVIEW );
-		Invalidate( FALSE );
-		break;
 	}
+
+	::wglMakeCurrent( NULL, NULL );
 }
 
-void CNCViewGL::DoRotation( float fAngle, float fX, float fY, float fZ )
+void CNCViewGL::DoScale(int nRate)
+{
+	m_rcView.InflateRect(
+		_copysign(m_rcView.Width(),  nRate) * 0.05,
+		_copysign(m_rcView.Height(), nRate) * 0.05 );
+	double	dW = m_rcView.Width(), dH = m_rcView.Height();
+	if ( dW > dH )
+		m_dRate = m_cx / dW;
+	else
+		m_dRate = m_cy / dH;
+
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
+	::glMatrixMode( GL_PROJECTION );
+	::glLoadIdentity();
+	::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
+		m_rcView.low, m_rcView.high);
+	::glMatrixMode( GL_MODELVIEW );
+	Invalidate(FALSE);
+
+	::wglMakeCurrent( NULL, NULL );
+
+	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
+	static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dRate/LOGPIXEL);
+}
+
+void CNCViewGL::DoRotation(double dAngle, const CPoint3D& pt)
 {
 	// 回転ﾏﾄﾘｯｸｽを現在のｵﾌﾞｼﾞｪｸﾄﾌｫｰﾑﾏﾄﾘｯｸｽに掛け合わせる
-	::glPushMatrix();
-		::glLoadIdentity();
-		::glRotatef( fAngle, fX, fY, fZ );
-		::glMultMatrixf( (GLfloat*) m_objectXform );
-		::glGetFloatv( GL_MODELVIEW_MATRIX, (GLfloat*)m_objectXform );
-	::glPopMatrix();
+	::glLoadIdentity();
+	::glRotated( dAngle, pt.x, pt.y, pt.z );
+	::glMultMatrixd( (GLdouble *)m_objectXform );
+	::glGetDoublev( GL_MODELVIEW_MATRIX, (GLdouble *)m_objectXform );
 
 	// ﾓﾃﾞﾘﾝｸﾞ&ﾋﾞｭｰｲﾝｸﾞ変換行列
-	::glMatrixMode( GL_MODELVIEW );
-	::glLoadIdentity();
 	SetupViewingTransform();
 }
 
 void CNCViewGL::SetupViewingTransform(void)
 {
-	::gluLookAt (	m_f3RenderingCenter[0],  m_f3RenderingCenter[1], m_f3RenderingCenter[2] + 1.0,	// 視点
-					m_f3RenderingCenter[0],  m_f3RenderingCenter[1], m_f3RenderingCenter[2],		// 注視点
-					0.0,  1.0, 0.0 );	// 上ベクトル
-
-	// モデル座標系の原点を視点座標系の前方クリップ面と後方クリップ面の中間に平行移動する
-	::glTranslatef( 0, 0, -50.0 );
-
-	::glMultMatrixf( (GLfloat*)m_objectXform );	// 表示回転（＝モデル回転）
-}
-
-void CNCViewGL::SetupViewingFrustum(void)
-{
-	::glOrtho(	- m_cx * 0.5 / m_fRenderingRate,	// left
-				  m_cx * 0.5 / m_fRenderingRate,	// right
-				- m_cy * 0.5 / m_fRenderingRate,	// buttom
-				  m_cy * 0.5 / m_fRenderingRate,	// top
-				  10,			// near
-				  1000 );		// far
+//	::glMatrixMode( GL_MODELVIEW );
+	::glLoadIdentity();
+	::glTranslated( m_ptCenter.x, m_ptCenter.y, 0.0 );
+	::glMultMatrixd( (GLdouble *)m_objectXform );	// 表示回転（＝モデル回転）
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -329,36 +508,39 @@ void CNCViewGL::OnDraw(CDC* pDC)
 {
 	ASSERT_VALID(GetDocument());
 
-	if( !m_pDC )
-		return;
-
-	// ﾄﾞﾗｲﾊﾞにﾊﾞｸﾞのあるｸﾞﾗﾌｨｯｸｶｰﾄﾞにおいてのSDIの最初の描画と、
-	// すべてのｸﾞﾗﾌｨｯｸｶｰﾄﾞにおいてのMDI描画において
-	// 以下の命令は、効果を発揮する。
-	::wglMakeCurrent( m_pDC->GetSafeHdc(), m_hRC );
+	// ｶﾚﾝﾄｺﾝﾃｷｽﾄの割り当て
+	::wglMakeCurrent( pDC->GetSafeHdc(), m_hRC );
 
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+//	::glMatrixMode( GL_MODELVIEW );
 
-	if ( m_uiDisplayListIndex > 0 ) {
-		::glPushMatrix();
-			// 軸の描画
-			::glCallList( m_uiDisplayListIndex );
-			// NCﾃﾞｰﾀ描画
-			::glCallList( m_uiDisplayListIndex+1 );
-		::glPopMatrix();
+	// 背景の描画
+	if ( m_uiBack > 0 )
+		::glCallList( m_uiBack );
+	else
+		RenderBack();	// 通常描画ﾓｰﾄﾞ(ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄを使用しない)
+	// 軸の描画
+	if ( m_uiAxis > 0 )
+		::glCallList( m_uiAxis );
+	else
+		RenderAxis();
+	// ﾜｰｸ矩形
+	if ( GetDocument()->IsWorkRect() ) {
+		if ( m_uiWork > 0 )
+			::glCallList( m_uiWork );
+		else
+			RenderWork();
 	}
-	else {
-		// 通常描画ﾓｰﾄﾞ(ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄを使用しない)
-		::glPushMatrix();
-			RenderAxis();
-		::glPopMatrix();
-		::glPushMatrix();
-			RenderCode();
-		::glPopMatrix();
-	}
+	// NCﾃﾞｰﾀ描画
+	if ( m_uiCode > 0 )
+		::glCallList( m_uiCode );
+	else
+		RenderCode();
 
 	::glFinish();
-	::SwapBuffers( m_pDC->GetSafeHdc() );
+	::SwapBuffers( pDC->GetSafeHdc() );
+
+	::wglMakeCurrent(NULL, NULL);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -391,31 +573,27 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	// ｽﾌﾟﾘｯﾀからの境界ｶｰｿﾙが移るので，IDC_ARROW を明示的に指定
-	// 他の NCView.cpp のように PreCreateWindow() での AfxRegisterWndClass() ではｴﾗｰ
+	// 他の NCView.cpp のように PreCreateWindow() での AfxRegisterWndClass() ではｴﾗｰ??
 	::SetClassLongPtr(m_hWnd, GCLP_HCURSOR,
 		(LONG_PTR)AfxGetApp()->LoadStandardCursor(IDC_ARROW));
 
 	// OpenGL初期化処理
-	m_pDC = new CClientDC(this);
-    if( !m_pDC ) {
-		TRACE0("m_pDC is NULL\n");
-		return -1;
-	}
+	CClientDC	dc(this);
 
 	// OpenGL pixel format の設定
-    if( !SetupPixelFormat() ) {
+    if( !SetupPixelFormat(&dc) ) {
 		TRACE0("SetupPixelFormat failed\n");
 		return -1;
 	}
 
 	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄの作成
-	if( !(m_hRC = ::wglCreateContext(m_pDC->GetSafeHdc())) ) {
+	if( !(m_hRC = ::wglCreateContext(dc.GetSafeHdc())) ) {
 		TRACE0("wglCreateContext failed\n");
 		return -1;
 	}
 
 	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄをｶﾚﾝﾄのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄに設定
-	if( !::wglMakeCurrent(m_pDC->GetSafeHdc(), m_hRC) ) {
+	if( !::wglMakeCurrent(dc.GetSafeHdc(), m_hRC) ) {
 		TRACE0("wglMakeCurrent failed\n");
 		return -1;
 	}
@@ -432,17 +610,35 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	// ﾃﾞﾌﾟｽﾌｧﾝｸ（同じか、手前にあるもので上描いていく）
 	::glDepthFunc( GL_LEQUAL );
 
+	// 裏面は描かない設定
+	::glFrontFace(GL_CCW);
+	::glCullFace(GL_BACK);
+	::glEnable(GL_CULL_FACE);
+/*
+#ifdef _DEBUG
+	g_dbg.printf("GetDeviceCaps([HORZSIZE|VERTSIZE])=%d, %d",
+		dc.GetDeviceCaps(HORZSIZE), dc.GetDeviceCaps(VERTSIZE) );
+	g_dbg.printf("GetDeviceCaps([LOGPIXELSX|LOGPIXELSY])=%d, %d",
+		dc.GetDeviceCaps(LOGPIXELSX), dc.GetDeviceCaps(LOGPIXELSY) );
+#endif
+*/
 	return 0;
 }
 
 void CNCViewGL::OnDestroy()
 {
-	CView::OnDestroy();
-	if ( m_uiDisplayListIndex > 0 )
-		::glDeleteLists(m_uiDisplayListIndex, 2);
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+	if ( m_uiAxis > 0 )
+		::glDeleteLists(m_uiAxis, 1);
+	if ( m_uiBack > 0 )
+		::glDeleteLists(m_uiBack, 1);
+	if ( m_uiCode > 0 )
+		::glDeleteLists(m_uiCode, 1);
 	::wglDeleteContext( m_hRC );
-	if ( m_pDC )
-		delete	m_pDC;
+	::wglMakeCurrent(NULL, NULL);
+	
+	CView::OnDestroy();
 }
 
 void CNCViewGL::OnSize(UINT nType, int cx, int cy)
@@ -455,7 +651,31 @@ void CNCViewGL::OnSize(UINT nType, int cx, int cy)
 	m_cy = cy;
 
 	// ﾋﾞｭｰﾎﾟｰﾄ設定処理
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 	::glViewport(0, 0, cx, cy);
+	::wglMakeCurrent(NULL, NULL);
+}
+
+void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView) 
+{
+	if ( bActivate ) {
+#ifdef _DEBUG
+		g_dbg.printf("OnActivateView() %s", GetDocument()->GetTitle());
+#endif
+		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dRate/LOGPIXEL);
+	}
+	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
+}
+
+LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
+{
+	if ( m_dRate == 0 )
+		OnLensKey(ID_VIEW_FIT);
+	// 他のﾋﾞｭｰとは違って、拡大率を更新する必要は無い
+	// ｽﾃｰﾀｽﾊﾞｰへの表示も OnActivateView() で行う
+	return 0;
 }
 
 LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM, LPARAM)
@@ -463,44 +683,100 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM, LPARAM)
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCViewGL::OnUserViewFitMsg()\nStart");
 #endif
+	// ｵﾌﾞｼﾞｪｸﾄ矩形を10%(上下左右5%ずつ)大きく
+	m_rcView = GetDocument()->GetMaxRect();
+	m_rcView.InflateRect(m_rcView.Width()*0.05, m_rcView.Height()*0.05);
+	m_rcView.NormalizeRect();
+
 	// ﾃﾞｨｽﾌﾟﾚｲのｱｽﾍﾟｸﾄ比から視野直方体設定
-	CRect3D	rc(m_rcMax);
-	CPointD	pt(rc.CenterPoint());
-	double	dW = rc.Width(), dH = rc.Height(), dZ;
+	CPointD	pt(m_rcView.CenterPoint());
+	double	dW = m_rcView.Width(), dH = m_rcView.Height(), dZ;
 	if ( dW > dH ) {
 		dH = dW * m_cy / m_cx / 2.0;
-		rc.top    = pt.y - dH;
-		rc.bottom = pt.y + dH;
-		dZ = dW;
+		dZ = max(dW, m_rcView.Depth());
+		m_rcView.top    = pt.y - dH;
+		m_rcView.bottom = pt.y + dH;
+		m_dRate = m_cx / dW;
 	}
 	else {
 		dW = dH * m_cx / m_cy / 2.0;
-		rc.left   = pt.x - dW;
-		rc.right  = pt.x + dW;
-		dZ = dH;
+		dZ = max(dH, m_rcView.Depth());
+		m_rcView.left   = pt.x - dW;
+		m_rcView.right  = pt.x + dW;
+		m_dRate = m_cy / dH;
 	}
-	rc.NormalizeRect();
+	m_rcView.high =  dZ;	// 奥
+	m_rcView.low  = -dZ;	// 手前
+	m_rcView.NormalizeRect();
+
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 	::glMatrixMode( GL_PROJECTION );
 	::glLoadIdentity();
-	::glOrtho(rc.left, rc.right, rc.top, rc.bottom, -dZ, dZ);
+	::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
+		m_rcView.low, m_rcView.high);
+	::glMatrixMode( GL_MODELVIEW );
+	::wglMakeCurrent(NULL, NULL);
+
 #ifdef _DEBUG
-	dbg.printf("(%f,%f)-(%f,%f)", rc.left, rc.top, rc.right, rc.bottom);
+	dbg.printf("(%f,%f)-(%f,%f)", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
+	dbg.printf("(%f,%f)", m_rcView.low, m_rcView.high);
+	dbg.printf("Rate=%f", m_dRate);
 #endif
 
-	// モデル座標系の原点を
-	// 視点座標系の前方クリップ面と後方クリップ面の中間に平行移動する
-//	::glTranslated( pt.x, pt.y, -50.0 );
-//	::glTranslated( 0.0, 0.0, 0.0 );
-	// 視点座標変換
-//	::glMatrixMode( GL_MODELVIEW );
-//	::glLoadIdentity();
-//	::gluLookAt(pt.x, pt.y,  dZ,	// 視点座標
-//				pt.x, pt.y, -dZ,	// 視点座標から見る座標
-//				0.0,  1.0,  0.0);	// Y軸が上
-//	::gluLookAt(0.0, 0.0,  dZ,	// 視点座標
-//				0.0, 0.0, -dZ,	// 視点座標から見る座標
-//				0.0,  1.0,  0.0);	// Y軸が上
 	return 0;
+}
+
+void CNCViewGL::OnMoveKey(UINT nID)
+{
+	// ｸﾗｲｱﾝﾄ座標の1/6を移動範囲とする
+	CSize	sz(m_cx/6, m_cy/6);
+	CPoint	pt(0, 0);
+
+	switch (nID) {
+	case ID_VIEW_UP:
+		pt.y += sz.cy;
+		break;
+	case ID_VIEW_DW:
+		pt.y -= sz.cy;
+		break;
+	case ID_VIEW_LT:
+		pt.x += sz.cx;
+		break;
+	case ID_VIEW_RT:
+		pt.x -= sz.cx;
+		break;
+	}
+
+	m_enTrackingMode = TM_PAN;
+	m_ptLastMove = 0;
+	DoTracking(pt);
+	m_enTrackingMode = TM_NONE;
+}
+
+void CNCViewGL::OnLensKey(UINT nID)
+{
+	switch ( nID ) {
+	case ID_VIEW_FIT:
+		ClearObjectForm();
+		OnUserViewFitMsg(0, 0);
+		{
+			CClientDC	dc(this);
+			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+			SetupViewingTransform();
+			::wglMakeCurrent( NULL, NULL );
+		}
+		Invalidate(FALSE);
+		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XYZ_PLANE, m_dRate/LOGPIXEL);
+		break;
+	case ID_VIEW_LENSP:
+		DoScale(-1);
+		break;
+	case ID_VIEW_LENSN:
+		DoScale(1);
+		break;
+	}
 }
 
 BOOL CNCViewGL::OnEraseBkgnd(CDC* pDC)
@@ -539,13 +815,17 @@ BOOL CNCViewGL::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	if ( !pOpt->IsMouseWheel() )
 		return FALSE;
 
-	if ( pOpt->GetWheelType() == 0 )
-		zDelta = -zDelta;
-
-	BeginTracking( pt, TM_ZOOM );
-	CPoint	pt_delta( pt.x - zDelta / 3, pt.y - zDelta / 3 );
-	DoTracking( pt_delta );
-	EndTracking();
+	// 高精度ﾏｳｽでは微細値の場合があるので、一応閾値の判定を入れる
+	if ( zDelta <= -WHEEL_DELTA ) {
+		if ( pOpt->GetWheelType() != 0 )
+			zDelta = -zDelta;
+		DoScale(zDelta);
+	}
+	else if ( zDelta >= WHEEL_DELTA ) {
+		if ( pOpt->GetWheelType() != 0 )
+			zDelta = -zDelta;
+		DoScale(zDelta);
+	}
 
 	return TRUE;
 }

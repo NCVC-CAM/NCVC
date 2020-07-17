@@ -102,7 +102,7 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawGL(void) const;
+	virtual	void	DrawGL(BOOL = FALSE) const;
 
 	// à⁄ìÆí∑ÅCêÿçÌí∑ÇÃåvéZ
 	virtual	double	SetCalcLength(void);
@@ -159,7 +159,7 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawGL(void) const;
+	virtual	void	DrawGL(BOOL = FALSE) const;
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
@@ -224,7 +224,7 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawGL(void) const;
+	virtual	void	DrawGL(BOOL = FALSE) const;
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
@@ -291,7 +291,7 @@ public:
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawGL(void) const;
+	virtual	void	DrawGL(BOOL = FALSE) const;
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;

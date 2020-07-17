@@ -564,13 +564,16 @@ inline void CDXFarc::AngleTuning(void)
 		m_sq += 360.0*RAD;
 	if ( m_eq < 0.0 )
 		m_eq += 360.0*RAD;
+	double	d;
 	if ( m_bRound ) {
 		// ”÷–­‚ÈŒë·‚Ì‹zŽû(=>”÷×‰~ŒÊ‚ª‘å‚«‚È‰~‚É•Ï‚í‚Á‚Ä‚µ‚Ü‚¤)
-		while ( ::RoundUp(m_sq*DEG) >= ::RoundUp(m_eq*DEG) )
+		d = ::RoundUp(m_sq*DEG);
+		while ( d >= ::RoundUp(m_eq*DEG) )
 			m_eq += 360.0*RAD;
 	}
 	else {
-		while ( ::RoundUp(m_eq*DEG) >= ::RoundUp(m_sq*DEG) )
+		d = ::RoundUp(m_eq*DEG);
+		while ( d >= ::RoundUp(m_sq*DEG) )
 			m_sq += 360.0*RAD;
 	}
 }
@@ -720,7 +723,7 @@ inline double CDXFellipse::GetLeanSin(void) const
 	return m_lqMakeSin;
 }
 
-inline BOOL CDXFellipse::GetArc(void) const
+inline BOOL CDXFellipse::IsArc(void) const
 {
 	return m_bArc;
 }

@@ -45,6 +45,8 @@ BEGIN_MESSAGE_MAP(CNCViewTab, CTabView)
 	ON_COMMAND_RANGE(ID_NCVIEW_TRACE_CURSOR, ID_NCVIEW_TRACE_CURSOR2, OnTraceCursor)
 	// 「全てのﾍﾟｲﾝの図形ﾌｨｯﾄ」ﾒﾆｭｰｺﾏﾝﾄﾞの使用許可
 	ON_UPDATE_COMMAND_UI(ID_NCVIEW_ALLFIT, OnUpdateAllFitCmd)
+	// 「直前の拡大率」ﾒﾆｭｰｺﾏﾝﾄﾞの使用許可
+	ON_UPDATE_COMMAND_UI(ID_VIEW_BEFORE, OnUpdateBeforeView)
 END_MESSAGE_MAP()
 
 //////////////////////////////////////////////////////////////////////
@@ -82,10 +84,10 @@ void CNCViewTab::OnInitialUpdate()
 
 	// CNCViewSplitのｻｲｽﾞ調整
 	// 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞと等しいときは，さらに各ﾋﾞｭｰWM_USERVIEWFITMSG送信
-	m_wndSplitter1.PostMessage(WM_USERINITIALUPDATE, NCVIEW_SINGLEPANE,   nPage==NCVIEW_SINGLEPANE);
-	m_wndSplitter2.PostMessage(WM_USERINITIALUPDATE, NCVIEW_SINGLEPANE+1, nPage==NCVIEW_SINGLEPANE+1);
+	m_wndSplitter1.PostMessage(WM_USERINITIALUPDATE, NCVIEW_FOURSVIEW,   nPage==NCVIEW_FOURSVIEW);
+	m_wndSplitter2.PostMessage(WM_USERINITIALUPDATE, NCVIEW_FOURSVIEW+1, nPage==NCVIEW_FOURSVIEW+1);
 
-	if ( NCVIEW_SINGLEPANE<=nPage && nPage<NCVIEW_OPENGL ) {
+	if ( NCVIEW_FOURSVIEW<=nPage && nPage<NCVIEW_OPENGL ) {
 		// ｽﾌﾟﾘｯﾀ表示の場合は，拡大率の再更新
 		for ( int i=0; i<SIZEOF(m_bSplit); i++ )
 			m_bSplit[i] = TRUE;
@@ -143,19 +145,23 @@ BOOL CNCViewTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 void CNCViewTab::OnActivatePage(int nIndex)
 {
 	CWnd*	pWnd = GetPage(nIndex);
-	if ( pWnd )
-		pWnd->SendMessage(WM_USERACTIVATEPAGE, (WPARAM)nIndex, (LPARAM)m_bSplit[nIndex]);
-	if ( nIndex == NCVIEW_OPENGL ) {
+	if ( pWnd ) {
+		// ４面表示と単一平面表示の拡大率更新のためにﾒｯｾｰｼﾞ送信
+		LPARAM	lSplit = nIndex < NCVIEW_FOURSVIEW ? (LPARAM)m_bSplit[nIndex] : 0;
+		// WPARAMはCNCViewSplit::OnUserActivatePage()向けのみ
+		pWnd->SendMessage(WM_USERACTIVATEPAGE, (WPARAM)nIndex, lSplit);
+	}
+	if ( nIndex < NCVIEW_FOURSVIEW ) {
+		m_bSplit[nIndex] = FALSE;
 		GetParentFrame()->SetActiveView(static_cast<CView *>(pWnd));
 	}
-	else if ( nIndex >= NCVIEW_SINGLEPANE ) {
-		// ｽﾌﾟﾘｯﾀ表示の場合は，拡大率の再更新
+	else if ( nIndex < NCVIEW_OPENGL ) {
+		// ｽﾌﾟﾘｯﾀ表示の場合は常に拡大率の再更新
 		for ( int i=0; i<SIZEOF(m_bSplit); i++ )
 			m_bSplit[i] = TRUE;
 		// ｱｸﾃｨﾌﾞﾋﾞｭｰはｽﾌﾟﾘｯﾀ内のSetActivePane()で
 	}
-	else {
-		m_bSplit[nIndex] = FALSE;
+	else if ( nIndex == NCVIEW_OPENGL ) {
 		GetParentFrame()->SetActiveView(static_cast<CView *>(pWnd));
 	}
 	AfxGetNCVCApp()->SetNCTabPage(nIndex);
@@ -242,11 +248,11 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		ASSERT(nIndex >= 0);
 		nIndex = AddPage("４面-2", &m_wndSplitter2);
 		ASSERT(nIndex >= 0);
-//		nIndex = AddPage("OpenGL",
-//			RUNTIME_CLASS(CNCViewGL), GetDocument(), GetParentFrame());
+		nIndex = AddPage("OpenGL",
+			RUNTIME_CLASS(CNCViewGL), GetDocument(), GetParentFrame());
 		// 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙを取得
 		CClientDC*	pDC;
-		for ( i=0; i<NCVIEW_SINGLEPANE; i++ ) {	// ４面以外
+		for ( i=0; i<NCVIEW_FOURSVIEW; i++ ) {	// ４面以外
 			pDC = new CClientDC(GetPage(i));
 			m_hDC[i] = pDC->GetSafeHdc();
 			delete	pDC;
@@ -453,7 +459,13 @@ void CNCViewTab::OnTraceCursor(UINT nID)
 void CNCViewTab::OnUpdateAllFitCmd(CCmdUI* pCmdUI)
 {
 	int nIndex = GetActivePage();
-	pCmdUI->Enable( NCVIEW_SINGLEPANE<=nIndex && nIndex<NCVIEW_OPENGL );
+	pCmdUI->Enable( NCVIEW_FOURSVIEW<=nIndex && nIndex<NCVIEW_OPENGL );
+}
+
+void CNCViewTab::OnUpdateBeforeView(CCmdUI* pCmdUI)
+{
+	int nIndex = GetActivePage();
+	pCmdUI->Enable( nIndex < NCVIEW_OPENGL );
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -491,7 +503,7 @@ BOOL CTraceThread::InitInstance()
 			if ( nTraceDraw <= 0 ) {
 				// 最後の選択消去
 				if ( bSelect && pData2 ) {
-					if ( nPage < NCVIEW_SINGLEPANE ) {
+					if ( nPage < NCVIEW_FOURSVIEW ) {
 						if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
 							::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 						switch ( nPage ) {
@@ -539,7 +551,7 @@ BOOL CTraceThread::InitInstance()
 			}
 			pData1 = pDoc->GetNCdata(nTraceDraw-1);
 			m_pListView->SendMessage(WM_USERTRACESELECT, (WPARAM)pData1);
-			if ( nPage < NCVIEW_SINGLEPANE ) {
+			if ( nPage < NCVIEW_FOURSVIEW ) {
 				if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
 					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 				switch ( nPage ) {

@@ -5,6 +5,7 @@
 #include "NCVC.h"
 #include "MainFrm.h"
 #include "NCChild.h"
+#include "NCDoc.h"
 #include "NCWorkDlg.h"
 
 #include "MagaDbgMac.h"
@@ -13,12 +14,14 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
 static	const	int		RANGEMAX[] = {
 	20000, 5000, 5000, 5000, 5000, 5000
 };
 
 BEGIN_MESSAGE_MAP(CNCWorkDlg, CDialog)
 	//{{AFX_MSG_MAP(CNCWorkDlg)
+	ON_WM_DESTROY()
 	ON_BN_CLICKED(IDC_WORK_HIDE, OnHide)
 	//}}AFX_MSG_MAP
 	ON_MESSAGE (WM_USERSWITCHDOCUMENT, OnUserSwitchDocument)
@@ -52,23 +55,35 @@ void CNCWorkDlg::DoDataExchange(CDataExchange* pDX)
 	}
 }
 
+void CNCWorkDlg::SaveValue(void)
+{
+	UpdateData();
+	int		i, j;
+	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_NC, IDS_REGKEY_WINDOW_WORKDLG)),
+			strEntry, strTmp;
+	for ( i=0; i<SIZEOF(m_WorkNum); i++ ) {
+		for ( j=0; j<NCXYZ; j++ )
+			AfxGetApp()->WriteProfileInt(strRegKey, g_szNdelimiter[j]+strTmp, m_WorkNum[i][j]);
+		strTmp = 'O';
+	}
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CNCWorkDlg メッセージ ハンドラ
 
 BOOL CNCWorkDlg::OnInitDialog() 
 {
-	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
 
 	CDialog::OnInitDialog();
 	int		i, j, n;
 
 	// ｺﾝｽﾄﾗｸﾀでは初期化できないｺﾝﾄﾛｰﾙの初期化
-	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_NC, IDS_REGKEY_WINDOW_WORKDLG)),
-				strEntry, strTmp;
+	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_NC, IDS_REGKEY_WINDOW_WORKDLG)),	// StdAfx.h
+			strEntry, strTmp;
 	// X,Y,Z, XO,YO,ZO のﾊﾟﾗﾒｰﾀ読み込み
 	for ( i=0; i<SIZEOF(m_WorkNum); i++ ) {
 		for ( j=0; j<NCXYZ; j++ )
-			m_WorkNum[i][j] = AfxGetApp()->GetProfileInt(strRegKey, g_szNdelimiter[i]+strTmp, 0);
+			m_WorkNum[i][j] = AfxGetApp()->GetProfileInt(strRegKey, g_szNdelimiter[j]+strTmp, 0);
 		strTmp = 'O';
 	}
 	UpdateData(FALSE);
@@ -127,23 +142,20 @@ void CNCWorkDlg::OnHide()
 
 void CNCWorkDlg::OnCancel() 
 {
-	extern	LPCTSTR	g_szNdelimiter;	// "XYZRIJKPLDH" from NCDoc.cpp
-
 	// ｳｨﾝﾄﾞｳ位置保存
 	AfxGetNCVCApp()->SaveDlgWindow(IDS_REGKEY_WINDOW_WORKDLG, this);
-	UpdateData();
 	// 設定値保存
-	int		i, j;
-	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_NC, IDS_REGKEY_WINDOW_WORKDLG)),
-				strEntry, strTmp;
-	for ( i=0; i<SIZEOF(m_WorkNum); i++ ) {
-		for ( j=0; j<NCXYZ; j++ )
-			AfxGetApp()->WriteProfileInt(strRegKey, g_szNdelimiter[i]+strTmp, m_WorkNum[i][j]);
-		strTmp = 'O';
-	}
+	SaveValue();
 
 	DestroyWindow();	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞ
 //	CDialog::OnCancel();
+}
+
+void CNCWorkDlg::OnDestroy() 
+{
+	// 設定値保存
+	SaveValue();
+	CDialog::OnDestroy();
 }
 
 void CNCWorkDlg::PostNcDestroy() 
@@ -159,6 +171,21 @@ LRESULT CNCWorkDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 	CMagaDbg	dbg("CNCWorkDlg::OnUserSwitchDocument()\nCalling");
 #endif
 	CMDIChildWnd* pFrame = AfxGetNCVCMainWnd()->MDIGetActive();
-	EnableButton( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ? TRUE : FALSE );
+	if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {
+		EnableButton(TRUE);
+		CNCDoc*	pDoc = static_cast<CNCDoc *>(pFrame->GetActiveDocument());
+		if ( pDoc && pDoc->IsKindOf(RUNTIME_CLASS(CNCDoc)) && pDoc->IsWorkRect() ) {
+			CRect3D	rc(pDoc->GetWorkRect());
+			m_WorkNum[0][NCA_X] = (int)rc.Width();
+			m_WorkNum[0][NCA_Y] = (int)rc.Height();
+			m_WorkNum[0][NCA_Z] = (int)rc.Depth();
+			m_WorkNum[1][NCA_X] = (int)rc.left;
+			m_WorkNum[1][NCA_Y] = (int)rc.top;
+			m_WorkNum[1][NCA_Z] = (int)rc.high;
+			UpdateData(FALSE);
+		}
+	}
+	else
+		EnableButton(FALSE);
 	return 0;
 }

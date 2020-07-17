@@ -214,8 +214,6 @@ CNCdata* CNCDoc::DataOperation
 				m_ptNcLocalOrg[i] = 0.0;
 				pt[i] = lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ?
 					lpArgv->nc.dValue[i] : pDataSrc->GetEndValue(i);
-//				if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
-//					pt[i] = lpArgv->nc.dValue[i];
 			}
 			// 現在位置 - G92値 で、G92座標系原点を計算
 			m_ptNcWorkOrg[WORKOFFSET] = pDataSrc->GetEndPoint() - pt;
@@ -265,7 +263,7 @@ void CNCDoc::StrOperation(LPCSTR pszTmp, int nIndex/*=-1*/, ENNCOPERATION enOper
 	CNCblock*	pBlock = NULL;
 
 	// 例外ｽﾛｰは上位でｷｬｯﾁ
-	pBlock = new CNCblock(str.Left(nBuf), str.Mid(nBuf));
+	pBlock = new CNCblock(str.Left(nBuf).Trim(), str.Mid(nBuf).Trim());
 	switch ( enOperation ) {
 	case NCADD:
 		m_obBlock.Add(pBlock);
@@ -794,7 +792,7 @@ void CNCDoc::SerializeBlock
 			}
 			// 行番号とGｺｰﾄﾞの分別(XYZ...含む)
 			strLine = strBlock.SpanIncluding(ss_szLineDelimiter);
-			pBlock = new CNCblock(strLine, strBlock.Mid(strLine.GetLength()), dwFlags);
+			pBlock = new CNCblock(strLine.Trim(), strBlock.Mid(strLine.GetLength()).Trim(), dwFlags);
 			obBlock.Add(pBlock);
 			pBlock = NULL;
 #ifdef _DEBUGOLD

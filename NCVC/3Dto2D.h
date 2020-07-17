@@ -220,6 +220,9 @@ public:
 		ASSERT(a>=0 && a<SIZEOF(xyz));
 		return xyz[a];
 	}
+	double		hypot(void) const {
+		return ::sqrt(x*x + y*y + z*z);
+	}
 	// 変換関数
 	CPointD		GetXY(void) const {
 		return CPointD(x, y);
@@ -229,6 +232,9 @@ public:
 	}
 	CPointD		GetYZ(void) const {
 		return CPointD(y, z);
+	}
+	operator CPointD() const {
+		return CPointD(x, y);
 	}
 	// 代入関数
 	void	SetPoint(double xx, double yy, double zz) {
@@ -282,9 +288,9 @@ public:
 	};
 	// 幅と高さの正規化
 	void	NormalizeRect() {
-		if (left > right)
+		if ( left > right )
 			std::swap(left, right);
-		if (top > bottom)
+		if ( top > bottom )
 			std::swap(top, bottom);
 	}
 	// 指定座標が矩形内にあるか(矩形線上を含める)
@@ -398,8 +404,15 @@ public:
 	// 幅と高さの正規化
 	void	NormalizeRect() {
 		CRectD::NormalizeRect();
-		if ( high < low )
-			std::swap(high, low);
+		if ( low > high )
+			std::swap(low, high);
+	}
+	// 中心座標...他
+	CPoint3D	CenterPoint(void) const {
+		return CPoint3D( (left+right)/2, (top+bottom)/2, (high+low)/2 );
+	}
+	double	Depth(void) const {
+		return high - low;
 	}
 	// 指定されたｵﾌｾｯﾄで CRectD を移動
 	void	OffsetRect(double x, double y, double z) {
@@ -461,17 +474,24 @@ boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_LC
 // ２つの円の交点を求める
 boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_CC
 	(const CPointD&, const CPointD&, double, double);
+// 直線と楕円の交点を求める
+boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_LE
+	(const CPointD&, const CPointD&, const CPointD&, double, double, double, BOOL = TRUE);
 // 線と線の端点を中心とした円との交点を求める
 CPointD	CalcIntersectionPoint_TC(const CPointD&, double, const CPointD&);
+// 直線のｵﾌｾｯﾄ座標
+boost::tuple<CPointD, CPointD> CalcOffsetLine(const CPointD&, const CPointD&, double, BOOL);
 // ２線がなす角度を求める(交点を原点ｾﾞﾛ扱い)
-double	CalcBetweenAngle_LL(const CPointD&, const CPointD&);
+double	CalcBetweenAngle(const CPointD&, const CPointD&);
 // ｵﾌｾｯﾄ分平行移動させた線分同士の交点を求める
 boost::optional<CPointD>	CalcOffsetIntersectionPoint_LL
 	(const CPointD&, const CPointD&, int, int, double);
 // ｵﾌｾｯﾄ分平行移動させた線と円弧の交点を求める
 boost::tuple<BOOL, CPointD, double>	CalcOffsetIntersectionPoint_LC
 	(const CPointD&, const CPointD&, double, double, int, int, int);
-
+// ｵﾌｾｯﾄ分平行移動させた線と楕円弧の交点を求める
+boost::optional<CPointD>	CalcOffsetIntersectionPoint_LE
+	(const CPointD&, const CPointD&, double, double, double, double, BOOL, BOOL);
 // ２次方程式の解を求める
 boost::tuple<int, double, double>	GetKon(double, double, double);
 // 引数を越える素数を返す
