@@ -77,5 +77,6 @@ void CDxfSetupReload::OnOK()
 		pDoc->SetDocFlag(DXFDOC_RELOAD, m_ctReloadList.GetCheck(nCnt++)==1 ? TRUE : FALSE);
 	}
 
-	__super::OnOK();
+//	__super::OnOK();
+	EndDialog(IDOK);
 }

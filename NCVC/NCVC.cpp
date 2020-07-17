@@ -1226,25 +1226,85 @@ void CNCVCApp::OnFileCADbind()
 
 	// ﾜｰｸ矩形の新規ﾄﾞｷｭﾒﾝﾄ生成と -> CDXFDoc::OnNewDocument()
 	// ﾋﾞｭｰ, ﾌﾚｰﾑの生成
-	CDocument*	pDoc = m_pDocTemplate[TYPE_DXF]->OpenDocumentFile(NULL);
-	if ( !pDoc ) {
+	CDXFDoc*	pDocParent = static_cast<CDXFDoc*>(m_pDocTemplate[TYPE_DXF]->OpenDocumentFile(NULL));
+	if ( !pDocParent ) {
 		NCVC_ControlErrorMsg(__FILE__, __LINE__);
 		return;
 	}
-	POSITION	pos = pDoc->GetFirstViewPosition();
+	POSITION	pos = pDocParent->GetFirstViewPosition();
 	ASSERT( pos );
-	CView*		pView = pDoc->GetNextView(pos);	// 親のCDXFView
-	ASSERT( pView );
-	
-	// ﾘｽﾄｱｯﾌﾟﾌｧｲﾙの読み込みｽﾚｯﾄﾞ生成
-	CThreadDlg	dlgThread(ID_FILE_CADBIND, pDoc, (WPARAM)&dlg.m_aryFile, (LPARAM)pView);
-	if ( dlgThread.DoModal() != IDOK ) {
-		// 新規ﾄﾞｷｭﾒﾝﾄを閉じる
-		m_pDocTemplate[TYPE_DXF]->RemoveDocument(pDoc);
+	CView*		pViewParent = pDocParent->GetNextView(pos);
+	ASSERT( pViewParent );
+
+	// ﾌｧｲﾙ個数分のｲﾝｽﾀﾝｽ生成
+	BOOL		bResult;
+	CStatic*	pFrame;
+	CDXFDoc*	pDoc;
+	CDXFView*	pView;
+	CRect		rc;
+	rc.SetRectEmpty();
+	for ( int i=0; i<dlg.m_aryFile.GetCount(); i++ ) {
+		// 子のﾄﾞｷｭﾒﾝﾄ
+		pDoc  = static_cast<CDXFDoc*>(RUNTIME_CLASS(CDXFDoc)->CreateObject());
+		if ( pDoc ) {
+			pDoc->SetDocFlag(DXFDOC_BIND);
+			CDocument*	dummy;
+#ifdef _DEBUG
+			if ( m_pDocTemplate[TYPE_DXF]->MatchDocType(dlg.m_aryFile[i], dummy) == CDocTemplate::yesAttemptNative )
+				bResult = pDoc->OnOpenDocument(dlg.m_aryFile[i]);	// break用
+			else
+				bResult = FALSE;
+#else
+			bResult = m_pDocTemplate[TYPE_DXF]->MatchDocType(dlg.m_aryFile[i], dummy) == CDocTemplate::yesAttemptNative ?
+						pDoc->OnOpenDocument(dlg.m_aryFile[i]) : FALSE;
+#endif
+			pDoc->SetPathName(dlg.m_aryFile[i], FALSE);
+		}
+		else
+			bResult = FALSE;
+		// 子のﾌﾚｰﾑ生成
+		if ( bResult ) {
+			pFrame = new CStatic;
+			bResult = pFrame->CreateEx(WS_EX_TRANSPARENT, NULL, NULL, WS_CHILD|WS_VISIBLE|SS_SUNKEN|SS_ENHMETAFILE,//|SS_NOTIFY,
+						rc, pViewParent, 0xffff);
+		}
+		else
+			pFrame = NULL;
+		// 子のﾋﾞｭｰ
+		if ( bResult ) {
+			pView = static_cast<CDXFView*>(RUNTIME_CLASS(CDXFView)->CreateObject());
+			if ( pView ) {
+				if ( bResult=pView->Create(NULL, NULL, AFX_WS_DEFAULT_VIEW, rc, pFrame, AFX_IDW_PANE_FIRST) ) {
+					pDoc->AddView(pView);
+					pView->OnInitialUpdate();
+				}
+			}
+			else
+				bResult = FALSE;
+		}
+		else
+			pView = NULL;
+		// bind情報の登録
+		if ( bResult ) {
+			LPCADBINDINFO pInfo = new CADBINDINFO;
+			pInfo->pParent	= pFrame;
+			pInfo->pDoc		= pDoc;
+			pInfo->pView	= pView;
+			pDocParent->AddBindInfo(pInfo);
+		}
+		else {
+			if ( pView )
+				pView->DestroyWindow();
+			if ( pDoc )
+				delete	pDoc;
+			delete	pFrame;
+		}
 	}
 
+	// 面積で並べ替え
+	pDocParent->SortBindInfo();
 	// 統合ﾃﾞｰﾀの配置処理
-	pView->PostMessage(WM_USERBINDINIT);
+	pViewParent->PostMessage(WM_USERBINDINIT);
 }
 
 void CNCVCApp::OnFileCloseAndOpen() 

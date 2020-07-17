@@ -55,6 +55,7 @@ class CNCViewGL : public CView
 	BOOL	CreateLathe(void);
 	BOOL	CreateWire(void);
 	BOOL	GetClipDepthMill(void);
+	BOOL	GetClipDepthCylinder(void);
 	BOOL	GetClipDepthLathe(void);
 	BOOL	CreateVBOMill(const GLfloat*, GLfloat*);
 	BOOL	CreateVBOLathe(const GLfloat*, const GLfloat*, const GLfloat*);

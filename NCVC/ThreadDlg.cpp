@@ -87,10 +87,6 @@ BOOL CThreadDlg::OnInitDialog()
 		pfnThread = AutoWorkingSet_Thread;
 		break;
 
-	case ID_FILE_CADBIND:		// CAD√ﬁ∞¿ÇÃìùçá
-		pfnThread = CADbind_Thread;
-		break;
-
 	default:
 		EndDialog(IDCANCEL);
 		return TRUE;

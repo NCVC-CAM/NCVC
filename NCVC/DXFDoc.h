@@ -57,6 +57,7 @@ typedef	struct tagCADBINDINFO {
 	CStatic*	pParent;
 	CDXFDoc*	pDoc;
 	CDXFView*	pView;
+	CPointD		pt;		// 配置位置(論理座標)
 } CADBINDINFO, *LPCADBINDINFO;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -180,6 +181,7 @@ public:
 	void	UpdateLayerSequence(void);
 	//
 	void	AllChangeFactor(double) const;	// 拡大率の更新
+	void	AllRoundObjPoint(const CPointD&, double);
 	//
 	void	CreateCutterOrigin(const CPointD&, double, BOOL = FALSE);
 	void	CreateLatheLine(const CPointD&, const CPointD&);

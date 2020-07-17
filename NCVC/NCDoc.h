@@ -17,16 +17,17 @@ enum NCDOCFLG {
 	NCDOC_COMMENTWORK,	// ｺﾒﾝﾄでﾜｰｸ矩形が指示された
 		NCDOC_COMMENTWORK_R,
 		NCDOC_COMMENTWORK_Z,
+		NCDOC_CYLINDER,		// ﾐﾙ加工の円柱ﾓｰﾄﾞ
 	NCDOC_MAXRECT,		// 最大移動矩形の描画
 	NCDOC_WRKRECT,		// ﾜｰｸ矩形の描画
 	NCDOC_THUMBNAIL,	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
 	NCDOC_LATHE,		// NC旋盤ﾓｰﾄﾞ
 	NCDOC_WIRE,			// ﾜｲﾔ加工ﾓｰﾄﾞ
-		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[11]
+		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[12]
 };
 
 enum NCCOMMENT {		// g_szNCcomment[]
-	ENDMILL = 0, WORKRECT,
+	ENDMILL = 0, WORKRECT, WORKCYLINDER,
 	LATHEVIEW, WIREVIEW,
 	TOOLPOS
 };
@@ -42,7 +43,7 @@ class CNCDoc : public CDocBase<NCDOC_FLGNUM>
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
 				m_strCurrentFile;	// 現在処理中のNCﾌｧｲﾙ名(FileInsert etc.)
 	CRecentViewInfo*	m_pRecentViewInfo;		// ﾌｧｲﾙごとの描画情報
-	// NCﾃﾞｰﾀ
+	//
 	int			m_nWorkOrg;						// 使用中のﾜｰｸ座標
 	CPoint3D	m_ptNcWorkOrg[WORKOFFSET+1],	// ﾜｰｸ座標系(G54～G59)とG92原点
 				m_ptNcLocalOrg;					// ﾛｰｶﾙ座標系(G52)原点
@@ -55,6 +56,10 @@ class CNCDoc : public CDocBase<NCDOC_FLGNUM>
 	CRect3D		m_rcMax,		// 最大ｵﾌﾞｼﾞｪｸﾄ(移動)矩形
 				m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
 				m_rcWorkCo;		// ｺﾒﾝﾄ指示
+	double		m_dCylinderD,	// 円柱表示直径
+				m_dCylinderH;	// 円柱表示高さ
+	CPointD		m_ptCylinderOffset;
+	//
 	void	SetMaxRect(const CNCdata* pData) {
 		// 最大ｵﾌﾞｼﾞｪｸﾄ矩形ﾃﾞｰﾀｾｯﾄ
 		m_rcMax  |= pData->GetMaxRect();
@@ -150,6 +155,9 @@ public:
 	CRect3D	GetWorkRectOrg(void) const {
 		return m_rcWorkCo;
 	}
+	boost::tuple<double, double, CPointD>	GetCylinderData(void) const {
+		return boost::make_tuple(m_dCylinderD, m_dCylinderH, m_ptCylinderOffset);
+	}
 
 // オペレーション
 public:
@@ -179,6 +187,17 @@ public:
 			m_rcWorkCo.NormalizeRect();
 			m_bDocFlg.set(NCDOC_COMMENTWORK);
 		}
+	}
+	void	SetWorkCylinder(double d, double h, const CPointD& ptOffset) {
+		m_dCylinderD = d;
+		m_dCylinderH = h;
+		m_ptCylinderOffset = ptOffset;
+		m_bDocFlg.set(NCDOC_CYLINDER);
+		// 外接四角形 -> m_rcWorkCo
+		d /= 2.0;
+		CRect3D	rc(-d, -d, d, d, h, 0);
+		rc.OffsetRect(ptOffset);
+		SetWorkRectOrg(rc);
 	}
 	void	SetWorkLatheR(double r) {
 		m_rcWorkCo.high = r;

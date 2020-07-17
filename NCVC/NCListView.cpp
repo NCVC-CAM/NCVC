@@ -106,6 +106,7 @@ void CNCListView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 			// qÌÚ°Ñ‚Ì½Ã°À½ÊŞ°‰Šú‰»
 			static_cast<CNCChild *>(GetParentFrame())->SetStatusMaxLine(nSize);
 		}
+		GetListCtrl().Invalidate();
 		break;
 	case UAV_CHANGEFONT:	// Ì«İÄ‚Ì•ÏX
 		GetListCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);

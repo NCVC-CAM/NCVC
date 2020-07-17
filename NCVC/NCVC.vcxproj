@@ -46,15 +46,15 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_56_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_56_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_57_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_57_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_56_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_56_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_57_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_57_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -239,7 +239,6 @@
     </ClCompile>
     <ClCompile Include="TabView.cpp" />
     <ClCompile Include="TH_AutoWorkingSet.cpp" />
-    <ClCompile Include="TH_CADbind.cpp" />
     <ClCompile Include="TH_Correct.cpp" />
     <ClCompile Include="TH_Cuttime.cpp" />
     <ClCompile Include="TH_MakeLathe.cpp" />

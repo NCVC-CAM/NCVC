@@ -700,8 +700,8 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.51c",IDC_STATIC,86,166,130,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 1997-2014 MNCT K.Magara",IDC_STATIC,86,182,123,8
+    LTEXT           "NCVC Version 3.51d",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 1997-2015 MNCT K.Magara",IDC_STATIC,86,182,123,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
 
@@ -1837,8 +1837,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,5,1,3
- PRODUCTVERSION 3,5,1,3
+ FILEVERSION 3,5,1,4
+ PRODUCTVERSION 3,5,1,4
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1856,14 +1856,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.5.1.3"
+            VALUE "FileVersion", "3.5.1.4"
             VALUE "InternalName", "NCVC.exe"
-            VALUE "LegalCopyright", "Copyright (C) 1997-2014 MNCT K.Magara"
+            VALUE "LegalCopyright", "Copyright (C) 1997-2015 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.5.1.3"
+            VALUE "ProductVersion", "3.5.1.4"
             VALUE "SpecialBuild", "VC++2012"
         END
     END

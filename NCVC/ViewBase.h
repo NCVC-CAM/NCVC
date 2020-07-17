@@ -17,6 +17,7 @@ class CViewBase : public CView
 	double		m_dBeforeFactor;// ’¼‘O‚ÌŠg‘å—¦
 
 	int		OnMouseButtonUp(int, const CPoint&);	// ÎÞÀÝ‚ð—£‚µ‚½‚Æ‚«‚Ì‹¤’Êˆ—
+	CSize	OnViewLens(CClientDC&);					// Šg‘åk¬‹¤’Êˆ—
 
 protected:
 	CViewBase();
@@ -33,8 +34,11 @@ protected:
 	int		DrawConvert(double d) {
 		return (int)(d * m_dFactor * LOMETRICFACTOR);
 	}
-	CPoint	DrawConvert(const CPointD& ptd) {
-		return CPoint( ptd * m_dFactor * LOMETRICFACTOR );
+	CPoint	DrawConvert(const CPointD& pt) {
+		return CPoint( pt * m_dFactor * LOMETRICFACTOR );
+	}
+	CRect	DrawConvert(const CRectD& rc) {
+		return CRect( DrawConvert(rc.TopLeft()), DrawConvert(rc.BottomRight()) );
 	}
 
 	// Šg‘å‹éŒ`‚Ì•`‰æ
@@ -63,13 +67,7 @@ protected:
 	int		OnRButtonUp(const CPoint&);
 	BOOL	OnMouseMove(UINT, const CPoint&);
 	BOOL	OnMouseWheel(UINT, short, const CPoint&);
-	void	OnContextMenu(CPoint pt, UINT nID) {
-		CMenu	menu;
-		menu.LoadMenu(nID);
-		CMenu*	pMenu = menu.GetSubMenu(0);
-		pMenu->TrackPopupMenu(TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON,
-			pt.x, pt.y, AfxGetMainWnd());
-	}
+	void	OnContextMenu(CPoint pt, UINT nID);
 	BOOL	OnEraseBkgnd(CDC*, COLORREF, COLORREF);
 
 #ifdef _DEBUG

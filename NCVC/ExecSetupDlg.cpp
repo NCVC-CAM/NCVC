@@ -183,7 +183,8 @@ void CExecSetupDlg::OnOK()
 	for ( int i=0; i<m_ctList.GetItemCount(); i++ )
 		pExeList->AddTail( reinterpret_cast<CExecOption *>(m_ctList.GetItemData(i)) );
 
-	__super::OnOK();
+//	__super::OnOK();
+	EndDialog(IDOK);
 }
 
 void CExecSetupDlg::OnCancel() 

@@ -108,8 +108,8 @@ CDXFDoc::~CDXFDoc()
 	for ( i=0; i<m_obLayer.GetSize(); i++ )
 		delete	m_obLayer[i];
 	for ( i=0; i<m_bindInfo.GetSize(); i++ ) {
-		m_bindInfo[i]->pParent->DestroyWindow();
-		delete	m_bindInfo[i]->pDoc;
+		// CreateObject()‚Å¶¬‚µ‚½²Ý½ÀÝ½‚Ídelete•s—v!!
+		delete	m_bindInfo[i]->pParent;
 		delete	m_bindInfo[i];
 	}
 }
@@ -380,6 +380,28 @@ void CDXFDoc::AllChangeFactor(double f) const
 	for ( i=0; i<SIZEOF(m_pLatheLine); i++ ) {
 		if ( m_pLatheLine[i] )
 			m_pLatheLine[i]->DrawTuning(f);
+	}
+}
+
+void CDXFDoc::AllRoundObjPoint(const CPointD& ptOrg, double dRound)
+{
+	int		i, j;
+	CLayerData*	pLayer;
+	CDXFdata*	pData;
+
+	m_rcMax.SetRectMinimum();
+	for ( i=0; i<m_obLayer.GetSize(); i++ ) {
+		pLayer = m_obLayer[i];
+		for ( j=0; j<pLayer->GetDxfSize(); j++ ) {
+			pData = pLayer->GetDxfData(j);
+			pData->RoundObjPoint(ptOrg, dRound);
+			SetMaxRect(pData);
+		}
+		for ( j=0; j<pLayer->GetDxfTextSize(); j++ ) {
+			pData = pLayer->GetDxfTextData(j);
+			pData->RoundObjPoint(ptOrg, dRound);
+			SetMaxRect(pData);
+		}
 	}
 }
 

@@ -31,10 +31,8 @@ extern	LPCTSTR	g_szHeader[];
 	//	"$ACADVER", "$EXTMIN", "$EXTMAX", "$LIMMIN", "$LIMMAX"
 // √∞ÃﬁŸªÃﬁ∑∞
 extern	LPCTSTR	g_szTables[];
-	//	"TABLE", "ENDTAB"
-// √∞ÃﬁŸ∑∞‹∞ƒﬁ
-extern	LPCTSTR	g_szTableKey[];
-	//	"LTYPE", "LAYER", "VPORT"
+	//	"TABLE", "ENDTAB",
+	//		"LTYPE", "LAYER", "VPORT"
 
 // â¸çs(StdAfx.cpp)
 extern	LPCTSTR	gg_szReturn;
@@ -210,9 +208,9 @@ void CDXFMake::MakeSection_Tables(const CNCDoc* pDoc)
 			strGroup72(MakeIntValue(72, 65));
 	CString	strTABLE(strGroup0+g_szTables[TABLES_TABLE]+gg_szReturn),
 			strENDTAB(strGroup0+g_szTables[TABLES_ENDTAB]+gg_szReturn),
-			strLTYPE(g_szTableKey[TABLEKEY_LTYPE]),
-			strLAYER(g_szTableKey[TABLEKEY_LAYER]),
-			strVPORT(g_szTableKey[TABLEKEY_VPORT]);
+			strLTYPE(g_szTables[TABLEKEY_LTYPE]),
+			strLAYER(g_szTables[TABLEKEY_LAYER]),
+			strVPORT(g_szTables[TABLEKEY_VPORT]);
 	strLTYPE += gg_szReturn;	strLAYER += gg_szReturn;
 	strVPORT += gg_szReturn;
 

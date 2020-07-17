@@ -3,14 +3,9 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
-#include "MainFrm.h"
-#include "NCChild.h"
 #include "NCdata.h"
 #include "NCDoc.h"
-#include "NCViewTab.h"
-#include "NCInfoTab.h"
 #include "NCViewXY.h"
-#include "NCListView.h"
 #include "ViewOption.h"
 
 #include "MagaDbgMac.h"

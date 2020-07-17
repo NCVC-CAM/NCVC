@@ -30,10 +30,12 @@ static	CThreadDlg*		g_pParent;
 static	CNCDoc*			g_pDoc;
 static	NCARGV			g_ncArgv;		// NCVCdefine.h
 static	int				g_nWorkRect,
+						g_nWorkCylinder,
 						g_nLatheView,
 						g_nWireView,
 						g_nSubprog;		// ｻﾌﾞﾌﾟﾛｸﾞﾗﾑ呼び出しの階層
 static	double			g_dWorkRect[NCXYZ*2],
+						g_dWorkCylinder[2+NCXYZ],
 						g_dLatheView[3],
 						g_dWireView,
 						g_dToolPos[NCXYZ];
@@ -106,6 +108,7 @@ static	int		SetTaperAngle(const string&);
 static	CNCdata*	SetToolPosition_fromComment(CNCblock*, CNCdata*);
 // ﾜｰｸ矩形情報設定
 static	void	SetWorkRect_fromComment(void);
+static	void	SetWorkCylinder_fromComment(void);
 static	void	SetLatheRect_fromComment(void);
 static	void	SetWireRect_fromComment(void);
 // ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの検索
@@ -274,8 +277,8 @@ template<typename Iterator>
 struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 {
 	qi::rule<Iterator, qi::space_type>		rr,
-		rs1, rs2, rs3, rs4, rs5,
-		rr1, r11, r12, rr2, rr3, rr4, rr5;
+		rs1, rs2, rs3, rs4, rs5, rs6,
+		rr1, r11, r12, rr2, rr3, rr4, rr5, rr6;
 
 	CCommentParser() : CCommentParser::base_type(rr) {
 		using qi::no_case;
@@ -284,44 +287,47 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 
 		// Endmill
 		rs1 = no_case[ g_szNCcomment[ENDMILL] ] >> '=';
-		r11 = double_[SetEndmill()] >> -no_case["mm"] >>
-						-(',' >> qi::digit[SetEndmillType()]);
-		r12 = (char_('R')|'r') >> double_[SetBallEndmill()] >>	// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
+		r11 = double_[_SetEndmill()] >> -no_case["mm"] >>
+						-(',' >> qi::digit[_SetEndmillType()]);
+		r12 = (char_('R')|'r') >> double_[_SetBallEndmill()] >>	// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
 						-no_case["mm"];
 		rr1 = r11 | r12;
 		// WorkRect
 		rs2 = no_case[ g_szNCcomment[WORKRECT] ] >> '=';
-		rr2 = double_[SetWorkRect()] % ',';
+		rr2 = double_[_SetWorkRect()] % ',';
+		// WorkCylinder
+		rs3 = no_case[ g_szNCcomment[WORKCYLINDER] ] >> '=';
+		rr3 = double_[_SetWorkCylinder()] % ',';
 		// ViewMode
-		rs3 = no_case[ g_szNCcomment[LATHEVIEW] ] >> '=';
-		rr3 = double_[SetLatheView()] % ',';
-		rs4 = no_case[ g_szNCcomment[WIREVIEW] ] >> '=';
-		rr4 = double_[SetWireView()];
+		rs4 = no_case[ g_szNCcomment[LATHEVIEW] ] >> '=';
+		rr4 = double_[_SetLatheView()] % ',';
+		rs5 = no_case[ g_szNCcomment[WIREVIEW] ] >> '=';
+		rr5 = double_[_SetWireView()];
 		// ToolPos
-		rs5 = no_case[ g_szNCcomment[TOOLPOS] ] >> '=';
-		rr5 = -double_[ToolPosX()] >>
-				-(',' >> -double_[ToolPosY()] >> -(',' >> -double_[ToolPosZ()]));
+		rs6 = no_case[ g_szNCcomment[TOOLPOS] ] >> '=';
+		rr6 = -double_[_ToolPosX()] >>
+				-(',' >> -double_[_ToolPosY()] >> -(',' >> -double_[_ToolPosZ()]));
 		//
-		rr  = *(char_ - '(') >> '(' >> *(char_ - (rs1|rs2|rs3|rs4|rs5)) >>
-					// コメント行を全て処理させるために
-					// ↓は＊としている
-					*( rs1>>rr1 | rs2>>rr2 | rs3>>rr3 | rs4>>rr4 | rs5>>rr5 );
+		rr  = *(char_ - '(') >> '(' >> *(char_ - (rs1|rs2|rs3|rs4|rs5|rs6)) >>
+				// コメント行を全て処理させるために
+				// ↓は＊としている
+				*( rs1>>rr1 | rs2>>rr2 | rs3>>rr3 | rs4>>rr4 | rs5>>rr5 | rs6>>rr6 );
 	}
 
 	// ｴﾝﾄﾞﾐﾙ径
-	struct	SetEndmill {
+	struct	_SetEndmill {
 		void operator()(const double& d, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.dEndmill = d / 2.0;
 #ifdef _DEBUG_GSPIRIT
 			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("SetEndmill()", DBG_MAGENTA);
+				CMagaDbg	dbg("_SetEndmill()", DBG_MAGENTA);
 				dbg.printf("Endmill=%f", g_ncArgv.dEndmill);
 			}
 #endif
 		}
 	};
 	// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
-	struct	SetBallEndmill {
+	struct	_SetBallEndmill {
 		void operator()(double& d, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.dEndmill = d;
 			g_ncArgv.nEndmillType = 1;
@@ -334,7 +340,7 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 		}
 	};
 	// ｴﾝﾄﾞﾐﾙﾀｲﾌﾟ
-	struct SetEndmillType {
+	struct _SetEndmillType {
 		void operator()(char& c, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.nEndmillType = c - '0';	// １文字を数値に変換
 #ifdef _DEBUG_GSPIRIT
@@ -346,28 +352,35 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 		}
 	};
 	// ﾜｰｸ矩形
-	struct SetWorkRect {
+	struct _SetWorkRect {
 		void operator()(double& d, qi::unused_type, qi::unused_type) const {
 			if ( g_nWorkRect < SIZEOF(g_dWorkRect) )
 				g_dWorkRect[g_nWorkRect++] = d;
 		}
 	};
+	// ﾜｰｸ円柱
+	struct _SetWorkCylinder {
+		void operator()(double& d, qi::unused_type, qi::unused_type) const {
+			if ( g_nWorkCylinder < SIZEOF(g_dWorkCylinder) )
+				g_dWorkCylinder[g_nWorkCylinder++] = d;
+		}
+	};
 	// 旋盤表示ﾓｰﾄﾞ
-	struct SetLatheView {
+	struct _SetLatheView {
 		void operator()(double& d, qi::unused_type, qi::unused_type) const {
 			if ( g_nLatheView < SIZEOF(g_dLatheView) )
 				g_dLatheView[g_nLatheView++] = d;
 		}
 	};
 	// ﾜｲﾔ加工機表示ﾓｰﾄﾞ
-	struct SetWireView {
+	struct _SetWireView {
 		void operator()(double& d, qi::unused_type, qi::unused_type) const {
 			if ( g_nWireView++ < 1 )
 				g_dWireView = d;
 		}
 	};
 	// 工具位置変更
-	struct ToolPosX {
+	struct _ToolPosX {
 		void operator()(double& d, qi::unused_type, qi::unused_type) const {
 			g_dToolPos[NCA_X] = d;
 			g_dwToolPosFlags |= NCD_X;
@@ -379,7 +392,7 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 #endif
 		}
 	};
-	struct ToolPosY {
+	struct _ToolPosY {
 		void operator()(double& d, qi::unused_type, qi::unused_type) const {
 			g_dToolPos[NCA_Y] = d;
 			g_dwToolPosFlags |= NCD_Y;
@@ -391,7 +404,7 @@ struct CCommentParser : qi::grammar<Iterator, qi::space_type>
 #endif
 		}
 	};
-	struct ToolPosZ {
+	struct _ToolPosZ {
 		void operator()(double& d, qi::unused_type, qi::unused_type) const {
 			g_dToolPos[NCA_Z] = d;
 			g_dwToolPosFlags |= NCD_Z;
@@ -441,7 +454,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	g_ncArgv.nc.nErrorCode	= 0;
 	g_ncArgv.nc.dwValFlags &= NCD_CLEARVALUE;	// 0xffff0000
 	g_ncArgv.taper.bTonly	= FALSE;
-	g_nWorkRect = g_nLatheView = g_nWireView = 0;
+	g_nWorkRect = g_nWorkCylinder = g_nLatheView = g_nWireView = 0;
 	g_dwToolPosFlags		= 0;
 
 	strBlock = pBlock->GetStrGcode();
@@ -464,6 +477,8 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	if ( qi::phrase_parse(it, strBlock.end(), comment_p, qi::space) ) {
 		if ( g_nWorkRect > 0 )
 			SetWorkRect_fromComment();
+		if ( g_nWorkCylinder > 0 )
+			SetWorkCylinder_fromComment();
 		if ( g_nLatheView > 0 )
 			SetLatheRect_fromComment();
 		if ( g_nWireView > 0 )
@@ -1428,6 +1443,45 @@ void SetWorkRect_fromComment(void)
 	if ( !IsThumbnail() ) {
 		dbg.printf("(%f,%f)-(%f,%f)", rc.left, rc.top, rc.right, rc.bottom);
 		dbg.printf("(%f,%f)", rc.low, rc.high);
+	}
+#endif
+}
+
+void SetWorkCylinder_fromComment(void)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("SetWorkCylinder_fromComment()", DBG_MAGENTA);
+#endif
+	double		d, h;
+	CPoint3D	pt;
+
+	for ( int i=0; i<g_nWorkCylinder && i<SIZEOF(g_dWorkCylinder); i++ ) {
+		switch ( i ) {
+		case 0:		// 直径
+			d = g_dWorkCylinder[0];
+			break;
+		case 1:		// 高さ
+			h = g_dWorkCylinder[1];
+			break;
+		case 2:		// Xｵﾌｾｯﾄ
+			pt.x = g_dWorkCylinder[2];
+			break;
+		case 3:		// Yｵﾌｾｯﾄ
+			pt.y = g_dWorkCylinder[3];
+			break;
+		case 4:		// Zｵﾌｾｯﾄ
+			pt.z = g_dWorkCylinder[4];
+			break;
+		}
+	}
+
+	// ﾄﾞｷｭﾒﾝﾄが保持する円柱情報の更新
+	g_pDoc->SetWorkCylinder(d, h, pt);
+
+#ifdef _DEBUG
+	if ( !IsThumbnail() ) {
+		dbg.printf("d=%f h=%f", d, h);
+		dbg.printf("offset=%f,%f,%f", pt.x, pt.y, pt.z);
 	}
 #endif
 }

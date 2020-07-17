@@ -181,6 +181,16 @@ void CDXFdata::SwapNativePt(void)	// 固有座標値の入れ替え
 #endif
 }
 
+void CDXFdata::RoundObjPoint(const CPointD& ptOrg, double dRound)
+{
+	for ( int i=0; i<GetPointNumber(); i++ ) {
+		m_pt[i] -= ptOrg;
+		m_pt[i].RoundPoint(dRound);
+		m_pt[i] += ptOrg;
+	}
+	SetMaxRect();
+}
+
 void CDXFdata::XRev(void)		// X軸の符号反転
 {
 	for ( int i=0; i<GetPointNumber(); i++ ) {
@@ -264,8 +274,9 @@ void CDXFpoint::DrawTuning(const double f)
 	CPointD	pt( m_pt[0] * f);
 	m_ptDraw = pt;
 	// 位置を表す丸印は常に2.5論理理位
-	m_rcDraw.TopLeft()		= pt - LOMETRICFACTOR*2.5;
-	m_rcDraw.BottomRight()	= pt + LOMETRICFACTOR*2.5;
+	double	dFactor = LOMETRICFACTOR * 2.5;
+	m_rcDraw.TopLeft()		= pt - dFactor;
+	m_rcDraw.BottomRight()	= pt + dFactor;
 }
 
 void CDXFpoint::Draw(CDC* pDC) const
@@ -805,6 +816,15 @@ void CDXFcircle::SwapMakePt(int n)
 void CDXFcircle::SwapNativePt(void)
 {
 	// 何もしない
+}
+
+void CDXFcircle::RoundObjPoint(const CPointD& ptOrg, double dRound)
+{
+	m_ct -= ptOrg;
+	m_ct.RoundPoint(dRound);
+	m_ct += ptOrg;
+	SetCirclePoint();
+	SetMaxRect();
 }
 
 void CDXFcircle::XRev(void)
@@ -1361,6 +1381,17 @@ void CDXFarc::SwapNativePt(void)
 	// 角度の入れ替え
 	swap(m_sq, m_eq);
 	swap(m_sqDraw, m_eqDraw);
+}
+
+void CDXFarc::RoundObjPoint(const CPointD& ptOrg, double dRound)
+{
+	m_ct -= ptOrg;
+	m_ct.RoundPoint(dRound);
+	m_ct += ptOrg;
+	m_sq += dRound;		m_eq += dRound;
+	AngleTuning();
+	m_sqDraw = m_sq;	m_eqDraw = m_eq;
+	CDXFdata::RoundObjPoint(ptOrg, dRound);
 }
 
 size_t CDXFarc::SetVectorPoint(VECPOINTD& vpt, double k) const
@@ -2021,6 +2052,14 @@ void CDXFellipse::SwapNativePt(void)
 		CDXFarc::SwapNativePt();
 }
 
+void CDXFellipse::RoundObjPoint(const CPointD& ptOrg, double dRound)
+{
+	m_lqMake = m_lq += dRound;
+	m_lqDrawCos = cos(m_lq);
+	m_lqDrawSin = sin(m_lq);
+	CDXFarc::RoundObjPoint(ptOrg, dRound);
+}
+
 size_t CDXFellipse::SetVectorPoint(VECPOINTD& vpt, double) const
 {
 	double	sq = m_sqDraw,
@@ -2539,6 +2578,21 @@ void CDXFpolyline::SwapNativePt(void)
 		pData = m_ltVertex.GetNext(pos);
 		if ( pData->GetType() != DXFPOINTDATA )
 			pData->SwapNativePt();
+	}
+}
+
+void CDXFpolyline::RoundObjPoint(const CPointD& ptOrg, double dRound)
+{
+#ifdef _DEBUG
+	CDXFdata*	pData;
+#endif
+	for ( POSITION pos=m_ltVertex.GetHeadPosition(); pos; ) {
+#ifdef _DEBUG
+		pData = m_ltVertex.GetNext(pos);
+		pData->RoundObjPoint(ptOrg,dRound);
+#else
+		m_ltVertex.GetNext(pos)->RoundObjPoint(ptOrg,dRound);
+#endif
 	}
 }
 

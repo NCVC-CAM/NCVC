@@ -5,9 +5,7 @@
 #include "NCVC.h"
 #include "MainFrm.h"
 #include "DXFChild.h"
-// ¶½ÀÑºÏİÄŞÙ°Ã¨İ¸Ş
 #include "DXFDoc.h"
-// ½ÌßØ¯À³¨İÄŞ³ì¬
 #include "DXFView.h"
 #include "DXFShapeView.h"
 

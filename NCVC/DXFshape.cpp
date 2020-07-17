@@ -153,8 +153,9 @@ void CDXFworkingStart::DrawTuning(const double f)
 {
 	CPointD	pt( m_ptStart * f ); 
 	// ˆÊ’u‚ğ•\‚·ŠÛˆó‚Íí‚É2.5˜_——ˆÊ (CDXFpoint€‹’)
-	m_rcDraw.TopLeft()		= pt - LOMETRICFACTOR*2.5;
-	m_rcDraw.BottomRight()	= pt + LOMETRICFACTOR*2.5;
+	double	dFactor = LOMETRICFACTOR * 2.5;
+	m_rcDraw.TopLeft()		= pt - dFactor;
+	m_rcDraw.BottomRight()	= pt + dFactor;
 }
 
 void CDXFworkingStart::Draw(CDC* pDC) const

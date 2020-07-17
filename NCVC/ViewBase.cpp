@@ -107,37 +107,14 @@ void CViewBase::OnViewLensP(void)
 #endif
 	CClientDC	dc(this);
 
-	// Œ»Ý‚Ì¸×²±ÝÄ—Ìˆæ‚Ì‘å‚«‚³
-	CRect		rc;
-	GetClientRect(rc);
-	CSize	sz(rc.Width(), rc.Height());
-	dc.DPtoLP(&sz);
-
-	// Šg‘å‹éŒ`‚ªŽw’è‚³‚ê‚Ä‚¢‚é‚©”Û‚©
-	if ( m_bMagRect ) {
-		// ’¼‘O‚ÌŠg‘å—¦
-		m_dBeforeFactor = m_dFactor;
-		m_ptBeforeOrg = dc.GetWindowOrg();
-		m_bMagRect = FALSE;
-	}
-	else {
-		dc.DPtoLP(&rc);
-		m_rcMagnify = rc;
-		// ¸×²±ÝÄ‹éŒ`‚Ì10%‚ðŠg‘å—Ìˆæ‚Æ‚·‚é
-		m_rcMagnify.DeflateRect((int)(rc.Width()*0.1), (int)(rc.Height()*0.1));
-	}
-	m_rcMagnify.NormalizeRect();
+	// ‘Oˆ—
+	CSize	sz( OnViewLens(dc) );
 
 	// Šg‘å—¦‚ÌŒvŽZ
 	double	dFactorH = (double)sz.cx / m_rcMagnify.Width();
 	double	dFactorV = (double)sz.cy / m_rcMagnify.Height();
 	double	dFactor  = m_dFactor;
 #ifdef _DEBUG
-	dbg.printf("sz.cx=%d sz.cy=%d", sz.cx, sz.cy);
-	dbg.printf("m_rcMagnify.left=%d m_rcMagnify.bottom=%d",
-		m_rcMagnify.left, m_rcMagnify.bottom);
-	dbg.printf("m_rcMagnify.Width()=%d m_rcMagnify.Height()=%d",
-		m_rcMagnify.Width(), m_rcMagnify.Height());
 	dbg.printf("dFactorH=%f dFactorV=%f", dFactorH, dFactorV);
 #endif
 	// ËÞ­°Œ´“_‚ÌÝ’è(µÌÞ¼Þª¸Ä‹éŒ`(ã‰º”½‘Î)‚Ì¶ã‹÷‚ðÃÞÊÞ²½À•W‚ÌŒ´“_(¶ã‹÷)‚Ö)‚Æ
@@ -177,37 +154,14 @@ void CViewBase::OnViewLensN(void)
 #endif
 	CClientDC	dc(this);
 
-	// Œ»Ý‚Ì¸×²±ÝÄ—Ìˆæ‚Ì‘å‚«‚³
-	CRect		rc;
-	GetClientRect(rc);
-	CSize	sz(rc.Width(), rc.Height());
-	dc.DPtoLP(&sz);
-
-	// Šg‘å‹éŒ`‚ªŽw’è‚³‚ê‚Ä‚¢‚é‚©”Û‚©
-	if ( m_bMagRect ) {
-		// ’¼‘O‚ÌŠg‘å—¦
-		m_dBeforeFactor = m_dFactor;
-		m_ptBeforeOrg = dc.GetWindowOrg();
-		m_bMagRect = FALSE;
-	}
-	else {
-		dc.DPtoLP(&rc);
-		m_rcMagnify = rc;
-		// ¸×²±ÝÄ‹éŒ`‚Ì10%‚ðk¬—Ìˆæ‚Æ‚·‚é
-		m_rcMagnify.DeflateRect((int)(rc.Width()*0.1), (int)(rc.Height()*0.1));
-	}
-	m_rcMagnify.NormalizeRect();
+	// ‘Oˆ—
+	CSize	sz( OnViewLens(dc) );
 
 	// Šg‘å—¦‚ÌŒvŽZ
-	double	dFactorH = m_rcMagnify.Width()  / (double)sz.cx;
-	double	dFactorV = m_rcMagnify.Height() / (double)sz.cy;
+	double	dFactorH = (double)m_rcMagnify.Width()  / sz.cx;
+	double	dFactorV = (double)m_rcMagnify.Height() / sz.cy;
 	double	dFactor  = m_dFactor;
 #ifdef _DEBUG
-	dbg.printf("sz.cx=%d sz.cy=%d", sz.cx, sz.cy);
-	dbg.printf("m_rcMagnify.left=%d m_rcMagnify.bottom=%d",
-		m_rcMagnify.left, m_rcMagnify.bottom);
-	dbg.printf("m_rcMagnify.Width()=%d m_rcMagnify.Height()=%d",
-		m_rcMagnify.Width(), m_rcMagnify.Height());
 	dbg.printf("dFactorH=%f dFactorV=%f", dFactorH, dFactorV);
 #endif
 	// ËÞ­°Œ´“_‚ÌÝ’è(µÌÞ¼Þª¸Ä‹éŒ`(ã‰º”½‘Î)‚Ì¶ã‹÷‚ðÃÞÊÞ²½À•W‚ÌŒ´“_(¶ã‹÷)‚Ö)‚Æ
@@ -228,6 +182,42 @@ void CViewBase::OnViewLensN(void)
 	dbg.printf("ptorg.x=%d ptorg.y=%d", pt.x, pt.y);
 #endif
 	dc.SetWindowOrg(pt);
+}
+
+CSize CViewBase::OnViewLens(CClientDC& dc)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("CViewBase::OnViewLens()");
+#endif
+	// Œ»Ý‚Ì¸×²±ÝÄ—Ìˆæ‚Ì‘å‚«‚³
+	CRect		rc;
+	GetClientRect(rc);
+	CSize	sz(rc.Width(), rc.Height());
+	dc.DPtoLP(&sz);
+
+	// Šg‘å‹éŒ`‚ªŽw’è‚³‚ê‚Ä‚¢‚é‚©”Û‚©
+	if ( m_bMagRect ) {
+		// ’¼‘O‚ÌŠg‘å—¦
+		m_dBeforeFactor = m_dFactor;
+		m_ptBeforeOrg = dc.GetWindowOrg();
+		m_bMagRect = FALSE;
+	}
+	else {
+		dc.DPtoLP(&rc);
+		m_rcMagnify = rc;
+		// ¸×²±ÝÄ‹éŒ`‚Ì10%‚ðŠg‘åk¬—Ìˆæ‚Æ‚·‚é
+		m_rcMagnify.DeflateRect((int)(rc.Width()*0.1), (int)(rc.Height()*0.1));
+	}
+	m_rcMagnify.NormalizeRect();
+
+#ifdef _DEBUG
+	dbg.printf("sz.cx=%d sz.cy=%d", sz.cx, sz.cy);
+	dbg.printf("m_rcMagnify.left=%d m_rcMagnify.bottom=%d",
+		m_rcMagnify.left, m_rcMagnify.bottom);
+	dbg.printf("m_rcMagnify.Width()=%d m_rcMagnify.Height()=%d",
+		m_rcMagnify.Width(), m_rcMagnify.Height());
+#endif
+	return sz;
 }
 
 void CViewBase::OnMoveKey(UINT nID)
@@ -463,6 +453,15 @@ BOOL CViewBase::OnMouseWheel(UINT nFlags, short zDelta, const CPoint& pt)
 	}
 
 	return TRUE;
+}
+
+void CViewBase::OnContextMenu(CPoint pt, UINT nID)
+{
+	CMenu	menu;
+	menu.LoadMenu(nID);
+	CMenu*	pMenu = menu.GetSubMenu(0);
+	pMenu->TrackPopupMenu(TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON,
+		pt.x, pt.y, AfxGetMainWnd());
 }
 
 BOOL CViewBase::OnEraseBkgnd(CDC* pDC, COLORREF col1, COLORREF col2) 

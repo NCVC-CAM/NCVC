@@ -111,7 +111,8 @@ void CExtensionDlg::OnOK()
 		e->Delete();
 	}
 
-	__super::OnOK();
+//	_super::OnOK();
+	EndDialog(IDOK);
 }
 
 void CExtensionDlg::OnExtAdd() 

@@ -27,6 +27,7 @@ using namespace boost;
 static	const	double	SELECTGAP = 5.0;
 //
 #define	IsBindMode()	GetDocument()->IsDocFlag(DXFDOC_BIND)
+#define	IsBindParent()	GetDocument()->IsDocFlag(DXFDOC_BINDPARENT)
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFView
@@ -36,6 +37,7 @@ IMPLEMENT_DYNCREATE(CDXFView, CViewBase)
 BEGIN_MESSAGE_MAP(CDXFView, CView)
 	//{{AFX_MSG_MAP(CDXFView)
 	ON_WM_CREATE()
+	ON_WM_DESTROY()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_LBUTTONDBLCLK()
@@ -69,11 +71,6 @@ CDXFView::CDXFView()
 {
 	m_nSelect = -1;
 	m_pSelData = NULL;
-}
-
-CDXFView::~CDXFView()
-{
-	DeleteOutlineTempObject();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -129,6 +126,14 @@ void CDXFView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 	}
 	CView::OnUpdate(pSender, lHint, pHint);
 }
+
+#ifdef _DEBUG
+CDXFDoc* CDXFView::GetDocument() // 非デバッグ バージョンはインラインです。
+{
+	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CDXFDoc)));
+	return static_cast<CDXFDoc *>(m_pDocument);
+}
+#endif //_DEBUG
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFView クラスのメンバ関数
@@ -344,11 +349,12 @@ void CDXFView::AllChangeFactor_OutlineTempObject(void)
 {
 	CDXFdata*	pData;
 	POSITION	pos;
+	double		dFactor = m_dFactor * LOMETRICFACTOR;
 	for ( int i=0; i<SIZEOF(m_ltOutline); i++ ) {
 		for ( pos=m_ltOutline[i].GetHeadPosition(); pos; ) {
 			pData = m_ltOutline[i].GetNext(pos);
 			if ( pData )
-				pData->DrawTuning(m_dFactor*LOMETRICFACTOR);
+				pData->DrawTuning(dFactor);
 		}
 	}
 }
@@ -369,15 +375,17 @@ void CDXFView::OnDraw(CDC* pDC)
 	pDC->SetTextAlign(TA_LEFT|TA_BOTTOM);
 	CFont*	pOldFont = pDC->SelectObject(AfxGetNCVCMainWnd()->GetTextFont(TYPE_DXF));
 	CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
-
-	// 原点描画
 	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_ORIGIN));
-	if ( pData=GetDocument()->GetCircleObject() )
-		pData->Draw(pDC);	// CDXFcircleEx::Draw()
-	// 旋盤原点
-	for ( i=0; i<2; i++ ) {
-		if ( pData=GetDocument()->GetLatheLine(i) )
-			pData->Draw(pDC);	// CDXFline::Draw()
+
+	if ( !IsBindMode() ) {
+		// 原点描画
+		if ( pData=GetDocument()->GetCircleObject() )
+			pData->Draw(pDC);	// CDXFcircleEx::Draw()
+		// 旋盤原点
+		for ( i=0; i<2; i++ ) {
+			if ( pData=GetDocument()->GetLatheLine(i) )
+				pData->Draw(pDC);	// CDXFline::Draw()
+		}
 	}
 
 	// DXF描画
@@ -450,7 +458,7 @@ void CDXFView::OnDraw(CDC* pDC)
 	if ( m_pSelData && m_nSelect>=0 )
 		DrawTemporaryProcess(pDC);
 	// ﾜｰｸ矩形(bind)
-	if ( GetDocument()->IsDocFlag(DXFDOC_BINDPARENT) ) {
+	if ( IsBindParent() ) {
 		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORK));
 		pDC->Rectangle(m_rcDrawWork);
 	}
@@ -489,9 +497,10 @@ void CDXFView::DrawTempArraw(CDC* pDC)
 
 	// 矢印の長さが拡大率に影響されないように計算
 	CPoint	ptDraw[SIZEOF(m_ptArraw)][SIZEOF(m_ptArraw[0])];
+	double	dFactor = m_dFactor * LOMETRICFACTOR;
 
 	for ( int i=0; i<SIZEOF(m_ptArraw); i++ ) {
-		ptDraw[i][1] = m_ptArraw[i][1] * m_dFactor * LOMETRICFACTOR;
+		ptDraw[i][1] = m_ptArraw[i][1] * dFactor;
 		ptDraw[i][0] = m_ptArraw[i][0] + ptDraw[i][1];
 		ptDraw[i][2] = m_ptArraw[i][2] + ptDraw[i][1];
 	}
@@ -509,8 +518,9 @@ void CDXFView::DrawTempStart(CDC* pDC)
 	CRect	rcDraw;
 	CPointD	pt( m_ptStart[m_nSelect] * m_dFactor * LOMETRICFACTOR);
 	// 位置を表す丸印は常に2.5論理理位
-	rcDraw.TopLeft()		= pt - LOMETRICFACTOR*2.5;
-	rcDraw.BottomRight()	= pt + LOMETRICFACTOR*2.5;
+	double	dFactor = LOMETRICFACTOR * 2.5;
+	rcDraw.TopLeft()		= pt - dFactor;
+	rcDraw.BottomRight()	= pt + dFactor;
 
 	CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
 	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE));
@@ -538,17 +548,6 @@ void CDXFView::DrawTempOutline(CDC* pDC)
 		pDC->SelectObject(pOldBrush);
 	}
 }
-
-/////////////////////////////////////////////////////////////////////////////
-// CDXFView 診断
-
-#ifdef _DEBUG
-CDXFDoc* CDXFView::GetDocument() // 非デバッグ バージョンはインラインです。
-{
-	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CDXFDoc)));
-	return static_cast<CDXFDoc *>(m_pDocument);
-}
-#endif //_DEBUG
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFView クラスのメッセージ ハンドラ（メニュー編）
@@ -588,8 +587,8 @@ void CDXFView::OnUpdateMouseCursor(CCmdUI* pCmdUI)
 			ScreenToClient(&pt);
 			CClientDC	dc(this);
 			dc.DPtoLP(&pt);
-			CPointD	ptd( pt.x/m_dFactor/LOMETRICFACTOR,
-						 pt.y/m_dFactor/LOMETRICFACTOR );
+			double	dFactor = m_dFactor * LOMETRICFACTOR;
+			CPointD	ptd( pt.x/dFactor, pt.y/dFactor );
 			// 原点からの距離
 			ptd -= *ptOrg;
 			static_cast<CDXFChild *>(GetParentFrame())->OnUpdateMouseCursor(&ptd);
@@ -619,6 +618,8 @@ void CDXFView::OnViewLayer()
 void CDXFView::OnMoveKey(UINT nID) 
 {
 	CViewBase::OnMoveKey(nID);
+	if ( IsBindParent() )
+		BindMove(FALSE);
 }
 
 void CDXFView::OnLensKey(UINT nID)
@@ -631,17 +632,18 @@ void CDXFView::OnLensKey(UINT nID)
 		CViewBase::OnBeforeMagnify();
 		break;
 	case ID_VIEW_FIT:
-		rc  = GetDocument()->GetMaxRect();
+		rc = GetDocument()->GetMaxRect();
 		if ( !IsBindMode() ) {
+			// 原点補間
 			pData = GetDocument()->GetCircleObject();
 			if ( pData )
 				rc |= pData->GetMaxRect();
-		}
-		if ( GetDocument()->IsDocFlag(DXFDOC_LATHE) ) {
-			for ( int i=0; i<2; i++ ) {
-				pData = GetDocument()->GetLatheLine(0);
-				if ( pData )
-					rc |= pData->GetMaxRect();
+			if ( GetDocument()->IsDocFlag(DXFDOC_LATHE) ) {
+				for ( int i=0; i<2; i++ ) {
+					pData = GetDocument()->GetLatheLine(0);
+					if ( pData )
+						rc |= pData->GetMaxRect();
+				}
 			}
 		}
 		CViewBase::OnViewFit(rc);
@@ -664,18 +666,46 @@ void CDXFView::OnViewLensComm(void)
 	GetDocument()->AllChangeFactor(m_dFactor);
 	// 一時ｵﾌﾞｼﾞｪｸﾄ分
 	AllChangeFactor_OutlineTempObject();
-	// ﾜｰｸ矩形
-	if ( GetDocument()->IsDocFlag(DXFDOC_BINDPARENT) ) {
-		CRectD	rc(GetDocument()->GetMaxRect());
-		m_rcDrawWork.left	= DrawConvert(rc.left);
-		m_rcDrawWork.top	= DrawConvert(rc.top);
-		m_rcDrawWork.right	= DrawConvert(rc.right);
-		m_rcDrawWork.bottom	= DrawConvert(rc.bottom);
+	//
+	if ( IsBindParent() ) {
+		// ﾜｰｸ矩形
+		m_rcDrawWork = DrawConvert(GetDocument()->GetMaxRect());
+		// 統合ﾃﾞｰﾀの再配置
+		BindMove(TRUE);
 	}
-	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-	static_cast<CDXFChild *>(GetParentFrame())->SetFactorInfo(m_dFactor);
+	if ( !IsBindMode() ) {
+		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
+		static_cast<CDXFChild *>(GetParentFrame())->SetFactorInfo(m_dFactor);
+	}
 	// ﾋﾞｭｰの再描画
 	Invalidate();
+}
+
+void CDXFView::BindMove(BOOL bFitMsg)
+{
+	CClientDC		dc(this);
+	LPCADBINDINFO	pInfo;
+	CPoint			pt;
+	CRect			rc;
+	CSize			sz;
+	double	dFactor = m_dFactor * LOMETRICFACTOR;
+
+	for ( int i=0; i<GetDocument()->GetBindInfoCnt(); i++ ) {
+		pInfo = GetDocument()->GetBindInfoData(i);
+		pt = pInfo->pt * dFactor;
+		dc.LPtoDP(&pt);
+		rc = pInfo->pDoc->GetMaxRect();
+		dc.LPtoDP(&rc);
+		rc.NormalizeRect();
+		sz.cx = (int)(rc.Width()  * dFactor);
+		sz.cy = (int)(rc.Height() * dFactor);
+		pInfo->pParent->MoveWindow(pt.x, pt.y, sz.cx, sz.cy);
+		if ( bFitMsg ) {
+			pInfo->pParent->GetClientRect(&rc);
+			pInfo->pView->MoveWindow(0, 0, rc.Width(), rc.Height());
+			pInfo->pView->SendMessage(WM_USERVIEWFITMSG);
+		}
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -687,14 +717,61 @@ int CDXFView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return CViewBase::OnCreate(lpCreateStruct);
 }
 
+void CDXFView::OnDestroy()
+{
+	DeleteOutlineTempObject();
+	__super::OnDestroy();
+}
+
 LRESULT CDXFView::OnUserViewFitMsg(WPARAM, LPARAM)
 {
-	OnLensKey(ID_VIEW_FIT);
+	if ( IsBindMode() ) {
+		CRectD	rc;
+		rc = GetDocument()->GetMaxRect();
+		CViewBase::OnViewFit(rc, FALSE);
+		OnViewLensComm();
+	}
+	else {
+		OnLensKey(ID_VIEW_FIT);
+	}
 	return 0;
 }
 
 LRESULT CDXFView::OnBindInitMsg(WPARAM, LPARAM)
 {
+	int		i, nLoop = GetDocument()->GetBindInfoCnt();
+	double	dMargin = AfxGetNCVCApp()->GetDXFOption()->GetBindMargin();
+	CClientDC		dc(this);
+	LPCADBINDINFO	pInfo;
+	CRectD	rcWork( GetDocument()->GetMaxRect() ), rcL;
+	CPointD	ptL( 0, rcWork.bottom );	// 初期配置位置(論理座標)
+	CPoint	pt;
+	CRect	rc;
+	CSize	sz;
+	double	dFactor = m_dFactor * LOMETRICFACTOR;
+
+	for ( i=0; i<nLoop; i++ ) {
+		pInfo = GetDocument()->GetBindInfoData(i);
+		// 位置記憶とﾃﾞﾊﾞｲｽ座標への変換
+		pInfo->pt = ptL;
+		pt = ptL * dFactor;
+		dc.LPtoDP(&pt);
+		// ﾃﾞｰﾀの最大矩形をﾃﾞﾊﾞｲｽ座標に変換
+		rc = rcL = pInfo->pDoc->GetMaxRect();
+		dc.LPtoDP(&rc);
+		rc.NormalizeRect();		// Y軸逆転
+		// 次の配置座標
+		ptL.x += rcL.Width() + dMargin;
+		// 拡大率の計算
+		sz.cx = (int)(rc.Width()  * dFactor);
+		sz.cy = (int)(rc.Height() * dFactor);
+		// 子ﾌﾚｰﾑの配置
+		pInfo->pParent->MoveWindow(pt.x, pt.y, sz.cx, sz.cy);
+		pInfo->pParent->GetClientRect(&rc);
+		pInfo->pView->MoveWindow(0,0, rc.Width(), rc.Height());
+		pInfo->pView->SendMessage(WM_USERVIEWFITMSG);
+	}
+
 	return 0;
 }
 
@@ -733,13 +810,14 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 	CClientDC	dc(this);
 	// 座標値計算(pointはCViewBase::OnLButtonUp()で論理座標に変換済み)
 	CPointD	pt(point);
-	pt /= ( m_dFactor * LOMETRICFACTOR );
+	double	dFactor = m_dFactor * LOMETRICFACTOR;
+	pt /= dFactor;
 	CRect	rc;
 	GetClientRect(rc);
 	dc.DPtoLP(rc);
 	rc.NormalizeRect();
 	CRectD	rcView(rc);
-	rcView /= ( m_dFactor * LOMETRICFACTOR );
+	rcView /= dFactor;
 	// ｸﾘｯｸﾎﾟｲﾝﾄから集合検索
 	if ( !m_pSelData ) {
 		CDXFshape*	pShape = NULL;
@@ -783,13 +861,14 @@ void CDXFView::OnLButtonDblClk(UINT nFlags, CPoint point)
 	CClientDC	dc(this);
 	dc.DPtoLP(&point);
 	CPointD		pt(point);
-	pt /= ( m_dFactor * LOMETRICFACTOR );
+	double		dFactor = m_dFactor * LOMETRICFACTOR;
+	pt /= dFactor;
 	CRect	rc;
 	GetClientRect(rc);
 	dc.DPtoLP(rc);
 	rc.NormalizeRect();
 	CRectD	rcView(rc);
-	rcView /= ( m_dFactor * LOMETRICFACTOR );
+	rcView /= dFactor;
 
 	// 加工指示ごとの処理
 	switch ( GetDocument()->GetShapeProcessID() ) {
@@ -1096,22 +1175,26 @@ void CDXFView::OnRButtonUp(UINT nFlags, CPoint point)
 
 void CDXFView::OnMouseMove(UINT nFlags, CPoint point) 
 {
-	if ( CViewBase::OnMouseMove(nFlags, point) ||
-				!m_pSelData || m_vSelect.which()!=DXFTREETYPE_SHAPE )
-		return;
+	if ( CViewBase::OnMouseMove(nFlags, point) ) {
+		if ( m_nRState>0 && IsBindParent() )
+			BindMove(FALSE);
+		if ( !m_pSelData || m_vSelect.which()!=DXFTREETYPE_SHAPE )
+			return;
+	}
 
 	// CViewBase::OnMouseMove() で処理がなければ
 	// ここで論理座標に変換する必要がある
 	CClientDC	dc(this);
 	dc.DPtoLP(&point);
 	CPointD		pt(point);
-	pt /= ( m_dFactor * LOMETRICFACTOR );
+	double		dFactor = m_dFactor * LOMETRICFACTOR;
+	pt /= dFactor;
 	CRect	rc;
 	GetClientRect(rc);
 	dc.DPtoLP(rc);
 	rc.NormalizeRect();
 	CRectD	rcView(rc);
-	rcView /= ( m_dFactor * LOMETRICFACTOR );
+	rcView /= dFactor;
 
 	// 加工指示ごとの処理
 	switch ( GetDocument()->GetShapeProcessID() ) {

@@ -175,8 +175,8 @@ public:
 	void	SerializeShapeSort(void);
 	//
 	void	AllChangeFactor(double) const;
-	void	DrawWorking(CDC*);
 	void	AllShapeClearSideFlg(void) const;
+	void	DrawWorking(CDC*);
 	// Ú²Ô–¼‚ÆğŒÌ§²ÙCÅ[Z’l‚ÌŠÖŒWî•ñ
 	void	SetLayerInfo(const CString&);	// from CDXFDoc::ReadLayerMap()
 	CString	FormatLayerInfo(LPCTSTR);		// from CDXFDoc::SaveLayerMap()

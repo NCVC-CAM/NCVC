@@ -17,19 +17,15 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 /*
-	DXF の読み込みは
-	CString strBuf の比較演算子だけで検査できるので
-	STRING_TESTER クラスは使わない
-
-	--------------------------------------
-	以下のDXFｷｰﾜｰﾄﾞは，DXFMakeClass.cpp でも使用
+	定義は DXFkeyword.h
+		以下のDXFｷｰﾜｰﾄﾞは，DXFMakeClass.cpp でも使用
 */
 
 // ｸﾞﾙｰﾌﾟｺｰﾄﾞ
 extern	LPCTSTR	g_szGroupCode[] = {
 	"0", "1", "2", "3", "6", "8", "9", "70"
 };
-extern	LPCTSTR	g_szValueGroupCode[] = {	// DXFMAXVALUESIZE
+extern	LPCTSTR	g_szValueGroupCode[] = {
 	"10", "20", "11", "21",
 	"40", "41", "42", "50", "51",
 	"210", "220", "230"
@@ -55,15 +51,12 @@ extern	LPCTSTR	g_szHeader[] = {
 };
 // ﾃｰﾌﾞﾙｻﾌﾞｷｰ
 extern	LPCTSTR	g_szTables[] = {
-	"TABLE", "ENDTAB"
+	"TABLE", "ENDTAB",
+		"LTYPE", "LAYER", "VPORT"
 };
 // ﾌﾞﾛｯｸｻﾌﾞｷｰ
 extern	LPCTSTR	g_szBlocks[] = {
 	"BLOCK", "ENDBLK"
-};
-// ﾃｰﾌﾞﾙｷｰﾜｰﾄﾞ
-extern	LPCTSTR	g_szTableKey[] = {
-	"LTYPE", "LAYER", "VPORT"
 };
 // ｴﾝﾃｨﾃｨｷｰﾜｰﾄﾞ
 extern	LPCTSTR	g_szEntitiesKey[] = {

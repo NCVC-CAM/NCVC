@@ -121,8 +121,10 @@ protected:
 	// CDXFpolyline だけは CDXFpolyline から更新する
 	CLayerData*	m_pParentLayer;	// ﾃﾞｰﾀの属するﾚｲﾔ情報
 	CDXFshape*	m_pParentMap;	// ﾃﾞｰﾀの属するﾏｯﾌﾟ情報
+	//
 	virtual	void	XRev(void);		// X軸の符号反転
 	virtual	void	YRev(void);		// Y軸の符号反転
+	virtual	void	SetMaxRect(void) = 0;
 
 	void	OrgTuningBase(void);
 
@@ -169,7 +171,8 @@ public:
 	//	
 	virtual	void	SwapMakePt(int);	// m_ptTun, m_ptMake の始点終点入れ替え
 	virtual	void	SwapNativePt(void);	// 固有座標値の入れ替え
-	// 各ｵﾌﾞｼﾞｪｸﾄにしか解らない独自の処理 -> 純粋仮想関数
+	virtual	void	RoundObjPoint(const CPointD&, double);
+	//
 	virtual	BOOL	IsMakeTarget(void) const = 0;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&) = 0;
 	virtual BOOL	IsStartEqEnd(void) const = 0;	// 始点終点が同じｵﾌﾞｼﾞｪｸﾄならTRUE
@@ -210,11 +213,9 @@ class CDXFpoint : public CDXFdata
 protected:
 	CPoint	m_ptDraw;	// 描画調整用(兼CDXFarc, CDXFellipse)
 	CRect	m_rcDraw;	// 矩形描画(兼CDXFcircle)
-
 	// CDXFtext からも参照
-	void	SetMaxRect(void);
-
-protected:
+	virtual	void	SetMaxRect(void);
+	//
 	CDXFpoint();
 	CDXFpoint(ENDXFTYPE, CLayerData*, int);
 public:
@@ -266,10 +267,10 @@ public:
 //		CDXFarcｸﾗｽでは始点, 終点情報が必要
 class CDXFline : public CDXFpoint
 {
-	CPoint	m_ptDrawS, m_ptDrawE;	// 描画用始点，終点
-	void	SetMaxRect(void);
-
 protected:
+	CPoint	m_ptDrawS, m_ptDrawE;	// 描画用始点，終点
+	virtual	void	SetMaxRect(void);
+	//
 	CDXFline();
 	CDXFline(ENDXFTYPE, CLayerData*, int);
 public:
@@ -335,7 +336,7 @@ protected:
 	virtual	void	YRev(void);
 
 	// CDXFcircleEx からも参照
-	void	SetMaxRect(void);
+	virtual	void	SetMaxRect(void);
 	// CDXFellipse からも参照
 	void	GetQuarterPoint(const CPointD&, CPointD[]) const;
 
@@ -385,6 +386,7 @@ public:
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
+	virtual	void	RoundObjPoint(const CPointD&, double);
 	virtual	BOOL	IsRangeAngle(const CPointD&) const;
 
 	virtual	void	DrawTuning(const double);
@@ -444,7 +446,6 @@ public:
 class CDXFarc : public CDXFcircle
 {
 	void	SetRsign(void);
-	void	SetMaxRect(void);
 
 protected:
 	BOOL	m_bRoundOrig;	// 生成中に向きが変わる可能性があるのでﾊﾞｯｸｱｯﾌﾟ
@@ -457,6 +458,7 @@ protected:
 
 	virtual	void	XRev(void);
 	virtual	void	YRev(void);
+	virtual	void	SetMaxRect(void);
 
 protected:
 	CDXFarc();
@@ -495,6 +497,7 @@ public:
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
+	virtual	void	RoundObjPoint(const CPointD&, double);
 	virtual	BOOL	IsRangeAngle(const CPointD&) const;
 
 	virtual	void	DrawTuning(const double);
@@ -528,13 +531,13 @@ class CDXFellipse : public CDXFarc
 
 	void	Construct(void);
 	void	EllipseCalc(void);
-	void	SetMaxRect(void);
 	void	SetEllipseTunPoint(void);
 	void	XYRev(const CPointD&, const CPointD&);
 
 protected:
 	virtual	void	XRev(void);
 	virtual	void	YRev(void);
+	virtual	void	SetMaxRect(void);
 
 	CDXFellipse();
 public:
@@ -572,6 +575,7 @@ public:
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
+	virtual	void	RoundObjPoint(const CPointD&, double);
 
 	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
@@ -638,6 +642,7 @@ public:
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
+	virtual	void	RoundObjPoint(const CPointD&, double);
 
 	virtual	BOOL	IsMakeTarget(void) const;
 	virtual BOOL	IsStartEqEnd(void) const;

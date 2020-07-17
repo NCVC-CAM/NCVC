@@ -42,8 +42,12 @@ protected:
 	//
 	virtual	void	SetDataMaxRect(void);
 	virtual	void	SetWorkRect(void) {}	// CNCView‚Ì‚Ý
-	virtual	void	ConvertWorkRect(void);
-	virtual	void	ConvertMaxRect(void);
+	virtual	void	ConvertWorkRect(void) {
+		m_rcDrawWork = DrawConvert(ConvertRect(GetDocument()->GetWorkRect()));
+	}
+	virtual	void	ConvertMaxRect(void) {
+		m_rcDrawMax = DrawConvert(m_rcDataMax);
+	}
 	virtual	void	DrawWorkRect(CDC* pDC) {
 		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_WORK));
 		pDC->Rectangle(m_rcDrawWork);

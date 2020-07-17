@@ -54,7 +54,7 @@ UINT CADbind_Thread(LPVOID pVoid)
 
 	try {
 		for ( i=0; i<nLoopCnt && IsThread(); i++ ) {
-			if ( !ReadCAD_MainFunc(pAryFile->GetAt(i), pView, i) ) {
+			if ( !ReadCAD_MainFunc(pAryFile->GetAt(i), pView, i+1) ) {
 				nResult = IDCANCEL;
 				break;
 			}
@@ -90,6 +90,7 @@ BOOL ReadCAD_MainFunc(const CString& strFile, CDXFView* pParentView, UINT nID)
 	pParent = new CStatic;
 	if ( !pParent->Create(NULL, WS_CHILD|WS_VISIBLE|SS_SUNKEN|SS_ENHMETAFILE|SS_NOTIFY,
 			rc, pParentView, nID) ) {
+		delete pParent;
 		return FALSE;
 	}
 

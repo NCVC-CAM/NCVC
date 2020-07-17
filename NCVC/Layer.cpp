@@ -137,16 +137,16 @@ void CLayerData::AllChangeFactor(double f) const
 		m_obShapeArray[i]->AllChangeFactor(f);
 }
 
-void CLayerData::DrawWorking(CDC* pDC)
-{
-	for ( int i=0; i<m_obShapeArray.GetSize(); i++ )
-		m_obShapeArray[i]->DrawWorking(pDC);
-}
-
 void CLayerData::AllShapeClearSideFlg(void) const
 {
 	for ( int i=0; i<m_obShapeArray.GetSize(); i++ )
 		m_obShapeArray[i]->ClearSideFlg();
+}
+
+void CLayerData::DrawWorking(CDC* pDC)
+{
+	for ( int i=0; i<m_obShapeArray.GetSize(); i++ )
+		m_obShapeArray[i]->DrawWorking(pDC);
 }
 
 void CLayerData::SetInitFile(LPCTSTR lpszInitFile)

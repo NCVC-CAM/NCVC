@@ -6,9 +6,7 @@
 #include "MainFrm.h"
 #include "NCdata.h"
 #include "NCChild.h"
-// ¶½ÀÑºÏİÄŞÙ°Ã¨İ¸Ş
 #include "NCDoc.h"
-// ½ÌßØ¯À³¨İÄŞ³ì¬
 #include "NCViewTab.h"
 #include "NCListView.h"
 #include "NCInfoTab.h"

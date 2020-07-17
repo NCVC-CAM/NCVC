@@ -266,7 +266,7 @@ void CThumbnailDlg::SetThumbnailDocument(void)
 				pView->DestroyWindow();
 				pView = NULL;
 			}
-		}
+		}	// pView==NULLはCreateEnumDoc_Thread()で弾く
 		pDoc->SetDocFlag(NCDOC_THUMBNAIL);	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞに設定
 		m_thumbInfo[i]->pDoc  = pDoc;
 		m_thumbInfo[i]->pView = pView;
@@ -715,11 +715,11 @@ UINT CThumbnailDlg::CreateEnumDoc_Thread(LPVOID pVoid)
 	// → TH_NCRead.cpp で __declspec(thread) の外部変数が必要なくなる
 	for ( int i=0; i<pParent->m_thumbInfo.GetSize() && pParent->m_bEnumDoc; i++ ) {
 		pInfo = pParent->m_thumbInfo[i];
-		// ﾌｧｲﾙを開くから一連の動作へ
-		AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->MatchDocType(pInfo->fStatus.m_szFullName, dummy);	// Serialize関数の決定
-		pInfo->pDoc->ReadThumbnail(pInfo->fStatus.m_szFullName);
-		// ﾋﾞｭｰへの通知
 		if ( pInfo->pView ) {
+			// ﾌｧｲﾙを開くから一連の動作へ
+			AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->MatchDocType(pInfo->fStatus.m_szFullName, dummy);	// Serialize関数の決定
+			pInfo->pDoc->ReadThumbnail(pInfo->fStatus.m_szFullName);
+			// ﾋﾞｭｰへの通知
 			pInfo->pView->OnInitialUpdate();
 			pInfo->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 		}

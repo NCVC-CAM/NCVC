@@ -186,6 +186,7 @@ void CNCViewBase::DrawGuideDivi(CDC* pDC, size_t x, size_t y)
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	CPointD	pt(-pOpt->GetGuideLength(x), 0), ptDraw;
+	double	dFactor = m_dFactor * LOMETRICFACTOR;
 
 	pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenOrg(x));
 	for ( ; pt.x<=pOpt->GetGuideLength(x); pt.x+=1.0 ) {
@@ -195,7 +196,7 @@ void CNCViewBase::DrawGuideDivi(CDC* pDC, size_t x, size_t y)
 			pt.y = 1.0;
 		else
 			pt.y = 0.5;
-		ptDraw = pt * m_dFactor * LOMETRICFACTOR;
+		ptDraw = pt * dFactor;
 		pDC->MoveTo(ptDraw);
 		pDC->LineTo((int)ptDraw.x, -(int)ptDraw.y);
 	}
@@ -209,7 +210,7 @@ void CNCViewBase::DrawGuideDivi(CDC* pDC, size_t x, size_t y)
 			pt.x = 1.0;
 		else
 			pt.x = 0.5;
-		ptDraw = pt * m_dFactor * LOMETRICFACTOR;
+		ptDraw = pt * dFactor;
 		pDC->MoveTo(ptDraw);
 		pDC->LineTo(-(int)ptDraw.x, (int)ptDraw.y);
 	}
@@ -279,24 +280,6 @@ void CNCViewBase::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pD
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewBase ƒNƒ‰ƒX‚Ìƒƒ“ƒoŠÖ”
-
-void CNCViewBase::ConvertWorkRect(void)
-{
-	CRectD	rc(ConvertRect(GetDocument()->GetWorkRect()));
-	m_rcDrawWork.left	= DrawConvert(rc.left);
-	m_rcDrawWork.top	= DrawConvert(rc.top);
-	m_rcDrawWork.right	= DrawConvert(rc.right);
-	m_rcDrawWork.bottom	= DrawConvert(rc.bottom);
-}
-
-void CNCViewBase::ConvertMaxRect(void)
-{
-	CRectD	rc(m_rcDataMax);
-	m_rcDrawMax.left	= DrawConvert(rc.left);
-	m_rcDrawMax.top		= DrawConvert(rc.top);
-	m_rcDrawMax.right	= DrawConvert(rc.right);
-	m_rcDrawMax.bottom	= DrawConvert(rc.bottom);
-}
 
 void CNCViewBase::SetDataMaxRect(void)
 {

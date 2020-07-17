@@ -40,6 +40,7 @@ class CDXFView : public CViewBase
 	void	DeleteOutlineTempObject(void);
 	BOOL	CancelForSelect(CDC* = NULL);
 	void	AllChangeFactor_OutlineTempObject(void);
+	void	BindMove(BOOL);
 
 	void	OnLButtonUp_Separate(CDC*, CDXFdata*, const CPointD&, const CRectD&);
 	void	OnLButtonUp_Vector  (CDC*, CDXFdata*, const CPointD&, const CRectD&);
@@ -71,14 +72,11 @@ public:
 	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
 	//}}AFX_VIRTUAL
 
-// インプリメンテーション
-protected:
-	virtual ~CDXFView();
-
 	// 生成されたメッセージ マップ関数
 protected:
 	//{{AFX_MSG(CDXFView)
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnDestroy();
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);

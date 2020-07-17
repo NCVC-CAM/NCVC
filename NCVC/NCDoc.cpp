@@ -36,7 +36,7 @@ extern	LPCTSTR	g_szGdelimiter = "GSMOF";
 extern	LPCTSTR	g_szNdelimiter = "XYZUVWIJKRPLDH";
 extern	LPTSTR	g_pszDelimiter;	// g_szGdelimiter[] + g_szNdelimiter[] (NCVC.cppÇ≈ê∂ê¨)
 extern	LPCTSTR	g_szNCcomment[] = {
-	"Endmill", "WorkRect",
+	"Endmill", "WorkRect", "WorkCylinder",
 	"LatheView", "WireView",
 	"ToolPos"
 };

@@ -430,7 +430,8 @@ BOOL CNCViewGL::CreateBoxel(void)
 #endif
 
 	// ﾃﾞﾌﾟｽ値の取得
-	BOOL	bResult = GetClipDepthMill();
+	BOOL	bResult = GetDocument()->IsDocFlag(NCDOC_CYLINDER) ?
+						GetClipDepthCylinder() : GetClipDepthMill();
 	if ( !bResult )
 		ClearVBO();
 
@@ -513,7 +514,7 @@ BOOL CNCViewGL::GetClipDepthMill(void)
 
 	// ﾜｰｸ上面と切削面の座標登録
 	for ( j=0, n=0, nn=0; j<m_icy; ++j ) {
-		for ( i=0; i<m_icx; ++i, ++n, nn=n*NCXYZ ) {
+		for ( i=0; i<m_icx; ++i, ++n, nn+=NCXYZ ) {
 			::gluUnProject(i+wx1, j+wy1, pfDepth[n],
 					mvMatrix, pjMatrix, viewPort,
 					&wx2, &wy2, &wz2);	// それほど遅くないので自作変換は中止
@@ -537,10 +538,8 @@ BOOL CNCViewGL::GetClipDepthMill(void)
 
 	// 底面用座標の登録
 	fz = (GLfloat)m_rcDraw.low;	// m_rcDraw.low座標で敷き詰める
-	for ( j=0; j<m_icy; ++j ) {
-		for ( i=0; i<m_icx; ++i ) {
-			n  = (j*m_icx+i) * NCXYZ;
-			nn = nSize + n;
+	for ( j=0, n=0; j<m_icy; ++j ) {
+		for ( i=0; i<m_icx; ++i, n+=NCXYZ, nn+=NCXYZ ) {
 			pfXYZ[nn+NCA_X] = pfXYZ[n+NCA_X];	// 上面で処理した
 			pfXYZ[nn+NCA_Y] = pfXYZ[n+NCA_Y];	// 変換後の座標を再利用
 			pfXYZ[nn+NCA_Z] = fz;
@@ -1275,6 +1274,142 @@ BOOL CreateElementSide(LPCREATEELEMENTPARAM pParam)
 	dbg.printf("end %d[ms]", t2 - t1);
 #endif
 
+	return TRUE;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//	ﾌﾗｲｽ加工の円柱ﾓﾃﾞﾘﾝｸﾞ
+/////////////////////////////////////////////////////////////////////////////
+
+BOOL CNCViewGL::GetClipDepthCylinder(void)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("GetClipDepthCylinder()\nStart");
+#endif
+	int			i, j, n, nn, pr, px, py, nSize;
+	double		q, dCylinderD, dCylinderH;
+	CPoint3D	ptCylinderOffset;
+	GLint		viewPort[4];
+	GLdouble	mvMatrix[16], pjMatrix[16],
+				wx1, wy1, wz1, wx2, wy2, wz2;
+	GLfloat		fz;
+	GLfloat*	pfDepth = NULL;		// ﾃﾞﾌﾟｽ値取得配列一時領域
+	GLfloat*	pfXYZ = NULL;		// 変換されたﾜｰﾙﾄﾞ座標
+	GLfloat*	pfNOR = NULL;		// 法線ﾍﾞｸﾄﾙ
+
+	::glGetIntegerv(GL_VIEWPORT, viewPort);
+	::glGetDoublev (GL_MODELVIEW_MATRIX,  mvMatrix);
+	::glGetDoublev (GL_PROJECTION_MATRIX, pjMatrix);
+
+	// 矩形領域をﾋﾟｸｾﾙ座標に変換
+	::gluProject(m_rcDraw.left,  m_rcDraw.top,    0.0, mvMatrix, pjMatrix, viewPort,
+		&wx1, &wy1, &wz1);
+	::gluProject(m_rcDraw.right, m_rcDraw.bottom, 0.0, mvMatrix, pjMatrix, viewPort,
+		&wx2, &wy2, &wz2);
+
+	m_icx = (int)(wx2 - wx1);
+	m_icy = (int)(wy2 - wy1);
+	if ( m_icx<=0 || m_icy<=0 )
+		return FALSE;
+
+#ifdef _DEBUG
+	dbg.printf("left,  top   =(%f, %f)", m_rcDraw.left,  m_rcDraw.top);
+	dbg.printf("right, bottom=(%f, %f)", m_rcDraw.right, m_rcDraw.bottom);
+	dbg.printf("wx1,   wy1   =(%f, %f)", wx1, wy1);
+	dbg.printf("wx2,   wy2   =(%f, %f)", wx2, wy2);
+	dbg.printf("m_icx=%d m_icy=%d", m_icx, m_icy);
+#endif
+
+	// 円柱情報取得
+	tie(dCylinderD, dCylinderH, ptCylinderOffset) = GetDocument()->GetCylinderData();
+	pr = m_icx / 2;		// 半径(ﾋﾟｸｾﾙ単位[整数])
+
+	try {
+		// 領域確保
+		pfDepth = new GLfloat[m_icx * m_icy];
+		nSize	= ARCCOUNT * pr * NCXYZ * 2;
+		pfXYZ   = new GLfloat[nSize];
+		pfNOR   = new GLfloat[nSize];
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		if ( pfDepth )
+			delete[]	pfDepth;
+		if ( pfXYZ )
+			delete[]	pfXYZ;
+		if ( pfNOR )
+			delete[]	pfNOR;
+		return FALSE;
+	}
+
+	// ｸﾗｲｱﾝﾄ領域のﾃﾞﾌﾟｽ値を取得（ﾋﾟｸｾﾙ単位）
+#ifdef _DEBUG
+	DWORD	t1 = ::timeGetTime();
+#endif
+	::glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	::glReadPixels((GLint)wx1, (GLint)wy1, m_icx, m_icy,
+					GL_DEPTH_COMPONENT, GL_FLOAT, pfDepth);
+//	ASSERT( ::glGetError() == GL_NO_ERROR );
+//	GLenum glError = ::glGetError();
+#ifdef _DEBUG
+	DWORD	t2 = ::timeGetTime();
+	dbg.printf( "glReadPixels()=%d[ms]", t2 - t1 );
+#endif
+
+	// ﾜｰｸ上面と切削面の座標登録
+	for ( i=0, nn=0; i<pr; ++i ) {
+		for ( j=0, q=0; j<ARCCOUNT; ++j, q+=ARCSTEP, nn+=NCXYZ ) {
+			px = (int)(i*cos(q))+pr;
+			py = (int)(i*sin(q))+pr;
+			n = py*m_icx + px;
+			::gluUnProject(px, py, pfDepth[n],
+					mvMatrix, pjMatrix, viewPort,
+					&wx2, &wy2, &wz2);
+			fz = (GLfloat)( (pfDepth[n]==0.0) ?	// ﾃﾞﾌﾟｽ値が初期値(矩形範囲内で切削面でない)なら
+				m_rcDraw.high :		// ﾜｰｸ矩形上面座標
+				wz2 );				// 変換座標
+			// ﾜｰﾙﾄﾞ座標
+			pfXYZ[nn+NCA_X] = (GLfloat)wx2;
+			pfXYZ[nn+NCA_Y] = (GLfloat)wy2;
+			pfXYZ[nn+NCA_Z] = fz;
+			// ﾃﾞﾌｫﾙﾄの法線ﾍﾞｸﾄﾙ
+			pfNOR[nn+NCA_X] = 0.0;
+			pfNOR[nn+NCA_Y] = 0.0;
+			pfNOR[nn+NCA_Z] = 1.0;
+		}
+	}
+#ifdef _DEBUG
+	DWORD	t3 = ::timeGetTime();
+	dbg.printf( "AddMatrix1=%d[ms]", t3 - t2 );
+#endif
+
+	// 底面用座標の登録
+	fz = (GLfloat)m_rcDraw.low;	// m_rcDraw.low座標で敷き詰める
+	for ( i=0, n=0; i<pr; ++i ) {
+		for ( j=0; j<ARCCOUNT; ++j, n+=NCXYZ, nn+=NCXYZ ) {
+			pfXYZ[nn+NCA_X] = pfXYZ[n+NCA_X];	// 上面で処理した
+			pfXYZ[nn+NCA_Y] = pfXYZ[n+NCA_Y];	// 変換後の座標を再利用
+			pfXYZ[nn+NCA_Z] = fz;
+			pfNOR[nn+NCA_X] = 0.0;
+			pfNOR[nn+NCA_Y] = 0.0;
+			pfNOR[nn+NCA_Z] = -1.0;
+		}
+	}
+#ifdef _DEBUG
+	DWORD	t4 = ::timeGetTime();
+	dbg.printf( "AddMatrix2=%d[ms]", t4 - t3 );
+#endif
+
+	delete[]	pfDepth;
+
+	// 頂点配列ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄ生成
+//	BOOL	bResult = CreateVBOMill(pfXYZ, pfNOR);
+
+	delete[]	pfXYZ;
+	delete[]	pfNOR;
+
+//	return bResult;
 	return TRUE;
 }
 

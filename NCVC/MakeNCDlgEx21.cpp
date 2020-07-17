@@ -248,7 +248,8 @@ void CMakeNCDlgEx21::OnOK()
 		return;
 	}
 
-	__super::OnOK();
+//	__super::OnOK();
+	EndDialog(IDOK);
 }
 
 void CMakeNCDlgEx21::OnNewLayer()

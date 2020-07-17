@@ -85,6 +85,8 @@ BOOL CCADbindDlg::OnInitDialog()
 
 void CCADbindDlg::OnOK()
 {
+	UpdateData();
+
 	if ( m_dBindWork[NCA_X]<=0 || m_dBindWork[NCA_Y]<=0 ) {
 		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
 		m_dBindWork[NCA_X].SetFocus();
@@ -98,7 +100,8 @@ void CCADbindDlg::OnOK()
 	pOpt->m_dBindMargin		 = m_dBindMargin;
 	pOpt->m_nBindOrg = m_nOrgType;
 
-	__super::OnOK();
+//	__super::OnOK();
+	EndDialog(IDOK);
 }
 
 void CCADbindDlg::OnBindFileAdd()

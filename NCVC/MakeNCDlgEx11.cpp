@@ -279,7 +279,8 @@ void CMakeNCDlgEx11::OnOK()
 		return;
 	}
 
-	__super::OnOK();
+//	__super::OnOK();
+	EndDialog(IDOK);
 }
 
 void CMakeNCDlgEx11::OnNewLayer()
