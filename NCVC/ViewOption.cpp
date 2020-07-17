@@ -93,6 +93,7 @@ static	const	int	g_nFontSize[] = {	// Îß²ÝÄŽw’è
 };
 static	const	BOOL	g_bDefaultSetting[] = {
 	FALSE,		// m_bTraceMarker
+	TRUE,		// m_bDrawRevise
 	TRUE,		// m_bDrawCircleCenter
 	FALSE,		// m_bScale
 	TRUE,		// m_bGuide
@@ -103,6 +104,7 @@ static	const	BOOL	g_bDefaultSetting[] = {
 };
 static	const	UINT	g_nFlagID[] = {
 	IDS_REG_VIEW_NC_TRACEMARK,
+	IDS_REG_VIEW_NC_DRAWREVISE,
 	IDS_REG_VIEW_NC_DRAWCENTERCIRCLE,
 	IDS_REG_VIEW_NC_SCALE,
 	IDS_REG_VIEW_NC_GUIDE,

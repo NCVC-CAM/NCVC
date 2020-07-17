@@ -118,10 +118,6 @@ CNCVCApp theApp;
 
 BOOL CNCVCApp::InitInstance()
 {
-	// GDI+ 初期化
-	Gdiplus::GdiplusStartupInput	gdiplusInput;
-	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusInput, NULL);
-
 	// アプリケーション マニフェストが visual スタイルを有効にするために、
 	// ComCtl32.dll Version 6 以降の使用を指定する場合は、
 	// Windows XP に InitCommonControlsEx() が必要です。さもなければ、ウィンドウ作成はすべて失敗します。
@@ -131,14 +127,8 @@ BOOL CNCVCApp::InitInstance()
 	// これを設定します。
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
-	// VC++2008SP1以降のコントロール初期化
-	InitShellManager();		// CMFCShellTreeCtrl
 
 	CWinAppEx::InitInstance();
-
-	CCommandLineInfo cmdInfo;
-	ParseCommandLine(cmdInfo);
-	CSplashWnd::ms_bShowSplashWnd = cmdInfo.m_bShowSplash;
 
 	// OLE ライブラリを初期化します。
 	if (!AfxOleInit())
@@ -155,6 +145,9 @@ BOOL CNCVCApp::InitInstance()
 	g_dbg.printf("RegistryKey=%s", m_pszRegistryKey);
 #endif
 	LoadStdProfileSettings(10);  // 標準の INI ファイルのオプションをロードします (MRU を含む)
+
+	// VC++2008SP1以降のコントロール初期化
+	InitShellManager();		// CMFCShellTreeCtrl
 
 	// g_pszExecDir への値ｾｯﾄ
 	{
@@ -187,7 +180,7 @@ BOOL CNCVCApp::InitInstance()
 	if ( !NCVCRegInit() )
 		return FALSE;
 	// ｱﾄﾞｲﾝ情報読み込み
-#ifdef _DEBUG
+#ifdef _DEBUG_OLD
 	g_dbg.printf("NCVCAddinInit() Start");
 	g_dbg.print("m_nShellCommand=", FALSE);
 	switch ( cmdInfo.m_nShellCommand ) {
@@ -214,7 +207,8 @@ BOOL CNCVCApp::InitInstance()
 		break;
 	}
 #endif
-	if ( !NCVCAddinInit(cmdInfo.m_nShellCommand) )
+//	if ( !NCVCAddinInit(cmdInfo.m_nShellCommand) )
+	if ( !NCVCAddinInit(0) )
 		return FALSE;
 	//////////
 
@@ -226,10 +220,6 @@ BOOL CNCVCApp::InitInstance()
 		return FALSE;
 	}
 	m_pMainWnd = pMainFrame;
-	// 接尾辞が存在する場合にのみ DragAcceptFiles を呼び出します。
-	//  MDI アプリケーションでは、この呼び出しは、m_pMainWnd を設定した直後に発生しなければなりません。
-	EnableShellOpen();
-	RegisterShellFileTypes(TRUE);
 
 	////////// CMainFrame作成後に実行
 	// 外部ｱﾌﾟﾘｹｰｼｮﾝ，ﾂｰﾙﾊﾞｰへの登録とﾒﾆｭｰの更新
@@ -248,6 +238,17 @@ BOOL CNCVCApp::InitInstance()
 	}
 	//////////
 
+	// 接尾辞が存在する場合にのみ DragAcceptFiles を呼び出します。
+	//  MDI アプリケーションでは、この呼び出しは、m_pMainWnd を設定した直後に発生しなければなりません。
+	m_pMainWnd->DragAcceptFiles();
+	EnableShellOpen();
+	RegisterShellFileTypes(TRUE);
+
+	// DDE、file open など標準のシェル コマンドのコマンド ラインを解析します。
+	CCommandLineInfo cmdInfo;
+	ParseCommandLine(cmdInfo);
+	CSplashWnd::ms_bShowSplashWnd = cmdInfo.m_bShowSplash;
+
 	// コマンド ラインで指定されたディスパッチ コマンドです。アプリケーションが
 	// /RegServer、/Register、/Unregserver または /Unregister で起動された場合、False を返します。
 	if (!ProcessShellCommand(cmdInfo))
@@ -256,7 +257,10 @@ BOOL CNCVCApp::InitInstance()
 	if ( !pMainFrame->RestoreWindowState() )		// CMainFrame
 		m_pMainWnd->ShowWindow(m_nCmdShow);
 	m_pMainWnd->UpdateWindow();
-	m_pMainWnd->DragAcceptFiles();
+
+	// GDI+ 初期化
+	Gdiplus::GdiplusStartupInput	gdiplusInput;
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusInput, NULL);
 
 	return TRUE;
 }
@@ -619,14 +623,10 @@ BOOL CNCVCApp::NCVCAddinInit(int nShellCommand)
 
 	::FindClose(hFind);
 
-/*
-	!!! DDE起動の時，警告ﾒｯｾｰｼﾞを出すと不具合発生 !!!
-	原因不明
-*/
-	if ( !strErrDLL.IsEmpty() && nShellCommand != CCommandLineInfo::FileDDE ) {
-		strDLL.Format(IDS_ERR_DLL, strErrDLL);
-		AfxMessageBox(strDLL, MB_OK|MB_ICONEXCLAMATION);
-	}
+//	if ( !strErrDLL.IsEmpty() && nShellCommand != CCommandLineInfo::FileDDE ) {
+//		strDLL.Format(IDS_ERR_DLL, strErrDLL);
+//		AfxMessageBox(strDLL, MB_OK|MB_ICONEXCLAMATION);
+//	}
 
 	return TRUE;
 }

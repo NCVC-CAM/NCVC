@@ -156,6 +156,8 @@ inline void _DrawEndmillPipe(const vector<CVCircle>& vPipe)
 
 void CNCdata::DrawGL(void) const
 {
+	for ( int i=0; i<m_obCdata.GetSize(); i++ )
+		m_obCdata[i]->DrawGL();
 }
 
 void CNCdata::DrawBottomFace(void) const
@@ -168,34 +170,33 @@ void CNCdata::DrawBottomFace(void) const
 
 void CNCline::DrawGL(void) const
 {
-	if ( m_obCdata.GetSize() > 0 ) {
-		// çHãÔåaï‚ê≥ÇÃï\é¶
-		for ( int i=0; i<m_obCdata.GetSize(); i++ )
-			m_obCdata[i]->DrawGL();
-		return;
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+		COLORREF col = pOpt->GetNcDrawColor(
+			m_obCdata.IsEmpty() ? (GetPenType()+NCCOL_G0) : NCCOL_CORRECT);
+		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
+		::glBegin(GL_LINES);
+		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+		::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
+		::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
+		::glEnd();
 	}
 
-	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetNcDrawColor(GetPenType()+NCCOL_G0);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
-	::glBegin(GL_LINES);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptValS.z);
-	::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
-	::glEnd();
+	CNCdata::DrawGL();
 }
 
 void CNCline::DrawBottomFace(void) const
 {
 	int		i;
 
-	if ( m_obCdata.GetSize() > 0 ) {
+	if ( m_nc.nGcode != 1 )
+		return;
+	if ( !m_obCdata.IsEmpty() ) {
 		for ( i=0; i<m_obCdata.GetSize(); i++ )
 			m_obCdata[i]->DrawBottomFace();
 		return;
 	}
-	if ( m_nc.nGcode != 1 )
-		return;
 
 	if ( GetEndmillType() == 0 ) {
 		// Ω∏≥™±ç¿ïWåvéZ
@@ -327,91 +328,89 @@ void CNCcycle::DrawBottomFace(void) const
 
 void CNCcircle::DrawGL(void) const
 {
-	if ( m_obCdata.GetCount() > 0 ) {
-		for ( int i=0; i<m_obCdata.GetSize(); i++ )
-			m_obCdata[i]->DrawGL();
-		return;
-	}
-
-	double		sq, eq, r = fabs(m_r);
-	CPoint3D	pt;
-
-	tie(sq, eq) = GetSqEq();
-
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetNcDrawColor(NCCOL_G1);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
-	::glBegin(GL_LINE_STRIP);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
 
-	switch ( GetPlane() ) {
-	case XY_PLANE:
-		// ARCSTEP Ç√Ç¬î˜ç◊ê¸ï™Ç≈ï`âÊ
-		if ( m_nG23 == 0 ) {
-			for ( pt.z=m_ptValS.z; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
-				pt.x = r * cos(sq) + m_ptOrg.x;
-				pt.y = r * sin(sq) + m_ptOrg.y;
-				::glVertex3d(pt.x, pt.y, pt.z);
-			}
-		}
-		else {
-			for ( pt.z=m_ptValS.z; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
-				pt.x = r * cos(sq) + m_ptOrg.x;
-				pt.y = r * sin(sq) + m_ptOrg.y;
-				::glVertex3d(pt.x, pt.y, pt.z);
-			}
-		}
-		// í[êîï™ï`âÊ
-		pt.x = r * cos(eq) + m_ptOrg.x;
-		pt.y = r * sin(eq) + m_ptOrg.y;
-		pt.z = m_ptValE.z;		// Õÿ∂ŸèIóπç¿ïW
-		::glVertex3d(pt.x, pt.y, pt.z);
-		break;
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+		double		sq, eq, r = fabs(m_r);
+		CPoint3D	pt;
+		tie(sq, eq) = GetSqEq();
+		COLORREF	col = pOpt->GetNcDrawColor(
+			m_obCdata.IsEmpty() ? NCCOL_G1 : NCCOL_CORRECT);
+		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
+		::glBegin(GL_LINE_STRIP);
+		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
 
-	case XZ_PLANE:
-		if ( m_nG23 == 0 ) {
-			for ( pt.y=m_ptValS.y; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
-				pt.x = r * cos(sq) + m_ptOrg.x;
-				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3d(pt.x, pt.y, pt.z);
+		switch ( GetPlane() ) {
+		case XY_PLANE:
+			// ARCSTEP Ç√Ç¬î˜ç◊ê¸ï™Ç≈ï`âÊ
+			if ( m_nG23 == 0 ) {
+				for ( pt.z=m_ptValS.z; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
+					pt.x = r * cos(sq) + m_ptOrg.x;
+					pt.y = r * sin(sq) + m_ptOrg.y;
+					::glVertex3d(pt.x, pt.y, pt.z);
+				}
 			}
-		}
-		else {
-			for ( pt.y=m_ptValS.y; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
-				pt.x = r * cos(sq) + m_ptOrg.x;
-				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3d(pt.x, pt.y, pt.z);
+			else {
+				for ( pt.z=m_ptValS.z; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
+					pt.x = r * cos(sq) + m_ptOrg.x;
+					pt.y = r * sin(sq) + m_ptOrg.y;
+					::glVertex3d(pt.x, pt.y, pt.z);
+				}
 			}
-		}
-		pt.x = r * cos(eq) + m_ptOrg.x;
-		pt.y = m_ptValE.y;
-		pt.z = r * sin(eq) + m_ptOrg.z;
-		::glVertex3d(pt.x, pt.y, pt.z);
-		break;
+			// í[êîï™ï`âÊ
+			pt.x = r * cos(eq) + m_ptOrg.x;
+			pt.y = r * sin(eq) + m_ptOrg.y;
+			pt.z = m_ptValE.z;		// Õÿ∂ŸèIóπç¿ïW
+			::glVertex3d(pt.x, pt.y, pt.z);
+			break;
 
-	case YZ_PLANE:
-		if ( m_nG23 == 0 ) {
-			for ( pt.x=m_ptValS.x; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
-				pt.y = r * cos(sq) + m_ptOrg.y;
-				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3d(pt.x, pt.y, pt.z);
+		case XZ_PLANE:
+			if ( m_nG23 == 0 ) {
+				for ( pt.y=m_ptValS.y; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
+					pt.x = r * cos(sq) + m_ptOrg.x;
+					pt.z = r * sin(sq) + m_ptOrg.z;
+					::glVertex3d(pt.x, pt.y, pt.z);
+				}
 			}
-		}
-		else {
-			for ( pt.x=m_ptValS.x; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
-				pt.y = r * cos(sq) + m_ptOrg.y;
-				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3d(pt.x, pt.y, pt.z);
+			else {
+				for ( pt.y=m_ptValS.y; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
+					pt.x = r * cos(sq) + m_ptOrg.x;
+					pt.z = r * sin(sq) + m_ptOrg.z;
+					::glVertex3d(pt.x, pt.y, pt.z);
+				}
 			}
+			pt.x = r * cos(eq) + m_ptOrg.x;
+			pt.y = m_ptValE.y;
+			pt.z = r * sin(eq) + m_ptOrg.z;
+			::glVertex3d(pt.x, pt.y, pt.z);
+			break;
+
+		case YZ_PLANE:
+			if ( m_nG23 == 0 ) {
+				for ( pt.x=m_ptValS.x; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
+					pt.y = r * cos(sq) + m_ptOrg.y;
+					pt.z = r * sin(sq) + m_ptOrg.z;
+					::glVertex3d(pt.x, pt.y, pt.z);
+				}
+			}
+			else {
+				for ( pt.x=m_ptValS.x; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
+					pt.y = r * cos(sq) + m_ptOrg.y;
+					pt.z = r * sin(sq) + m_ptOrg.z;
+					::glVertex3d(pt.x, pt.y, pt.z);
+				}
+			}
+			pt.x = m_ptValE.x;
+			pt.y = r * cos(eq) + m_ptOrg.y;
+			pt.z = r * sin(eq) + m_ptOrg.z;
+			::glVertex3d(pt.x, pt.y, pt.z);
+			break;
 		}
-		pt.x = m_ptValE.x;
-		pt.y = r * cos(eq) + m_ptOrg.y;
-		pt.z = r * sin(eq) + m_ptOrg.z;
-		::glVertex3d(pt.x, pt.y, pt.z);
-		break;
+
+		::glEnd();
 	}
 
-	::glEnd();
+	CNCdata::DrawGL();
 }
 //	--- CNCcircle::DrawBottomFace() ÉTÉu
 inline void _SetEndmillPathXY
@@ -535,7 +534,7 @@ inline void _SetEndmillPathYZ_Sphere
 //	---
 void CNCcircle::DrawBottomFace(void) const
 {
-	if ( m_obCdata.GetSize() > 0 ) {
+	if ( !m_obCdata.IsEmpty() ) {
 		for ( int i=0; i<m_obCdata.GetSize(); i++ )
 			m_obCdata[i]->DrawBottomFace();
 		return;

@@ -86,6 +86,7 @@ public:
 	double	GetCutLength(void) const;
 	double	GetFeed(void) const;
 	double	GetMove(size_t) const;
+	double	SetMove(size_t, double);
 	double	GetEndmill(void) const;
 	int		GetEndmillType(void) const;
 	CNCdata*	NC_CopyObject(void);			// from TH_Correct.cpp
@@ -99,10 +100,10 @@ public:
 	virtual	void	DrawTuningXY(const double);
 	virtual	void	DrawTuningXZ(const double);
 	virtual	void	DrawTuningYZ(const double);
-	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	Draw(CDC*, BOOL) const;
+	virtual	void	DrawXY(CDC*, BOOL) const;
+	virtual	void	DrawXZ(CDC*, BOOL) const;
+	virtual	void	DrawYZ(CDC*, BOOL) const;
 	virtual	void	DrawGL(void) const;
 	virtual	void	DrawBottomFace(void) const;
 
@@ -142,7 +143,7 @@ class CNCline : public CNCdata
 {
 	EN_NCPEN	GetPenType(void) const;
 	int			GetLineType(void) const;
-	void	DrawLine(CDC*, size_t, BOOL, BOOL) const;
+	void	DrawLine(CDC*, size_t, BOOL) const;
 	void	SetEndmillPath(CPointD*, CPointD*, CPointD*) const;
 
 protected:
@@ -161,10 +162,10 @@ public:
 	virtual	void	DrawTuningXY(const double);
 	virtual	void	DrawTuningXZ(const double);
 	virtual	void	DrawTuningYZ(const double);
-	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	Draw(CDC*, BOOL) const;
+	virtual	void	DrawXY(CDC*, BOOL) const;
+	virtual	void	DrawXZ(CDC*, BOOL) const;
+	virtual	void	DrawYZ(CDC*, BOOL) const;
 	virtual	void	DrawGL(void) const;
 	virtual	void	DrawBottomFace(void) const;
 
@@ -229,10 +230,10 @@ public:
 	virtual	void	DrawTuningXY(const double);
 	virtual	void	DrawTuningXZ(const double);
 	virtual	void	DrawTuningYZ(const double);
-	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	Draw(CDC*, BOOL) const;
+	virtual	void	DrawXY(CDC*, BOOL) const;
+	virtual	void	DrawXZ(CDC*, BOOL) const;
+	virtual	void	DrawYZ(CDC*, BOOL) const;
 	virtual	void	DrawGL(void) const;
 	virtual	void	DrawBottomFace(void) const;
 
@@ -300,10 +301,10 @@ public:
 	virtual	void	DrawTuningXY(const double);
 	virtual	void	DrawTuningXZ(const double);
 	virtual	void	DrawTuningYZ(const double);
-	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
-	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	Draw(CDC*, BOOL) const;
+	virtual	void	DrawXY(CDC*, BOOL) const;
+	virtual	void	DrawXZ(CDC*, BOOL) const;
+	virtual	void	DrawYZ(CDC*, BOOL) const;
 	virtual	void	DrawGL(void) const;
 	virtual	void	DrawBottomFace(void) const;
 

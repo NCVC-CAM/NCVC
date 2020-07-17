@@ -18,6 +18,7 @@ BEGIN_MESSAGE_MAP(CViewSetup2, CPropertyPage)
 	//{{AFX_MSG_MAP(CViewSetup2)
 	ON_WM_CTLCOLOR()
 	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, OnDefColor)
+	ON_BN_CLICKED(IDC_VIEWSETUP2_DRAWREVISE, OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP2_DRAWCIRCLECENTER, OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP2_BT_BACKGROUND1, OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP2_SCALE, OnScale)
@@ -59,7 +60,8 @@ CViewSetup2::CViewSetup2() : CPropertyPage(CViewSetup2::IDD)
 	//{{AFX_DATA_INIT(CViewSetup2)
 	//}}AFX_DATA_INIT
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	m_bDrawCircleCenter = pOpt->m_bDrawCircleCenter;
+	m_bDraw[0] = pOpt->m_bDrawRevise;
+	m_bDraw[1] = pOpt->m_bDrawCircleCenter;
 	m_bGuide[0] = pOpt->m_bScale;
 	m_bGuide[1] = pOpt->m_bGuide;
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
@@ -78,10 +80,11 @@ void CViewSetup2::DoDataExchange(CDataExchange* pDX)
 {
 	CPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CViewSetup2)
-	DDX_Check(pDX, IDC_VIEWSETUP2_DRAWCIRCLECENTER, m_bDrawCircleCenter);
 	DDX_Control(pDX, IDC_VIEWSETUP2_GUIDE, m_ctGuide);
 	//}}AFX_DATA_MAP
 	int		i;
+	for ( i=0; i<SIZEOF(m_bDraw); i++ )
+		DDX_Check(pDX, i+IDC_VIEWSETUP2_DRAWREVISE, m_bDraw[i]);
 	for ( i=0; i<SIZEOF(m_bGuide); i++ )
 		DDX_Check(pDX, i+IDC_VIEWSETUP2_SCALE, m_bGuide[i]);
 	for ( i=0; i<SIZEOF(m_cbLineType); i++ )
@@ -135,7 +138,12 @@ BOOL CViewSetup2::OnApply()
 	int		i;
 	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
-	pOpt->m_bDrawCircleCenter = m_bDrawCircleCenter;
+	if ( pOpt->m_bDrawRevise != m_bDraw[0] )
+		pOpt->m_dwUpdateFlg |= VIEWUPDATE_DISPLAYLIST;
+	pOpt->m_bDrawRevise = m_bDraw[0];
+	if ( pOpt->m_bDrawCircleCenter != m_bDraw[1] )
+		pOpt->m_dwUpdateFlg |= VIEWUPDATE_DISPLAYLIST;
+	pOpt->m_bDrawCircleCenter = m_bDraw[1];
 	pOpt->m_bScale = m_bGuide[0];
 	pOpt->m_bGuide = m_bGuide[1];
 	for ( i=0; i<SIZEOF(m_colView); i++ ) {

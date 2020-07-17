@@ -55,13 +55,14 @@ typedef	struct	tagPENSTYLE {
 #define	NCINFOCOL_BACKGROUND2	1
 #define	NCINFOCOL_TEXT			2
 #define	NCVIEWFLG_TRACEMARKER		0
-#define	NCVIEWFLG_DRAWCIRCLECENTER	1
-#define	NCVIEWFLG_GUIDESCALE		2
-#define	NCVIEWFLG_GUIDELENGTH		3
-#define	NCVIEWFLG_SOLIDVIEW			4
-#define	NCVIEWFLG_G00VIEW			5
-#define	NCVIEWFLG_DRAGRENDER		6
-#define	NCVIEWFLG_TEXTURE			7
+#define	NCVIEWFLG_DRAWREVISE		1
+#define	NCVIEWFLG_DRAWCIRCLECENTER	2
+#define	NCVIEWFLG_GUIDESCALE		3
+#define	NCVIEWFLG_GUIDELENGTH		4
+#define	NCVIEWFLG_SOLIDVIEW			5
+#define	NCVIEWFLG_G00VIEW			6
+#define	NCVIEWFLG_DRAGRENDER		7
+#define	NCVIEWFLG_TEXTURE			8
 #define	DXFCOL_BACKGROUND1	0
 #define	DXFCOL_BACKGROUND2	1
 #define	DXFCOL_ORIGIN		2
@@ -86,6 +87,7 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 	union {
 		struct {
 			BOOL	m_bTraceMarker,		// ﾄﾚｰｽ中の現在位置表示
+					m_bDrawRevise,		// 補正前ﾃﾞｰﾀの描画
 					m_bDrawCircleCenter,// 円弧補間の中心を描画
 					m_bScale,			// TRUE:ｶﾞｲﾄﾞに目盛
 					m_bGuide,			// TRUE:拡大率に同期
@@ -94,7 +96,7 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 					m_bDragRender,		// ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ
 					m_bTexture;			// ﾃｸｽﾁｬの貼り付け
 		};
-		BOOL		m_bNCFlag[8];
+		BOOL		m_bNCFlag[9];
 	};
 	COLORREF	m_colView[2],			// ﾋﾞｭｰの各色
 				m_colNCView[16],

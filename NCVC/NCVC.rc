@@ -649,7 +649,7 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 2.10",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 2.11",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2010 MNCT-S K.Magara",IDC_STATIC,86,182,130,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1467,7 +1467,8 @@ BEGIN
     PUSHBUTTON      "êÿçÌëóÇË(Zé≤)",IDC_VIEWSETUP2_BT_G1Z,195,59,72,16
     COMBOBOX        IDC_VIEWSETUP2_CB_G1Z,272,61,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "",IDC_VIEWSETUP2_ST_CORRECT,176,80,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
-    PUSHBUTTON      "ï‚ê≥ï\é¶",IDC_VIEWSETUP2_BT_CORRECT,195,79,72,16
+    PUSHBUTTON      "ï‚ê≥ëOï\é¶",IDC_VIEWSETUP2_BT_CORRECT,195,79,72,16
+    CONTROL         "ï`âÊ(&R)",IDC_VIEWSETUP2_DRAWREVISE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,82,39,10
     LTEXT           "",IDC_VIEWSETUP2_ST_CYCLE,176,100,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
     PUSHBUTTON      "å≈íËª≤∏Ÿ",IDC_VIEWSETUP2_BT_CYCLE,195,99,72,16
     COMBOBOX        IDC_VIEWSETUP2_CB_CYCLE,272,101,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -1624,8 +1625,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,1,0,0
- PRODUCTVERSION 2,1,0,0
+ FILEVERSION 2,1,1,0
+ PRODUCTVERSION 2,1,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1643,14 +1644,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT-S"
             VALUE "FileDescription", "NCVC MFC ±Ãﬂÿπ∞ºÆ›"
-            VALUE "FileVersion", "2.1.0.0"
+            VALUE "FileVersion", "2.1.1.0"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2010 MNCT-S K.Magara"
             VALUE "LegalTrademarks", "MNCT-S"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "2.1.0.0"
+            VALUE "ProductVersion", "2.1.1.0"
             VALUE "SpecialBuild", "VC++2008SP1 FeaturePack"
         END
     END
@@ -2738,6 +2739,7 @@ BEGIN
     IDS_REG_VIEW_COLOR      "DrawColor"
     IDS_REG_VIEW_LINETYPE   "DrawLineType"
     IDS_REG_VIEW_NC_SCALE   "GuideScale"
+    IDS_REG_VIEW_NC_DRAWREVISE "DrawRevise"
 END
 
 STRINGTABLE 

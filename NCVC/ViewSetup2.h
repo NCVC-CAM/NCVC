@@ -23,9 +23,9 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CViewSetup2)
 	enum { IDD = IDD_VIEW_SETUP2 };
-	BOOL	m_bDrawCircleCenter;
 	CButton	m_ctGuide;
 	//}}AFX_DATA
+	BOOL		m_bDraw[2];
 	BOOL		m_bGuide[2];
 	CStatic		m_ctColor[14];
 	CComboBox	m_cbLineType[9];

@@ -146,6 +146,13 @@ inline double CNCdata::GetMove(size_t a) const
 	return m_dMove[a];
 }
 
+inline double  CNCdata::SetMove(size_t a, double m)
+{
+	ASSERT(a>=0 && a<=SIZEOF(m_dMove));
+	m_dMove[a] = m;
+	return m_dMove[a];
+}
+
 inline double CNCdata::GetEndmill(void) const
 {
 	return m_dEndmill;

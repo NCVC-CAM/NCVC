@@ -248,28 +248,28 @@ void CNCdata::DrawTuningYZ(const double f)
 		m_obCdata[i]->DrawTuningYZ(f);
 }
 
-void CNCdata::Draw(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCdata::Draw(CDC* pDC, BOOL bSelect) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->Draw(pDC, bSelect, bCorrect);
+		m_obCdata[i]->Draw(pDC, bSelect);
 }
 
-void CNCdata::DrawXY(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCdata::DrawXY(CDC* pDC, BOOL bSelect) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawXY(pDC, bSelect, bCorrect);
+		m_obCdata[i]->DrawXY(pDC, bSelect);
 }
 
-void CNCdata::DrawXZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCdata::DrawXZ(CDC* pDC, BOOL bSelect) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawXZ(pDC, bSelect, bCorrect);
+		m_obCdata[i]->DrawXZ(pDC, bSelect);
 }
 
-void CNCdata::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCdata::DrawYZ(CDC* pDC, BOOL bSelect) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawYZ(pDC, bSelect, bCorrect);
+		m_obCdata[i]->DrawYZ(pDC, bSelect);
 }
 
 #ifdef _DEBUG_DUMP
@@ -343,13 +343,17 @@ double CNCline::SetCalcLength(void)
 		m_nc.dLength = pt.hypot();
 	}
 	else {
+		CNCdata*	pData;
 		m_nc.dLength = m_dMove[NCA_X] = m_dMove[NCA_Y] = m_dMove[NCA_Z] = 0.0;
 		// 各補正要素の合計
 		for ( int i=0; i<m_obCdata.GetSize(); i++ ) {
-			pt = m_obCdata[i]->GetEndPoint() - m_obCdata[i]->GetStartPoint();
-			m_dMove[NCA_X] += fabs(pt.x);
-			m_dMove[NCA_Y] += fabs(pt.y);
-			m_dMove[NCA_Z] += fabs(pt.z);
+			pData = m_obCdata[i];
+			pt = pData->GetEndPoint() - pData->GetStartPoint();
+			// DrawBottomFace() で移動量が必要なため
+			// 補正ﾃﾞｰﾀに対しても m_dMove をｾｯﾄ
+			m_dMove[NCA_X] += pData->SetMove(NCA_X, fabs(pt.x));
+			m_dMove[NCA_Y] += pData->SetMove(NCA_Y, fabs(pt.y));
+			m_dMove[NCA_Z] += pData->SetMove(NCA_Z, fabs(pt.z));
 			m_nc.dLength += pt.hypot();
 		}
 	}
@@ -385,53 +389,62 @@ void CNCline::DrawTuningYZ(const double f)
 	CNCdata::DrawTuningYZ(f);
 }
 
-void CNCline::Draw(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCline::Draw(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::Draw()", DBG_RED);
 	dbg.printf("Line=%d", GetBlockLineNo()+1);
 #endif
-	DrawLine(pDC, 0, bSelect, bCorrect);
-	CNCdata::Draw(pDC, bSelect, TRUE);
+	if ( m_obCdata.IsEmpty() ||
+			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
+		DrawLine(pDC, 0, bSelect);
+	CNCdata::Draw(pDC, bSelect);
 }
 
-void CNCline::DrawXY(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCline::DrawXY(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::DrawXY()", DBG_RED);
 	dbg.printf("Line=%d", GetBlockLineNo()+1);
 #endif
-	DrawLine(pDC, 1, bSelect, bCorrect);
-	CNCdata::DrawXY(pDC, bSelect, TRUE);
+	if ( m_obCdata.IsEmpty() ||
+			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
+		DrawLine(pDC, 1, bSelect);
+	CNCdata::DrawXY(pDC, bSelect);
 }
 
-void CNCline::DrawXZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCline::DrawXZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::DrawXZ()", DBG_RED);
 	dbg.printf("Line=%d", GetBlockLineNo()+1);
 #endif
-	DrawLine(pDC, 2, bSelect, bCorrect);
-	CNCdata::DrawXZ(pDC, bSelect, TRUE);
+	if ( m_obCdata.IsEmpty() ||
+			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
+		DrawLine(pDC, 2, bSelect);
+	CNCdata::DrawXZ(pDC, bSelect);
 }
 
-void CNCline::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCline::DrawYZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::DrawYZ()", DBG_RED);
 	dbg.printf("Line=%d", GetBlockLineNo()+1);
 #endif
-	DrawLine(pDC, 3, bSelect, bCorrect);
-	CNCdata::DrawYZ(pDC, bSelect, TRUE);
+	if ( m_obCdata.IsEmpty() ||
+			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
+		DrawLine(pDC, 3, bSelect);
+	CNCdata::DrawYZ(pDC, bSelect);
 }
 
-void CNCline::DrawLine(CDC* pDC, size_t n, BOOL bSelect, BOOL bCorrect) const
+void CNCline::DrawLine(CDC* pDC, size_t n, BOOL bSelect) const
 {
 	CPen*	pOldPen;
 	if ( bSelect )
 		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
 	else
-		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : GetPenType());
+		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(
+			m_obCdata.IsEmpty() ? GetPenType() : NCPEN_CORRECT );
 	pOldPen = pDC->SelectObject(pOldPen);
 	pDC->MoveTo(m_ptDrawS[n]);
 	pDC->LineTo(m_ptDrawE[n]);
@@ -941,7 +954,7 @@ void CNCcycle::DrawTuningYZ(const double f)
 	}
 }
 
-void CNCcycle::Draw(CDC* pDC, BOOL bSelect, BOOL) const
+void CNCcycle::Draw(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::Draw()", DBG_RED);
@@ -950,7 +963,7 @@ void CNCcycle::Draw(CDC* pDC, BOOL bSelect, BOOL) const
 	DrawCycle(pDC, 0, bSelect);
 }
 
-void CNCcycle::DrawXY(CDC* pDC, BOOL bSelect, BOOL) const
+void CNCcycle::DrawXY(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::DrawXY()", DBG_RED);
@@ -964,7 +977,7 @@ void CNCcycle::DrawXY(CDC* pDC, BOOL bSelect, BOOL) const
 		DrawCycle(pDC, 1, bSelect);
 }
 
-void CNCcycle::DrawXZ(CDC* pDC, BOOL bSelect, BOOL) const
+void CNCcycle::DrawXZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::DrawXZ()", DBG_RED);
@@ -978,7 +991,7 @@ void CNCcycle::DrawXZ(CDC* pDC, BOOL bSelect, BOOL) const
 		DrawCycle(pDC, 2, bSelect);
 }
 
-void CNCcycle::DrawYZ(CDC* pDC, BOOL bSelect, BOOL) const
+void CNCcycle::DrawYZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::DrawYZ()", DBG_RED);
@@ -1282,90 +1295,107 @@ void CNCcircle::DrawTuningYZ(const double f)
 	CNCdata::DrawTuningYZ(f);
 }
 
-void CNCcircle::Draw(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCcircle::Draw(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::Draw()", DBG_RED);
 	dbg.printf("Line=%d", GetBlockLineNo()+1);
 #endif
-	// 平面ごとの描画関数
-	CPen*	pOldPen;
-	if ( bSelect )
-		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
-	else
-		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1);
-	pOldPen = pDC->SelectObject(pOldPen);
-	(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_XYZ, pDC);
-	pDC->SelectObject(pOldPen);
-	// 中心座標(黄色)
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	// 平面ごとの描画関数
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+		CPen*	pOldPen;
+		if ( bSelect )
+			pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+		else
+			pOldPen = AfxGetNCVCMainWnd()->GetPenNC(
+				m_obCdata.IsEmpty() ? NCPEN_G1 : NCPEN_CORRECT);
+		pOldPen = pDC->SelectObject(pOldPen);
+		(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_XYZ, pDC);
+		pDC->SelectObject(pOldPen);
+	}
+	// 中心座標(黄色)
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_DRAWCIRCLECENTER) )
 		pDC->SetPixelV(m_ptOrg.PointConvert()*m_dFactor,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
-	CNCdata::Draw(pDC, bSelect, TRUE);
+	// 径補正ﾃﾞｰﾀの描画
+	CNCdata::Draw(pDC, bSelect);
 }
 
-void CNCcircle::DrawXY(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCcircle::DrawXY(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::DrawXY()", DBG_RED);
 	dbg.printf("Line=%d", GetBlockLineNo()+1);
 #endif
-	CPen*	pOldPen;
-	if ( bSelect )
-		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
-	else
-		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1);
-	pOldPen = pDC->SelectObject(pOldPen);
-	(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_XY, pDC);
-	pDC->SelectObject(pOldPen);
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+		CPen*	pOldPen;
+		if ( bSelect )
+			pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+		else
+			pOldPen = AfxGetNCVCMainWnd()->GetPenNC(
+				m_obCdata.IsEmpty() ? NCPEN_G1 : NCPEN_CORRECT);
+		pOldPen = pDC->SelectObject(pOldPen);
+		(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_XY, pDC);
+		pDC->SelectObject(pOldPen);
+	}
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_DRAWCIRCLECENTER) )
 		pDC->SetPixelV(m_ptOrg.GetXY()*m_dFactorXY,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
-	CNCdata::DrawXY(pDC, bSelect, TRUE);
+	CNCdata::DrawXY(pDC, bSelect);
 }
 
-void CNCcircle::DrawXZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCcircle::DrawXZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::DrawXZ()", DBG_RED);
 	dbg.printf("Line=%d", GetBlockLineNo()+1);
 #endif
-	CPen*	pOldPen;
-	if ( bSelect )
-		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
-	else
-		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1);
-	pOldPen = pDC->SelectObject(pOldPen);
-	(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_XZ, pDC);
-	pDC->SelectObject(pOldPen);
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+		CPen*	pOldPen;
+		if ( bSelect )
+			pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+		else
+			pOldPen = AfxGetNCVCMainWnd()->GetPenNC(
+				m_obCdata.IsEmpty() ? NCPEN_G1 : NCPEN_CORRECT);
+		pOldPen = pDC->SelectObject(pOldPen);
+		(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_XZ, pDC);
+		pDC->SelectObject(pOldPen);
+	}
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_DRAWCIRCLECENTER) )
 		pDC->SetPixelV(m_ptOrg.GetXZ()*m_dFactorXZ,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
-	CNCdata::DrawXZ(pDC, bSelect, TRUE);
+	CNCdata::DrawXZ(pDC, bSelect);
 }
 
-void CNCcircle::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
+void CNCcircle::DrawYZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::DrawYZ()", DBG_RED);
 	dbg.printf("Line=%d", GetBlockLineNo()+1);
 #endif
-	CPen*	pOldPen;
-	if ( bSelect )
-		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
-	else
-		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1);
-	pOldPen = pDC->SelectObject(pOldPen);
-	(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_YZ, pDC);
-	pDC->SelectObject(pOldPen);
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+		CPen*	pOldPen;
+		if ( bSelect )
+			pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+		else
+			pOldPen = AfxGetNCVCMainWnd()->GetPenNC(
+				m_obCdata.IsEmpty() ? NCPEN_G1 : NCPEN_CORRECT);
+		pOldPen = pDC->SelectObject(pOldPen);
+		(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_YZ, pDC);
+		pDC->SelectObject(pOldPen);
+	}
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_DRAWCIRCLECENTER) )
 		pDC->SetPixelV(m_ptOrg.GetYZ()*m_dFactorYZ,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
-	CNCdata::DrawYZ(pDC, bSelect, TRUE);
+	CNCdata::DrawYZ(pDC, bSelect);
 }
 
 // CDC::Arc() を使うとどうしても表示がズレる．

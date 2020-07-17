@@ -49,8 +49,10 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CView)
 	ON_WM_DESTROY()
 	ON_WM_SIZE()
 	ON_WM_ERASEBKGND()
+	ON_WM_CONTEXTMENU()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
+	ON_WM_LBUTTONDBLCLK()
 	ON_WM_RBUTTONDOWN()
 	ON_WM_RBUTTONUP()
 	ON_WM_MOUSEMOVE()
@@ -1375,7 +1377,7 @@ void CNCViewGL::EndTracking(void)
 	ReleaseCapture();
 	::ShowCursor(TRUE);
 	m_enTrackingMode = TM_NONE;
-	Invalidate(FALSE);		// ê¸âÊÇ©ÇÁ⁄›¿ﬁÿ›∏ﬁï`âÊÇ÷
+	Invalidate(FALSE);
 }
 
 void CNCViewGL::DoTracking( const CPoint& pt )
@@ -1482,8 +1484,8 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	RenderAxis();
 
 #ifdef _DEBUG_DRAWTEST_
-//	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
-//		GetDocument()->GetNCdata(i)->DrawBottomFace();
+	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
+		GetDocument()->GetNCdata(i)->DrawBottomFace();
 //		GetDocument()->GetNCdata(1)->DrawBottomFace();
 	if ( m_nPictureID > 0 ) {
 //		COLORREF col = pOpt->GetNcDrawColor(NCCOL_GL_WRK);
@@ -1876,6 +1878,15 @@ void CNCViewGL::OnLensKey(UINT nID)
 	}
 }
 
+void CNCViewGL::OnContextMenu(CWnd* pWnd, CPoint point) 
+{
+	CMenu	menu;
+	menu.LoadMenu(IDR_NCPOPUP1);
+	CMenu*	pMenu = menu.GetSubMenu(0);
+	pMenu->TrackPopupMenu(TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON,
+		point.x, point.y, AfxGetMainWnd());
+}
+
 void CNCViewGL::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	BeginTracking( point, TM_SPIN );
@@ -1886,14 +1897,26 @@ void CNCViewGL::OnLButtonUp(UINT nFlags, CPoint point)
 	EndTracking();
 }
 
+void CNCViewGL::OnLButtonDblClk(UINT nFlags, CPoint point) 
+{
+	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
+		pOpt->m_bG00View = !pOpt->m_bG00View;
+		Invalidate(FALSE);
+	}
+}
+
 void CNCViewGL::OnRButtonDown(UINT nFlags, CPoint point)
 {
+	m_ptDownClick = point;
 	BeginTracking( point, TM_PAN );
 }
 
 void CNCViewGL::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	EndTracking();
+	if ( m_ptDownClick == point )
+		CView::OnRButtonUp(nFlags, point);	// ∫›√∑Ωƒ“∆≠∞ÇÃï\é¶
 }
 
 void CNCViewGL::OnMouseMove(UINT nFlags, CPoint point)
