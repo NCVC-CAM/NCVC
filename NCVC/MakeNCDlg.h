@@ -64,4 +64,5 @@ int		MakeNCDlgSelChange(const CComboBox&, HWND, int, CString&, CString&);
 void	MakeDlgKillFocus(CString&, CString&, CDialog*, int nID);
 //
 void	CreateNCFile(const CDXFDoc*, CString&, CString&);
+void	CreateLayerFile(const CDXFDoc*, CString&, CString&);
 BOOL	InitialMakeNCDlgComboBox(const CStringList*, CComboBox&);

@@ -44,12 +44,13 @@ PFNGETCYCLESTRING	CNCMake::ms_pfnGetCycleString = &CNCMake::GetCycleString;
 PFNGETVALSTRING		CNCMake::ms_pfnGetValString = &CNCMake::GetValString_Normal;
 PFNMAKECIRCLESUB	CNCMake::ms_pfnMakeCircleSub = &CNCMake::MakeCircleSub_IJ;
 PFNMAKECIRCLE		CNCMake::ms_pfnMakeCircle = &CNCMake::MakeCircle_IJ;
+PFNMAKEHELICAL		CNCMake::ms_pfnMakeHelical = &CNCMake::MakeCircle_IJ_Helical;
 PFNMAKEARC			CNCMake::ms_pfnMakeArc = &CNCMake::MakeArc_IJ;
 
 //////////////////////////////////////////////////////////////////////
 // CNCMake ç\íz/è¡ñ≈
 //////////////////////////////////////////////////////////////////////
-CNCMake::CNCMake(const CDXFdata* pData, double dFeed, const CPointD* lpt/*=NULL*/)
+CNCMake::CNCMake(const CDXFdata* pData, double dFeed, const double* pdHelical/*=NULL*/)
 {
 	MAKECIRCLE	mc;
 	CString		strGcode;
@@ -83,23 +84,21 @@ CNCMake::CNCMake(const CDXFdata* pData, double dFeed, const CPointD* lpt/*=NULL*
 		break;
 
 	case DXFLINEDATA:
-		if ( lpt ) {	// ã≠êßç¿ïWéwé¶
-			pt.x = lpt->x;
-			pt.y = lpt->y;
-		}
-		else
-			pt = pData->GetEndMakePoint();
-		strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y);
+		strGcode = (*ms_pfnGetGString)(1) +
+			GetValString(NCA_X, pData->GetEndMakePoint().x) +
+			GetValString(NCA_Y, pData->GetEndMakePoint().y);
 		if ( !strGcode.IsEmpty() )
 			m_strGcode += (*ms_pfnGetLineNo)() + strGcode + GetFeedString(dFeed) + ms_strEOB;
 		break;
 
 	case DXFCIRCLEDATA:
-		m_strGcode += (*ms_pfnMakeCircle)(static_cast<const CDXFcircle*>(pData), dFeed);
+		m_strGcode += pdHelical ?
+			(*ms_pfnMakeHelical)(static_cast<const CDXFcircle*>(pData), dFeed, *pdHelical) :
+			(*ms_pfnMakeCircle) (static_cast<const CDXFcircle*>(pData), dFeed);
 		break;
 
 	case DXFARCDATA:
-		m_strGcode += (*ms_pfnMakeArc)(static_cast<const CDXFarc*>(pData), dFeed, lpt);
+		m_strGcode += (*ms_pfnMakeArc)(static_cast<const CDXFarc*>(pData), dFeed);
 		break;
 
 	case DXFELLIPSEDATA:
@@ -114,7 +113,7 @@ CNCMake::CNCMake(const CDXFdata* pData, double dFeed, const CPointD* lpt/*=NULL*
 	}
 }
 
-CNCMake::CNCMake(const CDXFdata* pData, BOOL bL0/*=FALSE*/)
+CNCMake::CNCMake(const CDXFdata* pData, BOOL bL0)
 {
 	CPointD	pt;
 
@@ -159,12 +158,24 @@ void CNCMake::MakeEllipse(const CDXFellipse* pEllipse, double dFeed)
 	CString	strGcode;
 	BOOL	bFeed = TRUE;
 	CPointD	pt, ptMake;
-#ifdef _DEBUG
-	pEllipse->GetBaseAxis();
-#endif;
-	double	sq = pEllipse->GetStartAngle(), eq = pEllipse->GetEndAngle();
-	// äpìxÇÃΩ√ØÃﬂêîÇãÅÇﬂÇÈ -> (sq-eq) / (r*(sq-eq) / STEP)
-	double	dStep = 1.0 / (pEllipse->GetR() / GetDbl(MKNC_DBL_ELLIPSE));
+	double	sq, eq,
+			// äpìxÇÃΩ√ØÃﬂêîÇãÅÇﬂÇÈ -> (sq-eq) / (r*(sq-eq) / STEP)
+			dStep = 1.0 / (pEllipse->GetR() / GetDbl(MKNC_DBL_ELLIPSE));
+
+	// ë»â~éûÇÃäJénèIóπäpìxÇçƒåvéZ
+	// -> XYîΩì]Ç»Ç«åXÇ´Ççló∂ÇµÇ»Ç¢Ç∆ê≥ÇµÇ¢äJénà íuÇ™ï€éùÇ≈Ç´Ç»Ç¢ÇΩÇﬂ
+	if ( pEllipse->IsArc() ) {
+		sq = pEllipse->GetStartAngle();
+		eq = pEllipse->GetEndAngle();
+	}
+	else {
+		pt = pEllipse->GetStartCutterPoint() - pEllipse->GetMakeCenter();
+		sq = atan2(pt.y, pt.x) - pEllipse->GetMakeLean();	// åXÇ´Çãzé˚
+		if ( pEllipse->GetRound() )
+			eq = sq + 360.0*RAD;
+		else
+			eq = sq - 360.0*RAD;
+	}
 
 	// ê∂ê¨äJén
 	if ( pEllipse->GetRound() ) {
@@ -226,7 +237,7 @@ void CNCMake::MakePolylineCut(const CDXFpolyline* pPoly, double dFeed)
 			break;
 
 		case DXFARCDATA:
-			strGcode = (*ms_pfnMakeArc)(static_cast<CDXFarc*>(pData), dFeed, NULL);
+			strGcode = (*ms_pfnMakeArc)(static_cast<CDXFarc*>(pData), dFeed);
 			if ( !strGcode.IsEmpty() ) {
 				m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode);
 				bFeed = FALSE;
@@ -438,13 +449,21 @@ void CNCMake::SetStaticOption(void)
 	ms_nCircleCode = GetNum(MKNC_NUM_CIRCLECODE) == 0 ? 2 : 3;
 	// --- â~,â~å √ﬁ∞¿ÇÃê∂ê¨
 	if ( GetNum(MKNC_NUM_IJ) == 0 ) {
-		ms_pfnMakeCircleSub	= &MakeCircleSub_R;
 		ms_pfnMakeCircle	= &MakeCircle_R;
+		ms_pfnMakeCircleSub	= &MakeCircleSub_R;
+		ms_pfnMakeHelical	= &MakeCircle_R_Helical;
 		ms_pfnMakeArc		= &MakeArc_R;
 	}
 	else {
+		if ( GetFlg(MKNC_FLG_CIRCLEHALF) ) {
+			ms_pfnMakeCircle  = &MakeCircle_IJHALF;
+			ms_pfnMakeHelical = &MakeCircle_IJHALF_Helical;
+		}
+		else {
+			ms_pfnMakeCircle  = &MakeCircle_IJ;
+			ms_pfnMakeHelical = &MakeCircle_IJ_Helical;
+		}
 		ms_pfnMakeCircleSub	= &MakeCircleSub_IJ;
-		ms_pfnMakeCircle	= GetFlg(MKNC_FLG_CIRCLEHALF) ? &MakeCircle_IJ_HALF : &MakeCircle_IJ;
 		ms_pfnMakeArc		= &MakeArc_IJ;
 	}
 }

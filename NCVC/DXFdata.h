@@ -85,8 +85,8 @@ enum	ENDXFTYPE2
 	{DXFORGDATA = 0, DXFSTADATA = 1};
 
 /*
-	SwapPt()    : 近接座標計算に使用．内部専用(円座標も入れ替え)
-	ReversePt() : 往復の深彫切削，POLYLINEのSwapPt()．(円座標は入れ替えない)
+	SwapPt()    : 近接座標計算に使用．内部専用
+	ReversePt() : 往復の深彫切削，POLYLINEのSwapPt()．
 */
 
 /////////////////////////////////////////////////////////////////////////////
@@ -165,6 +165,7 @@ public:
 	//	
 	virtual	void	ReversePt(void);
 	// 各ｵﾌﾞｼﾞｪｸﾄにしか解らない独自の処理 -> 純粋仮想関数
+	virtual	BOOL	IsMakeTarget(void) const = 0;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&) = 0;
 	virtual BOOL	IsStartEqEnd(void) const = 0;	// 始点終点が同じｵﾌﾞｼﾞｪｸﾄならTRUE
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE) = 0;
@@ -198,8 +199,8 @@ typedef	CTypedPtrArrayEx<CObArray, CDXFdata*>	CDXFarray;
 class CDXFpoint : public CDXFdata  
 {
 protected:
-	CPoint		m_ptDraw;	// 描画調整用(兼CDXFarc, CDXFellipse)
-	CRect		m_rcDraw;	// 矩形描画(兼CDXFcircle)
+	CPoint	m_ptDraw;	// 描画調整用(兼CDXFarc, CDXFellipse)
+	CRect	m_rcDraw;	// 矩形描画(兼CDXFcircle)
 
 	// CDXFtext からも参照
 	void	SetMaxRect(void);
@@ -214,6 +215,7 @@ public:
 
 	const	CPoint	GetDrawPoint(void) const;
 
+	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
@@ -260,6 +262,7 @@ public:
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
 	CDXFline(CLayerData*, const CDXFline*, LPDXFBLOCK);
 
+	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
@@ -302,7 +305,7 @@ class CDXFcircle : public CDXFline
 	void	SetCirclePoint(void);	// m_pt への代入
 
 protected:
-	int		m_nArrayExt;	// m_ptTun, m_ptMake の配列を指示(0-1:±X軸 or 2-3:±Y軸)
+	int		m_nArrayExt;	// m_ptTun, m_ptMake の配列を指示(0,1:±X軸 or 2,3:±Y軸)
 	double	m_r, m_rMake;	// 半径, 小数第３位までの半径 -> NC生成で使用
 	CPointD	m_ct, m_ctTun;	// 中心座標
 	BOOL	m_bRound;		// G2(FALSE)/G3(TRUE) DXFの基本は G3(反時計回り)
@@ -342,6 +345,7 @@ public:
 	const CPointD	GetCenter(void) const;
 	const CPointD	GetMakeCenter(void) const;
 
+	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
@@ -387,6 +391,7 @@ protected:
 public:
 	CDXFcircleEx(ENDXFTYPE2, CLayerData*, const CPointD&, double);
 
+	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
 	virtual	const CPointD	GetStartCutterPoint(void) const;
@@ -413,9 +418,9 @@ class CDXFarc : public CDXFcircle
 	void	SetMaxRect(void);
 
 protected:
-	BOOL		m_bRoundOrig;	// 生成中に向きが変わる可能性があるのでﾊﾞｯｸｱｯﾌﾟ
-	double		m_sq, m_eq,		// 開始・終了角度(ﾗｼﾞｱﾝ単位)
-				m_sqDraw, m_eqDraw,	m_rDraw;	// 描画用(Swapしない)
+	BOOL	m_bRoundOrig;	// 生成中に向きが変わる可能性があるのでﾊﾞｯｸｱｯﾌﾟ
+	double	m_sq, m_eq,		// 開始・終了角度(ﾗｼﾞｱﾝ単位)
+			m_sqDraw, m_eqDraw,	m_rDraw;	// 描画用(Swapしない)
 
 	void	AngleTuning(void);
 	void	SwapRound(void);
@@ -445,6 +450,7 @@ public:
 
 	virtual	void	SetNativePoint(size_t, const CPointD&);		// 角度の更新を含む
 
+	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
@@ -478,19 +484,19 @@ public:
 //		長軸長さを半径と見なし CDXFarc と同一にする
 class CDXFellipse : public CDXFarc
 {
-	CPointD		m_ptLong;	// 長軸(中心からの相対)
-	double		m_dShort;	// 短軸(倍率)
-	double		m_dLongLength, m_dDrawLongLength;
-	double		m_lq, m_lqMake;		// 長軸角度(==楕円の傾き)
-	double		m_lqMakeCos, m_lqMakeSin,	// 傾きの cos(), sin()
-				m_lqDrawCos, m_lqDrawSin;	// 使用頻度が高いので計算結果を保存
-	BOOL		m_bArc;		// TRUE:楕円弧，FALSE:楕円
+	CPointD	m_ptLong;	// 長軸(中心からの相対)
+	double	m_dShort,	// 短軸(倍率)
+			m_dLongLength, m_dDrawLongLength;
+	double	m_lq, m_lqMake,		// 長軸角度(==楕円の傾き)
+			m_lqMakeCos, m_lqMakeSin,	// 傾きの cos(), sin() 
+			m_lqDrawCos, m_lqDrawSin;	// 描画や生成で使用頻度が高いので計算結果を保存
+	BOOL	m_bArc;		// TRUE:楕円弧，FALSE:楕円
 
 	void	Construct(void);
 	void	EllipseCalc(void);
 	void	SetMaxRect(void);
-	void	XYRev(const CPointD&, const CPointD&);
 	void	SetEllipseTunPoint(void);
+	void	XYRev(const CPointD&, const CPointD&);
 
 protected:
 	virtual	void	SwapPt(int);
@@ -508,12 +514,14 @@ public:
 	double	GetLongLength(void) const;
 	double	GetShortLength(void) const;
 	double	GetLean(void) const;
-	double	GetLeanCos(void) const;
-	double	GetLeanSin(void) const;
+	double	GetMakeLean(void) const;
+	double	GetMakeLeanCos(void) const;
+	double	GetMakeLeanSin(void) const;
 	BOOL	IsArc(void) const;
 	void	SetRoundFixed(BOOL);
 	void	SetVectorPoint(std::vector<CPointD>&);
 
+	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
@@ -582,6 +590,7 @@ public:
 	void	SetVectorPoint(std::vector<CPointD>&);
 	void	CheckPolylineIntersection(void);
 
+	virtual	BOOL	IsMakeTarget(void) const;
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;

@@ -7,6 +7,7 @@
 #include "MKNCSetup.h"
 
 #include "MagaDbgMac.h"
+#include "MKNCSetup3.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
@@ -15,6 +16,8 @@ extern	CMagaDbg	g_dbg;
 BEGIN_MESSAGE_MAP(CMKNCSetup3, CPropertyPage)
 	//{{AFX_MSG_MAP(CMKNCSetup3)
 	ON_CBN_SELCHANGE(IDC_MKNC3_MAKEEND, OnSelchangeMakeEnd)
+	ON_CBN_SELCHANGE(IDC_MKNC3_APROCESS, OnSelchangeProcess)
+	ON_CBN_SELCHANGE(IDC_MKNC3_CPROCESS, OnSelchangeProcess)
 	ON_BN_CLICKED(IDC_MKNC3_DEEP, OnDeep)
 	ON_BN_CLICKED(IDC_MKNC3_FINISH, OnDeepFinish)
 	//}}AFX_MSG_MAP
@@ -33,6 +36,7 @@ CMKNCSetup3::CMKNCSetup3() : CPropertyPage(CMKNCSetup3::IDD),
 	m_nCProcess	= -1;
 	m_nZProcess	= -1;
 	m_bDeep		= FALSE;
+	m_bHelical	= FALSE;
 	m_bFinish	= FALSE;
 	//}}AFX_DATA_INIT
 }
@@ -47,10 +51,11 @@ void CMKNCSetup3::DoDataExchange(CDataExchange* pDX)
 	//{{AFX_DATA_MAP(CMKNCSetup3)
 	DDX_Control(pDX, IDC_MKNC3_FEED, m_dFeed);
 	DDX_Control(pDX, IDC_MKNC3_MAKEEND_FEED, m_dMakeFeed);
+	DDX_Control(pDX, IDC_MKNC3_HELICAL, m_ctHelical);
 	DDX_Control(pDX, IDC_MKNC3_FINISH, m_ctFinish);
-	DDX_Control(pDX, IDC_MKNC3_ZPROCESS, m_ctZProcess);
-	DDX_Control(pDX, IDC_MKNC3_CPROCESS, m_ctCProcess);
 	DDX_Control(pDX, IDC_MKNC3_APROCESS, m_ctAProcess);
+	DDX_Control(pDX, IDC_MKNC3_CPROCESS, m_ctCProcess);
+	DDX_Control(pDX, IDC_MKNC3_ZPROCESS, m_ctZProcess);
 	DDX_Control(pDX, IDC_MKNC3_MAKEEND_LB1, m_ctMakeLabel1);
 	DDX_Control(pDX, IDC_MKNC3_SPINDLE, m_nSpindle);
 	DDX_Control(pDX, IDC_MKNC1_ZCUT, m_dZCut);
@@ -63,6 +68,7 @@ void CMKNCSetup3::DoDataExchange(CDataExchange* pDX)
 	DDX_CBIndex(pDX, IDC_MKNC3_CPROCESS, m_nCProcess);
 	DDX_CBIndex(pDX, IDC_MKNC3_ZPROCESS, m_nZProcess);
 	DDX_Check(pDX, IDC_MKNC3_DEEP, m_bDeep);
+	DDX_Check(pDX, IDC_MKNC3_HELICAL, m_bHelical);
 	DDX_Check(pDX, IDC_MKNC3_FINISH, m_bFinish);
 	//}}AFX_DATA_MAP
 }
@@ -87,7 +93,13 @@ void CMKNCSetup3::EnableControl_Deep(void)
 	m_ctAProcess.EnableWindow(m_bDeep);
 	m_ctCProcess.EnableWindow(m_bDeep);
 	m_ctFinish.EnableWindow(m_bDeep);
+	EnableControl_Helical();
 	EnableControl_Finish();
+}
+
+void CMKNCSetup3::EnableControl_Helical(void)
+{
+	m_ctHelical.EnableWindow(m_bDeep && m_nAProcess==1);
 }
 
 void CMKNCSetup3::EnableControl_Finish(void)
@@ -117,6 +129,7 @@ BOOL CMKNCSetup3::OnInitDialog()
 	m_nZProcess		= pOpt->m_nDeepZProcess;
 	m_nAProcess		= pOpt->m_nDeepAProcess;
 	m_nCProcess		= pOpt->m_nDeepCProcess;
+	m_bHelical		= pOpt->m_bHelical;
 	m_bFinish		= pOpt->m_bDeepFinish;
 	m_nSpindle		= pOpt->m_nDeepSpindle;
 	m_dFeed			= pOpt->m_dDeepFeed;
@@ -143,6 +156,12 @@ void CMKNCSetup3::OnSelchangeMakeEnd()
 {
 	UpdateData();
 	EnableControl_MakeEnd();
+}
+
+void CMKNCSetup3::OnSelchangeProcess()
+{
+	UpdateData();
+	EnableControl_Helical();
 }
 
 void CMKNCSetup3::OnDeep() 
@@ -208,6 +227,7 @@ BOOL CMKNCSetup3::OnApply()
 	pOpt->m_nDeepZProcess	= m_nZProcess;
 	pOpt->m_nDeepAProcess	= m_nAProcess;
 	pOpt->m_nDeepCProcess	= m_nCProcess;
+	pOpt->m_bHelical		= m_bHelical;
 	pOpt->m_bDeepFinish		= m_bFinish;
 	pOpt->m_nDeepSpindle	= m_nSpindle;
 	pOpt->m_dDeepFeed		= m_dFeed;

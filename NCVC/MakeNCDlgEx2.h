@@ -13,6 +13,9 @@ class CMakeNCDlgEx2 : public CPropertyPage
 				m_strInitPath,
 				m_strLayerToInitPath;
 
+	BOOL	m_bNewLayer;
+	void	CheckNewLayer(void);
+
 public:
 	CString	GetNCFileName(void) {
 		return m_strNCPath + m_strNCFileName;

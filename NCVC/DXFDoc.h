@@ -138,7 +138,7 @@ public:
 	void	DelLayerMap(CLayerData*);
 	CString	CheckDuplexFile(const CString&, const CLayerArray* = NULL);
 	BOOL	ReadLayerMap(LPCTSTR);
-	BOOL	SaveLayerMap(LPCTSTR);
+	BOOL	SaveLayerMap(LPCTSTR, const CLayerArray* = NULL);
 	void	UpdateLayerSequence(void);
 	//
 	void	AllChangeFactor(double) const;	// ägëÂó¶ÇÃçXêV

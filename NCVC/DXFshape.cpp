@@ -2589,16 +2589,17 @@ CDXFdata* CreateDXFObject
 				k = -k;
 			dxfEllipse.pLayer = pEllipse->GetParentLayer();
 			dxfEllipse.c	= pEllipse->GetCenter();
-			double	l		= pEllipse->GetLongLength() + dOffset * k;
-			dxfEllipse.l.x	= l * pEllipse->GetLeanCos();
-			dxfEllipse.l.y	= l * pEllipse->GetLeanSin();
+			double	l		= pEllipse->GetLongLength() + dOffset * k,
+					lq		= pEllipse->GetLean();
+			dxfEllipse.l.x	= l * cos(lq);
+			dxfEllipse.l.y	= l * sin(lq);
 			dxfEllipse.s	=(pEllipse->GetShortLength() + dOffset * k) / l;
 			dxfEllipse.bRound = pEllipse->GetRoundOrig();
 			if ( pEllipse->IsArc() ) {
 				// Šp“xŒvŽZ‚Í’·Ž²‚ÌŒX‚«‚ðl—¶‚µ‚ÄŒvŽZ
 				CPointD	pt1(pts - dxfEllipse.c), pt2(pte - dxfEllipse.c);
-				pt1.RoundPoint(-pEllipse->GetLean());
-				pt2.RoundPoint(-pEllipse->GetLean());
+				pt1.RoundPoint(-lq);
+				pt2.RoundPoint(-lq);
 				// ‘È‰~‚ÌŠp“x‚Í atan2() ‚Å‚Í‚È‚¢
 				double	q = pt1.x / l;
 				if ( q < -1.0 || 1.0 < q )

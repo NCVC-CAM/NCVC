@@ -63,7 +63,7 @@ CNCViewGL::CNCViewGL()
 	m_hRC = NULL;
 	m_glCode = m_glWork = 0;
 
-	m_fDepth = NULL;
+//	m_pfDepth = NULL;
 
 	m_enTrackingMode = TM_NONE;
 	ClearObjectForm();
@@ -71,8 +71,8 @@ CNCViewGL::CNCViewGL()
 
 CNCViewGL::~CNCViewGL()
 {
-	if ( m_fDepth )
-		delete	m_fDepth;
+//	if ( m_pfDepth )
+//		delete	m_pfDepth;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -89,6 +89,11 @@ void CNCViewGL::OnInitialUpdate()
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCViewGL::OnInitialUpdate()\nStart", DBG_CYAN);
 #endif
+	// ﾜｰｸ矩形の描画用座標
+	// 上下左右1%ずつ大きく、深さを1%小さくする
+	m_rcDraw = GetDocument()->GetMaxRect();
+	m_rcDraw.InflateRect(m_rcDraw.Width()*0.01, m_rcDraw.Height()*0.01, -m_rcDraw.Depth()*0.01);
+
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
@@ -115,18 +120,6 @@ void CNCViewGL::OnInitialUpdate()
 		::glNewList( m_glWork, GL_COMPILE );
 			RenderWork();
 		::glEndList();
-	}
-
-	// 切削ﾊﾟｽのﾚﾝﾀﾞﾘﾝｸﾞ準備
-	CNCdata*	pData;
-	CNCdata*	pDataNext;
-	int		i, nLoop = GetDocument()->GetNCsize();
-
-	// 切削底面のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
-	for ( i=0; i<nLoop; i++ ) {
-		pData = GetDocument()->GetNCdata(i);
-		pDataNext = i<nLoop-1 ? GetDocument()->GetNCdata(i+1) : NULL;
-		pData->CreateOcclusionCulling(pDataNext);
 	}
 */
 	::wglMakeCurrent( NULL, NULL );
@@ -182,7 +175,7 @@ BOOL CNCViewGL::SetupPixelFormat(CDC* pDC)
 		0,
 		0, 0, 0, 0,
 		32,
-		0,		// Stencil Buffer
+		32,		// Stencil Buffer
 		0,
 		PFD_MAIN_PLANE,
 		0,
@@ -211,7 +204,7 @@ void CNCViewGL::ClearObjectForm(void)
 	m_objectXform[2][0]	= 0.0; m_objectXform[2][1] = 0.0; m_objectXform[2][2] = 1.0; m_objectXform[2][3] = 0.0;
 	m_objectXform[3][0]	= 0.0; m_objectXform[3][1] = 0.0; m_objectXform[3][2] = 0.0; m_objectXform[3][3] = 1.0;
 }
-
+/*
 void CNCViewGL::ClipDepth(void)
 {
 	::glDisable( GL_STENCIL_TEST );
@@ -237,12 +230,12 @@ void CNCViewGL::ClipDepth(void)
 	cy = (GLsizei)(wy2 - wy1);
 
 	// 矩形領域のﾃﾞﾌﾟｽ値を取得（ﾋﾟｸｾﾙ単位）
-	m_fDepth = new GLfloat[cx*cy];
+	m_pfDepth = new GLfloat[cx*cy];
 	::glReadPixels((GLint)wx1, (GLint)wy1, cx, cy,
-			GL_DEPTH_COMPONENT, GL_FLOAT, m_fDepth);
+			GL_DEPTH_COMPONENT, GL_FLOAT, m_pfDepth);
 
 #ifdef _DEBUG
-/*
+#ifdef _DEBUG_FILEOUT_
 	GLsizei		i, j;
 	CStdioFile	f("D:\\tmp\\depth.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
 	CString		s, r;
@@ -251,12 +244,12 @@ void CNCViewGL::ClipDepth(void)
 		for ( i=0; i<cx; i++ ) {
 			if ( !s.IsEmpty() )
 				s += ", ";
-			r.Format(IDS_MAKENCD_FORMAT, m_fDepth[j*cy+i]);
+			r.Format(IDS_MAKENCD_FORMAT, m_pfDepth[j*cy+i]);
 			s += r;
 		}
 		f.WriteString(s+"\n");
 	}
-*/
+#endif	// _DEBUG_FILEOUT_
 //	double	znr = pjMatrix[14]/(pjMatrix[10]-1.0),
 //			zfr = pjMatrix[14]/(pjMatrix[10]+1.0);
 //	g_dbg.printf("near=%f far=%f", znr, zfr);
@@ -272,7 +265,7 @@ void CNCViewGL::ClipDepth(void)
 	::glEnable ( GL_LIGHTING );
 	::glEnable ( GL_STENCIL_TEST );
 }
-
+*/
 void CNCViewGL::RenderBack(void)
 {
 	// 背景ﾎﾟﾘｺﾞﾝの描画
@@ -355,51 +348,47 @@ void CNCViewGL::RenderAxis(void)
 
 void CNCViewGL::RenderWork(void)
 {
-	// ﾜｰｸ矩形の描画(光源設定により発色)
-	CRect3D		rc(GetDocument()->GetMaxRect());
-
-	// ﾜｰｸ矩形を上下左右1%ずつ大きく、深さを1%小さくする
-	rc.InflateRect(rc.Width()*0.01, rc.Height()*0.01, -rc.Depth()*0.01);
-/*
 	::glBegin(GL_QUADS);
 	// 上面
 	::glNormal3d(0.0, 0.0, 1.0);
-	::glVertex3d(rc.left,	rc.bottom,	rc.high);
-	::glVertex3d(rc.left,	rc.top,		rc.high);
-	::glVertex3d(rc.right,	rc.top,		rc.high);
-	::glVertex3d(rc.right,	rc.bottom,	rc.high);
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.high);
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.high);
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.high);
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.high);
+/*
 	// 前面
 	::glNormal3d(0.0, 1.0, 0.0);
-	::glVertex3d(rc.left,	rc.top,		rc.high);
-	::glVertex3d(rc.left,	rc.top,		rc.low );
-	::glVertex3d(rc.right,	rc.top,		rc.low );
-	::glVertex3d(rc.right,	rc.top,		rc.high);
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.high);
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.low );
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.low );
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.high);
 	// 底面
 	::glNormal3d(0.0, 0.0, -1.0);
-	::glVertex3d(rc.right,	rc.bottom,	rc.low );
-	::glVertex3d(rc.right,	rc.top,		rc.low );
-	::glVertex3d(rc.left,	rc.top,		rc.low );
-	::glVertex3d(rc.left,	rc.bottom,	rc.low );
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.low );
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.low );
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.low );
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.low );
 	// 奥面
 	::glNormal3d(0.0, -1.0, 0.0);
-	::glVertex3d(rc.right,	rc.bottom,	rc.high);
-	::glVertex3d(rc.right,	rc.bottom,	rc.low );
-	::glVertex3d(rc.left,	rc.bottom,	rc.low );
-	::glVertex3d(rc.left,	rc.bottom,	rc.high);
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.high);
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.low );
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.low );
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.high);
 	// 左側面
 	::glNormal3d(-1.0, 0.0, 0.0);
-	::glVertex3d(rc.left,	rc.bottom,	rc.high);
-	::glVertex3d(rc.left,	rc.bottom,	rc.low );
-	::glVertex3d(rc.left,	rc.top,		rc.low );
-	::glVertex3d(rc.left,	rc.top,		rc.high);
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.high);
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.bottom,	m_rcDraw.low );
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.low );
+	::glVertex3d(m_rcDraw.left,		m_rcDraw.top,		m_rcDraw.high);
 	// 右側面
 	::glNormal3d(1.0, 0.0, 0.0);
-	::glVertex3d(rc.right,	rc.bottom,	rc.high);
-	::glVertex3d(rc.right,	rc.top,		rc.high);
-	::glVertex3d(rc.right,	rc.top,		rc.low );
-	::glVertex3d(rc.right,	rc.bottom,	rc.low );
-	::glEnd();
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.high);
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.high);
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.top,		m_rcDraw.low );
+	::glVertex3d(m_rcDraw.right,	m_rcDraw.bottom,	m_rcDraw.low );
 */
+	::glEnd();
+
 /*
 	// 側面をｸﾞﾘｯﾄﾞで表現
 	int		i;
@@ -422,6 +411,7 @@ void CNCViewGL::RenderWork(void)
 	}
 	::glEnd();
 */
+/*
 	// 100x100 ﾃﾞｸｾﾙ表示
 	int		i, j;
 	double	dx, sx = rc.Width()  / 100,
@@ -468,6 +458,7 @@ void CNCViewGL::RenderWork(void)
 		}
 	}
 	::glEnd();
+*/
 }
 
 void CNCViewGL::RenderCode(BOOL bInitial)
@@ -608,19 +599,25 @@ void CNCViewGL::OnDraw(CDC* pDC)
 {
 	ASSERT_VALID(GetDocument());
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	int		i;
 
 	// ｶﾚﾝﾄｺﾝﾃｷｽﾄの割り当て
 	::wglMakeCurrent( pDC->GetSafeHdc(), m_hRC );
 
-	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 	::glDisable( GL_LIGHTING );
-	::glDepthFunc( GL_LESS );
 
+	::glDepthMask(GL_FALSE);
+	::glStencilMask(0);
 	// 背景の描画
 	RenderBack();
 	// 軸の描画
 	RenderAxis();
+
+	::glStencilMask(~0);
+	::glDepthMask(GL_TRUE);
+	::glDepthFunc(GL_LESS);
 /*
 	if ( m_enTrackingMode==TM_NONE || pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) ) {
 		::glEnable(GL_LIGHT0);  
@@ -656,6 +653,112 @@ void CNCViewGL::OnDraw(CDC* pDC)
 			RenderCode(TRUE);
 	}
 */
+/*
+	// 切削底面描画（ｽﾃﾝｼﾙﾋﾞｯﾄON）
+	::glEnable(GL_STENCIL_TEST);
+	::glStencilOp(GL_INCR, GL_INCR, GL_INCR);
+	::glStencilFunc(GL_ALWAYS, 1, ~0);
+//	::glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+//	::glStencilFunc(GL_ALWAYS, 2, ~0);
+//	::glStencilOpSeparate(GL_FRONT_AND_BACK, GL_REPLACE, GL_REPLACE, GL_REPLACE);
+//	::glStencilOpSeparate(GL_FRONT_AND_BACK, GL_INCR, GL_INCR, GL_INCR);
+//	::glStencilFuncSeparate(GL_FRONT_AND_BACK, GL_ALWAYS, 1, ~0);
+	::glDisable(GL_LIGHT0);
+	::glDisable(GL_LIGHT1);
+	::glEnable (GL_LIGHT2);
+	::glEnable (GL_LIGHT3);
+	::glDisable(GL_LIGHT4);
+	::glDisable(GL_LIGHT5);
+	::glEnable(GL_LIGHTING);
+	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
+		GetDocument()->GetNCdata(i)->DrawBottomFace();
+
+	// 切削側面描画
+	// おもて面はｽﾃﾝｼﾙﾋﾞｯﾄON，ただしすでにｽﾃﾝｼﾙﾋﾞｯﾄがONの所には描画しない
+	// 裏面はﾃﾞﾌﾟｽﾃｽﾄにﾊﾟｽしたところだけｽﾃﾝｼﾙﾋﾞｯﾄOFF
+//	::glStencilOpSeparate(GL_FRONT, GL_INCR, GL_KEEP, GL_INCR);
+//	::glStencilFuncSeparate(GL_FRONT, GL_EQUAL, 0, ~0);
+//	::glStencilOpSeparate(GL_BACK, GL_KEEP, GL_KEEP, GL_DECR);
+//	::glStencilFuncSeparate(GL_BACK, GL_ALWAYS, 1, ~0);
+	::glDisable(GL_LIGHT2); 
+	::glDisable(GL_LIGHT3);
+	::glEnable (GL_LIGHT4);
+	::glEnable (GL_LIGHT5);
+	// ①表面だけ描画
+	::glCullFace(GL_BACK);
+	::glEnable(GL_CULL_FACE);
+	::glStencilOp(GL_INCR, GL_KEEP, GL_INCR);	// fail, zfail, pass
+	::glStencilFunc(GL_EQUAL, 0, ~0);
+//	::glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+//	::glStencilFunc(GL_LESS, 1, ~0);
+	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
+		GetDocument()->GetNCdata(i)->DrawSideFace(m_rcDraw.high);
+	// ②ｶﾗｰﾏｽｸを設定し裏面を描画（実際にはｽﾃﾝｼﾙﾊﾞｯﾌｧの調整のみ）
+	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	::glCullFace(GL_FRONT);
+	::glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
+	::glStencilFunc(GL_ALWAYS, 1, ~0);
+//	::glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+//	::glStencilFunc(GL_GREATER, 0, ~0);
+	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
+		GetDocument()->GetNCdata(i)->DrawSideFace(m_rcDraw.high);
+	::glDisable(GL_CULL_FACE);
+	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+
+	// ｽﾃﾝｼﾙﾋﾞｯﾄがOFFの所にﾜｰｸ矩形上面を描画
+	::glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	::glStencilFunc(GL_EQUAL, 0, ~0);
+//	::glStencilOpSeparate(GL_FRONT_AND_BACK, GL_KEEP, GL_KEEP, GL_KEEP);
+//	::glStencilFuncSeparate(GL_FRONT_AND_BACK, GL_EQUAL, 0, ~0);
+	::glEnable (GL_LIGHT0); 
+	::glEnable (GL_LIGHT1);
+	::glDisable(GL_LIGHT4);
+	::glDisable(GL_LIGHT5);
+	RenderWork();
+*/
+/*
+	// 切削底面を「深さ優先」で描画
+	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
+		GetDocument()->GetNCdata(i)->DrawBottomFace();	// ﾃﾞﾌﾟｽ値だけ更新
+	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	::glDepthFunc(GL_GEQUAL);
+	::glDisable(GL_LIGHT0);
+	::glDisable(GL_LIGHT1);
+	::glEnable(GL_LIGHT2);
+	::glEnable(GL_LIGHT3);
+	::glDisable(GL_LIGHT4);
+	::glDisable(GL_LIGHT5);
+	::glEnable(GL_LIGHTING);
+	for ( i=0; i<GetDocument()->GetNCsize(); i++ )
+		GetDocument()->GetNCdata(i)->DrawBottomFace();
+	::glDepthFunc(GL_LESS);
+*/
+/*
+	// ﾃﾞｰﾀを逆順に描画
+	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	::glEnable(GL_STENCIL_TEST);
+	::glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+	::glStencilFunc(GL_ALWAYS, 1, ~0);
+	for ( i=GetDocument()->GetNCsize()-1; i>=0; i-- )
+		GetDocument()->GetNCdata(i)->DrawBottomFace();
+	::glDisable(GL_LIGHT0);
+	::glDisable(GL_LIGHT1);
+	::glEnable(GL_LIGHT2);
+	::glEnable(GL_LIGHT3);
+	::glDisable(GL_LIGHT4);
+	::glDisable(GL_LIGHT5);
+	::glEnable(GL_LIGHTING);
+	::glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	::glStencilFunc(GL_LEQUAL, 1, ~0);
+	::glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	for ( i=GetDocument()->GetNCsize()-1; i>=0; i-- )
+		GetDocument()->GetNCdata(i)->DrawBottomFace();
+*/
+//	::glDisable( GL_STENCIL_TEST );
+//	::glDisable( GL_LIGHTING );
+
 
 	// 線画
 	if ( m_glCode > 0 )
@@ -734,6 +837,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	// Enable two OpenGL lights
     GLfloat light_diffuse_red[] = {1.0, 0.0, 0.0, 1.0};		// Red diffuse light
     GLfloat light_diffuse_yellow[] = {1.0, 1.0, 0.0, 1.0};	// Yellow diffuse light
+    GLfloat light_diffuse_green[] = {0.0, 1.0, 0.5, 1.0};	// Green diffuse light
     GLfloat light_position0[] = {-1.0, -1.0, -1.0, 0.0};	// Infinite light location
     GLfloat light_position1[] = {1.0, 1.0, 1.0, 0.0};		// Infinite light location
 
@@ -745,17 +849,23 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	::glLightfv(GL_LIGHT2, GL_POSITION, light_position0);
 	::glLightfv(GL_LIGHT3, GL_DIFFUSE, light_diffuse_yellow);
 	::glLightfv(GL_LIGHT3, GL_POSITION, light_position1);
+	::glLightfv(GL_LIGHT4, GL_DIFFUSE, light_diffuse_green);
+	::glLightfv(GL_LIGHT4, GL_POSITION, light_position0);
+	::glLightfv(GL_LIGHT5, GL_DIFFUSE, light_diffuse_green);
+	::glLightfv(GL_LIGHT5, GL_POSITION, light_position1);
 //	::glEnable(GL_LIGHTING);
 	::glEnable(GL_NORMALIZE);
 
 	// ｸﾘｱｶﾗｰの設定
 	::glClearColor( 0, 0, 0, 0 );	// 黒
 
-	// ﾃﾞﾌﾟｽﾊﾞｯﾌｧのｸﾘｱ
+	// ﾃﾞﾌﾟｽ・ｽﾃﾝｼﾙﾊﾞｯﾌｧのｸﾘｱ
 	::glClearDepth( 1.0 );
+	::glClearStencil(0);
 
-	// ﾃﾞﾌﾟｽﾃｽﾄ
+	// ﾃﾞﾌﾟｽ・ｽﾃﾝｼﾙﾃｽﾄ
 	::glEnable( GL_DEPTH_TEST );
+//	::glEnable( GL_STENCIL_TEST );
 
 	// ﾃﾞﾌﾟｽﾌｧﾝｸ（手前にあるもので上描いていく）
 //	::glDepthFunc( GL_LESS );

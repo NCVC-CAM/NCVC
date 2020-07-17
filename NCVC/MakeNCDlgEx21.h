@@ -8,7 +8,8 @@
 
 class CMakeNCDlgEx21 : public CDialog
 {
-	int			m_nIndex;	// ﾌｫｰｶｽを得たときのﾚｲﾔ配列番号
+	CString		m_strCaption;	// 元のｳｨﾝﾄﾞｳﾀｲﾄﾙ
+	int			m_nIndex;		// ﾌｫｰｶｽを得たときのﾚｲﾔ配列番号
 	// ｽﾀﾃｨｯｸｺﾝﾄﾛｰﾙに表示する前の省略形文字列
 	CString		m_strNCPath;	// 本物のﾊﾟｽ名
 
@@ -57,6 +58,7 @@ protected:
 	//{{AFX_MSG(CMakeNCDlgEx21)
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
+	afx_msg void OnNewLayer();
 	afx_msg void OnStep();
 	afx_msg void OnKillFocusNCFile();
 	afx_msg void OnMKNCFileUp();

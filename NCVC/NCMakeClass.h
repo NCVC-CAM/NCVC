@@ -22,7 +22,8 @@ typedef CString (*PFNGETGSTRING)(int);
 typedef CString (*PFNGETCYCLESTRING)(void);
 typedef	CString	(*PFNMAKECIRCLESUB)(int, const CPointD&, const CPointD&, double);
 typedef	CString	(*PFNMAKECIRCLE)(const CDXFcircle*, double);
-typedef	CString	(*PFNMAKEARC)(const CDXFarc*, double, const CPointD*);
+typedef	CString	(*PFNMAKEHELICAL)(const CDXFcircle*, double, double);
+typedef	CString	(*PFNMAKEARC)(const CDXFarc*, double);
 
 // ŒÅ’è»²¸Ù”F¯º°ÄŞ
 #define	NCMAKECYCLECODE		81
@@ -41,6 +42,7 @@ class CNCMake
 	static	PFNGETVALSTRING		ms_pfnGetValString;		// À•W’lİ’è
 	static	PFNMAKECIRCLESUB	ms_pfnMakeCircleSub;	// ‰~E‰~ŒÊÃŞ°À‚Ì¶¬•â•
 	static	PFNMAKECIRCLE		ms_pfnMakeCircle;		// ‰~ÃŞ°À‚Ì¶¬
+	static	PFNMAKEHELICAL		ms_pfnMakeHelical;		// ‰~ÃŞ°À‚ÌÍØ¶ÙØí
 	static	PFNMAKEARC			ms_pfnMakeArc;			// ‰~ŒÊÃŞ°À‚Ì¶¬
 
 	static	int		ms_nGcode;		// ‘O‰ñ‚ÌGº°ÄŞ
@@ -143,17 +145,22 @@ class CNCMake
 			GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) +
 			GetValString(NCA_I, ptij.x) + GetValString(NCA_J, ptij.y) );
 	}
+	static	CString	MakeCircleSub_Helical(int nCode, const CPoint3D& pt) {
+		return CString( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
+			GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) + GetValString(NCA_Z, pt.z) );
+
+	}
 	// ‰~ÃŞ°À‚Ì¶¬
 	static	CString	MakeCircle_R(const CDXFcircle* pCircle, double dFeed) {
-		int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1);
+		int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1),
+				nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
 		double	r = pCircle->GetMakeR();
-		int		nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
 		CPointD	pt;		// dummy
 		// Rw’èC180K‚¸‚Â•ª‚¯‚Ä¶¬
 		CString	strGcode;
 		CString	strBuf1( MakeCircleSub_R(nCode, pCircle->GetMakePoint(b), pt, r) );
 		CString	strBuf2( MakeCircleSub_R(nCode, pCircle->GetMakePoint(a), pt, r) );
-		if ( !strBuf1.IsEmpty() )
+		if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() )
 			strGcode = (*ms_pfnGetLineNo)() + strBuf1 + GetFeedString(dFeed) + ms_strEOB +
 							(*ms_pfnGetLineNo)() + strBuf2 + ms_strEOB;
 		return strGcode;
@@ -168,9 +175,9 @@ class CNCMake
 						strBuf + GetFeedString(dFeed) + ms_strEOB;
 		return strGcode;
 	}
-	static	CString	MakeCircle_IJ_HALF(const CDXFcircle* pCircle, double dFeed) {
-		int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1);
-		int		nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
+	static	CString	MakeCircle_IJHALF(const CDXFcircle* pCircle, double dFeed) {
+		int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1),
+				nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
 		CPointD	ij;
 		// Šî€²‚ÌŒˆ’è
 		if ( a > 1 ) 	// Y²ÍŞ°½
@@ -181,36 +188,72 @@ class CNCMake
 		CString	strBuf1( MakeCircleSub_IJ(nCode, pCircle->GetMakePoint(b), ij, 0.0) );
 		ij *= -1.0;		// ij = -ij;
 		CString	strBuf2( MakeCircleSub_IJ(nCode, pCircle->GetMakePoint(a), ij, 0.0) );
-		if ( !strBuf1.IsEmpty() )
+		if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() )
 			strGcode = (*ms_pfnGetLineNo)() + strBuf1 + GetFeedString(dFeed) + ms_strEOB +
 							(*ms_pfnGetLineNo)() + strBuf2 + ms_strEOB;
 		return strGcode;
 	}
-	// ‰~ŒÊÃŞ°À‚Ì¶¬
-	static	CString	MakeArc_R(const CDXFarc* pArc, double dFeed, const CPointD* lpt) {
-		CPointD	ij, pt;
-		if ( lpt ) {
-			pt.x = lpt->x;
-			pt.y = lpt->y;
+	static	CString	MakeCircle_R_Helical(const CDXFcircle* pCircle, double dFeed, double dHelical) {
+		int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1),
+				nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
+		double	r = pCircle->GetMakeR(),
+				s = ms_pMakeOpt->GetDbl(MKNC_DBL_ZSTEP),
+				z = dHelical - s + s/2.0;
+		CPoint3D	pt1(pCircle->GetMakePoint(b).x, pCircle->GetMakePoint(b).y, z),
+					pt2(pCircle->GetMakePoint(a).x, pCircle->GetMakePoint(a).y, dHelical);
+		CString	strGcode, strBuf( GetValString(NCA_R, r) );
+		if ( !strBuf.IsEmpty() ) {
+			// ŒvZ‡˜‚ÌŠÖŒW‚Å‚Ps‚É‚Å‚«‚È‚¢
+			strGcode  = MakeCircleSub_Helical(nCode, pt1) + strBuf + GetFeedString(dFeed) + ms_strEOB;
+			strGcode += MakeCircleSub_Helical(nCode, pt2) + strBuf + ms_strEOB;
 		}
+		return strGcode;
+	}
+	static	CString	MakeCircle_IJ_Helical(const CDXFcircle* pCircle, double dFeed, double dHelical) {
+		CString	strGcode, strBuf( pCircle->GetBaseAxis() > 1 ?
+							GetValString(NCA_J, pCircle->GetIJK(NCA_J)) :
+							GetValString(NCA_I, pCircle->GetIJK(NCA_I)) ); 
+		int		nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
+		if ( !strBuf.IsEmpty() )
+			strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) + GetValString(NCA_Z, dHelical) +
+						strBuf + GetFeedString(dFeed) + ms_strEOB;
+		return strGcode;
+	}
+	static	CString	MakeCircle_IJHALF_Helical(const CDXFcircle* pCircle, double dFeed, double dHelical) {
+		int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1),
+				nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
+		double	s = ms_pMakeOpt->GetDbl(MKNC_DBL_ZSTEP),
+				z = dHelical - s + s/2.0;
+		CPointD		ij;
+		CPoint3D	pt1(pCircle->GetMakePoint(b).x, pCircle->GetMakePoint(b).y, z),
+					pt2(pCircle->GetMakePoint(a).x, pCircle->GetMakePoint(a).y, dHelical);
+		if ( a > 1 )
+			ij.y = pCircle->GetIJK(NCA_J);
 		else
-			pt = pArc->GetEndMakePoint();
+			ij.x = pCircle->GetIJK(NCA_I);
+		CString	strGcode;
+		CString	strBuf1( GetValString(NCA_I, ij.x) + GetValString(NCA_J, ij.y) );
+		ij *= -1.0;		// ij = -ij;
+		CString	strBuf2( GetValString(NCA_I, ij.x) + GetValString(NCA_J, ij.y) );
+		if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() ) {
+			// ŒvZ‡˜‚ÌŠÖŒW‚Å‚Ps‚É‚Å‚«‚È‚¢
+			strGcode  = MakeCircleSub_Helical(nCode, pt1) + strBuf1 + GetFeedString(dFeed) + ms_strEOB;
+			strGcode += MakeCircleSub_Helical(nCode, pt2) + strBuf2 + ms_strEOB;
+		}
+		return strGcode;
+	}
+	// ‰~ŒÊÃŞ°À‚Ì¶¬
+	static	CString	MakeArc_R(const CDXFarc* pArc, double dFeed) {
 		CString	strGcode,
-				strBuf( MakeCircleSub_R(pArc->GetG(), pt, ij, pArc->GetMakeR()) );
+				strBuf( MakeCircleSub_R(pArc->GetG(), pArc->GetEndMakePoint(), CPointD(), pArc->GetMakeR()) );
 		if ( !strBuf.IsEmpty() )
 			strGcode = (*ms_pfnGetLineNo)() + strBuf + GetFeedString(dFeed) + ms_strEOB;
 		return strGcode;
 	}
-	static	CString	MakeArc_IJ(const CDXFarc* pArc, double dFeed, const CPointD* lpt) {
-		CPointD	ij(pArc->GetIJK(NCA_I), pArc->GetIJK(NCA_J)), pt;
-		if ( lpt ) {
-			pt.x = lpt->x;
-			pt.y = lpt->y;
-		}
-		else
-			pt = pArc->GetEndMakePoint();
+	static	CString	MakeArc_IJ(const CDXFarc* pArc, double dFeed) {
+		CPointD	ij(pArc->GetIJK(NCA_I), pArc->GetIJK(NCA_J));
 		CString	strGcode,
-				strBuf( MakeCircleSub_IJ(pArc->GetG(), pt, ij, 0.0) );
+				strBuf( MakeCircleSub_IJ(pArc->GetG(), pArc->GetEndMakePoint(), ij, 0.0) );
 		if ( !strBuf.IsEmpty() )
 			strGcode = (*ms_pfnGetLineNo)() + strBuf + GetFeedString(dFeed) + ms_strEOB;
 		return strGcode;
@@ -218,10 +261,10 @@ class CNCMake
 	// ‘È‰~ÃŞ°À‚Ì¶¬(’¼ü•âŠÔ)
 	void	MakeEllipse(const CDXFellipse *, double);
 	static	CString	MakeEllipse_Tolerance(const CDXFellipse* pEllipse, double q) {
-		CPointD	pt( pEllipse->GetLongLength() * cos(q),
+		CPointD	pt    ( pEllipse->GetLongLength()  * cos(q),
 						pEllipse->GetShortLength() * sin(q) );
-		CPointD	ptMake( pt.x * pEllipse->GetLeanCos() - pt.y * pEllipse->GetLeanSin(),
-						pt.x * pEllipse->GetLeanSin() + pt.y * pEllipse->GetLeanCos() );
+		CPointD	ptMake( pt.x * pEllipse->GetMakeLeanCos() - pt.y * pEllipse->GetMakeLeanSin(),
+						pt.x * pEllipse->GetMakeLeanSin() + pt.y * pEllipse->GetMakeLeanCos() );
 		ptMake += pEllipse->GetMakeCenter();
 		pt = ptMake.RoundUp();
 		return CString( (*ms_pfnGetGString)(1) + GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) );
@@ -232,9 +275,9 @@ class CNCMake
 
 public:
 	// ØíÃŞ°À
-	CNCMake(const CDXFdata*, double, const CPointD* = NULL);
+	CNCMake(const CDXFdata*, double, const double* = NULL);
 	// ‰ÁHŠJnˆÊ’uw¦ÃŞ°À‚ÌXYˆÚ“®
-	CNCMake(const CDXFdata*, BOOL = FALSE);
+	CNCMake(const CDXFdata*, BOOL);
 	// Z²‚Ì•Ï‰»(ã¸E‰º~)
 	CNCMake(int nCode, double ZVal, double dFeed) {
 		CString	strGcode;

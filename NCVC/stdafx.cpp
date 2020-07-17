@@ -53,6 +53,34 @@ void Path_Name_From_FullPath
 		strName += szExt;
 }
 
+// 相対パスを返す
+CString	RelativePath(LPCTSTR lpszBase, LPCTSTR lpszSrc)
+{
+	CString	strResult,
+			strPath1, strFile1,
+			strPath2, strFile2;
+	TCHAR	szRelativePath[_MAX_PATH];
+
+	// なぜか Vista で PathRelativePathTo() が正常なパスを返さない
+	// 同じパスに対して ..\ を返す
+//	strResult = ::PathRelativePathTo(szRelativePath, lpszBase, FILE_ATTRIBUTE_NORMAL,
+//					lpszSrc, FILE_ATTRIBUTE_NORMAL) ? szRelativePath : lpszSrc;
+
+	// ディレクトリだけにして判断させる
+	Path_Name_From_FullPath(lpszBase, strPath1, strFile1);
+	Path_Name_From_FullPath(lpszSrc,  strPath2, strFile2);
+	if ( ::PathRelativePathTo(szRelativePath, strPath1, FILE_ATTRIBUTE_DIRECTORY, strPath2, FILE_ATTRIBUTE_DIRECTORY) ) {
+		strResult = szRelativePath;
+		if ( strResult.Right(1) != "\\" )
+			strResult += "\\";	// 同じパスのとき「.」だけ返されるための対策
+		strResult += strFile2;
+	}
+	else
+		strResult = lpszSrc;
+
+	return strResult;
+}
+
 // ﾌｧｲﾙのﾊﾞｰｼﾞｮﾝﾘｿｰｽの取得
 LPVOID GetVersionResource(LPCTSTR lpszFileName, LPDWORD* pdwTrans)
 {

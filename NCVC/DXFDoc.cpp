@@ -302,13 +302,18 @@ BOOL CDXFDoc::ReadLayerMap(LPCTSTR lpszFile)
 	return bResult;
 }
 
-BOOL CDXFDoc::SaveLayerMap(LPCTSTR lpszFile)
+BOOL CDXFDoc::SaveLayerMap(LPCTSTR lpszFile, const CLayerArray* pLayer/*=NULL*/)
 {
 	int		i;
 
 	try {
 		CLayerArray	obLayer;
-		obLayer.Copy( m_obLayer );
+		if ( pLayer ) {
+			for ( i=0; i<pLayer->GetSize(); i++ )
+				obLayer.Add( pLayer->GetAt(i) );
+		}
+		else
+			obLayer.Copy( m_obLayer );
 		obLayer.Sort(LayerCompareFunc_Name);	// ï€ë∂ÇÃÇΩÇﬂÇæÇØÇ…ñºëOèáø∞ƒ
 		//
 		CStdioFile	fp(lpszFile,
@@ -318,9 +323,9 @@ BOOL CDXFDoc::SaveLayerMap(LPCTSTR lpszFile)
 			fp.WriteString(g_szLayerToInitComment[i]);
 		fp.WriteString(g_szLayerToInitComment[0]);
 		// √ﬁ∞¿èoóÕ
-		for ( i=0; i<m_obLayer.GetSize(); i++ ) {
-			if ( m_obLayer[i]->IsCutType() )
-				fp.WriteString( m_obLayer[i]->FormatLayerInfo(lpszFile) );
+		for ( i=0; i<obLayer.GetSize(); i++ ) {
+			if ( obLayer[i]->IsCutType() )
+				fp.WriteString( obLayer[i]->FormatLayerInfo(lpszFile) );
 		}
 		fp.Close();
 	}

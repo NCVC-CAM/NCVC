@@ -105,9 +105,8 @@ public:
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawGL(BOOL = FALSE) const;
-	virtual	void	DrawMill(void) const;
-	virtual	void	CreateOcclusionCulling(const CNCdata*);
-	virtual	void	CreateMillList(double);
+	virtual	void	DrawSideFace(double) const;
+	virtual	void	DrawBottomFace(void) const;
 
 	// 移動長，切削長の計算
 	virtual	double	SetCalcLength(void);
@@ -145,7 +144,7 @@ class CNCline : public CNCdata
 	EN_NCPEN	GetPenType(void) const;
 	int			GetLineType(void) const;
 	void	DrawLine(CDC*, size_t, BOOL, BOOL) const;
-	void	SolidPath(BOOL, double) const;
+	void	SetEndmillPath(CPointD*, CPointD*, CPointD*) const;
 
 protected:
 	CPointD		m_pt2Ds;				// 2次元変換後の始点(XYZ平面用)
@@ -169,9 +168,8 @@ public:
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawGL(BOOL = FALSE) const;
-	virtual	void	DrawMill(void) const;
-	virtual	void	CreateOcclusionCulling(const CNCdata*);
-	virtual	void	CreateMillList(double);
+	virtual	void	DrawSideFace(double) const;
+	virtual	void	DrawBottomFace(void) const;
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
@@ -215,6 +213,7 @@ class CNCcycle : public CNCline
 
 	void	DrawCyclePlane(CDC*, size_t, BOOL) const;
 	void	DrawCycle(CDC*, size_t, BOOL) const;
+	void	SetEndmillPath(const CPointD&, CPointD*) const;
 
 public:
 	CNCcycle(const CNCdata*, LPNCARGV, const CPoint3D&, BOOL);
@@ -237,9 +236,8 @@ public:
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawGL(BOOL = FALSE) const;
-	virtual	void	DrawMill(void) const;
-	virtual	void	CreateOcclusionCulling(const CNCdata*);
-	virtual	void	CreateMillList(double);
+	virtual	void	DrawSideFace(double) const;
+	virtual	void	DrawBottomFace(void) const;
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
@@ -277,7 +275,7 @@ class CNCcircle : public CNCdata
 	void	Draw_G17(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G18(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G19(EN_NCCIRCLEDRAW, CDC*) const;
-	void	SolidPath(BOOL, double) const;
+	void	SetEndmillPath(std::vector<CPointD>&, std::vector<CPointD>&, CPointD*) const;
 
 	// IJK指定なしの時，円の方程式から中心の算出
 	BOOL	CalcCenter(const CPointD&, const CPointD&);
@@ -308,9 +306,8 @@ public:
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawGL(BOOL = FALSE) const;
-	virtual	void	DrawMill(void) const;
-	virtual	void	CreateOcclusionCulling(const CNCdata*);
-	virtual	void	CreateMillList(double);
+	virtual	void	DrawSideFace(double) const;
+	virtual	void	DrawBottomFace(void) const;
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;

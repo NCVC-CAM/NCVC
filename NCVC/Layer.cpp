@@ -62,6 +62,7 @@ CLayerData::CLayerData(const CLayerData* pLayer, BOOL bCut)
 	// •K—v‚ÈÃÞ°À‚¾‚¯ºËß°
 	m_strLayer		= pLayer->m_strLayer;
 	m_nType			= pLayer->m_nType;
+	m_nListNo		= pLayer->m_nListNo;
 	m_bCutTarget	= bCut;
 	m_bDrillZ		= pLayer->m_bDrillZ;
 	m_bPartOut		= pLayer->m_bPartOut;
@@ -227,22 +228,16 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 
 CString CLayerData::FormatLayerInfo(LPCTSTR lpszBase)
 {
-	CString	strBuf, strInitFile, strNCFile;
-	TCHAR	szFile[_MAX_PATH];
+	CString	strResult, strInitFile, strNCFile;
 
-	// “¯‚¶Ù°ÄÊß½‚©?
-	if ( ::PathIsSameRoot(lpszBase, m_strInitFile) )	// Shlwapi.h
-		strInitFile = ::PathRelativePathTo(szFile, lpszBase, FILE_ATTRIBUTE_NORMAL,
-						m_strInitFile, FILE_ATTRIBUTE_NORMAL) ? szFile : m_strInitFile;
-	else
-		strInitFile = m_strInitFile;
-	if ( ::PathIsSameRoot(lpszBase, m_strNCFile) )
-		strNCFile = ::PathRelativePathTo(szFile, lpszBase, FILE_ATTRIBUTE_NORMAL,
-						m_strNCFile, FILE_ATTRIBUTE_NORMAL) ? szFile : m_strNCFile;
-	else
-		strNCFile = m_strNCFile;
+	// “¯‚¶Ù°ÄÊß½‚È‚ç‘Š‘ÎÊß½‚É•ÏŠ·
+	strInitFile = ::PathIsSameRoot(lpszBase, m_strInitFile) ?			// Shlwapi.h
+			::RelativePath(lpszBase, m_strInitFile) : m_strInitFile;	// stdafx.cpp
 
-	strBuf.Format("%s, %d, %s, %.3f, %d, %d, %s, %d, %s, %s\n",
+	strNCFile = ::PathIsSameRoot(lpszBase, m_strNCFile) ?
+			::RelativePath(lpszBase, m_strNCFile) : m_strNCFile;
+
+	strResult.Format("%s, %d, %s, %.3f, %d, %d, %s, %d, %s, %s\n",
 		m_strLayer,
 		m_bCutTarget ? 1 : 0,
 		strInitFile,
@@ -253,7 +248,8 @@ CString CLayerData::FormatLayerInfo(LPCTSTR lpszBase)
 		m_nListNo,
 		m_strLayerComment,
 		m_strLayerCode);
-	return strBuf;
+
+	return strResult;
 }
 
 void CLayerData::Serialize(CArchive& ar)

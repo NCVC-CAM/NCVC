@@ -25,7 +25,8 @@ using namespace boost::spirit;
 __declspec(thread)	static	CThreadDlg*	g_pParent;
 __declspec(thread)	static	CNCDoc*		g_pDoc;
 __declspec(thread)	static	NCARGV		g_ncArgv;		// NCVCdefine.h
-__declspec(thread)	static	DWORD		g_dwValFlags;	// 座標以外の値指示ﾌﾗｸﾞ
+__declspec(thread)	static	DWORD		g_dwValFlags;	// UVW座標用
+__declspec(thread)	static	double		g_dValue[NCXYZ];
 __declspec(thread)	static	int			g_nSubprog;		// ｻﾌﾞﾌﾟﾛｸﾞﾗﾑ呼び出しの階層
 __declspec(thread)	static	LPTSTR		g_lpstrComma;	// 次のﾌﾞﾛｯｸとの計算
 
@@ -443,18 +444,16 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 				g_ncArgv.nc.dValue[nCode] = atoi(it->substr(1).c_str());
 			//
 			g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[nCode];
-			//
-			if ( nCode < NCA_P ) {
-				if ( IsGcodeObject(g_ncArgv.nc.nGcode) != NOOBJ ) {
-					g_ncArgv.nc.dwValFlags |= g_dwValFlags;	// 前回のD,H分も加味
-					bNCval = TRUE;
-					g_dwValFlags = 0;
-				}
-			}
-			else if ( nCode >= NCA_D ) {	// D, H
-				// 座標以外の値指示は次のﾙｰﾌﾟ用に退避
-				g_dwValFlags |= g_dwSetValFlags[nCode];
-			}
+			bNCval = TRUE;
+			break;
+		case 'U':	case 'V':	case 'W':
+			nCode = (int)(it->at(0) - 'U');
+			g_dwValFlags |= g_dwSetValFlags[nCode];	// XYZ扱いでﾌﾗｸﾞON
+			if ( g_ncArgv.bAbs )
+				g_dValue[nCode]  = GetNCValue(it->substr(1));
+			else
+				g_dValue[nCode] += GetNCValue(it->substr(1));
+			bNCval = TRUE;
 			break;
 		}
 	} // End of for() iterator
@@ -481,12 +480,21 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 
 CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 {
+	extern	const	DWORD	g_dwSetValFlags[];
 	CNCdata*	pDataResult = pDataBefore;
 
+	// UVW座標の加算
+	g_dwValFlags |= g_ncArgv.nc.dwValFlags;
+	for ( int i=0; i<NCXYZ; i++ ) {
+		if ( g_dwValFlags & g_dwSetValFlags[i] ) {
+			g_ncArgv.nc.dValue[i]  += g_dValue[i];
+			g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[i];
+		}
+	}
+	g_dwValFlags = 0;
+
+	// NCﾃﾞｰﾀの登録前処理
 	if ( g_ncArgv.nc.nGtype == G_TYPE ) {
-		// Gｺｰﾄﾞｵﾌﾞｼﾞｪｸﾄのみﾁｪｯｸ
-		if ( !(g_ncArgv.nc.dwValFlags & 0x0000FFFF) )
-			return pDataResult;
 		// G68座標回転指示のﾁｪｯｸ
 		if ( nNotModalCode == 68 ) {
 			G68RoundCheck(pBlock);
@@ -1141,8 +1149,10 @@ void InitialVariable(void)
 	}
 	g_ncArgv.nc.nErrorCode = 0;
 	g_ncArgv.nc.dwValFlags = 0;
-	for ( i=0; i<NCXYZ; i++ )
+	for ( i=0; i<NCXYZ; i++ ) {
 		g_ncArgv.nc.dValue[i] = pMCopt->GetInitialXYZ(i);
+		g_dValue[i] = 0.0;
+	}
 	for ( ; i<VALUESIZE; i++ )
 		g_ncArgv.nc.dValue[i] = 0.0;
 	g_ncArgv.bAbs		= pMCopt->GetModalSetting(MODALGROUP3) == 0 ? TRUE : FALSE;

@@ -43,7 +43,8 @@ CMakeNCDlgEx2::CMakeNCDlgEx2() : CPropertyPage(CMakeNCDlgEx2::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CMakeNCDlgEx2)
 	//}}AFX_DATA_INIT
-	m_bNCView = FALSE;
+	m_bNCView	= FALSE;
+	m_bNewLayer	= FALSE;
 }
 
 CMakeNCDlgEx2::~CMakeNCDlgEx2()
@@ -68,6 +69,17 @@ void CMakeNCDlgEx2::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKNC_INITPATH, m_ctInit_st[i]);
 	for ( i=0; i<SIZEOF(m_ctInit_bt); i++ )
 		DDX_Control(pDX, IDC_MKNC_INITUP+i, m_ctInit_bt[i]);
+}
+
+void CMakeNCDlgEx2::CheckNewLayer(void)
+{
+	if ( GetNCMakeParent()->m_strLayerToInitFileName.CompareNoCase(m_strLayerToInitPath+m_strLayerToInitFileName) != 0 ) {
+		::Path_Name_From_FullPath(GetNCMakeParent()->m_strLayerToInitFileName,
+				m_strLayerToInitPath, m_strLayerToInitFileName);
+		::PathSetDlgItemPath(m_hWnd, IDC_MKNCEX_LAYERTOINITPATH, m_strLayerToInitPath);
+		UpdateData(FALSE);
+		m_bNewLayer = TRUE;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -111,8 +123,23 @@ BOOL CMakeNCDlgEx2::OnInitDialog()
 	InitialMakeNCDlgComboBox(pOpt->GetLayerToInitList(), m_ctLayerToInitFileName);
 	if ( !m_strLayerToInitPath.IsEmpty() )
 		::PathSetDlgItemPath(m_hWnd, IDC_MKNCEX_LAYERTOINITPATH, m_strLayerToInitPath);
-	if ( !m_strLayerToInitFileName.IsEmpty() )
-		m_ctLayerToInitFileName.SetCurSel(0);
+	if ( !m_strLayerToInitFileName.IsEmpty() ) {
+		CString	strFile(m_strLayerToInitPath+m_strLayerToInitFileName);
+		if ( ::IsFileExist(strFile, TRUE, FALSE) ) {
+			if ( GetNCMakeParent()->GetDocument()->ReadLayerMap(strFile) ) {
+				// ﾚｲﾔ情報の並べ替え
+				GetNCMakeParent()->GetDocument()->UpdateLayerSequence();
+				m_ctLayerToInitFileName.SetCurSel(0);
+			}
+			else {
+				// 履歴削除(ｺﾝﾎﾞﾎﾞｯｸｽからも削除)
+				AfxGetNCVCApp()->GetDXFOption()->DelLayerHistory(strFile);
+				int	nIndex = m_ctLayerToInitFileName.FindString(-1, m_strLayerToInitFileName);
+				if ( nIndex != CB_ERR )
+					m_ctLayerToInitFileName.DeleteString(nIndex);
+			}
+		}
+	}
 
 	UpdateData(FALSE);
 
@@ -124,11 +151,16 @@ BOOL CMakeNCDlgEx2::OnSetActive()
 {
 	// 「次へ」ﾎﾞﾀﾝのみ有効
 	GetNCMakeParent()->SetWizardButtons(PSWIZB_NEXT);
+	// MakeNCDlgEx3 で新規保存されている場合に備えて
+	// MakeNCDlgEx3 から戻る場合もありうる
+	CheckNewLayer();
+
 	return TRUE;
 }
 
 LRESULT CMakeNCDlgEx2::OnWizardNext()
 {
+	UpdateData();
 	CString	strInit(GetInitFileName()), strFile(GetNCFileName());
 
 	// NC生成ﾌｧｲﾙのﾁｪｯｸ(上書き確認は CMakeNCDlgEx2::OnWizardFinish() にて)
@@ -153,16 +185,13 @@ LRESULT CMakeNCDlgEx2::OnWizardNext()
 		GetNCMakeParent()->m_strLayerToInitFileName.Empty();
 	else {
 		strFile = m_strLayerToInitPath + m_strLayerToInitFileName;
-		GetNCMakeParent()->m_strLayerToInitFileName	= strFile;
-		// ﾃﾞｰﾀの反映，ﾚｲﾔﾘｽﾄﾃﾞｰﾀの変更
-		if ( ::IsFileExist(strFile, TRUE, FALSE) ) {
-			if ( !GetNCMakeParent()->GetDocument()->ReadLayerMap(strFile) ) {
-				// 履歴削除(ｺﾝﾎﾞﾎﾞｯｸｽからも削除)
-				AfxGetNCVCApp()->GetDXFOption()->DelLayerHistory(strFile);
-				int	nIndex = m_ctLayerToInitFileName.FindString(-1, m_strLayerToInitFileName);
-				if ( nIndex != CB_ERR )
-					m_ctLayerToInitFileName.DeleteString(nIndex);
-			}
+		if ( GetNCMakeParent()->m_strLayerToInitFileName.CompareNoCase(strFile) != 0 ) {
+			GetNCMakeParent()->m_strLayerToInitFileName = strFile;
+			m_bNewLayer = TRUE;		// ReadLayerMap処理へ
+		}
+		if ( m_bNewLayer && ::IsFileExist(strFile, TRUE, FALSE) ) {
+			// ﾃﾞｰﾀの反映，ﾚｲﾔﾘｽﾄﾃﾞｰﾀの変更
+			GetNCMakeParent()->GetDocument()->ReadLayerMap(strFile);
 		}
 	}
 
@@ -247,7 +276,7 @@ void CMakeNCDlgEx2::OnMKNCLayerEdit()
 			pLayer1 = pDoc->GetLayerData(i);
 			if ( pLayer1->IsCutType() ) {
 				pLayer2 = pArray->GetAt(j++);
-				pLayer1->m_bCutTarget	= pLayer2->m_bCutTarget;
+				pLayer1->m_bCutTarget		= pLayer2->m_bCutTarget;
 				if ( IsMakeEx1() )
 					pLayer1->m_strInitFile	= pLayer2->m_strInitFile;
 				else {
@@ -256,11 +285,14 @@ void CMakeNCDlgEx2::OnMKNCLayerEdit()
 				}
 				pLayer1->m_strLayerComment	= pLayer2->m_strLayerComment;
 				pLayer1->m_strLayerCode		= pLayer2->m_strLayerCode;
-				pLayer1->m_bPartOut		= pLayer2->m_bPartOut;
-				pLayer1->m_strNCFile	= pLayer2->m_strNCFile;
+				pLayer1->m_bPartOut			= pLayer2->m_bPartOut;
+				pLayer1->m_strNCFile		= pLayer2->m_strNCFile;
 			}
 		}
 	}
+
+	// 新規保存されている場合
+	CheckNewLayer();
 }
 
 void CMakeNCDlgEx2::OnSelChangeInit() 

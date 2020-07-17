@@ -18,7 +18,8 @@ class CNCViewGL : public CView
 
 	int			m_cx, m_cy;		// ｳｨﾝﾄﾞｳｻｲｽﾞ(ｽｸﾘｰﾝ)
 	double		m_dRate;		// 基準拡大率
-	CRect3D		m_rcView;		// ﾓﾃﾞﾙ空間
+	CRect3D		m_rcView,		// ﾓﾃﾞﾙ空間
+				m_rcDraw;		// ﾜｰｸ矩形
 	CPointD		m_ptCenter,		// 描画中心
 				m_ptLastMove;	// 移動前座標
 	CPoint3D	m_ptLastRound;	// 回転前座標
@@ -26,14 +27,14 @@ class CNCViewGL : public CView
 	GLuint		m_glWork,		// ﾜｰｸ矩形のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 				m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 
-	GLfloat*	m_fDepth;		// ﾃﾞﾌﾟｽ値取得配列
+//	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
 
 	ENTRACKINGMODE	m_enTrackingMode;
 	GLdouble		m_objectXform[4][4];
 
 	void	ClearObjectForm(void);
 	BOOL	SetupPixelFormat(CDC*);
-	void	ClipDepth(void);
+//	void	ClipDepth(void);
 
 	void	RenderBack(void);
 	void	RenderAxis(void);

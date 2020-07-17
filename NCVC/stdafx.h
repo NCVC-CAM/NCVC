@@ -31,6 +31,14 @@
 #include <afxcview.h>		// CListView, CTreeView
 #include <afxdlgs.h>
 
+#ifndef _AFX_NO_OLE_SUPPORT
+#include <afxdtctl.h>		// MFC の Internet Explorer 4 コモン コントロール サポート
+#endif
+#ifndef _AFX_NO_AFXCMN_SUPPORT
+#include <afxcmn.h>			// MFC の Windows コモン コントロール サポート
+#endif // _AFX_NO_AFXCMN_SUPPORT
+
+// OpenGL
 #define	GLEW_STATIC			// GLEW static link
 #include <gl/glew.h>		// OpenGL Extention
 #include <gl/wglew.h>
@@ -41,20 +49,13 @@
 #include <gl/glut.h>		// Use glut32.dll
 #endif
 
-#ifndef _AFX_NO_OLE_SUPPORT
-#include <afxdtctl.h>		// MFC の Internet Explorer 4 コモン コントロール サポート
-#endif
-#ifndef _AFX_NO_AFXCMN_SUPPORT
-#include <afxcmn.h>			// MFC の Windows コモン コントロール サポート
-#endif // _AFX_NO_AFXCMN_SUPPORT
-
 // STL
 #include <string>
 #include <vector>
 #include <algorithm>
 
 // BOOST Libraries
-#pragma	warning( disable : 4819 )
+#pragma	warning( disable : 4800 )		// 対Ver1.40用
 #define	BOOST_SPIRIT_THREADSAFE
 #include "boost/regex.hpp"				// 正規表現
 #include "boost/tokenizer.hpp"			// 文字列分割
@@ -138,6 +139,9 @@ inline	BOOL	NC_IsNullLine(const CString& str)	// EOF 等の行
 // ﾌﾙﾊﾟｽ名をﾊﾟｽ名とﾌｧｲﾙ名に分割
 void	Path_Name_From_FullPath(LPCTSTR, CString&, CString&, BOOL = TRUE);
 
+// 相対パスを返す
+CString	RelativePath(LPCTSTR, LPCTSTR);
+
 // ﾚｼﾞｽﾄﾘの階層文字列
 inline	CString	GetSubTreeRegKey(int nID1, int nID2)
 {
@@ -194,7 +198,8 @@ BOOL	GetVersionValue(CString& strBuffer, LPVOID pVersionInfo, DWORD dwTrans, LPC
 void	NC_FormatMessage(void);
 #endif
 
-#ifdef _UNICODE
+// XpStyle Manifest
+//#ifdef _UNICODE
 #if defined _M_IX86
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #elif defined _M_IA64
@@ -204,4 +209,4 @@ void	NC_FormatMessage(void);
 #else
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
-#endif
+//#endif

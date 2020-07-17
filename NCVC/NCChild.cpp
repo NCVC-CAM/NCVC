@@ -193,9 +193,9 @@ void CNCChild::OnSize(UINT nType, int cx, int cy)
 		return;
 
 	UINT	nID, nStyle;
-	int		nWidth=0, nWidth1;
+	int		i, nWidth=0, nWidth1;
 	// ÌßÛ¸ÞÚ½—Ìˆæ‚ÌŒvŽZ
-	for ( int i=0; i<SIZEOF(g_nIndicators)-1; i++ ) {
+	for ( i=0; i<SIZEOF(g_nIndicators)-1; i++ ) {
 		m_wndStatusBar.GetPaneInfo(
 			m_wndStatusBar.CommandToIndex(g_nIndicators[i]), nID, nStyle, nWidth1);
 		nWidth += nWidth1;

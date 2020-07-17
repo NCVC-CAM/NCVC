@@ -66,7 +66,7 @@ extern	LPCTSTR	g_szTableKey[] = {
 // ｴﾝﾃｨﾃｨｷｰﾜｰﾄﾞ
 extern	LPCTSTR	g_szEntitiesKey[] = {
 	"POINT", "LINE", "CIRCLE", "ARC", "ELLIPSE", "POLYLINE", "TEXT",
-	"INSERT"
+	"INSERT", "LWPOLYLINE", "VIEWPORT"
 };
 // Polylineｷｰﾜｰﾄﾞ
 extern	LPCTSTR	g_szPolyline[] = {
@@ -92,6 +92,8 @@ static	CDXFpolyline*	g_pPolyline;	// Polylineﾃﾞｰﾀの先行生成
 										// VERTEX溜まってからﾄﾞｷｭﾒﾝﾄﾃﾞｰﾀとして登録
 static	BOOL	g_bVertex,		// Polylineの各頂点処理中
 				g_bPuff;		// ふくらみ情報処理中
+static	double	g_dPuff;		// 前のVERTEXのふくらみ値
+static	CPointD	g_ptPuff;		// ふくらみ情報を計算するための前回位置
 static	int		g_nType,		// TYPE_XXX
 				g_nBlock,		// (-1:未処理, 0:Block基点待ち, 1:Block処理中)
 				g_nLayer;		// ﾚｲﾔ情報
@@ -100,7 +102,7 @@ static	CString	g_strLayer,		// ﾚｲﾔ名
 
 // g_strBlockMapをﾊﾞｯｸｸﾞﾗｳﾝﾄﾞで消去するｽﾚｯﾄﾞ
 static	CCriticalSection	g_csRemoveBlockMap;
-static	UINT		RemoveBlockMapThread(LPVOID);
+static	UINT	RemoveBlockMapThread(LPVOID);
 
 //
 static	BOOL	HeaderProcedure(void);
@@ -109,7 +111,8 @@ static	void	SetEntitiesFromBlock(CDXFDoc*, CDXFBlockData*);
 static	void	SetEntitiesInfo(CDXFDoc*);
 static	BOOL	BlocksProcedure(CDXFDoc*);
 static	BOOL	PolylineProcedure(CDXFDoc*);
-
+static	BOOL	PolylineEndProcedure(CDXFDoc*);
+static	BOOL	LWPolylineProcedure(CDXFDoc*, BOOL);
 
 /////////////////////////////////////////////////////////////////////////////
 //	ReadDXF() 補助関数
@@ -310,12 +313,14 @@ inline void SetBlockArgv(LPDXFBLOCK lpBlock)
 
 inline void CreatePolyline(void)
 {
-	// 例外処理はﾒｲﾝﾙｰﾌﾟで
-	g_pPolyline = new CDXFpolyline();
-	ASSERT( g_pPolyline );
+	if ( !g_pPolyline ) {
+		// 例外処理はﾒｲﾝﾙｰﾌﾟで
+		g_pPolyline = new CDXFpolyline();
+		ASSERT( g_pPolyline );
 #ifdef _DEBUG
-	g_dbg.printf("CreatePolyline()");
+		g_dbg.printf("CreatePolyline()");
 #endif
+	}
 }
 
 inline void DeletePolyline(void)
@@ -338,6 +343,7 @@ inline void NotsupportList(void)
 inline void InitialVariable(void)
 {
 	g_bVertex = g_bPuff = FALSE;
+	g_ptPuff = g_dPuff = 0.0;
 	g_nType = g_nBlock = g_nLayer = -1;
 	g_strLayer.Empty();
 	g_strBlock.Empty();
@@ -629,7 +635,21 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 		else
 			g_strMissBlckMap.SetAt(g_strBlock, NULL);
 		break;
+
+	case TYPE_LWPOLYLINE:
+		// 最後の点を処理
+		LWPolylineProcedure(pDoc, TRUE);
+		// LWPOLYLINE終了処理
+		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
+			g_pPolyline->SetParentLayer(pDoc->AddLayerMap(g_strLayer, g_nLayer));
+			PolylineEndProcedure(pDoc);
+			g_pPolyline = NULL;
+		}
+		else
+			DeletePolyline();
+		break;
 	}
+
 	if ( pData )
 		pDoc->DataOperation(pData);
 }
@@ -658,8 +678,11 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 		nResultLayer = EntitiesLayerCheck();
 		switch ( nResultLayer ) {
 		case -2:	// ﾚｲﾔｺｰﾄﾞでもない
-			if ( g_nType >= 0 )
+			if ( g_nType >= 0 ) {
+				if ( g_nType == TYPE_LWPOLYLINE )
+					LWPolylineProcedure(pDoc, FALSE);
 				SetValue();				// 値ｾｯﾄ
+			}
 			break;
 		case -1:	// 違うﾚｲﾔ
 			if ( !g_pPolyline ) {
@@ -678,14 +701,14 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			else {
 				g_nLayer = nResultLayer;
 				g_strLayer = g_strOrder;
-				if ( g_nType==TYPE_POLYLINE && !g_pPolyline )
+				if ( g_nType==TYPE_POLYLINE || g_nType==TYPE_LWPOLYLINE )
 					CreatePolyline();		// Polylineﾃﾞｰﾀの先行生成
 			}
 			break;
 		}
 		break;
 	case -1:	// 認識する命令ｷｰﾜｰﾄﾞでない
-		if ( g_pPolyline ) {
+		if ( g_nType==TYPE_POLYLINE && g_pPolyline ) {
 			bResult = PolylineProcedure(pDoc);
 			break;
 		}
@@ -723,7 +746,7 @@ inline int BlocksKeywordCheck(void)
 	return -1;
 }
 
-inline BOOL SetBlockData(void)
+BOOL SetBlockData(void)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetBlockData()", DBG_MAGENTA);
@@ -771,6 +794,7 @@ inline BOOL SetBlockData(void)
 
 	case TYPE_POLYLINE:
 		g_pBkData->AddData(g_pPolyline);
+		g_pPolyline = NULL;
 		break;
 
 	case TYPE_TEXT:
@@ -788,6 +812,16 @@ inline BOOL SetBlockData(void)
 		else
 			g_strMissBlckMap.SetAt(g_strBlock, NULL);
 		break;
+
+	case TYPE_LWPOLYLINE:
+		LWPolylineProcedure(NULL, TRUE);
+		PolylineEndProcedure(NULL);
+		g_pBkData->AddData(g_pPolyline);
+		g_pPolyline = NULL;
+		break;
+
+	case TYPE_VIEWPORT:
+		break;	// 何もしない
 
 	default:
 		return FALSE;
@@ -845,8 +879,11 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
 		}
 		else {
-			if ( g_nType>=0 || g_nBlock==0 )
+			if ( g_nType>=0 || g_nBlock==0 ) {
+				if ( g_nType == TYPE_LWPOLYLINE )
+					LWPolylineProcedure(pDoc, FALSE);
 				SetValue();
+			}
 		}
 		break;
 	case -1:	// 認識できないｷｰﾜｰﾄﾞ(BLOCK, ENDBLK以外)
@@ -858,7 +895,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 #endif
 			g_nBlock = 1;
 		}
-		if ( g_pPolyline ) {	// VERTEX, SEQEND 処理
+		if ( g_nType==TYPE_POLYLINE && g_pPolyline ) {	// VERTEX, SEQEND 処理
 			bResult = PolylineProcedure(pDoc);
 			break;
 		}
@@ -876,7 +913,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		}
 		else {
 			g_nType = nResultEntities;
-			if ( g_nType==TYPE_POLYLINE && !g_pPolyline )
+			if ( g_nType==TYPE_POLYLINE || g_nType==TYPE_LWPOLYLINE )
 				CreatePolyline();	// Polylineﾃﾞｰﾀの先行生成(ﾚｲﾔ情報無視)
 		}
 		break;
@@ -911,7 +948,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-//	Polyline 補助関数
+//	POLYLINE 補助関数
 
 inline int PolylineKeywordCheck(void)
 {
@@ -927,33 +964,30 @@ inline int PolylineKeywordCheck(void)
 
 BOOL PolylineProcedure(CDXFDoc* pDoc)
 {
-	// ふくらみ情報
-	static	double	ss_dPuff = 0.0;	// 前のVERTEXのふくらみ値
-	static	CPointD	ss_pts;			// ふくらみ情報を計算するための前回位置
 #ifdef _DEBUG
 	CMagaDbg	dbg("PolylineProcedure()", DBG_CYAN);
 #endif
-	DXFPARGV	dxfPoint;
 
 	if ( g_bVertex ) {
-		dxfPoint.pLayer = g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer);
+		DXFPARGV	dxfPoint;
+		dxfPoint.pLayer = g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
 		SetDxfArgv(&dxfPoint);
 		if ( g_nBlock >= 0 )	// Block処理中
 			dxfPoint.c -= g_pBkData->GetBlockOrigin();	// 原点補正
 		if ( !(g_bPuff ?
-					g_pPolyline->SetVertex(&dxfPoint, ss_dPuff, ss_pts) :	// CDXFarcとして登録
-					g_pPolyline->SetVertex(&dxfPoint)) ) {					// CDXFpointとして登録
+				g_pPolyline->SetVertex(&dxfPoint, g_dPuff, g_ptPuff) :	// CDXFarcとして登録
+				g_pPolyline->SetVertex(&dxfPoint)) ) {					// CDXFpointとして登録
 			AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
 			return FALSE;
 		}
-		ss_pts = dxfPoint.c;
+		g_ptPuff = dxfPoint.c;
 		g_bVertex = FALSE;
 	}
 
 	switch ( PolylineKeywordCheck() ) {
 	case 0:		// VERTEX
 		g_bVertex = TRUE;
-		ss_dPuff = g_dValue[VALUE42];
+		g_dPuff = g_dValue[VALUE42];
 		g_bPuff = g_dValue[VALUE42] == 0.0 ? FALSE : TRUE;
 		ClearValue();
 		break;
@@ -962,33 +996,8 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 #ifdef _DEBUG
 		dbg.printf("SEQEND");
 #endif
-		// 頂点の数が１以下ならｴﾗｰ
-		if ( g_pPolyline->GetVertexCount() <= 1 ) {
-			AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
+		if ( !PolylineEndProcedure(pDoc) )
 			return FALSE;
-		}
-		// 閉じたﾎﾟﾘﾗｲﾝの後処理
-		if ( g_pPolyline->IsStartEqEnd() ) {
-			dxfPoint.pLayer = g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer);
-			dxfPoint.c = g_pPolyline->GetFirstPoint();	// 最初の座標が終点
-			// 最後にふくらみ情報がない場合はCDXFpoint登録
-			// ある場合はCDXFarc登録
-			if ( !(g_dValue[VALUE42]==0.0 ?
-					g_pPolyline->SetVertex(&dxfPoint) :
-					g_pPolyline->SetVertex(&dxfPoint, g_dValue[VALUE42], ss_pts)) ) {
-				AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
-				return FALSE;
-			}
-		}
-		g_pPolyline->EndSeq();
-		if ( g_nBlock >= 0 )	// Block処理中
-			SetBlockData();
-		else {
-			if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
-				g_pPolyline->SetParentLayer(pDoc->AddLayerMap(g_strLayer, g_nLayer));
-				pDoc->DataOperation(g_pPolyline);
-			}
-		}
 		g_pPolyline = NULL;
 		g_nType = -1;
 		ClearValue();
@@ -1000,6 +1009,77 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 		NotsupportList();
 		break;
 	}
+
+	return TRUE;
+}
+
+BOOL PolylineEndProcedure(CDXFDoc* pDoc)
+{
+	// 頂点の数が１以下ならｴﾗｰ
+	if ( g_pPolyline->GetVertexCount() <= 1 ) {
+		AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+
+	// 閉じたﾎﾟﾘﾗｲﾝの後処理
+	if ( g_pPolyline->IsStartEqEnd() ) {
+		DXFPARGV	dxfPoint;
+		dxfPoint.pLayer = g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
+		dxfPoint.c = g_pPolyline->GetFirstPoint();	// 最初の座標が終点
+		// 最後にふくらみ情報がない場合はCDXFpoint登録
+		// ある場合はCDXFarc登録
+		if ( !(g_dValue[VALUE42]==0.0 ?
+				g_pPolyline->SetVertex(&dxfPoint) :
+				g_pPolyline->SetVertex(&dxfPoint, g_dValue[VALUE42], g_ptPuff)) ) {
+			AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
+			return FALSE;
+		}
+	}
+	g_pPolyline->EndSeq();
+	if ( !pDoc || g_nBlock>=0 )	// Block処理中
+		SetBlockData();
+	else {
+		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
+			g_pPolyline->SetParentLayer(pDoc->AddLayerMap(g_strLayer, g_nLayer));
+			pDoc->DataOperation(g_pPolyline);
+		}
+	}
+
+	return TRUE;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//	LWPOLYLINE 補助関数
+
+BOOL LWPolylineProcedure(CDXFDoc* pDoc, BOOL bEnd)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("LWPolylineProcedure()", DBG_CYAN);
+#endif
+
+	if ( !bEnd ) {
+		// ｸﾞﾙｰﾌﾟｺｰﾄﾞ"10"で既に値が読み込まれている場合に処理する
+		if ( g_strGroup!=g_szValueGroupCode[0] || !(g_dwValueFlg&VALFLG10) )
+			return TRUE;
+	}
+
+	DXFPARGV	dxfPoint;
+	dxfPoint.pLayer = !pDoc || g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
+	SetDxfArgv(&dxfPoint);
+	if ( g_nBlock >= 0 )	// Block処理中
+		dxfPoint.c -= g_pBkData->GetBlockOrigin();	// 原点補正
+	if ( !(g_bPuff ?
+			g_pPolyline->SetVertex(&dxfPoint, g_dPuff, g_ptPuff) :	// CDXFarcとして登録
+			g_pPolyline->SetVertex(&dxfPoint)) ) {					// CDXFpointとして登録
+		AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+
+	// 次のﾃﾞｰﾀに備える
+	g_ptPuff = dxfPoint.c;
+	g_dPuff = g_dValue[VALUE42];
+	g_bPuff = g_dValue[VALUE42] == 0.0 ? FALSE : TRUE;
+	g_dValue[VALUE42] = 0.0;
 
 	return TRUE;
 }
@@ -1024,7 +1104,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 
 	CProgressCtrl*	pProgress = AfxGetNCVCMainWnd()->GetProgressCtrl();
 	ULONGLONG	dwSize = fp.GetLength();	// ﾌｧｲﾙｻｲｽﾞ
-	DWORD		dwPosition = 0;				// ﾌｧｲﾙ現在位置
+	ULONGLONG	dwPosition = 0;				// ﾌｧｲﾙ現在位置
 	UINT	nReadCnt = 0;				// ﾚｺｰﾄﾞ件数
 	BOOL	bSection = FALSE;			// ｾｸｼｮﾝ処理中
 	int		n, nSectionName = SEC_NOSECTION;	// -1: ENDSECまで読み飛ばし
@@ -1053,16 +1133,16 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	try {
 		while ( DubleRead(fp) && bResult ) {
 			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
-			dwPosition += g_strGroup.GetLength() + 2;	// +2 = 改行ｺｰﾄﾞ分
-			dwPosition += g_strOrder.GetLength() + 2;
+			dwPosition += g_strGroup.GetLength() + 2 +	// +2 = 改行ｺｰﾄﾞ分
+						  g_strOrder.GetLength() + 2;
 			nReadCnt += 2;	// ２行づつ
-			if ( (nReadCnt & 0x0100) == 0 )	// 128(256/2)行おき
+			if ( (nReadCnt & 0x0100) == 0 ) {	// 128(256/2)行おき
 				n = (int)(dwPosition*100/dwSize);
 				pProgress->SetPos(min(100, n));
-
+			}
 			// ｾｸｼｮﾝのﾁｪｯｸ == DXFﾌｧｲﾙのﾌｫｰﾏｯﾄﾁｪｯｸ
 			switch ( SectionCheck() ) {
-			case 0:
+			case SEC_SECTION:
 				if ( !bSection ) {
 					bSection = TRUE;
 #ifdef _DEBUG
@@ -1071,7 +1151,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 				}
 				continue;
 
-			case 1:		// ｾｸｼｮﾝ終了処理
+			case SEC_ENDSEC:		// ｾｸｼｮﾝ終了処理
 				bSection = FALSE;
 #ifdef _DEBUG
 				dbg.printf("ENDSEC keyword");
@@ -1128,6 +1208,8 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 		g_strMissBlckMap.RemoveAll();
 		bResult = FALSE;
 	}
+
+	pProgress->SetPos(100);
 
 #ifdef _DEBUG
 	dbg.printf("dwSize=%d dwPosition=%d", dwSize, dwPosition);

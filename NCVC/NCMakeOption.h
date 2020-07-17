@@ -59,12 +59,13 @@
 #define	MKNC_FLG_CIRCLEHALF		6
 #define	MKNC_FLG_ELLIPSE		7
 #define	MKNC_FLG_DEEP			8
-#define	MKNC_FLG_DEEPFINISH		9
-#define	MKNC_FLG_DRILLMATCH		10
-#define	MKNC_FLG_DRILLCIRCLE	11
-#define	MKNC_FLG_DRILLBREAK		12
-#define	MKNC_FLG_LAYERCOMMENT	13
-#define	MKNC_FLG_L0CYCLE		14
+#define	MKNC_FLG_HELICAL		9
+#define	MKNC_FLG_DEEPFINISH		10
+#define	MKNC_FLG_DRILLMATCH		11
+#define	MKNC_FLG_DRILLCIRCLE	12
+#define	MKNC_FLG_DRILLBREAK		13
+#define	MKNC_FLG_LAYERCOMMENT	14
+#define	MKNC_FLG_L0CYCLE		15
 
 #define	MKNC_STR_LINEFORM		0
 #define	MKNC_STR_EOB			1
@@ -163,6 +164,7 @@ friend class CMKNCSetup8;
 					m_bEllipse,			// 長径と短径が等しい楕円は円とみなす
 			// -----
 					m_bDeep,			// 深彫切削を行う
+					m_bHelical,			// 円ﾃﾞｰﾀをﾍﾘｶﾙ切削
 					m_bDeepFinish,		// 仕上げｵﾌﾟｼｮﾝ適用か
 			// -----
 					m_bDrillMatch,		// 穴加工同一座標は無視
@@ -172,7 +174,7 @@ friend class CMKNCSetup8;
 					m_bLayerComment,	// ﾚｲﾔごとにｺﾒﾝﾄを埋め込む
 					m_bL0Cycle;			// 固定ｻｲｸﾙ中はL0出力
 		};
-		BOOL		m_ubFlags[15];
+		BOOL		m_ubFlags[16];
 	};
 	// CString型ｵﾌﾟｼｮﾝ
 	CString		m_strOption[6];			// 行番号ﾌｫｰﾏｯﾄ, EOB, ｶｽﾀﾑ移動ｺｰﾄﾞ(前後)

@@ -141,15 +141,19 @@ BOOL CMakeNCDlgEx3::OnSetActive()
 
 BOOL CMakeNCDlgEx3::OnWizardFinish()
 {
+	extern	LPCTSTR	gg_szCat;
+
 	if ( !OnKillActive() )	// ｲﾍﾞﾝﾄ発生しないので強制呼び出し
 		return FALSE;
 
-	extern	LPCTSTR	gg_szCat;
-	CNCMakeOption	optMake(GetNCMakeParent()->m_strInitFileName);
+	CNCMakeOption*	pMakeOpt = NULL;
 	int			i, nResult = -1;
 	const int	nLoop = m_ctLayerList.GetItemCount();
 	CString		strMiss, strPartOut;
 	CLayerData*	pLayer;
+
+	if ( IsMakeEx2() )
+		pMakeOpt = new CNCMakeOption(GetNCMakeParent()->m_strInitFileName);
 
 	// 最終ﾃﾞｰﾀﾁｪｯｸ
 	for ( i=0; i<nLoop; i++ ) {
@@ -165,7 +169,7 @@ BOOL CMakeNCDlgEx3::OnWizardFinish()
 		}
 		else {
 			// R点と強制Z座標のﾁｪｯｸ
-			if ( optMake.GetDbl(MKNC_DBL_ZG0STOP) < pLayer->m_dZCut ) {
+			if ( pMakeOpt->GetDbl(MKNC_DBL_ZG0STOP) < pLayer->m_dZCut ) {
 				// ｴﾗｰﾒｯｾｰｼﾞの生成
 				if ( !strMiss.IsEmpty() )
 					strMiss += gg_szCat;
@@ -175,6 +179,9 @@ BOOL CMakeNCDlgEx3::OnWizardFinish()
 			}
 		}
 	}
+	if ( pMakeOpt )		// IsMakeEx2()
+		delete	pMakeOpt;
+
 	if ( !strMiss.IsEmpty() ) {
 		CString	strMsg;
 		strMsg.Format(IDS_ERR_MAKEMULTILAYER_Z, strMiss);
@@ -407,15 +414,15 @@ LRESULT CMakeNCDlgEx3::OnQuerySiblings(WPARAM wParam, LPARAM lParam)
 	for ( int i=0; i<m_ctLayerList.GetItemCount(); i++ ) {
 		pLayer1 = reinterpret_cast<CLayerData *>(m_ctLayerList.GetItemData(i));
 		pLayer2 = pArray->GetAt(i);
-		pLayer1->m_bCutTarget	= pLayer2->m_bCutTarget;
+		pLayer1->m_bCutTarget		= pLayer2->m_bCutTarget;
 		if ( IsMakeEx1() )
-			pLayer1->m_strInitFile	= pLayer2->m_strInitFile;
+			pLayer1->SetInitFile(pLayer2->m_strInitFile);
 		else {
 			pLayer1->m_dZCut		= pLayer2->m_dZCut;
 			pLayer1->m_bDrillZ		= pLayer2->m_bDrillZ;
 		}
-		pLayer1->m_bPartOut		= pLayer2->m_bPartOut;
-		pLayer1->m_strNCFile	= pLayer2->m_strNCFile;
+		pLayer1->m_bPartOut			= pLayer2->m_bPartOut;
+		pLayer1->m_strNCFile		= pLayer2->m_strNCFile;
 		pLayer1->m_strLayerComment	= pLayer2->m_strLayerComment;
 		pLayer1->m_strLayerCode		= pLayer2->m_strLayerCode;
 		m_ctLayerList.SetCheck(i, pLayer1->m_bCutTarget);

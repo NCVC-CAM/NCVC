@@ -137,6 +137,29 @@ CPen* CDXFdata::GetDrawPen(void) const
 	return pDrawPen[ m_dwFlags & DXFFLG_SELECT ? 1 : 0 ];
 }
 
+void CDXFdata::SwapPt(int n)		// m_ptTun ‚Ì“ü‚ê‘Ö‚¦
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("SwapPt()", DBG_CYAN);
+#endif
+	if ( m_nPoint > n+1 ) {	// ”O‚Ì‚½‚ßÁª¯¸
+#ifdef _DEBUG
+		dbg.printf("calling ok");
+#endif
+		std::swap(m_ptTun[n],  m_ptTun[n+1]);
+		std::swap(m_ptMake[n], m_ptMake[n+1]);
+	}
+#ifdef _DEBUG
+	else
+		dbg.printf("Missing call! m_nPoint=%d n=%d", m_nPoint, n);
+#endif
+}
+
+void CDXFdata::ReversePt(void)
+{
+	SwapPt(0);
+}
+
 void CDXFdata::XRev(void)		// X²‚Ì•„†”½“]
 {
 	for ( int i=0; i<GetPointNumber(); i++ ) {
@@ -158,8 +181,8 @@ void CDXFdata::OrgTuningBase(void)
 	m_dwFlags &= ~(DXFFLG_MAKE|DXFFLG_SEARCH);	// ¶¬CŒŸõÌ×¸Ş‚Ì¸Ø±
 	for ( int i=0; i<GetPointNumber(); i++ )
 		m_ptMake[i] = m_ptTun[i].RoundUp();
-	if ( ms_fXRev ) XRev();		// •„†”½“]
-	if ( ms_fYRev ) YRev();		// •„†”½“]
+	if ( ms_fXRev ) XRev();		// •„†”½“](virtual)
+	if ( ms_fYRev ) YRev();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -650,6 +673,21 @@ void CDXFcircle::Serialize(CArchive& ar)
 	}
 }
 
+void CDXFcircle::SwapPt(int n)
+{
+	if ( m_nArrayExt != n )
+		m_nArrayExt = n;
+	// À•W‚Ì“ü‚ê‘Ö‚¦‚Í•K—v‚È‚µ
+	// ‚Á‚Ä‚ä‚¤‚© m_nArrayExt ‚ÅŠJn“_‚ğƒRƒ“ƒgƒ[ƒ‹‚µ‚Ä‚¢‚é‚Ì‚Å
+	// À•W“ü‚ê‘Ö‚¦‚µ‚¿‚áƒ_ƒI
+//	CDXFdata::SwapPt( n & 0xfe );	// 0 or 2 (‰ºˆÊ1ËŞ¯ÄÏ½¸)
+}
+
+void CDXFcircle::ReversePt(void)
+{
+	// ‰½‚à‚µ‚È‚¢
+}
+
 void CDXFcircle::XRev(void)
 {
 	if ( GetMakeType() == DXFPOINTDATA ) {
@@ -1103,46 +1141,62 @@ void CDXFarc::SetMaxRect(void)
 #endif
 }
 
+void CDXFarc::SwapPt(int)	// Îß²İÄ‚Ì“ü‚ê‘Ö‚¦(+‰ñ“]•ûŒü‚Ì”½“])
+{
+	// ŒvZ’l‚Ì“ü‚ê‘Ö‚¦
+	CDXFdata::SwapPt(0);
+	// ‰ñ“]•ûŒü‚Ì”½“]
+	SwapRound();
+	// Šp“x‚Ì“ü‚ê‘Ö‚¦
+	SwapAngle();
+}
+
+void CDXFarc::ReversePt(void)
+{
+	SwapPt(0);
+}
+
 void CDXFarc::XRev(void)
 {
-	CDXFdata::XRev();
-	m_ctTun.x = -m_ctTun.x;
-	SwapRound();	// ‰~ŒÊ‚Ìê‡‚Í‰ñ“]•ûŒü‚à•ÏX
+	CDXFcircle::XRev();
+	// ‰ñ“]•ûŒü‚Ì”½“]
+	SwapRound();
+	// Šp“x‚Ì’²®(SwapAngle‚Å‚Í‚È‚¢)
+	m_sq = 180.0*RAD - m_sq;
+	m_eq = 180.0*RAD - m_eq;
+	AngleTuning();
 }
 
 void CDXFarc::YRev(void)
 {
-	CDXFdata::YRev();
-	m_ctTun.y = -m_ctTun.y;
+	CDXFcircle::YRev();
 	SwapRound();
+	m_sq = 360.0*RAD - m_sq;
+	m_eq = 360.0*RAD - m_eq;
+	AngleTuning();
 }
 
 void CDXFarc::AngleTuning(void)
 {
-	if ( m_sq < 0.0 )
+	if ( m_sq<0.0 || m_eq<0.0 ) {
 		m_sq += 360.0*RAD;
-	if ( m_eq < 0.0 )
 		m_eq += 360.0*RAD;
+	}
 	// ”÷–­‚ÈŒë·‚Ì‹zû(=>”÷×‰~ŒÊ‚ª‘å‚«‚È‰~‚É•Ï‚í‚Á‚Ä‚µ‚Ü‚¤)‚Ì‚½‚ß
 	// “x(deg)‚Å”»’f
 	double	d;
 	if ( m_bRound ) {
-		// ŠJnŠp“x‚ÅŠù‚É360‹‚ğ’´‚¦‚Ä‚¢‚éê‡‚Íæ‚Éˆø‚¢‚Ä‚¨‚­
-		if ( m_sq > 360.0*RAD )
-			m_sq -= 360.0*RAD;
 		d = ::RoundUp(m_sq*DEG);
 		while ( d > ::RoundUp(m_eq*DEG) )
 			m_eq += 360.0*RAD;
 	}
 	else {
-		if ( m_eq > 360.0*RAD )
-			m_eq -= 360.0*RAD;
 		d = ::RoundUp(m_eq*DEG);
 		while ( d > ::RoundUp(m_sq*DEG) )
 			m_sq += 360.0*RAD;
 	}
 	// ·‚ª360‹‚ğ’´‚¦‚È‚¢‚æ‚¤‚É(•ÛŒ¯)
-	if ( fabs(m_eq-m_sq) > 360.0*RAD ) {
+	if ( fabs(m_eq-m_sq)*DEG - 360.0 > NCMIN ) {
 		double&	q = m_bRound ? m_eq : m_sq;		// QÆŒ^
 		q -= 360.0*RAD;
 	}
@@ -1496,8 +1550,8 @@ CDXFellipse::CDXFellipse(CLayerData* pLayer, const CDXFellipse* pData, LPDXFBLOC
 	else {
 		m_dLongLength	= pData->GetLongLength();
 		m_lqMake = m_lq	= pData->GetLean();
-		m_lqDrawCos = m_lqMakeCos = pData->GetLeanCos();
-		m_lqDrawSin = m_lqMakeSin = pData->GetLeanSin();
+		m_lqDrawCos = m_lqMakeCos = cos(m_lq);
+		m_lqDrawSin = m_lqMakeSin = sin(m_lq);
 		CPointD	pt;
 		m_nPoint = pData->GetPointNumber();
 		for ( int i=0; i<m_nPoint; i++ )
@@ -1538,7 +1592,6 @@ void CDXFellipse::Construct(void)
 	if ( !m_bArc ) {
 		m_sqDraw = m_sq = 0;
 		m_eqDraw = m_eq = 360.0*RAD;
-		AngleTuning();
 	}
 }
 
@@ -1603,7 +1656,7 @@ void CDXFellipse::SetMaxRect(void)
 	}
 	else {
 		pte.x = pts.x = m_dLongLength;
-//		pte.y = pts.y = 0.0;
+		pte.y = pts.y = 0.0;
 	}
 
 	// ŠeÛŒÀ‚Ì²Å‘å’l
@@ -1673,32 +1726,69 @@ void CDXFellipse::SetMaxRect(void)
 #endif
 }
 
+void CDXFellipse::SwapPt(int n)
+{
+	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
+		// ¶¬‚ÉGetStartCutterPoint()‚©‚ç
+		// iŒX‚«‚ğl—¶‚µ‚½jŠJnŠp“x‚ğÄŒvZ‚·‚é•K—v‚ª‚ ‚é‚½‚ß
+		// ‰~‚Æ“¯“™‚Å‚æ‚¢
+		CDXFcircle::SwapPt(n);
+	}
+	else if ( m_bArc ) {
+		// À•W’l‚Ì“ü‚ê‘Ö‚¦‚Æ‰ñ“]•ûŒü‚Ì”½“]
+		CDXFarc::SwapPt(0);
+	}
+}
+
+void CDXFellipse::ReversePt(void)
+{
+	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
+		// ‰ñ“]•ûŒü‚Ì”½“]
+		SwapRound();
+		// Šp“x‚Ì“ü‚ê‘Ö‚¦
+		SwapAngle();
+	}
+	else
+		CDXFarc::ReversePt();
+}
+
 void CDXFellipse::XRev(void)
 {
-	if ( GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA )
+	if ( GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
 		CDXFcircle::XRev();
-	else {
+	}
+	else if ( m_bArc ) {
+		// ’Pƒˆ—‚Å‚ÍAŒX‚«‚ğƒ}ƒCƒiƒX‚É‚·‚é‚±‚Æ‚ÅŠJnI—¹Šp“x‚ª180‹‰ñ“]‚É‚È‚é
 		// ŒX‚«‚Ì‚È‚¢n“_I“_À•WC‚©‚Â•Î•½—¦‚Ì–³‚¢u‰~v‚ÅÄŒvZ
-		CPointD	pts(m_dLongLength * cos(m_sq), m_dLongLength * sin(m_sq)),
-				pte(m_dLongLength * cos(m_eq), m_dLongLength * sin(m_eq));
-		pts.x = -pts.x;
-		pte.x = -pte.x;
+		CPointD	pts(-m_dLongLength * cos(m_sq), m_dLongLength * sin(m_sq)),
+				pte(-m_dLongLength * cos(m_eq), m_dLongLength * sin(m_eq));
 		m_ctTun.x = -m_ctTun.x;
 		XYRev(pts, pte);
+	}
+	else {
+		CDXFcircle::XRev();
+		m_lqMake = -m_lqMake;
+		m_lqMakeCos = cos(m_lqMake);
+		m_lqMakeSin = sin(m_lqMake);
 	}
 }
 
 void CDXFellipse::YRev(void)
 {
-	if ( GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA )
+	if ( GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
 		CDXFcircle::YRev();
-	else {
-		CPointD	pts(m_dLongLength * cos(m_sq), m_dLongLength * sin(m_sq)),
-				pte(m_dLongLength * cos(m_eq), m_dLongLength * sin(m_eq));
-		pts.y = -pts.y;
-		pte.y = -pte.y;
+	}
+	else if ( m_bArc ) {
+		CPointD	pts(m_dLongLength * cos(m_sq), -m_dLongLength * sin(m_sq)),
+				pte(m_dLongLength * cos(m_eq), -m_dLongLength * sin(m_eq));
 		m_ctTun.y = -m_ctTun.y;
 		XYRev(pts, pte);
+	}
+	else {
+		CDXFcircle::YRev();
+		m_lqMake = -m_lqMake;
+		m_lqMakeCos = cos(m_lqMake);
+		m_lqMakeSin = sin(m_lqMake);
 	}
 }
 
@@ -1706,63 +1796,28 @@ void CDXFellipse::XYRev(const CPointD& pts, const CPointD& pte)
 {
 	int		i;
 
+	// ŒX‚«‚ÌÄŒvZ(²”½“]‚È‚Ì‚Å•„†”½“])
+	m_lqMake = -m_lqMake;
+	m_lqMakeCos = cos(m_lqMake);
+	m_lqMakeSin = sin(m_lqMake);
+
 	// ‰ñ“]•ûŒü‚Ì”½“]
 	SwapRound();
 	// Šp“x‚ÌÄŒvZ
 	m_sq = atan2(pts.y, pts.x);
 	m_eq = atan2(pte.y, pte.x);
 	AngleTuning();
-	// ŒX‚«‚ÌÄŒvZ(²”½“]‚È‚Ì‚Å•„†”½“])
-	m_lqMake = -m_lqMake;
-	m_lqMakeCos = cos(m_lqMake);
-	m_lqMakeSin = sin(m_lqMake);
-	if ( m_bArc ) {
-		// (Šp“xÄŒvZŒã)•Î•½—¦‚Ì”½‰f
-		CPointD	pt1[2], pt;
-		pt1[0].SetPoint(pts.x, pts.y * m_dShort);
-		pt1[1].SetPoint(pte.x, pte.y * m_dShort);
-		for ( i=0; i<SIZEOF(pt1); i++ ) {		// ‚Q“_‚Ì‚İ
-			pt = pt1[i];
-			// ¶¬ÃŞ°À‚Ö”½‰f
-			m_ptTun[i].x = pt.x * m_lqMakeCos - pt.y * m_lqMakeSin + m_ctTun.x;
-			m_ptTun[i].y = pt.x * m_lqMakeSin + pt.y * m_lqMakeCos + m_ctTun.y;
-			m_ptMake[i] = m_ptTun[i].RoundUp();
-		}
+	// (Šp“xÄŒvZŒã)•Î•½—¦‚Ì”½‰f
+	CPointD	pt1[2], pt;
+	pt1[0].SetPoint(pts.x, pts.y * m_dShort);
+	pt1[1].SetPoint(pte.x, pte.y * m_dShort);
+	for ( i=0; i<SIZEOF(pt1); i++ ) {		// ‚Q“_‚Ì‚İ
+		pt = pt1[i];
+		// ¶¬ÃŞ°À‚Ö”½‰f
+		m_ptTun[i].x = pt.x * m_lqMakeCos - pt.y * m_lqMakeSin + m_ctTun.x;
+		m_ptTun[i].y = pt.x * m_lqMakeSin + pt.y * m_lqMakeCos + m_ctTun.y;
+		m_ptMake[i] = m_ptTun[i].RoundUp();
 	}
-	else {
-		SetEllipseTunPoint();
-		for ( i=0; i<4; i++ )		// ‚S“_
-			m_ptMake[i] = m_ptTun[i].RoundUp();
-	}
-}
-
-void CDXFellipse::SwapPt(int n)
-{
-	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
-		// À•W‚Ì“ü‚ê‘Ö‚¦‚Í•K—v‚È‚µ
-//		CDXFdata::SwapPt(n);	// CDXFcircle::SwapPt()
-		if ( !m_bArc ) {
-			// ‘È‰~‚Ìê‡AŠJnEI—¹Šp“x‚ğ’²®
-			switch ( m_nArrayExt ) {
-			case 1:		// 180‹
-				m_sq = 180.0*RAD;
-				break;
-			case 2:		// 90‹
-				m_sq = 90.0*RAD;
-				break;
-			case 3:		// 270‹
-				m_sq = 270.0*RAD;
-				break;
-			default:	// 0‹
-				m_sq = 0.0;
-				break;
-			}
-			m_eq = m_sq + 360.0*RAD;
-			AngleTuning();
-		}
-	}
-	else
-		CDXFarc::SwapPt(n);
 }
 
 void CDXFellipse::SetEllipseTunPoint(void)
@@ -1777,7 +1832,7 @@ void CDXFellipse::SetEllipseTunPoint(void)
 	m_ptTun[3].y = -dShort;
 	m_ptTun[2].x = m_ptTun[3].x = 0;
 	//
-	m_nArrayExt = 0;
+	m_nArrayExt = -1;	// Ÿ‚Ì‹ßÚŒŸõ‚ÅŠmÀ‚É“š‚¦‚ğ•Ô‚¹‚é‚æ‚¤‚É
 	// ‰ñ“]
 	CPointD	pt;
 	for ( int i=0; i<GetPointNumber(); i++ ) {
@@ -1867,10 +1922,11 @@ void CDXFellipse::Draw(CDC* pDC) const
 
 double CDXFellipse::OrgTuning(BOOL bCalc/*=TRUE*/)
 {
+	double	dResult;
+
 	m_lqMake = m_lq;
 	m_lqMakeCos = m_lqDrawCos;
 	m_lqMakeSin = m_lqDrawSin;
-	double	dResult;
 	if ( GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA )
 		dResult = CDXFcircle::OrgTuning(bCalc);
 	else if ( m_bArc )
@@ -1890,6 +1946,7 @@ double CDXFellipse::OrgTuning(BOOL bCalc/*=TRUE*/)
 			m_ptLong.x, m_ptLong.y, m_dLongLength, m_dShort);
 	dbg.printf("   lq=%f", m_lq*DEG);
 #endif
+
 	return dResult;
 }
 
@@ -1957,6 +2014,14 @@ void CDXFellipse::SetDirectionFixed(const CPointD& pts)
 	if ( m_bArc )	// ‘È‰~ŒÊ‚Ìê‡‚¾‚¯
 		CDXFarc::SetDirectionFixed(pts);
 	// ‘È‰~‚Ìê‡‚Í‰~“¯—lAÀ•W“ü‚ê‘Ö‚¦•s—v
+}
+
+void CDXFellipse::SetRoundFixed(BOOL bRound)
+{
+	if ( m_bRound != bRound ) {
+		m_bRound = bRound;
+		SwapAngle();
+	}
 }
 
 int CDXFellipse::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdge/*=TRUE*/) const

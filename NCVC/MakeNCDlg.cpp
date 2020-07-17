@@ -180,6 +180,15 @@ void CreateNCFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
 		::Path_Name_From_FullPath(strNCFile, strPath, strFile);
 }
 
+void CreateLayerFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
+{
+	// ÄÞ·­ÒÝÄ–¼‚©‚çÚ²ÔÌ§²Ù–¼‚ðì¬
+	::Path_Name_From_FullPath(pDoc->GetPathName(), strPath, strFile, FALSE);
+	CString	strExt;
+	VERIFY(strExt.LoadString(IDS_NCL_FILTER));
+	strFile += strExt.Right(4);		// .ncl
+}
+
 BOOL CheckMakeDlgFileExt(DOCTYPE enType, CString& strFile)
 {
 	// •Û‘¶Ì§²Ù‚ÉŠg’£Žq‚Ì’Ç‰Á

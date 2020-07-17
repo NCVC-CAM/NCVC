@@ -76,6 +76,7 @@
 #define IDC_THUMBNAIL_PATH              1006
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
+#define IDC_CHECK1                      1038
 #define ID_FILE_CLANDOP                 1090
 #define IDD_DXF_SETUP1                  1200
 #define IDC_DXF_CAMLINE                 1201
@@ -427,6 +428,7 @@
 #define IDC_MKNC3_MAKEEND_LB1           4211
 #define IDC_MKNC3_MAKEEND_VALUE         4212
 #define IDC_MKNC3_MAKEEND_FEED          4214
+#define IDC_MKNC3_HELICAL               4215
 #define IDD_MKNC_SETUP4                 4300
 #define IDC_MKNC4_SPINDLE               4301
 #define IDC_MKNC4_FEED                  4302
@@ -715,7 +717,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         1038
+#define _APS_NEXT_CONTROL_VALUE         1039
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

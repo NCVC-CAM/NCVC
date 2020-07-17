@@ -141,29 +141,6 @@ inline double CDXFdata::GetEdgeGap(const CDXFdata* pData, BOOL bSwap/*=TRUE*/)
 	return GetEdgeGap(pData->GetEndCutterPoint(), bSwap);	// virtualéwíË
 }
 
-inline void CDXFdata::SwapPt(int n)		// m_ptTun ÇÃì¸ÇÍë÷Ç¶
-{
-#ifdef _DEBUG
-	CMagaDbg	dbg("SwapPt()", DBG_CYAN);
-#endif
-	if ( m_nPoint > n+1 ) {	// îOÇÃÇΩÇﬂ¡™Ø∏
-#ifdef _DEBUG
-		dbg.printf("calling ok");
-#endif
-		std::swap(m_ptTun[n],  m_ptTun[n+1]);
-		std::swap(m_ptMake[n], m_ptMake[n+1]);
-	}
-#ifdef _DEBUG
-	else
-		dbg.printf("Missing call! m_nPoint <= 1");
-#endif
-}
-
-inline void CDXFdata::ReversePt(void)
-{
-	SwapPt(0);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // ÇcÇwÇeÉfÅ[É^ÇÃPointÉNÉâÉX
 /////////////////////////////////////////////////////////////////////////////
@@ -181,6 +158,11 @@ inline void CDXFpoint::SetMaxRect(void)
 inline const CPoint CDXFpoint::GetDrawPoint(void) const
 {
 	return m_ptDraw;
+}
+
+inline BOOL CDXFpoint::IsMakeTarget(void) const
+{
+	return TRUE;
 }
 
 inline BOOL CDXFpoint::IsMakeMatchPoint(const CPointD& pt)
@@ -236,6 +218,12 @@ inline void CDXFline::SetMaxRect(void)
 	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
 		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
+}
+
+inline BOOL CDXFline::IsMakeTarget(void) const
+{
+	CPointD	pt(m_pt[1]-m_pt[0]);
+	return pt.hypot() >= NCMIN;
 }
 
 inline BOOL CDXFline::IsMakeMatchPoint(const CPointD& pt)
@@ -440,15 +428,20 @@ inline void CDXFcircle::SetEllipseArgv(const LPDXFBLOCK lpBlock, LPDXFEARGV lpAr
 	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0, 360.0*RAD, TRUE);
 }
 
+inline BOOL CDXFcircle::IsMakeTarget(void) const
+{
+	return fabs(m_r) >= NCMIN;
+}
+
 inline BOOL CDXFcircle::IsMakeMatchPoint(const CPointD& pt)
 {
 	if ( GetMakeType() == DXFPOINTDATA )
 		return CDXFpoint::IsMakeMatchPoint(pt);
 
 	for ( int i=0; i<m_nPoint; i++ ) {
-		if ( m_ptMake[i]==pt && m_nArrayExt!=i ) {
-			m_nArrayExt = i;
-			SwapPt( i & 0xfe );		// 0 or 2 (â∫à 1ÀﬁØƒœΩ∏) => dummy
+//		if ( m_ptMake[i]==pt && m_nArrayExt!=i ) {
+		if ( m_ptMake[i]==pt ) {
+			SwapPt(i);
 			return TRUE;
 		}
 	}
@@ -474,10 +467,10 @@ inline double CDXFcircle::GetEdgeGap(const CPointD& pt, BOOL bSwap/*=TRUE*/)
 			a = i;
 		}
 	}
-	if ( bSwap && m_nArrayExt!=a ) {
-		m_nArrayExt = a;
-		SwapPt( a & 0xfe );			// 0 or 2 (â∫à 1ÀﬁØƒœΩ∏) => dummy
-	}
+//	if ( bSwap && m_nArrayExt!=a )
+	if ( bSwap )
+		SwapPt(a);
+
 	return dGapMin;
 }
 
@@ -507,19 +500,14 @@ inline double CDXFcircle::GetLength(void) const
 	return 2 * PI * m_r;
 }
 
-inline void CDXFcircle::SwapPt(int)
-{
-	// âΩÇ‡ÇµÇ»Ç¢
-}
-
-inline void CDXFcircle::ReversePt(void)
-{
-	// âΩÇ‡ÇµÇ»Ç¢
-}
-
 //////////////////////////////////////////////////////////////////////
 // ÇcÇwÇeÉfÅ[É^ÇÃCircleExÉNÉâÉX
 //////////////////////////////////////////////////////////////////////
+inline BOOL CDXFcircleEx::IsMakeTarget(void) const
+{
+	return FALSE;
+}
+
 inline BOOL CDXFcircleEx::IsMakeMatchPoint(const CPointD& pt)
 {
 	return GetEndMakePoint() == pt;
@@ -592,16 +580,6 @@ inline void CDXFarc::SetEllipseArgv(const LPDXFBLOCK lpBlock, LPDXFEARGV lpArgv)
 	SetEllipseArgv_Circle(lpBlock, lpArgv, m_sqDraw, m_eqDraw, m_bRoundOrig);
 }
 
-inline void CDXFarc::SwapPt(int n)	// Œﬂ≤›ƒÇÃì¸ÇÍë÷Ç¶(+âÒì]ï˚å¸ÇÃîΩì])
-{
-	// åvéZílÇÃì¸ÇÍë÷Ç¶
-	CDXFdata::SwapPt(n);
-	// âÒì]ï˚å¸ÇÃîΩì]
-	SwapRound();
-	// äpìxÇÃì¸ÇÍë÷Ç¶
-	SwapAngle();
-}
-
 inline void CDXFarc::SetNativePoint(size_t a, const CPointD& pt)
 {
 	CDXFdata::SetNativePoint(a, pt);
@@ -612,6 +590,12 @@ inline void CDXFarc::SetNativePoint(size_t a, const CPointD& pt)
 	AngleTuning();
 	m_sqDraw = m_sq;
 	m_eqDraw = m_eq;
+}
+
+inline BOOL CDXFarc::IsMakeTarget(void) const
+{
+	double	l = fabs(m_r * (m_eq - m_sq));
+	return CDXFcircle::IsMakeTarget() && l >= NCMIN;
 }
 
 inline BOOL CDXFarc::IsMakeMatchPoint(const CPointD& pt)
@@ -661,11 +645,6 @@ inline double CDXFarc::GetLength(void) const
 	return m_r * ( e - s );
 }
 
-inline void CDXFarc::ReversePt(void)
-{
-	SwapPt(0);
-}
-
 //////////////////////////////////////////////////////////////////////
 // ÇcÇwÇeÉfÅ[É^ÇÃEllipseÉNÉâÉX
 //////////////////////////////////////////////////////////////////////
@@ -694,12 +673,17 @@ inline double CDXFellipse::GetLean(void) const
 	return m_lq;
 }
 
-inline double CDXFellipse::GetLeanCos(void) const
+inline double CDXFellipse::GetMakeLean(void) const
+{
+	return m_lqMake;
+}
+
+inline double CDXFellipse::GetMakeLeanCos(void) const
 {
 	return m_lqMakeCos;
 }
 
-inline double CDXFellipse::GetLeanSin(void) const
+inline double CDXFellipse::GetMakeLeanSin(void) const
 {
 	return m_lqMakeSin;
 }
@@ -709,10 +693,9 @@ inline BOOL CDXFellipse::IsArc(void) const
 	return m_bArc;
 }
 
-inline void CDXFellipse::SetRoundFixed(BOOL bRound)
+inline BOOL CDXFellipse::IsMakeTarget(void) const
 {
-	m_bRound = bRound;
-	SwapAngle();
+	return CDXFarc::IsMakeTarget();
 }
 
 inline BOOL CDXFellipse::IsMakeMatchPoint(const CPointD& pt)
@@ -754,18 +737,6 @@ inline const CPointD CDXFellipse::GetEndMakePoint(void) const
 {
 	return !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ?
 		CDXFcircle::GetEndMakePoint() : CDXFarc::GetEndMakePoint();
-}
-
-inline void CDXFellipse::ReversePt(void)
-{
-	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
-		// âÒì]ï˚å¸ÇÃîΩì]
-		SwapRound();
-		// äpìxÇÃì¸ÇÍë÷Ç¶
-		SwapAngle();
-	}
-	else
-		CDXFarc::ReversePt();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -820,6 +791,11 @@ inline void CDXFpolyline::SetParentLayer(CLayerData* pLayer)
 inline BOOL	CDXFpolyline::IsIntersection(void) const
 {
 	return ( m_dwPolyFlags & DXFPOLY_INTERSEC );	// é©ï™é©êgÇ…åì_Ç†ÇË
+}
+
+inline BOOL CDXFpolyline::IsMakeTarget(void) const
+{
+	return TRUE;	// â°íÖ
 }
 
 inline BOOL CDXFpolyline::IsStartEqEnd(void) const

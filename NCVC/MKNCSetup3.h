@@ -10,6 +10,7 @@ class CMKNCSetup3 : public CPropertyPage
 {
 	void	EnableControl_MakeEnd(void);
 	void	EnableControl_Deep(void);
+	void	EnableControl_Helical(void);
 	void	EnableControl_Finish(void);
 
 // コンストラクション
@@ -20,11 +21,12 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CMKNCSetup3)
 	enum { IDD = IDD_MKNC_SETUP3 };
-	CButton	m_ctFinish;
+	CButton		m_ctHelical;
+	CButton		m_ctFinish;
 	CComboBox	m_ctZProcess;
 	CComboBox	m_ctCProcess;
 	CComboBox	m_ctAProcess;
-	CStatic	m_ctMakeLabel1;
+	CStatic		m_ctMakeLabel1;
 	CIntEdit	m_nSpindle;
 	CFloatEdit	m_dFeed;
 	CFloatEdit	m_dZCut;
@@ -38,6 +40,7 @@ public:
 	int		m_nCProcess;
 	int		m_nZProcess;
 	BOOL	m_bDeep;
+	BOOL	m_bHelical;
 	BOOL	m_bFinish;
 	//}}AFX_DATA
 
@@ -59,6 +62,7 @@ protected:
 	//{{AFX_MSG(CMKNCSetup3)
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSelchangeMakeEnd();
+	afx_msg void OnSelchangeProcess();
 	afx_msg void OnDeep();
 	afx_msg void OnDeepFinish();
 	//}}AFX_MSG

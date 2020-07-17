@@ -57,14 +57,14 @@ static	const	double	g_dfDOrder[] = {
 static	LPCTSTR	g_szBOrder[] = {
 	"XRev", "YRev", "LineAdd", "ZeroCut", "GClip", "DisableSpindle",
 	"CircleHalf", "EllipseFlg",
-	"Deep", "DeepFinishSet",
+	"Deep", "Helical", "DeepFinishSet",
 	"DrillMatch", "DrillCircle", "DrillBreak",
 	"LayerComment", "L0Cycle"
 };
 static	const	BOOL	g_dfBOrder[] = {
 	FALSE, FALSE, FALSE, TRUE, TRUE, FALSE,
 	FALSE, TRUE,
-	FALSE, TRUE,
+	FALSE, TRUE, FALSE,
 	TRUE, FALSE, TRUE,
 	TRUE, FALSE
 };
@@ -135,6 +135,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKNC_NUM_DEEPAPROCESS,	"深彫切削手順(0:全体,1:一筆)"},
 	{NC_NUM,	MKNC_NUM_DEEPCPROCESS,	"深彫切削方向(0:往復,1:一方)"},
 	{NC_NUM,	MKNC_NUM_DEEPZPROCESS,	"R点へのZ軸復帰(0:早送り,1:切削送り)"},
+	{NC_FLG,	MKNC_FLG_HELICAL,		"円ﾃﾞｰﾀをﾍﾘｶﾙ切削"},
 	{NC_FLG,	MKNC_FLG_DEEPFINISH,	"最終Z値仕上げ適用"},
 	{NC_NUM,	MKNC_NUM_DEEPSPINDLE,	"仕上げ回転数"},
 	{NC_DBL,	MKNC_DBL_DEEPFEED,		"仕上げ送り"},
@@ -361,7 +362,6 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 {
 	int		i, n, nLen;
 	CString	strBuf, strResult;
-	TCHAR	szFile[_MAX_PATH];
 
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCMakeOption::SaveMakeOption()\nStart", DBG_GREEN);
@@ -408,10 +408,8 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 			case NC_STR:	// CString型
 				if ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER ) {
 					// 同じﾙｰﾄﾊﾟｽなら相対ﾊﾟｽに変換
-					if ( !m_strOption[n].IsEmpty() &&
-							::PathIsSameRoot(m_strInitFile, m_strOption[n]) )	// Shlwapi.h
-						strResult = ::PathRelativePathTo(szFile, m_strInitFile, FILE_ATTRIBUTE_NORMAL,
-										m_strOption[n], FILE_ATTRIBUTE_NORMAL) ? szFile : m_strOption[n];
+					if ( !m_strOption[n].IsEmpty() && ::PathIsSameRoot(m_strInitFile, m_strOption[n]) )
+						strResult = ::RelativePath(m_strInitFile, m_strOption[n]);
 					else
 						strResult = m_strOption[n];
 				}
@@ -570,6 +568,7 @@ void CNCMakeOption::DbgDump(void) const
 	dbg.printf("  DeepZProcess =%d", m_nDeepZProcess);
 	dbg.printf("  DeepAProcess =%d", m_nDeepAProcess);
 	dbg.printf("  DeepCProcess =%d", m_nDeepCProcess);
+	dbg.printf("  Helical      =%d", m_bHelical);
 	dbg.printf("  DeepFinish   =%d", m_bDeepFinish);
 	dbg.printf("  DeepSpindle  =%d", m_nDeepSpindle);
 	dbg.printf("  DeepFeed     =%f", m_dDeepFeed);

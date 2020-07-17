@@ -135,8 +135,8 @@ BOOL CViewSetup2::OnApply()
 	int		i;
 	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	pOpt->m_bDrawCircleCenter = m_bDrawCircleCenter;
-	pOpt->m_bGuide = m_bGuide[0];
-	pOpt->m_bScale = m_bGuide[1];
+	pOpt->m_bScale = m_bGuide[0];
+	pOpt->m_bGuide = m_bGuide[1];
 	for ( i=0; i<SIZEOF(m_colView); i++ )
 		pOpt->m_colNCView[i] = m_colView[i];
 	for ( i=0; i<SIZEOF(m_cbLineType); i++ )

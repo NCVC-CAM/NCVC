@@ -26,6 +26,7 @@ BEGIN_MESSAGE_MAP(CMakeNCDlgEx11, CDialog)
 	ON_CBN_SELCHANGE(IDC_MKNCEX_LAYER, OnSelChangeLayer)
 	ON_CBN_SETFOCUS(IDC_MKNCEX_LAYER, OnSetFocusLayer)
 	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, OnKillFocusNCFile)
+	ON_BN_CLICKED(IDC_MKNCEX_NEW, OnNewLayer)
 	ON_BN_CLICKED(IDC_MKNC_INITUP, OnMKNCInitUp)
 	ON_BN_CLICKED(IDC_MKNC_INITED, OnMKNCInitEdit)
 	ON_BN_CLICKED(IDC_MKNC_NCFILEUP, OnMKNCFileUp)
@@ -89,8 +90,8 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx* pParent, int nIndex)
 	else if ( pList->GetCount() > 0 )
 		::Path_Name_From_FullPath(pList->GetHead(), m_strInitPath, m_strInitFileName);
 	::Path_Name_From_FullPath(pLayer->m_strNCFile, m_strNCPath, m_strNCFileName);
-	m_bPartOut	= m_strNCFileName.IsEmpty() ? FALSE : pLayer->m_bPartOut;
-	m_bCheck	= pLayer->m_bCutTarget;
+	m_bPartOut			= m_strNCFileName.IsEmpty() ? FALSE : pLayer->m_bPartOut;
+	m_bCheck			= pLayer->m_bCutTarget;
 	m_strLayerComment	= pLayer->m_strLayerComment;
 	m_strLayerCode		= pLayer->m_strLayerCode;
 }
@@ -128,10 +129,10 @@ void CMakeNCDlgEx11::GetNowState(void)
 {
 	CLayerData* pLayer = m_obLayer[m_nIndex];
 	UpdateData();
-	pLayer->m_bCutTarget	= m_bCheck;
-	pLayer->m_bPartOut		= m_bPartOut;
-	pLayer->m_strNCFile		= m_strNCPath + m_strNCFileName;
-	pLayer->m_strInitFile	= m_strInitPath + m_strInitFileName;
+	pLayer->m_bCutTarget		= m_bCheck;
+	pLayer->m_bPartOut			= m_bPartOut;
+	pLayer->m_strNCFile			= m_strNCPath + m_strNCFileName;
+	pLayer->m_strInitFile		= m_strInitPath + m_strInitFileName;
 	pLayer->m_strLayerComment	= m_strLayerComment;
 	pLayer->m_strLayerCode		= m_strLayerCode;
 }
@@ -197,6 +198,11 @@ BOOL CMakeNCDlgEx11::OnInitDialog()
 		return TRUE;
 	}
 
+	// À²ÄÙİ’è
+	GetWindowText(m_strCaption);	// Œ³‚Ì³¨İÄŞ³À²ÄÙ‚ğæ“¾
+	if ( !GetNCMakeParent()->m_strLayerToInitFileName.IsEmpty() )
+		SetWindowText(::AddDialogTitle2File(m_strCaption, GetNCMakeParent()->m_strLayerToInitFileName));
+
 	int		i;
 	// Ú²ÔØ½Ä‚Ì‰Šú‰»
 	for ( i=0; i<m_obLayer.GetSize(); i++ )
@@ -258,7 +264,7 @@ void CMakeNCDlgEx11::OnOK()
 				m_ctNCFileName.SetSel(0, -1);
 				return;
 			}
-			if ( strNCFile.CompareNoCase(pLayer->m_strNCFile) )
+			if ( strNCFile.CompareNoCase(pLayer->m_strNCFile) != 0 )
 				pLayer->m_strNCFile = strNCFile;
 		}
 	}
@@ -273,6 +279,27 @@ void CMakeNCDlgEx11::OnOK()
 	}
 
 	CDialog::OnOK();
+}
+
+void CMakeNCDlgEx11::OnNewLayer()
+{
+	GetNowState();
+
+	CDXFDoc*	pDoc = GetNCMakeParent()->GetDocument();
+	CString		strPath, strFile;
+	if ( GetNCMakeParent()->m_strLayerToInitFileName.IsEmpty() )
+		CreateLayerFile(pDoc, strPath, strFile);
+	else
+		::Path_Name_From_FullPath(GetNCMakeParent()->m_strLayerToInitFileName, strPath, strFile);
+
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_LAYER2INITSAVE, IDS_NCL_FILTER,
+				strFile, strPath, FALSE, OFN_HIDEREADONLY|OFN_OVERWRITEPROMPT) == IDOK ) {
+		pDoc->SaveLayerMap(strFile, &m_obLayer);
+		if ( GetNCMakeParent()->m_strLayerToInitFileName.CompareNoCase(strFile) != 0 ) {
+			GetNCMakeParent()->m_strLayerToInitFileName = strFile;
+			SetWindowText(::AddDialogTitle2File(m_strCaption, strFile));
+		}
+	}
 }
 
 void CMakeNCDlgEx11::OnSetFocusLayer() 

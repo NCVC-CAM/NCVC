@@ -17,61 +17,6 @@ using namespace std;
 extern	const	PENSTYLE	g_penStyle[];		// ViewOption.cpp
 
 //////////////////////////////////////////////////////////////////////
-//	OpenGL 描画共通
-//////////////////////////////////////////////////////////////////////
-
-void DrawCylinder(BOOL bCulling, const CPoint3D& pt, double z, double r)
-{
-	double	q;
-	int		i;
-	CPointD	vt[ARCCOUNT+1];
-
-	// 円座標をｾｯﾄ（閉じた面を保証）
-	vt[0].x = r + pt.x;		// cos(0) == 1
-	vt[0].y = pt.y;			// sin(0) == 0
-	for ( i=1, q=ARCSTEP; i<ARCCOUNT; i++, q+=ARCSTEP ) {
-		vt[i].x = r * cos(q) + pt.x;
-		vt[i].y = r * sin(q) + pt.y;
-	}
-	vt[i] = vt[0];
-
-	if ( bCulling ) {
-		// 遮蔽問合せのため底面描画のみ
-		// かつ法線ﾍﾞｸﾄﾙは上向き
-		::glBegin(GL_TRIANGLE_FAN);
-		::glNormal3d(0.0, 0.0, 1.0);
-		::glVertex3d(pt.x, pt.y, pt.z);		// 中心
-		for	( i=0; i<=ARCCOUNT; i++ )
-			::glVertex3d(vt[i].x, vt[i].y, pt.z);
-		::glEnd();
-	}
-	else {
-		// 上面
-		::glBegin(GL_TRIANGLE_FAN);
-		::glNormal3d(0.0, 0.0, 1.0);
-		::glVertex3d(pt.x, pt.y, z);
-		for	( i=0; i<=ARCCOUNT; i++ )
-			::glVertex3d(vt[i].x, vt[i].y, z);
-		::glEnd();
-		// 底面
-		::glBegin(GL_TRIANGLE_FAN);
-		::glNormal3d(0.0, 0.0, -1.0);
-		::glVertex3d(pt.x, pt.y, pt.z);
-		for ( i=ARCCOUNT; i>=0; i-- )
-			::glVertex3d(vt[i].x, vt[i].y, pt.z);
-		::glEnd();
-		// 側面
-		::glBegin(GL_QUAD_STRIP);
-		for ( i=0; i<=ARCCOUNT; i++ ) {
-			::glNormal3d(vt[i].x, vt[i].y, 0.0);
-			::glVertex3d(vt[i].x, vt[i].y, z);
-			::glVertex3d(vt[i].x, vt[i].y, pt.z);
-		}
-		::glEnd();
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀｸﾗｽ
 //////////////////////////////////////////////////////////////////////
 
@@ -79,16 +24,11 @@ void CNCdata::DrawGL(BOOL) const
 {
 }
 
-void CNCdata::DrawMill(void) const
+void CNCdata::DrawSideFace(double) const
 {
 }
 
-void CNCdata::CreateOcclusionCulling(const CNCdata*)
-{
-	m_glList = 0;
-}
-
-void CNCdata::CreateMillList(double)
+void CNCdata::DrawBottomFace(void) const
 {
 }
 
@@ -115,120 +55,110 @@ void CNCline::DrawGL(BOOL bG00) const
 	::glEnd();
 }
 
-void CNCline::DrawMill(void) const
-{
-//	if ( m_glList > 0 )
-		::glCallList(m_glList);		// 無けりゃ無視なので if() 必要なし
-}
-
-void CNCline::CreateOcclusionCulling(const CNCdata* pDataNext)
-{
-	if ( m_nc.nGcode == 1 ) {
-		// 遮蔽問い合わせのため、底面だけ描画
-		m_glList = ::glGenLists(1);
-		if ( m_glList > 0 ) {
-			::glNewList(m_glList, GL_COMPILE);
-			// 切削軌跡
-			if ( m_dMove[NCA_X]>0 || m_dMove[NCA_Y]>0 )
-				SolidPath(TRUE, 0.0);		// Z値はdummy
-			// 終点のｴﾝﾄﾞﾐﾙ形状
-			if ( !pDataNext->IsCutter() )
-				DrawCylinder(TRUE, m_ptValE, 0.0, m_dEndmill);
-			::glEndList();
-		}
-	}
-	else
-		m_glList = 0;
-}
-
-void CNCline::CreateMillList(double z)
-{
-	m_glList = ::glGenLists(1);
-	if ( m_glList > 0 ) {
-		::glNewList(m_glList, GL_COMPILE);
-		if ( m_dMove[NCA_X]>0 || m_dMove[NCA_Y]>0 )
-			SolidPath(FALSE, z);
-		DrawCylinder(FALSE, m_ptValE, z, m_dEndmill);
-		::glEndList();
-	}
-}
-
-void CNCline::SolidPath(BOOL bCulling, double z) const
+void CNCline::SetEndmillPath(CPointD* pt1, CPointD* pt2, CPointD* pt3) const
 {
 	int		i;
-	double	qs = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x) - 90.0*RAD,
-			qe = atan2(m_ptValS.y-m_ptValE.y, m_ptValS.x-m_ptValE.x) + 90.0*RAD;
-	CPointD	vt1[ARCCOUNT/2+1], vt2[ARCCOUNT/2+1];
+	double	qs = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x) + 90.0*RAD,
+			qe = atan2(m_ptValS.y-m_ptValE.y, m_ptValS.x-m_ptValE.x) - 90.0*RAD;
 
 	// 始点凸面，終点凹面の座標計算
-	for ( i=0; i<=ARCCOUNT/2; i++, qs-=ARCSTEP, qe-=ARCSTEP ) {
-		// 始点凸側は -90°から反時計回りに
-		vt1[i].x = m_dEndmill * cos(qs) + m_ptValS.x;
-		vt1[i].y = m_dEndmill * sin(qs) + m_ptValS.y;
-		// 終点凹側は +90°から反時計回り
-		vt2[i].x = m_dEndmill * cos(qe) + m_ptValE.x;
-		vt2[i].y = m_dEndmill * sin(qe) + m_ptValE.y;
+	for ( i=0; i<=ARCCOUNT/2; i++, qs+=ARCSTEP, qe+=ARCSTEP ) {
+		// 始点凸側は +90°から反時計回りに
+		pt1[i].x = m_dEndmill * cos(qs) + m_ptValS.x;
+		pt1[i].y = m_dEndmill * sin(qs) + m_ptValS.y;
+		// 終点凹側は -90°から反時計回り
+		pt2[i].x = m_dEndmill * cos(qe) + m_ptValE.x;
+		pt2[i].y = m_dEndmill * sin(qe) + m_ptValE.y;
 	}
+	// 終点○面残りの半円座標計算
+	for ( i=0; i<ARCCOUNT/2; i++, qe+=ARCSTEP ) {
+		pt3[i].x = m_dEndmill * cos(qe) + m_ptValE.x;
+		pt3[i].y = m_dEndmill * sin(qe) + m_ptValE.y;
+	}
+}
 
-	if ( bCulling ) {
-		// 遮蔽問合せのため底面描画のみ
-		// かつ法線ﾍﾞｸﾄﾙは上向き
-		::glBegin(GL_QUAD_STRIP);
-		::glNormal3d(0.0, 0.0, 1.0);
-		for ( i=0; i<=ARCCOUNT/2; i++ ) {
-			::glVertex3d(vt1[i].x, vt1[i].y, m_ptValS.z);
-			::glVertex3d(vt2[i].x, vt2[i].y, m_ptValE.z);
-		}
-		::glEnd();
-	}
-	else {
+void CNCline::DrawSideFace(double z) const
+{
+	if ( m_nc.nGcode != 1 )
+		return;
+
+	int		i;
+	CPointD	pt1[ARCCOUNT/2+1], pt2[ARCCOUNT/2+1], pt3[ARCCOUNT/2];
+
+	// 座標計算
+	SetEndmillPath(pt1, pt2, pt3);
+
+	if ( m_dMove[NCA_X]>0 || m_dMove[NCA_Y]>0 ) {
+		// 側面描画(おもて面が切削ﾊﾟｽの内側)
 		::glBegin(GL_QUADS);
 		// 進行方向左側側面（反時計回りに繋げる）
-		::glNormal3d(vt1[0].x, vt1[0].y, 0.0);
-		::glVertex3d(vt1[0].x, vt1[0].y, m_ptValS.z);	// 左下
-		::glVertex3d(vt2[0].x, vt2[0].y, m_ptValE.z);	// 右下
-		::glVertex3d(vt2[0].x, vt2[0].y, z);			// 右上
-		::glVertex3d(vt1[0].x, vt1[0].y, z);			// 左上
+		::glNormal3d(pt1[0].x, pt1[0].y, 0.0);
+		::glVertex3d(pt1[0].x, pt1[0].y, m_ptValS.z);	// 左下
+		::glVertex3d(pt2[0].x, pt2[0].y, m_ptValE.z);	// 右下
+		::glVertex3d(pt2[0].x, pt2[0].y, z);			// 右上
+		::glVertex3d(pt1[0].x, pt1[0].y, z);			// 左上
 		// 進行方向右側側面（裏から見て反時計回り）
-		::glNormal3d(vt2[ARCCOUNT/2].x, vt2[ARCCOUNT/2].y, 0.0);
-		::glVertex3d(vt2[ARCCOUNT/2].x, vt2[ARCCOUNT/2].y, m_ptValE.z);	// 左下
-		::glVertex3d(vt1[ARCCOUNT/2].x, vt1[ARCCOUNT/2].y, m_ptValS.z);	// 右下
-		::glVertex3d(vt1[ARCCOUNT/2].x, vt1[ARCCOUNT/2].y, z);			// 右上
-		::glVertex3d(vt2[ARCCOUNT/2].x, vt2[ARCCOUNT/2].y, z);			// 左上
+		::glNormal3d(pt2[ARCCOUNT/2].x, pt2[ARCCOUNT/2].y, 0.0);
+		::glVertex3d(pt2[ARCCOUNT/2].x, pt2[ARCCOUNT/2].y, m_ptValE.z);	// 左下
+		::glVertex3d(pt1[ARCCOUNT/2].x, pt1[ARCCOUNT/2].y, m_ptValS.z);	// 右下
+		::glVertex3d(pt1[ARCCOUNT/2].x, pt1[ARCCOUNT/2].y, z);			// 右上
+		::glVertex3d(pt2[ARCCOUNT/2].x, pt2[ARCCOUNT/2].y, z);			// 左上
 		::glEnd();
-		// 天井
-		::glBegin(GL_QUAD_STRIP);
+	}
+
+	// 始点凸側面
+//	::glBegin(GL_QUAD_STRIP);
+	::glBegin(GL_TRIANGLE_STRIP);		// こちらの方が高速
+	for ( i=ARCCOUNT/2; i>=0; i-- ) {
+		::glNormal3d(pt1[i].x, pt1[i].y, 0.0);
+		::glVertex3d(pt1[i].x, pt1[i].y, z);
+		::glVertex3d(pt1[i].x, pt1[i].y, m_ptValS.z);
+	}
+	::glEnd();
+	// 終点凹側面
+//	::glBegin(GL_QUAD_STRIP);
+	::glBegin(GL_TRIANGLE_STRIP);
+	for ( i=0; i<=ARCCOUNT/2; i++ ) {
+		::glNormal3d(pt2[i].x, pt2[i].y, 0.0);
+		::glVertex3d(pt2[i].x, pt2[i].y, z);
+		::glVertex3d(pt2[i].x, pt2[i].y, m_ptValE.z);
+	}
+	::glEnd();
+}
+
+void CNCline::DrawBottomFace(void) const
+{
+	if ( m_nc.nGcode != 1 )
+		return;
+
+	int		i;
+	CPointD	pt1[ARCCOUNT/2+1], pt2[ARCCOUNT/2+1], pt3[ARCCOUNT/2];
+
+	// 座標計算
+	SetEndmillPath(pt1, pt2, pt3);
+
+	if ( m_dMove[NCA_X]>0 || m_dMove[NCA_Y]>0 ) {
+		// 底面描画(法線ﾍﾞｸﾄﾙは上向き)
+//		::glBegin(GL_QUAD_STRIP);
+		::glBegin(GL_TRIANGLE_STRIP);
 		::glNormal3d(0.0, 0.0, 1.0);
 		for ( i=0; i<=ARCCOUNT/2; i++ ) {
-			::glVertex3d(vt1[i].x, vt1[i].y, z);
-			::glVertex3d(vt2[i].x, vt2[i].y, z);
-		}
-		::glEnd();
-		// 底面
-		::glBegin(GL_QUAD_STRIP);
-		::glNormal3d(0.0, 0.0, -1.0);
-		for ( i=ARCCOUNT/2; i>=0; i-- ) {
-			::glVertex3d(vt1[i].x, vt1[i].y, m_ptValS.z);
-			::glVertex3d(vt2[i].x, vt2[i].y, m_ptValE.z);
-		}
-		::glEnd();
-		// 始点凸側面
-		::glBegin(GL_QUAD_STRIP);
-		for ( i=ARCCOUNT/2; i>=0; i-- ) {
-			::glNormal3d(vt1[i].x, vt1[i].y, 0.0);
-			::glVertex3d(vt1[i].x, vt1[i].y, z);
-			::glVertex3d(vt1[i].x, vt1[i].y, m_ptValS.z);
-		}
-		::glEnd();
-		// 終点凹側面
-		::glBegin(GL_QUAD_STRIP);
-		for ( i=0; i<=ARCCOUNT/2; i++ ) {
-			::glNormal3d(vt2[i].x, vt2[i].y, 0.0);
-			::glVertex3d(vt2[i].x, vt2[i].y, z);
-			::glVertex3d(vt2[i].x, vt2[i].y, m_ptValE.z);
+			::glVertex3d(pt2[i].x, pt2[i].y, m_ptValS.z);
+			::glVertex3d(pt1[i].x, pt1[i].y, m_ptValE.z);
 		}
 		::glEnd();
 	}
+
+	// 終点○面の描画
+	::glBegin(GL_TRIANGLE_FAN);
+	::glNormal3d(0.0, 0.0, 1.0);
+	::glVertex3d(m_ptValE.x, m_ptValE.y, m_ptValE.z);
+	for ( i=0; i<=ARCCOUNT/2; i++ )
+		::glVertex3d(pt2[i].x, pt2[i].y, m_ptValE.z);
+	for ( i=0; i< ARCCOUNT/2; i++ )
+		::glVertex3d(pt3[i].x, pt3[i].y, m_ptValE.z);
+	::glVertex3d(pt2[0].x, pt2[0].y, m_ptValE.z);
+	::glEnd();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -266,31 +196,56 @@ void CNCcycle::DrawGL(BOOL bG00) const
 	::glEnd();
 }
 
-void CNCcycle::DrawMill(void) const
+void CNCcycle::SetEndmillPath(const CPointD& ptOrg, CPointD* pt) const
 {
-//	if ( m_glList > 0 )
-		::glCallList(m_glList);
+	int		i;
+	double	q;
+
+	// 円座標をｾｯﾄ（閉じた面を保証）
+	pt[0].x = m_dEndmill + ptOrg.x;		// cos(0) == 1
+	pt[0].y = ptOrg.y;					// sin(0) == 0
+	for ( i=1, q=ARCSTEP; i<ARCCOUNT; i++, q+=ARCSTEP ) {
+		pt[i].x = m_dEndmill * cos(q) + ptOrg.x;
+		pt[i].y = m_dEndmill * sin(q) + ptOrg.y;
+	}
+	pt[i] = pt[0];
 }
 
-void CNCcycle::CreateOcclusionCulling(const CNCdata*)
+void CNCcycle::DrawSideFace(double z) const
 {
-	m_glList = ::glGenLists(1);
-	if ( m_glList > 0 ) {
-		::glNewList(m_glList, GL_COMPILE);
-		for ( int i=0; i<m_nDrawCnt; i++ )
-			DrawCylinder(TRUE, m_Cycle3D[i].ptC, 0.0, m_dEndmill);
-		::glEndList();
+	int		i, j;
+	CPointD	pt[ARCCOUNT+1];
+
+	for ( i=0; i<m_nDrawCnt; i++ ) {
+		// 座標計算
+		SetEndmillPath(m_Cycle3D[i].ptC, pt);
+		// 側面（内側をおもて面にするために反対ﾙｰﾌﾟ）
+//		::glBegin(GL_QUAD_STRIP);
+		::glBegin(GL_TRIANGLE_STRIP);
+		for ( j=ARCCOUNT; j>=0; j-- ) {
+			::glNormal3d(pt[j].x, pt[j].y, 0.0);
+			::glVertex3d(pt[j].x, pt[j].y, z);
+			::glVertex3d(pt[j].x, pt[j].y, m_Cycle3D[i].ptC.z);
+		}
+		::glEnd();
 	}
 }
 
-void CNCcycle::CreateMillList(double z)
+void CNCcycle::DrawBottomFace(void) const
 {
-	m_glList = ::glGenLists(1);
-	if ( m_glList > 0 ) {
-		::glNewList(m_glList, GL_COMPILE);
-		for ( int i=0; i<m_nDrawCnt; i++ )
-			DrawCylinder(FALSE, m_Cycle3D[i].ptC, z, m_dEndmill);
-		::glEndList();
+	int		i, j;
+	CPointD	pt[ARCCOUNT+1];
+
+	for ( i=0; i<m_nDrawCnt; i++ ) {
+		// 座標計算
+		SetEndmillPath(m_Cycle3D[i].ptC, pt);
+		// 底面描画
+		::glBegin(GL_TRIANGLE_FAN);
+		::glNormal3d(0.0, 0.0, 1.0);
+		::glVertex3d(m_Cycle3D[i].ptC.x, m_Cycle3D[i].ptC.y, m_Cycle3D[i].ptC.z);	// 中心
+		for	( j=0; j<=ARCCOUNT; j++ )
+			::glVertex3d(pt[j].x, pt[j].y, m_Cycle3D[i].ptC.z);
+		::glEnd();
 	}
 }
 
@@ -399,47 +354,15 @@ void CNCcircle::DrawGL(BOOL bG00) const
 	::glEnd();
 }
 
-void CNCcircle::DrawMill(void) const
+void CNCcircle::SetEndmillPath(vector<CPointD>& vt1, vector<CPointD>& vt2, CPointD* pt3) const
 {
-//	if ( m_glList > 0 )
-		::glCallList(m_glList);
-}
-
-void CNCcircle::CreateOcclusionCulling(const CNCdata*)
-{
-	m_glList = ::glGenLists(1);
-	if ( m_glList > 0 ) {
-		::glNewList(m_glList, GL_COMPILE);
-		SolidPath(TRUE, 0.0);
-		DrawCylinder(TRUE, m_ptValE, 0.0, m_dEndmill);
-		::glEndList();
-	}
-}
-
-void CNCcircle::CreateMillList(double z)
-{
-	m_glList = ::glGenLists(1);
-	if ( m_glList > 0 ) {
-		::glNewList(m_glList, GL_COMPILE);
-		SolidPath(FALSE, z);
-		DrawCylinder(FALSE, m_ptValE, z, m_dEndmill);
-		::glEndList();
-	}
-}
-
-void CNCcircle::SolidPath(BOOL bCulling, double z) const
-{
-	int			i;
-	double		sq, eq, cos_q, sin_q, sz, r1, r2, rr = fabs(m_r),
-				qs = atan2(m_ptValS.y-m_ptOrg.y, m_ptValS.x-m_ptOrg.x),
-				qe = atan2(m_ptValE.y-m_ptOrg.y, m_ptValE.x-m_ptOrg.x);
-	CPointD		pt1, pt2;
-	vector<CPointD>		vt1, vt2;		// 側面座標
-	CPointD		vt3[ARCCOUNT/2+1];		// 始点凸座標
+	int		i;
+	double	sq, eq, qs, cos_q, sin_q, r1, r2, rr = fabs(m_r);
+	CPointD	pt1, pt2;
 
 	// 円弧補間切削ﾊﾟｽ座標
 	if ( m_nG23 == 0 ) {
-		sq = m_eq;
+		sq = qs = m_eq;
 		eq = m_sq;
 		r1 = rr + m_dEndmill;	// 進行方向左側
 		r2 = rr - m_dEndmill;	// 進行方向右側
@@ -455,7 +378,7 @@ void CNCcircle::SolidPath(BOOL bCulling, double z) const
 		}
 	}
 	else {
-		sq = m_sq;
+		sq = qs = m_sq;
 		eq = m_eq;
 		r1 = rr - m_dEndmill;	// 進行方向左側
 		r2 = rr + m_dEndmill;	// 進行方向右側
@@ -482,98 +405,81 @@ void CNCcircle::SolidPath(BOOL bCulling, double z) const
 	sq = qs;
 	if ( m_nG23 == 1 )
 		sq += 180.0*RAD;
-	vt3[0] = vt1.front();
+	pt3[0] = vt1.front();
 	for ( i=1; i<ARCCOUNT/2; i++, sq+=ARCSTEP ) {
-		vt3[i].x = m_dEndmill * cos(sq) + m_ptValS.x;
-		vt3[i].y = m_dEndmill * sin(sq) + m_ptValS.y;
+		pt3[i].x = m_dEndmill * cos(sq) + m_ptValS.x;
+		pt3[i].y = m_dEndmill * sin(sq) + m_ptValS.y;
 	}
-	vt3[i] = vt2.front();
+	pt3[i] = vt2.front();
+}
 
-	if ( bCulling ) {
-		// 遮蔽問合せのため底面描画のみ
-		// かつ法線ﾍﾞｸﾄﾙは上向き
-		// 底面の始点凸側
-		::glBegin(GL_TRIANGLE_FAN);
-		::glNormal3d(0.0, 0.0, 1.0);
-		::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptOrg.z);
-		for ( i=ARCCOUNT/2; i>=0; i-- )	// unsigned ではﾙｰﾌﾟ抜けない
-			::glVertex3d(vt3[i].x, vt3[i].y, m_ptOrg.z);
-		::glEnd();
-		// 底面
-		sz = m_ptOrg.z;
-		::glBegin(GL_QUAD_STRIP);
-		::glNormal3d(0.0, 0.0, 1.0);
-		for ( i=0; (size_t)i<vt1.size() && (size_t)i<vt2.size(); i++, sz+=m_dHelicalStep ) {
-			pt1 = vt1[i];
-			pt2 = vt2[i];
-			::glVertex3d(pt2.x, pt2.y, sz);
-			::glVertex3d(pt1.x, pt1.y, sz);
-		}
-		::glEnd();
+void CNCcircle::DrawSideFace(double z) const
+{
+	int		i;
+	double	sz;
+	vector<CPointD>	vt1, vt2;
+	CPointD	pt, pt3[ARCCOUNT/2+1];
+
+	// 座標計算
+	SetEndmillPath(vt1, vt2, pt3);
+
+	// 側面左側
+//	::glBegin(GL_QUAD_STRIP);
+	::glBegin(GL_TRIANGLE_STRIP);
+	::glNormal3d(0.0, 0.0, 1.0);
+	for ( i=0, sz=m_ptOrg.z; i<(int)vt1.size(); i++, sz+=m_dHelicalStep ) {
+		pt = vt1[i];
+		::glVertex3d(pt.x, pt.y,  z);
+		::glVertex3d(pt.x, pt.y, sz);
 	}
-	else {
-		// 進行方向左側側面
-		sz = m_ptOrg.z;
-		::glBegin(GL_QUAD_STRIP);
-		for ( i=0; (size_t)i<vt1.size(); i++, sz+=m_dHelicalStep ) {
-			pt1 = vt1[i];
-			::glNormal3d(pt1.x, pt1.y, 0.0);
-			::glVertex3d(pt1.x, pt1.y, sz);
-			::glVertex3d(pt1.x, pt1.y, z);
-		}
-		::glEnd();
-		// 進行方向右側側面
-		sz = m_ptOrg.z;
-		::glBegin(GL_QUAD_STRIP);
-		for ( i=0; (size_t)i<vt2.size(); i++, sz+=m_dHelicalStep ) {
-			pt2 = vt2[i];
-			::glNormal3d(pt2.x, pt2.y, 0.0);
-			::glVertex3d(pt2.x, pt2.y, z);
-			::glVertex3d(pt2.x, pt2.y, sz);
-		}
-		::glEnd();
-		// 天井の始点凸側
-		::glBegin(GL_TRIANGLE_FAN);
-		::glNormal3d(0.0, 0.0, 1.0);
-		::glVertex3d(m_ptValS.x, m_ptValS.y, z);
-		for ( i=0; i<=ARCCOUNT/2; i++ )
-			::glVertex3d(vt3[i].x, vt3[i].y, z);
-		::glEnd();
-		// 天井
-		::glBegin(GL_QUAD_STRIP);
-		::glNormal3d(0.0, 0.0, 1.0);
-		for ( i=0; (size_t)i<vt1.size() && (size_t)i<vt2.size(); i++ ) {
-			pt1 = vt1[i];
-			pt2 = vt2[i];
-			::glVertex3d(pt1.x, pt1.y, z);
-			::glVertex3d(pt2.x, pt2.y, z);
-		}
-		::glEnd();
-		// 底面の始点凸側
-		::glBegin(GL_TRIANGLE_FAN);
-		::glNormal3d(0.0, 0.0, -1.0);
-		::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptOrg.z);
-		for ( i=ARCCOUNT/2; i>=0; i-- )	// unsigned ではﾙｰﾌﾟ抜けない
-			::glVertex3d(vt3[i].x, vt3[i].y, m_ptOrg.z);
-		::glEnd();
-		// 底面
-		sz = m_ptOrg.z;
-		::glBegin(GL_QUAD_STRIP);
-		::glNormal3d(0.0, 0.0, -1.0);
-		for ( i=0; (size_t)i<vt1.size() && (size_t)i<vt2.size(); i++, sz+=m_dHelicalStep ) {
-			pt1 = vt1[i];
-			pt2 = vt2[i];
-			::glVertex3d(pt2.x, pt2.y, sz);
-			::glVertex3d(pt1.x, pt1.y, sz);
-		}
-		::glEnd();
-		// 始点凸側面
-		::glBegin(GL_QUAD_STRIP);
-		for ( i=0; i<=ARCCOUNT/2; i++ ) {
-			::glNormal3d(vt3[i].x, vt3[i].y, 0.0);
-			::glVertex3d(vt3[i].x, vt3[i].y, z);
-			::glVertex3d(vt3[i].x, vt3[i].y, m_ptOrg.z);
-		}
-		::glEnd();
+	::glEnd();
+	// 側面右側
+//	::glBegin(GL_QUAD_STRIP);
+	::glBegin(GL_TRIANGLE_STRIP);
+	::glNormal3d(0.0, 0.0, 1.0);
+	for ( i=0, sz=m_ptOrg.z; i<(int)vt2.size(); i++, sz+=m_dHelicalStep ) {
+		pt = vt2[i];
+		::glVertex3d(pt.x, pt.y, sz);
+		::glVertex3d(pt.x, pt.y,  z);
 	}
+	::glEnd();
+	// 始点凸側面
+//	::glBegin(GL_QUAD_STRIP);
+	::glBegin(GL_TRIANGLE_STRIP);
+	for ( i=ARCCOUNT/2; i>=0; i-- ) {
+		::glNormal3d(pt3[i].x, pt3[i].y, 0.0);
+		::glVertex3d(pt3[i].x, pt3[i].y, z);
+		::glVertex3d(pt3[i].x, pt3[i].y, m_ptOrg.z);
+	}
+	::glEnd();
+}
+
+void CNCcircle::DrawBottomFace(void) const
+{
+	size_t	i;
+	double	sz;
+	vector<CPointD>	vt1, vt2;
+	CPointD	pt1, pt2, pt3[ARCCOUNT/2+1];
+
+	// 座標計算
+	SetEndmillPath(vt1, vt2, pt3);
+
+	// 底面の始点凸側
+	::glBegin(GL_TRIANGLE_FAN);
+	::glNormal3d(0.0, 0.0, 1.0);
+	::glVertex3d(m_ptValS.x, m_ptValS.y, m_ptOrg.z);
+	for ( i=0; i<=ARCCOUNT/2; i++ )
+		::glVertex3d(pt3[i].x, pt3[i].y, m_ptOrg.z);
+	::glEnd();
+	// 底面
+//	::glBegin(GL_QUAD_STRIP);
+	::glBegin(GL_TRIANGLE_STRIP);
+	::glNormal3d(0.0, 0.0, 1.0);
+	for ( i=0, sz=m_ptOrg.z; i<vt1.size() && i<vt2.size(); i++, sz+=m_dHelicalStep ) {
+		pt1 = vt1[i];
+		pt2 = vt2[i];
+		::glVertex3d(pt1.x, pt1.y, sz);
+		::glVertex3d(pt2.x, pt2.y, sz);
+	}
+	::glEnd();
 }
