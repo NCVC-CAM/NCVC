@@ -61,6 +61,9 @@ END_MESSAGE_MAP()
 
 CNCChild::CNCChild()
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCChild::CNCChild() Start");
+#endif
 	m_nPos = m_nMaxSize = 0;
 	m_vStatus = (CNCdata *)NULL;	// dummy
 }

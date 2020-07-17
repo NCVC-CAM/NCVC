@@ -14,7 +14,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
-#define	_DEBUG_GSPILIT
+//#define	_DEBUG_GSPILIT
 #endif
 
 using namespace std;
@@ -67,10 +67,11 @@ static	ENGCODEOBJ	IsGcodeObject_Milling(int);
 static	ENGCODEOBJ	IsGcodeObject_Wire(int);
 static	ENGCODEOBJ	IsGcodeObject_Lathe(int);
 __declspec(thread)	static	PFNCHECKGCODE	g_pfnIsGcode;
-static	ENGCODEOBJ	CheckGcodeOther_Milling(int);
-static	ENGCODEOBJ	CheckGcodeOther_Wire(int);
-static	ENGCODEOBJ	CheckGcodeOther_Lathe(int);
-__declspec(thread)	static	PFNCHECKGCODE	g_pfnCheckGcodeOther;
+typedef	int			(*PFNCHECKGCODEOTHER)(int);
+static	int			CheckGcodeOther_Milling(int);
+static	int			CheckGcodeOther_Wire(int);
+static	int			CheckGcodeOther_Lathe(int);
+__declspec(thread)	static	PFNCHECKGCODEOTHER	g_pfnCheckGcodeOther;
 // 面取り・ｺｰﾅｰR処理
 static	void	MakeChamferingObject(CNCblock*, CNCdata*, CNCdata*);
 // Fﾊﾟﾗﾒｰﾀ, ﾄﾞｳｪﾙ時間の解釈
@@ -81,7 +82,7 @@ __declspec(thread)	static	PFNFEEDANALYZE	g_pfnFeedAnalyze;
 // 工具径解析
 static	void	SetEndmillDiameter(const string&);
 // ﾃｰﾊﾟ角度
-static	BOOL	SetTaperAngle(const string&);
+static	int		SetTaperAngle(const string&);
 // 工具位置情報
 static	CNCdata*	SetToolPosition_fromComment(CNCblock*, CNCdata*);
 // ﾜｰｸ矩形情報設定
@@ -107,7 +108,7 @@ __declspec(thread)	static	PFNBLOCKPROCESS	g_pfnSearchAutoBreak;
 //////////////////////////////////////////////////////////////////////
 
 // 数値変換( 1/1000 ﾃﾞｰﾀを判断する)
-inline	double	GetNCValue(const string& str)
+inline	double	_GetNCValue(const string& str)
 {
 	double	dResult = atof(str.c_str());
 	if ( str.find('.') == string::npos )
@@ -115,7 +116,7 @@ inline	double	GetNCValue(const string& str)
 	return dResult;
 }
 // g_lpstrComma にﾃﾞｰﾀを代入
-inline	void	SetStrComma(const string& strComma)
+inline	void	_SetStrComma(const string& strComma)
 {
 	if ( g_lpstrComma )
 		delete	g_lpstrComma;
@@ -136,6 +137,14 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 #ifdef _DEBUG
 	CMagaDbg	dbg("NCDtoXYZ_Thread()\nStart", DBG_RED);
 	CMagaDbg	dbg1(DBG_BLUE);
+#ifdef _DEBUG_FILEOPEN		// NCVC.h
+	extern	CTime	dbgtimeFileOpen;	// NCVC.cpp
+	CTime	t2 = CTime::GetCurrentTime();
+	CTimeSpan ts = t2 - dbgtimeFileOpen;
+	CString	strTime( ts.Format("%H:%M:%S") );
+	g_dbg.printf("NCDtoXYZ_Thread() %s", strTime);
+	dbgtimeFileOpen = t2;
+#endif
 #endif
 
 	int			i, nLoopCnt,
@@ -354,7 +363,8 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	int			i, nCode,
 				nNotModalCode = -1,	// ﾓｰﾀﾞﾙ不要のGｺｰﾄﾞ(ﾌﾞﾛｯｸ内でのみ有効)
 				nResult, nIndex;
-	BOOL		bNCobj = FALSE, bNCval = FALSE, bNCsub = FALSE;
+	BOOL		bNCobj = FALSE, bNCval = FALSE, bNCsub = FALSE,
+				bTcode = FALSE;
 	ENGCODEOBJ	enGcode;
 	CNCdata*	pData;
 	CNCblock*	pBlock = g_pDoc->GetNCblock(nLine);
@@ -364,6 +374,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	g_ncArgv.nc.nLine		= nLine;
 	g_ncArgv.nc.nErrorCode	= 0;
 	g_ncArgv.nc.dwValFlags &= NCD_CLEARVALUE;	// 0xffff0000
+	g_ncArgv.taper.bTonly   = FALSE;
 	g_dwToolPosFlags = 0;
 #ifdef _DEBUG_GSPILIT
 	CMagaDbg	dbg("NC_Gseparate()", DBG_BLUE);
@@ -436,7 +447,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 				if ( g_lpstrComma )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
-				SetStrComma(strComma);
+				_SetStrComma(strComma);
 				nNotModalCode = -1;
 				bNCobj = bNCval = FALSE;
 			}
@@ -474,7 +485,9 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			nCode = atoi(it->substr(1).c_str());
 			enGcode = (*g_pfnIsGcode)(nCode);	// IsGcodeObject_～
 			if ( enGcode == NOOBJ ) {
-				(*g_pfnCheckGcodeOther)(nCode);
+				nResult = (*g_pfnCheckGcodeOther)(nCode);
+				if ( nResult > 0 )
+					pBlock->SetNCBlkErrorCode(nResult);
 				break;
 			}
 			// 前回のｺｰﾄﾞで登録ｵﾌﾞｼﾞｪｸﾄがあるなら
@@ -483,7 +496,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 				if ( g_lpstrComma )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
-				SetStrComma(strComma);
+				_SetStrComma(strComma);
 				nNotModalCode = -1;
 				bNCval = FALSE;		// bNCobj ｸﾘｱ不要
 			}
@@ -507,18 +520,32 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			break;
 		case 'T':
 			if ( g_pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
-				if ( !SetTaperAngle(it->substr(1)) )	// ﾃｰﾊﾟ角度
-					pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
+				// ﾃｰﾊﾟ角度ｾｯﾄ
+				nResult = SetTaperAngle(it->substr(1));
+				if ( nResult > 0 )	
+					pBlock->SetNCBlkErrorCode(nResult);
+				else
+					bTcode = TRUE;	// Tｺｰﾄﾞ指定(ﾜｲﾔのみ)
 			}
 			else
 				SetEndmillDiameter(it->substr(1));		// ﾂｰﾙ番号
 			break;
 		case ',':
-			strComma = ::Trim(it->substr(1));	// ｶﾝﾏ以降を取得
+			if ( g_pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
+				// ﾜｲﾔﾓｰﾄﾞでｻﾎﾟｰﾄすべきか...
+				string	strTmp = ::Trim(it->substr(1));
+				if ( strTmp[0] == 'R' ) {
+					g_ncArgv.nc.dValue[NCA_R] = _GetNCValue(strTmp.substr(1));
+					g_ncArgv.nc.dwValFlags |= NCD_R;
+				}
+			}
+			else {
+				strComma = ::Trim(it->substr(1));	// ｶﾝﾏ以降を取得
 #ifdef _DEBUG_GSPILIT
-			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
-				dbg1.printf("strComma=%s", strComma.c_str());
+				if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
+					dbg1.printf("strComma=%s", strComma.c_str());
 #endif
+			}
 			break;
 		case 'X':	case 'Y':	case 'Z':
 		case 'U':	case 'V':	case 'W':
@@ -537,31 +564,30 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 					g_ncArgv.nc.dValue[NCA_P] = (*g_pfnFeedAnalyze)(it->substr(1));
 					break;
 				default:
-					g_ncArgv.nc.dValue[nCode] = GetNCValue(it->substr(1));
+					g_ncArgv.nc.dValue[nCode] = _GetNCValue(it->substr(1));
 				}
 			}
 			else if ( g_pDoc->IsNCDocFlag(NCDOC_WIRE) ) {
-				// ﾜｲﾔﾓｰﾄﾞにおける特別処理
-				if ( nCode == NCA_R ) {
-					// ｺｰﾅR
-					strComma = *it;
-					bNCval = TRUE;
-					break;	// dwValFlags立てずに
-				}
-				else {
-					g_ncArgv.nc.dValue[nCode] = nCode<GVALSIZE || nCode==NCA_L ?
-						GetNCValue(it->substr(1)) : atoi(it->substr(1).c_str());
-				}
+				// ﾜｲﾔﾓｰﾄﾞにおける特別処理(L値)
+				g_ncArgv.nc.dValue[nCode] = nCode<GVALSIZE || nCode==NCA_L ?
+					_GetNCValue(it->substr(1)) : atoi(it->substr(1).c_str());
 			}
 			else {
 				g_ncArgv.nc.dValue[nCode] = nCode < GVALSIZE ?	// nCode < NCA_P
-					GetNCValue(it->substr(1)) : atoi(it->substr(1).c_str());
+					_GetNCValue(it->substr(1)) : atoi(it->substr(1).c_str());
 			}
 			g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[nCode];
 			bNCval = TRUE;
 			break;
-		}
-	} // End of for() iterator
+		}	// End of switch()
+	}	// End of for() iterator
+
+	if ( bTcode && !bNCobj && !bNCval ) {
+		// Tｺｰﾄﾞ単独指示(ﾜｲﾔのみ)
+		nNotModalCode = 01;		// dummy
+		g_ncArgv.taper.bTonly = TRUE;	// TH_UVWire.cpp での処理目印
+		bNCobj = TRUE;			// dummy object の生成
+	}
 
 	if ( bNCsub ) {
 		// Mｺｰﾄﾞ後処理
@@ -574,7 +600,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		if ( g_lpstrComma )
 			MakeChamferingObject(pBlock, pDataResult, pData);
 		pDataResult = pData;
-		SetStrComma(strComma);
+		_SetStrComma(strComma);
 		// ﾌﾞﾛｯｸ情報の更新
 		pBlock->SetBlockToNCdata(pDataResult, g_pDoc->GetNCsize());
 	}
@@ -597,42 +623,53 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 	}
 
 	if ( g_pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
-		// 旋盤ﾓｰﾄﾞでの座標入れ替え
-		boost::optional<double>	x, z, i, k;
-		if ( g_ncArgv.nc.dwValFlags & NCD_X )
-			x = g_ncArgv.nc.dValue[NCA_X] / 2.0;	// 直径指示
-		if ( g_ncArgv.nc.dwValFlags & NCD_Z )
-			z = g_ncArgv.nc.dValue[NCA_Z];
-		if ( g_ncArgv.nc.dwValFlags & NCD_I )
-			i = g_ncArgv.nc.dValue[NCA_I];
-		if ( g_ncArgv.nc.dwValFlags & NCD_K )
-			k = g_ncArgv.nc.dValue[NCA_K];
-		g_ncArgv.nc.dwValFlags &= ~(NCD_X|NCD_Y|NCD_Z|NCD_I|NCD_J|NCD_K);
-		if ( x ) {
-			g_ncArgv.nc.dValue[NCA_Z] = *x;
-			g_ncArgv.nc.dwValFlags |=  NCD_Z;
-		}
-		if ( z ) {
-			g_ncArgv.nc.dValue[NCA_X] = *z;
-			g_ncArgv.nc.dwValFlags |=  NCD_X;
-		}
-		if ( i ) {
-			g_ncArgv.nc.dValue[NCA_K] = *i;
-			g_ncArgv.nc.dwValFlags |=  NCD_K;
-		}
-		if ( k ) {
-			g_ncArgv.nc.dValue[NCA_I] = *k;
-			g_ncArgv.nc.dwValFlags |=  NCD_I;
+		// 旋盤ﾓｰﾄﾞでの座標入れ替え(ﾄﾞｳｪﾙ除く)
+		if ( g_ncArgv.nc.nGcode != 4 ) {
+			boost::optional<double>	x, z, i, k;
+			if ( g_ncArgv.nc.dwValFlags & NCD_X )
+				x = g_ncArgv.nc.dValue[NCA_X] / 2.0;	// 直径指示
+			if ( g_ncArgv.nc.dwValFlags & NCD_Z )
+				z = g_ncArgv.nc.dValue[NCA_Z];
+			if ( g_ncArgv.nc.dwValFlags & NCD_I )
+				i = g_ncArgv.nc.dValue[NCA_I];
+			if ( g_ncArgv.nc.dwValFlags & NCD_K )
+				k = g_ncArgv.nc.dValue[NCA_K];
+			g_ncArgv.nc.dwValFlags &= ~(NCD_X|NCD_Y|NCD_Z|NCD_I|NCD_J|NCD_K);
+			if ( x ) {
+				g_ncArgv.nc.dValue[NCA_Z] = *x;
+				g_ncArgv.nc.dwValFlags |=  NCD_Z;
+			}
+			if ( z ) {
+				g_ncArgv.nc.dValue[NCA_X] = *z;
+				g_ncArgv.nc.dwValFlags |=  NCD_X;
+			}
+			if ( i ) {
+				g_ncArgv.nc.dValue[NCA_K] = *i;
+				g_ncArgv.nc.dwValFlags |=  NCD_K;
+			}
+			if ( k ) {
+				g_ncArgv.nc.dValue[NCA_I] = *k;
+				g_ncArgv.nc.dwValFlags |=  NCD_I;
+			}
 		}
 	}
 	else {
 		// NCﾃﾞｰﾀの登録前処理
 		if ( g_ncArgv.nc.nGtype == G_TYPE ) {
-			// G68座標回転指示のﾁｪｯｸ
-			if ( nNotModalCode == 68 ) {
+			switch ( nNotModalCode ) {
+			case 68:
+				// G68座標回転指示のﾁｪｯｸ
 				G68RoundCheck(pBlock);
 				if ( !g_ncArgv.g68.bG68 )
 					return pDataResult;
+				break;
+			case 92:
+				if ( g_pDoc->IsNCDocFlag(NCDOC_WIRE) && g_ncArgv.nc.dwValFlags&NCD_J ) {
+					// ﾌﾟﾛｸﾞﾗﾑ面(XY軸)の設定
+					g_ncArgv.nc.dValue[NCA_Z] = g_ncArgv.nc.dValue[NCA_J];
+					g_ncArgv.nc.dwValFlags |= NCD_Z;
+				}
+				break;
 			}
 			// 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間
 			if ( g_Cycle.bCycle )
@@ -747,7 +784,7 @@ ENGCODEOBJ	IsGcodeObject_Wire(int nCode)
 
 	if ( 0<=nCode && nCode<=3 )
 		enResult = MAKEOBJ;
-	else if ( nCode==4 || nCode==92 || nCode==93 )
+	else if ( nCode==4 || nCode==10 || nCode==11 || nCode==92 || nCode==93 )
 		enResult = MAKEOBJ_NOTMODAL;
 	else
 		enResult = NOOBJ;
@@ -772,9 +809,9 @@ ENGCODEOBJ	IsGcodeObject_Lathe(int nCode)
 }
 
 // 切削ｺｰﾄﾞ以外の重要なGｺｰﾄﾞ検査
-ENGCODEOBJ CheckGcodeOther_Milling(int nCode)
+int CheckGcodeOther_Milling(int nCode)
 {
-	ENGCODEOBJ	enResult = NOOBJ;
+	int		nResult = 0;
 
 	switch ( nCode ) {
 	// ﾍﾘｶﾙ平面指定
@@ -830,12 +867,12 @@ ENGCODEOBJ CheckGcodeOther_Milling(int nCode)
 		break;
 	}
 
-	return enResult;
+	return nResult;
 }
 
-ENGCODEOBJ CheckGcodeOther_Wire(int nCode)
+int CheckGcodeOther_Wire(int nCode)
 {
-	ENGCODEOBJ	enResult = NOOBJ;
+	int		nResult = 0;
 
 	switch ( nCode ) {
 	// ﾃｰﾊﾟ処理
@@ -855,9 +892,15 @@ ENGCODEOBJ CheckGcodeOther_Wire(int nCode)
 	case 59:
 		g_pDoc->SelectWorkOffset(nCode - 54);
 		break;
-	// 座標回転ｷｬﾝｾﾙ
-	case 69:
-		G68RoundClear();
+	// 上下独立ｺｰﾅｰ
+	case 60:
+	case 61:
+	case 62:
+	case 63:
+		if ( g_ncArgv.taper.nTaper == 0 )
+			nResult = IDS_ERR_NCBLK_TAPER;
+		else
+			g_ncArgv.taper.nDiff = nCode - 60;
 		break;
 	// ｱﾌﾞｿﾘｭｰﾄ, ｲﾝｸﾘﾒﾝﾄ
 	case 90:
@@ -868,12 +911,12 @@ ENGCODEOBJ CheckGcodeOther_Wire(int nCode)
 		break;
 	}
 
-	return enResult;
+	return nResult;
 }
 
-ENGCODEOBJ CheckGcodeOther_Lathe(int nCode)
+int CheckGcodeOther_Lathe(int nCode)
 {
-	ENGCODEOBJ	enResult = NOOBJ;
+	int		nResult = 0;
 
 	switch ( nCode ) {
 	// 刃先Ｒ補正
@@ -912,7 +955,7 @@ ENGCODEOBJ CheckGcodeOther_Lathe(int nCode)
 		break;
 	}
 
-	return enResult;
+	return nResult;
 }
 
 // ｻﾌﾞﾌﾟﾛｸﾞﾗﾑの検索
@@ -1062,6 +1105,10 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_GTYPE);
 		return;
 	}
+	if ( !(pData1->GetValFlags()&(NCD_X|NCD_Y|NCD_Z)) || !(pData2->GetValFlags()&(NCD_X|NCD_Y|NCD_Z)) ) {
+		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_VALUE);
+		return;
+	}
 	if ( pData1->GetPlane() != pData2->GetPlane() ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_PLANE);
 		return;
@@ -1078,7 +1125,11 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	BOOL	bResult;
 
 	// 計算開始
-	if ( cCham == 'C' )
+	if ( cr < NCMIN ) {
+		r1 = r2 = 0.0;
+		cCham = 'C';		// nGcode = 1
+	}
+	else if ( cCham == 'C' )
 		r1 = r2 = cr;
 	else {
 		// ｺｰﾅｰRの場合は，面取りに相当するC値の計算
@@ -1091,19 +1142,29 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	}
 
 	// pData1(前のｵﾌﾞｼﾞｪｸﾄ)の終点を補正
-	ptResult = pData1->SetChamferingPoint(FALSE, r1);
-	if ( !ptResult ) {
-		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LENGTH);
-		return;
+	if ( r1 < NCMIN )
+		pts = pData1->GetPlaneValue(pData1->GetEndPoint());
+	else {
+		ptResult = pData1->SetChamferingPoint(FALSE, r1);
+		if ( !ptResult ) {
+			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LENGTH);
+			return;
+		}
+		pts = *ptResult;
 	}
-	pts = *ptResult - ptOffset;
+	pts -= ptOffset;
 	// pData2(次のｵﾌﾞｼﾞｪｸﾄ)の始点を補正
-	ptResult = pData2->SetChamferingPoint(TRUE, r2);
-	if ( !ptResult ) {
-		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LENGTH);
-		return;
+	if ( r2 < NCMIN )
+		pte = pData2->GetPlaneValue(pData2->GetStartPoint());
+	else {
+		ptResult = pData2->SetChamferingPoint(TRUE, r2);
+		if ( !ptResult ) {
+			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LENGTH);
+			return;
+		}
+		pte = *ptResult;
 	}
-	pte = *ptResult - ptOffset;
+	pte -= ptOffset;
 
 #ifdef _DEBUG_GSPILIT
 	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
@@ -1172,7 +1233,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 
 double FeedAnalyze_Dot(const string& str)
 {
-	return fabs(GetNCValue(str));
+	return fabs(_GetNCValue(str));
 }
 
 double FeedAnalyze_Int(const string& str)
@@ -1185,6 +1246,7 @@ void SetEndmillDiameter(const string& str)
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetEndmillDiameter()", DBG_MAGENTA);
 #endif
+
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
 	boost::optional<double> dResult = pMCopt->GetToolD( atoi(str.c_str()) );
 	if ( dResult ) {
@@ -1202,13 +1264,25 @@ void SetEndmillDiameter(const string& str)
 #endif
 }
 
-BOOL SetTaperAngle(const string& str)
+int SetTaperAngle(const string& str)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetTaperAngle()", DBG_MAGENTA);
 #endif
-	if ( g_ncArgv.taper.nTaper != 0 ) {
-		g_ncArgv.taper.dTaper = RAD( atof(str.c_str()) );	// ﾗｼﾞｱﾝ保持
+	int		nResult = 0;
+	double	dTaper  = atof(str.c_str());
+
+	if ( g_ncArgv.taper.nTaper == 0 ) {
+		if ( dTaper == 0.0 )
+			g_ncArgv.taper.dTaper = 0.0;
+		else
+			nResult = IDS_ERR_NCBLK_TAPER;
+	}
+	else {
+		if ( 45.0 < fabs(dTaper) )
+			nResult = IDS_ERR_NCBLK_OVER;
+		else
+			g_ncArgv.taper.dTaper = RAD(dTaper);	// ﾗｼﾞｱﾝ保持
 #ifdef _DEBUG
 		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 			int dbgTaper = 0;
@@ -1216,15 +1290,12 @@ BOOL SetTaperAngle(const string& str)
 				dbgTaper = 51;
 			else if ( g_ncArgv.taper.nTaper == -1 )
 				dbgTaper = 52;
-			dbg.printf("Mode=%d angle=%f", dbgTaper, DEG(g_ncArgv.taper.dTaper));
+			dbg.printf("Mode=%d angle=%f", dbgTaper, dTaper);
 		}
 #endif
-		if ( 45.0 < fabs(g_ncArgv.taper.dTaper) )
-			return FALSE;
-		return TRUE;	// 正常認識
 	}
-	else
-		return FALSE;
+
+	return nResult;
 }
 
 CNCdata* SetToolPosition_fromComment(CNCblock* pBlock, CNCdata* pDataBefore)
@@ -1340,7 +1411,7 @@ void SetWireRect_fromComment(vector<double>& vWire)
 		// ﾜｰｸ厚さ指示
 		CRect3D		rc;
 		rc.high = vWire[0];
-		g_pDoc->SetWorkRectOrg(rc);
+		g_pDoc->SetWorkRectOrg(rc, FALSE);	// 描画領域を更新しない(CNCDoc::SerializeAfterCheck)
 #ifdef _DEBUG
 		if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) )
 			dbg.printf("t=%f", rc.high);
@@ -1541,6 +1612,7 @@ void TaperClear(void)
 {
 	g_ncArgv.taper.nTaper  = 0;
 	g_ncArgv.taper.dTaper  = 0.0;
+	g_ncArgv.taper.nDiff   = 0;
 }
 
 // 変数初期化
@@ -1552,7 +1624,7 @@ void InitialVariable(void)
 
 	ZeroMemory(&g_ncArgv, sizeof(NCARGV));
 
-	g_pfnFeedAnalyze = pMCopt->GetFDot()==0 ? &FeedAnalyze_Int : &FeedAnalyze_Dot;
+	g_pfnFeedAnalyze = pMCopt->GetInt(MC_INT_FDOT)==0 ? &FeedAnalyze_Int : &FeedAnalyze_Dot;
 	g_ncArgv.nc.nGtype = G_TYPE;
 	g_ncArgv.nc.nGcode = pMCopt->GetModalSetting(MODALGROUP0);
 	switch ( pMCopt->GetModalSetting(MODALGROUP1) ) {
@@ -1568,15 +1640,22 @@ void InitialVariable(void)
 	}
 //	g_ncArgv.nc.nErrorCode = 0;
 //	g_ncArgv.nc.dwValFlags = 0;
-	if ( pMCopt->GetFlag(MC_FLG_LATHE) ) {	// pDoc->IsNCDocFlag(NCDOC_LATHE)
-		vector<double>	vDummy;
+	vector<double>	vDummy;
+	switch ( pMCopt->GetInt(MC_INT_FORCEVIEWMODE) ) {
+	case 1:		// 旋盤
 		SetLatheRect_fromComment(vDummy);	// 旋盤ﾓｰﾄﾞへ強制切替
 		g_ncArgv.nc.dValue[NCA_X] = pMCopt->GetInitialXYZ(NCA_Z);
 		g_ncArgv.nc.dValue[NCA_Y] = 0.0;
 		g_ncArgv.nc.dValue[NCA_Z] = pMCopt->GetInitialXYZ(NCA_X) / 2.0;
 		i = 3;	// XYZ初期化ｲﾝﾃﾞｯｸｽを進める
-	}
-	else {
+		break;
+	case 2:		// ﾜｲﾔ加工機
+		vDummy.push_back( pMCopt->GetDbl(MC_DBL_DEFWIREDEPTH) );
+		SetWireRect_fromComment(vDummy);
+		for ( i=0; i<NCXYZ; i++ )
+			g_ncArgv.nc.dValue[i] = pMCopt->GetInitialXYZ(i);
+		break;
+	default:
 		g_pfnIsGcode = &IsGcodeObject_Milling;
 		g_pfnCheckGcodeOther = &CheckGcodeOther_Milling;
 		for ( i=0; i<NCXYZ; i++ )
@@ -1587,7 +1666,7 @@ void InitialVariable(void)
 	g_ncArgv.bAbs		= pMCopt->GetModalSetting(MODALGROUP3) == 0 ? TRUE : FALSE;
 	g_ncArgv.bG98		= pMCopt->GetModalSetting(MODALGROUP4) == 0 ? TRUE : FALSE;
 //	g_ncArgv.nSpindle	= 0;
-	g_ncArgv.dFeed		= pMCopt->GetFeed();
+	g_ncArgv.dFeed		= pMCopt->GetDbl(MC_DBL_FEED);
 	g_ncArgv.dEndmill	= pVopt->GetDefaultEndmill();
 	g_ncArgv.nEndmillType	= pVopt->GetDefaultEndmillType();
 

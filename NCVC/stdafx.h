@@ -44,9 +44,9 @@
 #include <gl/glew.h>		// OpenGL Extention
 #include <gl/wglew.h>
 #include <gl/gl.h>			// OpenGL
+#ifdef _DEBUGOLD
 #include <gl/glu.h>
-//#include <gl/glaux.h>		// VC++2008 で不要？
-#ifdef _DEBUG
+#include <gl/glaux.h>		// VC++2008 で不要？
 #include <gl/glut.h>		// Use glut32.dll
 #endif
 

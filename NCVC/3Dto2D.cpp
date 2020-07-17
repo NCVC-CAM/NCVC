@@ -517,12 +517,12 @@ double CalcBetweenAngle(const CPointD& pts, const CPointD& pte)
 //	ｵﾌｾｯﾄ分平行移動させた線分同士の交点を求める
 
 optional<CPointD> CalcOffsetIntersectionPoint_LL
-	(const CPointD& pts, const CPointD& pte, double r, BOOL bLeft)
+	(const CPointD& pts, const CPointD& pte, double t1, double t2, BOOL bLeft)
 {
 	CPointD	pt1s, pt1e, pt2s, pt2e, pt;
 
-	tie(pt1s, pt1e) = CalcOffsetLine(pts, pt, r, bLeft);
-	tie(pt2s, pt2e) = CalcOffsetLine(pt, pte, r, bLeft);
+	tie(pt1s, pt1e) = CalcOffsetLine(pts, pt, t1, bLeft);
+	tie(pt2s, pt2e) = CalcOffsetLine(pt, pte, t2, bLeft);
 
 	return CalcIntersectionPoint_LL(pt1s, pt1e, pt2s, pt2e, FALSE);
 }
@@ -532,18 +532,18 @@ optional<CPointD> CalcOffsetIntersectionPoint_LL
 //		bRound: CW=FALSE, CCW=TRUE
 
 optional<CPointD> CalcOffsetIntersectionPoint_LC
-	(const CPointD& pts, const CPointD& pto, double ro, double rr, BOOL bRound, BOOL bLeft)
+	(const CPointD& pts, const CPointD& pto, double ro, double t1, double t2, BOOL bRound, BOOL bLeft)
 {
 	int		nResult = 0, k;
 	CPointD	pt1, pt2, pr1, pr2;
 
 	// 直線のｵﾌｾｯﾄを計算
-	tie(pt1, pt2) = CalcOffsetLine(pts, CPointD(), rr, bLeft);
+	tie(pt1, pt2) = CalcOffsetLine(pts, CPointD(), t1, bLeft);
 	// 円のｵﾌｾｯﾄを計算
 	k = bRound ? -1 : 1;	// 反時計回りならﾏｲﾅｽｵﾌｾｯﾄ(左側基準)
 	if ( !bLeft )
 		k = -k;
-	ro += rr * k;
+	ro += t2 * k;
 	if ( ro > 0 ) {
 		// ｵﾌｾｯﾄ後の直線と円の交点
 		tie(nResult, pr1, pr2) = CalcIntersectionPoint_LC(pt1, pt2, pto, ro, FALSE);

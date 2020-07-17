@@ -15,20 +15,31 @@
 // G54`G59
 #define	WORKOFFSET		6
 // Ï¸ÛŠÖ˜A
-#define	MCMACROSTRING		4
-#define	MCMACROCODE			0	// ŒÄ‚Ño‚µº°ÄÞ
-#define	MCMACROFOLDER		1	// Ì«ÙÀÞ
-#define	MCMACROIF			2	// I/F
-#define	MCMACROARGV			3	// ˆø”
-#define	MCMACRORESULT		4	// o—ÍŒ‹‰Ê
-#define	MCMACHINEFILE		5	// Œ»Ý‚Ì‹@ŠBî•ñÌ§²Ù–¼
-#define	MCCURRENTFOLDER		6	// Œ»Ý‚ÌNCÌ§²ÙÌ«ÙÀÞ
+#define	MCMACROSTRING	4
+#define	MCMACROCODE				0	// ŒÄ‚Ño‚µº°ÄÞ
+#define	MCMACROFOLDER			1	// Ì«ÙÀÞ
+#define	MCMACROIF				2	// I/F
+#define	MCMACROARGV				3	// ˆø”
+#define	MCMACRORESULT			4	// o—ÍŒ‹‰Ê
+#define	MCMACHINEFILE			5	// Œ»Ý‚Ì‹@ŠBî•ñÌ§²Ù–¼
+#define	MCCURRENTFOLDER			6	// Œ»Ý‚ÌNCÌ§²ÙÌ«ÙÀÞ
+// intŒ^
+#define	MC_INT_FDOT				8
+#define	MC_INT_CORRECTTYPE		9
+#define	MC_INT_FORCEVIEWMODE	10
+// doubleŒ^
+#define	MC_DBL_FEED				3
+#define	MC_DBL_BLOCKWAIT		4
+#define	MC_DBL_DEFWIREDEPTH		5
 // BOOLŒ^
-#define	MC_FLG_LATHE		0
-#define	MC_FLG_L0CYCLE		1
+#define	MC_FLG_L0CYCLE			0
 // H‹ï•â³À²Ìß
 #define	MC_TYPE_A			0
 #define	MC_TYPE_B			1
+// ‹­§•\Ž¦Ó°ÄÞ
+#define	MC_VIEWMODE_MILL	0
+#define	MC_VIEWMODE_LATHE	1
+#define	MC_VIEWMODE_WIRE	2
 
 // H‹ïî•ñ
 #define	MCTOOLINFOOPT	4	// MCTOOLINFO ‚ÌµÌß¼®Ý‹æØ‚è”
@@ -80,27 +91,28 @@ friend	class	CMCSetup5;
 			int		m_nModal[MODALGROUP],	// Ó°ÀÞÙÝ’è
 					m_nG0Speed[NCXYZ],		// ˆÊ’uŒˆ‚ß(G0)ˆÚ“®‘¬“x
 					m_nFDot,				// ”FŽ¯ 0:sec 1:msec
-					m_nCorrectType;			// •â³À²Ìß
+					m_nCorrectType,			// •â³À²Ìß
+					m_nForceViewMode;		// ‹­§•\Ž¦Ó°ÄÞ
 		};
-		int			m_unNums[10];
+		int			m_unNums[11];
 	};
 	// doubleŒ^µÌß¼®Ý
 	union {
 		struct {
-			double	m_dFeed,				// È—ªŽž‚ÌØí‘¬“x
-					m_dInitialXYZ[NCXYZ],	// XYZ‰Šú’l
+			double	m_dInitialXYZ[NCXYZ],	// XYZ‰Šú’l
+					m_dFeed,				// È—ªŽž‚ÌØí‘¬“x
 					m_dBlock,				// 1ÌÞÛ¯¸ˆ—ŽžŠÔ
+					m_dDefWireDepth,		// Ü²Ô‰ÁH‹@‚ÌÃÞÌ«ÙÄŒú‚³
 					m_dWorkOffset[WORKOFFSET][NCXYZ];	// G54`G59
 		};
-		double		m_udNums[23];
+		double		m_udNums[24];
 	};
 	// BOOLŒ^µÌß¼®Ý
 	union {
 		struct {
-			BOOL	m_bLathe,		// ‹­§ù”ÕÓ°ÄÞ
-					m_bL0Cycle;		// ŒÅ’è»²¸Ù’†‚ÌL0“®ì
+			BOOL	m_bL0Cycle;		// ŒÅ’è»²¸Ù’†‚ÌL0“®ì
 		};
-		BOOL		m_ubFlgs[2];
+		BOOL		m_ubFlgs[1];
 	};
 	// CStringŒ^µÌß¼®Ý
 	CString		m_strMCname,	// ‹@ŠB–¼
@@ -119,10 +131,19 @@ public:
 	BOOL	ReadMCoption(LPCTSTR, BOOL = TRUE);
 	BOOL	SaveMCoption(LPCTSTR);
 
-	BOOL	GetFlag(size_t n) const {		// Ì×¸ÞµÌß¼®Ý
+	BOOL	GetFlag(size_t n) const {
 		ASSERT( n>=0 && n<SIZEOF(m_ubFlgs) );
 		return m_ubFlgs[n];
 	}
+	int		GetInt(size_t n) const {
+		ASSERT( n>=0 && n<SIZEOF(m_unNums) );
+		return m_unNums[n];
+	}
+	double	GetDbl(size_t n) const {
+		ASSERT( n>=0 && n<SIZEOF(m_udNums) );
+		return m_udNums[n];
+	}
+
 	const	CStringList*	GetMCList(void) {
 		return &m_strMCList;
 	}
@@ -145,15 +166,6 @@ public:
 			return TRUE;
 		return FALSE;
 	}
-	double	GetBlockTime(void) const {
-		return m_dBlock;
-	}
-	int		GetFDot(void) const {
-		return m_nFDot;
-	}
-	double	GetFeed(void) const {
-		return m_dFeed;
-	}
 	double	GetInitialXYZ(size_t n) const {
 		ASSERT( n>=0 && n<NCXYZ );
 		return m_dInitialXYZ[n];
@@ -170,9 +182,6 @@ public:
 	CString	GetDefaultOption(void) const;	// from MCSetup4.cpp
 	CString	GetAutoBreakStr(void) const {
 		return m_strAutoBreak;
-	}
-	int		GetCorrectType(void) const {
-		return m_nCorrectType;
 	}
 	boost::optional<double>	GetToolD(int) const;
 	boost::optional<double>	GetToolH(int) const;

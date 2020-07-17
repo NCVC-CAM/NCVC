@@ -174,10 +174,12 @@ public:
 	// from TH_NCRead.cpp
 	BOOL	SerializeInsertBlock(LPCTSTR, int, DWORD = 0, BOOL = TRUE);	// »ÌŞÌßÛCÏ¸Û‚Ì‘}“ü
 	void	AddMacroFile(const CString&);	// ÄŞ·­ÒİÄ”jŠüŒã‚ÉÁ‹‚·‚éˆêÌ§²Ù
-	void	SetWorkRectOrg(const CRect3D& rc) {
+	void	SetWorkRectOrg(const CRect3D& rc, BOOL bUpdate = TRUE) {
 		m_rcWorkCo = rc;	// ºÒİÄ‚Åw’è‚³‚ê‚½Ü°¸‹éŒ`
-		m_rcWorkCo.NormalizeRect();
-		m_bNcDocFlg.set(NCDOC_COMMENTWORK);
+		if ( bUpdate ) {
+			m_rcWorkCo.NormalizeRect();
+			m_bNcDocFlg.set(NCDOC_COMMENTWORK);
+		}
 	}
 	void	SetWorkLatheR(double r) {
 		m_rcWorkCo.high = r;

@@ -60,6 +60,7 @@ friend	class	CTraceThread;
 	CTraceThread*	m_pTraceThread;	// ﾄﾚｰｽ実行ｽﾚｯﾄﾞﾊﾝﾄﾞﾙ
 	BOOL		m_bTraceContinue,	// ﾄﾚｰｽ実行継続ﾌﾗｸﾞ
 				m_bTracePause;		// ﾄﾚｰｽ一時停止
+	CNCdata*	m_pDataTraceSel;	// ﾄﾚｰｽ実行中の選択ﾃﾞｰﾀ
 	CEvent		m_evTrace;			// ﾄﾚｰｽ開始ｲﾍﾞﾝﾄ(ｺﾝｽﾄﾗｸﾀにて手動ｲﾍﾞﾝﾄ設定)
 
 	BOOL		m_bSplit[NCVIEW_FOURSVIEW];	// ｽﾌﾟﾘｯﾀ表示されたかどうか

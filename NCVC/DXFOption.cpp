@@ -86,7 +86,7 @@ CDXFOption::CDXFOption()
 /////////////////////////////////////////////////////////////////////////////
 // “› ﬁä÷êî
 
-BOOL CDXFOption::ReadInitHistory(eMAKETYPE enType)
+BOOL CDXFOption::ReadInitHistory(enMAKETYPE enType)
 {
 	extern	LPTSTR	g_pszExecDir;	// é¿çs√ﬁ®⁄∏ƒÿ(NCVC.cpp)
 	int		i;
@@ -124,7 +124,7 @@ BOOL CDXFOption::ReadInitHistory(eMAKETYPE enType)
 	return TRUE;
 }
 
-BOOL CDXFOption::SaveInitHistory(eMAKETYPE enType)
+BOOL CDXFOption::SaveInitHistory(enMAKETYPE enType)
 {
 	int			i;
 	POSITION	pos;

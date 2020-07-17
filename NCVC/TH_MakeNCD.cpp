@@ -14,12 +14,6 @@
 #include "MakeCustomCode.h"
 #include "ThreadDlg.h"
 
-/*
-!!!ATTENTION!!!
-生成時間の表示：正式ﾘﾘｰｽでは外すのを忘れずに
-#define	_DBG_NCMAKE_TIME
-*/
-
 using namespace std;
 using namespace boost;
 
@@ -27,11 +21,15 @@ using namespace boost;
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
+/* --------------
+!!!ATTENTION!!!
+	生成時間の表示：正式ﾘﾘｰｽでは外すのを忘れずに
+----------------- */
+//#define	_DBG_NCMAKE_TIME
 #endif
 
-/*
-	CDXFdata の GetType() と GetMakeType() の使い分けに注意！！
-*/
+// --- CDXFdata の GetType() と GetMakeType() の使い分けに注意！！
+
 // よく使う変数や呼び出しの簡略置換
 #define	IsThread()	g_pParent->IsThreadContinue()
 #define	GetFlg(a)	g_pMakeOpt->GetFlag(a)

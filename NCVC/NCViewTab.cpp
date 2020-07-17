@@ -56,6 +56,9 @@ END_MESSAGE_MAP()
 
 CNCViewTab::CNCViewTab() : m_evTrace(FALSE, TRUE)
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewTab::CNCViewTab() Start");
+#endif
 /*
 	ここでﾄﾚｰｽｽﾋﾟｰﾄﾞをﾚｼﾞｽﾄﾘから取得すると，NCViewTab起動の度にｱｸｾｽされることになる
 	以下，ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ情報も同じ
@@ -64,6 +67,7 @@ CNCViewTab::CNCViewTab() : m_evTrace(FALSE, TRUE)
 	m_nTrace = ID_NCVIEW_TRACE_STOP;
 	m_pTraceThread = NULL;
 	m_bTraceContinue = m_bTracePause = FALSE;
+	m_pDataTraceSel  = NULL;
 	for ( int i=0; i<SIZEOF(m_bSplit); i++ )
 		m_bSplit[i] = FALSE;
 }
@@ -207,6 +211,9 @@ CNCDoc* CNCViewTab::GetDocument() // 非デバッグ バージョンはインラインです。
 
 int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewTab::OnCreate() Start");
+#endif
 	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 	if ( CTabView::OnCreate(lpCreateStruct) < 0 )
@@ -399,6 +406,7 @@ void CNCViewTab::OnTraceStop()
 {
 	if ( m_nTrace != ID_NCVIEW_TRACE_STOP ) {
 		m_bTraceContinue = FALSE;
+		m_pDataTraceSel  = NULL;
 		m_nTrace = ID_NCVIEW_TRACE_STOP;
 		// 現在位置以降を描画
 		GetDocument()->StopTrace();
@@ -482,8 +490,7 @@ BOOL CTraceThread::InitInstance()
 	CMagaDbg	dbg("CTraceThread::InitInstance()\nStart", DBG_BLUE);
 #endif
 	CNCDoc*			pDoc  = m_pParent->GetDocument();
-	CNCdata*		pData1;
-	CNCdata*		pData2 = NULL;
+	CNCdata*		pData;
 	CNCViewSplit*	pWnd;
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	CDC		dc;
@@ -512,30 +519,30 @@ BOOL CTraceThread::InitInstance()
 #endif
 		if ( !m_pParent->m_bTraceContinue )
 			break;
-		// ﾄﾚｰｽ開始・再開
+
+		// ﾏｰｶ表示状態取得
 		bSelect = pOpt->GetNCViewFlg(NCVIEWFLG_TRACEMARKER);
+
+		// ﾄﾚｰｽ開始・再開
 		do {
 			nPage = m_pParent->GetActivePage();
 			if ( nPage < 0 )
 				continue;
 			bBreak = pDoc->IncrementTrace(nTraceDraw);
-			if ( nTraceDraw <= 0 ) {
+			if ( nTraceDraw < 0 ) {
 				// 最後の選択消去
-				if ( bSelect && pData2 ) {
+				if ( bSelect && m_pParent->m_pDataTraceSel ) {
 					if ( nPage < NCVIEW_FOURSVIEW ) {
 						if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
 							::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-						dc.SetROP2(R2_XORPEN);
-						(pData2->*pfnDrawProc[nPage])(&dc, TRUE);
 						dc.SetROP2(R2_COPYPEN);
-						(pData2->*pfnDrawProc[nPage])(&dc, FALSE);
+						(m_pParent->m_pDataTraceSel->*pfnDrawProc[nPage])(&dc, FALSE);
 						dc.Detach();
 					}
 					else if ( nPage < NCVIEW_OPENGL ) {
 						pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
 						if ( pWnd ) {
-							pWnd->DrawData(pData2, TRUE,  TRUE,  pfnDrawProc);
-							pWnd->DrawData(pData2, FALSE, FALSE, pfnDrawProc);
+							pWnd->DrawData(m_pParent->m_pDataTraceSel, FALSE, pfnDrawProc);
 						}
 					}
 				}
@@ -543,30 +550,27 @@ BOOL CTraceThread::InitInstance()
 				m_pParent->m_nTrace = ID_NCVIEW_TRACE_STOP;
 				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);
 				// 次の再開に備える
-				pData2 = NULL;
+				m_pParent->m_pDataTraceSel = NULL;
 				break;
 			}
-			pData1 = pDoc->GetNCdata(nTraceDraw-1);
-			m_pListView->SendMessage(WM_USERTRACESELECT, (WPARAM)pData1);
+			pData = pDoc->GetNCdata(nTraceDraw-1);
+			m_pListView->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
 			if ( nPage < NCVIEW_FOURSVIEW ) {
 				if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
 					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-				if ( bSelect && pData2 ) {
-					dc.SetROP2(R2_XORPEN);
-					(pData2->*pfnDrawProc[nPage])(&dc, TRUE);
+				if ( bSelect && m_pParent->m_pDataTraceSel ) {
 					dc.SetROP2(R2_COPYPEN);
-					(pData2->*pfnDrawProc[nPage])(&dc, FALSE);
+					(m_pParent->m_pDataTraceSel->*pfnDrawProc[nPage])(&dc, FALSE);
 				}
-				(pData1->*pfnDrawProc[nPage])(&dc, bSelect);
+				(pData->*pfnDrawProc[nPage])(&dc, bSelect);
 				dc.Detach();
 			}
 			else if ( nPage < NCVIEW_OPENGL ) {
 				pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
-				if ( pWnd && bSelect && pData2 ) {
-					pWnd->DrawData(pData2, TRUE,  TRUE,  pfnDrawProc);	// XOR PEN
-					pWnd->DrawData(pData2, FALSE, FALSE, pfnDrawProc);	// COPY PEN
+				if ( pWnd && bSelect && m_pParent->m_pDataTraceSel ) {
+					pWnd->DrawData(m_pParent->m_pDataTraceSel, FALSE, pfnDrawProc);
 				}
-				pWnd->DrawData(pData1, bSelect, FALSE, pfnDrawProc);
+				pWnd->DrawData(pData, bSelect, pfnDrawProc);
 			}
 			::GdiFlush();
 			if ( bBreak ) {
@@ -577,13 +581,13 @@ BOOL CTraceThread::InitInstance()
 			else if ( m_pParent->m_nTrace != ID_NCVIEW_TRACE_PAUSE )
 				::Sleep( pOpt->GetTraceSpeed(m_pParent->m_nTraceSpeed-ID_NCVIEW_TRACE_FAST) );
 			// 次の選択解除用
-			pData2 = pData1;
+			m_pParent->m_pDataTraceSel = pData;
 		} while ( m_pParent->m_bTraceContinue && !m_pParent->m_bTracePause );
 #ifdef _DEBUG
 		dbg.printf("Stop the trace loop");
 #endif
 		if ( !m_pParent->m_bTraceContinue )
-			pData2 = FALSE;	// 次の再開に備える
+			m_pParent->m_pDataTraceSel = FALSE;	// 次の再開に備える
 	}
 
 #ifdef _DEBUG

@@ -81,6 +81,9 @@ END_MESSAGE_MAP()
 
 CNCViewGL::CNCViewGL()
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewGL::CNCViewGL() Start");
+#endif
 	m_bActive = FALSE;
 	m_cx = m_cy = m_icx = m_icy = 0;
 	m_dRate = 0.0;
@@ -372,8 +375,11 @@ BOOL CNCViewGL::CreateBoxel(void)
 	::glMatrixMode(GL_MODELVIEW);
 	
 #ifdef _DEBUG
+	dbg.printf("(%f,%f)-(%f,%f)", m_rcDraw.left, m_rcDraw.top, m_rcDraw.right, m_rcDraw.bottom);
+	dbg.printf("(%f,%f)", m_rcView.low, m_rcView.high);
 	DWORD	t1 = ::timeGetTime();
 #endif
+
 	// 切削底面描画
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
 		GetDocument()->GetNCdata(i)->DrawGLBottomFace();
@@ -1157,6 +1163,9 @@ BOOL CreateElement_Side(LPCREATEELEMENTPARAM pParam)
 
 BOOL CNCViewGL::CreateLathe(void)
 {
+#ifdef _DEBUG
+	CMagaDbg	dbg("CreateLathe()\nStart");
+#endif
 	// ﾎﾞｸｾﾙ生成のための初期設定
 	InitialBoxel();
 	// 画面いっぱいに描画
@@ -1167,6 +1176,11 @@ BOOL CNCViewGL::CreateLathe(void)
 		m_rcView.low, m_rcView.high,	// top と bottom は使用不可
 		m_rcView.low, m_rcView.high);	// m_rcDraw ではｷﾞﾘｷﾞﾘなので m_rcView を使う
 	::glMatrixMode(GL_MODELVIEW);
+
+#ifdef _DEBUG
+	dbg.printf("(%f,%f)-(%f,%f)", m_rcDraw.left, m_rcView.low, m_rcDraw.right, m_rcView.high);
+	dbg.printf("(%f,%f)", m_rcView.low, m_rcView.high);
+#endif
 
 	// 旋盤用ZXﾜｲﾔｰの描画
 	::glPushAttrib( GL_LINE_BIT );
@@ -1829,6 +1843,8 @@ void CNCViewGL::FinalBoxel(void)
 
 void CNCViewGL::RenderBack(void)
 {
+	::glDisable(GL_DEPTH_TEST);	// ﾃﾞﾌﾟｽﾃｽﾄ無効で描画
+
 	// 背景ﾎﾟﾘｺﾞﾝの描画
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND1),
@@ -1848,7 +1864,8 @@ void CNCViewGL::RenderBack(void)
 	// 左上
 	dVertex[0] = m_rcView.left;
 	dVertex[1] = m_rcView.bottom;
-	dVertex[2] = m_rcView.low;		// ﾃﾞﾌﾟｽﾃｽﾄ無効で描画
+//	dVertex[2] = m_rcView.low;
+	dVertex[2] = m_rcView.high - NCMIN *2.0;	// 一番奥(x2はｵﾏｹ)
 	::glColor3ubv(col1v);
 	::glVertex3dv(dVertex);
 	// 左下
@@ -1866,6 +1883,8 @@ void CNCViewGL::RenderBack(void)
 	//
 	::glEnd();
 	::glPopMatrix();
+
+	::glEnable(GL_DEPTH_TEST);
 }
 
 void CNCViewGL::RenderAxis(void)
@@ -2018,6 +2037,11 @@ void CNCViewGL::DoScale(int nRate)
 		::glMatrixMode( GL_MODELVIEW );
 		Invalidate(FALSE);
 		::wglMakeCurrent( NULL, NULL );
+#ifdef _DEBUG
+		g_dbg.printf("DoScale() ---");
+		g_dbg.printf("  (%f,%f)-(%f,%f)", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
+		g_dbg.printf("  (%f,%f)", m_rcView.low, m_rcView.high);
+#endif
 	}
 
 	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
@@ -2058,12 +2082,11 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	::wglMakeCurrent( pDC->GetSafeHdc(), m_hRC );
 
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	::glDisable(GL_DEPTH_TEST);
 
 	// 背景の描画
 	RenderBack();
+
 	// 軸の描画
-	::glEnable(GL_DEPTH_TEST);
 	RenderAxis();
 
 #ifdef _DEBUG_DRAWTEST_
@@ -2191,6 +2214,9 @@ CNCDoc* CNCViewGL::GetDocument() // 非デバッグ バージョンはインラインです。
 
 int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewGL::OnCreate() Start");
+#endif
 	if ( CView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
@@ -2198,6 +2224,9 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	// 他の NCView.cpp のように PreCreateWindow() での AfxRegisterWndClass() ではｴﾗｰ??
 	::SetClassLongPtr(m_hWnd, GCLP_HCURSOR,
 		(LONG_PTR)AfxGetApp()->LoadStandardCursor(IDC_ARROW));
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewGL::SetClassLongPtr() End");
+#endif
 
 	// OpenGL初期化処理
 	CClientDC	dc(this);
@@ -2208,18 +2237,27 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		TRACE0("SetupPixelFormat failed\n");
 		return -1;
 	}
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewGL::SetupPixelFormat() End");
+#endif
 
 	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄの作成
 	if( !(m_hRC = ::wglCreateContext(hDC)) ) {
 		TRACE0("wglCreateContext failed\n");
 		return -1;
 	}
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewGL::wglCreateContext() End");
+#endif
 
 	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄをｶﾚﾝﾄのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄに設定
 	if( !::wglMakeCurrent(hDC, m_hRC) ) {
 		TRACE0("wglMakeCurrent failed\n");
 		return -1;
 	}
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewGL::wglMakeCurrent() End");
+#endif
 
 	// OpenGL Extention 使用準備
 	GLenum glewResult = ::glewInit();
@@ -2227,6 +2265,9 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		TRACE1("glewInit() failed code=%s\n", ::glewGetErrorString(glewResult));
 		return -1;
 	}
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewGL::glewInit() End");
+#endif
 
 	::glEnable(GL_NORMALIZE);
 	::glClearColor( 0, 0, 0, 0 );
@@ -2303,6 +2344,9 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 
 LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 {
+#ifdef _DEBUG
+	CMagaDbg	dbg("CNCViewGL::OnUserActivatePage()\nStart");
+#endif
 	if ( !m_bActive ) {
 		// m_rcView初期化
 		OnUserViewFitMsg(1, 0);		// glOrtho() を実行しない
@@ -2337,6 +2381,10 @@ LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 		::glMatrixMode( GL_MODELVIEW );
 		SetupViewingTransform();
 		::wglMakeCurrent( NULL, NULL );
+#ifdef _DEBUG
+		dbg.printf("(%f,%f)-(%f,%f)", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
+		dbg.printf("(%f,%f)", m_rcView.low, m_rcView.high);
+#endif
 		//
 		pOpt->m_dwUpdateFlg = 0;
 		m_bActive = TRUE;
@@ -2353,12 +2401,12 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCViewGL::OnUserViewFitMsg()\nStart");
 #endif
-	double		dW, dH, dZ, dLength;
+	double		dW, dH, dZ, dLength, d;
 
 	if ( lParam ) {		// from CNCViewTab::OnInitialUpdate()
 		// m_dRate の更新(m_cx,m_cyが正しい値のときに計算)
-		dW = m_rcView.Width();
-		dH = m_rcView.Height();
+		dW = fabs(m_rcView.Width());
+		dH = fabs(m_rcView.Height());
 		if ( dW > dH )
 			m_dRate = m_cx / dW;
 		else
@@ -2368,24 +2416,27 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 	else {
 		m_rcView  = GetDocument()->GetMaxRect();
 //		m_rcView |= GetDocument()->GetWorkRect();
+		dW = fabs(m_rcView.Width());
+		dH = fabs(m_rcView.Height());
+		dZ = fabs(m_rcView.Depth());
 
 		// 占有矩形の補正(不正表示の防止)
 		const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-		if ( m_rcView.Width() <= NCMIN ) {
+		if ( dW <= NCMIN ) {
 			dLength = pOpt->GetGuideLength(NCA_X);
 			if ( dLength == 0.0 )
 				dLength = g_dDefaultGuideLength;
 			m_rcView.left  = -dLength;
 			m_rcView.right =  dLength;
 		}
-		if ( m_rcView.Height() <= NCMIN ) {
+		if ( dH <= NCMIN ) {
 			dLength = pOpt->GetGuideLength(NCA_Y);
 			if ( dLength == 0.0 )
 				dLength = g_dDefaultGuideLength;
 			m_rcView.top    = -dLength;
 			m_rcView.bottom =  dLength;
 		}
-		if ( m_rcView.Depth() <= NCMIN ) {
+		if ( dZ <= NCMIN ) {
 			dLength = pOpt->GetGuideLength(NCA_Z);
 			if ( dLength == 0.0 )
 				dLength = g_dDefaultGuideLength;
@@ -2393,29 +2444,30 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 			m_rcView.high =  dLength;
 		}
 		// ｵﾌﾞｼﾞｪｸﾄ矩形を10%(上下左右5%ずつ)大きく
-		m_rcView.InflateRect(m_rcView.Width()*0.05, m_rcView.Height()*0.05);
-		m_rcView.NormalizeRect();
+		m_rcView.InflateRect(dW*0.05, dH*0.05);
+//		m_rcView.NormalizeRect();
+		dW = fabs(m_rcView.Width());
+		dH = fabs(m_rcView.Height());
+		dZ = fabs(m_rcView.Depth());
 
 		// ﾃﾞｨｽﾌﾟﾚｲのｱｽﾍﾟｸﾄ比から視野直方体設定
 		CPointD	pt(m_rcView.CenterPoint());
-		dW = m_rcView.Width();
-		dH = m_rcView.Height();
 		if ( dW > dH ) {
-			dH = dW * m_cy / m_cx / 2.0;
-			m_rcView.top    = pt.y - dH;
-			m_rcView.bottom = pt.y + dH;
+			d = dW * m_cy / m_cx / 2.0;
+			m_rcView.top    = pt.y - d;
+			m_rcView.bottom = pt.y + d;
 			m_dRate = m_cx / dW;
 		}
 		else {
-			dW = dH * m_cx / m_cy / 2.0;
-			m_rcView.left   = pt.x - dW;
-			m_rcView.right  = pt.x + dW;
+			d = dH * m_cx / m_cy / 2.0;
+			m_rcView.left   = pt.x - d;
+			m_rcView.right  = pt.x + d;
 			m_dRate = m_cy / dH;
 		}
-		dZ = max(max(m_rcView.Width(), m_rcView.Height()), m_rcView.Depth()) * 2.0;
-		m_rcView.high =  dZ;	// 奥
-		m_rcView.low  = -dZ;	// 手前
-		m_rcView.NormalizeRect();
+		d = max(max(dW, dH), dZ) * 2.0;
+		m_rcView.high =  d;		// 奥
+		m_rcView.low  = -d;		// 手前
+//		m_rcView.NormalizeRect();
 	}
 
 	if ( !wParam ) {	// from OnUserActivatePage()
@@ -2431,13 +2483,12 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 //		GLenum glError = ::glGetError();
 		::glMatrixMode( GL_MODELVIEW );
 		::wglMakeCurrent(NULL, NULL);
-	}
-
 #ifdef _DEBUG
-	dbg.printf("(%f,%f)-(%f,%f)", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
-	dbg.printf("(%f,%f)", m_rcView.low, m_rcView.high);
-	dbg.printf("Rate=%f", m_dRate);
+		dbg.printf("(%f,%f)-(%f,%f)", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
+		dbg.printf("(%f,%f)", m_rcView.low, m_rcView.high);
+		dbg.printf("Rate=%f", m_dRate);
 #endif
+	}
 
 	return 0;
 }

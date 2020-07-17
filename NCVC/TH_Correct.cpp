@@ -47,7 +47,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 	int			i=0, j, nLoopCnt = pDoc->GetNCsize(),
 				nCorrect = 0,	// 0:補正ｷｬﾝｾﾙ 1: 補正ﾌﾞﾛｯｸ直後 2:補正処理中
-				nCorrectType = pMCopt->GetCorrectType(),
+				nCorrectType = pMCopt->GetInt(MC_INT_CORRECTTYPE),
 				nSign1, nSign2,
 				k,			// 90°回転させる方向(始点を基準)
 				nResult = IDOK;
@@ -202,7 +202,7 @@ try {
 					break;
 				case 2:		// ｵﾌｾｯﾄﾓｰﾄﾞ
 					// ｵﾌｾｯﾄ分移動させた交点
-					ptResult = pData1->CalcOffsetIntersectionPoint(pData2, dToolD_abs, k>0);
+					ptResult = pData1->CalcOffsetIntersectionPoint(pData2, dToolD_abs, dToolD_abs, k>0);
 					break;
 				}
 				// 結果確認

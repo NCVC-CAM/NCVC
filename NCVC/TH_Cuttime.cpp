@@ -132,7 +132,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	} // End of Loop
 
 	// ÌÞÛ¯¸ˆ—‚Ìd‚Ý
-	pDoc->m_dCutTime += pMCopt->GetBlockTime() * pDoc->GetNCBlockSize() / 60.0;
+	pDoc->m_dCutTime += pMCopt->GetDbl(MC_DBL_BLOCKWAIT) * pDoc->GetNCBlockSize() / 60.0;
 
 	pView->PostMessage(WM_USERPROGRESSPOS);
 #ifdef _DEBUG

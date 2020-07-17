@@ -28,24 +28,26 @@ static	const	UINT	g_nConvert = 2;
 static	LPCTSTR	g_szNOrder[] = {
 	"Modal%d",
 	"G0Speed%c",
-	"FDot", "CorrectType"
+	"FDot", "CorrectType", "ForceViewMode"
 };
 static	const	int		g_dfNOrder[] = {
 	0, 0, 0, 0, 0,
 	0, 0, 0,
-	0, 0
+	0, 0, 0
 };
 
 // doubleŒ^–½—ß
 static	LPCTSTR	g_szDOrder[] = {
-	"DefaultFeed",
 	"Initial%c",
+	"DefaultFeed",
 	"BlockTime",
+	"DefWireDepth"
 };
 static	const	double	g_dfDOrder[] = {
-	30.0,
 	0.0, 0.0, 10.0,
+	30.0,
 	0.0,
+	20.0,
 	// G54`G59
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -53,10 +55,10 @@ static	const	double	g_dfDOrder[] = {
 
 // BOOLŒ^–½—ß
 static	LPCTSTR	g_szBOrder[] = {
-	"Lathe", "L0Cycle"
+	"L0Cycle"
 };
 static	const	BOOL	g_dfBOrder[] = {
-	FALSE, FALSE
+	FALSE
 };
 
 // CStringŒ^–½—ß
@@ -72,6 +74,12 @@ static	LPCTSTR	g_szSOrderMacro[] = {
 extern	const	int		g_nDefaultMacroID[] = {
 	MCMACHINEFILE, MCMACROCODE, MCMACROFOLDER, MCCURRENTFOLDER, MCMACRORESULT
 };
+
+// ‹Œ·°Ü°ÄŞ
+static	LPCTSTR	g_szOldOrder[] = {
+	"Lathe"		// -> ForceViewMode(int)
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CMCOption ƒNƒ‰ƒX‚Ì\’z/Á–Å
@@ -230,8 +238,11 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 */
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 
+	// ‹Œ·°Ü°ÄŞ‚Ìæ“Ç‚İ
+	m_nForceViewMode = ::GetPrivateProfileInt(strRegKey, g_szOldOrder[0], 0, lpszFile);
+
 	// intŒ^–½—ß
-	for ( i=0, j=0, k=0; i<MODALGROUP; i++, j++ ) {
+	for ( i=j=k=0; i<MODALGROUP; i++, j++ ) {
 		strEntry.Format(g_szNOrder[k], i);
 		m_nModal[i] = ::GetPrivateProfileInt(strRegKey, strEntry, g_dfNOrder[j], lpszFile);
 	}
@@ -240,49 +251,44 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 		m_nG0Speed[i] = ::GetPrivateProfileInt(strRegKey, strEntry, g_dfNOrder[j], lpszFile);
 	}
 	for ( k++; j<SIZEOF(m_unNums); j++, k++ ) {
-		strEntry = g_szNOrder[k];
-		m_unNums[j] = ::GetPrivateProfileInt(strRegKey, strEntry, g_dfNOrder[j], lpszFile);
+		m_unNums[j] = ::GetPrivateProfileInt(strRegKey, g_szNOrder[k], g_dfNOrder[j], lpszFile);
 	}
 
 	// doubleŒ^–½—ß
-	j= k = 0;
-	strEntry = g_szDOrder[k++];
-	::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile);
-	m_dFeed = lstrlen(szResult) > 0 ? atof(szResult) : g_dfDOrder[j];
-	for ( i=0, j++; i<NCXYZ; i++, j++ ) {
+	for ( i=j=k=0; i<NCXYZ; i++, j++ ) {
 		strEntry.Format(g_szDOrder[k], g_szNdelimiter[i]);
-		m_dInitialXYZ[i] = 
+		m_udNums[j] =	//	m_dInitialXYZ[i]
 			::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile) > 0 ?
 				atof(szResult) : g_dfDOrder[j];
 	}
-	strEntry = g_szDOrder[++k];
-	::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile);
-	m_dBlock = lstrlen(szResult) > 0 ? atof(szResult) : g_dfDOrder[j];
+	for ( k++; k<SIZEOF(g_szDOrder); j++, k++ ) {
+		m_udNums[j] = ::GetPrivateProfileString(strRegKey, g_szDOrder[k], "", szResult, _MAX_PATH, lpszFile) > 0 ?
+			atof(szResult) : g_dfDOrder[j];
+	}
 	// ----------
 		// `Ver1.72‚Ü‚Å‚ÌÊŞ¸ŞÁª¯¸
-		::GetPrivateProfileString(strRegKey, g_szDOrder[1], "", szResult, _MAX_PATH, lpszFile);
+		::GetPrivateProfileString(strRegKey, g_szDOrder[0], "", szResult, _MAX_PATH, lpszFile);
 		if ( lstrlen(szResult) > 0 ) {
 			// "BlockTime" ‚ª "Initial%c" ‚É‘‚«‚ñ‚Å‚¢‚½ÊŞ¸Ş
 			m_dBlock = atof(szResult);
 			// ³‚µ‚¢·°‚Åo—Í
 			// @¨’P‚È‚éØ‚è‘Ö‚¦‚Å‚Í SaveMCoption() ‚ªŒÄ‚Î‚ê‚È‚¢‚Ì‚Å
 			// @@‚±‚±‚Åˆ—‚·‚é
-			CString	strResult;
-			strResult.Format(IDS_MAKENCD_FORMAT, m_dBlock);
-			::WritePrivateProfileString(strRegKey, g_szDOrder[2], strResult, lpszFile);
+			strEntry.Format(IDS_MAKENCD_FORMAT, m_dBlock);
+			::WritePrivateProfileString(strRegKey, g_szDOrder[2], strEntry, lpszFile);
 			// "Initial%c" ‚Ì´İÄØ‚ğíœ
-			::WritePrivateProfileString(strRegKey, g_szDOrder[1], NULL, lpszFile);
+			::WritePrivateProfileString(strRegKey, g_szDOrder[0], NULL, lpszFile);
 		}
 	// ----------
-	for ( i=0, j++; i<WORKOFFSET; i++ ) {
+	for ( i=0; i<WORKOFFSET; i++ ) {
 		strEntry.Format("G%d", i+54);
 		if ( ::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile) > 0 ) {
 			ConvertWorkOffset(i, szResult);
 			j += NCXYZ;
 		}
 		else {
-			for ( int ii=0; ii<NCXYZ; ii++, j++ )
-				m_dWorkOffset[i][ii] = g_dfDOrder[j];
+			for ( k=0; k<NCXYZ; k++, j++ )
+				m_dWorkOffset[i][k] = g_dfDOrder[j];
 		}
 	}
 
@@ -388,28 +394,23 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 			return FALSE;
 	}
 	for ( k++; j<SIZEOF(m_unNums); j++, k++ ) {
-		strEntry = g_szNOrder[k];
 		strResult.Format("%d", m_unNums[j]);
-		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
+		if ( !::WritePrivateProfileString(strRegKey, g_szNOrder[k], strResult, lpszFile) )
 			return FALSE;
 	}
 
 	// doubleŒ^–½—ß
-	k = 0;
-	strEntry = g_szDOrder[k++];
-	strResult.Format(IDS_MAKENCD_FORMAT, m_dFeed);
-	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
-		return FALSE;
-	for ( i=0; i<NCXYZ; i++ ) {
+	for ( i=j=k=0; i<NCXYZ; i++, j++ ) {
 		strEntry.Format(g_szDOrder[k], g_szNdelimiter[i]);
-		strResult.Format(IDS_MAKENCD_FORMAT, m_dInitialXYZ[i]);
+		strResult.Format(IDS_MAKENCD_FORMAT, m_udNums[j]);	// m_dInitialXYZ[i]
 		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
 			return FALSE;
 	}
-	strEntry = g_szDOrder[++k];
-	strResult.Format(IDS_MAKENCD_FORMAT, m_dBlock);
-	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
-		return FALSE;
+	for ( k++; k<SIZEOF(g_szDOrder); j++, k++ ) {
+		strResult.Format(IDS_MAKENCD_FORMAT, m_udNums[j]);
+		if ( !::WritePrivateProfileString(strRegKey, g_szDOrder[k], strResult, lpszFile) )
+			return FALSE;
+	}
 	for ( i=0; i<WORKOFFSET; i++ ) {
 		strResult.Empty();
 		for ( j=0; j<NCXYZ; j++ ) {
@@ -469,6 +470,10 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 		// ‰¼“o˜^Ì×¸Ş‰Šú‰»
 		pToolInfo->m_bDlgAdd = pToolInfo->m_bDlgDel = FALSE;
 	}
+
+	// ‹ŒÃŞ°À‚Ìíœ
+	for ( i=0; i<SIZEOF(g_szOldOrder); i++ )
+		::WritePrivateProfileString(strRegKey, g_szOldOrder[i], NULL, lpszFile);
 
 	// —š—ğ‚ÌXV
 	return AddMCListHistory(lpszFile);

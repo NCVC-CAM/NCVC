@@ -55,6 +55,9 @@ END_MESSAGE_MAP()
 
 CNCViewXY::CNCViewXY()
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewXY::CNCViewXY() Start");
+#endif
 	m_pfnDrawProc = NULL;
 }
 
@@ -217,10 +220,11 @@ CRectD CNCViewXY::GetDrawMaxRect(void)
 
 void CNCViewXY::OnDraw(CDC* pDC)
 {
-	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-
 	ASSERT_VALID(GetDocument());
+
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	int		i;
+
 	pDC->SetROP2(R2_COPYPEN);
 	CPen* pOldPen = (CPen *)pDC->SelectStockObject(NULL_PEN);
 
@@ -255,15 +259,18 @@ void CNCViewXY::OnDraw(CDC* pDC)
 	}
 	// NCÃÞ°À•`‰æ
 	ASSERT( m_pfnDrawProc );
-	CNCdata*	pData;
+	CNCdata*	pData = NULL;
 	int	nDraw = GetDocument()->GetTraceDraw();	// ¸ØÃ¨¶Ù¾¸¼®Ý‚É‚æ‚éÛ¯¸
 	for ( i=GetDocument()->GetTraceStart(); i<nDraw; i++ ) {
 		pData = GetDocument()->GetNCdata(i);
-		if ( pData->GetGtype() == G_TYPE ) {
-//			pData->DrawXY(pDC, FALSE);
-			(pData->*m_pfnDrawProc)(pDC, FALSE);
-		}
+		if ( pData->GetGtype() == G_TYPE )
+			(pData->*m_pfnDrawProc)(pDC, FALSE);	// pData->DrawXY(pDC, FALSE);
 	}
+	if ( pOpt->GetNCViewFlg(NCVIEWFLG_TRACEMARKER) && pData && nDraw!=GetDocument()->GetNCsize() ) {
+		// ÅŒã‚É•`‰æ‚µ‚½µÌÞ¼Þª¸Ä‚ÌÄÚ°½Ï°¶°
+		(pData->*m_pfnDrawProc)(pDC, TRUE);
+	}
+
 	if ( !GetDocument()->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
 		// Å‘åØí‹éŒ`
 		if ( GetDocument()->IsNCDocFlag(NCDOC_MAXRECT) )
@@ -409,6 +416,9 @@ void CNCViewXY::OnViewLensComm(void)
 
 int CNCViewXY::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewXY::OnCreate() Start");
+#endif
 	if ( CView::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 

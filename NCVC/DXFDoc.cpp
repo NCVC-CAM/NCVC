@@ -856,7 +856,7 @@ void CDXFDoc::Serialize(CArchive& ar)
 	// ŠeŽíó‘Ô
 	ar >> bReady >> bShape;
 	m_bDxfDocFlg.set(DXFDOC_READY, bReady);
-	m_bDxfDocFlg.set(DXFDOC_READY, bShape);
+	m_bDxfDocFlg.set(DXFDOC_SHAPE, bShape);
 	if ( g_dwCamVer > NCVCSERIALVERSION_1600 ) {	// Ver1.70`
 		ar >> m_AutoWork.nSelect >> m_AutoWork.dOffset >> m_AutoWork.bAcuteRound >>
 			m_AutoWork.nLoopCnt >> m_AutoWork.nScanLine >> m_AutoWork.bCircleScroll;

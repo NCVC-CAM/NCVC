@@ -579,13 +579,13 @@ CDXFline::CalcOffsetIntersectionPoint
 	switch ( pNext->GetType() ) {
 	case DXFLINEDATA:
 		pt2 = pNext->GetNativePoint(1) - pto;
-		ptResult = ::CalcOffsetIntersectionPoint_LL(pt1, pt2, r, bLeft);
+		ptResult = ::CalcOffsetIntersectionPoint_LL(pt1, pt2, r, r, bLeft);
 		break;
 	case DXFARCDATA:
 		pArc = static_cast<const CDXFarc*>(pNext);
 		pt2 = pArc->GetCenter() - pto;
 		ptResult = ::CalcOffsetIntersectionPoint_LC(pt1, pt2,
-				pArc->GetR(), r, pArc->GetRoundOrig(), bLeft);
+				pArc->GetR(), r, r, pArc->GetRoundOrig(), bLeft);
 		break;
 	case DXFELLIPSEDATA:
 		pEllipse = static_cast<const CDXFellipse*>(pNext);
@@ -1482,7 +1482,7 @@ CDXFarc::CalcOffsetIntersectionPoint
 		pt1 = pNext->GetNativePoint(1) - pto;
 		pt2 = m_ct - pto;
 		{
-			optional<CPointD> ptr = ::CalcOffsetIntersectionPoint_LC(pt1, pt2, m_r, r,
+			optional<CPointD> ptr = ::CalcOffsetIntersectionPoint_LC(pt1, pt2, m_r, r, r,
 						!m_bRoundOrig, !bLeft);
 			if ( ptr ) {
 				ptResult = *ptr + pto;

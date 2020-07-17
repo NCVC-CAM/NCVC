@@ -35,6 +35,7 @@ inline const CNCread* CNCdata::GetReadData(void) const
 
 inline void CNCdata::SetWireObj(CNCdata* pData)
 {
+//	ASSERT( m_pWireObj );
 	m_pWireObj = pData;
 }
 
@@ -230,7 +231,7 @@ inline boost::optional<CPointD> CNCdata::CalcPerpendicularPoint(ENPOINTORDER, do
 	return boost::optional<CPointD>();
 }
 
-inline boost::optional<CPointD> CNCdata::CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const
+inline boost::optional<CPointD> CNCdata::CalcOffsetIntersectionPoint(const CNCdata*, double, double, BOOL) const
 {
 	return boost::optional<CPointD>();
 }
@@ -404,7 +405,7 @@ inline boost::optional<CPointD> CNCcycle::CalcPerpendicularPoint(ENPOINTORDER, d
 	return boost::optional<CPointD>();
 }
 
-inline boost::optional<CPointD> CNCcycle::CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const
+inline boost::optional<CPointD> CNCcycle::CalcOffsetIntersectionPoint(const CNCdata*, double, double, BOOL) const
 {
 	return boost::optional<CPointD>();
 }

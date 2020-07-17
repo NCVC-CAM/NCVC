@@ -38,6 +38,9 @@ END_MESSAGE_MAP()
 
 CNCViewSplit::CNCViewSplit()
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCViewSplit::CNCViewSplit() Start");
+#endif
 }
 
 CNCViewSplit::~CNCViewSplit()
@@ -50,12 +53,12 @@ CNCViewSplit::~CNCViewSplit()
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewSplit ÉNÉâÉXÇÃÉÅÉìÉoä÷êî
 
-void CNCViewSplit::DrawData(CNCdata* pData, BOOL bSelect, BOOL bErase, PFNNCDRAWPROC pfnDrawProc[])
+void CNCViewSplit::DrawData(CNCdata* pData, BOOL bSelect, PFNNCDRAWPROC pfnDrawProc[])
 {
 	CDC		dc;
 	for ( int i=0; i<SIZEOF(m_hDC); i++ ) {
 		if ( dc.Attach(m_hDC[i]) ) {
-			dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
+			dc.SetROP2(R2_COPYPEN);
 			(pData->*pfnDrawProc[i])(&dc, bSelect);
 			dc.Detach();
 		}

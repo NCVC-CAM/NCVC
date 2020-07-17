@@ -6,7 +6,6 @@
 
 #include "boost/operators.hpp"		// 演算子の手抜き定義
 
-const double EPS = 0.0005;			// NCの計算誤差
 const double NCMIN = 0.001;			// NCの桁落ち誤差
 const double PI = 3.1415926535897932384626433832795;
 
@@ -37,17 +36,14 @@ const double RX = RAD(-60.0);
 const double RY = 0.0;
 const double RZ = RAD(-35.0);
 
+template<class T> class	CPoint3T;
+
 //////////////////////////////////////////////////////////////////////
 // 実数型 CPoint の雛形
 
 template<class T>
 class CPointT :
 	// +=, -=, *=, /= で +, -, * / も自動定義
-//	boost::arithmetic			< CPointT<T>,
-//	boost::arithmetic			< CPointT<T>, T,
-//	boost::equality_comparable	< CPointT<T>,
-//	boost::equality_comparable	< CPointT<T>, T
-//	> > > >
 	boost::operators< CPointT<T> >
 {
 public:
@@ -137,6 +133,9 @@ public:
 	operator CPoint() const {
 		return CPoint((int)x, (int)y);
 	}
+	operator CPoint3T<T>() const {
+		return CPoint3T<T>(x, y, 0);
+	}
 	CPointT<T>	RoundUp(void) const {
 		return CPointT<T>(::RoundUp(x), ::RoundUp(y));
 	}
@@ -160,11 +159,6 @@ typedef	CPointT<float>		CPointF;
 
 template<class T>
 class CPoint3T :
-//	boost::arithmetic			< CPoint3T<T>,
-//	boost::arithmetic			< CPoint3T<T>, T,
-//	boost::equality_comparable	< CPoint3T<T>,
-//	boost::equality_comparable	< CPoint3T<T>, T
-//	> > > >
 	boost::operators< CPoint3T<T> >
 {
 	static	T	ms_rx_cos, ms_rx_sin,		// 回転角度
@@ -191,6 +185,10 @@ public:
 	// 演算子定義
 	CPoint3T<T>&	operator = (T xyz) {
 		x = y = z = xyz;
+		return *this;
+	}
+	CPoint3T<T>&	operator = (const CPointT<T>& pt) {
+		x = pt.x;	y = pt.y;
 		return *this;
 	}
 	CPoint3T<T>&	operator += (T d) {
@@ -545,10 +543,10 @@ boost::tuple<CPointD, CPointD> CalcOffsetLine(const CPointD&, const CPointD&, do
 double	CalcBetweenAngle(const CPointD&, const CPointD&);
 //	ｵﾌｾｯﾄ分平行移動させた線分同士の交点を求める
 boost::optional<CPointD>	CalcOffsetIntersectionPoint_LL
-	(const CPointD&, const CPointD&, double, BOOL);
+	(const CPointD&, const CPointD&, double, double, BOOL);
 //	ｵﾌｾｯﾄ分平行移動させた線と円弧の交点を求める
 boost::optional<CPointD>	CalcOffsetIntersectionPoint_LC
-	(const CPointD&, const CPointD&, double, double, BOOL, BOOL);
+	(const CPointD&, const CPointD&, double, double, double, BOOL, BOOL);
 //	ｵﾌｾｯﾄ分平行移動させた線と楕円弧の交点を求める
 boost::optional<CPointD>	CalcOffsetIntersectionPoint_LE
 	(const CPointD&, const CPointD&, double, double, double, double, BOOL, BOOL);

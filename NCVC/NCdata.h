@@ -5,10 +5,11 @@
 #pragma once
 
 #include "MainFrm.h"
+#include "DXFOption.h"		// enMAKETYPE
 #include "NCVCdefine.h"
 
 #ifdef _DEBUG
-#define	_DEBUG_DUMP
+//#define	_DEBUG_DUMP
 #endif
 
 // 始点終点指示
@@ -59,14 +60,8 @@ protected:
 	CPoint3D	m_ptValS, m_ptValE;	// 開始,終了座標
 	CNCread*	m_pRead;		// 読み込み終了後に消去するﾃﾞｰﾀ群
 
-	// CPoint3Dから平面の2D座標を抽出
-	CPointD	GetPlaneValue(const CPoint3D&) const;
-	// CPointDからCPoint3Dへ座標設定
-	void	SetPlaneValue(const CPointD&, CPoint3D&);
-	// CPoint3Dから平面の2D座標を抽出して原点補正
-	CPointD	GetPlaneValueOrg(const CPoint3D&, const CPoint3D&) const;
 	// G68座標回転
-	void	CalcG68Round(LPG68ROUND, CPoint3D&);
+	void	CalcG68Round(LPG68ROUND, CPoint3D&) const;
 
 	// 派生ｸﾗｽ用ｺﾝｽﾄﾗｸﾀ
 	CNCdata(ENNCDTYPE, const CNCdata*, LPNCARGV, const CPoint3D&);
@@ -87,6 +82,13 @@ public:
 	ENPLANE	GetPlane(void) const;
 	DWORD	GetValFlags(void) const;
 	double	GetValue(size_t) const;
+	// CPoint3Dから平面の2D座標を抽出
+	CPointD	GetPlaneValue(const CPoint3D&) const;
+	// CPointDからCPoint3Dへ座標設定
+	void	SetPlaneValue(const CPointD&, CPoint3D&) const;
+	// CPoint3Dから平面の2D座標を抽出して原点補正
+	CPointD	GetPlaneValueOrg(const CPoint3D&, const CPoint3D&) const;
+	//
 	const CPoint3D	GetStartPoint(void) const;
 	const CPoint3D	GetEndPoint(void) const;
 	const CPoint3D	GetOriginalEndPoint(void) const;
@@ -132,6 +134,10 @@ public:
 			int		AddGLWireFirstVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
 	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
 	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
+	//
+	virtual	CPoint	GetDrawStartPoint(size_t) const;
+	virtual	CPoint	GetDrawEndPoint(size_t) const;
+	virtual	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
 
 	// ｵﾌﾞｼﾞｪｸﾄ占有矩形(都度ｾｯﾄ)
 	virtual	CRect3D	GetMaxRect(void) const;
@@ -150,7 +156,7 @@ public:
 	// [始点|終点]を垂直にｵﾌｾｯﾄ(90°回転)した座標計算
 	virtual	boost::optional<CPointD>	CalcPerpendicularPoint(ENPOINTORDER, double, int) const;
 	// ｵﾌｾｯﾄ分移動させた交点
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, double, BOOL) const;
 	// ｵﾌｾｯﾄ分移動させた交点(円弧は接線)
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const;
 	// 補正座標の設定
@@ -172,7 +178,6 @@ class CNCline : public CNCdata
 	EN_NCPEN	GetPenType(void) const;
 	int			GetLineType(void) const;
 	void	DrawLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
-	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
 	void	SetEndmillPath(CPointD*, CPointD*, CPointD*) const;
 
 protected:
@@ -187,9 +192,6 @@ public:
 	CNCline(const CNCdata*);
 
 public:
-	CPoint	GetDrawStartPoint(size_t) const;
-	CPoint	GetDrawEndPoint(size_t) const;
-
 	virtual	void	DrawTuning(double);
 	virtual	void	DrawTuningXY(double);
 	virtual	void	DrawTuningXZ(double);
@@ -208,6 +210,10 @@ public:
 	virtual	void	DrawGLBottomFace(void) const;
 	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
 	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
+	//
+	virtual	CPoint	GetDrawStartPoint(size_t) const;
+	virtual	CPoint	GetDrawEndPoint(size_t) const;
+	virtual	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
 	virtual	CRect3D	GetMaxCutRect(void) const;
@@ -217,7 +223,7 @@ public:
 	virtual	double	CalcBetweenAngle(const CNCdata*) const;
 	virtual	int		CalcOffsetSign(void) const;
 	virtual	boost::optional<CPointD>	CalcPerpendicularPoint(ENPOINTORDER, double, int) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, double, BOOL) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const;
 	virtual	void	SetCorrectPoint(ENPOINTORDER, const CPointD&, double);
 };
@@ -293,7 +299,7 @@ public:
 	virtual	double	CalcBetweenAngle(const CNCdata*) const;
 	virtual	int		CalcOffsetSign(void) const;
 	virtual	boost::optional<CPointD>	CalcPerpendicularPoint(ENPOINTORDER, double, int) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, double, BOOL) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const;
 	virtual	void	SetCorrectPoint(ENPOINTORDER, const CPointD&, double);
 };
@@ -318,7 +324,6 @@ class CNCcircle : public CNCline
 				m_dFactorXZ,
 				m_dFactorYZ;
 	PFNCIRCLEDRAW	m_pfnCircleDraw;	// 平面別の描画関数
-	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
 	void	DrawEndmillXYPath(void) const;
 	void	DrawEndmillPipe(void) const;
 	void	DrawEndmillBall(void) const;
@@ -330,7 +335,7 @@ class CNCcircle : public CNCline
 	void	AngleTuning(const CPointD&, const CPointD&);
 
 public:
-	CNCcircle(const CNCdata*, LPNCARGV, const CPoint3D&, BOOL bLathe = FALSE);
+	CNCcircle(const CNCdata*, LPNCARGV, const CPoint3D&, enMAKETYPE enType = NCMAKEMILL);
 	CNCcircle(const CNCdata*);
 
 	int		GetG23(void) const;
@@ -363,6 +368,8 @@ public:
 	virtual	void	DrawGLBottomFace(void) const;
 	virtual	int		AddGLWireVertex(std::vector<GLfloat>&, std::vector<GLfloat>&) const;
 	virtual	int		AddGLWireTexture(int, double&, double, GLfloat*) const;
+	//
+	virtual	void	DrawWireLine(EN_NCDRAWVIEW, CDC*, BOOL) const;
 
 	virtual	CRect3D	GetMaxRect(void) const;
 	virtual	CRect3D	GetMaxCutRect(void) const;
@@ -372,7 +379,7 @@ public:
 	virtual	double	CalcBetweenAngle(const CNCdata*) const;
 	virtual	int		CalcOffsetSign(void) const;
 	virtual	boost::optional<CPointD>	CalcPerpendicularPoint(ENPOINTORDER, double, int) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, double, BOOL) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const;
 	virtual	void	SetCorrectPoint(ENPOINTORDER, const CPointD&, double);
 };

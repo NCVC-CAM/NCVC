@@ -13,7 +13,7 @@
 */
 #define	DXFOPT_VIEW		0
 #define	DXFOPT_ORGTYPE	1
-enum	eMAKETYPE	{NCMAKEMILL, NCMAKELATHE};
+enum	enMAKETYPE	{NCMAKEMILL, NCMAKELATHE, NCMAKEWIRE};
 
 class CDXFOption
 {
@@ -27,12 +27,12 @@ friend	class	CDxfSetup2;
 	CStringList	m_strMillList,			// ØíğŒÌ§²Ù–¼‚Ì—š—ğ
 				m_strLatheList,			// ù”Õ—pØíğŒÌ§²Ù–¼‚Ì—š—ğ
 				m_strLayerToInitList;	// Ú²Ô–¼‚ÆğŒÌ§²Ù‚ÌŠÖŒWÌ§²Ù‚Ì—š—ğ
-	eMAKETYPE	m_enMakeType;		// ’¼‘O‚ÌNC¶¬À²Ìß
+	enMAKETYPE	m_enMakeType;		// ’¼‘O‚ÌNC¶¬À²Ìß
 
 	BOOL	AddListHistory(CStringList&, LPCTSTR);
 	void	DelListHistory(CStringList&, LPCTSTR);
-	BOOL	ReadInitHistory(eMAKETYPE);
-	BOOL	SaveInitHistory(eMAKETYPE);
+	BOOL	ReadInitHistory(enMAKETYPE);
+	BOOL	SaveInitHistory(enMAKETYPE);
 	BOOL	SaveLayerHistory(void);
 
 public:
@@ -65,7 +65,7 @@ public:
 	void	SetViewFlag(BOOL bView) {
 		m_nDXF[DXFOPT_VIEW] = bView;
 	}
-	eMAKETYPE	GetNCMakeType(void) const {
+	enMAKETYPE	GetNCMakeType(void) const {
 		return m_enMakeType;
 	}
 

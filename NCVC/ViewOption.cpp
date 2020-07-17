@@ -92,9 +92,9 @@ static	const	int	g_nFontSize[] = {	// Îß²ÝÄŽw’è
 	9, 12
 };
 static	const	BOOL	g_bDefaultSetting[] = {
-	FALSE,		// m_bTraceMarker
+	TRUE,		// m_bTraceMarker
 	TRUE,		// m_bDrawRevise
-	TRUE,		// m_bDrawCircleCenter
+	FALSE,		// m_bDrawCircleCenter
 	FALSE,		// m_bScale
 	TRUE,		// m_bGuide
 	FALSE,		// m_bSolidView

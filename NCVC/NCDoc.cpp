@@ -16,6 +16,7 @@
 #include "ThreadDlg.h"
 #include "DXFMakeOption.h"
 #include "DXFMakeClass.h"
+#include "DXFOption.h"
 #include "MakeDXFDlg.h"
 #include "DXFkeyword.h"
 
@@ -64,6 +65,9 @@ END_MESSAGE_MAP()
 
 CNCDoc::CNCDoc()
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCDoc::CNCDoc() Start");
+#endif
 	int		i;
 
 	m_bNcDocFlg.reset();
@@ -151,8 +155,17 @@ CNCdata* CNCDoc::DataOperation
 	CMCOption*	pOpt = AfxGetNCVCApp()->GetMCOption();
 	CNCdata*	pDataResult = NULL;
 	CNCblock*	pBlock;
-	CPoint3D	pt( m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg );
+//	CPoint3D	ptOffset( m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg );	// GetOffsetOrig()
 	int			i;
+	enMAKETYPE	enMakeType;
+
+	// 円弧補間用
+	if ( m_bNcDocFlg[NCDOC_LATHE] )
+		enMakeType = NCMAKELATHE;
+	else if ( m_bNcDocFlg[NCDOC_WIRE] )
+		enMakeType = NCMAKEWIRE;
+	else
+		enMakeType = NCMAKEMILL;
 
 	// 例外ｽﾛｰは上位でｷｬｯﾁ
 	if ( lpArgv->nc.nGtype == G_TYPE ) {
@@ -160,17 +173,27 @@ CNCdata* CNCDoc::DataOperation
 		case 0:		// 直線
 		case 1:
 			// ｵﾌﾞｼﾞｪｸﾄ生成
-			pDataResult = new CNCline(pData, lpArgv, pt);
+			pDataResult = new CNCline(pData, lpArgv, GetOffsetOrig());
 			SetMaxRect(pDataResult);		// 最小・最大値の更新
 			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
 				m_bNcDocFlg.set(NCDOC_REVISEING);	// 補正ﾓｰﾄﾞ
 			break;
 		case 2:		// 円弧
 		case 3:
-			pDataResult = new CNCcircle(pData, lpArgv, pt, m_bNcDocFlg[NCDOC_LATHE]);
+			pDataResult = new CNCcircle(pData, lpArgv, GetOffsetOrig(), enMakeType);
 			SetMaxRect(pDataResult);
 			if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
 				m_bNcDocFlg.set(NCDOC_REVISEING);
+			break;
+		case 4:		// ﾄﾞｳｪﾙ
+			if ( lpArgv->nc.dwValFlags & NCD_X ) {
+				// 移動ｺｰﾄﾞを考慮し、Ｐ値に強制変換
+				lpArgv->nc.dValue[NCA_P] = lpArgv->nc.dValue[NCA_X] * 1000.0;	// sec -> msec
+				lpArgv->nc.dValue[NCA_X] = 0.0;
+				lpArgv->nc.dwValFlags &= ~NCD_X;
+				lpArgv->nc.dwValFlags |=  NCD_P;
+			}
+			pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 			break;
 		case 81:	// 固定ｻｲｸﾙ
 		case 82:
@@ -181,7 +204,7 @@ CNCdata* CNCDoc::DataOperation
 		case 87:
 		case 88:
 		case 89:
-			pDataResult = new CNCcycle(pData, lpArgv, pt, pOpt->GetFlag(MC_FLG_L0CYCLE));
+			pDataResult = new CNCcycle(pData, lpArgv, GetOffsetOrig(), pOpt->GetFlag(MC_FLG_L0CYCLE));
 			SetMaxRect(pDataResult);
 			break;
 		case 10:	// ﾃﾞｰﾀ設定
@@ -189,7 +212,7 @@ CNCdata* CNCDoc::DataOperation
 				if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
 					// 工具情報の追加
 					if ( pOpt->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) )
-						pDataResult = new CNCdata(pData, lpArgv, pt);
+						pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 					else {
 						i = lpArgv->nc.nLine;
 						if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
@@ -208,7 +231,7 @@ CNCdata* CNCDoc::DataOperation
 						if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
 							m_ptNcWorkOrg[nWork][i] += lpArgv->nc.dValue[i];
 					}
-					pDataResult = new CNCdata(pData, lpArgv, pt);
+					pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 					break;
 				}
 			}
@@ -226,7 +249,7 @@ CNCdata* CNCDoc::DataOperation
 				if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
 					m_ptNcLocalOrg[i] = lpArgv->nc.dValue[i];
 			}
-			pDataResult = new CNCdata(pData, lpArgv, pt);
+			pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 			break;
 		case 92:
 			if ( !m_bNcDocFlg[NCDOC_LATHE] ) {
@@ -241,16 +264,23 @@ CNCdata* CNCDoc::DataOperation
 				}
 				// 現在位置 - G92値 で、G92座標系原点を計算
 				m_nWorkOrg = WORKOFFSET;	// G92座標系選択
-				pt = m_ptNcWorkOrg[WORKOFFSET];
+				// ptOffset = m_ptNcWorkOrg[WORKOFFSET];
+			}
+			if ( m_bNcDocFlg[NCDOC_WIRE] ) {
+				// ﾜｰｸ厚さとﾌﾟﾛｸﾞﾗﾑ面の指示
+				if ( lpArgv->nc.dwValFlags & NCD_I )
+					m_rcWorkCo.high = lpArgv->nc.dValue[NCA_I];
+				if ( lpArgv->nc.dwValFlags & NCD_J )
+					m_rcWorkCo.low  = lpArgv->nc.dValue[NCA_J];
 			}
 			// through
-		default:	// G04 ...
-			pDataResult = new CNCdata(pData, lpArgv, pt);
+		default:
+			pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 		}
 	}	// end of G_TYPE
 	else {
 		// M_TYPE, O_TYPE, etc.
-		pDataResult = new CNCdata(pData, lpArgv, pt);
+		pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 	}
 
 	// ｵﾌﾞｼﾞｪｸﾄ登録
@@ -694,7 +724,7 @@ void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 	dbg.printf("File =%s", lpszPathName);
 	dbg.printf("Block=%d", GetNCBlockSize());
 #endif
-	if ( ValidBlockCheck() ) {
+	if ( !ValidBlockCheck() ) {
 #ifdef _DEBUG
 		dbg.printf("ValidBlockCheck() Error");
 #endif
@@ -726,7 +756,7 @@ void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 #endif
 	delete	pThread;
 
-	if ( ValidDataCheck() ) {
+	if ( !ValidDataCheck() ) {
 		m_rcMax.SetRectEmpty();
 		m_bNcDocFlg.set(NCDOC_ERROR);
 		// error through
@@ -765,6 +795,14 @@ void CNCDoc::Dump(CDumpContext& dc) const
 
 BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName) 
 {
+#ifdef _DEBUG_FILEOPEN		// NCVC.h
+	extern	CTime	dbgtimeFileOpen;	// NCVC.cpp
+	CTime	t2 = CTime::GetCurrentTime();
+	CTimeSpan ts = t2 - dbgtimeFileOpen;
+	CString	strTime( ts.Format("%H:%M:%S") );
+	g_dbg.printf("CNCDoc::OnOpenDocument() Start %s", strTime);
+	dbgtimeFileOpen = t2;
+#endif
 	BOOL	bResult;
 	PFNNCVCSERIALIZEFUNC	pSerialFunc = AfxGetNCVCApp()->GetSerializeFunc();
 
@@ -983,7 +1021,7 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	for ( i=0; i<GetNCBlockSize(); i++ )
 		dbg.printf("%4d:%s", i, GetNCblock(i)->GetStrBlock());
 #endif
-	if ( ValidBlockCheck() ) {
+	if ( !ValidBlockCheck() ) {
 		AfxMessageBox(IDS_ERR_NCDATA, MB_OK|MB_ICONEXCLAMATION);
 		return FALSE;
 	}
@@ -992,6 +1030,20 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	CThreadDlg	dlg(IDS_READ_NCD, this);
 	if ( dlg.DoModal() != IDOK )
 		return FALSE;
+
+	// ﾜｲﾔﾓｰﾄﾞにおけるUV軸ｵﾌﾞｼﾞｪｸﾄの生成
+	if ( m_bNcDocFlg[NCDOC_WIRE] ) {
+		CThreadDlg	dlg(IDS_UVTAPER_NCD, this);
+		if ( dlg.DoModal() != IDOK )
+			return FALSE;
+	}
+
+	// 補正座標計算
+	if ( m_bNcDocFlg[NCDOC_REVISEING] ) {
+		CThreadDlg	dlg(IDS_CORRECT_NCD, this);
+		if ( dlg.DoModal() != IDOK )
+			return FALSE;
+	}
 
 	// 占有矩形調整
 	m_rcMax.NormalizeRect();
@@ -1014,7 +1066,7 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	}
 
 	// 最終ﾁｪｯｸ
-	if ( ValidDataCheck() ) {
+	if ( !ValidDataCheck() ) {
 		AfxMessageBox(IDS_ERR_NCDATA, MB_OK|MB_ICONEXCLAMATION);
 		m_bNcDocFlg.set(NCDOC_ERROR);
 		// error through
@@ -1034,20 +1086,6 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	dbg.printf("m_rcWork low  =%f high  =%f", m_rcWork.low, m_rcWork.high);
 #endif
 
-	// ﾜｲﾔﾓｰﾄﾞにおけるUV軸ｵﾌﾞｼﾞｪｸﾄの生成
-	if ( m_bNcDocFlg[NCDOC_WIRE] ) {
-		CThreadDlg	dlg(IDS_UVTAPER_NCD, this);
-		if ( dlg.DoModal() != IDOK )
-			return FALSE;
-	}
-
-	// 補正座標計算
-	if ( m_bNcDocFlg[NCDOC_REVISEING] ) {
-		CThreadDlg	dlg(IDS_CORRECT_NCD, this);
-		if ( dlg.DoModal() != IDOK )
-			return FALSE;
-	}
-
 	// 切削時間計算ｽﾚｯﾄﾞ開始
 	CreateCutcalcThread();
 	// NCﾃﾞｰﾀの最大値取得
@@ -1064,18 +1102,18 @@ BOOL CNCDoc::ValidBlockCheck(void)
 {
 	for ( int i=0; i<GetNCBlockSize(); i++ ) {
 		if ( GetNCblock(i)->GetStrGcode().GetLength() > 0 )
-			return FALSE;
+			return TRUE;
 	}
-	return TRUE;
+	return FALSE;
 }
 
 BOOL CNCDoc::ValidDataCheck(void)
 {
 	for ( int i=0; i<GetNCsize(); i++ ) {
 		if ( GetNCdata(i)->GetType() != NCDBASEDATA )
-			return FALSE;
+			return TRUE;
 	}
-	return TRUE;
+	return FALSE;
 }
 
 BOOL CNCDoc::SerializeInsertBlock

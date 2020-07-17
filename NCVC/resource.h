@@ -404,7 +404,10 @@
 #define IDD_MC_SETUP5                   3700
 #define IDC_MCST5_L0CYCLE               3700
 #define IDC_MCST5_AUTOBREAK             3701
-#define IDC_MCST5_LATHE                 3702
+#define IDC_MCST5_VIEWMODE              3702
+#define IDC_MCST5_WIREDEPTH             3703
+#define IDC_MCST5_LABEL1                3704
+#define IDC_MCST5_LABEL2                3705
 #define IDD_MKNC_SETUP1                 4000
 #define IDC_MKNC1_SPINDLE               4001
 #define IDC_MKNC1_FEED                  4002
@@ -709,15 +712,17 @@
 #define IDS_ERR_NCBLK_UNKNOWN           25000
 #define IDS_ERR_NCBLK_VALUE             25001
 #define IDS_ERR_NCBLK_ORDER             25002
-#define IDS_ERR_NCBLK_M98               25003
-#define IDS_ERR_NCBLK_M98L              25004
-#define IDS_ERR_NCBLK_CHAMFERING        25005
-#define IDS_ERR_NCBLK_NOTLATHE          25009
-#define IDS_ERR_NCBLK_CORRECT           25010
-#define IDS_ERR_NCBLK_CORRECTSTART      25011
-#define IDS_ERR_NCBLK_ENDCIRCLE         25012
-#define IDS_ERR_NCBLK_CORRECTOBJECT     25013
-#define IDS_ERR_NCBLK_G10ADDTOOL        25014
+#define IDS_ERR_NCBLK_OVER              25003
+#define IDS_ERR_NCBLK_M98               25004
+#define IDS_ERR_NCBLK_M98L              25005
+#define IDS_ERR_NCBLK_CHAMFERING        25006
+#define IDS_ERR_NCBLK_NOTLATHE          25010
+#define IDS_ERR_NCBLK_CORRECT           25011
+#define IDS_ERR_NCBLK_CORRECTSTART      25012
+#define IDS_ERR_NCBLK_ENDCIRCLE         25013
+#define IDS_ERR_NCBLK_CORRECTOBJECT     25014
+#define IDS_ERR_NCBLK_G10ADDTOOL        25015
+#define IDS_ERR_NCBLK_TAPER             25016
 #define IDS_ERR_NCBLK_GTYPE             25020
 #define IDS_ERR_NCBLK_PLANE             25021
 #define IDS_ERR_NCBLK_INTERSECTION      25100
@@ -737,7 +742,6 @@
 #define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
-#define ID_32792                        32792
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -760,9 +764,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        153
+#define _APS_NEXT_RESOURCE_VALUE        154
 #define _APS_NEXT_COMMAND_VALUE         32793
-#define _APS_NEXT_CONTROL_VALUE         1045
+#define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

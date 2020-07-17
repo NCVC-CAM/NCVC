@@ -20,9 +20,9 @@ extern	const	DWORD		g_dwSetValFlags[];	// NCDoc.cpp
 
 // CalcRoundPoint() ｻﾌﾞ
 // --- ｵﾌｾｯﾄ方向の決定
-static	int		CalcRoundPoint_OffsetFlag(const CPointD&, const CPointD&, int);
+static	int		_CalcRoundPoint_OffsetFlag(const CPointD&, const CPointD&, int);
 // --- 円同士の内外半径計算
-static	optional<double>	CalcRoundPoint_CircleInOut(const CPointD&, const CPointD&, int, int, double);
+static	optional<double>	_CalcRoundPoint_CircleInOut(const CPointD&, const CPointD&, int, int, double);
 
 //////////////////////////////////////////////////////////////////////
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀｸﾗｽ
@@ -115,19 +115,10 @@ CNCdata::CNCdata
 		else
 			m_nc.dValue[i] = pData->GetOriginalEndValue(i);
 	}
-	// UVW座標値
-	for ( ; i<NCXYZ*2; i++ ) {
-		if ( lpArgv->bAbs )
-			m_nc.dValue[i]  = lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ?
-				lpArgv->nc.dValue[i] : pData->GetValue(i);
-		else
-			m_nc.dValue[i] += lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ?
-				lpArgv->nc.dValue[i] : 0.0;
-	}
 	// 上記以外
 	for ( ; i<VALUESIZE; i++ )
 		m_nc.dValue[i] = lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ?
-			lpArgv->nc.dValue[i] : 0.0;
+			lpArgv->nc.dValue[i] : pData->GetValue(i);
 	// ---------------------------------------------------------------
 	// m_ptValS, m_ptValE, m_ptValOrg, m_pt2D は派生ｸﾗｽで代入
 	// m_nc.dLength は TH_Cuttime.cpp にてセット
@@ -204,7 +195,7 @@ CPointD CNCdata::GetPlaneValue(const CPoint3D& ptVal) const
 	return pt;
 }
 
-void CNCdata::SetPlaneValue(const CPointD& pt, CPoint3D& ptResult)
+void CNCdata::SetPlaneValue(const CPointD& pt, CPoint3D& ptResult) const
 {
 	switch ( GetPlane() ) {
 	case XY_PLANE:
@@ -239,7 +230,7 @@ CPointD	CNCdata::GetPlaneValueOrg(const CPoint3D& pt1, const CPoint3D& pt2) cons
 	return pt;
 }
 
-void CNCdata::CalcG68Round(LPG68ROUND lpG68, CPoint3D& ptResult)
+void CNCdata::CalcG68Round(LPG68ROUND lpG68, CPoint3D& ptResult) const
 {
 	CPoint3D	ptOrg(lpG68->dOrg[NCA_X], lpG68->dOrg[NCA_Y], lpG68->dOrg[NCA_Z]);
 	CPointD		pt(GetPlaneValueOrg(ptResult, ptOrg));
@@ -336,6 +327,23 @@ void CNCdata::DrawWireXZ(CDC* pDC, BOOL bSelect) const
 
 void CNCdata::DrawWireYZ(CDC* pDC, BOOL bSelect) const
 {
+}
+
+CPoint CNCdata::GetDrawStartPoint(size_t n) const
+{
+	ASSERT( FALSE );	// ｴﾗｰ
+	return CPoint();
+}
+
+CPoint CNCdata::GetDrawEndPoint(size_t n) const
+{
+	ASSERT( FALSE );
+	return CPoint();
+}
+
+void CNCdata::DrawWireLine(EN_NCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
+{
+	ASSERT( FALSE );
 }
 
 #ifdef _DEBUG_DUMP
@@ -550,36 +558,34 @@ void CNCline::DrawWireLine(EN_NCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
 	pDC->LineTo(m_ptDrawE[enDraw]);
 	// UV
 	if ( m_pWireObj ) {
-		CPoint	pts(static_cast<CNCline*>(m_pWireObj)->GetDrawStartPoint(enDraw)),
-				pte(static_cast<CNCline*>(m_pWireObj)->GetDrawEndPoint(enDraw));
-		pDC->MoveTo(pts);
-		pDC->LineTo(pte);
+		// m_pWireObjがCNClineとは限らない
+		m_pWireObj->DrawWireLine(enDraw, pDC, bSelect);
 		// XYとUVの接続
 		pDC->MoveTo(m_ptDrawS[enDraw]);
-		pDC->LineTo(pts);
+		pDC->LineTo(m_pWireObj->GetDrawStartPoint(enDraw));
 		pDC->MoveTo(m_ptDrawE[enDraw]);
-		pDC->LineTo(pte);
+		pDC->LineTo(m_pWireObj->GetDrawEndPoint(enDraw));
 	}
 	pDC->SelectObject(pOldPen);
 }
 
-tuple<BOOL, CPointD, double, double> CNCline::CalcRoundPoint
-	(const CNCdata* pNext, double r) const
+tuple<BOOL, CPointD, double, double> CNCline::CalcRoundPoint(const CNCdata* pNext, double r) const
 {
-	BOOL	bResult = FALSE;
-	double	rr1, rr2;
-	// ２線の交点(自身の終点)が原点になるように補正
-	CPointD	pt, pts( GetPlaneValueOrg(m_ptValS, m_ptValE) );
+	BOOL		bResult = FALSE;
+	double		rr1, rr2;
+	CPointD		pt, pts;
 
 	if ( pNext->GetType() == NCDARCDATA ) {
 		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
-		CPointD	pto( GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE) );
+		// 計算原点補正
+		pts = GetPlaneValueOrg(m_ptValS, m_ptValE);
+		CPointD	ptc( GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE) );
 		// ｵﾌｾｯﾄ方向を決定
-		int nOffset = CalcRoundPoint_OffsetFlag(pts, pto, pCircle->GetG23());
+		int nOffset = _CalcRoundPoint_OffsetFlag(pts, ptc, pCircle->GetG23());
 		if ( nOffset != 0 ) {
 			// ｵﾌｾｯﾄ分平行移動させた交点を求める
 			double	rr, xa, ya, rn = fabs(pCircle->GetR());
-			optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LC(pts, pto, rn, r,
+			optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LC(pts, ptc, rn, r, r,
 							pCircle->GetG23(), nOffset>0);
 			if ( ptResult ) {
 				pt = *ptResult;
@@ -592,13 +598,13 @@ tuple<BOOL, CPointD, double, double> CNCline::CalcRoundPoint
 				rr = rn + r*nOffset;
 				if ( nOffset > 0 ) {
 					// 内分点(+r)
-					xa = (pt.x*rn+pto.x*r) / rr;
-					ya = (pt.y*rn+pto.y*r) / rr;
+					xa = (pt.x*rn+ptc.x*r) / rr;
+					ya = (pt.y*rn+ptc.y*r) / rr;
 				}
 				else {
 					// 外分点(-r)
-					xa = (pt.x*rn-pto.x*r) / rr;
-					ya = (pt.y*rn-pto.y*r) / rr;
+					xa = (pt.x*rn-ptc.x*r) / rr;
+					ya = (pt.y*rn-ptc.y*r) / rr;
 				}
 				rr2 = _hypot(xa, ya);
 				bResult = TRUE;
@@ -606,6 +612,8 @@ tuple<BOOL, CPointD, double, double> CNCline::CalcRoundPoint
 		}
 	}
 	else {
+		// 計算原点補正
+		pts = GetPlaneValueOrg(m_ptValS, m_ptValE);
 		CPointD	pte( GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE) );
 		// pts を X軸上に回転
 		double	q = atan2(pts.y, pts.x);
@@ -622,7 +630,6 @@ tuple<BOOL, CPointD, double, double> CNCline::CalcRoundPoint
 		}
 	}
 
-	// 原点補正
 	if ( bResult )
 		pt += GetPlaneValue(m_ptValE);
 
@@ -717,7 +724,7 @@ optional<CPointD> CNCline::CalcPerpendicularPoint
 }
 
 optional<CPointD> CNCline::CalcOffsetIntersectionPoint
-	(const CNCdata* pNext, double r, BOOL bLeft) const
+	(const CNCdata* pNext, double t1, double t2, BOOL bLeft) const
 {
 	optional<CPointD>	ptResult;
 	// ２線の交点(自身の終点)が原点になるように補正
@@ -727,12 +734,12 @@ optional<CPointD> CNCline::CalcOffsetIntersectionPoint
 	if ( pNext->GetType() == NCDARCDATA ) {
 		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
 		pt2 = GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE);
-		ptResult = ::CalcOffsetIntersectionPoint_LC(pt1, pt2, fabs(pCircle->GetR()), r,
+		ptResult = ::CalcOffsetIntersectionPoint_LC(pt1, pt2, fabs(pCircle->GetR()), t1, t2,
 						pCircle->GetG23(), bLeft);
 	}
 	else {
 		pt2 = GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE);
-		ptResult = ::CalcOffsetIntersectionPoint_LL(pt1, pt2, r, bLeft);
+		ptResult = ::CalcOffsetIntersectionPoint_LL(pt1, pt2, t1, t2, bLeft);
 	}
 
 	// 原点補正
@@ -764,7 +771,7 @@ optional<CPointD> CNCline::CalcOffsetIntersectionPoint2
 	}
 
 	// 直線同士のｵﾌｾｯﾄ交点計算
-	optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LL(pt1, pt2, r, bLeft);
+	optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LL(pt1, pt2, r, r, bLeft);
 	// 原点補正
 	if ( ptResult ) {
 		pt = *ptResult + GetPlaneValue(m_ptValE);
@@ -1181,7 +1188,8 @@ void CNCcycle::DrawCycle(EN_NCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
 // CNCcircle クラス
 //////////////////////////////////////////////////////////////////////
 
-CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset, BOOL bLathe/*=FALSE*/) :
+CNCcircle::CNCcircle
+(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset, enMAKETYPE enType/*=NCMAKEMILL*/) :
 	CNCline(NCDARCDATA, pData, lpArgv, ptOffset)
 {
 #ifdef _DEBUG
@@ -1191,7 +1199,7 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOf
 
 	m_nG23 = GetGcode() - 2;	// G2=0, G3=1
 
-	if ( !bLathe ) {
+	if ( enType != NCMAKELATHE ) {
 		// XZ平面は(Z->X, X->Y)なのでそのまま計算すると -90°回転させる必要がある
 		// 簡単に対応するには回転方向を反対にすればよい -> もうちょっとマシな対応を！
 		if ( GetPlane() == XZ_PLANE )
@@ -1208,30 +1216,33 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOf
 			pte( GetPlaneValue(m_ptValE) ),
 			pto;
 
-	// 半径と中心座標の計算(R優先)
-	if ( GetValFlags() & NCD_R ) {
+	// 半径と中心座標の計算(R優先 ただし、ﾜｲﾔﾓｰﾄﾞは無視)
+	if ( GetValFlags()&NCD_R && enType!=NCMAKEWIRE ) {
 		m_r = GetValue(NCA_R);
 		fError = CalcCenter(pts, pte);
 	}
 	else if ( GetValFlags() & (NCD_I|NCD_J|NCD_K) ) {
+		double	i = GetValFlags() & NCD_I ? GetValue(NCA_I) : 0.0,
+				j = GetValFlags() & NCD_J ? GetValue(NCA_J) : 0.0,
+				k = GetValFlags() & NCD_K ? GetValue(NCA_K) : 0.0;
 		m_ptOrg = m_ptValS;
 		switch ( GetPlane() ) {
 		case XY_PLANE:
-			m_r = _hypot(GetValue(NCA_I), GetValue(NCA_J));
-			m_ptOrg.x += GetValue(NCA_I);
-			m_ptOrg.y += GetValue(NCA_J);
+			m_r = _hypot(i, j);
+			m_ptOrg.x += i;
+			m_ptOrg.y += j;
 			pto = m_ptOrg.GetXY();
 			break;
 		case XZ_PLANE:
-			m_r = _hypot(GetValue(NCA_I), GetValue(NCA_K));
-			m_ptOrg.x += GetValue(NCA_I);
-			m_ptOrg.z += GetValue(NCA_K);
+			m_r = _hypot(i, k);
+			m_ptOrg.x += i;
+			m_ptOrg.z += k;
 			pto = m_ptOrg.GetXZ();
 			break;
 		case YZ_PLANE:
-			m_r = _hypot(GetValue(NCA_J), GetValue(NCA_K));
-			m_ptOrg.y += GetValue(NCA_J);
-			m_ptOrg.z += GetValue(NCA_K);
+			m_r = _hypot(j, k);
+			m_ptOrg.y += j;
+			m_ptOrg.z += k;
 			pto = m_ptOrg.GetYZ();
 			break;
 		}
@@ -1373,6 +1384,10 @@ void CNCcircle::AngleTuning(const CPointD& pts, const CPointD& pte)
 	double	sq = ::RoundUp(DEG(m_sq));
 	while ( sq >= ::RoundUp(DEG(m_eq)) )
 		m_eq += RAD(360.0);
+
+	// 角度異常の検出
+	ASSERT( -720.0<=DEG(m_sq) && DEG(m_sq)<=720.0 );
+	ASSERT( -720.0<=DEG(m_eq) && DEG(m_eq)<=720.0 );
 }
 
 double CNCcircle::SetCalcLength(void)
@@ -1608,12 +1623,13 @@ void CNCcircle::DrawWireLine(EN_NCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
 	Draw_G17(enDraw, pDC);
 	// UV
 	if ( m_pWireObj ) {
-		static_cast<CNCcircle*>(m_pWireObj)->Draw_G17(enDraw, pDC);
+		// m_pWireObjがCNCcircleとは限らない
+		m_pWireObj->DrawWireLine(enDraw, pDC, bSelect);
 		// XYとUVの接続
 		pDC->MoveTo(m_ptDrawS[enDraw]);
-		pDC->LineTo(static_cast<CNCcircle*>(m_pWireObj)->GetDrawStartPoint(enDraw));
+		pDC->LineTo(m_pWireObj->GetDrawStartPoint(enDraw));
 		pDC->MoveTo(m_ptDrawE[enDraw]);
-		pDC->LineTo(static_cast<CNCcircle*>(m_pWireObj)->GetDrawEndPoint(enDraw));
+		pDC->LineTo(m_pWireObj->GetDrawEndPoint(enDraw));
 	}
 	pDC->SelectObject(pOldPen);
 }
@@ -2089,56 +2105,49 @@ CRect3D CNCcircle::GetMaxRect(void) const
 	return rcResult;
 }
 
-tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint
-	(const CNCdata* pNext, double r) const
+tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint(const CNCdata* pNext, double r) const
 {
-	// ２線の交点(自身の終点)が原点になるように補正
-	CPointD	pt, pts( GetPlaneValueOrg(m_ptOrg, m_ptValE) ), pte;
-	double	rr1, rr2, xa, ya, r0 = fabs(m_r);
-	int		nResult;
-	BOOL	bResult = TRUE;
+	BOOL		bResult = FALSE;
+	int			nResult;
+	double		rr1, rr2, xa, ya, r0 = fabs(m_r);
+	CPointD		pt, pts, pte, pt1, pt2;
+
+	pts = GetPlaneValueOrg(m_ptOrg, m_ptValE);
 
 	if ( pNext->GetType() == NCDARCDATA ) {
 		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
 		int	nG23next = 1 - pCircle->GetG23();	// 交点への進入は反対回転
 		pte = GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE);
-		CPointD	p1, p2;
 		double	r1, r2, rn = fabs(pCircle->GetR());
 		// 自身の円と他方の接線で自身の±r符号を計算
-		optional<double> dResult = CalcRoundPoint_CircleInOut(pts, pte, m_nG23, nG23next, r);
+		optional<double> dResult = _CalcRoundPoint_CircleInOut(pts, pte, m_nG23, nG23next, r);
 		if ( dResult )
 			r1 = *dResult;
-		else {
-			bResult = FALSE;
+		else
 			return make_tuple(bResult, pt, rr1, rr2);
-		}
 		// 他方の円と自身の接線で他方の±r符号を計算
-		dResult = CalcRoundPoint_CircleInOut(pte, pts, nG23next, m_nG23, r);
+		dResult = _CalcRoundPoint_CircleInOut(pte, pts, nG23next, m_nG23, r);
 		if ( dResult )
 			r2 = *dResult;
-		else {
-			bResult = FALSE;
+		else
 			return make_tuple(bResult, pt, rr1, rr2);
-		}
 		// ２つの円の交点を求める -> 解が２つないと面取り出来ないと判断する
 		rr1 = r0 + r1;		rr2 = rn + r2;
-		tie(nResult, p1, p2) = ::CalcIntersectionPoint_CC(pts, pte, rr1, rr2);
-		if ( nResult != 2 ) {
-			bResult = FALSE;
+		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(pts, pte, rr1, rr2);
+		if ( nResult != 2 )
 			return make_tuple(bResult, pt, rr1, rr2);
-		}
 		// 解の選択
 		double	sx = fabs(pts.x), sy = fabs(pts.y), ex = fabs(pte.x), ey = fabs(pte.y);
 		if ( (sx<NCMIN && ex<NCMIN) || (sy<NCMIN && ey<NCMIN) ||
 				(sx>NCMIN && ex>NCMIN && fabs(pts.y/pts.x - pte.y/pte.x)<NCMIN) ) {
 			// 中心が同一線上にあるとき，接線と符号が同じ方を選択
 			if ( sy < NCMIN )
-				pt = (m_nG23==0 ? -pts.x : pts.x) * p1.y > 0 ? p1 : p2;
+				pt = (m_nG23==0 ? -pts.x : pts.x) * pt1.y > 0 ? pt1 : pt2;
 			else
-				pt = (m_nG23==0 ? pts.y : -pts.y) * p1.x > 0 ? p1 : p2;
+				pt = (m_nG23==0 ? pts.y : -pts.y) * pt1.x > 0 ? pt1 : pt2;
 		}
 		else
-			pt = p1.x*p1.x+p1.y*p1.y < p2.x*p2.x+p2.y*p2.y ? p1 : p2;
+			pt = pt1.x*pt1.x+pt1.y*pt1.y < pt2.x*pt2.x+pt2.y*pt2.y ? pt1 : pt2;
 		// 面取りに相当するC値の計算
 		if ( r1 > 0 ) {
 			xa = (pt.x*r0+pts.x*r1) / rr1;
@@ -2160,42 +2169,44 @@ tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint
 			ya = (pt.y*rn-pte.y*r2) / rr2;
 		}
 		rr2 = _hypot(xa, ya);
+		bResult = TRUE;
 	}
 	else {
 		pte = GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE);
 		// ｵﾌｾｯﾄ方向を決定
 		int nG23 = 1 - m_nG23,
-			nOffset = CalcRoundPoint_OffsetFlag(pte, pts, nG23);
+			nOffset = _CalcRoundPoint_OffsetFlag(pte, pts, nG23);
 		if ( nOffset == 0 )
 			return make_tuple(bResult, pt, rr1, rr2);
 		// ｵﾌｾｯﾄ分平行移動させた交点を求める
 		optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LC(pte, pts,	// 直線からのｱﾌﾟﾛｰﾁで
-								r0, r, nG23, nOffset>0);						// 回転方向を反転
-		if ( !ptResult )
-			return make_tuple(bResult, pt, rr1, rr2);
-		pt = *ptResult;
-		// 面取りに相当するC値の計算
-		if ( nOffset > 0 )
-			nOffset = nG23==0 ? 1 : -1;
-		else
-			nOffset = nG23==0 ? -1 : 1;
-		rr1 = r0 + r*nOffset;
-		if ( nOffset > 0 ) {
-			// 内分点
-			xa = (pt.x*r0+pts.x*r) / rr1;
-			ya = (pt.y*r0+pts.y*r) / rr1;
+								r0, r, r, nG23, nOffset>0);						// 回転方向を反転
+		if ( ptResult ) {
+			pt = *ptResult;
+			// 面取りに相当するC値の計算
+			if ( nOffset > 0 )
+				nOffset = nG23==0 ? 1 : -1;
+			else
+				nOffset = nG23==0 ? -1 : 1;
+			rr1 = r0 + r*nOffset;
+			if ( nOffset > 0 ) {
+				// 内分点
+				xa = (pt.x*r0+pts.x*r) / rr1;
+				ya = (pt.y*r0+pts.y*r) / rr1;
+			}
+			else {
+				// 外分点
+				xa = (pt.x*r0-pts.x*r) / rr1;
+				ya = (pt.y*r0-pts.y*r) / rr1;
+			}
+			rr1 = _hypot(xa, ya);
+			rr2 = sqrt(pt.x*pt.x + pt.y*pt.y - r*r);
+			bResult = TRUE;
 		}
-		else {
-			// 外分点
-			xa = (pt.x*r0-pts.x*r) / rr1;
-			ya = (pt.y*r0-pts.y*r) / rr1;
-		}
-		rr1 = _hypot(xa, ya);
-		rr2 = sqrt(pt.x*pt.x + pt.y*pt.y - r*r);
 	}
 
-	// 原点補正
-	pt += GetPlaneValue(m_ptValE);
+	if ( bResult )
+		pt += GetPlaneValue(m_ptValE);
 
 	return make_tuple(bResult, pt, rr1, rr2);
 }
@@ -2372,7 +2383,7 @@ optional<CPointD> CNCcircle::CalcPerpendicularPoint
 }
 
 optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint
-	(const CNCdata* pNext, double r, BOOL bLeft) const
+	(const CNCdata* pNext, double t1, double t2, BOOL bLeft) const
 {
 	BOOL	bResult = FALSE;
 	// ２線の交点(自身の終点)が原点になるように補正
@@ -2389,7 +2400,7 @@ optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint
 			k1 = -k1;
 			k2 = -k2;
 		}
-		double	r1 = fabs(m_r)+r*k1, r2 = fabs(pCircle->GetR())+r*k2;
+		double	r1 = fabs(m_r)+t1*k1, r2 = fabs(pCircle->GetR())+t2*k2;
 		// 同一円か判断
 		if ( pto1.IsMatchPoint(&pto2) && fabs(r1-r2)<NCMIN ) {
 			// 円の交点は求められないので、単純ｵﾌｾｯﾄ座標計算
@@ -2420,7 +2431,7 @@ optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint
 				pt2( GetPlaneValueOrg(m_ptOrg, m_ptValE) );
 		// 線からのｱﾌﾟﾛｰﾁで回転方向を反転
 		optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LC(pt1, pt2,
-								fabs(m_r), r, 1-GetG23(), !bLeft);
+								fabs(m_r), t1, t2, 1-GetG23(), !bLeft);
 		if ( ptResult ) {
 			pt = *ptResult;
 			bResult = TRUE;
@@ -2462,7 +2473,7 @@ optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint2
 	}
 
 	// 直線同士のｵﾌｾｯﾄ交点計算
-	optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LL(pt1, pt2, r, bLeft);
+	optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LL(pt1, pt2, r, r, bLeft);
 	// 原点補正
 	if ( ptResult ) {
 		pt = *ptResult + GetPlaneValue(m_ptValE);
@@ -2504,7 +2515,7 @@ void CNCcircle::SetCorrectPoint(ENPOINTORDER enPoint, const CPointD& ptSrc, doub
 //////////////////////////////////////////////////////////////////////
 
 // ｵﾌｾｯﾄ方向の決定
-int CalcRoundPoint_OffsetFlag(const CPointD& pts, const CPointD& pto, int nRound)
+int _CalcRoundPoint_OffsetFlag(const CPointD& pts, const CPointD& pto, int nRound)
 {
 	// 回転符号
 	int		k = nRound==0 ? 1 : -1;		// G02:+90°,G03:-90°
@@ -2526,7 +2537,7 @@ int CalcRoundPoint_OffsetFlag(const CPointD& pts, const CPointD& pto, int nRound
 }
 
 // 円同士の内外半径計算
-optional<double> CalcRoundPoint_CircleInOut
+optional<double> _CalcRoundPoint_CircleInOut
 	(const CPointD& pts, const CPointD& pte, int nG23, int nG23next, double r)
 {
 	CPointD	pto;

@@ -69,7 +69,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="MagaDbg.lib version.lib opengl32.lib glu32.lib glew32sd.lib gdiplus.lib"
+				AdditionalDependencies="MagaDbg.lib winmm.lib version.lib opengl32.lib glu32.lib glew32sd.lib gdiplus.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				GenerateMapFile="true"

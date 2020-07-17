@@ -9,6 +9,10 @@
 #include <afxwinappex.h>
 #include "resource.h"       // メイン シンボル
 
+#ifdef _DEBUG
+#define	_DEBUG_FILEOPEN		// ﾌｧｲﾙを開くときの追跡
+#endif
+
 // ｱﾄﾞｲﾝ定義(ncvcaddin.h)
 #define	___NCVC___
 
@@ -53,6 +57,9 @@ public:
 
 	// 厳格な拡張子検査
 	virtual	Confidence	MatchDocType(LPCTSTR lpszPathName, CDocument*& rpDocMatch);
+#ifdef _DEBUG_FILEOPEN
+	CDocument* OpenDocumentFile(LPCTSTR lpszPathName, BOOL bMakeVisible = TRUE);
+#endif
 
 	DECLARE_DYNAMIC(CNCVCDocTemplate)
 };
@@ -231,6 +238,9 @@ public:
 	virtual BOOL InitInstance();
 	virtual int	 ExitInstance();
 	virtual void AddToRecentFileList(LPCTSTR);
+#ifdef _DEBUG_FILEOPEN
+	virtual CDocument* OpenDocumentFile(LPCTSTR lpszFileName);
+#endif
 
 // 実装
 	afx_msg void OnAppAbout();

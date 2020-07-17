@@ -136,7 +136,7 @@ static void NCArgvInitialize(LPNCARGV lpArgv)
 	lpArgv->bAbs		= pMCopt->GetModalSetting(MODALGROUP3) == 0 ? TRUE : FALSE;
 	lpArgv->bG98		= pMCopt->GetModalSetting(MODALGROUP4) == 0 ? TRUE : FALSE;
 	lpArgv->nSpindle	= 0;
-	lpArgv->dFeed		= pMCopt->GetFeed();
+	lpArgv->dFeed		= pMCopt->GetDbl(MC_DBL_FEED);
 	lpArgv->dEndmill	= pVopt->GetDefaultEndmill();
 }
 

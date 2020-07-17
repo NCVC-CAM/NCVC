@@ -28,6 +28,9 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
+#ifdef _DEBUG_FILEOPEN
+CTime	dbgtimeFileOpen;
+#endif
 #endif
 
 extern	int		g_nProcesser = 1;		// Ãﬂ€æØªêî(->åüçıΩ⁄Øƒﬁêî)
@@ -309,8 +312,6 @@ int CNCVCApp::ExitInstance()
 	return CWinAppEx::ExitInstance();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
 void CNCVCApp::AddToRecentFileList(LPCTSTR lpszPathName)
 {
 	CWinAppEx::AddToRecentFileList(lpszPathName);
@@ -318,6 +319,26 @@ void CNCVCApp::AddToRecentFileList(LPCTSTR lpszPathName)
 	if ( lpszPathName && lstrlen(lpszPathName)>0 )
 		AddToRecentViewList(lpszPathName);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+#ifdef _DEBUG_FILEOPEN
+CDocument* CNCVCApp::OpenDocumentFile(LPCTSTR lpszFileName)
+{
+	g_dbg.printf("CNCVCApp::OpenDocumentFile() Start");
+	
+	CTime	t1 = CTime::GetCurrentTime();
+	CDocument* pDoc = CWinAppEx::OpenDocumentFile(lpszFileName);
+	CTime	t2 = CTime::GetCurrentTime();
+
+	CTimeSpan ts = t2 - t1;
+	CString	strTime( ts.Format("%H:%M:%S") );
+	g_dbg.printf("CWinAppEx::OpenDocumentFile() End = %s", strTime);
+	dbgtimeFileOpen = t2;
+
+	return pDoc;
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCVCApp “› ﬁä÷êî
@@ -1088,6 +1109,9 @@ const CExecOption* CNCVCApp::GetLookupExecID(WORD wID)
 
 BOOL CNCVCApp::DoPromptFileNameEx(CString& strFileName)
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCVCApp::DoPromptFileNameEx() Start");
+#endif
 	int		i, nResult, nExt;
 	CString	strAllFilter, strFilter[SIZEOF(m_pDocTemplate)], strExt[SIZEOF(m_pDocTemplate)], strTmp;
 
@@ -1131,6 +1155,9 @@ BOOL CNCVCApp::DoPromptFileNameEx(CString& strFileName)
 
 void CNCVCApp::OnFileOpen() 
 {
+#ifdef _DEBUG_FILEOPEN
+	g_dbg.printf("CNCVCApp::OnFileOpen() Start");
+#endif
 	// MRUç≈êVÿΩƒÇÃ ﬂΩÇóLå¯Ç…Ç∑ÇÈ
 	CString	newName(GetRecentFileName());
 	if ( !DoPromptFileNameEx(newName) )		// ∂Ω¿—Ãß≤Ÿµ∞Ãﬂ›
@@ -1672,6 +1699,23 @@ CDocTemplate::Confidence
 	}
 	return match;
 }
+
+#ifdef _DEBUG_FILEOPEN
+CDocument* CNCVCDocTemplate::OpenDocumentFile(LPCTSTR lpszPathName, BOOL bMakeVisible/*=TRUE*/)
+{
+	g_dbg.printf("CNCVCDocTemplate::OpenDocumentFile() Start");
+
+	CTime	t1 = dbgtimeFileOpen = CTime::GetCurrentTime();
+	CDocument* pDoc = CMultiDocTemplate::OpenDocumentFile(lpszPathName, bMakeVisible);
+	CTime	t2 = CTime::GetCurrentTime();
+
+	CTimeSpan ts = t2 - t1;
+	CString	strTime( ts.Format("%H:%M:%S") );
+	g_dbg.printf("CMultiDocTemplate::OpenDocumentFile() = %s", strTime);
+
+	return pDoc;
+}
+#endif
 
 BOOL CNCVCDocTemplate::IsExtension(LPCTSTR lpszExt, LPVOID* pFuncResult/*=NULL*/)
 {
