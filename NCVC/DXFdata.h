@@ -13,10 +13,16 @@ class	CDXFshape;
 #define	ARRAWLENGTH		100
 
 // DXFèÛë‘Ã◊∏ﬁ
-#define	DXFFLG_MAKE			0x0001
-#define	DXFFLG_SEARCH		0x0002
-#define	DXFSEL_SELECT		0x0001
-#define	DXFSEL_DIRECTIONFIX	0x0100
+#define	DXFFLG_MAKE				0x0001
+#define	DXFFLG_SEARCH			0x0002
+#define	DXFFLG_SELECT			0x0010
+#define	DXFFLG_DIRECTIONFIX		0x0100
+#define	DXFFLG_OFFSET_EXCLUDE	0x1000
+// DXFPOLYLINEÃ◊∏ﬁ
+#define	DXFPOLY_SEQ				0x0001
+#define	DXFPOLY_SEQBAK			0x0002
+#define	DXFPOLY_CLOSED			0x0100
+#define	DXFPOLY_INTERSEC		0x0200
 
 // µÃﬁºﬁ™∏ƒê∂ê¨éûÇÃà¯êî
 // äe pLayer ÇÕÅCDataOperation()Ç≈ strLayer Ç©ÇÁ CLayerDataµÃﬁºﬁ™∏ƒÇìoò^Ç∑ÇÈ
@@ -100,8 +106,7 @@ class CDXFdata : public CObject
 {
 	ENDXFTYPE	m_enMakeType,	// ê∂ê¨¿≤Ãﬂ(â~->åäâ¡çHÇ»Ç«)
 				m_enType;		// √ﬁ∞¿¿≤Ãﬂ : NCVCdefine.h
-	DWORD		m_dwFlags,		// DXFèÛë‘Ã◊∏ﬁ(Make, Search)
-				m_dwSelect,		// DXFëIëèÛë‘Ã◊∏ﬁ(Group)
+	DWORD		m_dwFlags,		// DXFèÛë‘Ã◊∏ﬁ
 				m_nSerialSeq;
 
 protected:
@@ -119,12 +124,6 @@ protected:
 
 	void	OrgTuningBase(void);
 
-	// CDXFpolyline Ç©ÇÁÇÃåƒÇ—èoÇµÇ‡Ç†ÇÈÇΩÇﬂ
-	// CDXF[line|circle]“› ﬁÇ≈ÇÕÇ»Ç≠ÅCÕﬁ∞Ω∏◊ΩÇ…íËã`ÇµÇΩ
-	BOOL	GetDirectionArraw_Line(const CPointD[], CPointD [][3]) const;
-	BOOL	GetDirectionArraw_Circle(BOOL, const double[], const CPointD[], CPointD[][3]) const;
-
-protected:
 	CDXFdata(ENDXFTYPE, CLayerData*, int);
 
 public:
@@ -143,16 +142,14 @@ public:
 	CLayerData*	GetParentLayer(void) const;
 	CDXFshape*	GetParentMap(void) const;
 	void		SetParentMap(CDXFshape*);
+	DWORD		GetDxfFlg(void) const;
+	void		SetDxfFlg(DWORD, BOOL = TRUE);
 	BOOL		IsMakeFlg(void) const;
 	BOOL		IsSearchFlg(void) const;
 	void		SetMakeFlg(void);
 	void		SetSearchFlg(void);
 	void		ClearMakeFlg(void);
 	void		ClearSearchFlg(void);
-	BOOL		IsMoveFlg(void) const;
-	DWORD		GetSelectFlg(void) const;
-	void		SetSelectFlg(BOOL);
-	void		SetWorkingFlag(DWORD, BOOL = TRUE);
 	//
 	CPen*		GetDrawPen(void) const;
 	const CRect3D	GetMaxRect(void) const;
@@ -162,12 +159,13 @@ public:
 	virtual	void	SetNativePoint(size_t, const CPointD&);		// virtual -> CDXFarc
 	const CPointD	GetTunPoint(size_t) const;
 	const CPointD	GetMakePoint(size_t) const;
-	BOOL		IsMatchObject(const CDXFdata*);
+	BOOL		IsMatchPoint(const CPointD&) const;
+	BOOL		IsMakeMatchObject(const CDXFdata*);
 	double		GetEdgeGap(const CDXFdata*, BOOL = TRUE);
 	//	
 	virtual	void	ReversePt(void);
 	// äeµÃﬁºﬁ™∏ƒÇ…ÇµÇ©âÇÁÇ»Ç¢ì∆é©ÇÃèàóù -> èÉêàâºëzä÷êî
-	virtual	BOOL	IsMatchPoint(const CPointD&) = 0;
+	virtual	BOOL	IsMakeMatchPoint(const CPointD&) = 0;
 	virtual BOOL	IsStartEqEnd(void) const = 0;	// énì_èIì_Ç™ìØÇ∂µÃﬁºﬁ™∏ƒÇ»ÇÁTRUE
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE) = 0;
 	virtual	const CPointD	GetStartCutterPoint(void) const = 0;// â¡çHäJénà íu
@@ -176,7 +174,7 @@ public:
 	virtual	const CPointD	GetEndMakePoint(void) const = 0;
 	virtual	double	GetLength(void) const = 0;
 	//
-	virtual	void	DrawTuning(double) = 0;
+	virtual	void	DrawTuning(const double) = 0;
 	virtual	void	Draw(CDC*) const = 0;
 	virtual	double	OrgTuning(BOOL = TRUE) = 0;
 	//
@@ -186,7 +184,6 @@ public:
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const = 0;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const = 0;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const = 0;
-	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const = 0;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_DYNAMIC(CDXFdata)
@@ -217,7 +214,7 @@ public:
 
 	const	CPoint	GetDrawPoint(void) const;
 
-	virtual	BOOL	IsMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
 	virtual	const CPointD	GetStartCutterPoint(void) const;
@@ -226,7 +223,7 @@ public:
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
 
-	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 	virtual	double	OrgTuning(BOOL = TRUE);
 
@@ -241,7 +238,6 @@ public:
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
-	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFpoint)
@@ -257,9 +253,6 @@ class CDXFline : public CDXFpoint
 	void	SetMaxRect(void);
 
 protected:
-	double	GetSelectPointGap_Line(const CRectD&, const CPointD&, const CPointD&, const CPointD&) const;
-
-protected:
 	CDXFline();
 	CDXFline(ENDXFTYPE, CLayerData*, int);
 public:
@@ -267,7 +260,7 @@ public:
 	// BLOCK√ﬁ∞¿Ç©ÇÁÇÃ∫Àﬂ∞óp
 	CDXFline(CLayerData*, const CDXFline*, LPDXFBLOCK);
 
-	virtual	BOOL	IsMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
 	virtual	const CPointD	GetStartCutterPoint(void) const;
@@ -276,7 +269,7 @@ public:
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
 
-	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 	virtual	double	OrgTuning(BOOL = TRUE);
 
@@ -286,7 +279,6 @@ public:
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
-	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFline)
@@ -327,8 +319,8 @@ protected:
 	// â~ÅCâ~å ÅCã§í èàóù
 	void	SetEllipseArgv_Circle(const LPDXFBLOCK, LPDXFEARGV, double, double, BOOL);
 	double	GetSelectPointGap_Circle(const CPointD&, double, double) const;
+	BOOL	GetDirectionArraw_Circle(const double[], const CPointD[], CPointD[][3]) const;
 
-protected:
 	CDXFcircle();
 	CDXFcircle(ENDXFTYPE, CLayerData*, const CPointD&, double, BOOL, int);
 public:
@@ -350,7 +342,7 @@ public:
 	const CPointD	GetCenter(void) const;
 	const CPointD	GetMakeCenter(void) const;
 
-	virtual	BOOL	IsMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
 	virtual	const CPointD	GetStartCutterPoint(void) const;
@@ -362,7 +354,7 @@ public:
 	virtual	void	ReversePt(void);
 	virtual	BOOL	IsRangeAngle(const CPointD&) const;
 
-	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 	virtual	double	OrgTuning(BOOL = TRUE);
 
@@ -372,7 +364,6 @@ public:
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
-	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFcircle)
@@ -396,7 +387,7 @@ protected:
 public:
 	CDXFcircleEx(ENDXFTYPE2, CLayerData*, const CPointD&, double);
 
-	virtual	BOOL	IsMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
 	virtual	const CPointD	GetStartCutterPoint(void) const;
 	virtual	const CPointD	GetStartMakePoint(void) const;
@@ -450,10 +441,11 @@ public:
 	BOOL	GetRoundOrig(void) const;
 	double	GetStartAngle(void) const;
 	double	GetEndAngle(void) const;
+	void	SetVectorPoint(std::vector<CPointD>&);	// from CDXFchain::IsPointInPolygon()
 
 	virtual	void	SetNativePoint(size_t, const CPointD&);		// äpìxÇÃçXêVÇä‹Çﬁ
 
-	virtual	BOOL	IsMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
 	virtual	const CPointD	GetStartCutterPoint(void) const;
@@ -465,7 +457,7 @@ public:
 	virtual	void	ReversePt(void);
 	virtual	BOOL	IsRangeAngle(const CPointD&) const;
 
-	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 	virtual	double	OrgTuning(BOOL = TRUE);
 
@@ -475,7 +467,6 @@ public:
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
-	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFarc)
@@ -521,8 +512,9 @@ public:
 	double	GetLeanSin(void) const;
 	BOOL	IsArc(void) const;
 	void	SetRoundFixed(BOOL);
+	void	SetVectorPoint(std::vector<CPointD>&);
 
-	virtual	BOOL	IsMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
 	virtual	const CPointD	GetStartCutterPoint(void) const;
@@ -532,7 +524,7 @@ public:
 
 	virtual	void	ReversePt(void);
 
-	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 	virtual	double	OrgTuning(BOOL = TRUE);
 
@@ -542,7 +534,6 @@ public:
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
-	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFellipse)
@@ -555,10 +546,13 @@ public:
 class CDXFpolyline : public CDXFline
 {
 	int			m_nObjCnt[3];	// Œﬂÿ◊≤›óvëfÇ…ä‹Ç‹ÇÍÇÈê¸[0]Ç∆â~å [1]ÅCë»â~[2]ÇÃêî
-	int			m_nPolyFlag;	// Œﬂÿ◊≤›ï`âÊÃ◊∏ﬁ
+	DWORD		m_dwPolyFlags;	// Œﬂÿ◊≤›ï`âÊÃ◊∏ﬁ
 	CDXFlist	m_ltVertex;		// äeí∏ì_(CDXFpoint or CDXFarc or CDXFellipse äiî[)
-	BOOL		m_bSeq, m_bSeqBak;	// TRUE:Head, FALSE:Tail
 	POSITION	m_posSel;		// GetSelectPointGap() Ç≈àÍî‘ãﬂÇ©Ç¡ÇΩµÃﬁºﬁ™∏ƒŒﬂºﬁºÆ›
+
+	void		CheckPolylineIntersection_SubLoop(const CPointD&, const CPointD&, POSITION);
+	void		CheckPolylineIntersection_SubLoop(const CDXFarc*, POSITION);
+	void		CheckPolylineIntersection_SubLoop(const CDXFellipse*, POSITION);
 
 protected:
 	virtual	void	SwapPt(int);
@@ -571,21 +565,25 @@ public:
 	CDXFpolyline(CLayerData*, const CDXFpolyline*, LPDXFBLOCK);
 	virtual ~CDXFpolyline();
 
-	void	SetPolyFlag(int);
-	int		GetPolyFlag(void) const;
-	BOOL	GetSequence(void) const;
+	void	SetPolyFlag(DWORD);
+	DWORD	GetPolyFlag(void) const;
 	INT_PTR	GetVertexCount(void) const;
 	int		GetObjectCount(int) const;
 	POSITION	GetFirstVertex(void) const;
 	CDXFdata*	GetNextVertex(POSITION&) const;
 	const	CPointD		GetFirstPoint(void) const;
+	CDXFdata*	GetFirstObject(void) const;
+	CDXFdata*	GetTailObject(void) const;
+	BOOL	IsIntersection(void) const;
 
 	BOOL	SetVertex(LPDXFPARGV);
 	BOOL	SetVertex(LPDXFPARGV, double, const CPointD&);
 	void	EndSeq(void);
+	void	SetVectorPoint(std::vector<CPointD>&);
+	void	CheckPolylineIntersection(void);
 
 	virtual BOOL	IsStartEqEnd(void) const;
-	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 	virtual	double	OrgTuning(BOOL = TRUE);
 
@@ -595,7 +593,6 @@ public:
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
-	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	// PolylineÇÃì¡éÍèàóù(from DXFDoc.cpp2)
 	void	SetParentLayer(CLayerData*);

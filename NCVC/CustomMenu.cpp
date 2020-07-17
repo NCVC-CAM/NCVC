@@ -42,9 +42,8 @@ CCustomMenu::CCustomMenu()
 	NONCLIENTMETRICS	nclm;
 	::ZeroMemory(&nclm, sizeof(NONCLIENTMETRICS));
 	nclm.cbSize = sizeof(NONCLIENTMETRICS);
-	BOOL bResult = ::SystemParametersInfo(SPI_GETNONCLIENTMETRICS,
-							sizeof(NONCLIENTMETRICS), &nclm, 0);
-	ASSERT(bResult);
+	VERIFY( ::SystemParametersInfo(SPI_GETNONCLIENTMETRICS,
+							sizeof(NONCLIENTMETRICS), &nclm, 0) );
 
 	// ̫�č쐬
 	m_fontMenu.CreateFontIndirect(&nclm.lfMenuFont);
@@ -85,7 +84,7 @@ void CCustomMenu::MAP_IMAGE_PRINT() const
 {
 	CMagaDbg	dbg(DBG_MAGENTA);
 	dbg.printf("<MAP_IMAGE_PRINT> ------------------- start ------------------- size=%d", m_arrayImage.GetSize());
-	for (int i=0; i<m_arrayImage.GetSize(); i++ ) {
+	for ( int i=0; i<m_arrayImage.GetSize(); i++ ) {
 		dbg.printf("<MAP_IMAGE_PRINT> i=%d itemID=%d", i, m_arrayImage[i]);
 	}
 	dbg.printf("<MAP_IMAGE_PRINT> -------------------  end  -------------------");
@@ -95,7 +94,7 @@ void CCustomMenu::VEC_MNEMONIC_PRINT() const
 {
 	CMagaDbg	dbg(DBG_MAGENTA);
 	dbg.printf("<VEC_MNEMONIC_PRINT> ------------------- start ------------------- size=%d", m_arrayString.GetSize());
-	for (int i=0; i<m_arrayString.GetSize(); i++) {
+	for ( int i=0; i<m_arrayString.GetSize(); i++ ) {
 		dbg.printf("<VEC_MNEMONIC_PRINT> i=%d, arrayString=%s", i, m_arrayString[i]);
 	}
 	dbg.printf("<VEC_MNEMONIC_PRINT> -------------------  end  -------------------");

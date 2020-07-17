@@ -6,10 +6,12 @@
 
 // CDXFworkingﾌﾗｸﾞ
 #define	DXFWORKFLG_AUTO				0x0001
+#define	DXFWORKFLG_SCAN				0x0002
 #define	DXFWORKFLG_SELECT			0x1000
 // DXFshapeﾌﾗｸﾞ
 #define	DXFMAPFLG_CANNOTWORKING		0x0001
 #define	DXFMAPFLG_CANNOTOUTLINE		0x0002
+#define	DXFMAPFLG_TEMP				0x0004
 #define	DXFMAPFLG_CANNOTAUTOWORKING	0x000f
 #define	DXFMAPFLG_DIRECTION			0x0010
 #define	DXFMAPFLG_START				0x0020
@@ -18,6 +20,7 @@
 #define	DXFMAPFLG_WORKING			0x00f0
 #define	DXFMAPFLG_INSIDE			0x0100
 #define	DXFMAPFLG_OUTSIDE			0x0200
+#define	DXFMAPFLG_SEPARATE			0x0800
 #define	DXFMAPFLG_SELECT			0x1000
 #define	DXFMAPFLG_MAKE				0x2000
 #define	DXFMAPFLG_SEARCH			0x4000
@@ -26,20 +29,21 @@ enum	ENWORKINGTYPE {
 	WORK_DIRECTION=0, WORK_START=1, WORK_OUTLINE=2, WORK_POCKET=3
 };
 // CDXFshape 所属集合
-enum	DXFSHAPE_ASSEMBLE	{
+enum	DXFSHAPE_ASSEMBLE {
 	DXFSHAPE_OUTLINE=0, DXFSHAPE_LOCUS=1, DXFSHAPE_EXCLUDE=2
 };
-// 自動形状処理ﾀｲﾌﾟ
-enum	ENAUTOWORKINGTYPE {
-	AUTOOUTLINE=0,		AUTOPOCKET=1,
-	AUTOALLINSIDE=2,	AUTOALLOUTSIDE=3,
-	AUTORECALCWORKING=4
-};
+// CDXFshape 集合ﾀｲﾌﾟ
+#define	DXFSHAPETYPE_CHAIN			0
+#define	DXFSHAPETYPE_MAP			1
 
 class CDXFdata;
 class CDXFmap;
 class CDXFchain;
 class CDXFshape;
+
+//	TH_AutoWorkingSet.cpp からも参照
+CDXFdata*	CreateDXFObject
+	(const CDXFdata*, const CPointD&, const CPointD&, int = 0, double = 0);
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの座標マップ＋連結集団クラス
@@ -47,7 +51,7 @@ class CDXFshape;
 typedef	CMap<CPointD, CPointD&, CDXFarray*, CDXFarray*&>	CMapPointToDXFarray;
 class CDXFmap : public CMapPointToDXFarray
 {
-	CDXFdata*	GetFirstObject(void) const;
+	CDXFdata*	GetFirstObject(BOOL) const;
 
 public:
 	CDXFmap();
@@ -60,9 +64,10 @@ public:
 	DWORD	GetMapTypeFlag(void) const;
 	boost::tuple<BOOL, CDXFarray*, CPointD>	IsEulerRequirement(const CPointD&) const;
 	BOOL	IsAllSearchFlg(void) const;
+	BOOL	IsAllMakeFlg(void) const;
 	void	AllMapObject_ClearSearchFlg(BOOL = TRUE) const;
-	void	AllMapObject_ClearMakeFlg() const;
-	void	CopyToChain(CDXFchain*);
+	void	AllMapObject_ClearMakeFlg(void) const;
+	BOOL	CopyToChain(CDXFchain*);
 	void	Append(const CDXFmap*);
 	void	Append(const CDXFchain*);
 	//
@@ -119,28 +124,43 @@ class CDXFchain : public CDXFlist
 	CRect3D		m_rcMax;
 
 public:
-	CDXFchain();
+	CDXFchain(DWORD = 0);
 	virtual	~CDXFchain();
 
 	void	SetChainFlag(DWORD dwFlags) {
 		m_dwFlags |=  dwFlags;
 	}
+	DWORD	GetChainFlag(void) const {
+		return m_dwFlags;
+	}
+	void	ClearSideFlg(void) {
+		m_dwFlags &= ~(DXFMAPFLG_INSIDE|DXFMAPFLG_OUTSIDE);
+	}
 	BOOL	IsMakeFlg(void) const {
 		return m_dwFlags & DXFMAPFLG_MAKE;
+	}
+	BOOL	IsSearchFlg(void) const {
+		return m_dwFlags & DXFMAPFLG_SEARCH;
 	}
 	CRect3D	GetMaxRect(void) const {
 		return m_rcMax;
 	}
+	void	SetMaxRect(const CRect3D& rc) {
+		m_rcMax |= rc;
+	}
 	void	SetMaxRect(const CDXFdata* pData) {
-		m_rcMax |= pData->GetMaxRect();
+		SetMaxRect(pData->GetMaxRect());
 	}
 	void	ClearMaxRect(void) {
 		m_rcMax.SetRectMinimum();
 	}
-	void	ReversPoint(void);
+	void	ReversePoint(void);
 	void	CopyToMap(CDXFmap*);
+	BOOL	IsLoop(void) const;
+	BOOL	IsPointInPolygon(const CPointD&) const;
 	//
 	int		GetObjectCount(void) const;
+	void	AllChainObject_ClearSearchFlg(void);
 	double	GetSelectObjectFromShape(const CPointD&, const CRectD* = NULL, CDXFdata** = NULL);
 	void	SetShapeSwitch(BOOL);
 	void	RemoveObject(const CDXFdata*);
@@ -184,6 +204,9 @@ public:
 	BOOL	IsAutoWorking(void) const {
 		return m_dwFlags & DXFWORKFLG_AUTO;
 	}
+	BOOL	IsScanWorking(void) const {
+		return m_dwFlags & DXFWORKFLG_SCAN;		// CDXFworkingOutline のみ
+	}
 	CString	GetWorkingName(void) const {
 		return m_strWorking;
 	}
@@ -197,7 +220,7 @@ public:
 		return m_pData;
 	}
 
-	virtual	void	DrawTuning(double) = 0;
+	virtual	void	DrawTuning(const double) = 0;
 	virtual	void	Draw(CDC*) const = 0;
 
 	virtual	void	Serialize(CArchive&);
@@ -225,7 +248,7 @@ public:
 	CPointD	GetArrowPoint(void) const {
 		return m_ptArraw[1];	// 矢印中心=>ｵﾌﾞｼﾞｪｸﾄ終点
 	}
-	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 
 	virtual	void	Serialize(CArchive&);
@@ -247,7 +270,7 @@ public:
 	CPointD	GetStartPoint(void) const {
 		return m_ptStart;
 	}
-	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 
 	virtual	void	Serialize(CArchive&);
@@ -256,31 +279,58 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「輪郭」加工指示クラス
+typedef CSortArray<CObArray, CDXFchain*>	COutlineData;
 class CDXFworkingOutline : public CDXFworking
 {
-	CDXFchain	m_ltOutline;	// 輪郭ｵﾌﾞｼﾞｪｸﾄ
+	COutlineData	m_obOutline;
+	CStringArray	m_obMergeHandle;	// 併合処理された集合
+	double			m_dOffset;			// 輪郭ｵﾌﾞｼﾞｪｸﾄが作られたときのｵﾌｾｯﾄ値
+	CRect3D			m_rcMax;
+	void	SeparateAdd_Construct(const CDXFchain*);
 
 protected:
-	CDXFworkingOutline() : CDXFworking(WORK_OUTLINE) {}
+	CDXFworkingOutline() : CDXFworking(WORK_OUTLINE) {
+		m_rcMax.SetRectMinimum();
+	}
 public:
-	CDXFworkingOutline(CDXFshape*, const CDXFchain*, DWORD = 0);
+	CDXFworkingOutline(CDXFshape*, const CDXFchain*, const double, DWORD = 0);
 	virtual	~CDXFworkingOutline();
 
-	CDXFchain*	GetOutlineChain(void) {
-		return &m_ltOutline;
+	double		GetOutlineOffset(void) const {
+		return m_dOffset;
 	}
-	virtual	void	DrawTuning(double);
+	int			GetOutlineSize(void) const {
+		return m_obOutline.GetSize();
+	}
+	CDXFchain*	GetOutlineObject(int n) const {
+		return m_obOutline[n];
+	}
+	CRect3D		GetMaxRect(void) const {
+		return m_rcMax;
+	}
+	void	SeparateModify(void);	// from TH_AutoWorkingSet.cpp::SeparateOutline_Thread()
+	void	SetMergeHandle(const CString&);
+	int		GetMergeHandleSize(void) const {
+		return m_obMergeHandle.GetSize();
+	}
+	CString	GetMergeHandle(int n) const {
+		return m_obMergeHandle[n];
+	}
+
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFworkingOutline)
 };
+typedef	CTypedPtrList<CObList, CDXFworkingOutline*>	COutlineList;
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「ポケット」加工指示クラス
+typedef CSortArray<CObArray, CDXFworkingOutline*>	COutlineWorkArray;
 class CDXFworkingPocket : public CDXFworking
 {
-	CDXFarray	m_obPocket;		// ﾎﾟｹｯﾄｵﾌﾞｼﾞｪｸﾄ
+	COutlineWorkArray	m_obPocket;		// 複数の輪郭ｵﾌﾞｼﾞｪｸﾄを管理
 
 protected:
 	CDXFworkingPocket() : CDXFworking(WORK_POCKET) {}
@@ -288,7 +338,7 @@ public:
 	CDXFworkingPocket(CDXFshape*, DWORD = 0);
 	virtual	~CDXFworkingPocket();
 
-	virtual	void	DrawTuning(double);
+	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
 
 	virtual	void	Serialize(CArchive&);
@@ -305,32 +355,33 @@ class CDXFshape : public CObject
 {
 	DWORD		m_dwFlags;
 	DXFSHAPE_ASSEMBLE	m_enAssemble;	// 所属集合
-	CRect3D		m_rcMax;		// ｵﾌﾞｼﾞｪｸﾄ最大矩形
-	CString		m_strShape;		// 形状名
+	CRect3D		m_rcMax;				// ｵﾌﾞｼﾞｪｸﾄ最大矩形
+	CString		m_strShape,				// 形状名(変更可)
+				m_strShapeHandle;		// 形状集合ｸﾗｽ識別用(変更不可)
 	boost::variant<CDXFchain*, CDXFmap*>	m_vShape;	// CDXFchain* or CDXFmap*
-	CDXFworkingList	m_ltWork;	// 加工指示ﾃﾞｰﾀ
-	double		m_dOffset;		// 形状ｵﾌｾｯﾄ値
-	int			m_nInOut;		// 輪郭ｵﾌﾞｼﾞｪｸﾄの方向
-	BOOL		m_bAcute;		// 鋭角丸め
-	HTREEITEM	m_hTree;		// 登録されているﾂﾘｰﾋﾞｭｰﾊﾝﾄﾞﾙ(実行時動的設定)
-	int			m_nSerialSeq;	// 現在のﾂﾘｰ順
+	CDXFworkingList	m_ltWork;			// 加工指示ﾃﾞｰﾀ(Outline除く)
+	COutlineList	m_ltOutline;		// 輪郭ﾃﾞｰﾀ
+	double		m_dOffset;				// 形状のﾃﾞﾌｫﾙﾄｵﾌｾｯﾄ値
+	int			m_nInOut;				// 輪郭ｵﾌﾞｼﾞｪｸﾄの方向
+	BOOL		m_bAcute;				// 鋭角丸め
+	HTREEITEM	m_hTree;				// 登録されているﾂﾘｰﾋﾞｭｰﾊﾝﾄﾞﾙ(実行時動的設定)
+	int			m_nSerialSeq;			// 現在のﾂﾘｰ順
 
 	void	Constructor(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD);
 	void	SetDetailInfo(CDXFchain*);
 	void	SetDetailInfo(CDXFmap*);
 	BOOL	ChangeCreate_MapToChain(CDXFmap*);
 	BOOL	ChangeCreate_ChainToMap(CDXFchain*);
-	CDXFdata*	CreateOutlineTempObject_new(const CDXFdata*, const CPointD&, const CPointD&, int) const;
+	BOOL	CreateOutlineTempObject_polyline(const CDXFpolyline*, BOOL, double,
+				CDXFchain*, CTypedPtrArrayEx<CPtrArray, CDXFlist*>&);
 	BOOL	SeparateOutlineIntersection(CDXFchain*, CTypedPtrArrayEx<CPtrArray, CDXFlist*>&, BOOL = FALSE);
-	BOOL	CheckSeparateChain(CDXFlist*);
-	BOOL	CheckIntersectionCircle(const CPointD&);
-	void	RemoveExceptDirection(void);
+	BOOL	CheckSeparateChain(CDXFlist*, const double);
 
 protected:
 	CDXFshape();	// Serialize
 public:
-	CDXFshape(DXFSHAPE_ASSEMBLE, LPCTSTR lpszShape, DWORD, CDXFchain*);
-	CDXFshape(DXFSHAPE_ASSEMBLE, LPCTSTR lpszShape, DWORD, CDXFmap*);
+	CDXFshape(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD, CDXFchain*);
+	CDXFshape(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD, CDXFmap*);
 	virtual	~CDXFshape();
 
 	DXFSHAPE_ASSEMBLE	GetShapeAssemble(void) const {
@@ -365,6 +416,12 @@ public:
 	}
 	BOOL	IsSearchFlg(void) const {
 		return m_dwFlags & DXFMAPFLG_SEARCH;
+	}
+	BOOL	IsSideFlg(void) const {
+		return m_dwFlags & (DXFMAPFLG_INSIDE|DXFMAPFLG_OUTSIDE);
+	}
+	CString	GetShapeHandle(void) const {
+		return m_strShapeHandle;
 	}
 	CString	GetShapeName(void) const {
 		return m_strShape;
@@ -405,15 +462,30 @@ public:
 	CDXFworkingList*	GetWorkList(void) {
 		return &m_ltWork;
 	}
-	BOOL	AddWorkingData(CDXFworking*, int = -1);
+	COutlineList*		GetOutlineList(void) {
+		return &m_ltOutline;
+	}
+	BOOL	IsOutlineList(void) const {
+		return !m_ltOutline.IsEmpty();
+	}
+	CDXFworkingOutline*	GetOutlineLastObj(void) {
+		return m_ltOutline.IsEmpty() ? NULL : m_ltOutline.GetTail();
+	}
+	BOOL	AddWorkingData(CDXFworking*);
 	BOOL	DelWorkingData(CDXFworking*, CDXFshape* = NULL);
-	boost::tuple<CDXFworking*, CDXFdata*> GetDirectionObject(void) const;
-	boost::tuple<CDXFworking*, CDXFdata*> GetStartObject(void) const;
-	CDXFchain*	GetOutlineObject(void) const;
+	BOOL	AddOutlineData(CDXFworkingOutline*, int);
+	BOOL	DelOutlineData(CDXFworkingOutline* = NULL);
+	boost::tuple<CDXFworking*, CDXFdata*>  GetDirectionObject(void) const;
+	boost::tuple<CDXFworking*, CDXFdata*>  GetStartObject(void) const;
 	BOOL	LinkObject(void);
 	BOOL	LinkShape(CDXFshape*);
 	//
-	BOOL	CreateOutlineTempObject(BOOL, CDXFchain*);
+	BOOL	CreateOutlineTempObject(BOOL, CDXFchain*, double = 0.0);
+	BOOL	CheckIntersectionCircle(const CPointD&, const double dOffset);
+	BOOL	CreateScanLine_X(CDXFchain*);
+	BOOL	CreateScanLine_Y(CDXFchain*);
+	BOOL	CreateScanLine_Outline(CDXFchain*);
+	BOOL	CreateScanLine_ScrollCircle(CDXFchain*);
 	//
 	void	AllChangeFactor(double) const;
 	void	DrawWorking(CDC*) const;

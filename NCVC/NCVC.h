@@ -6,6 +6,7 @@
 	#error "PCH に対してこのファイルをインクルードする前に 'stdafx.h' をインクルードしてください"
 #endif
 
+#include <afxwinappex.h>
 #include "resource.h"       // メイン シンボル
 
 // ｱﾄﾞｲﾝ定義(ncvcaddin.h)
@@ -60,7 +61,7 @@ public:
 // このクラスの実装については、NCVC.cpp を参照してください。
 //
 
-class CNCVCApp : public CWinApp
+class CNCVCApp : public CWinAppEx
 {
 	// NCViewTab管理情報
 	UINT	m_nTraceSpeed;		// ﾄﾚｰｽ実行の速度
@@ -76,7 +77,7 @@ class CNCVCApp : public CWinApp
 
 	// ｱﾄﾞｲﾝ情報
 	CNCVCaddinIF*	m_pActiveAddin;	// 現在ｱｸﾃｨﾌﾞなｱﾄﾞｲﾝ
-	WORD			m_wAddin;	// ｱﾄﾞｲﾝｺﾏﾝﾄﾞID
+	WORD			m_wAddin;		// ｱﾄﾞｲﾝｺﾏﾝﾄﾞID
 	CNCVCaddinArray	m_obAddin;
 	CNCVCaddinWordMap	m_mpAddin;	// ﾒﾆｭｰIDをｷｰとするｴﾝﾄﾘ関数ﾏｯﾌﾟ
 	BOOL	NCVCAddinInit(int);		// ｱﾄﾞｲﾝ情報読み込み
@@ -180,6 +181,8 @@ public:
 	BOOL		ChangeMachine(int);
 	BOOL		ChangeMachine(LPCTSTR);
 
+	void		SaveWindowState(const CString&, const WINDOWPLACEMENT&);
+	BOOL		GetWindowState(const CString&, WINDOWPLACEMENT*);
 	void		SaveDlgWindow(int, const CWnd*);
 	BOOL		GetDlgWindow(int, CPoint*);
 
@@ -191,6 +194,7 @@ public:
 // 実装
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileOpen();
+	afx_msg void OnFileThumbnail();
 	afx_msg void OnFileCloseAndOpen();
 	afx_msg void OnHelp();
 	afx_msg void OnHelpAddin();
@@ -216,21 +220,6 @@ public:
 
 // ｸﾘﾃｨｶﾙｴﾗｰのﾒｯｾｰｼﾞﾎﾞｯｸｽ
 void	NCVC_CriticalErrorMsg(LPCTSTR, int);
-
-// ﾏﾙﾁｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ取得
-inline	HANDLE	NCVC_DuplicateHandle(HANDLE hSource)
-{
-	HANDLE	hResult;
-	if ( !::DuplicateHandle(::GetCurrentProcess(), hSource,
-			::GetCurrentProcess(), &hResult, 0, FALSE, DUPLICATE_SAME_ACCESS) ) {
-#ifdef _DEBUG
-		::NC_FormatMessage();
-#endif
-		hResult = NULL;
-	}
-	return hResult;
-}
-
 // ﾌｧｲﾙの存在ﾁｪｯｸ
 BOOL	IsFileExist(LPCTSTR lpszFile, BOOL bExist = TRUE, BOOL bMsg = TRUE);
 

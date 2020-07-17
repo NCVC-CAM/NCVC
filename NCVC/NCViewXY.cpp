@@ -8,7 +8,9 @@
 #include "NCdata.h"
 #include "NCDoc.h"
 #include "NCViewTab.h"
+#include "NCInfoTab.h"
 #include "NCViewXY.h"
+#include "NCListView.h"
 #include "ViewOption.h"
 
 #include "MagaDbgMac.h"
@@ -32,7 +34,9 @@ BEGIN_MESSAGE_MAP(CNCViewXY, CView)
 	ON_WM_RBUTTONUP()
 	ON_WM_MOUSEMOVE()
 	ON_WM_MOUSEWHEEL()
+	ON_WM_MOUSEACTIVATE()
 	ON_WM_LBUTTONDBLCLK()
+	ON_WM_KEYDOWN()
 	ON_WM_ERASEBKGND()
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
 	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
@@ -91,7 +95,7 @@ void CNCViewXY::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 			}
 			// 描画用にﾃﾞｰﾀ更新
 			if ( pHint ) {
-				DrawConvertWorkRect();
+				ConvertWorkRect();
 				dc.SetROP2(R2_COPYPEN);
 				DrawWorkRect(&dc);
 			}
@@ -128,7 +132,8 @@ BOOL CNCViewXY::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 void CNCViewXY::SetGuideData(void)
 {
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	double	dSrc = pOpt->IsGuideSync() ? m_dFactor*LOMETRICFACTOR : LOMETRICFACTOR;
+	double	dSrc = pOpt->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) ?
+					m_dFactor*LOMETRICFACTOR : LOMETRICFACTOR;
 	// Ｘ軸のガイド初期化（左から右へ）
 	m_ptGuid[NCA_X][0].x = (int)(-pOpt->GetGuideLength(NCA_X) * dSrc);
 	m_ptGuid[NCA_X][0].y = 0;
@@ -141,7 +146,7 @@ void CNCViewXY::SetGuideData(void)
 	m_ptGuid[NCA_Y][1].y = (int)(-pOpt->GetGuideLength(NCA_Y) * dSrc);
 }
 
-void CNCViewXY::DrawConvertWorkRect(void)
+void CNCViewXY::ConvertWorkRect(void)
 {
 	CRectD	rc(GetDocument()->GetWorkRect());
 	m_rcDrawWork.left	= DrawConvert(rc.left);
@@ -150,13 +155,38 @@ void CNCViewXY::DrawConvertWorkRect(void)
 	m_rcDrawWork.bottom	= DrawConvert(rc.bottom);
 }
 
-void CNCViewXY::DrawConvertMaxRect(void)
+void CNCViewXY::ConvertMaxRect(void)
 {
-	CRectD	rc(GetDocument()->GetMaxRect());
+	CRectD	rc(GetDrawMaxRect());
 	m_rcDrawMax.left	= DrawConvert(rc.left);
 	m_rcDrawMax.top		= DrawConvert(rc.top);
 	m_rcDrawMax.right	= DrawConvert(rc.right);
 	m_rcDrawMax.bottom	= DrawConvert(rc.bottom);
+}
+
+CRectD CNCViewXY::GetDrawMaxRect(void)
+{
+	extern	const	double	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
+	CRectD	rc(GetDocument()->GetMaxRect());		// CRect3D -> CRectD
+	// 占有矩形の補正(不正表示の防止)
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	double	dLength;
+	if ( rc.Width() <= NCMIN ) {
+		dLength = pOpt->GetGuideLength(NCA_X);
+		if ( dLength == 0.0 )
+			dLength = g_dDefaultGuideLength;
+		rc.left  = -dLength;
+		rc.right =  dLength;
+	}
+	if ( rc.Height() <= NCMIN ) {
+		dLength = pOpt->GetGuideLength(NCA_Y);
+		if ( dLength == 0.0 )
+			dLength = g_dDefaultGuideLength;
+		rc.top    = -dLength;
+		rc.bottom =  dLength;
+	}
+	rc.NormalizeRect();
+	return	rc;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -178,16 +208,28 @@ void CNCViewXY::OnDraw(CDC* pDC)
 		pDC->DPtoLP(&pt);
 		pDC->SetTextAlign(TA_LEFT|TA_TOP);
 		pDC->SetTextColor(pOpt->GetNcDrawColor(NCCOL_PANE));
-		pDC->TextOut(pt.x, pt.y, g_szNdelimiter, 2);	// XY
+		if ( GetDocument()->IsThumbnail() ) {
+			CGdiObject* pFontOld = pDC->SelectStockObject(SYSTEM_FIXED_FONT);
+			pDC->TextOut(pt.x, pt.y, GetDocument()->GetTitle());
+			pDC->SelectObject(pFontOld);
+		}
+		else
+			pDC->TextOut(pt.x, pt.y, g_szNdelimiter, 2);	// XY
 	}
 	// ｶﾞｲﾄﾞ表示
-	pDC->SetTextAlign(TA_CENTER|TA_BOTTOM);
-	for ( i=0; i<SIZEOF(m_ptGuid); i++ ) {
-		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenOrg(i));
-		pDC->MoveTo(m_ptGuid[i][0]);
-		pDC->LineTo(m_ptGuid[i][1]);
-		pDC->SetTextColor(pOpt->GetNcDrawColor(i+NCCOL_GUIDEX));
-		pDC->TextOut(m_ptGuid[i][0].x, m_ptGuid[i][0].y, g_szNdelimiter+i, 1);
+	if ( !GetDocument()->IsThumbnail() ) {
+		pDC->SetTextAlign(TA_CENTER|TA_BOTTOM);
+		for ( i=0; i<SIZEOF(m_ptGuid); i++ ) {
+			if ( pOpt->GetGuideLength(i) > 0 ) {
+				pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenOrg(i));
+				pDC->MoveTo(m_ptGuid[i][0]);
+				pDC->LineTo(m_ptGuid[i][1]);
+				pDC->SetTextColor(pOpt->GetNcDrawColor(i+NCCOL_GUIDEX));
+				pDC->TextOut(m_ptGuid[i][0].x, m_ptGuid[i][0].y, g_szNdelimiter+i, 1);
+			}
+		}
+		if ( pOpt->GetNCViewFlg(NCVIEWFLG_GUIDESCALE) )
+			DrawGuideScale(pDC);	// 目盛表示
 	}
 	// NCﾃﾞｰﾀ描画
 	CNCdata*	pData;
@@ -197,17 +239,52 @@ void CNCViewXY::OnDraw(CDC* pDC)
 		if ( pData->GetGtype() == G_TYPE )
 			pData->DrawXY(pDC, FALSE);
 	}
-	// 最大切削矩形
-	if ( GetDocument()->IsMaxRect() )
-		DrawMaxRect(pDC);	// CNCViewBase
-	// ﾜｰｸ矩形
-	if ( GetDocument()->IsWorkRect() )
-		DrawWorkRect(pDC);	// CNCViewBase
-	// 現在の拡大矩形を描画(ViewBase.cpp)
-	if ( m_bMagRect )
-		DrawMagnifyRect(pDC);
+	if ( !GetDocument()->IsThumbnail() ) {
+		// 最大切削矩形
+		if ( GetDocument()->IsMaxRect() )
+			DrawMaxRect(pDC);	// CNCViewBase
+		// ﾜｰｸ矩形
+		if ( GetDocument()->IsWorkRect() )
+			DrawWorkRect(pDC);	// CNCViewBase
+		// 現在の拡大矩形を描画(ViewBase.cpp)
+		if ( m_bMagRect )
+			DrawMagnifyRect(pDC);
+	}
 
 	pDC->SelectObject(pOldPen);
+}
+
+void CNCViewXY::DrawGuideScale(CDC* pDC)
+{
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	CPointD	pt(-pOpt->GetGuideLength(NCA_X), 0), ptDraw;
+
+	pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenOrg(NCA_X));
+	for ( ; pt.x<=pOpt->GetGuideLength(NCA_X); pt.x+=1.0 ) {
+		if ( fmod(pt.x, 10.0) == 0 )
+			pt.y = 1.5;
+		else if ( fmod(pt.x, 5.0) == 0 )
+			pt.y = 1.0;
+		else
+			pt.y = 0.5;
+		ptDraw = pt * m_dFactor * LOMETRICFACTOR;
+		pDC->MoveTo(ptDraw);
+		pDC->LineTo((int)ptDraw.x, -(int)ptDraw.y);
+	}
+
+	pt.y = -pOpt->GetGuideLength(NCA_Y);
+	pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenOrg(NCA_Y));
+	for ( ; pt.y<=pOpt->GetGuideLength(NCA_Y); pt.y+=1.0 ) {
+		if ( fmod(pt.y, 10.0) == 0 )
+			pt.x = 1.5;
+		else if ( fmod(pt.y, 5.0) == 0 )
+			pt.x = 1.0;
+		else
+			pt.x = 0.5;
+		ptDraw = pt * m_dFactor * LOMETRICFACTOR;
+		pDC->MoveTo(ptDraw);
+		pDC->LineTo(-(int)ptDraw.x, (int)ptDraw.y);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -269,7 +346,7 @@ void CNCViewXY::OnLensKey(UINT nID)
 		CViewBase::OnBeforeMagnify();
 		break;
 	case ID_VIEW_FIT:
-		CViewBase::OnViewFit(GetDocument()->GetMaxRect());
+		CViewBase::OnViewFit(GetDrawMaxRect());
 		break;
 	case ID_VIEW_LENSP:
 		CViewBase::OnViewLensP();
@@ -287,15 +364,17 @@ void CNCViewXY::OnViewLensComm(void)
 {
 	// 拡大率による描画情報の更新
 	GetDocument()->AllChangeFactorXY(m_dFactor);
-	// ｶﾞｲﾄﾞ軸
-	if ( AfxGetNCVCApp()->GetViewOption()->IsGuideSync() )
-		SetGuideData();
-	// 各矩形情報の更新
-	if ( GetDocument()->IsWorkRect() )
-		DrawConvertWorkRect();
-	DrawConvertMaxRect();
-	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-	static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XY_PLANE, m_dFactor);
+	if ( !GetDocument()->IsThumbnail() ) {
+		// ｶﾞｲﾄﾞ軸
+		if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) )
+			SetGuideData();
+		// 各矩形情報の更新
+		if ( GetDocument()->IsWorkRect() )
+			ConvertWorkRect();
+		ConvertMaxRect();
+		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XY_PLANE, m_dFactor);
+	}
 	// ﾋﾞｭｰの再描画
 	Invalidate();
 }
@@ -318,7 +397,7 @@ int CNCViewXY::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CNCViewXY::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView) 
 {
-	if ( bActivate ) {
+	if ( bActivate && !GetDocument()->IsThumbnail() ) {
 		// CNCViewSplit::SetActivePane() からのｱｸﾃｨﾌﾞ設定に対応
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
 		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_XY_PLANE, m_dFactor);
@@ -332,11 +411,9 @@ LRESULT CNCViewXY::OnUserActivatePage(WPARAM, LPARAM lParam)
 		// OnUserInitialUpdate() が実行されていないとき
 		OnLensKey(ID_VIEW_FIT);
 	}
-	else {
-		if ( lParam ) {
-			// 拡大率の再更新
-			OnViewLensComm();
-		}
+	else if ( lParam ) {
+		// 拡大率の再更新
+		OnViewLensComm();
 	}
 
 	return 0;
@@ -348,7 +425,7 @@ LRESULT CNCViewXY::OnUserViewFitMsg(WPARAM, LPARAM lParam)
 	CMagaDbg	dbg("CNCViewXY::OnUserViewFitMsg()\nStart");
 #endif
 	// 拡大率の計算と図形ﾌｨｯﾄ
-	CViewBase::OnViewFit(GetDocument()->GetMaxRect());
+	CViewBase::OnViewFit(GetDrawMaxRect());
 	if ( lParam )		// 再描画ﾌﾗｸﾞ == 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ
 		OnViewLensComm();
 	return 0;
@@ -382,7 +459,9 @@ void CNCViewXY::OnRButtonUp(UINT nFlags, CPoint point)
 		OnLensKey(ID_VIEW_LENSP);
 		break;
 	case 2:		// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示
-		CView::OnRButtonUp(nFlags, point);
+		// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞでｺﾝﾃｷｽﾄﾒﾆｭｰは表示させない
+		if ( !GetDocument()->IsThumbnail() )
+			CView::OnRButtonUp(nFlags, point);
 		break;
 	}
 }
@@ -402,13 +481,43 @@ BOOL CNCViewXY::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 
 void CNCViewXY::OnLButtonDblClk(UINT nFlags, CPoint point) 
 {
-	// ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳでﾀﾞﾌﾞﾙｸﾘｯｸされれば，XY単体表示に切り替え
-	if ( !GetParent()->IsKindOf(RUNTIME_CLASS(CNCViewTab)) ) {
+	if ( GetDocument()->IsThumbnail() ) {
+		// ｻﾑﾈｲﾙｺﾝﾄﾛｰﾙに通知
+		GetParent()->SendMessage(WM_USERFINISH, (WPARAM)this);
+	}
+	else if ( !GetParent()->IsKindOf(RUNTIME_CLASS(CNCViewTab)) ) {
+		// ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳでﾀﾞﾌﾞﾙｸﾘｯｸされれば，XY単体表示に切り替え
 		static_cast<CNCChild *>(GetParentFrame())->GetMainView()->DblClkChange(1);
 		return;
 	}
 
 	CView::OnLButtonDblClk(nFlags, point);
+}
+
+void CNCViewXY::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	if ( !GetDocument()->IsThumbnail() ) {
+		if ( nChar == VK_TAB ) {
+			CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
+			if ( ::GetKeyState(VK_SHIFT) < 0 )
+				pFrame->GetListView()->SetFocus();
+			else
+				pFrame->GetInfoView()->SetFocus();
+		}
+	}
+
+	CView::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+int CNCViewXY::OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message)
+{
+	// 基底ｸﾗｽを呼び出すと、CFrameWnd関連が呼ばれるので
+	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞでは不具合(ASSERT)が発生する
+	if ( GetDocument()->IsThumbnail() ) {
+		SetFocus();		// 自力でﾌｫｰｶｽを取得
+		return MA_ACTIVATE;
+	}
+	return CView::OnMouseActivate(pDesktopWnd, nHitTest, message);
 }
 
 BOOL CNCViewXY::OnEraseBkgnd(CDC* pDC) 

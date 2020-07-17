@@ -7,6 +7,8 @@
 #include "NCChild.h"
 #include "NCdata.h"
 #include "NCDoc.h"
+#include "NCViewTab.h"
+#include "NCInfoTab.h"
 #include "NCListView.h"
 #include "NCJumpDlg.h"
 #include "NCFindDlg.h"
@@ -43,6 +45,7 @@ BEGIN_MESSAGE_MAP(CNCListView, CListView)
 	//{{AFX_MSG_MAP(CNCListView)
 	ON_WM_CREATE()
 	ON_WM_CONTEXTMENU()
+	ON_NOTIFY_REFLECT(LVN_KEYDOWN, OnKeyDown)
 	ON_NOTIFY_REFLECT(LVN_GETDISPINFO, OnGetDispInfo)
 	ON_NOTIFY_REFLECT(LVN_ITEMCHANGED, OnItemChanged)
 	ON_UPDATE_COMMAND_UI(ID_NCVIEW_TRACE_BREAK, OnUpdateTraceBreak)
@@ -384,4 +387,19 @@ LRESULT CNCListView::OnSelectTrace(WPARAM wParam, LPARAM)
 	GetListCtrl().EnsureVisible(nIndex, FALSE);
 
 	return 0;
+}
+
+void CNCListView::OnKeyDown(NMHDR* pNMHDR, LRESULT* pResult) 
+{
+	LPNMLVKEYDOWN pTVKeyDown = reinterpret_cast<LPNMLVKEYDOWN>(pNMHDR);
+
+	if ( pTVKeyDown->wVKey == VK_TAB ) {
+		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
+		if ( ::GetKeyState(VK_SHIFT) < 0 )
+			pFrame->GetInfoView()->SetFocus();
+		else
+			pFrame->GetMainView()->SetFocus();
+	}
+
+	*pResult = 0;
 }

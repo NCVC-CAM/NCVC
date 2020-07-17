@@ -8,7 +8,32 @@
 #include "DXFshape.h"
 #include "Layer.h"
 #include "NCVCdefine.h"
+
 class	CDXFBlockData;
+
+// 自動処理ﾃﾞｰﾀ受け渡し構造体
+struct	AUTOWORKINGDATA
+{
+	int		nSelect;		// 機能選択(0:輪郭, 1:ｵﾌｾｯﾄ)
+	double	dOffset;		// ｵﾌｾｯﾄ
+	BOOL	bAcuteRound;	// 鋭角の外側を丸める
+	int		nLoopCnt;		// 繰り返し数
+	int		nScanLine;		// 走査線(0:なし, 1:X方向, 2:Y方向)
+	BOOL	bCircleScroll;	// 円ﾃﾞｰﾀはｽｸﾛｰﾙ切削
+	// 初期化
+	AUTOWORKINGDATA() {
+		nSelect	= 0;
+		dOffset	= 1.0;
+		bAcuteRound	= TRUE;
+		nLoopCnt	= 1;
+		nScanLine	= 0;
+		bCircleScroll	= TRUE;
+	}
+};
+// 自動形状処理ﾀｲﾌﾟ
+#define	AUTOWORKING			0
+#define	AUTORECALCWORKING	1
+#define	AUTOSTRICTOFFSET	2
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFDoc ドキュメント
@@ -19,10 +44,8 @@ class CDXFDoc : public CDocument, public CDocBase
 			m_bThread,		// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
 			m_bReload,		// 再読込ﾌﾗｸﾞ(from DXFSetup.cpp)
 			m_bShape;		// 形状処理を行ったか
-	UINT	m_nShapePattern;	// 形状処理ﾊﾟﾀｰﾝ
-	double	m_dOffset;		// ﾃﾞﾌｫﾙﾄ輪郭ｵﾌｾｯﾄ
-	BOOL	m_bAcute;		// ﾃﾞﾌｫﾙﾄ鋭角丸め設定
-
+	UINT	m_nShapeProcessID;	// 形状加工指示ID
+	AUTOWORKINGDATA	m_AutoWork;	// 自動輪郭処理ﾃﾞｰﾀ
 	CRect3D		m_rcMax;			// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
 	CDXFcircleEx*	m_pCircle;		// 切削原点
 	boost::optional<CPointD>	m_ptOrgOrig;	// ﾌｧｲﾙから読み込んだｵﾘｼﾞﾅﾙ原点
@@ -64,8 +87,8 @@ public:
 	BOOL	IsShape(void) const {
 		return m_bShape;
 	}
-	UINT	GetShapePattern(void) const {
-		return m_nShapePattern;
+	UINT	GetShapeProcessID(void) const {
+		return m_nShapeProcessID;
 	}
 	CDXFcircleEx*	GetCircleObject(void) {
 		return m_pCircle;
@@ -132,7 +155,7 @@ public:
 	}
 
 	// ﾏｳｽｸﾘｯｸの位置と該当ｵﾌﾞｼﾞｪｸﾄの最小距離を返す
-	boost::tuple<CDXFshape*, double>	GetSelectObject(const CPointD&, const CRectD&);
+	boost::tuple<CDXFshape*, CDXFdata*, double>	GetSelectObject(const CPointD&, const CRectD&);
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
@@ -169,6 +192,7 @@ protected:
 	afx_msg void OnEditOrigin();
 	afx_msg void OnEditShape();
 	afx_msg void OnEditAutoShape();
+	afx_msg void OnEditStrictOffset();
 	afx_msg void OnUpdateEditShape(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateEditShaping(CCmdUI* pCmdUI);
 	//}}AFX_MSG
@@ -176,6 +200,7 @@ protected:
 	afx_msg void OnUpdateFileDXF2NCD(CCmdUI* pCmdUI);
 	afx_msg void OnFileDXF2NCD(UINT);
 	// 形状加工処理
+	afx_msg void OnUpdateShapePattern(CCmdUI* pCmdUI);
 	afx_msg	void OnShapePattern(UINT);
 
 	DECLARE_MESSAGE_MAP()

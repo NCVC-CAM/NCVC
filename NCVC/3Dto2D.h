@@ -102,7 +102,8 @@ public:
 		return IsMatchPoint(&pt);
 	}
 	BOOL	IsMatchPoint(const CPointD* pt) const {
-		return ( fabs(x-pt->x)<NCMIN && fabs(y-pt->y)<NCMIN );
+		CPointD	ptw(x - pt->x, y - pt->y);
+		return ptw.hypot() < NCMIN;
 	}
 	double&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xy));
@@ -210,7 +211,8 @@ public:
 		return IsMatchPoint(&pt);
 	}
 	BOOL	IsMatchPoint(const CPoint3D* pt) const {
-		return ( fabs(x-pt->x)<NCMIN && fabs(y-pt->y)<NCMIN && fabs(z-pt->z)<NCMIN );
+		CPoint3D	ptw(x - pt->x, y - pt->y, z - pt->z);
+		return ptw.hypot() < NCMIN;
 	}
 	double&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xyz));
@@ -297,19 +299,16 @@ public:
 	BOOL	PtInRect(const CPointD& pt) const {
 		return left<=pt.x && pt.x<=right && top<=pt.y && pt.y<=bottom;
 	}
+	// 指定矩形が矩形内に完全に含まれるか
 	BOOL	PtInRect(const CRectD& rc) const {
 		return PtInRect(rc.TopLeft()) && PtInRect(rc.BottomRight());
 	}
-	BOOL	PtInRectpt(const CRectD& rc) const {
-		return PtInRect(rc.TopLeft()) || PtInRect(rc.BottomRight()) ||
-				PtInRect(CPointD(rc.left,rc.bottom)) || PtInRect(CPointD(rc.right,rc.top));
-	}
 	// 2つの四角形が交わる部分に相当する四角形を設定
-	BOOL	IntersectRect(const CRectD& rc1, const CRectD& rc2) {
-		left	= max(rc1.left, rc2.left);
-		top		= max(rc1.top, rc2.top);
-		right	= min(rc1.right, rc2.right);
-		bottom	= min(rc1.bottom, rc2.bottom);
+	BOOL	CrossRect(const CRectD& rc1, const CRectD& rc2) {
+		left	= max(rc1.left,		rc2.left);
+		top		= max(rc1.top,		rc2.top);
+		right	= min(rc1.right,	rc2.right);
+		bottom	= min(rc1.bottom,	rc2.bottom);
 		if ( rc1.PtInRect(TopLeft()) && rc1.PtInRect(BottomRight()) )
 			return TRUE;
 		SetRectEmpty();
@@ -395,7 +394,7 @@ public:
 	double	high, low;		// 高さ
 	// 初期化のためのｺﾝｽﾄﾗｸﾀ
 	CRect3D() {
-		high = low = 0.0;	// CRectD::SetRectEmpty() は自動で呼ばれる
+		high = low = 0.0;	// CRectD::SetRectEmpty() はﾍﾞｰｽｸﾗｽで呼ばれる
 	}
 	CRect3D(double l, double t, double r, double b, double h, double w) :
 			CRectD(l, t, r, b) {
@@ -426,6 +425,14 @@ public:
 		CRectD::OffsetRect(pt.GetXY());
 		high += pt.z;	low += pt.z;
 	}
+	// 各辺を中心から外側に向かって移動
+	void	InflateRect(double w, double h) {
+		CRectD::InflateRect(w, h);
+	}
+	void	InflateRect(double w, double h, double t) {
+		CRectD::InflateRect(w, h);
+		high += t;		low  -= t;
+	}
 	// 演算子定義
 	CRect3D&	operator |= (const CRect3D& rc) {
 		CRectD::operator |= (rc);
@@ -448,7 +455,7 @@ public:
 //////////////////////////////////////////////////////////////////////
 // NCVC数値演算共通関数
 
-// ｷﾞｬｯﾌﾟ計算のｲﾝﾗｲﾝ関数
+//	ｷﾞｬｯﾌﾟ計算のｲﾝﾗｲﾝ関数
 inline	double	GAPCALC(double x, double y)
 {
 //	return	_hypot(x, y);		// 時間がかかりすぎ
@@ -458,41 +465,45 @@ inline	double	GAPCALC(const CPointD& pt)
 {
 	return pt.x * pt.x + pt.y * pt.y;
 }
-// ｵﾌｾｯﾄ符号(進行方向左側)
+
+//	ｵﾌｾｯﾄ符号(進行方向左側)
 inline int	CalcOffsetSign(const CPointD& pt)
 {
 	double	dAngle = RoundUp(atan2(pt.y, pt.x)*DEG);
-	return (90.0<=dAngle || -90.0>dAngle) ? -1 : 1;
+	return ( dAngle < -90.0 || 90.0 <= dAngle ) ? -1 : 1;
 }
 
-// ２線の交点を求める
+//	２線の交点を求める
 boost::optional<CPointD>	CalcIntersectionPoint_LL
 	(const CPointD&, const CPointD&, const CPointD&, const CPointD&, BOOL = TRUE);
-// 直線と円の交点を求める
+//	直線と円の交点を求める
 boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_LC
 	(const CPointD&, const CPointD&, const CPointD&, double, BOOL = TRUE);
-// ２つの円の交点を求める
+//	２つの円の交点を求める
 boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_CC
 	(const CPointD&, const CPointD&, double, double);
-// 直線と楕円の交点を求める
+//	直線と楕円の交点を求める
 boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_LE
 	(const CPointD&, const CPointD&, const CPointD&, double, double, double, BOOL = TRUE);
-// 線と線の端点を中心とした円との交点を求める
+//	線と線の端点を中心とした円との交点を求める
 CPointD	CalcIntersectionPoint_TC(const CPointD&, double, const CPointD&);
-// 直線のｵﾌｾｯﾄ座標
+//	直線のｵﾌｾｯﾄ座標
 boost::tuple<CPointD, CPointD> CalcOffsetLine(const CPointD&, const CPointD&, double, BOOL);
-// ２線がなす角度を求める(交点を原点ｾﾞﾛ扱い)
+//	２線がなす角度を求める(交点を原点ｾﾞﾛ扱い)
 double	CalcBetweenAngle(const CPointD&, const CPointD&);
-// ｵﾌｾｯﾄ分平行移動させた線分同士の交点を求める
+//	ｵﾌｾｯﾄ分平行移動させた線分同士の交点を求める
 boost::optional<CPointD>	CalcOffsetIntersectionPoint_LL
-	(const CPointD&, const CPointD&, int, int, double);
-// ｵﾌｾｯﾄ分平行移動させた線と円弧の交点を求める
-boost::tuple<BOOL, CPointD, double>	CalcOffsetIntersectionPoint_LC
-	(const CPointD&, const CPointD&, double, double, int, int, int);
-// ｵﾌｾｯﾄ分平行移動させた線と楕円弧の交点を求める
+	(const CPointD&, const CPointD&, double, BOOL);
+//	ｵﾌｾｯﾄ分平行移動させた線と円弧の交点を求める
+boost::optional<CPointD>	CalcOffsetIntersectionPoint_LC
+	(const CPointD&, const CPointD&, double, double, BOOL, BOOL);
+//	ｵﾌｾｯﾄ分平行移動させた線と楕円弧の交点を求める
 boost::optional<CPointD>	CalcOffsetIntersectionPoint_LE
 	(const CPointD&, const CPointD&, double, double, double, double, BOOL, BOOL);
-// ２次方程式の解を求める
+//	点が多角形の内側か否か
+BOOL IsPointInPolygon(const CPointD&, const std::vector<CPointD>&);
+
+//	２次方程式の解を求める
 boost::tuple<int, double, double>	GetKon(double, double, double);
-// 引数を越える素数を返す
+//	引数を越える素数を返す
 UINT	GetPrimeNumber(UINT);

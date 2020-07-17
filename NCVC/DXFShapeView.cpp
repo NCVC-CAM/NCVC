@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
+#include "DXFChild.h"
 #include "DXFdata.h"
 #include "DXFshape.h"
 #include "Layer.h"
@@ -46,9 +47,10 @@ BEGIN_MESSAGE_MAP(CDXFShapeView, CTreeView)
 	ON_NOTIFY_REFLECT(TVN_GETDISPINFO, OnGetDispInfo)
 	ON_NOTIFY_REFLECT(TVN_BEGINLABELEDIT, OnBeginLabelEdit)
 	ON_NOTIFY_REFLECT(TVN_ENDLABELEDIT, OnEndLabelEdit)
-	ON_NOTIFY_REFLECT(TVN_KEYDOWN, OnKeydown)
+	ON_NOTIFY_REFLECT(TVN_KEYDOWN, OnKeyDown)
 	ON_NOTIFY_REFLECT(TVN_SELCHANGED, OnSelChanged)
 	ON_NOTIFY_REFLECT(TVN_BEGINDRAG, OnBeginDrag)
+	ON_WM_CHAR()
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONUP()
 	ON_WM_RBUTTONDOWN()
@@ -61,8 +63,6 @@ BEGIN_MESSAGE_MAP(CDXFShapeView, CTreeView)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_NAME, OnUpdateEditShapeName)
 	ON_COMMAND(ID_EDIT_SHAPE_NAME, OnEditShapeName)
 	//}}AFX_MSG_MAP
-	// å`èÛâ¡çHéwé¶(é¿∫œ›ƒﬁÇÕDXFDoc.cpp)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, OnUpdateShapePattern)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -156,6 +156,8 @@ void CDXFShapeView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		}
 		break;
 	case UAV_DXFAUTOWORKING:	// from CDXFDoc::OnEditAutoShape
+		if ( pHint )			// from CDXFDoc::OnEditStrictOffset
+			return;
 		AutoWorkingSet(TRUE);
 		SetFocus();
 		break;
@@ -250,22 +252,28 @@ void CDXFShapeView::OnUpdateShape(LPDXFADDSHAPE lpShape)
 	if ( !hLayerTree ) {
 		tvInsert.hParent = m_hRootTree[nID];
 		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_LAYER;
-		tvInsert.item.lParam = (LPARAM)(lpShape->pLayer);
+		tvInsert.item.lParam = reinterpret_cast<LPARAM>(lpShape->pLayer);
 		hLayerTree = GetTreeCtrl().InsertItem(&tvInsert);
 		ASSERT( hLayerTree );
 	}
 	tvInsert.hParent = hLayerTree;
 	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_CHAIN + lpShape->pShape->GetShapeType();
-	tvInsert.item.lParam = (LPARAM)(lpShape->pShape);
+	tvInsert.item.lParam = reinterpret_cast<LPARAM>(lpShape->pShape);
 	hTree = GetTreeCtrl().InsertItem(&tvInsert);
 	lpShape->pShape->SetTreeHandle(hTree);
 
 	// â¡çHéwé¶ÇÃìoò^
-	CDXFworkingList*	pList = lpShape->pShape->GetWorkList();
+	POSITION	pos;
+	CDXFworkingList*	pWorkList = lpShape->pShape->GetWorkList();
 	tvInsert.hParent = hTree;
 	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-	for ( POSITION pos=pList->GetHeadPosition(); pos; ) {
-		tvInsert.item.lParam = (LPARAM)(pList->GetNext(pos));
+	for ( pos=pWorkList->GetHeadPosition(); pos; ) {
+		tvInsert.item.lParam = reinterpret_cast<LPARAM>(pWorkList->GetNext(pos));
+		GetTreeCtrl().InsertItem(&tvInsert);
+	}
+	COutlineList*	pOutline = lpShape->pShape->GetOutlineList();
+	for ( pos=pOutline->GetHeadPosition(); pos; ) {
+		tvInsert.item.lParam = reinterpret_cast<LPARAM>(pOutline->GetNext(pos));
 		GetTreeCtrl().InsertItem(&tvInsert);
 	}
 	if ( bExpand )
@@ -354,8 +362,8 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 	POSITION	pos;
 	HTREEITEM	hLayerTree = NULL, hShapeTree;
 	CDXFshape*	pShape;
-	CDXFworkingList*	pList;
-	CDXFworking*	pWork;
+	CDXFworkingList*	pWorkList;
+	COutlineList*		pOutlineList;
 
 	// îzâ∫ÇÃå`èÛÃﬂ€ ﬂ√®ämîF
 	hShapeTree = GetTreeCtrl().GetChildItem(m_hItemDrag);
@@ -365,9 +373,11 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 			bCanNotOutline = TRUE;
 			break;	// à»ç~ämîFïKóvÇ»Çµ
 		}
-		if ( dwRoot==ROOTTREE_LOCUS && pShape->GetOutlineObject() ) {
-			bOutline = TRUE;
-			break;
+		if ( dwRoot==ROOTTREE_LOCUS ) {
+			if ( pShape->IsOutlineList() ) {
+				bOutline = TRUE;
+				break;
+			}
 		}
 		hShapeTree = GetTreeCtrl().GetNextSiblingItem(hShapeTree);
 	}
@@ -412,7 +422,7 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 		hLayerTree = SearchLayerTree(GetTreeCtrl().GetChildItem(tvInsert.hParent), m_pDragLayer);
 	if ( !hLayerTree ) {
 		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_LAYER;
-		tvInsert.item.lParam = (LPARAM)m_pDragLayer;
+		tvInsert.item.lParam = reinterpret_cast<LPARAM>(m_pDragLayer);
 		hLayerTree = GetTreeCtrl().InsertItem(&tvInsert);
 		if ( !hLayerTree ) {
 			DragCancel(TRUE);
@@ -433,7 +443,7 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 		pShape = reinterpret_cast<CDXFshape *>(GetTreeCtrl().GetItemData(hShapeTree));
 		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_CHAIN + pShape->GetShapeType();
 		tvInsert.hParent = hLayerTree;
-		tvInsert.item.lParam = (LPARAM)pShape;
+		tvInsert.item.lParam = reinterpret_cast<LPARAM>(pShape);
 		tvInsert.hParent = GetTreeCtrl().InsertItem(&tvInsert);	// â¡çHéwé¶ÇÃêe¬ÿ∞
 		if ( !tvInsert.hParent ) {
 			DragCancel(TRUE);
@@ -445,18 +455,21 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 		if ( m_dwDragRoot != dwRoot )
 			pShape->SetShapeAssemble((DXFSHAPE_ASSEMBLE)(dwRoot-1));
 		// â¡çHéwé¶
-		pList = pShape->GetWorkList();
 		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-		for ( pos=pList->GetHeadPosition(); pos; ) {
-			pWork = pList->GetNext(pos);
-			if ( dwRoot==ROOTTREE_LOCUS && bOutline &&
-						pWork->GetWorkingType() > WORK_START ) {	// WORK_OUTLINE, WORK_POCKET
-				// å≥¬ÿ∞Ç™écÇ¡ÇƒÇ¢ÇÈèÛë‘Ç≈Œﬂ≤›¿çÌèúÇ∑ÇÈÇΩÇﬂ
-				// à»ç~¬ÿ∞ëÄçÏÇÇ∑ÇÈÇ∆OnGetDispInfo()Ç≈¥◊∞ÇÃâ¬î\ê´Ç™Ç†ÇÈ
-				pShape->DelWorkingData(pWork);	// ó÷äsâ¡çHéwé¶çÌèú
-			}
-			else {
-				tvInsert.item.lParam = (LPARAM)pWork;
+		pWorkList = pShape->GetWorkList();
+		for ( pos=pWorkList->GetHeadPosition(); pos; ) {
+			tvInsert.item.lParam = reinterpret_cast<LPARAM>(pWorkList->GetNext(pos));
+			GetTreeCtrl().InsertItem(&tvInsert);
+		}
+		if ( dwRoot==ROOTTREE_LOCUS && bOutline ) {
+			// å≥¬ÿ∞Ç™écÇ¡ÇƒÇ¢ÇÈèÛë‘Ç≈Œﬂ≤›¿çÌèúÇ∑ÇÈÇΩÇﬂ
+			// à»ç~¬ÿ∞ëÄçÏÇÇ∑ÇÈÇ∆OnGetDispInfo()Ç≈¥◊∞ÇÃâ¬î\ê´Ç™Ç†ÇÈ
+			pShape->DelOutlineData();	// ó÷äsâ¡çHéwé¶ëSçÌèú
+		}
+		else {
+			pOutlineList = pShape->GetOutlineList();
+			for ( pos=pOutlineList->GetHeadPosition(); pos; ) {
+				tvInsert.item.lParam = reinterpret_cast<LPARAM>(pOutlineList->GetNext(pos));
 				GetTreeCtrl().InsertItem(&tvInsert);
 			}
 		}
@@ -473,7 +486,6 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 HTREEITEM CDXFShapeView::DragInsertShape(void)
 {
 	DWORD		dwRoot = GetParentAssemble(m_hItemDrop);
-	CDXFchain*	pChain;
 
 	switch ( dwRoot ) {
 	case ROOTTREE_SHAPE:
@@ -486,8 +498,7 @@ HTREEITEM CDXFShapeView::DragInsertShape(void)
 		break;
 	case ROOTTREE_LOCUS:
 		// ó÷äsâ¡çHéwé¶Ç™è¡Ç≥ÇÍÇÈämîF
-		pChain = m_pDragShape->GetOutlineObject();
-		if ( pChain ) {
+		if ( m_pDragShape->IsOutlineList() ) {
 			DragCancel(FALSE, FALSE);
 			if ( AfxMessageBox(IDS_ANA_OUTLINE, MB_YESNO|MB_ICONQUESTION) != IDYES )
 				return NULL;
@@ -509,7 +520,7 @@ HTREEITEM CDXFShapeView::DragInsertShape(void)
 			tvInsert.hParent = m_hItemDrop;
 			tvInsert.hInsertAfter = TVI_LAST;
 			tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_LAYER;
-			tvInsert.item.lParam = (LPARAM)m_pDragLayer;
+			tvInsert.item.lParam = reinterpret_cast<LPARAM>(m_pDragLayer);
 			hTree = GetTreeCtrl().InsertItem(&tvInsert);
 			if ( !hTree ) {
 				DragCancel(TRUE);
@@ -539,7 +550,7 @@ HTREEITEM CDXFShapeView::DragInsertShape(void)
 	hTree = GetTreeCtrl().GetPrevSiblingItem(m_hItemDrop);
 	tvInsert.hInsertAfter = hTree ? hTree : TVI_FIRST;	// ƒﬁ€ØÃﬂêÊ
 	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_CHAIN + m_pDragShape->GetShapeType();
-	tvInsert.item.lParam = (LPARAM)m_pDragShape;
+	tvInsert.item.lParam = reinterpret_cast<LPARAM>(m_pDragShape);
 	hTree = GetTreeCtrl().InsertItem(&tvInsert);
 	if ( !hTree ) {
 		DragCancel(TRUE);
@@ -552,19 +563,21 @@ HTREEITEM CDXFShapeView::DragInsertShape(void)
 		m_pDragShape->SetShapeAssemble((DXFSHAPE_ASSEMBLE)(dwRoot-1));
 
 	// â¡çHéwé¶ÇÃìoò^
+	POSITION	pos;
 	tvInsert.hInsertAfter = TVI_LAST;
 	tvInsert.hParent = hTree;
 	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-	CDXFworkingList* pList = m_pDragShape->GetWorkList();
-	CDXFworking* pWork;
-	for ( POSITION pos=pList->GetHeadPosition(); pos; ) {
-		pWork = pList->GetNext(pos);
-		if ( dwRoot==ROOTTREE_LOCUS && pChain &&
-					pWork->GetWorkingType() > WORK_START ) {	// WORK_OUTLINE, WORK_POCKET
-			m_pDragShape->DelWorkingData(pWork);	// ó÷äsâ¡çHéwé¶çÌèú
-		}
-		else {
-			tvInsert.item.lParam = (LPARAM)pWork;
+	CDXFworkingList*	pWorkList = m_pDragShape->GetWorkList();
+	for ( pos=pWorkList->GetHeadPosition(); pos; ) {
+		tvInsert.item.lParam = reinterpret_cast<LPARAM>(pWorkList->GetNext(pos));
+		GetTreeCtrl().InsertItem(&tvInsert);
+	}
+	if ( dwRoot==ROOTTREE_LOCUS )
+		m_pDragShape->DelOutlineData();	// ó÷äsâ¡çHéwé¶ëSçÌèú
+	else {
+		COutlineList*	pOutlineList = m_pDragShape->GetOutlineList();
+		for ( pos=pOutlineList->GetHeadPosition(); pos; ) {
+			tvInsert.item.lParam = reinterpret_cast<LPARAM>(pOutlineList->GetNext(pos));
 			GetTreeCtrl().InsertItem(&tvInsert);
 		}
 	}
@@ -587,7 +600,7 @@ void CDXFShapeView::DragLink(void)
 		::MessageBeep(MB_ICONEXCLAMATION);
 		return;
 	}
-	if ( pShape->GetOutlineObject() ) {
+	if ( pShape->IsOutlineList() ) {
 		DragCancel(FALSE, FALSE);
 		if ( AfxMessageBox(IDS_ANA_OUTLINE, MB_YESNO|MB_ICONQUESTION) != IDYES )
 			return;
@@ -605,11 +618,11 @@ void CDXFShapeView::DragLink(void)
 	// ƒﬁ◊Ø∏ﬁå≥±≤√—çÌèú
 	m_pDragLayer->RemoveShape(m_pDragShape);
 	// ƒﬁ◊Ø∏ﬁêÊÇÃâ¡çHéwé¶¬ÿ∞ÇçÌèú
-	HTREEITEM hTree = GetTreeCtrl().GetChildItem(m_hItemDrop), hTreeTmp;
+	HTREEITEM hTree = GetTreeCtrl().GetChildItem(m_hItemDrop), hTreeNext;
 	while ( hTree ) {
-		hTreeTmp = hTree;
-		hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
-		GetTreeCtrl().DeleteItem(hTreeTmp);
+		hTreeNext = GetTreeCtrl().GetNextSiblingItem(hTree);
+		GetTreeCtrl().DeleteItem(hTree);
+		hTree = hTreeNext;
 	}
 	// ƒﬁ◊Ø∏ﬁêÊÇÃèäëÆèWçáåüç∏(ç~äi)
 	if ( GetParentAssemble(m_hItemDrop)==ROOTTREE_SHAPE && !pShape->GetShapeChain() ) {
@@ -624,12 +637,13 @@ void CDXFShapeView::DragLink(void)
 		Invalidate();
 	}
 	else {
-		// â¡çHéwé¶ÇÃçƒìoò^
-		CDXFworkingList* pList = pShape->GetWorkList();
-		for ( POSITION pos=pList->GetHeadPosition(); pos; ) {
+		// â¡çHéwé¶ÇÃçƒìoò^(ó÷äséwé¶ÇÕñ≥Çµ)
+		POSITION	pos;
+		CDXFworkingList* pWorkList = pShape->GetWorkList();
+		for ( pos=pWorkList->GetHeadPosition(); pos; ) {
 			hTree = GetTreeCtrl().InsertItem(TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE|TVIF_PARAM,
 				LPSTR_TEXTCALLBACK, TREEIMG_WORK, TREEIMG_WORK, 0, 0,
-				(LPARAM)(pList->GetNext(pos)), m_hItemDrop, TVI_LAST);
+				reinterpret_cast<LPARAM>(pWorkList->GetNext(pos)), m_hItemDrop, TVI_LAST);
 			ASSERT( hTree );
 		}
 		// åãçáêÊ±≤√—ÇÃëIë
@@ -736,7 +750,8 @@ void CDXFShapeView::SetShapeSwitch_SubordinateTree(HTREEITEM hParentTree, BOOL b
 
 void CDXFShapeView::SetShapeTree(void)
 {
-	int			i, j, k, nLoop, nLayerLoop = GetDocument()->GetLayerCnt();
+	int			i, j, k, nLoop;
+	const int	nLayerLoop = GetDocument()->GetLayerCnt();
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	HTREEITEM	hLayerTree;
@@ -762,13 +777,13 @@ void CDXFShapeView::SetShapeTree(void)
 			if ( !hLayerTree ) {
 				tvInsert.hParent = m_hRootTree[k];
 				tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_LAYER;
-				tvInsert.item.lParam = (LPARAM)pLayer;
+				tvInsert.item.lParam = reinterpret_cast<LPARAM>(pLayer);
 				hLayerTree = GetTreeCtrl().InsertItem(&tvInsert);
 				ASSERT( hLayerTree );
 			}
 			tvInsert.hParent = hLayerTree;
 			tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_CHAIN + pShape->GetShapeType();
-			tvInsert.item.lParam = (LPARAM)pShape;
+			tvInsert.item.lParam = reinterpret_cast<LPARAM>(pShape);
 			pShape->SetTreeHandle( GetTreeCtrl().InsertItem(&tvInsert) );
 		}
 	}
@@ -789,7 +804,7 @@ void CDXFShapeView::AddWorking(CDXFworking* pWork)
 	ASSERT( hParentTree );
 	hTree = GetTreeCtrl().InsertItem(TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE|TVIF_PARAM,
 		LPSTR_TEXTCALLBACK, TREEIMG_WORK, TREEIMG_WORK, 0, 0,
-		(LPARAM)pWork, hParentTree, TVI_LAST);
+		reinterpret_cast<LPARAM>(pWork), hParentTree, TVI_LAST);
 	ASSERT( hTree );
 	GetTreeCtrl().Expand(hParentTree, TVE_EXPAND);
 	GetTreeCtrl().SelectItem(hParentTree);	// å`èÛèWçáÇëIë
@@ -800,9 +815,9 @@ void CDXFShapeView::AutoWorkingDel
 	(const CLayerData* pLayerSrc/*=NULL*/, const CDXFshape* pShapeSrc/*=NULL*/)
 {
 	// åªç›ìoò^Ç≥ÇÍÇƒÇ¢ÇÈó÷äsÅEŒﬂπØƒâ¡çHÇÃ¬ÿ∞Çè¡ãé
-	HTREEITEM		hLayerTree, hShapeTree, hTree;
+	HTREEITEM		hLayerTree, hShapeTree, hTree, hTreeNext;
 	CDXFshape*		pShape;
-	CDXFworking*	pPara;
+	CDXFworking*	pWork;
 
 	// ó÷äsèWçáÇÃÇ›Ç™ëŒè€
 	hLayerTree = GetTreeCtrl().GetChildItem(m_hRootTree[0]);
@@ -822,15 +837,14 @@ void CDXFShapeView::AutoWorkingDel
 				hTree = GetTreeCtrl().GetChildItem(hShapeTree);
 			// åªç›ÇÃó÷äsÅEŒﬂπØƒâ¡çHéwé¶ÇçÌèúÇ∑ÇÈŸ∞Ãﬂ
 			while ( hTree ) {
-				pPara = reinterpret_cast<CDXFworking *>(GetTreeCtrl().GetItemData(hTree));
-				ASSERT(pPara);
-				if ( pPara->GetWorkingType() > WORK_START ) {	// WORK_OUTLINE, WORK_POCKET
-					pShape->DelWorkingData(pPara);
+				pWork = reinterpret_cast<CDXFworking *>(GetTreeCtrl().GetItemData(hTree));
+				ASSERT(pWork);
+				hTreeNext = GetTreeCtrl().GetNextSiblingItem(hTree);
+				if ( pWork->GetWorkingType() >= WORK_OUTLINE )	// WORK_OUTLINE, WORK_POCKET
 					GetTreeCtrl().DeleteItem(hTree);
-					break;	// ó÷äsÅEŒﬂπØƒâ¡çHÇÕ1Ç¬ÇæÇØ
-				}
-				hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
+				hTree = hTreeNext;
 			}
+			pShape->DelOutlineData();
 			hShapeTree = GetTreeCtrl().GetNextSiblingItem(hShapeTree);
 		}
 		hLayerTree = GetTreeCtrl().GetNextSiblingItem(hLayerTree);
@@ -841,13 +855,14 @@ void CDXFShapeView::AutoWorkingSet
 	(BOOL bAuto, const CLayerData* pLayerSrc/*=NULL*/, const CDXFshape* pShapeSrc/*=NULL*/)
 {
 	// å`èÛèÓïÒÇ©ÇÁâ¡çHéwé¶Çìoò^
-	int		i, j, nLoop, nLayerLoop = GetDocument()->GetLayerCnt();
+	int			i, j, nLoop;
+	const int	nLayerLoop = GetDocument()->GetLayerCnt();
 	POSITION	pos;
 	HTREEITEM	hTree;
 	CLayerData*			pLayer;
 	CDXFshape*			pShape;
-	CDXFworkingList*	pList;
-	CDXFworking*		pWork;
+	COutlineList*		pOutlineList;
+	CDXFworkingOutline*	pOutline;
 
 	TVINSERTSTRUCT	tvInsert;
 	::ZeroMemory(&tvInsert, sizeof(TVINSERTSTRUCT));
@@ -866,12 +881,20 @@ void CDXFShapeView::AutoWorkingSet
 			if ( pShapeSrc && pShapeSrc!=pShape )
 				continue;
 			hTree = pShape->GetTreeHandle();
-			pList = pShape->GetWorkList();
 			tvInsert.hParent = hTree;
-			for ( pos=pList->GetHeadPosition(); pos; ) {
-				pWork = pList->GetNext(pos);
-				if ( !bAuto || pWork->IsAutoWorking() ) {
-					tvInsert.item.lParam = (LPARAM)pWork;
+			if ( !bAuto ) {
+				// ï˚å¸ÅEäJénà íuÇ»Ç«ÇÃâ¡çHéwé¶Ç…ÇÕ IsAutoWorking() Ç™ñ≥Ç¢
+				CDXFworkingList* pWorkList = pShape->GetWorkList();
+				for ( pos=pWorkList->GetHeadPosition(); pos; ) {
+					tvInsert.item.lParam = reinterpret_cast<LPARAM>(pWorkList->GetNext(pos));
+					GetTreeCtrl().InsertItem(&tvInsert);
+				}
+			}
+			pOutlineList = pShape->GetOutlineList();
+			for ( pos=pOutlineList->GetHeadPosition(); pos; ) {
+				pOutline = pOutlineList->GetNext(pos);
+				if ( !bAuto || pOutline->IsAutoWorking() ) {
+					tvInsert.item.lParam = reinterpret_cast<LPARAM>(pOutline);
 					GetTreeCtrl().InsertItem(&tvInsert);
 				}
 			}
@@ -960,14 +983,6 @@ void CDXFShapeView::OnSortShape()
 	GetDocument()->SetModifiedFlag();
 }
 
-void CDXFShapeView::OnUpdateShapePattern(CCmdUI* pCmdUI)
-{
-	if ( pCmdUI->m_nID == ID_EDIT_SHAPE_POC )	// ŒﬂπØƒèàóùÇÕñ¢é¿ëï
-		pCmdUI->Enable(FALSE);
-	else
-		pCmdUI->SetCheck( pCmdUI->m_nID == GetDocument()->GetShapePattern() );
-}
-
 void CDXFShapeView::OnUpdateWorkingDel(CCmdUI* pCmdUI) 
 {
 	HTREEITEM hTree = GetTreeCtrl().GetSelectedItem();
@@ -983,13 +998,16 @@ void CDXFShapeView::OnWorkingDel()
 {
 	HTREEITEM hTree = GetTreeCtrl().GetSelectedItem();
 	if ( hTree && !IsRootTree(hTree) ) {
-		CDXFworking* pPara = reinterpret_cast<CDXFworking *>(GetTreeCtrl().GetItemData(hTree));
-		if ( pPara && pPara->IsKindOf(RUNTIME_CLASS(CDXFworking)) ) {
+		CDXFworking* pWork = reinterpret_cast<CDXFworking *>(GetTreeCtrl().GetItemData(hTree));
+		if ( pWork && pWork->IsKindOf(RUNTIME_CLASS(CDXFworking)) ) {
 			// ±≤√—è¡ãé
 			HTREEITEM hParentTree = GetTreeCtrl().GetParentItem(hTree);
 			CDXFshape* pShape = reinterpret_cast<CDXFshape *>(GetTreeCtrl().GetItemData(hParentTree));
 			GetTreeCtrl().DeleteItem(hTree);
-			pShape->DelWorkingData(pPara);
+			if ( pWork->GetWorkingType() >= WORK_OUTLINE )	// WORK_OUTLINE, WORK_POCKET
+				pShape->DelOutlineData(static_cast<CDXFworkingOutline*>(pWork));
+			else
+				pShape->DelWorkingData(pWork);
 			// ƒﬁ∑≠“›ƒïœçXí ím
 			GetDocument()->SetModifiedFlag();
 			// Àﬁ≠∞ÇÃçƒï`âÊ
@@ -1096,7 +1114,7 @@ void CDXFShapeView::OnEditShapeProp()
 				while ( hTree ) {
 					pShape = reinterpret_cast<CDXFshape *>(GetTreeCtrl().GetItemData(hTree));
 					if ( pShape && pShape->IsKindOf(RUNTIME_CLASS(CDXFshape)) &&
-								pShape->GetShapeType()==0 ) {
+								pShape->GetShapeType()==DXFSHAPETYPE_CHAIN ) {
 						if ( *dOffset == HUGE_VAL )
 							dOffset = pShape->GetOffset();
 						else if ( *dOffset != pShape->GetOffset() )
@@ -1121,7 +1139,7 @@ void CDXFShapeView::OnEditShapeProp()
 			pShape = static_cast<CDXFshape *>(pSelect);
 			vSelect = pShape;
 			nShape = pShape->GetShapeAssemble();
-			if ( pShape->GetShapeType() == 0 ) {
+			if ( pShape->GetShapeType() == DXFSHAPETYPE_CHAIN ) {
 				bChain = TRUE;
 				dOffset = pShape->GetOffset();
 			}
@@ -1297,7 +1315,7 @@ void CDXFShapeView::OnGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
 	LPNMTVDISPINFO pTVDispInfo = reinterpret_cast<LPNMTVDISPINFO>(pNMHDR);
 
 	CObject*	pParam = reinterpret_cast<CObject *>(pTVDispInfo->item.lParam);
-	if ( pParam && pTVDispInfo->item.mask & TVIF_TEXT && !IsRootTree(pTVDispInfo->item.hItem) ) {
+	if ( pParam && (pTVDispInfo->item.mask&TVIF_TEXT) && !IsRootTree(pTVDispInfo->item.hItem) ) {
 		if ( pParam->IsKindOf(RUNTIME_CLASS(CLayerData)) ) {
 			lstrcpy(pTVDispInfo->item.pszText, static_cast<CLayerData *>(pParam)->GetStrLayer());
 		}
@@ -1350,11 +1368,14 @@ void CDXFShapeView::OnEndLabelEdit(NMHDR* pNMHDR, LRESULT* pResult)
 	*pResult = 0;
 }
 
-void CDXFShapeView::OnKeydown(NMHDR* pNMHDR, LRESULT* pResult) 
+void CDXFShapeView::OnKeyDown(NMHDR* pNMHDR, LRESULT* pResult) 
 {
 	LPNMTVKEYDOWN pTVKeyDown = reinterpret_cast<LPNMTVKEYDOWN>(pNMHDR);
 
 	switch ( pTVKeyDown->wVKey ) {
+	case VK_TAB:
+		static_cast<CDXFChild *>(GetParentFrame())->GetMainView()->SetFocus();
+		break;
 	case VK_DELETE:
 		OnWorkingDel();
 		break;
@@ -1369,6 +1390,14 @@ void CDXFShapeView::OnKeydown(NMHDR* pNMHDR, LRESULT* pResult)
 	*pResult = 0;
 }
 
+void CDXFShapeView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	if ( nChar == VK_TAB )
+		return;		// Õﬁ∞Ω∏◊ΩÇåƒÇ—èoÇ∑Ç∆Àﬁ∞ÃﬂâπÇ™ñ¬ÇÈ
+
+	CTreeView::OnChar(nChar, nRepCnt, nFlags);
+}
+
 void CDXFShapeView::OnSelChanged(NMHDR* pNMHDR, LRESULT* pResult) 
 {
 	LPNMTREEVIEW pNMTreeView = reinterpret_cast<LPNMTREEVIEW>(pNMHDR);
@@ -1381,7 +1410,7 @@ void CDXFShapeView::OnSelChanged(NMHDR* pNMHDR, LRESULT* pResult)
 		pNMTreeView->itemOld.hItem,
 		pNMTreeView->itemNew.hItem
 	};
-	DXFTREETYPE	vSelect[SIZEOF(pObject)];	// DXFView.h
+	DXFTREETYPE		vSelect[SIZEOF(pObject)];	// DXFView.h
 	CDXFshape*		pShape;
 	CDXFworking*	pWork;
 
@@ -1414,7 +1443,8 @@ void CDXFShapeView::OnSelChanged(NMHDR* pNMHDR, LRESULT* pResult)
 	}
 
 	// ëIëï\é¶ÇÃçXêV ( To DXFView.cpp )
-	GetDocument()->UpdateAllViews(this, UAV_DXFSHAPEUPDATE, (CObject *)vSelect);
+	GetDocument()->UpdateAllViews(this, UAV_DXFSHAPEUPDATE,
+		reinterpret_cast<CObject *>(vSelect));
 
 	*pResult = 0;
 }

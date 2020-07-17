@@ -23,13 +23,6 @@ BEGIN_MESSAGE_MAP(CFloatEdit, CEdit)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-BEGIN_MESSAGE_MAP(CIEStatic, CStatic)
-	//{{AFX_MSG_MAP(CIEStatic)
-	ON_WM_SETCURSOR()
-	ON_WM_LBUTTONUP()
-	//}}AFX_MSG_MAP
-END_MESSAGE_MAP()
-
 BEGIN_MESSAGE_MAP(CColComboBox, CComboBox)
 	//{{AFX_MSG_MAP(CColComboBox)
 	//}}AFX_MSG_MAP
@@ -128,38 +121,6 @@ void CFloatEdit::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 		CEdit::OnChar(nChar, nRepCnt, nFlags);
 	else
 		::MessageBeep(MB_ICONASTERISK);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// CIEStatic
-
-CIEStatic::CIEStatic()
-{
-}
-
-CIEStatic::~CIEStatic()
-{
-}
-
-///////////////////////////////////
-// CIEStatic メッセージ ハンドラ
-
-void CIEStatic::OnLButtonUp(UINT nFlags, CPoint point) 
-{
-	CString	strURL;
-	GetWindowText(strURL);
-	::ShellExecute(NULL, NULL, strURL, NULL, NULL, SW_SHOWNORMAL);
-
-	CStatic::OnLButtonUp(nFlags, point);
-}
-
-BOOL CIEStatic::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message) 
-{
-	if ( nHitTest == HTCLIENT ) {
-		::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_HAND));	// WINVER>=0x0500
-		return TRUE;
-	}
-	return CStatic::OnSetCursor(pWnd, nHitTest, message);
 }
 
 /////////////////////////////////////////////////////////////////////////////

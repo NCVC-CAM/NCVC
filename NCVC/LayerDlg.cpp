@@ -174,9 +174,9 @@ LRESULT CLayerDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 	EnableButton(TRUE);
 	CDXFDoc*	pDoc = (CDXFDoc *)pDocTest;
 	CLayerData*	pLayer;
-	int			nType, nLoop = pDoc->GetLayerCnt();
+	int			nType;
 
-	for ( i=0; i<nLoop; i++ ) {
+	for ( i=0; i<pDoc->GetLayerCnt(); i++ ) {
 		pLayer = pDoc->GetLayerData(i);
 		nType = pLayer->GetLayerType();
 #ifdef _DEBUG

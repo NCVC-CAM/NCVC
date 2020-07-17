@@ -45,6 +45,15 @@ typedef	struct	tagPENSTYLE {
 #define	NCINFOCOL_BACKGROUND1	0
 #define	NCINFOCOL_BACKGROUND2	1
 #define	NCINFOCOL_TEXT			2
+#define	NCVIEWFLG_TRACEMARKER		0
+#define	NCVIEWFLG_DRAWCIRCLECENTER	1
+#define	NCVIEWFLG_GUIDESCALE		2
+#define	NCVIEWFLG_GUIDELENGTH		3
+#define	NCVIEWFLG_SOLIDVIEW			4
+#define	NCVIEWFLG_G00VIEW			5
+#define	NCVIEWFLG_DRAGRENDER		6
+#define	NCVIEWFLG_MILL_T			7
+#define	NCVIEWFLG_MILL_C			8
 #define	DXFCOL_BACKGROUND1	0
 #define	DXFCOL_BACKGROUND2	1
 #define	DXFCOL_ORIGIN		2
@@ -60,11 +69,23 @@ friend	class	CViewSetup1;
 friend	class	CViewSetup2;
 friend	class	CViewSetup3;
 friend	class	CViewSetup4;
+friend	class	CViewSetup5;
 
-	BOOL		m_bMouseWheel,			// Šg‘åk¬‚ÉÏ³½Î²°Ù‚ðŽg‚¤‚©
-				m_bTraceMarker,			// ÄÚ°½’†‚ÌŒ»ÝˆÊ’u•\Ž¦
-				m_bDrawCircleCenter,	// ‰~ŒÊ•âŠÔ‚Ì’†S‚ð•`‰æ
-				m_bGuide;				// TRUE:Šg‘å—¦‚É“¯Šú
+	BOOL	m_bMouseWheel;			// Šg‘åk¬‚ÉÏ³½Î²°Ù‚ðŽg‚¤‚©
+	union {
+		struct {
+			BOOL	m_bTraceMarker,			// ÄÚ°½’†‚ÌŒ»ÝˆÊ’u•\Ž¦
+					m_bDrawCircleCenter,	// ‰~ŒÊ•âŠÔ‚Ì’†S‚ð•`‰æ
+					m_bScale,				// TRUE:¶Þ²ÄÞ‚É–Ú·
+					m_bGuide,				// TRUE:Šg‘å—¦‚É“¯Šú
+					m_bSolidView,			// OpenGL¿Ø¯ÄÞ•\Ž¦
+					m_bG00View,				// G00ˆÚ“®•\Ž¦
+					m_bDragRender,			// ÄÞ×¯¸Þ’†‚àÚÝÀÞØÝ¸Þ
+					m_bMillT,				// ‚s”Ô†”FŽ¯
+					m_bMillC;				// ºÒÝÄ‚Å‚ÌH‹ïŒaŽw’è‚ð”FŽ¯
+		};
+		BOOL		m_bNCFlag[9];
+	};
 	COLORREF	m_colView[2],			// ËÞ­°‚ÌŠeF
 				m_colNCView[14],
 				m_colNCInfoView[3],
@@ -72,10 +93,12 @@ friend	class	CViewSetup4;
 				m_colCustom[16];
 	int			m_nLineType[2],			// üŽí
 				m_nNCLineType[9],
-				m_nDXFLineType[5];
-	int			m_nWheelType;			// 0->Žè‘O:Šg‘å,‰œ:k¬ 1->‹t
-	int			m_nTraceSpeed[3];		// 0:‚‘¬, 1:’†‘¬, 2:’á‘¬
-	double		m_dGuide[NCXYZ];		// ¶Þ²ÄÞŽ²‚Ì’·‚³
+				m_nDXFLineType[5],
+				m_nWheelType,			// 0->Žè‘O:Šg‘å,‰œ:k¬ 1->‹t
+				m_nTraceSpeed[3],		// 0:‚‘¬, 1:’†‘¬, 2:’á‘¬
+				m_nMillType;			// 0:½¸³ª±, 1:ÎÞ°Ù
+	double		m_dGuide[NCXYZ],		// ¶Þ²ÄÞŽ²‚Ì’·‚³
+				m_dDefaultEndmill;		// ÃÞÌ«ÙÄ´ÝÄÞÐÙŒa(”¼Œa)
 	LOGFONT		m_lfFont[2];			// NC/DXF‚ÅŽg—p‚·‚éÌ«ÝÄî•ñ
 
 	void	AllDefaultSetting(void);
@@ -90,15 +113,13 @@ public:
 	int			GetWheelType(void) const {
 		return m_nWheelType;
 	}
-	BOOL		IsTraceMarker(void) const {
-		return m_bTraceMarker;
+	BOOL		GetNCViewFlg(size_t a) const {
+		ASSERT( a>=0 && a<SIZEOF(m_bNCFlag) );
+		return m_bNCFlag[a];
 	}
 	int			GetTraceSpeed(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_nTraceSpeed) );
 		return m_nTraceSpeed[a];
-	}
-	BOOL		IsDrawCircleCenter(void) const {
-		return m_bDrawCircleCenter;
 	}
 	COLORREF	GetDrawColor(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_colView) );
@@ -131,12 +152,15 @@ public:
 		ASSERT( a>=0 && a<SIZEOF(m_nDXFLineType) );
 		return m_nDXFLineType[a];
 	}
-	BOOL	IsGuideSync(void) const {
-		return m_bGuide;
-	}
 	double	GetGuideLength(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_dGuide) );
 		return m_dGuide[a];
+	}
+	double	GetDefaultEndmill(void) const {
+		return m_dDefaultEndmill;
+	}
+	int		GetDefaultEndmillType(void) const {
+		return m_nMillType;
 	}
 	const	LPLOGFONT	GetLogFont(DOCTYPE enType) {
 		return &m_lfFont[enType];

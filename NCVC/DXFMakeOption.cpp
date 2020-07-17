@@ -35,9 +35,11 @@ static	const	double	g_dfDOrder[] = {
 
 // BOOLŒ^–½—ß
 static	LPCTSTR	g_szBOrder[] = {
+	"OutO", "OutC", "OutM", "OutH",
 	"OrgCircle", "OrgCross"
 };
 static	const	BOOL	g_dfBOrder[] = {
+	TRUE, TRUE, TRUE, TRUE,
 	TRUE, TRUE
 };
 

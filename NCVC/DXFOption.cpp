@@ -80,6 +80,8 @@ CDXFOption::CDXFOption()
 			strResult += "INIT.nci";
 			m_strInitList.AddTail(strResult);
 		}
+		for ( i=m_strInitList.GetCount(); i>DXFMAXINITFILE; i-- )
+			m_strInitList.RemoveTail();		// DXFMAXINITFILE ‚ğ’´‚¦‚é•ª‚ğíœ
 		// Ú²Ô–¼‚ÆğŒÌ§²ÙŠÖŒW‚Ì—š—ğ
 		VERIFY(strEntry.LoadString(IDS_REG_DXF_LAYERTOINIT));
 		for ( i=0; i<DXFMAXINITFILE; i++ ) {
@@ -127,6 +129,10 @@ BOOL CDXFOption::SaveInitHistory(void)
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT));
+	for ( i=0; i<DXFMAXINITFILE; i++ ) {
+		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
+		AfxGetApp()->WriteProfileString(strRegKey, strFmt, NULL);
+	}
 	for ( i=0, pos=m_strInitList.GetHeadPosition();
 				pos && i<DXFMAXINITFILE; i++ ) {
 		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
@@ -135,6 +141,10 @@ BOOL CDXFOption::SaveInitHistory(void)
 	}
 
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_LAYERTOINIT));
+	for ( i=0; i<DXFMAXINITFILE; i++ ) {
+		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
+		AfxGetApp()->WriteProfileString(strRegKey, strFmt, NULL);
+	}
 	for ( i=0, pos=m_strLayerToInitList.GetHeadPosition();
 				pos && i<DXFMAXINITFILE; i++ ) {
 		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
@@ -156,7 +166,7 @@ BOOL CDXFOption::AddListHistory(CStringList& strList, LPCTSTR lpszSearch)
 	// •¶š—ñ‚ÌŒŸõ(Find‚Í‘å•¶š¬•¶š‚ğ‹æ•Ê‚·‚é‚Ì‚Åg‚¦‚È‚¢)
 	try {
 		POSITION pos1, pos2;
-		for ( pos1=strList.GetHeadPosition(); (pos2 = pos1); ) {
+		for ( pos1=strList.GetHeadPosition(); (pos2=pos1); ) {
 			if ( strList.GetNext(pos1).CompareNoCase(lpszSearch) == 0 ) {
 				// •¶š—ñ‚ª‚ ‚ê‚ÎC‚»‚ê‚ğÁ‚µ‚Äæ“ª‚Ö
 				strList.RemoveAt(pos2);
@@ -166,7 +176,7 @@ BOOL CDXFOption::AddListHistory(CStringList& strList, LPCTSTR lpszSearch)
 		}
 		// ‚È‚¯‚ê‚Îæ“ª‚É’Ç‰Á
 		strList.AddHead(lpszSearch);
-		// 10ŒÂ‰z‚¦‚ê‚ÎÅŒã‚ğÁ‹
+		// DXFMAXINITFILE ‚ğ‰z‚¦‚ê‚ÎÅŒã‚ğÁ‹
 		if ( strList.GetCount() > DXFMAXINITFILE )
 			strList.RemoveTail();
 	}

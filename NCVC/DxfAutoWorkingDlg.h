@@ -12,19 +12,23 @@ class CDxfAutoWorkingDlg : public CDialog
 
 // コンストラクション
 public:
-	CDxfAutoWorkingDlg(double, BOOL);
+	CDxfAutoWorkingDlg(AUTOWORKINGDATA*);
 
 // ダイアログ データ
 	//{{AFX_DATA(CDxfAutoWorkingDlg)
 	enum { IDD = IDD_DXFEDIT_AUTOWORKING };
 	int		m_nSelect;
-	int		m_nDetail;
-	CFloatEdit	m_ctOffset;
 	BOOL	m_bAcuteRound;
-	CButton m_ctDetail[4];
+	int		m_nScan;
+	BOOL	m_bCircle;
+	CFloatEdit	m_ctOffset;
+	CIntEdit m_ctLoop;
+	CComboBox m_ctScan;
 	CButton m_ctAcuteRound;
+	CButton m_ctCircle;
 	//}}AFX_DATA
 	double	m_dOffset;	// ｵﾌｾｯﾄ値取得用
+	int		m_nLoopCnt;	// 繰り返し数取得用
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

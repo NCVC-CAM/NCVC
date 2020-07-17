@@ -66,6 +66,7 @@
       <ValidateAllParameters>false</ValidateAllParameters>
     </Midl>
     <ClCompile>
+      <AdditionalOptions>/Zm150 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
@@ -81,10 +82,12 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>MagaDbg.lib;version.lib;opengl32.lib;glu32.lib;glaux.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MagaDbg.lib;version.lib;opengl32.lib;glu32.lib;glew32sd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -104,7 +107,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat />
       <AdditionalIncludeDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost;C:\Users\magara\Documents\Visual Studio 2015\include</AdditionalIncludeDirectories>
     </ClCompile>
     <ResourceCompile>
@@ -113,12 +116,14 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>MagaDbg.lib;version.lib;opengl32.lib;glu32.lib;glaux.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>version.lib;opengl32.lib;glu32.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib;C:\Users\magara\Documents\Visual Studio 2015\lib</AdditionalLibraryDirectories>
     </Link>
@@ -182,6 +187,7 @@
     <ClCompile Include="MKNCSetup8.cpp" />
     <ClCompile Include="NCChild.cpp" />
     <ClCompile Include="NCdata.cpp" />
+    <ClCompile Include="NCdataGL.cpp" />
     <ClCompile Include="NCDoc.cpp" />
     <ClCompile Include="NCFindDlg.cpp" />
     <ClCompile Include="NCInfoTab.cpp" />
@@ -210,6 +216,7 @@
     </ClCompile>
     <ClCompile Include="TabView.cpp" />
     <ClCompile Include="ThreadDlg.cpp" />
+    <ClCompile Include="ThumbnailDlg.cpp" />
     <ClCompile Include="TH_AutoWorkingSet.cpp" />
     <ClCompile Include="TH_Correct.cpp" />
     <ClCompile Include="TH_Cuttime.cpp" />
@@ -224,6 +231,7 @@
     <ClCompile Include="ViewSetup2.cpp" />
     <ClCompile Include="ViewSetup3.cpp" />
     <ClCompile Include="ViewSetup4.cpp" />
+    <ClCompile Include="ViewSetup5.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3Dto2D.h" />
@@ -309,7 +317,9 @@
     <ClInclude Include="SplashWnd.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TabView.h" />
+    <ClInclude Include="targetver.h" />
     <ClInclude Include="ThreadDlg.h" />
+    <ClInclude Include="ThumbnailDlg.h" />
     <ClInclude Include="ToolBarSetupDlg.h" />
     <ClInclude Include="ViewBase.h" />
     <ClInclude Include="ViewOption.h" />
@@ -318,6 +328,7 @@
     <ClInclude Include="ViewSetup2.h" />
     <ClInclude Include="ViewSetup3.h" />
     <ClInclude Include="ViewSetup4.h" />
+    <ClInclude Include="ViewSetup5.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DXFdata.inl" />

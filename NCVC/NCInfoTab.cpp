@@ -84,7 +84,6 @@ BOOL CNCInfoTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 
 	// é©ï™é©êg(CWnd)Ç∆±∏√®ÃﬁÇ»Àﬁ≠∞ÇæÇØÇ…∫œ›ƒﬁŸ∞√®›∏ﬁ
 	// åãâ ìIÇ… CNCDoc Ç÷ÇÃ∫œ›ƒﬁŸ∞√®›∏ﬁÇÕÇ±Ç±Ç©ÇÁÇæÇØÇ…Ç»ÇÈ
-	CWnd*	pWnd = GetFocus();
 	if ( CTabView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) )
 		return TRUE;
 	if ( GetPageCount() <= 0 )
@@ -161,8 +160,20 @@ void CNCInfoTab::OnDestroy()
 
 void CNCInfoTab::OnSetFocus(CWnd*) 
 {
-	if ( GetActivePage() > 0 )
-		GetActivePageWnd()->SetFocus();
+#ifdef _DEBUG
+	g_dbg.print("CNCInfoTab::OnSetFocus()");
+#endif
+	int	nIndex = GetActivePage();
+	if ( nIndex >= 0 ) {
+//		GetPage(nIndex)->SetFocus();
+		GetTabCtrl().SetCurSel(nIndex);
+		GetTabCtrl().SetCurFocus(nIndex);
+	}
+#ifdef _DEBUG
+	else {
+		g_dbg.print("not select active page");
+	}
+#endif
 }
 
 void CNCInfoTab::OnMoveTab(UINT nID)

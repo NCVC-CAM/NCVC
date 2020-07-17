@@ -11,6 +11,8 @@ class CViewSetup1 : public CPropertyPage
 	COLORREF	m_colView[2];
 	CBrush		m_brColor[2];
 
+	void	EnableControl(void);
+
 // コンストラクション
 public:
 	CViewSetup1();
@@ -21,6 +23,7 @@ public:
 	enum { IDD = IDD_VIEW_SETUP1 };
 	BOOL	m_bMouseWheel;
 	int		m_nWheelType;
+	CButton m_ctMouseWheel[2];
 	//}}AFX_DATA
 	CStatic		m_ctColor[2];
 	CComboBox	m_cbLineType[2];
@@ -43,6 +46,7 @@ protected:
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnColorButton();
 	afx_msg void OnChange();
+	afx_msg void OnWheel();
 	afx_msg void OnDefColor();
 	//}}AFX_MSG
 

@@ -36,6 +36,11 @@ BOOL CAboutDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
+	CString	strURL;
+	m_ctURL.GetWindowText(strURL);
+	m_ctURL.SetURL(strURL);
+	m_ctURL.SetTooltip(_T("Visit NCVC WebPage"));
+/*
 	// ﾎｯﾄｽﾎﾟｯﾄに下線付きﾌｫﾝﾄを指示
 	LOGFONT	logFont;
 	if ( GetFont()->GetLogFont(&logFont) ) {
@@ -43,6 +48,8 @@ BOOL CAboutDlg::OnInitDialog()
 		if ( m_fontURL.CreateFontIndirect(&logFont) )
 			m_ctURL.SetFont(&m_fontURL);
 	}
+*/
+	m_ctURL.SizeToContent();
 
 	return TRUE;  // コントロールにフォーカスを設定しないとき、戻り値は TRUE となります
 	              // 例外: OCX プロパティ ページの戻り値は FALSE となります
@@ -55,6 +62,10 @@ HBRUSH CAboutDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	// ﾎｯﾄｽﾎﾟｯﾄに青色
 	if ( m_ctURL.m_hWnd == pWnd->m_hWnd )
 		pDC->SetTextColor(RGB(0,0,255));
+
+//	OnInitDialog() で
+//	m_ctURL.SetTextColor(RGB(0,0,255));
+//	は効果なかった
 
 	return hbr;
 }

@@ -18,8 +18,12 @@
 #define	MKDX_DBL_ORGLENGTH		0
 #define	MKDX_DBL_CYCLER			1
 
-#define	MKDX_FLG_ORGCIRCLE		0
-#define	MKDX_FLG_ORGCROSS		1
+#define	MKDX_FLG_OUT_O			0
+#define	MKDX_FLG_OUT_C			1
+#define	MKDX_FLG_OUT_M			2
+#define	MKDX_FLG_OUT_H			3
+#define	MKDX_FLG_ORGCIRCLE		4
+#define	MKDX_FLG_ORGCROSS		5
 
 #define	MKDX_STR_ORIGIN			0
 #define	MKDX_STR_CAMLINE		1
@@ -53,10 +57,11 @@ friend class CMakeDXFDlg2;
 	// BOOL型ｵﾌﾟｼｮﾝ
 	union {
 		struct {
-			BOOL	m_bOrgCircle,	// 原点円出力
+			BOOL	m_bOut[4],		// 各ﾚｲﾔの出力ﾌﾗｸﾞ
+					m_bOrgCircle,	// 原点円出力
 					m_bOrgCross;	// 原点十字出力
 		};
-		BOOL		m_ubFlags[2];
+		BOOL		m_ubFlags[6];
 	};
 	// CString型ｵﾌﾟｼｮﾝ
 	CString		m_strOption[4];		// 各種ﾚｲﾔ

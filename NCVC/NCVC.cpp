@@ -18,6 +18,7 @@
 #include "ExecSetupDlg.h"
 #include "ExtensionDlg.h"
 #include "ThreadDlg.h"
+#include "ThumbnailDlg.h"
 #include "NCVCaddin.h"
 #include "NCVCaddinIF.h"
 #include "AddinDlg.h"
@@ -46,9 +47,10 @@ extern	int		g_nLastPage_ViewSetup = 0;	// 表示系ｾｯﾄｱｯﾌﾟ
 /////////////////////////////////////////////////////////////////////////////
 // CNCVCApp
 
-BEGIN_MESSAGE_MAP(CNCVCApp, CWinApp)
+BEGIN_MESSAGE_MAP(CNCVCApp, CWinAppEx)
 	ON_COMMAND(ID_APP_ABOUT, OnAppAbout)
 	ON_COMMAND(ID_FILE_OPEN, OnFileOpen)
+	ON_COMMAND(ID_FILE_THUMBNAIL, OnFileThumbnail)
 	ON_COMMAND(ID_FILE_CLANDOP, OnFileCloseAndOpen)
 	ON_COMMAND(ID_HELP, OnHelp)
 	ON_COMMAND(ID_HELP_ADDIN, OnHelpAddin)
@@ -125,8 +127,10 @@ BOOL CNCVCApp::InitInstance()
 	// これを設定します。
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
+	// VC++2008SP1以降のコントロール初期化
+	InitShellManager();		// CMFCShellTreeCtrl
 
-	CWinApp::InitInstance();
+	CWinAppEx::InitInstance();
 
 	CCommandLineInfo cmdInfo;
 	ParseCommandLine(cmdInfo);
@@ -143,6 +147,7 @@ BOOL CNCVCApp::InitInstance()
 	// 設定が格納されているレジストリ キーを変更します。
 	SetRegistryKey(IDS_REGISTRY_KEY);
 #ifdef _DEBUG
+	g_dbg.printf("Processer Count=%d", g_nProcesser);
 	g_dbg.printf("RegistryKey=%s", m_pszRegistryKey);
 #endif
 	LoadStdProfileSettings(10);  // 標準の INI ファイルのオプションをロードします (MRU を含む)
@@ -247,7 +252,6 @@ BOOL CNCVCApp::InitInstance()
 	if ( !pMainFrame->RestoreWindowState() )		// CMainFrame
 		m_pMainWnd->ShowWindow(m_nCmdShow);
 	m_pMainWnd->UpdateWindow();
-
 	m_pMainWnd->DragAcceptFiles();
 
 	return TRUE;
@@ -290,7 +294,7 @@ int CNCVCApp::ExitInstance()
 	m_obAddin.RemoveAll();
 	m_mpAddin.RemoveAll();
 
-	return CWinApp::ExitInstance();
+	return CWinAppEx::ExitInstance();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -672,22 +676,71 @@ BOOL CNCVCApp::NCVCAddinMenu(void)
 		// 「ﾌｧｲﾙ」ﾒﾆｭｰの場合は，ﾒﾆｭｰ順番指定
 		switch ( i ) {
 		case NCVCADIN_ARY_APPFILE:	// ﾒｲﾝﾌﾚｰﾑの「ﾌｧｲﾙ」ﾒﾆｭｰ
-			pMenu->InsertMenu(1, MF_BYPOSITION|MF_SEPARATOR);
-			pMenu->InsertMenu(2, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->InsertMenu(2, MF_BYPOSITION|MF_SEPARATOR);
+			pMenu->InsertMenu(3, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
 			break;
 		case NCVCADIN_ARY_NCDFILE:	// NCD の「ﾌｧｲﾙ」ﾒﾆｭｰ
-			pMenu->InsertMenu(8, MF_BYPOSITION|MF_SEPARATOR);
-			pMenu->InsertMenu(9, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->InsertMenu(9,  MF_BYPOSITION|MF_SEPARATOR);
+			pMenu->InsertMenu(10, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
 			break;
 		case NCVCADIN_ARY_DXFFILE:	// DXF の「ﾌｧｲﾙ」ﾒﾆｭｰ
-			pMenu->InsertMenu(6, MF_BYPOSITION|MF_SEPARATOR);
-			pMenu->InsertMenu(7, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->InsertMenu(7, MF_BYPOSITION|MF_SEPARATOR);
+			pMenu->InsertMenu(8, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
 			break;
 		default:	// それ以外は追加
 			pMenu->AppendMenu(MF_SEPARATOR);
 			pMenu->AppendMenu(MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
 		}
 	}
+
+	return TRUE;
+}
+
+void CNCVCApp::SaveWindowState(const CString& strRegKey, const WINDOWPLACEMENT& wp)
+{
+	CString	strEntry;
+	int		i = IDS_REG_WINFLAGS;
+	VERIFY(strEntry.LoadString(i++));
+	WriteProfileInt(strRegKey, strEntry, wp.flags);
+	VERIFY(strEntry.LoadString(i++));
+	WriteProfileInt(strRegKey, strEntry, wp.showCmd);
+	VERIFY(strEntry.LoadString(i++));
+	WriteProfileInt(strRegKey, strEntry, wp.rcNormalPosition.left);
+	VERIFY(strEntry.LoadString(i++));
+	WriteProfileInt(strRegKey, strEntry, wp.rcNormalPosition.top);
+	VERIFY(strEntry.LoadString(i++));
+	WriteProfileInt(strRegKey, strEntry, wp.rcNormalPosition.right);
+	VERIFY(strEntry.LoadString(i++));
+	WriteProfileInt(strRegKey, strEntry, wp.rcNormalPosition.bottom);
+}
+
+BOOL CNCVCApp::GetWindowState(const CString& strRegKey, WINDOWPLACEMENT* lpwp)
+{
+	CString	strEntry;
+	int		i = IDS_REG_WINFLAGS;
+	VERIFY(strEntry.LoadString(i++));
+	lpwp->flags = GetProfileInt(strRegKey, strEntry, 0);
+	VERIFY(strEntry.LoadString(i++));
+	lpwp->showCmd = GetProfileInt(strRegKey, strEntry, -1);
+	VERIFY(strEntry.LoadString(i++));
+	lpwp->rcNormalPosition.left = GetProfileInt(strRegKey, strEntry, -1);
+	VERIFY(strEntry.LoadString(i++));
+	lpwp->rcNormalPosition.top = GetProfileInt(strRegKey, strEntry, -1);
+	VERIFY(strEntry.LoadString(i++));
+	lpwp->rcNormalPosition.right = GetProfileInt(strRegKey, strEntry, -1);
+	VERIFY(strEntry.LoadString(i++));
+	lpwp->rcNormalPosition.bottom = GetProfileInt(strRegKey, strEntry, -1);
+
+	if ( lpwp->showCmd==-1 ||
+			lpwp->rcNormalPosition.left==-1 || lpwp->rcNormalPosition.top==-1 ||
+			lpwp->rcNormalPosition.right==-1 || lpwp->rcNormalPosition.bottom==-1 )
+		return FALSE;
+
+	int	n;
+	n = ::GetSystemMetrics(SM_CXSCREEN) - ::GetSystemMetrics(SM_CXICON);
+	lpwp->rcNormalPosition.left = min(lpwp->rcNormalPosition.left, n);
+	n = ::GetSystemMetrics(SM_CYSCREEN) - ::GetSystemMetrics(SM_CYICON);
+	lpwp->rcNormalPosition.top = min(lpwp->rcNormalPosition.top, n);
 
 	return TRUE;
 }
@@ -948,6 +1001,23 @@ void CNCVCApp::OnFileOpen()
 	OpenDocumentFile(newName);
 }
 
+void CNCVCApp::OnFileThumbnail()
+{
+	CString	strRegKey, strSort, strPlane;
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
+	VERIFY(strSort.LoadString(IDS_REG_THUMBNAIL_SORT));
+	VERIFY(strPlane.LoadString(IDS_REG_THUMBNAIL_PLANE));
+	int	nSort  = (int)GetProfileInt(strRegKey, strSort, 0),
+		nPlane = (int)GetProfileInt(strRegKey, strPlane, 1);
+	CThumbnailDlg	dlg(nSort, (ENNCVPLANE)nPlane);
+	if ( dlg.DoModal() != IDOK )
+		return;
+
+	WriteProfileInt(strRegKey, strSort,  dlg.m_nSort);
+	WriteProfileInt(strRegKey, strPlane, dlg.m_nPlane);
+	OpenDocumentFile(dlg.m_strFile);
+}
+
 void CNCVCApp::OnFileCloseAndOpen() 
 {
 	CString		newName(GetRecentFileName());
@@ -990,8 +1060,12 @@ void CNCVCApp::OnViewSetupExport()
 	CString	strFile;
 	if ( ::NCVC_FileDlgCommon(IDS_VIEW_SETUP_EXPORT, IDS_INI_FILTER,
 			strFile, NULL, FALSE, OFN_HIDEREADONLY|OFN_PATHMUSTEXIST) == IDOK ) {
-		if ( !m_pOptView->Export(strFile) ) {
-			CString	strMsg;
+		CString	strMsg;
+		if ( m_pOptView->Export(strFile) ) {
+			strMsg.Format(IDS_ANA_FILEOUTPUT, strFile);
+			AfxMessageBox(strMsg, MB_OK|MB_ICONINFORMATION);
+		}
+		else {
 			strMsg.Format(IDS_ERR_WRITESETTING, strFile);
 			AfxMessageBox(strMsg, MB_OK|MB_ICONEXCLAMATION);
 		}

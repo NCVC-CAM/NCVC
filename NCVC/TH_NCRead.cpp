@@ -21,13 +21,13 @@ using namespace boost;
 using namespace boost::spirit;
 
 #define	IsThread()	g_pParent->IsThreadContinue()
-//
-static	CThreadDlg*	g_pParent;
-static	CNCDoc*		g_pDoc;
-static	NCARGV		g_ncArgv;		// NCVCdefine.h
-static	DWORD		g_dwValFlags;	// 座標以外の値指示ﾌﾗｸﾞ
-static	int			g_nSubprog;		// ｻﾌﾞﾌﾟﾛｸﾞﾗﾑ呼び出しの階層
-static	string		g_strComma;		// 次のﾌﾞﾛｯｸとの計算
+//	ｻﾑﾈｲﾙ表示でのﾏﾙﾁｽﾚｯﾄﾞ対応
+__declspec(thread)	static	CThreadDlg*	g_pParent;
+__declspec(thread)	static	CNCDoc*		g_pDoc;
+__declspec(thread)	static	NCARGV		g_ncArgv;		// NCVCdefine.h
+__declspec(thread)	static	DWORD		g_dwValFlags;	// 座標以外の値指示ﾌﾗｸﾞ
+__declspec(thread)	static	int			g_nSubprog;		// ｻﾌﾞﾌﾟﾛｸﾞﾗﾑ呼び出しの階層
+__declspec(thread)	static	LPTSTR		g_lpstrComma;	// 次のﾌﾞﾛｯｸとの計算
 
 // 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間値
 struct	CYCLE_INTERPOLATE
@@ -39,7 +39,7 @@ struct	CYCLE_INTERPOLATE
 		dVal[0] = dVal[1] = dVal[2] = HUGE_VAL;
 	}
 };
-static	CYCLE_INTERPOLATE	g_Cycle;
+__declspec(thread)	static	CYCLE_INTERPOLATE	g_Cycle;
 static	void	CycleInterpolate(void);
 
 // G68座標回転
@@ -63,11 +63,11 @@ inline	ENGCODEOBJ	IsGcodeObject(int nCode)
 {
 	ENGCODEOBJ	enResult;
 
-	if ( (0<=nCode && nCode<=3) || nCode==52 || nCode==92 ) {
+	if ( 0<=nCode && nCode<=3 ) {
 		g_Cycle.bCycle = FALSE;
 		enResult = MAKEOBJ;
 	}
-	else if ( nCode==4 || nCode==10 || nCode==68 ) {
+	else if ( nCode==4 || nCode==10 || nCode==52 || nCode==68 || nCode==92 ) {
 		enResult = MAKEOBJ_NOTMODAL;
 	}
 	else if ( 81<=nCode && nCode<=89 ) {
@@ -79,13 +79,25 @@ inline	ENGCODEOBJ	IsGcodeObject(int nCode)
 
 	return enResult;
 }
+// g_lpstrComma にﾃﾞｰﾀを代入
+inline	void	SetStrComma(const string& strComma)
+{
+	if ( g_lpstrComma )
+		delete	g_lpstrComma;
+	if ( strComma.length() <= 0 )
+		g_lpstrComma = NULL;
+	else {
+		g_lpstrComma = new TCHAR[strComma.length()+1];
+		lstrcpy(g_lpstrComma, strComma.c_str());
+	}
+}
 
 // 解析関数
-static	int		NC_GSeparater(int, CNCdata*&);
+static	int			NC_GSeparater(int, CNCdata*&);
 static	CNCdata*	AddGcode(CNCblock*, CNCdata*, int);
 static	CNCdata*	AddM98code(CNCblock*, CNCdata*, int);
 static	int			CallSubProgram(CNCblock*, CNCdata*&);
-static	void	CheckGcodeOther(int);
+static	void		CheckGcodeOther(int);
 // 面取り・ｺｰﾅｰR処理
 static	void	MakeChamferingObject(CNCblock*, CNCdata*, CNCdata*);
 // Fﾊﾟﾗﾒｰﾀ, ﾄﾞｳｪﾙ時間の解釈
@@ -93,6 +105,10 @@ typedef double (*PFNFEEDANALYZE)(const string&);
 static	double	FeedAnalyze_Dot(const string&);
 static	double	FeedAnalyze_Int(const string&);
 static	PFNFEEDANALYZE	g_pfnFeedAnalyze;
+// 工具径解析
+static	void	SetEndmillDiameter(const string&);
+static	void	SetEndmillDiameter_fromComment(double);
+static	void	SetEndmillType(char);
 // ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの検索
 static	CString	g_strSearchFolder[2];	// ｶﾚﾝﾄと指定ﾌｫﾙﾀﾞ
 static	CString	SearchFolder(regex&);
@@ -128,30 +144,33 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 	// 変数初期化
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	g_pParent = pParam->pParent;
-	g_pDoc = static_cast<CNCDoc*>(pParam->pDoc);
-	ASSERT(g_pParent);
+	g_pDoc  = static_cast<CNCDoc*>(pParam->pDoc);
+
 	ASSERT(g_pDoc);
 	InitialVariable();
 
-	{
+	nLoopCnt = g_pDoc->GetNCBlockSize();
+	if ( g_pParent ) {
 		CString	strMsg;
 		VERIFY(strMsg.LoadString(IDS_READ_NCD));
 		g_pParent->SetFaseMessage(strMsg);
+		g_pParent->m_ctReadProgress.SetRange32(0, nLoopCnt);
 	}
-	nLoopCnt = g_pDoc->GetNCBlockSize();
-	g_pParent->m_ctReadProgress.SetRange32(0, nLoopCnt);
 #ifdef _DEBUG
-	dbg.printf("LoopCount=%d", nLoopCnt);
+	if ( !g_pDoc->IsThumbnail() )
+		dbg.printf("LoopCount=%d", nLoopCnt);
 #endif
 
 	try {
 		// １つ前のｵﾌﾞｼﾞｪｸﾄ参照でNULL参照しないため
 		pDataFirst = pData = new CNCdata(&g_ncArgv);
 		// 1行(1ﾌﾞﾛｯｸ)解析しｵﾌﾞｼﾞｪｸﾄの登録
-		for ( i=0; i<nLoopCnt && IsThread(); i++ ) {
+		for ( i=0; i<nLoopCnt; i++ ) {
+			if ( g_pParent && !IsThread() )
+				break;
 			if ( NC_GSeparater(i, pData) != 0 )
 				break;
-			if ( (i & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
+			if ( (i & 0x003f)==0 && g_pParent )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
 				g_pParent->m_ctReadProgress.SetPos(i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
 		}
 	}
@@ -161,37 +180,84 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		nResult = IDCANCEL;
 	}
 
+	if ( g_lpstrComma )
+		delete	g_lpstrComma;
 	// 初回登録用ﾀﾞﾐｰﾃﾞｰﾀの消去
 	if ( pDataFirst )
 		delete	pDataFirst;
 
-	g_pParent->m_ctReadProgress.SetPos(nLoopCnt);
-	g_pParent->PostMessage(WM_USERFINISH, IsThread() ? nResult : IDCANCEL);
+	if ( g_pParent ) {
+		g_pParent->m_ctReadProgress.SetPos(nLoopCnt);
+		g_pParent->PostMessage(WM_USERFINISH, IsThread() ? nResult : IDCANCEL);
+	}
 
 	return 0;	// AfxEndThread(0);
 }
 
 //////////////////////////////////////////////////////////////////////
-// Gｺｰﾄﾞの構文解析
+//	Gｺｰﾄﾞの構文解析
 
-struct CGcode : grammar<CGcode>
+//	NCﾌﾟﾛｸﾞﾗﾑ解析
+struct CGcodeParser : grammar<CGcodeParser>
 {
 	vector<string>&	vResult;
-	CGcode(vector<string>& v) : vResult(v) {}
+	CGcodeParser(vector<string>& v) : vResult(v) {}
 
+	template<typename T>
+	struct definition {
+		typedef	rule<T>	rule_t;
+		rule_t	rr;
+		definition( const CGcodeParser& self ) {
+			// 未知ｺｰﾄﾞにも対応するため「全ての英大文字に続く数値」で解析
+			rr = +( +( upper_p >> real_p )[append(self.vResult)]
+					>> !( ch_p(',') >> ((ch_p('R')|'C') >> real_p) )[append(self.vResult)] )
+				>> *(anychar_p - alnum_p)	// EOFなど
+				>> end_p;	// 終端(これを入れないと parse()関数で full を返さない)
+		}
+		const rule_t& start() const {
+			return rr;
+		}
+	};
+};
+
+//	ｽｷｯﾌﾟﾊﾟｰｻ
+struct CSkipParser : grammar<CSkipParser>
+{
+	template<typename T>
+	struct definition {
+		typedef	rule<T>	rule_t;
+		rule_t	skip_p;
+		definition( const CSkipParser& self )
+		{
+			skip_p = space_p | comment_p('(', ')');
+		}
+		const rule_t& start() const {
+			return skip_p;
+		}
+	};
+};
+
+//	ｺﾒﾝﾄ文字列解析
+struct CCommentParser : grammar<CCommentParser>
+{
 	template<typename T>
 	struct definition
 	{
 		typedef	rule<T>	rule_t;
-		rule_t	rr;
-		definition( const CGcode& a )
+		rule_t	rr, r1, r2;
+		definition( const CCommentParser& self )
 		{
-			// 未知ｺｰﾄﾞにも対応するため「全ての英大文字に続く数値」で解析
-			rr = +( +( upper_p >> real_p )[append(a.vResult)]
-					>> !( ch_p(',') >> ((ch_p('R')|'C') >> real_p) )[append(a.vResult)] )
-				>> *( graph_p|space_p );	// EOFなど
+			r1 = !(ch_p('c')|ch_p('m')) >> ch_p('m');		// 長さ[m],[cm],[mm]
+			r2 = ch_p(',') >> digit_p[&SetEndmillType];		// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ
+			// SetEndmillDiameter() 関数
+			// 曖昧で多重定義ではｺﾝﾊﾟｲﾙｴﾗｰとなる
+			rr = confix_p('(', *anychar_p, as_lower_d[str_p("endmill")] >> '=') >>
+					real_p[&SetEndmillDiameter_fromComment] >>
+					!r1 >> !r2;
 		}
-		const rule_t& start() const { return rr; }
+		const rule_t& start() const {
+			return rr;
+		}
 	};
 };
 
@@ -203,7 +269,9 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	extern	const	DWORD	g_dwSetValFlags[];
 	vector<string>	vResult;
 	vector<string>::iterator	it;
-	CGcode		a(vResult);
+	CGcodeParser	gr(vResult);
+	CSkipParser		skip_p;
+
 	int			i, nCode,
 				nNotModalCode = -1,	// ﾓｰﾀﾞﾙ不要のGｺｰﾄﾞ(ﾌﾞﾛｯｸ内でのみ有効)
 				nResult, nIndex;
@@ -212,6 +280,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	CNCdata*	pData;
 	CNCblock*	pBlock = g_pDoc->GetNCblock(nLine);
 	string		strComma;		// ｶﾝﾏ以降の文字列(次のﾌﾞﾛｯｸへ継ぐ)
+
 	// 変数初期化
 	g_ncArgv.nc.nLine		= nLine;
 	g_ncArgv.nc.nErrorCode	= 0;
@@ -219,11 +288,18 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 #ifdef _DEBUG
 	CMagaDbg	dbg("NC_Gseparate()", DBG_BLUE);
 	CMagaDbg	dbg1(DBG_GREEN);
-	dbg.printf("No.%004d Line=%s", nLine+1, pBlock->GetStrGcode());
+	if ( !g_pDoc->IsThumbnail() )
+		dbg.printf("No.%004d Line=%s", nLine+1, pBlock->GetStrGcode());
 #endif
 
 	// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
 	(*g_pfnSearchAutoBreak)(pBlock);
+
+	// ｺﾒﾝﾄ解析
+	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_MILL_C) ) {
+		CCommentParser	comment_p;
+		parse((LPCTSTR)(pBlock->GetStrGcode()), comment_p, space_p);
+	}
 
 	// ﾏｸﾛ置換解析
 	if ( (nIndex=(*g_pfnSearchMacro)(pBlock)) >= 0 ) {
@@ -232,7 +308,9 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		pDataResult = AddM98code(pBlock, pDataResult, nIndex);
 		// g_pfnSearchMacro でﾌﾞﾛｯｸが追加される可能性アリ
 		// ここでは nLoop 変数を使わず、ﾈｲﾃｨﾌﾞのﾌﾞﾛｯｸｻｲｽﾞにて判定
-		for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && IsThread(); i++ ) {
+		for ( i=nIndex; i<g_pDoc->GetNCBlockSize(); i++ ) {
+			if ( g_pParent && !IsThread() )
+				break;
 			nResult = NC_GSeparater(i, pDataResult);	// 再帰
 			if ( nResult == 30 )
 				return 30;
@@ -248,14 +326,16 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	}
 
 	// Gｺｰﾄﾞ構文解析
-	if ( !parse( (LPCTSTR)(pBlock->GetStrGcode()),
-					a, space_p|comment_p('(', ')') ).full ||
+	if ( !parse((LPCTSTR)(pBlock->GetStrGcode()), gr, skip_p).full ||
 			vResult.empty() )
 		return 0;
 
-	for ( it=vResult.begin(); it!=vResult.end() && IsThread(); it++ ) {
+	for ( it=vResult.begin(); it!=vResult.end(); ++it ) {
+		if ( g_pParent && !IsThread() )
+			break;
 #ifdef _DEBUG
-		dbg1.printf("G Cut=%s", it->c_str());
+		if ( !g_pDoc->IsThumbnail() )
+			dbg1.printf("G Cut=%s", it->c_str());
 #endif
 		switch ( it->at(0) ) {
 		case 'M':
@@ -264,10 +344,10 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 				// ｵﾌﾞｼﾞｪｸﾄ生成
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 				// 面取りｵﾌﾞｼﾞｪｸﾄの登録
-				if ( !g_strComma.empty() )
+				if ( g_lpstrComma )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
-				g_strComma = strComma;
+				SetStrComma(strComma);
 				nNotModalCode = -1;
 				bNCobj = bNCval = FALSE;
 			}
@@ -309,10 +389,10 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 			// 前回のｺｰﾄﾞで登録ｵﾌﾞｼﾞｪｸﾄがあるなら
 			if ( bNCobj || bNCval ) {
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
-				if ( !g_strComma.empty() )
+				if ( g_lpstrComma )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
-				g_strComma = strComma;
+				SetStrComma(strComma);
 				nNotModalCode = -1;
 				bNCval = FALSE;		// bNCobj ｸﾘｱ不要
 			}
@@ -331,10 +411,15 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 		case 'F':
 			g_ncArgv.dFeed = (*g_pfnFeedAnalyze)(it->substr(1));
 			break;
+		case 'T':
+			if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_MILL_T) )
+				SetEndmillDiameter(it->substr(1));
+			break;
 		case ',':
 			strComma = ::Trim(it->substr(1));	// ｶﾝﾏ以降を取得
 #ifdef _DEBUG
-			dbg1.printf("strComma=%s", strComma.c_str());
+			if ( !g_pDoc->IsThumbnail() )
+				dbg1.printf("strComma=%s", strComma.c_str());
 #endif
 			break;
 		case 'X':	case 'Y':	case 'Z':
@@ -377,10 +462,10 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	// NCﾃﾞｰﾀ登録処理
 	if ( bNCobj || bNCval ) {
 		pData = AddGcode(pBlock, pDataResult, nNotModalCode);
-		if ( !g_strComma.empty() )
+		if ( g_lpstrComma )
 			MakeChamferingObject(pBlock, pDataResult, pData);
 		pDataResult = pData;
-		g_strComma = strComma;
+		SetStrComma(strComma);
 		// ﾌﾞﾛｯｸ情報の更新
 		pBlock->SetBlockToNCdata(pDataResult, g_pDoc->GetNCsize());
 	}
@@ -464,10 +549,14 @@ int CallSubProgram(CNCblock* pBlock, CNCdata*& pDataResult)
 		// M98ｵﾌﾞｼﾞｪｸﾄとO番号(nIndex)の登録
 		pDataResult = AddM98code(pBlock, pDataResult, nIndex);
 		// nRepeat分繰り返し
-		while ( nRepeat-- > 0 && IsThread() ) {
+		while ( nRepeat-- > 0 ) {
+			if ( g_pParent && !IsThread() )
+				break;
 			// NC_SearchSubProgram でﾌﾞﾛｯｸが追加される可能性アリ
 			// ここでは nLoop 変数を使わず、ﾈｲﾃｨﾌﾞのﾌﾞﾛｯｸｻｲｽﾞにて判定
-			for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && IsThread(); i++ ) {
+			for ( i=nIndex; i<g_pDoc->GetNCBlockSize(); i++ ) {
+				if ( g_pParent && !IsThread() )
+					break;
 				nResult = NC_GSeparater(i, pDataResult);	// 再帰
 				if ( nResult == 30 )
 					return 30;
@@ -601,8 +690,8 @@ int NC_SearchSubProgram(int *pRepeat)
 // ﾏｸﾛﾌﾟﾛｸﾞﾗﾑの検索
 int NC_SearchMacroProgram(CNCblock* pBlock)
 {
-	extern	int		g_nDefaultMacroID[];	// MCOption.cpp
-	
+	extern	const	int		g_nDefaultMacroID[];	// MCOption.cpp
+
 	CString	strBlock(pBlock->GetStrGcode());
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
 
@@ -693,13 +782,13 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_PLANE);
 		return;
 	}
-	TCHAR	cCham = g_strComma[0];
+	TCHAR	cCham = g_lpstrComma[0];
 	if ( cCham != 'R' && cCham != 'C' ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_CHAMFERING);
 		return;
 	}
 
-	double	r1, r2, cr = fabs(atof(g_strComma.substr(1).c_str()));
+	double	r1, r2, cr = fabs(atof(g_lpstrComma + 1));
 	CPointD	pts, pte, pto, ptOffset(g_pDoc->GetOffsetOrig());
 	boost::optional<CPointD>	ptResult;
 	BOOL	bResult;
@@ -733,9 +822,11 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	pte = *ptResult - ptOffset;
 
 #ifdef _DEBUG
-	dbg.printf("%c=%f, %f", cCham, r1, r2);
-	dbg.printf("pts=(%f, %f)", pts.x, pts.y);
-	dbg.printf("pte=(%f, %f)", pte.x, pte.y);
+	if ( !g_pDoc->IsThumbnail() ) {
+		dbg.printf("%c=%f, %f", cCham, r1, r2);
+		dbg.printf("pts=(%f, %f)", pts.x, pts.y);
+		dbg.printf("pte=(%f, %f)", pte.x, pte.y);
+	}
 #endif
 
 	// pts, pte で面取りｵﾌﾞｼﾞｪｸﾄの生成
@@ -743,6 +834,8 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	ZeroMemory(&ncArgv, sizeof(NCARGV));
 	ncArgv.bAbs			= TRUE;
 	ncArgv.dFeed		= pData1->GetFeed();
+	ncArgv.dEndmill		= pData1->GetEndmill();
+	ncArgv.nEndmillType	= pData1->GetEndmillType();
 	ncArgv.nc.nLine		= pData1->GetBlockLineNo();
 	ncArgv.nc.nGtype	= G_TYPE;
 	ncArgv.nc.enPlane	= pData1->GetPlane();
@@ -797,6 +890,51 @@ double FeedAnalyze_Dot(const string& str)
 double FeedAnalyze_Int(const string& str)
 {
 	return fabs(atof(str.c_str()));
+}
+
+void SetEndmillDiameter(const string& str)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("SetEndmillDiameter()\nStart", DBG_MAGENTA);
+#endif
+	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
+	boost::optional<double> dResult = pMCopt->GetToolD( atoi(str.c_str()) );
+	if ( dResult ) {
+		g_ncArgv.dEndmill = *dResult;	// ｵﾌｾｯﾄは半径なので、そのまま使用
+#ifdef _DEBUG
+		if ( !g_pDoc->IsThumbnail() )
+			dbg.printf("Endmill=%f from T-No.%d", g_ncArgv.dEndmill, atoi(str.c_str()));
+#endif
+	}
+#ifdef _DEBUG
+	else {
+		if ( !g_pDoc->IsThumbnail() )
+			dbg.printf("Endmill T-No.%d nothing", atoi(str.c_str()));
+	}
+#endif
+}
+
+void SetEndmillDiameter_fromComment(double d)
+{
+	// CCommentParser 解析ｱｸｼｮﾝからの呼び出し
+	g_ncArgv.dEndmill = d / 2.0;
+#ifdef _DEBUG
+	if ( !g_pDoc->IsThumbnail() ) {
+		CMagaDbg	dbg("SetEndmillDiameter()\nStart", DBG_MAGENTA);
+		dbg.printf("Endmill=%f from CommentParser", g_ncArgv.dEndmill);
+	}
+#endif
+}
+
+void SetEndmillType(char c)
+{
+	g_ncArgv.nEndmillType = c - '0';	// １文字を数値に変換
+#ifdef _DEBUG
+	if ( !g_pDoc->IsThumbnail() ) {
+		CMagaDbg	dbg("SetEndmillType()\nStart", DBG_MAGENTA);
+		dbg.printf("EndmillType=%d from CommentParser", g_ncArgv.nEndmillType);
+	}
+#endif
 }
 
 CString SearchFolder(regex& r)
@@ -984,7 +1122,8 @@ void G68RoundClear(void)
 void InitialVariable(void)
 {
 	int		i;
-	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
+	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
+	const CViewOption*	pVopt  = AfxGetNCVCApp()->GetViewOption();
 
 	g_pfnFeedAnalyze = pMCopt->GetFDot()==0 ? &FeedAnalyze_Int : &FeedAnalyze_Dot;
 	g_ncArgv.nc.nGtype = G_TYPE;
@@ -1006,16 +1145,18 @@ void InitialVariable(void)
 		g_ncArgv.nc.dValue[i] = pMCopt->GetInitialXYZ(i);
 	for ( ; i<VALUESIZE; i++ )
 		g_ncArgv.nc.dValue[i] = 0.0;
-	g_ncArgv.bAbs = pMCopt->GetModalSetting(MODALGROUP3) == 0 ? TRUE : FALSE;
-	g_ncArgv.bInitial = pMCopt->GetModalSetting(MODALGROUP4) == 0 ? TRUE : FALSE;;
-	g_ncArgv.dFeed = pMCopt->GetFeed();
+	g_ncArgv.bAbs		= pMCopt->GetModalSetting(MODALGROUP3) == 0 ? TRUE : FALSE;
+	g_ncArgv.bInitial	= pMCopt->GetModalSetting(MODALGROUP4) == 0 ? TRUE : FALSE;;
+	g_ncArgv.dFeed		= pMCopt->GetFeed();
+	g_ncArgv.dEndmill	= pVopt->GetDefaultEndmill();
+	g_ncArgv.nEndmillType	= pVopt->GetDefaultEndmillType();
 
 	g_Cycle.clear();
 	G68RoundClear();
 
 	g_dwValFlags = 0;
 	g_nSubprog = 0;
-	g_strComma.clear();
+	g_lpstrComma = NULL;
 
 	if ( pMCopt->GetMacroStr(MCMACROCODE).IsEmpty() || pMCopt->GetMacroStr(MCMACROIF).IsEmpty() )
 		g_pfnSearchMacro = &NC_NoSearch;

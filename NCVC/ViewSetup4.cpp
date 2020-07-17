@@ -38,7 +38,7 @@ CViewSetup4::CViewSetup4() : CPropertyPage(CViewSetup4::IDD)
 	//}}AFX_DATA_INIT
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();	// Can't const (GetLogFont)
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
-		m_colView[i] = pOpt->GetNcInfoDrawColor(i);
+		m_colView[i] = pOpt->m_colNCInfoView[i];
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
 	}
 	m_bTraceMarker = pOpt->m_bTraceMarker;
@@ -133,15 +133,16 @@ HBRUSH CViewSetup4::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 void CViewSetup4::OnColorButton() 
 {
 	int	nIndex = GetFocus()->GetDlgCtrlID() - IDC_VIEWSETUP4_BT_BACKGROUND1;
-	ASSERT( 0<=nIndex && nIndex<SIZEOF(m_colView) );
-	CColorDialog	dlg(m_colView[nIndex]);
-	dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
-	if ( dlg.DoModal() == IDOK ) {
-		m_colView[nIndex] = dlg.GetColor();
-		m_brColor[nIndex].DeleteObject();
-		m_brColor[nIndex].CreateSolidBrush( m_colView[nIndex] );
-		m_ctColor[nIndex].Invalidate();
-		SetModified();
+	if ( 0<=nIndex && nIndex<SIZEOF(m_colView) ) {
+		CColorDialog	dlg(m_colView[nIndex]);
+		dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
+		if ( dlg.DoModal() == IDOK ) {
+			m_colView[nIndex] = dlg.GetColor();
+			m_brColor[nIndex].DeleteObject();
+			m_brColor[nIndex].CreateSolidBrush( m_colView[nIndex] );
+			m_ctColor[nIndex].Invalidate();
+			SetModified();
+		}
 	}
 }
 

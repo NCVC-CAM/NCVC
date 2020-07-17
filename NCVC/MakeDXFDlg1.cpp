@@ -37,6 +37,10 @@ CMakeDXFDlg1::CMakeDXFDlg1() : CPropertyPage(CMakeDXFDlg1::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CMakeDXFDlg1)
 	m_nPlane = -1;
+	m_bOut[0] = FALSE;
+	m_bOut[1] = FALSE;
+	m_bOut[2] = FALSE;
+	m_bOut[3] = FALSE;
 	//}}AFX_DATA_INIT
 }
 
@@ -52,7 +56,7 @@ void CMakeDXFDlg1::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_MKNC_NCFILE, m_strDXFFileName);
 	DDX_CBIndex(pDX, IDC_MKDX1_PLANE, m_nPlane);
 	//}}AFX_DATA_MAP
-	DDX_Text(pDX, IDC_DXF_ORIGIN,  m_strLayer[0]);
+	DDX_Text(pDX, IDC_DXF_ORIGIN,  m_strLayer[0]);	// IDC_ が連続でないので for() 使えない
 	DDX_Text(pDX, IDC_DXF_CAMLINE, m_strLayer[1]);
 	DDX_Text(pDX, IDC_DXF_MOVE,    m_strLayer[2]);
 	DDX_Text(pDX, IDC_DXF_CORRECT, m_strLayer[3]);
@@ -64,6 +68,10 @@ void CMakeDXFDlg1::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKDX1_COLOR_C, m_ctColor[1]);
 	DDX_Control(pDX, IDC_MKDX1_COLOR_M, m_ctColor[2]);
 	DDX_Control(pDX, IDC_MKDX1_COLOR_H, m_ctColor[3]);
+	DDX_Check(pDX, IDC_MKDX1_OUT_O, m_bOut[0]);
+	DDX_Check(pDX, IDC_MKDX1_OUT_C, m_bOut[1]);
+	DDX_Check(pDX, IDC_MKDX1_OUT_M, m_bOut[2]);
+	DDX_Check(pDX, IDC_MKDX1_OUT_H, m_bOut[3]);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -93,6 +101,8 @@ BOOL CMakeDXFDlg1::OnInitDialog()
 	// ﾚｲﾔ情報，線属性ﾀｲﾌﾟの選択肢登録
 	extern	const	PENSTYLE	g_penStyle[];		// ViewOption.cpp
 	for ( i=0; i<SIZEOF(m_strLayer); i++ ) {
+		// 出力情報
+		m_bOut[i] = pDXFMake->m_bOut[i];
 		// ﾚｲﾔ名
 		m_strLayer[i] = pDXFMake->m_strOption[i];
 		// 線種
@@ -136,9 +146,9 @@ void CMakeDXFDlg1::OnMKDXFileUp()
 
 BOOL CMakeDXFDlg1::OnApply() 
 {
-	int		i;
 	CDXFMakeOption*	pDXFMake = static_cast<CMakeDXFDlg *>(GetParent())->GetDXFMakeOption();
-	for ( i=0; i<SIZEOF(m_strLayer); i++ ) {
+	for ( int i=0; i<SIZEOF(m_strLayer); i++ ) {
+		pDXFMake->m_bOut[i]			= m_bOut[i];
 		pDXFMake->m_strOption[i]	= m_strLayer[i];
 		pDXFMake->m_nLType[i]		= m_cbLineType[i].GetCurSel();
 		pDXFMake->m_nLColor[i]		= m_ctColor[i].GetCurSel();
@@ -152,6 +162,18 @@ BOOL CMakeDXFDlg1::OnKillActive()
 {
 	if ( !CPropertyPage::OnKillActive() )
 		return FALSE;
+
+	BOOL	bCheck = TRUE;
+	for ( int i=0; i<SIZEOF(m_bOut); i++ ) {
+		if ( m_bOut[i] ) {
+			bCheck = FALSE;
+			break;
+		}
+	}
+	if ( bCheck ) {
+		AfxMessageBox(IDS_ERR_MAKEDXFLAYER, MB_OK|MB_ICONEXCLAMATION);
+		return FALSE;
+	}
 
 	CString	strDXFFile(m_strDXFPath+m_strDXFFileName);
 	if ( !CheckMakeDlgFileExt(TYPE_DXF, strDXFFile) ) {	// MakeNCDlg.cpp

@@ -44,6 +44,7 @@ protected:
 	// 生成されたメッセージ マップ関数
 protected:
 	//{{AFX_MSG(CNCInfoView1)
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnEditCopy();
@@ -93,6 +94,7 @@ protected:
 	// 生成されたメッセージ マップ関数
 protected:
 	//{{AFX_MSG(CNCInfoView2)
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnEditCopy();

@@ -62,10 +62,18 @@
 #define IDS_MAKENCD_TITLE_EX2           712
 #define IDS_MAKENCD_TITLE_SHAPE         713
 #define IDS_COMMON_FORMAT               999
+#define IDD_THUMBNAIL                   1000
+#define ID_FILE_THUMBNAIL               1000
+#define IDC_THUMBNAIL_TREE              1001
+#define IDC_THUMBNAIL_SCROLL            1002
 #define ID_FILE_DXF2NCD                 1003
+#define IDC_THUMBNAIL_VIEWPARENT        1003
 #define ID_FILE_DXF2NCD_EX1             1004
+#define IDC_THUMBNAIL_SORTNAME          1004
 #define ID_FILE_DXF2NCD_EX2             1005
+#define IDC_THUMBNAIL_PLANE             1005
 #define ID_FILE_DXF2NCD_SHAPE           1006
+#define IDC_THUMBNAIL_PATH              1006
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
 #define ID_FILE_CLANDOP                 1090
@@ -146,6 +154,10 @@
 #define IDC_MKDX1_COLOR_C               1703
 #define IDC_MKDX1_COLOR_M               1704
 #define IDC_MKDX1_COLOR_H               1705
+#define IDC_MKDX1_OUT_O                 1712
+#define IDC_MKDX1_OUT_C                 1713
+#define IDC_MKDX1_OUT_M                 1714
+#define IDC_MKDX1_OUT_H                 1715
 #define IDD_MAKEDXF2                    1800
 #define IDC_MKDX2_LENGTH                1801
 #define IDC_MKDX2_CIRCLE                1802
@@ -161,6 +173,7 @@
 #define ID_EDIT_SHAPE_PROP              2004
 #define ID_EDIT_SHAPE_AUTO              2005
 #define ID_EDIT_SHAPE_NAME              2006
+#define ID_EDIT_SHAPE_STRICTOFFSET      2007
 #define ID_EDIT_SHAPE_SEL               2011
 #define IDC_VIEWSETUP1_BT_RECT          2011
 #define ID_EDIT_SHAPE_VEC               2012
@@ -214,10 +227,11 @@
 #define IDC_VIEWSETUP2_CB_WORK          2147
 #define IDC_VIEWSETUP2_CB_MAXCUT        2148
 #define IDC_VIEWSETUP2_DRAWCIRCLECENTER 2152
-#define IDC_VIEWSETUP2_GUIDE            2160
-#define IDC_VIEWSETUP2_X                2161
-#define IDC_VIEWSETUP2_Y                2162
-#define IDC_VIEWSETUP2_Z                2163
+#define IDC_VIEWSETUP2_SCALE            2160
+#define IDC_VIEWSETUP2_GUIDE            2161
+#define IDC_VIEWSETUP2_X                2162
+#define IDC_VIEWSETUP2_Y                2163
+#define IDC_VIEWSETUP2_Z                2164
 #define IDD_VIEW_SETUP3                 2200
 #define IDC_VIEWSETUP3_ST_BACKGROUND1   2200
 #define IDC_VIEWSETUP3_ST_BACKGROUND2   2201
@@ -253,6 +267,14 @@
 #define IDC_VIEWSETUP4_TRACE1           2352
 #define IDC_VIEWSETUP4_TRACE2           2353
 #define IDC_VIEWSETUP4_TRACEMARK        2354
+#define IDD_VIEW_SETUP5                 2400
+#define IDC_VIEWSETUP5_DEFAULTENDMILL   2401
+#define IDC_VIEWSETUP5_MILL_T           2402
+#define IDC_VIEWSETUP5_MILL_C           2403
+#define IDC_VIEWSETUP5_MILL_TYPE        2404
+#define IDC_VIEWSETUP5_SOLIDVIEW        2410
+#define IDC_VIEWSETUP5_G00VIEW          2411
+#define IDC_VIEWSETUP5_DRAGRENDER       2412
 #define IDD_NCVIEW_WORK                 2500
 #define IDC_WORK_X                      2501
 #define IDC_WORK_Y                      2502
@@ -281,14 +303,13 @@
 #define IDC_DXFEDIT_SEL_ORIG            2703
 #define IDC_DXFEDIT_NUM                 2704
 #define IDD_DXFEDIT_AUTOWORKING         2800
-#define IDC_AUTOSHAPE_1                 2801
-#define IDC_AUTOSHAPE_2                 2802
-#define IDC_AUTOSHAPE_3                 2803
-#define IDC_AUTOSHAPE_4                 2804
-#define IDC_AUTO_ACUTEROUND             2808
-#define IDC_AUTO_OFFSET                 2809
-#define IDC_AUTO_SELECT_OUTLINE         2810
-#define IDC_AUTO_SELECT_POCKET          2811
+#define IDC_AUTO_SELECT_OUTLINE         2801
+#define IDC_AUTO_SELECT_POCKET          2802
+#define IDC_AUTO_OFFSET                 2810
+#define IDC_AUTO_ACUTEROUND             2811
+#define IDC_AUTO_LOOPCNT                2812
+#define IDC_AUTO_SCANLINE               2813
+#define IDC_AUTO_CIRCLESCROLL           2814
 #define ID_NCVIEW_MAXRECT               3001
 #define ID_NCVIEW_WORKRECT              3002
 #define ID_NCVIEW_ALLFIT                3003
@@ -523,6 +544,7 @@
 #define IDS_REGKEY_WINDOW_JUMPDLG       10051
 #define IDS_REGKEY_WINDOW_WORKDLG       10052
 #define IDS_REGKEY_WINDOW_LAYERDLG      10053
+#define IDS_REGKEY_WINDOW_THUMBNAILDLG  10054
 #define IDS_REGKEY_WINDOW_TOOLBAR       10059
 #define IDS_REG_COMPORT                 10100
 #define IDS_REG_COMFORM                 10101
@@ -553,6 +575,7 @@
 #define IDS_REG_DXF_LINE                10197
 #define IDS_REG_DXF_XREV                10198
 #define IDS_REG_NCV_MCFILE              10210
+#define IDS_REG_NCV_MCTOOLSORT          10211
 #define IDS_REG_NCV_INPUT               10213
 #define IDS_REG_NCV_MOVE                10214
 #define IDS_REG_NCV_DEFFEED             10215
@@ -569,14 +592,24 @@
 #define IDS_REG_LOGFONT                 10903
 #define IDS_REG_CUSTOMCOLOR             10904
 #define IDS_REG_EXTENSION               10905
+#define IDS_REG_THUMBNAIL_SORT          10906
+#define IDS_REG_THUMBNAIL_PLANE         10907
 #define IDS_REG_VIEW_WHEEL              10950
 #define IDS_REG_VIEW_WHEELTYPE          10951
 #define IDS_REG_VIEW_COLOR              10952
 #define IDS_REG_VIEW_LINETYPE           10953
+#define IDS_REG_VIEW_NC_SCALE           10959
 #define IDS_REG_VIEW_NC_DRAWCENTERCIRCLE 10960
 #define IDS_REG_VIEW_NC_GUIDE           10961
 #define IDS_REG_VIEW_NC_INFOCOL         10962
 #define IDS_REG_VIEW_NC_TRACEMARK       10963
+#define IDS_REG_VIEW_NC_DEFAULTENDMILL  10964
+#define IDS_REG_VIEW_NC_SOLIDVIEW       10965
+#define IDS_REG_VIEW_NC_G00VIEW         10966
+#define IDS_REG_VIEW_NC_DRAGRENDER      10967
+#define IDS_REG_VIEW_NC_MILL_T          10968
+#define IDS_REG_VIEW_NC_MILL_C          10969
+#define IDS_REG_VIEW_NC_MILLTYPE        10970
 #define IDS_REG_CONVERT                 10999
 #define IDS_REG_WINFLAGS                11900
 #define IDS_REG_ICONIC                  11901
@@ -607,6 +640,7 @@
 #define IDS_ERR_FILEREAD                21101
 #define IDS_ERR_SUBPRO                  21102
 #define IDS_ERR_ADDITEM                 21105
+#define IDS_ERR_MAKEDXFLAYER            21188
 #define IDS_ERR_MAKEMULTILAYER          21189
 #define IDS_ERR_FAILMULTILAYER          21190
 #define IDS_ERR_OVERLAPPINGFILE         21191
@@ -653,10 +687,12 @@
 #define IDS_ANA_NOMCFILE                29008
 #define IDS_ANA_MCFILESHIFT             29009
 #define IDS_ANA_RELOAD                  29010
+#define IDS_ANA_FILEOUTPUT              29011
 #define IDS_ANA_FILEEXIST               29012
 #define IDS_ANA_FILECHANGE              29013
 #define IDS_ANA_VALUECHANGE             29014
 #define IDS_ANA_OUTLINE                 29015
+#define IDS_ANA_STRICTOFFSET            29016
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -677,9 +713,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        148
-#define _APS_NEXT_COMMAND_VALUE         32786
-#define _APS_NEXT_CONTROL_VALUE         1013
+#define _APS_NEXT_RESOURCE_VALUE        152
+#define _APS_NEXT_COMMAND_VALUE         32790
+#define _APS_NEXT_CONTROL_VALUE         1038
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -23,7 +23,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CThreadDlg ダイアログ
 
-CThreadDlg::CThreadDlg(int nID, CDocument* pDoc, WPARAM wParam, LPARAM lParam)
+CThreadDlg::CThreadDlg(int nID, CDocument* pDoc, WPARAM wParam/*=NULL*/, LPARAM lParam/*=NULL*/)
 	: CDialog(CThreadDlg::IDD, NULL)
 {
 	//{{AFX_DATA_INIT(CThreadDlg)
@@ -34,7 +34,7 @@ CThreadDlg::CThreadDlg(int nID, CDocument* pDoc, WPARAM wParam, LPARAM lParam)
 	m_paramThread.wParam = wParam;
 	m_paramThread.lParam = lParam;
 
-	m_hThread = NULL;
+	m_pThread = NULL;
 	m_bThread = TRUE;
 }
 
@@ -55,32 +55,31 @@ BOOL CThreadDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
-	CWinThread*		pThread;
 	m_ctReadProgress.SetPos(0);
 
 	switch ( m_nID ) {
 	case IDS_READ_NCD:			// NCﾃﾞｰﾀ内部変換ｽﾚｯﾄﾞ開始
-		pThread = AfxBeginThread(NCDtoXYZ_Thread, &m_paramThread,
+		m_pThread = AfxBeginThread(NCDtoXYZ_Thread, &m_paramThread,
 			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		break;
 
 	case IDS_CORRECT_NCD:		// 補正座標計算ｽﾚｯﾄﾞ開始
-		pThread = AfxBeginThread(CorrectCalc_Thread, &m_paramThread,
+		m_pThread = AfxBeginThread(CorrectCalc_Thread, &m_paramThread,
 			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		break;
 
 	case ID_FILE_DXF2NCD:		// NC生成ｽﾚｯﾄﾞ開始
-		pThread = AfxBeginThread(MakeNCD_Thread, &m_paramThread,
+		m_pThread = AfxBeginThread(MakeNCD_Thread, &m_paramThread,
 			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		break;
 
 	case ID_EDIT_DXFSHAPE:		// 連結ｵﾌﾞｼﾞｪｸﾄの検索ｽﾚｯﾄﾞ開始
-		pThread = AfxBeginThread(ShapeSearch_Thread, &m_paramThread,
+		m_pThread = AfxBeginThread(ShapeSearch_Thread, &m_paramThread,
 			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		break;
 
 	case ID_EDIT_SHAPE_AUTO:	// 自動加工指示ｽﾚｯﾄﾞ開始
-		pThread = AfxBeginThread(AutoWorkingSet_Thread, &m_paramThread,
+		m_pThread = AfxBeginThread(AutoWorkingSet_Thread, &m_paramThread,
 			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		break;
 
@@ -89,10 +88,12 @@ BOOL CThreadDlg::OnInitDialog()
 		return TRUE;
 	}
 
-	m_hThread = ::NCVC_DuplicateHandle(pThread->m_hThread);
-	if ( !m_hThread )
+	if ( m_pThread ) {
+		m_pThread->m_bAutoDelete = FALSE;
+		m_pThread->ResumeThread();
+	}
+	else
 		::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-	pThread->ResumeThread();
 
 	return TRUE;  // コントロールにフォーカスを設定しないとき、戻り値は TRUE となります
 	              // 例外: OCX プロパティ ページの戻り値は FALSE となります
@@ -111,25 +112,19 @@ void CThreadDlg::OnCancel()
 
 LRESULT CThreadDlg::OnUserFinish(WPARAM wParam, LPARAM)
 {
-	if ( m_hThread ) {
+	if ( m_pThread ) {
 #ifdef _DEBUG
 		CMagaDbg	dbg("CThreadDlg::OnUserFinish()", DBG_BLUE);
-		if ( ::WaitForSingleObject(m_hThread, INFINITE) == WAIT_FAILED ) {
+		if ( ::WaitForSingleObject(m_pThread->m_hThread, INFINITE) == WAIT_FAILED ) {
 			dbg.printf("WaitForSingleObject() Fail!");
 			::NC_FormatMessage();
 		}
 		else
 			dbg.printf("WaitForSingleObject() OK");
-		if ( !::CloseHandle(m_hThread) ) {
-			dbg.printf("CloseHandle() Fail!");
-			::NC_FormatMessage();
-		}
-		else
-			dbg.printf("CloseHandle() OK");
 #else
-		::WaitForSingleObject(m_hThread, INFINITE);
-		::CloseHandle(m_hThread);
+		::WaitForSingleObject(m_pThread->m_hThread, INFINITE);
 #endif
+		delete	m_pThread;
 	}
 	EndDialog(wParam);
 	return 0;

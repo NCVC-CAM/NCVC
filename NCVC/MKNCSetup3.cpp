@@ -175,6 +175,29 @@ BOOL CMKNCSetup3::OnSetActive()
 
 BOOL CMKNCSetup3::OnApply() 
 {
+	// Íß°¼ÞŠÔ‚ÌˆË‘¶ŠÖŒW
+	// OnKillActive() ‚Å‚ÍÍß°¼Þ‚ðØ‚è‘Ö‚¦‚ç‚ê‚È‚¢‚Ì‚Å‚¤‚Á‚Æ‚¨‚µ‚¢
+	if ( m_nMakeEnd == 2 ) {	// Fix
+		if ( (double)m_dMakeValue > (double)m_dZG0Stop ) {
+			AfxMessageBox(IDS_ERR_DEEPFIXR, MB_OK|MB_ICONEXCLAMATION);
+			m_dMakeValue.SetFocus();
+			m_dMakeValue.SetSel(0, -1);
+			return FALSE;
+		}
+		if ( (double)m_dMakeValue <= (double)m_dZCut ) {
+			AfxMessageBox(IDS_ERR_DEEPFIXZ, MB_OK|MB_ICONEXCLAMATION);
+			m_dMakeValue.SetFocus();
+			m_dMakeValue.SetSel(0, -1);
+			return FALSE;
+		}
+	}
+	if ( m_bDeep && (double)m_dZCut<(double)m_dDeep ) {
+		AfxMessageBox(IDS_ERR_DEEPFINAL, MB_OK|MB_ICONEXCLAMATION);
+		m_dDeep.SetFocus();
+		m_dDeep.SetSel(0, -1);
+		return FALSE;
+	}
+
 	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_nMakeEnd		= m_nMakeEnd;
 	pOpt->m_dMakeValue		= m_dMakeValue;
@@ -197,35 +220,21 @@ BOOL CMKNCSetup3::OnKillActive()
 	if ( !CPropertyPage::OnKillActive() )
 		return FALSE;
 
-	switch ( m_nMakeEnd ) {
-	case 1:		// Offset
+	if ( m_nMakeEnd == 1 ) {	// Offset
 		if ( m_dMakeValue <= 0 ) {
 			AfxMessageBox(IDS_ERR_DEEPVALUE, MB_OK|MB_ICONEXCLAMATION);
 			m_dMakeValue.SetFocus();
 			m_dMakeValue.SetSel(0, -1);
 			return FALSE;
 		}
-		break;
-	case 2:		// Fix
-		if ( (double)m_dMakeValue > (double)m_dZG0Stop ) {
-			AfxMessageBox(IDS_ERR_DEEPFIXR, MB_OK|MB_ICONEXCLAMATION);
-			m_dMakeValue.SetFocus();
-			m_dMakeValue.SetSel(0, -1);
-			return FALSE;
-		}
-		if ( (double)m_dMakeValue <= (double)m_dZCut ) {
-			AfxMessageBox(IDS_ERR_DEEPFIXZ, MB_OK|MB_ICONEXCLAMATION);
-			m_dMakeValue.SetFocus();
-			m_dMakeValue.SetSel(0, -1);
-			return FALSE;
-		}
-		break;
 	}
-	if ( m_dMakeFeed <= 0 ) {
-		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
-		m_dMakeFeed.SetFocus();
-		m_dMakeFeed.SetSel(0, -1);
-		return FALSE;
+	if ( m_nMakeEnd!=0 || (m_bDeep && m_nZProcess!=0) ) {
+		if ( m_dMakeFeed <= 0 ) {
+			AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
+			m_dMakeFeed.SetFocus();
+			m_dMakeFeed.SetSel(0, -1);
+			return FALSE;
+		}
 	}
 
 	if ( m_bDeep ) {
@@ -233,12 +242,6 @@ BOOL CMKNCSetup3::OnKillActive()
 			AfxMessageBox(IDS_ERR_DEEPSTEP, MB_OK|MB_ICONEXCLAMATION);
 			m_dZStep.SetFocus();
 			m_dZStep.SetSel(0, -1);
-			return FALSE;
-		}
-		if ( (double)m_dZCut < (double)m_dDeep ) {
-			AfxMessageBox(IDS_ERR_DEEPFINAL, MB_OK|MB_ICONEXCLAMATION);
-			m_dDeep.SetFocus();
-			m_dDeep.SetSel(0, -1);
 			return FALSE;
 		}
 		if ( m_bFinish ) {

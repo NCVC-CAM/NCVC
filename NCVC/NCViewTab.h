@@ -8,6 +8,44 @@
 #include "ViewBase.h"
 #include "NCViewSplit.h"
 
+/////////////////////////////////////////////////////////////////////////////
+// CTraceThread スレッド
+
+class CNCViewTab;
+class CNCListView;
+// ｽﾚｯﾄﾞへの引数
+typedef struct tagTRACETHREADPARAM {
+	CMainFrame*		pMainFrame;
+	CNCViewTab*		pParent;
+	CNCListView*	pListView;
+} TRACETHREADPARAM, *LPTRACETHREADPARAM;
+
+class CTraceThread : public CWinThread
+{
+	CNCViewTab*		m_pParent;
+	CNCListView*	m_pListView;
+
+public:
+/*
+	CWinThread からの派生ｸﾗｽを生成して m_pMainWnd をｾｯﾄしないと
+	AfxGetNCVCMainWnd() のﾎﾟｲﾝﾀが参照できない
+*/
+	CTraceThread(LPTRACETHREADPARAM pParam) {
+		m_bAutoDelete	= FALSE;				// CWinThread
+		m_pMainWnd		= pParam->pMainFrame;	// 　〃
+		m_pParent		= pParam->pParent;
+		m_pListView		= pParam->pListView;
+		delete	pParam;
+	}
+
+public:
+	virtual BOOL	InitInstance();
+	virtual int		ExitInstance();
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// CNCViewTab
+
 class CNCViewTab : public CTabView, public CViewBase
 {
 friend	class	CTraceThread;
@@ -16,15 +54,15 @@ friend	class	CTraceThread;
 					m_wndSplitter2,		// ４面-2
 					m_wndSplitter22;
 
-	HDC		m_hDC[NCVIEW_FOURSVIEW];	// XYZ, XY, XZ, YZ 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
-	UINT	m_nTraceSpeed,	// ﾄﾚｰｽ実行の速度
-			m_nTrace;		// ﾄﾚｰｽ実行状態
-	HANDLE	m_hTrace;		// ﾄﾚｰｽ実行ｽﾚｯﾄﾞﾊﾝﾄﾞﾙ
-	BOOL	m_bTraceContinue,	// ﾄﾚｰｽ実行継続ﾌﾗｸﾞ
-			m_bTracePause;		// ﾄﾚｰｽ一時停止
-	CEvent	m_evTrace;		// ﾄﾚｰｽ開始ｲﾍﾞﾝﾄ(ｺﾝｽﾄﾗｸﾀにて手動ｲﾍﾞﾝﾄ設定)
+	HDC			m_hDC[NCVIEW_FOURSVIEW];	// XYZ, XY, XZ, YZ 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
+	UINT		m_nTraceSpeed,		// ﾄﾚｰｽ実行の速度
+				m_nTrace;			// ﾄﾚｰｽ実行状態
+	CTraceThread*	m_pTraceThread;	// ﾄﾚｰｽ実行ｽﾚｯﾄﾞﾊﾝﾄﾞﾙ
+	BOOL		m_bTraceContinue,	// ﾄﾚｰｽ実行継続ﾌﾗｸﾞ
+				m_bTracePause;		// ﾄﾚｰｽ一時停止
+	CEvent		m_evTrace;			// ﾄﾚｰｽ開始ｲﾍﾞﾝﾄ(ｺﾝｽﾄﾗｸﾀにて手動ｲﾍﾞﾝﾄ設定)
 
-	BOOL	m_bSplit[NCVIEW_FOURSVIEW];	// ｽﾌﾟﾘｯﾀ表示されたかどうか
+	BOOL		m_bSplit[NCVIEW_FOURSVIEW];	// ｽﾌﾟﾘｯﾀ表示されたかどうか
 
 protected:
 	CNCViewTab();		// 動的生成に使用されるプロテクト コンストラクタ
@@ -89,37 +127,3 @@ protected:
 inline CNCDoc* CNCViewTab::GetDocument()
    { return static_cast<CNCDoc *>(m_pDocument); }
 #endif
-
-/////////////////////////////////////////////////////////////////////////////
-// CTraceThread スレッド
-
-class CNCListView;
-// ｽﾚｯﾄﾞへの引数
-typedef struct tagTRACETHREADPARAM {
-	CMainFrame*		pMainFrame;
-	CNCViewTab*		pParent;
-	CNCListView*	pListView;
-} TRACETHREADPARAM, *LPTRACETHREADPARAM;
-
-class CTraceThread : public CWinThread
-{
-	CNCViewTab*		m_pParent;
-	CNCListView*	m_pListView;
-
-public:
-/*
-	CWinThread からの派生ｸﾗｽを生成して m_pMainWnd をｾｯﾄしないと
-	AfxGetNCVCMainWnd() のﾎﾟｲﾝﾀが参照できない
-*/
-	CTraceThread(LPTRACETHREADPARAM pParam) {
-		m_bAutoDelete	= TRUE;					// CWinThread
-		m_pMainWnd		= pParam->pMainFrame;	// 　〃
-		m_pParent		= pParam->pParent;
-		m_pListView		= pParam->pListView;
-		delete	pParam;
-	}
-
-public:
-	virtual BOOL	InitInstance();
-	virtual int		ExitInstance();
-};

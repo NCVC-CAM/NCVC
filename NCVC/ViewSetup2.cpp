@@ -12,12 +12,15 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+extern	const	double	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
+
 BEGIN_MESSAGE_MAP(CViewSetup2, CPropertyPage)
 	//{{AFX_MSG_MAP(CViewSetup2)
 	ON_WM_CTLCOLOR()
-	ON_BN_CLICKED(IDC_VIEWSETUP2_DRAWCIRCLECENTER, OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, OnDefColor)
+	ON_BN_CLICKED(IDC_VIEWSETUP2_DRAWCIRCLECENTER, OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP2_BT_BACKGROUND1, OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP2_SCALE, OnScale)
 	ON_BN_CLICKED(IDC_VIEWSETUP2_GUIDE, OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP2_BT_BACKGROUND2, OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP2_BT_PANE, OnColorButton)
@@ -56,10 +59,11 @@ CViewSetup2::CViewSetup2() : CPropertyPage(CViewSetup2::IDD)
 	//{{AFX_DATA_INIT(CViewSetup2)
 	//}}AFX_DATA_INIT
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	m_bDrawCircleCenter = pOpt->IsDrawCircleCenter();
-	m_bGuide = pOpt->IsGuideSync();
+	m_bDrawCircleCenter = pOpt->m_bDrawCircleCenter;
+	m_bGuide[0] = pOpt->m_bScale;
+	m_bGuide[1] = pOpt->m_bGuide;
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
-		m_colView[i] = pOpt->GetNcDrawColor(i);
+		m_colView[i] = pOpt->m_colNCView[i];
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
 	}
 }
@@ -75,15 +79,28 @@ void CViewSetup2::DoDataExchange(CDataExchange* pDX)
 	CPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CViewSetup2)
 	DDX_Check(pDX, IDC_VIEWSETUP2_DRAWCIRCLECENTER, m_bDrawCircleCenter);
-	DDX_Check(pDX, IDC_VIEWSETUP2_GUIDE, m_bGuide);
+	DDX_Control(pDX, IDC_VIEWSETUP2_GUIDE, m_ctGuide);
 	//}}AFX_DATA_MAP
 	int		i;
+	for ( i=0; i<SIZEOF(m_bGuide); i++ )
+		DDX_Check(pDX, i+IDC_VIEWSETUP2_SCALE, m_bGuide[i]);
 	for ( i=0; i<SIZEOF(m_cbLineType); i++ )
-		DDX_Control(pDX, i + IDC_VIEWSETUP2_CB_X, m_cbLineType[i]);
+		DDX_Control(pDX, i+IDC_VIEWSETUP2_CB_X, m_cbLineType[i]);
 	for ( i=0; i<SIZEOF(m_ctColor); i++ )
 		DDX_Control(pDX, i + IDC_VIEWSETUP2_ST_BACKGROUND1, m_ctColor[i]);
 	for ( i=0; i<NCXYZ; i++ )
 		DDX_Control(pDX, i+IDC_VIEWSETUP2_X, m_dGuide[i]);
+}
+
+void CViewSetup2::EnableControl(void)
+{
+	if ( m_bGuide[0] && !m_bGuide[1] ) {
+		m_bGuide[1] = TRUE;		//　目盛表示は「拡大率に同期させる」が必須
+		UpdateData(FALSE);
+	}
+	m_ctGuide.EnableWindow(!m_bGuide[0]);
+	for ( int i=0; i<NCXYZ; i++ )
+		m_cbLineType[i].EnableWindow(!m_bGuide[0]);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -107,6 +124,8 @@ BOOL CViewSetup2::OnInitDialog()
 	for ( i=0; i<NCXYZ; i++ )
 		m_dGuide[i] = pOpt->GetGuideLength(i);
 
+	EnableControl();
+
 	return TRUE;  // コントロールにフォーカスを設定しないとき、戻り値は TRUE となります
 	              // 例外: OCX プロパティ ページの戻り値は FALSE となります
 }
@@ -116,7 +135,8 @@ BOOL CViewSetup2::OnApply()
 	int		i;
 	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	pOpt->m_bDrawCircleCenter = m_bDrawCircleCenter;
-	pOpt->m_bGuide = m_bGuide;
+	pOpt->m_bGuide = m_bGuide[0];
+	pOpt->m_bScale = m_bGuide[1];
 	for ( i=0; i<SIZEOF(m_colView); i++ )
 		pOpt->m_colNCView[i] = m_colView[i];
 	for ( i=0; i<SIZEOF(m_cbLineType); i++ )
@@ -161,20 +181,28 @@ HBRUSH CViewSetup2::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 void CViewSetup2::OnColorButton() 
 {
 	int	nIndex = GetFocus()->GetDlgCtrlID() - IDC_VIEWSETUP2_BT_BACKGROUND1;
-	ASSERT( 0<=nIndex && nIndex<SIZEOF(m_colView) );
-	CColorDialog	dlg(m_colView[nIndex]);
-	dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
-	if ( dlg.DoModal() == IDOK ) {
-		m_colView[nIndex] = dlg.GetColor();
-		m_brColor[nIndex].DeleteObject();
-		m_brColor[nIndex].CreateSolidBrush( m_colView[nIndex] );
-		m_ctColor[nIndex].Invalidate();
-		SetModified();
+	if ( 0<=nIndex && nIndex<SIZEOF(m_colView) ) {
+		CColorDialog	dlg(m_colView[nIndex]);
+		dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
+		if ( dlg.DoModal() == IDOK ) {
+			m_colView[nIndex] = dlg.GetColor();
+			m_brColor[nIndex].DeleteObject();
+			m_brColor[nIndex].CreateSolidBrush( m_colView[nIndex] );
+			m_ctColor[nIndex].Invalidate();
+			SetModified();
+		}
 	}
 }
 
 void CViewSetup2::OnChange() 
 {
+	SetModified();
+}
+
+void CViewSetup2::OnScale()
+{
+	UpdateData();
+	EnableControl();
 	SetModified();
 }
 
@@ -203,8 +231,8 @@ void CViewSetup2::OnDefColor()
 		}
 	}
 	for ( i=0; i<NCXYZ; i++ ) {
-		if ( m_dGuide[i] != 50.0 ) {
-			m_dGuide[i] = 50.0;
+		if ( m_dGuide[i] != g_dDefaultGuideLength ) {
+			m_dGuide[i] = g_dDefaultGuideLength;	// 50.0
 			bChange = TRUE;
 		}
 	}

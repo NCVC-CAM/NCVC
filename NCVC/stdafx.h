@@ -4,31 +4,17 @@
 
 #pragma once
 
-/*
+#define	_BIND_TO_CURRENT_VCLIBS_VERSION	1
+
 #ifndef _SECURE_ATL
 #define _SECURE_ATL 1
 #endif
+/*
 #ifndef VC_EXTRALEAN
 #define VC_EXTRALEAN		// Windows ヘッダーから使用されていない部分を除外します。
 #endif
 */
-// 下で指定された定義の前に対象プラットフォームを指定しなければならない場合、以下の定義を変更してください。
-// 異なるプラットフォームに対応する値に関する最新情報については、MSDN を参照してください。
-#ifndef WINVER				// Windows XP 以降のバージョンに固有の機能の使用を許可します。
-#define WINVER 0x0501		// これを Windows の他のバージョン向けに適切な値に変更してください。
-#endif
-
-#ifndef _WIN32_WINNT		// Windows XP 以降のバージョンに固有の機能の使用を許可します。                   
-#define _WIN32_WINNT 0x0501	// これを Windows の他のバージョン向けに適切な値に変更してください。
-#endif						
-
-#ifndef _WIN32_WINDOWS		// Windows 98 以降のバージョンに固有の機能の使用を許可します。
-#define _WIN32_WINDOWS 0x0410 // これを Windows Me またはそれ以降のバージョン向けに適切な値に変更してください。
-#endif
-
-#ifndef _WIN32_IE			// IE 6.0 以降のバージョンに固有の機能の使用を許可します。
-#define _WIN32_IE 0x0600	// これを IE の他のバージョン向けに適切な値に変更してください。
-#endif
+#include "targetver.h"
 /*
 // 一部の CString コンストラクタは明示的です。
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS
@@ -45,10 +31,15 @@
 #include <afxcview.h>		// CListView, CTreeView
 #include <afxdlgs.h>
 
+#define	GLEW_STATIC			// GLEW static link
+#include <gl/glew.h>		// OpenGL Extention
+#include <gl/wglew.h>
 #include <gl/gl.h>			// OpenGL
 #include <gl/glu.h>
-//#include <gl/glut.h>		// Use glut32.dll
-#include <gl/glaux.h>
+//#include <gl/glaux.h>		// VC++2008 で不要？
+#ifdef _DEBUG
+#include <gl/glut.h>		// Use glut32.dll
+#endif
 
 #ifndef _AFX_NO_OLE_SUPPORT
 #include <afxdtctl.h>		// MFC の Internet Explorer 4 コモン コントロール サポート
@@ -57,21 +48,31 @@
 #include <afxcmn.h>			// MFC の Windows コモン コントロール サポート
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
+// STL
+#include <string>
+#include <vector>
+#include <algorithm>
+
 // BOOST Libraries
 #pragma	warning( disable : 4819 )
-#include "boost/regex.hpp"			// 正規表現
-#include "boost/tokenizer.hpp"		// 文字列分割
-#include "boost/tuple/tuple.hpp"	// 拡張ﾃﾞｰﾀ
+#define	BOOST_SPIRIT_THREADSAFE
+#include "boost/regex.hpp"				// 正規表現
+#include "boost/tokenizer.hpp"			// 文字列分割
+#include "boost/tuple/tuple.hpp"		// 拡張ﾃﾞｰﾀ
 #include "boost/optional.hpp"
 #include "boost/variant.hpp"
-#include "boost/spirit.hpp"			// 構文解析
+#include "boost/spirit.hpp"				// 構文解析
+#include "boost/utility.hpp"			// ﾕｰﾃｨﾘﾃｨ
+#include "boost/algorithm/minmax.hpp"
 
 #define	NCVCSERIALVERSION_1503	1503	// v1.00RC～
 #define	NCVCSERIALVERSION_1505	1505	// v1.10～
-#define	NCVCSERIALVERSION		1507	// v1.10a～
+#define	NCVCSERIALVERSION_1507	1507	// v1.10a～
+#define	NCVCSERIALVERSION_1600	1600	// v1.60～ (CDXFworkingOutlineのﾃﾞｰﾀ変更)
+#define	NCVCSERIALVERSION		1700	// v1.70～ (CDXFworkingOutlineのｵﾌｾｯﾄ値追加)
 #define	SIZEOF(array)			( sizeof(array)/sizeof(array[0]) )
 
-#include <string>
+// NCVC original
 #include "3Dto2D.h"
 #include "CustomClass.h"
 #include "CustomControl.h"
@@ -82,7 +83,8 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 #define	AfxGetNCVCApp()			( static_cast<CNCVCApp *>(AfxGetApp()) )
 #define	AfxGetNCVCMainWnd()		( static_cast<CMainFrame *>(AfxGetMainWnd()) )
 #define	LOMETRICFACTOR			10.0
-// 円を64(2π/64≒5.6度)分割で描画 from NCdata.cpp,DXFdata.cpp
+// 円を64(2π/64≒5.6度)分割で描画 from NCdata.cpp, DXFdata.cpp
+#define	ARCCOUNT				64
 #define	ARCSTEP					(PI/32)
 
 // Timer Event
@@ -132,12 +134,6 @@ inline	BOOL	NC_IsNullLine(const CString& str)	// EOF 等の行
 {
 	return ( str.IsEmpty() || str[0]=='#' || str[0]=='\x1a' ) ? TRUE : FALSE;
 }
-
-// ﾌｫﾙﾀﾞ名からｱｲﾃﾑIDを返す
-LPITEMIDLIST GetItemIDList(LPCTSTR lpszFolder);
-
-// ﾌｫﾙﾀﾞ参照ﾀﾞｲｱﾛｸﾞの表示(ﾌﾙﾊﾟｽを返す)
-CString	BrowseForFolder(LPCTSTR lpszCaption = NULL, LPCTSTR lpszInitFolder = NULL);
 
 // ﾌﾙﾊﾟｽ名をﾊﾟｽ名とﾌｧｲﾙ名に分割
 void	Path_Name_From_FullPath(LPCTSTR, CString&, CString&, BOOL = TRUE);
@@ -209,5 +205,3 @@ void	NC_FormatMessage(void);
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 #endif
-
-

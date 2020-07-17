@@ -147,7 +147,48 @@ void CMKNCSetup1::OnFooterEdit()
 
 BOOL CMKNCSetup1::OnApply() 
 {
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	// Õﬂ∞ºﬁä‘ÇÃàÀë∂ä÷åW
+	// OnKillActive() Ç≈ÇÕÕﬂ∞ºﬁÇêÿÇËë÷Ç¶ÇÁÇÍÇ»Ç¢ÇÃÇ≈Ç§Ç¡Ç∆Ç®ÇµÇ¢
+	int		nMakeEnd;
+	BOOL	bDeep;
+	double	dDeep, dMakeValue;
+	CMKNCSetup*	pParent = static_cast<CMKNCSetup *>(GetParent());
+	CNCMakeOption* pOpt = pParent->GetNCMakeOption();
+
+	if ( ::IsWindow(pParent->m_dlg3.m_hWnd) ) {
+		nMakeEnd	= pParent->m_dlg3.m_nMakeEnd;
+		dMakeValue	= pParent->m_dlg3.m_dMakeValue;
+		bDeep		= pParent->m_dlg3.m_bDeep;
+		dDeep		= pParent->m_dlg3.m_dDeep;
+	}
+	else {
+		nMakeEnd	= pOpt->m_nMakeEnd;
+		dMakeValue	= pOpt->m_dMakeValue;
+		bDeep		= pOpt->m_bDeep;
+		dDeep		= pOpt->m_dDeep;
+	}
+
+	if ( nMakeEnd == 2 ) {
+		if ( dMakeValue > m_dZG0Stop ) {
+			AfxMessageBox(IDS_ERR_DEEPFIXR, MB_OK|MB_ICONEXCLAMATION);
+			m_dZG0Stop.SetFocus();
+			m_dZG0Stop.SetSel(0, -1);
+			return FALSE;
+		}
+		if ( dMakeValue <= m_dZCut ) {
+			AfxMessageBox(IDS_ERR_DEEPFIXZ, MB_OK|MB_ICONEXCLAMATION);
+			m_dZCut.SetFocus();
+			m_dZCut.SetSel(0, -1);
+			return FALSE;
+		}
+	}
+	if ( bDeep && m_dZCut<dDeep ) {
+		AfxMessageBox(IDS_ERR_DEEPFINAL, MB_OK|MB_ICONEXCLAMATION);
+		m_dZCut.SetFocus();
+		m_dZCut.SetSel(0, -1);
+		return FALSE;
+	}
+
 	pOpt->m_nSpindle	= m_nSpindle;
 	pOpt->m_dFeed		= m_dFeed;
 	pOpt->m_dZFeed		= m_dZFeed;
@@ -190,46 +231,6 @@ BOOL CMKNCSetup1::OnKillActive()
 	}
 	if ( (double)m_dZCut > (double)m_dZG0Stop ) {
 		AfxMessageBox(IDS_ERR_ZCUT, MB_OK|MB_ICONEXCLAMATION);
-		m_dZCut.SetFocus();
-		m_dZCut.SetSel(0, -1);
-		return FALSE;
-	}
-
-	// Õﬂ∞ºﬁä‘ÇÃàÀë∂ä÷åW
-	int		nMakeEnd;
-	BOOL	bDeep;
-	double	dDeep, dMakeValue;
-	CMKNCSetup*	pParent = static_cast<CMKNCSetup *>(GetParent());
-	if ( ::IsWindow(pParent->m_dlg3.m_hWnd) ) {
-		nMakeEnd	= pParent->m_dlg3.m_nMakeEnd;
-		dMakeValue	= pParent->m_dlg3.m_dMakeValue;
-		bDeep		= pParent->m_dlg3.m_bDeep;
-		dDeep		= pParent->m_dlg3.m_dDeep;
-	}
-	else {
-		CNCMakeOption* pOpt = pParent->GetNCMakeOption();
-		nMakeEnd	= pOpt->m_nMakeEnd;
-		dMakeValue	= pOpt->m_dMakeValue;
-		bDeep		= pOpt->m_bDeep;
-		dDeep		= pOpt->m_dDeep;
-	}
-
-	if ( nMakeEnd == 2 ) {
-		if ( dMakeValue > m_dZG0Stop ) {
-			AfxMessageBox(IDS_ERR_DEEPFIXR, MB_OK|MB_ICONEXCLAMATION);
-			m_dZG0Stop.SetFocus();
-			m_dZG0Stop.SetSel(0, -1);
-			return FALSE;
-		}
-		if ( dMakeValue <= m_dZCut ) {
-			AfxMessageBox(IDS_ERR_DEEPFIXZ, MB_OK|MB_ICONEXCLAMATION);
-			m_dZCut.SetFocus();
-			m_dZCut.SetSel(0, -1);
-			return FALSE;
-		}
-	}
-	if ( bDeep && m_dZCut<dDeep ) {
-		AfxMessageBox(IDS_ERR_DEEPFINAL, MB_OK|MB_ICONEXCLAMATION);
 		m_dZCut.SetFocus();
 		m_dZCut.SetSel(0, -1);
 		return FALSE;

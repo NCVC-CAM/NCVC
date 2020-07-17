@@ -24,12 +24,12 @@ BEGIN_MESSAGE_MAP(CViewSetup3, CPropertyPage)
 	ON_BN_CLICKED(IDC_VIEWSETUP3_BT_MOVE, OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP3_BT_TEXT, OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP3_BT_OUTLINE, OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP3_FONT, OnFontChange)
 	ON_CBN_SELCHANGE(IDC_VIEWSETUP3_CB_ORIGIN, OnChange)
 	ON_CBN_SELCHANGE(IDC_VIEWSETUP3_CB_CUTTER, OnChange)
 	ON_CBN_SELCHANGE(IDC_VIEWSETUP3_CB_START, OnChange)
 	ON_CBN_SELCHANGE(IDC_VIEWSETUP3_CB_MOVE, OnChange)
 	ON_CBN_SELCHANGE(IDC_VIEWSETUP3_CB_OUTLINE, OnChange)
-	ON_BN_CLICKED(IDC_VIEWSETUP3_FONT, OnFontChange)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -44,7 +44,7 @@ CViewSetup3::CViewSetup3() : CPropertyPage(CViewSetup3::IDD)
 	//}}AFX_DATA_INIT
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();	// Can't const(GetLogFont)
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
-		m_colView[i] = pOpt->GetDxfDrawColor(i);
+		m_colView[i] = pOpt->m_colDXFView[i];
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
 	}
 	// MM_LOMETRIC ‚Ö‚ÌÌ«ÝÄ‘®«‚Ì‚½‚ßC•ÏŠ·‚ª•K—v
@@ -138,15 +138,16 @@ HBRUSH CViewSetup3::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 void CViewSetup3::OnColorButton() 
 {
 	int	nIndex = GetFocus()->GetDlgCtrlID() - IDC_VIEWSETUP3_BT_BACKGROUND1;
-	ASSERT( 0<=nIndex && nIndex<SIZEOF(m_colView) );
-	CColorDialog	dlg(m_colView[nIndex]);
-	dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
-	if ( dlg.DoModal() == IDOK ) {
-		m_colView[nIndex] = dlg.GetColor();
-		m_brColor[nIndex].DeleteObject();
-		m_brColor[nIndex].CreateSolidBrush( m_colView[nIndex] );
-		m_ctColor[nIndex].Invalidate();
-		SetModified();
+	if ( 0<=nIndex && nIndex<SIZEOF(m_colView) ) {
+		CColorDialog	dlg(m_colView[nIndex]);
+		dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
+		if ( dlg.DoModal() == IDOK ) {
+			m_colView[nIndex] = dlg.GetColor();
+			m_brColor[nIndex].DeleteObject();
+			m_brColor[nIndex].CreateSolidBrush( m_colView[nIndex] );
+			m_ctColor[nIndex].Invalidate();
+			SetModified();
+		}
 	}
 }
 

@@ -81,13 +81,35 @@ extern	const	PENSTYLE	g_penStyle[] = {
 			{20.0, -1.0, 0.0, -1.0, 0.0, -1.0},
 		0xf333 }
 };
-
 extern	const	int	g_nTraceSpeed[] = {
 	10, 300, 600
 };
+extern	const	double	g_dDefaultGuideLength = 50.0;
 
 static	const	int	g_nFontSize[] = {	// Œﬂ≤›ƒéwíË
 	9, 12
+};
+static	const	BOOL	g_bDefaultSetting[] = {
+	FALSE,		// m_bTraceMarker
+	TRUE,		// m_bDrawCircleCenter
+	FALSE,		// m_bScale
+	TRUE,		// m_bGuide
+	FALSE,		// m_bSolidView
+	FALSE,		// m_bG00View
+	FALSE,		// m_bDragRender
+	TRUE,		// m_bMillT
+	TRUE		// m_bMillC
+};
+static	const	UINT	g_nFlagID[] = {
+	IDS_REG_VIEW_NC_TRACEMARK,
+	IDS_REG_VIEW_NC_DRAWCENTERCIRCLE,
+	IDS_REG_VIEW_NC_SCALE,
+	IDS_REG_VIEW_NC_GUIDE,
+	IDS_REG_VIEW_NC_SOLIDVIEW,
+	IDS_REG_VIEW_NC_G00VIEW,
+	IDS_REG_VIEW_NC_DRAGRENDER,
+	IDS_REG_VIEW_NC_MILL_T,
+	IDS_REG_VIEW_NC_MILL_C
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -143,9 +165,10 @@ CViewOption::CViewOption()
 		delete	lpFont;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DRAWCENTERCIRCLE));
-	m_bDrawCircleCenter = AfxGetApp()->GetProfileInt(strRegKey, strEntry,
-								m_bDrawCircleCenter);
+	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
+		VERIFY(strEntry.LoadString(g_nFlagID[i]));
+		m_bNCFlag[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, m_bNCFlag[i]);
+	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
@@ -166,8 +189,6 @@ CViewOption::CViewOption()
 		m_nNCLineType[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntryFormat,
 								m_nNCLineType[i]);
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_GUIDE));
-	m_bGuide = AfxGetApp()->GetProfileInt(strRegKey, strEntry, 1);
 	for ( i=0; i<NCXYZ; i++ ) {
 		strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry+g_szNdelimiter[i]);
 		if ( !strResult.IsEmpty() )
@@ -179,9 +200,12 @@ CViewOption::CViewOption()
 		m_nTraceSpeed[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntryFormat,
 								m_nTraceSpeed[i]);
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TRACEMARK));
-	m_bTraceMarker = AfxGetApp()->GetProfileInt(strRegKey, strEntry,
-								m_bTraceMarker);
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DEFAULTENDMILL));
+	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
+	if ( !strResult.IsEmpty() )
+		m_dDefaultEndmill = fabs(atof(strResult)) / 2.0;	// “”ÿè„ÇÕîºåa
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
+	m_nMillType = AfxGetApp()->GetProfileInt(strRegKey, strEntry, m_nMillType);
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -220,6 +244,7 @@ void CViewOption::AllDefaultSetting(void)
 	ASSERT( SIZEOF(m_nDXFLineType) == SIZEOF(g_nDxfViewLineTypeDef) );
 	ASSERT( SIZEOF(m_nTraceSpeed) == SIZEOF(g_nTraceSpeed) );
 	ASSERT( SIZEOF(m_lfFont) == SIZEOF(g_nFontSize) );
+	ASSERT( SIZEOF(m_bNCFlag) == SIZEOF(g_bDefaultSetting) );
 	//
 	int		i;
 	//
@@ -244,19 +269,21 @@ void CViewOption::AllDefaultSetting(void)
 	dc.DPtoLP(&pt);
 	m_lfFont[TYPE_DXF].lfHeight = -abs(pt.y);
 	//
-	m_bTraceMarker = FALSE;
-	m_bDrawCircleCenter	= TRUE;
+	for ( i=0; i<SIZEOF(m_bNCFlag); i++ )
+		m_bNCFlag[i] = g_bDefaultSetting[i];
 	for ( i=0; i<SIZEOF(m_colNCView); i++ )
 		m_colNCView[i] = ConvertSTRtoRGB(g_szNcViewColDef[i]);
 	for ( i=0; i<SIZEOF(m_colNCInfoView); i++ )
 		m_colNCInfoView[i] = ConvertSTRtoRGB(g_szNcInfoViewColDef[i]);
 	for ( i=0; i<SIZEOF(m_nNCLineType); i++ )
 		m_nNCLineType[i] = g_nNcViewLineTypeDef[i];
-	m_bGuide = TRUE;
 	for ( i=0; i<NCXYZ; i++ )
-		m_dGuide[i] = 50.0;		// 50mm å≈íË
+		m_dGuide[i] = g_dDefaultGuideLength;	// 50mm å≈íË
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ )
 		m_nTraceSpeed[i] = g_nTraceSpeed[i];
+	//
+	m_dDefaultEndmill = 0.5;	// √ﬁÃ´Ÿƒ¥›ƒﬁ–Ÿåa 1mm
+	m_nMillType = 0;			// Ω∏≥™±¥›ƒﬁ–Ÿ
 	//
 	for ( i=0; i<SIZEOF(m_colDXFView); i++ )
 		m_colDXFView[i] = ConvertSTRtoRGB(g_szDxfViewColDef[i]);
@@ -302,9 +329,11 @@ BOOL CViewOption::SaveViewOption(void)
 		return FALSE;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DRAWCENTERCIRCLE));
-	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_bDrawCircleCenter) )
-		return FALSE;
+	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
+		VERIFY(strEntry.LoadString(g_nFlagID[i]));
+		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_bNCFlag[i]) )
+			return FALSE;
+	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
@@ -325,9 +354,6 @@ BOOL CViewOption::SaveViewOption(void)
 		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntryFormat, m_nNCLineType[i]) )
 			return FALSE;
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_GUIDE));
-	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_bGuide) )
-		return FALSE;
 	for ( i=0; i<NCXYZ; i++ ) {
 		strResult.Format(IDS_MAKENCD_FORMAT, m_dGuide[i]);
 		if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry+g_szNdelimiter[i], strResult) )
@@ -339,8 +365,12 @@ BOOL CViewOption::SaveViewOption(void)
 		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntryFormat, m_nTraceSpeed[i]) )
 			return FALSE;
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TRACEMARK));
-	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_bTraceMarker) )
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DEFAULTENDMILL));
+	strResult.Format(IDS_MAKENCD_FORMAT, m_dDefaultEndmill * 2.0);	// ï€ë∂ÇÕíºåa
+	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, strResult) )
+		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
+	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nMillType) )
 		return FALSE;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
@@ -406,10 +436,12 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	}
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DRAWCENTERCIRCLE));
-	strResult.Format("%d", m_bDrawCircleCenter ? 1 : 0);
-	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
-		return FALSE;
+	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
+		VERIFY(strEntry.LoadString(g_nFlagID[i]));
+		strResult.Format("%d", m_bNCFlag[i] ? 1 : 0);
+		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
+			return FALSE;
+	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
@@ -431,10 +463,6 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_GUIDE));
-	strResult.Format("%d", m_bGuide ? 1 : 0);
-	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
-		return FALSE;
 	for ( i=0; i<NCXYZ; i++ ) {
 		strResult.Format(IDS_MAKENCD_FORMAT, m_dGuide[i]);
 		if ( !::WritePrivateProfileString(strRegKey, strEntry+g_szNdelimiter[i],
@@ -448,8 +476,12 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TRACEMARK));
-	strResult.Format("%d", m_bTraceMarker ? 1 : 0);
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DEFAULTENDMILL));
+	strResult.Format(IDS_MAKENCD_FORMAT, m_dDefaultEndmill * 2.0);	// ï€ë∂ÇÕíºåa
+	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
+		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
+	strResult.Format("%d", m_nMillType);
 	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
 		return FALSE;
 	//
@@ -509,9 +541,11 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	}
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DRAWCENTERCIRCLE));
-	m_bDrawCircleCenter = (BOOL)::GetPrivateProfileInt(strRegKey, strEntry,
-								(UINT)m_bDrawCircleCenter, lpszFileName);
+	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
+		VERIFY(strEntry.LoadString(g_nFlagID[i]));
+		m_bNCFlag[i] = (BOOL)::GetPrivateProfileInt(strRegKey, strEntry,
+								(UINT)m_bNCFlag[i], lpszFileName);
+	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
@@ -534,14 +568,11 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 		m_nNCLineType[i] = ::GetPrivateProfileInt(strRegKey, strEntryFormat,
 								m_nNCLineType[i], lpszFileName);
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_GUIDE));
-	m_bGuide = (BOOL)::GetPrivateProfileInt(strRegKey, strEntry,
-								(UINT)m_bGuide, lpszFileName);
 	for ( i=0; i<NCXYZ; i++ ) {
-		strResult.Format(IDS_MAKENCD_FORMAT, m_dGuide[i]);
-		::GetPrivateProfileString(strRegKey, strEntry+g_szNdelimiter[i],
-				strResult, szResult, 256, lpszFileName);
-		m_dGuide[i] = atof(szResult);
+		::GetPrivateProfileString(strRegKey, strEntry+g_szNdelimiter[i], "",
+				szResult, 256, lpszFileName);
+		if ( lstrlen(szResult) > 0 )
+			m_dGuide[i] = atof(szResult);
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_TRACESPEED));
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ ) {
@@ -549,9 +580,13 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 		m_nTraceSpeed[i] = ::GetPrivateProfileInt(strRegKey, strEntryFormat,
 								m_nTraceSpeed[i], lpszFileName);
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TRACEMARK));
-	m_bTraceMarker = (BOOL)::GetPrivateProfileInt(strRegKey, strEntry,
-								(UINT)m_bTraceMarker, lpszFileName);
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DEFAULTENDMILL));
+	::GetPrivateProfileString(strRegKey, strEntry, "",
+			szResult, 256, lpszFileName);
+	if ( lstrlen(szResult) > 0 )
+		m_dDefaultEndmill = fabs(atof(szResult)) / 2.0;	// “”ÿè„ÇÕîºåa
+	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
+	m_nMillType = ::GetPrivateProfileInt(strRegKey, strEntry, m_nMillType, lpszFileName);
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));

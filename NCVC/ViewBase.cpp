@@ -41,7 +41,7 @@ void CViewBase::OnViewFit(const CRectD& rcMax)
 	CMagaDbg	dbg("CViewBase::OnViewFit()");
 #endif
 	// µÌŞ¼Şª¸Ä‹éŒ`‚ğ10%(ã‰º¶‰E5%‚¸‚Â)‘å‚«‚­
-	CRectD	rcObj = rcMax;
+	CRectD	rcObj(rcMax);
 	rcObj.InflateRect(rcMax.Width()*0.05, rcMax.Height()*0.05);
 
 	ASSERT(m_pView);

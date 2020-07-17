@@ -32,19 +32,30 @@ inline void CDXFdata::ChangeMakeType(ENDXFTYPE enType)
 
 inline CLayerData* CDXFdata::GetParentLayer(void) const
 {
-	ASSERT( m_pParentLayer );
 	return m_pParentLayer;
 }
 
 inline CDXFshape* CDXFdata::GetParentMap(void) const
 {
-	ASSERT( m_pParentMap );
 	return m_pParentMap;
 }
 
 inline void CDXFdata::SetParentMap(CDXFshape* pShape)
 {
 	m_pParentMap = pShape;
+}
+
+inline DWORD CDXFdata::GetDxfFlg(void) const
+{
+	return m_dwFlags;
+}
+
+inline void CDXFdata::SetDxfFlg(DWORD dwFlags, BOOL bSet/*=TRUE*/)
+{
+	if ( bSet )
+		m_dwFlags |=  dwFlags;
+	else
+		m_dwFlags &= ~dwFlags;
 }
 
 inline BOOL CDXFdata::IsMakeFlg(void) const
@@ -59,45 +70,27 @@ inline BOOL CDXFdata::IsSearchFlg(void) const
 
 inline void CDXFdata::SetMakeFlg(void)
 {
-	m_dwFlags |= DXFFLG_MAKE;
+	m_dwFlags |= DXFFLG_MAKE;		// SetDxfFlg(DXFFLG_MAKE);
 }
 
 inline void CDXFdata::SetSearchFlg(void)
 {
-	m_dwFlags |= DXFFLG_SEARCH;
+	m_dwFlags |= DXFFLG_SEARCH;		// SetDxfFlg(DXFFLG_SEARCH);
 }
 
 inline void CDXFdata::ClearMakeFlg(void)
 {
-	m_dwFlags &= ~DXFFLG_MAKE;
+	m_dwFlags &= ~DXFFLG_MAKE;		// SetDxfFlg(DXFFLG_MAKE, FALSE);
 }
 
 inline void CDXFdata::ClearSearchFlg(void)
 {
-	m_dwFlags &= ~DXFFLG_SEARCH;
+	m_dwFlags &= ~DXFFLG_SEARCH;	// SetDxfFlg(DXFFLG_SEARCH, FALSE);
 }
 
 inline const CRect3D CDXFdata::GetMaxRect(void) const
 {
 	return m_rcMax;
-}
-
-inline DWORD CDXFdata::GetSelectFlg(void) const
-{
-	return m_dwSelect;
-}
-
-inline void CDXFdata::SetWorkingFlag(DWORD dwFlags, BOOL bSet/*=TRUE*/)
-{
-	if ( bSet )
-		m_dwSelect |=  dwFlags;
-	else
-		m_dwSelect &= ~dwFlags;
-}
-
-inline void CDXFdata::SetSelectFlg(BOOL bSelect)
-{
-	SetWorkingFlag(DXFSEL_SELECT, bSelect);
 }
 
 inline int CDXFdata::GetPointNumber(void) const
@@ -129,9 +122,18 @@ inline const CPointD CDXFdata::GetMakePoint(size_t a) const
 	return m_ptMake[a];
 }
 
-inline BOOL CDXFdata::IsMatchObject(const CDXFdata* pData)
+inline BOOL CDXFdata::IsMatchPoint(const CPointD& pt) const
 {
-	return IsMatchPoint( pData->GetEndMakePoint() );	// virtual指定
+	for ( int i=0; i<m_nPoint; i++ ) {
+		if ( m_pt[i].IsMatchPoint(&pt) )
+			return TRUE;
+	}
+	return FALSE;
+}
+
+inline BOOL CDXFdata::IsMakeMatchObject(const CDXFdata* pData)
+{
+	return IsMakeMatchPoint( pData->GetEndMakePoint() );	// virtual指定
 }
 
 inline double CDXFdata::GetEdgeGap(const CDXFdata* pData, BOOL bSwap/*=TRUE*/)
@@ -181,7 +183,7 @@ inline const CPoint CDXFpoint::GetDrawPoint(void) const
 	return m_ptDraw;
 }
 
-inline BOOL CDXFpoint::IsMatchPoint(const CPointD& pt)
+inline BOOL CDXFpoint::IsMakeMatchPoint(const CPointD& pt)
 {
 	return m_ptMake[0] == pt ? TRUE : FALSE;
 }
@@ -236,7 +238,7 @@ inline void CDXFline::SetMaxRect(void)
 #endif
 }
 
-inline BOOL CDXFline::IsMatchPoint(const CPointD& pt)
+inline BOOL CDXFline::IsMakeMatchPoint(const CPointD& pt)
 {
 	// 指定位置とこのｵﾌﾞｼﾞｪｸﾄの
 	if ( m_ptMake[0] == pt )		// 始点と等しい
@@ -334,7 +336,7 @@ inline void CDXFcircle::GetQuarterPoint(const CPointD& ptClick, CPointD pt[]) co
 inline void CDXFcircle::SetEllipseArgv_Circle
 	(const LPDXFBLOCK lpBlock, LPDXFEARGV lpArgv, double sq, double eq, BOOL bRound)
 {
-	lpArgv->pLayer = NULL;
+	lpArgv->pLayer = GetParentLayer();
 	// 中心座標
 	lpArgv->c.x = m_ct.x * lpBlock->dMagni[NCA_X];
 	lpArgv->c.y = m_ct.y * lpBlock->dMagni[NCA_Y];
@@ -438,12 +440,12 @@ inline void CDXFcircle::SetEllipseArgv(const LPDXFBLOCK lpBlock, LPDXFEARGV lpAr
 	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0, 360.0*RAD, TRUE);
 }
 
-inline BOOL CDXFcircle::IsMatchPoint(const CPointD& pt)
+inline BOOL CDXFcircle::IsMakeMatchPoint(const CPointD& pt)
 {
 	if ( GetMakeType() == DXFPOINTDATA )
-		return CDXFpoint::IsMatchPoint(pt);
+		return CDXFpoint::IsMakeMatchPoint(pt);
 
-	for ( int i=0; i<GetPointNumber(); i++ ) {
+	for ( int i=0; i<m_nPoint; i++ ) {
 		if ( m_ptMake[i]==pt && m_nArrayExt!=i ) {
 			m_nArrayExt = i;
 			SwapPt( i & 0xfe );		// 0 or 2 (下位1ﾋﾞｯﾄﾏｽｸ) => dummy
@@ -465,7 +467,7 @@ inline double CDXFcircle::GetEdgeGap(const CPointD& pt, BOOL bSwap/*=TRUE*/)
 
 	int		i, a = 0;
 	double	dGap, dGapMin = HUGE_VAL;
-	for ( i=0; i<GetPointNumber(); i++ ) {
+	for ( i=0; i<m_nPoint; i++ ) {
 		dGap = GAPCALC(m_ptTun[i] - pt);
 		if ( dGap < dGapMin ) {
 			dGapMin = dGap;
@@ -518,7 +520,7 @@ inline void CDXFcircle::ReversePt(void)
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのCircleExクラス
 //////////////////////////////////////////////////////////////////////
-inline BOOL CDXFcircleEx::IsMatchPoint(const CPointD& pt)
+inline BOOL CDXFcircleEx::IsMakeMatchPoint(const CPointD& pt)
 {
 	return GetEndMakePoint() == pt;
 }
@@ -612,9 +614,9 @@ inline void CDXFarc::SetNativePoint(size_t a, const CPointD& pt)
 	m_eqDraw = m_eq;
 }
 
-inline BOOL CDXFarc::IsMatchPoint(const CPointD& pt)
+inline BOOL CDXFarc::IsMakeMatchPoint(const CPointD& pt)
 {
-	return CDXFline::IsMatchPoint(pt);
+	return CDXFline::IsMakeMatchPoint(pt);
 }
 
 inline BOOL CDXFarc::IsStartEqEnd(void) const
@@ -713,10 +715,10 @@ inline void CDXFellipse::SetRoundFixed(BOOL bRound)
 	SwapAngle();
 }
 
-inline BOOL CDXFellipse::IsMatchPoint(const CPointD& pt)
+inline BOOL CDXFellipse::IsMakeMatchPoint(const CPointD& pt)
 {
 	return !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ?
-		CDXFcircle::IsMatchPoint(pt) : CDXFarc::IsMatchPoint(pt);
+		CDXFcircle::IsMakeMatchPoint(pt) : CDXFarc::IsMakeMatchPoint(pt);
 }
 
 inline BOOL CDXFellipse::IsStartEqEnd(void) const
@@ -769,19 +771,14 @@ inline void CDXFellipse::ReversePt(void)
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのPolylineクラス
 //////////////////////////////////////////////////////////////////////
-inline void CDXFpolyline::SetPolyFlag(int nFlag)
+inline void CDXFpolyline::SetPolyFlag(DWORD dwFlag)
 {
-	m_nPolyFlag = nFlag;
+	m_dwPolyFlags |= dwFlag;
 }
 
-inline int CDXFpolyline::GetPolyFlag(void) const
+inline DWORD CDXFpolyline::GetPolyFlag(void) const
 {
-	return m_nPolyFlag;
-}
-
-inline BOOL CDXFpolyline::GetSequence(void) const
-{
-	return m_bSeq;
+	return m_dwPolyFlags;
 }
 
 inline INT_PTR CDXFpolyline::GetVertexCount(void) const
@@ -797,17 +794,21 @@ inline int CDXFpolyline::GetObjectCount(int n) const
 
 inline POSITION CDXFpolyline::GetFirstVertex(void) const
 {
-	return m_bSeq ? m_ltVertex.GetHeadPosition() : m_ltVertex.GetTailPosition();
+	return m_dwPolyFlags & DXFPOLY_SEQ ?
+		m_ltVertex.GetHeadPosition() : m_ltVertex.GetTailPosition();
 }
 
 inline CDXFdata* CDXFpolyline::GetNextVertex(POSITION& pos) const
 {
-	return m_bSeq ? m_ltVertex.GetNext(pos) : m_ltVertex.GetPrev(pos);
+	return m_dwPolyFlags & DXFPOLY_SEQ ?
+		m_ltVertex.GetNext(pos) : m_ltVertex.GetPrev(pos);
 }
 
 inline const CPointD CDXFpolyline::GetFirstPoint(void) const
 {
-	return m_ltVertex.GetHead()->GetNativePoint(0);
+	CDXFdata*	pData = m_dwPolyFlags & DXFPOLY_SEQ ?
+		m_ltVertex.GetHead() : m_ltVertex.GetTail();
+	return pData->GetNativePoint(0);
 }
 
 inline void CDXFpolyline::SetParentLayer(CLayerData* pLayer)
@@ -816,9 +817,14 @@ inline void CDXFpolyline::SetParentLayer(CLayerData* pLayer)
 	m_pParentLayer = pLayer;
 }
 
+inline BOOL	CDXFpolyline::IsIntersection(void) const
+{
+	return ( m_dwPolyFlags & DXFPOLY_INTERSEC );	// 自分自身に交点あり
+}
+
 inline BOOL CDXFpolyline::IsStartEqEnd(void) const
 {
-	return ( m_nPolyFlag & 1 );		// 閉ﾙｰﾌﾟ
+	return ( m_dwPolyFlags & DXFPOLY_CLOSED );	// 閉ﾙｰﾌﾟ
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -831,5 +837,5 @@ inline CString CDXFtext::GetStrValue(void) const
 
 inline double CDXFtext::GetEdgeGap(const CPointD&, BOOL/*=TRUE*/)
 {
-	return HUGE_VAL;	// IsMatchPoint() 以外は近接判断の必要なし
+	return HUGE_VAL;	// IsMakeMatchPoint() 以外は近接判断の必要なし
 }

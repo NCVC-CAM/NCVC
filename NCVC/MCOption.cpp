@@ -21,6 +21,9 @@ extern	LPCTSTR	gg_szRegKey;
 // 機械情報履歴サイズ
 #define	NCMAXMCFILE		10
 
+// ﾚｼﾞｽﾄﾘ・INIﾌｧｲﾙの移行ｽｷｰﾏ
+static	const	UINT	g_nConvert = 2;
+
 // int型命令
 static	LPCTSTR	g_szNOrder[] = {
 	"Modal%d",
@@ -66,7 +69,7 @@ static	LPCTSTR	g_szSOrderMacro[] = {
 	"MacroCode", "MacroFolder", "MacroIF", "MacroArgv",
 	"MacroResult", "MachineFile", "CurrentFolder"	// 置換引数のみに使用
 };
-extern	int		g_nDefaultMacroID[] = {
+extern	const	int		g_nDefaultMacroID[] = {
 	MCMACHINEFILE, MCMACROCODE, MCMACROFOLDER, MCCURRENTFOLDER, MCMACRORESULT
 };
 
@@ -91,29 +94,22 @@ CMCOption::CMCOption()
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
 
-	// 機械情報履歴
-	try {
-		VERIFY(strEntry.LoadString(IDS_REG_NCV_MCFILE));
-		for ( i=0; i<NCMAXMCFILE; i++ ) {
-			strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
-			strResult = AfxGetApp()->GetProfileString(strRegKey, strFmt);
-			// ﾌｧｲﾙが存在するときだけ履歴に登録
-			if ( !strResult.IsEmpty() && ::IsFileExist(strResult, TRUE, FALSE) )
-				m_strMCList.AddTail(strResult); 
-		}
-	}
-	catch (CMemoryException* e) {
-		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
-		e->Delete();
-		return;
+	// 機械情報履歴(逆順で読み込み)
+	VERIFY(strEntry.LoadString(IDS_REG_NCV_MCFILE));
+	for ( i=NCMAXMCFILE-1; i>=0; i-- ) {
+		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strResult = AfxGetApp()->GetProfileString(strRegKey, strFmt);
+		// ﾌｧｲﾙが存在するときだけ履歴に登録
+		if ( !strResult.IsEmpty() && ::IsFileExist(strResult, TRUE, FALSE) )
+			AddMCListHistory(strResult);
 	}
 
 	// 下位互換移行完了ﾁｪｯｸ
 	VERIFY(strEntry.LoadString(IDS_REG_CONVERT));
 	UINT nResult = AfxGetApp()->GetProfileInt(strRegKey, strEntry, 0);
-	switch ( nResult ) {
-	case 0:		// Convertｷｰ無し(新規ﾕｰｻﾞ)，Fﾊﾟﾗﾒｰﾀがint型
-	case 1:		// 機械情報がﾚｼﾞｽﾄﾘにある
+	if ( nResult < g_nConvert ) {
+		// 0:Convertｷｰ無し(新規ﾕｰｻﾞ)，Fﾊﾟﾗﾒｰﾀがint型
+		// 1:機械情報がﾚｼﾞｽﾄﾘにある
 		VERIFY(strEntry.LoadString(IDS_REG_NCV_INPUT));
 		m_nModal[MODALGROUP3] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, 0);
 		VERIFY(strEntry.LoadString(IDS_REG_NCV_MOVE));
@@ -136,13 +132,11 @@ CMCOption::CMCOption()
 			m_dFeed = AfxGetApp()->GetProfileInt(strRegKey, strEntry, (int)g_dfDOrder[0]);
 		// ﾌｧｲﾙへの移行確認
 		Convert();
-		break;
-
-	default:	// 機械情報をﾌｧｲﾙから読み込み
-		if ( !m_strMCList.IsEmpty() )
-			ReadMCoption(m_strMCList.GetHead());
-		break;
 	}
+
+	// 機械情報をﾌｧｲﾙから読み込み(ﾚｼﾞｽﾄﾘ情報を上書き)
+	if ( !m_strMCList.IsEmpty() )
+		ReadMCoption(m_strMCList.GetHead());
 }
 
 CMCOption::~CMCOption()
@@ -154,6 +148,10 @@ CMCOption::~CMCOption()
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_MCFILE));
 
 	// 履歴の保存
+	for ( i=0; i<NCMAXMCFILE; i++ ) {
+		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
+		AfxGetApp()->WriteProfileString(strRegKey, strFmt, NULL);	// 先に履歴削除
+	}
 	for ( i=0; pos && i<NCMAXMCFILE; i++ ) {
 		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
 		if ( !AfxGetApp()->WriteProfileString(strRegKey, strFmt, m_strMCList.GetNext(pos)) )
@@ -162,7 +160,7 @@ CMCOption::~CMCOption()
 
 	// 移行完了ｷｰの書き込み
 	VERIFY(strEntry.LoadString(IDS_REG_CONVERT));
-	AfxGetApp()->WriteProfileInt(strRegKey, strEntry, 2);
+	AfxGetApp()->WriteProfileInt(strRegKey, strEntry, g_nConvert);
 
 	// 工具情報の削除
 	for ( pos=m_ltTool.GetHeadPosition(); pos; )
@@ -257,9 +255,25 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 			::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile) > 0 ?
 				atof(szResult) : g_dfDOrder[j];
 	}
-	strEntry = g_szDOrder[k++];
+	strEntry = g_szDOrder[++k];
 	::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile);
 	m_dBlock = lstrlen(szResult) > 0 ? atof(szResult) : g_dfDOrder[j];
+	// ----------
+		// ～Ver1.72までのﾊﾞｸﾞﾁｪｯｸ
+		::GetPrivateProfileString(strRegKey, g_szDOrder[1], "", szResult, _MAX_PATH, lpszFile);
+		if ( lstrlen(szResult) > 0 ) {
+			// "BlockTime" が "Initial%c" に書き込んでいたﾊﾞｸﾞ
+			m_dBlock = atof(szResult);
+			// 正しいｷｰで出力
+			// 　→単なる切り替えでは SaveMCoption() が呼ばれないので
+			// 　　ここで処理する
+			CString	strResult;
+			strResult.Format(IDS_MAKENCD_FORMAT, m_dBlock);
+			::WritePrivateProfileString(strRegKey, g_szDOrder[2], strResult, lpszFile);
+			// "Initial%c" のｴﾝﾄﾘを削除
+			::WritePrivateProfileString(strRegKey, g_szDOrder[1], NULL, lpszFile);
+		}
+	// ----------
 	for ( i=0, j++; i<WORKOFFSET; i++ ) {
 		strEntry.Format("G%d", i+54);
 		if ( ::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile) > 0 ) {
@@ -392,7 +406,7 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
 			return FALSE;
 	}
-	strEntry = g_szDOrder[k++];
+	strEntry = g_szDOrder[++k];
 	strResult.Format(IDS_MAKENCD_FORMAT, m_dBlock);
 	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
 		return FALSE;

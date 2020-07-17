@@ -49,9 +49,9 @@ extern	const	PENSTYLE	g_penStyle[];
 //////////////////////////////
 // 静的変数の初期化
 const	CDXFMakeOption*	CDXFMake::ms_pMakeOpt = NULL;
-PFNMAKEVALUE	CDXFMake::ms_pfnMakeValueLine = NULL;
-PFNMAKEVALUE	CDXFMake::ms_pfnMakeValueCircle = NULL;
-PFNMAKEVALUE	CDXFMake::ms_pfnMakeValueCircleToLine = NULL;
+PFNMAKEVALUE		CDXFMake::ms_pfnMakeValueLine = NULL;
+PFNMAKEVALUE		CDXFMake::ms_pfnMakeValueCircle = NULL;
+PFNMAKEVALUE		CDXFMake::ms_pfnMakeValueCircleToLine = NULL;
 PFNMAKEVALUECYCLE	CDXFMake::ms_pfnMakeValueCycle = NULL;
 
 //////////////////////////////////////////////////////////////////////
@@ -90,11 +90,12 @@ CDXFMake::CDXFMake(const CNCdata* pData, BOOL bCorrect/*=FALSE*/)
 	case NCDLINEDATA:	// 直線補間
 		MakeDXF_Line(static_cast<const CNCline*>(pData), bCorrect);
 		break;
+	case NCDARCDATA:	// 円弧補間
+		if ( bCorrect || GetFlg(MKDX_FLG_OUT_C) )
+			MakeDXF_Arc(static_cast<const CNCcircle*>(pData), bCorrect);
+		break;
 	case NCDCYCLEDATA:	// 固定ｻｲｸﾙ
 		MakeDXF_Cycle(static_cast<const CNCcycle*>(pData));
-		break;
-	case NCDARCDATA:	// 円弧補間
-		MakeDXF_Arc(static_cast<const CNCcircle*>(pData), bCorrect);
 		break;
 	}
 }
@@ -343,12 +344,27 @@ void CDXFMake::MakeSection_EOF(void)
 
 void CDXFMake::MakeDXF_Line(const CNCline* pData, BOOL bCorrect)
 {
+	CString	strResult;
+
 	// ｵﾌﾞｼﾞｪｸﾄ情報(早送り or 切削送り)
-	m_strDXFarray.Add( MakeDxfInfo(TYPE_LINE,
-		bCorrect ? MKDX_STR_CORRECT :
-		(pData->GetGcode() == 0 ? MKDX_STR_MOVE : MKDX_STR_CAMLINE)) );
-	// 座標値
-	m_strDXFarray.Add( (*ms_pfnMakeValueLine)(pData) );
+	if ( bCorrect )
+		strResult = MakeDxfInfo(TYPE_LINE, MKDX_STR_CORRECT);
+	else {
+		if ( pData->GetGcode() == 0 ) {
+			if ( GetFlg(MKDX_FLG_OUT_M) )
+				strResult = MakeDxfInfo(TYPE_LINE, MKDX_STR_MOVE);
+		}
+		else {
+			if ( GetFlg(MKDX_FLG_OUT_C) )
+				strResult = MakeDxfInfo(TYPE_LINE, MKDX_STR_CAMLINE);
+		}
+	}
+
+	if ( !strResult.IsEmpty() ) {
+		m_strDXFarray.Add(strResult);
+		// 座標値
+		m_strDXFarray.Add( (*ms_pfnMakeValueLine)(pData) );
+	}
 }
 
 inline int SetDXFtype(ENPLANE enPlane, const CNCdata* pData)
@@ -381,10 +397,8 @@ void CDXFMake::MakeDXF_Arc(const CNCcircle* pData, BOOL bCorrect)
 	m_strDXFarray.Add( MakeDxfInfo(nType,
 		bCorrect ? MKDX_STR_CORRECT : MKDX_STR_CAMLINE) );
 	// 座標値
-	if ( nType == TYPE_LINE )
-		m_strDXFarray.Add( (*ms_pfnMakeValueCircleToLine)(pData) );
-	else
-		m_strDXFarray.Add( (*ms_pfnMakeValueCircle)(pData) );
+	m_strDXFarray.Add( nType == TYPE_LINE ? 
+		(*ms_pfnMakeValueCircleToLine)(pData) : (*ms_pfnMakeValueCircle)(pData) );
 	// 円弧のみ角度の追加
 	if ( nType == TYPE_ARC ) {
 		double	dVal[DXFMAXVALUESIZE];
@@ -405,7 +419,7 @@ void CDXFMake::MakeDXF_Cycle(const CNCcycle* pData)
 		for ( int i=0; i<pData->GetDrawCnt(); i++ )
 			m_strDXFarray.Add( (*ms_pfnMakeValueCycle)(pData, i) );
 	}
-	else if ( pData->GetStartPoint() != pData->GetEndPoint() ) {
+	else if ( pData->GetStartPoint()!=pData->GetEndPoint() && GetFlg(MKDX_FLG_OUT_M) ) {
 		// L0 でも移動がある場合
 		m_strDXFarray.Add( MakeDxfInfo(TYPE_LINE, MKDX_STR_MOVE) );
 		// CNCline として処理
@@ -533,7 +547,9 @@ CString CDXFMake::MakeValueCycle
 	int		nStart = nIndex - 1;
 	double	dVal[DXFMAXVALUESIZE];
 	CPointD	pts, pti, ptr;
-	CString	strResult( MakeDxfInfo(TYPE_LINE, MKDX_STR_MOVE) );
+	CString	strResult;
+	if ( GetFlg(MKDX_FLG_OUT_M) )
+		strResult = MakeDxfInfo(TYPE_LINE, MKDX_STR_MOVE);
 
 	// 呼び出し関数の動的決定
 	CPointD	(CPoint3D::*pfnGetAxis)(void) const;
@@ -551,77 +567,86 @@ CString CDXFMake::MakeValueCycle
 	
 	// ｵﾌﾞｼﾞｪｸﾄの平面と指示平面が等しいかどうか
 	if ( pData->GetPlane() == enPlane ) {
-		// 移動ﾃﾞｰﾀ
-		if ( nStart < 0 ) {
-			// 現在位置から1点目のｲﾆｼｬﾙ点
-			pts = (pData->GetStartPoint().*pfnGetAxis)();
-			dVal[VALUE10] = pts.x;
-			dVal[VALUE20] = pts.y;
+		if ( GetFlg(MKDX_FLG_OUT_M) ) {
+			// 移動ﾃﾞｰﾀ
+			if ( nStart < 0 ) {
+				// 現在位置から1点目のｲﾆｼｬﾙ点
+				pts = (pData->GetStartPoint().*pfnGetAxis)();
+				dVal[VALUE10] = pts.x;
+				dVal[VALUE20] = pts.y;
+			}
+			else {
+				dVal[VALUE10] = pCycleInside[nStart].ptI.x;
+				dVal[VALUE20] = pCycleInside[nStart].ptI.y;
+			}
+			dVal[VALUE11] = pCycleInside[nIndex].ptI.x;
+			dVal[VALUE21] = pCycleInside[nIndex].ptI.y;
+			strResult += MakeFloatValue(VALFLG_LINE, dVal);
 		}
-		else {
-			dVal[VALUE10] = pCycleInside[nStart].ptI.x;
-			dVal[VALUE20] = pCycleInside[nStart].ptI.y;
+		if ( GetFlg(MKDX_FLG_OUT_C) ) {
+			// 切削ﾃﾞｰﾀ(円または実点)
+			strResult += MakeDxfInfo(nType, MKDX_STR_CAMLINE);
+			dVal[VALUE10] = pCycleInside[nIndex].ptI.x;
+			dVal[VALUE20] = pCycleInside[nIndex].ptI.y;
+			DWORD dwFlags = VALFLG_START;
+			if ( nType == TYPE_CIRCLE ) {
+				dVal[VALUE40] = GetDbl(MKDX_DBL_CYCLER);
+				dwFlags |= VALFLG40;
+			}
+			strResult += MakeFloatValue(dwFlags, dVal);
 		}
-		dVal[VALUE11] = pCycleInside[nIndex].ptI.x;
-		dVal[VALUE21] = pCycleInside[nIndex].ptI.y;
-		strResult += MakeFloatValue(VALFLG_LINE, dVal);
-		// 切削ﾃﾞｰﾀ(円または実点)
-		strResult += MakeDxfInfo(nType, MKDX_STR_CAMLINE);
-		dVal[VALUE10] = pCycleInside[nIndex].ptI.x;
-		dVal[VALUE20] = pCycleInside[nIndex].ptI.y;
-		DWORD dwFlags = VALFLG_START;
-		if ( nType == TYPE_CIRCLE ) {
-			dVal[VALUE40] = GetDbl(MKDX_DBL_CYCLER);
-			dwFlags |= VALFLG40;
-		}
-		strResult += MakeFloatValue(dwFlags, dVal);
 	}
 	else {
-		if ( nStart < 0 ) {
-			pts = (pData->GetStartPoint().*pfnGetAxis)();
-			pti = (pData->GetIPoint().*pfnGetAxis)();
-			ptr = (pData->GetRPoint().*pfnGetAxis)();
-			dVal[VALUE10] = pts.x;
-			dVal[VALUE20] = pts.y;
-			dVal[VALUE11] = pti.x;
-			dVal[VALUE21] = pti.y;
-			strResult += MakeFloatValue(VALFLG_LINE, dVal);
-			if ( pti != ptr ) {
-				// ｲﾆｼｬﾙ点からR点
-				strResult += MakeDxfInfo(TYPE_LINE, MKDX_STR_MOVE);
-				dVal[VALUE10] = pti.x;
-				dVal[VALUE20] = pti.y;
-				dVal[VALUE11] = ptr.x;
-				dVal[VALUE21] = ptr.y;
+		if ( GetFlg(MKDX_FLG_OUT_M) ) {
+			if ( nStart < 0 ) {
+				pts = (pData->GetStartPoint().*pfnGetAxis)();
+				pti = (pData->GetIPoint().*pfnGetAxis)();
+				ptr = (pData->GetRPoint().*pfnGetAxis)();
+				dVal[VALUE10] = pts.x;
+				dVal[VALUE20] = pts.y;
+				dVal[VALUE11] = pti.x;
+				dVal[VALUE21] = pti.y;
 				strResult += MakeFloatValue(VALFLG_LINE, dVal);
+				if ( pti != ptr ) {
+					// ｲﾆｼｬﾙ点からR点
+					strResult += MakeDxfInfo(TYPE_LINE, MKDX_STR_MOVE);
+					dVal[VALUE10] = pti.x;
+					dVal[VALUE20] = pti.y;
+					dVal[VALUE11] = ptr.x;
+					dVal[VALUE21] = ptr.y;
+					strResult += MakeFloatValue(VALFLG_LINE, dVal);
+				}
+			}
+			else {
+				pts = pCycleInside[nStart].ptI;
+				pti = pCycleInside[nIndex].ptI;
+				ptr = pCycleInside[nIndex].ptR;
+				dVal[VALUE10] = pts.x;
+				dVal[VALUE20] = pts.y;
+				dVal[VALUE11] = pti.x;
+				dVal[VALUE21] = pti.y;
+				strResult += MakeFloatValue(VALFLG_LINE, dVal);
+				if ( pti != ptr ) {
+					strResult += MakeDxfInfo(TYPE_LINE, MKDX_STR_MOVE);
+					dVal[VALUE10] = pti.x;
+					dVal[VALUE20] = pti.y;
+					dVal[VALUE11] = ptr.x;
+					dVal[VALUE21] = ptr.y;
+					strResult += MakeFloatValue(VALFLG_LINE, dVal);
+				}
 			}
 		}
-		else {
-			pts = pCycleInside[nStart].ptI;
-			pti = pCycleInside[nIndex].ptI;
-			ptr = pCycleInside[nIndex].ptR;
-			dVal[VALUE10] = pts.x;
-			dVal[VALUE20] = pts.y;
-			dVal[VALUE11] = pti.x;
-			dVal[VALUE21] = pti.y;
+		if ( GetFlg(MKDX_FLG_OUT_C) ) {
+			// 切削ﾃﾞｰﾀ
+			strResult += MakeDxfInfo(TYPE_LINE, MKDX_STR_CAMLINE);
+			dVal[VALUE10] = pCycleInside[nIndex].ptR.x;
+			dVal[VALUE20] = pCycleInside[nIndex].ptR.y;
+			dVal[VALUE11] = pCycleInside[nIndex].ptC.x;
+			dVal[VALUE21] = pCycleInside[nIndex].ptC.y;
 			strResult += MakeFloatValue(VALFLG_LINE, dVal);
-			if ( pti != ptr ) {
-				strResult += MakeDxfInfo(TYPE_LINE, MKDX_STR_MOVE);
-				dVal[VALUE10] = pti.x;
-				dVal[VALUE20] = pti.y;
-				dVal[VALUE11] = ptr.x;
-				dVal[VALUE21] = ptr.y;
-				strResult += MakeFloatValue(VALFLG_LINE, dVal);
-			}
 		}
-		// 切削ﾃﾞｰﾀ
-		strResult += MakeDxfInfo(TYPE_LINE, MKDX_STR_CAMLINE);
-		dVal[VALUE10] = pCycleInside[nIndex].ptR.x;
-		dVal[VALUE20] = pCycleInside[nIndex].ptR.y;
-		dVal[VALUE11] = pCycleInside[nIndex].ptC.x;
-		dVal[VALUE21] = pCycleInside[nIndex].ptC.y;
-		strResult += MakeFloatValue(VALFLG_LINE, dVal);
 	}
+
 	return strResult;
 }
 

@@ -23,6 +23,7 @@ public:
 	CString	m_strDXFFileName;
 	int		m_nPlane;
 	//}}AFX_DATA
+	BOOL			m_bOut[4];
 	CString			m_strLayer[4];
 	CComboBox		m_cbLineType[4];
 	CColComboBox	m_ctColor[4];

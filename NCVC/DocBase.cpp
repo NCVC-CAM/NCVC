@@ -20,7 +20,7 @@ static UINT FileChangeNotificationThread(LPVOID pParam);
 BOOL CDocBase::OnOpenDocument(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
 {
 	ASSERT( pWnd );
-	m_hFileChangeThread = NULL;
+	m_pFileChangeThread = NULL;
 
 	try {
 		// ﾌｧｲﾙ監視ｽﾚｯﾄﾞ起動
@@ -28,12 +28,12 @@ BOOL CDocBase::OnOpenDocument(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
 		pParam->lpstrFileName = lpstrFileName;
 		pParam->hWndFrame	= pWnd->GetSafeHwnd();
 		pParam->hFinish		= HANDLE(m_evFinish);
-		CWinThread* pThread	= AfxBeginThread(FileChangeNotificationThread, pParam,
+		m_pFileChangeThread = AfxBeginThread(FileChangeNotificationThread, pParam,
 									THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
-		m_hFileChangeThread	= ::NCVC_DuplicateHandle(pThread->m_hThread);
-		if ( !m_hFileChangeThread )
-			::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-		pThread->ResumeThread();
+		if ( m_pFileChangeThread ) {
+			m_pFileChangeThread->m_bAutoDelete = FALSE;
+			m_pFileChangeThread->ResumeThread();
+		}
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -46,29 +46,22 @@ BOOL CDocBase::OnOpenDocument(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
 
 void CDocBase::OnCloseDocument(void)
 {
-	if ( !m_hFileChangeThread )
+	if ( !m_pFileChangeThread )
 		return;
 
 	m_evFinish.SetEvent();
 #ifdef _DEBUG
 	CMagaDbg	dbg("CDocBase::OnCloseDocument()", DBG_BLUE);
-	if ( ::WaitForSingleObject(m_hFileChangeThread, INFINITE) == WAIT_FAILED ) {
+	if ( ::WaitForSingleObject(m_pFileChangeThread->m_hThread, INFINITE) == WAIT_FAILED ) {
 		dbg.printf("WaitForSingleObject() Fail!");
 		::NC_FormatMessage();
 	}
 	else
 		dbg.printf("WaitForSingleObject() OK");
-	if ( !::CloseHandle(m_hFileChangeThread) ) {
-		dbg.printf("CloseHandle() Fail!");
-		::NC_FormatMessage();
-	}
-	else
-		dbg.printf("CloseHandle() OK");
 #else
-	::WaitForSingleObject(m_hFileChangeThread, INFINITE);
-	::CloseHandle(m_hFileChangeThread);
+	::WaitForSingleObject(m_pFileChangeThread->m_hThread, INFINITE);
 #endif
-	m_hFileChangeThread = NULL;
+	delete	m_pFileChangeThread;
 }
 
 BOOL CDocBase::UpdateModifiedTitle(BOOL bModified, CString& strTitle)
@@ -127,22 +120,18 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("FileChangeNotifyThread()", DBG_RED);
-	CString		dbg_strFile;
 #endif
 	HANDLE	hEvent[2];		// 0:ﾄﾞｷｭﾒﾝﾄｸﾗｽの終了通知ｲﾍﾞﾝﾄﾊﾝﾄﾞﾙ
 							// 1:ﾌｧｲﾙ変更通知ﾊﾝﾄﾞﾙ
 
 	LPFNCNGTHREADPARAM pThreadParam = reinterpret_cast<LPFNCNGTHREADPARAM>(pParam);
-	CString	strFileName(pThreadParam->lpstrFileName);
+	CString	strFileName(pThreadParam->lpstrFileName), strPath, strFile;
 	HWND	hWndFrame = pThreadParam->hWndFrame;
 	hEvent[0] = pThreadParam->hFinish;
 	delete	pThreadParam;
-#ifdef _DEBUG
-	{
-		CString	strPath;
-		Path_Name_From_FullPath(strFileName, strPath, dbg_strFile);
-	}
-#endif
+
+	// ﾌｧｲﾙのﾊﾟｽ名取得
+	Path_Name_From_FullPath(strFileName, strPath, strFile);
 
 	// ﾌｧｲﾙの現在日時を取得
 	CFileStatus		fStatus;
@@ -150,29 +139,25 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 	ULONGLONG		llSize;
 	if ( !CFile::GetStatus(strFileName, fStatus) ) {
 #ifdef _DEBUG
-		dbg.printf("GetStatus() Error (TimeStamp) \"%s\"", dbg_strFile);
+		dbg.printf("GetStatus() Error (TimeStamp) \"%s\"", strFile);
 #endif
 		return 0;
 	}
 	fLastTime = fStatus.m_mtime;	// ﾌｧｲﾙ最終変更日時
 	llSize    = fStatus.m_size;		// ﾌｧｲﾙｻｲｽﾞ
-	// ﾌｧｲﾙのﾊﾟｽ名取得と変更通知ｾｯﾄ
-	{
-		CString	strPath, strFile;
-		Path_Name_From_FullPath(strFileName, strPath, strFile);
-		hEvent[1] = FindFirstChangeNotification(strPath, FALSE,
-						FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE);
-		if ( hEvent[1] == INVALID_HANDLE_VALUE ) {
+	// 変更通知ｾｯﾄ
+	hEvent[1] = FindFirstChangeNotification(strPath, FALSE,
+		FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME);
+	if ( hEvent[1] == INVALID_HANDLE_VALUE ) {
 #ifdef _DEBUG
-			NC_FormatMessage();
-			dbg.printf("FindFirstChangeNotification() Error \"%s\"", strPath);
+		dbg.printf("FindFirstChangeNotification() Error \"%s\"", strPath);
+		NC_FormatMessage();
 #endif
-			return 0;
-		}
+		return 0;
 	}
 
 #ifdef _DEBUG
-	dbg.printf("Start! \"%s\"", dbg_strFile);
+	dbg.printf("Start! \"%s\"", strFile);
 #endif
 	BOOL	bResult = TRUE;
 	DWORD	dwResult;
@@ -188,40 +173,50 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 			if ( CFile::GetStatus(strFileName, fStatus) ) {
 				if ( fLastTime!=fStatus.m_mtime || llSize!=fStatus.m_size ) {
 #ifdef _DEBUG
-					dbg.printf("Change! \"%s\"", dbg_strFile);
+					dbg.printf("Change! \"%s\"", strFile);
 #endif
 					fLastTime = fStatus.m_mtime;
 					llSize    = fStatus.m_size;
 					PostMessage(hWndFrame, WM_USERFILECHANGENOTIFY, NULL, NULL);
 				}
-#ifdef _DEBUG
-				else
-					dbg.printf("File does not changed. \"%s\"", dbg_strFile);
-#endif
 			}
 #ifdef _DEBUG
 			else
-				dbg.printf("GetStatus() Error \"%s\"", dbg_strFile);
+				dbg.printf("GetStatus() Error \"%s\"", strFile);
 #endif
-			if ( !FindNextChangeNotification(hEvent[1]) ) {
+			if ( FindNextChangeNotification(hEvent[1]) )
+				break;
+
 #ifdef _DEBUG
-				NC_FormatMessage();
+			dbg.printf("FindNextChangeNotification() Error \"%s\"", strPath);
 #endif
-				bResult = FALSE;
-			}
-			break;
+			// through;
 
 		default:
 #ifdef _DEBUG
 			NC_FormatMessage();
 #endif
+			// 一度ﾊﾝﾄﾞﾙをｸﾛｰｽﾞして再ﾁｬﾚﾝｼﾞ
+			if ( FindCloseChangeNotification(hEvent[1]) ) {
+				hEvent[1] = FindFirstChangeNotification(strPath, FALSE,
+					FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME);
+				if ( hEvent[1] != INVALID_HANDLE_VALUE )
+					break;		// 再ﾁｬﾚﾝｼﾞ成功！
+#ifdef _DEBUG
+				else {
+					dbg.printf("FindFirstChangeNotification() Retry Error \"%s\"", strPath);
+					NC_FormatMessage();
+				}
+#endif
+			}
 			bResult = FALSE;
 		}
 	}
 
-	FindCloseChangeNotification(hEvent[1]);
+	if ( hEvent[1] != INVALID_HANDLE_VALUE )
+		FindCloseChangeNotification(hEvent[1]);
 #ifdef _DEBUG
-	dbg.printf("End Thread \"%s\"", dbg_strFile);
+	dbg.printf("End Thread \"%s\"", strFile);
 #endif
 	return 0;
 }

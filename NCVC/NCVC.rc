@@ -165,6 +165,7 @@ BEGIN
     POPUP "ﾌｧｲﾙ(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
+        MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
         MENUITEM SEPARATOR
         MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1, GRAYED
         MENUITEM SEPARATOR
@@ -209,6 +210,7 @@ BEGIN
     POPUP "ﾌｧｲﾙ(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
+        MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
         MENUITEM "ｶｰｿﾙ位置に読み込み(&I)...\tIns",     ID_FILE_NCINSERT
         MENUITEM "閉じて開く(&L)...",                ID_FILE_CLANDOP
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
@@ -313,6 +315,7 @@ BEGIN
     POPUP "ﾌｧｲﾙ(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
+        MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
         MENUITEM "閉じて開く(&L)...",                ID_FILE_CLANDOP
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
         MENUITEM SEPARATOR
@@ -356,6 +359,7 @@ BEGIN
             MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
             MENUITEM SEPARATOR
             MENUITEM "自動輪郭処理...",                   ID_EDIT_SHAPE_AUTO
+            MENUITEM "ｵﾌｾｯﾄ交点除去",                   2007
         END
     END
     POPUP "表示(&V)"
@@ -447,6 +451,7 @@ BEGIN
             MENUITEM "加工指示の削除\tDel",                ID_EDIT_SHAPE_DEL
             MENUITEM SEPARATOR
             MENUITEM "自動輪郭処理...",                   ID_EDIT_SHAPE_AUTO
+            MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
         END
         MENUITEM SEPARATOR
         MENUITEM "図形ﾌｨｯﾄ(&O)\tHome",            ID_VIEW_FIT
@@ -550,6 +555,8 @@ IDR_DXFPOPUP2 MENU
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM "形状加工生成...\tAlt+F7",           ID_FILE_DXF2NCD_SHAPE
+        MENUITEM SEPARATOR
         MENUITEM "方向\tF9",                      ID_EDIT_SHAPE_VEC
         MENUITEM "開始位置\tF10",                   ID_EDIT_SHAPE_START
         MENUITEM "輪郭\tF11",                     ID_EDIT_SHAPE_OUT
@@ -562,7 +569,7 @@ BEGIN
         MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
         MENUITEM SEPARATOR
         MENUITEM "自動輪郭処理...",                   ID_EDIT_SHAPE_AUTO
-        MENUITEM "形状加工生成...\tAlt+F7",           ID_FILE_DXF2NCD_SHAPE
+        MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
     END
 END
 
@@ -583,6 +590,7 @@ BEGIN
     "M",            ID_NCVIEW_MAXRECT,      VIRTKEY, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
     "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL, NOINVERT
+    "T",            ID_FILE_THUMBNAIL,      VIRTKEY, CONTROL, NOINVERT
     "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
     VK_DELETE,      ID_EDIT_CUT,            VIRTKEY, SHIFT, NOINVERT
     VK_DOWN,        ID_VIEW_DW,             VIRTKEY, NOINVERT
@@ -641,8 +649,8 @@ BEGIN
     CONTROL         105,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 1.51a",IDC_STATIC,86,166,130,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 1997-2007 MNCT-S K.Magara",IDC_STATIC,86,182,130,8
+    LTEXT           "NCVC Version 1.73",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 1997-2009 MNCT-S K.Magara",IDC_STATIC,86,182,130,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
 
@@ -659,29 +667,26 @@ BEGIN
     DEFPUSHBUTTON   "閉じる(&C)",IDCANCEL,115,222,50,14
 END
 
-IDD_DXFEDIT_AUTOWORKING DIALOGEX 0, 0, 230, 300
+IDD_DXFEDIT_AUTOWORKING DIALOGEX 0, 0, 231, 203
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "自動処理"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
     CONTROL         "輪郭加工(&R)",IDC_AUTO_SELECT_OUTLINE,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,13,20,53,10
-    CONTROL         "ﾎﾟｹｯﾄ加工(&P)",IDC_AUTO_SELECT_POCKET,"Button",BS_AUTORADIOBUTTON | WS_DISABLED,13,37,55,10
+    CONTROL         "ﾎﾟｹｯﾄ加工(&P)",IDC_AUTO_SELECT_POCKET,"Button",BS_AUTORADIOBUTTON,13,37,55,10
     GROUPBOX        "機能選択",IDC_STATIC,7,7,66,50,WS_GROUP
     LTEXT           "ｵﾌｾｯﾄ値(&F)",IDC_STATIC,90,21,36,8
     EDITTEXT        IDC_AUTO_OFFSET,134,19,37,12,ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,177,21,24,8
-    CONTROL         "鋭角の外側を丸める(&A)",IDC_AUTO_ACUTEROUND,"Button",BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_DISABLED | WS_TABSTOP,90,37,81,10
-    CONTROL         "自動輪郭処理(&1)",IDC_AUTOSHAPE_1,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,15,83,65,10
-    CONTROL         "自動ﾎﾟｹｯﾄ処理(&2)",IDC_AUTOSHAPE_2,"Button",BS_AUTORADIOBUTTON | BS_MULTILINE | WS_DISABLED,15,129,69,10
-    CONTROL         "全部内側(&3)",IDC_AUTOSHAPE_3,"Button",BS_AUTORADIOBUTTON | BS_MULTILINE,15,175,51,10
-    CONTROL         "全部外側(&4)",IDC_AUTOSHAPE_4,"Button",BS_AUTORADIOBUTTON | BS_MULTILINE,15,221,51,10
-    LTEXT           "　他のｵﾌﾞｼﾞｪｸﾄに含まれる最小内周ｵﾌﾞｼﾞｪｸﾄに内側の加工指示，\nそれ以外は外側の加工指示を行います",IDC_STATIC,15,99,196,18
-    LTEXT           "　最大外周と最小内周の占有矩形を持つｵﾌﾞｼﾞｪｸﾄに\n内側の加工指示を行います",IDC_STATIC,15,145,196,18,WS_DISABLED
-    LTEXT           "　全てのｵﾌﾞｼﾞｪｸﾄに内側の加工指示を行います",IDC_STATIC,15,191,196,18
-    LTEXT           "　全てのｵﾌﾞｼﾞｪｸﾄに外側の加工指示を行います",IDC_STATIC,15,237,196,18
-    GROUPBOX        "詳細選択",IDC_STATIC,7,67,216,193,WS_GROUP
-    DEFPUSHBUTTON   "&OK",IDOK,57,279,50,14
-    PUSHBUTTON      "ｷｬﾝｾﾙ(&C)",IDCANCEL,123,279,50,14
+    LTEXT           "繰り返し数(&L)",IDC_STATIC,90,38,39,8
+    EDITTEXT        IDC_AUTO_LOOPCNT,134,36,37,12,ES_RIGHT | ES_AUTOHSCROLL
+    CONTROL         "鋭角の外側を丸める(&A)",IDC_AUTO_ACUTEROUND,"Button",BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_DISABLED | WS_TABSTOP,7,70,81,10
+    LTEXT           "外枠走査線(&S)",IDC_STATIC,15,113,44,8
+    COMBOBOX        IDC_AUTO_SCANLINE,87,111,48,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "円ﾃﾞｰﾀはｽｸﾛｰﾙ切削(&E)",IDC_AUTO_CIRCLESCROLL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,137,86,10
+    GROUPBOX        "ﾎﾟｹｯﾄ加工ｵﾌﾟｼｮﾝ",IDC_STATIC,7,95,217,69,WS_GROUP
+    DEFPUSHBUTTON   "&OK",IDOK,57,182,50,14
+    PUSHBUTTON      "ｷｬﾝｾﾙ(&C)",IDCANCEL,123,182,50,14
 END
 
 IDD_DXFEDIT_ORG DIALOGEX 0, 0, 162, 95
@@ -814,25 +819,25 @@ BEGIN
     EDITTEXT        IDC_MKNC_NCFILE,54,39,136,12,ES_AUTOHSCROLL
     PUSHBUTTON      "参照...",IDC_MKNC_NCFILEUP,195,19,35,14
     GROUPBOX        "DXFﾌｧｲﾙ名",IDC_STATIC,7,7,237,54,WS_GROUP
-    LTEXT           "原点ﾚｲﾔ(&O)",IDC_STATIC,14,85,36,8
-    EDITTEXT        IDC_DXF_ORIGIN,60,83,50,12,ES_AUTOHSCROLL
-    COMBOBOX        IDC_VIEWSETUP3_CB_ORIGIN,125,83,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_MKDX1_COLOR_O,185,83,49,37,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "切削ﾚｲﾔ(&C)",IDC_STATIC,14,105,36,8
-    EDITTEXT        IDC_DXF_CAMLINE,60,103,50,12,ES_AUTOHSCROLL
-    COMBOBOX        IDC_VIEWSETUP3_CB_CUTTER,125,103,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_MKDX1_COLOR_C,185,103,49,37,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "移動ﾚｲﾔ(&M)",IDC_STATIC,14,125,37,8
-    EDITTEXT        IDC_DXF_MOVE,60,123,50,12,ES_AUTOHSCROLL
-    COMBOBOX        IDC_VIEWSETUP3_CB_MOVE,125,123,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_MKDX1_COLOR_M,185,123,49,37,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "補正ﾚｲﾔ(&H)",IDC_STATIC,14,145,36,8
-    EDITTEXT        IDC_DXF_CORRECT,60,143,50,12,ES_AUTOHSCROLL
-    COMBOBOX        IDC_VIEWSETUP3_CB_OUTLINE,125,143,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_MKDX1_COLOR_H,185,143,49,37,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "原点ﾚｲﾔ(&O)",IDC_MKDX1_OUT_O,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,84,51,10
+    EDITTEXT        IDC_DXF_ORIGIN,74,83,50,12,ES_AUTOHSCROLL
+    COMBOBOX        IDC_VIEWSETUP3_CB_ORIGIN,135,83,48,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MKDX1_COLOR_O,193,83,40,120,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "切削ﾚｲﾔ(&C)",IDC_MKDX1_OUT_C,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,104,51,10
+    EDITTEXT        IDC_DXF_CAMLINE,74,103,50,12,ES_AUTOHSCROLL
+    COMBOBOX        IDC_VIEWSETUP3_CB_CUTTER,135,103,48,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MKDX1_COLOR_C,193,103,40,120,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "移動ﾚｲﾔ(&M)",IDC_MKDX1_OUT_M,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,124,52,10
+    EDITTEXT        IDC_DXF_MOVE,74,123,50,12,ES_AUTOHSCROLL
+    COMBOBOX        IDC_VIEWSETUP3_CB_MOVE,135,123,48,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MKDX1_COLOR_M,193,123,40,120,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "補正ﾚｲﾔ(&H)",IDC_MKDX1_OUT_H,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,144,51,10
+    EDITTEXT        IDC_DXF_CORRECT,74,143,50,12,ES_AUTOHSCROLL
+    COMBOBOX        IDC_VIEWSETUP3_CB_OUTLINE,135,143,48,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MKDX1_COLOR_H,193,143,40,120,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "ﾚｲﾔ情報",IDC_STATIC,7,70,237,96,WS_GROUP
     LTEXT           "平面指定(&P)",IDC_STATIC,7,178,37,8
-    COMBOBOX        IDC_MKDX1_PLANE,60,176,45,74,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MKDX1_PLANE,60,176,45,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_MAKEDXF2 DIALOGEX 0, 0, 251, 205
@@ -933,7 +938,7 @@ BEGIN
     COMBOBOX        IDC_MKNCEX_LAYERTOINITFILE,54,166,136,80,CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "参照...",IDC_MKNCEX_LAYERTOINIT_UP,195,145,35,14
     PUSHBUTTON      "編集...",IDC_MKNCEX_LAYERTOINIT_ED,195,165,35,14
-    GROUPBOX        "ﾚｲﾔ名とZ座標との関係",IDC_STATIC,7,133,237,54,WS_GROUP
+    GROUPBOX        "ﾚｲﾔ名と各ﾊﾟﾗﾒｰﾀの関係",IDC_STATIC,7,133,237,54,WS_GROUP
     CONTROL         "NCｺｰﾄﾞ生成後に開く(&V)",IDC_MKNC_VIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,200,85,10
 END
 
@@ -1321,40 +1326,34 @@ BEGIN
     DEFPUSHBUTTON   "移動(&J)",IDOK,33,28,41,16
 END
 
-IDD_NCVIEW_WORK DIALOGEX 0, 0, 251, 115
+IDD_NCVIEW_WORK DIALOGEX 0, 0, 255, 115
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
 CAPTION "ﾜｰｸ矩形の表示"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
     LTEXT           "幅(&W)",IDC_STATIC,14,22,25,8
-    EDITTEXT        IDC_WORK_X,54,20,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
-    CONTROL         "Spin1",IDC_WORK_XSPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,86,22,9,15
-    LTEXT           "mm",IDC_STATIC,98,22,18,8
+    EDITTEXT        IDC_WORK_X,54,20,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,103,22,18,8
     LTEXT           "奥行(&D)",IDC_STATIC,14,43,25,8
-    EDITTEXT        IDC_WORK_Y,54,41,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
-    CONTROL         "Spin2",IDC_WORK_YSPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,86,44,9,13
-    LTEXT           "mm",IDC_STATIC,98,43,18,8
+    EDITTEXT        IDC_WORK_Y,54,41,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,103,43,18,8
     LTEXT           "高さ(&H)",IDC_STATIC,14,64,25,8
-    EDITTEXT        IDC_WORK_Z,54,62,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
-    CONTROL         "Spin3",IDC_WORK_ZSPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,85,64,9,13
-    LTEXT           "mm",IDC_STATIC,98,64,18,8
-    GROUPBOX        "矩形の大きさ",IDC_STATIC,7,7,113,76,WS_GROUP
-    LTEXT           "ｵﾌｾｯﾄ(&X)",IDC_STATIC,133,22,34,8
-    EDITTEXT        IDC_WORK_XO,173,20,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
-    CONTROL         "Spin1",IDC_WORK_XOSPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,205,22,9,15
-    LTEXT           "mm",IDC_STATIC,219,22,18,8
-    LTEXT           "ｵﾌｾｯﾄ(&Y)",IDC_STATIC,133,43,34,8
-    EDITTEXT        IDC_WORK_YO,173,41,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
-    CONTROL         "Spin1",IDC_WORK_YOSPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,205,43,9,15
-    LTEXT           "mm",IDC_STATIC,219,43,18,8
-    LTEXT           "ｵﾌｾｯﾄ(&Z)",IDC_STATIC,133,64,34,8
-    EDITTEXT        IDC_WORK_ZO,173,62,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
-    CONTROL         "Spin1",IDC_WORK_ZOSPIN,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,205,63,9,15
-    LTEXT           "mm",IDC_STATIC,219,64,18,8
-    GROUPBOX        "原点からのｵﾌｾｯﾄ",IDC_STATIC,125,7,113,76,WS_GROUP
-    DEFPUSHBUTTON   "表示(&V)",IDOK,46,92,71,16
-    PUSHBUTTON      "非表示(&C)",IDC_WORK_HIDE,133,92,71,16
+    EDITTEXT        IDC_WORK_Z,54,62,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,103,64,18,8
+    GROUPBOX        "矩形の大きさ",IDC_STATIC,7,7,118,76,WS_GROUP
+    LTEXT           "ｵﾌｾｯﾄ(&X)",IDC_STATIC,138,22,34,8
+    EDITTEXT        IDC_WORK_XO,178,20,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,229,22,18,8
+    LTEXT           "ｵﾌｾｯﾄ(&Y)",IDC_STATIC,138,43,34,8
+    EDITTEXT        IDC_WORK_YO,178,41,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,229,43,18,8
+    LTEXT           "ｵﾌｾｯﾄ(&Z)",IDC_STATIC,138,64,34,8
+    EDITTEXT        IDC_WORK_ZO,178,62,42,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,229,64,18,8
+    GROUPBOX        "原点からのｵﾌｾｯﾄ",IDC_STATIC,130,7,118,76,WS_GROUP
+    DEFPUSHBUTTON   "表示(&V)",IDOK,48,92,71,16
+    PUSHBUTTON      "非表示(&C)",IDC_WORK_HIDE,135,92,71,16
 END
 
 IDD_SHAPE_PROP DIALOGEX 0, 0, 207, 155
@@ -1438,21 +1437,22 @@ BEGIN
     PUSHBUTTON      "背景色2",IDC_VIEWSETUP2_BT_BACKGROUND2,109,19,46,16
     LTEXT           "",IDC_VIEWSETUP2_ST_PANE,13,40,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
     PUSHBUTTON      "ﾍﾟｲﾝ文字色",IDC_VIEWSETUP2_BT_PANE,32,39,72,16
-    LTEXT           "",IDC_VIEWSETUP2_ST_X,13,80,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
-    PUSHBUTTON      "Ｘ軸ｶﾞｲﾄﾞ",IDC_VIEWSETUP2_BT_X,32,79,72,16
-    COMBOBOX        IDC_VIEWSETUP2_CB_X,109,81,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "",IDC_VIEWSETUP2_ST_Y,13,100,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
-    PUSHBUTTON      "Ｙ軸ｶﾞｲﾄﾞ",IDC_VIEWSETUP2_BT_Y,32,99,72,16
-    COMBOBOX        IDC_VIEWSETUP2_CB_Y,109,101,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "",IDC_VIEWSETUP2_ST_Z,13,120,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
-    PUSHBUTTON      "Ｚ軸ｶﾞｲﾄﾞ",IDC_VIEWSETUP2_BT_Z,32,119,72,16
-    COMBOBOX        IDC_VIEWSETUP2_CB_Z,109,121,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "&X",IDC_STATIC,13,143,8,8,NOT WS_GROUP
-    EDITTEXT        IDC_VIEWSETUP2_X,22,141,32,12,ES_RIGHT | ES_AUTOHSCROLL
-    LTEXT           "&Y",IDC_STATIC,62,143,8,8,NOT WS_GROUP
-    EDITTEXT        IDC_VIEWSETUP2_Y,73,141,32,12,ES_RIGHT | ES_AUTOHSCROLL
-    LTEXT           "&Z",IDC_STATIC,113,143,8,8,NOT WS_GROUP
-    EDITTEXT        IDC_VIEWSETUP2_Z,124,141,32,12,ES_RIGHT | ES_AUTOHSCROLL
+    LTEXT           "",IDC_VIEWSETUP2_ST_X,13,60,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "Ｘ軸ｶﾞｲﾄﾞ",IDC_VIEWSETUP2_BT_X,32,59,72,16
+    COMBOBOX        IDC_VIEWSETUP2_CB_X,109,61,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "",IDC_VIEWSETUP2_ST_Y,13,80,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "Ｙ軸ｶﾞｲﾄﾞ",IDC_VIEWSETUP2_BT_Y,32,79,72,16
+    COMBOBOX        IDC_VIEWSETUP2_CB_Y,109,81,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "",IDC_VIEWSETUP2_ST_Z,13,100,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "Ｚ軸ｶﾞｲﾄﾞ",IDC_VIEWSETUP2_BT_Z,32,99,72,16
+    COMBOBOX        IDC_VIEWSETUP2_CB_Z,109,101,49,37,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "&X",IDC_STATIC,13,123,8,8,NOT WS_GROUP
+    EDITTEXT        IDC_VIEWSETUP2_X,22,121,32,12,ES_RIGHT | ES_AUTOHSCROLL
+    LTEXT           "&Y",IDC_STATIC,62,123,8,8,NOT WS_GROUP
+    EDITTEXT        IDC_VIEWSETUP2_Y,73,121,32,12,ES_RIGHT | ES_AUTOHSCROLL
+    LTEXT           "&Z",IDC_STATIC,113,123,8,8,NOT WS_GROUP
+    EDITTEXT        IDC_VIEWSETUP2_Z,124,121,32,12,ES_RIGHT | ES_AUTOHSCROLL
+    CONTROL         "ｶﾞｲﾄﾞ軸に目盛を表示(&S)",IDC_VIEWSETUP2_SCALE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,142,84,10
     CONTROL         "ｶﾞｲﾄﾞ軸の長さを拡大率に同期させる(&L)",IDC_VIEWSETUP2_GUIDE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,162,129,10
     GROUPBOX        "画面属性",IDC_STATIC,7,7,157,175,WS_GROUP
     LTEXT           "",IDC_VIEWSETUP2_ST_G0,176,20,15,15,SS_SUNKEN | NOT WS_GROUP,WS_EX_CLIENTEDGE
@@ -1575,6 +1575,41 @@ BEGIN
     PUSHBUTTON      "&DW",IDC_EXE_DOWN,157,213,25,14,NOT WS_TABSTOP
 END
 
+IDD_VIEW_SETUP5 DIALOGEX 0, 0, 334, 212
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "NCD-3"
+FONT 9, "MS UI Gothic", 0, 0, 0x1
+BEGIN
+    CONTROL         "ソリッド描画(&S)",IDC_VIEWSETUP5_SOLIDVIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,21,57,10
+    CONTROL         "G00移動軌跡ﾊﾟｽも表示(&0)",IDC_VIEWSETUP5_G00VIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,40,93,10
+    CONTROL         "ﾄﾞﾗｯｸﾞ中にもﾚﾝﾀﾞﾘﾝｸﾞ(&R)",IDC_VIEWSETUP5_DRAGRENDER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,61,86,10
+    GROUPBOX        "OpenGL表示属性",IDC_STATIC,7,7,157,78,WS_GROUP
+    LTEXT           "ﾃﾞﾌｫﾙﾄ工具径(&D)",IDC_STATIC,177,22,52,8
+    EDITTEXT        IDC_VIEWSETUP5_DEFAULTENDMILL,235,20,40,12,ES_RIGHT | ES_AUTOHSCROLL
+    LTEXT           "mm",IDC_STATIC,279,22,11,8
+    CONTROL         "Ｔ番号で認識(&T)",IDC_VIEWSETUP5_MILL_T,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,177,40,62,10
+    CONTROL         "コメントで認識(&M)",IDC_VIEWSETUP5_MILL_C,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,247,40,64,10
+    LTEXT           "工具タイプ(&E)",IDC_STATIC,177,62,38,8
+    COMBOBOX        IDC_VIEWSETUP5_MILL_TYPE,233,60,48,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "工具属性",IDC_STATIC,170,7,157,78,WS_GROUP
+    LTEXT           "テクスチャ画像",IDC_STATIC,7,101,39,8
+END
+
+IDD_THUMBNAIL DIALOGEX 0, 0, 455, 379
+STYLE DS_SETFONT | WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "サムネイル表示"
+FONT 9, "MS UI Gothic", 400, 0, 0x80
+BEGIN
+    CONTROL         "",IDC_THUMBNAIL_TREE,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | WS_BORDER | WS_HSCROLL | WS_TABSTOP,7,40,135,332
+    CONTROL         "",IDC_THUMBNAIL_VIEWPARENT,"Static",SS_ETCHEDFRAME | SS_NOTIFY,143,40,292,332
+    LTEXT           "並び替え(&S)",IDC_STATIC,154,17,39,8
+    COMBOBOX        IDC_THUMBNAIL_SORTNAME,198,15,70,90,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "平面指定(&P)",IDC_STATIC,290,17,37,8
+    COMBOBOX        IDC_THUMBNAIL_PLANE,340,15,40,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    SCROLLBAR       IDC_THUMBNAIL_SCROLL,436,40,12,332,SBS_VERT
+    LTEXT           "Static",IDC_THUMBNAIL_PATH,10,17,126,8
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1582,8 +1617,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,5,1,1
- PRODUCTVERSION 1,5,1,1
+ FILEVERSION 1,7,3,0
+ PRODUCTVERSION 1,7,3,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1601,15 +1636,15 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT-S"
             VALUE "FileDescription", "NCVC MFC ｱﾌﾟﾘｹｰｼｮﾝ"
-            VALUE "FileVersion", "1.5.1.1"
+            VALUE "FileVersion", "1.7.3.0"
             VALUE "InternalName", "NCVC.exe"
-            VALUE "LegalCopyright", "Copyright (C) 1997-2007 MNCT-S K.Magara"
+            VALUE "LegalCopyright", "Copyright (C) 1997-2009 MNCT-S K.Magara"
             VALUE "LegalTrademarks", "MNCT-S"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "1.5.1.1"
-            VALUE "SpecialBuild", "VC++.NET2005 with MFC"
+            VALUE "ProductVersion", "1.7.3.0"
+            VALUE "SpecialBuild", "VC++2008SP1 FeaturePack"
         END
     END
     BLOCK "VarFileInfo"
@@ -1646,9 +1681,9 @@ BEGIN
     IDD_DXFEDIT_AUTOWORKING, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 223
+        RIGHTMARGIN, 224
         TOPMARGIN, 7
-        BOTTOMMARGIN, 293
+        BOTTOMMARGIN, 196
     END
 
     IDD_DXFEDIT_ORG, DIALOG
@@ -1854,7 +1889,7 @@ BEGIN
     IDD_NCVIEW_WORK, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 244
+        RIGHTMARGIN, 248
         TOPMARGIN, 7
         BOTTOMMARGIN, 108
     END
@@ -1937,6 +1972,22 @@ BEGIN
         RIGHTMARGIN, 292
         TOPMARGIN, 7
         BOTTOMMARGIN, 227
+    END
+
+    IDD_VIEW_SETUP5, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 327
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 205
+    END
+
+    IDD_THUMBNAIL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 448
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 372
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -2158,6 +2209,51 @@ BEGIN
     0
 END
 
+IDD_DXFEDIT_AUTOWORKING DLGINIT
+BEGIN
+    IDC_AUTO_SCANLINE, 0x403, 5, 0
+0xc882, 0xb582, "\000" 
+    IDC_AUTO_SCANLINE, 0x403, 6, 0
+0x9558, 0x8cfb, 0x00fc, 
+    IDC_AUTO_SCANLINE, 0x403, 6, 0
+0x9559, 0x8cfb, 0x00fc, 
+    0
+END
+
+IDD_VIEW_SETUP5 DLGINIT
+BEGIN
+    IDC_VIEWSETUP5_MILL_TYPE, 0x403, 11, 0
+0x5883, 0x4e83, 0x4583, 0x4683, 0x4183, "\000" 
+    IDC_VIEWSETUP5_MILL_TYPE, 0x403, 7, 0
+0x7b83, 0x5b81, 0x8b83, "\000" 
+    0
+END
+
+IDD_THUMBNAIL DLGINIT
+BEGIN
+    IDC_THUMBNAIL_SORTNAME, 0x403, 13, 0
+0xa7cc, 0xd9b2, 0xbc96, 0x8f28, 0x8fb8, 0x2987, "\000" 
+    IDC_THUMBNAIL_SORTNAME, 0x403, 13, 0
+0xa7cc, 0xd9b2, 0xbc96, 0x8d28, 0x8f7e, 0x2987, "\000" 
+    IDC_THUMBNAIL_SORTNAME, 0x403, 15, 0
+0x588d, 0x5690, 0xfa93, 0x7495, 0x8f28, 0x8fb8, 0x2987, "\000" 
+    IDC_THUMBNAIL_SORTNAME, 0x403, 15, 0
+0x588d, 0x5690, 0xfa93, 0x7495, 0x8d28, 0x8f7e, 0x2987, "\000" 
+    IDC_THUMBNAIL_SORTNAME, 0x403, 11, 0
+0xb2bb, 0xdebd, 0x8f28, 0x8fb8, 0x2987, "\000" 
+    IDC_THUMBNAIL_SORTNAME, 0x403, 11, 0
+0xb2bb, 0xdebd, 0x8d28, 0x8f7e, 0x2987, "\000" 
+    IDC_THUMBNAIL_PLANE, 0x403, 4, 0
+0x5958, 0x005a, 
+    IDC_THUMBNAIL_PLANE, 0x403, 3, 0
+0x5958, "\000" 
+    IDC_THUMBNAIL_PLANE, 0x403, 3, 0
+0x5a58, "\000" 
+    IDC_THUMBNAIL_PLANE, 0x403, 3, 0
+0x5a59, "\000" 
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2192,7 +2288,7 @@ END
 
 STRINGTABLE 
 BEGIN
-    ID_APP_ABOUT            "プログラム情報、バージョン、著作権を表示します。\nバージョン情報"
+    ID_APP_ABOUT            "プログラム情報・バージョン・著作権を表示します。\nバージョン情報"
     ID_APP_EXIT             "アプリケーションを終了し、ファイルの保存を指示\\終了"
     ID_CONTEXT_HELP         "ｸﾘｯｸされたﾎﾞﾀﾝ、ﾒﾆｭｰまたはｳｨﾝﾄﾞｳのﾍﾙﾌﾟを表示\nﾍﾙﾌﾟ"
     ID_HELP                 "ﾍﾙﾌﾟ ﾄﾋﾟｯｸの一覧\nﾍﾙﾌﾟ ﾄﾋﾟｯｸ"
@@ -2287,6 +2383,7 @@ END
 STRINGTABLE 
 BEGIN
     IDS_COMMON_FORMAT       "%s%02d"
+    ID_FILE_THUMBNAIL       "ｻﾑﾈｲﾙ表示からファイルを開く\nｻﾑﾈｲﾙで開く"
     ID_FILE_DXF2NCD         "CADﾃﾞｰﾀからNCﾃﾞｰﾀを生成します\nNC生成(F7)"
     ID_FILE_DXF2NCD_EX1     "複数ﾚｲﾔのCADﾃﾞｰﾀからNCﾃﾞｰﾀを生成します\n拡張NC生成1(Ctrl+F7)"
     ID_FILE_DXF2NCD_EX2     "複数ﾚｲﾔのCADﾃﾞｰﾀからNCﾃﾞｰﾀを生成します\n拡張NC生成2(Shift+F7)"
@@ -2295,18 +2392,18 @@ END
 
 STRINGTABLE 
 BEGIN
-    ID_FILE_NCINSERT        "NCｺｰﾄﾞのｶｰｿﾙ位置に他のﾌｧｲﾙを読み込み，挿入します"
+    ID_FILE_NCINSERT        "NCｺｰﾄﾞのｶｰｿﾙ位置に他のﾌｧｲﾙを読み込み挿入します"
     ID_FILE_NCD2DXF         "NCﾃﾞｰﾀからDXFを出力します\nDXF出力(Ctrl+D)"
 END
 
 STRINGTABLE 
 BEGIN
     IDS_ERR_OUTOFMEM        "Out of memory"
-    IDS_ERR_CRITICAL        "ﾌﾟﾛｸﾞﾗﾑ内部で致命的なｴﾗｰが発生しました．処理を中断します．\nFile=%s\nLine=%d"
-    IDS_ERR_REGISTRY        "設定をﾚｼﾞｽﾄﾘに保存できませんでした．処理は継続します．"
+    IDS_ERR_CRITICAL        "ﾌﾟﾛｸﾞﾗﾑ内部で致命的なｴﾗｰが発生しました。処理を中断します。\nFile=%s\nLine=%d"
+    IDS_ERR_REGISTRY        "設定をﾚｼﾞｽﾄﾘに保存できませんでした。処理は継続します。"
     IDS_ERR_WRITESETTING    "%s\n設定ﾌｧｲﾙの書き出しに失敗しました"
     IDS_ERR_CLIPBOARD       "ｸﾘｯﾌﾟﾎﾞｰﾄﾞの操作に失敗しました"
-    IDS_ERR_MAXADD          "登録数の上限に達しました．これ以上は登録できません"
+    IDS_ERR_MAXADD          "登録数の上限に達しました。これ以上は登録できません"
 END
 
 STRINGTABLE 
@@ -2316,19 +2413,19 @@ END
 
 STRINGTABLE 
 BEGIN
-    ID_OPTION_MC            "各種工作機械の設定を行います．正しく設定しないと切削時間の計算ができません\n機械情報の設定"
+    ID_OPTION_MC            "各種工作機械の設定を行います。正しく設定しないと切削時間の計算ができません\n機械情報の設定"
     ID_OPTION_MCCOMBO       "\n機械情報選択履歴"
-    ID_OPTION_EDITMC        "各種工作機械の設定をﾃｷｽﾄｴﾃﾞｨﾀで行います．外部ｱﾌﾟﾘの１つ目にﾃｷｽﾄｴﾃﾞｨﾀを登録しておいてください"
+    ID_OPTION_EDITMC        "各種工作機械の設定をﾃｷｽﾄｴﾃﾞｨﾀで行います。外部ｱﾌﾟﾘの１つ目にﾃｷｽﾄｴﾃﾞｨﾀを登録しておいてください"
     ID_OPTION_DXF           "CADﾃﾞｰﾀの読み込みﾚｲﾔを設定します"
     ID_OPTION_MAKENC        "NC生成に必要な加工条件を設定します\n切削ﾊﾟﾗﾒｰﾀの設定(F8)"
-    ID_OPTION_EDITNC        "NC生成に必要な加工条件をﾃｷｽﾄｴﾃﾞｨﾀで編集します．外部ｱﾌﾟﾘの１つ目にﾃｷｽﾄｴﾃﾞｨﾀを登録しておいてください"
-    ID_OPTION_VIEW_SETUP    "画面表示の色，ﾏｳｽの動作をｶｽﾀﾏｲｽﾞできます\n表示属性"
+    ID_OPTION_EDITNC        "NC生成に必要な加工条件をﾃｷｽﾄｴﾃﾞｨﾀで編集します。外部ｱﾌﾟﾘの１つ目にﾃｷｽﾄｴﾃﾞｨﾀを登録しておいてください"
+    ID_OPTION_VIEW_SETUP    "画面表示の色、ﾏｳｽの動作をｶｽﾀﾏｲｽﾞできます\n表示属性"
 END
 
 STRINGTABLE 
 BEGIN
     ID_OPTION_VIEW_INPORT   "ｴｸｽﾎﾟｰﾄした表示属性(ﾌｫﾝﾄ情報除く)を取り込みます"
-    ID_OPTION_VIEW_EXPORT   "現在の表示属性をﾃｷｽﾄﾌｧｲﾙに出力します．自分の設定を保存するとき，また他人に自分の設定を渡すのに使います"
+    ID_OPTION_VIEW_EXPORT   "現在の表示属性をﾃｷｽﾄﾌｧｲﾙに出力します。自分の設定を保存するとき、また他人に自分の設定を渡すのに使います"
     ID_OPTION_EXEC          "外部ｱﾌﾟﾘｹｰｼｮﾝの設定を行います\n外部ｱﾌﾟﾘ"
     ID_OPTION_EXT           "NCVCで読み込む拡張子を登録します\n拡張子登録"
 END
@@ -2360,28 +2457,31 @@ BEGIN
     IDS_REG_LOGFONT         "LOGFONT"
     IDS_REG_CUSTOMCOLOR     "CustomColor"
     IDS_REG_EXTENSION       "Extension"
+    IDS_REG_THUMBNAIL_SORT  "ThumbnailSort"
+    IDS_REG_THUMBNAIL_PLANE "ThumbnailPlane"
 END
 
 STRINGTABLE 
 BEGIN
+    IDS_ERR_MAKEDXFLAYER    "少なくとも１つ以上のレイヤを指定してください"
     IDS_ERR_MAKEMULTILAYER  "切削対象ﾚｲﾔを１つ以上指定してください"
-    IDS_ERR_FAILMULTILAYER  "個別出力設定の以下のﾚｲﾔ\n%s\nには生成ﾃﾞｰﾀが存在しませんでした．切削条件ﾌｧｲﾙ等を確認してください"
+    IDS_ERR_FAILMULTILAYER  "個別出力設定の以下のﾚｲﾔ\n%s\nには生成ﾃﾞｰﾀが存在しませんでした。切削条件ﾌｧｲﾙ等を確認してください"
     IDS_ERR_OVERLAPPINGFILE "個別出力ﾌｧｲﾙが重複しています"
-    IDS_ERR_MAKEMULTILAYER_Z "以下のﾚｲﾔは，切削条件ﾌｧｲﾙのR点と強制Z座標との関係が不正です\n%s"
+    IDS_ERR_MAKEMULTILAYER_Z "以下のﾚｲﾔは切削条件ﾌｧｲﾙのR点と強制Z座標との関係が不正です\n%s"
     IDS_ERR_MAKECUSTOM      "切削条件ﾌｧｲﾙのｶｽﾀﾑﾍｯﾀﾞｰ/ﾌｯﾀｰ読み込みでｴﾗｰが発生しました\n無視して生成を始めます"
-    IDS_ERR_MAKENC          "NC生成の対象ﾃﾞｰﾀが見つかりませんでした．\n切削条件ﾌｧｲﾙを確認してください"
+    IDS_ERR_MAKENC          "NC生成の対象ﾃﾞｰﾀが見つかりませんでした。\n切削条件ﾌｧｲﾙを確認してください"
     IDS_ERR_DATAWRITE       "ﾃﾞｰﾀ保存でｴﾗｰが発生しました\nﾌｧｲﾙ名:%s"
     IDS_ERR_DXF2NCDINIT_EX  "複数ﾚｲﾔ切削条件関係ﾌｧｲﾙの読み書きに失敗しました\nﾌｧｲﾙ名：%s"
     IDS_ERR_DXF2NCDINIT     "切削条件ﾌｧｲﾙの読み書きに失敗しました\nﾌｧｲﾙ名：%s"
-    IDS_ERR_DXFDATAORG      "原点ﾚｲﾔが見つかりませんでした．\nCADﾃﾞｰﾀを確認してください"
-    IDS_ERR_DXFDATACUT      "切削ﾚｲﾔが見つかりませんでした．\nCADﾃﾞｰﾀを確認してください"
+    IDS_ERR_DXFDATAORG      "原点ﾚｲﾔが見つかりませんでした。\nCADﾃﾞｰﾀを確認してください"
+    IDS_ERR_DXFDATACUT      "切削ﾚｲﾔが見つかりませんでした。\nCADﾃﾞｰﾀを確認してください"
 END
 
 STRINGTABLE 
 BEGIN
-    IDS_ERR_DLL             "以下のアドインDLL\n%s\nが返した内部情報が現在のNCVCのバージョンと合いません\nアドインDLLをバージョンアップするか，消去してください"
+    IDS_ERR_DLL             "以下のアドインDLL\n%s\nが返した内部情報が現在のNCVCのバージョンと合いません\nアドインDLLをバージョンアップするか消去してください"
     IDS_ERR_PROCESS         "外部編集ﾌﾟﾛｾｽを起動できませんでした"
-    IDS_ERR_THREAD          "現在ﾊﾞｯｸｸﾞﾗｳﾝﾄﾞで処理中です．終了できません"
+    IDS_ERR_THREAD          "現在ﾊﾞｯｸｸﾞﾗｳﾝﾄﾞで処理中です。終了できません"
     IDS_ERR_NCDATA          "有効なNCﾃﾞｰﾀがありませんでした"
     IDS_ERR_FILEREAD        "ﾃﾞｰﾀ読み込み中にｴﾗｰが発生しました"
     IDS_ERR_SUBPRO          "M99ｻﾌﾞﾌﾟﾛ終了ｺｰﾄﾞが見つかりませんでした"
@@ -2420,11 +2520,11 @@ END
 
 STRINGTABLE 
 BEGIN
-    ID_VIEW_TOOLBARCUSTOM   "ﾂｰﾙﾊﾞｰの表示/非表示，ｶｽﾀﾏｲｽﾞ\nﾂｰﾙﾊﾞｰの表示切り替え"
+    ID_VIEW_TOOLBARCUSTOM   "ﾂｰﾙﾊﾞｰの表示/非表示、ｶｽﾀﾏｲｽﾞ\nﾂｰﾙﾊﾞｰの表示切り替え"
     ID_VIEW_BEFORE          "矩形指定による拡大縮小の直前の拡大率(+表示位置)に戻します\n前倍率(Ctrl+Z)"
     ID_VIEW_FIT             "現在のｳｨﾝﾄﾞｳ領域に合うように表示します\n図形ﾌｨｯﾄ(Home)"
-    ID_VIEW_LENSP           "領域が指定されていれば領域を拡大，指定されていなければ表示領域を基準に10%ずつ拡大\n拡大(PageUp)"
-    ID_VIEW_LENSN           "領域が指定されていれば領域を表示領域と見なして縮小，指定されていなければ表示領域を基準に10%ずつ縮小\n縮小(PageDown)"
+    ID_VIEW_LENSP           "領域が指定されていれば領域を拡大、指定されていなければ表示領域を基準に10%ずつ拡大\n拡大(PageUp)"
+    ID_VIEW_LENSN           "領域が指定されていれば領域を表示領域と見なして縮小、指定されていなければ表示領域を基準に10%ずつ縮小\n縮小(PageDown)"
     ID_DXFVIEW_LAYER        "ﾚｲﾔの表示・非表示を切り替えます\nﾚｲﾔ(Ctrl+L)"
 END
 
@@ -2435,8 +2535,8 @@ BEGIN
     ID_NCVIEW_TRACE_STOP    "ﾄﾚｰｽ停止\n停止(Ctrl+F5)"
     ID_NCVIEW_TRACE_BREAK   "ﾌﾞﾚｰｸﾎﾟｲﾝﾄの設定/解除\nﾌﾞﾚｰｸ(F9)"
     ID_NCVIEW_TRACE_BREAKOFF "全ﾌﾞﾚｰｸ解除\n全ﾌﾞﾚｰｸ解除(Ctrl+F9)"
-    ID_NCVIEW_TRACE_CURSOR  "ｶｰｿﾙ位置までﾄﾚｰｽ実行後，一時停止します\nｶｰｿﾙ位置まで実行(Alt+F5)"
-    ID_NCVIEW_TRACE_CURSOR2 "ｶｰｿﾙ位置からﾄﾚｰｽ実行，それ以前は表示されません．ただし再描画されると戻ります\nｶｰｿﾙ位置から実行(Alt+Shift+F5)"
+    ID_NCVIEW_TRACE_CURSOR  "ｶｰｿﾙ位置までﾄﾚｰｽ実行後、一時停止します\nｶｰｿﾙ位置まで実行(Alt+F5)"
+    ID_NCVIEW_TRACE_CURSOR2 "ｶｰｿﾙ位置からﾄﾚｰｽ実行、それ以前は表示されません。ただし再描画されると戻ります\nｶｰｿﾙ位置から実行(Alt+Shift+F5)"
     ID_NCVIEW_TRACE_FAST    "ﾄﾚｰｽ高速実行\n高速(F2)"
     ID_NCVIEW_TRACE_MIDDLE  "ﾄﾚｰｽ中速実行\n中速(F3)"
     ID_NCVIEW_TRACE_LOW     "ﾄﾚｰｽ低速実行\n低速(F4)"
@@ -2448,6 +2548,7 @@ BEGIN
     IDS_REGKEY_WINDOW_JUMPDLG "JumpDlg"
     IDS_REGKEY_WINDOW_WORKDLG "WorkDlg"
     IDS_REGKEY_WINDOW_LAYERDLG "LayerDlg"
+    IDS_REGKEY_WINDOW_THUMBNAILDLG "ThumbnailDlg"
     IDS_REGKEY_WINDOW_TOOLBAR "ToolBar"
 END
 
@@ -2507,6 +2608,7 @@ END
 STRINGTABLE 
 BEGIN
     IDS_REG_NCV_MCFILE      "MCFILE"
+    IDS_REG_NCV_MCTOOLSORT  "MCTOOLSORT"
     IDS_REG_NCV_INPUT       "Input"
     IDS_REG_NCV_MOVE        "MoveSpeed"
     IDS_REG_NCV_DEFFEED     "DefaultFeed"
@@ -2522,7 +2624,7 @@ END
 
 STRINGTABLE 
 BEGIN
-    IDS_ERR_ADDITEM         "ﾘｽﾄｺﾝﾄﾛｰﾙへの登録でｴﾗｰが発生しました．行番号=%d\n登録処理を中断します"
+    IDS_ERR_ADDITEM         "ﾘｽﾄｺﾝﾄﾛｰﾙへの登録でｴﾗｰが発生しました。行番号=%d\n登録処理を中断します"
 END
 
 STRINGTABLE 
@@ -2534,18 +2636,20 @@ STRINGTABLE
 BEGIN
     IDS_ERR_DEEPFINAL       "「深彫最終切り込み」は「基本切り込み」よりも小さく(低く)設定してください"
     IDS_ERR_DEEPSTEP        "切り込みｽﾃｯﾌﾟはｾﾞﾛ未満(ﾏｲﾅｽ値)でないと無限ﾙｰﾌﾟになります"
-    IDS_ERR_DEEPVALUE       "加工済み深さの指示が「ｵﾌｾｯﾄ」の時は，値がｾﾞﾛを超える必要があります"
+    IDS_ERR_DEEPVALUE       "加工済み深さの指示が「ｵﾌｾｯﾄ」の時は値がｾﾞﾛを超える必要があります"
 END
 
 STRINGTABLE 
 BEGIN
-    IDS_ANA_NOMCFILE        "ﾌｧｲﾙへの保存が選択されませんでした．または書き込みに失敗しました．\n後で機械情報を設定して下さい．関連するﾚｼﾞｽﾄﾘは消去されます"
-    IDS_ANA_MCFILESHIFT     "ﾚｼﾞｽﾄﾘに登録されている機械情報をﾌｧｲﾙに移行します．\n「はい」を選択すると，現在の設定がﾌｧｲﾙへ\n「いいえ」を選択すると，後で設定し直す必要があります"
-    IDS_ANA_RELOAD          "再読込が必要なｵﾌﾟｼｮﾝが変更されました．再読込しますか？"
-    IDS_ANA_FILEEXIST       "%s\nがすでに存在します．上書きしますか？"
-    IDS_ANA_FILECHANGE      "%s\n他のｱﾌﾟﾘｹｰｼｮﾝによって更新されたようです．再読込しますか？"
-    IDS_ANA_VALUECHANGE     "%s\nが変更されています．保存しますか？"
-    IDS_ANA_OUTLINE         "輪郭加工指示が消去されますが、続行しますか？"
+    IDS_ANA_NOMCFILE        "ﾌｧｲﾙへの保存が選択されませんでした。または書き込みに失敗しました。\n後で機械情報を設定して下さい。関連するﾚｼﾞｽﾄﾘは消去されます"
+    IDS_ANA_MCFILESHIFT     "ﾚｼﾞｽﾄﾘに登録されている機械情報をﾌｧｲﾙに移行します。\n「はい」を選択すると現在の設定がﾌｧｲﾙへ\n「いいえ」を選択すると後で設定し直す必要があります"
+    IDS_ANA_RELOAD          "再読込が必要なｵﾌﾟｼｮﾝが変更されました。再読込しますか？"
+    IDS_ANA_FILEOUTPUT      "%s\nにﾃﾞｰﾀ出力完了しました。"
+    IDS_ANA_FILEEXIST       "%s\nがすでに存在します。上書きしますか？"
+    IDS_ANA_FILECHANGE      "%s\n他のｱﾌﾟﾘｹｰｼｮﾝによって更新されたようです。再読込しますか？"
+    IDS_ANA_VALUECHANGE     "%s\nが変更されています。保存しますか？"
+    IDS_ANA_OUTLINE         "輪郭加工指示が消去されますが続行しますか？"
+    IDS_ANA_STRICTOFFSET    "この処理は手動で輪郭情報を変更したときにだけ必要です。\n実行しますか？"
 END
 
 STRINGTABLE 
@@ -2564,7 +2668,7 @@ BEGIN
     IDS_ERR_DXFKEYWORD      "以下のDXFｷｰﾜｰﾄﾞ\n%s\nは現在のNCVCでは未ｻﾎﾟｰﾄです"
     IDS_ERR_DXFBLOCK        "以下のﾌﾞﾛｯｸ名\n%s\nが見つかりませんでした"
     IDS_ERR_DXFMISSING      "\nﾃﾞｰﾀが欠落している可能性があります"
-    IDS_ERR_DXFPOLYLINE     "POLYLINEの頂点処理でｴﾗｰが発生しました．CADｿﾌﾄでﾃﾞｰﾀを確認して下さい"
+    IDS_ERR_DXFPOLYLINE     "POLYLINEの頂点処理でｴﾗｰが発生しました。CADｿﾌﾄでﾃﾞｰﾀを確認して下さい"
     IDS_ERR_DXFLAYER        "ﾚｲﾔ名を省略できません"
 END
 
@@ -2622,6 +2726,7 @@ BEGIN
     IDS_REG_VIEW_WHEELTYPE  "MouseWheelType"
     IDS_REG_VIEW_COLOR      "DrawColor"
     IDS_REG_VIEW_LINETYPE   "DrawLineType"
+    IDS_REG_VIEW_NC_SCALE   "GuideScale"
 END
 
 STRINGTABLE 
@@ -2630,11 +2735,18 @@ BEGIN
     IDS_REG_VIEW_NC_GUIDE   "GuideLength"
     IDS_REG_VIEW_NC_INFOCOL "DrawInfoColor"
     IDS_REG_VIEW_NC_TRACEMARK "TraceMarker"
+    IDS_REG_VIEW_NC_DEFAULTENDMILL "DefaultEndmill"
+    IDS_REG_VIEW_NC_SOLIDVIEW "SolidView"
+    IDS_REG_VIEW_NC_G00VIEW "G00View"
+    IDS_REG_VIEW_NC_DRAGRENDER "DragRender"
+    IDS_REG_VIEW_NC_MILL_T  "MillT"
+    IDS_REG_VIEW_NC_MILL_C  "MillC"
+    IDS_REG_VIEW_NC_MILLTYPE "MillType"
 END
 
 STRINGTABLE 
 BEGIN
-    IDS_ANA_LOCKADDIN       "ｱﾄﾞｲﾝがﾄﾞｷｭﾒﾝﾄをﾛｯｸしています．終了しますか？"
+    IDS_ANA_LOCKADDIN       "ｱﾄﾞｲﾝがﾄﾞｷｭﾒﾝﾄをﾛｯｸしています。終了しますか？"
 END
 
 STRINGTABLE 
@@ -2647,8 +2759,8 @@ END
 
 STRINGTABLE 
 BEGIN
-    IDS_ERR_DEEPFIXZ        "加工済み深さの「固定Z値」の値は，「基本切り込み」よりも高く(大きく)設定して下さい"
-    IDS_ERR_DEEPFIXR        "加工済み深さの「固定Z値」の値は，「R点」よりも小さく(低く)設定して下さい"
+    IDS_ERR_DEEPFIXZ        "加工済み深さの「固定Z値」の値は「基本切り込み」よりも高く(大きく)設定して下さい"
+    IDS_ERR_DEEPFIXR        "加工済み深さの「固定Z値」の値は「R点」よりも小さく(低く)設定して下さい"
 END
 
 STRINGTABLE 
@@ -2663,10 +2775,12 @@ END
 STRINGTABLE 
 BEGIN
     ID_EDIT_DXFORG          "機械原点情報を更新します\n原点調整(Ctrl+@)"
-    ID_EDIT_DXFSHAPE        "形状認識処理のあと，各種加工指示(輪郭・ポケット)が可能です\n形状認識(Ctrl+E)"
+    ID_EDIT_DXFSHAPE        "形状認識処理のあと各種加工指示(輪郭・ポケット)が可能です\n形状認識(Ctrl+E)"
     ID_EDIT_SHAPE_PROP      "形状ごとの設定を行います\n形状ﾌﾟﾛﾊﾟﾃｨ"
     ID_EDIT_SHAPE_AUTO      "占有矩形から内外の加工指示を計算します\n自動処理"
     ID_EDIT_SHAPE_NAME      "形状集合の名前を変更します"
+    ID_EDIT_SHAPE_STRICTOFFSET 
+                            "ｵﾌｾｯﾄ同士の交点を除去し厳格な輪郭を形成します。自動輪郭処理では自動的に処理されます\nｵﾌｾｯﾄ交点除去"
     ID_EDIT_SHAPE_SEL       "形状ｸﾞﾙｰﾌﾟから単一のｵﾌﾞｼﾞｪｸﾄを分離します\n分離(F12)"
     ID_EDIT_SHAPE_VEC       "切削方向を指示します\n方向指示(F9)"
     ID_EDIT_SHAPE_START     "形状ごとに開始位置を指示します\n開始位置(F10)"
@@ -2714,8 +2828,8 @@ END
 STRINGTABLE 
 BEGIN
     IDS_ERR_CAMDATA         "%s\nNCVC CAMﾃﾞｰﾀではありません"
-    IDS_ERR_CAMVER          "%s\nNCVC CAMﾃﾞｰﾀのﾊﾞｰｼﾞｮﾝが違います．最新のNCVCを取得してください．"
-    IDS_ERR_CAMOLD          "%s\n旧形式のCAMﾃﾞｰﾀです．このﾊﾞｰｼﾞｮﾝはｻﾎﾟｰﾄされなくなりました．\nもう一度CADﾃﾞｰﾀからCAMﾃﾞｰﾀを生成してください．"
+    IDS_ERR_CAMVER          "%s\nNCVC CAMﾃﾞｰﾀのﾊﾞｰｼﾞｮﾝが違います。最新のNCVCを取得してください。"
+    IDS_ERR_CAMOLD          "%s\n旧形式のCAMﾃﾞｰﾀです。このﾊﾞｰｼﾞｮﾝはｻﾎﾟｰﾄされなくなりました。\nもう一度CADﾃﾞｰﾀからCAMﾃﾞｰﾀを生成してください。"
     IDS_ERR_DXF_DRAGOUTLINE "形状集合に属する条件を満たしていないのでﾄﾞﾗｯｸﾞできません"
     IDS_ERR_DXF_DRAGLINK    "結合座標が見つかりませんでしたので処理が出来ません"
     IDS_ERR_DXF_CREATEOUTELINE "輪郭ｵﾌﾞｼﾞｪｸﾄ計算でｴﾗｰが発生しました"

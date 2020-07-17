@@ -5,6 +5,7 @@
 #include "NCVC.h"
 #include "MCOption.h"
 #include "MCSetup.h"
+#include <afxshellmanager.h>
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -54,7 +55,11 @@ void CMCSetup4::DoDataExchange(CDataExchange* pDX)
 
 void CMCSetup4::OnFolder() 
 {
-	CString	strResult( ::BrowseForFolder() );	// StdAfx.cpp
+	CString	strResult;
+	CShellManager*	pShell = AfxGetNCVCApp()->GetShellManager();
+	pShell->BrowseForFolder(strResult, this, NULL, NULL,
+		BIF_BROWSEFORCOMPUTER | BIF_DONTGOBELOWDOMAIN | BIF_RETURNONLYFSDIRS);
+
 	if ( !strResult.IsEmpty() ) {
 		m_strMacro[MCMACROFOLDER] = strResult;
 		UpdateData(FALSE);

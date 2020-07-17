@@ -119,6 +119,13 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 				SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTSTART);
 				nCorrect = 0;	// 補正ﾙｰﾌﾟに入らない
 			}
+			else if ( i<nLoopCnt && IsThread() ) {
+				nSign1 = pData1->CalcOffsetSign();
+				if ( dwValFlags & NCD_CORRECT_R )
+					nSign1 = -nSign1;
+				if ( dToolD < 0 )
+					nSign1 = -nSign1;
+			}
 
 			// ----------
 			// 補正ﾙｰﾌﾟ
@@ -137,13 +144,16 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 				if ( k ) {
 					SetErrorCode(pDoc, pData2, k);
 					pData1 = pData2;
+					nSign1 = pData1->CalcOffsetSign();	// 符号再計算
+					if ( dwValFlags & NCD_CORRECT_R )
+						nSign1 = -nSign1;
+					if ( dToolD < 0 )
+						nSign1 = -nSign1;
 					continue;
 				}
-				// 平面ﾁｪｯｸ
-				if ( !IsPlaneCheck(pData1, pData2, obNdata) ) {
-					pData1 = pData2;
-					continue;
-				}
+				// 平面ﾁｪｯｸ(同一平面に動きのないｵﾌﾞｼﾞｪｸﾄはobNdataに溜めて後回し)
+				if ( !IsPlaneCheck(pData1, pData2, obNdata) )
+					continue;	// pData1はそのまま
 #ifdef _DEBUG
 				dbg.printf("Gcode=%d X=%.3f Y=%.3f Z=%.3f", pData2->GetGcode(),
 					pData2->GetEndValue(NCA_X),
@@ -151,23 +161,15 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 					pData2->GetEndValue(NCA_Z) );
 #endif
 				// ｵﾌｾｯﾄ符号計算(G41(左)基準に計算)
-				nSign1 = pData1->CalcOffsetSign();	// pData1の始点
 				nSign2 = pData2->CalcOffsetSign();	// pData1の終点=>pData2の始点
-				if ( nSign1==0 || nSign2==0 ) {
-					SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_GTYPE);
-					pData1 = pData2;
-					continue;
-				}
 				if ( dwValFlags & NCD_CORRECT_R ) {
-					nSign1 = -nSign1;	// G42の場合は符号反転
-					nSign2 = -nSign2;
+					nSign2 = -nSign2;	// G42の場合は符号反転
 					k = -1;			// -90°回転
 				}
 				else
 					k = 1;			// +90°回転
 				if ( dToolD < 0 ) {
-					nSign1 = -nSign1;	// 工具径がﾏｲﾅｽの場合は符号反転
-					nSign2 = -nSign2;
+					nSign2 = -nSign2;	// 工具径がﾏｲﾅｽの場合は符号反転
 					k = -k;
 				}
 
@@ -176,6 +178,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 				if ( !pData2c ) {
 					SetErrorCode(pDoc, pData2, IDS_ERR_NCBLK_CORRECTOBJECT);
 					pData1 = pData2;
+					nSign1 = nSign2;
 					continue;
 				}
 
@@ -194,7 +197,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 						break;
 					case 2:		// ｵﾌｾｯﾄﾓｰﾄﾞ
 						// ｵﾌｾｯﾄ分移動させた交点
-						ptResult = pData1->CalcOffsetIntersectionPoint(pData2, dToolD_abs, nSign1, nSign2);
+						ptResult = pData1->CalcOffsetIntersectionPoint(pData2, dToolD_abs, k>0);
 						break;
 					}
 					// 結果確認
@@ -293,7 +296,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 								SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_INTERSECTION);
 								break;
 							}
-							ptResult = pData1->CalcOffsetIntersectionPoint2(pData2, dToolD_abs, nSign1, nSign2);
+							ptResult = pData1->CalcOffsetIntersectionPoint2(pData2, dToolD_abs, k>0);
 							if ( ptResult )
 								pt2 = *ptResult;
 							else {
@@ -327,7 +330,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 						}
 						else {						// ﾀｲﾌﾟB
 							// ｵﾌｾｯﾄ分移動させた交点(円弧は接線)
-							ptResult = pData1->CalcOffsetIntersectionPoint2(pData2, dToolD_abs, nSign1, nSign2);
+							ptResult = pData1->CalcOffsetIntersectionPoint2(pData2, dToolD_abs, k>0);
 							if ( ptResult )
 								pt2 = *ptResult;
 							else {
@@ -372,7 +375,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 						break;
 					case 2:		// ｵﾌｾｯﾄﾓｰﾄﾞ
 						// ｵﾌｾｯﾄ分移動させた交点(円弧は接線)
-						ptResult = pData1->CalcOffsetIntersectionPoint2(pData2, dToolD_abs, nSign1, nSign2);
+						ptResult = pData1->CalcOffsetIntersectionPoint2(pData2, dToolD_abs, k>0);
 						if ( ptResult )
 							pt1 = *ptResult;
 						else {
@@ -461,7 +464,8 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 #endif
 				// 次のﾙｰﾌﾟへ
 				pData2->AddCorrectObject(pData2c);
-				pData1  = pData2;
+				pData1 = pData2;
+				nSign1 = nSign2;
 				pData1c = pData2c;
 				if ( nCorrect > 0 )
 					nCorrect = 2;	// 1 -> 2
@@ -640,7 +644,7 @@ CNCdata* CreateNCobj
 	// 座標値のｾｯﾄ
 	switch ( pData->GetPlane() ) {
 	case XY_PLANE:
-		if ( sqrt(GAPCALC(pt-ptSrc.GetXY())) < NCMIN ) {
+		if ( ptSrc.GetXY().IsMatchPoint(&pt) ) {
 			bCreate = FALSE;	// ｵﾌﾞｼﾞｪｸﾄ生成の必要なし
 			break;
 		}
@@ -653,7 +657,7 @@ CNCdata* CreateNCobj
 		}
 		break;
 	case XZ_PLANE:
-		if ( sqrt(GAPCALC(pt-ptSrc.GetXZ())) < NCMIN ) {
+		if ( ptSrc.GetXZ().IsMatchPoint(&pt) ) {
 			bCreate = FALSE;
 			break;
 		}
@@ -666,7 +670,7 @@ CNCdata* CreateNCobj
 		}
 		break;
 	case YZ_PLANE:
-		if ( sqrt(GAPCALC(pt-ptSrc.GetYZ())) < NCMIN ) {
+		if ( ptSrc.GetYZ().IsMatchPoint(&pt) ) {
 			bCreate = FALSE;
 			break;
 		}

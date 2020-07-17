@@ -46,22 +46,21 @@ typedef	struct	tagFNCNGTHREADPARAM {
 
 class CDocBase
 {
+	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
+	CWinThread*	m_pFileChangeThread;
+	HANDLE		m_hAddinThread;			// ｽﾚｯﾄﾞﾛｯｸﾊﾝﾄﾞﾙ
+	CEvent		m_evFinish;				// 終了通知ｲﾍﾞﾝﾄ
+
 protected:
 	// ｱﾄﾞｲﾝｼﾘｱﾙ関数の保持
 	PFNNCVCSERIALIZEFUNC	m_pfnSerialFunc;
-
-	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
-	HANDLE		m_hFileChangeThread;	// ｽﾚｯﾄﾞﾊﾝﾄﾞﾙ
-	CEvent		m_evFinish;				// 終了通知ｲﾍﾞﾝﾄ
-
 	// ｱﾄﾞｲﾝ向けﾛｯｸﾊﾝﾄﾞﾙ
-	HANDLE	m_hAddinThread;		// ｽﾚｯﾄﾞﾛｯｸﾊﾝﾄﾞﾙ
 	BOOL	IsLockThread(void);	// 終了ﾁｪｯｸ
 
 protected:
 	CDocBase() {
 		UnlockDocument();
-		m_hFileChangeThread = NULL;
+		m_pFileChangeThread = NULL;
 		m_pfnSerialFunc = NULL;
 	}
 

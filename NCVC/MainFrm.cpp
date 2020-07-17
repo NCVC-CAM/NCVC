@@ -7,6 +7,7 @@
 #include "NCChild.h"
 #include "DXFChild.h"
 #include "NCDoc.h"
+#include "NCListView.h"
 #include "DXFDoc.h"
 #include "NCWorkDlg.h"
 #include "ExecOption.h"
@@ -124,7 +125,8 @@ extern	const	int		gg_nIconY;
 
 // 外部ｱﾌﾟﾘ起動用ｷｰﾜｰﾄﾞ
 static	LPCTSTR	g_szCommandReplace[] = {
-	"FileFullPath", "FilePath", "FileNameNoExt", "FileName"
+	"FileFullPath", "FilePath", "FileNameNoExt", "FileName",
+	"SelectNcLine"
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -242,21 +244,9 @@ void CMainFrame::SaveWindowState(void)
 	WINDOWPLACEMENT		wp;
 	wp.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(&wp);	// ｳｨﾝﾄﾞｳの状態Get
-	CString	strSection, strEntry;
-	VERIFY(strSection.LoadString(IDS_REGKEY_WINDOW));
-	int		i = IDS_REG_WINFLAGS;
-	VERIFY(strEntry.LoadString(i++));
-	AfxGetApp()->WriteProfileInt(strSection, strEntry, wp.flags);
-	VERIFY(strEntry.LoadString(i++));
-	AfxGetApp()->WriteProfileInt(strSection, strEntry, wp.showCmd);
-	VERIFY(strEntry.LoadString(i++));
-	AfxGetApp()->WriteProfileInt(strSection, strEntry, wp.rcNormalPosition.left);
-	VERIFY(strEntry.LoadString(i++));
-	AfxGetApp()->WriteProfileInt(strSection, strEntry, wp.rcNormalPosition.top);
-	VERIFY(strEntry.LoadString(i++));
-	AfxGetApp()->WriteProfileInt(strSection, strEntry, wp.rcNormalPosition.right);
-	VERIFY(strEntry.LoadString(i++));
-	AfxGetApp()->WriteProfileInt(strSection, strEntry, wp.rcNormalPosition.bottom);
+	CString	strRegKey;
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_WINDOW));
+	AfxGetNCVCApp()->SaveWindowState(strRegKey, wp);
 }
 
 BOOL CMainFrame::RestoreWindowState(void)
@@ -264,35 +254,15 @@ BOOL CMainFrame::RestoreWindowState(void)
 	WINDOWPLACEMENT		wp;
 	wp.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(&wp);
-	CString	strSection, strEntry;
-	VERIFY(strSection.LoadString(IDS_REGKEY_WINDOW));
-	int		i = IDS_REG_WINFLAGS;
-	VERIFY(strEntry.LoadString(i++));
-	wp.flags = AfxGetApp()->GetProfileInt(strSection, strEntry, 0);
-	VERIFY(strEntry.LoadString(i++));
-	wp.showCmd = AfxGetApp()->GetProfileInt(strSection, strEntry, -1);
-	VERIFY(strEntry.LoadString(i++));
-	wp.rcNormalPosition.left = AfxGetApp()->GetProfileInt(strSection, strEntry, -1);
-	VERIFY(strEntry.LoadString(i++));
-	wp.rcNormalPosition.top = AfxGetApp()->GetProfileInt(strSection, strEntry, -1);
-	VERIFY(strEntry.LoadString(i++));
-	wp.rcNormalPosition.right = AfxGetApp()->GetProfileInt(strSection, strEntry, -1);
-	VERIFY(strEntry.LoadString(i++));
-	wp.rcNormalPosition.bottom = AfxGetApp()->GetProfileInt(strSection, strEntry, -1);
+	CString	strRegKey;
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_WINDOW));
 
-	if ( wp.showCmd==-1 ||
-		wp.rcNormalPosition.left==-1 || wp.rcNormalPosition.top==-1 ||
-		wp.rcNormalPosition.right==-1 || wp.rcNormalPosition.bottom==-1 )
-		return FALSE;
+	if ( AfxGetNCVCApp()->GetWindowState(strRegKey, &wp) ) {
+		SetWindowPlacement(&wp);
+		return TRUE;
+	}
 
-	int	n;
-	n = ::GetSystemMetrics(SM_CXSCREEN) - ::GetSystemMetrics(SM_CXICON);
-	wp.rcNormalPosition.left = min(wp.rcNormalPosition.left, n);
-	n = ::GetSystemMetrics(SM_CYSCREEN) - ::GetSystemMetrics(SM_CYICON);
-	wp.rcNormalPosition.top = min(wp.rcNormalPosition.top, n);
-
-	SetWindowPlacement(&wp);
-	return TRUE;
+	return FALSE;
 }
 
 void CMainFrame::AllModelessDlg_PostSwitchMessage(void)
@@ -350,7 +320,7 @@ void CMainFrame::ChangeViewOption(void)
 			m_penOrg[0][i].DeleteObject();
 		if ( (HPEN)m_penOrg[1][i] )
 			m_penOrg[1][i].DeleteObject();
-		pen = g_penStyle[pOpt->GetNcDrawType(i)].nPenType;
+		pen = g_penStyle[pOpt->GetNCViewFlg(NCVIEWFLG_GUIDESCALE) ? 0 : pOpt->GetNcDrawType(i)].nPenType;
 		m_penOrg[0][i].CreatePen(pen, 0, col);
 		m_penOrg[1][i].CreatePen(pen, 0, col!=RGB(255,255,255) ? col : RGB(0,0,0));
 	}
@@ -566,6 +536,22 @@ CString	CMainFrame::CommandReplace(const CExecOption* pExec, const CDocument* pD
 		case 3:		// FileName
 			strTmp  = szFileName;
 			strTmp += szExt;
+			nReplace += strResult.Replace(strKey, strTmp);
+			break;
+		case 4:		// SelectNcLine
+			CMDIChildWnd* pFrame = MDIGetActive();
+			if ( pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {
+				CNCChild* pChild = static_cast<CNCChild *>(pFrame);
+				CNCListView* pList = pChild->GetListView();
+				POSITION pos = pList->GetListCtrl().GetFirstSelectedItemPosition();
+				if ( pos ) {
+					strTmp.Format("%d", pList->GetListCtrl().GetNextSelectedItem(pos)+1);
+					nReplace += strResult.Replace(strKey, strTmp);
+					break;
+				}
+			}
+			// else
+			strTmp.Empty();
 			nReplace += strResult.Replace(strKey, strTmp);
 			break;
 		}
@@ -1303,7 +1289,7 @@ int CMachineToolBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	SetButtonInfo(1, ID_OPTION_MCCOMBO, TBBS_SEPARATOR, size.cx);
 	CRect	rc;
 	GetItemRect(1, &rc);
-	rc.bottom = rc.top + size.cy * 5;	// 5行分
+	rc.bottom = rc.top + size.cy * 20;	// 10行分
 
 	// ｺﾝﾎﾞﾎﾞｯｸｽの作成
 	if ( !m_ctMachine.Create(WS_CHILD|WS_VISIBLE|WS_VSCROLL|CBS_DROPDOWNLIST,

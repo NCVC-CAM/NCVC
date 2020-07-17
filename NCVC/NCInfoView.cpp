@@ -4,7 +4,10 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MCOption.h"
+#include "NCChild.h"
 #include "NCDoc.h"
+#include "NCViewTab.h"
+#include "NCListView.h"
 #include "NCInfoView.h"
 #include "ViewBase.h"
 #include "ViewOption.h"
@@ -38,6 +41,7 @@ CNCInfoView1::~CNCInfoView1()
 BEGIN_MESSAGE_MAP(CNCInfoView1, CView)
 	//{{AFX_MSG_MAP(CNCInfoView1)
 	ON_WM_CONTEXTMENU()
+	ON_WM_KEYDOWN()
 	ON_WM_ERASEBKGND()
 	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
@@ -61,6 +65,7 @@ CNCInfoView2::~CNCInfoView2()
 BEGIN_MESSAGE_MAP(CNCInfoView2, CView)
 	//{{AFX_MSG_MAP(CNCInfoView2)
 	ON_WM_CONTEXTMENU()
+	ON_WM_KEYDOWN()
 	ON_WM_ERASEBKGND()
 	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
@@ -168,9 +173,10 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 	VERIFY(strBuf.LoadString(IDCV_CUTTIME));
 	pDC->TextOut(0, (i+1)*nHeight, strBuf+strFormat);
 	// ---
-	if ( GetDocument()->IsCalcContinue() ) {
+	if ( GetDocument()->IsNCDocError() )
+		strFormat.Empty();
+	else if ( GetDocument()->IsCalcContinue() )
 		VERIFY(strFormat.LoadString(IDCV_CUTCALC));
-	}
 	else {
 		double	dMove = 0.0, dTime = GetDocument()->GetCutTime();
 		for ( i=0; i<2; i++ ) {
@@ -241,17 +247,19 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 		VERIFY(strBuf.LoadString(IDCV_MILI));
 		pDC->TextOut(11*nWidth+W*2, (i+1)*nHeight, strBuf);
 	}
-	double	dResult[2];
-	for ( i=0; i<NCXYZ; i++ ) {
-		GetDocument()->GetWorkRectPP(i, dResult);
-		// ---
-		strBuf.Format(IDCV_VALFORMAT, dResult[0]);
-		rc.SetRect(4*nWidth, (i+1)*nHeight, 5*nWidth+W, (i+1)*nHeight+nHeight);
-		pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
-		// ---
-		strBuf.Format(IDCV_VALFORMAT, dResult[1]);
-		rc.SetRect(9*nWidth+W, (i+1)*nHeight, 10*nWidth+W*2, (i+1)*nHeight+nHeight);
-		pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
+	if ( !GetDocument()->IsNCDocError() ) {
+		double	dResult[2];
+		for ( i=0; i<NCXYZ; i++ ) {
+			GetDocument()->GetWorkRectPP(i, dResult);
+			// ---
+			strBuf.Format(IDCV_VALFORMAT, dResult[0]);
+			rc.SetRect(4*nWidth, (i+1)*nHeight, 5*nWidth+W, (i+1)*nHeight+nHeight);
+			pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
+			// ---
+			strBuf.Format(IDCV_VALFORMAT, dResult[1]);
+			rc.SetRect(9*nWidth+W, (i+1)*nHeight, 10*nWidth+W*2, (i+1)*nHeight+nHeight);
+			pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
+		}
 	}
 
 	pDC->SelectObject(pFontOld);
@@ -312,6 +320,19 @@ void CNCInfoView1::OnContextMenu(CWnd* pWnd, CPoint point)
 	CViewBase::OnContextMenu(point, IDR_NCPOPUP3);
 }
 
+void CNCInfoView1::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	if ( nChar == VK_TAB ) {
+		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
+		if ( ::GetKeyState(VK_SHIFT) < 0 )
+			pFrame->GetMainView()->SetFocus();
+		else
+			pFrame->GetListView()->SetFocus();
+	}
+
+	CView::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
 BOOL CNCInfoView1::OnEraseBkgnd(CDC* pDC) 
 {
 	CRect	rc;
@@ -349,6 +370,19 @@ void CNCInfoView2::OnEditCopy()
 void CNCInfoView2::OnContextMenu(CWnd* pWnd, CPoint point) 
 {
 	CViewBase::OnContextMenu(point, IDR_NCPOPUP3);
+}
+
+void CNCInfoView2::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	if ( nChar == VK_TAB ) {
+		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
+		if ( ::GetKeyState(VK_SHIFT) < 0 )
+			pFrame->GetMainView()->SetFocus();
+		else
+			pFrame->GetListView()->SetFocus();
+	}
+
+	CView::OnKeyDown(nChar, nRepCnt, nFlags);
 }
 
 BOOL CNCInfoView2::OnEraseBkgnd(CDC* pDC) 
@@ -402,10 +436,10 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 			VERIFY(strFormat.LoadString(ID_INDICATOR_TIME_F));
 			strItem += strDelimiter + fStatus.m_mtime.Format(strBuf) + g_szSpace +
 				fStatus.m_mtime.Format(strFormat) + g_szSpace + g_szSpace;
-			if ( fStatus.m_size >= 1000000 )
-				strFormat.Format("%d MB", fStatus.m_size/1000000);
-			else if ( fStatus.m_size >= 1000 )
-				strFormat.Format("%d KB", fStatus.m_size/1000);
+			if ( fStatus.m_size >= 1024*1024 )
+				strFormat.Format("%d MB", fStatus.m_size/(1024*1024));
+			else if ( fStatus.m_size >= 1024 )
+				strFormat.Format("%d KB", fStatus.m_size/1024);
 			else
 				strFormat.Format("%d bytes", fStatus.m_size);
 			strarrayInfo.Add(strItem + strFormat);

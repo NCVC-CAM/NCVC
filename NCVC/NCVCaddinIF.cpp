@@ -167,9 +167,8 @@ NCEXPORT void WINAPI NCVC_UnlockDocument(NCVCHANDLE hDoc)
 
 NCEXPORT void WINAPI NCVC_MainfrmProgressRange(int nMin, int nMax)
 {
-	CProgressCtrl* pProgress = AfxGetNCVCMainWnd()->GetProgressCtrl();
-	pProgress->SetRange32(nMin, nMax);
-	pProgress->SetPos(0);
+	AfxGetNCVCMainWnd()->GetProgressCtrl()->SetRange32(nMin, nMax);
+	AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
 }
 
 NCEXPORT void WINAPI NCVC_MainfrmProgressPos(int nPos)

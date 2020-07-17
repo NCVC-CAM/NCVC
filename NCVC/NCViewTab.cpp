@@ -60,7 +60,7 @@ CNCViewTab::CNCViewTab() : m_evTrace(FALSE, TRUE)
 */
 	m_nTraceSpeed = AfxGetNCVCApp()->GetTraceSpeed();
 	m_nTrace = ID_NCVIEW_TRACE_STOP;
-	m_hTrace = NULL;
+	m_pTraceThread = NULL;
 	m_bTraceContinue = m_bTracePause = FALSE;
 	for ( int i=0; i<SIZEOF(m_bSplit); i++ )
 		m_bSplit[i] = FALSE;
@@ -262,16 +262,12 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		pParam->pMainFrame	= AfxGetNCVCMainWnd();
 		pParam->pParent		= this;
 		pParam->pListView	= static_cast<CNCChild *>(GetParentFrame())->GetListView();
-		CTraceThread*	pThread = new CTraceThread(pParam);
-		if ( !pThread->CreateThread(CREATE_SUSPENDED) ) {
-			delete	pThread;
+		m_pTraceThread = new CTraceThread(pParam);
+		if ( !m_pTraceThread->CreateThread() ) {
+			delete	m_pTraceThread;
 			delete	pParam;
 			::NCVC_CriticalErrorMsg(__FILE__, __LINE__);	// ExitProcess()
 		}
-		m_hTrace = ::NCVC_DuplicateHandle(pThread->m_hThread);
-		if ( !m_hTrace )
-			::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-		pThread->ResumeThread();
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -288,39 +284,43 @@ void CNCViewTab::OnDestroy()
 	CMagaDbg	dbg("CNCViewTab::OnDestroy()", DBG_BLUE);
 #endif
 
-	if ( m_hTrace ) {
-		// ﾄﾚｰｽ描画ｽﾚｯﾄﾞの終了指示
-		m_bTraceContinue = FALSE;
-		m_evTrace.SetEvent();
-		MSG		msg;
-		while ( ::PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) )
-			AfxGetApp()->PumpMessage();
+	// ﾄﾚｰｽ描画ｽﾚｯﾄﾞの終了指示
+	m_bTraceContinue = FALSE;
+	m_evTrace.SetEvent();
+	MSG		msg;
+	while ( ::PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) )
+		AfxGetApp()->PumpMessage();
 #ifdef _DEBUG
-		if ( ::WaitForSingleObject(m_hTrace, INFINITE) == WAIT_FAILED ) {
-			dbg.printf("WaitForSingleObject() Fail!");
-			::NC_FormatMessage();
-		}
-		else
-			dbg.printf("WaitForSingleObject() OK");
-		if ( !::CloseHandle(m_hTrace) ) {
-			dbg.printf("CloseHandle() Fail!");
-			::NC_FormatMessage();
-		}
-		else
-			dbg.printf("CloseHandle() OK");
-#else
-		::WaitForSingleObject(m_hTrace, INFINITE);
-		::CloseHandle(m_hTrace);
-#endif
+	if ( ::WaitForSingleObject(m_pTraceThread->m_hThread, INFINITE) == WAIT_FAILED ) {
+		dbg.printf("WaitForSingleObject() Fail!");
+		::NC_FormatMessage();
 	}
+	else
+		dbg.printf("WaitForSingleObject() OK");
+#else
+	::WaitForSingleObject(m_pTraceThread->m_hThread, INFINITE);
+#endif
+	delete	m_pTraceThread;
 
 	CTabView::OnDestroy();
 }
 
 void CNCViewTab::OnSetFocus(CWnd*) 
 {
-	if ( GetActivePage() > 0 )
-		GetActivePageWnd()->SetFocus();
+#ifdef _DEBUG
+	g_dbg.print("CNCViewTab::OnSetFocus()");
+#endif
+	int	nIndex = GetActivePage();
+	if ( nIndex >= 0 ) {
+//		GetPage(nIndex)->SetFocus();
+		GetTabCtrl().SetCurSel(nIndex);
+		GetTabCtrl().SetCurFocus(nIndex);
+	}
+#ifdef _DEBUG
+	else {
+		g_dbg.print("not select active page");
+	}
+#endif
 }
 
 void CNCViewTab::OnMoveTab(UINT nID)
@@ -488,7 +488,7 @@ BOOL CTraceThread::InitInstance()
 		if ( !m_pParent->m_bTraceContinue )
 			break;
 		// ﾄﾚｰｽ開始・再開
-		bSelect = pOpt->IsTraceMarker();
+		bSelect = pOpt->GetNCViewFlg(NCVIEWFLG_TRACEMARKER);
 		do {
 			nPage = m_pParent->GetActivePage();
 			if ( nPage < 0 )

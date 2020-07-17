@@ -26,7 +26,7 @@ struct	CHECKMAPTHREADPARAM
 	CLayerData*	pLayer;		// 対象ﾚｲﾔ
 	CDXFmap*	pMap;		// 検査対象ﾏｯﾌﾟ
 	// CHECKMAPTHREADPARAM::CEvent を手動ｲﾍﾞﾝﾄにするためのｺﾝｽﾄﾗｸﾀ
-	CHECKMAPTHREADPARAM() : evStart(FALSE, TRUE), evEnd(TRUE, TRUE),
+	CHECKMAPTHREADPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE),
 		bThread(TRUE), pMap(NULL)
 	{}
 };
@@ -52,16 +52,15 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 	CLayerData*	pLayer;
 	CDXFdata*	pData;
 	CDXFmap		mpDXFdata;	// ﾚｲﾔごとの座標ﾏｯﾌﾟ母体
-	HANDLE		hCheckMapThread;
 	CHECKMAPTHREADPARAM	chkParam;
 
 	VERIFY(strMsg.LoadString(IDS_SHAPESEARCH));
 
 	// 座標ﾏｯﾌﾟ検査ｽﾚｯﾄﾞ起動
 	CWinThread*	pThread = AfxBeginThread(CheckMapWorking_Thread, &chkParam);
-	hCheckMapThread = ::NCVC_DuplicateHandle(pThread->m_hThread);
-	if ( !hCheckMapThread )
+	if ( !pThread )
 		::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+
 	// SetPointMap() 前の静的変数初期化
 	CDXFmap::ms_dTolerance = NCMIN;
 
@@ -82,6 +81,9 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 					mpDXFdata.SetPointMap(pData);
 					pData->ClearMakeFlg();
 					pData->ClearSearchFlg();
+					// ﾎﾟﾘﾗｲﾝ自身の交点ﾁｪｯｸ
+					if ( pData->GetType() == DXFPOLYDATA )
+						static_cast<CDXFpolyline*>(pData)->CheckPolylineIntersection();
 				}
 				if ( (j & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
 					g_pParent->m_ctReadProgress.SetPos(j);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
@@ -95,6 +97,7 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 		}
 		// 最終検査ｽﾚｯﾄﾞ終了待ち
 		chkParam.evEnd.Lock();
+		chkParam.evEnd.ResetEvent();
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -105,8 +108,7 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 	// 検査ｽﾚｯﾄﾞ終了指示
 	chkParam.bThread = FALSE;
 	chkParam.evStart.SetEvent();
-	WaitForSingleObject(hCheckMapThread, INFINITE);
-	CloseHandle(hCheckMapThread);
+	WaitForSingleObject(pThread->m_hThread, INFINITE);
 
 	// 途中でｷｬﾝｾﾙされたら座標ﾏｯﾌﾟをｸﾘｱ
 	if ( nResult==IDCANCEL || !IsThread() ) {
@@ -146,7 +148,8 @@ void SetChainMap(const CDXFmap* pMasterMap, LPCHECKMAPTHREADPARAM pParam)
 
 	g_pParent->m_ctReadProgress.SetRange32(0, pMasterMap->GetCount());
 	mapRegist.InitHashTable(max(17, nPrime));
-	
+	pParam->evEnd.SetEvent();
+
 	// 座標ﾏｯﾌﾟ母体をｼｰｹﾝｼｬﾙにｱｸｾｽし連結固体を作成
 	for ( POSITION pos=pMasterMap->GetStartPosition(); pos && IsThread(); nCnt++ ) {
 		pMasterMap->GetNextAssoc(pos, pt, pDummy);
@@ -224,6 +227,7 @@ UINT CheckMapWorking_Thread(LPVOID pVoid)
 		dwFlags = pParam->pMap->GetMapTypeFlag();
 		// 形状情報生成
 		if ( dwFlags == 0 ) {
+			pParam->pMap->AllMapObject_ClearMakeFlg();
 			// CDXFmapからCDXFchainに昇格
 			pChain = new CDXFchain;
 			pParam->pMap->CopyToChain(pChain);
@@ -241,6 +245,5 @@ UINT CheckMapWorking_Thread(LPVOID pVoid)
 		pParam->evEnd.SetEvent();
 	}
 
-	pParam->evEnd.SetEvent();
 	return 0;
 }

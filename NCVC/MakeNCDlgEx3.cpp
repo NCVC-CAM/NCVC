@@ -32,10 +32,6 @@ static	int		HEADINDEX[][4] = {
 	{0, 1, 2, 4},
 	{0, 3, 4, 0}	// 4”Ô–Ú‚ÍÀŞĞ°
 };
-// •À‚Ñ‘Ö‚¦ƒ}[ƒN
-static	LPCTSTR	g_szSortMark[] = {
-	"¤", "¢"
-};
 
 BEGIN_MESSAGE_MAP(CMakeNCDlgEx3, CPropertyPage)
 	ON_NOTIFY(LVN_GETDISPINFO, IDC_MKNCEX_LAYERLIST, OnGetDispInfoLayerList)
@@ -53,7 +49,7 @@ END_MESSAGE_MAP()
 CMakeNCDlgEx3::CMakeNCDlgEx3() : CPropertyPage(CMakeNCDlgEx3::IDD)
 {
 	m_psp.dwFlags &= ~PSP_HASHELP;
-	m_nSortLayer = 0;
+	m_nSortColumn = 0;
 }
 
 CMakeNCDlgEx3::~CMakeNCDlgEx3()
@@ -109,9 +105,9 @@ BOOL CMakeNCDlgEx3::OnInitDialog()
 	lvi.pszText = LPSTR_TEXTCALLBACK;
 	CDXFDoc*	pDoc = GetNCMakeParent()->GetDocument();
 	CLayerData*	pLayer;
-	int		i, nCnt, nLoop = pDoc->GetLayerCnt();
+	int		i, nCnt;
 
-	for ( i=0, nCnt=0; i<nLoop; i++ ) {
+	for ( i=0, nCnt=0; i<pDoc->GetLayerCnt(); i++ ) {
 		pLayer = pDoc->GetLayerData(i);
 		if ( pLayer->IsCutType() ) {
 			lvi.iItem = nCnt;
@@ -128,7 +124,7 @@ BOOL CMakeNCDlgEx3::OnInitDialog()
 	// Ú²ÔØ½Ä‚Ì•À‚×‘Ö‚¦
 	m_ctLayerList.SortItems(CompareFunc, nSortLayer);
 	// Í¯ÀŞ°Ï°¸‘}“ü
-	SetHeaderMark(nSortLayer);		// m_nSortLayer‚Ö‘ã“ü
+	SetHeaderMark(nSortLayer);		// m_nSortColumn‚Ö‘ã“ü
 
 	UpdateData(FALSE);
 
@@ -150,7 +146,8 @@ BOOL CMakeNCDlgEx3::OnWizardFinish()
 
 	extern	LPCTSTR	gg_szCat;
 	CNCMakeOption	optMake(GetNCMakeParent()->m_strInitFileName);
-	int			i, nLoop = m_ctLayerList.GetItemCount(), nResult = -1;
+	int			i, nResult = -1;
+	const int	nLoop = m_ctLayerList.GetItemCount();
 	CString		strMiss, strPartOut;
 	CLayerData*	pLayer;
 
@@ -208,7 +205,7 @@ BOOL CMakeNCDlgEx3::OnWizardFinish()
 	CString		strRegKey, strEntry;
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IsMakeEx1() ? IDS_REG_DXF_SORTLAYER1 : IDS_REG_DXF_SORTLAYER2));
-	AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nSortLayer);
+	AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nSortColumn);
 
 	return TRUE;
 }
@@ -320,8 +317,8 @@ void CMakeNCDlgEx3::OnColumnClickLayerList(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
 	int	nNewColumn = pNMListView->iSubItem + 1;
-	if ( abs(m_nSortLayer) == nNewColumn )
-		nNewColumn = -m_nSortLayer;	// ¸‡E~‡‚ÌØ‚è‘Ö‚¦
+	if ( abs(m_nSortColumn) == nNewColumn )
+		nNewColumn = -m_nSortColumn;	// ¸‡E~‡‚ÌØ‚è‘Ö‚¦
 	// •À‚×‘Ö‚¦
 	m_ctLayerList.SortItems(CompareFunc, nNewColumn);
 	// Í¯ÀŞ°Ï°¸‘}“ü
@@ -441,25 +438,24 @@ void CMakeNCDlgEx3::SetHeaderMark(int nNewColumn)
 {
 	CHeaderCtrl*	pHeader = m_ctLayerList.GetHeaderCtrl();
 	HDITEM			hdi;
-	int				nPos = abs(m_nSortLayer) - 1,
-					nIndex = IsMakeEx1() ? 0 : 1;
+	int				nPos = abs(m_nSortColumn) - 1;
 
-	hdi.mask = HDI_TEXT;
+	hdi.mask = HDI_FORMAT;
 
 	// Ï°¶°íœ
-	if ( m_nSortLayer!=0 && abs(m_nSortLayer)!=abs(nNewColumn) ) {
-		hdi.pszText = const_cast<LPTSTR>(g_szListHeader[HEADINDEX[nIndex][nPos]]);
+	if ( m_nSortColumn!=0 && m_nSortColumn!=nNewColumn ) {
+		pHeader->GetItem(nPos, &hdi);
+		hdi.fmt &= ~( HDF_SORTUP | HDF_SORTDOWN );
 		pHeader->SetItem(nPos, &hdi);
 	}
 
 	// Ï°¶°‘}“ü
 	if ( nNewColumn != 0 ) {
 		nPos = abs(nNewColumn) - 1;
-		CString	strBuf( g_szSortMark[ nNewColumn<0 ? 0 : 1 ] );
-		strBuf += g_szListHeader[HEADINDEX[nIndex][nPos]];
-		hdi.pszText = const_cast<LPTSTR>((LPCTSTR)strBuf);
+		pHeader->GetItem(nPos, &hdi);
+		hdi.fmt |= ( nNewColumn<0 ? HDF_SORTUP : HDF_SORTDOWN );
 		pHeader->SetItem(nPos, &hdi);
 	}
 
-	m_nSortLayer = nNewColumn;
+	m_nSortColumn = nNewColumn;
 }

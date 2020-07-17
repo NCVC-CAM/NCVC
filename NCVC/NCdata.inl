@@ -17,6 +17,8 @@ inline void CNCdata::Constracter(LPNCARGV lpArgv)
 	m_nc.dwValFlags	= lpArgv->nc.dwValFlags;
 	m_nc.dLength	= 0.0;
 	m_dFeed			= lpArgv->dFeed;
+	m_dEndmill		= lpArgv->dEndmill;
+	m_nEndmillType	= lpArgv->nEndmillType;
 	m_dMove[NCA_X] = m_dMove[NCA_Y] = m_dMove[NCA_Z] = 0.0;
 	m_pRead = new CNCread;
 	memcpy(&(m_pRead->m_g68), &(lpArgv->g68), sizeof(G68ROUND));
@@ -61,6 +63,11 @@ inline int CNCdata::GetGtype(void) const
 inline int CNCdata::GetGcode(void) const
 {
 	return	m_nc.nGcode;
+}
+
+inline BOOL CNCdata::IsCutter(void) const
+{
+	return GetGtype()!=NCDBASEDATA && GetGcode()>0;
 }
 
 inline ENPLANE CNCdata::GetPlane(void) const
@@ -144,6 +151,16 @@ inline double CNCdata::GetMove(size_t a) const
 	return m_dMove[a];
 }
 
+inline double CNCdata::GetEndmill(void) const
+{
+	return m_dEndmill;
+}
+
+inline int CNCdata::GetEndmillType(void) const
+{
+	return m_nEndmillType;
+}
+
 inline const CRect3D CNCdata::GetMaxRect(void) const
 {
 	return m_rcMax;
@@ -181,12 +198,12 @@ inline boost::optional<CPointD> CNCdata::CalcPerpendicularPoint(ENPOINTORDER, do
 	return boost::optional<CPointD>();
 }
 
-inline boost::optional<CPointD> CNCdata::CalcOffsetIntersectionPoint(const CNCdata*, double, int, int) const
+inline boost::optional<CPointD> CNCdata::CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const
 {
 	return boost::optional<CPointD>();
 }
 
-inline boost::optional<CPointD> CNCdata::CalcOffsetIntersectionPoint2(const CNCdata*, double, int, int) const
+inline boost::optional<CPointD> CNCdata::CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const
 {
 	return boost::optional<CPointD>();
 }
@@ -235,7 +252,7 @@ inline void CNCline::SetMaxRect(void)
 /////////////////////////////////////////////////////////////////////////////
 // ＮＣデータの固定サイクルクラス
 /////////////////////////////////////////////////////////////////////////////
-inline void PTCYCLE::DrawTuning(double f)
+inline void PTCYCLE::DrawTuning(const double f)
 {
 	ptDrawI = ptI * f;
 	ptDrawR = ptR * f;
@@ -306,12 +323,12 @@ inline boost::optional<CPointD> CNCcycle::CalcPerpendicularPoint(ENPOINTORDER, d
 	return boost::optional<CPointD>();
 }
 
-inline boost::optional<CPointD> CNCcycle::CalcOffsetIntersectionPoint(const CNCdata*, double, int, int) const
+inline boost::optional<CPointD> CNCcycle::CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const
 {
 	return boost::optional<CPointD>();
 }
 
-inline boost::optional<CPointD> CNCcycle::CalcOffsetIntersectionPoint2(const CNCdata*, double, int, int) const
+inline boost::optional<CPointD> CNCcycle::CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const
 {
 	return boost::optional<CPointD>();
 }

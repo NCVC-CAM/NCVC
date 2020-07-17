@@ -23,20 +23,22 @@ class CNCViewGL : public CView
 				m_ptLastMove;	// 移動前座標
 	CPoint3D	m_ptLastRound;	// 回転前座標
 	HGLRC		m_hRC;
-	GLuint		m_uiAxis,		// 軸ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
-				m_uiBack,		// 背景
-				m_uiWork,		// ﾜｰｸ矩形
-				m_uiCode;		// 切削ﾊﾟｽ
+	GLuint		m_glWork,		// ﾜｰｸ矩形のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
+				m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
+
+	GLfloat*	m_fDepth;		// ﾃﾞﾌﾟｽ値取得配列
 
 	ENTRACKINGMODE	m_enTrackingMode;
 	GLdouble		m_objectXform[4][4];
 
 	void	ClearObjectForm(void);
 	BOOL	SetupPixelFormat(CDC*);
-	void	RenderAxis(void);
+	void	ClipDepth(void);
+
 	void	RenderBack(void);
+	void	RenderAxis(void);
 	void	RenderWork(void);
-	void	RenderCode(void);
+	void	RenderCode(BOOL = FALSE);
 
 	CPoint3D	PtoR(const CPoint& pt);
 	void	BeginTracking(const CPoint&, ENTRACKINGMODE);
@@ -77,6 +79,7 @@ protected:
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	// CNCViewTab::OnActivatePage() から SendMessage()
 	afx_msg LRESULT OnUserActivatePage(WPARAM, LPARAM);
 	// ﾒﾆｭｰｺﾏﾝﾄﾞ

@@ -74,11 +74,11 @@ public:
 		ASSERT(n>=0 && n<GetDxfTextSize());
 		return m_obDXFTextArray[n];
 	}
-	CDXFshape*	GetShapeData(INT_PTR n) {
+	CDXFshape*	GetShapeData(INT_PTR n) const {
 		ASSERT(n>=0 && n<GetShapeSize());
 		return m_obShapeArray[n];
 	}
-	CDXFshape*	GetActiveShape(void) {
+	CDXFshape*	GetActiveShape(void) const {
 		return m_pActiveShape;
 	}
 	void	SetActiveShape(CDXFshape* pShape) {
@@ -182,8 +182,8 @@ public:
 	void	SerializeShapeSort(void);
 	//
 	void	AllChangeFactor(double) const;
-	int		AllShape_OrgTuning(void);
 	void	DrawWorking(CDC*);
+	void	AllShapeClearSideFlg(void) const;
 	// Ú²Ô–¼‚ÆðŒÌ§²ÙCÅ[Z’l‚ÌŠÖŒWî•ñ
 	void	SetLayerInfo(const CString&);	// from CDXFDoc::ReadLayerMap()
 	CString	FormatLayerInfo(LPCTSTR);		// from CDXFDoc::SaveLayerMap()

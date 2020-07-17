@@ -16,10 +16,11 @@ enum	ENNCOPERATION	{
 
 class CNCDoc : public CDocument, public CDocBase
 {
-	BOOL		m_fError;		// ﾄﾞｷｭﾒﾝﾄ全体
-	HANDLE		m_hCutcalc;		// 切削時間計算ｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ
-	BOOL		m_bCutcalc,		// 　　〃　　継続ﾌﾗｸﾞ
-				m_bCorrect;		// 補正計算行うかどうか
+	BOOL		m_fError;			// ﾄﾞｷｭﾒﾝﾄ全体
+	CWinThread*	m_pCutcalcThread;	// 切削時間計算ｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ
+	BOOL		m_bCutcalc,			// 　　〃　　継続ﾌﾗｸﾞ
+				m_bCorrect,			// 補正計算行うかどうか
+				m_bThumbnail;		// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
 				m_strCurrentFile;	// 現在処理中のNCﾌｧｲﾙ名(FileInsert etc.)
 	// NCﾃﾞｰﾀ
@@ -34,6 +35,7 @@ class CNCDoc : public CDocument, public CDocBase
 				m_dCutTime;		// 切削時間
 	CRect3D		m_rcMax,		// 最大ｵﾌﾞｼﾞｪｸﾄ矩形
 				m_rcWork;		// ﾜｰｸ矩形
+	CPoint3D	m_ptWorkOffset;	// ﾜｰｸ矩形ｵﾌｾｯﾄ
 	BOOL		m_bMaxRect,		// 最大切削矩形の描画
 				m_bWorkRect;	// ﾜｰｸ矩形の描画
 	void		SetMaxRect(const CNCdata* pData) {
@@ -50,8 +52,13 @@ class CNCDoc : public CDocument, public CDocBase
 	// 移動・切削長，時間計算ｽﾚｯﾄﾞ
 	static	UINT CuttimeCalc_Thread(LPVOID);
 
-	void	SerializeBlock(CArchive&, CNCblockArray&, DWORD = 0, BOOL = TRUE);
+	void	SerializeBlock(CArchive&, CNCblockArray&, DWORD, BOOL);
 	BOOL	SerializeAfterCheck(void);
+	BOOL	ValidBlockCheck(void);
+	BOOL	ValidDataCheck(void);
+
+	void	ClearBlockData(void);
+	void	DeleteMacroFile(void);
 
 protected: // シリアライズ機能のみから作成します。
 	CNCDoc();
@@ -59,8 +66,11 @@ protected: // シリアライズ機能のみから作成します。
 
 // アトリビュート
 public:
-	BOOL	GetDocError(void) const {
+	BOOL	IsNCDocError(void) const {
 		return m_fError;
+	}
+	BOOL	IsThumbnail(void) const {
+		return m_bThumbnail;
 	}
 	CString	GetDXFFileName(void) const {
 		return m_strDXFFileName;
@@ -130,6 +140,9 @@ public:
 	CRect3D	GetWorkRect(void) const {
 		return m_rcWork;
 	}
+	CPoint3D GetWorkRectOffset(void) const {
+		return m_ptWorkOffset;
+	}
 
 // オペレーション
 public:
@@ -158,10 +171,13 @@ public:
 	void	AddMacroFile(const CString&);	// ﾄﾞｷｭﾒﾝﾄ破棄後に消去する一時ﾌｧｲﾙ
 
 	// from NCChild.cpp <- NCWorkDlg.cpp
-	void	SetWorkRect(BOOL bShow, CRect3D& rc) {
-		if ( bShow )
+	void	SetWorkRect(BOOL bShow, const CRect3D& rc, const CPoint3D& pt) {
+		if ( bShow ) {
 			m_rcWork = rc;
-		UpdateAllViews(NULL, UAV_DRAWWORKRECT, (CObject *)bShow);
+			m_ptWorkOffset = pt;
+		}
+		UpdateAllViews(NULL, UAV_DRAWWORKRECT,
+			reinterpret_cast<CObject *>(bShow));
 		m_bWorkRect = bShow;
 	}
 
@@ -182,6 +198,12 @@ public:
 		m_nTraceStart = 0;
 	}
 
+	// from ThumbnailDlg.cpp
+	void	SetThumbnailMode(void) {
+		m_bThumbnail = TRUE;
+	}
+	void	ReadThumbnail(LPCTSTR);
+
 //オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 	//{{AFX_VIRTUAL(CNCDoc)
@@ -192,8 +214,9 @@ public:
 	virtual void OnCloseDocument();
 	virtual void ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault);
 	//}}AFX_VIRTUAL
-	// 更新ﾏｰｸ付与
-	virtual void SetModifiedFlag(BOOL bModified = TRUE);
+	virtual void SetModifiedFlag(BOOL bModified = TRUE);	// 更新ﾏｰｸ付与
+	virtual void SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU = TRUE);
+	virtual void OnChangedViewList();
 
 // インプリメンテーション
 public:

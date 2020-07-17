@@ -459,7 +459,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 			break;
 
 		case DXFLINEDATA:
-			if ( g_nLayer>=DXFCAMLAYER && g_nLayer<=DXFMOVLAYER ) {
+			if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
 				pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
 				pData = new CDXFline(pLayer, static_cast<CDXFline*>(pDataBlock), &argvBlock);
 			}
@@ -518,14 +518,14 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 			break;
 
 		case DXFPOLYDATA:
-			if ( g_nLayer>=DXFCAMLAYER && g_nLayer<=DXFMOVLAYER ) {
+			if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
 				pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
 				pData = new CDXFpolyline(pLayer, static_cast<CDXFpolyline*>(pDataBlock), &argvBlock);
 			}
 			break;
 
 		case DXFTEXTDATA:
-			if ( g_nLayer>=DXFCAMLAYER && g_nLayer<=DXFCOMLAYER ) {
+			if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFCOMLAYER ) {
 				pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
 				pData = new CDXFtext(pLayer, static_cast<CDXFtext*>(pDataBlock), &argvBlock);
 			}
@@ -562,7 +562,7 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 		break;
 
 	case TYPE_LINE:
-		if ( g_nLayer>=DXFCAMLAYER && g_nLayer<=DXFMOVLAYER ) {
+		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
 			dxfLine.pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
 			SetDxfArgv(&dxfLine);
 			pData = new CDXFline(&dxfLine);
@@ -616,7 +616,7 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 		break;
 
 	case TYPE_TEXT:
-		if ( g_nLayer>=DXFCAMLAYER && g_nLayer<=DXFCOMLAYER ) {
+		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFCOMLAYER ) {
 			dxfText.pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
 			SetDxfArgv(&dxfText);
 			pData = new CDXFtext(&dxfText);
@@ -650,7 +650,8 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			break;
 		}
 		else if ( g_pPolyline && g_strGroup==g_szGroupCode[GROUP70] ) {
-			g_pPolyline->SetPolyFlag( atoi(g_strOrder) );	// Polyline‚ÌÌ×¸Þ¾¯Ä
+			if ( atoi(g_strOrder) & 1 )	// Polyline‚Ì•ÂÙ°Ìß‚©H
+				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
 			break;
 		}
 		// Ú²ÔÁª¯¸
@@ -840,7 +841,8 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 			}
 		}
 		else if ( g_pPolyline && g_strGroup==g_szGroupCode[GROUP70] ) {
-			g_pPolyline->SetPolyFlag( atoi(g_strOrder) );	// Polyline‚ÌÌ×¸Þ¾¯Ä
+			if ( atoi(g_strOrder) & 1 )
+				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
 		}
 		else {
 			if ( g_nType>=0 || g_nBlock==0 )
@@ -934,6 +936,7 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 	DXFPARGV	dxfPoint;
 
 	if ( g_bVertex ) {
+		dxfPoint.pLayer = g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer);
 		SetDxfArgv(&dxfPoint);
 		if ( g_nBlock >= 0 )	// Blockˆ—’†
 			dxfPoint.c -= g_pBkData->GetBlockOrigin();	// Œ´“_•â³
@@ -964,20 +967,24 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 			AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
 			return FALSE;
 		}
-		// •Â‚¶‚½ÎßØ×²Ý‚ÅÅŒã‚É‚Ó‚­‚ç‚Ýî•ñ‚ª‚ ‚éê‡
-		if ( g_pPolyline->GetPolyFlag() & 1 && g_dValue[VALUE42] != 0.0 ) {
-			dxfPoint.c = g_pPolyline->GetFirstPoint();	// Å‰‚ÌÀ•W‚ª‰~ŒÊ‚ÌI“_
-			if ( !g_pPolyline->SetVertex(&dxfPoint, g_dValue[VALUE42], ss_pts) ) {
+		// •Â‚¶‚½ÎßØ×²Ý‚ÌŒãˆ—
+		if ( g_pPolyline->IsStartEqEnd() ) {
+			dxfPoint.pLayer = g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer);
+			dxfPoint.c = g_pPolyline->GetFirstPoint();	// Å‰‚ÌÀ•W‚ªI“_
+			// ÅŒã‚É‚Ó‚­‚ç‚Ýî•ñ‚ª‚È‚¢ê‡‚ÍCDXFpoint“o˜^
+			// ‚ ‚éê‡‚ÍCDXFarc“o˜^
+			if ( !(g_dValue[VALUE42]==0.0 ?
+					g_pPolyline->SetVertex(&dxfPoint) :
+					g_pPolyline->SetVertex(&dxfPoint, g_dValue[VALUE42], ss_pts)) ) {
 				AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
 				return FALSE;
 			}
-			g_pPolyline->SetPolyFlag(0);	// ŠJ‚¢‚½ÎßØ×²Ýˆµ‚¢‚Æ‚·‚é
 		}
 		g_pPolyline->EndSeq();
 		if ( g_nBlock >= 0 )	// Blockˆ—’†
 			SetBlockData();
 		else {
-			if ( g_nLayer>=DXFCAMLAYER && g_nLayer<=DXFMOVLAYER ) {
+			if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
 				g_pPolyline->SetParentLayer(pDoc->AddLayerMap(g_strLayer, g_nLayer));
 				pDoc->DataOperation(g_pPolyline);
 			}

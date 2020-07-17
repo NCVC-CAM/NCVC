@@ -243,18 +243,6 @@ void CNCMake::MakePolylineCut(const CDXFpolyline* pPoly, double dFeed)
 			break;
 		}
 	}	// End of loop
-
-	if ( pPoly->GetPolyFlag() & 1 )	{	// 閉じたﾎﾟﾘﾗｲﾝなら
-		// 最後がふくらみ(円弧)の場合は，読み込み時に「開いたﾎﾟﾘﾗｲﾝ」扱いのため
-		// 直線補間生成で良い
-		strGcode = (*ms_pfnGetGString)(1) +
-				GetValString(NCA_X, pPoly->GetMakePoint(0).x) +
-				GetValString(NCA_Y, pPoly->GetMakePoint(0).y);
-		if ( bFeed && !strGcode.IsEmpty() )
-			strGcode += GetFeedString(dFeed);
-		if ( !strGcode.IsEmpty() )
-			m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
-	}
 }
 
 void CNCMake::MakePolylineMov(const CDXFpolyline* pPoly, BOOL bL0)
@@ -283,18 +271,6 @@ void CNCMake::MakePolylineMov(const CDXFpolyline* pPoly, BOOL bL0)
 			if ( !strGcode.IsEmpty() )
 				m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
 		}
-	}
-	if ( pPoly->GetPolyFlag() & 1 )	{
-		pt = pPoly->GetMakePoint(0);
-		if ( bL0 )
-			strGcode = (*ms_pfnGetCycleString)() +
-				GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) +
-				GetValString(NCA_L, 0);
-		else
-			strGcode = (*ms_pfnGetGString)(0) +
-				GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y);
-		if ( !strGcode.IsEmpty() )
-			m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
 	}
 }
 

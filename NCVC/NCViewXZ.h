@@ -8,16 +8,11 @@
 class CNCViewXZ : public CView, public CNCViewBase
 {
 	void	SetGuideData(void);
-	void	DrawConvertWorkRect(void);
-	void	DrawConvertMaxRect(void);
-	CRectD	GetMaxRect(void) {
-		CRect3D	rcMax(GetDocument()->GetMaxRect());
-		CRectD	rc(rcMax.left, rcMax.high, rcMax.right, rcMax.low);
-		rc.NormalizeRect();
-		return	rc;
-	}
-
+	void	ConvertWorkRect(void);
+	void	ConvertMaxRect(void);
+	CRectD	GetDrawMaxRect(void);
 	void	OnViewLensComm(void);
+	void	DrawGuideScale(CDC*);
 
 protected:
 	CNCViewXZ();           // 動的生成に使用されるプロテクト コンストラクタ
@@ -63,6 +58,8 @@ protected:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg int OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	afx_msg void OnEditCopy();

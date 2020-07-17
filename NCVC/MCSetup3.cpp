@@ -19,8 +19,8 @@ typedef	struct tagTOOLHEADER {
 static	TOOLHEADER	g_ToolHeader[] = {
 	{"Çsî‘çÜ", LVCFMT_CENTER},
 	{"ñºÅ@èÃ", LVCFMT_LEFT},
-	{"Å@Å@Å@åaï‚ê≥íl ", LVCFMT_RIGHT},
-	{"Å@Å@Å@í∑ï‚ê≥íl ", LVCFMT_RIGHT}
+	{"åaï‚ê≥íl ", LVCFMT_RIGHT},
+	{"í∑ï‚ê≥íl ", LVCFMT_RIGHT}
 };
 
 BEGIN_MESSAGE_MAP(CMCSetup3, CPropertyPage)
@@ -41,9 +41,8 @@ END_MESSAGE_MAP()
 CMCSetup3::CMCSetup3() : CPropertyPage(CMCSetup3::IDD)
 {
 	m_psp.dwFlags &= ~PSP_HASHELP;
-	//{{AFX_DATA_INIT(CMCSetup3)
-	//}}AFX_DATA_INIT
 	m_bChange = FALSE;
+	m_nSortColumn = 0;
 
 	// åªç›ìoò^çœÇ›ÇÃçHãÔèÓïÒÇÕÅCìoò^ÅEçÌèúÃ◊∏ﬁÇ∏ÿ±
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
@@ -105,6 +104,32 @@ BOOL CMCSetup3::CheckData(void)
 	return TRUE;
 }
 
+void CMCSetup3::SetHeaderMark(int nNewColumn)
+{
+	CHeaderCtrl*	pHeader = m_ctToolList.GetHeaderCtrl();
+	HDITEM			hdi;
+	int				nPos = abs(m_nSortColumn) - 1;
+
+	hdi.mask = HDI_FORMAT;
+
+	// œ∞∂∞çÌèú
+	if ( m_nSortColumn!=0 && m_nSortColumn!=nNewColumn ) {
+		pHeader->GetItem(nPos, &hdi);
+		hdi.fmt &= ~( HDF_SORTUP | HDF_SORTDOWN );
+		pHeader->SetItem(nPos, &hdi);
+	}
+
+	// œ∞∂∞ë}ì¸
+	if ( nNewColumn != 0 ) {
+		nPos = abs(nNewColumn) - 1;
+		pHeader->GetItem(nPos, &hdi);
+		hdi.fmt |= ( nNewColumn<0 ? HDF_SORTUP : HDF_SORTDOWN );
+		pHeader->SetItem(nPos, &hdi);
+	}
+
+	m_nSortColumn = nNewColumn;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CMCSetup3 ÉÅÉbÉZÅ[ÉW ÉnÉìÉhÉâ
 
@@ -117,6 +142,12 @@ BOOL CMCSetup3::OnInitDialog()
 	CRect		rc;
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
+	// ø∞ƒóÒÇÃéÊìæ
+	CString		strRegKey, strEntry;
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
+	VERIFY(strEntry.LoadString(IDS_REG_NCV_MCTOOLSORT));
+	int nSortLayer = (int)(AfxGetApp()->GetProfileInt(strRegKey, strEntry, 1));
+
 	// ÕØ¿ﬁ∞íËã`
 	for ( i=0; i<SIZEOF(g_ToolHeader); i++ ) {
 		m_ctToolList.InsertColumn(i,
@@ -124,13 +155,14 @@ BOOL CMCSetup3::OnInitDialog()
 	}
 	// óÒïù
 	m_ctToolList.GetClientRect(rc);
-	m_ctToolList.SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
-	m_ctToolList.SetColumnWidth(2, LVSCW_AUTOSIZE_USEHEADER);
-	m_ctToolList.SetColumnWidth(3, m_ctToolList.GetColumnWidth(2));
+	i = m_ctToolList.GetStringWidth(g_ToolHeader[2].lpszName) + 16;	// "åaï‚ê≥íl "
+	m_ctToolList.SetColumnWidth(0, i);
+	m_ctToolList.SetColumnWidth(2, i);
+	m_ctToolList.SetColumnWidth(3, i);
 	m_ctToolList.SetColumnWidth(1, rc.Width() -
 		m_ctToolList.GetColumnWidth(0)-
 		m_ctToolList.GetColumnWidth(2)-
-		m_ctToolList.GetColumnWidth(3));
+		m_ctToolList.GetColumnWidth(3)-32);
 	// ÿΩƒ∫›ƒ€∞ŸÇ÷ÇÃìoò^
 	LV_ITEM	lvi;
 	lvi.mask = LVIF_TEXT | LVIF_PARAM;
@@ -154,8 +186,10 @@ BOOL CMCSetup3::OnInitDialog()
 	if ( pMCopt->m_ltTool.IsEmpty() )
 		m_nToolNo.SetFocus();
 	else {
-		m_ctToolList.SortItems(CompareToolListFunc, 0);
+		m_ctToolList.SortItems(CompareToolListFunc, nSortLayer);
 		m_ctToolList.SetItemState(0, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
+		// ÕØ¿ﬁ∞œ∞∏ë}ì¸
+		SetHeaderMark(nSortLayer);		// m_nSortColumnÇ÷ë„ì¸
 	}
 
 	return FALSE;
@@ -168,6 +202,12 @@ BOOL CMCSetup3::OnApply()
 	// ¿ﬁ≤±€∏ﬁÇ≈çÌèúÇ≥ÇÍÇΩçHãÔèÓïÒÇçÌèú
 	pMCopt->ReductionTools(FALSE);
 	pMCopt->m_nCorrectType = m_nType;
+
+	// ø∞ƒóÒÇÃï€ë∂
+	CString		strRegKey, strEntry;
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
+	VERIFY(strEntry.LoadString(IDS_REG_NCV_MCTOOLSORT));
+	AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nSortColumn);
 
 	// çƒì«çû¡™Ø∏
 	if ( m_bChange )
@@ -225,33 +265,40 @@ void CMCSetup3::OnGetDispInfoToolList(NMHDR* pNMHDR, LRESULT* pResult)
 void CMCSetup3::OnColumnClickToolList(NMHDR* pNMHDR, LRESULT* pResult) 
 {
 	LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-	m_ctToolList.SortItems(CompareToolListFunc, pNMListView->iSubItem);
+	int	nNewColumn = pNMListView->iSubItem + 1;
+	if ( abs(m_nSortColumn) == nNewColumn )
+		nNewColumn = -m_nSortColumn;	// è∏èáÅEç~èáÇÃêÿÇËë÷Ç¶
+	// ï¿Ç◊ë÷Ç¶
+	m_ctToolList.SortItems(CompareToolListFunc, nNewColumn);
+	// ÕØ¿ﬁ∞œ∞∏ë}ì¸
+	SetHeaderMark(nNewColumn);
+
 	*pResult = 0;
 }
 
 int	CALLBACK CMCSetup3::CompareToolListFunc
-	(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+	(LPARAM lParam1, LPARAM lParam2, LPARAM lSubItem)
 {
 	CMCTOOLINFO*	pToolInfo1 = (CMCTOOLINFO *)lParam1;
 	CMCTOOLINFO*	pToolInfo2 = (CMCTOOLINFO *)lParam2;
-	int		nResult = 0;
+	int		nResult = 0, nSort = (int)lSubItem;
 
-	switch ( lParamSort ) {
-	case 0:		// Çsî‘çÜ
+	switch ( abs(nSort) ) {
+	case 1:		// Çsî‘çÜ
 		nResult = pToolInfo1->m_nTool - pToolInfo2->m_nTool;
 		break;
-	case 1:		// çHãÔñº
+	case 2:		// çHãÔñº
 		nResult = pToolInfo1->m_strName.Compare(pToolInfo2->m_strName);
 		break;
-	case 2:		// åaï‚ê≥
+	case 3:		// åaï‚ê≥
 		nResult = (int)( (pToolInfo1->m_dToolD - pToolInfo2->m_dToolD) * 1000 );
 		break;
-	case 3:		// í∑ï‚ê≥
+	case 4:		// í∑ï‚ê≥
 		nResult = (int)( (pToolInfo1->m_dToolH - pToolInfo2->m_dToolH) * 1000 );
 		break;
 	}
 
-	return nResult;
+	return nSort != 0 ? (nResult * nSort) : nResult;
 }
 
 void CMCSetup3::OnKeyDownToolList(NMHDR* pNMHDR, LRESULT* pResult) 

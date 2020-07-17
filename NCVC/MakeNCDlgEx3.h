@@ -8,7 +8,7 @@
 
 class CMakeNCDlgEx3 : public CPropertyPage
 {
-	int		m_nSortLayer;	// ¿°Ä’†‚Ì—ñ”Ô†(0:”CˆÓ)
+	int		m_nSortColumn;	// ¿°Ä’†‚Ì—ñ”Ô†(0:”CˆÓ)
 	void	SwapObject(int, int);
 	void	SetFocusListCtrl(int);
 	void	SetHeaderMark(int);
@@ -37,9 +37,9 @@ protected:
 	afx_msg void OnDown();
 	afx_msg LRESULT OnQuerySiblings(WPARAM, LPARAM);
 
-	DECLARE_MESSAGE_MAP()
-
 	static UINT	m_nParentID;
 	// ¿°Ä—pº°ÙÊŞ¯¸ŠÖ”
 	static int CALLBACK CompareFunc(LPARAM, LPARAM, LPARAM);
+
+	DECLARE_MESSAGE_MAP()
 };

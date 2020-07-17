@@ -10,11 +10,12 @@
 
 class CNCViewTab;
 class CNCListView;
+class CNCInfoTab;
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCFrameSplit スプリッタフレーム
 
-class CNCFrameSplit : public CSplitterWnd  
+class CNCFrameSplit : public CSplitterWnd
 {
 protected:
 	// ﾒｯｾｰｼﾞﾏｯﾌﾟ
@@ -48,11 +49,8 @@ public:
 	CNCListView*	GetListView(void) {
 		return reinterpret_cast<CNCListView *>(m_wndSplitter2.GetPane(1, 0));
 	}
-	CMainStatusBar*	GetStatusBar(void) {
-		return &m_wndStatusBar;
-	}
-	CProgressCtrl*	GetProgressCtrl(void) {
-		return GetStatusBar()->GetProgressCtrl();
+	CNCInfoTab*		GetInfoView(void) {
+		return reinterpret_cast<CNCInfoTab *>(m_wndSplitter2.GetPane(0, 0));
 	}
 	void	SetStatusMaxLine(int nSize) {
 		m_nMaxSize = nSize;
@@ -68,7 +66,7 @@ public:
 
 // オペレーション
 public:
-	void	SetWorkRect(BOOL, CRect3D&);		// from NCWorkDlg.cpp
+	void	SetWorkRect(BOOL, const CRect3D&, const CPoint3D&);	// from NCWorkDlg.cpp
 	void	SetJumpList(int);					// from NCJumpDlg.cpp
 	void	SetFindList(int, const CString&);	// from NCFindDlg.cpp
 	void	SetFactorInfo(ENNCVPLANE, double);

@@ -12,6 +12,8 @@ class CViewSetup2 : public CPropertyPage
 {
 	COLORREF	m_colView[14];
 	CBrush		m_brColor[14];
+	
+	void	EnableControl(void);
 
 // コンストラクション
 public:
@@ -22,8 +24,9 @@ public:
 	//{{AFX_DATA(CViewSetup2)
 	enum { IDD = IDD_VIEW_SETUP2 };
 	BOOL	m_bDrawCircleCenter;
-	BOOL	m_bGuide;
+	CButton	m_ctGuide;
 	//}}AFX_DATA
+	BOOL		m_bGuide[2];
 	CStatic		m_ctColor[14];
 	CComboBox	m_cbLineType[9];
 	CFloatEdit	m_dGuide[NCXYZ];
@@ -48,6 +51,7 @@ protected:
 	afx_msg void OnChange();
 	afx_msg void OnDefColor();
 	afx_msg void OnColorButton();
+	afx_msg void OnScale();
 	//}}AFX_MSG
 
 	DECLARE_MESSAGE_MAP()

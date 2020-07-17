@@ -7,6 +7,7 @@
 #include "ViewSetup2.h"
 #include "ViewSetup3.h"
 #include "ViewSetup4.h"
+#include "ViewSetup5.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CViewSetup
@@ -24,6 +25,7 @@ public:
 	CViewSetup2	m_dlg2;
 	CViewSetup3	m_dlg3;
 	CViewSetup4	m_dlg4;
+	CViewSetup5	m_dlg5;
 
 // オペレーション
 public:

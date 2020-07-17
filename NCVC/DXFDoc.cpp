@@ -53,14 +53,17 @@ BEGIN_MESSAGE_MAP(CDXFDoc, CDocument)
 	ON_COMMAND(ID_EDIT_DXFORG, OnEditOrigin)
 	ON_COMMAND(ID_EDIT_DXFSHAPE, OnEditShape)
 	ON_COMMAND(ID_EDIT_SHAPE_AUTO, OnEditAutoShape)
+	ON_COMMAND(ID_EDIT_SHAPE_STRICTOFFSET, OnEditStrictOffset)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_DXFSHAPE, OnUpdateEditShape)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SORTSHAPE, OnUpdateEditShaping)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_AUTO, OnUpdateEditShaping)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_STRICTOFFSET, OnUpdateEditShaping)
 	//}}AFX_MSG_MAP
 	// NC生成ﾒﾆｭｰ
 	ON_UPDATE_COMMAND_UI_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_SHAPE, OnUpdateFileDXF2NCD)
 	ON_COMMAND_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_SHAPE, OnFileDXF2NCD)
-	// 形状加工指示(ｺﾏﾝﾄﾞ実行許可はDXFShapeView.cpp)
+	// 形状加工指示
+	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, OnUpdateShapePattern)
 	ON_COMMAND_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, OnShapePattern)
 END_MESSAGE_MAP()
 
@@ -73,9 +76,7 @@ CDXFDoc::CDXFDoc()
 	// 初期状態はｴﾗｰ, ｽﾚｯﾄﾞは継続
 	m_bShape = m_bReady = FALSE;
 	m_bThread = m_bReload = TRUE;
-	m_nShapePattern = 0;
-	m_dOffset = 1.0;
-	m_bAcute  = TRUE;
+	m_nShapeProcessID = 0;
 	// ﾃﾞｰﾀ数初期化
 	for ( i=0; i<SIZEOF(m_nDataCnt); i++ )
 		m_nDataCnt[i] = 0;
@@ -117,7 +118,7 @@ void CDXFDoc::RemoveData(CLayerData* pLayer, int nIndex)
 {
 	CDXFdata*	pData = pLayer->GetDxfData(nIndex);
 	ENDXFTYPE	enType = pData->GetType();
-	if ( enType>=DXFPOINTDATA || enType<=DXFELLIPSEDATA )
+	if ( DXFPOINTDATA<=enType && enType<=DXFELLIPSEDATA )
 		m_nDataCnt[enType]--;
 	else if ( enType == DXFPOLYDATA ) {
 		CDXFpolyline* pPoly = static_cast<CDXFpolyline*>(pData);
@@ -146,7 +147,7 @@ void CDXFDoc::DataOperation
 		RemoveData(pLayer, nIndex);
 
 	ENDXFTYPE	enType = pData->GetType();
-	if ( enType>=DXFPOINTDATA || enType<=DXFELLIPSEDATA )
+	if ( DXFPOINTDATA<=enType && enType<=DXFELLIPSEDATA )
 		m_nDataCnt[enType]++;
 	else if ( enType == DXFPOLYDATA ) {
 		CDXFpolyline* pPoly = static_cast<CDXFpolyline*>(pData);
@@ -214,7 +215,8 @@ CString CDXFDoc::CheckDuplexFile(const CString& strOrgFile, const CLayerArray* p
 	if ( !pArray )
 		pArray = &m_obLayer;
 
-	int			i, j, nLoop = pArray->GetSize();
+	int			i, j;
+	const int	nLoop = pArray->GetSize();
 	CLayerData*	pLayer;
 	CLayerData*	pLayerCmp;
 	CString		strLayer, strFile, strCmp;
@@ -374,7 +376,7 @@ void CDXFDoc::CreateCutterOrigin(const CPointD& pt, double r, BOOL bRedraw/*=FAL
 	}
 	SetMaxRect(m_pCircle);
 	if ( bRedraw )
-		UpdateAllViews(NULL, UAV_DXFORGUPDATE, static_cast<CObject *>(m_pCircle));
+		UpdateAllViews(NULL, UAV_DXFORGUPDATE, m_pCircle);
 }
 
 BOOL CDXFDoc::GetEditOrgPoint(LPCTSTR lpctStr, CPointD& pt)
@@ -409,7 +411,7 @@ BOOL CDXFDoc::GetEditOrgPoint(LPCTSTR lpctStr, CPointD& pt)
 	return bResult;
 }
 
-tuple<CDXFshape*, double> CDXFDoc::GetSelectObject(const CPointD& pt, const CRectD& rcView)
+tuple<CDXFshape*, CDXFdata*, double> CDXFDoc::GetSelectObject(const CPointD& pt, const CRectD& rcView)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("GetSelectViewPointGap()", DBG_CYAN);
@@ -417,6 +419,8 @@ tuple<CDXFshape*, double> CDXFDoc::GetSelectObject(const CPointD& pt, const CRec
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	CDXFshape*	pShapeResult = NULL;
+	CDXFdata*	pData;
+	CDXFdata*	pDataResult  = NULL;
 	int			i, j;
 	double		dGap, dGapMin = HUGE_VAL;
 	CRectD		rcShape;
@@ -428,19 +432,19 @@ tuple<CDXFshape*, double> CDXFDoc::GetSelectObject(const CPointD& pt, const CRec
 			continue;
 		for ( j=0; j<pLayer->GetShapeSize(); j++ ) {
 			pShape = pLayer->GetShapeData(j);
-			// 表示矩形に少しでもかかっていれば => PtInRectpt()
-			rcShape = pShape->GetMaxRect();
-			if ( rcView.PtInRectpt(rcShape) || rcShape.PtInRectpt(rcView) ) {
-				dGap = pShape->GetSelectObjectFromShape(pt, &rcView);
+			// 表示矩形に少しでもかかっていれば(交差含む)
+			if ( rcShape.CrossRect(rcView, pShape->GetMaxRect()) ) {
+				dGap = pShape->GetSelectObjectFromShape(pt, &rcView, &pData);
 				if ( dGap < dGapMin ) {
 					dGapMin = dGap;
 					pShapeResult = pShape;
+					pDataResult  = pData;
 				}
 			}
 		}
 	}
 
-	return make_tuple(pShapeResult, dGapMin);
+	return make_tuple(pShapeResult, pDataResult, dGapMin);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -507,8 +511,9 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 #ifdef _DEBUG
 		SerializeInfo();
 #endif
+		int		i = 0, nCnt = 0;
 		// 切削ﾃﾞｰﾀがないとき
-		for ( int i=0, nCnt=0; i<m_obLayer.GetSize(); i++ )
+		for ( ; i<m_obLayer.GetSize(); i++ )
 			nCnt += m_obLayer[i]->GetDxfSize();
 		if ( nCnt < 1 ) {
 			AfxMessageBox(IDS_ERR_DXFDATACUT, MB_OK|MB_ICONEXCLAMATION);
@@ -699,7 +704,9 @@ void CDXFDoc::Serialize(CArchive& ar)
 
 	if ( ar.IsStoring() ) {
 		// 各種状態
-		ar << m_bReady << m_bShape << m_dOffset << m_bAcute;
+		ar << m_bReady << m_bShape;
+		ar << m_AutoWork.nSelect << m_AutoWork.dOffset << m_AutoWork.bAcuteRound <<
+			m_AutoWork.nLoopCnt << m_AutoWork.nScanLine << m_AutoWork.bCircleScroll;
 		// NC生成ﾌｧｲﾙ名
 		ar << m_strNCFileName;
 		// 原点ｵﾌﾞｼﾞｪｸﾄ
@@ -723,9 +730,16 @@ void CDXFDoc::Serialize(CArchive& ar)
 	}
 
 	// 各種状態
-	ar >> m_bReady >> m_bShape >> m_dOffset;
-	if ( g_dwCamVer > NCVCSERIALVERSION_1503 )	// Ver1.10～
-		ar >> m_bAcute;
+	ar >> m_bReady >> m_bShape;
+	if ( g_dwCamVer > NCVCSERIALVERSION_1600 ) {	// Ver1.70～
+		ar >> m_AutoWork.nSelect >> m_AutoWork.dOffset >> m_AutoWork.bAcuteRound >>
+			m_AutoWork.nLoopCnt >> m_AutoWork.nScanLine >> m_AutoWork.bCircleScroll;
+	}
+	else {
+		ar >> m_AutoWork.dOffset;
+		if ( g_dwCamVer > NCVCSERIALVERSION_1503 )	// Ver1.10～
+			ar >> m_AutoWork.bAcuteRound;
+	}
 	// NC生成ﾌｧｲﾙ名
 	ar >> m_strNCFileName;
 	// 原点ｵﾌﾞｼﾞｪｸﾄ
@@ -750,10 +764,6 @@ void CDXFDoc::Serialize(CArchive& ar)
 
 	// --- ﾃﾞｰﾀ読み込み後の処理
 
-	// 加工指示のﾃﾞﾌｫﾙﾄ
-	if ( m_bShape )
-		m_nShapePattern = ID_EDIT_SHAPE_VEC;
-
 	// NC生成ﾌｧｲﾙのﾊﾟｽﾁｪｯｸ
 	if ( !m_strNCFileName.IsEmpty() ) {
 		CString	strPath, strFile;
@@ -775,7 +785,7 @@ void CDXFDoc::Serialize(CArchive& ar)
 		for ( j=0; j<nLoopCnt; j++ ) {
 			pData = pLayer->GetDxfData(j);
 			enType = pData->GetType();
-			if ( enType>=DXFPOINTDATA && enType<=DXFELLIPSEDATA )
+			if ( DXFPOINTDATA<=enType && enType<=DXFELLIPSEDATA )
 				m_nDataCnt[enType]++;
 			else if ( enType == DXFPOLYDATA ) {
 				CDXFpolyline*	pPoly = static_cast<CDXFpolyline*>(pData);
@@ -856,8 +866,6 @@ void CDXFDoc::OnEditShape()
 		static_cast<CDXFChild *>(AfxGetNCVCMainWnd()->MDIGetActive())->ShowShapeView();
 		// DXFShapeView更新
 		UpdateAllViews(NULL, UAV_DXFSHAPEUPDATE);
-		// 加工指示のﾃﾞﾌｫﾙﾄ
-		m_nShapePattern = ID_EDIT_SHAPE_VEC;
 		// 更新ﾌﾗｸﾞ
 		SetModifiedFlag();
 	}
@@ -865,12 +873,16 @@ void CDXFDoc::OnEditShape()
 
 void CDXFDoc::OnEditAutoShape() 
 {
-	CDxfAutoWorkingDlg	dlg(m_dOffset, m_bAcute);
+	CDxfAutoWorkingDlg	dlg(&m_AutoWork);
 	if ( dlg.DoModal() != IDOK )
 		return;
 
-	m_dOffset = dlg.m_dOffset;
-	m_bAcute  = dlg.m_bAcuteRound;
+	m_AutoWork.nSelect		= dlg.m_nSelect;
+	m_AutoWork.dOffset		= dlg.m_dOffset;
+	m_AutoWork.bAcuteRound	= dlg.m_bAcuteRound;
+	m_AutoWork.nLoopCnt		= dlg.m_nLoopCnt;
+	m_AutoWork.nScanLine	= dlg.m_nScan;
+	m_AutoWork.bCircleScroll= dlg.m_bCircle;
 
 	// ｵﾌｾｯﾄ初期値の更新
 	int	i, j;
@@ -883,26 +895,42 @@ void CDXFDoc::OnEditAutoShape()
 		for ( j=0; j<pLayer->GetShapeSize(); j++ ) {
 			pShape = pLayer->GetShapeData(j);
 			// 自動処理対象か否か(CDXFchain* だけを対象とする)
-			if ( pShape->GetShapeType()!=0 || pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING )
+			if ( pShape->GetShapeType()!=DXFSHAPETYPE_CHAIN || pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING )
 				continue;
 			// 各種設定の反映
-			pShape->SetOffset(m_dOffset);
-			pShape->SetAcuteRound(m_bAcute);
+			pShape->SetOffset(m_AutoWork.dOffset);
+			pShape->SetAcuteRound(m_AutoWork.bAcuteRound);
 		}
 	}
 
-	// 自動加工指示
-	CThreadDlg	dlgThread(ID_EDIT_SHAPE_AUTO, this,
-					(WPARAM)(dlg.m_nSelect*100+dlg.m_nDetail));
-	if ( dlgThread.DoModal() != IDOK )
-		return;
-
 	// 現在登録されている加工指示を削除
 	UpdateAllViews(NULL, UAV_DXFAUTODELWORKING);
-	// 自動加工指示登録(と再描画)
-	UpdateAllViews(NULL, UAV_DXFAUTOWORKING);
+
+	// 自動加工指示
+	CThreadDlg	dlgThread(ID_EDIT_SHAPE_AUTO, this,
+					AUTOWORKING, (LPARAM)&m_AutoWork);
+	if ( dlgThread.DoModal() == IDOK )
+		UpdateAllViews(NULL, UAV_DXFAUTOWORKING);	// 自動加工指示登録(と再描画)
+	else
+		UpdateAllViews(NULL);						// 再描画のみ
+
 	// 更新ﾌﾗｸﾞ
 	SetModifiedFlag();
+}
+
+void CDXFDoc::OnEditStrictOffset()
+{
+	if ( AfxMessageBox(IDS_ANA_STRICTOFFSET, MB_YESNO|MB_ICONQUESTION) != IDYES )
+		return;
+
+	//	ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄ同士の交点を検索し、厳密なｵﾌｾｯﾄを計算する
+	CThreadDlg	dlgThread(ID_EDIT_SHAPE_AUTO, this,
+					AUTOSTRICTOFFSET);
+	if ( dlgThread.DoModal() == IDOK ) {
+		UpdateAllViews(NULL, UAV_DXFAUTOWORKING,
+			reinterpret_cast<CObject *>(TRUE));	// 再描画のみ
+		SetModifiedFlag();
+	}
 }
 
 void CDXFDoc::OnUpdateEditShape(CCmdUI* pCmdUI) 
@@ -915,14 +943,24 @@ void CDXFDoc::OnUpdateEditShaping(CCmdUI* pCmdUI)
 	pCmdUI->Enable(m_bShape);
 }
 
+void CDXFDoc::OnUpdateShapePattern(CCmdUI* pCmdUI)
+{
+	if ( pCmdUI->m_nID == ID_EDIT_SHAPE_POC )	// ﾎﾟｹｯﾄ処理は未実装
+		pCmdUI->Enable(FALSE);
+	else
+		pCmdUI->SetCheck( pCmdUI->m_nID == m_nShapeProcessID );
+}
+
 void CDXFDoc::OnShapePattern(UINT nID)
 {
-	if ( m_nShapePattern != nID ) {
+	if ( m_nShapeProcessID != nID ) {
 		// 各ﾋﾞｭｰへの通知を先にしないと、仮描画を消せない
 		UpdateAllViews(NULL, UAV_DXFSHAPEID);	// to CDXFView::CancelForSelect()
 		// IDの切り替え
-		m_nShapePattern = nID;
+		m_nShapeProcessID = nID;
 	}
+	else
+		m_nShapeProcessID = 0;	// 加工指示無効化
 }
 
 void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI) 
@@ -934,8 +972,9 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_SHAPE )
 		bEnable = m_bShape;	// 形状処理が済んでいるか
 	else {
+		int		i = 0, nCnt = 0;
 		// 単一ﾚｲﾔの場合は拡張生成をoffにする
-		for ( int i=0, nCnt=0; i<m_obLayer.GetSize(); i++ ) {
+		for ( ; i<m_obLayer.GetSize(); i++ ) {
 			if ( m_obLayer[i]->IsCutType() )
 				nCnt++;
 		}
@@ -1021,6 +1060,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(m_strNCFileName);
 		if ( pDoc )
 			pDoc->OnCloseDocument();
+		bAllOut = TRUE;
 	}
 	else {
 		bAllOut = FALSE;
@@ -1059,7 +1099,16 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		THREAD_PRIORITY_IDLE
 		/*THREAD_PRIORITY_BELOW_NORMAL*/);
 
-	if ( nRet!=IDOK || !bNCView )
+	// 「NC生成後に開く」が無効の場合だけ出力完了ﾒｯｾｰｼﾞ
+	if ( nRet == IDOK ) {
+		if ( !bNCView && bAllOut ) {
+			CString	strMsg;
+			strMsg.Format(IDS_ANA_FILEOUTPUT, m_strNCFileName);
+			AfxMessageBox(strMsg, MB_OK|MB_ICONINFORMATION);
+			return;
+		}
+	}
+	else
 		return;
 
 	// NC生成後のﾃﾞｰﾀを開く

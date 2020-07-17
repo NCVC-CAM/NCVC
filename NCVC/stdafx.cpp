@@ -27,77 +27,8 @@ extern	LPCTSTR	gg_szWild = "*.";
 extern	const	int		gg_nIconX = 16;
 extern	const	int		gg_nIconY = 15;
 
-// BrowseForFolder() ｺｰﾙﾊﾞｯｸ関数
-static	int	AFXAPI	BrowseCallbackProc(HWND, UINT, LPARAM, LPARAM);
-
 /////////////////////////////////////////////////////////////////////////////
 // NCVC 共通関数
-
-// ﾌｫﾙﾀﾞ名からｱｲﾃﾑIDを返す
-LPITEMIDLIST GetItemIDList(LPCTSTR lpszFolder)
-{
-	if ( !lpszFolder || lstrlen(lpszFolder) <= 0 )
-		return NULL;
-
-	LPITEMIDLIST	lpIDL;
-	LPSHELLFOLDER	lpDesktopFolder;
-	if ( ::SHGetDesktopFolder(&lpDesktopFolder) != NOERROR )
-		return NULL;
-
-	OLECHAR		ochPath[_MAX_PATH];
-	ULONG		chEaten;	//文字列のサイズを受け取ります。
-	ULONG		dwAttributes;	//属性を受け取ります。
-
-	::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, lpszFolder, -1, ochPath, _MAX_PATH);
-	if ( lpDesktopFolder->ParseDisplayName( NULL, NULL,
-					ochPath, &chEaten, &lpIDL, &dwAttributes) != NOERROR )
-		lpIDL = NULL;
-
-	lpDesktopFolder->Release();
-
-	return lpIDL;
-}
-
-// ﾌｫﾙﾀﾞ参照ﾀﾞｲｱﾛｸﾞの表示(ﾌﾙﾊﾟｽを返す)
-CString	BrowseForFolder(LPCTSTR lpszCaption/*=NULL*/, LPCTSTR lpszInitFolder/*=NULL*/)
-{
-	LPITEMIDLIST	pidlRetFolder, pidlInitFolder;
-	BROWSEINFO		brInfo;
-	TCHAR			szFolder[_MAX_PATH];
-	CString			strFolder;
-
-	pidlInitFolder = GetItemIDList(lpszInitFolder);
-
-	::ZeroMemory(&brInfo, sizeof(BROWSEINFO));
-	brInfo.hwndOwner		= AfxGetMainWnd()->m_hWnd;
-	brInfo.pszDisplayName	= szFolder;
-	brInfo.lpszTitle		= lpszCaption;
-	brInfo.ulFlags			= BIF_BROWSEFORCOMPUTER | BIF_DONTGOBELOWDOMAIN | BIF_RETURNONLYFSDIRS;
-	brInfo.lpfn				= (BFFCALLBACK)BrowseCallbackProc;
-	brInfo.lParam			= (LPARAM)pidlInitFolder;
-
-	pidlRetFolder = ::SHBrowseForFolder(&brInfo);
-	if ( pidlRetFolder ) {
-		if ( ::SHGetPathFromIDList(pidlRetFolder, szFolder) )
-			strFolder = szFolder;
-		::CoTaskMemFree(pidlRetFolder);
-	}
-
-	if ( pidlInitFolder )
-		::CoTaskMemFree(pidlInitFolder);
-
-	return strFolder;
-}
-
-int	AFXAPI BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
-{
-	if ( uMsg == BFFM_INITIALIZED ) {
-		::SetWindowText(hwnd, _T("ﾌｫﾙﾀﾞの参照"));
-		::SendMessage(hwnd, BFFM_SETSELECTION, FALSE, lpData);
-	}
-
-	return 0;
-}
 
 // ﾌﾙﾊﾟｽ名をﾊﾟｽ名とﾌｧｲﾙ名に分割
 void Path_Name_From_FullPath

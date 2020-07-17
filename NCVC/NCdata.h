@@ -7,11 +7,6 @@
 #include "MainFrm.h"
 #include "NCVCdefine.h"
 
-// 拡張dwValFlags 上位16ﾋﾞｯﾄを使用
-#define	NCD_CORRECT_L		0x00010000
-#define	NCD_CORRECT_R		0x00020000
-#define	NCD_CORRECT			(NCD_CORRECT_L | NCD_CORRECT_R)
-
 // 始点終点指示
 enum	ENPOINTORDER
 	{STARTPOINT, ENDPOINT};
@@ -38,8 +33,10 @@ class CNCdata
 protected:
 	NCDATA		m_nc;			// NC基礎ﾃﾞｰﾀ -> NCVCdefine.h
 	CPointD		m_pt2D;			// ２次元変換後の座標計算結果(終点)
-	double		m_dFeed;		// このｵﾌﾞｼﾞｪｸﾄの切削送り速度
-	double		m_dMove[NCXYZ];	// 各軸ごとの移動距離(早送りの時間計算用)
+	double		m_dFeed,		// このｵﾌﾞｼﾞｪｸﾄの切削送り速度
+				m_dMove[NCXYZ],	// 各軸ごとの移動距離(早送りの時間計算用)
+				m_dEndmill;		// ｴﾝﾄﾞﾐﾙ径
+	int			m_nEndmillType;	// ｴﾝﾄﾞﾐﾙﾀｲﾌﾟ
 	CTypedPtrArrayEx<CPtrArray, CNCdata*>
 				m_obCdata;		// 補正用ｵﾌﾞｼﾞｪｸﾄ
 	//	固定ｻｲｸﾙでは，指定された座標が最終座標ではないので
@@ -73,6 +70,7 @@ public:
 	int		GetBlockLineNo(void) const;
 	int		GetGtype(void) const;
 	int		GetGcode(void) const;
+	BOOL	IsCutter(void) const;
 	ENPLANE	GetPlane(void) const;
 	DWORD	GetValFlags(void) const;
 	double	GetValue(size_t) const;
@@ -88,6 +86,8 @@ public:
 	double	GetCutLength(void) const;
 	double	GetFeed(void) const;
 	double	GetMove(size_t) const;
+	double	GetEndmill(void) const;
+	int		GetEndmillType(void) const;
 	const CRect3D	GetMaxRect(void) const;
 	CNCdata*	NC_CopyObject(void);			// from TH_Correct.cpp
 	void		AddCorrectObject(CNCdata*);
@@ -96,15 +96,18 @@ public:
 	const CNCread*	GetReadData(void) const;
 	void		DeleteReadData(void);
 
-	virtual	void	DrawTuning(double);
-	virtual	void	DrawTuningXY(double);
-	virtual	void	DrawTuningXZ(double);
-	virtual	void	DrawTuningYZ(double);
+	virtual	void	DrawTuning(const double);
+	virtual	void	DrawTuningXY(const double);
+	virtual	void	DrawTuningXZ(const double);
+	virtual	void	DrawTuningYZ(const double);
 	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawGL(BOOL = FALSE) const;
+	virtual	void	DrawMill(void) const;
+	virtual	void	CreateOcclusionCulling(const CNCdata*);
+	virtual	void	CreateMillList(double);
 
 	// 移動長，切削長の計算
 	virtual	double	SetCalcLength(void);
@@ -119,13 +122,16 @@ public:
 	// [始点|終点]を垂直にｵﾌｾｯﾄ(90°回転)した座標計算
 	virtual	boost::optional<CPointD>	CalcPerpendicularPoint(ENPOINTORDER, double, int) const;
 	// ｵﾌｾｯﾄ分移動させた交点
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, int, int) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const;
 	// ｵﾌｾｯﾄ分移動させた交点(円弧は接線)
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, int, int) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const;
 	// 補正座標の設定
 	virtual	void	SetCorrectPoint(ENPOINTORDER, const CPointD&, double);
 
-#ifdef _DEBUG
+	// OpenGL 関連
+	GLuint		m_glList;		// 描画用ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
+
+#ifdef _DEBUG_DUMP
 	void	DbgDump(void);
 #endif
 };
@@ -139,7 +145,8 @@ class CNCline : public CNCdata
 	EN_NCPEN	GetPenType(void) const;
 	int			GetLineType(void) const;
 	void	DrawLine(CDC*, size_t, BOOL, BOOL) const;
-	
+	void	SolidPath(BOOL, double) const;
+
 protected:
 	CPointD		m_pt2Ds;				// 2次元変換後の始点(XYZ平面用)
 	CPoint		m_ptDrawS[1+NCXYZ],		// 拡大係数込みの描画始点終点
@@ -153,15 +160,18 @@ public:
 	CNCline(const CNCdata*);
 
 public:
-	virtual	void	DrawTuning(double);
-	virtual	void	DrawTuningXY(double);
-	virtual	void	DrawTuningXZ(double);
-	virtual	void	DrawTuningYZ(double);
+	virtual	void	DrawTuning(const double);
+	virtual	void	DrawTuningXY(const double);
+	virtual	void	DrawTuningXZ(const double);
+	virtual	void	DrawTuningYZ(const double);
 	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawGL(BOOL = FALSE) const;
+	virtual	void	DrawMill(void) const;
+	virtual	void	CreateOcclusionCulling(const CNCdata*);
+	virtual	void	CreateMillList(double);
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
@@ -169,8 +179,8 @@ public:
 	virtual	double	CalcBetweenAngle(const CNCdata*) const;
 	virtual	int		CalcOffsetSign(void) const;
 	virtual	boost::optional<CPointD>	CalcPerpendicularPoint(ENPOINTORDER, double, int) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, int, int) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, int, int) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const;
 	virtual	void	SetCorrectPoint(ENPOINTORDER, const CPointD&, double);
 };
 
@@ -181,7 +191,7 @@ struct PTCYCLE
 	CPointD		ptI, ptR, ptC;	// ｲﾆｼｬﾙ点、R点、切り込み点
 	CPoint		ptDrawI, ptDrawR, ptDrawC;
 	CRect		rcDraw;			// 同一平面の丸印描画用
-	void	DrawTuning(double f);
+	void	DrawTuning(const double f);
 };
 struct PTCYCLE3D
 {
@@ -190,7 +200,7 @@ struct PTCYCLE3D
 
 class CNCcycle : public CNCline
 {
-	int			m_nDrawCnt;		// ｵﾌﾞｼﾞｪｸﾄ座標値生成数==描画用繰り返し数
+	int			m_nDrawCnt;			// ｵﾌﾞｼﾞｪｸﾄ座標値生成数==描画用繰り返し数
 	PTCYCLE*	m_Cycle[1+NCXYZ];	// XYZとXY,XZ,YZ
 	PTCYCLE3D*	m_Cycle3D;			// OpenGL用
 
@@ -218,15 +228,18 @@ public:
 	double	GetCycleMove(void) const;
 	double	GetDwell(void) const;
 
-	virtual	void	DrawTuning(double);
-	virtual	void	DrawTuningXY(double);
-	virtual	void	DrawTuningXZ(double);
-	virtual	void	DrawTuningYZ(double);
+	virtual	void	DrawTuning(const double);
+	virtual	void	DrawTuningXY(const double);
+	virtual	void	DrawTuningXZ(const double);
+	virtual	void	DrawTuningYZ(const double);
 	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawGL(BOOL = FALSE) const;
+	virtual	void	DrawMill(void) const;
+	virtual	void	CreateOcclusionCulling(const CNCdata*);
+	virtual	void	CreateMillList(double);
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
@@ -234,8 +247,8 @@ public:
 	virtual	double	CalcBetweenAngle(const CNCdata*) const;
 	virtual	int		CalcOffsetSign(void) const;
 	virtual	boost::optional<CPointD>	CalcPerpendicularPoint(ENPOINTORDER, double, int) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, int, int) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, int, int) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const;
 	virtual	void	SetCorrectPoint(ENPOINTORDER, const CPointD&, double);
 };
 
@@ -264,6 +277,7 @@ class CNCcircle : public CNCdata
 	void	Draw_G17(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G18(EN_NCCIRCLEDRAW, CDC*) const;
 	void	Draw_G19(EN_NCCIRCLEDRAW, CDC*) const;
+	void	SolidPath(BOOL, double) const;
 
 	// IJK指定なしの時，円の方程式から中心の算出
 	BOOL	CalcCenter(const CPointD&, const CPointD&);
@@ -285,15 +299,18 @@ public:
 	double	GetStartAngle(void) const;
 	double	GetEndAngle(void) const;
 
-	virtual	void	DrawTuning(double);
-	virtual	void	DrawTuningXY(double);
-	virtual	void	DrawTuningXZ(double);
-	virtual	void	DrawTuningYZ(double);
+	virtual	void	DrawTuning(const double);
+	virtual	void	DrawTuningXY(const double);
+	virtual	void	DrawTuningXZ(const double);
+	virtual	void	DrawTuningYZ(const double);
 	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 	virtual	void	DrawGL(BOOL = FALSE) const;
+	virtual	void	DrawMill(void) const;
+	virtual	void	CreateOcclusionCulling(const CNCdata*);
+	virtual	void	CreateMillList(double);
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
@@ -301,8 +318,8 @@ public:
 	virtual	double	CalcBetweenAngle(const CNCdata*) const;
 	virtual	int		CalcOffsetSign(void) const;
 	virtual	boost::optional<CPointD>	CalcPerpendicularPoint(ENPOINTORDER, double, int) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, int, int) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, int, int) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CNCdata*, double, BOOL) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const;
 	virtual	void	SetCorrectPoint(ENPOINTORDER, const CPointD&, double);
 };
 

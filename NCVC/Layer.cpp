@@ -134,25 +134,16 @@ void CLayerData::AllChangeFactor(double f) const
 		m_obShapeArray[i]->AllChangeFactor(f);
 }
 
-int CLayerData::AllShape_OrgTuning(void)
-{
-	CDXFshape*	pShape;
-	int	i, nLoop = m_obShapeArray.GetSize();
-
-	for ( i=0; i<nLoop; i++ ) {
-		pShape = m_obShapeArray[i];
-		pShape->OrgTuning();
-		pShape->ClearMakeFlg();
-	}
-
-	return nLoop;
-}
-
 void CLayerData::DrawWorking(CDC* pDC)
 {
-	int	i, nLoop = m_obShapeArray.GetSize();
-	for ( i=0; i<nLoop; i++ )
+	for ( int i=0; i<m_obShapeArray.GetSize(); i++ )
 		m_obShapeArray[i]->DrawWorking(pDC);
+}
+
+void CLayerData::AllShapeClearSideFlg(void) const
+{
+	for ( int i=0; i<m_obShapeArray.GetSize(); i++ )
+		m_obShapeArray[i]->ClearSideFlg();
 }
 
 void CLayerData::SetInitFile(LPCTSTR lpszInitFile)
@@ -294,7 +285,7 @@ int AreaCompareFunc1(CDXFshape* pFirst, CDXFshape* pSecond)
 	double	dResult = rc1.Width() * rc1.Height() - rc2.Width() * rc2.Height();
 	if ( dResult == 0.0 )
 		nResult = 0;
-	else if ( dResult > 0 )
+	else if ( dResult > 0.0 )
 		nResult = 1;
 	else
 		nResult = -1;
@@ -308,7 +299,7 @@ int AreaCompareFunc2(CDXFshape* pFirst, CDXFshape* pSecond)
 	double	dResult = rc2.Width() * rc2.Height() - rc1.Width() * rc1.Height();
 	if ( dResult == 0.0 )
 		nResult = 0;
-	else if ( dResult > 0 )
+	else if ( dResult > 0.0 )
 		nResult = 1;
 	else
 		nResult = -1;

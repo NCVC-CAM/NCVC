@@ -8,10 +8,12 @@
 
 class CMCSetup3 : public CPropertyPage
 {
+	int		m_nSortColumn;	// ｿｰﾄ中の列番号(0:任意)
 	BOOL	m_bChange;
 
 	void	SetDetailData(const CMCTOOLINFO*);
 	BOOL	CheckData(void);
+	void	SetHeaderMark(int);
 
 // コンストラクション
 public:
@@ -54,6 +56,7 @@ protected:
 	afx_msg void OnDel();
 	//}}AFX_MSG
 
+	// ｿｰﾄ用ｺｰﾙﾊﾞｯｸ関数
 	static	int	CALLBACK	CompareToolListFunc(LPARAM, LPARAM, LPARAM);
 
 	DECLARE_MESSAGE_MAP()

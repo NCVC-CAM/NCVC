@@ -6,11 +6,12 @@
 #include "ChildBase.h"
 
 class	CDXFView;
+class	CDXFShapeView;
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFFrameSplit スプリッタフレーム
 
-class CDXFFrameSplit : public CSplitterWnd  
+class CDXFFrameSplit : public CSplitterWnd
 {
 protected:
 	// ﾒｯｾｰｼﾞﾏｯﾌﾟ
@@ -33,8 +34,11 @@ protected:
 
 // アトリビュート
 public:
-	CDXFView*	GetMainView(void) {
+	CDXFView*		GetMainView(void) {
 		return reinterpret_cast<CDXFView *>(m_wndSplitter.GetPane(0, 0));
+	}
+	CDXFShapeView*	GetTreeView(void) {
+		return reinterpret_cast<CDXFShapeView *>(m_wndSplitter.GetPane(0, 1));
 	}
 
 // オペレーション

@@ -26,8 +26,7 @@ public:
 	CButton	m_ctHide;
 	CButton	m_ctOK;
 	//}}AFX_DATA
-	CIntEdit	m_WorkNum[2][NCXYZ];
-	CSpinButtonCtrl	m_Spin[2][NCXYZ];
+	CFloatEdit	m_ctWork[2][NCXYZ];
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

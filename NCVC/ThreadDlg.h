@@ -27,8 +27,8 @@ class CThreadDlg : public CDialog
 	int		m_nID;
 	NCVCTHREADPARAM		m_paramThread;		// ｽﾚｯﾄﾞへの引数
 
-	HANDLE	m_hThread;		// ｽﾚｯﾄﾞﾊﾝﾄﾞﾙ
-	BOOL	m_bThread;		// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
+	CWinThread*	m_pThread;
+	BOOL		m_bThread;		// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
 
 // コンストラクション
 public:

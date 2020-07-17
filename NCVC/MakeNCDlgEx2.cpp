@@ -217,19 +217,19 @@ void CMakeNCDlgEx2::OnMKNCLayerEdit()
 {
 	UpdateData();
 	CLayerArray*	pArray;
+	CMakeNCDlgEx11	dlg1(GetNCMakeParent(), 0);	// ÃÞ½Ä×¸À‚Ådlg.m_obLayer‚Ì“à—e‚ªÁ‚³‚ê‚é‚Ì‚Å
+	CMakeNCDlgEx21	dlg2(GetNCMakeParent(), 0);	// if•¶“à‚É‚Í“ü‚ê‚ç‚ê‚È‚¢
 
 	// Ú×Ý’è—pÀÞ²±Û¸Þ‚ÌŒÄ‚Ño‚µ
 	if ( IsMakeEx1() ) {
-		CMakeNCDlgEx11	dlg(GetNCMakeParent(), 0);
-		if ( dlg.DoModal() != IDOK )
+		if ( dlg1.DoModal() != IDOK )
 			return;
-		pArray = &(dlg.m_obLayer);
+		pArray = &(dlg1.m_obLayer);
 	}
 	else {
-		CMakeNCDlgEx21	dlg(GetNCMakeParent(), 0);
-		if ( dlg.DoModal() != IDOK )
+		if ( dlg2.DoModal() != IDOK )
 			return;
-		pArray = &(dlg.m_obLayer);
+		pArray = &(dlg2.m_obLayer);
 	}
 
 	// Œ‹‰Ê‚Ì”½‰f
@@ -242,8 +242,8 @@ void CMakeNCDlgEx2::OnMKNCLayerEdit()
 		CLayerData*	pLayer1;
 		CLayerData*	pLayer2;
 		CDXFDoc*	pDoc = GetNCMakeParent()->GetDocument();
-		int			i, j, nLoop = pDoc->GetLayerCnt();
-		for ( i=0, j=0; i<nLoop; i++ ) {
+		int			i, j;
+		for ( i=0, j=0; i<pDoc->GetLayerCnt(); i++ ) {
 			pLayer1 = pDoc->GetLayerData(i);
 			if ( pLayer1->IsCutType() ) {
 				pLayer2 = pArray->GetAt(j++);

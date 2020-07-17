@@ -20,6 +20,7 @@ class CDXFView : public CView, public CViewBase
 	CPointD		m_ptArraw[2][3],	// 一時的な始点終点の矢印座標
 				m_ptStart[4];		// 一時的な開始位置(円で最大4点)
 	CDXFchain	m_ltOutline[2];		// 一時的な輪郭ｵﾌﾞｼﾞｪｸﾄ
+	double		m_dOffset;			// ↑のｵﾌｾｯﾄ値
 	int			m_nSelect;			// m_ptArraw[0|1] or -1
 	DXFTREETYPE	m_vSelect;			// 現在選択されているﾂﾘｰｵﾌﾞｼﾞｪｸﾄ
 	CDXFdata*	m_pSelData;			// 　〃　ｵﾌﾞｼﾞｪｸﾄ(OnLButtonUp)
@@ -37,14 +38,14 @@ class CDXFView : public CView, public CViewBase
 	BOOL	CancelForSelect(CDC* = NULL);
 	void	AllChangeFactor_OutlineTempObject(void);
 
-	BOOL	OnLButtonUp_Select (CDC*, const CPointD&, const CRectD&);
-	BOOL	OnLButtonUp_Vector (CDC*, const CPointD&, const CRectD&);
-	BOOL	OnLButtonUp_Start  (CDC*, const CPointD&, const CRectD&);
-	BOOL	OnLButtonUp_Outline(CDC*, const CPointD&, const CRectD&);
-	BOOL	OnMouseMove_Select (CDC*, const CPointD&, const CRectD&);
-	BOOL	OnMouseMove_Vector (CDC*, const CPointD&, const CRectD&);
-	BOOL	OnMouseMove_Start  (CDC*, const CPointD&, const CRectD&);
-	BOOL	OnMouseMove_Outline(CDC*, const CPointD&, const CRectD&);
+	void	OnLButtonUp_Separate(CDC*, CDXFdata*, const CPointD&, const CRectD&);
+	void	OnLButtonUp_Vector  (CDC*, CDXFdata*, const CPointD&, const CRectD&);
+	void	OnLButtonUp_Start   (CDC*, CDXFdata*, const CPointD&, const CRectD&);
+	void	OnLButtonUp_Outline (CDC*, CDXFdata*, const CPointD&, const CRectD&);
+	void	OnMouseMove_Separate(CDC*, const CPointD&, const CRectD&);
+	void	OnMouseMove_Vector  (CDC*, const CPointD&, const CRectD&);
+	void	OnMouseMove_Start   (CDC*, const CPointD&, const CRectD&);
+	void	OnMouseMove_Outline (CDC*, const CPointD&, const CRectD&);
 
 protected:
 	CDXFView();           // 動的生成に使用されるプロテクト コンストラクタ
@@ -82,6 +83,7 @@ protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);

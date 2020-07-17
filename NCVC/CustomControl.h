@@ -83,41 +83,6 @@ protected:
 };
 
 /////////////////////////////////////////////////////////////////////////////
-// CIEStatic ウィンドウ
-// ﾘﾝｸｶﾗｰ(青色)への変更は，親ｳｨﾝﾄﾞｳの OnCtlColor() で行う
-
-class CIEStatic : public CStatic
-{
-// コンストラクション
-public:
-	CIEStatic();
-
-// アトリビュート
-public:
-
-// オペレーション
-public:
-
-// オーバーライド
-	// ClassWizard は仮想関数のオーバーライドを生成します。
-	//{{AFX_VIRTUAL(CIEStatic)
-	//}}AFX_VIRTUAL
-
-// インプリメンテーション
-public:
-	virtual ~CIEStatic();
-
-	// 生成されたメッセージ マップ関数
-protected:
-	//{{AFX_MSG(CIEStatic)
-	afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	//}}AFX_MSG
-
-	DECLARE_MESSAGE_MAP()
-};
-
-/////////////////////////////////////////////////////////////////////////////
 // CColComboBox ウィンドウ
 
 class CColComboBox : public CComboBox

@@ -91,7 +91,8 @@ BOOL CAddinDlg::OnInitDialog()
 	// Ø½ÄºÝÄÛ°Ù‚Ì²Ò°¼Þ¾¯Ä
 	m_ctList.SetImageList(AfxGetNCVCMainWnd()->GetAddinImage(), LVSIL_NORMAL);
 	// Ø½ÄºÝÄÛ°Ù‚Ö‚Ì“o˜^
-	int		i, nCnt = AfxGetNCVCApp()->GetAddinArray()->GetSize();
+	int			i;
+	const int	nCnt = AfxGetNCVCApp()->GetAddinArray()->GetSize();
 	CNCVCaddinIF*	pAddin;
 	LV_ITEM	lvi;
 	lvi.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;

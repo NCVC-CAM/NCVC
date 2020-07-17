@@ -4,9 +4,11 @@
 
 #pragma once
 
-#include "NCViewBase.h"
+//#include "NCViewBase.h"
+#include "ViewBase.h"
 
-class CNCView : public CView, public CNCViewBase
+//class CNCView : public CView, public CNCViewBase
+class CNCView : public CView, public CViewBase
 {
 	CPoint		m_ptGuid[NCXYZ][2];		// XYZ軸のｶﾞｲﾄﾞ座標(始点・終点)
 	// ﾜｰｸ矩形
@@ -20,8 +22,8 @@ class CNCView : public CView, public CNCViewBase
 	void	SetGuideData(void);
 	void	SetMaxRect2D(void);
 	void	SetWorkRect2D(void);
-	void	DrawConvertWorkRect(void);
-	void	DrawConvertMaxRect(void);
+	void	ConvertWorkRect(void);
+	void	ConvertMaxRect(void);
 
 	void	DrawWorkRect(CDC*);
 	void	DrawMaxRect(CDC*);
@@ -72,6 +74,8 @@ protected:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg int OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	afx_msg void OnEditCopy();

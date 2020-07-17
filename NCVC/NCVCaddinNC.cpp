@@ -112,7 +112,8 @@ NCEXPORT void WINAPI NCVC_DelNCStrData(NCVCHANDLE hDoc, int nIndex, int nCnt)
 static void NCArgvInitialize(LPNCARGV lpArgv)
 {
 	int		i;
-	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
+	const CMCOption* pMCopt  = AfxGetNCVCApp()->GetMCOption();
+	const CViewOption* pVopt = AfxGetNCVCApp()->GetViewOption();
 
 	lpArgv->nc.nGtype = G_TYPE;
 	lpArgv->nc.nGcode = pMCopt->GetModalSetting(MODALGROUP0);
@@ -132,9 +133,10 @@ static void NCArgvInitialize(LPNCARGV lpArgv)
 		lpArgv->nc.dValue[i] = pMCopt->GetInitialXYZ(i);
 	for ( ; i<VALUESIZE; i++ )
 		lpArgv->nc.dValue[i] = 0.0;
-	lpArgv->bAbs = pMCopt->GetModalSetting(MODALGROUP3) == 0 ? TRUE : FALSE;
-	lpArgv->bInitial = pMCopt->GetModalSetting(MODALGROUP4) == 0 ? TRUE : FALSE;
-	lpArgv->dFeed = pMCopt->GetFeed();
+	lpArgv->bAbs		= pMCopt->GetModalSetting(MODALGROUP3) == 0 ? TRUE : FALSE;
+	lpArgv->bInitial	= pMCopt->GetModalSetting(MODALGROUP4) == 0 ? TRUE : FALSE;
+	lpArgv->dFeed		= pMCopt->GetFeed();
+	lpArgv->dEndmill	= pVopt->GetDefaultEndmill();
 }
 
 static BOOL NCdataOperation

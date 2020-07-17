@@ -126,7 +126,7 @@ public:
 // ‘®«
 public:
 	CPen*		GetPenOrg(size_t a) {
-		ASSERT(a>=NCA_X && a<=NCA_Z);
+		ASSERT(NCA_X<=a && a<=NCA_Z);
 		return &m_penOrg[m_nSelectGDI][a];
 	}
 	CPen*		GetPenCom(EN_COMPEN a) {

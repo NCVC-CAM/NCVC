@@ -15,10 +15,10 @@ extern	CMagaDbg	g_dbg;
 BEGIN_MESSAGE_MAP(CViewSetup1, CPropertyPage)
 	//{{AFX_MSG_MAP(CViewSetup1)
 	ON_WM_CTLCOLOR()
+	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, OnDefColor)
 	ON_BN_CLICKED(IDC_VIEWSETUP1_BT_RECT, OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP1_BT_SEL, OnColorButton)
-	ON_BN_CLICKED(IDC_VIEWSETUP1_WHEEL, OnChange)
-	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, OnDefColor)
+	ON_BN_CLICKED(IDC_VIEWSETUP1_WHEEL, OnWheel)
 	ON_BN_CLICKED(IDC_VIEWSETUP1_NtoP, OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP1_PtoN, OnChange)
 	ON_CBN_SELCHANGE(IDC_VIEWSETUP1_CB_RECT, OnChange)
@@ -38,7 +38,7 @@ CViewSetup1::CViewSetup1() : CPropertyPage(CViewSetup1::IDD)
 	m_bMouseWheel	= pOpt->m_bMouseWheel;
 	m_nWheelType	= pOpt->m_nWheelType;
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
-		m_colView[i] = pOpt->GetDrawColor(i);
+		m_colView[i] = pOpt->m_colView[i];
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
 	}
 }
@@ -55,12 +55,20 @@ void CViewSetup1::DoDataExchange(CDataExchange* pDX)
 	//{{AFX_DATA_MAP(CViewSetup1)
 	DDX_Check(pDX, IDC_VIEWSETUP1_WHEEL, m_bMouseWheel);
 	DDX_Radio(pDX, IDC_VIEWSETUP1_PtoN, m_nWheelType);
+	DDX_Control(pDX, IDC_VIEWSETUP1_PtoN, m_ctMouseWheel[0]);
+	DDX_Control(pDX, IDC_VIEWSETUP1_NtoP, m_ctMouseWheel[1]);
 	//}}AFX_DATA_MAP
 	int		i;
 	for ( i=0; i<SIZEOF(m_cbLineType); i++ )
 		DDX_Control(pDX, i + IDC_VIEWSETUP1_CB_RECT, m_cbLineType[i]);
 	for ( i=0; i<SIZEOF(m_ctColor); i++ )
 		DDX_Control(pDX, i + IDC_VIEWSETUP1_ST_RECT, m_ctColor[i]);
+}
+
+void CViewSetup1::EnableControl(void)
+{
+	m_ctMouseWheel[0].EnableWindow(m_bMouseWheel);
+	m_ctMouseWheel[1].EnableWindow(m_bMouseWheel);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -79,6 +87,8 @@ BOOL CViewSetup1::OnInitDialog()
 			m_cbLineType[i].AddString(g_penStyle[j].lpszPenName);
 		m_cbLineType[i].SetCurSel(pOpt->GetDrawType(i));
 	}
+
+	EnableControl();
 
 	return TRUE;  // コントロールにフォーカスを設定しないとき、戻り値は TRUE となります
 	              // 例外: OCX プロパティ ページの戻り値は FALSE となります
@@ -117,18 +127,26 @@ void CViewSetup1::OnChange()
 	SetModified();
 }
 
+void CViewSetup1::OnWheel() 
+{
+	UpdateData();
+	EnableControl();
+	SetModified();
+}
+
 void CViewSetup1::OnColorButton() 
 {
 	int	nIndex = GetFocus()->GetDlgCtrlID() - IDC_VIEWSETUP1_BT_RECT;
-	ASSERT( 0<=nIndex && nIndex<SIZEOF(m_colView) );
-	CColorDialog	dlg(m_colView[nIndex]);
-	dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
-	if ( dlg.DoModal() == IDOK ) {
-		m_colView[nIndex] = dlg.GetColor();
-		m_brColor[nIndex].DeleteObject();
-		m_brColor[nIndex].CreateSolidBrush( m_colView[nIndex] );
-		m_ctColor[nIndex].Invalidate();
-		SetModified();
+	if ( 0<=nIndex && nIndex<SIZEOF(m_colView) ) {
+		CColorDialog	dlg(m_colView[nIndex]);
+		dlg.m_cc.lpCustColors = AfxGetNCVCApp()->GetViewOption()->GetCustomColor();
+		if ( dlg.DoModal() == IDOK ) {
+			m_colView[nIndex] = dlg.GetColor();
+			m_brColor[nIndex].DeleteObject();
+			m_brColor[nIndex].CreateSolidBrush( m_colView[nIndex] );
+			m_ctColor[nIndex].Invalidate();
+			SetModified();
+		}
 	}
 }
 
