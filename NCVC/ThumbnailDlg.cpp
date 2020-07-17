@@ -1,5 +1,6 @@
 // ThumbnailDlg.cpp : インプリメンテーション ファイル
 //
+/////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
 #include "NCVC.h"
@@ -36,14 +37,6 @@ BEGIN_MESSAGE_MAP(CThumbnailStatic, CStatic)
 	ON_MESSAGE(WM_USERFINISH, OnUserDblClk)
 END_MESSAGE_MAP()
 
-struct	ENUMDOCTHREADPARAM {
-	CNCDoc*		pDoc;
-	CView*		pView;
-	CString		strFile;
-};
-#define	LPENUMDOCTHREADPARAM	ENUMDOCTHREADPARAM *
-static UINT	EnumDocument_Thread(LPVOID);
-
 // 並べ替え補助関数
 static int	FileNameCompareFunc1(LPTHUMBNAILINFO, LPTHUMBNAILINFO);		// ﾌｧｲﾙ名昇順ｿｰﾄ
 static int	FileNameCompareFunc2(LPTHUMBNAILINFO, LPTHUMBNAILINFO);		// ﾌｧｲﾙ名降順ｿｰﾄ
@@ -77,7 +70,7 @@ CThumbnailDlg::~CThumbnailDlg()
 
 void CThumbnailDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_THUMBNAIL_TREE, m_ctFolderTree);
 	DDX_Control(pDX, IDC_THUMBNAIL_VIEWPARENT, m_ctParentView);
 	DDX_Control(pDX, IDC_THUMBNAIL_SCROLL, m_ctScroll);
@@ -339,7 +332,7 @@ BOOL CThumbnailDlg::OnInitDialog()
 	int		i;
 	CRect	rc;
 
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ﾂﾘｰﾋﾞｭｰのﾃﾞｽｸﾄｯﾌﾟを展開
 	HTREEITEM hTree = m_ctFolderTree.GetRootItem();
@@ -396,7 +389,7 @@ BOOL CThumbnailDlg::OnInitDialog()
 
 void CThumbnailDlg::OnSize(UINT nType, int cx, int cy)
 {
-	CDialog::OnSize(nType, cx, cy);
+	__super::OnSize(nType, cx, cy);
 
 	if ( m_bInitialize )	// OnInitDialog()前のOnSize()は無視
 		ResizeControl(cx, cy);
@@ -416,7 +409,7 @@ void CThumbnailDlg::OnSelchanged(NMHDR *pNMHDR, LRESULT *pResult)
 void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
 	if ( !pScrollBar ) {
-		CDialog::OnVScroll(nSBCode, nPos, pScrollBar);
+		__super::OnVScroll(nSBCode, nPos, pScrollBar);
 		return;
 	}
 
@@ -527,7 +520,7 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 void CThumbnailDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	m_ctChild[0].SetFocus();
-	CDialog::OnLButtonUp(nFlags, point);
+	__super::OnLButtonUp(nFlags, point);
 }
 
 BOOL CThumbnailDlg::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
@@ -552,7 +545,7 @@ void CThumbnailDlg::OnDestroy()
 	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_WINDOW, IDS_REGKEY_WINDOW_THUMBNAILDLG));
 	AfxGetNCVCApp()->SaveWindowState(strRegKey, wp);
 
-	CDialog::OnDestroy();
+	__super::OnDestroy();
 }
 
 void CThumbnailDlg::OnSelchangeSort()
@@ -700,85 +693,20 @@ LRESULT CThumbnailStatic::OnUserDblClk(WPARAM wParam, LPARAM lParam)
 
 UINT CThumbnailDlg::CreateEnumDoc_Thread(LPVOID pVoid)
 {
-	extern	int		g_nProcesser;		// ﾌﾟﾛｾｯｻ数(->検索ｽﾚｯﾄﾞ数)
 	CThumbnailDlg*	pParent = reinterpret_cast<CThumbnailDlg*>(pVoid);
-	int		i, n, nCnt;
-	DWORD	dwResult;
-	CWinThread**	pThread = new CWinThread*[g_nProcesser];
-	HANDLE*			pHandle = new HANDLE[g_nProcesser];
-	LPENUMDOCTHREADPARAM	pParam;
+	LPTHUMBNAILINFO pInfo;
 
-	// CPUの数だけｽﾚｯﾄﾞ起動
-	for ( i=0; i<g_nProcesser && i<pParent->m_aInfo.GetSize() && pParent->m_bEnumDoc; i++ ) {
-		pParam = new ENUMDOCTHREADPARAM;
-		pParam->pDoc	= pParent->m_aInfo[i]->pDoc;
-		pParam->pView	= pParent->m_aInfo[i]->pView;
-		pParam->strFile	= pParent->m_aInfo[i]->fStatus.m_szFullName;
-		pThread[i] = AfxBeginThread(EnumDocument_Thread, pParam,
-						THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
-		if ( pThread[i] ) {
-			pThread[i]->m_bAutoDelete = FALSE;
-			pHandle[i] = pThread[i]->m_hThread;
-			pThread[i]->ResumeThread();
+	// 無理にﾏﾙﾁｽﾚｯﾄﾞで処理せず、ｼｰｹﾝｼｬﾙに1件ずつ
+	// → TH_NCRead.cpp で __declspec(thread) の外部変数が必要なくなる
+	for ( int i=0; i<pParent->m_aInfo.GetSize() && pParent->m_bEnumDoc; i++ ) {
+		pInfo = pParent->m_aInfo[i];
+		// ﾌｧｲﾙを開くから一連の動作へ
+		pInfo->pDoc->ReadThumbnail(pInfo->fStatus.m_szFullName);
+		// ﾋﾞｭｰへの通知
+		if ( pInfo->pView ) {
+			pInfo->pView->OnInitialUpdate();
+			pInfo->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 		}
-	}
-	nCnt = i;	// 有効なｽﾚｯﾄﾞﾊﾝﾄﾞﾙｶｳﾝﾄ
-
-	// 終了待ちして残りのﾌｧｲﾙを逐一処理
-	for ( ; i<pParent->m_aInfo.GetSize() && pParent->m_bEnumDoc; i++ ) {
-		// どれか１つでもｽﾚｯﾄﾞが終了
-		dwResult = ::WaitForMultipleObjects(nCnt, pHandle, FALSE, INFINITE);
-		// 該当ｽﾚｯﾄﾞのCWinThread*を削除
-		n = dwResult - WAIT_OBJECT_0;
-		if ( n < 0 || nCnt <= n ) {
-#ifdef _DEBUG
-			NC_FormatMessage();
-#endif
-			break;
-		}
-		delete	pThread[n];
-		// 新たなｽﾚｯﾄﾞを起動
-		pParam = new ENUMDOCTHREADPARAM;
-		pParam->pDoc	= pParent->m_aInfo[i]->pDoc;
-		pParam->pView	= pParent->m_aInfo[i]->pView;
-		pParam->strFile	= pParent->m_aInfo[i]->fStatus.m_szFullName;
-		pThread[n] = AfxBeginThread(EnumDocument_Thread, pParam,
-						THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
-		if ( pThread[n] ) {
-			pThread[n]->m_bAutoDelete = FALSE;
-			pHandle[n] = pThread[n]->m_hThread;
-			pThread[n]->ResumeThread();
-		}
-	}
-
-	// 全てのｽﾚｯﾄﾞ終了待ち
-	::WaitForMultipleObjects(nCnt, pHandle, TRUE, INFINITE);
-	for ( i=0; i<nCnt; i++ )
-		delete	pThread[i];
-
-	delete	pThread;
-	delete	pHandle;
-
-	return 0;
-}
-
-UINT EnumDocument_Thread(LPVOID lpVoid)
-{
-#ifdef _DEBUG
-	CMagaDbg	dbg("EnumDocument_Thread()\nStart", TRUE, DBG_RED);
-#endif
-	LPENUMDOCTHREADPARAM pParam = reinterpret_cast<LPENUMDOCTHREADPARAM>(lpVoid);
-	CNCDoc*		pDoc  = pParam->pDoc;
-	CView*		pView = pParam->pView;
-	CString	strFile(pParam->strFile);
-	delete	pParam;
-
-	// ﾌｧｲﾙを開くから一連の動作へ
-	pDoc->ReadThumbnail(strFile);
-	// ﾋﾞｭｰへの通知
-	if ( pView ) {
-		pView->OnInitialUpdate();
-		pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 	}
 
 	return 0;

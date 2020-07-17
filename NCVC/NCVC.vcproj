@@ -44,7 +44,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/Zm150"
+				AdditionalOptions="/Zm220"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG"
 				MinimalRebuild="true"
@@ -129,6 +129,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm220"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
@@ -430,6 +431,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MKWISetup.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MKWISetup1.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MKWISetup2.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\NCChild.cpp"
 				>
 			</File>
@@ -487,6 +500,14 @@
 			</File>
 			<File
 				RelativePath=".\NCMakeOption.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeWire.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeWireOpt.cpp"
 				>
 			</File>
 			<File
@@ -595,6 +616,10 @@
 			</File>
 			<File
 				RelativePath=".\TH_MakeNCD.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\TH_MakeWire.cpp"
 				>
 			</File>
 			<File
@@ -904,6 +929,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MKWISetup.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MKWISetup1.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MKWISetup2.h"
+				>
+			</File>
+			<File
 				RelativePath=".\NCChild.h"
 				>
 			</File>
@@ -961,6 +998,14 @@
 			</File>
 			<File
 				RelativePath=".\NCMakeOption.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeWire.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeWireOpt.h"
 				>
 			</File>
 			<File
@@ -1150,6 +1195,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\ClassDiagram1.cd"
+			>
+		</File>
 		<File
 			RelativePath=".\ReadMe.txt"
 			>

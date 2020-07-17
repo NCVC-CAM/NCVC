@@ -23,7 +23,7 @@ CAboutDlg::CAboutDlg() : CDialog(CAboutDlg::IDD)
 
 void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CAboutDlg)
 	DDX_Control(pDX, IDC_ABOUT_URL, m_ctURL);
 	//}}AFX_DATA_MAP
@@ -34,7 +34,7 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 
 BOOL CAboutDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	CString	strURL;
 	m_ctURL.GetWindowText(strURL);
@@ -57,7 +57,7 @@ BOOL CAboutDlg::OnInitDialog()
 
 HBRUSH CAboutDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor) 
 {
-	HBRUSH hbr = CDialog::OnCtlColor(pDC, pWnd, nCtlColor);
+	HBRUSH hbr = __super::OnCtlColor(pDC, pWnd, nCtlColor);
 
 	// ίĽ�߯ĂɐF
 	if ( m_ctURL.m_hWnd == pWnd->m_hWnd )

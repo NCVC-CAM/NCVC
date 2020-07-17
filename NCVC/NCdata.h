@@ -19,9 +19,6 @@ enum	ENPOINTORDER
 enum	EN_NCDRAWVIEW
 	{NCDRAWVIEW_XYZ=0, NCDRAWVIEW_XY=1, NCDRAWVIEW_XZ=2, NCDRAWVIEW_YZ=3};
 
-// 円弧補間ﾊﾟｽ座標
-typedef	std::vector<CPoint3D>	CVCircle;
-
 /////////////////////////////////////////////////////////////////////////////
 // NCﾃﾞｰﾀを読み込む時にだけ必要なﾃﾞｰﾀ
 // 読み込み終了後に消去することで、ﾒﾓﾘ使用効率を上げる
@@ -324,9 +321,9 @@ class CNCcircle : public CNCline
 				m_dFactorXZ,
 				m_dFactorYZ;
 	PFNCIRCLEDRAW	m_pfnCircleDraw;	// 平面別の描画関数
-	void	DrawEndmillXYPath(void) const;
-	void	DrawEndmillPipe(void) const;
-	void	DrawEndmillBall(void) const;
+	int		SetEndmillXYPath(CPoint3D*) const;
+	void	SetEndmillPipe(void) const;
+	void	SetEndmillBall(void) const;
 
 	// IJK指定なしの時，円の方程式から中心の算出
 	BOOL	CalcCenter(const CPointD&, const CPointD&);

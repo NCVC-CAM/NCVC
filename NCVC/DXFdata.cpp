@@ -116,6 +116,16 @@ CDXFdata::~CDXFdata()
 	}
 }
 
+#ifdef _DEBUG
+void CDXFdata::DbgDump(void)
+{
+	CMagaDbg	dbg(DBG_MAGENTA);
+	for ( int i=0; i<m_nPoint; i++ ) {
+		dbg.printf("No.%d x=%.3f y=%.3f", i+1, m_pt[i].x, m_pt[i].y);
+	}
+}
+#endif
+
 void CDXFdata::Serialize(CArchive& ar)
 {
 	if ( ar.IsStoring() ) {
@@ -230,6 +240,15 @@ CDXFpoint::CDXFpoint(CLayerData* pLayer, const CDXFpoint* pData, LPCDXFBLOCK lpB
 	SetMaxRect();
 }
 
+#ifdef _DEBUG
+void CDXFpoint::DbgDump(void)
+{
+	CMagaDbg	dbg(DBG_MAGENTA);
+	dbg.printf("POINT");
+	CDXFdata::DbgDump();
+}
+#endif
+
 void CDXFpoint::Serialize(CArchive& ar)
 {
 	CDXFdata::Serialize(ar);
@@ -319,6 +338,20 @@ int CDXFpoint::CheckIntersectionCircle(const CPointD&, double) const
 	return 0;
 }
 
+size_t CDXFpoint::SetVectorPoint(VECPOINTD& vpt, double) const
+{
+	vpt.push_back(GetNativePoint(0));
+	return 1;
+}
+
+void CDXFpoint::SetVectorPoint(VECPOINTD& vpt, size_t) const
+{
+}
+
+void CDXFpoint::SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const
+{
+}
+
 //////////////////////////////////////////////////////////////////////
 // ÇcÇwÇeÉfÅ[É^ÇÃLineÉNÉâÉX
 //////////////////////////////////////////////////////////////////////
@@ -361,6 +394,15 @@ CDXFline::CDXFline(CLayerData* pLayer, const CDXFline* pData, LPCDXFBLOCK lpBloc
 	m_pt[1] += lpBlock->ptOrg;
 	SetMaxRect();
 }
+
+#ifdef _DEBUG
+void CDXFline::DbgDump(void)
+{
+	CMagaDbg	dbg(DBG_MAGENTA);
+	dbg.printf("LINE");
+	CDXFdata::DbgDump();
+}
+#endif
 
 void CDXFline::Serialize(CArchive& ar)
 {
@@ -635,6 +677,40 @@ int CDXFline::CheckIntersectionCircle(const CPointD& ptc, double r) const
 	return nResult;
 }
 
+size_t CDXFline::SetVectorPoint(VECPOINTD& vpt, double k) const
+{
+	if ( k == 0.0 )
+		return CDXFpoint::SetVectorPoint(vpt);
+
+	vpt.push_back(GetEndMakePoint());
+	return 1;
+}
+
+void CDXFline::SetVectorPoint(VECPOINTD& vpt, size_t n) const
+{
+	CPointD	pts(GetStartMakePoint()), pte(GetEndMakePoint()),
+			pto(pte - pts), pt;
+	double	q = atan2(pto.y, pto.x),
+			s = GetLength() / n,	// çèÇ›âÒêîÇ©ÇÁçèÇ›ïùÇãÅÇﬂÇÈ
+			r = s;
+	for ( size_t i=0; i<n-1; i++, r+=s ) {	// èIì_ï™
+		pt.x = r * cos(q) + pts.x;
+		pt.y = r * sin(q) + pts.y;
+		vpt.push_back(pt);
+	}
+	vpt.push_back(pte);
+}
+
+void CDXFline::SetWireHeteroData(const CDXFdata* pDataUV, VECPOINTD& vptXY, VECPOINTD& vptUV, double k) const
+{
+	if ( pDataUV->GetMakeType() == DXFARCDATA ) {
+		// â~å ÇçèÇ›ïùÇ≈ç¿ïWìoò^Çµ
+		pDataUV->SetVectorPoint(vptUV, k);
+		// ÇªÇÃçèÇ›êîÇ≈ê¸Çç¿ïWìoò^
+		SetVectorPoint(vptXY, vptUV.size());
+	}
+}
+
 //////////////////////////////////////////////////////////////////////
 // ÇcÇwÇeÉfÅ[É^ÇÃCircleÉNÉâÉX
 //////////////////////////////////////////////////////////////////////
@@ -653,7 +729,7 @@ CDXFcircle::CDXFcircle(ENDXFTYPE enType, CLayerData* pLayer,
 	m_nArrayExt = 0;
 	m_ct	= c;
 	m_r		= r;
-	m_rMake	= ::RoundUp(m_r);
+	m_rMake	= fabs(::RoundUp(m_r));
 	m_bRound = bRound;
 	m_bRoundFixed = FALSE;
 }
@@ -664,7 +740,7 @@ CDXFcircle::CDXFcircle(LPCDXFCARGV lpCircle) :
 	m_nArrayExt = 0;
 	m_ct	= lpCircle->c;
 	m_r		= lpCircle->r;
-	m_rMake	= ::RoundUp(m_r);
+	m_rMake	= fabs(::RoundUp(m_r));
 	m_bRound = FALSE;
 	m_bRoundFixed = FALSE;
 	SetCirclePoint();
@@ -692,6 +768,17 @@ CDXFcircle::CDXFcircle(CLayerData* pLayer, const CDXFcircle* pData, LPCDXFBLOCK 
 	SetCirclePoint();
 	SetMaxRect();
 }
+
+#ifdef _DEBUG
+void CDXFcircle::DbgDump(void)
+{
+	CMagaDbg	dbg(DBG_MAGENTA);
+	dbg.printf("CIRCLE");
+	CDXFdata::DbgDump();
+	dbg.printf("r=%.3f cx=%.3f cy=%.3f %s", m_r, m_ct.x, m_ct.y,
+		m_bRound ? "CCW" : "CW");
+}
+#endif
 
 void CDXFcircle::Serialize(CArchive& ar)
 {
@@ -924,6 +1011,70 @@ int CDXFcircle::CheckIntersectionCircle(const CPointD&, double) const
 	return 0;
 }
 
+size_t CDXFcircle::SetVectorPoint(VECPOINTD& vpt, double k) const
+{
+	double	sq, eq;
+	switch (m_nArrayExt) {
+	case 1:		sq = RAD(180);		break;
+	case 2:		sq = RAD(90);		break;
+	case 3:		sq = RAD(270);		break;
+	default:	sq = 0;
+	}
+	if ( m_bRound )
+		eq = sq + RAD(360);
+	else
+		eq = sq - RAD(360);
+
+	return SetVectorPointSub(m_bRound, sq, eq, k/m_r, m_ctTun, vpt);
+}
+
+void CDXFcircle::SetVectorPoint(VECPOINTD& vpt, size_t n) const
+{
+	double	sq, eq;
+	switch (m_nArrayExt) {
+	case 1:		sq = RAD(180);		break;
+	case 2:		sq = RAD(90);		break;
+	case 3:		sq = RAD(270);		break;
+	default:	sq = 0;
+	}
+	if ( m_bRound )
+		eq = sq + RAD(360);
+	else
+		eq = sq - RAD(360);
+	
+	size_t m = SetVectorPointSub(m_bRound, sq, eq, RAD(360)/n, m_ctTun, vpt);
+	while ( n < m-- )
+		vpt.pop_back();
+}
+
+size_t CDXFcircle::SetVectorPointSub(BOOL bRound, double s, double e, double k, const CPointD& ptOrg, VECPOINTD& vpt) const
+{
+	size_t	nCnt = 0;
+	CPointD	pt;
+
+	// âÒì]ï˚å¸Ç…ÇƒåµñßÇ…âÒÇ∑
+	if ( bRound ) {
+		for ( s+=k; s<e; s+=k, nCnt++ ) {
+			pt.SetPoint(m_r * cos(s) + ptOrg.x, m_r * sin(s) + ptOrg.y);
+			vpt.push_back(pt);
+		}
+	}
+	else {
+		for ( s-=k; s>e; s-=k, nCnt++ ) {
+			pt.SetPoint(m_r * cos(s) + ptOrg.x, m_r * sin(s) + ptOrg.y);
+			vpt.push_back(pt);
+		}
+	}
+	pt.SetPoint(m_r * cos(e) + ptOrg.x, m_r * sin(e) + ptOrg.y);
+	vpt.push_back(pt);
+
+	return nCnt+1;
+}
+
+void CDXFcircle::SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const
+{
+}
+
 //////////////////////////////////////////////////////////////////////
 // ÇcÇwÇeÉfÅ[É^ÇÃCircleExÉNÉâÉX
 //////////////////////////////////////////////////////////////////////
@@ -1091,6 +1242,17 @@ CDXFarc::CDXFarc(CLayerData* pLayer, const CDXFarc* pData, LPCDXFBLOCK lpBlock) 
 	}
 }
 
+#ifdef _DEBUG
+void CDXFarc::DbgDump(void)
+{
+	CMagaDbg	dbg(DBG_MAGENTA);
+	dbg.printf("ARC");
+	CDXFdata::DbgDump();
+	dbg.printf("r=%.3f cx=%.3f cy=%.3f %s", m_r, m_ct.x, m_ct.y,
+		m_bRound ? "CCW" : "CW");
+}
+#endif
+
 void CDXFarc::Serialize(CArchive& ar)
 {
 	CDXFdata::Serialize(ar);
@@ -1119,7 +1281,7 @@ void CDXFarc::SetMaxRect(void)
 	CPointD	pts, pte, ptInit[4];
 	double	sq, eq;
 
-	// énì_èIì_Ç∆äpìxÇÃí≤êÆ
+	// énì_èIì_Ç∆äpìxÇÃí≤êÆ(s<e Ç∆ÇµÇƒèàóù)
 	if ( m_bRoundOrig ) {
 		pts = m_pt[0] - m_ct;
 		pte = m_pt[1] - m_ct;
@@ -1202,6 +1364,80 @@ void CDXFarc::SwapNativePt(void)
 	swap(m_sqDraw, m_eqDraw);
 }
 
+size_t CDXFarc::SetVectorPoint(VECPOINTD& vpt, double k) const
+{
+	BOOL	bRound;
+	double	sq, eq, dStep;
+	CPointD	ptOrg;
+
+	// k Ç™éwíËÇ≥ÇÍÇƒÇ¢ÇÈÇ∆Ç´ÇÕãììÆÇ™à·Ç§
+	if ( k == 0.0 ) {
+		bRound	= m_bRoundOrig;
+		sq		= m_sqDraw;
+		eq		= m_eqDraw;
+		dStep	= ARCSTEP;
+		ptOrg	= m_ct;
+	}
+	else {
+		bRound	= m_bRound;
+		sq		= m_sq;
+		eq		= m_eq;
+		dStep	= k / m_r;	// Ω√ØÃﬂäpìx
+		ptOrg	= m_ctTun;
+	}
+
+	// â~å î˜ç◊ê¸ï™Ç vector<> Ç…ìoò^
+	if ( k == 0.0 ) {
+		// énì_ìoò^ÇÕ k==0.0 ÇÃÇ∆Ç´ÇÃÇ›
+		CPointD	pt(m_r * cos(sq) + ptOrg.x, m_r * sin(sq) + ptOrg.y);
+		vpt.push_back(pt);
+	}
+	// ã§í èàóù
+	return SetVectorPointSub(bRound, sq, eq, dStep, ptOrg, vpt);
+}
+
+void CDXFarc::SetVectorPoint(VECPOINTD& vpt, size_t n) const
+{
+	// äpìxîÕàÕÇ nâÒ ìoò^
+	double	sq, eq, dStep;
+	if ( m_bRound ) {
+		sq = m_sq;	eq = m_eq;
+	}
+	else {
+		sq = m_eq;	eq = m_sq;
+	}
+	dStep = (eq - sq) / n;
+
+	// ÇªÇÃäpìxΩ√ØÃﬂÇ≈ vector<> Ç…ìoò^
+	size_t m = SetVectorPointSub(m_bRound, m_sq, m_eq, dStep, m_ctTun, vpt);
+	while ( n < m-- )
+		vpt.pop_back();
+}
+
+void CDXFarc::SetWireHeteroData(const CDXFdata* pDataUV, VECPOINTD& vptXY, VECPOINTD& vptUV, double k) const
+{
+	if ( pDataUV->GetMakeType() == DXFLINEDATA ) {
+		// é©êgÇÃçèÇ›ïùÇäÓèÄÇ…
+		SetVectorPoint(vptXY, k);
+		// ê¸ÇçèÇﬁ
+		pDataUV->SetVectorPoint(vptUV, vptXY.size());
+	}
+	else if ( pDataUV->GetMakeType()==DXFARCDATA &&
+						GetRound() != static_cast<const CDXFarc*>(pDataUV)->GetRound() ) {
+		double	dLen1 = GetLength(),
+				dLen2 = pDataUV->GetLength();
+		// í∑Ç¢ï˚ÇçèÇ›ïùÇ≈ç¿ïWìoò^ÇµÅAíZÇ¢ï˚ÇÕÇªÇÃâÒêîÇ≈ç¿ïWìoò^
+		if ( dLen1 > dLen2 ) {
+			SetVectorPoint(vptXY, k);
+			pDataUV->SetVectorPoint(vptUV, vptXY.size());
+		}
+		else {
+			pDataUV->SetVectorPoint(vptUV, k);
+			SetVectorPoint(vptXY, vptUV.size());
+		}
+	}
+}
+
 void CDXFarc::XRev(void)
 {
 	CDXFcircle::XRev();
@@ -1275,35 +1511,6 @@ BOOL CDXFarc::IsRangeAngle(const CPointD& pt) const
 	return FALSE;
 }
 
-void CDXFarc::SetVectorPoint(vector<CPointD>& vpt)
-{
-	// â~å î˜ç◊ê¸ï™Ç vector<> Ç…ìoò^
-	double	sq, eq;
-	if ( m_bRoundOrig ) {
-		sq = m_sqDraw;	eq = m_eqDraw;
-	}
-	else {
-		sq = m_eqDraw;	eq = m_sqDraw;
-	}
-	CPointD	pt(m_r * cos(sq) + m_ct.x, m_r * sin(sq) + m_ct.y);
-	vpt.push_back(pt);
-	// Draw() Ç∆à·Ç¡ÇƒÅAåµñßÇ»å¸Ç´Ç™èdóv
-	if ( m_bRoundOrig ) {
-		for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
-			pt.SetPoint(m_r * cos(sq) + m_ct.x, m_r * sin(sq) + m_ct.y);
-			vpt.push_back(pt);
-		}
-	}
-	else {
-		for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
-			pt.SetPoint(m_r * cos(sq) + m_ct.x, m_r * sin(sq) + m_ct.y);
-			vpt.push_back(pt);
-		}
-	}
-	pt.SetPoint(m_r * cos(eq) + m_ct.x, m_r * sin(eq) + m_ct.y);
-	vpt.push_back(pt);
-}
-
 void CDXFarc::DrawTuning(const double f)
 {
 	m_rDraw  = m_r * f;
@@ -1316,23 +1523,26 @@ void CDXFarc::Draw(CDC* pDC) const
 #ifdef _DEBUGDRAW_DXF
 	CMagaDbg	dbg("CDXFarc::Draw()", DBG_RED);
 #endif
-	double	sq, eq;
-	if ( m_bRoundOrig ) {
-		sq = m_sqDraw;	eq = m_eqDraw;
-	}
-	else {
-		sq = m_eqDraw;	eq = m_sqDraw;
-	}
+	double	sq = m_sqDraw;
+
 	CPointD	pt(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
 	pDC->MoveTo(pt);
 #ifdef _DEBUGDRAW_DXF
 	dbg.printf("pts.x=%d pts.y=%d", (int)pt.x, (int)pt.y);
 #endif
-	for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
-		pt.SetPoint(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
-		pDC->LineTo(pt);
+	if ( m_bRoundOrig ) {
+		for ( sq+=ARCSTEP; sq<m_eqDraw; sq+=ARCSTEP ) {
+			pt.SetPoint(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
+			pDC->LineTo(pt);
+		}
 	}
-	pt.SetPoint(m_rDraw * cos(eq) + m_ptDraw.x, m_rDraw * sin(eq) + m_ptDraw.y);
+	else {
+		for ( sq-=ARCSTEP; sq>m_eqDraw; sq-=ARCSTEP ) {
+			pt.SetPoint(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
+			pDC->LineTo(pt);
+		}
+	}
+	pt.SetPoint(m_rDraw * cos(m_eqDraw) + m_ptDraw.x, m_rDraw * sin(m_eqDraw) + m_ptDraw.y);
 	pDC->LineTo(pt);
 #ifdef _DEBUGDRAW_DXF
 	dbg.printf("pte.x=%d pte.y=%d", (int)pt.x, (int)pt.y);
@@ -1404,7 +1614,8 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdg
 	// bEdge==TRUE : í[ì_Ç™ìØÇ∂èÍçáÇÕåì_Ç»ÇµÇ∆Ç∑ÇÈ
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
-		return GetIntersectionPoint(pt1, pt2, pt, bEdge);
+		nResult = GetIntersectionPoint(pt1, pt2, pt, bEdge);
+		break;
 	case DXFARCDATA:
 		if ( bEdge && (IsMatchPoint(pt1) || IsMatchPoint(pt2)) )
 			break;
@@ -1610,6 +1821,17 @@ CDXFellipse::CDXFellipse(CLayerData* pLayer, const CDXFellipse* pData, LPCDXFBLO
 	}
 }
 
+#ifdef _DEBUG
+void CDXFellipse::DbgDump(void)
+{
+	CMagaDbg	dbg(DBG_MAGENTA);
+	dbg.printf("ELLIPSE");
+	CDXFdata::DbgDump();
+	dbg.printf("r=%.3f cx=%.3f cy=%.3f %s", m_r, m_ct.x, m_ct.y,
+		m_bRound ? "CCW" : "CW");
+}
+#endif
+
 void CDXFellipse::Serialize(CArchive& ar)
 {
 	CDXFdata::Serialize(ar);
@@ -1796,6 +2018,47 @@ void CDXFellipse::SwapNativePt(void)
 		CDXFarc::SwapNativePt();
 }
 
+size_t CDXFellipse::SetVectorPoint(VECPOINTD& vpt, double) const
+{
+	double	sq = m_sqDraw,
+			dShort = m_dLongLength * m_dShort;
+
+	CPointD	pt1(m_dLongLength * cos(sq), dShort * sin(sq)),
+			pt2(pt1.x * m_lqDrawCos - pt1.y * m_lqDrawSin + m_ct.x,
+				pt1.x * m_lqDrawSin + pt1.y * m_lqDrawCos + m_ct.y);
+	vpt.push_back(pt2);
+	if ( m_bRoundOrig ) {
+		for ( sq+=ARCSTEP; sq<m_eqDraw; sq+=ARCSTEP ) {
+			pt1.SetPoint(m_dLongLength * cos(sq), dShort * sin(sq));
+			pt2.SetPoint(pt1.x * m_lqDrawCos - pt1.y * m_lqDrawSin + m_ct.x,
+						 pt1.x * m_lqDrawSin + pt1.y * m_lqDrawCos + m_ct.y);
+			vpt.push_back(pt2);
+		}
+	}
+	else {
+		for ( sq-=ARCSTEP; sq>m_eqDraw; sq-=ARCSTEP ) {
+			pt1.SetPoint(m_dLongLength * cos(sq), dShort * sin(sq));
+			pt2.SetPoint(pt1.x * m_lqDrawCos - pt1.y * m_lqDrawSin + m_ct.x,
+						 pt1.x * m_lqDrawSin + pt1.y * m_lqDrawCos + m_ct.y);
+			vpt.push_back(pt2);
+		}
+	}
+	pt1.SetPoint(m_dLongLength * cos(m_eqDraw), dShort * sin(m_eqDraw));
+	pt2.SetPoint(pt1.x * m_lqDrawCos - pt1.y * m_lqDrawSin + m_ct.x,
+				 pt1.x * m_lqDrawSin + pt1.y * m_lqDrawCos + m_ct.y);
+	vpt.push_back(pt2);
+
+	return 0;
+}
+
+void CDXFellipse::SetVectorPoint(VECPOINTD& vpt, size_t n) const
+{
+}
+
+void CDXFellipse::SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const
+{
+}
+
 void CDXFellipse::XRev(void)
 {
 	if ( GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
@@ -1886,42 +2149,6 @@ void CDXFellipse::SetEllipseTunPoint(void)
 	}
 }
 
-void CDXFellipse::SetVectorPoint(vector<CPointD>& vpt)
-{
-	double	sq, eq,
-			dShort = m_dLongLength * m_dShort;
-	if ( m_bRoundOrig ) {
-		sq = m_sqDraw;	eq = m_eqDraw;
-	}
-	else {
-		sq = m_eqDraw;	eq = m_sqDraw;
-	}
-	CPointD	pt1(m_dLongLength * cos(sq), dShort * sin(sq)),
-			pt2(pt1.x * m_lqDrawCos - pt1.y * m_lqDrawSin + m_ct.x,
-				pt1.x * m_lqDrawSin + pt1.y * m_lqDrawCos + m_ct.y);
-	vpt.push_back(pt2);
-	if ( m_bRoundOrig ) {
-		for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
-			pt1.SetPoint(m_dLongLength * cos(sq), dShort * sin(sq));
-			pt2.SetPoint(pt1.x * m_lqDrawCos - pt1.y * m_lqDrawSin + m_ct.x,
-						 pt1.x * m_lqDrawSin + pt1.y * m_lqDrawCos + m_ct.y);
-			vpt.push_back(pt2);
-		}
-	}
-	else {
-		for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
-			pt1.SetPoint(m_dLongLength * cos(sq), dShort * sin(sq));
-			pt2.SetPoint(pt1.x * m_lqDrawCos - pt1.y * m_lqDrawSin + m_ct.x,
-						 pt1.x * m_lqDrawSin + pt1.y * m_lqDrawCos + m_ct.y);
-			vpt.push_back(pt2);
-		}
-	}
-	pt1.SetPoint(m_dLongLength * cos(eq), dShort * sin(eq));
-	pt2.SetPoint(pt1.x * m_lqDrawCos - pt1.y * m_lqDrawSin + m_ct.x,
-				 pt1.x * m_lqDrawSin + pt1.y * m_lqDrawCos + m_ct.y);
-	vpt.push_back(pt2);
-}
-
 void CDXFellipse::DrawTuning(const double f)
 {
 	m_dDrawLongLength = m_dLongLength * f;
@@ -1934,14 +2161,9 @@ void CDXFellipse::Draw(CDC* pDC) const
 #ifdef _DEBUGDRAW_DXF
 	CMagaDbg	dbg("CDXFellipse::Draw()", DBG_RED);
 #endif
-	double	sq, eq,
+	double	sq = m_sqDraw,
 			dShort = m_dDrawLongLength * m_dShort;
-	if ( m_bRoundOrig ) {
-		sq = m_sqDraw;	eq = m_eqDraw;
-	}
-	else {
-		sq = m_eqDraw;	eq = m_sqDraw;
-	}
+
 	CPointD	pt(m_dDrawLongLength * cos(sq), dShort * sin(sq));
 	CPointD	ptDraw(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin + m_ptDraw.x,
 				   pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y);
@@ -1949,13 +2171,23 @@ void CDXFellipse::Draw(CDC* pDC) const
 #ifdef _DEBUGDRAW_DXF
 	dbg.printf("pts.x=%d pts.y=%d", (int)pt.x, (int)pt.y);
 #endif
-	for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
-		pt.SetPoint(m_dDrawLongLength * cos(sq), dShort * sin(sq));
-		ptDraw.SetPoint(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin + m_ptDraw.x,
-						pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y);
-		pDC->LineTo(ptDraw);
+	if ( m_bRoundOrig ) {
+		for ( sq+=ARCSTEP; sq<m_eqDraw; sq+=ARCSTEP ) {
+			pt.SetPoint(m_dDrawLongLength * cos(sq), dShort * sin(sq));
+			ptDraw.SetPoint(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin + m_ptDraw.x,
+							pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y);
+			pDC->LineTo(ptDraw);
+		}
 	}
-	pt.SetPoint(m_dDrawLongLength * cos(eq), dShort * sin(eq));
+	else {
+		for ( sq-=ARCSTEP; sq>m_eqDraw; sq-=ARCSTEP ) {
+			pt.SetPoint(m_dDrawLongLength * cos(sq), dShort * sin(sq));
+			ptDraw.SetPoint(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin + m_ptDraw.x,
+							pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y);
+			pDC->LineTo(ptDraw);
+		}
+	}
+	pt.SetPoint(m_dDrawLongLength * cos(m_eqDraw), dShort * sin(m_eqDraw));
 	ptDraw.SetPoint(pt.x * m_lqDrawCos - pt.y * m_lqDrawSin + m_ptDraw.x,
 					pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y);
 	pDC->LineTo(ptDraw);
@@ -2051,6 +2283,14 @@ BOOL CDXFellipse::GetDirectionArraw(const CPointD& ptClick, CPointD ptResult[][3
 	}
 
 	return GetDirectionArraw_Circle(q, pt, ptResult);
+}
+
+void CDXFellipse::SetRoundFixed(const CPointD& pts, const CPointD& pte)
+{
+	BOOL	bRound = m_bRound;
+	CDXFcircle::SetRoundFixed(pts, pte);
+	if ( m_bRound != bRound )
+		SwapAngle();
 }
 
 void CDXFellipse::SetRoundFixed(BOOL bRound)
@@ -2233,6 +2473,12 @@ CDXFpolyline::~CDXFpolyline()
 		delete	m_ltVertex.GetNext(pos);
 }
 
+#ifdef _DEBUG
+void CDXFpolyline::DbgDump(void)
+{
+}
+#endif
+
 void CDXFpolyline::Serialize(CArchive& ar)
 {
 	BOOL	bDummy = TRUE;
@@ -2287,6 +2533,27 @@ void CDXFpolyline::SwapNativePt(void)
 		if ( pData->GetType() != DXFPOINTDATA )
 			pData->SwapNativePt();
 	}
+}
+
+size_t CDXFpolyline::SetVectorPoint(VECPOINTD& vpt, double k) const
+{
+	CDXFdata*	pData;
+
+	for ( POSITION pos=GetFirstVertex(); pos; ) {
+		pData = GetNextVertex(pos);
+		// Ç±Ç±Ç…åªÇÍÇÈÇÃÇÕÅADXFPOINTDATA, DXFARCDATA, DXFELLIPSEDATA ÇÃÇ›
+		pData->SetVectorPoint(vpt, k);
+	}
+
+	return 0;
+}
+
+void CDXFpolyline::SetVectorPoint(VECPOINTD& vpt, size_t) const
+{
+}
+
+void CDXFpolyline::SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const
+{
 }
 
 BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv)
@@ -2516,26 +2783,6 @@ CDXFdata* CDXFpolyline::GetTailObject(void) const
 	// ñﬂÇËílÇ™ CDXFline ÇÃèÍçáÅA
 	// åƒÇ—èoÇµë§Ç≈ïKÇ∏ delete Ç∑ÇÈÇ±Ç∆
 	return pData1;
-}
-
-void CDXFpolyline::SetVectorPoint(vector<CPointD>& vpt)
-{
-	CDXFdata*	pData;
-
-	for ( POSITION pos=GetFirstVertex(); pos; ) {
-		pData = GetNextVertex(pos);
-		switch ( pData->GetType() ) {
-		case DXFPOINTDATA:
-			vpt.push_back(pData->GetNativePoint(0));
-			break;
-		case DXFARCDATA:
-			static_cast<CDXFarc*>(pData)->SetVectorPoint(vpt);
-			break;
-		case DXFELLIPSEDATA:
-			static_cast<CDXFellipse*>(pData)->SetVectorPoint(vpt);
-			break;
-		}
-	}
 }
 
 void CDXFpolyline::CheckPolylineIntersection(void)
@@ -3039,6 +3286,12 @@ CDXFtext::CDXFtext(CLayerData* pLayer, const CDXFtext* pData, LPCDXFBLOCK lpBloc
 	m_strValue = pData->GetStrValue();
 	SetMaxRect();
 }
+
+#ifdef _DEBUG
+void CDXFtext::DbgDump(void)
+{
+}
+#endif
 
 void CDXFtext::Serialize(CArchive& ar)
 {

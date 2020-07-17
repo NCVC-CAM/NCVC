@@ -11,6 +11,7 @@
 
 #ifdef _DEBUG
 #define	_DEBUG_FILEOPEN		// Ì§²Ù‚ğŠJ‚­‚Æ‚«‚Ì’ÇÕ
+//#define _DEBUG_CMDMSG		// ºÏİÄŞÙ°Ã¨İ¸Ş
 #endif
 
 // ±ÄŞ²İ’è‹`(ncvcaddin.h)
@@ -248,6 +249,7 @@ public:
 	afx_msg void OnFileThumbnail();
 	afx_msg void OnFileCloseAndOpen();
 	afx_msg void OnHelp();
+	afx_msg void OnHelpUsing(UINT);
 	afx_msg void OnHelpAddin();
 	afx_msg void OnOptionMC();
 	afx_msg void OnOptionEditMC();

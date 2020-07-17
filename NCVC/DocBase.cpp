@@ -17,7 +17,7 @@ static UINT FileChangeNotificationThread(LPVOID pParam);
 /////////////////////////////////////////////////////////////////////////////
 // CDocBase
 
-BOOL CDocBase::OnOpenDocument(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
+BOOL CDocBase::OnOpenDocumentSP(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
 {
 	ASSERT( pWnd );
 	m_pFileChangeThread = NULL;
@@ -44,7 +44,7 @@ BOOL CDocBase::OnOpenDocument(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
 	return TRUE;
 }
 
-void CDocBase::OnCloseDocument(void)
+void CDocBase::OnCloseDocumentSP(void)
 {
 	if ( !m_pFileChangeThread )
 		return;

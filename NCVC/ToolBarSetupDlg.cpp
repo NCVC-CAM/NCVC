@@ -40,7 +40,7 @@ CToolBarSetupDlg::CToolBarSetupDlg(DWORD dwViewFlg)
 
 void CToolBarSetupDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CToolBarSetupDlg)
 	//}}AFX_DATA_MAP
 	for ( int i=0; i<SIZEOF(m_bToolBar); i++ )

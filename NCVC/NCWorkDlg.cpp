@@ -34,7 +34,7 @@ CNCWorkDlg::CNCWorkDlg(CWnd* pParent /*=NULL*/)
 
 void CNCWorkDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CNCWorkDlg)
 	DDX_Control(pDX, IDOK, m_ctOK);
 	DDX_Control(pDX, IDC_WORK_HIDE, m_ctHide);
@@ -102,7 +102,7 @@ BOOL CNCWorkDlg::OnInitDialog()
 {
 	extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 	int		i, j;
 
 	// ºÝ½Ä×¸À‚Å‚Í‰Šú‰»‚Å‚«‚È‚¢ºÝÄÛ°Ù‚Ì‰Šú‰»
@@ -183,14 +183,14 @@ void CNCWorkDlg::OnCancel()
 	AfxGetNCVCApp()->SaveDlgWindow(IDS_REGKEY_WINDOW_WORKDLG, this);
 
 	DestroyWindow();	// Ó°ÄÞÚ½ÀÞ²±Û¸Þ
-//	CDialog::OnCancel();
+//	__super::OnCancel();
 }
 
 void CNCWorkDlg::PostNcDestroy() 
 {
 	AfxGetNCVCMainWnd()->SetModelessDlg(MLD_NCWORK, NULL);
 	delete	this;
-//	CDialog::PostNcDestroy();
+//	__super::PostNcDestroy();
 }
 
 LRESULT CNCWorkDlg::OnUserSwitchDocument(WPARAM, LPARAM)

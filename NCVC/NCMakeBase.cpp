@@ -8,6 +8,7 @@
 #include "NCMakeOption.h"
 #include "NCMakeMillOpt.h"
 #include "NCMakeLatheOpt.h"
+#include "NCMakeWireOpt.h"
 #include "NCMakeBase.h"
 
 #include "MagaDbgMac.h"
@@ -34,12 +35,12 @@ int		CNCMakeBase::ms_nMagni = 1;
 int		CNCMakeBase::ms_nCircleCode = 2;
 double	CNCMakeBase::ms_dEllipse = 0.5;
 CString	CNCMakeBase::ms_strEOB;
-PFNGETSPINDLE		CNCMakeBase::ms_pfnGetSpindle = &CNCMakeBase::GetSpindleString;
-PFNGETFEED			CNCMakeBase::ms_pfnGetFeed = &CNCMakeBase::GetFeedString_Integer;
-PFNGETLINENO		CNCMakeBase::ms_pfnGetLineNo = &CNCMakeBase::GetLineNoString;
-PFNGETGSTRING		CNCMakeBase::ms_pfnGetGString = &CNCMakeBase::GetGString;
+PFNGETARGINT		CNCMakeBase::ms_pfnGetSpindle = &CNCMakeBase::GetSpindleString;
+PFNGETARGDOUBLE		CNCMakeBase::ms_pfnGetFeed = &CNCMakeBase::GetFeedString_Integer;
+PFNGETARGVOID		CNCMakeBase::ms_pfnGetLineNo = &CNCMakeBase::GetLineNoString;
+PFNGETARGINT		CNCMakeBase::ms_pfnGetGString = &CNCMakeBase::GetGString;
 PFNGETVALSTRING		CNCMakeBase::ms_pfnGetValString = NULL;		// ”h¶¸×½‚ÅŒˆ’è
-PFNGETVALDETAIL		CNCMakeBase::ms_pfnGetValDetail = &CNCMakeBase::GetValString_Normal;
+PFNGETARGDOUBLE		CNCMakeBase::ms_pfnGetValDetail = &CNCMakeBase::GetValString_Normal;
 PFNMAKECIRCLESUB	CNCMakeBase::ms_pfnMakeCircleSub = &CNCMakeBase::MakeCircleSub_IJ;
 PFNMAKECIRCLE		CNCMakeBase::ms_pfnMakeCircle = &CNCMakeBase::MakeCircle_IJ;
 PFNMAKEHELICAL		CNCMakeBase::ms_pfnMakeHelical = &CNCMakeBase::MakeCircle_IJ_Helical;
@@ -56,12 +57,16 @@ CNCMakeBase::CNCMakeBase()
 CNCMakeBase::CNCMakeBase(const CString& strGcode)
 {
 	extern	LPCTSTR	gg_szReturn;
+
 	if ( strGcode.IsEmpty() )
 		m_strGcode = gg_szReturn;
-	else
-		m_strGcode = strGcode[0]=='%' ?
-			(strGcode + gg_szReturn) :
-			((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
+	else if ( strGcode[0] == '%' )
+		m_strGcode = strGcode + gg_szReturn;
+	else {
+		CString	str(strGcode);
+		str.Replace("\\n", "\n");	// ‰üsº°ÄÞ‚Ì’uŠ·
+		m_strGcode = (*ms_pfnGetLineNo)() + str + ms_strEOB;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -87,7 +92,7 @@ void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, double dFeed)
 	CPointD	pt, ptMake;
 	double	sq, eq,
 			// Šp“x‚Ì½Ã¯Ìß”‚ð‹‚ß‚é -> (sq-eq) / (r*(sq-eq) / STEP)
-			dStep = 1.0 / (pEllipse->GetR() / ms_dEllipse);
+			dStep = ms_dEllipse / pEllipse->GetR();
 
 	// ‘È‰~Žž‚ÌŠJŽnI—¹Šp“x‚ðÄŒvŽZ
 	// -> XY”½“]‚È‚ÇŒX‚«‚ðl—¶‚µ‚È‚¢‚Æ³‚µ‚¢ŠJŽnˆÊ’u‚ª•ÛŽ‚Å‚«‚È‚¢‚½‚ß
@@ -250,7 +255,7 @@ CString	CNCMakeBase::GetSpindleString_Clip(int)
 CString	CNCMakeBase::GetFeedString(double dFeed)
 {
 	CString		strResult;
-	if ( ms_dFeed != dFeed ) {
+	if ( dFeed!=0.0 && ms_dFeed!=dFeed ) {
 		ms_dFeed = dFeed;
 		strResult = "F" + (*ms_pfnGetFeed)(dFeed);
 	}
@@ -260,6 +265,7 @@ CString	CNCMakeBase::GetFeedString(double dFeed)
 CString	CNCMakeBase::GetFeedString_Integer(double dFeed)
 {
 	CString	strResult;
+	// 	GetFeedString()‚©‚ç‚ÌŽQÆ‚Ì‚½‚ß if() •s—v
 	strResult.Format("%d", (int)dFeed);
 	return strResult;
 }
@@ -268,6 +274,8 @@ CString	CNCMakeBase::GetFeedString_Integer(double dFeed)
 CString	CNCMakeBase::GetLineNoString(void)
 {
 	ASSERT( MKNC_STR_LINEFORM == MKLA_STR_LINEFORM );	// ‹ê“÷‚Ìô
+	ASSERT( MKNC_STR_LINEFORM == MKWI_STR_LINEFORM );
+
 	CString	strResult;
 	strResult.Format(ms_pMakeOpt->GetStr(MKNC_STR_LINEFORM), ms_nCnt++ * ms_nMagni);
 	return strResult;

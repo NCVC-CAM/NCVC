@@ -46,7 +46,7 @@ CDxfEditOrgDlg::CDxfEditOrgDlg(DWORD dwControl)
 
 void CDxfEditOrgDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CDxfEditOrgDlg)
 	DDX_Control(pDX, IDC_DXFEDIT_SEL_NUM, m_ctSelNumeric);
 	DDX_Control(pDX, IDC_DXFEDIT_SEL_ORIG, m_ctSelOriginal);
@@ -85,7 +85,7 @@ void CDxfEditOrgDlg::SelectControl(int nIndex)
 
 BOOL CDxfEditOrgDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	SelectControl( m_nSelect );
 
@@ -114,6 +114,6 @@ void CDxfEditOrgDlg::OnOK()
 	ss_strNumeric = m_strNumeric;
 	ss_nRectType = m_nRectType;
 
-//	CDialog::OnOK();
+//	__super::OnOK();
 	EndDialog(IDOK);
 }

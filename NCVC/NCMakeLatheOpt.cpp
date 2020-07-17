@@ -17,13 +17,13 @@ extern	CMagaDbg	g_dbg;
 // intå^ñΩóﬂ
 static	LPCTSTR	g_szNOrder[] = {
 	"Spindle", "MarginNum",
-	"ProgNo",
-	"LineAddType", "G90", "Dot", "FDot", "CircleCode", "CircleIJ"
+	"ProgNo", "LineAddType",
+	"G90", "Dot", "FDot", "CircleCode", "CircleIJ"
 };
 static	const	int		g_dfNOrder[] = {
 	200, 1,
-	1,
-	1, 0, 0, 0, 0, 0
+	1, 1,
+	0, 0, 0, 0, 0
 };
 
 // doubleå^ñΩóﬂ
@@ -91,7 +91,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKLA_NUM_DOT,			"ç¿ïWï\ãL(0:è¨êîì_,1:1/1000)"},
 	{NC_NUM,	MKLA_NUM_FDOT,			"F ﬂ◊“∞¿ï\ãL(0:è¨êîì_,1:1/1000,2:êÆêî)"},
 	{NC_FLG,	MKLA_FLG_ZEROCUT,		"è¨êîì_à»â∫ÇÃæﬁ€∂Øƒ"},
-	{NC_NUM,	MKLA_NUM_CIRCLECODE,	"â~√ﬁ∞¿ÇÃêÿçÌ(0:G2,1:G3)"},
+	{NC_NUM,	MKLA_NUM_CIRCLECODE,	"â~√ﬁ∞¿ÇÃêÿçÌ(0:G02,1:G03)"},
 	{NC_NUM,	MKLA_NUM_IJ,			"â~å éwé¶(0:R,1:I/J)"},
 	{NC_FLG,	MKLA_FLG_CIRCLEHALF,	"ëSâ~ÇÕ2ï™äÑ"},
 	{NC_DBL,	MKLA_DBL_ELLIPSE,		"ë»â~åˆç∑"},
@@ -106,7 +106,9 @@ CNCMakeLatheOpt::CNCMakeLatheOpt(LPCTSTR lpszInit) :
 		SIZEOF(g_szNOrder), g_szNOrder, g_dfNOrder, m_unNums,
 		SIZEOF(g_szDOrder), g_szDOrder, g_dfDOrder, m_udNums,
 		SIZEOF(g_szBOrder), g_szBOrder, g_dfBOrder, m_ubFlags,
-		SIZEOF(g_szSOrder), g_szSOrder, g_dfSOrder)
+		SIZEOF(g_szSOrder), g_szSOrder, g_dfSOrder,
+		SIZEOF(g_szInitComment), g_szInitComment,
+		SIZEOF(g_stSaveOrder),   g_stSaveOrder)
 {
 	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(g_dfNOrder) );
 	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(m_unNums) );
@@ -121,18 +123,6 @@ CNCMakeLatheOpt::CNCMakeLatheOpt(LPCTSTR lpszInit) :
 
 /////////////////////////////////////////////////////////////////////////////
 // ’∞ªﬁ“› ﬁä÷êî
-
-BOOL CNCMakeLatheOpt::ReadMakeOption(LPCTSTR lpszInitFile)
-{
-	return CNCMakeOption::ReadMakeOption(lpszInitFile);
-}
-
-BOOL CNCMakeLatheOpt::SaveMakeOption(LPCTSTR lpszInitFile)
-{
-	return CNCMakeOption::SaveMakeOption(lpszInitFile,
-				SIZEOF(g_szInitComment), g_szInitComment,
-				SIZEOF(g_stSaveOrder),   g_stSaveOrder);
-}
 
 #ifdef _DEBUGOLD
 void CNCMakeLatheOpt::DbgDump(void) const

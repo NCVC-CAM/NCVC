@@ -7,14 +7,16 @@
 #include "NCVCdefine.h"
 #include "NCMakeOption.h"
 
-#define	MKNC_NUM_SPINDLE			0
-#define	MKNC_NUM_PROG				1
-#define	MKNC_NUM_LINEADD			2
-#define	MKNC_NUM_G90				3
-#define	MKNC_NUM_ZRETURN			4
-#define	MKNC_NUM_DOT				5
-#define	MKNC_NUM_FDOT				6
-#define	MKNC_NUM_CIRCLECODE			7
+// -- ”h¶WireOption‹¤’Ê
+#define	MKNC_NUM_PROG				0
+#define	MKNC_NUM_LINEADD			1
+#define	MKNC_NUM_G90				2
+#define	MKNC_NUM_DOT				3
+#define	MKNC_NUM_FDOT				4
+#define	MKNC_NUM_CIRCLECODE			5
+// --
+#define	MKNC_NUM_SPINDLE			6
+#define	MKNC_NUM_ZRETURN			7
 #define	MKNC_NUM_IJ					8
 #define	MKNC_NUM_MAKEEND			9
 #define	MKNC_NUM_DEEPSPINDLE		10
@@ -52,16 +54,18 @@
 #define	MKNC_DBL_TOLERANCE		17
 #define	MKNC_DBL_DRILLMARGIN	18
 
-#define	MKNC_FLG_XREV			0
-#define	MKNC_FLG_YREV			1
-#define	MKNC_FLG_PROG			2
-#define	MKNC_FLG_PROGAUTO		3
-#define	MKNC_FLG_LINEADD		4
-#define	MKNC_FLG_ZEROCUT		5
-#define	MKNC_FLG_GCLIP			6
-#define	MKNC_FLG_DISABLESPINDLE	7
-#define	MKNC_FLG_CIRCLEHALF		8
-#define	MKNC_FLG_ELLIPSE		9
+// -- ”h¶WireOption‹¤’Ê
+#define	MKNC_FLG_PROG			0
+#define	MKNC_FLG_PROGAUTO		1
+#define	MKNC_FLG_LINEADD		2
+#define	MKNC_FLG_ZEROCUT		3
+#define	MKNC_FLG_GCLIP			4
+#define	MKNC_FLG_ELLIPSE		5
+// --
+#define	MKNC_FLG_XREV			6
+#define	MKNC_FLG_YREV			7
+#define	MKNC_FLG_DISABLESPINDLE	8
+#define	MKNC_FLG_CIRCLEHALF		9
 #define	MKNC_FLG_DEEP			10
 #define	MKNC_FLG_HELICAL		11
 #define	MKNC_FLG_DEEPFINISH		12
@@ -92,15 +96,16 @@ friend class CMKNCSetup8;
 	// intŒ^µÌß¼®İ
 	union {
 		struct {
-			int		m_nSpindle,			// å²‰ñ“]‘¬“x
 			// -----
-					m_nProg,			// ÌßÛ¸Ş×Ñ”Ô†
+			int		m_nProg,			// ÌßÛ¸Ş×Ñ”Ô†
 					m_nLineAdd,			// s”Ô†‘‰Á
 					m_nG90,				// ˆÊ’uw’è(G90 or G91)
-					m_nZReturn,			// Z²‚Ì•œ‹A(Initial or R)
 					m_nDot,				// ”’l•\‹L(¬”“_ or 1/1000)
 					m_nFDot,			// ‚eÊß×Ò°À‚Ì”’l•\‹L
 					m_nCircleCode,		// ‰~Øí(G2 or G3)
+			//
+					m_nSpindle,			// å²‰ñ“]‘¬“x
+					m_nZReturn,			// Z²‚Ì•œ‹A(Initial or R)
 					m_nIJ,				// ‰~ŒÊ•âŠÔ‚ÉR‚©I/J/K
 			// -----
 					m_nMakeEnd,			// ‰ÁHÏ‚İ[‚³‚Ìw¦
@@ -154,17 +159,17 @@ friend class CMKNCSetup8;
 	// BOOLŒ^µÌß¼®İ
 	union {
 		struct {
-			BOOL	m_bXrev,			// X²”½“]
-					m_bYrev,			// Y²”½“]
-					m_bProg,			// O”Ô†•t—^
+			BOOL	m_bProg,			// O”Ô†•t—^
 					m_bProgAuto,		// ×İÀŞÑŠ„‚è“–‚Ä
 					m_bLineAdd,			// s”Ô†
 					m_bZeroCut,			// ¬”“_ˆÈ‰º‚Ì¾ŞÛ¶¯Ä
 					m_bGclip,			// Gº°ÄŞÈ—ªŒ`
+					m_bEllipse,			// ’·Œa‚Æ’ZŒa‚ª“™‚µ‚¢‘È‰~‚Í‰~‚Æ‚İ‚È‚·
+			//
+					m_bXrev,			// X²”½“]
+					m_bYrev,			// Y²”½“]
 					m_bDisableSpindle,	// SÊß×Ò°À‚ğ¶¬‚µ‚È‚¢
 					m_bCircleHalf,		// ‘S‰~‚Í•ªŠ„
-			// -----
-					m_bEllipse,			// ’·Œa‚Æ’ZŒa‚ª“™‚µ‚¢‘È‰~‚Í‰~‚Æ‚İ‚È‚·
 			// -----
 					m_bDeep,			// [’¤Øí‚ğs‚¤
 					m_bHelical,			// ‰~ÃŞ°À‚ğÍØ¶ÙØí
@@ -188,10 +193,7 @@ friend class CMKNCSetup8;
 public:
 	CNCMakeMillOpt(LPCTSTR);
 
-	BOOL	ReadMakeOption(LPCTSTR);
-	BOOL	SaveMakeOption(LPCTSTR = NULL);	// ğŒÌ§²Ù‚Ì‘‚«o‚µ
-
 #ifdef _DEBUGOLD
-	void	DbgDump(void) const;		// µÌß¼®İ•Ï”‚ÌÀŞİÌß
+	virtual	void	DbgDump(void) const;	// µÌß¼®İ•Ï”‚ÌÀŞİÌß
 #endif
 };

@@ -847,7 +847,7 @@ void CDXFView::OnLButtonUp_Separate
 				pMap = new CDXFmap;
 				pMap->SetPointMap(pDataSel);
 				pShape = new CDXFshape(DXFSHAPE_LOCUS, pShapeSel->GetShapeName()+"(•ª—£)",
-									pMap->GetMapTypeFlag(), pMap);
+									pMap->GetMapTypeFlag(), pLayer, pMap);
 				// Ú²Ôî•ñ‚É’Ç‰Á
 				pLayer->AddShape(pShape);
 			}

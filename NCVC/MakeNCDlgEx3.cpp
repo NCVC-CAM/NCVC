@@ -118,7 +118,7 @@ BOOL CMakeNCDlgEx3::OnInitDialog()
 				AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 				break;
 			}
-			m_ctLayerList.SetCheck(nCnt++, pLayer->m_bLayerFlg[LAYER_CUTTARGET]);
+			m_ctLayerList.SetCheck(nCnt++, pLayer->m_bLayerFlg[LAYER_CUT_TARGET]);
 		}
 	}
 	// ﾚｲﾔﾘｽﾄの並べ替え
@@ -196,9 +196,9 @@ BOOL CMakeNCDlgEx3::OnWizardFinish()
 			continue;
 		pLayer = reinterpret_cast<CLayerData *>(m_ctLayerList.GetItemData(i));
 		// 出力順の設定
-		pLayer->SetLayerListNo(pLayer->IsLayerFlag(LAYER_PARTOUT) ? -1 : i);
+		pLayer->SetLayerListNo(pLayer->IsLayerFlag(LAYER_PART_OUT) ? -1 : i);
 		// 個別出力の有無
-		if ( pLayer->IsLayerFlag(LAYER_PARTOUT) ) {
+		if ( pLayer->IsLayerFlag(LAYER_PART_OUT) ) {
 			strPartOut = pLayer->GetNCFile();	// 代表で最初のみ
 			break;
 		}
@@ -225,8 +225,8 @@ BOOL CMakeNCDlgEx3::OnKillActive()
 	// ﾃﾞｰﾀ反映
 	for ( int i=0; i<m_ctLayerList.GetItemCount(); i++ ) {
 		pLayer = reinterpret_cast<CLayerData *>(m_ctLayerList.GetItemData(i));
-		pLayer->m_bLayerFlg.set(LAYER_CUTTARGET, m_ctLayerList.GetCheck(i));
-		if ( pLayer->m_bLayerFlg[LAYER_CUTTARGET] )
+		pLayer->m_bLayerFlg.set(LAYER_CUT_TARGET, m_ctLayerList.GetCheck(i));
+		if ( pLayer->m_bLayerFlg[LAYER_CUT_TARGET] )
 			bCutCheck = TRUE;
 	}
 	// 切削対象が１つもない
@@ -270,7 +270,7 @@ void CMakeNCDlgEx3::OnGetDispInfoLayerList(NMHDR* pNMHDR, LRESULT* pResult)
 				lstrcpy(pDispInfo->item.pszText, strBuf);
 				break;
 			case 3:		// 個別出力ﾌｧｲﾙ
-				if ( pLayer->m_bLayerFlg[LAYER_PARTOUT] )
+				if ( pLayer->m_bLayerFlg[LAYER_PART_OUT] )
 					lstrcpy(pDispInfo->item.pszText, pLayer->m_strNCFile);
 				else
 					pDispInfo->item.pszText[0] = '\0';
@@ -287,7 +287,7 @@ void CMakeNCDlgEx3::OnGetDispInfoLayerList(NMHDR* pNMHDR, LRESULT* pResult)
 				lstrcpy(pDispInfo->item.pszText, strBuf);
 				break;
 			case 2:		// 個別出力ﾌｧｲﾙ
-				if ( pLayer->m_bLayerFlg[LAYER_PARTOUT] )
+				if ( pLayer->m_bLayerFlg[LAYER_PART_OUT] )
 					lstrcpy(pDispInfo->item.pszText, pLayer->m_strNCFile);
 				else
 					pDispInfo->item.pszText[0] = '\0';
@@ -415,18 +415,18 @@ LRESULT CMakeNCDlgEx3::OnQuerySiblings(WPARAM wParam, LPARAM lParam)
 	for ( int i=0; i<m_ctLayerList.GetItemCount(); i++ ) {
 		pLayer1 = reinterpret_cast<CLayerData *>(m_ctLayerList.GetItemData(i));
 		pLayer2 = pArray->GetAt(i);
-		pLayer1->m_bLayerFlg.set(LAYER_CUTTARGET, pLayer2->m_bLayerFlg[LAYER_CUTTARGET]);
+		pLayer1->m_bLayerFlg.set(LAYER_CUT_TARGET, pLayer2->m_bLayerFlg[LAYER_CUT_TARGET]);
 		if ( IsMakeEx1() )
 			pLayer1->SetInitFile(pLayer2->m_strInitFile);
 		else {
 			pLayer1->m_dZCut		= pLayer2->m_dZCut;
-			pLayer1->m_bLayerFlg.set(LAYER_DRILLZ, pLayer2->m_bLayerFlg[LAYER_DRILLZ]);
+			pLayer1->m_bLayerFlg.set(LAYER_DRILL_Z, pLayer2->m_bLayerFlg[LAYER_DRILL_Z]);
 		}
-		pLayer1->m_bLayerFlg.set(LAYER_PARTOUT, pLayer2->m_bLayerFlg[LAYER_PARTOUT]);
+		pLayer1->m_bLayerFlg.set(LAYER_PART_OUT, pLayer2->m_bLayerFlg[LAYER_PART_OUT]);
 		pLayer1->m_strNCFile		= pLayer2->m_strNCFile;
 		pLayer1->m_strLayerComment	= pLayer2->m_strLayerComment;
 		pLayer1->m_strLayerCode		= pLayer2->m_strLayerCode;
-		m_ctLayerList.SetCheck(i, pLayer1->m_bLayerFlg[LAYER_CUTTARGET]);
+		m_ctLayerList.SetCheck(i, pLayer1->m_bLayerFlg[LAYER_CUT_TARGET]);
 	}
 	m_ctLayerList.Invalidate();
 

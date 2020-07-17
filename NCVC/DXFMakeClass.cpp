@@ -367,7 +367,7 @@ void CDXFMake::MakeDXF_Line(const CNCline* pData, BOOL bCorrect)
 	}
 }
 
-inline int _SetDXFtype(ENPLANE enPlane, const CNCdata* pData)
+static inline int _SetDXFtype(ENPLANE enPlane, const CNCdata* pData)
 {
 	int		nType;
 	if ( pData->GetPlane() != enPlane )

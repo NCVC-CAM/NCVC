@@ -36,6 +36,7 @@ enum	DXFSHAPE_ASSEMBLE {
 #define	DXFSHAPETYPE_CHAIN			0
 #define	DXFSHAPETYPE_MAP			1
 
+class CLayerData;
 class CDXFdata;
 class CDXFmap;
 class CDXFchain;
@@ -122,6 +123,10 @@ class CDXFchain : public CDXFlist
 	DWORD		m_dwFlags;
 	CRect3D		m_rcMax;
 
+	POSITION	(CDXFchain::*m_pfnGetFirstPos)(void) const;
+	CDXFdata*&	(CDXFchain::*m_pfnGetFirstData)();
+	CDXFdata*&	(CDXFchain::*m_pfnGetData)(POSITION&);
+
 public:
 	CDXFchain(DWORD = 0);
 	virtual	~CDXFchain();
@@ -141,6 +146,7 @@ public:
 	BOOL	IsSearchFlg(void) const {
 		return m_dwFlags & DXFMAPFLG_SEARCH;
 	}
+	void	SetMakeFlags(void);
 	CRect3D	GetMaxRect(void) const {
 		return m_rcMax;
 	}
@@ -159,9 +165,23 @@ public:
 	BOOL	IsLoop(void) const;
 	BOOL	IsPointInPolygon(const CPointD&) const;
 	//
+	POSITION	SetLoopFunc(const CDXFdata*, BOOL, BOOL);
+	POSITION	GetFirstPosition(void) {
+		return (this->*m_pfnGetFirstPos)();
+	}
+	CDXFdata*&	GetFirstData(void) {
+		return (this->*m_pfnGetFirstData)();
+	}
+	CDXFdata*&	GetSeqData(POSITION& pos) {
+		return (this->*m_pfnGetData)(pos);
+	}
+	//
 	int		GetObjectCount(void) const;
+	double	GetLength(void) const;
 	void	AllChainObject_ClearSearchFlg(void);
 	double	GetSelectObjectFromShape(const CPointD&, const CRectD* = NULL, CDXFdata** = NULL);
+	void	SetVectorPoint(POSITION, VECPOINTD&, double);
+	void	SetVectorPoint(POSITION, VECPOINTD&, size_t);
 	void	SetShapeSwitch(BOOL);
 	void	RemoveObject(const CDXFdata*);
 	void	DrawShape(CDC*) const;
@@ -355,6 +375,7 @@ class CDXFshape : public CObject
 {
 	DWORD		m_dwFlags;
 	DXFSHAPE_ASSEMBLE	m_enAssemble;	// 所属集合
+	CLayerData*	m_pParentLayer;			// ﾃﾞｰﾀの属するﾚｲﾔ情報
 	CRect3D		m_rcMax;				// ｵﾌﾞｼﾞｪｸﾄ最大矩形
 	CString		m_strShape,				// 形状名(変更可)
 				m_strShapeHandle;		// 形状集合ｸﾗｽ識別用(変更不可)
@@ -368,7 +389,7 @@ class CDXFshape : public CObject
 	HTREEITEM	m_hTree;				// 登録されているﾂﾘｰﾋﾞｭｰﾊﾝﾄﾞﾙ(実行時動的設定)
 	int			m_nSerialSeq;			// 現在のﾂﾘｰ順
 
-	void	Constructor(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD);
+	void	Constructor(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD, CLayerData*);
 	void	SetDetailInfo(CDXFchain*);
 	void	SetDetailInfo(CDXFmap*);
 	BOOL	CreateOutlineTempObject_polyline(const CDXFpolyline*, BOOL, double,
@@ -379,8 +400,8 @@ class CDXFshape : public CObject
 protected:
 	CDXFshape();	// Serialize
 public:
-	CDXFshape(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD, CDXFchain*);
-	CDXFshape(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD, CDXFmap*);
+	CDXFshape(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD, CLayerData*, CDXFchain*);
+	CDXFshape(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD, CLayerData*, CDXFmap*);
 	virtual	~CDXFshape();
 
 	DXFSHAPE_ASSEMBLE	GetShapeAssemble(void) const {
@@ -397,6 +418,9 @@ public:
 	}
 	CDXFmap*	GetShapeMap(void) const {
 		return m_vShape.which()==1 ? boost::get<CDXFmap*>(m_vShape) : NULL;
+	}
+	CLayerData*	GetParentLayer(void) const {
+		return m_pParentLayer;
 	}
 	DWORD	GetShapeFlag(void) const {
 		return m_dwFlags;
@@ -479,6 +503,7 @@ public:
 	BOOL	DelOutlineData(CDXFworkingOutline* = NULL);
 	boost::tuple<CDXFworking*, CDXFdata*>  GetDirectionObject(void) const;
 	boost::tuple<CDXFworking*, CDXFdata*>  GetStartObject(void) const;
+	POSITION	GetFirstChainPosition(void);		// TH_MakeXXX.cpp
 	BOOL	LinkObject(void);
 	BOOL	LinkShape(CDXFshape*);
 	BOOL	ChangeCreate_MapToChain(CDXFmap* = NULL);

@@ -40,6 +40,7 @@ BEGIN_MESSAGE_MAP(CDXFChild, CMDIChildWnd)
 	ON_MESSAGE(WM_USERINITIALUPDATE, OnUserInitialUpdate)
 	// ﾌｧｲﾙ変更通知 from DocBase.cpp
 	ON_MESSAGE(WM_USERFILECHANGENOTIFY, OnUserFileChangeNotify)
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 BEGIN_MESSAGE_MAP(CDXFFrameSplit, CSplitterWnd)
@@ -80,18 +81,18 @@ void CDXFChild::ActivateFrame(int nCmdShow)
 #ifdef _DEBUG
 	g_dbg.printf("CDXFChild::ActivateFrame() Call");
 #endif
-	CMDIChildWnd::ActivateFrame(CChildBase::ActivateFrame(nCmdShow));
+	__super::ActivateFrame(ActivateFrameSP(nCmdShow));	// CChildBase
 }
 
 BOOL CDXFChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
-//	return CMDIChildWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+//	return __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 /*
 	ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳによる複数ﾋﾞｭｰで
 	ﾌｫｰｶｽが移っても正常動作させるための
 	ｶｽﾀﾑｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞ
 */
-	if ( CMDIChildWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) )
+	if ( __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) )
 		return TRUE;
 	CDXFDoc* pDoc = static_cast<CDXFDoc *>(GetActiveDocument());
 	if ( !pDoc )
@@ -107,12 +108,12 @@ BOOL CDXFChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 #ifdef _DEBUG
 void CDXFChild::AssertValid() const
 {
-	CMDIChildWnd::AssertValid();
+	__super::AssertValid();
 }
 
 void CDXFChild::Dump(CDumpContext& dc) const
 {
-	CMDIChildWnd::Dump(dc);
+	__super::Dump(dc);
 }
 #endif //_DEBUG
 
@@ -167,7 +168,7 @@ void CDXFChild::ShowShapeView(void)
 
 int CDXFChild::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if ( CMDIChildWnd::OnCreate(lpCreateStruct) < 0 )
+	if ( __super::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 	
 	// ｽﾃｰﾀｽﾊﾞｰ作成
@@ -180,15 +181,29 @@ int CDXFChild::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
+void CDXFChild::OnSize(UINT nType, int cx, int cy)
+{
+	__super::OnSize(nType, cx, cy);
+	if ( cx<=0 || cy<=0 )
+		return;
+
+	CDXFDoc* pDoc = static_cast<CDXFDoc *>(GetActiveDocument());
+	if ( pDoc && !pDoc->IsDXFDocFlag(DXFDOC_SHAPE) ) {
+		m_wndSplitter.SetColumnInfo(0, cx, 0);
+		m_wndSplitter.RecalcLayout();
+		// 再描画時にﾂｰﾙﾊﾞｰ領域で妙なスジがでる
+	}
+}
+
 void CDXFChild::OnClose() 
 {
 	AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();
-	CMDIChildWnd::OnClose();
+	__super::OnClose();
 }
 
 void CDXFChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd) 
 {
-	CMDIChildWnd::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
+	__super::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
 	DBGBOOL(g_dbg, "CDXFChild::bActivate", bActivate);
 	CChildBase::OnMDIActivate(this, bActivate);
 }

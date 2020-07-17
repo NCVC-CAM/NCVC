@@ -180,9 +180,11 @@ try {
 			if ( dTaper != pRead2->m_taper.dTaper ) {
 				dTaper = pRead2->m_taper.dTaper;
 				dT2 = dT * tan(fabs(dTaper));
-				nSign2 = pRead2->m_taper.nTaper;
-				if ( dTaper < 0 )
-					nSign2 = -nSign2;
+				if ( dTaper != 0.0 ) {	// T0 ‚ÌŽž‚Í•„†•ÛŽ
+					nSign2 = pRead2->m_taper.nTaper;
+					if ( dTaper < 0 )
+						nSign2 = -nSign2;
+				}
 			}
 			// 
 			ncArgv.nc.nLine  = pData1->GetBlockLineNo();
@@ -248,8 +250,8 @@ try {
 					ptResult = pt;
 				}
 				else {
-					// Ã°ÊßÓ°ÄÞ’†‚ÍŒa•â³‚Æ“¯‚¶ŒvŽZ(‘æ‚Sˆø”’ˆÓ)
-					ptResult = pData1->CalcOffsetIntersectionPoint(pData2, dT1, dT2, nSign1>0);
+					// Ã°ÊßÓ°ÄÞ’†‚ÍŒa•â³‚Æ“¯‚¶ŒvŽZ(‘æ‚Sˆø”’ˆÓFŽŸ‚Ì•„†)
+					ptResult = pData1->CalcOffsetIntersectionPoint(pData2, dT1, dT2, nSign2>0);
 				}
 				if ( ptResult ) {
 					pt = *ptResult;
@@ -319,7 +321,7 @@ try {
 				pParent->m_ctReadProgress.SetPos(i);
 			pData1 = pDoc->GetNCdata(i);
 			dwValFlags = pData1->GetValFlags();
-			if ( pData1->IsCutCode() && dwValFlags&(NCD_R|NCD_K) )
+			if ( pData1->IsCutCode() && dwValFlags&NCD_R )
 				nTaper++;				// break
 		}
 		if ( i >= nLoopCnt )	// nTaper == 0
@@ -350,7 +352,7 @@ try {
 		ncArgv.nc.dwValFlags |= NCD_Z;
 		ncArgv.nc.dValue[NCA_Z] = pData1->GetValue(NCA_Z);
 
-		// --- XYŽ²‚Ìº°ÅR ˆ—(TH_NCRead.cpp‚ÅGetValue(NCA_R)‚Í•K‚¸•t—^‚³‚ê‚Ä‚¢‚é‚Í‚¸)
+		// --- XYŽ²‚Ìº°ÅR ˆ—
 		bResult = SetArgvCornerRobject( &ncArgv,
 					pDoc->GetNCblock(pData1->GetBlockLineNo()),
 					pData1, pData2, dwValFlags&NCD_R ? pData1->GetValue(NCA_R) : 0.0 );
@@ -370,7 +372,7 @@ try {
 		if ( pRead1->m_taper.nDiff == 0 ) {
 			// G60
 			// Ã°ÊßÍÞ¸ÄÙ‚ÌK‚Æ‹æ•Ê‚·‚é‚½‚ß‚ÉR‚Æ‘g‚Ý‡‚í‚¹‚½‚Æ‚«‚¾‚¯ã‰º“Æ—§º°ÅR
-			k = dwValFlags & NCD_R ? pData1->GetValue( dwValFlags & NCD_K ? NCA_K : NCA_R) : 0.0;
+			k = dwValFlags&NCD_R ? pData1->GetValue(dwValFlags&NCD_K ? NCA_K : NCA_R) : 0.0;
 		}
 		else {
 			k = pDataR->GetType() == NCDARCDATA ?

@@ -46,8 +46,11 @@ BEGIN_MESSAGE_MAP(CNCViewTab, CTabView)
 	ON_UPDATE_COMMAND_UI(ID_NCVIEW_ALLFIT, OnUpdateAllFitCmd)
 	// 「直前の拡大率」ﾒﾆｭｰｺﾏﾝﾄﾞの使用許可
 	ON_UPDATE_COMMAND_UI(ID_VIEW_BEFORE, OnUpdateBeforeView)
-	//
+	// 他
 	ON_UPDATE_COMMAND_UI(ID_OPTION_DEFVIEWINFO, OnUpdateDefViewInfo)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  OnUpdateMoveKey)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, OnUpdateRoundKey)
 END_MESSAGE_MAP()
 
 //////////////////////////////////////////////////////////////////////
@@ -137,6 +140,9 @@ void CNCViewTab::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 
 BOOL CNCViewTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
+#ifdef _DEBUG_CMDMSG
+	g_dbg.printf("CNCViewTab::OnCmdMsg()");
+#endif
 	// ﾀﾌﾞ移動だけ特別
 	if ( nID == ID_TAB_NEXT || nID == ID_TAB_PREV ) {
 		CWnd*	pWnd = GetFocus();
@@ -153,8 +159,12 @@ BOOL CNCViewTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 
 	// 自分自身とｱｸﾃｨﾌﾞなﾋﾞｭｰだけにｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞ
 	// 結果的に CNCDoc へのｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞはここからだけになる
-	if ( CTabView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) )
+	if ( CTabView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) ) {
+#ifdef _DEBUG_CMDMSG
+		g_dbg.printf("CTabView::OnCmdMsg() return");
+#endif
 		return TRUE;
+	}
 	if ( GetPageCount() <= 0 )
 		return FALSE;
 	return GetActivePageWnd()->OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
@@ -471,14 +481,27 @@ void CNCViewTab::OnUpdateAllFitCmd(CCmdUI* pCmdUI)
 
 void CNCViewTab::OnUpdateBeforeView(CCmdUI* pCmdUI)
 {
-	int nIndex = GetActivePage();
-	pCmdUI->Enable( nIndex < NCVIEW_OPENGL );
+	pCmdUI->Enable( GetActivePage() < NCVIEW_OPENGL );
 }
 
 void CNCViewTab::OnUpdateDefViewInfo(CCmdUI *pCmdUI)
 {
-	int nIndex = GetActivePage();
-	pCmdUI->Enable( nIndex == NCVIEW_OPENGL );
+	pCmdUI->Enable( GetActivePage() == NCVIEW_OPENGL );
+}
+
+void CNCViewTab::OnUpdateEditCopy(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable( GetActivePage() < NCVIEW_OPENGL );
+}
+
+void CNCViewTab::OnUpdateMoveKey(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(TRUE);
+}
+
+void CNCViewTab::OnUpdateRoundKey(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable( GetActivePage() == NCVIEW_OPENGL );
 }
 
 /////////////////////////////////////////////////////////////////////////////

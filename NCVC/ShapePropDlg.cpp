@@ -43,7 +43,7 @@ CShapePropDlg::~CShapePropDlg()
 
 void CShapePropDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	DDX_CBIndex(pDX, IDC_SHAPEPROP_SHAPE, m_nShape);
 	DDX_Control(pDX, IDC_SHAPEPROP_SHAPE, m_ctShape);
 	DDX_Control(pDX, IDC_SHAPEPROP_OFFSET, m_ctOffset);
@@ -58,7 +58,7 @@ void CShapePropDlg::DoDataExchange(CDataExchange* pDX)
 
 BOOL CShapePropDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ∫›ƒ€∞Ÿèâä˙ê›íË
 	switch ( m_vSelect.which() ) {

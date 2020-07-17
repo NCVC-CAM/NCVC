@@ -31,7 +31,7 @@ CNCFindDlg::~CNCFindDlg()
 
 void CNCFindDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	DDX_Control(pDX, IDOK, m_ctFind);
 	DDX_Control(pDX, IDC_NCVIEW_FIND_STR, m_ctStrFind);
 	DDX_Control(pDX, IDC_NCVIEW_FIND_UP, m_ctFindUp);
@@ -46,14 +46,14 @@ BOOL CNCFindDlg::PreTranslateMessage(MSG* pMsg)
 	CFrameWnd*	pFrame = GetParentFrame();	// CMainFrame
 	if ( pFrame && ::TranslateAccelerator(pFrame->GetSafeHwnd(), pFrame->GetDefaultAccelerator(), pMsg))
 		return TRUE;
-	return CDialog::PreTranslateMessage(pMsg);
+	return __super::PreTranslateMessage(pMsg);
 }
 
 // CNCFindDlg メッセージ ハンドラ
 
 BOOL CNCFindDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	// 移動ﾎﾞﾀﾝの初期化
 	OnUserSwitchDocument(NULL, NULL);
@@ -86,14 +86,14 @@ void CNCFindDlg::OnCancel()
 	AfxGetNCVCApp()->SaveDlgWindow(IDS_REGKEY_WINDOW_FINDDLG, this);
 
 	DestroyWindow();	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞ
-//	CDialog::OnCancel();
+//	__super::OnCancel();
 }
 
 void CNCFindDlg::PostNcDestroy() 
 {
 	AfxGetNCVCMainWnd()->SetModelessDlg(MLD_NCFIND, NULL);
 	delete	this;
-//	CDialog::PostNcDestroy();
+//	__super::PostNcDestroy();
 }
 
 LRESULT CNCFindDlg::OnUserSwitchDocument(WPARAM, LPARAM)

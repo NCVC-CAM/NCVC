@@ -43,8 +43,10 @@ BEGIN_MESSAGE_MAP(CNCInfoView1, CView)
 	ON_WM_CONTEXTMENU()
 	ON_WM_KEYDOWN()
 	ON_WM_ERASEBKGND()
-	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  OnUpdateMoveRoundKey)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, OnUpdateMoveRoundKey)
+	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
 	//}}AFX_MSG_MAP
 	ON_MESSAGE (WM_USERPROGRESSPOS, OnUserCalcMsg)
 END_MESSAGE_MAP()
@@ -67,8 +69,10 @@ BEGIN_MESSAGE_MAP(CNCInfoView2, CView)
 	ON_WM_CONTEXTMENU()
 	ON_WM_KEYDOWN()
 	ON_WM_ERASEBKGND()
-	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  OnUpdateMoveRoundKey)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, OnUpdateMoveRoundKey)
+	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -384,6 +388,11 @@ LRESULT CNCInfoView1::OnUserCalcMsg(WPARAM, LPARAM)
 	return 0;
 }
 
+void CNCInfoView1::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(FALSE);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CNCInfoView2 メッセージ ハンドラ
 
@@ -425,6 +434,11 @@ BOOL CNCInfoView2::OnEraseBkgnd(CDC* pDC)
 				col2 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND2);
 
 	return AfxGetNCVCMainWnd()->DrawBackGroundView(pDC, &rc, col1, col2);
+}
+
+void CNCInfoView2::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(FALSE);
 }
 
 /////////////////////////////////////////////////////////////////////////////

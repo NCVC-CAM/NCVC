@@ -15,7 +15,7 @@ protected:
 
 protected:
 	// Ò¯¾°¼ÞÏ¯Ìß‚Ì‹¤’Ê•”•ª
-	int		ActivateFrame(int nCmdShow);
+	int		ActivateFrameSP(int nCmdShow);
 	void	OnMDIActivate(CMDIChildWnd*, BOOL bActivate);
 	void	OnUserFileChangeNotify(CMDIChildWnd*);
 };

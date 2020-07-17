@@ -13,7 +13,13 @@
 */
 #define	DXFOPT_VIEW		0
 #define	DXFOPT_ORGTYPE	1
-enum	enMAKETYPE	{NCMAKEMILL, NCMAKELATHE, NCMAKEWIRE};
+enum	enMAKETYPE	{
+	NCMAKEMILL = 0,		// MC
+	NCMAKELATHE,		// 旋盤
+	NCMAKEWIRE,			// ﾜｲﾔ放電加工機
+	NCMAKELAYER,		// ﾚｲﾔ名と条件ﾌｧｲﾙの関係ﾌｧｲﾙの履歴
+		NCMAKENUM			// [4]
+};
 
 class CDXFOption
 {
@@ -23,17 +29,13 @@ friend	class	CDxfSetup2;
 	CString	m_strReadLayer[DXFLAYERSIZE];	// 原点，切削(入力ｲﾒｰｼﾞ保存用)，
 											// 加工開始位置ﾚｲﾔ名, 強制移動指示ﾚｲﾔ名, ｺﾒﾝﾄ用
 	boost::regex	m_regCutter;			// 切削ﾚｲﾔ正規表現
-	int			m_nDXF[2];			// View, OrgType
-	CStringList	m_strMillList,			// 切削条件ﾌｧｲﾙ名の履歴
-				m_strLatheList,			// 旋盤用切削条件ﾌｧｲﾙ名の履歴
-				m_strLayerToInitList;	// ﾚｲﾔ名と条件ﾌｧｲﾙの関係ﾌｧｲﾙの履歴
+	int			m_nDXF[2];				// View, OrgType
+	CStringList	m_strInitList[NCMAKENUM];	// 切削条件ﾌｧｲﾙ名の履歴
 	enMAKETYPE	m_enMakeType;		// 直前のNC生成ﾀｲﾌﾟ
 
-	BOOL	AddListHistory(CStringList&, LPCTSTR);
-	void	DelListHistory(CStringList&, LPCTSTR);
+	BOOL	AddListHistory(enMAKETYPE, LPCTSTR);
 	BOOL	ReadInitHistory(enMAKETYPE);
 	BOOL	SaveInitHistory(enMAKETYPE);
-	BOOL	SaveLayerHistory(void);
 
 public:
 	CDXFOption();
@@ -68,40 +70,16 @@ public:
 	enMAKETYPE	GetNCMakeType(void) const {
 		return m_enMakeType;
 	}
+	const	CStringList*	GetInitList(enMAKETYPE enType) const {
+		return &m_strInitList[enType];
+	}
 
-	const	CStringList*	GetMillInitList(void) const {
-		return &m_strMillList;
-	}
-	const	CStringList*	GetLatheInitList(void) const {
-		return &m_strLatheList;
-	}
-	const	CStringList*	GetLayerToInitList(void) const {
-		return &m_strLayerToInitList;
-	}
-	BOOL	AddMillInitHistory(LPCTSTR lpszSearch) {
-		if ( AddListHistory(m_strMillList, lpszSearch) )
-			return SaveInitHistory(NCMAKEMILL);
+	BOOL	AddInitHistory(enMAKETYPE enType, LPCTSTR lpszSearch) {
+		if ( AddListHistory(enType, lpszSearch) )
+			return SaveInitHistory(enType);
 		return FALSE;
 	}
-	BOOL	AddLatheInitHistory(LPCTSTR lpszSearch) {
-		if ( AddListHistory(m_strLatheList, lpszSearch) )
-			return SaveInitHistory(NCMAKELATHE);
-		return FALSE;
-	}
-	BOOL	AddLayerHistory(LPCTSTR lpszSearch) {
-		if ( AddListHistory(m_strLayerToInitList, lpszSearch) )
-			return SaveLayerHistory();
-		return FALSE;
-	}
-	void	DelMillInitHistory(LPCTSTR lpszSearch) {
-		DelListHistory(m_strMillList, lpszSearch);
-	}
-	void	DelLatheInitHistory(LPCTSTR lpszSearch) {
-		DelListHistory(m_strLatheList, lpszSearch);
-	}
-	void	DelLayerHistory(LPCTSTR lpszSearch) {
-		DelListHistory(m_strLayerToInitList, lpszSearch);
-	}
+	void	DelInitHistory(enMAKETYPE, LPCTSTR);
 
 	// from DXFMakeOption.cpp, NCVCaddinDXF.cpp
 	CString	GetReadLayer(size_t n) const {

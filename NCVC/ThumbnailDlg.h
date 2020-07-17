@@ -1,17 +1,17 @@
 // ThumbnailDlg.h : ヘッダー ファイル
 //
+/////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
 #include <afxshelltreeCtrl.h>
 
 class CNCDoc;
-struct THUMBNAILINFO {
+typedef	struct tagTHUMBNAILINFO {
 	CFileStatus	fStatus;
 	CNCDoc*		pDoc;
 	CView*		pView;	// CNCView, CNCViewXY, CNCViewXZ, CNCViewYZ
-};
-#define	LPTHUMBNAILINFO	THUMBNAILINFO *
+} THUMBNAILINFO, *LPTHUMBNAILINFO;
 
 class CThumbnailStatic : public CStatic
 {

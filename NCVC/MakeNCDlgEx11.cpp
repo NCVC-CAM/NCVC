@@ -66,7 +66,7 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx* pParent, int nIndex)
 			for ( i=0; i<nLoop; i++ ) {
 				pLayer = pDoc->GetLayerData(i);
 				if ( pLayer->IsCutType() ) {
-					pLayer = new CLayerData(pLayer, pLayer->m_bLayerFlg[LAYER_CUTTARGET]);
+					pLayer = new CLayerData(pLayer, pLayer->m_bLayerFlg[LAYER_CUT_TARGET]);
 					m_obLayer.Add(pLayer);
 				}
 			}
@@ -81,7 +81,7 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx* pParent, int nIndex)
 		return;
 	}
 
-	const CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetMillInitList();
+	const CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetInitList(NCMAKEMILL);
 	// 初期表示ﾃﾞｰﾀは nIndex から取得
 	m_nIndex = nIndex<0 || nIndex>m_obLayer.GetUpperBound() ? 0 : nIndex;
 	pLayer = m_obLayer[m_nIndex];
@@ -90,8 +90,8 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx* pParent, int nIndex)
 	else if ( pList->GetCount() > 0 )
 		::Path_Name_From_FullPath(pList->GetHead(), m_strInitPath, m_strInitFileName);
 	::Path_Name_From_FullPath(pLayer->m_strNCFile, m_strNCPath, m_strNCFileName);
-	m_bPartOut			= m_strNCFileName.IsEmpty() ? FALSE : pLayer->m_bLayerFlg[LAYER_PARTOUT];
-	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUTTARGET];
+	m_bPartOut			= m_strNCFileName.IsEmpty() ? FALSE : pLayer->m_bLayerFlg[LAYER_PART_OUT];
+	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUT_TARGET];
 	m_strLayerComment	= pLayer->m_strLayerComment;
 	m_strLayerCode		= pLayer->m_strLayerCode;
 }
@@ -104,7 +104,7 @@ CMakeNCDlgEx11::~CMakeNCDlgEx11()
 
 void CMakeNCDlgEx11::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMakeNCDlgEx11)
 	DDX_Control(pDX, IDOK, m_ctOK);
 	DDX_Control(pDX, IDC_MKNCEX_STATIC3, m_ctPartEnable3);
@@ -129,8 +129,8 @@ void CMakeNCDlgEx11::GetNowState(void)
 {
 	CLayerData* pLayer = m_obLayer[m_nIndex];
 	UpdateData();
-	pLayer->m_bLayerFlg.set(LAYER_CUTTARGET, m_bCheck);
-	pLayer->m_bLayerFlg.set(LAYER_PARTOUT,   m_bPartOut);
+	pLayer->m_bLayerFlg.set(LAYER_CUT_TARGET, m_bCheck);
+	pLayer->m_bLayerFlg.set(LAYER_PART_OUT,   m_bPartOut);
 	pLayer->m_strNCFile			= m_strNCPath + m_strNCFileName;
 	pLayer->m_strInitFile		= m_strInitPath + m_strInitFileName;
 	pLayer->m_strLayerComment	= m_strLayerComment;
@@ -141,11 +141,11 @@ void CMakeNCDlgEx11::SetNowState(int nIndex)
 {
 	m_nIndex = nIndex;
 	CLayerData* pLayer = m_obLayer[m_nIndex];
-	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUTTARGET];
-	m_bPartOut			= pLayer->m_bLayerFlg[LAYER_PARTOUT];
+	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUT_TARGET];
+	m_bPartOut			= pLayer->m_bLayerFlg[LAYER_PART_OUT];
 	m_strLayerComment	= pLayer->m_strLayerComment;
 	m_strLayerCode		= pLayer->m_strLayerCode;
-	const CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetMillInitList();
+	const CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetInitList(NCMAKEMILL);
 	if ( !pLayer->m_strInitFile.IsEmpty() )
 		::Path_Name_From_FullPath(pLayer->m_strInitFile, m_strInitPath, m_strInitFileName);
 	else if ( pList->GetCount() > 0 )
@@ -191,7 +191,7 @@ void CMakeNCDlgEx11::EnablePartOut(void)
 
 BOOL CMakeNCDlgEx11::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	if ( m_nIndex < 0 ) {
 		EndDialog(IDCANCEL);
@@ -208,7 +208,7 @@ BOOL CMakeNCDlgEx11::OnInitDialog()
 	for ( i=0; i<m_obLayer.GetSize(); i++ )
 		m_ctLayer.AddString( m_obLayer[i]->m_strLayer );
 	// 切削条件ｺﾝﾎﾞﾎﾞｯｸｽにｱｲﾃﾑ追加
-	InitialMakeNCDlgComboBox(AfxGetNCVCApp()->GetDXFOption()->GetMillInitList(), m_ctInitFileName);	// MakeNCDlg.cpp
+	InitialMakeNCDlgComboBox(AfxGetNCVCApp()->GetDXFOption()->GetInitList(NCMAKEMILL), m_ctInitFileName);	// MakeNCDlg.cpp
 	// ﾊﾟｽ表示の最適化
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, m_strInitPath);
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_NCPATH, m_strNCPath);
@@ -227,7 +227,7 @@ void CMakeNCDlgEx11::OnOK()
 	m_ctOK.SetFocus();
 
 	CString	strNCFile;
-	const	CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetMillInitList();
+	const	CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetInitList(NCMAKEMILL);
 	// 最後の情報を取得
 	GetNowState();
 	
@@ -235,7 +235,7 @@ void CMakeNCDlgEx11::OnOK()
 	CLayerData* pLayer;
 	for ( int i=0; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
-		if ( !pLayer->m_bLayerFlg[LAYER_CUTTARGET] )
+		if ( !pLayer->m_bLayerFlg[LAYER_CUT_TARGET] )
 			continue;
 		// 条件ﾌｧｲﾙが空欄なら強制的に設定
 		if ( pLayer->m_strInitFile.IsEmpty() ) {
@@ -256,7 +256,7 @@ void CMakeNCDlgEx11::OnOK()
 			return;
 		}
 		// 個別ﾌｧｲﾙ名のﾁｪｯｸ
-		if ( pLayer->m_bLayerFlg[LAYER_PARTOUT] ) {
+		if ( pLayer->m_bLayerFlg[LAYER_PART_OUT] ) {
 			strNCFile = pLayer->m_strNCFile;
 			if ( !CheckMakeDlgFileExt(TYPE_NCD, strNCFile) ) {
 				SetNowState(i);
@@ -278,7 +278,7 @@ void CMakeNCDlgEx11::OnOK()
 		return;
 	}
 
-	CDialog::OnOK();
+	__super::OnOK();
 }
 
 void CMakeNCDlgEx11::OnNewLayer()
@@ -356,7 +356,7 @@ void CMakeNCDlgEx11::OnSelChangeInit()
 	CString	strFullPath(m_strInitPath+m_strInitFileName);
 	if ( !::IsFileExist(strFullPath) ) {
 		// 履歴削除
-		AfxGetNCVCApp()->GetDXFOption()->DelMillInitHistory(strFullPath);
+		AfxGetNCVCApp()->GetDXFOption()->DelInitHistory(NCMAKEMILL, strFullPath);
 		m_ctInitFileName.DeleteString(nIndex);
 	}
 }
@@ -390,8 +390,8 @@ void CMakeNCDlgEx11::OnCopy()
 	GetNowState();
 	// 現在位置以降にﾃﾞｰﾀをｺﾋﾟｰ
 	CLayerData* pLayer = m_obLayer[m_nIndex];
-	BOOL	bCheck		= pLayer->m_bLayerFlg[LAYER_CUTTARGET],
-			bPartOut	= pLayer->m_bLayerFlg[LAYER_PARTOUT];
+	BOOL	bCheck		= pLayer->m_bLayerFlg[LAYER_CUT_TARGET],
+			bPartOut	= pLayer->m_bLayerFlg[LAYER_PART_OUT];
 	CString	strInit		= pLayer->m_strInitFile,
 			strComment	= pLayer->m_strLayerComment,
 			strCode		= pLayer->m_strLayerCode;
@@ -401,8 +401,8 @@ void CMakeNCDlgEx11::OnCopy()
 	strNCFile = strPath + strFile + "_";
 	for ( int i=m_nIndex+1; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
-		pLayer->m_bLayerFlg.set(LAYER_CUTTARGET, bCheck);
-		pLayer->m_bLayerFlg.set(LAYER_PARTOUT,   bPartOut);
+		pLayer->m_bLayerFlg.set(LAYER_CUT_TARGET, bCheck);
+		pLayer->m_bLayerFlg.set(LAYER_PART_OUT,   bPartOut);
 		pLayer->m_strInitFile		= strInit;
 		pLayer->m_strLayerComment	= strComment;
 		pLayer->m_strLayerCode		= strCode;

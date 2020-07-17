@@ -8,9 +8,6 @@
 
 class CViewBase
 {
-	friend class CNCViewBase;
-	CView*		m_pView;		// 派生ﾋﾞｭｰ
-
 	int			m_nBoth;		// 両ﾎﾞﾀﾝ処理ｶｳﾝﾀ
 								// 最後に離したﾎﾞﾀﾝでReleaseCapture()するため
 	CPoint		m_ptBeforeOrg,	// 直前の原点
@@ -25,6 +22,7 @@ protected:
 	CViewBase();
 	virtual	~CViewBase();
 
+	CView*		m_pView;		// 派生ﾋﾞｭｰ
 	BOOL		m_bMagRect;		// 拡大矩形表示中
 	double		m_dFactor;		// 拡大率
 	int			m_nLState,		// -1:Up, 0:Down, 1:拡大矩形表示中

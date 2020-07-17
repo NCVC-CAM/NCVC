@@ -309,8 +309,8 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFoption(LPDXFOPTION pOpt)
 	pOpt->nAccept	= 0;
 	pOpt->nOrgType	= pSrc->GetDxfFlag(DXFOPT_ORGTYPE);
 	pOpt->bView		= pSrc->GetDxfFlag(DXFOPT_VIEW);
-	const	CStringList*	pList1 = pSrc->GetMillInitList();
-	const	CStringList*	pList2 = pSrc->GetLayerToInitList();
+	const	CStringList*	pList1 = pSrc->GetInitList(NCMAKEMILL);
+	const	CStringList*	pList2 = pSrc->GetInitList(NCMAKELAYER);
 	for( i=0, pos=pList1->GetHeadPosition(); pos && i<DXFMAXINITFILE; i++ )
 		pOpt->pszInitList[i] = (LPCTSTR)(pList1->GetNext(pos));
 	for( i=0, pos=pList2->GetHeadPosition(); pos && i<DXFMAXINITFILE; i++ )

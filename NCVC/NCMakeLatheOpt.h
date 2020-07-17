@@ -96,10 +96,7 @@ friend class CMKNCSetup6;
 public:
 	CNCMakeLatheOpt(LPCTSTR);
 
-	BOOL	ReadMakeOption(LPCTSTR);
-	BOOL	SaveMakeOption(LPCTSTR = NULL);	// ğŒÌ§²Ù‚Ì‘‚«o‚µ
-
 #ifdef _DEBUGOLD
-	void	DbgDump(void) const;		// µÌß¼®İ•Ï”‚ÌÀŞİÌß
+	virtual	void	DbgDump(void) const;	// µÌß¼®İ•Ï”‚ÌÀŞİÌß
 #endif
 };

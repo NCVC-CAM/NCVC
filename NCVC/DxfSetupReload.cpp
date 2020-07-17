@@ -30,7 +30,7 @@ CDxfSetupReload::CDxfSetupReload(CWnd* pParent)
 
 void CDxfSetupReload::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CDxfSetupReload)
 		// メモ - ClassWizard はこの位置にマッピング用のマクロを追加または削除します。
 	//}}AFX_DATA_MAP
@@ -41,7 +41,7 @@ void CDxfSetupReload::DoDataExchange(CDataExchange* pDX)
 
 BOOL CDxfSetupReload::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	// 標準ﾘｽﾄﾎﾞｯｸｽをｻﾌﾞｸﾗｽ化
 	m_ctReloadList.SubclassDlgItem(IDC_DXF_RELOADLIST, this);
@@ -76,5 +76,5 @@ void CDxfSetupReload::OnOK()
 		pDoc->SetReload( m_ctReloadList.GetCheck(nCnt++)==1 ? TRUE : FALSE );
 	}
 
-	CDialog::OnOK();
+	__super::OnOK();
 }

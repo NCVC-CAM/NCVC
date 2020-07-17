@@ -1,5 +1,5 @@
 // TH_MakeLathe.cpp
-// DXF->旋盤用NC生成
+//		旋盤用NC生成
 //////////////////////////////////////////////////////////////////////
 #include "stdafx.h"
 #include "NCVC.h"
@@ -8,17 +8,10 @@
 #include "DXFshape.h"
 #include "Layer.h"
 #include "DXFDoc.h"
-#include "NCdata.h"
 #include "NCMakeLatheOpt.h"
 #include "NCMakeLathe.h"
 #include "MakeCustomCode.h"
 #include "ThreadDlg.h"
-
-/*
-!!!ATTENTION!!!
-生成時間の表示：正式ﾘﾘｰｽでは外すのを忘れずに
-#define	_DBG_NCMAKE_TIME
-*/
 
 using namespace std;
 using namespace boost;
@@ -27,6 +20,11 @@ using namespace boost;
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
+/* --------------
+!!!ATTENTION!!!
+	生成時間の表示：正式ﾘﾘｰｽでは外すのを忘れずに
+----------------- */
+//#define	_DBG_NCMAKE_TIME
 #endif
 
 // よく使う変数や呼び出しの簡略置換
@@ -45,7 +43,7 @@ static	CNCMakeLatheOpt*	g_pMakeOpt;
 static	CShapeArray	g_obShape;
 static	CDXFarray	g_obOutsideTemp;
 static	CDXFarray	g_obLathePass;
-static	CTypedPtrArrayEx<CPtrArray, CNCMakeLathe*>	g_obMakeGdata;	// 加工ﾃﾞｰﾀ
+static	CTypedPtrArrayEx<CPtrArray, CNCMakeLathe*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
 
 // ｻﾌﾞ関数
 static	void	InitialVariable(void);		// 変数初期化
@@ -58,17 +56,17 @@ static	BOOL	CreateRoughPass(void);		// 荒加工ﾃﾞｰﾀの生成
 static	BOOL	MakeLatheCode(void);		// NCｺｰﾄﾞの生成
 static	BOOL	CheckXZMove(const CPointD&, const CPointD&);
 static	void	MoveLatheCode(const CDXFdata*, double, double);
-static	BOOL	OutputNCcode(void);			// NCｺｰﾄﾞの出力
+static	BOOL	OutputLatheCode(void);		// NCｺｰﾄﾞの出力
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
-static	void	AddCustomCode(const CString&);
+static	void	AddCustomLatheCode(const CString&);
 
 // 任意ﾃﾞｰﾀの生成
-inline	void	AddMakeLatheStr(const CString& strData)
+static inline	void	AddMakeLatheStr(const CString& strData)
 {
-	CNCMakeLathe*	mkNCD = new CNCMakeLathe(strData);
-	ASSERT( mkNCD );
-	g_obMakeGdata.Add(mkNCD);
+	CNCMakeLathe*	pNCD = new CNCMakeLathe(strData);
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
 }
 
 // ﾌｪｰｽﾞ更新
@@ -109,10 +107,9 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 
 	// 下位の CMemoryException は全てここで集約
 	try {
-		BOOL	bResult = FALSE;
 		// NC生成ｵﾌﾟｼｮﾝｵﾌﾞｼﾞｪｸﾄの生成とｵﾌﾟｼｮﾝの読み込み
 		g_pMakeOpt = new CNCMakeLatheOpt(
-				AfxGetNCVCApp()->GetDXFOption()->GetLatheInitList()->GetHead());
+				AfxGetNCVCApp()->GetDXFOption()->GetInitList(NCMAKELATHE)->GetHead());
 		// NC生成のﾙｰﾌﾟ前に必要な初期化
 		InitialVariable();
 		// 条件ごとに変化するﾊﾟﾗﾒｰﾀを設定
@@ -121,11 +118,11 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 		g_csMakeAfter.Lock();		// ｽﾚｯﾄﾞ側でﾛｯｸ解除するまで待つ
 		g_csMakeAfter.Unlock();
 		// 増分割り当て
-		g_obMakeGdata.SetSize(0, 1024);		// 旋盤ﾃﾞｰﾀ生成は未知数
+		g_obMakeData.SetSize(0, 1024);		// 旋盤ﾃﾞｰﾀ生成は未知数
 		// 生成開始
-		bResult = MakeLathe_MainFunc();
+		BOOL bResult = MakeLathe_MainFunc();
 		if ( bResult )
-			bResult = OutputNCcode();
+			bResult = OutputLatheCode();
 
 		// 戻り値ｾｯﾄ
 		if ( bResult && IsThread() )
@@ -189,31 +186,27 @@ void SetStaticOption(void)
 	// CDXFdataの静的変数初期化
 	CDXFdata::ms_fXRev = CDXFdata::ms_fYRev = FALSE;
 
-	// CNCMakeMillの静的変数初期化
+	// CNCMakeLatheの静的変数初期化
 	CPointD	ptOrg(g_pDoc->GetCircleObject()->GetStartMakePoint());
 	CNCMakeLathe::ms_xyz[NCA_X] = ptOrg.y;
-	CNCMakeLathe::ms_xyz[NCA_Y] = 0;
+	CNCMakeLathe::ms_xyz[NCA_Y] = 0.0;
 	CNCMakeLathe::ms_xyz[NCA_Z] = ptOrg.x;
 
 	// 生成ｵﾌﾟｼｮﾝによる静的変数の初期化
 	CNCMakeLathe::SetStaticOption(g_pMakeOpt);
 }
 
-BOOL OutputNCcode(void)
+BOOL OutputLatheCode(void)
 {
 	CString	strPath, strFile,
 			strNCFile(g_pDoc->GetNCFileName());
 	Path_Name_From_FullPath(strNCFile, strPath, strFile);
-	SendFaseMessage(g_obMakeGdata.GetSize(), IDS_ANA_DATAFINAL, strFile);
+	SendFaseMessage(g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
 	try {
 		CStdioFile	fp(strNCFile,
 				CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive | CFile::typeText);
-#ifdef _DEBUG
-		for ( int i=0; i<g_obMakeGdata.GetSize(); i++ ) {
-#else
-		for ( int i=0; i<g_obMakeGdata.GetSize() && IsThread(); i++ ) {
-#endif
-			g_obMakeGdata[i]->WriteGcode(fp);
+		for ( int i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
+			g_obMakeData[i]->WriteGcode(fp);
 			SetProgressPos(i+1);
 		}
 	}
@@ -224,7 +217,7 @@ BOOL OutputNCcode(void)
 		return FALSE;
 	}
 
-	SetProgressPos(g_obMakeGdata.GetSize());
+	SetProgressPos(g_obMakeData.GetSize());
 	return IsThread();
 }
 
@@ -261,7 +254,7 @@ BOOL MakeLathe_MainFunc(void)
 BOOL CreateShapeThread(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CreateShapeThread()\nStart");
+	CMagaDbg	dbg("CreateShapeThread() for TH_MakeLathe\nStart");
 	CDXFchain*	pChainDbg;
 	CDXFdata*	pDataDbg;
 	POSITION	posdbg;
@@ -607,7 +600,7 @@ BOOL MakeLatheCode(void)
 	CDXFchain*	pChain;
 	CDXFdata*	pData;
 	COutlineData*	pOutline;
-	CNCMakeLathe*	mkNCD;
+	CNCMakeLathe*	pNCD;
 
 	// 端面と外径の最大値を取得
 	double		dMaxZ = g_pDoc->GetLatheLine(0)->GetStartMakePoint().x,
@@ -616,26 +609,26 @@ BOOL MakeLatheCode(void)
 	// 先頭ﾃﾞｰﾀの始点に移動
 	if ( nLoop > 0 ) {
 		// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
-		AddCustomCode(g_pMakeOpt->GetStr(MKLA_STR_HEADER));
+		AddCustomLatheCode(g_pMakeOpt->GetStr(MKLA_STR_HEADER));
 		//
 		pData = g_obLathePass[0];
 		pt = pData->GetStartMakePoint();
 		if ( pt.x < CNCMakeLathe::ms_xyz[NCA_Z] ) {
 			// 工具初期位置が端面の右側
 			// →指定位置まで直線移動
-			mkNCD = new CNCMakeLathe(pt);
+			pNCD = new CNCMakeLathe(pt);
 		}
 		else {
 			// 工具初期位置が端面の左側
 			// →Z軸移動後、X軸移動
-			mkNCD = new CNCMakeLathe(ZXMOVE, pt);
+			pNCD = new CNCMakeLathe(ZXMOVE, pt);
 		}
-		ASSERT(mkNCD);
-		g_obMakeGdata.Add(mkNCD);
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
 		// 先頭ﾃﾞｰﾀの切削ﾊﾟｽ
-		mkNCD = new CNCMakeLathe(pData);
-		ASSERT(mkNCD);
-		g_obMakeGdata.Add(mkNCD);
+		pNCD = new CNCMakeLathe(pData);
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
 	}
 
 	// 荒加工ﾊﾟｽﾙｰﾌﾟ
@@ -659,24 +652,24 @@ BOOL MakeLatheCode(void)
 			pt.y = dMaxX; 
 		}
 		pt.y += GetDbl(MKLA_DBL_PULL_X);	// 引き代分引いて移動
-		mkNCD = new CNCMakeLathe(XZMOVE, pt);
-		ASSERT(mkNCD);
-		g_obMakeGdata.Add(mkNCD);
+		pNCD = new CNCMakeLathe(XZMOVE, pt);
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
 		// 始点への切り込み
 		if ( dMaxZ < pt.x ) {
 			// 端面よりも右側 → 早送りでX軸方向に移動
-			mkNCD = new CNCMakeLathe(0, NCA_X, dCutX);
+			pNCD = new CNCMakeLathe(0, NCA_X, dCutX);
 		}
 		else {
 			// 端面よりも左側 → 切削送りでX軸方向に切り込み
-			mkNCD = new CNCMakeLathe(1, NCA_X, dCutX);
+			pNCD = new CNCMakeLathe(1, NCA_X, dCutX);
 		}
-		ASSERT(mkNCD);
-		g_obMakeGdata.Add(mkNCD);
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
 		// 切削ﾊﾟｽ
-		mkNCD = new CNCMakeLathe(pData);
-		ASSERT(mkNCD);
-		g_obMakeGdata.Add(mkNCD);
+		pNCD = new CNCMakeLathe(pData);
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
 	}
 
 	// 仕上げしろﾊﾟｽﾙｰﾌﾟ
@@ -691,12 +684,12 @@ BOOL MakeLatheCode(void)
 			for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
 #ifdef _DEBUG
 				pData = pChain->GetNext(pos);
-				mkNCD = new CNCMakeLathe(pData);
+				pNCD = new CNCMakeLathe(pData);
 #else
-				mkNCD = new CNCMakeLathe(pChain->GetNext(pos));
+				pNCD = new CNCMakeLathe(pChain->GetNext(pos));
 #endif
-				ASSERT(mkNCD);
-				g_obMakeGdata.Add(mkNCD);
+				ASSERT(pNCD);
+				g_obMakeData.Add(pNCD);
 			}
 		}
 	}
@@ -712,37 +705,37 @@ BOOL MakeLatheCode(void)
 		for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
 #ifdef _DEBUG
 			pData = pChain->GetNext(pos);
-			mkNCD = new CNCMakeLathe(pData);
+			pNCD = new CNCMakeLathe(pData);
 #else
-			mkNCD = new CNCMakeLathe(pChain->GetNext(pos));
+			pNCD = new CNCMakeLathe(pChain->GetNext(pos));
 #endif
-			ASSERT(mkNCD);
-			g_obMakeGdata.Add(mkNCD);
+			ASSERT(pNCD);
+			g_obMakeData.Add(pNCD);
 		}
 	}
 
-	if ( !g_obMakeGdata.IsEmpty() ) {
+	if ( !g_obMakeData.IsEmpty() ) {
 		// 工具初期位置へ復帰
 		dCutX = dMaxX + GetDbl(MKLA_DBL_PULL_X);
 		pt = g_pDoc->GetCircleObject()->GetStartMakePoint();
-		mkNCD = new CNCMakeLathe(1, NCA_X, dCutX);
-		ASSERT(mkNCD);
-		g_obMakeGdata.Add(mkNCD);
+		pNCD = new CNCMakeLathe(1, NCA_X, dCutX);
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
 		if ( dCutX < pt.y ) {
-			mkNCD = new CNCMakeLathe(0, NCA_X, pt.y);
-			ASSERT(mkNCD);
-			g_obMakeGdata.Add(mkNCD);
+			pNCD = new CNCMakeLathe(0, NCA_X, pt.y);
+			ASSERT(pNCD);
+			g_obMakeData.Add(pNCD);
 		}
-		mkNCD = new CNCMakeLathe(0, NCA_Z, pt.x);
-		ASSERT(mkNCD);
-		g_obMakeGdata.Add(mkNCD);
+		pNCD = new CNCMakeLathe(0, NCA_Z, pt.x);
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
 		if ( pt.y < dCutX ) {
-			mkNCD = new CNCMakeLathe(0, NCA_X, pt.y);
-			ASSERT(mkNCD);
-			g_obMakeGdata.Add(mkNCD);
+			pNCD = new CNCMakeLathe(0, NCA_X, pt.y);
+			ASSERT(pNCD);
+			g_obMakeData.Add(pNCD);
 		}
 		// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
-		AddCustomCode(g_pMakeOpt->GetStr(MKLA_STR_FOOTER));
+		AddCustomLatheCode(g_pMakeOpt->GetStr(MKLA_STR_FOOTER));
 	}
 
 	return IsThread();
@@ -779,7 +772,7 @@ BOOL CheckXZMove(const CPointD& pts, const CPointD& pte)
 
 void MoveLatheCode(const CDXFdata* pData, double dMaxZ, double dMaxX)
 {
-	CNCMakeLathe*	mkNCD;
+	CNCMakeLathe*	pNCD;
 	CPointD		pts(pData->GetStartMakePoint()),
 				pt(pts);
 
@@ -791,18 +784,18 @@ void MoveLatheCode(const CDXFdata* pData, double dMaxZ, double dMaxX)
 	else
 		pt.y = dMaxX;	// Z軸はｵﾌﾞｼﾞｪｸﾄの開始位置, X軸は外径
 	pt.y += GetDbl(MKLA_DBL_PULL_X);	// 引き代
-	mkNCD = new CNCMakeLathe(XZMOVE, pt);
-	ASSERT(mkNCD);
-	g_obMakeGdata.Add(mkNCD);
+	pNCD = new CNCMakeLathe(XZMOVE, pt);
+	ASSERT(pNCD);
+	g_obMakeData.Add(pNCD);
 	// X軸始点に移動
-	mkNCD = new CNCMakeLathe(dMaxZ < pt.x ? 0 : 1, NCA_X, pts.y);
-	ASSERT(mkNCD);
-	g_obMakeGdata.Add(mkNCD);
+	pNCD = new CNCMakeLathe(dMaxZ < pt.x ? 0 : 1, NCA_X, pts.y);
+	ASSERT(pNCD);
+	g_obMakeData.Add(pNCD);
 	if ( dMaxZ < pt.x ) {
 		// ｵﾌﾞｼﾞｪｸﾄの始点に移動
-		mkNCD = new CNCMakeLathe(1, NCA_Z, pts.x);
-		ASSERT(mkNCD);
-		g_obMakeGdata.Add(mkNCD);
+		pNCD = new CNCMakeLathe(1, NCA_Z, pts.x);
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
 	}
 }
 
@@ -828,12 +821,12 @@ void SendFaseMessage
 	g_nFase++;
 }
 
-//	AddCustomCode() parse()関数から呼び出し
+//	AddCustomLatheCode() から呼び出し
 class CMakeCustomCode_Lathe : public CMakeCustomCode	// MakeCustomCode.h
 {
 public:
-	CMakeCustomCode_Lathe(CString& r) :
-				CMakeCustomCode(r, g_pDoc, NULL, g_pMakeOpt) {
+	CMakeCustomCode_Lathe(void) :
+				CMakeCustomCode(g_pDoc, NULL, g_pMakeOpt) {
 		static	LPCTSTR	szCustomCode[] = {
 			"ProgNo", 
 			"G90orG91", "SPINDLE",
@@ -844,71 +837,70 @@ public:
 		m_strOrderIndex.AddElement(SIZEOF(szCustomCode), szCustomCode);
 	}
 
-	void	operator()(const char* s, const char* e) const {
-		CString	strTmp;
+	CString	ReplaceCustomCode(const string& str) {
+		int		nTestCode;
+		CString	strResult;
 
 		// 基底ｸﾗｽ呼び出し
-		int		nTestCode = CMakeCustomCode::ReplaceCustomCode(s, e);
+		tie(nTestCode, strResult) = CMakeCustomCode::ReplaceCustomCode(str);
+		if ( !strResult.IsEmpty() )
+			return strResult;
 
-		// replace
+		// 派生replace
 		switch ( nTestCode ) {
 		case 0:		// ProgNo
-			if ( GetFlg(MKLA_FLG_PROG) ) {
-				strTmp.Format(IDS_MAKENCD_PROG,
+			if ( GetFlg(MKLA_FLG_PROG) )
+				strResult.Format(IDS_MAKENCD_PROG,
 					GetFlg(MKLA_FLG_PROGAUTO) ? ::GetRandom(1,9999) : GetNum(MKLA_NUM_PROG));
-				m_strResult += strTmp;
-			}
 			break;
 		case 1:		// G90orG91
-			m_strResult += CNCMakeBase::MakeCustomString(GetNum(MKLA_NUM_G90)+90);
+			strResult = CNCMakeBase::MakeCustomString(GetNum(MKLA_NUM_G90)+90);
 			break;
 		case 2:		// SPINDLE
-			m_strResult += CNCMakeLathe::MakeSpindle();
+			strResult = CNCMakeLathe::MakeSpindle();
 			break;
 		case 3:		// LatheDiameter
-			strTmp.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetLatheLine(1)->GetStartMakePoint().y * 2.0);
-			m_strResult += strTmp;
+			strResult.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetLatheLine(1)->GetStartMakePoint().y * 2.0);
 			break;
 		case 4:		// LatheZmax
-			strTmp.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetLatheLine(0)->GetStartMakePoint().x);
-			m_strResult += strTmp;
+			strResult.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetLatheLine(0)->GetStartMakePoint().x);
 			break;
 		case 5:		// LatheZmin
-			strTmp.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetLatheLine(0)->GetEndMakePoint().x);
-			m_strResult += strTmp;
+			strResult.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetLatheLine(0)->GetEndMakePoint().x);
 			break;
 		case 6:		// ToolPosX
-			strTmp.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetCircleObject()->GetStartMakePoint().y * 2.0);
-			m_strResult += strTmp;
+			strResult.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetCircleObject()->GetStartMakePoint().y * 2.0);
 			break;
 		case 7:		// ToolPosZ
-			strTmp.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetCircleObject()->GetStartMakePoint().x);
-			m_strResult += strTmp;
+			strResult.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetCircleObject()->GetStartMakePoint().x);
 			break;
+		default:
+			strResult = str.c_str();
 		}
+
+		return strResult;
 	}
 };
 
-void AddCustomCode(const CString& strFileName)
+void AddCustomLatheCode(const CString& strFileName)
 {
-	using namespace boost::spirit::classic;
-
-	CString	strBuf;
-	CString	strResult;
-	CMakeCustomCode_Lathe	custom(strResult);
+	CString	strBuf, strResult;
+	CMakeCustomCode_Lathe	custom;
+	string	str;
+	tokenizer<tag_separator>	tokens(str);
+	tokIte	it;		// MakeCustomCode.h
 
 	try {
 		CStdioFile	fp(strFileName,
 			CFile::modeRead | CFile::shareDenyWrite | CFile::typeText);
 		while ( fp.ReadString(strBuf) && IsThread() ) {
-			// 構文解析
+			str = strBuf;
+			tokens.assign(str);
 			strResult.Empty();
-			if ( parse((LPCTSTR)strBuf, *( *(anychar_p - '{')[custom] >> comment_p('{', '}')[custom] ) ).hit ) {
-				if ( !strResult.IsEmpty() )
-					AddMakeLatheStr( strResult );
-			}
-			else
-				AddMakeLatheStr( strBuf );
+			for ( it=tokens.begin(); it!=tokens.end(); ++it )
+				strResult += custom.ReplaceCustomCode(*it);
+			if ( !strResult.IsEmpty() )
+				AddMakeLatheStr(strResult);
 		}
 	}
 	catch (CFileException* e) {
@@ -934,14 +926,14 @@ UINT MakeLathe_AfterThread(LPVOID)
 		delete	g_obOutsideTemp[i];
 	for ( i=0; i<g_obLathePass.GetSize(); i++ )
 		delete	g_obLathePass[i];
-	for ( i=0; i<g_obMakeGdata.GetSize(); i++ )
-		delete	g_obMakeGdata[i];
+	for ( i=0; i<g_obMakeData.GetSize(); i++ )
+		delete	g_obMakeData[i];
 	for ( i=0; i<g_pDoc->GetLayerCnt(); i++ )
 		g_pDoc->GetLayerData(i)->RemoveAllShape();
 
 	g_obOutsideTemp.RemoveAll();
 	g_obLathePass.RemoveAll();
-	g_obMakeGdata.RemoveAll();
+	g_obMakeData.RemoveAll();
 
 	g_csMakeAfter.Unlock();
 

@@ -59,8 +59,8 @@ BEGIN_MESSAGE_MAP(CDXFDoc, CDocument)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_STRICTOFFSET, OnUpdateEditShaping)
 	//}}AFX_MSG_MAP
 	// NC生成ﾒﾆｭｰ
-	ON_UPDATE_COMMAND_UI_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_LATHE, OnUpdateFileDXF2NCD)
-	ON_COMMAND_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_LATHE, OnFileDXF2NCD)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_WIRE, OnUpdateFileDXF2NCD)
+	ON_COMMAND_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_WIRE, OnFileDXF2NCD)
 	// 形状加工指示
 	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, OnUpdateShapePattern)
 	ON_COMMAND_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, OnShapePattern)
@@ -235,7 +235,7 @@ CString CDXFDoc::CheckDuplexFile(const CString& strOrgFile, const CLayerArray* p
 	for ( i=0; i<nLoop; i++ ) {
 		pLayer = pArray->GetAt(i);
 		strFile = pLayer->GetNCFile();
-		if ( !pLayer->IsLayerFlag(LAYER_CUTTARGET) || !pLayer->IsLayerFlag(LAYER_PARTOUT) || strFile.IsEmpty() )
+		if ( !pLayer->IsLayerFlag(LAYER_CUT_TARGET) || !pLayer->IsLayerFlag(LAYER_PART_OUT) || strFile.IsEmpty() )
 			continue;
 		strLayer = pLayer->GetStrLayer();
 		// ｵﾘｼﾞﾅﾙﾌｧｲﾙとの重複ﾁｪｯｸ(上位ﾀﾞｲｱﾛｸﾞのみ)
@@ -249,7 +249,7 @@ CString CDXFDoc::CheckDuplexFile(const CString& strOrgFile, const CLayerArray* p
 		for ( j=i+1; j<nLoop; j++ ) {
 			pLayerCmp = pArray->GetAt(j);
 			strCmp = pLayerCmp->GetNCFile();
-			if ( !pLayerCmp->IsLayerFlag(LAYER_CUTTARGET) || !pLayerCmp->IsLayerFlag(LAYER_PARTOUT) || strCmp.IsEmpty() )
+			if ( !pLayerCmp->IsLayerFlag(LAYER_CUT_TARGET) || !pLayerCmp->IsLayerFlag(LAYER_PART_OUT) || strCmp.IsEmpty() )
 				continue;
 			if ( strFile.CompareNoCase(strCmp) == 0 ) {
 				AfxMessageBox(IDS_ERR_OVERLAPPINGFILE, MB_OK|MB_ICONEXCLAMATION);
@@ -528,12 +528,12 @@ tuple<CDXFshape*, CDXFdata*, double> CDXFDoc::GetSelectObject(const CPointD& pt,
 #ifdef _DEBUG
 void CDXFDoc::AssertValid() const
 {
-	CDocument::AssertValid();
+	__super::AssertValid();
 }
 
 void CDXFDoc::Dump(CDumpContext& dc) const
 {
-	CDocument::Dump(dc);
+	__super::Dump(dc);
 }
 
 void CDXFDoc::DbgSerializeInfo(void)
@@ -567,7 +567,7 @@ void CDXFDoc::DbgSerializeInfo(void)
 BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName) 
 {
 	BOOL	bResult;
-	int		i;
+	int		i, nCnt;
 	PFNNCVCSERIALIZEFUNC	pSerialFunc = AfxGetNCVCApp()->GetSerializeFunc();
 
 	if ( pSerialFunc ) {
@@ -580,7 +580,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 	}
 	else {
 		// 通常のｼﾘｱﾙ関数呼び出し
-		bResult = CDocument::OnOpenDocument(lpszPathName);
+		bResult = __super::OnOpenDocument(lpszPathName);
 	}
 
 	// NC生成可能かどうかのﾁｪｯｸ
@@ -588,9 +588,8 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 #ifdef _DEBUG
 		DbgSerializeInfo();
 #endif
-		int	nCnt = 0;
 		// 切削ﾃﾞｰﾀがないとき
-		for ( i=0; i<m_obLayer.GetSize(); i++ )
+		for ( i=nCnt=0; i<m_obLayer.GetSize(); i++ )
 			nCnt += m_obLayer[i]->GetDxfSize();
 		if ( nCnt < 1 ) {
 			AfxMessageBox(IDS_ERR_DXFDATACUT, MB_OK|MB_ICONEXCLAMATION);
@@ -637,8 +636,8 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		}
 	}
 
-	// 旋盤生成可能かどうかのﾁｪｯｸ
 	if ( bResult && m_bDxfDocFlg[DXFDOC_READY] ) {
+		// 旋盤ﾃﾞｰﾀ生成可能かどうかのﾁｪｯｸ
 		if ( m_pLatheLine[0] && m_pLatheLine[1] ) {
 			m_bDxfDocFlg.set(DXFDOC_LATHE);
 			// 外径を表す線を[0]に、（最小X座標を持つｵﾌﾞｼﾞｪｸﾄ）
@@ -668,12 +667,15 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 			if ( pt1.y < pt2.y )
 				m_pLatheLine[1]->SwapNativePt();
 		}
+		// ﾜｲﾔ加工機ﾃﾞｰﾀ生成可能かどうかのﾁｪｯｸ
+		if ( GetCutLayerCnt() <= 2 )
+			m_bDxfDocFlg.set(DXFDOC_WIRE);
 	}
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	if ( bResult ) {
 		POSITION	pos = GetFirstViewPosition();
-		CDocBase::OnOpenDocument(lpszPathName, GetNextView(pos)->GetParentFrame());
+		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());	// CDocBase
 	}
 
 	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
@@ -688,7 +690,7 @@ BOOL CDXFDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	UpdateAllViews(NULL, UAV_FILESAVE);	// CDXFShapeView順序更新
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの終了
-	CDocBase::OnCloseDocument();
+	OnCloseDocumentSP();	// CDocBase
 
 	if ( GetPathName().CompareNoCase(lpszPathName) != 0 ) {
 		CDXFDoc* pDoc = AfxGetNCVCApp()->GetAlreadyDXFDocument(lpszPathName);
@@ -697,13 +699,13 @@ BOOL CDXFDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	}
 
 	// 保存処理
-	BOOL bResult = CDocument::OnSaveDocument(lpszPathName);
+	BOOL bResult = __super::OnSaveDocument(lpszPathName);
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	if ( bResult ) {
 		POSITION	pos = GetFirstViewPosition();
 		CFrameWnd*	pFrame = GetNextView(pos)->GetParentFrame();
-		CDocBase::OnOpenDocument(lpszPathName, pFrame);
+		OnOpenDocumentSP(lpszPathName, pFrame);
 	}
 
 	return bResult;
@@ -722,7 +724,7 @@ void CDXFDoc::OnCloseDocument()
 		return;
 	}
 	// 処理中のｽﾚｯﾄﾞを中断させる
-	CDocBase::OnCloseDocument();	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
+	OnCloseDocumentSP();	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
 	m_bDxfDocFlg.reset(DXFDOC_THREAD);
 	m_csRestoreCircleType.Lock();
 	m_csRestoreCircleType.Unlock();
@@ -730,7 +732,7 @@ void CDXFDoc::OnCloseDocument()
 	dbg.printf("m_csRestoreCircleType Unlock OK");
 #endif
 
-	CDocument::OnCloseDocument();
+	__super::OnCloseDocument();
 }
 
 void CDXFDoc::ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault) 
@@ -739,7 +741,7 @@ void CDXFDoc::ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL 
 		AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
 		return;	// 標準ｴﾗｰﾒｯｾｰｼﾞを出さない
 	}
-	CDocument::ReportSaveLoadException(lpszPathName, e, bSaving, nIDPDefault);
+	__super::ReportSaveLoadException(lpszPathName, e, bSaving, nIDPDefault);
 }
 
 void CDXFDoc::SetModifiedFlag(BOOL bModified)
@@ -747,7 +749,7 @@ void CDXFDoc::SetModifiedFlag(BOOL bModified)
 	CString	strTitle( GetTitle() );
 	if ( UpdateModifiedTitle(bModified, strTitle) )		// DocBase.cpp
 		SetTitle(strTitle);
-	CDocument::SetModifiedFlag(bModified);
+	__super::SetModifiedFlag(bModified);
 }
 
 BOOL CDXFDoc::SaveModified()
@@ -775,7 +777,7 @@ BOOL CDXFDoc::SaveModified()
 	}
 	else {
 		// ﾃﾞﾌｫﾙﾄの保存問い合わせ処理
-		bResult = CDocument::SaveModified();
+		bResult = __super::SaveModified();
 	}
 
 	return bResult;
@@ -1108,14 +1110,11 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 		bEnable = m_bDxfDocFlg[DXFDOC_SHAPE];	// 形状処理が済んでいるか
 	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_LATHE )
 		bEnable = m_bDxfDocFlg[DXFDOC_LATHE];	// 旋盤用原点を読み込んだか
+	else if ( pCmdUI->m_nID == ID_FILE_DXF2NCD_WIRE )
+		bEnable = m_bDxfDocFlg[DXFDOC_WIRE];	// ﾜｲﾔ加工機の条件を満たしているか
 	else {
-		int		i = 0, nCnt = 0;
 		// 単一ﾚｲﾔの場合は拡張生成をoffにする
-		for ( ; i<m_obLayer.GetSize(); i++ ) {
-			if ( m_obLayer[i]->IsCutType() )
-				nCnt++;
-		}
-		if ( pCmdUI->m_nID!=ID_FILE_DXF2NCD && nCnt<=1 )
+		if ( pCmdUI->m_nID!=ID_FILE_DXF2NCD && GetCutLayerCnt()<=1 )
 			bEnable = FALSE;
 	}
 
@@ -1125,8 +1124,10 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 void CDXFDoc::OnFileDXF2NCD(UINT nID) 
 {
 	int		i;
+	enMAKETYPE	enType;
 	BOOL	bNCView,
-			bSingle = (nID==ID_FILE_DXF2NCD || nID==ID_FILE_DXF2NCD_SHAPE || nID==ID_FILE_DXF2NCD_LATHE);
+			bSingle = (nID==ID_FILE_DXF2NCD || nID==ID_FILE_DXF2NCD_SHAPE ||
+						nID==ID_FILE_DXF2NCD_LATHE || nID==ID_FILE_DXF2NCD_WIRE);
 	CLayerData* pLayer;
 	CString	strInit, strLayerFile;
 	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
@@ -1143,19 +1144,9 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 	}
 
 	switch ( nID ) {
-	case ID_FILE_DXF2NCD:		// 標準生成
-		{
-			CMakeNCDlg		dlg(IDS_MAKENCD_TITLE_BASIC, this);
-			if ( dlg.DoModal() != IDOK )
-				return;
-			m_strNCFileName	= dlg.m_strNCFileName;
-			strInit = dlg.m_strInitFileName;
-			bNCView = dlg.m_bNCView;
-		}
-		break;
-
 	case ID_FILE_DXF2NCD_EX1:	// ﾚｲﾔごとの複数条件
 	case ID_FILE_DXF2NCD_EX2:	// ﾚｲﾔごとのZ座標
+		enType = NCMAKEMILL;
 		{
 			CMakeNCDlgEx	ps(nID, this);
 			ps.SetWizardMode();
@@ -1168,9 +1159,14 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		}
 		break;
 
+	case ID_FILE_DXF2NCD:		// 標準生成
 	case ID_FILE_DXF2NCD_SHAPE:	// 形状処理
+	case ID_FILE_DXF2NCD_LATHE:	// 旋盤ﾃﾞｰﾀ生成
+	case ID_FILE_DXF2NCD_WIRE:	// ﾜｲﾔ加工機ﾃﾞｰﾀ生成
+		enType = ( nID <= ID_FILE_DXF2NCD_SHAPE ) ? NCMAKEMILL :
+					(enMAKETYPE)(nID - ID_FILE_DXF2NCD_LATHE + 1);
 		{
-			CMakeNCDlg	dlg(IDS_MAKENCD_TITLE_SHAPE, this);
+			CMakeNCDlg	dlg(nID-ID_FILE_DXF2NCD+IDS_MAKENCD_TITLE_BASIC, enType, this);
 			if ( dlg.DoModal() != IDOK )
 				return;
 			m_strNCFileName	= dlg.m_strNCFileName;
@@ -1179,28 +1175,15 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		}
 		break;
 
-	case ID_FILE_DXF2NCD_LATHE:	// 旋盤ﾃﾞｰﾀ生成
-		{
-			CMakeNCDlg	dlg(IDS_MAKENCD_TITLE_LATHE, this);
-			if ( dlg.DoModal() != IDOK )
-				return;
-			m_strNCFileName	= dlg.m_strNCFileName;
-			strInit = dlg.m_strInitFileName;
-			bNCView = dlg.m_bNCView;
-		}
-		break;
 	}
 
 	// 設定の保存
 	if ( !strInit.IsEmpty() ) {
-		if ( nID == ID_FILE_DXF2NCD_LATHE )
-			pOpt->AddLatheInitHistory(strInit);
-		else
-			pOpt->AddMillInitHistory(strInit);
+		pOpt->AddInitHistory(enType, strInit);
 	}
 	if ( !strLayerFile.IsEmpty() ) {
 		if ( SaveLayerMap(strLayerFile) )
-			pOpt->AddLayerHistory(strLayerFile);
+			pOpt->AddInitHistory(NCMAKELAYER, strLayerFile);
 	}
 	pOpt->SetViewFlag(bNCView);
 
@@ -1218,7 +1201,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		for ( i=0; i<m_obLayer.GetSize(); i++ ) {
 			pLayer = m_obLayer[i];
 			if ( pLayer->IsMakeTarget() ) {
-				if ( pLayer->IsLayerFlag(LAYER_PARTOUT) ) {
+				if ( pLayer->IsLayerFlag(LAYER_PART_OUT) ) {
 					pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(pLayer->GetNCFile());
 					if ( pDoc )
 						pDoc->OnCloseDocument();
@@ -1270,8 +1253,8 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 		bAllOut = FALSE;	// m_strNCFileName も開くかどうか
 		for ( i=0; i<m_obLayer.GetSize(); i++ ) {
 			pLayer = m_obLayer[i];
-			if ( pLayer->IsMakeTarget() && !pLayer->IsLayerFlag(LAYER_PARTERROR) ) {
-				if ( pLayer->IsLayerFlag(LAYER_PARTOUT) )
+			if ( pLayer->IsMakeTarget() && !pLayer->IsLayerFlag(LAYER_PART_ERROR) ) {
+				if ( pLayer->IsLayerFlag(LAYER_PART_OUT) )
 					AfxGetNCVCApp()->OpenDocumentFile(pLayer->GetNCFile());
 				else
 					bAllOut = TRUE;

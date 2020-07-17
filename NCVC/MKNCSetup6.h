@@ -16,14 +16,17 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CMKNCSetup6)
 	enum { IDD = IDD_MKNC_SETUP6 };
+	CStatic m_ctCircleGroup;
+	CButton m_ctCircleR;
+	CButton m_ctCircleIJ;
 	CButton	m_ctCircleHalf;
+	CFloatEdit	m_dEllipse;
 	int		m_nDot;
 	int		m_nFDot;
-	BOOL	m_bZeroCut;
 	int		m_nCircleCode;
 	int		m_nIJ;
+	BOOL	m_bZeroCut;
 	BOOL	m_bCircleHalf;
-	CFloatEdit	m_dEllipse;
 	BOOL	m_bEllipse;
 	//}}AFX_DATA
 
@@ -31,10 +34,10 @@ public:
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 
 	//{{AFX_VIRTUAL(CMKNCSetup6)
-	public:
+public:
 	virtual BOOL OnApply();
 	virtual BOOL OnKillActive();
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
 	//}}AFX_VIRTUAL
 

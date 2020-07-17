@@ -42,6 +42,9 @@ extern	const	DWORD	g_dwSetValFlags[] = {
 	NCD_D, NCD_H
 };
 
+// ｻﾑﾈｲﾙﾓｰﾄﾞのときに読み込む最大ﾌﾞﾛｯｸ数
+static	const INT_PTR	THUMBNAIL_MAXREADBLOCK = 5000;
+
 /////////////////////////////////////////////////////////////////////////////
 // CNCDoc
 
@@ -111,6 +114,9 @@ CNCDoc::~CNCDoc()
 BOOL CNCDoc::RouteCmdToAllViews
 	(CView* pActiveView, UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
+#ifdef _DEBUG_CMDMSG
+	g_dbg.printf("CNCDoc::RouteCmdToAllViews()");
+#endif
 	CView*	pView;
 
 	for ( POSITION pos=GetFirstViewPosition(); pos; ) {
@@ -157,6 +163,7 @@ CNCdata* CNCDoc::DataOperation
 	CNCblock*	pBlock;
 //	CPoint3D	ptOffset( m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg );	// GetOffsetOrig()
 	int			i;
+	BOOL		bResult = TRUE;
 	enMAKETYPE	enMakeType;
 
 	// 円弧補間用
@@ -211,17 +218,15 @@ CNCdata* CNCDoc::DataOperation
 			if ( lpArgv->nc.dwValFlags & (NCD_P|NCD_R) ) {	// G10P_R_
 				if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] ) {
 					// 工具情報の追加
-					if ( pOpt->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) )
-						pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
-					else {
+					if ( !pOpt->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) ) {
 						i = lpArgv->nc.nLine;
 						if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
 							pBlock = GetNCblock(i);
 							pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_G10ADDTOOL);
 						}
+						// このｴﾗｰはｽﾙｰ
 					}
 				}
-				break;
 			}
 			else if ( lpArgv->nc.dwValFlags & NCD_P ) {
 				// ﾜｰｸ座標系の設定
@@ -231,15 +236,22 @@ CNCdata* CNCDoc::DataOperation
 						if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] )
 							m_ptNcWorkOrg[nWork][i] += lpArgv->nc.dValue[i];
 					}
-					pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
-					break;
+				}
+				else {
+					bResult = FALSE;
 				}
 			}
-			// P値認識不能
-			i = lpArgv->nc.nLine;
-			if ( 0<=i && i<m_obBlock.GetSize() ) {
-				pBlock = GetNCblock(i);
-				pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
+			else {
+				bResult = FALSE;
+			}
+			pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
+			if ( !bResult ) {
+				// P値認識不能など
+				i = lpArgv->nc.nLine;
+				if ( 0<=i && i<m_obBlock.GetSize() ) {
+					pBlock = GetNCblock(i);
+					pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
+				}
 			}
 			break;
 		case 52:	// Mill
@@ -282,6 +294,8 @@ CNCdata* CNCDoc::DataOperation
 		// M_TYPE, O_TYPE, etc.
 		pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 	}
+
+	ASSERT( pDataResult );
 
 	// ｵﾌﾞｼﾞｪｸﾄ登録
 	switch ( enOperation ) {
@@ -736,25 +750,7 @@ void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 	param.pDoc		= this;
 	param.wParam	= NULL;
 	param.lParam	= NULL;
-	CWinThread*	pThread = AfxBeginThread(NCDtoXYZ_Thread, &param,
-			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
-	if ( pThread ) {
-		pThread->m_bAutoDelete = FALSE;
-		pThread->ResumeThread();
-	}
-	else
-		::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-#ifdef _DEBUG
-	if ( ::WaitForSingleObject(pThread->m_hThread, INFINITE) == WAIT_FAILED ) {
-		dbg.printf("WaitForSingleObject() Fail!");
-		::NC_FormatMessage();
-	}
-	else
-		dbg.printf("WaitForSingleObject() OK");
-#else
-	::WaitForSingleObject(pThread->m_hThread, INFINITE);
-#endif
-	delete	pThread;
+	NCDtoXYZ_Thread(&param);	// ｽﾚｯﾄﾞで呼び出す必要なし
 
 	if ( !ValidDataCheck() ) {
 		m_rcMax.SetRectEmpty();
@@ -781,12 +777,12 @@ void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 #ifdef _DEBUG
 void CNCDoc::AssertValid() const
 {
-	CDocument::AssertValid();
+	__super::AssertValid();
 }
 
 void CNCDoc::Dump(CDumpContext& dc) const
 {
-	CDocument::Dump(dc);
+	__super::Dump(dc);
 }
 #endif //_DEBUG
 
@@ -816,9 +812,9 @@ BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName)
 	}
 	else {
 		// 通常のｼﾘｱﾙ関数呼び出し
-		bResult = CDocument::OnOpenDocument(lpszPathName);
+		bResult = __super::OnOpenDocument(lpszPathName);
 		if ( bResult ) {
-			// CDocument::GetPathName() は
+			// __super::GetPathName() は
 			// OnOpenDocument() 終了後にﾌﾚｰﾑﾜｰｸが設定するので使えない
 			m_strCurrentFile = lpszPathName;
 		}
@@ -830,7 +826,7 @@ BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		if ( bResult ) {
 			// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 			POSITION	pos = GetFirstViewPosition();
-			CDocBase::OnOpenDocument(lpszPathName, GetNextView(pos)->GetParentFrame());
+			OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());	// CDocBase
 		}
 	}
 
@@ -845,7 +841,7 @@ BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName)
 BOOL CNCDoc::OnSaveDocument(LPCTSTR lpszPathName) 
 {
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの終了
-	CDocBase::OnCloseDocument();
+	OnCloseDocumentSP();	// CDocBase
 
 	if ( GetPathName().CompareNoCase(lpszPathName) != 0 ) {
 		CNCDoc* pDoc = AfxGetNCVCApp()->GetAlreadyNCDocument(lpszPathName);
@@ -854,13 +850,13 @@ BOOL CNCDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	}
 
 	// 保存処理
-	BOOL bResult = CDocument::OnSaveDocument(lpszPathName);
+	BOOL bResult = __super::OnSaveDocument(lpszPathName);
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	if ( bResult ) {
 		POSITION	pos = GetFirstViewPosition();
 		CFrameWnd*	pFrame = GetNextView(pos)->GetParentFrame();
-		CDocBase::OnOpenDocument(lpszPathName, pFrame);
+		OnOpenDocumentSP(lpszPathName, pFrame);
 	}
 
 	return bResult;
@@ -883,10 +879,10 @@ void CNCDoc::OnCloseDocument()
 	}
 
 	// 処理中のｽﾚｯﾄﾞを中断させる
-	CDocBase::OnCloseDocument();	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
-	WaitCalcThread();				// 切削時間計算ｽﾚｯﾄﾞ
+	OnCloseDocumentSP();		// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
+	WaitCalcThread();			// 切削時間計算ｽﾚｯﾄﾞ
 
-	CDocument::OnCloseDocument();
+	__super::OnCloseDocument();
 }
 
 void CNCDoc::ReportSaveLoadException
@@ -896,7 +892,7 @@ void CNCDoc::ReportSaveLoadException
 		AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
 		return;	// 標準ｴﾗｰﾒｯｾｰｼﾞを出さない
 	}
-	CDocument::ReportSaveLoadException(lpszPathName, e, bSaving, nIDPDefault);
+	__super::ReportSaveLoadException(lpszPathName, e, bSaving, nIDPDefault);
 }
 
 void CNCDoc::SetModifiedFlag(BOOL bModified)
@@ -904,7 +900,7 @@ void CNCDoc::SetModifiedFlag(BOOL bModified)
 	CString	strTitle( GetTitle() );
 	if ( UpdateModifiedTitle(bModified, strTitle) )		// DocBase.cpp
 		SetTitle(strTitle);
-	CDocument::SetModifiedFlag(bModified);
+	__super::SetModifiedFlag(bModified);
 }
 
 void CNCDoc::SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU)
@@ -916,7 +912,7 @@ void CNCDoc::SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU)
 		m_strPathName = lpszPathName;
 	}
 	else {
-		CDocument::SetPathName(lpszPathName, bAddToMRU);
+		__super::SetPathName(lpszPathName, bAddToMRU);
 		// --> to be CNCVCApp::AddToRecentFileList()
 		m_pRecentViewInfo = AfxGetNCVCApp()->GetRecentViewInfo();
 	}
@@ -927,7 +923,7 @@ void CNCDoc::OnChangedViewList()
 	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞでﾋﾞｭｰを切り替えるとき、
 	// ﾄﾞｷｭﾒﾝﾄが delete this してしまうのを防止する
 	if ( !m_bNcDocFlg[NCDOC_THUMBNAIL] )
-		CDocument::OnChangedViewList();
+		__super::OnChangedViewList();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -993,6 +989,9 @@ void CNCDoc::SerializeBlock
 			strLine = strBlock.SpanIncluding(ss_szLineDelimiter);
 			pBlock = new CNCblock(strLine.Trim(), strBlock.Mid(strLine.GetLength()).Trim(), dwFlags);
 			obBlock.Add(pBlock);
+			// ｻﾑﾈｲﾙﾓｰﾄﾞで規程件数を超えたら、読み込みを中断
+			if ( m_bNcDocFlg[NCDOC_THUMBNAIL] && m_obBlock.GetSize()>=THUMBNAIL_MAXREADBLOCK )
+				break;
 			pBlock = NULL;
 #ifdef _DEBUGOLD
 			dbg.printf("LineCnt=%d Line=%s Gcode=%s", nCnt,
@@ -1120,7 +1119,7 @@ BOOL CNCDoc::SerializeInsertBlock
 	(LPCTSTR lpszFileName, int nInsert, DWORD dwFlags/*=0*/, BOOL bProgress/*=TRUE*/)
 {
 /*
-	MFC\SRC\DOCCORE.CPP の CDocument::OnOpenDocument を参考
+	MFC\SRC\DOCCORE.CPP の __super::OnOpenDocument を参考
 */
 	CFileException	fe;
 	CFile*	pFile = GetFile(lpszFileName, CFile::modeRead|CFile::shareDenyWrite, &fe);

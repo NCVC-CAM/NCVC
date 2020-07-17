@@ -13,7 +13,7 @@ typedef	struct	tagSAVEORDER {
 	ENORDERTYPE		enType;
 	int				nID;
 	LPCTSTR			lpszComment;
-} SAVEORDER;
+} SAVEORDER, *LPSAVEORDER;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -38,6 +38,13 @@ class CNCMakeOption
 	// CStringŒ^µÌß¼®Ý
 	LPCTSTR*		m_szSOrder;
 	LPCTSTR*		m_dfSOrder;
+
+	// SaveMakeOption() ºÒÝÄî•ñ‘¼
+	int				m_nComment;
+	LPCTSTR*		m_szComment;
+	int				m_nSaveOrder;
+	LPSAVEORDER		m_pSaveOrder;
+
 protected:
 	CStringArray	m_strOption;	// CStringŒ^‚¾‚¯‚ÍÍÞ°½¸×½‚ÅŽÀ‘Ì‚ðŽ‚Â
 
@@ -45,20 +52,21 @@ protected:
 		int, LPCTSTR*, const int*,    int*,		// intŒ^
 		int, LPCTSTR*, const double*, double*,	// doubleŒ^
 		int, LPCTSTR*, const BOOL*,   BOOL*,	// BOOLŒ^
-		int, LPCTSTR*, LPCTSTR*);				// CStringŒ^
+		int, LPCTSTR*, LPCTSTR*,				// CStringŒ^
+		int, LPCTSTR*, int, LPSAVEORDER);		// SaveMakeOption()î•ñ
 
 	CString	GetInsertSpace(int nLen) {
 		CString	strResult(' ', m_nOrderLength - nLen);
 		return strResult;
 	}
 	void	InitialDefault(void);	// ÃÞÌ«ÙÄÝ’è
-	BOOL	ReadMakeOption(LPCTSTR);
-	BOOL	SaveMakeOption(LPCTSTR, int, LPCTSTR*, int, SAVEORDER*);
 
 public:
 	CString	GetInitFile(void) const {
 		return m_strInitFile;
 	}
+	BOOL	ReadMakeOption(LPCTSTR);
+	BOOL	SaveMakeOption(LPCTSTR = NULL);
 
 	int		GetNum(int n) const {		// ®”’lµÌß¼®Ý
 		ASSERT( n>=0 && n<m_nOrderCnt[0] );
@@ -76,4 +84,8 @@ public:
 		ASSERT( n>=0 && n<m_strOption.GetSize() );
 		return m_strOption[n];
 	}
+
+#ifdef _DEBUGOLD
+	virtual	void DbgDump(void) const = 0;	// µÌß¼®Ý•Ï”‚ÌÀÞÝÌß(”h¶—p)
+#endif
 };

@@ -116,11 +116,11 @@ BOOL CMakeNCDlgEx2::OnInitDialog()
 			::Path_Name_From_FullPath(GetNCMakeParent()->m_strInitFileName,
 				m_strInitPath, m_strInitFileName);
 		// ØíðŒºÝÎÞÎÞ¯¸½‚É±²ÃÑ’Ç‰Á
-		InitialMakeNCDlgComboBox(pOpt->GetMillInitList(), m_ctInitFileName);
+		InitialMakeNCDlgComboBox(pOpt->GetInitList(NCMAKEMILL), m_ctInitFileName);
 		::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, m_strInitPath);
 	}
 	// ŠÖŒWÌ§²ÙºÝÎÞÎÞ¯¸½‚É±²ÃÑ’Ç‰Á
-	InitialMakeNCDlgComboBox(pOpt->GetLayerToInitList(), m_ctLayerToInitFileName);
+	InitialMakeNCDlgComboBox(pOpt->GetInitList(NCMAKELAYER), m_ctLayerToInitFileName);
 	if ( !m_strLayerToInitPath.IsEmpty() )
 		::PathSetDlgItemPath(m_hWnd, IDC_MKNCEX_LAYERTOINITPATH, m_strLayerToInitPath);
 	if ( !m_strLayerToInitFileName.IsEmpty() ) {
@@ -133,7 +133,7 @@ BOOL CMakeNCDlgEx2::OnInitDialog()
 			}
 			else {
 				// —š—ðíœ(ºÝÎÞÎÞ¯¸½‚©‚ç‚àíœ)
-				AfxGetNCVCApp()->GetDXFOption()->DelLayerHistory(strFile);
+				AfxGetNCVCApp()->GetDXFOption()->DelInitHistory(NCMAKELAYER, strFile);
 				int	nIndex = m_ctLayerToInitFileName.FindString(-1, m_strLayerToInitFileName);
 				if ( nIndex != CB_ERR )
 					m_ctLayerToInitFileName.DeleteString(nIndex);
@@ -276,17 +276,17 @@ void CMakeNCDlgEx2::OnMKNCLayerEdit()
 			pLayer1 = pDoc->GetLayerData(i);
 			if ( pLayer1->IsCutType() ) {
 				pLayer2 = pArray->GetAt(j++);
-				pLayer1->m_bLayerFlg.set(LAYER_CUTTARGET, pLayer2->m_bLayerFlg[LAYER_CUTTARGET]);
+				pLayer1->m_bLayerFlg.set(LAYER_CUT_TARGET, pLayer2->m_bLayerFlg[LAYER_CUT_TARGET]);
 				if ( IsMakeEx1() )
 					pLayer1->m_strInitFile	= pLayer2->m_strInitFile;
 				else {
 					pLayer1->m_dZCut		= pLayer2->m_dZCut;
-					pLayer1->m_bLayerFlg.set(LAYER_DRILLZ, pLayer2->m_bLayerFlg[LAYER_DRILLZ]);
+					pLayer1->m_bLayerFlg.set(LAYER_DRILL_Z, pLayer2->m_bLayerFlg[LAYER_DRILL_Z]);
 				}
 				pLayer1->m_strLayerComment	= pLayer2->m_strLayerComment;
 				pLayer1->m_strLayerCode		= pLayer2->m_strLayerCode;
 				pLayer1->m_strNCFile		= pLayer2->m_strNCFile;
-				pLayer1->m_bLayerFlg.set(LAYER_PARTOUT, pLayer2->m_bLayerFlg[LAYER_PARTOUT]);
+				pLayer1->m_bLayerFlg.set(LAYER_PART_OUT, pLayer2->m_bLayerFlg[LAYER_PART_OUT]);
 			}
 		}
 	}
@@ -303,7 +303,7 @@ void CMakeNCDlgEx2::OnSelChangeInit()
 	CString	strFullPath(m_strInitPath+m_strInitFileName);
 	if ( !::IsFileExist(strFullPath) ) {
 		// —š—ðíœ
-		AfxGetNCVCApp()->GetDXFOption()->DelMillInitHistory(strFullPath);
+		AfxGetNCVCApp()->GetDXFOption()->DelInitHistory(NCMAKEMILL, strFullPath);
 		m_ctInitFileName.DeleteString(nIndex);
 	}
 }

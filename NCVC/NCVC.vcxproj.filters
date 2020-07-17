@@ -189,6 +189,15 @@
     <ClCompile Include="MKNCSetup8.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="MKWISetup.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="MKWISetup1.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="MKWISetup2.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="NCChild.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -232,6 +241,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NCMakeOption.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="NCMakeWire.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="NCMakeWireOpt.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NCVC.cpp">
@@ -301,6 +316,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="TH_MakeNCD.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="TH_MakeWire.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="TH_NCRead.cpp">
@@ -527,6 +545,15 @@
     <ClInclude Include="MKNCSetup8.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="MKWISetup.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="MKWISetup1.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="MKWISetup2.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="NCChild.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -567,6 +594,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="NCMakeOption.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="NCMakeWire.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="NCMakeWireOpt.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="NCVC.h">
@@ -664,6 +697,7 @@
     <None Include="res\NCVC.rc2">
       <Filter>リソース ファイル</Filter>
     </None>
+    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\check.ico">

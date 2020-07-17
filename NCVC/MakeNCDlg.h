@@ -2,20 +2,22 @@
 //
 
 #pragma once
+#include "DXFOption.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCDlg ダイアログ
 
 class CMakeNCDlg : public CDialog
 {
-	UINT	m_nTitle;
+	UINT		m_nTitle;
+	enMAKETYPE	m_enType;
 	// ｽﾀﾃｨｯｸｺﾝﾄﾛｰﾙに表示する前の省略形文字列
-	CString	m_strNCPath,	// 本物のﾊﾟｽ名
-			m_strInitPath;
+	CString		m_strNCPath,	// 本物のﾊﾟｽ名
+				m_strInitPath;
 
 // コンストラクション
 public:
-	CMakeNCDlg(UINT, CDXFDoc*);
+	CMakeNCDlg(UINT, enMAKETYPE, CDXFDoc*);
 
 // ダイアログ データ
 	//{{AFX_DATA(CMakeNCDlg)

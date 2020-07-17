@@ -16,7 +16,7 @@ extern	CMagaDbg	g_dbg;
 /////////////////////////////////////////////////////////////////////////////
 // CChildBase
 
-int CChildBase::ActivateFrame(int nCmdShow)
+int CChildBase::ActivateFrameSP(int nCmdShow)
 {
 	// ‚P”Ô–Ú‚ÌMDIqÌÚ°Ñ³¨İÄŞ³‚©CŒ»İ±¸Ã¨ÌŞ‚ÈqÌÚ°Ñ‚ªÅ‘å‰»‚Ì‚Æ‚«
 	BOOL	fMax = FALSE;

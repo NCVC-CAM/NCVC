@@ -23,6 +23,7 @@ extern	CMagaDbg	g_dbg;
 //////////////////////////////////////////////////////////////////////
 // CNCMakeMill \’z/Á–Å
 //////////////////////////////////////////////////////////////////////
+
 CNCMakeLathe::CNCMakeLathe(const CDXFdata* pData)
 {
 	CString	strGcode;
@@ -31,21 +32,20 @@ CNCMakeLathe::CNCMakeLathe(const CDXFdata* pData)
 	switch ( pData->GetMakeType() ) {
 	case DXFLINEDATA:
 		pt = pData->GetEndMakePoint();
-		strGcode = (*ms_pfnGetGString)(1) +
-			GetValString(NCA_Z, pt.x, FALSE) +
-			GetValString(NCA_X, pt.y, FALSE);
+		strGcode = GetValString(NCA_Z, pt.x, FALSE) +
+				   GetValString(NCA_X, pt.y, FALSE);
 		if ( !strGcode.IsEmpty() )
-			m_strGcode += (*ms_pfnGetLineNo)() + strGcode +
-							GetFeedString(GetDbl(MKLA_DBL_FEED)) + ms_strEOB;
+			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
+						strGcode + GetFeedString(GetDbl(MKLA_DBL_FEED)) + ms_strEOB;
 		break;
 
 	case DXFCIRCLEDATA:
-		m_strGcode += (*ms_pfnMakeCircle)(static_cast<const CDXFcircle*>(pData),
+		m_strGcode = (*ms_pfnMakeCircle)(static_cast<const CDXFcircle*>(pData),
 							GetDbl(MKLA_DBL_FEED));
 		break;
 
 	case DXFARCDATA:
-		m_strGcode += (*ms_pfnMakeArc)(static_cast<const CDXFarc*>(pData),
+		m_strGcode = (*ms_pfnMakeArc)(static_cast<const CDXFarc*>(pData),
 							GetDbl(MKLA_DBL_FEED));
 		break;
 

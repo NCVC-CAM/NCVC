@@ -32,6 +32,11 @@ PFNGETCYCLESTRING	CNCMakeMill::ms_pfnGetCycleString = &CNCMakeMill::GetCycleStri
 //////////////////////////////////////////////////////////////////////
 // CNCMakeMill 構築/消滅
 //////////////////////////////////////////////////////////////////////
+
+CNCMakeMill::CNCMakeMill()
+{
+}
+
 CNCMakeMill::CNCMakeMill(const CDXFdata* pData, double dFeed, const double* pdHelical/*=NULL*/)
 {
 	CString	strGcode;
@@ -41,9 +46,8 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, double dFeed, const double* pdHe
 	switch ( pData->GetMakeType() ) {
 	case DXFPOINTDATA:
 		pt = pData->GetEndMakePoint();
-		strGcode = (*ms_pfnGetCycleString)() +
-			GetValString(NCA_X, pt.x, FALSE) +
-			GetValString(NCA_Y, pt.y, FALSE);
+		strGcode = GetValString(NCA_X, pt.x, FALSE) +
+				   GetValString(NCA_Y, pt.y, FALSE);
 		if ( !GetFlg(MKNC_FLG_GCLIP) || ms_dCycleZ[0]!=ms_dCycleZ[1] ) {
 			strGcode += GetValString(NCA_Z, ms_dCycleZ[0], FALSE);
 			ms_dCycleZ[1] = ms_dCycleZ[0];
@@ -58,8 +62,8 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, double dFeed, const double* pdHe
 			ms_dCycleP[1] = ms_dCycleP[0];
 		}
 		if ( !strGcode.IsEmpty() )
-			m_strGcode += (*ms_pfnGetLineNo)() + strGcode +
-								GetFeedString(dFeed) + ms_strEOB;
+			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetCycleString)() +
+						strGcode + GetFeedString(dFeed) + ms_strEOB;
 		// Z軸の復帰点を静的変数へ
 		ms_xyz[NCA_Z] = GetNum(MKNC_NUM_ZRETURN) == 0 ?
 			::RoundUp(GetDbl(MKNC_DBL_G92Z)) : ::RoundUp(GetDbl(MKNC_DBL_ZG0STOP));
@@ -67,21 +71,21 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, double dFeed, const double* pdHe
 
 	case DXFLINEDATA:
 		pt = pData->GetEndMakePoint();
-		strGcode = (*ms_pfnGetGString)(1) +
-			GetValString(NCA_X, pt.x, FALSE) +
-			GetValString(NCA_Y, pt.y, FALSE);
+		strGcode = GetValString(NCA_X, pt.x, FALSE) +
+				   GetValString(NCA_Y, pt.y, FALSE);
 		if ( !strGcode.IsEmpty() )
-			m_strGcode += (*ms_pfnGetLineNo)() + strGcode + GetFeedString(dFeed) + ms_strEOB;
+			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
+						strGcode + GetFeedString(dFeed) + ms_strEOB;
 		break;
 
 	case DXFCIRCLEDATA:
-		m_strGcode += pdHelical ?
+		m_strGcode = pdHelical ?
 			(*ms_pfnMakeHelical)(static_cast<const CDXFcircle*>(pData), dFeed, *pdHelical) :
 			(*ms_pfnMakeCircle) (static_cast<const CDXFcircle*>(pData), dFeed);
 		break;
 
 	case DXFARCDATA:
-		m_strGcode += (*ms_pfnMakeArc)(static_cast<const CDXFarc*>(pData), dFeed);
+		m_strGcode = (*ms_pfnMakeArc)(static_cast<const CDXFarc*>(pData), dFeed);
 		break;
 
 	case DXFELLIPSEDATA:
@@ -153,14 +157,13 @@ CNCMakeMill::CNCMakeMill(int nCode, double ZVal, double dFeed)
 }
 
 // XYのG[0|1]移動
-CNCMakeMill::CNCMakeMill(int nCode, const CPointD& pt)
+CNCMakeMill::CNCMakeMill(int nCode, const CPointD& pt, double dFeed)
 {
-	CString	strGcode(
-		GetValString(NCA_X, pt.x, FALSE) +
-		GetValString(NCA_Y, pt.y, FALSE) );
+	CString	strGcode(GetValString(NCA_X, pt.x, FALSE) +
+					 GetValString(NCA_Y, pt.y, FALSE) );
 	if ( !strGcode.IsEmpty() ) {
-		if ( nCode != 0 )	// G0以外
-			strGcode += GetFeedString(GetDbl(MKNC_DBL_FEED));
+		if ( nCode != 0 )	// G00以外
+			strGcode += GetFeedString(dFeed);
 		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
 			strGcode + ms_strEOB;
 	}
@@ -229,6 +232,9 @@ CString	CNCMakeMill::MakeSpindle(ENDXFTYPE enType, BOOL bDeep)
 
 CString CNCMakeMill::GetValString(int xyz, double dVal, BOOL bSpecial)
 {
+	// *** CNCMakeWire と共用 ***
+	// WireMode でKとLの生成には、bSpecialにTRUEを指示
+
 	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 	CString	strResult;
 
@@ -250,12 +256,22 @@ CString CNCMakeMill::GetValString(int xyz, double dVal, BOOL bSpecial)
 			}
 		}
 		break;
+	case NCA_U:		// WireMode
+	case NCA_V:
+		break;			// ｾﾞﾛも省略せずに出力
 	case NCA_I:
 	case NCA_J:
-	case NCA_K:
-		if ( fabs(dVal) < NCMIN )	// NCの桁落ち誤差未満なら無視
+	case NCA_K:		// bSpecial==TRUE -> WireMode
+		if ( !bSpecial && fabs(dVal)<NCMIN )	// NCの桁落ち誤差未満なら無視
 			return strResult;
 		break;
+	case NCA_L:
+		if ( !bSpecial ) {
+			// 小数点指定なし
+			strResult.Format("%c%d", g_szNdelimiter[xyz], (int)dVal);
+			return strResult;
+		}
+		break;		// -> WireMode
 	case NCA_R:
 		// 半径Rではなく固定ｻｲｸﾙR点の場合
 		if ( bSpecial ) {
@@ -276,7 +292,8 @@ CString CNCMakeMill::GetValString(int xyz, double dVal, BOOL bSpecial)
 			}	// 整数表記は default で処理
 		}
 		// through
-	default:	// L(小数点指定なし)
+	default:
+		// 小数点指定なし
 		strResult.Format("%c%d", g_szNdelimiter[xyz], (int)dVal);
 		return strResult;
 	}

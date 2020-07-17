@@ -13,12 +13,13 @@ class	CDXFBlockData;
 
 // CDXFDoc ﾌﾗｸﾞ
 enum DXFDOCFLG {
-	DXFDOC_READY = 0,		// NC生成可能かどうか(ｴﾗｰﾌﾗｸﾞ)
-	DXFDOC_RELOAD,			// 再読込ﾌﾗｸﾞ(from DXFSetup.cpp)
-	DXFDOC_THREAD,			// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
-	DXFDOC_SHAPE,			// 形状処理を行ったか
-	DXFDOC_LATHE,			// 旋盤用の原点(ﾜｰｸ径と端面)を読み込んだか
-		DXFDOC_FLGNUM			// ﾌﾗｸﾞの数[5]
+	DXFDOC_READY = 0,	// NC生成可能かどうか(ｴﾗｰﾌﾗｸﾞ)
+	DXFDOC_RELOAD,		// 再読込ﾌﾗｸﾞ(from DXFSetup.cpp)
+	DXFDOC_THREAD,		// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
+	DXFDOC_SHAPE,		// 形状処理を行ったか
+	DXFDOC_LATHE,		// 旋盤用の原点(ﾜｰｸ径と端面)を読み込んだか
+	DXFDOC_WIRE,		// ﾜｲﾔ加工機用の生成が可能かどうか
+		DXFDOC_FLGNUM		// ﾌﾗｸﾞの数[6]
 };
 
 // 自動処理ﾃﾞｰﾀ受け渡し構造体
@@ -51,8 +52,8 @@ struct	AUTOWORKINGDATA
 class CDXFDoc : public CDocument, public CDocBase
 {
 	std::bitset<DXFDOC_FLGNUM>	m_bDxfDocFlg;	// CDXFDocﾌﾗｸﾞ
-	UINT	m_nShapeProcessID;	// 形状加工指示ID
-	AUTOWORKINGDATA	m_AutoWork;	// 自動輪郭処理ﾃﾞｰﾀ
+	UINT	m_nShapeProcessID;		// 形状加工指示ID
+	AUTOWORKINGDATA	m_AutoWork;		// 自動輪郭処理ﾃﾞｰﾀ
 	CRect3D		m_rcMax;			// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
 	CDXFcircleEx*	m_pCircle;		// 切削原点
 	CDXFline*		m_pLatheLine[2];// 旋盤用原点([0]:外径, [1]:端面)
@@ -112,6 +113,14 @@ public:
 	}
 	INT_PTR	GetLayerCnt(void) const {
 		return m_obLayer.GetSize();
+	}
+	int	GetCutLayerCnt(void) const {
+		int	i = 0, nCnt = 0;
+		for ( ; i<m_obLayer.GetSize(); i++ ) {
+			if ( m_obLayer[i]->IsCutType() )
+				nCnt++;
+		}
+		return nCnt;
 	}
 	CLayerData*	GetLayerData(INT_PTR n) const {
 		ASSERT(n>=0 && n<GetLayerCnt());

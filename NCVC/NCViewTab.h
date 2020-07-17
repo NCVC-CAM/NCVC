@@ -120,8 +120,11 @@ protected:
 	afx_msg	void OnUpdateAllFitCmd(CCmdUI* pCmdUI);
 	// 「直前の拡大率」ﾒﾆｭｰｺﾏﾝﾄﾞの使用許可
 	afx_msg	void OnUpdateBeforeView(CCmdUI* pCmdUI);
-	//
+	// 他
 	afx_msg void OnUpdateDefViewInfo(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateMoveKey (CCmdUI* pCmdUI);
+	afx_msg void OnUpdateRoundKey(CCmdUI* pCmdUI);
 
 	DECLARE_MESSAGE_MAP()
 };

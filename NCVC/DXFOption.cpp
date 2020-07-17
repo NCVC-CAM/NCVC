@@ -65,16 +65,9 @@ CDXFOption::CDXFOption()
 		// êÿçÌèåèÃß≤ŸÇÃóöó
 		ReadInitHistory(NCMAKEMILL);
 		ReadInitHistory(NCMAKELATHE);
+		ReadInitHistory(NCMAKEWIRE);
 		// ⁄≤‘ñºÇ∆èåèÃß≤Ÿä÷åWÇÃóöó
-		VERIFY(strEntry.LoadString(IDS_REG_DXF_LAYERTOINIT));
-		for ( i=0; i<DXFMAXINITFILE; i++ ) {
-			strTmp.Format(IDS_COMMON_FORMAT, strEntry, i);
-			strResult = AfxGetApp()->GetProfileString(strRegKey, strTmp);
-			if ( strResult.IsEmpty() )
-				break;
-			if ( ::IsFileExist(strResult, TRUE, FALSE) )
-				m_strLayerToInitList.AddTail(strResult); 
-		}
+		ReadInitHistory(NCMAKELAYER);
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -90,21 +83,13 @@ BOOL CDXFOption::ReadInitHistory(enMAKETYPE enType)
 {
 	extern	LPTSTR	g_pszExecDir;	// é¿çs√ﬁ®⁄∏ƒÿ(NCVC.cpp)
 	int		i;
-	CStringList*	pList;
 	CString	strRegKey, strEntry, strDefExt('.'),
 			strTmp, strResult;
+	CStringList&	strList = m_strInitList[enType];
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-	if ( enType == NCMAKEMILL ) {
-		pList = &m_strMillList;
-		VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT));
-		VERIFY(strTmp.LoadString(IDS_NCIM_FILTER));
-	}
-	else {
-		pList = &m_strLatheList;
-		VERIFY(strEntry.LoadString(IDS_REG_DXF_LATHEINIT));
-		VERIFY(strTmp.LoadString(IDS_NCIL_FILTER));
-	}
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT+enType));
+	VERIFY(strTmp.LoadString(IDS_NCIM_FILTER+enType));
 	strDefExt += strTmp.Left(3);
 
 	for ( i=0; i<DXFMAXINITFILE; i++ ) {
@@ -113,12 +98,12 @@ BOOL CDXFOption::ReadInitHistory(enMAKETYPE enType)
 		if ( strResult.IsEmpty() )
 			break;
 		if ( ::IsFileExist(strResult, TRUE, FALSE) )
-			pList->AddTail(strResult); 
+			strList.AddTail(strResult); 
 	}
-	if ( pList->IsEmpty() ) {
+	if ( strList.IsEmpty() && enType!=NCMAKELAYER ) {
 		strResult  = g_pszExecDir;
 		strResult += "INIT" + strDefExt;
-		pList->AddTail(strResult);
+		strList.AddTail(strResult);
 	}
 
 	return TRUE;
@@ -128,57 +113,31 @@ BOOL CDXFOption::SaveInitHistory(enMAKETYPE enType)
 {
 	int			i;
 	POSITION	pos;
-	const CStringList*	pList;
 	CString		strRegKey, strEntry, strFmt;
+	CStringList&	strList = m_strInitList[enType];
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-	if ( enType == NCMAKEMILL ) {
-		VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT));
-		pList = GetMillInitList();
-	}
-	else {
-		VERIFY(strEntry.LoadString(IDS_REG_DXF_LATHEINIT));
-		pList = GetLatheInitList();
-	}
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT+enType));
 
 	for ( i=0; i<DXFMAXINITFILE; i++ ) {
 		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
 		AfxGetApp()->WriteProfileString(strRegKey, strFmt, NULL);
 	}
-	for ( i=0, pos=pList->GetHeadPosition(); pos && i<DXFMAXINITFILE; i++ ) {
+	for ( i=0, pos=strList.GetHeadPosition(); pos && i<DXFMAXINITFILE; i++ ) {
 		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
-		if ( !AfxGetApp()->WriteProfileString(strRegKey, strFmt, pList->GetNext(pos)) )
+		if ( !AfxGetApp()->WriteProfileString(strRegKey, strFmt, strList.GetNext(pos)) )
 			return FALSE;
 	}
-	m_enMakeType = enType;
+	if ( enType != NCMAKELAYER )
+		m_enMakeType = enType;
 
 	return TRUE;
 }
 
-BOOL CDXFOption::SaveLayerHistory(void)
+BOOL CDXFOption::AddListHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
 {
-	int			i;
-	POSITION	pos;
-	CString		strRegKey, strEntry, strFmt;
-	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-	VERIFY(strEntry.LoadString(IDS_REG_DXF_LAYERTOINIT));
+	CStringList& strList = m_strInitList[enType];
 
-	for ( i=0; i<DXFMAXINITFILE; i++ ) {
-		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
-		AfxGetApp()->WriteProfileString(strRegKey, strFmt, NULL);
-	}
-	for ( i=0, pos=m_strLayerToInitList.GetHeadPosition();
-				pos && i<DXFMAXINITFILE; i++ ) {
-		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
-		if ( !AfxGetApp()->WriteProfileString(strRegKey, strFmt, m_strLayerToInitList.GetNext(pos)) )
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-BOOL CDXFOption::AddListHistory(CStringList& strList, LPCTSTR lpszSearch)
-{
 	if ( !lpszSearch || lstrlen(lpszSearch) <= 0 )
 		return TRUE;
 	if ( !strList.IsEmpty() &&
@@ -211,8 +170,10 @@ BOOL CDXFOption::AddListHistory(CStringList& strList, LPCTSTR lpszSearch)
 	return TRUE;
 }
 
-void CDXFOption::DelListHistory(CStringList& strList, LPCTSTR lpszSearch)
+void CDXFOption::DelInitHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
 {
+	CStringList& strList = m_strInitList[enType];
+
 	POSITION pos1, pos2;
 	for ( pos1=strList.GetHeadPosition(); (pos2 = pos1); ) {
 		if ( strList.GetNext(pos1).CompareNoCase(lpszSearch) == 0 ) {

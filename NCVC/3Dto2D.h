@@ -151,8 +151,10 @@ public:
 		y = pt.x * sin_q + pt.y * cos_q;
 	}
 };
-typedef	CPointT<double>		CPointD;
-typedef	CPointT<float>		CPointF;
+typedef	CPointT<double>			CPointD;
+typedef	CPointT<float>			CPointF;
+typedef	std::vector<CPointD>	VECPOINTD;
+//BOOST_GEOMETRY_REGISTER_POINT_2D(CPointD, double, cs::cartesian, x, y)
 
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD クラス
@@ -276,8 +278,11 @@ public:
 		ms_rz_cos = cos(rz);		ms_rz_sin = sin(rz);
 	}
 };
-typedef	CPoint3T<double>	CPoint3D;
-typedef	CPoint3T<float>		CPoint3F;
+typedef	CPoint3T<double>		CPoint3D;
+typedef	CPoint3T<float>			CPoint3F;
+typedef	std::vector<CPoint3D>	VECPOINT3D;	// 主にOpenGL描画用
+typedef	std::vector<CPoint3F>	VECPOINT3F;
+//BOOST_GEOMETRY_REGISTER_POINT_3D(CPoint3D, double, cs::cartesian, x, y, z)
 
 //////////////////////////////////////////////////////////////////////
 // 実数型の CRectｸﾗｽ
@@ -426,6 +431,7 @@ class CRect3T : public CRectT<T>
 {
 public:
 	T	high, low;		// 高さ
+
 	// 初期化のためのｺﾝｽﾄﾗｸﾀ
 	CRect3T() : CRectT<T>() {
 		high = low = 0.0;	// CRectT::SetRectEmpty() はﾍﾞｰｽｸﾗｽで呼ばれる
@@ -477,8 +483,7 @@ public:
 		return !operator ==(rc);
 	}
 	CRect3T<T>&	operator /= (T d) {
-		left /= d;		right /= d;
-		top /= d;		bottom /= d;
+		CRectT<T>::operator /= (d);
 		high /= d;		low /= d;
 		return *this;
 	}
@@ -551,7 +556,7 @@ boost::optional<CPointD>	CalcOffsetIntersectionPoint_LC
 boost::optional<CPointD>	CalcOffsetIntersectionPoint_LE
 	(const CPointD&, const CPointD&, double, double, double, double, BOOL, BOOL);
 //	点が多角形の内側か否か
-BOOL IsPointInPolygon(const CPointD&, const std::vector<CPointD>&);
+BOOL IsPointInPolygon(const CPointD&, const VECPOINTD&);
 //	点と直線の距離を求める
 double	CalcLineDistancePt(const CPointD&, const CPointD&, const CPointD&);
 

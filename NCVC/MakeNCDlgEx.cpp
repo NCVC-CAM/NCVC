@@ -35,15 +35,15 @@ CMakeNCDlgEx::CMakeNCDlgEx(UINT nID, CDXFDoc* pDoc) : CPropertySheet(nID)
 	CreateNCFile(pDoc, strPath, strFile);	// MakeNCDlg.cpp
 	m_strNCFileName = strPath + strFile;
 	// ØíðŒÌ§²Ù
-	if ( pOpt->GetMillInitList()->GetCount() > 0 )
-		m_strInitFileName = pOpt->GetMillInitList()->GetHead();
+	if ( pOpt->GetInitList(NCMAKEMILL)->GetCount() > 0 )
+		m_strInitFileName = pOpt->GetInitList(NCMAKEMILL)->GetHead();
 	// Ú²Ôî•ñ‚Ì¾¯Ä(NCÌ§²Ù‚Æ“¯‚¶Êß½)
 	::Path_Name_From_FullPath(m_strNCFileName, strPath, strFile, FALSE);
 	VERIFY(strExt.LoadString(IDS_NCL_FILTER));
 	strPath += strFile + strExt.Right(4);		// .ncl
 	if ( ::IsFileExist(strPath, TRUE, FALSE) ) {
 		m_strLayerToInitFileName = strPath;
-		pOpt->AddLayerHistory(strPath);
+		pOpt->AddInitHistory(NCMAKELAYER, strPath);
 	}
 }
 

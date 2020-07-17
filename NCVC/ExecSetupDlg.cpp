@@ -56,7 +56,7 @@ CExecSetupDlg::~CExecSetupDlg()
 
 void CExecSetupDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CExecSetupDlg)
 	DDX_Control(pDX, IDC_EXE_FILE, m_ctFile);
 	DDX_Control(pDX, IDC_EXE_LIST, m_ctList);
@@ -126,7 +126,7 @@ void CExecSetupDlg::SwapObject(int nList1, int nList2)
 
 BOOL CExecSetupDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	int			i;
 	POSITION	pos;
@@ -187,7 +187,7 @@ void CExecSetupDlg::OnOK()
 	for ( int i=0; i<m_ctList.GetItemCount(); i++ )
 		pExeList->AddTail( reinterpret_cast<CExecOption *>(m_ctList.GetItemData(i)) );
 
-	CDialog::OnOK();
+	__super::OnOK();
 }
 
 void CExecSetupDlg::OnCancel() 
@@ -205,7 +205,7 @@ void CExecSetupDlg::OnCancel()
 		}
 	}
 
-	CDialog::OnCancel();
+	__super::OnCancel();
 }
 
 void CExecSetupDlg::OnItemChangedExeList(NMHDR* pNMHDR, LRESULT* pResult) 

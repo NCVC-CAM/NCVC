@@ -716,9 +716,6 @@ DWORD CDXFmap::GetMapTypeFlag(void) const
 	CDXFarray*	pArray;
 	CPointD		pt, ptChk[4];
 	CDXFdata*	pData;
-#ifdef _DEBUG
-	CDXFdata*	pDataDbg;
-#endif
 
 	// 所属ｵﾌﾞｼﾞｪｸﾄが１つ かつ 閉ﾙｰﾌﾟなら
 	if ( GetObjectCount() == 1 ) {
@@ -765,10 +762,12 @@ DWORD CDXFmap::GetMapTypeFlag(void) const
 			for ( i=0; i<nLoop; i++ ) {
 				pData = obWorkArray[i];
 				for ( j=i+1; j<nLoop; j++ ) {
-#ifdef _DEBUG
-					pDataDbg = obWorkArray[j];	// obWorkArray[j]値確認用
-#endif
 					if ( pData->GetIntersectionPoint(obWorkArray[j], ptChk) > 0 ) {
+#ifdef _DEBUG
+						g_dbg.printf("Intersection !!! i=%d j=%d", i, j);
+						pData->DbgDump();
+						obWorkArray[j]->DbgDump();
+#endif
 						dwFlags |= DXFMAPFLG_INTERSEC;
 						i = nLoop;	// 外側ﾙｰﾌﾟも終了
 						break;
@@ -1115,6 +1114,12 @@ void CDXFchain::Serialize(CArchive& ar)
 	}
 }
 
+void CDXFchain::SetMakeFlags(void)
+{
+	for ( POSITION pos=GetHeadPosition(); pos; )
+		GetNext(pos)->SetMakeFlg();
+}
+
 void CDXFchain::ReverseMakePt(void)
 {
 	// 全ｵﾌﾞｼﾞｪｸﾄの座標反転
@@ -1138,12 +1143,8 @@ BOOL CDXFchain::IsLoop(void) const
 {
 	if ( IsEmpty() )
 		return FALSE;
-	if ( GetCount() == 1 ) {
-		CDXFdata* pData = GetHead();
-		if ( pData->GetType()==DXFCIRCLEDATA ||
-			(pData->GetType()==DXFELLIPSEDATA && !static_cast<CDXFellipse*>(pData)->IsArc()) )
-			return TRUE;
-	}
+	if ( GetCount()==1 && GetHead()->IsStartEqEnd() )
+		return TRUE;
 
 	CPointD	pts( GetHead()->GetNativePoint(0) ),
 			pte( GetTail()->GetNativePoint(1) );
@@ -1155,7 +1156,7 @@ BOOL CDXFchain::IsPointInPolygon(const CPointD& ptTarget) const
 	CDXFdata*	pData;
 	POSITION	pos;
 	CPointD		pt;
-	vector<CPointD>	vpt;
+	VECPOINTD	vpt;
 
 	if ( GetCount() == 1 ) {
 		pData = GetHead();
@@ -1174,20 +1175,14 @@ BOOL CDXFchain::IsPointInPolygon(const CPointD& ptTarget) const
 			switch ( pData->GetType() ) {
 			case DXFLINEDATA:
 				if ( bNext )
-					vpt.push_back(pData->GetNativePoint(0));
+					pData->SetVectorPoint(vpt);
 				bNext = TRUE;
 				break;
 			case DXFARCDATA:
-				bNext = FALSE;	// 終点まで登録するから次のDXFLINEDATAの始点は無視
-				static_cast<CDXFarc*>(pData)->SetVectorPoint(vpt);
-				break;
 			case DXFELLIPSEDATA:
-				bNext = FALSE;
-				static_cast<CDXFellipse*>(pData)->SetVectorPoint(vpt);
-				break;
 			case DXFPOLYDATA:
-				bNext = FALSE;
-				static_cast<CDXFpolyline*>(pData)->SetVectorPoint(vpt);
+				pData->SetVectorPoint(vpt);
+				bNext = FALSE;	// 終点まで登録するから次のDXFLINEDATAの始点は無視
 				break;
 			default:
 				bNext = TRUE;
@@ -1214,9 +1209,89 @@ BOOL CDXFchain::IsPointInPolygon(const CPointD& ptTarget) const
 	return ::IsPointInPolygon(ptTarget, vpt);
 }
 
+POSITION CDXFchain::SetLoopFunc(const CDXFdata* pData, BOOL bReverse, BOOL bNext)
+{
+#ifdef _DEBUG
+	optional<CPointD>	ptDbg;
+	CPointD		ptDbg1, ptDbg2;
+	CDXFdata*	pDataDbg;
+	POSITION	posDbg;
+#endif
+	POSITION	pos1, pos2;
+
+	if ( bReverse ) {
+		ReverseMakePt();
+		m_pfnGetFirstPos	= &CDXFchain::GetTailPosition;
+		m_pfnGetFirstData	= &CDXFchain::GetTail;
+		m_pfnGetData		= &CDXFchain::GetPrev;
+	}
+	else {
+		m_pfnGetFirstPos	= &CDXFchain::GetHeadPosition;
+		m_pfnGetFirstData	= &CDXFchain::GetHead;
+		m_pfnGetData		= &CDXFchain::GetNext;
+	}
+
+	// 開始ｵﾌﾞｼﾞｪｸﾄの検索
+	if ( pData && IsLoop() ) {
+		for ( pos1=(this->*m_pfnGetFirstPos)(); (pos2=pos1); ) {
+			if ( pData == (this->*m_pfnGetData)(pos1) )
+				break;
+		}
+		ASSERT(pos2);
+		pos1 = pos2;	// pData のﾎﾟｼﾞｼｮﾝ
+		// 開始ｵﾌﾞｼﾞｪｸﾄの最終調整
+		if ( bNext ) {
+			for ( int i=0; i<2; i++ ) {	// 自分自身と次のｵﾌﾞｼﾞｪｸﾄの[ﾎﾟｼﾞｼｮﾝ]
+				pos2 = pos1;
+				pData = (this->*m_pfnGetData)(pos1);
+				if ( !pos1 )
+					pos1 = (this->*m_pfnGetFirstPos)();
+			}
+			pos1 = pos2;
+		}
+	}
+	else
+		pos1 = pos2 = (this->*m_pfnGetFirstPos)();
+
+#ifdef _DEBUG
+	// CDXFchainﾘｽﾄ構造が順序良く並んでいるか
+	g_dbg.printf("--- pChain Fin");
+	ptDbg.reset();
+
+	for ( posDbg=pos1; posDbg; ) {
+		pDataDbg = (this->*m_pfnGetData)(posDbg);
+		ptDbg1 = pDataDbg->GetTunPoint(0);
+		ptDbg2 = pDataDbg->GetTunPoint(1);
+		g_dbg.printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s",
+			ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y,
+			ptDbg && sqrt(GAPCALC(*ptDbg-ptDbg1))>=NCMIN ? "X" : " ");
+		ptDbg = ptDbg2;
+	}
+	for ( posDbg=(this->*m_pfnGetFirstPos)(); posDbg!=pos2; ) {
+		pDataDbg = (this->*m_pfnGetData)(posDbg);
+		ptDbg1 = pDataDbg->GetTunPoint(0);
+		ptDbg2 = pDataDbg->GetTunPoint(1);
+		g_dbg.printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s",
+			ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y,
+			ptDbg && sqrt(GAPCALC(*ptDbg-ptDbg1))>=NCMIN ? "X" : " ");
+		ptDbg = ptDbg2;
+	}
+#endif
+
+	return pos1;
+}
+
 int CDXFchain::GetObjectCount(void) const
 {
 	return GetCount();
+}
+
+double CDXFchain::GetLength(void) const
+{
+	double	dLength = 0;
+	for ( POSITION pos=GetHeadPosition(); pos; )
+		dLength += GetNext(pos)->GetLength();
+	return dLength;
 }
 
 void CDXFchain::AllChainObject_ClearSearchFlg(void)
@@ -1256,6 +1331,65 @@ double CDXFchain::GetSelectObjectFromShape
 	}
 
 	return dGapMin;
+}
+
+void CDXFchain::SetVectorPoint(POSITION pos1, VECPOINTD& vpt, double k)
+{
+	POSITION	pos2 = pos1;
+	CDXFdata*	pData;
+
+	do {
+		pData = GetSeqData(pos1);
+		if ( !pos1 )
+			pos1 = GetFirstPosition();
+		pData->SetVectorPoint(vpt, k);
+	} while ( pos1 != pos2 );
+}
+
+void CDXFchain::SetVectorPoint(POSITION pos1, VECPOINTD& vpt, size_t n)
+{
+	POSITION	pos2 = pos1;
+	CDXFdata*	pData;
+	size_t		nCnt, nTotal = 0;
+	vector<size_t>	vCnt;
+	vector<size_t>::iterator	it;
+
+	double		L = GetLength();	// 総長さ
+
+	// 各ｵﾌﾞｼﾞｪｸﾄの長さから分割する割合を計算
+	do {
+		pData = GetSeqData(pos1);
+		if ( !pos1 )
+			pos1 = GetFirstPosition();
+		nCnt = (size_t)(n * pData->GetLength() / L + 0.5);	// 四捨五入
+		nTotal += nCnt;
+		vCnt.push_back(nCnt);
+	} while ( pos1 != pos2 );
+
+	// 四捨五入するので過不足を調整
+	if ( nTotal > n ) {
+		do {
+			it = max_element(vCnt.begin(), vCnt.end());
+			(*it)--;
+			nTotal--;
+		} while ( nTotal > n );
+	}
+	else if ( nTotal < n ) {
+		do {
+			it = min_element(vCnt.begin(), vCnt.end());
+			(*it)++;
+			nTotal++;
+		} while ( nTotal < n );
+	}
+
+	// 調整後の分割数で各ｵﾌﾞｼﾞｪｸﾄを分割
+	it = vCnt.begin();
+	do {
+		pData = GetSeqData(pos1);
+		if ( !pos1 )
+			pos1 = GetFirstPosition();
+		pData->SetVectorPoint(vpt, *it++);
+	} while ( pos1 != pos2 );
 }
 
 void CDXFchain::SetShapeSwitch(BOOL bSelect)
@@ -1309,34 +1443,35 @@ void CDXFchain::OrgTuning(void)
 /////////////////////////////////////////////////////////////////////////////
 CDXFshape::CDXFshape()
 {
-	Constructor(DXFSHAPE_OUTLINE, NULL, 0);
+	Constructor(DXFSHAPE_OUTLINE, NULL, 0, NULL);
 }
 
-CDXFshape::CDXFshape(DXFSHAPE_ASSEMBLE enAssemble, LPCTSTR lpszShape, DWORD dwFlags, CDXFchain* pChain)
+CDXFshape::CDXFshape(DXFSHAPE_ASSEMBLE enAssemble, LPCTSTR lpszShape, DWORD dwFlags, CLayerData* pLayer, CDXFchain* pChain)
 {
 	m_vShape = pChain;
-	Constructor(enAssemble, lpszShape, dwFlags);
+	Constructor(enAssemble, lpszShape, dwFlags, pLayer);
 	// 座標ﾏｯﾌﾟのｵﾌﾞｼﾞｪｸﾄ最大矩形と所属ﾏｯﾌﾟの更新
 	SetDetailInfo(pChain);
 }
 
-CDXFshape::CDXFshape(DXFSHAPE_ASSEMBLE enAssemble, LPCTSTR lpszShape, DWORD dwFlags, CDXFmap* pMap)
+CDXFshape::CDXFshape(DXFSHAPE_ASSEMBLE enAssemble, LPCTSTR lpszShape, DWORD dwFlags, CLayerData* pLayer, CDXFmap* pMap)
 {
 	m_vShape = pMap;
-	Constructor(enAssemble, lpszShape, dwFlags);
+	Constructor(enAssemble, lpszShape, dwFlags, pLayer);
 	// 座標ﾏｯﾌﾟのｵﾌﾞｼﾞｪｸﾄ最大矩形と所属ﾏｯﾌﾟの更新
 	SetDetailInfo(pMap);
 }
 
-void CDXFshape::Constructor(DXFSHAPE_ASSEMBLE enAssemble, LPCTSTR lpszShape, DWORD dwFlags)
+void CDXFshape::Constructor(DXFSHAPE_ASSEMBLE enAssemble, LPCTSTR lpszShape, DWORD dwFlags, CLayerData* pLayer)
 {
-	m_enAssemble = enAssemble;
-	m_dwFlags = dwFlags;
-	m_dOffset = 1.0;	// ﾃﾞﾌｫﾙﾄｵﾌｾｯﾄ値
-	m_nInOut  = -1;		// ﾃﾞﾌｫﾙﾄ輪郭方向無し
-	m_bAcute  = TRUE;
-	m_hTree   = NULL;
-	m_nSerialSeq = 0;
+	m_enAssemble	= enAssemble;
+	m_pParentLayer	= pLayer;
+	m_dwFlags	= dwFlags;
+	m_dOffset	= 1.0;	// ﾃﾞﾌｫﾙﾄｵﾌｾｯﾄ値
+	m_nInOut	= -1;		// ﾃﾞﾌｫﾙﾄ輪郭方向無し
+	m_bAcute	= TRUE;
+	m_hTree		= NULL;
+	m_nSerialSeq= 0;
 	if ( lpszShape && lstrlen(lpszShape) > 0 )
 		m_strShapeHandle = m_strShape = lpszShape;
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
@@ -1406,7 +1541,7 @@ void CDXFshape::Serialize(CArchive& ar)
 			get<CDXFmap*>(m_vShape)->Serialize(ar);
 	}
 	else {
-		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
+		m_pParentLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
 		ar >> m_dwFlags >> nAssemble >> m_strShape;
 		if ( g_dwCamVer > NCVCSERIALVERSION_1507 )	// Ver1.60～
 			ar >> m_strShapeHandle;
@@ -1428,7 +1563,7 @@ void CDXFshape::Serialize(CArchive& ar)
 			SetDetailInfo(pMap);
 		}
 		// CDXFworkingｼﾘｱﾗｲｽﾞ情報用にCDXFshape*をCLayerData::m_pActiveMapに格納
-		pLayer->SetActiveShape(this);
+		m_pParentLayer->SetActiveShape(this);
 	}
 	// 加工指示情報のｼﾘｱﾗｲｽﾞ
 	m_ltWork.Serialize(ar);
@@ -1559,6 +1694,69 @@ tuple<CDXFworking*, CDXFdata*> CDXFshape::GetStartObject(void) const
 	}
 
 	return make_tuple(pWork, pData);
+}
+
+POSITION CDXFshape::GetFirstChainPosition(void)
+{
+	BOOL	bReverse = FALSE, bNext = FALSE;
+	double	dGap1, dGap2;
+	const CPointD	ptOrg( CDXFdata::ms_ptOrg );
+	CPointD			ptNow;
+	CDXFworking*	pWork;
+	CDXFdata*		pData;
+	CDXFdata*		pDataFix;
+	CDXFchain*		pChain = GetShapeChain();
+
+	// 開始位置指示
+	tie(pWork, pData) = GetStartObject();
+	if ( pData ) {
+		// 先頭ｵﾌﾞｼﾞｪｸﾄと現在位置を更新
+		pDataFix = pData;
+		ptNow = static_cast<CDXFworkingStart*>(pWork)->GetStartPoint() - ptOrg;	// 原点調整兼ねる
+	}
+	else {
+		ptNow = CDXFdata::ms_pData->GetEndCutterPoint();
+		// 開始ｵﾌﾞｼﾞｪｸﾄの検索 (pDataに近接ｵﾌﾞｼﾞｪｸﾄをｾｯﾄ)
+		GetSelectObjectFromShape(ptNow+ptOrg, NULL, &pDataFix);
+	}
+	ASSERT(pDataFix);
+
+	// 方向指示および生成順のﾁｪｯｸ
+	tie(pWork, pData) = GetDirectionObject();
+	if ( pChain->GetCount()==1 && pDataFix->IsStartEqEnd() ) {
+		if ( pData ) {
+			CPointD	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() ),
+					pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() );
+			// 回転設定
+			static_cast<CDXFcircle*>(pData)->SetRoundFixed(pts, pte);	// 楕円処理含む
+		}
+		pDataFix->GetEdgeGap(ptNow);	// 輪郭ｵﾌﾞｼﾞｪｸﾄの近接座標計算
+	}
+	else {
+		dGap1 = GAPCALC(pDataFix->GetStartCutterPoint() - ptNow);
+		dGap2 = GAPCALC(pDataFix->GetEndCutterPoint()   - ptNow);
+		if ( pData ) {
+			CPointD	ptFix( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
+			if ( pData->GetEndCutterPoint().IsMatchPoint(&ptFix) ) {
+				// 開始ｵﾌﾞｼﾞｪｸﾄの終点の方が近い場合は、
+				// 次のｵﾌﾞｼﾞｪｸﾄから開始
+				if ( dGap1 > dGap2 )
+					bNext = TRUE;
+			}
+			else {
+				bReverse = TRUE;
+				// 開始ｵﾌﾞｼﾞｪｸﾄの終点は bReverse なので始点で判断
+				if ( dGap1 < dGap2 )
+					bNext = TRUE;
+			}
+		}
+		else {
+			if ( dGap1 > dGap2 )
+				bReverse = TRUE;
+		}
+	}
+
+	return pChain->SetLoopFunc(pDataFix, bReverse, bNext);
 }
 
 BOOL CDXFshape::LinkObject(void)

@@ -40,7 +40,7 @@ CThreadDlg::CThreadDlg(int nID, CDocument* pDoc, WPARAM wParam/*=NULL*/, LPARAM 
 
 void CThreadDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CThreadDlg)
 	DDX_Control(pDX, IDC_READ_TEXT2, m_ctMsgText2);
 	DDX_Control(pDX, IDC_READ_TEXT, m_ctMsgText1);
@@ -53,7 +53,7 @@ void CThreadDlg::DoDataExchange(CDataExchange* pDX)
 
 BOOL CThreadDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	m_ctReadProgress.SetPos(0);
 
@@ -76,6 +76,9 @@ BOOL CThreadDlg::OnInitDialog()
 	case ID_FILE_DXF2NCD:		// NC生成ｽﾚｯﾄﾞ開始
 		if ( m_paramThread.wParam == ID_FILE_DXF2NCD_LATHE )
 			m_pThread = AfxBeginThread(MakeLathe_Thread, &m_paramThread,
+				THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+		else if ( m_paramThread.wParam == ID_FILE_DXF2NCD_WIRE )
+			m_pThread = AfxBeginThread(MakeWire_Thread, &m_paramThread,
 				THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		else
 			m_pThread = AfxBeginThread(MakeNCD_Thread, &m_paramThread,
@@ -116,7 +119,7 @@ void CThreadDlg::OnCancel()
 	m_bThread = FALSE;		// ｷｬﾝｾﾙﾌﾗｸﾞのみ
 							// ここでWaitForSingleObject()を呼び出すと
 							// ﾌﾟﾛｸﾞﾚｽﾊﾞｰなどの更新ﾒｯｾｰｼﾞとﾃﾞｯﾄﾞﾛｯｸを引き起こす
-//	CDialog::OnCancel();	// 各ｽﾚｯﾄﾞより OnUserFinishをPostMessage()
+//	__super::OnCancel();	// 各ｽﾚｯﾄﾞより OnUserFinishをPostMessage()
 }
 
 LRESULT CThreadDlg::OnUserFinish(WPARAM wParam, LPARAM)
@@ -141,7 +144,7 @@ LRESULT CThreadDlg::OnUserFinish(WPARAM wParam, LPARAM)
 
 LRESULT CThreadDlg::OnNcHitTest(CPoint pt)
 {
-	LRESULT nHitTest = CDialog::OnNcHitTest(pt);
+	LRESULT nHitTest = __super::OnNcHitTest(pt);
 	if ( nHitTest==HTCLIENT && GetAsyncKeyState(MK_LBUTTON)<0 )
 		nHitTest = HTCAPTION;
 	return nHitTest;

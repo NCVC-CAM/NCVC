@@ -38,15 +38,17 @@ BEGIN_MESSAGE_MAP(CNCViewXY, CView)
 	ON_WM_LBUTTONDBLCLK()
 	ON_WM_KEYDOWN()
 	ON_WM_ERASEBKGND()
-	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
-	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
 	//}}AFX_MSG_MAP
 	// ﾍﾟｰｼﾞ切替ｲﾍﾞﾝﾄ
 	ON_MESSAGE (WM_USERACTIVATEPAGE, OnUserActivatePage)
 	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
 	ON_MESSAGE (WM_USERVIEWFITMSG, OnUserViewFitMsg)
 	// ﾒﾆｭｰｺﾏﾝﾄﾞ
-	ON_COMMAND_RANGE(ID_VIEW_UP, ID_VIEW_RT, OnMoveKey)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  OnUpdateMoveKey)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, OnUpdateRoundKey)
+	ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
+	ON_COMMAND_RANGE(ID_VIEW_UP,     ID_VIEW_RT,    OnMoveKey)
 	ON_COMMAND_RANGE(ID_VIEW_BEFORE, ID_VIEW_LENSN, OnLensKey)
 END_MESSAGE_MAP()
 
@@ -147,6 +149,9 @@ void CNCViewXY::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 
 BOOL CNCViewXY::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
+#ifdef _DEBUG_CMDMSG
+	g_dbg.printf("CNCViewXY::OnCmdMsg()");
+#endif
 	// ここから CDocument::OnCmdMsg() を呼ばないようにする
 //	return CView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 	return CWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
@@ -346,6 +351,16 @@ CNCDoc* CNCViewXY::GetDocument() // 非デバッグ バージョンはインラインです。
 void CNCViewXY::OnUpdateEditCopy(CCmdUI* pCmdUI) 
 {
 	pCmdUI->Enable(TRUE);
+}
+
+void CNCViewXY::OnUpdateMoveKey(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(TRUE);
+}
+
+void CNCViewXY::OnUpdateRoundKey(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(FALSE);
 }
 
 void CNCViewXY::OnEditCopy() 

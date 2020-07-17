@@ -29,64 +29,67 @@ static	const	int		COMMONCTRL_TREEBITMAPSIZE = 16;
 // 初期表示用ﾂｰﾙﾊﾞｰﾎﾞﾀﾝ定義
 static	CUSTTBBUTTON	tbMainButtons[] = {
 	//コマンド,				状態,				スタイル,		表示
-	{ ID_FILE_OPEN,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_FILE_SAVE,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_SEPARATOR,			TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
-	{ ID_EDIT_CUT,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_EDIT_COPY,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_EDIT_PASTE,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_EDIT_FIND,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
-	{ ID_SEPARATOR,			TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
-	{ ID_DXFVIEW_LAYER,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_VIEW_FIT,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_NCVIEW_ALLFIT,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
-	{ ID_VIEW_LENSP,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_VIEW_LENSN,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_VIEW_BEFORE,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_SEPARATOR,			TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
-	{ ID_HELP,				TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_CONTEXT_HELP,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
-	{ 0,					0,					0,				FALSE }	// 定義終了
+	{ ID_FILE_OPEN,				TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_FILE_SAVE,				TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_SEPARATOR,				TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
+	{ ID_EDIT_CUT,				TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_COPY,				TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_PASTE,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_FIND,				TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
+	{ ID_SEPARATOR,				TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
+	{ ID_DXFVIEW_LAYER,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_VIEW_FIT,				TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_NCVIEW_ALLFIT,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
+	{ ID_VIEW_LENSP,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_VIEW_LENSN,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_VIEW_BEFORE,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_SEPARATOR,				TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
+	{ ID_HELP_USING,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_CONTEXT_HELP,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
+	{ 0,						0,					0,				FALSE }	// 定義終了
 };
 static	CUSTTBBUTTON	tbTraceButtons[] = {
-	{ ID_NCVIEW_TRACE_RUN,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_NCVIEW_TRACE_PAUSE, TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_NCVIEW_TRACE_STOP,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_NCVIEW_TRACE_CURSOR, TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_NCVIEW_TRACE_CURSOR2, TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_NCVIEW_TRACE_BREAK, TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_NCVIEW_TRACE_BREAKOFF, TBSTATE_ENABLED,TBSTYLE_BUTTON,	FALSE },
-	{ ID_NCVIEW_TRACE_FAST,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_NCVIEW_TRACE_MIDDLE, TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_NCVIEW_TRACE_LOW,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ 0,					0,					0,				FALSE }
+	{ ID_NCVIEW_TRACE_RUN,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_NCVIEW_TRACE_PAUSE,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_NCVIEW_TRACE_STOP,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_NCVIEW_TRACE_CURSOR,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_NCVIEW_TRACE_CURSOR2,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_NCVIEW_TRACE_BREAK,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_NCVIEW_TRACE_BREAKOFF,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
+	{ ID_NCVIEW_TRACE_FAST,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_NCVIEW_TRACE_MIDDLE,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_NCVIEW_TRACE_LOW,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ 0,						0,					0,				FALSE }
 };
 static	CUSTTBBUTTON	tbMakeButtons[] = {
-	{ ID_OPTION_MAKENC,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_SEPARATOR,			TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
-	{ ID_FILE_DXF2NCD,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_FILE_DXF2NCD_EX1,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_FILE_DXF2NCD_EX2,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_SEPARATOR,			TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
-	{ ID_FILE_NCD2DXF,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ 0,					0,					0,				FALSE }
+	{ ID_OPTION_MAKENC,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_SEPARATOR,				TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
+	{ ID_FILE_DXF2NCD,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_FILE_DXF2NCD_EX1,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_FILE_DXF2NCD_EX2,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_FILE_DXF2NCD_SHAPE,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_FILE_DXF2NCD_LATHE,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_FILE_DXF2NCD_WIRE,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_SEPARATOR,				TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
+	{ ID_FILE_NCD2DXF,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ 0,						0,					0,				FALSE }
 };
 static	CUSTTBBUTTON	tbShapeButtons[] = {
-	{ ID_EDIT_SHAPE_VEC,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_EDIT_SHAPE_START,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_EDIT_SHAPE_OUT,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_EDIT_SHAPE_POC,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_EDIT_SHAPE_SEL,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_EDIT_SHAPE_DEL,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_SEPARATOR,			TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
-	{ ID_EDIT_SHAPE_AUTO,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_EDIT_SHAPE_PROP,	TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ 0,					0,					0,				FALSE }
+	{ ID_EDIT_SHAPE_VEC,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_SHAPE_START,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_SHAPE_OUT,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_SHAPE_POC,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_SHAPE_SEL,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_SHAPE_DEL,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_SEPARATOR,				TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
+	{ ID_EDIT_SHAPE_AUTO,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_SHAPE_PROP,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ 0,						0,					0,				FALSE }
 };
 static	CUSTTBBUTTON	tbMachineButtons[] = {
-	{ ID_OPTION_MC,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_OPTION_MCCOMBO,	TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
-	{ 0,					0,					0,				FALSE }
+	{ ID_OPTION_MC,				TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_OPTION_MCCOMBO,		TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
+	{ 0,						0,					0,				FALSE }
 };
 
 // ﾒﾆｭｰの数
@@ -196,7 +199,7 @@ CMainFrame::~CMainFrame()
 BOOL CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam) 
 {
 	if ( lParam==0 && HIWORD(wParam)==1 )
-		return CMDIFrameWnd::OnCommand(wParam, lParam);
+		return __super::OnCommand(wParam, lParam);
 
 #ifdef _DEBUG
 	CMagaDbg	dbg("CMainFrame::OnCommand()", DBG_MAGENTA);
@@ -233,7 +236,7 @@ BOOL CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 		return TRUE;
 	}
 
-	return CMDIFrameWnd::OnCommand(wParam, lParam);
+	return __super::OnCommand(wParam, lParam);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -792,12 +795,12 @@ void CALLBACK CMainFrame::StatusBarEventTimerProc(HWND, UINT, UINT, DWORD)
 #ifdef _DEBUG
 void CMainFrame::AssertValid() const
 {
-	CMDIFrameWnd::AssertValid();
+	__super::AssertValid();
 }
 
 void CMainFrame::Dump(CDumpContext& dc) const
 {
-	CMDIFrameWnd::Dump(dc);
+	__super::Dump(dc);
 }
 
 #endif //_DEBUG
@@ -810,7 +813,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 #ifdef _DEBUG
 	CMagaDbg	dbg("CMainFrame::OnCreate\nStart");
 #endif
-	if ( CMDIFrameWnd::OnCreate(lpCreateStruct) < 0 )
+	if ( __super::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	CString	strRegKey, strEntry;
@@ -945,7 +948,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CMainFrame::OnSize(UINT nType, int cx, int cy) 
 {
-	CMDIFrameWnd::OnSize(nType, cx, cy);
+	__super::OnSize(nType, cx, cy);
 
 	if ( cx<=0 || cy<=0 || !::IsWindow(m_wndStatusBar.m_hWnd) )
 		return;
@@ -967,7 +970,7 @@ void CMainFrame::OnClose()
 		SaveBarState(strRegKey);
 	}
 
-	CMDIFrameWnd::OnClose();
+	__super::OnClose();
 }
 
 void CMainFrame::OnDestroy() 
@@ -999,7 +1002,7 @@ void CMainFrame::OnDestroy()
 	// GDI+ 破棄
 	Gdiplus::GdiplusShutdown(gdiplusToken);
 
-	CMDIFrameWnd::OnDestroy();
+	__super::OnDestroy();
 }
 
 void CMainFrame::OnEndSession(BOOL bEnding) 
@@ -1013,12 +1016,12 @@ void CMainFrame::OnEndSession(BOOL bEnding)
 			SaveBarState(strRegKey);
 		}
 	}
-	CMDIFrameWnd::OnEndSession(bEnding);
+	__super::OnEndSession(bEnding);
 }
 
 void CMainFrame::OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu)
 {
-  	CMDIFrameWnd::OnMenuSelect(nItemID, nFlags, hSysMenu);
+  	__super::OnMenuSelect(nItemID, nFlags, hSysMenu);
   
 	// ステータス バーの最初のペインを元に戻すかどうかを判断します。
 	if (nFlags==0xFFFF && hSysMenu==0 && m_nStatusPane1Width!=-1) {
@@ -1035,7 +1038,7 @@ void CMainFrame::OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu)
 
 void CMainFrame::OnInitMenuPopup(CMenu* pPopupMenu, UINT nIndex, BOOL bSysMenu)
 {
-  	CMDIFrameWnd::OnInitMenuPopup(pPopupMenu, nIndex, bSysMenu);
+  	__super::OnInitMenuPopup(pPopupMenu, nIndex, bSysMenu);
   
 	// 最初のペインの幅とスタイルを保存しておきます。
 	if (m_nStatusPane1Width == -1 && m_bMenuSelect) {
@@ -1090,7 +1093,7 @@ void CMainFrame::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	if ( lpDrawItemStruct->CtlType == ODT_MENU)
 		m_menuMain.OnDrawItem(lpDrawItemStruct);
 	else
-		CMDIFrameWnd::OnDrawItem(nIDCtl, lpDrawItemStruct);
+		__super::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }
 
 void CMainFrame::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct) 
@@ -1098,7 +1101,7 @@ void CMainFrame::OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStru
 	if ( lpMeasureItemStruct->CtlType == ODT_MENU )
 		m_menuMain.OnMeasureItem(lpMeasureItemStruct);
 	else
-		CMDIFrameWnd::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
+		__super::OnMeasureItem(nIDCtl, lpMeasureItemStruct);
 }
 
 void CMainFrame::OnSysColorChange() 
@@ -1106,7 +1109,7 @@ void CMainFrame::OnSysColorChange()
 	static	UINT	nID[] = {
 		IDR_MAINFRAME, IDR_TRACEBAR, IDR_MAKENCD
 	};
-	CMDIFrameWnd::OnSysColorChange();
+	__super::OnSysColorChange();
 	// ﾂｰﾙﾊﾞｰｲﾒｰｼﾞの再読込
 	m_menuMain.OnSysColorChange(SIZEOF(nID), nID);
 }
@@ -1134,7 +1137,7 @@ BOOL CMainFrame::OnToolTipText(UINT nID, NMHDR* pNMHDR, LRESULT* pResult)
 		}
 	}
 
-	return CMDIFrameWnd::OnToolTipText(nID, pNMHDR, pResult);
+	return __super::OnToolTipText(nID, pNMHDR, pResult);
 }
 
 // 外部ｱﾌﾟﾘｹｰｼｮﾝ起動ﾂｰﾙﾊﾞｰの有効無効切り替え(ﾒｯｾｰｼﾞﾏｯﾌﾟは反則技)

@@ -16,14 +16,15 @@ class CNCMakeMill : public CNCMakeBase
 	static	PFNGETCYCLESTRING	ms_pfnGetCycleString;	// Gｺｰﾄﾞﾓｰﾀﾞﾙ(固定ｻｲｸﾙ)
 	static	int		ms_nCycleCode;	// 固定ｻｲｸﾙの切削指示(81,82,85,89)
 	static	int		ms_nCycleReturn;// 固定ｻｲｸﾙの復帰指示(88,89)
-
-	// 座標値設定
-	static	CString	GetValString(int, double, BOOL);
 	// Gｺｰﾄﾞﾓｰﾀﾞﾙ(固定ｻｲｸﾙ)
 	static	CString	GetCycleString(void);
 	static	CString	GetCycleString_Clip(void);
 
-	// ---
+protected:
+	CNCMakeMill();		// 派生ｸﾗｽ用
+	// 座標値設定
+	static	CString	GetValString(int, double, BOOL);
+	//
 	void	MakePolylineMov(const CDXFpolyline*, BOOL);
 
 public:
@@ -34,7 +35,7 @@ public:
 	// Z軸の変化(上昇・下降)
 	CNCMakeMill(int, double, double);
 	// XYのG[0|1]移動
-	CNCMakeMill(int, const CPointD& pt);
+	CNCMakeMill(int, const CPointD&, double);
 	// 座標指示による円弧の生成
 	CNCMakeMill(int, const CPointD&, const CPointD&, const CPointD&, double);
 	// 任意の文字列ｺｰﾄﾞ

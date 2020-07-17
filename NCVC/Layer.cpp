@@ -47,8 +47,8 @@ CLayerData::CLayerData(const CString& strLayer, int nType)
 	m_nType		= nType;
 	m_bLayerFlg.reset();
 	m_bLayerFlg.set(LAYER_VIEW);
-	m_bLayerFlg.set(LAYER_CUTTARGET);
-	m_bLayerFlg.set(LAYER_DRILLZ);
+	m_bLayerFlg.set(LAYER_CUT_TARGET);
+	m_bLayerFlg.set(LAYER_DRILL_Z);
 	m_nListNo	= -1;
 	m_dInitZCut	= m_dZCut = 0.0;
 	m_obDXFArray.SetSize(0, 1024);
@@ -63,9 +63,9 @@ CLayerData::CLayerData(const CLayerData* pLayer, BOOL bCut)
 	m_nType			= pLayer->m_nType;
 	m_nListNo		= pLayer->m_nListNo;
 	m_bLayerFlg.reset();
-	m_bLayerFlg.set(LAYER_CUTTARGET, bCut);
-	m_bLayerFlg.set(LAYER_DRILLZ,    pLayer->IsLayerFlag(LAYER_DRILLZ));
-	m_bLayerFlg.set(LAYER_PARTOUT,   pLayer->IsLayerFlag(LAYER_PARTOUT));
+	m_bLayerFlg.set(LAYER_CUT_TARGET, bCut);
+	m_bLayerFlg.set(LAYER_DRILL_Z,  pLayer->IsLayerFlag(LAYER_DRILL_Z));
+	m_bLayerFlg.set(LAYER_PART_OUT, pLayer->IsLayerFlag(LAYER_PART_OUT));
 	m_strInitFile	= pLayer->m_strInitFile;
 	m_strNCFile		= pLayer->m_strNCFile;
 	m_strLayerComment = pLayer->m_strLayerComment;
@@ -180,7 +180,7 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 	for ( i=0, it=tok.begin(); i<LAYERTOINITORDER-1 && it!=tok.end(); i++, ++it ) {
 		switch ( i ) {
 		case 0:		// êÿçÌëŒè€Ã◊∏ﬁ
-			m_bLayerFlg.set(LAYER_CUTTARGET, atoi(it->c_str()) ? 1 : 0);
+			m_bLayerFlg.set(LAYER_CUT_TARGET, atoi(it->c_str()) ? 1 : 0);
 			break;
 		case 1:		// êÿçÌèåèÃß≤Ÿ
 			strTemp = ::Trim(*it);	// stdafx.h
@@ -194,10 +194,10 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 			m_dZCut = atof(it->c_str());
 			break;
 		case 3:		// ã≠êßç≈ê[ZÇåäâ¡çHÇ…Ç‡ìKóp
-			m_bLayerFlg.set(LAYER_DRILLZ, atoi(it->c_str()) ? 1 : 0);
+			m_bLayerFlg.set(LAYER_DRILL_Z, atoi(it->c_str()) ? 1 : 0);
 			break;
 		case 4:		// å¬ï èoóÕ
-			m_bLayerFlg.set(LAYER_PARTOUT, atoi(it->c_str()) ? 1 : 0);
+			m_bLayerFlg.set(LAYER_PART_OUT, atoi(it->c_str()) ? 1 : 0);
 			break;
 		case 5:		// å¬ï èoóÕÃß≤Ÿñº
 			strTemp = ::Trim(*it);
@@ -221,9 +221,9 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 	}
 #ifdef _DEBUG
 	g_dbg.printf("Layer=%s", m_strLayer);
-	g_dbg.printf("--- Check=%d InitFile=%s", m_bLayerFlg[LAYER_CUTTARGET] ? 1 : 0, m_strInitFile);
-	g_dbg.printf("--- Z=%f Drill=%d", m_dZCut, m_bLayerFlg[LAYER_DRILLZ] ? 1 : 0);
-	g_dbg.printf("--- PartOut=%d NCFile=%s", m_bLayerFlg[LAYER_PARTOUT] ? 1 : 0, m_strNCFile);
+	g_dbg.printf("--- Check=%d InitFile=%s", m_bLayerFlg[LAYER_CUT_TARGET] ? 1 : 0, m_strInitFile);
+	g_dbg.printf("--- Z=%f Drill=%d", m_dZCut, m_bLayerFlg[LAYER_DRILL_Z] ? 1 : 0);
+	g_dbg.printf("--- PartOut=%d NCFile=%s", m_bLayerFlg[LAYER_PART_OUT] ? 1 : 0, m_strNCFile);
 	g_dbg.printf("--- Seq=%d, Comment=%s Code=%s", m_nListNo, m_strLayerComment, m_strLayerCode);
 #endif
 }
@@ -241,11 +241,11 @@ CString CLayerData::FormatLayerInfo(LPCTSTR lpszBase)
 
 	strResult.Format("%s, %d, %s, %.3f, %d, %d, %s, %d, %s, %s\n",
 		m_strLayer,
-		m_bLayerFlg[LAYER_CUTTARGET] ? 1 : 0,
+		m_bLayerFlg[LAYER_CUT_TARGET] ? 1 : 0,
 		strInitFile,
 		m_dZCut,
-		m_bLayerFlg[LAYER_DRILLZ]  ? 1 : 0, 
-		m_bLayerFlg[LAYER_PARTOUT] ? 1 : 0,
+		m_bLayerFlg[LAYER_DRILL_Z]  ? 1 : 0, 
+		m_bLayerFlg[LAYER_PART_OUT] ? 1 : 0,
 		strNCFile,
 		m_nListNo,
 		m_strLayerComment,

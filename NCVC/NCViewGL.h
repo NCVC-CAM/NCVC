@@ -21,12 +21,15 @@ class CNCViewGL : public CView
 	BOOL		m_bActive;
 	int			m_cx,  m_cy,	// ｳｨﾝﾄﾞｳｻｲｽﾞ(ｽｸﾘｰﾝ)
 				m_icx, m_icy;
-	double		m_dRate;		// 基準拡大率
+	double		m_dRate,		// 基準拡大率
+				m_dRoundAngle,	// 中ﾎﾞﾀﾝの回転角度
+				m_dRoundStep;	// 中ﾎﾞﾀﾝの１回あたりの回転角度
 	CRect3D		m_rcView,		// ﾓﾃﾞﾙ空間
 				m_rcDraw;		// ﾜｰｸ矩形(ｿﾘｯﾄﾞ表示用)
 	CPointD		m_ptCenter,		// 描画中心
 				m_ptLastMove;	// 移動前座標
-	CPoint3D	m_ptLastRound;	// 回転前座標
+	CPoint3D	m_ptLastRound,	// 回転前座標
+				m_ptRoundBase;	// 中ﾎﾞﾀﾝ連続回転の基準座標
 	CPoint		m_ptDownClick;	// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示用他
 	HGLRC		m_hRC;
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
@@ -74,7 +77,7 @@ class CNCViewGL : public CView
 	void	EndTracking(void);
 	void	DoTracking(const CPoint&);
 	void	DoScale(int);
-	void	DoRotation(double, const CPoint3D&);
+	void	DoRotation(double);
 	void	SetupViewingTransform(void);
 
 protected:
@@ -108,15 +111,21 @@ protected:
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnTimer(UINT nIDEvent);
 	// CNCViewTab::OnActivatePage() から SendMessage()
 	afx_msg LRESULT OnUserActivatePage(WPARAM, LPARAM);
 	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
 	afx_msg LRESULT OnUserViewFitMsg(WPARAM, LPARAM);
 	// ﾒﾆｭｰｺﾏﾝﾄﾞ
+	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
 	afx_msg	void OnMoveKey(UINT);
+	afx_msg	void OnRoundKey(UINT);
 	afx_msg	void OnLensKey(UINT);
 	afx_msg void OnDefViewInfo();
 

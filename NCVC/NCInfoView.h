@@ -49,6 +49,7 @@ protected:
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnEditCopy();
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
 	//}}AFX_MSG
 	afx_msg LRESULT OnUserCalcMsg(WPARAM, LPARAM);
 
@@ -99,6 +100,7 @@ protected:
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnEditCopy();
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
 	//}}AFX_MSG
 
 	DECLARE_MESSAGE_MAP()

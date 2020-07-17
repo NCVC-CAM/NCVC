@@ -18,11 +18,41 @@ class CMakeCustomCode
 protected:
 	CStringKeyIndex	m_strOrderIndex;	// ｵｰﾀﾞｰ文字列
 	const CDXFdata*	m_pData;			// 派生ｸﾗｽから参照
-	CString&		m_strResult;		// 置換結果(参照型)
 
 public:
-	CMakeCustomCode(CString&,
-		const CDXFDoc*, const CDXFdata*, const CNCMakeOption*);
+	CMakeCustomCode(const CDXFDoc*, const CDXFdata*, const CNCMakeOption*);
 
-	int		ReplaceCustomCode(const char*, const char*) const;
+	boost::tuple<int, CString>	ReplaceCustomCode(const std::string&) const;
 };
+
+// '{' と '}' の token
+//	boost::tokenizer<tag_separator>	tokens(str);
+//	的に使用
+
+struct tag_separator {
+	void reset() {}		// Unused
+	
+	template<typename Iterator, typename Token>
+	bool operator()(Iterator& i, Iterator end, Token& tok) {
+		tok = Token();
+		if ( i == end )
+			return false;
+		
+		if ( *i == '{' ) {
+			for ( ; i!=end && *i!='}'; ++i )
+				tok += *i;
+			if ( i == end )
+				return false;
+			
+			tok += *i++;
+			return true;
+		}
+		else {
+			for ( ; i!=end && *i!='{'; ++i )
+				tok += *i;
+			return true;
+		}
+	}
+};
+
+typedef boost::tokenizer<tag_separator>::iterator tokIte;

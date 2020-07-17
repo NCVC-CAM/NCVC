@@ -455,8 +455,9 @@ try {
 				}
 				pData = pData1->GetEndCorrectObject();
 				for ( j=0; j<obNdata.GetSize(); j++ ) {
-					if ( pDataResult = CreateNCobj(pData, pt1, obNdata[j]->GetEndPoint()[k]) ) {
-						obNdata[j]->AddCorrectObject(pDataResult);
+					pData1 = obNdata[j];
+					if ( pDataResult = CreateNCobj(pData, pt1, pData1->GetEndPoint()[k]) ) {
+						pData1->AddCorrectObject(pDataResult);
 						pData = pDataResult;
 					}
 				}
@@ -503,8 +504,8 @@ try {
 				break;
 			}
 			pData2->AddCorrectObject(pData2c);
-			pData1 = pData2;
-			nSign1 = nSign2;
+			pData1  = pData2;
+			nSign1  = nSign2;
 			pData1c = pData2c;
 		} // End of Loop
 	} // End of Main(while) loop
@@ -571,8 +572,6 @@ int IsCorrectCheck(const CNCdata* pData1, const CNCdata* pData2, int nCorrect)
 
 BOOL IsPlaneCheck(const CNCdata* pData1, const CNCdata* pData2, CNCarray& obNdata)
 {
-	BOOL	bResult = TRUE;
-
 	// 同じ平面移動が無い場合(等しい場合を含む)はあとで処理
 	switch ( pData1->GetPlane() ) {
 	case XY_PLANE:
@@ -580,13 +579,13 @@ BOOL IsPlaneCheck(const CNCdata* pData1, const CNCdata* pData2, CNCarray& obNdat
 		case NCDLINEDATA:
 			if ( !(pData2->GetValFlags() & (NCD_X|NCD_Y)) ) {
 				obNdata.Add(const_cast<CNCdata*>(pData2));
-				bResult = FALSE;
+				return FALSE;
 			}
 			break;
 		case NCDARCDATA:
 			if ( !(pData2->GetValFlags() & (NCD_R|NCD_I|NCD_J)) ) {
 				obNdata.Add(const_cast<CNCdata*>(pData2));
-				bResult = FALSE;
+				return FALSE;
 			}
 			break;
 		}
@@ -596,13 +595,13 @@ BOOL IsPlaneCheck(const CNCdata* pData1, const CNCdata* pData2, CNCarray& obNdat
 		case NCDLINEDATA:
 			if ( !(pData2->GetValFlags() & (NCD_X|NCD_Z)) ) {
 				obNdata.Add(const_cast<CNCdata*>(pData2));
-				bResult = FALSE;
+				return FALSE;
 			}
 			break;
 		case NCDARCDATA:
 			if ( !(pData2->GetValFlags() & (NCD_R|NCD_I|NCD_K)) ) {
 				obNdata.Add(const_cast<CNCdata*>(pData2));
-				bResult = FALSE;
+				return FALSE;
 			}
 			break;
 		}
@@ -612,13 +611,13 @@ BOOL IsPlaneCheck(const CNCdata* pData1, const CNCdata* pData2, CNCarray& obNdat
 		case NCDLINEDATA:
 			if ( !(pData2->GetValFlags() & (NCD_Y|NCD_Z)) ) {
 				obNdata.Add(const_cast<CNCdata*>(pData2));
-				bResult = FALSE;
+				return FALSE;
 			}
 			break;
 		case NCDARCDATA:
 			if ( !(pData2->GetValFlags() & (NCD_R|NCD_J|NCD_K)) ) {
 				obNdata.Add(const_cast<CNCdata*>(pData2));
-				bResult = FALSE;
+				return FALSE;
 			}
 			break;
 		}
@@ -628,10 +627,10 @@ BOOL IsPlaneCheck(const CNCdata* pData1, const CNCdata* pData2, CNCarray& obNdat
 	if ( pData2->GetType()==NCDLINEDATA &&
 			pData1->GetEndPoint()==pData2->GetEndPoint() ) {
 		obNdata.Add(const_cast<CNCdata*>(pData2));
-		bResult = FALSE;
+		return FALSE;
 	}
 
-	return bResult;
+	return TRUE;
 }
 
 int GetInsideOutside(const CNCdata* pData1, const CNCdata* pData2, DWORD dwValFlags)
@@ -728,25 +727,23 @@ CNCdata* CreateNCobj
 	NCARGV	ncArgv;
 	ZeroMemory(&ncArgv, sizeof(NCARGV));
 
-	CPoint3D	ptSrc(pData->GetEndPoint());
-	BOOL		bCreate = TRUE;
 	CNCdata*	pDataResult = NULL;
 
 	// 必要な初期ﾊﾟﾗﾒｰﾀのｾｯﾄ
 	ncArgv.bAbs			= TRUE;
+	ncArgv.bG98			= pData->GetG98();
 	ncArgv.dFeed		= pData->GetFeed();
+	ncArgv.dEndmill		= pData->GetEndmill();
+	ncArgv.nEndmillType	= pData->GetEndmillType();
 	ncArgv.nc.nLine		= pData->GetBlockLineNo();
 	ncArgv.nc.nGtype	= G_TYPE;
 	ncArgv.nc.nGcode	= pData->GetGcode() > 0 ? 1 : 0;
 	ncArgv.nc.enPlane	= pData->GetPlane();
+	memcpy(&(ncArgv.g68), &(pData->GetReadData()->m_g68), sizeof(G68ROUND));
 
 	// 座標値のｾｯﾄ
 	switch ( pData->GetPlane() ) {
 	case XY_PLANE:
-		if ( ptSrc.GetXY().IsMatchPoint(&pt) ) {
-			bCreate = FALSE;	// ｵﾌﾞｼﾞｪｸﾄ生成の必要なし
-			break;
-		}
 		ncArgv.nc.dValue[NCA_X] = pt.x;
 		ncArgv.nc.dValue[NCA_Y] = pt.y;
 		ncArgv.nc.dwValFlags = NCD_X|NCD_Y;
@@ -756,10 +753,6 @@ CNCdata* CreateNCobj
 		}
 		break;
 	case XZ_PLANE:
-		if ( ptSrc.GetXZ().IsMatchPoint(&pt) ) {
-			bCreate = FALSE;
-			break;
-		}
 		ncArgv.nc.dValue[NCA_X] = pt.x;
 		ncArgv.nc.dValue[NCA_Z] = pt.y;
 		ncArgv.nc.dwValFlags = NCD_X|NCD_Z;
@@ -769,10 +762,6 @@ CNCdata* CreateNCobj
 		}
 		break;
 	case YZ_PLANE:
-		if ( ptSrc.GetYZ().IsMatchPoint(&pt) ) {
-			bCreate = FALSE;
-			break;
-		}
 		ncArgv.nc.dValue[NCA_Y] = pt.x;
 		ncArgv.nc.dValue[NCA_Z] = pt.y;
 		ncArgv.nc.dwValFlags = NCD_Y|NCD_Z;
@@ -783,10 +772,9 @@ CNCdata* CreateNCobj
 		break;
 	}
 
-	if ( bCreate ) {
-		ncArgv.nc.dwValFlags |= (pData->GetValFlags() & NCD_CORRECT);
-		pDataResult = new CNCline(pData, &ncArgv, pData->GetOffsetPoint());
-	}
+	ncArgv.nc.dwValFlags |= (pData->GetValFlags() & NCD_CORRECT);
+	pDataResult = new CNCline(pData, &ncArgv, pData->GetOffsetPoint());
+	ASSERT( pDataResult );
 
 	return pDataResult;
 }

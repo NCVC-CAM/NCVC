@@ -431,7 +431,11 @@ double CNCline::SetCalcLength(void)
 		}
 	}
 
-	return m_nc.dLength;
+	double	dResult = 0;
+	if ( m_pWireObj )
+		dResult = m_pWireObj->SetCalcLength();
+
+	return max(m_nc.dLength, dResult);
 }
 
 void CNCline::DrawTuning(double f)
@@ -1378,6 +1382,7 @@ void CNCcircle::AngleTuning(const CPointD& pts, const CPointD& pte)
 		m_sq += RAD(360.0);
 	if ( (m_eq=atan2(pte.y, pte.x)) < 0.0 )
 		m_eq += RAD(360.0);
+
 	// 常に s<e (反時計回り) とする
 	if ( m_nG23 == 0 )	// G02 なら開始角度と終了角度を入れ替え
 		std::swap(m_sq, m_eq);
@@ -1385,9 +1390,11 @@ void CNCcircle::AngleTuning(const CPointD& pts, const CPointD& pte)
 	while ( sq >= ::RoundUp(DEG(m_eq)) )
 		m_eq += RAD(360.0);
 
-	// 角度異常の検出
-	ASSERT( -720.0<=DEG(m_sq) && DEG(m_sq)<=720.0 );
-	ASSERT( -720.0<=DEG(m_eq) && DEG(m_eq)<=720.0 );
+	// 角度調整
+	if ( sq>=360.0 && ::RoundUp(DEG(m_eq))>=360.0 ) {
+		m_sq -= RAD(360.0);
+		m_eq -= RAD(360.0);
+	}
 }
 
 double CNCcircle::SetCalcLength(void)
@@ -1400,25 +1407,15 @@ double CNCcircle::SetCalcLength(void)
 	else {
 		m_nc.dLength = 0.0;
 		// 各補正要素の合計
-		CNCdata*	pData;
-		CNCcircle*	pCircle;
-		CPoint3D	pt;
-		for ( int i=0; i<m_obCdata.GetSize(); i++ ) {
-			pData = m_obCdata[i];
-			switch ( pData->GetType() ) {
-			case NCDLINEDATA:
-				pt = pData->GetEndPoint() - pData->GetStartPoint();
-				m_nc.dLength += pt.hypot();
-				break;
-			case NCDARCDATA:
-				pCircle = static_cast<CNCcircle *>(pData);
-				m_nc.dLength += fabs(pCircle->GetR() * (pCircle->GetEndAngle() - pCircle->GetStartAngle()));
-				break;
-			}
-		}
+		for ( int i=0; i<m_obCdata.GetSize(); i++ )
+			m_nc.dLength += m_obCdata[i]->SetCalcLength();
 	}
 
-	return m_nc.dLength;
+	double	dResult = 0;
+	if ( m_pWireObj )
+		dResult = m_pWireObj->SetCalcLength();
+
+	return max(m_nc.dLength, dResult);
 }
 
 void CNCcircle::DrawTuning(double f)

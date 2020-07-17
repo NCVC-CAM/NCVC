@@ -94,18 +94,21 @@ void CNCChild::ActivateFrame(int nCmdShow)
 #ifdef _DEBUG
 	g_dbg.printf("CNCChild::ActivateFrame() Call");
 #endif
-	CMDIChildWnd::ActivateFrame(CChildBase::ActivateFrame(nCmdShow));
+	__super::ActivateFrame(ActivateFrameSP(nCmdShow));	// CChildBase
 }
 
 BOOL CNCChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
-//	return CMDIChildWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+#ifdef _DEBUG_CMDMSG
+	g_dbg.printf("CNCChild::OnCmdMsg()");
+#endif
+//	return __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 /*
 	ΩÃﬂÿØ¿≥®›ƒﬁ≥Ç…ÇÊÇÈï°êîÀﬁ≠∞Ç≈
 	Ã´∞∂ΩÇ™à⁄Ç¡ÇƒÇ‡ê≥èÌìÆçÏÇ≥ÇπÇÈÇΩÇﬂÇÃ
 	∂Ω¿—∫œ›ƒﬁŸ∞√®›∏ﬁ
 */
-	if ( CMDIChildWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) )
+	if ( __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) )
 		return TRUE;
 	CNCDoc* pDoc = static_cast<CNCDoc *>(GetActiveDocument());
 	if ( !pDoc )
@@ -121,12 +124,12 @@ BOOL CNCChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* p
 #ifdef _DEBUG
 void CNCChild::AssertValid() const
 {
-	CMDIChildWnd::AssertValid();
+	__super::AssertValid();
 }
 
 void CNCChild::Dump(CDumpContext& dc) const
 {
-	CMDIChildWnd::Dump(dc);
+	__super::Dump(dc);
 }
 #endif //_DEBUG
 
@@ -156,7 +159,7 @@ void CNCChild::SetFactorInfo(double dFactor, const CString& strGuide)
 
 int CNCChild::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-	if ( CMDIChildWnd::OnCreate(lpCreateStruct) < 0 )
+	if ( __super::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
 	// Ω√∞¿Ω ﬁ∞çÏê¨
@@ -175,12 +178,12 @@ int CNCChild::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CNCChild::OnClose() 
 {
 	AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();
-	CMDIChildWnd::OnClose();
+	__super::OnClose();
 }
 
 void CNCChild::OnSize(UINT nType, int cx, int cy) 
 {
-	CMDIChildWnd::OnSize(nType, cx, cy);
+	__super::OnSize(nType, cx, cy);
 
 	if ( cx<=0 || cy<=0 || !::IsWindow(m_wndStatusBar.m_hWnd) )
 		return;
@@ -199,7 +202,7 @@ void CNCChild::OnSize(UINT nType, int cx, int cy)
 
 void CNCChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd) 
 {
-	CMDIChildWnd::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
+	__super::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
 	DBGBOOL(g_dbg, "CNCChild::bActivate", bActivate);
 	CChildBase::OnMDIActivate(this, bActivate);
 	if ( !bActivate )

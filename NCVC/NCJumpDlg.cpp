@@ -33,7 +33,7 @@ CNCJumpDlg::CNCJumpDlg(CWnd* pParent /*=NULL*/)
 
 void CNCJumpDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CNCJumpDlg)
 	DDX_Control(pDX, IDOK, m_ctOK);
 	DDX_Control(pDX, IDC_JUMP, m_nJump);
@@ -46,7 +46,7 @@ BOOL CNCJumpDlg::PreTranslateMessage(MSG* pMsg)
 	CFrameWnd*	pFrame = GetParentFrame();	// CMainFrame
 	if ( pFrame && ::TranslateAccelerator(pFrame->GetSafeHwnd(), pFrame->GetDefaultAccelerator(), pMsg))
 		return TRUE;
-	return CDialog::PreTranslateMessage(pMsg);
+	return __super::PreTranslateMessage(pMsg);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -54,7 +54,7 @@ BOOL CNCJumpDlg::PreTranslateMessage(MSG* pMsg)
 
 BOOL CNCJumpDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ｴﾗｰがあればその行をﾃﾞﾌｫﾙﾄ(最初だけ)
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙのため，ｺﾝｽﾄﾗｸﾀでは不可能
@@ -100,14 +100,14 @@ void CNCJumpDlg::OnCancel()
 	AfxGetNCVCApp()->SaveDlgWindow(IDS_REGKEY_WINDOW_JUMPDLG, this);
 
 	DestroyWindow();	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞ
-//	CDialog::OnCancel();
+//	__super::OnCancel();
 }
 
 void CNCJumpDlg::PostNcDestroy() 
 {
 	AfxGetNCVCMainWnd()->SetModelessDlg(MLD_NCJUMP, NULL);
 	delete	this;
-//	CDialog::PostNcDestroy();
+//	__super::PostNcDestroy();
 }
 
 LRESULT CNCJumpDlg::OnUserSwitchDocument(WPARAM, LPARAM)

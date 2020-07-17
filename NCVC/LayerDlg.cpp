@@ -38,7 +38,7 @@ CLayerDlg::CLayerDlg() : CDialog(CLayerDlg::IDD, NULL)
 
 void CLayerDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CLayerDlg)
 	DDX_Control(pDX, IDC_DXFVIEW_LAYER, m_ctLayerTree);
 	DDX_Control(pDX, IDOK, m_ctOK);
@@ -83,7 +83,7 @@ void CLayerDlg::SetParentCheck(HTREEITEM hTree)
 
 BOOL CLayerDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	// “≤›¬ÿ∞ÇÃçÏê¨
 	for ( int i=0; i<SIZEOF(g_szTreeTitle); i++ )
@@ -136,14 +136,14 @@ void CLayerDlg::OnCancel()
 	AfxGetNCVCApp()->SaveDlgWindow(IDS_REGKEY_WINDOW_LAYERDLG, this);
 
 	DestroyWindow();	// ”∞ƒﬁ⁄Ω¿ﬁ≤±€∏ﬁ
-//	CDialog::OnCancel();
+//	__super::OnCancel();
 }
 
 void CLayerDlg::PostNcDestroy() 
 {
 	AfxGetNCVCMainWnd()->SetModelessDlg(MLD_DXFLAYER, NULL);
 	delete	this;
-//	CDialog::PostNcDestroy();
+//	__super::PostNcDestroy();
 }
 
 LRESULT CLayerDlg::OnUserSwitchDocument(WPARAM, LPARAM)

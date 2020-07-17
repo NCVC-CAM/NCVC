@@ -586,7 +586,7 @@ optional<CPointD> CalcOffsetIntersectionPoint_LE
 //////////////////////////////////////////////////////////////////////
 //	“_‚ª‘½ŠpŒ`‚Ì“à‘¤‚©”Û‚©
 
-BOOL IsPointInPolygon(const CPointD& ptTarget, const vector<CPointD>& pt)
+BOOL IsPointInPolygon(const CPointD& ptTarget, const VECPOINTD& pt)
 {
 	int		iCountCrossing = 0;
 	UINT	ui, uiCountPoint = pt.size();

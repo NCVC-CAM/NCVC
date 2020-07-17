@@ -7,6 +7,7 @@
 #include "DXFDoc.h"
 #include "MKNCSetup.h"
 #include "MKLASetup.h"
+#include "MKWISetup.h"
 #include "MakeNCDlg.h"
 
 #include "MagaDbgMac.h"
@@ -21,18 +22,19 @@ BEGIN_MESSAGE_MAP(CMakeNCDlg, CDialog)
 	ON_BN_CLICKED(IDC_MKNC_INITUP, OnMKNCInitUp)
 	ON_BN_CLICKED(IDC_MKNC_INITED, OnMKNCInitEdit)
 	ON_CBN_SELCHANGE(IDC_MKNC_INIT, OnSelChangeInit)
-	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, OnKillFocusNCFile)
 	ON_CBN_KILLFOCUS(IDC_MKNC_INIT, OnKillFocusInit)
+	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, OnKillFocusNCFile)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCDlg ダイアログ
 
-CMakeNCDlg::CMakeNCDlg(UINT nTitle, CDXFDoc* pDoc)
+CMakeNCDlg::CMakeNCDlg(UINT nTitle, enMAKETYPE enType, CDXFDoc* pDoc)
 	: CDialog(CMakeNCDlg::IDD, NULL)
 {
 	m_nTitle = nTitle;
+	m_enType = enType;
 	//{{AFX_DATA_INIT(CMakeNCDlg)
 	//}}AFX_DATA_INIT
 
@@ -40,16 +42,14 @@ CMakeNCDlg::CMakeNCDlg(UINT nTitle, CDXFDoc* pDoc)
 	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
 	// 切削条件履歴から初期表示ﾌｧｲﾙを取得
 	const CDXFOption*  pOpt = AfxGetNCVCApp()->GetDXFOption();
-	const CStringList* pList = nTitle == IDS_MAKENCD_TITLE_LATHE ?
-				pOpt->GetLatheInitList() : pOpt->GetMillInitList();
-	if ( pList->GetCount() > 0 )
-		::Path_Name_From_FullPath(pList->GetHead(), m_strInitPath, m_strInitFileName);
+	if ( pOpt->GetInitList(enType)->GetCount() > 0 )
+		::Path_Name_From_FullPath(pOpt->GetInitList(enType)->GetHead(), m_strInitPath, m_strInitFileName);
 	m_bNCView = pOpt->GetDxfFlag(DXFOPT_VIEW);
 }
 
 void CMakeNCDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMakeNCDlg)
 	DDX_Control(pDX, IDOK, m_ctOK);
 	DDX_Control(pDX, IDC_MKNC_NCFILE, m_ctNCFileName);
@@ -65,18 +65,16 @@ void CMakeNCDlg::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMakeNCDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 	
 	// ｺﾝｽﾄﾗｸﾀではできないｺﾝﾄﾛｰﾙの初期化
 	CString	strTitle;
-	strTitle.LoadString(m_nTitle);
+	VERIFY(strTitle.LoadString(m_nTitle));
 	SetWindowText(strTitle);
 
 	// 切削条件ｺﾝﾎﾞﾎﾞｯｸｽにｱｲﾃﾑ追加
 	InitialMakeNCDlgComboBox(
-		(m_nTitle == IDS_MAKENCD_TITLE_LATHE ? 
-			AfxGetNCVCApp()->GetDXFOption()->GetLatheInitList() :
-			AfxGetNCVCApp()->GetDXFOption()->GetMillInitList()),
+		AfxGetNCVCApp()->GetDXFOption()->GetInitList(m_enType),
 		m_ctInitFileName);
 	// ﾊﾟｽ表示の最適化(shlwapi.h)
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_NCPATH,   m_strNCPath);
@@ -110,7 +108,7 @@ void CMakeNCDlg::OnOK()
 	m_strInitFileName = strInitPath;
 	m_strNCFileName   = strNCPath;
 
-	// CDialog::OnOK()を呼ぶとUpdateData()されm_strNCFileNameが上書きされる
+	// __super::OnOK()を呼ぶとUpdateData()されm_strNCFileNameが上書きされる
 	EndDialog(IDOK);
 }
 
@@ -128,10 +126,7 @@ void CMakeNCDlg::OnMKNCInitUp()
 {
 	UpdateData();
 	CString	strFilter;
-	if ( m_nTitle == IDS_MAKENCD_TITLE_LATHE )
-		VERIFY(strFilter.LoadString(IDS_NCIL_FILTER));	// 旋盤用
-	else
-		VERIFY(strFilter.LoadString(IDS_NCIM_FILTER));	// ﾌﾗｲｽ用
+	VERIFY(strFilter.LoadString(m_enType+IDS_NCIM_FILTER));
 	MakeDlgFileRefer(IDS_OPTION_INIT, strFilter, this, IDC_MKNC_INITPATH,
 			m_strInitPath, m_strInitFileName, TRUE);
 	// 文字選択状態
@@ -141,20 +136,52 @@ void CMakeNCDlg::OnMKNCInitUp()
 
 void CMakeNCDlg::OnMKNCInitEdit() 
 {
-	UpdateData();
-	if ( m_nTitle == IDS_MAKENCD_TITLE_LATHE ) {
-		// 処理手順は MakeNCDlgInitFileEdit() と同じ
-		CString	strInitFile(m_strInitPath+m_strInitFileName),
-				strCaption, strResult;
+	CString	strInitFile, strCaption, strResult;
+
+	if ( m_enType != NCMAKEMILL ) {
+		strInitFile = m_strInitPath + m_strInitFileName;
 		VERIFY(strCaption.LoadString(IDS_MAKE_NCD));
-		CMKLASetup	ps(::AddDialogTitle2File(strCaption, strInitFile), strInitFile);
-		if ( ps.DoModal() != IDOK )
-			return;
-		ps.GetNCMakeOption()->SaveMakeOption();
+	}
+
+	UpdateData();
+
+	switch ( m_enType ) {
+	case NCMAKEMILL:
+		MakeNCDlgInitFileEdit(m_strInitPath, m_strInitFileName,
+			this, IDC_MKNC_INITPATH, m_ctInitFileName);
+		break;
+
+	case NCMAKELATHE:
+		VERIFY(strResult.LoadString(IDCV_LATHE));
+		{
+			// 処理手順は MakeNCDlgInitFileEdit() と同じ
+			CMKLASetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
+			if ( ps.DoModal() != IDOK )
+				return;
+			ps.GetNCMakeOption()->SaveMakeOption();
 #ifdef _DEBUGOLD
-		ps.GetNCMakeOption()->DbgDump();
+			ps.GetNCMakeOption()->DbgDump();
 #endif
-		strResult = ps.GetNCMakeOption()->GetInitFile();
+			strResult = ps.GetNCMakeOption()->GetInitFile();
+		}
+		break;
+
+	case NCMAKEWIRE:
+		VERIFY(strResult.LoadString(IDCV_WIRE));
+		{
+			CMKWISetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
+			if ( ps.DoModal() != IDOK )
+				return;
+			ps.GetNCMakeOption()->SaveMakeOption();
+#ifdef _DEBUGOLD
+			ps.GetNCMakeOption()->DbgDump();
+#endif
+			strResult = ps.GetNCMakeOption()->GetInitFile();
+		}
+		break;
+	}
+
+	if ( m_enType != NCMAKEMILL ) {
 		if ( strInitFile.CompareNoCase(strResult) != 0 ) {
 			CString	strPath, strFile;
 			::Path_Name_From_FullPath(strResult, strPath, strFile);
@@ -164,10 +191,7 @@ void CMakeNCDlg::OnMKNCInitEdit()
 			m_ctInitFileName.SetFocus();
 		}
 	}
-	else {
-		MakeNCDlgInitFileEdit(m_strInitPath, m_strInitFileName,
-			this, IDC_MKNC_INITPATH, m_ctInitFileName);
-	}
+
 	m_ctOK.SetFocus();
 }
 
@@ -178,12 +202,9 @@ void CMakeNCDlg::OnSelChangeInit()
 	// 履歴ﾌｧｲﾙの存在ﾁｪｯｸ
 	CString	strFullPath(m_strInitPath+m_strInitFileName);
 	if ( !::IsFileExist(strFullPath) ) {
-		// 履歴削除
-		if ( m_nTitle == IDS_MAKENCD_TITLE_LATHE )
-			AfxGetNCVCApp()->GetDXFOption()->DelLatheInitHistory(strFullPath);
-		else
-			AfxGetNCVCApp()->GetDXFOption()->DelMillInitHistory(strFullPath);
 		m_ctInitFileName.DeleteString(nIndex);
+		// 履歴削除
+		AfxGetNCVCApp()->GetDXFOption()->DelInitHistory(m_enType, strFullPath);
 	}
 }
 

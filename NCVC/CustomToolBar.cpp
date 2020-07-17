@@ -194,6 +194,8 @@ BOOL CCustomToolBar::SetCustomButtons(LPCTSTR lpszResourceName,
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
+		if ( lptb )
+			delete[]	lptb;
 		return FALSE;
 	}
 

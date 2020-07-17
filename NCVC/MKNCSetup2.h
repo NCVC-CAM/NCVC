@@ -20,6 +20,7 @@ public:
 	//{{AFX_DATA(CMKNCSetup2)
 	enum { IDD = IDD_MKNC_SETUP2 };
 	CButton		m_ctProgAuto;
+	CButton		m_ctDisableSpindle;
 	CStatic		m_ctZReturnS;
 	CComboBox	m_ctLineAdd;
 	CComboBox	m_ctZReturn;
@@ -41,10 +42,10 @@ public:
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 
 	//{{AFX_VIRTUAL(CMKNCSetup2)
-	public:
+public:
 	virtual BOOL OnApply();
 	virtual BOOL OnKillActive();
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
 	//}}AFX_VIRTUAL
 

@@ -65,8 +65,8 @@ protected:
 	}
 
 protected:
-	BOOL	OnOpenDocument(LPCTSTR, CFrameWnd*);
-	void	OnCloseDocument(void);
+	BOOL	OnOpenDocumentSP(LPCTSTR, CFrameWnd*);
+	void	OnCloseDocumentSP(void);
 	BOOL	UpdateModifiedTitle(BOOL, CString&);
 
 public:

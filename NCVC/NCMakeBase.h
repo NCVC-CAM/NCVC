@@ -3,12 +3,10 @@
 
 #pragma once
 
-typedef	CString	(*PFNGETSPINDLE)(int);
-typedef	CString	(*PFNGETFEED)(double);
-typedef CString (*PFNGETLINENO)(void);
-typedef CString (*PFNGETGSTRING)(int);
+typedef	CString	(*PFNGETARGINT)(int);
+typedef	CString	(*PFNGETARGDOUBLE)(double);
+typedef CString (*PFNGETARGVOID)(void);
 typedef	CString	(*PFNGETVALSTRING)(int, double, BOOL);
-typedef CString (*PFNGETVALDETAIL)(double);
 typedef	CString	(*PFNMAKECIRCLESUB)(int, const CPointD&, const CPointD&, double);
 typedef	CString	(*PFNMAKECIRCLE)(const CDXFcircle*, double);
 typedef	CString	(*PFNMAKEHELICAL)(const CDXFcircle*, double, double);
@@ -17,7 +15,7 @@ typedef	CString	(*PFNMAKEARC)(const CDXFarc*, double);
 class CNCMakeBase
 {
 protected:
-	CNCMakeBase();
+	CNCMakeBase();		// 派生ｸﾗｽ用
 	// ｺﾝｽﾄﾗｸﾀ -- 任意の文字列ｺｰﾄﾞ
 	CNCMakeBase(const CString& strGcode);
 
@@ -38,12 +36,12 @@ protected:
 	static	double	ms_dEllipse;	// 楕円公差
 	static	CString	ms_strEOB;		// EOB
 
-	static	PFNGETSPINDLE		ms_pfnGetSpindle;		// Sｺｰﾄﾞの生成
-	static	PFNGETFEED			ms_pfnGetFeed;			// Fｺｰﾄﾞの生成
-	static	PFNGETLINENO		ms_pfnGetLineNo;		// 行番号付加
-	static	PFNGETGSTRING		ms_pfnGetGString;		// Gｺｰﾄﾞﾓｰﾀﾞﾙ
+	static	PFNGETARGINT		ms_pfnGetSpindle;		// Sｺｰﾄﾞの生成
+	static	PFNGETARGDOUBLE		ms_pfnGetFeed;			// Fｺｰﾄﾞの生成
+	static	PFNGETARGVOID		ms_pfnGetLineNo;		// 行番号付加
+	static	PFNGETARGINT		ms_pfnGetGString;		// Gｺｰﾄﾞﾓｰﾀﾞﾙ
 	static	PFNGETVALSTRING		ms_pfnGetValString;		// 座標値設定
-	static	PFNGETVALDETAIL		ms_pfnGetValDetail;		// 　の詳細
+	static	PFNGETARGDOUBLE		ms_pfnGetValDetail;		// 　の詳細
 	static	PFNMAKECIRCLESUB	ms_pfnMakeCircleSub;	// 円・円弧ﾃﾞｰﾀの生成補助
 	static	PFNMAKECIRCLE		ms_pfnMakeCircle;		// 円ﾃﾞｰﾀの生成
 	static	PFNMAKEHELICAL		ms_pfnMakeHelical;		// 円ﾃﾞｰﾀのﾍﾘｶﾙ切削
@@ -91,10 +89,10 @@ protected:
 	void	MakePolylineCut(const CDXFpolyline*, double);
 
 public:
-	// TH_MakeNCD.cpp で初期化
+	// TH_MakeXXX.cpp で初期化
 	static	double	ms_xyz[NCXYZ];	// 前回の位置
 	static	void	InitialVariable(void);
-
+	// TH_MakeXXX.cpp でも使用
 	static	CString	MakeCustomString(int, DWORD = 0, double* = NULL, BOOL = TRUE);
 	static	CString	MakeCustomString(int, int[], double[]);
 

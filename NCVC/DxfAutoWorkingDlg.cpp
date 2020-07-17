@@ -37,7 +37,7 @@ CDxfAutoWorkingDlg::CDxfAutoWorkingDlg(AUTOWORKINGDATA* pAuto)
 
 void CDxfAutoWorkingDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CDxfAutoWorkingDlg)
 	DDX_Control(pDX, IDC_AUTO_OFFSET, m_ctOffset);
 	DDX_Control(pDX, IDC_AUTO_ACUTEROUND, m_ctAcuteRound);
@@ -68,7 +68,7 @@ void CDxfAutoWorkingDlg::SetDetailCtrl(void)
 
 BOOL CDxfAutoWorkingDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 	m_ctOffset = m_dOffset;	// ÃÞÌ«ÙÄµÌ¾¯Ä
 	m_ctLoop   = m_nLoopCnt;
 	SetDetailCtrl();

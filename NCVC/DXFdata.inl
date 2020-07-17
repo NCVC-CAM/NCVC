@@ -453,6 +453,11 @@ inline BOOL CDXFcircle::IsStartEqEnd(void) const
 	return TRUE;
 }
 
+inline BOOL CDXFcircle::IsUnderRadius(double d) const
+{
+	return GetMakeR() <= d;
+}
+
 inline double CDXFcircle::GetEdgeGap(const CPointD& pt, BOOL bSwap/*=TRUE*/)
 {
 	if ( GetMakeType() == DXFPOINTDATA )
@@ -497,7 +502,7 @@ inline const CPointD CDXFcircle::GetEndMakePoint(void) const
 
 inline double CDXFcircle::GetLength(void) const
 {
-	return 2 * PI * m_r;
+	return 2.0 * PI * m_r;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -707,6 +712,11 @@ inline BOOL CDXFellipse::IsMakeMatchPoint(const CPointD& pt)
 inline BOOL CDXFellipse::IsStartEqEnd(void) const
 {
 	return !m_bArc;		// ‘È‰~‚©‘È‰~ŒÊ‚©
+}
+
+inline BOOL	CDXFellipse::IsLongEqShort(void) const
+{
+	return fabs( ::RoundUp(GetLongLength()) - ::RoundUp(GetShortLength()) ) < NCMIN;
 }
 
 inline double CDXFellipse::GetEdgeGap(const CPointD& pt, BOOL bSwap/*=TRUE*/)

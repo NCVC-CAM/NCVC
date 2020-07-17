@@ -33,7 +33,7 @@ CExtensionDlg::CExtensionDlg() : CDialog(CExtensionDlg::IDD, NULL)
 
 void CExtensionDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CExtensionDlg)
 	//}}AFX_DATA_MAP
 	DDX_Text(pDX, IDC_EXT_NCD_TXT, m_strExtTxt[0]);
@@ -51,7 +51,7 @@ void CExtensionDlg::DoDataExchange(CDataExchange* pDX)
 
 BOOL CExtensionDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	const	CMapStringToPtr*	pMapExt;
 	CString		strResult;
@@ -111,7 +111,7 @@ void CExtensionDlg::OnOK()
 		e->Delete();
 	}
 
-	CDialog::OnOK();
+	__super::OnOK();
 }
 
 void CExtensionDlg::OnExtAdd() 

@@ -61,7 +61,7 @@ CMakeNCDlgEx21::CMakeNCDlgEx21(CMakeNCDlgEx* pParent, int nIndex)
 			for ( i=0; i<nLoop; i++ ) {
 				pLayer = pDoc->GetLayerData(i);
 				if ( pLayer->IsCutType() ) {
-					pLayer = new CLayerData(pLayer, pLayer->m_bLayerFlg[LAYER_CUTTARGET]);
+					pLayer = new CLayerData(pLayer, pLayer->m_bLayerFlg[LAYER_CUT_TARGET]);
 					m_obLayer.Add(pLayer);
 				}
 			}
@@ -80,12 +80,12 @@ CMakeNCDlgEx21::CMakeNCDlgEx21(CMakeNCDlgEx* pParent, int nIndex)
 	m_nIndex = nIndex<0 || nIndex>m_obLayer.GetUpperBound() ? 0 : nIndex;
 	pLayer = m_obLayer[m_nIndex];
 	::Path_Name_From_FullPath(pLayer->m_strNCFile, m_strNCPath, m_strNCFileName);
-	m_bDrill			= pLayer->m_bLayerFlg[LAYER_DRILLZ];
-	m_bPartOut			= m_strNCFileName.IsEmpty() ? FALSE : pLayer->m_bLayerFlg[LAYER_PARTOUT];
-	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUTTARGET];
+	m_bDrill			= pLayer->m_bLayerFlg[LAYER_DRILL_Z];
+	m_bPartOut			= m_strNCFileName.IsEmpty() ? FALSE : pLayer->m_bLayerFlg[LAYER_PART_OUT];
+	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUT_TARGET];
 	m_strLayerComment	= pLayer->m_strLayerComment;
 	m_strLayerCode		= pLayer->m_strLayerCode;
-	// ¶½ÀÑºÝÄÛ°Ù‚Ì‰Šú‰»‚Í CDialog::OnInitDialog() ˆÈ~‚Å‚È‚¢‚Æ±»°Ä´×°
+	// ¶½ÀÑºÝÄÛ°Ù‚Ì‰Šú‰»‚Í __super::OnInitDialog() ˆÈ~‚Å‚È‚¢‚Æ±»°Ä´×°
 //	m_dZCut = pLayer->m_dZCut;
 }
 
@@ -97,7 +97,7 @@ CMakeNCDlgEx21::~CMakeNCDlgEx21()
 
 void CMakeNCDlgEx21::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMakeNCDlgEx21)
 	DDX_Control(pDX, IDC_MKNCEX_STATIC3, m_ctPartEnable3);
 	DDX_Control(pDX, IDC_MKNCEX_STATIC2, m_ctPartEnable2);
@@ -122,9 +122,9 @@ void CMakeNCDlgEx21::GetNowState(void)
 {
 	CLayerData* pLayer = m_obLayer[m_nIndex];
 	UpdateData();
-	pLayer->m_bLayerFlg.set(LAYER_CUTTARGET, m_bCheck);
-	pLayer->m_bLayerFlg.set(LAYER_DRILLZ,    m_bDrill);
-	pLayer->m_bLayerFlg.set(LAYER_PARTOUT,   m_bPartOut);
+	pLayer->m_bLayerFlg.set(LAYER_CUT_TARGET, m_bCheck);
+	pLayer->m_bLayerFlg.set(LAYER_DRILL_Z,    m_bDrill);
+	pLayer->m_bLayerFlg.set(LAYER_PART_OUT,   m_bPartOut);
 	pLayer->m_dZCut				= m_dZCut;
 	pLayer->m_strNCFile			= m_strNCPath + m_strNCFileName;
 	pLayer->m_strLayerComment	= m_strLayerComment;
@@ -135,9 +135,9 @@ void CMakeNCDlgEx21::SetNowState(int nIndex)
 {
 	m_nIndex = nIndex;
 	CLayerData* pLayer = m_obLayer[m_nIndex];
-	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUTTARGET];
-	m_bDrill			= pLayer->m_bLayerFlg[LAYER_DRILLZ];
-	m_bPartOut			= pLayer->m_bLayerFlg[LAYER_PARTOUT];
+	m_bCheck			= pLayer->m_bLayerFlg[LAYER_CUT_TARGET];
+	m_bDrill			= pLayer->m_bLayerFlg[LAYER_DRILL_Z];
+	m_bPartOut			= pLayer->m_bLayerFlg[LAYER_PART_OUT];
 	m_dZCut				= pLayer->m_dZCut;
 	m_strLayerComment	= pLayer->m_strLayerComment;
 	m_strLayerCode		= pLayer->m_strLayerCode;
@@ -181,7 +181,7 @@ void CMakeNCDlgEx21::EnablePartOut(void)
 
 BOOL CMakeNCDlgEx21::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	if ( m_nIndex < 0 ) {
 		EndDialog(IDCANCEL);
@@ -222,10 +222,10 @@ void CMakeNCDlgEx21::OnOK()
 	CLayerData* pLayer;
 	for ( int i=0; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
-		if ( !pLayer->m_bLayerFlg[LAYER_CUTTARGET] )
+		if ( !pLayer->m_bLayerFlg[LAYER_CUT_TARGET] )
 			continue;
 		// ŒÂ•ÊÌ§²Ù–¼‚ÌÁª¯¸
-		if ( pLayer->m_bLayerFlg[LAYER_PARTOUT] ) {
+		if ( pLayer->m_bLayerFlg[LAYER_PART_OUT] ) {
 			strNCFile = pLayer->m_strNCFile;
 			if ( !CheckMakeDlgFileExt(TYPE_NCD, strNCFile) ) {
 				m_ctNCFileName.SetFocus();
@@ -247,7 +247,7 @@ void CMakeNCDlgEx21::OnOK()
 		return;
 	}
 
-	CDialog::OnOK();
+	__super::OnOK();
 }
 
 void CMakeNCDlgEx21::OnNewLayer()
@@ -318,9 +318,9 @@ void CMakeNCDlgEx21::OnCopy()
 	GetNowState();
 	// Œ»ÝˆÊ’uˆÈ~‚ÉÃÞ°À‚ðºËß°
 	CLayerData* pLayer = m_obLayer[m_nIndex];
-	BOOL	bCheck		= pLayer->m_bLayerFlg[LAYER_CUTTARGET],
-			bDrill		= pLayer->m_bLayerFlg[LAYER_DRILLZ],
-			bPartOut	= pLayer->m_bLayerFlg[LAYER_PARTOUT];
+	BOOL	bCheck		= pLayer->m_bLayerFlg[LAYER_CUT_TARGET],
+			bDrill		= pLayer->m_bLayerFlg[LAYER_DRILL_Z],
+			bPartOut	= pLayer->m_bLayerFlg[LAYER_PART_OUT];
 	double	dZCut		= pLayer->m_dZCut;
 	CString	strComment	= pLayer->m_strLayerComment,
 			strCode		= pLayer->m_strLayerCode;
@@ -330,9 +330,9 @@ void CMakeNCDlgEx21::OnCopy()
 	strNCFile = strPath + strFile + "_";
 	for ( int i=m_nIndex+1; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
-		pLayer->m_bLayerFlg.set(LAYER_CUTTARGET, bCheck);
-		pLayer->m_bLayerFlg.set(LAYER_DRILLZ,    bDrill);
-		pLayer->m_bLayerFlg.set(LAYER_PARTOUT,   bPartOut);
+		pLayer->m_bLayerFlg.set(LAYER_CUT_TARGET, bCheck);
+		pLayer->m_bLayerFlg.set(LAYER_DRILL_Z,    bDrill);
+		pLayer->m_bLayerFlg.set(LAYER_PART_OUT,   bPartOut);
 		pLayer->m_dZCut			= dZCut;
 		pLayer->m_strLayerComment	= strComment;
 		pLayer->m_strLayerCode		= strCode;

@@ -38,7 +38,7 @@ struct	CHECKMAPTHREADPARAM
 #define	LPCHECKMAPTHREADPARAM	CHECKMAPTHREADPARAM *
 static	UINT	CheckMapWorking_Thread(LPVOID);
 
-static	void	SetChainMap(const CDXFmap*, LPCHECKMAPTHREADPARAM);
+static	void	SetChainMap(const CDXFmap*, CLayerData*, LPCHECKMAPTHREADPARAM);
 static	void	SearchChainMap(const CDXFmap*, const CPointD&, CDXFmap*, CDXFmap&);
 
 //////////////////////////////////////////////////////////////////////
@@ -62,6 +62,8 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 
 	VERIFY(strMsg.LoadString(IDS_SHAPESEARCH));
 
+	// ²ÍŞİÄ‰Šúİ’è
+	chkParam.evStart.ResetEvent();
 	// À•WÏ¯ÌßŒŸ¸½Ú¯ÄŞ‹N“®
 	CWinThread*	pThread = AfxBeginThread(CheckMapWorking_Thread, &chkParam);
 	if ( !pThread )
@@ -100,14 +102,10 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 			if ( g_pParent )
 				SetProgressPos(nDataCnt);
 			// Ú²Ô‚²‚Æ‚ÌŒÅ—LÀ•WÏ¯Ìß•ê‘Ì‚©‚ç˜AŒ‹µÌŞ¼Şª¸Ä‚ÌŒŸõ
-			chkParam.pLayer = pLayer;
-			SetChainMap(&mpDXFdata, &chkParam);
+			SetChainMap(&mpDXFdata, pLayer, &chkParam);
 			// À•WÏ¯Ìß•ê‘Ì‚ğÁ‹
 			mpDXFdata.RemoveAll();
 		}
-		// ÅIŒŸ¸½Ú¯ÄŞI—¹‘Ò‚¿
-		chkParam.evEnd.Lock();
-		chkParam.evEnd.ResetEvent();
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -148,10 +146,10 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 
 //////////////////////////////////////////////////////////////////////
 
-void SetChainMap(const CDXFmap* pMasterMap, LPCHECKMAPTHREADPARAM pParam)
+void SetChainMap(const CDXFmap* pMasterMap, CLayerData* pLayer, LPCHECKMAPTHREADPARAM pParam)
 {
 	int			nCnt = 0,
-				nPrime = GetPrimeNumber(pParam->pLayer->GetDxfSize());
+				nPrime = GetPrimeNumber(pLayer->GetDxfSize());
 	CPointD		pt;
 	CDXFmap		mapRegist;	// ˜AŒ‹À•W“o˜^Ï‚İÏ¯Ìß
 	CDXFmap*	pMap;
@@ -174,14 +172,18 @@ void SetChainMap(const CDXFmap* pMasterMap, LPCHECKMAPTHREADPARAM pParam)
 			pParam->evEnd.Lock();
 			pParam->evEnd.ResetEvent();
 			// ŒŸ¸½Ú¯ÄŞŠJn
-			pParam->pMap = pMap;
+			pParam->pMap	= pMap;
+			pParam->pLayer	= pLayer;
 			pParam->evStart.SetEvent();
 		}
 		if ( g_pParent && (nCnt & 0x003f) == 0 )
 			SetProgressPos(nCnt);
 	}
+	pParam->evEnd.Lock();
+	pParam->evEnd.ResetEvent();
+
 #ifdef _DEBUG
-	g_dbg.printf("m_obShapeArray.GetSize()=%d", pParam->pLayer->GetShapeSize());
+	g_dbg.printf("m_obShapeArray.GetSize()=%d", pLayer->GetShapeSize());
 #endif
 }
 
@@ -244,7 +246,7 @@ UINT CheckMapWorking_Thread(LPVOID pVoid)
 			if ( pParam->pMap->CopyToChain(pChain) ) {
 				delete	pParam->pMap;	// Œ³‚ÌCDXFmap‚ÍÁ‹
 				strShape.Format("—ÖŠs%04d", ++nChain);
-				pShape = new CDXFshape(DXFSHAPE_OUTLINE, strShape, 0, pChain);
+				pShape = new CDXFshape(DXFSHAPE_OUTLINE, strShape, 0, pParam->pLayer, pChain);
 			}
 			else {
 				delete	pChain;			// ¸Ši¸”s
@@ -253,10 +255,13 @@ UINT CheckMapWorking_Thread(LPVOID pVoid)
 		}
 		if ( dwFlags != 0 ) {
 			strShape.Format("‹OÕ%04d", ++nMap);
-			pShape = new CDXFshape(DXFSHAPE_LOCUS, strShape, dwFlags, pParam->pMap);
+			pShape = new CDXFshape(DXFSHAPE_LOCUS, strShape, dwFlags, pParam->pLayer, pParam->pMap);
 		}
 		// Œ`óî•ñ“o˜^
 		pParam->pLayer->AddShape(pShape);
+#ifdef _DEBUG
+		g_dbg.printf("Layer=%s %s Add ok", pParam->pLayer->GetStrLayer(), strShape);
+#endif
 		// ŒŸ¸I—¹
 		pParam->evEnd.SetEvent();
 	}

@@ -70,7 +70,9 @@ BOOL CMKNCSetup::OnInitDialog()
 	}
 
 	// 適用ﾎﾞﾀﾝを「新規保存」に
-	GetDlgItem(ID_APPLY_NOW)->SetWindowText("新規保存");
+	CString	strTitle;
+	VERIFY(strTitle.LoadString(IDS_NEW_SAVE));	// "新規保存"
+	GetDlgItem(ID_APPLY_NOW)->SetWindowText(strTitle);
 	GetDlgItem(ID_APPLY_NOW)->EnableWindow();
 
 	return CPropertySheet::OnInitDialog();

@@ -11,10 +11,10 @@
 // CLayerData ﾌﾗｸﾞ
 enum LAYERFLG {
 	LAYER_VIEW = 0,		// 表示対象
-	LAYER_CUTTARGET,	// 切削対象
-	LAYER_DRILLZ,		// 最深Z座標を穴加工にも適用するか
-	LAYER_PARTOUT,		// 個別出力ﾌﾗｸﾞ
-	LAYER_PARTERROR,	// 個別出力でのｴﾗｰ
+	LAYER_CUT_TARGET,	// 切削対象
+	LAYER_DRILL_Z,		// 最深Z座標を穴加工にも適用するか
+	LAYER_PART_OUT,		// 個別出力ﾌﾗｸﾞ
+	LAYER_PART_ERROR,	// 個別出力でのｴﾗｰ
 		LAYER_FLGNUM		// ﾌﾗｸﾞの数[5]
 };
 
@@ -104,13 +104,13 @@ public:
 		return m_nType == DXFCAMLAYER;
 	}
 	BOOL	IsMakeTarget(void) const {
-		return IsCutType() && IsLayerFlag(LAYER_CUTTARGET);
+		return IsCutType() && IsLayerFlag(LAYER_CUT_TARGET);
 	}
 	void	SetCutTargetFlg(BOOL bCut) {
-		m_bLayerFlg.set(LAYER_CUTTARGET, bCut);
+		m_bLayerFlg.set(LAYER_CUT_TARGET, bCut);
 	}
 	void	SetCutTargetFlg_fromView(void) {
-		m_bLayerFlg.set(LAYER_CUTTARGET, m_bLayerFlg[LAYER_VIEW]);
+		m_bLayerFlg.set(LAYER_CUT_TARGET, m_bLayerFlg[LAYER_VIEW]);
 	}
 	int		GetLayerListNo(void) const {
 		return m_nListNo;
@@ -119,7 +119,7 @@ public:
 		m_nListNo = n;
 	}
 	void	SetLayerPartFlag(BOOL bError = FALSE) {
-		m_bLayerFlg.set(LAYER_PARTERROR, bError);
+		m_bLayerFlg.set(LAYER_PART_ERROR, bError);
 	}
 	CString	GetInitFile(void) const {
 		return m_strInitFile;

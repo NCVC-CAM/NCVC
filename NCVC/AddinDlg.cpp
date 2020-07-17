@@ -30,7 +30,7 @@ CAddinDlg::CAddinDlg(CWnd* pParent /*=NULL*/)
 
 void CAddinDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CAddinDlg)
 	DDX_Control(pDX, IDC_ADDIN_INFO, m_ctAddnInfo);
 	DDX_Control(pDX, IDC_ADDIN_README, m_ctReadMe);
@@ -86,7 +86,7 @@ void CAddinDlg::SetDetailData(CNCVCaddinIF* pAddin)
 
 BOOL CAddinDlg::OnInitDialog() 
 {
-	CDialog::OnInitDialog();
+	__super::OnInitDialog();
 
 	// Ø½ÄºÝÄÛ°Ù‚Ì²Ò°¼Þ¾¯Ä
 	m_ctList.SetImageList(AfxGetNCVCMainWnd()->GetAddinImage(), LVSIL_NORMAL);

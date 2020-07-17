@@ -61,6 +61,7 @@ protected:
 	afx_msg void OnViewFind();
 	afx_msg void OnUpdateViewFind(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
 	//}}AFX_MSG
 	afx_msg LRESULT OnSelectTrace(WPARAM, LPARAM);	// from NCViewTab.cpp To NCChild.cpp
 

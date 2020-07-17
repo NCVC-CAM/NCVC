@@ -58,15 +58,15 @@
 #include <algorithm>
 
 // BOOST Libraries
-#pragma	warning( disable : 4800 )
-#define	BOOST_SPIRIT_THREADSAFE			// MT対応Spirit
+#pragma	warning( disable : 4800 )		// BOOL setting
+#pragma	warning( disable : 4819 )		// codepage
+//#include "boost/geometry.hpp"			// 計算幾何
+//#include "boost/geometry/geometries/register/point.hpp"
 #include "boost/regex.hpp"				// 正規表現
 #include "boost/tokenizer.hpp"			// 文字列分割
 #include "boost/tuple/tuple.hpp"		// 拡張ﾃﾞｰﾀ
 #include "boost/optional.hpp"
 #include "boost/variant.hpp"
-#include "boost/spirit/include/classic.hpp"	// 構文解析(旧版)
-#include "boost/spirit/include/classic_parser.hpp"
 #include "boost/utility.hpp"			// ﾕｰﾃｨﾘﾃｨ
 #include "boost/algorithm/minmax.hpp"
 
@@ -96,6 +96,7 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 // Timer Event
 #define	IDC_SPLASH_TIMER		100
 #define	IDC_STATUSBAR_EVENT		101
+#define	IDC_OPENGL_DRAGROUND	110
 
 // ﾏﾆｭｱﾙ操作のｳｨﾝﾄﾞｳID
 #define	ID_NC_STATUSBAR			30100
@@ -107,9 +108,9 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 #define	IDR_EXECBAR				121
 
 // ｱﾄﾞｲﾝ，外部ｱﾌﾟﾘｹｰｼｮﾝ用ﾒﾆｭｰID
-#define	EXECSTARTID		40000
-#define	ADDINSTARTID	40100
-#define	EXECADDIN_ENDID	40200
+#define	EXECSTARTID				40000
+#define	ADDINSTARTID			40100
+#define	EXECADDIN_ENDID			40200
 
 // UserMessage
 	// ｽﾚｯﾄﾞ終了 ThreadDlg.cpp 他

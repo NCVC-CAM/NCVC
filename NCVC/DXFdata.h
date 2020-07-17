@@ -130,6 +130,9 @@ protected:
 
 public:
 	virtual	~CDXFdata();
+#ifdef _DEBUG
+	virtual	void	DbgDump(void);
+#endif
 
 	static	BOOL		ms_fXRev;		// X軸反転かどうか
 	static	BOOL		ms_fYRev;		// Y軸反転かどうか
@@ -163,7 +166,6 @@ public:
 	const CPointD	GetMakePoint(size_t) const;
 	BOOL		IsMatchPoint(const CPointD&) const;
 	BOOL		IsMakeMatchObject(const CDXFdata*);
-	double		GetEdgeGap(const CDXFdata*, BOOL = TRUE);
 	//	
 	virtual	void	SwapMakePt(int);	// m_ptTun, m_ptMake の始点終点入れ替え
 	virtual	void	SwapNativePt(void);	// 固有座標値の入れ替え
@@ -171,11 +173,15 @@ public:
 	virtual	BOOL	IsMakeTarget(void) const = 0;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&) = 0;
 	virtual BOOL	IsStartEqEnd(void) const = 0;	// 始点終点が同じｵﾌﾞｼﾞｪｸﾄならTRUE
-	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE) = 0;
+			double	GetEdgeGap(const CDXFdata*, BOOL = TRUE);
+	virtual	double	GetEdgeGap(const CPointD&,  BOOL = TRUE) = 0;
 	virtual	const CPointD	GetStartCutterPoint(void) const = 0;// 加工開始位置
 	virtual	const CPointD	GetStartMakePoint(void) const = 0;
 	virtual	const CPointD	GetEndCutterPoint(void) const = 0;	// 加工終了位置(加工終点)
 	virtual	const CPointD	GetEndMakePoint(void) const = 0;
+	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const = 0;	// from CDXFchain::IsPointInPolygon()
+	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const = 0;
+	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const = 0;
 	virtual	double	GetLength(void) const = 0;
 	//
 	virtual	void	DrawTuning(const double) = 0;
@@ -215,6 +221,9 @@ public:
 	CDXFpoint(LPCDXFPARGV);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
 	CDXFpoint(CLayerData*, const CDXFpoint*, LPCDXFBLOCK);
+#ifdef _DEBUG
+	virtual	void	DbgDump(void);
+#endif
 
 	const	CPoint	GetDrawPoint(void) const;
 
@@ -227,6 +236,9 @@ public:
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
+	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
 
 	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
@@ -264,6 +276,9 @@ public:
 	CDXFline(LPCDXFLARGV);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
 	CDXFline(CLayerData*, const CDXFline*, LPCDXFBLOCK);
+#ifdef _DEBUG
+	virtual	void	DbgDump(void);
+#endif
 
 	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
@@ -274,6 +289,9 @@ public:
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
+	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
 
 	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
@@ -325,6 +343,7 @@ protected:
 	void	SetEllipseArgv_Circle(LPCDXFBLOCK, LPCDXFEARGV, double, double, BOOL);
 	double	GetSelectPointGap_Circle(const CPointD&, double, double) const;
 	BOOL	GetDirectionArraw_Circle(const double[], const CPointD[], CPointD[][3]) const;
+	size_t	SetVectorPointSub(BOOL, double, double, double, const CPointD&, VECPOINTD&) const;
 
 	CDXFcircle();
 	CDXFcircle(ENDXFTYPE, CLayerData*, const CPointD&, double, BOOL, int);
@@ -332,6 +351,9 @@ public:
 	CDXFcircle(LPCDXFCARGV);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
 	CDXFcircle(CLayerData*, const CDXFcircle*, LPCDXFBLOCK);
+#ifdef _DEBUG
+	virtual	void	DbgDump(void);
+#endif
 
 	// ﾌﾞﾛｯｸｺﾋﾟｰ時の尺度で円が楕円になる
 	void	SetEllipseArgv(LPCDXFBLOCK, LPCDXFEARGV);
@@ -340,7 +362,7 @@ public:
 	double	GetR(void) const;
 	double	GetMakeR(void) const;
 	BOOL	GetRound(void) const;
-	void	SetRoundFixed(const CPointD&, const CPointD&);
+	virtual	void	SetRoundFixed(const CPointD&, const CPointD&);	// CDXFellipse
 	int		GetG(void) const;
 	int		GetBaseAxis(void) const;
 	double	GetIJK(int nType) const;
@@ -350,12 +372,16 @@ public:
 	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
+			BOOL	IsUnderRadius(double) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
 	virtual	const CPointD	GetStartCutterPoint(void) const;
 	virtual	const CPointD	GetStartMakePoint(void) const;
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
+	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
@@ -441,6 +467,9 @@ public:
 	CDXFarc(LPCDXFAARGV, BOOL, const CPointD&, const CPointD&);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
 	CDXFarc(CLayerData*, const CDXFarc*, LPCDXFBLOCK);
+#ifdef _DEBUG
+	virtual	void	DbgDump(void);
+#endif
 
 	// ﾌﾞﾛｯｸｺﾋﾟｰ時の尺度で円弧が楕円弧になる
 	void	SetEllipseArgv(LPCDXFBLOCK, LPCDXFEARGV);
@@ -448,7 +477,6 @@ public:
 	BOOL	GetRoundOrig(void) const;
 	double	GetStartAngle(void) const;
 	double	GetEndAngle(void) const;
-	void	SetVectorPoint(std::vector<CPointD>&);	// from CDXFchain::IsPointInPolygon()
 
 	virtual	void	SetNativePoint(size_t, const CPointD&);		// 角度の更新を含む
 
@@ -461,6 +489,9 @@ public:
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
+	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
@@ -510,6 +541,9 @@ public:
 	CDXFellipse(LPCDXFEARGV);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
 	CDXFellipse(CLayerData*, const CDXFellipse*, LPCDXFBLOCK);
+#ifdef _DEBUG
+	virtual	void	DbgDump(void);
+#endif
 
 	const CPointD	GetLongPoint(void) const;
 	double	GetShortMagni(void) const;
@@ -520,17 +554,21 @@ public:
 	double	GetMakeLeanCos(void) const;
 	double	GetMakeLeanSin(void) const;
 	BOOL	IsArc(void) const;
-	void	SetRoundFixed(BOOL);
-	void	SetVectorPoint(std::vector<CPointD>&);
+	virtual	void	SetRoundFixed(const CPointD&, const CPointD&);
+			void	SetRoundFixed(BOOL);
 
 	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
+			BOOL	IsLongEqShort(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
 	virtual	const CPointD	GetStartCutterPoint(void) const;
 	virtual	const CPointD	GetStartMakePoint(void) const;
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
+	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
@@ -574,6 +612,9 @@ public:
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
 	CDXFpolyline(CLayerData*, const CDXFpolyline*, LPCDXFBLOCK);
 	virtual ~CDXFpolyline();
+#ifdef _DEBUG
+	virtual	void	DbgDump(void);
+#endif
 
 	void	SetPolyFlag(DWORD);
 	DWORD	GetPolyFlag(void) const;
@@ -589,8 +630,11 @@ public:
 	BOOL	SetVertex(LPCDXFPARGV);
 	BOOL	SetVertex(LPCDXFPARGV, double, const CPointD&);
 	void	EndSeq(void);
-	void	SetVectorPoint(std::vector<CPointD>&);
 	void	CheckPolylineIntersection(void);
+
+	virtual	size_t	SetVectorPoint(VECPOINTD&, double = 0.0) const;
+	virtual	void	SetVectorPoint(VECPOINTD&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, VECPOINTD&, VECPOINTD&, double) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
@@ -627,6 +671,9 @@ public:
 	CDXFtext(LPCDXFTARGV lpText);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
 	CDXFtext(CLayerData*, const CDXFtext*, LPCDXFBLOCK);
+#ifdef _DEBUG
+	virtual	void	DbgDump(void);
+#endif
 
 	CString		GetStrValue(void) const;
 

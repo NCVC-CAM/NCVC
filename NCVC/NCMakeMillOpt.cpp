@@ -16,9 +16,9 @@ extern	CMagaDbg	g_dbg;
 
 // int型命令
 static	LPCTSTR	g_szNOrder[] = {
+	"ProgNo", "LineAddType", "G90", "Dot", "FDot", "CircleCode",
 	"Spindle",
-	"ProgNo", "LineAddType", "G90", "ZReturn",
-		"Dot", "FDot", "CircleCode", "CircleIJ",
+		"ZReturn", "CircleIJ",
 	"MakeEnd", "FinishSpindle",
 		"DeepZProcess", "DeepAProcess", "DeepCProcess",
 	"DrillSpindle", "Dwell", "DwellFormat", "DrillZProcess",
@@ -27,9 +27,9 @@ static	LPCTSTR	g_szNOrder[] = {
 	"ToleranceProcess", "DrillOptimaize"
 };
 static	const	int		g_dfNOrder[] = {
+	1, 1, 0, 0, 2, 0,
 	3000,
-	1, 1, 0, 1,
-		0, 2, 0, 1,
+		1, 1,
 	0, 8000,
 		0, 0, 0,
 	3000, 10, 0, 0,
@@ -58,17 +58,18 @@ static	const	double	g_dfDOrder[] = {
 
 // BOOL型命令
 static	LPCTSTR	g_szBOrder[] = {
-	"XRev", "YRev",
-		"ProgSet", "ProgAuto", "LineAdd", "ZeroCut", "GClip", "DisableSpindle",
-	"CircleHalf", "EllipseFlg",
+	"ProgSet", "ProgAuto", "LineAdd", "ZeroCut", "GClip", "EllipseFlg",
+	// --
+	"XRev", "YRev", "DisableSpindle",
+	"CircleHalf",
 	"Deep", "Helical", "DeepFinishSet",
 	"DrillMatch", "DrillCircle", "DrillBreak",
 	"LayerComment", "L0Cycle"
 };
 static	const	BOOL	g_dfBOrder[] = {
-	FALSE, FALSE,
-		TRUE, FALSE, FALSE, TRUE, TRUE, FALSE,
-	FALSE, TRUE,
+	TRUE, FALSE, FALSE, TRUE, TRUE, TRUE,
+	FALSE, FALSE, FALSE,
+	FALSE,
 	FALSE, TRUE, FALSE,
 	TRUE, FALSE, TRUE,
 	TRUE, FALSE
@@ -119,7 +120,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKNC_NUM_DOT,			"座標表記(0:小数点,1:1/1000)"},
 	{NC_NUM,	MKNC_NUM_FDOT,			"Fﾊﾟﾗﾒｰﾀ表記(0:小数点,1:1/1000,2:整数)"},
 	{NC_FLG,	MKNC_FLG_ZEROCUT,		"小数点以下のｾﾞﾛｶｯﾄ"},
-	{NC_NUM,	MKNC_NUM_CIRCLECODE,	"円ﾃﾞｰﾀの切削(0:G2,1:G3)"},
+	{NC_NUM,	MKNC_NUM_CIRCLECODE,	"円ﾃﾞｰﾀの切削(0:G02,1:G03)"},
 	{NC_NUM,	MKNC_NUM_IJ,			"円弧指示(0:R,1:I/J)"},
 	{NC_FLG,	MKNC_FLG_CIRCLEHALF,	"全円は2分割"},
 	{NC_DBL,	MKNC_DBL_ELLIPSE,		"楕円公差"},
@@ -161,7 +162,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_FLG,	MKNC_FLG_L0CYCLE,		"固定ｻｲｸﾙ中はL0出力"},
 	{NC_PAGE,	7},		// Page7(最適化:Dialog5)
 	{NC_DBL,	MKNC_DBL_TOLERANCE,		"同一座標と見なす許容差"},
-	{NC_NUM,	MKNC_NUM_TOLERANCE,		"超えた時の動作(0:Z上昇G0移動,1:G1補間)"},
+	{NC_NUM,	MKNC_NUM_TOLERANCE,		"超えた時の動作(0:Z上昇G00移動,1:G01補間)"},
 	{NC_NUM,	MKNC_NUM_OPTIMAIZEDRILL,"穴加工基準軸(0:なし,1:X,2:Y)"},
 	{NC_DBL,	MKNC_DBL_DRILLMARGIN,	"穴加工同一軸上と見なす許容差"}
 };
@@ -174,7 +175,9 @@ CNCMakeMillOpt::CNCMakeMillOpt(LPCTSTR lpszInit) :
 		SIZEOF(g_szNOrder), g_szNOrder, g_dfNOrder, m_unNums,
 		SIZEOF(g_szDOrder), g_szDOrder, g_dfDOrder, m_udNums,
 		SIZEOF(g_szBOrder), g_szBOrder, g_dfBOrder, m_ubFlags,
-		SIZEOF(g_szSOrder), g_szSOrder, g_dfSOrder)
+		SIZEOF(g_szSOrder), g_szSOrder, g_dfSOrder,
+		SIZEOF(g_szInitComment), g_szInitComment,
+		SIZEOF(g_stSaveOrder),   g_stSaveOrder)
 {
 	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(g_dfNOrder) );
 	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(m_unNums) );
@@ -195,18 +198,6 @@ CNCMakeMillOpt::CNCMakeMillOpt(LPCTSTR lpszInit) :
 
 /////////////////////////////////////////////////////////////////////////////
 // ﾕｰｻﾞﾒﾝﾊﾞ関数
-
-BOOL CNCMakeMillOpt::ReadMakeOption(LPCTSTR lpszInitFile)
-{
-	return CNCMakeOption::ReadMakeOption(lpszInitFile);
-}
-
-BOOL CNCMakeMillOpt::SaveMakeOption(LPCTSTR lpszInitFile)
-{
-	return CNCMakeOption::SaveMakeOption(lpszInitFile,
-				SIZEOF(g_szInitComment), g_szInitComment,
-				SIZEOF(g_stSaveOrder),   g_stSaveOrder);
-}
 
 // ﾚｼﾞｽﾄﾘからの移行
 BOOL CNCMakeMillOpt::Convert()

@@ -16,6 +16,7 @@
 #include "DxfSetup.h"
 #include "MKNCSetup.h"
 #include "MKLASetup.h"
+#include "MKWISetup.h"
 #include "ExecSetupDlg.h"
 #include "ExtensionDlg.h"
 #include "ThreadDlg.h"
@@ -36,7 +37,6 @@ CTime	dbgtimeFileOpen;
 extern	int		g_nProcesser = 1;		// ﾌﾟﾛｾｯｻ数(->検索ｽﾚｯﾄﾞ数)
 extern	LPTSTR	g_pszDelimiter = NULL;	// g_szGdelimiter[] + g_szNdelimiter[]
 extern	LPTSTR	g_pszExecDir = NULL;	// 実行ﾃﾞｨﾚｸﾄﾘ
-static	LPCTSTR	g_szHelp = "NCVC.pdf";	// HelpFile
 extern	DWORD	g_dwCamVer = NCVCSERIALVERSION;	// CAMﾌｧｲﾙ Ver.No.
 extern	double	_TABLECOS[ARCCOUNT] = {	// 事前に計算された三角関数の結果
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -58,6 +58,7 @@ extern	int		g_nLastPage_DXFSetup = 0;		// DXFｵﾌﾟｼｮﾝ
 extern	int		g_nLastPage_MCSetup = 0;		// 工作機械ｵﾌﾟｼｮﾝ
 extern	int		g_nLastPage_NCMake = 0;			// NC生成ｵﾌﾟｼｮﾝ
 extern	int		g_nLastPage_NCMakeLathe = 0;	// 旋盤用NC生成ｵﾌﾟｼｮﾝ
+extern	int		g_nLastPage_NCMakeWire = 0;		// ﾜｲﾔ放電加工機用NC生成ｵﾌﾟｼｮﾝ
 extern	int		g_nLastPage_ViewSetup = 0;		// 表示系ｾｯﾄｱｯﾌﾟ
 
 /////////////////////////////////////////////////////////////////////////////
@@ -68,7 +69,8 @@ BEGIN_MESSAGE_MAP(CNCVCApp, CWinAppEx)
 	ON_COMMAND(ID_FILE_OPEN, OnFileOpen)
 	ON_COMMAND(ID_FILE_THUMBNAIL, OnFileThumbnail)
 	ON_COMMAND(ID_FILE_CLANDOP, OnFileCloseAndOpen)
-	ON_COMMAND(ID_HELP, OnHelp)
+	ON_COMMAND(ID_HELP_USING, OnHelp)
+	ON_COMMAND_RANGE(ID_HELP_USING2, ID_HELP_USING4, OnHelpUsing)
 	ON_COMMAND(ID_HELP_ADDIN, OnHelpAddin)
 	ON_COMMAND(ID_OPTION_MC, OnOptionMC)
 	ON_COMMAND(ID_OPTION_EDITMC, OnOptionEditMC)
@@ -151,7 +153,7 @@ BOOL CNCVCApp::InitInstance()
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
 
-	CWinAppEx::InitInstance();
+	__super::InitInstance();
 
 	// OLE ライブラリを初期化します。
 	if ( !AfxOleInit() ) {
@@ -309,12 +311,12 @@ int CNCVCApp::ExitInstance()
 	m_obAddin.RemoveAll();
 	m_mpAddin.RemoveAll();
 
-	return CWinAppEx::ExitInstance();
+	return __super::ExitInstance();
 }
 
 void CNCVCApp::AddToRecentFileList(LPCTSTR lpszPathName)
 {
-	CWinAppEx::AddToRecentFileList(lpszPathName);
+	__super::AddToRecentFileList(lpszPathName);
 	
 	if ( lpszPathName && lstrlen(lpszPathName)>0 )
 		AddToRecentViewList(lpszPathName);
@@ -328,7 +330,7 @@ CDocument* CNCVCApp::OpenDocumentFile(LPCTSTR lpszFileName)
 	g_dbg.printf("CNCVCApp::OpenDocumentFile() Start");
 	
 	CTime	t1 = CTime::GetCurrentTime();
-	CDocument* pDoc = CWinAppEx::OpenDocumentFile(lpszFileName);
+	CDocument* pDoc = __super::OpenDocumentFile(lpszFileName);
 	CTime	t2 = CTime::GetCurrentTime();
 
 	CTimeSpan ts = t2 - t1;
@@ -1332,54 +1334,73 @@ void CNCVCApp::OnOptionDXF()
 
 void CNCVCApp::OnOptionMakeNC() 
 {
-	CString		strFileName;
-	const CStringList*	pList = NULL;
-	switch ( m_pOptDXF->GetNCMakeType() ) {
-	case NCMAKEMILL:
-		pList = m_pOptDXF->GetMillInitList();
-		break;
-	case NCMAKELATHE:
-		pList = m_pOptDXF->GetLatheInitList();
-		break;
-	}
-	if ( pList && !pList->IsEmpty() )
+	int		i, nResult = -1;
+	CString	strFileName;
+	const CStringList*	pList = m_pOptDXF->GetInitList(m_pOptDXF->GetNCMakeType());
+
+	if ( !pList->IsEmpty() )
 		strFileName = pList->GetHead();
+
 	if ( ::NCVC_FileDlgCommon(IDS_OPTION_INIT, IDS_NCI_FILTER, FALSE, strFileName) != IDOK ||
 				strFileName.IsEmpty() )
 		return;
 
 	// 拡張子の判断
-	CString	strCaption, strTmp, strMill, strLathe;
+	CString	strCaption, strCmpExt, strFileExt;
 
 	VERIFY(strCaption.LoadString(IDS_MAKE_NCD));
+	strFileExt = strFileName.Right(3);	// 指定ﾌｧｲﾙの拡張子
 
-	VERIFY(strTmp.LoadString(IDS_NCIM_FILTER));
-	strMill = strTmp.Left(3);		// nci
-	VERIFY(strTmp.LoadString(IDS_NCIL_FILTER));
-	strLathe = strTmp.Left(3);		// ncj
-	strTmp = strFileName.Right(3);	// 指定ﾌｧｲﾙの拡張子
-
-	if ( strMill.CompareNoCase(strTmp) == 0 ) {
-		CMKNCSetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
-		if ( ps.DoModal() == IDOK ) {
-			// ｵﾌﾟｼｮﾝの保存
-			ps.GetNCMakeOption()->SaveMakeOption();
-#ifdef _DEBUGOLD
-			ps.GetNCMakeOption()->DbgDump();
-#endif
-			// 切削条件ﾌｧｲﾙの履歴更新
-			m_pOptDXF->AddMillInitHistory(ps.GetNCMakeOption()->GetInitFile());
+	for ( i=0; i<3; i++ ) {		// Mill, Lathe, Wire
+		VERIFY(strCmpExt.LoadString(i+IDS_NCIM_FILTER));
+		if ( strCmpExt.Left(3).CompareNoCase(strFileExt) == 0 ) {
+			nResult = i;
+			break;
 		}
 	}
-	else if ( strLathe.CompareNoCase(strTmp) == 0 ) {
-		CMKLASetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
-		if ( ps.DoModal() == IDOK ) {
-			ps.GetNCMakeOption()->SaveMakeOption();
+	switch ( nResult ) {
+	case NCMAKEMILL:
+		{
+			CMKNCSetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
+			if ( ps.DoModal() == IDOK ) {
+				// ｵﾌﾟｼｮﾝの保存
+				ps.GetNCMakeOption()->SaveMakeOption();
 #ifdef _DEBUGOLD
-			ps.GetNCMakeOption()->DbgDump();
+				ps.GetNCMakeOption()->DbgDump();
 #endif
-			m_pOptDXF->AddLatheInitHistory(ps.GetNCMakeOption()->GetInitFile());
+				// 切削条件ﾌｧｲﾙの履歴更新
+				m_pOptDXF->AddInitHistory(NCMAKEMILL, ps.GetNCMakeOption()->GetInitFile());
+			}
 		}
+		break;
+
+	case NCMAKELATHE:
+		{
+			VERIFY(strCmpExt.LoadString(IDCV_LATHE));
+			CMKLASetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
+			if ( ps.DoModal() == IDOK ) {
+				ps.GetNCMakeOption()->SaveMakeOption();
+#ifdef _DEBUGOLD
+				ps.GetNCMakeOption()->DbgDump();
+#endif
+				m_pOptDXF->AddInitHistory(NCMAKELATHE, ps.GetNCMakeOption()->GetInitFile());
+			}
+		}
+		break;
+
+	case NCMAKEWIRE:
+		{
+			VERIFY(strCmpExt.LoadString(IDCV_WIRE));
+			CMKWISetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
+			if ( ps.DoModal() == IDOK ) {
+				ps.GetNCMakeOption()->SaveMakeOption();
+#ifdef _DEBUGOLD
+				ps.GetNCMakeOption()->DbgDump();
+#endif
+				m_pOptDXF->AddInitHistory(NCMAKEWIRE, ps.GetNCMakeOption()->GetInitFile());
+			}
+		}
+		break;
 	}
 }
 
@@ -1394,17 +1415,11 @@ void CNCVCApp::OnOptionEditNC()
 		return;
 
 	CString		strFileName;
-	const CStringList*	pList = NULL;
-	switch ( m_pOptDXF->GetNCMakeType() ) {
-	case NCMAKEMILL:
-		pList = m_pOptDXF->GetMillInitList();
-		break;
-	case NCMAKELATHE:
-		pList = m_pOptDXF->GetLatheInitList();
-		break;
-	}
-	if ( pList && !pList->IsEmpty() )
+	const CStringList*	pList = m_pOptDXF->GetInitList(m_pOptDXF->GetNCMakeType());
+
+	if ( !pList->IsEmpty() )
 		strFileName = pList->GetHead();
+
 	if ( ::NCVC_FileDlgCommon(IDS_OPTION_INIT, IDS_NCI_FILTER, TRUE, strFileName) == IDOK )
 		AfxGetNCVCMainWnd()->CreateOutsideProcess(m_liExec.GetHead()->GetFileName(), "\""+strFileName+"\"");
 }
@@ -1480,9 +1495,18 @@ void CNCVCApp::OnOptionExt()
 
 void CNCVCApp::OnHelp() 
 {
-	CString	strHelp(g_pszExecDir);
-	strHelp += g_szHelp;
-	::ShellExecute(NULL, NULL, strHelp, NULL, NULL, SW_SHOWNORMAL);
+	CString	strExec(g_pszExecDir);
+	strExec += "NCVC.pdf";
+	::ShellExecute(NULL, NULL, strExec, NULL, NULL, SW_SHOWNORMAL);
+}
+
+void CNCVCApp::OnHelpUsing(UINT nID)
+{
+	UINT	n = nID - ID_HELP_USING2 + 2;
+	CString	strExec(g_pszExecDir), strHelp;
+	strHelp.Format("NCVC%d.pdf", n);
+	strExec += strHelp;
+	::ShellExecute(NULL, NULL, strExec, NULL, NULL, SW_SHOWNORMAL);
 }
 
 void CNCVCApp::OnHelpAddin() 
