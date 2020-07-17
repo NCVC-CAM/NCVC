@@ -95,6 +95,7 @@ public:
 
 	void	GetWorkRectPP(int a, double dTmp[]);	// from NCInfoView.cpp
 
+	int		SearchBlockRegex(boost::regex&, int = 0, BOOL = FALSE);
 	void	CheckBreakPoint(int a) {	// ÌÞÚ°¸Îß²ÝÄ‚ÌÝ’è
 		CNCblock*	pBlock = GetNCblock(a);
 		pBlock->SetBlockFlag(pBlock->GetBlockFlag() ^ NCF_BREAK, FALSE);

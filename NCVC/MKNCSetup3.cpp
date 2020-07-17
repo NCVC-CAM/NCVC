@@ -106,7 +106,7 @@ BOOL CMKNCSetup3::OnInitDialog()
 
 	// ¶½ÀÑºİÄÛ°Ù‚Íºİ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²İÀ‚ğæ“¾‚Å‚«‚È‚¢
-	CMKNCSetup*	pParent = (CMKNCSetup *)GetParent();
+	CMKNCSetup*	pParent = static_cast<CMKNCSetup *>(GetParent());
 	CNCMakeOption* pOpt = pParent->GetNCMakeOption();
 	m_nMakeEnd		= pOpt->m_nMakeEnd;
 	m_dMakeValue	= pOpt->m_dMakeValue;
@@ -159,7 +159,7 @@ void CMKNCSetup3::OnDeepFinish()
 
 BOOL CMKNCSetup3::OnSetActive() 
 {
-	CMKNCSetup*	pParent = (CMKNCSetup *)GetParent();
+	CMKNCSetup*	pParent = static_cast<CMKNCSetup *>(GetParent());
 	// Šî–{Íß°¼Ş‚©‚çuØ‚è‚İvÃŞ°À‚ğæ“¾
 	if ( ::IsWindow(pParent->m_dlg1.m_hWnd) ) {
 		m_dZCut		= (double)(pParent->m_dlg1.m_dZCut);
@@ -175,7 +175,7 @@ BOOL CMKNCSetup3::OnSetActive()
 
 BOOL CMKNCSetup3::OnApply() 
 {
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_nMakeEnd		= m_nMakeEnd;
 	pOpt->m_dMakeValue		= m_dMakeValue;
 	pOpt->m_dMakeFeed		= m_dMakeFeed;

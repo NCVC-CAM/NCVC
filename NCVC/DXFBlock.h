@@ -88,36 +88,43 @@ public:
 	void	CopyBlock(const CDXFBlockData *, LPDXFBLOCK);
 private:
 	void	AddData(const CDXFpoint* pData, LPDXFBLOCK pBlock) {
+		ASSERT(pData);
 		CDXFpoint*	pPoint = new CDXFpoint(NULL, pData, pBlock);
 		ASSERT(pPoint);
 		m_obDXFArray.Add(pPoint);
 	}
 	void	AddData(const CDXFline* pData, LPDXFBLOCK pBlock) {
+		ASSERT(pData);
 		CDXFline*	pLine = new CDXFline(NULL, pData, pBlock);
 		ASSERT(pLine);
 		m_obDXFArray.Add(pLine);
 	}
 	void	AddData(const CDXFcircle* pData, LPDXFBLOCK pBlock) {
+		ASSERT(pData);
 		CDXFcircle*	pCircle = new CDXFcircle(NULL, pData, pBlock);
 		ASSERT(pCircle);
 		m_obDXFArray.Add(pCircle);
 	}
 	void	AddData(const CDXFarc* pData, LPDXFBLOCK pBlock) {
+		ASSERT(pData);
 		CDXFarc*	pArc = new CDXFarc(NULL, pData, pBlock);
 		ASSERT(pArc);
 		m_obDXFArray.Add(pArc);
 	}
 	void	AddData(const CDXFellipse* pData, LPDXFBLOCK pBlock) {
+		ASSERT(pData);
 		CDXFellipse*	pEllipse = new CDXFellipse(NULL, pData, pBlock);
 		ASSERT(pEllipse);
 		m_obDXFArray.Add(pEllipse);
 	}
 	void	AddData(const CDXFpolyline* pData, LPDXFBLOCK pBlock) {
+		ASSERT(pData);
 		CDXFpolyline*	pPolyline = new CDXFpolyline(NULL, pData, pBlock);
 		ASSERT(pPolyline);
 		m_obDXFArray.Add(pPolyline);
 	}
 	void	AddData(const CDXFtext* pData, LPDXFBLOCK pBlock) {
+		ASSERT(pData);
 		CDXFtext*	pText = new CDXFtext(NULL, pData, pBlock);
 		ASSERT(pText);
 		m_obDXFArray.Add(pText);

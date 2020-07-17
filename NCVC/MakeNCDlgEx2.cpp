@@ -332,7 +332,7 @@ void CMakeNCDlgEx2::OnGetDispInfoLayerList(NMHDR* pNMHDR, LRESULT* pResult)
 	CString	strBuf;
 
 	if ( pDispInfo->item.mask & LVIF_TEXT ) {
-		CLayerData* pLayer = (CLayerData *)pDispInfo->item.lParam;
+		CLayerData* pLayer = reinterpret_cast<CLayerData *>(pDispInfo->item.lParam);
 		switch ( pDispInfo->item.iSubItem ) {
 		case 0:		// ڲԖ�
 			lstrcpy(pDispInfo->item.pszText, pLayer->m_strLayer);
@@ -369,8 +369,8 @@ void CMakeNCDlgEx2::OnColumnClickLayerList(NMHDR* pNMHDR, LRESULT* pResult)
 
 int CALLBACK CMakeNCDlgEx2::CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lSubItem)
 {
-	CLayerData*	pData1 = (CLayerData *)lParam1;
-	CLayerData*	pData2 = (CLayerData *)lParam2;
+	CLayerData*	pData1 = reinterpret_cast<CLayerData *>(lParam1);
+	CLayerData*	pData2 = reinterpret_cast<CLayerData *>(lParam2);
 	int nResult = 0;
 
 	switch ( lSubItem ) {
@@ -401,7 +401,7 @@ void CMakeNCDlgEx2::OnLayerEdit(int nIndex)
 	CLayerData*	pData1;
 	CLayerData*	pData2;
 	for ( int i=0; i<m_ctLayerList.GetItemCount()/*dlg.GetLayerArray()->GetSize()*/; i++ ) {
-		pData1 = (CLayerData *)(m_ctLayerList.GetItemData(i));
+		pData1 = reinterpret_cast<CLayerData *>(m_ctLayerList.GetItemData(i));
 		pData2 = dlg.m_obLayer[i];
 		pData1->m_bCutTarget= pData2->m_bCutTarget;
 		pData1->m_dZCut		= pData2->m_dZCut;

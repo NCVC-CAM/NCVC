@@ -34,7 +34,7 @@ protected:
 // アトリビュート
 public:
 	CDXFView*	GetMainView(void) {
-		return (CDXFView *)(m_wndSplitter.GetPane(0, 0));
+		return reinterpret_cast<CDXFView *>(m_wndSplitter.GetPane(0, 0));
 	}
 
 // オペレーション

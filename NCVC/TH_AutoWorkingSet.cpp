@@ -34,11 +34,11 @@ static	void	CreateAutoWorking(CThreadDlg*, CLayerData*, BOOL);
 
 UINT AutoWorkingSet_Thread(LPVOID pVoid)
 {
-	LPNCVCTHREADPARAM	pParam = (LPNCVCTHREADPARAM)pVoid;
+	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	CThreadDlg*	pParent = pParam->pParent;
-	CDXFDoc*	pDoc = (CDXFDoc *)(pParam->pDoc);
+	CDXFDoc*	pDoc = static_cast<CDXFDoc*>(pParam->pDoc);
 	int			nType = (int)(pParam->wParam);	// 処理ﾀｲﾌﾟ
-	DXFTREETYPE*	vSelect = (DXFTREETYPE *)(pParam->lParam);		// 再計算時の形状集合
+	DXFTREETYPE*	vSelect = reinterpret_cast<DXFTREETYPE*>(pParam->lParam);	// 再計算時の形状集合
 	ENAUTOWORKINGTYPE enType;
 	BOOL		bPocket;
 	PFNAUTOPROC	pfnAutoProc;
@@ -116,8 +116,7 @@ BOOL AutoOutlineProc(CThreadDlg* pParent, CLayerData* pLayer, DXFTREETYPE*)
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pShape = pLayer->GetShapeData(i);
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
-		if ( (i & 0x003f) == 0 )
-			pParent->m_ctReadProgress.SetPos(i);
+		pParent->m_ctReadProgress.SetPos(i);	// 件数少ないので１件ずつ更新
 		pShape->ClearSideFlg();
 		// 自動処理対象か否か(CDXFchain* だけを対象とする)
 		if ( pShape->GetShapeType()!=0 || pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING )
@@ -157,8 +156,7 @@ BOOL AutoPocketProc(CThreadDlg* pParent, CLayerData* pLayer, DXFTREETYPE*)
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pShape = pLayer->GetShapeData(i);
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
-		if ( (i & 0x003f) == 0 )
-			pParent->m_ctReadProgress.SetPos(i);
+		pParent->m_ctReadProgress.SetPos(i);
 		pShape->ClearSideFlg();
 		// CDXFchain* だけを対象とする
 		if ( pShape->GetShapeType()!=0 || pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING )
@@ -182,8 +180,7 @@ BOOL AutoPocketProc(CThreadDlg* pParent, CLayerData* pLayer, DXFTREETYPE*)
 	// 最小内周判定
 	for ( ; i<nLoop && IsThread(); i++ ) {	// [0]～は判定済み
 		pShape = pLayer->GetShapeData(i);
-		if ( (i & 0x003f) == 0 )
-			pParent->m_ctReadProgress.SetPos(i);
+		pParent->m_ctReadProgress.SetPos(i);
 		pShape->ClearSideFlg();
 		if ( pShape->GetShapeType()!=0 || pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING )
 			continue;
@@ -219,8 +216,7 @@ BOOL AutoAllInside(CThreadDlg* pParent, CLayerData* pLayer, DXFTREETYPE*)
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pShape = pLayer->GetShapeData(i);
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
-		if ( (i & 0x003f) == 0 )
-			pParent->m_ctReadProgress.SetPos(i);
+		pParent->m_ctReadProgress.SetPos(i);
 		pShape->ClearSideFlg();
 		// 自動処理対象か否か(CDXFchain* だけを対象とする)
 		if ( pShape->GetShapeType()!=0 || pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING )
@@ -246,8 +242,7 @@ BOOL AutoAllOutside(CThreadDlg* pParent, CLayerData* pLayer, DXFTREETYPE*)
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pShape = pLayer->GetShapeData(i);
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
-		if ( (i & 0x003f) == 0 )
-			pParent->m_ctReadProgress.SetPos(i);
+		pParent->m_ctReadProgress.SetPos(i);
 		pShape->ClearSideFlg();
 		// 自動処理対象か否か(CDXFchain* だけを対象とする)
 		if ( pShape->GetShapeType()!=0 || pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING )
@@ -266,6 +261,7 @@ BOOL AutoRecalcWorking(CThreadDlg* pParent, CLayerData* pLayer, DXFTREETYPE* vSe
 {
 	int		i, nInOut, nLoop = pLayer->GetShapeSize();
 	DWORD	dwFlags;
+	CDXFdata*	pData;
 	CDXFshape*	pShape;
 	CDXFshape*	pShapeSrc = NULL;
 	CDXFchain	ltOutline;
@@ -281,8 +277,7 @@ BOOL AutoRecalcWorking(CThreadDlg* pParent, CLayerData* pLayer, DXFTREETYPE* vSe
 		for ( i=0; i<nLoop && IsThread(); i++ ) {
 			pShape = pLayer->GetShapeData(i);
 			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
-			if ( (i & 0x003f) == 0 )
-				pParent->m_ctReadProgress.SetPos(i);
+			pParent->m_ctReadProgress.SetPos(i);
 			// 形状集合が指定されていれば、それにﾏｯﾁするものだけ
 			if ( pShapeSrc && pShapeSrc != pShape )
 				continue;
@@ -294,8 +289,11 @@ BOOL AutoRecalcWorking(CThreadDlg* pParent, CLayerData* pLayer, DXFTREETYPE* vSe
 			nInOut = pShape->GetInOutFlag();
 			if ( !pShape->CreateOutlineTempObject(nInOut, &ltOutline) ) {
 				// 一時ｵﾌﾞｼﾞｪｸﾄ全削除
-				for ( POSITION pos=ltOutline.GetHeadPosition(); pos; )
-					delete	ltOutline.GetNext(pos);
+				for ( POSITION pos=ltOutline.GetHeadPosition(); pos; ) {
+					pData = ltOutline.GetNext(pos);
+					if ( pData )
+						delete	pData;
+				}
 				continue;
 			}
 			// 加工指示登録
@@ -330,46 +328,77 @@ void CreateAutoWorking(CThreadDlg* pParent, CLayerData* pLayer, BOOL)
 	double		dArea[2];
 	CRect3D		rcMax;
 	CDXFchain	ltOutline[2];
+	CDXFdata*		pData;
 	CDXFshape*		pShape;
 	CDXFworking*	pWork;
 	POSITION		pos;
+#ifdef _DEBUG
+	CRect	rcDbg;
+#endif
+
+	pParent->m_ctReadProgress.SetRange32(0, nLoop);
 
 	try {
-		for ( i=0; i<nLoop; i++ ) {
+		for ( i=0; i<nLoop && IsThread(); i++ ) {
+			pWork = NULL;
 			pShape = pLayer->GetShapeData(i);
+			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
+			pParent->m_ctReadProgress.SetPos(i);
+			// 処理対象ﾁｪｯｸ
 			if ( !(pShape->GetShapeFlag() & (DXFMAPFLG_INSIDE|DXFMAPFLG_OUTSIDE)) )
 				continue;
+#ifdef _DEBUG
+			g_dbg.printf("ShapeName=%s", pShape->GetShapeName());
+			rcDbg = pShape->GetMaxRect();
+			g_dbg.printStruct(&rcDbg, "Orig");
+#endif
 			// 輪郭一時ｵﾌﾞｼﾞｪｸﾄの生成
-			for ( j=0; j<SIZEOF(ltOutline); j++ ) {
+			for ( j=0; j<SIZEOF(ltOutline) && IsThread(); j++ ) {
 				if ( !pShape->CreateOutlineTempObject(j, &ltOutline[j]) ) {
 					// 一時ｵﾌﾞｼﾞｪｸﾄ全削除
 					for ( n=0; n<SIZEOF(ltOutline); n++ ) {
-						for ( pos=ltOutline[n].GetHeadPosition(); pos; )
-							delete	ltOutline[n].GetNext(pos);
+						for ( pos=ltOutline[n].GetHeadPosition(); pos; ) {
+							pData = ltOutline[n].GetNext(pos);
+							if ( pData )
+								delete	pData;
+						}
+						ltOutline[n].RemoveAll();
 					}
-					return;
+					break;
 				}
-				rcMax = ltOutline[j].GetMaxRect();
+				if ( ltOutline[j].IsEmpty() )
+					rcMax = pShape->GetMaxRect();	// 元集合の矩形領域をｾｯﾄ
+				else
+					rcMax = ltOutline[j].GetMaxRect();
+				// 矩形領域の大きさ計算
 				dArea[j] = rcMax.Width() * rcMax.Height();
+#ifdef _DEBUG
+				rcDbg = ltOutline[j].GetMaxRect();
+				g_dbg.printStruct(&rcDbg, "OutLine");
+#endif
 			}
+			if ( j < SIZEOF(ltOutline) )	// CreateOutlineTempObject() でのｴﾗｰ
+				continue;
 			// 内外を矩形の大きさで決定
 			if ( pShape->GetShapeFlag() & DXFMAPFLG_INSIDE )
-				j = dArea[0] > dArea[1] ? 1 : 0;	// 小さい方
+				j = dArea[0] > dArea[1] ? 1 : 0;	// 小さい方を採用
 			else
-				j = dArea[0] > dArea[1] ? 0 : 1;	// 大きい方
+				j = dArea[0] > dArea[1] ? 0 : 1;	// 大きい方を採用
 			// 加工指示登録
-			pWork = new CDXFworkingOutline(pShape, &ltOutline[j], DXFWORKFLG_AUTO);
-			pShape->AddWorkingData(pWork, j);
-			pWork = NULL;
+			if ( !ltOutline[j].IsEmpty() ) {
+				pWork = new CDXFworkingOutline(pShape, &ltOutline[j], DXFWORKFLG_AUTO);
+				pShape->AddWorkingData(pWork, j);
+			}
 			// Select分はCDXFworkingOutlineのﾃﾞｽﾄﾗｸﾀにてdelete
 			n = 1 - j;	// 1->0, 0->1
-			for ( pos=ltOutline[n].GetHeadPosition(); pos; )
-				delete	ltOutline[n].GetNext(pos);
-			// 次のﾙｰﾌﾟに備え、矩形の初期化
-			for ( j=0; j<SIZEOF(ltOutline); j++ ) {
-				ltOutline[j].RemoveAll();
-				ltOutline[j].ClearMaxRect();
+			for ( pos=ltOutline[n].GetHeadPosition(); pos; ) {
+				pData = ltOutline[n].GetNext(pos);
+				if ( pData )
+					delete	pData;
 			}
+			// 次のﾙｰﾌﾟに備え、矩形の初期化
+			for ( j=0; j<SIZEOF(ltOutline); j++ )
+				ltOutline[j].RemoveAll();
 		}
 	}
 	catch ( CMemoryException* e ) {
@@ -379,5 +408,6 @@ void CreateAutoWorking(CThreadDlg* pParent, CLayerData* pLayer, BOOL)
 		e->Delete();
 	}
 
+	pParent->m_ctReadProgress.SetPos(nLoop);
 	return;
 }

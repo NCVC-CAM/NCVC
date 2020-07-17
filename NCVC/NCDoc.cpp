@@ -129,6 +129,7 @@ BOOL CNCDoc::RouteCmdToAllViews
 CNCdata* CNCDoc::DataOperation
 	(const CNCdata* pDataSrc, LPNCARGV lpArgv, int nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
 {
+	CMCOption*	pOpt = AfxGetNCVCApp()->GetMCOption();
 	CNCdata*	pData = NULL;
 	CNCline*	pLine = NULL;
 	CNCcycle*	pCycle = NULL;
@@ -146,11 +147,6 @@ CNCdata* CNCDoc::DataOperation
 			lpArgv->nc.dValue[i] += pt[i];
 		// ｵﾌﾞｼﾞｪｸﾄ生成
 		pLine = new CNCline(pDataSrc, lpArgv);
-		if ( enOperation == NCMOD ) {
-			pData = GetNCdata(nIndex);
-			m_dMove[pData->GetGcode()] -= pData->GetCutLength();
-			delete	pData;
-		}
 		SetMaxRect(pLine);		// 最小・最大値の更新
 		pData = pLine;
 		if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
@@ -161,11 +157,6 @@ CNCdata* CNCDoc::DataOperation
 		for ( i=0; i<NCXYZ; i++ )
 			lpArgv->nc.dValue[i] += pt[i];
 		pCircle = new CNCcircle(pDataSrc, lpArgv);
-		if ( enOperation == NCMOD ) {
-			pData = GetNCdata(nIndex);
-			m_dMove[1] -= pData->GetCutLength();
-			delete	pData;
-		}
 		SetMaxRect(pCircle);
 		pData = pCircle;
 		if ( lpArgv->nc.dwValFlags & NCD_CORRECT )
@@ -182,20 +173,14 @@ CNCdata* CNCDoc::DataOperation
 	case 89:
 		for ( i=0; i<NCXYZ; i++ )
 			lpArgv->nc.dValue[i] += pt[i];
-		pCycle = new CNCcycle(pDataSrc, lpArgv);
-		if ( enOperation == NCMOD ) {
-			pData = GetNCdata(nIndex);
-			m_dMove[0] -= ((CNCcycle *)pData)->GetCycleMove();
-			m_dMove[1] -= pData->GetCutLength();
-			delete	pData;
-		}
+		pCycle = new CNCcycle(pDataSrc, lpArgv, pOpt->GetFlag(MC_FLG_L0CYCLE));
 		SetMaxRect(pCycle);
 		pData = pCycle;
 		break;
 	case 10:	// ﾃﾞｰﾀ設定
 		if ( lpArgv->nc.dwValFlags & (NCD_P|NCD_R) ) {	// G10P_R_
 			// 工具情報の追加
-			if ( !AfxGetNCVCApp()->GetMCOption()->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) ) {
+			if ( !pOpt->AddTool((int)lpArgv->nc.dValue[NCA_P], lpArgv->nc.dValue[NCA_R], lpArgv->bAbs) ) {
 				i = lpArgv->nc.nLine;
 				if ( 0<=i && i<m_obBlock.GetSize() ) {	// 保険
 					pBlock = GetNCblock(i);
@@ -242,8 +227,6 @@ CNCdata* CNCDoc::DataOperation
 		// through
 	default:	// G04 ...
 		pData = new CNCdata(pDataSrc, lpArgv);
-		if ( enOperation == NCMOD )
-			delete	GetNCdata(nIndex);
 	}
 
 	// ｵﾌﾞｼﾞｪｸﾄ登録
@@ -255,6 +238,7 @@ CNCdata* CNCDoc::DataOperation
 		m_obGdata.InsertAt(nIndex, pData);
 		break;
 	case NCMOD:
+		RemoveAt(nIndex, 1);
 		m_obGdata.SetAt(nIndex, pData);
 		break;
 	}
@@ -296,15 +280,30 @@ void CNCDoc::StrOperation(LPCSTR pszTmp, int nIndex/*=-1*/, ENNCOPERATION enOper
 
 void CNCDoc::RemoveAt(int nIndex, int nCnt)
 {
-	nCnt = min(nCnt, m_obGdata.GetSize()-nIndex);
-	for ( int i=nIndex; i<nIndex+nCnt; i++ )
-		delete	m_obGdata[i];
+	nCnt = min(nCnt, m_obGdata.GetSize() - nIndex);
+	CNCdata*	pData;
+	for ( int i=nIndex; i<nIndex+nCnt; i++ ) {
+		pData = m_obGdata[i];
+		switch ( pData->GetType() ) {
+		case NCDLINEDATA:
+			m_dMove[pData->GetGcode()] -= pData->GetCutLength();
+			break;
+		case NCDCYCLEDATA:
+			m_dMove[0] -= static_cast<CNCcycle *>(pData)->GetCycleMove();
+			m_dMove[1] -= pData->GetCutLength();
+			break;
+		case NCDARCDATA:
+			m_dMove[1] -= pData->GetCutLength();
+			break;
+		}
+		delete pData;
+	}
 	m_obGdata.RemoveAt(nIndex, nCnt);
 }
 
 void CNCDoc::RemoveStr(int nIndex, int nCnt)
 {
-	nCnt = min(nCnt, m_obBlock.GetSize()-nIndex);
+	nCnt = min(nCnt, m_obBlock.GetSize() - nIndex);
 	for ( int i=nIndex; i<nIndex+nCnt; i++ )
 		delete	m_obBlock[i];
 	m_obBlock.RemoveAt(nIndex, nCnt);
@@ -392,6 +391,26 @@ void CNCDoc::WaitCalcThread(void)
 	}
 }
 
+int CNCDoc::SearchBlockRegex(boost::regex& r, int nStart/*=0*/, BOOL bReverse/*=FALSE*/)
+{
+	int		i;
+
+	if ( bReverse ) {
+		for (i=nStart; i>=0; i--) {
+			if ( regex_search((LPCTSTR)(GetNCblock(i)->GetStrGcode()), r) )
+				return i;
+		}
+	}
+	else {
+		for (i=nStart; i<GetNCBlockSize(); i++) {
+			if ( regex_search((LPCTSTR)(GetNCblock(i)->GetStrGcode()), r) )
+				return i;
+		}
+	}
+
+	return -1;
+}
+
 void CNCDoc::ClearBreakPoint(void)
 {
 	CNCblock*	pBlock;
@@ -435,8 +454,10 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 	}
 	m_csTraceDraw.Lock();
 	m_nTraceDraw = GetNCblock(i)->GetBlockToNCdataArrayNo();
-	if ( bStart )
-		m_nTraceStart = max(0, m_nTraceDraw-1);
+	if ( bStart ) {
+		int n =m_nTraceDraw - 1;
+		m_nTraceStart = max(0, n);
+	}
 	m_csTraceDraw.Unlock();
 
 	return TRUE;
@@ -716,7 +737,7 @@ void CNCDoc::SerializeBlock
 #endif
 	CString		strBlock, strLine;
 	CNCblock*	pBlock = NULL;
-	int			nCnt = 0;
+	int			n, nCnt = 0;
 
 	ULONGLONG	dwSize = ar.GetFile()->GetLength();		// ﾌｧｲﾙｻｲｽﾞ取得
 	DWORD		dwPosition = 0;
@@ -731,8 +752,10 @@ void CNCDoc::SerializeBlock
 		while ( ar.ReadString(strBlock) ) {
 			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの表示
 			dwPosition += strBlock.GetLength() + 2;	// 改行ｺｰﾄﾞ分
-			if ( bProgress && (++nCnt & 0x003f)==0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
-				pProgress->SetPos(min(100, (int)(dwPosition*100/dwSize)));
+			if ( bProgress && (++nCnt & 0x003f)==0 ) {	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
+				n = (int)(dwPosition*100/dwSize);
+				pProgress->SetPos(min(100, n));
+			}
 			// 行番号とGｺｰﾄﾞの分別(XYZ...含む)
 			strLine = strBlock.SpanIncluding(ss_szLineDelimiter);
 			pBlock = new CNCblock(strLine, strBlock.Mid(strLine.GetLength()), dwFlags);
@@ -847,7 +870,7 @@ BOOL CNCDoc::SerializeInsertBlock
 
 void CNCDoc::OnUpdateFileInsert(CCmdUI* pCmdUI) 
 {
-	CNCChild*		pFrame = (CNCChild *)(AfxGetNCVCMainWnd()->MDIGetActive());
+	CNCChild*		pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
 	CNCListView*	pList = pFrame->GetListView();
 	pCmdUI->Enable(pList->GetListCtrl().GetFirstSelectedItemPosition() ? TRUE : FALSE);
 }
@@ -855,7 +878,7 @@ void CNCDoc::OnUpdateFileInsert(CCmdUI* pCmdUI)
 void CNCDoc::OnFileInsert()
 {
 	int		i;
-	CNCChild*		pFrame = (CNCChild *)(AfxGetNCVCMainWnd()->MDIGetActive());
+	CNCChild*		pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
 	CNCListView*	pList = pFrame->GetListView();
 	POSITION pos;
 	if ( !(pos=pList->GetListCtrl().GetFirstSelectedItemPosition()) )

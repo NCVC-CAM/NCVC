@@ -111,6 +111,12 @@ inline const CPointD CDXFdata::GetNativePoint(size_t a) const
 	return m_pt[a];
 }
 
+inline void CDXFdata::SetNativePoint(size_t a, const CPointD& pt)
+{
+	ASSERT( a>=0 && a<(size_t)m_nPoint );
+	m_pt[a] = pt;
+}
+
 inline const CPointD CDXFdata::GetTunPoint(size_t a) const
 {
 	ASSERT( a>=0 && a<(size_t)m_nPoint );
@@ -142,8 +148,8 @@ inline void CDXFdata::SwapPt(int n)		// m_ptTun ‚Ì“ü‚ê‘Ö‚¦
 #ifdef _DEBUG
 		dbg.printf("calling ok");
 #endif
-		swap(m_ptTun[n],  m_ptTun[n+1]);
-		swap(m_ptMake[n], m_ptMake[n+1]);
+		std::swap(m_ptTun[n],  m_ptTun[n+1]);
+		std::swap(m_ptMake[n], m_ptMake[n+1]);
 	}
 #ifdef _DEBUG
 	else
@@ -159,14 +165,6 @@ inline void CDXFdata::ReversePt(void)
 /////////////////////////////////////////////////////////////////////////////
 // ‚c‚w‚eƒf[ƒ^‚ÌPointƒNƒ‰ƒX
 /////////////////////////////////////////////////////////////////////////////
-inline void CDXFpoint::SetDrawRect(const CPointD& pt, double r, double f)
-{
-	m_rcDraw.left   = (int)((pt.x - r) * f);
-	m_rcDraw.top    = (int)((pt.y - r) * f);
-	m_rcDraw.right  = (int)((pt.x + r) * f);
-	m_rcDraw.bottom = (int)((pt.y + r) * f);
-}
-
 inline void CDXFpoint::SetMaxRect(void)
 {
 	m_rcMax.TopLeft()     = m_pt[0];
@@ -174,7 +172,7 @@ inline void CDXFpoint::SetMaxRect(void)
 	m_rcMax.NormalizeRect();
 #ifdef _DEBUG
 	CMagaDbg	dbg("CDXFpoint::SetMaxRect()", DBG_RED);
-	dbg.printf("m_rcMax(left, top   )=(%f, %f)", m_rcMax.left, m_rcMax.top);
+	dbg.printf("l=%.3f t=%.3f", m_rcMax.left, m_rcMax.top);
 #endif
 }
 
@@ -218,6 +216,11 @@ inline const CPointD CDXFpoint::GetEndMakePoint(void) const
 	return GetMakePoint(0);
 }
 
+inline double CDXFpoint::GetLength(void) const
+{
+	return 0;
+}
+
 //////////////////////////////////////////////////////////////////////
 // ‚c‚w‚eƒf[ƒ^‚ÌLineƒNƒ‰ƒX
 //////////////////////////////////////////////////////////////////////
@@ -228,8 +231,8 @@ inline void CDXFline::SetMaxRect(void)
 	m_rcMax.NormalizeRect();
 #ifdef _DEBUG
 	CMagaDbg	dbg("CDXFline::SetMaxRect()", DBG_RED);
-	dbg.printf("m_rcMax(left, top   )=(%f, %f)", m_rcMax.left, m_rcMax.top);
-	dbg.printf("m_rcMax(right,bottom)=(%f, %f)", m_rcMax.right, m_rcMax.bottom);
+	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
 
@@ -280,6 +283,12 @@ inline const CPointD CDXFline::GetEndCutterPoint(void) const
 inline const CPointD CDXFline::GetEndMakePoint(void) const
 {
 	return GetMakePoint(1);
+}
+
+inline double CDXFline::GetLength(void) const
+{
+	CPointD	pt(m_pt[1] - m_pt[0]);
+	return pt.hypot();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -369,8 +378,8 @@ inline void CDXFcircle::SetMaxRect(void)
 	m_rcMax.NormalizeRect();
 #ifdef _DEBUG
 	CMagaDbg	dbg("CDXFcircle::SetMaxRect()", DBG_RED);
-	dbg.printf("m_rcMax(left, top   )=(%f, %f)", m_rcMax.left, m_rcMax.top);
-	dbg.printf("m_rcMax(right,bottom)=(%f, %f)", m_rcMax.right, m_rcMax.bottom);
+	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
 
@@ -494,6 +503,11 @@ inline const CPointD CDXFcircle::GetEndMakePoint(void) const
 	return CDXFcircle::GetStartMakePoint();
 }
 
+inline double CDXFcircle::GetLength(void) const
+{
+	return 2 * PI * m_r;
+}
+
 inline void CDXFcircle::ReversePt(void)
 {
 	// ‰½‚à‚µ‚È‚¢
@@ -549,11 +563,12 @@ inline void CDXFarc::AngleTuning(void)
 	if ( m_eq < 0.0 )
 		m_eq += 360.0*RAD;
 	if ( m_bRound ) {
-		while ( m_sq - m_eq >= 0 )
+		// ”÷–­‚ÈŒë·‚Ì‹zû(=>”÷×‰~ŒÊ‚ª‘å‚«‚È‰~‚É•Ï‚í‚Á‚Ä‚µ‚Ü‚¤)
+		while ( ::RoundUp(m_sq*DEG) > ::RoundUp(m_eq*DEG) )
 			m_eq += 360.0*RAD;
 	}
 	else {
-		while ( m_eq - m_sq >= 0 )
+		while ( ::RoundUp(m_eq*DEG) > ::RoundUp(m_sq*DEG) )
 			m_sq += 360.0*RAD;
 	}
 }
@@ -571,7 +586,7 @@ inline void CDXFarc::SwapRound(void)
 inline void CDXFarc::SwapAngle(void)
 {
 	// Šp“x‚Ì“ü‚ê‘Ö‚¦‚Æ’²®
-	swap(m_sq, m_eq);
+	std::swap(m_sq, m_eq);
 	AngleTuning();
 }
 
@@ -598,6 +613,19 @@ inline void CDXFarc::SwapPt(int n)	// Îß²İÄ‚Ì“ü‚ê‘Ö‚¦(+‰ñ“]•ûŒü‚Ì”½“])
 	SwapRound();
 	// Šp“x‚Ì“ü‚ê‘Ö‚¦
 	SwapAngle();
+}
+
+inline void CDXFarc::SetNativePoint(size_t a, const CPointD& pt)
+{
+	CDXFdata::SetNativePoint(a, pt);
+	// Šp“x‚Ì’²®
+	if ( a == 0 )
+		m_sq = atan2(m_pt[0].y-m_ct.y, m_pt[0].x-m_ct.x);
+	else
+		m_eq = atan2(m_pt[1].y-m_ct.y, m_pt[1].x-m_ct.x);
+	AngleTuning();
+	m_sqDraw = m_sq;
+	m_eqDraw = m_eq;
 }
 
 inline BOOL CDXFarc::IsMatchPoint(const CPointD& pt)
@@ -633,6 +661,18 @@ inline const CPointD CDXFarc::GetEndCutterPoint(void) const
 inline const CPointD CDXFarc::GetEndMakePoint(void) const
 {
 	return CDXFline::GetEndMakePoint();
+}
+
+inline double CDXFarc::GetLength(void) const
+{
+	double	s, e;
+	if ( m_bRound ) {
+		s = m_sq;	e = m_eq;
+	}
+	else {
+		s = m_eq;	e = m_sq;
+	}
+	return m_r * ( e - s );
 }
 
 inline void CDXFarc::ReversePt(void)

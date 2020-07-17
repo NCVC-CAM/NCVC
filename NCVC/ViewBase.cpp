@@ -446,7 +446,7 @@ BOOL CViewBase::OnMouseMove(UINT nFlags, const CPoint& pt)
 
 BOOL CViewBase::OnMouseWheel(UINT nFlags, short zDelta, const CPoint& pt)
 {
-	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( !pOpt->IsMouseWheel() )
 		return FALSE;
 

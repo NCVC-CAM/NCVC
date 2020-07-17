@@ -1,12 +1,7 @@
 // DXFShapeView.h : ヘッダー ファイル
 //
 
-#if !defined(AFX_DXFSHAPEVIEW_H__967EA6F2_0128_4064_A8F1_4A828C5F9D5E__INCLUDED_)
-#define AFX_DXFSHAPEVIEW_H__967EA6F2_0128_4064_A8F1_4A828C5F9D5E__INCLUDED_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 // ﾙｰﾄﾂﾘｰID
 #define	ROOTTREE_SHAPE		0x00000001
@@ -37,15 +32,15 @@ class CDXFShapeView : public CTreeView
 	HTREEITEM	DragInsertLayer(void);
 	HTREEITEM	DragInsertShape(void);
 	void		DragLink(void);
-	void	DragCancel(BOOL);
+	void	DragCancel(BOOL, BOOL = TRUE);
 	HTREEITEM	SearchLayerTree(HTREEITEM, const CLayerData*);
 	DWORD	GetParentAssemble(HTREEITEM);
 	void	SetShapeSwitch_SubordinateTree(HTREEITEM, BOOL);
 
 	void	SetShapeTree(void);
 	void	AddWorking(CDXFworking *);
-	void	AutoWorkingDel(void);
-	void	AutoWorkingSet(BOOL = TRUE);
+	void	AutoWorkingDel(const CLayerData* = NULL, const CDXFshape* = NULL);
+	void	AutoWorkingSet(BOOL, const CLayerData* = NULL, const CDXFshape* = NULL);
 	void	UpdateSequence(void);
 
 protected:
@@ -92,10 +87,15 @@ protected:
 	afx_msg void OnBeginDrag(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnNMRclick(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnSortShape();
 	afx_msg void OnUpdateWorkingDel(CCmdUI* pCmdUI);
 	afx_msg void OnWorkingDel();
+	afx_msg void OnUpdateEditShapeProp(CCmdUI *pCmdUI);
+	afx_msg void OnEditShapeProp();
+	afx_msg void OnUpdateEditShapeName(CCmdUI *pCmdUI);
+	afx_msg void OnEditShapeName();
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	//}}AFX_MSG
 	// 形状加工処理
 	afx_msg void OnUpdateShapePattern(CCmdUI* pCmdUI);
@@ -109,8 +109,3 @@ protected:
 inline CDXFDoc* CDXFShapeView::GetDocument()
    { return (CDXFDoc*)m_pDocument; }
 #endif
-
-//{{AFX_INSERT_LOCATION}}
-// Microsoft Visual C++ は前行の直前に追加の宣言を挿入します。
-
-#endif // !defined(AFX_DXFSHAPEVIEW_H__967EA6F2_0128_4064_A8F1_4A828C5F9D5E__INCLUDED_)

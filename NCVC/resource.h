@@ -21,6 +21,7 @@
 #define IDI_CHECK                       140
 #define IDI_DEFICONLARGE                142
 #define IDI_DEFICONSMALL                143
+#define IDD_DIALOG1                     145
 #define IDS_ADDIN_INFO                  200
 #define IDS_TAB_INFO1                   496
 #define IDS_TAB_INFO2                   497
@@ -64,7 +65,10 @@
 #define ID_FILE_DXF2NCD_EX1             1004
 #define ID_FILE_DXF2NCD_EX2             1005
 #define ID_FILE_DXF2NCD_SHAPE           1006
+#define IDC_CHECK1                      1006
+#define IDC_RADIO2                      1009
 #define ID_FILE_NCINSERT                1010
+#define IDC_HOTKEY1                     1010
 #define ID_FILE_NCD2DXF                 1011
 #define ID_FILE_CLANDOP                 1090
 #define IDD_DXF_SETUP1                  1200
@@ -243,6 +247,7 @@
 #define IDC_VIEWSETUP4_TRACE0           2351
 #define IDC_VIEWSETUP4_TRACE1           2352
 #define IDC_VIEWSETUP4_TRACE2           2353
+#define IDC_VIEWSETUP4_TRACEMARK        2354
 #define IDD_NCVIEW_WORK                 2500
 #define IDC_WORK_X                      2501
 #define IDC_WORK_Y                      2502
@@ -259,6 +264,11 @@
 #define IDC_WORK_ZOSPIN                 2516
 #define IDD_NCVIEW_JUMP                 2550
 #define IDC_JUMP                        2551
+#define IDD_NCVIEW_FIND                 2560
+#define IDC_NCVIEW_FIND                 2560
+#define IDC_NCVIEW_FIND_STR             2561
+#define IDC_NCVIEW_FIND_UP              2562
+#define IDC_NCVIEW_FIND_DOWN            2563
 #define IDD_DXFVIEW_LAYER               2600
 #define IDC_DXFVIEW_LAYER               2601
 #define IDD_DXFEDIT_ORG                 2700
@@ -271,6 +281,7 @@
 #define IDC_AUTOSHAPE_2                 2802
 #define IDC_AUTOSHAPE_3                 2803
 #define IDC_AUTOSHAPE_4                 2804
+#define IDC_AUTO_ACUTEROUND             2808
 #define IDC_AUTO_OFFSET                 2809
 #define IDC_AUTO_SELECT_OUTLINE         2810
 #define IDC_AUTO_SELECT_POCKET          2811
@@ -348,6 +359,8 @@
 #define IDC_MCST4_MACROARGV             3603
 #define IDC_MCST4_MACROFOLDER_BT        3605
 #define IDC_MCST4_MACROIF_BT            3606
+#define IDD_MC_SETUP5                   3700
+#define IDC_MCST5_L0CYCLE               3700
 #define IDD_MKNC_SETUP1                 4000
 #define IDC_MKNC1_SPINDLE               4001
 #define IDC_MKNC1_FEED                  4002
@@ -425,10 +438,12 @@
 #define IDC_MKNC8_MOVEZ                 4702
 #define IDC_MKNC8_CUSTMOVEB             4703
 #define IDC_MKNC8_CUSTMOVEA             4704
+#define IDC_MKNC8_L0CYCLE               4705
 #define IDD_SHAPE_PROP                  5000
 #define IDC_SHAPEPROP_SHAPE             5000
 #define IDC_SHAPEPROP_NAME              5001
 #define IDC_SHAPEPROP_OFFSET            5002
+#define IDC_SHAPEPROP_ACUTE             5003
 #define ID_WINDOW_ALLCLOSE              8001
 #define ID_WINDOW_NEXT                  8002
 #define ID_TAB_NEXT                     8003
@@ -500,6 +515,7 @@
 #define IDS_REGKEY_NC                   10005
 #define IDS_REGKEY_MAKEDXF              10010
 #define IDS_REGKEY_WINDOW_SENDDLG       10050
+#define IDS_REGKEY_WINDOW_FINDDLG       10050
 #define IDS_REGKEY_WINDOW_JUMPDLG       10051
 #define IDS_REGKEY_WINDOW_WORKDLG       10052
 #define IDS_REGKEY_WINDOW_LAYERDLG      10053
@@ -556,6 +572,7 @@
 #define IDS_REG_VIEW_NC_DRAWCENTERCIRCLE 10960
 #define IDS_REG_VIEW_NC_GUIDE           10961
 #define IDS_REG_VIEW_NC_INFOCOL         10962
+#define ID_REG_VIEW_NC_TRACEMARK        10963
 #define IDS_REG_CONVERT                 10999
 #define IDS_REG_WINFLAGS                11900
 #define IDS_REG_ICONIC                  11901
@@ -655,9 +672,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        144
-#define _APS_NEXT_COMMAND_VALUE         32782
-#define _APS_NEXT_CONTROL_VALUE         1005
+#define _APS_NEXT_RESOURCE_VALUE        146
+#define _APS_NEXT_COMMAND_VALUE         32786
+#define _APS_NEXT_CONTROL_VALUE         1011
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

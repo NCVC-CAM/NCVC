@@ -42,8 +42,8 @@ static	void	SearchChainMap(const CDXFmap*, const CPointD&, CDXFmap*, CDXFmap&);
 
 UINT ShapeSearch_Thread(LPVOID pVoid)
 {
-	LPNCVCTHREADPARAM	pParam = (LPNCVCTHREADPARAM)pVoid;
-	CDXFDoc*	pDoc = (CDXFDoc *)(pParam->pDoc);
+	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
+	CDXFDoc*	pDoc = static_cast<CDXFDoc*>(pParam->pDoc);
 	g_pParent = pParam->pParent;
 	
 	int		i, j, nResult = IDOK;
@@ -74,7 +74,8 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 			nDataCnt = pLayer->GetDxfSize();
 			g_pParent->SetFaseMessage(strMsg, pLayer->GetStrLayer());
 			g_pParent->m_ctReadProgress.SetRange32(0, nDataCnt);
-			mpDXFdata.InitHashTable(max(17, GetPrimeNumber(nDataCnt*2)));
+			j = GetPrimeNumber(nDataCnt*2);
+			mpDXFdata.InitHashTable(max(17, j));
 			for ( j=0; j<nDataCnt && IsThread(); j++ ) {
 				pData = pLayer->GetDxfData(j);
 				if ( pData->GetType() != DXFPOINTDATA ) {
@@ -136,21 +137,22 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 
 void SetChainMap(const CDXFmap* pMasterMap, LPCHECKMAPTHREADPARAM pParam)
 {
-	int			nCnt = 0;
+	int			nCnt = 0,
+				nPrime = GetPrimeNumber(pParam->pLayer->GetDxfSize());
 	CPointD		pt;
 	CDXFmap		mapRegist;	// 連結座標登録済みﾏｯﾌﾟ
 	CDXFmap*	pMap;
 	CDXFarray*	pDummy;
 
 	g_pParent->m_ctReadProgress.SetRange32(0, pMasterMap->GetCount());
-	mapRegist.InitHashTable(max(17, GetPrimeNumber(pParam->pLayer->GetDxfSize())));
+	mapRegist.InitHashTable(max(17, nPrime));
 	
 	// 座標ﾏｯﾌﾟ母体をｼｰｹﾝｼｬﾙにｱｸｾｽし連結固体を作成
 	for ( POSITION pos=pMasterMap->GetStartPosition(); pos && IsThread(); nCnt++ ) {
 		pMasterMap->GetNextAssoc(pos, pt, pDummy);
 		if ( !mapRegist.PLookup(pt) ) {
 			pMap = new CDXFmap;
-			pMap->InitHashTable(max(17, GetPrimeNumber(pParam->pLayer->GetDxfSize())));
+			pMap->InitHashTable(max(17, nPrime));
 			// 連結座標の検索
 			SearchChainMap(pMasterMap, pt, pMap, mapRegist);	// 再帰呼び出し
 			// 前回の検査ｽﾚｯﾄﾞ終了待ち
@@ -177,7 +179,8 @@ void SearchChainMap
 	CDXFarray*	pDummy = NULL;
 	CDXFdata*	pData;
 
-	VERIFY( pMasterMap->Lookup(const_cast<CPointD&>(pt), pArray) );		// 必ず存在する
+	if ( !pMasterMap->Lookup(const_cast<CPointD&>(pt), pArray) )	// 必ず存在する
+		NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 
 	// 未登録の座標ﾃﾞｰﾀを検索
 	if ( !mapRegist.PLookup(const_cast<CPointD&>(pt)) ) {
@@ -203,7 +206,7 @@ void SearchChainMap
 
 UINT CheckMapWorking_Thread(LPVOID pVoid)
 {
-	LPCHECKMAPTHREADPARAM	pParam = (LPCHECKMAPTHREADPARAM)pVoid;
+	LPCHECKMAPTHREADPARAM	pParam = reinterpret_cast<LPCHECKMAPTHREADPARAM>(pVoid);
 	int			nChain = 0, nMap = 0;
 	CString		strShape;
 	DWORD		dwFlags;

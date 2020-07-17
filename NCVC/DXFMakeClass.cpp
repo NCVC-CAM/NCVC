@@ -88,13 +88,13 @@ CDXFMake::CDXFMake(const CNCdata* pData)
 	// µÃﬁºﬁ™∏ƒéÌï 
 	switch ( pData->GetType() ) {
 	case NCDLINEDATA:	// íºê¸ï‚ä‘
-		MakeDXF_Line(pData);
+		MakeDXF_Line(static_cast<const CNCline*>(pData));
 		break;
 	case NCDCYCLEDATA:	// å≈íËª≤∏Ÿ
-		MakeDXF_Cycle(pData);
+		MakeDXF_Cycle(static_cast<const CNCcycle*>(pData));
 		break;
 	case NCDARCDATA:	// â~å ï‚ä‘
-		MakeDXF_Arc(pData);
+		MakeDXF_Arc(static_cast<const CNCcircle*>(pData));
 		break;
 	}
 }
@@ -201,7 +201,7 @@ void CDXFMake::MakeSection_Tables(const CNCDoc* pDoc)
 	// æ∏ºÆ›íËã`
 	m_strDXFarray.Add(MakeSection(SEC_TABLES));
 	// TABLESæ∏ºÆ›íl
-	double	dVal[DXFMAXVALUESIZE];
+	double	dVal[DXFMAXVALUESIZE], d1, d2;
 	CString	strGroup0(GROUPCODE(g_szGroupCode[GROUP0])),
 			strGroup2(GROUPCODE(g_szGroupCode[GROUP2])),
 			strGroup3(GROUPCODE(g_szGroupCode[GROUP3])),
@@ -227,17 +227,23 @@ void CDXFMake::MakeSection_Tables(const CNCDoc* pDoc)
 	case 1:		// XZ
 		dVal[VALUE10] = (rc.right + rc.left) / 2.0;		// VALUE10ÇÕâºë„ì¸óvëf
 		dVal[VALUE20] = (rc.high  + rc.low)  / 2.0;
-		dVal[VALUE40] = max( (rc.right-rc.left), (rc.high-rc.low) ) * 1.1;
+		d1 = rc.right - rc.left;
+		d2 = rc.high  - rc.low;
+		dVal[VALUE40] = max( d1, d2 ) * 1.1;
 		break;
 	case 2:		// YZ
 		dVal[VALUE10] = (rc.bottom + rc.top) / 2.0;
 		dVal[VALUE20] = (rc.high   + rc.low) / 2.0;
-		dVal[VALUE40] = max( (rc.bottom-rc.top), (rc.high-rc.low) ) * 1.1;
+		d1 = rc.bottom - rc.top;
+		d2 = rc.high   - rc.low;
+		dVal[VALUE40] = max( d1, d2 ) * 1.1;
 		break;
 	default:	// XY
 		pt = rc.CenterPoint();
 		dVal[VALUE10] = pt.x;		dVal[VALUE20] = pt.y;
-		dVal[VALUE40] = max( rc.Width(), rc.Height() ) * 1.1;
+		d1 = rc.Width();
+		d2 = rc.Height();
+		dVal[VALUE40] = max( d1, d2 ) * 1.1;
 		break;
 	}
 	dVal[VALUE41] = 1.5376;		// 1280x1024ècâ°î‰
@@ -335,7 +341,7 @@ void CDXFMake::MakeSection_EOF(void)
 
 //////////////////////////////////////////////////////////////////////
 
-void CDXFMake::MakeDXF_Line(const CNCdata* pData)
+void CDXFMake::MakeDXF_Line(const CNCline* pData)
 {
 	// µÃﬁºﬁ™∏ƒèÓïÒ(ëÅëóÇË or êÿçÌëóÇË)
 	m_strDXFarray.Add( MakeDxfInfo(TYPE_LINE,
@@ -354,7 +360,7 @@ inline int SetDXFtype(ENPLANE enPlane, const CNCdata* pData)
 	return nType;
 }
 
-void CDXFMake::MakeDXF_Arc(const CNCdata* pData)
+void CDXFMake::MakeDXF_Arc(const CNCcircle* pData)
 {
 	int		nType;
 
@@ -381,8 +387,8 @@ void CDXFMake::MakeDXF_Arc(const CNCdata* pData)
 	if ( nType == TYPE_ARC ) {
 		double	dVal[DXFMAXVALUESIZE];
 		// CNCcircle::AngleTuning() Ç…ÇƒèÌÇ…îΩéûåvâÒÇË
-		dVal[VALUE50] = ((CNCcircle *)pData)->GetStartAngle() * DEG;
-		dVal[VALUE51] = ((CNCcircle *)pData)->GetEndAngle() * DEG;
+		dVal[VALUE50] = pData->GetStartAngle() * DEG;
+		dVal[VALUE51] = pData->GetEndAngle() * DEG;
 		while ( dVal[VALUE50] > 360.0 )
 			dVal[VALUE50] -= 360.0;
 		while ( dVal[VALUE51] > 360.0 )
@@ -391,10 +397,18 @@ void CDXFMake::MakeDXF_Arc(const CNCdata* pData)
 	}
 }
 
-void CDXFMake::MakeDXF_Cycle(const CNCdata* pData)
+void CDXFMake::MakeDXF_Cycle(const CNCcycle* pData)
 {
-	for ( int i=0; i<((CNCcycle *)pData)->GetDrawCnt(); i++ )
-		m_strDXFarray.Add( (*ms_pfnMakeValueCycle)((CNCcycle *)pData, i) );
+	if ( pData->GetDrawCnt() > 0 ) {
+		for ( int i=0; i<pData->GetDrawCnt(); i++ )
+			m_strDXFarray.Add( (*ms_pfnMakeValueCycle)(pData, i) );
+	}
+	else if ( pData->GetStartPoint() != pData->GetEndPoint() ) {
+		// L0 Ç≈Ç‡à⁄ìÆÇ™Ç†ÇÈèÍçá
+		m_strDXFarray.Add( MakeDxfInfo(TYPE_LINE, MKDX_STR_MOVE) );
+		// CNCline Ç∆ÇµÇƒèàóù
+		m_strDXFarray.Add( (*ms_pfnMakeValueLine)(pData) );
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -429,27 +443,27 @@ CString	CDXFMake::MakeValueLine_YZ(const CNCdata* pData)
 CString CDXFMake::MakeValueCircle_XY(const CNCdata* pData)
 {
 	double	dVal[DXFMAXVALUESIZE];
-	CPoint3D	ptOrg( ((CNCcircle *)pData)->GetOrg() );
+	CPoint3D	ptOrg( static_cast<const CNCcircle *>(pData)->GetOrg() );
 	dVal[VALUE10] = ptOrg.x;	dVal[VALUE20] = ptOrg.y;
-	dVal[VALUE40] = fabs( ((CNCcircle *)pData)->GetR() );
+	dVal[VALUE40] = fabs( static_cast<const CNCcircle *>(pData)->GetR() );
 	return MakeFloatValue(VALFLG_CIRCLE, dVal);
 }
 
 CString CDXFMake::MakeValueCircle_XZ(const CNCdata* pData)
 {
 	double	dVal[DXFMAXVALUESIZE];
-	CPoint3D	ptOrg( ((CNCcircle *)pData)->GetOrg() );
+	CPoint3D	ptOrg( static_cast<const CNCcircle *>(pData)->GetOrg() );
 	dVal[VALUE10] = ptOrg.x;	dVal[VALUE20] = ptOrg.z;
-	dVal[VALUE40] = fabs( ((CNCcircle *)pData)->GetR() );
+	dVal[VALUE40] = fabs( static_cast<const CNCcircle *>(pData)->GetR() );
 	return MakeFloatValue(VALFLG_CIRCLE, dVal);
 }
 
 CString CDXFMake::MakeValueCircle_YZ(const CNCdata* pData)
 {
 	double	dVal[DXFMAXVALUESIZE];
-	CPoint3D	ptOrg( ((CNCcircle *)pData)->GetOrg() );
+	CPoint3D	ptOrg( static_cast<const CNCcircle *>(pData)->GetOrg() );
 	dVal[VALUE10] = ptOrg.y;	dVal[VALUE20] = ptOrg.z;
-	dVal[VALUE40] = fabs( ((CNCcircle *)pData)->GetR() );
+	dVal[VALUE40] = fabs( static_cast<const CNCcircle *>(pData)->GetR() );
 	return MakeFloatValue(VALFLG_CIRCLE, dVal);
 }
 

@@ -174,6 +174,9 @@ CViewOption::CViewOption()
 		m_nTraceSpeed[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntryFormat,
 								m_nTraceSpeed[i]);
 	}
+	VERIFY(strEntry.LoadString(ID_REG_VIEW_NC_TRACEMARK));
+	m_bTraceMarker = AfxGetApp()->GetProfileInt(strRegKey, strEntry,
+								m_bTraceMarker);
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -236,6 +239,7 @@ void CViewOption::AllDefaultSetting(void)
 	dc.DPtoLP(&pt);
 	m_lfFont[TYPE_DXF].lfHeight = -abs(pt.y);
 	//
+	m_bTraceMarker = FALSE;
 	m_bDrawCircleCenter	= TRUE;
 	for ( i=0; i<SIZEOF(m_colNCView); i++ )
 		m_colNCView[i] = ConvertSTRtoRGB(g_szNcViewColDef[i]);
@@ -330,6 +334,9 @@ BOOL CViewOption::SaveViewOption(void)
 		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntryFormat, m_nTraceSpeed[i]) )
 			return FALSE;
 	}
+	VERIFY(strEntry.LoadString(ID_REG_VIEW_NC_TRACEMARK));
+	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_bTraceMarker) )
+		return FALSE;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -436,6 +443,10 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
+	VERIFY(strEntry.LoadString(ID_REG_VIEW_NC_TRACEMARK));
+	strResult.Format("%d", m_bTraceMarker ? 1 : 0);
+	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
+		return FALSE;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -533,6 +544,9 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 		m_nTraceSpeed[i] = ::GetPrivateProfileInt(strRegKey, strEntryFormat,
 								m_nTraceSpeed[i], lpszFileName);
 	}
+	VERIFY(strEntry.LoadString(ID_REG_VIEW_NC_TRACEMARK));
+	m_bTraceMarker = (BOOL)::GetPrivateProfileInt(strRegKey, strEntry,
+								(UINT)m_bTraceMarker, lpszFileName);
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));

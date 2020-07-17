@@ -89,14 +89,14 @@ BOOL IsNCDocument(NCVCHANDLE hDoc)
 {
 	if ( !hDoc )
 		return FALSE;
-	return ((CNCDoc *)hDoc)->IsKindOf(RUNTIME_CLASS(CNCDoc));
+	return reinterpret_cast<CNCDoc *>(hDoc)->IsKindOf(RUNTIME_CLASS(CNCDoc));
 }
 
 BOOL IsDXFDocument(NCVCHANDLE hDoc)
 {
 	if ( !hDoc )
 		return FALSE;
-	return ((CDXFDoc *)hDoc)->IsKindOf(RUNTIME_CLASS(CDXFDoc));
+	return reinterpret_cast<CDXFDoc *>(hDoc)->IsKindOf(RUNTIME_CLASS(CDXFDoc));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -141,7 +141,7 @@ NCEXPORT int WINAPI NCVC_GetDocumentFileName(NCVCHANDLE hDoc, LPTSTR lpszPathNam
 {
 	int	nLength = -1;
 	if ( IsNCDocument(hDoc) || IsDXFDocument(hDoc) ) {
-		CString	strFullPath( ((CDocument *)hDoc)->GetPathName() );
+		CString	strFullPath( reinterpret_cast<CDocument *>(hDoc)->GetPathName() );
 		nLength = strFullPath.GetLength();
 		if ( lpszPathName ) {
 			if ( nLength+1 <= nSize )
@@ -156,13 +156,13 @@ NCEXPORT int WINAPI NCVC_GetDocumentFileName(NCVCHANDLE hDoc, LPTSTR lpszPathNam
 NCEXPORT void WINAPI NCVC_LockDocument(NCVCHANDLE hDoc, HANDLE hThread)
 {
 	if ( IsNCDocument(hDoc) || IsDXFDocument(hDoc) )
-		((CDocBase *)hDoc)->LockDocument(hThread);
+		reinterpret_cast<CDocBase *>(hDoc)->LockDocument(hThread);
 }
 
 NCEXPORT void WINAPI NCVC_UnlockDocument(NCVCHANDLE hDoc)
 {
 	if ( IsNCDocument(hDoc) || IsDXFDocument(hDoc) )
-		((CDocBase *)hDoc)->UnlockDocument();
+		reinterpret_cast<CDocBase *>(hDoc)->UnlockDocument();
 }
 
 NCEXPORT void WINAPI NCVC_MainfrmProgressRange(int nMin, int nMax)
@@ -235,22 +235,22 @@ NCEXPORT BOOL WINAPI NCVC_AddDXFExtensionFunc
 NCEXPORT void WINAPI NCVC_CloseDocument(NCVCHANDLE hDoc)
 {
 	if ( IsNCDocument(hDoc) || IsDXFDocument(hDoc) )
-		((CDocument *)hDoc)->OnCloseDocument();
+		reinterpret_cast<CDocument *>(hDoc)->OnCloseDocument();
 }
 
 NCEXPORT void WINAPI NCVC_ReDraw(NCVCHANDLE hDoc)
 {
 	if ( IsNCDocument(hDoc) || IsDXFDocument(hDoc) )
-		((CDocument *)hDoc)->UpdateAllViews(NULL, UAV_ADDINREDRAW);
+		reinterpret_cast<CDocument *>(hDoc)->UpdateAllViews(NULL, UAV_ADDINREDRAW);
 }
 
 NCEXPORT void WINAPI NCVC_GetObjectSize(NCVCHANDLE hDoc, LPRECT3D lprc)
 {
 	CRect3D		rc;
 	if ( IsNCDocument(hDoc) )
-		rc = ((CNCDoc *)hDoc)->GetMaxRect();
+		rc = reinterpret_cast<CNCDoc *>(hDoc)->GetMaxRect();
 	else if ( IsDXFDocument(hDoc) )
-		rc = ((CDXFDoc *)hDoc)->GetMaxRect();
+		rc = reinterpret_cast<CDXFDoc *>(hDoc)->GetMaxRect();
 	lprc->left		= rc.left;
 	lprc->top		= rc.top;
 	lprc->right		= rc.right;

@@ -20,6 +20,7 @@ using namespace boost;
 
 IMPLEMENT_DYNAMIC(CDXFworking, CObject)
 IMPLEMENT_SERIAL(CDXFworkingDirection, CDXFworking, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
+IMPLEMENT_SERIAL(CDXFworkingStart, CDXFworking, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFworkingOutline, CDXFworking, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFworkingPocket, CDXFworking, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFmap, CMapPointToDXFarray, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
@@ -29,6 +30,8 @@ IMPLEMENT_SERIAL(CDXFshape, CObject, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 /////////////////////////////////////////////////////////////////////////////
 // 静的変数の初期化
 double		CDXFmap::ms_dTolerance = NCMIN;
+
+extern	DWORD	g_dwCamVer;		// NCVC.cpp
 
 static	DWORD	g_dwMapFlag[] = {
 	DXFMAPFLG_DIRECTION, DXFMAPFLG_START,
@@ -82,7 +85,7 @@ void CDXFworking::Serialize(CArchive& ar)
 	else {
 		BYTE	bExist;
 		DWORD	nIndex;
-		CLayerData*	pLayer = (CLayerData *)(ar.m_pDocument);
+		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
 		m_pShape = pLayer->GetActiveShape();
 		ar >> m_dwFlags >> m_strWorking;
 		ar >> bExist;
@@ -138,6 +141,38 @@ void CDXFworkingDirection::Serialize(CArchive& ar)
 }
 
 //////////////////////////////////////////////////////////////////////
+// ＤＸＦデータの「開始位置」指示クラス
+//////////////////////////////////////////////////////////////////////
+CDXFworkingStart::CDXFworkingStart
+	(CDXFshape* pShape, CDXFdata* pData, CPointD pts) :
+		CDXFworking(WORK_START, pShape, pData, 0)
+{
+	m_ptStart = pts;
+}
+
+void CDXFworkingStart::DrawTuning(double f)
+{
+	CPointD	pt( m_ptStart * f ); 
+	// 位置を表す丸印は常に2.5論理理位 (CDXFpoint準拠)
+	m_rcDraw.TopLeft()		= pt - LOMETRICFACTOR*2.5;
+	m_rcDraw.BottomRight()	= pt + LOMETRICFACTOR*2.5;
+}
+
+void CDXFworkingStart::Draw(CDC* pDC) const
+{
+	pDC->Ellipse(&m_rcDraw);
+}
+
+void CDXFworkingStart::Serialize(CArchive& ar)
+{
+	CDXFworking::Serialize(ar);
+	if ( ar.IsStoring() )
+		ar << m_ptStart.x << m_ptStart.y;
+	else
+		ar >> m_ptStart.x >> m_ptStart.y;
+}
+
+//////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「輪郭」加工指示クラス
 //////////////////////////////////////////////////////////////////////
 CDXFworkingOutline::CDXFworkingOutline(CDXFshape* pShape, const CDXFchain* pOutline, DWORD dwFlags) :
@@ -148,41 +183,82 @@ CDXFworkingOutline::CDXFworkingOutline(CDXFshape* pShape, const CDXFchain* pOutl
 
 CDXFworkingOutline::~CDXFworkingOutline()
 {
-	for ( POSITION pos=m_ltOutline.GetHeadPosition(); pos; )
-		delete	m_ltOutline.GetNext(pos);
+	CDXFdata*	pData;
+	for ( POSITION pos=m_ltOutline.GetHeadPosition(); pos; ) {
+		pData = m_ltOutline.GetNext(pos);
+		if ( pData )
+			delete	pData;
+	}
 }
 
 void CDXFworkingOutline::DrawTuning(double f)
 {
-	for ( POSITION pos=m_ltOutline.GetHeadPosition(); pos; )
-		m_ltOutline.GetNext(pos)->DrawTuning(f);
+	CDXFdata*	pData;
+	for ( POSITION pos=m_ltOutline.GetHeadPosition(); pos; ) {
+		pData = m_ltOutline.GetNext(pos);
+		if ( pData )
+			pData->DrawTuning(f);
+	}
 }
 
 void CDXFworkingOutline::Draw(CDC* pDC) const
 {
-	for ( POSITION pos=m_ltOutline.GetHeadPosition(); pos; )
-		m_ltOutline.GetNext(pos)->Draw(pDC);
+	CDXFdata*	pData;
+	for ( POSITION pos=m_ltOutline.GetHeadPosition(); pos; ) {
+		pData = m_ltOutline.GetNext(pos);
+		if ( pData )
+			pData->Draw(pDC);
+//		else			// 分離集合ﾃﾞﾊﾞｯｸﾞ
+//			break;
+	}
 }
 
 void CDXFworkingOutline::Serialize(CArchive& ar)
 {
 	CDXFworking::Serialize(ar);
 
+	DWORD		dwCnt = 0;	// ﾃﾞｰﾀの切れ目回数
+	CDWordArray	obGap;		// ﾃﾞｰﾀの切れ目一覧
+
 	// 輪郭ｵﾌﾞｼﾞｪｸﾄのｼﾘｱﾗｲｽﾞ
 	// m_ltOutline.Serialize(ar); では CDXFchain を呼び，
 	// ｵﾌﾞｼﾞｪｸﾄへの SeqNo. で処理される．ゆえに自力ｺｰﾃﾞｨﾝｸﾞ
 	if ( ar.IsStoring() ) {
+		POSITION	pos;
+		CDXFdata*	pData;
+		// ﾃﾞｰﾀの切れ目(NULL値)の記録
+		for ( pos=m_ltOutline.GetHeadPosition(); pos; dwCnt++ ) {
+			pData = m_ltOutline.GetNext(pos);
+			if ( !pData )
+				obGap.Add(dwCnt);
+		}
+		obGap.Serialize(ar);
+		// ﾃﾞｰﾀ本体
 		ar << m_ltOutline.GetCount();
-		for ( POSITION pos=m_ltOutline.GetHeadPosition(); pos; )
-			ar << m_ltOutline.GetNext(pos);
+		for ( pos=m_ltOutline.GetHeadPosition(); pos; ) {
+			pData = m_ltOutline.GetNext(pos);
+			if ( pData )
+				ar << pData;
+		}
 	}
 	else {
-		INT_PTR		nLoop;
+		INT_PTR		i, n = 0, nLoop;
 		CObject*	pNewData;	// CDXFdata*
+		// ﾃﾞｰﾀの切れ目(NULL値)の読み込み
+		if ( g_dwCamVer > NCVCSERIALVERSION_1503 )	// Ver1.10～
+			obGap.Serialize(ar);
+		dwCnt = obGap.IsEmpty() ? -1 : obGap[0];
+		// ﾃﾞｰﾀ本体
 		ar >> nLoop;
-		while ( nLoop-- ) {
-			ar >> pNewData;
-			m_ltOutline.AddTail( (CDXFdata *)pNewData );
+		for ( i=0; i<nLoop; i++ ) {
+			if ( i == dwCnt ) {
+				m_ltOutline.AddTail( (CDXFdata *)NULL );
+				dwCnt = n < obGap.GetUpperBound() ? obGap[++n] : -1;
+			}
+			else {
+				ar >> pNewData;
+				m_ltOutline.AddTail( (CDXFdata *)pNewData );
+			}
 		}
 	}
 }
@@ -255,7 +331,7 @@ void CDXFmap::Serialize(CArchive& ar)
 		UINT		nHash;
 		DWORD		nIndex;
 		CDXFdata*	pData;
-		CLayerData*	pLayer = (CLayerData *)(ar.m_pDocument);
+		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
 		ar >> nMapLoop >> nHash;
 		InitHashTable(nHash);
 		while ( nMapLoop-- ) {
@@ -581,8 +657,12 @@ void CDXFmap::Append(const CDXFmap* pMap)
 
 void CDXFmap::Append(const CDXFchain* pChain)
 {
-	for ( POSITION pos=pChain->GetHeadPosition(); pos; )
-		SetPointMap( pChain->GetNext(pos) );
+	CDXFdata*	pData;
+	for ( POSITION pos=pChain->GetHeadPosition(); pos; ) {
+		pData = pChain->GetNext(pos);
+		if ( pData )
+			SetPointMap(pData);
+	}
 }
 
 int CDXFmap::GetObjectCount(void) const
@@ -723,6 +803,7 @@ void CDXFmap::OrgTuning(void)
 CDXFchain::CDXFchain()
 {
 	m_rcMax.SetRectMinimum();
+	m_dwFlags = 0;
 }
 
 CDXFchain::~CDXFchain()
@@ -731,21 +812,31 @@ CDXFchain::~CDXFchain()
 
 void CDXFchain::Serialize(CArchive& ar)
 {
+	CDXFdata*	pData;
+
 	if ( ar.IsStoring() ) {
 		ar << GetCount();
-		for ( POSITION pos=GetHeadPosition(); pos; )
-			ar << GetNext(pos)->GetSerializeSeq();
+		for ( POSITION pos=GetHeadPosition(); pos; ) {
+			pData = GetNext(pos);
+			if ( pData )
+				ar << pData->GetSerializeSeq();
+			else
+				ar << (DWORD)-1;
+		}
 	}
 	else {
 		INT_PTR		nListLoop;
 		DWORD		nIndex;
-		CDXFdata*	pData;
-		CLayerData*	pLayer = (CLayerData *)(ar.m_pDocument);
+		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
 		ar >> nListLoop;
 		while ( nListLoop-- ) {
 			ar >> nIndex;
-			pData = pLayer->GetDxfData(nIndex);
-			AddTail(pData);
+			if ( nIndex >= 0 ) {
+				pData = pLayer->GetDxfData(nIndex);
+				AddTail(pData);
+			}
+			else
+				AddTail((CDXFdata *)NULL);
 		}
 	}
 }
@@ -753,14 +844,22 @@ void CDXFchain::Serialize(CArchive& ar)
 void CDXFchain::ReversPoint(void)
 {
 	// 全ｵﾌﾞｼﾞｪｸﾄの座標反転
-	for ( POSITION pos=GetHeadPosition(); pos; )
-		GetNext(pos)->ReversePt();
+	CDXFdata*	pData;
+	for ( POSITION pos=GetHeadPosition(); pos; ) {
+		pData = GetNext(pos);
+		if ( pData )
+			pData->ReversePt();
+	}
 }
 
 void CDXFchain::CopyToMap(CDXFmap* pMap)
 {
-	for ( POSITION pos=GetHeadPosition(); pos; )
-		pMap->SetPointMap( GetNext(pos) );
+	CDXFdata*	pData;
+	for ( POSITION pos=GetHeadPosition(); pos; ) {
+		pData = GetNext(pos);
+		if ( pData )
+			pMap->SetPointMap(pData);
+	}
 }
 
 int CDXFchain::GetObjectCount(void) const
@@ -780,6 +879,8 @@ double CDXFchain::GetSelectObjectFromShape
 	// 指定座標に一番近いｵﾌﾞｼﾞｪｸﾄを検索
 	for ( POSITION pos=GetHeadPosition(); pos; ) {
 		pData = GetNext(pos);
+		if ( !pData )	// 分離ﾏｰｸ
+			continue;
 		if ( rcView && !rcView->PtInRectpt(pData->GetMaxRect()) )
 			continue;
 		dGap = pData->GetSelectPointGap(pt);
@@ -795,8 +896,12 @@ double CDXFchain::GetSelectObjectFromShape
 
 void CDXFchain::SetShapeSwitch(BOOL bSelect)
 {
-	for ( POSITION pos=GetHeadPosition(); pos; )
-		GetNext(pos)->SetSelectFlg(bSelect);
+	CDXFdata*	pData;
+	for ( POSITION pos=GetHeadPosition(); pos; ) {
+		pData = GetNext(pos);
+		if ( pData )
+			pData->SetSelectFlg(bSelect);
+	}
 }
 
 void CDXFchain::RemoveObject(const CDXFdata* pData)
@@ -820,6 +925,8 @@ void CDXFchain::DrawShape(CDC* pDC) const
 	pDC->SetROP2(R2_COPYPEN);
 	for ( POSITION pos=GetHeadPosition(); pos; ) {
 		pData = GetNext(pos);
+		if ( !pData )	// 分離ﾏｰｸ
+			continue;
 		dwSel = pData->GetSelectFlg() & DXFSEL_SELECT;
 		if ( dwSel != dwSelBak ) {
 			dwSelBak = dwSel;
@@ -833,8 +940,14 @@ void CDXFchain::DrawShape(CDC* pDC) const
 
 void CDXFchain::OrgTuning(void)
 {
-	for ( POSITION pos=GetHeadPosition(); pos; )
-		GetNext(pos)->OrgTuning(FALSE);
+	CDXFdata*	pData;
+	for ( POSITION pos=GetHeadPosition(); pos; ) {
+		pData = GetNext(pos);
+		if ( pData )
+			pData->OrgTuning(FALSE);
+	}
+	// 自分自身のﾌﾗｸﾞも初期化
+	m_dwFlags = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -867,7 +980,9 @@ void CDXFshape::Constructor(DXFSHAPE_ASSEMBLE enAssemble, LPCTSTR lpszShape, DWO
 	m_dwFlags = dwFlags;
 	m_dOffset = 1.0;	// ﾃﾞﾌｫﾙﾄｵﾌｾｯﾄ値
 	m_nInOut  = -1;		// ﾃﾞﾌｫﾙﾄ輪郭方向無し
+	m_bAcute  = TRUE;
 	m_hTree   = NULL;
+	m_nSerialSeq = 0;
 	if ( lpszShape && lstrlen(lpszShape) > 0 )
 		m_strShape = lpszShape;
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
@@ -879,8 +994,10 @@ void CDXFshape::SetDetailInfo(CDXFchain* pChain)
 	CDXFdata*	pData;
 	for ( POSITION pos=pChain->GetHeadPosition(); pos; ) {
 		pData = pChain->GetNext(pos);
-		m_rcMax |= pData->GetMaxRect();
-		pData->SetParentMap(this);
+		if ( pData ) {
+			m_rcMax |= pData->GetMaxRect();
+			pData->SetParentMap(this);
+		}
 	}
 }
 
@@ -918,7 +1035,7 @@ void CDXFshape::Serialize(CArchive& ar)
 		nType = m_vShape.which();
 		nAssemble = m_enAssemble;
 		ar << (m_dwFlags & ~DXFMAPFLG_SELECT) << nAssemble << m_strShape;	// 選択状態除く
-		ar << m_dOffset << m_nInOut;
+		ar << m_dOffset << m_nInOut << m_bAcute;
 		ar << nType;
 		if ( nType == 0 )
 			get<CDXFchain*>(m_vShape)->Serialize(ar);
@@ -926,9 +1043,11 @@ void CDXFshape::Serialize(CArchive& ar)
 			get<CDXFmap*>(m_vShape)->Serialize(ar);
 	}
 	else {
-		CLayerData*	pLayer = (CLayerData *)(ar.m_pDocument);
+		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
 		ar >> m_dwFlags >> nAssemble >> m_strShape;
 		ar >> m_dOffset >> m_nInOut;
+		if ( g_dwCamVer > NCVCSERIALVERSION_1503 )	// Ver1.10～
+			ar >> m_bAcute;
 		ar >> nType;
 		m_enAssemble = (DXFSHAPE_ASSEMBLE)nAssemble;
 		if ( nType == 0 ) {
@@ -1014,6 +1133,22 @@ tuple<CDXFworking*, CDXFdata*> CDXFshape::GetDirectionObject(void) const
 	return make_tuple(pWork, pData);
 }
 
+tuple<CDXFworking*, CDXFdata*> CDXFshape::GetStartObject(void) const
+{
+	CDXFworking*	pWork;
+	CDXFdata*		pData = NULL;
+
+	for ( POSITION pos=m_ltWork.GetHeadPosition(); pos; ) {
+		pWork = m_ltWork.GetNext(pos);
+		if ( pWork->GetWorkingType() == WORK_START ) {
+			pData = pWork->GetTargetObject();
+			break;
+		}
+	}
+
+	return make_tuple(pWork, pData);
+}
+
 CDXFchain*	CDXFshape::GetOutlineObject(void) const
 {
 	CDXFworking*	pWork;
@@ -1022,7 +1157,7 @@ CDXFchain*	CDXFshape::GetOutlineObject(void) const
 	for ( POSITION pos=m_ltWork.GetHeadPosition(); pos; ) {
 		pWork = m_ltWork.GetNext(pos);
 		if ( pWork->GetWorkingType() == WORK_OUTLINE ) {
-			pChain = ((CDXFworkingOutline *)pWork)->GetOutlineChain();
+			pChain = static_cast<CDXFworkingOutline*>(pWork)->GetOutlineChain();
 			break;
 		}
 	}
@@ -1108,7 +1243,7 @@ BOOL CDXFshape::ChangeCreate_ChainToMap(CDXFchain* pChain)
 		m_vShape = pMap;
 		m_dwFlags = pMap->GetMapTypeFlag();
 		m_strShape += "(降格)";
-		// 適さない加工指示(方向指示以外)を削除
+		// 適さない加工指示(輪郭指示など)を削除
 		RemoveExceptDirection();
 	}
 	catch (CMemoryException* e) {
@@ -1169,7 +1304,7 @@ BOOL CDXFshape::LinkShape(CDXFshape* pShape)
 			delete	pMapTmp;
 			return FALSE;
 		}
-		// 不要加工指示(方向指示以外)を削除
+		// 不要加工指示(輪郭指示など)を削除
 		RemoveExceptDirection();
 		// 方向指示の統合
 		CDXFworking*	pWork1;
@@ -1189,6 +1324,18 @@ BOOL CDXFshape::LinkShape(CDXFshape* pShape)
 			// 自分自身に方向指示がなく，相手にある
 			pShape->DelWorkingData(pWork2, this);	// 方向指示の付け替え
 		}
+		// 開始位置の統合
+		tie(pWork1, pData1) = GetStartObject();
+		tie(pWork2, pData2) = pShape->GetStartObject();
+		if ( pData1 ) {
+			if ( pData2 ) {
+				pShape->DelWorkingData(pWork2);
+			}
+		}
+		else if ( pData2 ) {
+			pShape->DelWorkingData(pWork2, this);
+		}
+
 		// 集合検査
 		DWORD dwFlag = pMapTmp->GetMapTypeFlag();
 		if ( dwFlag == 0 ) {
@@ -1244,21 +1391,35 @@ BOOL CDXFshape::LinkShape(CDXFshape* pShape)
 	return bResult;
 }
 
-BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult) const
+BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult)
 {
-	CDXFchain*	pChain = GetShapeChain();
+#ifdef _DEBUG
+	CMagaDbg	dbg("CreateOutlineTempObject()", DBG_MAGENTA);
+	CPointD		ptDbg1, ptDbg2, ptDbg3;
+#endif
+	// 占有矩形領域の初期化
+	pResult->ClearMaxRect();
+
+	const CDXFchain*	pChain = GetShapeChain();
 	if ( !pChain || pChain->IsEmpty() )
 		return FALSE;
 
+	CTypedPtrArrayEx<CPtrArray, CDXFlist*>	obSepArray;
+
+	int			k = bLeft ? -1 : 1;
+	BOOL		bResult = TRUE;
 	CDXFdata*	pData;
-	CPointD		pte;
-	optional<CPointD>	ptResult, pt;
+	CPointD		pt, pte;
+	optional<CPointD>	ptResult, pts;
 
 	// 唯一のｵﾌﾞｼﾞｪｸﾄが円ﾃﾞｰﾀなら
 	if ( pChain->GetCount() == 1 ) {
 		pData = pChain->GetHead();
 		if ( pData->GetType() == DXFCIRCLEDATA ) {
-			pData = CreateOutlineTempObject_new(pData, pte, pte, bLeft);
+			// ｵﾌｾｯﾄ半径のﾏｲﾅｽﾁｪｯｸ
+			if ( static_cast<CDXFcircle*>(pData)->GetR()+m_dOffset*k < EPS )
+				return TRUE;	// ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄを生成しない
+			pData = CreateOutlineTempObject_new(pData, pte, pte, k);
 			if ( pData ) {
 				pResult->AddTail(pData);
 				pResult->SetMaxRect(pData);
@@ -1277,49 +1438,130 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult) const
 	// 単純ﾙｰﾌﾟで良い
 	while ( pos ) {		// ２回目以降からﾙｰﾌﾟ
 		pData2 = pChain->GetNext(pos);
+#ifdef _DEBUG
+		ptDbg1 = pData1->GetNativePoint(0);
+		ptDbg2 = pData1->GetNativePoint(1);
+		ptDbg3 = pData2->GetNativePoint(1);
+		dbg.printf("p1=(%.3f, %.3f) p2=(%.3f, %.3f) p3=(%.3f, %.3f)",
+			ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y, ptDbg3.x, ptDbg3.y);
+#endif
 		// ｵﾌｾｯﾄ座標計算
 		ptResult = pData1->CalcOffsetIntersectionPoint(pData2, m_dOffset, bLeft);
-		if ( !ptResult )
-			return FALSE;
+		if ( !ptResult ) {
+			bResult = FALSE;
+			break;
+		}
+		pt = *ptResult;
+#ifdef _DEBUG
+		dbg.printf("Offset=(%.3f, %.3f)", pt.x, pt.y);
+#endif
 		// 輪郭ｵﾌﾞｼﾞｪｸﾄ生成(初回は無視)
-		if ( pt ) {
-			pData = CreateOutlineTempObject_new(pData1, *pt, *ptResult, bLeft);
+		if ( pts ) {
+			pData = CreateOutlineTempObject_new(pData1, *pts, pt, k);
 			if ( pData ) {
 				pResult->AddTail(pData);
 				pResult->SetMaxRect(pData);
+				// ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄの交点検査
+				if ( !SeparateOutlineIntersection(pResult, obSepArray) ) {
+					bResult = FALSE;
+					break;
+				}
 			}
-			else
-				return FALSE;
+			else {
+				bResult = FALSE;
+				break;
+			}
 		}
 		else
-			pte = *ptResult;	// 最初の輪郭ｵﾌﾞｼﾞｪｸﾄの終点
-		pt = ptResult;
+			pte = pt;		// 最初の輪郭ｵﾌﾞｼﾞｪｸﾄの終点
+		pts = pt;
 		pData1 = pData2;
 	}
-	// 残りの輪郭ｵﾌﾞｼﾞｪｸﾄ生成
-	ptResult = pData1->CalcOffsetIntersectionPoint(pChain->GetHead(), m_dOffset, bLeft);
-	if ( !ptResult )
+	if ( !bResult ) {
+		// ｴﾗｰﾘｶﾊﾞﾘ
+		for ( k=0; k<obSepArray.GetSize(); k++ ) {
+			for ( pos=obSepArray[k]->GetHeadPosition(); pos; )
+				delete	obSepArray[k]->GetNext(pos);
+			delete	obSepArray[k];
+		}
 		return FALSE;
-	pData = CreateOutlineTempObject_new(pData1, *pt, *ptResult, bLeft);
+	}
+
+	// 残りの輪郭ｵﾌﾞｼﾞｪｸﾄ生成(最後のｵﾌﾞｼﾞｪｸﾄと先頭のｵﾌﾞｼﾞｪｸﾄ)
+	pData2 = pChain->GetHead();
+#ifdef _DEBUG
+	ptDbg1 = pData1->GetNativePoint(0);
+	ptDbg2 = pData1->GetNativePoint(1);
+	ptDbg3 = pData2->GetNativePoint(1);
+	dbg.printf("p1=(%.3f, %.3f) p2=(%.3f, %.3f) p3=(%.3f, %.3f)",
+		ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y, ptDbg3.x, ptDbg3.y);
+#endif
+	ptResult = pData1->CalcOffsetIntersectionPoint(pData2, m_dOffset, bLeft);
+	if ( ptResult ) {
+		pt = *ptResult;
+#ifdef _DEBUG
+		dbg.printf("Offset=(%.3f, %.3f)", pt.x, pt.y);
+#endif
+		pData = CreateOutlineTempObject_new(pData1, *pts, pt, k);
+		if ( pData ) {
+			pResult->AddTail(pData);
+			pResult->SetMaxRect(pData);
+			if ( !SeparateOutlineIntersection(pResult, obSepArray) )
+				bResult = FALSE;
+		}
+		else
+			bResult = FALSE;
+	}
+	else
+		bResult = FALSE;
+	if ( !bResult ) {
+		for ( k=0; k<obSepArray.GetSize(); k++ ) {
+			for ( pos=obSepArray[k]->GetHeadPosition(); pos; )
+				delete	obSepArray[k]->GetNext(pos);
+			delete	obSepArray[k];
+		}
+		return FALSE;
+	}
+
+	// 最初のｵﾌﾞｼﾞｪｸﾄ(の終点で)
+	pData = CreateOutlineTempObject_new(pData2, pt, pte, k);
 	if ( pData ) {
 		pResult->AddTail(pData);
 		pResult->SetMaxRect(pData);
+		if ( !SeparateOutlineIntersection(pResult, obSepArray) )
+			bResult = FALSE;
 	}
 	else
+		bResult = FALSE;
+	if ( !bResult ) {
+		for ( k=0; k<obSepArray.GetSize(); k++ ) {
+			for ( pos=obSepArray[k]->GetHeadPosition(); pos; )
+				delete	obSepArray[k]->GetNext(pos);
+			delete	obSepArray[k];
+		}
 		return FALSE;
-	pData = CreateOutlineTempObject_new(pChain->GetHead(), *ptResult, pte, bLeft);
-	if ( pData ) {
-		pResult->AddTail(pData);
-		pResult->SetMaxRect(pData);
 	}
-	else
-		return FALSE;
+
+	// 本集合の検査
+	CheckSeparateChain(pResult);
+
+	// 分離集合の検査
+	for ( k=0; k<obSepArray.GetSize(); k++ ) {
+		CheckSeparateChain(obSepArray[k]);
+		// 分離集合を末尾に結合
+		if ( !obSepArray[k]->IsEmpty() ) {
+			if ( !pResult->IsEmpty() )
+				pResult->AddTail((CDXFdata *)NULL);		// 分離ﾏｰｸ
+			pResult->AddTail(obSepArray[k]);
+		}
+		delete	obSepArray[k];
+	}
 
 	return TRUE;
 }
 
 CDXFdata* CDXFshape::CreateOutlineTempObject_new
-	(const CDXFdata* pDataSrc, const CPointD& pts, const CPointD& pte, BOOL bLeft) const
+	(const CDXFdata* pDataSrc, const CPointD& pts, const CPointD& pte, int k) const
 {
 	CDXFdata*	pData = NULL;
 	DXFLARGV	dxfLine;
@@ -1334,28 +1576,38 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 		pData = new CDXFline(&dxfLine);
 		break;
 	case DXFCIRCLEDATA:
-		dxfCircle.c = ((CDXFcircle *)pDataSrc)->GetCenter();
-		dxfCircle.r = ((CDXFcircle *)pDataSrc)->GetR() + m_dOffset * (bLeft ? 1 : -1);
+		pData = const_cast<CDXFdata*>(pDataSrc);
+		dxfCircle.c = static_cast<CDXFcircle*>(pData)->GetCenter();
+		dxfCircle.r = static_cast<CDXFcircle*>(pData)->GetR() + m_dOffset * k;
 		pData = new CDXFcircle(&dxfCircle);
 		break;
 	case DXFARCDATA:
 		{
-			BOOL	bRound = ((CDXFarc *)pDataSrc)->GetRoundOrig();
-			dxfArc.c = ((CDXFarc *)pDataSrc)->GetCenter();
-			if ( bRound )
-				dxfArc.r = ((CDXFarc *)pDataSrc)->GetR() + m_dOffset * ( bLeft ? -1 : 1 );
-			else
-				dxfArc.r = ((CDXFarc *)pDataSrc)->GetR() + m_dOffset * ( bLeft ? 1 : -1 );
+			const CDXFarc* pArc = static_cast<const CDXFarc*>(pDataSrc);
+			BOOL	bRound = pArc->GetRound();
+			if ( !bRound && k!=0 )	// 左方向を基準
+				k = -k;
+			dxfArc.c = pArc->GetCenter();
+			dxfArc.r = pArc->GetR() + m_dOffset * k;
 			if ( (dxfArc.sq=atan2(pts.y - dxfArc.c.y, pts.x - dxfArc.c.x)) < 0.0 )
 				dxfArc.sq += 360.0*RAD;
 			if ( (dxfArc.eq=atan2(pte.y - dxfArc.c.y, pte.x - dxfArc.c.x)) < 0.0 )
 				dxfArc.eq += 360.0*RAD;
+			// ｵﾘｼﾞﾅﾙ円弧とｵﾌｾｯﾄ円弧の回転方向ﾁｪｯｸ
+			if ( k != 0 ) {
+				optional<CPointD> ptResult = ::CalcIntersectionPoint_LL(
+						pts, pArc->GetNativePoint(0),
+						pte, pArc->GetNativePoint(1) );
+				if ( ptResult )		// ｵﾘｼﾞﾅﾙ円弧とｵﾌｾｯﾄ円弧の回転方向が違う
+					bRound = !bRound;
+			}
 			if ( bRound ) {
-				while ( dxfArc.sq - dxfArc.eq >= 0 )
+				// for CDXFarc::AngleTuning()
+				while ( ::RoundUp(dxfArc.sq*DEG) > ::RoundUp(dxfArc.eq*DEG) )
 					dxfArc.eq += 360.0*RAD;
 			}
 			else {
-				while ( dxfArc.eq - dxfArc.sq >= 0 )
+				while ( ::RoundUp(dxfArc.eq*DEG) > ::RoundUp(dxfArc.sq*DEG) )
 					dxfArc.sq += 360.0*RAD;
 			}
 			pData = new CDXFarc(&dxfArc, bRound, pts, pte);
@@ -1364,6 +1616,177 @@ CDXFdata* CDXFshape::CreateOutlineTempObject_new
 	}
 
 	return pData;
+}
+
+BOOL CDXFshape::SeparateOutlineIntersection
+	(CDXFchain* pOffset, CTypedPtrArrayEx<CPtrArray, CDXFlist*>& obSepList)
+{
+	POSITION	pos1 = pOffset->GetTailPosition(), pos2, pos;
+	CDXFdata*	pData;
+	CDXFdata*	pData1;
+	CDXFdata*	pData2;
+	CDXFlist*	pSepList = NULL;
+	CPointD		pt[4];	// 最大４交点
+	int			nCnt, nLoop = 0;
+	BOOL		bResult = TRUE;
+
+	if ( pos1 )
+		pData1 = pOffset->GetPrev(pos1);	// 検索対象ﾃﾞｰﾀ
+	else
+		return TRUE;
+
+	for ( ; (pos2=pos1); nLoop++ ) {
+		pData2 = pOffset->GetPrev(pos1);		// さかのぼって検索
+		// ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄ同士の交点ﾁｪｯｸ(端点含む)
+		nCnt = pData1->GetIntersectionPoint(pData2, pt, nLoop==0);	// 最初のﾙｰﾌﾟだけTRUE
+		if ( nCnt <= 0 )
+			continue;
+		// --- 交点あり！！
+		pSepList = new CDXFlist;
+		// 1) 交点から pData2 の終点までｵﾌﾞｼﾞｪｸﾄ生成
+		pData = CreateOutlineTempObject_new(pData2, pt[0], pData2->GetNativePoint(1), 0);
+		if ( !pData ) {
+			bResult = FALSE;
+			break;
+		}
+		pSepList->AddTail(pData);
+		// 2) pData2 の次から pData1 の手前まで分離集合に移動
+		pos = pos2;
+		pOffset->GetNext(pos);		// １つ進める
+		while ( (pos2=pos) ) {
+			pData = pOffset->GetNext(pos);
+			if ( pData1 == pData )
+				break;
+			pSepList->AddTail(pData);
+			pOffset->RemoveAt(pos2);
+		}
+		// 3) pData1 の始点から交点までｵﾌﾞｼﾞｪｸﾄ生成(pData1上書き禁止)
+		pData = CreateOutlineTempObject_new(pData1, pData1->GetNativePoint(0), pt[0], 0);
+		if ( !pData ) {
+			bResult = FALSE;
+			break;
+		}
+		pSepList->AddTail(pData);
+		// 4) pData1/pData2 の始点/終点を更新
+		pData1->SetNativePoint(0, pt[0]);
+		pData2->SetNativePoint(1, pt[0]);
+		// 5) 分離集合に追加
+		obSepList.Add(pSepList);
+		pSepList = NULL;
+	}
+
+	if ( !bResult && pSepList ) {
+		// ｺﾞﾐ掃除
+		for ( pos=pSepList->GetHeadPosition(); pos; )
+			delete	pSepList->GetNext(pos);
+	}
+
+	return TRUE;
+}
+
+BOOL CDXFshape::CheckSeparateChain(CDXFlist* pResult)
+{
+	BOOL	bDelete  = TRUE;
+	int		nCnt = 0;
+	POSITION	pos1, pos2, pos;
+	CDXFdata*	pData;
+	CMapPtrToPtr	mp, mpDel;		// NG点のﾎﾟｼﾞｼｮﾝｷｰ
+
+	// NG点検査
+	for ( pos1=pResult->GetHeadPosition(); (pos2=pos1); ) {
+		pData = pResult->GetNext(pos1);
+		if ( CheckIntersectionCircle(pData->GetNativePoint(1)) )
+			mp.SetAt(pos2, pData);		// １つでもNG点含む
+		else {
+			bDelete = FALSE;	// 全部NG点でない=>削除対象ではない
+			nCnt++;				// OK点ｶｳﾝﾄ
+		}
+	}
+
+	// 分離集合の削除対象検査
+	if ( nCnt<=2 || bDelete ) {	// OK点2個以下もｱｳﾄ
+		for ( pos1=pResult->GetHeadPosition(); pos1; )
+			delete	pResult->GetNext(pos1);
+		pResult->RemoveAll();
+		return TRUE;
+	}
+
+	// --- NG点の除去
+	LPVOID		pKey, pVoid;		// dummy
+
+	// 連続NG点のｵﾌﾞｼﾞｪｸﾄを除去
+	for ( pos1=mp.GetStartPosition(); pos1; ) {
+		mp.GetNextAssoc(pos1, pKey, pVoid);
+		pos2 = (POSITION)pKey;
+		if ( mpDel.Lookup(pos2, pVoid) )
+			continue;	// 削除処理済み
+		pResult->GetNext(pos2);
+		if ( !pos2 )
+			pos2 = pResult->GetHeadPosition();
+		while ( mp.Lookup(pos2, pVoid) ) {
+			mpDel.SetAt(pos2, pVoid);	// ここでは mp.RemoveKey() できない
+			pos = pos2;
+			delete	pResult->GetNext(pos2);
+			pResult->RemoveAt(pos);
+			if ( !pos2 )
+				pos2 = pResult->GetHeadPosition();
+		}
+	}
+	for ( pos1=mpDel.GetStartPosition(); pos1; ) {	// 後片付け
+		mpDel.GetNextAssoc(pos1, pKey, pVoid);
+		mp.RemoveKey(pKey);
+	}
+
+	// NG点の枝刈り(終点でNG点を持つｵﾌﾞｼﾞｪｸﾄ)
+	CDXFdata*	pData1;
+	CDXFdata*	pData2;
+	optional<CPointD>	ptResult;
+	for ( pos1=mp.GetStartPosition(); pos1; ) {
+		mp.GetNextAssoc(pos1, pKey, pVoid);
+		pos2 = (POSITION)pKey;
+		pData1 = pResult->GetNext(pos2);
+		if ( !pos2 )
+			pos2 = pResult->GetHeadPosition();
+		pData2 = pResult->GetNext(pos2);
+		// NG点を持つｵﾌﾞｼﾞｪｸﾄの長さﾁｪｯｸ
+		if ( pData1->GetLength() <= pData2->GetLength() ) {
+			// pData1の前とpData2の交点を計算
+			pos2 = (POSITION)pKey;
+			pData = pResult->GetPrev(pos2);		// pData1
+			if ( !pos2 )
+				pos2 = pResult->GetTailPosition();
+			pData = pResult->GetPrev(pos2);
+			ptResult = pData2->CalcExpandPoint(pData);
+		}
+		else {
+			// pData2の次とpData1の交点を計算
+			if ( !pos2 )
+				pos2 = pResult->GetHeadPosition();
+			pData = pResult->GetNext(pos2);
+			ptResult = pData1->CalcExpandPoint(pData);
+		}
+		if ( ptResult ) {
+			pData1->SetNativePoint(1, *ptResult);
+			pData2->SetNativePoint(0, *ptResult);
+		}
+	}
+
+	return TRUE;
+}
+
+BOOL CDXFshape::CheckIntersectionCircle(const CPointD& ptc)
+{
+	const CDXFchain*	pChain = GetShapeChain();
+	ASSERT( pChain );
+
+	// ｵﾘｼﾞﾅﾙｵﾌﾞｼﾞｪｸﾄとの交点ﾁｪｯｸ
+	for ( POSITION pos = pChain->GetHeadPosition(); pos; ) {
+		// 交点あり(==2)なら TRUE、「接する」(==1)はOK!
+		if ( pChain->GetNext(pos)->CheckIntersectionCircle(ptc, m_dOffset) > 1 )
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 void CDXFshape::AllChangeFactor(double dFactor) const
@@ -1375,7 +1798,8 @@ void CDXFshape::AllChangeFactor(double dFactor) const
 void CDXFshape::DrawWorking(CDC* pDC) const
 {
 	CDXFworking*	pWork;
-	int		i = 0, j;
+	int		i = 0, j,
+			a = 0, b;
 	CPen*	pPen[] = {
 		AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER),
 		AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL)
@@ -1389,6 +1813,14 @@ void CDXFshape::DrawWorking(CDC* pDC) const
 		if ( i != j ) {
 			i = j;
 			pDC->SelectObject( pPen[i] );
+		}
+		b = pWork->GetWorkingType() == WORK_START ? 1 : 0;
+		if ( a != b ) {
+			a = b;
+			if ( a == 0 )
+				pDC->SelectStockObject(NULL_BRUSH);
+			else
+				pDC->SelectObject(AfxGetNCVCMainWnd()->GetBrushDXF(DXFBRUSH_START));
 		}
 		pWork->Draw(pDC);
 	}

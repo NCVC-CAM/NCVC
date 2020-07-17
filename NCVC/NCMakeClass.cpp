@@ -95,34 +95,34 @@ CNCMake::CNCMake(const CDXFdata* pData, double dFeed, const CPointD* lpt/*=NULL*
 		break;
 
 	case DXFCIRCLEDATA:
-		m_strGcode += (*ms_pfnMakeCircle)((CDXFcircle *)pData, dFeed);
+		m_strGcode += (*ms_pfnMakeCircle)(static_cast<const CDXFcircle*>(pData), dFeed);
 		break;
 
 	case DXFARCDATA:
-		m_strGcode += (*ms_pfnMakeArc)((CDXFarc *)pData, dFeed, lpt);
+		m_strGcode += (*ms_pfnMakeArc)(static_cast<const CDXFarc*>(pData), dFeed, lpt);
 		break;
 
 	case DXFELLIPSEDATA:
 		m_strGarray.SetSize(0, 1024);
-		MakeEllipse((CDXFellipse *)pData, dFeed);
+		MakeEllipse(static_cast<const CDXFellipse*>(pData), dFeed);
 		break;
 
 	case DXFPOLYDATA:
 		m_strGarray.SetSize(0, 1024);
-		MakePolylineCut((CDXFpolyline *)pData, dFeed);
+		MakePolylineCut(static_cast<const CDXFpolyline*>(pData), dFeed);
 		break;
 	}
 }
 
-CNCMake::CNCMake(const CDXFdata* pData)
+CNCMake::CNCMake(const CDXFdata* pData, BOOL bL0/*=FALSE*/)
 {
 	CPointD	pt;
 
 	switch ( pData->GetMakeType() ) {
 	case DXFLINEDATA:
 		pt = pData->GetMakePoint(0);
-		// そのｵﾌﾞｼﾞｪｸﾄと現在位置が違うなら
-		if ( pt.x!=ms_xyz[NCA_X] || pt.y!=ms_xyz[NCA_Y] ) {
+		// そのｵﾌﾞｼﾞｪｸﾄと現在位置が違うなら、そこまで移動(bL0除く)
+		if ( bL0 && (pt.x!=ms_xyz[NCA_X] || pt.y!=ms_xyz[NCA_Y]) ) {
 			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(0) +
 				GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) +
 				ms_strEOB;
@@ -132,15 +132,21 @@ CNCMake::CNCMake(const CDXFdata* pData)
 		// ｵﾌﾞｼﾞｪｸﾄの移動ﾃﾞｰﾀ生成
 		pt = pData->GetEndMakePoint();
 		if ( pt.x!=ms_xyz[NCA_X] || pt.y!=ms_xyz[NCA_Y] ) {
-			m_strGcode += (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(0) +
-				GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) +
-				ms_strEOB;
+			if ( bL0 ) {
+				m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetCycleString)() +
+					GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) +
+					GetValString(NCA_L, 0) + ms_strEOB;
+			}
+			else {
+				m_strGcode += (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(0) +
+					GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) + ms_strEOB;
+			}
 		}
 		break;
 
 	case DXFPOLYDATA:
 		m_strGarray.SetSize(0, 1024);
-		MakePolylineMov((CDXFpolyline *)pData);
+		MakePolylineMov(static_cast<const CDXFpolyline*>(pData), bL0);
 		break;
 	}
 }
@@ -194,7 +200,7 @@ void CNCMake::MakePolylineCut(const CDXFpolyline* pPoly, double dFeed)
 
 	BOOL	bFeed = TRUE;
 	CString	strGcode;
-	const	CDXFdata*		pData;
+	CDXFdata*	pData;
 
 	// SwapPt()で順序が入れ替わっても端点は必ず CDXFpoint
 	POSITION pos = pPoly->GetFirstVertex();
@@ -217,7 +223,7 @@ void CNCMake::MakePolylineCut(const CDXFpolyline* pPoly, double dFeed)
 			break;
 
 		case DXFARCDATA:
-			strGcode = (*ms_pfnMakeArc)((CDXFarc *)pData, dFeed, NULL);
+			strGcode = (*ms_pfnMakeArc)(static_cast<CDXFarc*>(pData), dFeed, NULL);
 			if ( !strGcode.IsEmpty() ) {
 				m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode);
 				bFeed = FALSE;
@@ -227,7 +233,7 @@ void CNCMake::MakePolylineCut(const CDXFpolyline* pPoly, double dFeed)
 			break;
 
 		case DXFELLIPSEDATA:
-			MakeEllipse((CDXFellipse *)pData, dFeed);
+			MakeEllipse(static_cast<CDXFellipse*>(pData), dFeed);
 			bFeed = FALSE;
 			// 終点分を飛ばす
 			pPoly->GetNextVertex(pos);
@@ -248,11 +254,12 @@ void CNCMake::MakePolylineCut(const CDXFpolyline* pPoly, double dFeed)
 	}
 }
 
-void CNCMake::MakePolylineMov(const CDXFpolyline* pPoly)
+void CNCMake::MakePolylineMov(const CDXFpolyline* pPoly, BOOL bL0)
 {
 	if ( pPoly->GetVertexCount() <= 1 )
 		return;
 
+	CPointD	pt;
 	CString	strGcode;
 	const	CDXFdata*	pData;
 
@@ -262,17 +269,27 @@ void CNCMake::MakePolylineMov(const CDXFpolyline* pPoly)
 		pData = pPoly->GetNextVertex(pos);
 		// 円弧(ふくらみ情報)は無視
 		if ( pData->GetMakeType() == DXFPOINTDATA ) {
-			strGcode = (*ms_pfnGetGString)(0) +
-					GetValString(NCA_X, pData->GetEndMakePoint().x) +
-					GetValString(NCA_Y, pData->GetEndMakePoint().y);
+			pt = pData->GetEndMakePoint();
+			if ( bL0 )
+				strGcode = (*ms_pfnGetCycleString)() +
+					GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) +
+					GetValString(NCA_L, 0);
+			else
+				strGcode = (*ms_pfnGetGString)(0) +
+					GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y);
 			if ( !strGcode.IsEmpty() )
 				m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
 		}
 	}
 	if ( pPoly->GetPolyFlag() & 1 )	{
-		strGcode = (*ms_pfnGetGString)(0) +
-				GetValString(NCA_X, pPoly->GetMakePoint(0).x) +
-				GetValString(NCA_Y, pPoly->GetMakePoint(0).y);
+		pt = pPoly->GetMakePoint(0);
+		if ( bL0 )
+			strGcode = (*ms_pfnGetCycleString)() +
+				GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) +
+				GetValString(NCA_L, 0);
+		else
+			strGcode = (*ms_pfnGetGString)(0) +
+				GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y);
 		if ( !strGcode.IsEmpty() )
 			m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
 	}
@@ -310,7 +327,7 @@ CString CNCMake::MakeCustomString(int nCode, int nValFlag[], double dValue[])
 	return strResult;
 }
 
-CString CNCMake::GetValString(int xyz, double dVal, BOOL bSpecial)
+CString CNCMake::GetValString(int xyz, double dVal, BOOL bSpecial/*=FALSE*/)
 {
 	extern	LPCTSTR	g_szNdelimiter;		// "XYZRIJKPLDH" from NCDoc.cpp
 	CString	strResult;
@@ -360,7 +377,7 @@ CString CNCMake::GetValString(int xyz, double dVal, BOOL bSpecial)
 		}
 		// through
 	default:	// L(小数点指定なし)
-		strResult.Format("%c%02d", g_szNdelimiter[xyz], (int)dVal);
+		strResult.Format("%c%d", g_szNdelimiter[xyz], (int)dVal);
 		return strResult;
 	}
 

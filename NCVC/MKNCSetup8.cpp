@@ -25,6 +25,7 @@ CMKNCSetup8::CMKNCSetup8() : CPropertyPage(CMKNCSetup8::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CMKNCSetup8)
 	m_bLayerComment	= FALSE;
+	m_bL0Cycle		= FALSE;
 	m_nMoveZ		= 0;
 	m_strCustMoveB = _T("");
 	m_strCustMoveA = _T("");
@@ -40,6 +41,7 @@ void CMKNCSetup8::DoDataExchange(CDataExchange* pDX)
 	CPropertyPage::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMKNCSetup8)
 	DDX_Check(pDX, IDC_MKNC8_LAYERCOMMENT, m_bLayerComment);
+	DDX_Check(pDX, IDC_MKNC8_L0CYCLE, m_bL0Cycle);
 	DDX_CBIndex(pDX, IDC_MKNC8_MOVEZ, m_nMoveZ);
 	DDX_Text(pDX, IDC_MKNC8_CUSTMOVEB, m_strCustMoveB);
 	DDX_Text(pDX, IDC_MKNC8_CUSTMOVEA, m_strCustMoveA);
@@ -55,8 +57,9 @@ BOOL CMKNCSetup8::OnInitDialog()
 
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	m_bLayerComment	= pOpt->m_bLayerComment;
+	m_bL0Cycle		= pOpt->m_bL0Cycle;
 	m_nMoveZ		= pOpt->m_nMoveZ;
 	m_strCustMoveB	= pOpt->m_strOption[MKNC_STR_CUSTMOVE_B];
 	m_strCustMoveA	= pOpt->m_strOption[MKNC_STR_CUSTMOVE_A];
@@ -69,8 +72,9 @@ BOOL CMKNCSetup8::OnInitDialog()
 
 BOOL CMKNCSetup8::OnApply() 
 {
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_bLayerComment	= m_bLayerComment;
+	pOpt->m_bL0Cycle		= m_bL0Cycle;
 	pOpt->m_nMoveZ			= m_nMoveZ;
 	pOpt->m_strOption[MKNC_STR_CUSTMOVE_B] = m_strCustMoveB;
 	pOpt->m_strOption[MKNC_STR_CUSTMOVE_A] = m_strCustMoveA;

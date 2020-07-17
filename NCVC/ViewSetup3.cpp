@@ -42,7 +42,7 @@ CViewSetup3::CViewSetup3() : CPropertyPage(CViewSetup3::IDD)
 	//{{AFX_DATA_INIT(CViewSetup3)
 		// メモ - ClassWizard はこの位置にメンバの初期化処理を追加します。
 	//}}AFX_DATA_INIT
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();	// Can't const(GetLogFont)
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
 		m_colView[i] = pOpt->GetDxfDrawColor(i);
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
@@ -84,11 +84,11 @@ BOOL CViewSetup3::OnInitDialog()
 
 	// ﾎﾞﾀﾝﾃｷｽﾄの変更
 	m_ctFontButton.SetWindowText(
-		((CViewSetup *)GetParent())->GetChangeFontButtonText(&m_lfFont) );
+		static_cast<CViewSetup *>(GetParent())->GetChangeFontButtonText(&m_lfFont) );
 
 	// 線属性ﾀｲﾌﾟの選択肢登録
 	extern	const	PENSTYLE	g_penStyle[];
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	int		i, j;
 	for ( i=0; i<SIZEOF(m_cbLineType); i++ ) {
 		for ( j=0; j<MAXPENSTYLE; j++ )
@@ -156,7 +156,7 @@ void CViewSetup3::OnFontChange()
 	if ( fontDlg.DoModal() == IDOK ) {
 		memcpy(&m_lfFont, fontDlg.m_cf.lpLogFont, sizeof(m_lfFont));
 		m_ctFontButton.SetWindowText(
-			((CViewSetup *)GetParent())->GetChangeFontButtonText(&m_lfFont) );
+			static_cast<CViewSetup *>(GetParent())->GetChangeFontButtonText(&m_lfFont) );
 		// 適用ﾎﾞﾀﾝを有効に
 		SetModified();
 	}

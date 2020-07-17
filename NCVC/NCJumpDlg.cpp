@@ -40,6 +40,15 @@ void CNCJumpDlg::DoDataExchange(CDataExchange* pDX)
 	//}}AFX_DATA_MAP
 }
 
+BOOL CNCJumpDlg::PreTranslateMessage(MSG* pMsg) 
+{
+	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞでﾒｲﾝｳｨﾝﾄﾞｳのｷｰﾎﾞｰﾄﾞｱｸｾﾗﾚｰﾀを有効にする
+	CFrameWnd*	pFrame = GetParentFrame();	// CMainFrame
+	if ( pFrame && ::TranslateAccelerator(pFrame->GetSafeHwnd(), pFrame->GetDefaultAccelerator(), pMsg))
+		return TRUE;
+	return CDialog::PreTranslateMessage(pMsg);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CNCJumpDlg メッセージ ハンドラ
 
@@ -78,10 +87,10 @@ void CNCJumpDlg::OnOK()
 	// ﾄﾞｷｭﾒﾝﾄﾋﾞｭｰへの変更通知
 	// このｲﾍﾞﾝﾄが発生するときは，OnUserSwitchDocument() より
 	// 必ず AfxGetNCVCMainWnd()->MDIGetActive() が CNCChild を指している
-	CNCChild* pFrame = (CNCChild *)(AfxGetNCVCMainWnd()->MDIGetActive());
+	CNCChild* pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
 	if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {	// 念のため
 		UpdateData();
-		pFrame->SetJumpList(m_nJump);
+		pFrame->SetJumpList((int)m_nJump - 1);	// Zero Origin
 	}
 }
 
@@ -107,6 +116,10 @@ LRESULT CNCJumpDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 	CMagaDbg	dbg("CNCJumpDlg::OnUserSwitchDocument()\nCalling");
 #endif
 	CMDIChildWnd* pFrame = AfxGetNCVCMainWnd()->MDIGetActive();
-	EnableButton( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ? TRUE : FALSE );
+
+	BOOL	bEnable = pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ? TRUE : FALSE;
+	m_ctOK.EnableWindow(bEnable);
+	m_nJump.EnableWindow(bEnable);
+
 	return 0;
 }

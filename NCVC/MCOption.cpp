@@ -48,6 +48,14 @@ static	const	double	g_dfDOrder[] = {
 	0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 };
 
+// BOOLå^ñΩóﬂ
+static	LPCTSTR	g_szBOrder[] = {
+	"L0Cycle"
+};
+static	const	BOOL	g_dfBOrder[] = {
+	FALSE
+};
+
 // CStringå^ñΩóﬂ
 static	LPCTSTR	g_szSOrder[] = {
 	"Name",
@@ -72,10 +80,13 @@ CMCOption::CMCOption()
 	// “› ﬁïœêîÇÃèâä˙âª
 	ASSERT( SIZEOF(m_unNums) == SIZEOF(g_dfNOrder) );
 	ASSERT( SIZEOF(m_udNums) == SIZEOF(g_dfDOrder) );
+	ASSERT( SIZEOF(m_ubFlgs) == SIZEOF(g_dfBOrder) );
 	for ( i=0; i<SIZEOF(g_dfNOrder); i++ )
 		m_unNums[i] = g_dfNOrder[i];
 	for ( i=0; i<SIZEOF(g_dfDOrder); i++ )
 		m_udNums[i] = g_dfDOrder[i];
+	for ( i=0; i<SIZEOF(g_dfBOrder); i++ )
+		m_ubFlgs[i] = g_dfBOrder[i];
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
 
@@ -260,6 +271,12 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 		}
 	}
 
+	// BOOLå^ñΩóﬂ
+	for ( i=0; i<SIZEOF(m_ubFlgs); i++ ) {
+		strEntry = g_szBOrder[i];
+		m_ubFlgs[i] = ::GetPrivateProfileInt(strRegKey, strEntry, g_dfBOrder[i], lpszFile);
+	}
+
 	// CStringå^ñΩóﬂ
 	for ( i=0; i<MCMACROSTRING/*SIZEOF(g_szSOrderMacro)-1*/; i++ ) {
 		::GetPrivateProfileString(strRegKey, g_szSOrderMacro[i], "", szResult, _MAX_PATH, lpszFile);
@@ -385,6 +402,14 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 			strResult += strFormat;
 		}
 		strEntry.Format("G%d", i+54);
+		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
+			return FALSE;
+	}
+
+	// BOOLå^ñΩóﬂ
+	for ( i=0; i<SIZEOF(m_ubFlgs); i++ ) {
+		strEntry = g_szBOrder[i];
+		strResult.Format("%d", m_ubFlgs[i]);
 		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
 			return FALSE;
 	}

@@ -93,7 +93,7 @@ BOOL CDXFChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 */
 	if ( CMDIChildWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) )
 		return TRUE;
-	CDXFDoc* pDoc = (CDXFDoc *)GetActiveDocument();
+	CDXFDoc* pDoc = static_cast<CDXFDoc *>(GetActiveDocument());
 	if ( !pDoc )
 		return FALSE;
 	CMDIChildWnd*	pChild = AfxGetNCVCMainWnd()->MDIGetActive();
@@ -148,11 +148,13 @@ void CDXFChild::OnUpdateMouseCursor(const CPointD* lppt)
 
 void CDXFChild::ShowShapeView(void)
 {
-	int		nInfo;
 	// 40•¶Žš•ª‚©³¨ÝÄÞ³»²½Þ‚Ì1/4C‚Ç‚¿‚ç‚©¬‚³‚¢•û‚ðÂØ°ËÞ­°‚ÌÍß²Ý‚É
 	CRect	rc;
 	GetClientRect(&rc);
-	nInfo = min(AfxGetNCVCMainWnd()->GetNCTextWidth() * 40, rc.Width()/4);
+	int		nInfo,
+			n1 = AfxGetNCVCMainWnd()->GetNCTextWidth() * 40,
+			n2 = rc.Width() / 4;
+	nInfo = min(n1, n2);
 	m_wndSplitter.SetColumnInfo(0, rc.Width()-nInfo, 0);
 	m_wndSplitter.RecalcLayout();
 	m_wndSplitter.SetActivePane(0, 1);

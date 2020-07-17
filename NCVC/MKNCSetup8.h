@@ -17,6 +17,7 @@ public:
 	//{{AFX_DATA(CMKNCSetup8)
 	enum { IDD = IDD_MKNC_SETUP8 };
 	BOOL	m_bLayerComment;
+	BOOL	m_bL0Cycle;
 	int		m_nMoveZ;
 	CString	m_strCustMoveB;
 	CString	m_strCustMoveA;

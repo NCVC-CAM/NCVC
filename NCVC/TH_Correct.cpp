@@ -35,8 +35,8 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 	CMagaDbg	dbg("CorrectCalc_Thread()\nStart", DBG_BLUE);
 	CPoint3D	ptDBG;
 #endif
-	LPNCVCTHREADPARAM	pParam = (LPNCVCTHREADPARAM)pVoid;
-	CNCDoc*			pDoc = (CNCDoc *)(pParam->pDoc);
+	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
+	CNCDoc*			pDoc = static_cast<CNCDoc*>(pParam->pDoc);
 	CThreadDlg*		pParent = pParam->pParent;
 	ASSERT(pDoc);
 	ASSERT(pParent);
@@ -96,7 +96,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 						continue;	// çHãÔèÓïÒñ≥ÇØÇÍÇŒì«Ç›îÚÇŒÇµ
 					//
 					dToolD_abs = fabs(dToolD);
-					pData1c = pData1->CopyObject();	// ï°êª
+					pData1c = pData1->NC_CopyObject();	// ï°êª
 					if ( !pData1c ) {
 						SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_UNKNOWN);
 						continue;
@@ -168,7 +168,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 				}
 
 				// ï‚ê≥ç¿ïWåvéZ
-				pData2c = pData2->CopyObject();	// ï°êª
+				pData2c = pData2->NC_CopyObject();	// ï°êª
 				if ( !pData2c ) {
 					SetErrorCode(pDoc, pData2, IDS_ERR_NCBLK_UNKNOWN);
 					pData1 = pData2;

@@ -447,14 +447,14 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 		case DXFPOINTDATA:
 			if ( g_nLayer == DXFCAMLAYER ) {
 				pLayer = pDoc->AddLayerMap(g_strLayer);
-				pData = new CDXFpoint(pLayer, (CDXFpoint *)pDataBlock, &argvBlock);
+				pData = new CDXFpoint(pLayer, static_cast<CDXFpoint*>(pDataBlock), &argvBlock);
 			}
 			break;
 
 		case DXFLINEDATA:
 			if ( g_nLayer>=DXFCAMLAYER && g_nLayer<=DXFMOVLAYER ) {
 				pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
-				pData = new CDXFline(pLayer, (CDXFline *)pDataBlock, &argvBlock);
+				pData = new CDXFline(pLayer, static_cast<CDXFline*>(pDataBlock), &argvBlock);
 			}
 			break;
 
@@ -471,12 +471,12 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 				pLayer = pDoc->AddLayerMap(g_strLayer);
 				// ŠeŽ²“ÆŽ©‚ÌŠg‘å—¦‚Í CDXFcircle -> CDXFellipse
 				if ( argvBlock.dMagni[NCA_X] != argvBlock.dMagni[NCA_Y] ) {
-					((CDXFcircle *)pDataBlock)->SetEllipseArgv(&argvBlock, &dxfEllipse);
+					static_cast<CDXFcircle*>(pDataBlock)->SetEllipseArgv(&argvBlock, &dxfEllipse);
 					dxfEllipse.pLayer = pLayer;
 					pData = new CDXFellipse(&dxfEllipse); 
 				}
 				else
-					pData = new CDXFcircle(pLayer, (CDXFcircle *)pDataBlock, &argvBlock);
+					pData = new CDXFcircle(pLayer, static_cast<CDXFcircle*>(pDataBlock), &argvBlock);
 				break;
 			case DXFSTRLAYER:
 				pLayer = pDoc->AddLayerMap(g_strLayer, DXFSTRLAYER);
@@ -494,33 +494,33 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 				pLayer = pDoc->AddLayerMap(g_strLayer);
 				// ŠeŽ²“ÆŽ©‚ÌŠg‘å—¦‚Í CDXFarc -> CDXFellipse
 				if ( argvBlock.dMagni[NCA_X] != argvBlock.dMagni[NCA_Y] ) {
-					((CDXFarc *)pDataBlock)->SetEllipseArgv(&argvBlock, &dxfEllipse);
+					static_cast<CDXFarc*>(pDataBlock)->SetEllipseArgv(&argvBlock, &dxfEllipse);
 					dxfEllipse.pLayer = pLayer;
 					pData = new CDXFellipse(&dxfEllipse); 
 				}
 				else
-					pData = new CDXFarc(pLayer, (CDXFarc *)pDataBlock, &argvBlock);
+					pData = new CDXFarc(pLayer, static_cast<CDXFarc*>(pDataBlock), &argvBlock);
 			}
 			break;
 
 		case DXFELLIPSEDATA:
 			if ( g_nLayer == DXFCAMLAYER ) {
 				pLayer = pDoc->AddLayerMap(g_strLayer);
-				pData = new CDXFellipse(pLayer, (CDXFellipse *)pDataBlock, &argvBlock);
+				pData = new CDXFellipse(pLayer, static_cast<CDXFellipse*>(pDataBlock), &argvBlock);
 			}
 			break;
 
 		case DXFPOLYDATA:
 			if ( g_nLayer>=DXFCAMLAYER && g_nLayer<=DXFMOVLAYER ) {
 				pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
-				pData = new CDXFpolyline(pLayer, (CDXFpolyline *)pDataBlock, &argvBlock);
+				pData = new CDXFpolyline(pLayer, static_cast<CDXFpolyline*>(pDataBlock), &argvBlock);
 			}
 			break;
 
 		case DXFTEXTDATA:
 			if ( g_nLayer>=DXFCAMLAYER && g_nLayer<=DXFCOMLAYER ) {
 				pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
-				pData = new CDXFtext(pLayer, (CDXFtext *)pDataBlock, &argvBlock);
+				pData = new CDXFtext(pLayer, static_cast<CDXFtext*>(pDataBlock), &argvBlock);
 			}
 			break;
 		}
@@ -1013,7 +1013,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	DWORD		dwPosition = 0;				// Ì§²ÙŒ»ÝˆÊ’u
 	UINT	nReadCnt = 0;				// Úº°ÄÞŒ”
 	BOOL	bSection = FALSE;			// ¾¸¼®Ýˆ—’†
-	int		nSectionName = SEC_NOSECTION;	// -1: ENDSEC‚Ü‚Å“Ç‚Ý”ò‚Î‚µ
+	int		n, nSectionName = SEC_NOSECTION;	// -1: ENDSEC‚Ü‚Å“Ç‚Ý”ò‚Î‚µ
 	BOOL	bResult = TRUE;
 
 	// Ò²ÝÌÚ°Ñ‚ÌÌßÛ¸ÞÚ½ÊÞ°€”õ
@@ -1043,7 +1043,8 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 			dwPosition += g_strOrder.GetLength() + 2;
 			nReadCnt += 2;	// ‚Qs‚Ã‚Â
 			if ( (nReadCnt & 0x0100) == 0 )	// 128(256/2)s‚¨‚«
-				pProgress->SetPos(min(100, (int)(dwPosition*100/dwSize)));
+				n = (int)(dwPosition*100/dwSize);
+				pProgress->SetPos(min(100, n));
 
 			// ¾¸¼®Ý‚ÌÁª¯¸ == DXFÌ§²Ù‚ÌÌ«°Ï¯ÄÁª¯¸
 			switch ( SectionCheck() ) {

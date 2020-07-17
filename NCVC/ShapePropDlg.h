@@ -1,4 +1,5 @@
 #pragma once
+#include "afxwin.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CShapePropDlg ダイアログ
@@ -10,7 +11,7 @@ class CShapePropDlg : public CDialog
 	boost::optional<double>	m_dOffsetInit;	// ｵﾌｾｯﾄ値が入力可能か
 
 public:
-	CShapePropDlg(DXFTREETYPE&, BOOL, int, boost::optional<double>&);
+	CShapePropDlg(DXFTREETYPE&, BOOL, int, boost::optional<double>&, BOOL);
 	virtual ~CShapePropDlg();
 
 // ダイアログ データ
@@ -20,6 +21,8 @@ public:
 	CEdit		m_ctName;
 	CString		m_strShapeName;
 	double		m_dOffset;	// EndDialog()後のm_ctOffset
+	CButton		m_ctAcuteRound;
+	BOOL		m_bAcuteRound;
 protected:
 	CFloatEdit	m_ctOffset;
 

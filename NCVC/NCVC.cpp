@@ -32,6 +32,7 @@ extern	int		g_nProcesser = 1;		// ÌßÛ¾¯»”(->ŒŸõ½Ú¯ÄÞ”)
 extern	LPTSTR	g_pszDelimiter = NULL;	// g_szGdelimiter[] + g_szNdelimiter[]
 extern	LPTSTR	g_pszExecDir = NULL;	// ŽÀsÃÞ¨Ú¸ÄØ
 static	LPCTSTR	g_szHelp = "NCVC.pdf";	// HelpFile
+extern	DWORD	g_dwCamVer = NCVCSERIALVERSION;	// CAMÌ§²Ù Ver.No.
 
 /*
 	ÌßÛÊßÃ¨¼°Ä‚Ì×½ÄÍß°¼Þ::¬‚³‚¢î•ñ‚Ì‚½‚ßC(Ú¼Þ½ÄØ‚Ö‚Ì)•Û‘¶‚Í‚µ‚È‚¢
@@ -713,10 +714,11 @@ BOOL CNCVCApp::GetDlgWindow(int nID, CPoint* lpt)
 	if ( lpt->x==-1 || lpt->y==-1 )
 		return FALSE;
 
-	lpt->x = min(lpt->x,
-		::GetSystemMetrics(SM_CXSCREEN) - ::GetSystemMetrics(SM_CXICON));
-	lpt->y = min(lpt->y,
-		::GetSystemMetrics(SM_CYSCREEN) - ::GetSystemMetrics(SM_CYICON));
+	int	n;
+	n = ::GetSystemMetrics(SM_CXSCREEN) - ::GetSystemMetrics(SM_CXICON);
+	lpt->x = min(lpt->x, n);
+	n = ::GetSystemMetrics(SM_CYSCREEN) - ::GetSystemMetrics(SM_CYICON);
+	lpt->y = min(lpt->y, n);
 	return TRUE;
 }
 

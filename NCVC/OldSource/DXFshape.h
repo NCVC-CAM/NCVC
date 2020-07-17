@@ -2,13 +2,8 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#if !defined(__DXFSHAPE_H__)
-#define __DXFSHAPE_H__
+#pragma once
 
-// CDXFworkingﾀｲﾌﾟ
-enum	ENWORKINGTYPE {
-	DIRECTION=0, OUTLINE=1, POCKET=2
-};
 // CDXFworkingﾌﾗｸﾞ
 #define	DXFWORKFLG_AUTO				0x0001
 #define	DXFWORKFLG_SELECT			0x1000
@@ -17,23 +12,139 @@ enum	ENWORKINGTYPE {
 #define	DXFMAPFLG_CANNOTOUTLINE		0x0002
 #define	DXFMAPFLG_CANNOTAUTOWORKING	0x000f
 #define	DXFMAPFLG_DIRECTION			0x0010
-#define	DXFMAPFLG_OUTLINE			0x0020
-#define	DXFMAPFLG_POCKET			0x0040
+#define	DXFMAPFLG_START				0x0020
+#define	DXFMAPFLG_OUTLINE			0x0040
+#define	DXFMAPFLG_POCKET			0x0080
 #define	DXFMAPFLG_WORKING			0x00f0
 #define	DXFMAPFLG_INSIDE			0x0100
 #define	DXFMAPFLG_OUTSIDE			0x0200
 #define	DXFMAPFLG_SELECT			0x1000
 #define	DXFMAPFLG_MAKE				0x2000
 #define	DXFMAPFLG_SEARCH			0x4000
+// CDXFworkingﾀｲﾌﾟ
+enum	ENWORKINGTYPE {
+	WORK_DIRECTION=0, WORK_START=1, WORK_OUTLINE=2, WORK_POCKET=3
+};
 // CDXFshape 所属集合
 enum	DXFSHAPE_ASSEMBLE	{
 	DXFSHAPE_OUTLINE=0, DXFSHAPE_LOCUS=1, DXFSHAPE_EXCLUDE=2
+};
+// 自動形状処理ﾀｲﾌﾟ
+enum	ENAUTOWORKINGTYPE {
+	AUTOOUTLINE=0,		AUTOPOCKET=1,
+	AUTOALLINSIDE=2,	AUTOALLOUTSIDE=3,
+	AUTORECALCWORKING=4
 };
 
 class CDXFdata;
 class CDXFmap;
 class CDXFchain;
 class CDXFshape;
+
+/////////////////////////////////////////////////////////////////////////////
+// ＤＸＦデータの座標マップ＋連結集団クラス
+/////////////////////////////////////////////////////////////////////////////
+typedef	CMap<CPointD, CPointD&, CDXFarray*, CDXFarray*&>	CMapPointToDXFarray;
+class CDXFmap : public CMapPointToDXFarray
+{
+	CDXFdata*	GetFirstObject(void) const;
+
+public:
+	CDXFmap();
+	virtual	~CDXFmap();
+
+	static	double	ms_dTolerance;	// 同一座標と見なす許容差
+
+	void	SetPointMap(CDXFdata*);			// CMapに座標ﾃﾞｰﾀ登録
+	void	SetMakePointMap(CDXFdata*);		// 　〃　(Make用)
+	DWORD	GetMapTypeFlag(void) const;
+	boost::tuple<BOOL, CDXFarray*, CPointD>	IsEulerRequirement(const CPointD&) const;
+	BOOL	IsAllSearchFlg(void) const;
+	void	AllMapObject_ClearSearchFlg(BOOL = TRUE) const;
+	void	AllMapObject_ClearMakeFlg() const;
+	void	CopyToChain(CDXFchain*);
+	void	Append(const CDXFmap*);
+	void	Append(const CDXFchain*);
+	//
+	int		GetObjectCount(void) const;
+	double	GetSelectObjectFromShape(const CPointD&, const CRectD* = NULL, CDXFdata** = NULL);
+	void	SetShapeSwitch(BOOL);
+	void	RemoveObject(const CDXFdata*);
+	void	DrawShape(CDC*) const;
+	void	OrgTuning(void);
+
+	// ｵｰﾊﾞｰﾗｲﾄﾞ
+	void	RemoveAll();	// DestructElements()が使えなくなったので
+							// RemoveAll()をｵｰﾊﾞｰﾗｲﾄﾞしてﾒﾓﾘﾘｰｸを防ぐ
+
+	virtual	void	Serialize(CArchive&);
+	DECLARE_SERIAL(CDXFmap)
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// CDXFmap(CMap)をｻﾎﾟｰﾄするｸﾞﾛｰﾊﾞﾙﾍﾙﾊﾟｰ関数
+template<> AFX_INLINE
+UINT AFXAPI HashKey(CPointD& ptKey)
+{
+	// 三平方の定理をキーに(２乗だけでは数値が大きくなりすぎ)
+	// 精度が高すぎるので，１の位をｾﾞﾛに
+//	return (UINT)(ptKey.hypot() / 10.0) * 10;
+	// 時間がかかるので簡単に
+//	return (UINT)GAPCALC(ptKey) >> 4;	// x^2 + y^2
+	// 微妙に違う座標でキー値が変わらないように
+	return (UINT)GAPCALC(ptKey.RoundUp()) >> 4;	// x^2 + y^2
+}
+
+template<> AFX_INLINE
+BOOL AFXAPI CompareElements(const CPointD* lpt1, const CPointD* lpt2)
+{
+	return ( lpt1->IsMatchPoint(lpt2) ||
+				_hypot(lpt1->x - lpt2->x, lpt1->y - lpt2->y) < CDXFmap::ms_dTolerance );
+}
+
+#ifdef _DEBUG
+template<> AFX_INLINE
+void AFXAPI DumpElements(CDumpContext& dc, const CPointD* lpt, INT_PTR nCount)
+{
+	dc << "key x=" << lpt->x << " y=" << lpt->y;
+}
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+// ＤＸＦデータの輪郭集団クラス
+/////////////////////////////////////////////////////////////////////////////
+class CDXFchain : public CDXFlist
+{
+	CRect3D	m_rcMax;	// 自動輪郭設定用
+
+public:
+	CDXFchain();
+	virtual	~CDXFchain();
+
+	CRect3D	GetMaxRect(void) const {
+		return m_rcMax;
+	}
+	void	SetMaxRect(const CDXFdata* pData) {
+		m_rcMax |= pData->GetMaxRect();
+	}
+	void	ClearMaxRect(void) {
+		m_rcMax.SetRectMinimum();
+	}
+	void	ReversPoint(void);
+	void	CopyToMap(CDXFmap*);
+	//
+	int		GetObjectCount(void) const;
+	double	GetSelectObjectFromShape(const CPointD&, const CRectD* = NULL, CDXFdata** = NULL);
+	void	SetShapeSwitch(BOOL);
+	void	RemoveObject(const CDXFdata*);
+	void	DrawShape(CDC*) const;
+	void	OrgTuning(void);
+
+	virtual	void	Serialize(CArchive&);
+	DECLARE_SERIAL(CDXFchain)
+};
+
+/////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータ加工指示のベースクラス
@@ -82,23 +193,31 @@ public:
 	virtual	void	DrawTuning(double) = 0;
 	virtual	void	Draw(CDC*) const = 0;
 
-protected:
-	virtual	void	Serialize(CArchive&);	// 派生ｸﾗｽ用
+	virtual	void	Serialize(CArchive&);
 	DECLARE_DYNAMIC(CDXFworking)
 };
+
+typedef	CTypedPtrList<CObList, CDXFworking*>	CDXFworkingList;
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「方向」加工指示クラス
 class CDXFworkingDirection : public CDXFworking
 {
-	CPointD		m_ptArraw[3];	// 矢印座標
+	CPointD		m_ptStart,		// 始点座標（円用）
+				m_ptArraw[3];	// 矢印座標（終点）
 	CPoint		m_ptDraw[3];	// 矢印描画座標
 
 protected:
-	CDXFworkingDirection() : CDXFworking(DIRECTION) {}
+	CDXFworkingDirection() : CDXFworking(WORK_DIRECTION) {}
 public:
-	CDXFworkingDirection(CDXFshape*, CDXFdata*, CPointD[]);
+	CDXFworkingDirection(CDXFshape*, CDXFdata*, CPointD, CPointD[]);
 
+	CPointD	GetStartPoint(void) const {
+		return m_ptStart;
+	}
+	CPointD	GetArrowPoint(void) const {
+		return m_ptArraw[1];	// 矢印中心=>ｵﾌﾞｼﾞｪｸﾄ終点
+	}
 	virtual	void	DrawTuning(double);
 	virtual	void	Draw(CDC*) const;
 
@@ -107,17 +226,42 @@ public:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// ＤＸＦデータの「開始位置」指示クラス
+class CDXFworkingStart : public CDXFworking
+{
+	CPointD		m_ptStart;		// 始点座標
+	CRect		m_rcDraw;		// 描画矩形
+
+protected:
+	CDXFworkingStart() : CDXFworking(WORK_START) {}
+public:
+	CDXFworkingStart(CDXFshape*, CDXFdata*, CPointD);
+
+	CPointD	GetStartPoint(void) const {
+		return m_ptStart;
+	}
+	virtual	void	DrawTuning(double);
+	virtual	void	Draw(CDC*) const;
+
+	virtual	void	Serialize(CArchive&);
+	DECLARE_SERIAL(CDXFworkingStart)
+};
+
+/////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「輪郭」加工指示クラス
 class CDXFworkingOutline : public CDXFworking
 {
-	CDXFarray	m_obOutline;	// 輪郭ｵﾌﾞｼﾞｪｸﾄ
+	CDXFchain	m_ltOutline;	// 輪郭ｵﾌﾞｼﾞｪｸﾄ
 
 protected:
-	CDXFworkingOutline() : CDXFworking(OUTLINE) {}
+	CDXFworkingOutline() : CDXFworking(WORK_OUTLINE) {}
 public:
-	CDXFworkingOutline(CDXFshape*, const CDXFarray&, DWORD = 0);
+	CDXFworkingOutline(CDXFshape*, const CDXFchain*, DWORD = 0);
 	virtual	~CDXFworkingOutline();
 
+	CDXFchain*	GetOutlineChain(void) {
+		return &m_ltOutline;
+	}
 	virtual	void	DrawTuning(double);
 	virtual	void	Draw(CDC*) const;
 
@@ -132,7 +276,7 @@ class CDXFworkingPocket : public CDXFworking
 	CDXFarray	m_obPocket;		// ﾎﾟｹｯﾄｵﾌﾞｼﾞｪｸﾄ
 
 protected:
-	CDXFworkingPocket() : CDXFworking(POCKET) {}
+	CDXFworkingPocket() : CDXFworking(WORK_POCKET) {}
 public:
 	CDXFworkingPocket(CDXFshape*, DWORD = 0);
 	virtual	~CDXFworkingPocket();
@@ -144,101 +288,7 @@ public:
 	DECLARE_SERIAL(CDXFworkingPocket)
 };
 
-typedef	CTypedPtrList<CObList, CDXFworking*>	CDXFworkingList;
-
 /////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////////////////
-// ＤＸＦデータの座標マップ＋連結集団クラス
-/////////////////////////////////////////////////////////////////////////////
-typedef	CMap<CPointD, CPointD&, CDXFarray*, CDXFarray*&>	CMapPointToDXFarray;
-class CDXFmap : public CMapPointToDXFarray
-{
-	CDXFdata*	GetFirstObject(void) const;
-
-public:
-	CDXFmap();
-	virtual	~CDXFmap();
-
-	static	double	ms_dTolerance;	// 同一座標と見なす許容差
-
-	void	SetPointMap(CDXFdata*);			// CMapに座標ﾃﾞｰﾀ登録
-	void	SetMakePointMap(CDXFdata*);		// 　〃　(Make用)
-	DWORD	GetShapeFlag(void);
-	boost::tuple<BOOL, CDXFarray*, CPointD>	IsEulerRequirement(const CPointD&) const;
-	BOOL	IsAllSearchFlg(void) const;
-	void	AllMapObject_ClearSearchFlg(BOOL = TRUE) const;
-	void	AllMapObject_ClearMakeFlg() const;
-	void	Copy_ToChain(CDXFchain*);
-	void	Append(const CDXFmap*);
-	void	Append(const CDXFchain*);
-	//
-	int		GetObjectCount(void);
-	boost::tuple<CDXFdata*, double> GetSelectViewGap(const CPointD&, const CRectD&);
-	boost::tuple<CDXFdata*, double>	GetSelectMakeGap(const CPointD&, BOOL = TRUE);
-	void	SetShapeSwitch(BOOL);
-	void	RemoveObject(const CDXFdata*);
-	void	DrawShape(CDC*);
-
-	// ｵｰﾊﾞｰﾗｲﾄﾞ
-	void	RemoveAll();	// DestructElements()が使えなくなったので
-							// RemoveAll()をｵｰﾊﾞｰﾗｲﾄﾞしてﾒﾓﾘﾘｰｸを防ぐ
-
-	virtual	void	Serialize(CArchive&);
-	DECLARE_SERIAL(CDXFmap)
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// CDXFmap(CMap)をｻﾎﾟｰﾄするｸﾞﾛｰﾊﾞﾙﾍﾙﾊﾟｰ関数
-template<> AFX_INLINE
-UINT AFXAPI HashKey(CPointD& ptKey)
-{
-	// 三平方の定理をキーに(２乗だけでは数値が大きくなりすぎ)
-	// 精度が高すぎるので，１の位をｾﾞﾛに
-//	return (UINT)(ptKey.hypot() / 10.0) * 10;
-	// 時間がかかるので簡単に
-//	return (UINT)GAPCALC(ptKey) >> 4;	// x^2 + y^2
-	// 微妙に違う座標でキー値が変わらないように
-	return (UINT)GAPCALC(ptKey.RoundUp()) >> 4;	// x^2 + y^2
-}
-
-template<> AFX_INLINE
-BOOL AFXAPI CompareElements(const CPointD* lpt1, const CPointD* lpt2)
-{
-	return ( lpt1->IsMatchPoint(lpt2) ||
-				_hypot(lpt1->x - lpt2->x, lpt1->y - lpt2->y) < CDXFmap::ms_dTolerance );
-}
-
-#ifdef _DEBUG
-template<> AFX_INLINE
-void AFXAPI DumpElements(CDumpContext& dc, const CPointD* lpt, INT_PTR nCount)
-{
-	dc << "key x=" << lpt->x << " y=" << lpt->y;
-}
-#endif
-
-/////////////////////////////////////////////////////////////////////////////
-// ＤＸＦデータの輪郭集団クラス
-/////////////////////////////////////////////////////////////////////////////
-class CDXFchain : public CDXFlist
-{
-public:
-	CDXFchain();
-	virtual	~CDXFchain();
-
-	DWORD	GetShapeFlag(void);
-	void	Copy_ToMap(CDXFmap*);
-	//
-	int		GetObjectCount(void);
-	boost::tuple<CDXFdata*, double> GetSelectViewGap(const CPointD&, const CRectD&);
-	boost::tuple<CDXFdata*, double>	GetSelectMakeGap(const CPointD&, BOOL = TRUE);
-	void	SetShapeSwitch(BOOL);
-	void	RemoveObject(const CDXFdata*);
-	void	DrawShape(CDC*);
-
-	virtual	void	Serialize(CArchive&);
-	DECLARE_SERIAL(CDXFchain)
-};
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの形状集合クラス
@@ -252,13 +302,22 @@ class CDXFshape : public CObject
 	CString		m_strShape;		// 形状名
 	boost::variant<CDXFchain*, CDXFmap*>	m_vShape;	// CDXFchain* or CDXFmap*
 	CDXFworkingList	m_ltWork;	// 加工指示ﾃﾞｰﾀ
-	HTREEITEM	m_hTree;		// 登録されているﾂﾘｰﾋﾞｭｰﾊﾝﾄﾞﾙ
+	double		m_dOffset;		// 形状ｵﾌｾｯﾄ値
+	int			m_nInOut;		// 輪郭ｵﾌﾞｼﾞｪｸﾄの方向
+	BOOL		m_bAcute;		// 鋭角丸め
+	HTREEITEM	m_hTree;		// 登録されているﾂﾘｰﾋﾞｭｰﾊﾝﾄﾞﾙ(実行時動的設定)
 
 	void	Constructor(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD);
 	void	SetDetailInfo(CDXFchain*);
 	void	SetDetailInfo(CDXFmap*);
 	BOOL	ChangeCreate_MapToChain(CDXFmap*);
 	BOOL	ChangeCreate_ChainToMap(CDXFchain*);
+	CDXFdata*	CreateOutlineTempObject_new(const CDXFdata*, const CPointD&, const CPointD&, int) const;
+	BOOL	CheckOutlineIntersection(CDXFchain*, CDXFchain*);
+	BOOL	CheckIntersectionCircle(const CPointD&);
+	boost::tuple<BOOL, boost::optional<CPointD> >	CheckOutlineAcute_Prev(CDXFdata*, CDXFdata*, const CPointD&, BOOL);
+	boost::tuple<BOOL, CDXFdata*, CPointD>	CheckOutlineAcute_Next(POSITION&, const CDXFchain*, const CPointD&, CDXFdata*, BOOL);
+	void	RemoveExceptDirection(void);
 
 protected:
 	CDXFshape();	// Serialize
@@ -315,27 +374,44 @@ public:
 	void	SetTreeHandle(HTREEITEM hTree) {
 		m_hTree = hTree;
 	}
+	double	GetOffset(void) const {
+		return m_dOffset;
+	}
+	void	SetOffset(double dOffset) {
+		m_dOffset = dOffset;
+	}
+	BOOL	GetAcuteRound(void) const {
+		return m_bAcute;
+	}
+	void	SetAcuteRound(BOOL bAcute) {
+		m_bAcute = bAcute;
+	}
+	int		GetInOutFlag(void) const {
+		return m_nInOut;
+	}
 	CDXFworkingList*	GetWorkList(void) {
 		return &m_ltWork;
 	}
-	BOOL	AddWorkingData(CDXFworking*);
+	BOOL	AddWorkingData(CDXFworking*, int = -1);
 	BOOL	DelWorkingData(CDXFworking*, CDXFshape* = NULL);
 	boost::tuple<CDXFworking*, CDXFdata*> GetDirectionObject(void) const;
-	void	RemoveExceptDirection(void);
+	boost::tuple<CDXFworking*, CDXFdata*> GetStartObject(void) const;
+	CDXFchain*	GetOutlineObject(void) const;
 	BOOL	LinkObject(void);
 	BOOL	LinkShape(CDXFshape*);
 	//
-	void	AllChangeFactor(double);
-	void	DrawWorking(CDC*);
+	BOOL	CreateOutlineTempObject(BOOL, CDXFchain*);
+	//
+	void	AllChangeFactor(double) const;
+	void	DrawWorking(CDC*) const;
 	// CDXFchain* or CDXFmap* で振り分け処理
 	int		GetObjectCount(void) const;
-	boost::tuple<CDXFdata*, double> GetSelectViewGap(const CPointD&, const CRectD&);
-	boost::tuple<CDXFdata*, double>	GetSelectMakeGap(const CPointD&, BOOL = TRUE);
+	double	GetSelectObjectFromShape(const CPointD&, const CRectD* = NULL, CDXFdata** = NULL);
 	void	SetShapeSwitch(BOOL);
 	void	RemoveObject(const CDXFdata*);
-	void	DrawShape(CDC*);
+	void	DrawShape(CDC*) const;
+	void	OrgTuning(void);
 
-protected:
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFshape)
 };
@@ -351,4 +427,8 @@ struct GetObjectCount_Visitor : boost::static_visitor<int>
 	int operator()(T p) const { return p->GetObjectCount(); }
 };
 
-#endif
+struct OrgTuning_Visitor : boost::static_visitor<>
+{
+	template<typename T>
+	void operator()(T p) const { p->OrgTuning(); }
+};

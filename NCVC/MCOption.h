@@ -23,6 +23,8 @@
 #define	MCMACRORESULT		4	// o—ÍŒ‹‰Ê
 #define	MCMACHINEFILE		5	// Œ»Ý‚Ì‹@ŠBî•ñÌ§²Ù–¼
 #define	MCCURRENTFOLDER		6	// Œ»Ý‚ÌNCÌ§²ÙÌ«ÙÀÞ
+// BOOLŒ^
+#define	MC_FLG_L0CYCLE		0
 // H‹ï•â³À²Ìß
 #define	MC_TYPE_A			0
 #define	MC_TYPE_B			1
@@ -67,6 +69,7 @@ friend	class	CMCSetup1;
 friend	class	CMCSetup2;
 friend	class	CMCSetup3;
 friend	class	CMCSetup4;
+friend	class	CMCSetup5;
 
 	CStringList	m_strMCList;	// ‹@ŠBî•ñÌ§²Ù—š—ð
 
@@ -84,11 +87,18 @@ friend	class	CMCSetup4;
 	union {
 		struct {
 			double	m_dFeed,				// È—ªŽž‚ÌØí‘¬“x
-					m_dInitialXYZ[NCXYZ],				// XYZ‰Šú’l
+					m_dInitialXYZ[NCXYZ],	// XYZ‰Šú’l
 					m_dBlock,				// 1ÌÞÛ¯¸ˆ—ŽžŠÔ
 					m_dWorkOffset[WORKOFFSET][NCXYZ];	// G54`G59
 		};
 		double		m_udNums[23];
+	};
+	// BOOLŒ^µÌß¼®Ý
+	union {
+		struct {
+			BOOL	m_bL0Cycle;		// ŒÅ’è»²¸Ù’†‚ÌL0“®ì
+		};
+		BOOL		m_ubFlgs[1];
 	};
 	// CStringŒ^µÌß¼®Ý
 	CString		m_strMCname,	// ‹@ŠB–¼
@@ -106,6 +116,10 @@ public:
 	BOOL	ReadMCoption(LPCTSTR, BOOL = TRUE);
 	BOOL	SaveMCoption(LPCTSTR);
 
+	BOOL	GetFlag(size_t n) const {		// Ì×¸ÞµÌß¼®Ý
+		ASSERT( n>=0 && n<SIZEOF(m_ubFlgs) );
+		return m_ubFlgs[n];
+	}
 	const	CStringList*	GetMCList(void) {
 		return &m_strMCList;
 	}
@@ -149,7 +163,6 @@ public:
 		ASSERT( n>=0 && n<SIZEOF(m_strMacroOpt) );
 		return m_strMacroOpt[n];
 	}
-
 	BOOL	IsMacroSearch(void) const {
 		return !(m_strMacroOpt[MCMACROCODE].IsEmpty() | m_strMacroOpt[MCMACROIF].IsEmpty());
 	}

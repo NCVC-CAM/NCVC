@@ -48,7 +48,7 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx1* pParent, int nIndex, const CString
 	try {
 		const CListCtrl& Layer = pParent->m_ctLayerList;
 		for ( int i=0; i<Layer.GetItemCount(); i++ ) {
-			pLayer = new CLayerData((const CLayerData *)(Layer.GetItemData(i)), Layer.GetCheck(i));
+			pLayer = new CLayerData(reinterpret_cast<const CLayerData *>(Layer.GetItemData(i)), Layer.GetCheck(i));
 			m_obLayer.Add(pLayer);
 		}
 	}

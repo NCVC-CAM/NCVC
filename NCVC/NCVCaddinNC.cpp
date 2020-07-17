@@ -22,7 +22,7 @@ NCEXPORT int WINAPI NCVC_GetNCBlockDataSize(NCVCHANDLE hDoc)
 #endif
 	if ( !IsNCDocument(hDoc) )
 		return -1;
-	return ((CNCDoc *)hDoc)->GetNCBlockSize();
+	return reinterpret_cast<CNCDoc *>(hDoc)->GetNCBlockSize();
 }
 
 NCEXPORT int WINAPI NCVC_GetNCBlockData(NCVCHANDLE hDoc, int nIndex, LPSTR pszBuf, int nMax)
@@ -33,7 +33,7 @@ NCEXPORT int WINAPI NCVC_GetNCBlockData(NCVCHANDLE hDoc, int nIndex, LPSTR pszBu
 	int		nResult = -1;
 	if ( !IsNCDocument(hDoc) )
 		return nResult;
-	CNCDoc* pDoc = (CNCDoc *)hDoc;
+	CNCDoc* pDoc = reinterpret_cast<CNCDoc *>(hDoc);
 	if ( nIndex < 0 || nIndex > pDoc->GetNCBlockSize() || !pszBuf )
 		return nResult;
 
@@ -49,21 +49,21 @@ NCEXPORT DWORD WINAPI NCVC_GetNCBlockFlag(NCVCHANDLE hDoc, int nIndex)
 {
 	if ( !IsNCDocument(hDoc) )
 		return 0;
-	return ((CNCDoc *)hDoc)->GetNCblock(nIndex)->GetBlockFlag();
+	return reinterpret_cast<CNCDoc *>(hDoc)->GetNCblock(nIndex)->GetBlockFlag();
 }
 
 NCEXPORT int WINAPI NCVC_GetNCDataSize(NCVCHANDLE hDoc)
 {
 	if ( !IsNCDocument(hDoc) )
 		return -1;
-	return ((CNCDoc *)hDoc)->GetNCsize();
+	return reinterpret_cast<CNCDoc *>(hDoc)->GetNCsize();
 }
 
 NCEXPORT BOOL WINAPI NCVC_GetNCData(NCVCHANDLE hDoc, int nIndex, LPNCDATA pData)
 {
 	if ( !IsNCDocument(hDoc) || !pData || pData->dwSize != sizeof(NCDATA) )
 		return FALSE;
-	CNCDoc* pDoc = (CNCDoc *)hDoc;
+	CNCDoc* pDoc = reinterpret_cast<CNCDoc *>(hDoc);
 	if ( nIndex < 0 || nIndex > pDoc->GetNCsize() )
 		return FALSE;
 
@@ -83,7 +83,7 @@ NCEXPORT BOOL WINAPI NCVC_AddNCStrData(NCVCHANDLE hDoc, LPCTSTR pszBuf)
 {
 	if ( !IsNCDocument(hDoc) )
 		return FALSE;
-	((CNCDoc *)hDoc)->StrOperation(pszBuf, -1, NCADD);
+	reinterpret_cast<CNCDoc *>(hDoc)->StrOperation(pszBuf, -1, NCADD);
 	return TRUE;
 }
 
@@ -91,7 +91,7 @@ NCEXPORT BOOL WINAPI NCVC_InsNCStrData(NCVCHANDLE hDoc, int nIndex, LPCTSTR pszB
 {
 	if ( !IsNCDocument(hDoc) )
 		return FALSE;
-	((CNCDoc *)hDoc)->StrOperation(pszBuf, nIndex, NCINS);
+	reinterpret_cast<CNCDoc *>(hDoc)->StrOperation(pszBuf, nIndex, NCINS);
 	return TRUE;
 }
 
@@ -99,14 +99,14 @@ NCEXPORT BOOL WINAPI NCVC_ModNCStrData(NCVCHANDLE hDoc, int nIndex, LPCTSTR pszB
 {
 	if ( !IsNCDocument(hDoc) )
 		return FALSE;
-	((CNCDoc *)hDoc)->StrOperation(pszBuf, nIndex, NCMOD);
+	reinterpret_cast<CNCDoc *>(hDoc)->StrOperation(pszBuf, nIndex, NCMOD);
 	return TRUE;
 }
 
 NCEXPORT void WINAPI NCVC_DelNCStrData(NCVCHANDLE hDoc, int nIndex, int nCnt)
 {
 	if ( IsNCDocument(hDoc) )
-		((CNCDoc *)hDoc)->RemoveStr(nIndex, nCnt);
+		reinterpret_cast<CNCDoc *>(hDoc)->RemoveStr(nIndex, nCnt);
 }
 
 static void NCArgvInitialize(LPNCARGV lpArgv)
@@ -142,7 +142,7 @@ static BOOL NCdataOperation
 {
 	if ( !IsNCDocument(hDoc) || lpArgv->dwSize != sizeof(NCARGV) )
 		return FALSE;
-	CNCDoc*		pDoc = (CNCDoc *)hDoc;
+	CNCDoc*		pDoc = reinterpret_cast<CNCDoc *>(hDoc);
 	CNCdata*	pData;
 	if ( nIndex <= 0 ) {
 		NCARGV	ncArgv;
@@ -176,5 +176,5 @@ NCEXPORT BOOL WINAPI NCVC_ModNCData(NCVCHANDLE hDoc, int nIndex, LPNCARGV lpArgv
 NCEXPORT void WINAPI NCVC_DelNCData(NCVCHANDLE hDoc, int nIndex, int nCnt)
 {
 	if ( IsNCDocument(hDoc) )
-		((CNCDoc *)hDoc)->RemoveAt(nIndex, nCnt);
+		reinterpret_cast<CNCDoc *>(hDoc)->RemoveAt(nIndex, nCnt);
 }

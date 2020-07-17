@@ -25,7 +25,7 @@ public:
 		TYPE*	pObj = (TYPE *)GetData();
 		int	ii = GetSize() >> 1;	// 1/2
 		for ( int i=0, j=GetUpperBound(); i<ii; i++, j-- )
-			swap(pObj[i], pObj[j]);
+			std::swap(pObj[i], pObj[j]);
 	}
 };
 
@@ -53,12 +53,12 @@ private:
 			for ( ; i <= j && (*pfnCompare)(pObj[j], pObj[nFirst]) >= 0; j-- );
 			//
 			if ( i < j ) {
-				swap(pObj[i], pObj[j]);
+				std::swap(pObj[i], pObj[j]);
 				i++;	j--;
 			}
 		}
 
-		swap(pObj[j], pObj[nFirst]);
+		std::swap(pObj[j], pObj[nFirst]);
 
 		QSort( pfnCompare, nFirst, j-1 );
 		QSort( pfnCompare, j+1, nLast );

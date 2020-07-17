@@ -16,6 +16,7 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+using namespace std;
 using namespace boost;
 using namespace boost::spirit;
 
@@ -26,14 +27,24 @@ static	CNCDoc*		g_pDoc;
 static	NCARGV		g_ncArgv;		// NCVCdefine.h
 static	DWORD		g_dwValFlags;	// ç¿ïWà»äOÇÃíléwé¶Ã◊∏ﬁ
 static	int			g_nSubprog;		// ªÃﬁÃﬂ€∏ﬁ◊—åƒÇ—èoÇµÇÃäKëw
-static	string		g_strComma;		// ∂›œà»ç~ÇÃï∂éöóÒ
+static	string		g_strComma;		// éüÇÃÃﬁ€Ø∏Ç∆ÇÃåvéZ
+
 // å≈íËª≤∏ŸÇÃ”∞¿ﬁŸï‚ä‘íl
-typedef	struct	tagCYCLE {
+struct	CYCLE_INTERPOLATE
+{
 	BOOL	bCycle;		// å≈íËª≤∏ŸèàóùíÜ
 	double	dVal[3];	// Z, R, P
-} CYCLE_INTERPOLATE;
+	void	clear(void) {
+		bCycle = FALSE;
+		dVal[0] = dVal[1] = dVal[2] = HUGE_VAL;
+	}
+};
 static	CYCLE_INTERPOLATE	g_Cycle;
 static	void	CycleInterpolate(void);
+
+// G68ç¿ïWâÒì]
+static	void	G68RoundCheck(CNCblock*);
+static	void	G68RoundClear(void);
 
 //
 static	void		InitialVariable(void);
@@ -56,10 +67,10 @@ inline	ENGCODEOBJ	IsGcodeObject(int nCode)
 		g_Cycle.bCycle = FALSE;
 		enResult = MAKEOBJ;
 	}
-	else if ( nCode==4 || nCode==10 ) {
+	else if ( nCode==4 || nCode==10 || nCode==68 ) {
 		enResult = MAKEOBJ_NOTMODAL;
 	}
-	else if ( nCode>=81 && nCode<=89 ) {
+	else if ( 81<=nCode && nCode<=89 ) {
 		g_Cycle.bCycle = TRUE;
 		enResult = MAKEOBJ;
 	}
@@ -71,13 +82,15 @@ inline	ENGCODEOBJ	IsGcodeObject(int nCode)
 
 // âêÕä÷êî
 static	int		NC_GSeparater(int, CNCdata*&);
+static	CNCdata*	AddGcode(CNCblock*, CNCdata*, int);
+static	int			CallSubProgram(CNCblock*, CNCdata*&);
 static	void	CheckGcodeOther(int);
 static	int		NC_SearchSubProgram(int*);
 typedef	int		(*PFNSEARCHMACRO)(CNCblock*);
 static	int		NC_SearchMacroProgram(CNCblock*);
 static	int		NC_NoSearchMacro(CNCblock*);
 static	PFNSEARCHMACRO	g_pfnSearchMacro;
-static	CNCdata*	MakeChamferingObject(CNCblock*, CNCdata*, CNCdata*);
+static	void	MakeChamferingObject(CNCblock*, CNCdata*, CNCdata*);
 // F ﬂ◊“∞¿, ƒﬁ≥™Ÿéûä‘ÇÃâéﬂ
 typedef double (*PFNFEEDANALYZE)(const string&);
 static	double	FeedAnalyze_Dot(const string&);
@@ -106,9 +119,9 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 	CNCdata*	pData;	// ÇPÇ¬ëOÇÃê∂ê¨µÃﬁºﬁ™∏ƒ
 
 	// ïœêîèâä˙âª
-	LPNCVCTHREADPARAM	pParam = (LPNCVCTHREADPARAM)pVoid;
+	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	g_pParent = pParam->pParent;
-	g_pDoc = (CNCDoc *)(pParam->pDoc);
+	g_pDoc = static_cast<CNCDoc*>(pParam->pDoc);
 	ASSERT(g_pParent);
 	ASSERT(g_pDoc);
 	InitialVariable();
@@ -167,8 +180,9 @@ struct CGcode : grammar<CGcode>
 		definition( const CGcode& a )
 		{
 			// ñ¢ím∫∞ƒﬁÇ…Ç‡ëŒâûÇ∑ÇÈÇΩÇﬂÅuëSÇƒÇÃâpëÂï∂éöÇ…ë±Ç≠êîílÅvÇ≈âêÕ
-			rr = +( upper_p >> real_p )[append(a.vResult)]
-				>> !( ch_p(',') >> ((ch_p('R')|'C') >> real_p) )[append(a.vResult)];
+			rr = +( +( upper_p >> real_p )[append(a.vResult)]
+					>> !( ch_p(',') >> ((ch_p('R')|'C') >> real_p) )[append(a.vResult)] )
+				>> *( graph_p );	// EOFÇ»Ç«
 		}
 		const rule_t& start() const { return rr; }
 	};
@@ -176,43 +190,44 @@ struct CGcode : grammar<CGcode>
 
 //////////////////////////////////////////////////////////////////////
 // G∫∞ƒﬁÇÃï™äÑ(çƒãAä÷êî)
-int NC_GSeparater(int i, CNCdata*& pDataResult)
+int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 {
 	extern	LPCTSTR			g_szNdelimiter; // "XYZRIJKPLDH"
 	extern	const	DWORD	g_dwSetValFlags[];
 	vector<string>	vResult;
 	vector<string>::iterator	it;
 	CGcode		a(vResult);
-	int			ii, nCode, nNotModalCode = -1,
+	int			i, nCode,
+				nNotModalCode = -1,	// ”∞¿ﬁŸïsóvÇÃG∫∞ƒﬁ(Ãﬁ€Ø∏ì‡Ç≈ÇÃÇ›óLå¯)
 				nLoopCnt = g_pDoc->GetNCBlockSize(),
-				nResult, nIndex, nRepeat;
+				nResult, nIndex;
 	BOOL		bNCobj = FALSE, bNCval = FALSE, bNCsub = FALSE;
 	ENGCODEOBJ	enGcode;
-	string		strComma;
-	CNCdata*	pData = NULL;
-	CNCblock*	pBlock = g_pDoc->GetNCblock(i);
+	CNCdata*	pData;
+	CNCblock*	pBlock = g_pDoc->GetNCblock(nLine);
+	string		strComma;		// ∂›œà»ç~ÇÃï∂éöóÒ(éüÇÃÃﬁ€Ø∏Ç÷åpÇÆ)
 	// ïœêîèâä˙âª
-	g_ncArgv.nc.nLine		= i;
+	g_ncArgv.nc.nLine		= nLine;
 	g_ncArgv.nc.nErrorCode	= 0;
-	g_ncArgv.nc.dwValFlags	&= 0xFFFF0000;
+	g_ncArgv.nc.dwValFlags &= 0xFFFF0000;
 #ifdef _DEBUG
 	CMagaDbg	dbg("NC_Gseparate()", DBG_BLUE);
 	CMagaDbg	dbg1(DBG_GREEN);
-	dbg.printf("No.%004d Line=%s", i+1, g_pDoc->GetNCblock(i)->GetStrGcode());
+	dbg.printf("No.%004d Line=%s", nLine+1, pBlock->GetStrGcode());
 #endif
 
 	// œ∏€íuä∑âêÕ
 	if ( (nIndex=(*g_pfnSearchMacro)(pBlock)) >= 0 ) {
 		g_nSubprog++;
-		for ( ii=nIndex; ii<nLoopCnt && IsThread(); ii++ ) {
-			nResult = NC_GSeparater(ii, pDataResult);	// çƒãA
+		for ( i=nIndex; i<nLoopCnt && IsThread(); i++ ) {
+			nResult = NC_GSeparater(i, pDataResult);	// çƒãA
 			if ( nResult == 30 )
 				return 30;
 			else if ( nResult == 99 )
 				break;
 		}
 		// EOFÇ≈èIóπÇ»ÇÁM99ïúãAàµÇ¢
-		if ( ii >= nLoopCnt && nResult == 0 ) {
+		if ( i >= nLoopCnt && nResult == 0 ) {
 			if ( g_nSubprog > 0 )
 				g_nSubprog--;
 		}
@@ -231,6 +246,24 @@ int NC_GSeparater(int i, CNCdata*& pDataResult)
 #endif
 		switch ( it->at(0) ) {
 		case 'M':
+			// ëOâÒÇÃ∫∞ƒﬁÇ≈ìoò^µÃﬁºﬁ™∏ƒÇ™Ç†ÇÈÇ»ÇÁ
+			if ( bNCobj ) {
+				// µÃﬁºﬁ™∏ƒê∂ê¨
+				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
+				// ñ éÊÇËµÃﬁºﬁ™∏ƒÇÃìoò^
+				if ( !g_strComma.empty() )
+					MakeChamferingObject(pBlock, pDataResult, pData);
+				pDataResult = pData;
+				g_strComma = strComma;
+				bNCobj = FALSE;
+				nNotModalCode = -1;
+			}
+			// ëOâÒÇÃ∫∞ƒﬁÇ≈ªÃﬁÃﬂ€åƒÇ—èoÇµÇ™Ç†ÇÍÇŒ
+			if ( bNCsub ) {
+				bNCsub = FALSE;
+				if ( CallSubProgram(pBlock, pDataResult) == 30 )
+					return 30;	// èIóπ∫∞ƒﬁ
+			}
 			nCode = atoi(it->substr(1).c_str());
 			switch ( nCode ) {
 			case 2:
@@ -251,36 +284,34 @@ int NC_GSeparater(int i, CNCdata*& pDataResult)
 			}
 			break;
 		case 'G':
+			// êÊÇ…åªç›ÇÃ∫∞ƒﬁéÌï Ç¡™Ø∏
 			nCode = atoi(it->substr(1).c_str());
 			enGcode = IsGcodeObject(nCode);
-			if ( enGcode != NOOBJ ) {
-				// ëOâÒÇÃ∫∞ƒﬁÇ≈ìoò^µÃﬁºﬁ™∏ƒÇ™Ç†ÇÈÇ»ÇÁ
-				if ( bNCobj ) {
-					// ç¿ïWíl¡™Ø∏ÇµÇƒµÃﬁºﬁ™∏ƒê∂ê¨
-					if ( !(g_ncArgv.nc.dwValFlags & 0x0000FFFF) )
-						pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_VALUE);
-					else {
-						// ”∞¿ﬁŸÇ≈Ç»Ç¢∫∞ƒﬁÇÃ¡™Ø∏
-						if ( nNotModalCode >= 0 ) {
-							nResult = g_ncArgv.nc.nGcode;
-							g_ncArgv.nc.nGcode = nNotModalCode;
-							pDataResult = g_pDoc->DataOperation(pDataResult, &g_ncArgv);
-							g_ncArgv.nc.nGcode = nResult;
-							nNotModalCode = -1;
-						}
-						else
-							pDataResult = g_pDoc->DataOperation(pDataResult, &g_ncArgv);
-					}
-				}
-				else
-					bNCobj = TRUE;
-				if ( enGcode == MAKEOBJ )
-					g_ncArgv.nc.nGcode = nCode;
-				else
-					nNotModalCode = nCode;
-			}
-			else
+			if ( enGcode == NOOBJ ) {
 				CheckGcodeOther(nCode);
+				break;
+			}
+			// ëOâÒÇÃ∫∞ƒﬁÇ≈ìoò^µÃﬁºﬁ™∏ƒÇ™Ç†ÇÈÇ»ÇÁ
+			if ( bNCobj ) {
+				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
+				if ( !g_strComma.empty() )
+					MakeChamferingObject(pBlock, pDataResult, pData);
+				pDataResult = pData;
+				g_strComma = strComma;
+				nNotModalCode = -1;
+				// bNCobj ∏ÿ±ïsóv
+			}
+			if ( bNCsub ) {
+				bNCsub = FALSE;
+				if ( CallSubProgram(pBlock, pDataResult) == 30 )
+					return 30;	// èIóπ∫∞ƒﬁ
+			}
+			// åªç›ÇÃ∫∞ƒﬁï€ä«
+			if ( enGcode == MAKEOBJ )
+				g_ncArgv.nc.nGcode = nCode;
+			else
+				nNotModalCode = nCode;
+			bNCobj = TRUE;
 			break;
 		case 'F':
 			g_ncArgv.dFeed = (*g_pfnFeedAnalyze)(it->substr(1));
@@ -335,68 +366,89 @@ int NC_GSeparater(int i, CNCdata*& pDataResult)
 		}
 	} // End of for() iterator
 
-	// M∫∞ƒﬁå„èàóù
-	if ( bNCsub ) {
-		if ( !(g_ncArgv.nc.dwValFlags & NCD_P) )
-			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
-		else if ( (nIndex=NC_SearchSubProgram(&nRepeat)) < 0 )
-			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_M98);
-		else {
-			g_nSubprog++;
-			// nRepeatï™åJÇËï‘Çµ
-			while ( nRepeat-- > 0 && IsThread() ) {
-				for ( ii=nIndex; ii<nLoopCnt && IsThread(); ii++ ) {
-					nResult = NC_GSeparater(ii, pDataResult);	// çƒãA
-					if ( nResult == 30 )
-						return 30;
-					else if ( nResult == 99 )
-						break;
-				}
-			}
-			// EOFÇ≈èIóπÇ»ÇÁM99ïúãAàµÇ¢
-			if ( ii >= nLoopCnt && nResult == 0 ) {
-				if ( g_nSubprog > 0 )
-					g_nSubprog--;
-			}
-		}
-		return 0;
-	}
-
 	// NC√ﬁ∞¿ìoò^èàóù
 	if ( bNCobj || bNCval ) {
-		// ç¿ïWíl¡™Ø∏
-		if ( !(g_ncArgv.nc.dwValFlags & 0x0000FFFF) )
-			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_VALUE);
-		else {
-			// å≈íËª≤∏ŸÇÃ”∞¿ﬁŸï‚ä‘
-			if ( g_Cycle.bCycle )
-				CycleInterpolate();
-			// NC√ﬁ∞¿ÇÃìoò^
-			// --- ñ éÊÇËìôÇ…ÇÊÇÈçƒåvéZçÄñ⁄Ç™Ç†ÇÈÇ™ÅC
-			// --- Ç±ÇÃéûì_Ç≈µÃﬁºﬁ™∏ƒìoò^ÇµÇƒÇ®Ç©Ç»Ç¢Ç∆êFÅXñ ì|(?)
-			if ( nNotModalCode >= 0 ) {
-				nResult = g_ncArgv.nc.nGcode;
-				g_ncArgv.nc.nGcode = nNotModalCode;
-				pData = g_pDoc->DataOperation(pDataResult, &g_ncArgv);
-				g_ncArgv.nc.nGcode = nResult;
+		pData = AddGcode(pBlock, pDataResult, nNotModalCode);
+		if ( !g_strComma.empty() )
+			MakeChamferingObject(pBlock, pDataResult, pData);
+		pDataResult = pData;
+		g_strComma = strComma;
+		// Ãﬁ€Ø∏èÓïÒÇÃçXêV
+		pBlock->SetBlockToNCdata(pDataResult, g_pDoc->GetNCsize());
+	}
+
+	// M∫∞ƒﬁå„èàóù
+	if ( bNCsub ) {
+		if ( CallSubProgram(pBlock, pDataResult) == 30 )
+			return 30;	// èIóπ∫∞ƒﬁ
+	}
+
+	return 0;
+}
+
+CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
+{
+	int			nGcode;
+	CNCdata*	pDataResult = pDataBefore;
+
+	if ( !(g_ncArgv.nc.dwValFlags & 0x0000FFFF) )
+		return pDataResult;
+
+	// G68ç¿ïWâÒì]éwé¶ÇÃ¡™Ø∏
+	if ( nNotModalCode == 68 ) {
+		G68RoundCheck(pBlock);
+		if ( !g_ncArgv.g68.bG68 )
+			return pDataResult;
+	}
+
+	// å≈íËª≤∏ŸÇÃ”∞¿ﬁŸï‚ä‘
+	if ( g_Cycle.bCycle )
+		CycleInterpolate();
+
+	// NC√ﬁ∞¿ÇÃìoò^
+	// --- ñ éÊÇËìôÇ…ÇÊÇÈçƒåvéZçÄñ⁄Ç™Ç†ÇÈÇ™ÅC
+	// --- Ç±ÇÃéûì_Ç≈µÃﬁºﬁ™∏ƒìoò^ÇµÇƒÇ®Ç©Ç»Ç¢Ç∆êFÅXñ ì|(?)
+	if ( nNotModalCode >= 0 ) {
+		nGcode = g_ncArgv.nc.nGcode;
+		g_ncArgv.nc.nGcode = nNotModalCode;
+		pDataResult = g_pDoc->DataOperation(pDataBefore, &g_ncArgv);
+		g_ncArgv.nc.nGcode = nGcode;
+	}
+	else
+		pDataResult = g_pDoc->DataOperation(pDataBefore, &g_ncArgv);
+
+	return pDataResult;
+}
+
+int CallSubProgram(CNCblock* pBlock, CNCdata*& pData)
+{
+	int		i, nIndex, nRepeat, nResult = 0,
+			nLoop = g_pDoc->GetNCBlockSize();
+
+	if ( !(g_ncArgv.nc.dwValFlags & NCD_P) )
+		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
+	else if ( (nIndex=NC_SearchSubProgram(&nRepeat)) < 0 )
+		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_M98);
+	else {
+		g_nSubprog++;
+		// nRepeatï™åJÇËï‘Çµ
+		while ( nRepeat-- > 0 && IsThread() ) {
+			for ( i=nIndex; i<nLoop && IsThread(); i++ ) {
+				nResult = NC_GSeparater(i, pData);	// çƒãA(?)
+				if ( nResult == 30 )
+					return 30;
+				else if ( nResult == 99 )
+					break;
 			}
-			else
-				pData = g_pDoc->DataOperation(pDataResult, &g_ncArgv);
-			// ñ éÊÇËµÃﬁºﬁ™∏ƒÇÃìoò^
-			if ( !g_strComma.empty() )
-				MakeChamferingObject(pBlock, pDataResult, pData);
-			// Ãﬁ€Ø∏èÓïÒÇÃçXêV
-			pBlock->SetBlockToNCdata(pData, g_pDoc->GetNCsize());
-			// éüÇÃèàóùÇ÷
-			pDataResult = pData;
+		}
+		// EOFÇ≈èIóπÇ»ÇÁM99ïúãAàµÇ¢
+		if ( i >= nLoop && nResult == 0 ) {
+			if ( g_nSubprog > 0 )
+				g_nSubprog--;
 		}
 	}
 
-	// éüÇÃèàóùÇ…îıÇ¶Çƒ∂›œï∂éöóÒÇê√ìIïœêîÇ÷
-	if ( pData )
-		g_strComma = strComma;
-
-	return 0;
+	return nResult;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -435,10 +487,13 @@ void CheckGcodeOther(int nCode)
 	case 59:
 		g_pDoc->SelectWorkOffset(nCode - 54);
 		break;
+	// ç¿ïWâÒì]∑¨›æŸ
+	case 69:
+		G68RoundClear();
+		break;
 	// å≈íËª≤∏Ÿ∑¨›æŸ
 	case 80:
-		g_Cycle.bCycle = FALSE;
-		g_Cycle.dVal[0] = g_Cycle.dVal[1] = g_Cycle.dVal[2] = HUGE_VAL;
+		g_Cycle.clear();
 		break;
 	// ±Ãﬁøÿ≠∞ƒ, ≤›∏ÿ“›ƒ
 	case 90:
@@ -460,8 +515,7 @@ void CheckGcodeOther(int nCode)
 // ªÃﬁÃﬂ€∏ﬁ◊—ÇÃåüçı
 int NC_SearchSubProgram(int *pRepeat)
 {
-	int		nProg, i, n,
-			nLoopCnt = g_pDoc->GetNCBlockSize();
+	int		nProg, n;
 	CString	strProg;
 
 	if ( g_ncArgv.nc.dwValFlags & NCD_L ) {
@@ -484,14 +538,14 @@ int NC_SearchSubProgram(int *pRepeat)
 		}
 	}
 
-	strProg.Format("(O(0)*%d)($|[^0-9])", nProg);	// ê≥ãKï\åª(OxxxxÇ…œØ¡Ç∑ÇÈ)
+	// ê≥ãKï\åª(OxxxxÇ…œØ¡Ç∑ÇÈ)
+	strProg.Format("(O(0)*%d)($|[^0-9])", nProg);
 	regex	r(strProg);
 
-	// ìØÇ∂“”ÿÃﬁ€Ø∏Ç©ÇÁåüçı
-	for ( i=0; i<nLoopCnt && IsThread(); i++ ) {
-		if ( regex_search((LPCTSTR)(g_pDoc->GetNCblock(i)->GetStrGcode()), r) )
-			return i;
-	}
+	// åªç›ÇÃ(ìØÇ∂)“”ÿÃﬁ€Ø∏Ç©ÇÁåüçı
+	n = g_pDoc->SearchBlockRegex(r);
+	if ( n >= 0 )
+		return n;
 
 	// ã@äBèÓïÒÃ´Ÿ¿ﬁÇ©ÇÁÃß≤Ÿåüçı
 	CString	strFile( SearchFolder(r) );
@@ -499,10 +553,10 @@ int NC_SearchSubProgram(int *pRepeat)
 		return -1;
 
 	// Çnî‘çÜÇ™ë∂ç›Ç∑ÇÍÇŒNCÃﬁ€Ø∏ÇÃë}ì¸ ->Åu∂∞øŸà íuÇ…ì«Ç›çûÇ›ÅvÇ≈Ãﬁ€Ø∏í«â¡
-	n = nLoopCnt;
+	n = g_pDoc->GetNCBlockSize();
 	if ( g_pDoc->SerializeInsertBlock(strFile, n, NCF_AUTOREAD, FALSE) ) {
 		// ë}ì¸Ãﬁ€Ø∏ÇÃç≈èâÇæÇØNCF_FOLDER
-		if ( n < nLoopCnt )	// Ãﬁ€Ø∏ë}ì¸Ç™é∏îsÇÃâ¬î\ê´Ç‡Ç†ÇÈ
+		if ( n < g_pDoc->GetNCBlockSize() )	// ë}ì¸ëO < ë}ì¸å„
 			g_pDoc->GetNCblock(n)->SetBlockFlag(NCF_FOLDER);
 		return n;
 	}
@@ -582,7 +636,7 @@ int NC_NoSearchMacro(CNCblock*)
 	return -1;
 }
 
-CNCdata* MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
+void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeChamferingObject()", DBG_BLUE);
@@ -592,16 +646,16 @@ CNCdata* MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2
 			pData1->GetGcode() < 1 || pData1->GetGcode() > 3 ||
 			pData2->GetGcode() < 1 || pData2->GetGcode() > 3 ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_GTYPE);
-		return NULL;
+		return;
 	}
 	if ( pData1->GetPlane() != pData2->GetPlane() ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_PLANE);
-		return NULL;
+		return;
 	}
 	TCHAR	cCham = g_strComma[0];
 	if ( cCham != 'R' && cCham != 'C' ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_CHAMFERING);
-		return NULL;
+		return;
 	}
 
 	double	r1, r2, cr = fabs(atof(g_strComma.substr(1).c_str()));
@@ -617,7 +671,7 @@ CNCdata* MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2
 		tie(bResult, pto, r1, r2) = pData1->CalcRoundPoint(pData2, cr);
 		if ( !bResult ) {
 			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_INTERSECTION);
-			return NULL;
+			return;
 		}
 	}
 
@@ -625,14 +679,14 @@ CNCdata* MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2
 	ptResult = pData1->SetChamferingPoint(FALSE, r1);
 	if ( !ptResult ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LENGTH);
-		return NULL;
+		return;
 	}
 	pts = *ptResult;
 	// pData2(éüÇÃµÃﬁºﬁ™∏ƒ)ÇÃénì_Çï‚ê≥
 	ptResult = pData2->SetChamferingPoint(TRUE, r2);
 	if ( !ptResult ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LENGTH);
-		return NULL;
+		return;
 	}
 	pte = *ptResult;
 
@@ -690,7 +744,7 @@ CNCdata* MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2
 		ncArgv.nc.dwValFlags |= NCD_R;
 	}
 	// ä˘Ç…ìoò^Ç≥ÇÍÇΩÇPÇ¬ëOÇ…ñ éÊÇËµÃﬁºﬁ™∏ƒÇë}ì¸
-	return g_pDoc->DataOperation(pData1, &ncArgv, g_pDoc->GetNCsize()-1, NCINS);
+	g_pDoc->DataOperation(pData1, &ncArgv, g_pDoc->GetNCsize()-1, NCINS);
 }
 
 double FeedAnalyze_Dot(const string& str)
@@ -784,7 +838,7 @@ void CycleInterpolate(void)
 
 	// îOÇÃÇΩÇﬂÇ…¡™Ø∏
 	if ( g_ncArgv.nc.nGcode<81 || g_ncArgv.nc.nGcode>89 ) {
-		g_Cycle.bCycle = FALSE;
+		g_Cycle.clear();
 		return;
 	}
 
@@ -825,6 +879,65 @@ void CycleInterpolate(void)
 	}
 }
 
+void G68RoundCheck(CNCblock* pBlock)
+{
+	// äeéwé¶ç¿ïWÇÃ¡™Ø∏
+	g_ncArgv.g68.dOrg[NCA_X] =
+	g_ncArgv.g68.dOrg[NCA_Y] =
+	g_ncArgv.g68.dOrg[NCA_Z] = 0.0;
+	switch ( g_ncArgv.nc.enPlane ) {
+	case XY_PLANE:
+		if ( g_ncArgv.nc.dwValFlags & NCD_Z )
+			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_PLANE);
+		else {
+			g_ncArgv.g68.bG68    = TRUE;
+			g_ncArgv.g68.enPlane = XY_PLANE;
+			g_ncArgv.g68.dOrg[NCA_X] = g_ncArgv.nc.dValue[NCA_X];
+			g_ncArgv.g68.dOrg[NCA_Y] = g_ncArgv.nc.dValue[NCA_Y];
+		}
+		break;
+	case XZ_PLANE:
+		if ( g_ncArgv.nc.dwValFlags & NCD_Y )
+			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_PLANE);
+		else {
+			g_ncArgv.g68.bG68    = TRUE;
+			g_ncArgv.g68.enPlane = XZ_PLANE;
+			g_ncArgv.g68.dOrg[NCA_X] = g_ncArgv.nc.dValue[NCA_X];
+			g_ncArgv.g68.dOrg[NCA_Z] = g_ncArgv.nc.dValue[NCA_Z];
+		}
+		break;
+	case YZ_PLANE:
+		if ( g_ncArgv.nc.dwValFlags & NCD_X )
+			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_PLANE);
+		else {
+			g_ncArgv.g68.bG68    = TRUE;
+			g_ncArgv.g68.enPlane = YZ_PLANE;
+			g_ncArgv.g68.dOrg[NCA_Y] = g_ncArgv.nc.dValue[NCA_Y];
+			g_ncArgv.g68.dOrg[NCA_Z] = g_ncArgv.nc.dValue[NCA_Z];
+		}
+		break;
+	}
+
+	if ( g_ncArgv.g68.bG68 ) {
+		if ( g_ncArgv.nc.dwValFlags & NCD_R )
+			g_ncArgv.g68.dRound = g_ncArgv.nc.dValue[NCA_R] * RAD;	// ◊ºﬁ±›Ç≈äiî[
+		else {
+			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ORDER);
+			g_ncArgv.g68.bG68 = FALSE;		// G68∑¨›æŸ
+		}
+	}
+}
+
+void G68RoundClear(void)
+{
+	g_ncArgv.g68.bG68	= FALSE;
+	g_ncArgv.g68.enPlane= XY_PLANE;
+	g_ncArgv.g68.dRound	= 0.0;
+	g_ncArgv.g68.dOrg[NCA_X] =
+	g_ncArgv.g68.dOrg[NCA_Y] =
+	g_ncArgv.g68.dOrg[NCA_Z] = 0.0;
+}
+
 // ïœêîèâä˙âª
 void InitialVariable(void)
 {
@@ -855,8 +968,8 @@ void InitialVariable(void)
 	g_ncArgv.bInitial = pMCopt->GetModalSetting(MODALGROUP4) == 0 ? TRUE : FALSE;;
 	g_ncArgv.dFeed = pMCopt->GetFeed();
 
-	g_Cycle.bCycle = FALSE;
-	g_Cycle.dVal[0] = g_Cycle.dVal[1] = g_Cycle.dVal[2] = HUGE_VAL;
+	g_Cycle.clear();
+	G68RoundClear();
 
 	g_dwValFlags = 0;
 	g_nSubprog = 0;

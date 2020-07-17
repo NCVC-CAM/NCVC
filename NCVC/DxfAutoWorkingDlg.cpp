@@ -21,13 +21,14 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CDxfAutoWorkingDlg É_ÉCÉAÉçÉO
 
-CDxfAutoWorkingDlg::CDxfAutoWorkingDlg(double dOffset)
+CDxfAutoWorkingDlg::CDxfAutoWorkingDlg(double dOffset, BOOL bAcute)
 	: CDialog(CDxfAutoWorkingDlg::IDD, NULL)
 {
 	//{{AFX_DATA_INIT(CDxfAutoWorkingDlg)
 	m_nSelect = 0;
 	m_nDetail = 0;
 	m_dOffset = dOffset;
+	m_bAcuteRound = bAcute;
 	//}}AFX_DATA_INIT
 }
 
@@ -36,6 +37,8 @@ void CDxfAutoWorkingDlg::DoDataExchange(CDataExchange* pDX)
 	CDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CDxfAutoWorkingDlg)
 	DDX_Control(pDX, IDC_AUTO_OFFSET, m_ctOffset);
+	DDX_Control(pDX, IDC_AUTO_ACUTEROUND, m_ctAcuteRound);
+	DDX_Check(pDX, IDC_AUTO_ACUTEROUND, m_bAcuteRound);
 	DDX_Radio(pDX, IDC_AUTO_SELECT_OUTLINE, m_nSelect);
 	DDX_Radio(pDX, IDC_AUTOSHAPE_1, m_nDetail);
 	//}}AFX_DATA_MAP
@@ -60,6 +63,7 @@ void CDxfAutoWorkingDlg::SetDetailCtrl(void)
 	}
 	for ( int i=0; i<SIZEOF(m_ctDetail); i++ )
 		m_ctDetail[i].EnableWindow(bActive[i]);
+	m_ctAcuteRound.EnableWindow(bActive[0]);	// âsäpä€ÇﬂèàóùÇÕé©ìÆó÷äsèàóùÇ…èÄãí
 }
 
 /////////////////////////////////////////////////////////////////////////////

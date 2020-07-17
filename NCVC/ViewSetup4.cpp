@@ -36,11 +36,12 @@ CViewSetup4::CViewSetup4() : CPropertyPage(CViewSetup4::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CViewSetup4)
 	//}}AFX_DATA_INIT
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();	// Can't const (GetLogFont)
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
 		m_colView[i] = pOpt->GetNcInfoDrawColor(i);
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
 	}
+	m_bTraceMarker = pOpt->m_bTraceMarker;
 	memcpy(&m_lfFont, pOpt->GetLogFont(TYPE_NCD), sizeof(m_lfFont));
 }
 
@@ -61,6 +62,7 @@ void CViewSetup4::DoDataExchange(CDataExchange* pDX)
 		DDX_Control(pDX, i + IDC_VIEWSETUP4_ST_BACKGROUND1, m_ctColor[i]);
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ )
 		DDX_Control(pDX, i+IDC_VIEWSETUP4_TRACE0, m_nTraceSpeed[i]);
+	DDX_Check(pDX, IDC_VIEWSETUP4_TRACEMARK, m_bTraceMarker);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -72,10 +74,10 @@ BOOL CViewSetup4::OnInitDialog()
 
 	// ﾎﾞﾀﾝﾃｷｽﾄの変更
 	m_ctFontButton.SetWindowText(
-		((CViewSetup *)GetParent())->GetChangeFontButtonText(&m_lfFont) );
+		static_cast<CViewSetup *>(GetParent())->GetChangeFontButtonText(&m_lfFont) );
 
 	// ﾄﾚｰｽｽﾋﾟｰﾄﾞ
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	for ( int i=0; i<SIZEOF(m_nTraceSpeed); i++ )
 		m_nTraceSpeed[i] = pOpt->GetTraceSpeed(i);
 
@@ -92,6 +94,7 @@ BOOL CViewSetup4::OnApply()
 		pOpt->m_colNCInfoView[i] = m_colView[i];
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ )
 		pOpt->m_nTraceSpeed[i] = m_nTraceSpeed[i];
+	pOpt->m_bTraceMarker = m_bTraceMarker;
 
 	SetModified(FALSE);
 	// ﾒｲﾝﾌﾚｰﾑ，各ﾋﾞｭｰへの更新通知
@@ -148,7 +151,7 @@ void CViewSetup4::OnFontChange()
 	if ( fontDlg.DoModal() == IDOK ) {
 		memcpy(&m_lfFont, fontDlg.m_cf.lpLogFont, sizeof(m_lfFont));
 		m_ctFontButton.SetWindowText(
-			((CViewSetup *)GetParent())->GetChangeFontButtonText(&m_lfFont) );
+			static_cast<CViewSetup *>(GetParent())->GetChangeFontButtonText(&m_lfFont) );
 		// 適用ﾎﾞﾀﾝを有効に
 		SetModified();
 	}

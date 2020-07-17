@@ -19,14 +19,14 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v140_xp</PlatformToolset>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -68,7 +68,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalIncludeDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost;C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\include\old</AdditionalIncludeDirectories>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -81,7 +80,6 @@
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib;C:\Users\magara\Documents\Visual Studio 2015\lib;C:\Users\magara\Documents\Visual Studio 2015\lib\old</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -101,6 +99,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost;C:\Users\magara\Documents\Visual Studio 2015\include</AdditionalIncludeDirectories>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -115,6 +114,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib;C:\Users\magara\Documents\Visual Studio 2015\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -164,6 +164,7 @@
     <ClCompile Include="MCSetup2.cpp" />
     <ClCompile Include="MCSetup3.cpp" />
     <ClCompile Include="MCSetup4.cpp" />
+    <ClCompile Include="MCSetup5.cpp" />
     <ClCompile Include="MKNCSetup.cpp" />
     <ClCompile Include="MKNCSetup1.cpp" />
     <ClCompile Include="MKNCSetup2.cpp" />
@@ -175,6 +176,7 @@
     <ClCompile Include="NCChild.cpp" />
     <ClCompile Include="NCdata.cpp" />
     <ClCompile Include="NCDoc.cpp" />
+    <ClCompile Include="NCFindDlg.cpp" />
     <ClCompile Include="NCInfoTab.cpp" />
     <ClCompile Include="NCInfoView.cpp" />
     <ClCompile Include="NCJumpDlg.cpp" />
@@ -263,6 +265,7 @@
     <ClInclude Include="MCSetup2.h" />
     <ClInclude Include="MCSetup3.h" />
     <ClInclude Include="MCSetup4.h" />
+    <ClInclude Include="MCSetup5.h" />
     <ClInclude Include="MKNCSetup.h" />
     <ClInclude Include="MKNCSetup1.h" />
     <ClInclude Include="MKNCSetup2.h" />
@@ -274,6 +277,7 @@
     <ClInclude Include="NCChild.h" />
     <ClInclude Include="NCdata.h" />
     <ClInclude Include="NCDoc.h" />
+    <ClInclude Include="NCFindDlg.h" />
     <ClInclude Include="NCInfoTab.h" />
     <ClInclude Include="NCInfoView.h" />
     <ClInclude Include="NCJumpDlg.h" />

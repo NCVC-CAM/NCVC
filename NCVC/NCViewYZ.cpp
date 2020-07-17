@@ -87,6 +87,7 @@ void CNCViewYZ::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 			if ( GetDocument()->IsWorkRect() ) {
 				dc.SetROP2(R2_XORPEN);
 				DrawWorkRect(&dc);	// CNCViewBase
+				dc.SetROP2(R2_COPYPEN);
 			}
 			// 描画用にﾃﾞｰﾀ更新
 			if ( pHint ) {
@@ -101,6 +102,7 @@ void CNCViewYZ::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 			CClientDC	dc(this);
 			dc.SetROP2(GetDocument()->IsMaxRect() ? R2_COPYPEN : R2_XORPEN);
 			DrawMaxRect(&dc);
+			dc.SetROP2(R2_COPYPEN);
 		}
 		return;
 	case UAV_CHANGEFONT:
@@ -125,7 +127,7 @@ BOOL CNCViewYZ::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 
 void CNCViewYZ::SetGuideData(void)
 {
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	double	dSrc = pOpt->IsGuideSync() ? m_dFactor*LOMETRICFACTOR : LOMETRICFACTOR;
 	// Ｙ軸のガイド初期化（奥から手前へ）
 	m_ptGuid[0][0].x = (int)( pOpt->GetGuideLength(NCA_Y) * dSrc);
@@ -196,7 +198,7 @@ void CNCViewYZ::OnDraw(CDC* pDC)
 	for ( i=GetDocument()->GetTraceStart(); i<nDraw; i++ ) {
 		pData = GetDocument()->GetNCdata(i);
 		if ( pData->GetGtype() == G_TYPE )
-			pData->DrawYZ(pDC);
+			pData->DrawYZ(pDC, FALSE);
 	}
 	// 最大切削矩形
 	if ( GetDocument()->IsMaxRect() )
@@ -296,7 +298,7 @@ void CNCViewYZ::OnViewLensComm(void)
 		DrawConvertWorkRect();
 	DrawConvertMaxRect();
 	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-	((CNCChild *)GetParentFrame())->SetFactorInfo(NC_YZ_PLANE, m_dFactor);
+	static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_YZ_PLANE, m_dFactor);
 	// ﾋﾞｭｰの再描画
 	Invalidate();
 }
@@ -348,7 +350,7 @@ void CNCViewYZ::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 {
 	if ( bActivate ) {
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-		((CNCChild *)GetParentFrame())->SetFactorInfo(NC_YZ_PLANE, m_dFactor);
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(NC_YZ_PLANE, m_dFactor);
 	}
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
 }
@@ -403,7 +405,7 @@ void CNCViewYZ::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	// ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳでﾀﾞﾌﾞﾙｸﾘｯｸされれば，YZ単体表示に切り替え
 	if ( !GetParent()->IsKindOf(RUNTIME_CLASS(CNCViewTab)) ) {
-		((CNCChild *)GetParentFrame())->GetMainView()->DblClkChange(3);
+		static_cast<CNCChild *>(GetParentFrame())->GetMainView()->DblClkChange(3);
 		return;
 	}
 
@@ -415,7 +417,7 @@ BOOL CNCViewYZ::OnEraseBkgnd(CDC* pDC)
 	CRect	rc;
 	GetClientRect(&rc);
 
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND2),
 				col2 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND1);
 

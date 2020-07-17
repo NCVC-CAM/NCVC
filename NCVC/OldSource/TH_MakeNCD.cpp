@@ -10,25 +10,21 @@
 #include "DXFDoc.h"
 #include "NCdata.h"
 #include "NCMakeClass.h"
-#include "MakeNCDWiz.h"
 #include "ThreadDlg.h"
 #include "NCVCdefine.h"
 
-#include <math.h>
-#include <float.h>
-#include <ctype.h>
-
 /*
 !!!ATTENTION!!!
-生成時間の表示：ﾘﾘｰｽﾊﾞｰｼﾞｮﾝでは外すのを忘れずに
+生成時間の表示：正式ﾘﾘｰｽでは外すのを忘れずに
 #define	_DBG_NCMAKE_TIME
 */
+
+using namespace std;
+using namespace boost;
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
 extern	CMagaDbg	g_dbg;
 #endif
 
@@ -36,7 +32,6 @@ extern	CMagaDbg	g_dbg;
 	CDXFdata の GetType() と GetMakeType() の使い分けに注意！！
 */
 // よく使う変数や呼び出しの簡略置換
-using namespace boost;
 #define	IsThread()	g_pParent->IsThreadContinue()
 #define	GetFlg(a)	g_pMakeOpt->GetFlag(a)
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
@@ -55,12 +50,11 @@ static	CDXFmap		g_mpDXFdata,	// 座標をｷｰにCDXFdataを格納
 			g_mpDXFstarttext,				// 開始ﾚｲﾔ
 			g_mpDXFmove, g_mpDXFmovetext,	// 移動ﾚｲﾔﾏｯﾌﾟ
 			g_mpDXFtext, g_mpDXFcomment;	// 加工ﾃｷｽﾄ，ｺﾒﾝﾄ専用
-static	CDXFarray	g_obPoint;		// 穴加工ﾃﾞｰﾀ
+typedef	CTypedPtrArrayEx<CPtrArray, CDXFsort*>	CDrillAxis;
+static	CDXFsort	g_obDrill;		// 穴加工ﾃﾞｰﾀ
 static	CDXFsort	g_obCircle;		// 円ﾃﾞｰﾀを穴加工するときの仮登録
-static	CDXFsort	g_obDrillGroup;	// ｸﾞﾙｰﾌﾟ分けした穴加工ﾃﾞｰﾀ
-static	CDXFsort	g_obDrillAxis;	// -> 軸座標で並べ替え
 static	CDXFsort	g_obStartData;	// 加工開始位置指示ﾃﾞｰﾀ
-static	CDXFlist	g_ltDeepGlist(1024);// 深彫切削用の仮登録
+static	CDXFlist	g_ltDeepGlist;	// 深彫切削用の仮登録
 static	CTypedPtrArrayEx<CPtrArray, CNCMake*>	g_obMakeGdata;	// 加工ﾃﾞｰﾀ
 
 static	BOOL		g_bData;		// 各生成処理で生成されたか
@@ -74,16 +68,15 @@ static	int			g_nCorrect;		// 補正ｺｰﾄﾞ
 // ｻﾌﾞ関数
 static	void	InitialVariable(void);		// 変数初期化
 static	void	InitialCycleBaseVariable(void);	// 固定ｻｲｸﾙのﾍﾞｰｽ値初期化
-static	BOOL	SingleLayer(int, LPMAKENCDWIZARDPARAM);	// 単一ﾚｲﾔ, 形状処理
+static	BOOL	SingleLayer(int);			// 単一ﾚｲﾔ, 形状処理
 static	BOOL	MultiLayer(int);			// 複数ﾚｲﾔ処理(2ﾊﾟﾀｰﾝ兼用)
 static	void	SetStaticOption(void);		// 静的変数の初期化
 static	BOOL	SetStartData(void);			// 加工開始位置指示ﾚｲﾔの仮登録, 移動指示ﾚｲﾔの処理
-static	void	SetGlobalArray_Single(void);
-static	void	SetGlobalArray_Multi(const CLayerData*);
-static	void	SetGlobalArray_Sub(CDXFdata*);
-static	void	SetGlobalMap_Other(void);
+static	void	SetGlobalMap(void);
+static	void	SetGlobalMapToLayer(const CLayerData*);
+static	void	SetGlobalMapToOther(void);
 static	BOOL	MakeNCD_MainFunc(const CLayerData*);		// NC生成のﾒｲﾝﾙｰﾌﾟ
-static	BOOL	MakeNCD_ShapeFunc(LPMAKENCDWIZARDPARAM);
+static	BOOL	MakeNCD_ShapeFunc(void);
 static	BOOL	MakeNCD_FinalFunc(LPCTSTR = NULL);	// 終了ｺｰﾄﾞ，ﾌｧｲﾙ出力など
 static	BOOL	OutputNCcode(LPCTSTR);		// NCｺｰﾄﾞの出力
 
@@ -93,54 +86,55 @@ static	BOOL	CallMakeDrill(const CLayerData*, CString&);
 static	BOOL	CallMakeLoop(ENMAKETYPE, const CLayerData*, CString&);
 
 // 原点調整(TRUE:IsMatch)
-static	tuple<CDXFdata*, BOOL>	OrgTuningCutter(const CLayerData*, BOOL);
+static	tuple<CDXFdata*, BOOL>	OrgTuningCutter(const CLayerData*);
 static	tuple<CDXFdata*, BOOL>	OrgTuningDrillPoint(void);
 static	CDXFdata*	OrgTuningDrillCircle(void);
 
 // ﾃﾞｰﾀ解析関数
 static	BOOL		MakeLoopEuler(const CLayerData*, CDXFdata*);
-static	BOOL		MakeLoopEulerSearch(CDXFmap&, CPointD&);
+static	BOOL		MakeLoopEulerSearch(const CPointD&, CDXFmap&);
 static	int			MakeLoopEulerAdd(const CDXFmap*);
-static	BOOL		MakeLoopEulerAdd_with_one_stroke(const CDXFmap*, const CPointD&, const CDXFarray*, CDXFlist&, BOOL);
-static	BOOL		MakeLoopShape(CDXFmap*, LPMAKENCDWIZARDPARAM);
-static	int			MakeLoopShapeSearch(const CDXFmap*, LPMAKENCDWIZARDPARAM);
-static	BOOL		MakeLoopShapeAdd(const CDXFmap*, CDXFdata*, LPMAKENCDWIZARDPARAM);
-static	BOOL		MakeApproachArc(const CDXFdata*, const CDXFdata*, const CPointD&, double, BOOL, BOOL);
+static	BOOL		MakeLoopEulerAdd_with_one_stroke(const CDXFmap*, BOOL, BOOL, const CPointD&, const CDXFarray*, CDXFlist&);
+static	BOOL		MakeLoopShape(CDXFshape*);
+static	int			MakeLoopShapeSearch(const CDXFshape*);
+static	BOOL		MakeLoopShapeAdd(CDXFshape*, CDXFdata*);
+static	BOOL		MakeLoopShapeAdd_ChainList(CDXFshape*, CDXFchain*, CDXFdata*);
+static	BOOL		MakeLoopShapeAdd_EulerMap(CDXFshape*);
+static	BOOL		MakeLoopShapeAdd_EulerMap_Make(CDXFshape*, CDXFmap*, BOOL&);
+static	BOOL		MakeLoopShapeAdd_EulerMap_Search(const CPointD&, CDXFmap*, CDXFmap*);
 static	BOOL		MakeLoopDeepAdd(void);
-typedef	CDXFdata*	(*PFNDEEPPROC)(BOOL);
-static	PFNDEEPPROC	g_pfnDeepHead, g_pfnDeepTail;
-static	CDXFdata*	MakeLoopAddDeepHead(BOOL);
-static	CDXFdata*	MakeLoopAddDeepTail(BOOL);
-static	CDXFdata*	MakeLoopAddDeepHeadAll(BOOL);
-static	CDXFdata*	MakeLoopAddDeepTailAll(BOOL);
-static	void		MakeLoopAddDeepZProc(BOOL, BOOL, CDXFdata*);
+typedef	CDXFdata*	(*PFNDEEPPROC)(BOOL, BOOL);
+static	PFNDEEPPROC	g_pfnDeepProc;
+static	CDXFdata*	MakeLoopDeepAdd_Euler(BOOL, BOOL);
+static	CDXFdata*	MakeLoopDeepAdd_All(BOOL, BOOL);
 static	void		MakeLoopDeepZDown(void);
 static	void		MakeLoopDeepZUp(void);
 static	BOOL		MakeLoopDrillPoint(CDXFdata*);
-static	BOOL		MakeLoopDrillPointSeqChk(BOOL, CDXFsort&);
-static	BOOL		MakeLoopDrillPointXY(BOOL);
-static	BOOL		MakeLoopDrillPointXYRevers(BOOL);
+static	void		MakeLoopDrillPoint_MakeAxis(int, CDrillAxis&);
+static	int			MakeLoopDrillPoint_EdgeChk(int, CDXFsort*);
+static	int			MakeLoopDrillPoint_SeqChk(int, int, CDXFsort*);
 static	BOOL		MakeLoopDrillCircle(void);
 static	BOOL		MakeLoopAddDrill(CDXFdata*);
-static	BOOL		MakeLoopAddDrillSeq(int);
+static	tuple<int, CDXFdata*>	MakeLoopAddDrillSeq(int, int, CDXFsort*);
 static	CDXFdata*	MakeLoopAddFirstMove(ENMAKETYPE);
 static	BOOL		MakeLoopAddLastMove(void);
 
 // 引数で指定したｵﾌﾞｼﾞｪｸﾄに一番近いｵﾌﾞｼﾞｪｸﾄを返す(戻り値:Z軸の移動が必要か)
 static	CDXFdata*	GetNearPointCutter(const CLayerData*, const CDXFdata*);
-static	CDXFmap*	GetNearPointMap(const CPointD&, DWORD);
-static	tuple<CDXFdata*, BOOL>	GetNearPointDrill(CDXFdata*);
-static	BOOL	GetMatchPointMove(CDXFdata*&);
+static	CDXFshape*	GetNearPointShape(const CPointD&);
+static	tuple<CDXFdata*, BOOL>	GetNearPointDrill(const CDXFdata*);
+static	tuple<int, int>			GetNearPointDrillAxis(const CDXFdata*, int, CDrillAxis&);
+static	CDXFdata*	GetMatchPointMove(const CDXFdata*);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomCode(const CString&, const CDXFdata*);
 static	BOOL	IsNCchar(LPCTSTR);
 
 // ﾃｷｽﾄ情報
-static	void	AddCommentText(CPointD&);
-static	void	AddStartTextIntegrated(CPointD& pt);
-static	void	AddMoveTextIntegrated(CPointD& pt);
-static	void	AddCutterTextIntegrated(CPointD& pt);
+static	void	AddCommentText(const CPointD&);
+static	void	AddStartTextIntegrated(const CPointD& pt);
+static	void	AddMoveTextIntegrated(const CPointD& pt);
+static	void	AddCutterTextIntegrated(const CPointD& pt);
 
 // NCﾃﾞｰﾀ登録関数
 static	void	AddMakeStart(void);		// 加工開始指示ﾃﾞｰﾀの生成
@@ -162,9 +156,8 @@ inline	void	AddMoveGdata(int nCode, double dZ, double dFeed)
 // Z軸の上昇
 inline	void	AddMoveGdataZup(void)
 {
-	CPointD	pt( CDXFdata::ms_pData->GetEndMakePoint() );
 	// 終点座標でのｺﾒﾝﾄ生成
-	AddCutterTextIntegrated(pt);
+	AddCutterTextIntegrated( CDXFdata::ms_pData->GetEndCutterPoint() );
 	// Z軸の上昇
 	AddMoveGdata(0, g_dZReturn, -1.0);
 }
@@ -214,9 +207,8 @@ inline	void	AddMoveGdataG1(const CDXFdata* pData)
 // 切削ﾃﾞｰﾀの生成
 inline	void	AddMakeGdata(CDXFdata* pData)
 {
-	CPointD	pt( pData->GetStartMakePoint() );
 	// 開始位置と等しいﾃｷｽﾄﾃﾞｰﾀの生成
-	AddCutterTextIntegrated(pt);
+	AddCutterTextIntegrated( pData->GetStartCutterPoint() );
 	// 切削ﾃﾞｰﾀ生成
 	CNCMake*	mkNCD = new CNCMake(pData,
 		pData->GetMakeType() == DXFPOINTDATA ?
@@ -228,9 +220,8 @@ inline	void	AddMakeGdata(CDXFdata* pData)
 // 切削ﾃﾞｰﾀの生成（深彫）
 inline	void	AddMakeGdataDeep(CDXFdata* pData, BOOL bDeep)
 {
-	CPointD	pt( pData->GetStartMakePoint() );
 	// 開始位置と等しいﾃｷｽﾄﾃﾞｰﾀの生成
-	AddCutterTextIntegrated(pt);
+	AddCutterTextIntegrated( pData->GetStartCutterPoint() );
 	// 切削ﾃﾞｰﾀ生成
 	CNCMake*	mkNCD = new CNCMake(pData,
 		bDeep ? GetDbl(MKNC_DBL_DEEPFEED) : GetDbl(MKNC_DBL_FEED) );
@@ -248,9 +239,8 @@ inline	void	AddMakeGdata(const CString& strData)
 // 移動指示ﾚｲﾔのﾃﾞｰﾀ生成
 inline	void	AddMakeMove(CDXFdata* pData)
 {
-	CPointD	pt( pData->GetStartMakePoint() );
 	// 開始位置と等しいﾃｷｽﾄﾃﾞｰﾀの生成
-	AddMoveTextIntegrated(pt);
+	AddMoveTextIntegrated( pData->GetStartCutterPoint() );
 	// 移動指示
 	CNCMake*	mkNCD = new CNCMake(pData);
 	ASSERT( mkNCD );
@@ -284,10 +274,11 @@ inline	void	SendProgressPos(int i)
 }
 
 // 並べ替え補助関数
-int		CircleSizeCompareFunc1(CDXFdata*, CDXFdata*);	// 円ﾃﾞｰﾀ昇順ｿｰﾄ
-int		CircleSizeCompareFunc2(CDXFdata*, CDXFdata*);	// 円ﾃﾞｰﾀ降順ｿｰﾄ
-int		DrillOptimaizeCompareFuncX(CDXFdata*, CDXFdata*);	// X軸
-int		DrillOptimaizeCompareFuncY(CDXFdata*, CDXFdata*);	// Y軸
+static	int		CircleSizeCompareFunc1(CDXFdata*, CDXFdata*);	// 円ﾃﾞｰﾀ昇順ｿｰﾄ
+static	int		CircleSizeCompareFunc2(CDXFdata*, CDXFdata*);	// 円ﾃﾞｰﾀ降順ｿｰﾄ
+static	int		DrillOptimaizeCompareFuncX(CDXFdata*, CDXFdata*);	// X軸
+static	int		DrillOptimaizeCompareFuncY(CDXFdata*, CDXFdata*);	// Y軸
+static	int		AreaSizeCompareFunc(CDXFchain*, CDXFchain*);	// 形状集合の面積昇順ｿｰﾄ
 
 // ｻﾌﾞｽﾚｯﾄﾞ関数
 static	CCriticalSection	g_csMakeAfter;	// MakeNCD_AfterThread()ｽﾚｯﾄﾞﾛｯｸｵﾌﾞｼﾞｪｸﾄ
@@ -310,9 +301,9 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 #endif
 
 	// ｸﾞﾛｰﾊﾞﾙ変数初期化
-	LPNCVCTHREADPARAM	pParam = (LPNCVCTHREADPARAM)pVoid;
+	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	g_pParent = pParam->pParent;
-	g_pDoc = (CDXFDoc *)(pParam->pDoc);
+	g_pDoc = static_cast<CDXFDoc*>(pParam->pDoc);
 	ASSERT(g_pParent);
 	ASSERT(g_pDoc);
 
@@ -339,31 +330,38 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 #endif
 
 		// NC生成のﾙｰﾌﾟ前に必要な初期化
-		CDXFdata::ms_ptOrg = g_pDoc->GetCutterOrigin();
+		{
+			optional<CPointD>	ptResult = g_pDoc->GetCutterOrigin();
+			CDXFdata::ms_ptOrg = ptResult ? *ptResult : 0.0;
+		}
 		g_pDoc->GetCircleObject()->OrgTuning(FALSE);	// 結果的に原点がｾﾞﾛになる
 		InitialVariable();
 		// 増分割り当て
 		i = g_pDoc->GetDxfLayerDataCnt(DXFCAMLAYER);
-		g_obPoint.SetSize(0, i);
+		g_obDrill.SetSize(0, i);
 		g_obCircle.SetSize(0, i);
 		i *= 2;
 		g_obMakeGdata.SetSize(0, i);
-		i = max(17, GetPrimeNumber(i));
+		i = GetPrimeNumber(i);
+		i = max(17, i);
 		g_mpDXFdata.InitHashTable(i);
 		g_mpDXFtext.InitHashTable(i);
-		i = g_pDoc->GetDxfLayerDataCnt(DXFSTRLAYER);
-		g_obStartData.SetSize(0, max(10, i*2));
-		g_mpDXFstarttext.InitHashTable(max(17, GetPrimeNumber(i)));
-		i = max(17, GetPrimeNumber(g_pDoc->GetDxfLayerDataCnt(DXFMOVLAYER)*2));
+		i = g_pDoc->GetDxfLayerDataCnt(DXFSTRLAYER) * 2;
+		g_obStartData.SetSize(0, max(10, i));
+		i = GetPrimeNumber(i);
+		g_mpDXFstarttext.InitHashTable(max(17, i));
+		i = GetPrimeNumber(g_pDoc->GetDxfLayerDataCnt(DXFMOVLAYER)*2);
+		i = max(17, i);
 		g_mpDXFmove.InitHashTable(i);
 		g_mpDXFmovetext.InitHashTable(i);
-		g_mpDXFcomment.InitHashTable(max(17, GetPrimeNumber(g_pDoc->GetDxfLayerDataCnt(DXFCOMLAYER))));
+		i = GetPrimeNumber(g_pDoc->GetDxfLayerDataCnt(DXFCOMLAYER));
+		g_mpDXFcomment.InitHashTable(max(17, i));
 
 		// ﾒｲﾝﾙｰﾌﾟへ
 		switch ( nID ) {
 		case ID_FILE_DXF2NCD:		// 単一ﾚｲﾔ
-		case ID_FILE_DXF2NCD_WIZ:	// 形状加工
-			bResult = SingleLayer(nID, (LPMAKENCDWIZARDPARAM)(pParam->lParam));
+		case ID_FILE_DXF2NCD_SHAPE:	// 形状加工
+			bResult = SingleLayer(nID);
 			break;
 
 		case ID_FILE_DXF2NCD_EX1:	// 複数の切削条件ﾌｧｲﾙ
@@ -427,7 +425,7 @@ void InitialCycleBaseVariable(void)
 
 //////////////////////////////////////////////////////////////////////
 
-BOOL SingleLayer(int nID, LPMAKENCDWIZARDPARAM pWizParam)
+BOOL SingleLayer(int nID)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SingleLayer()\nStart", DBG_CYAN);
@@ -448,7 +446,7 @@ BOOL SingleLayer(int nID, LPMAKENCDWIZARDPARAM pWizParam)
 	CNCMake::ms_dCycleP[0] = GetNum(MKNC_NUM_DWELL);
 	InitialCycleBaseVariable();
 	// ｸﾞﾛｰﾊﾞﾙ変数に生成対象ｵﾌﾞｼﾞｪｸﾄのｺﾋﾟｰ
-	SetGlobalArray_Single();
+	SetGlobalMap();
 
 	// 生成開始
 	if ( nID == ID_FILE_DXF2NCD ) {
@@ -460,7 +458,7 @@ BOOL SingleLayer(int nID, LPMAKENCDWIZARDPARAM pWizParam)
 		}
 	}
 	else {
-		if ( !MakeNCD_ShapeFunc(pWizParam) ) {
+		if ( !MakeNCD_ShapeFunc() ) {
 #ifdef _DEBUG
 			dbg.printf("Error:MakeNCD_ShapeFunc()");
 #endif
@@ -505,6 +503,9 @@ BOOL MultiLayer(int nID)
 	if ( !SetStartData() )
 		return FALSE;
 
+	// 切削ﾚｲﾔ以外のﾏｯﾌﾟ作成
+	SetGlobalMapToOther();
+
 	// ﾚｲﾔ毎のﾙｰﾌﾟ
 	for ( i=0; i<nLayerCnt && IsThread(); i++ ) {
 		pLayer = g_pDoc->GetLayerData(i);
@@ -525,19 +526,29 @@ BOOL MultiLayer(int nID)
 			// Z軸の切削座標ｾｯﾄ
 			g_dZCut = RoundUp(GetDbl(MKNC_DBL_ZCUT));
 			g_dDeep = RoundUp(GetDbl(MKNC_DBL_DEEP));
+			// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
+			CNCMake::ms_dCycleZ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLZ));
 		}
 		else {
 			// 強制Z座標補正
 			g_dZCut = g_dDeep = RoundUp(pLayer->GetZCut());
+			// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
+			CNCMake::ms_dCycleZ[0] = pLayer->IsDrillZ() ?
+						g_dZCut : RoundUp(GetDbl(MKNC_DBL_DRILLZ));
 		}
-		// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
-		CNCMake::ms_dCycleZ[0] = pLayer->IsDrillZ() ?
-					g_dZCut : RoundUp(GetDbl(MKNC_DBL_DRILLZ));
+		// 固定ｻｲｸﾙその他の座標ｾｯﾄ
 		CNCMake::ms_dCycleR[0] = RoundUp(GetDbl(MKNC_DBL_DRILLR));
 		CNCMake::ms_dCycleP[0] = GetNum(MKNC_NUM_DWELL);
 		InitialCycleBaseVariable();
 		// ｸﾞﾛｰﾊﾞﾙ変数に生成対象ｵﾌﾞｼﾞｪｸﾄのｺﾋﾟｰ
-		SetGlobalArray_Multi(pLayer);
+		g_mpDXFdata.RemoveAll();
+		g_mpDXFtext.RemoveAll();
+		g_obDrill.RemoveAll();
+		g_obCircle.RemoveAll();
+		g_ltDeepGlist.RemoveAll();
+		SetGlobalMapToLayer(pLayer);
+		// 一時領域で使用したﾏｯﾌﾟを削除
+		g_mpDXFdata.RemoveAll();
 
 		// 生成開始
 #ifdef _DEBUG
@@ -657,14 +668,8 @@ void SetStaticOption(void)
 	CDXFmap::ms_dTolerance = GetFlg(MKNC_FLG_DEEP) ?
 		NCMIN : GetDbl(MKNC_DBL_TOLERANCE);
 	// 深彫の処理
-	if ( GetNum(MKNC_NUM_DEEPAPROCESS) == 0 ) {
-		g_pfnDeepHead = &MakeLoopAddDeepHeadAll;
-		g_pfnDeepTail = &MakeLoopAddDeepTailAll;
-	}
-	else {
-		g_pfnDeepHead = &MakeLoopAddDeepHead;
-		g_pfnDeepTail = &MakeLoopAddDeepTail;
-	}
+	g_pfnDeepProc = GetNum(MKNC_NUM_DEEPAPROCESS) == 0 ?
+		&MakeLoopDeepAdd_All : &MakeLoopDeepAdd_Euler;
 
 	// CDXFdataの静的変数初期化
 	CDXFdata::ms_fXRev = GetFlg(MKNC_FLG_XREV);
@@ -711,7 +716,7 @@ BOOL SetStartData(void)
 		for ( j=0; j<pLayer->GetDxfSize() && IsThread(); j++ ) {
 			pData = pLayer->GetDxfData(j);
 			if ( pData->IsKindOf(RUNTIME_CLASS(CDXFcircleEx)) )
-				pStartCircle = (CDXFcircleEx *)pData;
+				pStartCircle = static_cast<CDXFcircleEx*>(pData);
 			else {
 				dGap = pData->OrgTuning();
 				if ( dGap < dGapMin ) {
@@ -760,110 +765,76 @@ BOOL SetStartData(void)
 	return IsThread();
 }
 
-void SetGlobalArray_Single(void)
+void SetGlobalMap(void)
 {
-	int		i, j;
-	CDXFdata*	pData;
 	CLayerData*	pLayer;
-
 	// 切削対象ﾚｲﾔ(表示ﾚｲﾔ)をｺﾋﾟｰ
-	for ( i=0; i<g_pDoc->GetLayerCnt() && IsThread(); i++ ) {
+	for ( int i=0; i<g_pDoc->GetLayerCnt() && IsThread(); i++ ) {
 		pLayer = g_pDoc->GetLayerData(i);
-		if ( pLayer->IsMakeTarget() ) {
-			// 切削ﾃﾞｰﾀをｺﾋﾟｰ(穴加工のみ)
-			for ( j=0; j<pLayer->GetDxfSize() && IsThread(); j++ )
-				SetGlobalArray_Sub(pLayer->GetDxfData(j));
-			g_mpDXFdata.RemoveAll();
-			// ﾃｷｽﾄﾃﾞｰﾀのﾏｯﾌﾟ作成
-			for ( j=0; j<pLayer->GetDxfTextSize() && IsThread(); j++ ) {
-				pData = pLayer->GetDxfTextData(j);
-				pData->OrgTuning(FALSE);
-				g_mpDXFtext.SetMakePointMap(pData);
-			}
-		}
+		if ( pLayer->IsMakeTarget() )
+			SetGlobalMapToLayer(pLayer);
 	}
+	// 一時領域で使用したﾏｯﾌﾟを削除
+	g_mpDXFdata.RemoveAll();
+
 	// その他ﾚｲﾔﾃﾞｰﾀのﾏｯﾌﾟ作成
-	SetGlobalMap_Other();
+	SetGlobalMapToOther();
 }
 
-void SetGlobalArray_Multi(const CLayerData* pLayer)
+void SetGlobalMapToLayer(const CLayerData* pLayer)
 {
 	int		i;
+	CPointD	pt;
 	CDXFdata*	pData;
+	CDXFarray*	pDummy = NULL;
 
-	g_mpDXFdata.RemoveAll();
-	g_mpDXFmove.RemoveAll();
-	g_mpDXFmovetext.RemoveAll();
-	g_mpDXFtext.RemoveAll();
-	g_mpDXFcomment.RemoveAll();
-	g_obPoint.RemoveAll();
-	g_obCircle.RemoveAll();
-	g_ltDeepGlist.RemoveAll();
-	g_obDrillGroup.RemoveAll();
-	g_obDrillAxis.RemoveAll();
+	// 指定ﾚｲﾔのDXFﾃﾞｰﾀｵﾌﾞｼﾞｪｸﾄ(穴加工のみ)をｺﾋﾟｰ
+	for ( i=0; i<pLayer->GetDxfSize() && IsThread(); i++ ) {
+		pData = pLayer->GetDxfData(i);
+		// 楕円ﾃﾞｰﾀの変身(長径短径が等しい楕円なら)
+		if ( GetFlg(MKNC_FLG_ELLIPSE) && pData->GetType()==DXFELLIPSEDATA ) {
+			CDXFellipse* pEllipse = static_cast<CDXFellipse*>(pData);
+			if ( fabs( RoundUp(pEllipse->GetLongLength()) - RoundUp(pEllipse->GetShortLength()) ) < EPS )
+				pData->ChangeMakeType( pEllipse->GetArc() ? DXFARCDATA : DXFCIRCLEDATA);	// 円弧か円ﾃﾞｰﾀに変身
+		}
+		// 各ｵﾌﾞｼﾞｪｸﾄﾀｲﾌﾟごとの処理
+		switch ( pData->GetMakeType() ) {
+		case DXFPOINTDATA:
+			// 重複ﾁｪｯｸ
+			if ( GetFlg(MKNC_FLG_DRILLMATCH) ) {
+				pt = pData->GetNativePoint(0);
+				if ( !g_mpDXFdata.Lookup(pt, pDummy) ) {
+					g_obDrill.Add(pData);
+					g_mpDXFdata.SetAt(pt, pDummy);
+				}
+			}
+			else
+				g_obDrill.Add(pData);
+			break;
+		case DXFCIRCLEDATA:
+			// 円ﾃﾞｰﾀの半径が指定値以下なら
+			if ( GetFlg(MKNC_FLG_DRILLCIRCLE) &&
+					static_cast<CDXFcircle*>(pData)->GetMakeR() <= GetDbl(MKNC_DBL_DRILLCIRCLE) ) {
+				// 穴加工ﾃﾞｰﾀに変身して登録
+				pData->ChangeMakeType(DXFPOINTDATA);
+				// ここでは重複ﾁｪｯｸを行わない。
+				// 並べ替えた後(OrgTuningDrillCircle)に行う
+				g_obCircle.Add(pData);
+				break;
+			}
+			break;
+		}
+	}
 
-	// 指定ﾚｲﾔのDXFﾃﾞｰﾀｵﾌﾞｼﾞｪｸﾄをｺﾋﾟｰ
-	for ( i=0; i<pLayer->GetDxfSize() && IsThread(); i++ )
-		SetGlobalArray_Sub(pLayer->GetDxfData(i));
-	g_mpDXFdata.RemoveAll();
 	// ﾃｷｽﾄﾃﾞｰﾀのﾏｯﾌﾟ作成
 	for ( i=0; i<pLayer->GetDxfTextSize() && IsThread(); i++ ) {
 		pData = pLayer->GetDxfTextData(i);
 		pData->OrgTuning(FALSE);
 		g_mpDXFtext.SetMakePointMap(pData);
 	}
-	// その他ﾚｲﾔﾃﾞｰﾀのﾏｯﾌﾟ作成
-	SetGlobalMap_Other();
 }
 
-void SetGlobalArray_Sub(CDXFdata* pData)
-{
-	// 楕円ﾃﾞｰﾀの変身(長径短径が等しい楕円なら)
-	if ( GetFlg(MKNC_FLG_ELLIPSE) && pData->GetType()==DXFELLIPSEDATA &&
-			fabs(1.0-((CDXFellipse *)pData)->GetShortMagni()) < EPS ) {	// 倍率1.0
-		pData->ChangeMakeType( ((CDXFellipse *)pData)->GetArc() ?
-			DXFARCDATA : DXFCIRCLEDATA);	// 円弧か円ﾃﾞｰﾀに変身
-	}
-
-	CDXFarray*	pDummy = NULL;
-	CPointD		pt;
-	// 各ｵﾌﾞｼﾞｪｸﾄﾀｲﾌﾟごとの処理
-	switch ( pData->GetMakeType() ) {
-	case DXFPOINTDATA:
-		// 重複ﾁｪｯｸ
-		if ( GetFlg(MKNC_FLG_DRILLMATCH) ) {
-			pt = pData->GetNativePoint(0);
-			if ( !g_mpDXFdata.Lookup(pt, pDummy) ) {
-				g_obPoint.Add(pData);
-				g_mpDXFdata.SetAt(pt, pDummy);
-			}
-		}
-		else
-			g_obPoint.Add(pData);
-		break;
-	case DXFCIRCLEDATA:
-		// 円ﾃﾞｰﾀの半径が指定値以下なら
-		if ( GetFlg(MKNC_FLG_DRILLCIRCLE) &&
-				((CDXFcircle *)pData)->GetMakeR() <= GetDbl(MKNC_DBL_DRILLCIRCLE) ) {
-			// 穴加工ﾃﾞｰﾀに変身して登録
-			pData->ChangeMakeType(DXFPOINTDATA);
-			// 重複ﾁｪｯｸ
-			if ( GetFlg(MKNC_FLG_DRILLMATCH) ) {
-				pt = ((CDXFcircle *)pData)->GetCenter();
-				if ( !g_mpDXFdata.Lookup(pt, pDummy) ) {
-					g_obCircle.Add(pData);
-					g_mpDXFdata.SetAt(pt, pDummy);
-				}
-			}
-			else
-				g_obCircle.Add(pData);
-			break;
-		}
-		break;
-	}
-}
-
-void SetGlobalMap_Other(void)
+void SetGlobalMapToOther(void)
 {
 	// ここから原点調整するｵﾌﾞｼﾞｪｸﾄは距離計算の必要なし
 	int			i, j, nType;
@@ -991,27 +962,18 @@ BOOL MakeNCD_MainFunc(const CLayerData* pLayer)
 	return MakeLoopAddLastMove();
 }
 
-BOOL MakeNCD_ShapeFunc(LPMAKENCDWIZARDPARAM pWizParam)
+BOOL MakeNCD_ShapeFunc(void)
 {
-	CDXFmap*	pMap;
-	CDXFdata*	pData;	// dummy
-	BOOL		bMatch;	// dummy
+	CDXFshape*	pShape;
 	CString		strBuf;
 	int			nMapCnt = 0;
 
 	// ﾌｪｰｽﾞ1
-	tie(pData, bMatch) = OrgTuningCutter(NULL, FALSE);	// 原点調整のみ
-	// ﾏｯﾌﾟの生成ﾌﾗｸﾞをｸﾘｱ
+	// 原点調整とﾏｯﾌﾟの生成ﾌﾗｸﾞをｸﾘｱ
 	for ( int i=0; i<g_pDoc->GetLayerCnt() && IsThread(); i++ )
-		nMapCnt += g_pDoc->GetLayerData(i)->AllChainMap_ClearMakeFlg();
-	// 原点に近い座標ﾏｯﾌﾟを検索
-	pMap = GetNearPointMap(CDXFdata::ms_ptOrg,
-				pWizParam->nType == 2 ? DXFMAPFLG_POCKET : DXFMAPFLG_OUTLINE);
-
+		nMapCnt += g_pDoc->GetLayerData(i)->AllShape_OrgTuning();
 	if ( !IsThread() )
 		return FALSE;
-	if ( !pMap )
-		return TRUE;
 
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 	AddCustomCode(g_pMakeOpt->GetStr(MKNC_STR_HEADER), NULL);
@@ -1021,25 +983,19 @@ BOOL MakeNCD_ShapeFunc(LPMAKENCDWIZARDPARAM pWizParam)
 	strBuf = CNCMake::MakeSpindle(DXFLINEDATA);
 	if ( !strBuf.IsEmpty() )
 		AddMakeGdata(strBuf);
-	// G10指示
-	if ( pWizParam->bG10 ) {
-		double	dValue[VALUESIZE];
-		int		nValFlag[VALUESIZE];
-		dValue[NCA_P] = pWizParam->nTool;
-		dValue[NCA_R] = pWizParam->dTool;
-		nValFlag[0] = NCA_P;
-		nValFlag[1] = NCA_R;
-		nValFlag[2] = -1;
-		AddMakeGdata( CNCMake::MakeCustomString(10, nValFlag, dValue) );
-	}
 	// 加工前移動指示の生成
 	MakeLoopAddFirstMove(MAKECUTTER);
+
+	// 原点に近い座標ﾏｯﾌﾟを検索
+	pShape = GetNearPointShape(CDXFdata::ms_pData->GetEndCutterPoint()+CDXFdata::ms_ptOrg);
+	if ( !pShape )
+		return TRUE;
 
 	// ﾌｪｰｽﾞ2
 	SendFaseMessage(nMapCnt);
 
 	// NC生成ﾙｰﾌﾟ
-	return MakeLoopShape(pMap, pWizParam);
+	return MakeLoopShape(pShape);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1090,7 +1046,7 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer
 	// ﾌｪｰｽﾞ1 ( OrgTuning_XXX)
 	switch( enMake ) {
 	case MAKECUTTER:
-		tie(pData, bMatch) = OrgTuningCutter(pLayer, TRUE);
+		tie(pData, bMatch) = OrgTuningCutter(pLayer);
 		break;
 	case MAKEDRILLPOINT:
 		tie(pData, bMatch) = OrgTuningDrillPoint();
@@ -1137,8 +1093,13 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer
 	if ( !bMatch && enMake!=MAKEDRILLCIRCLE ) {
 		// OrgTuning()で現在位置と同一座標が見つからなかった
 		CDXFdata* pDataMove = MakeLoopAddFirstMove(enMake);
-		if ( pDataMove )
-			pData = pDataMove;
+		if ( pDataMove ) {
+			// 移動先に近い切削ﾃﾞｰﾀを再検索
+			if ( enMake == MAKECUTTER )
+				pData = GetNearPointCutter(pLayer, pDataMove);
+			else if ( enMake==MAKEDRILLPOINT && GetNum(MKNC_NUM_OPTIMAIZEDRILL)==0 )
+				tie(pData, bMatch) = GetNearPointDrill(pDataMove);
+		}
 	}
 
 	// ﾌｪｰｽﾞ2
@@ -1167,7 +1128,7 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer
 	return bResult;
 }
 
-tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget, BOOL bGap)
+tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("OrgTuningCutter()", DBG_GREEN);
@@ -1175,7 +1136,7 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget, BOOL bGap
 	CLayerData*	pLayerDbg = NULL;
 #endif
 	int		i, nCnt = 0, nLayerLoop, nDataLoop;
-	BOOL	bMatch = FALSE;
+	BOOL	bMatch = FALSE, bCalc = !g_bData;
 	double	dGap, dGapMin = HUGE_VAL;	// 原点までの距離
 	CDXFdata*	pDataResult = NULL;
 	CDXFdata*	pData;
@@ -1206,8 +1167,10 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget, BOOL bGap
 			pData = pLayer->GetDxfData(i);
 			if ( pData->GetMakeType() != DXFPOINTDATA ) {
 				// 原点調整と距離計算 + NC生成ﾌﾗｸﾞの初期化
-				dGap = pData->OrgTuning(bGap);
-				// 原点に一番近いﾎﾟｲﾝﾄを探す
+				dGap = pData->OrgTuning(bCalc);
+				if ( !bCalc )
+					dGap = pData->GetEdgeGap(CDXFdata::ms_pData);
+				// 原点(または現在位置)に一番近いﾎﾟｲﾝﾄを探す
 				if ( dGap < dGapMin ) {
 					dGapMin = dGap;
 					pDataResult = pData;
@@ -1245,64 +1208,56 @@ tuple<CDXFdata*, BOOL> OrgTuningDrillPoint(void)
 #ifdef _DEBUG
 	CMagaDbg	dbg("OrgTuningDrillPoint()", DBG_GREEN);
 #endif
-	CDXFdata*	pDataResult = NULL;
-	if ( g_obPoint.IsEmpty() )
-		return make_tuple(pDataResult, FALSE);
-
-	int		i, j, nLoop = g_obPoint.GetSize();
-	BOOL	bMatch = FALSE, bCalc = GetNum(MKNC_NUM_OPTIMAIZEDRILL) == 0 ? TRUE : FALSE;
-	double	dGap, dGapMin = HUGE_VAL,	// 原点までの距離
-			dTolerance = GetDbl(MKNC_DBL_TOLERANCE);
+	int		i, nLoop = g_obDrill.GetSize();
+	BOOL	bMatch = FALSE, bCalc;
+	double	dGap, dGapMin = HUGE_VAL;	// 原点までの距離
 	CDXFdata*	pData;
+	CDXFdata*	pDataResult = NULL;
+
+	if ( g_obDrill.IsEmpty() )
+		return make_tuple(pDataResult, bMatch);
 
 	// ﾌｪｰｽﾞ1
 	SendFaseMessage(nLoop);
 
-	// 最適化に伴う配列のｺﾋﾟｰ先
-	CDXFsort& obDrill = GetNum(MKNC_NUM_OPTIMAIZEDRILL) == 0 ? g_obDrillAxis : g_obDrillGroup;
-	obDrill.SetSize(0, nLoop);
-
 	// 原点調整と切削開始ﾎﾟｲﾝﾄ検索ﾙｰﾌﾟ
-			// 基準軸が設定されていると「原点に一番近いﾎﾟｲﾝﾄを探す」はムダな処理
 #ifdef _DEBUG
-	int	nResult;
+	int	nDbg = -1;
 #endif
 
-	// 穴加工ｵﾌﾞｼﾞｪｸﾄを g_obDrillGroup にｺﾋﾟｰ
+	// 切削開始ﾎﾟｲﾝﾄの計算が必要かどうか
+	if ( g_bData )
+		bCalc = FALSE;
+	else
+		bCalc = GetNum(MKNC_NUM_OPTIMAIZEDRILL) == 0 ? TRUE : FALSE;
+
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
-		pData = g_obPoint[i];
+		pData = g_obDrill[i];
 		// 原点調整と距離計算 + NC生成ﾌﾗｸﾞの初期化
 		dGap = pData->OrgTuning(bCalc);
-		// 重複座標のﾁｪｯｸ
-		if ( GetFlg(MKNC_FLG_DRILLMATCH) ) {
-			for ( j=0; j<obDrill.GetSize() && IsThread(); j++ ) {
-				if ( obDrill[j]->IsMatchObject(pData) ||
-						sqrt(obDrill[j]->GetEdgeGap(pData, FALSE)) < dTolerance ) {
-					pData->SetMakeFlg();
-					break;
-				}
-			}
-		}
 		// 原点に一番近いﾎﾟｲﾝﾄを探す
-		if ( !pData->IsMakeFlg() ) {
-			obDrill.Add(pData);
+		if ( !bCalc ) {
+			dGap = pData->GetEdgeGap(CDXFdata::ms_pData);
 			if ( dGap < dGapMin ) {
 				dGapMin = dGap;
 				pDataResult = pData;
 #ifdef _DEBUG
-				nResult = i;
+				nDbg = i;
 #endif
-				if ( sqrt(dGap) < dTolerance )
+				if ( sqrt(dGap) < GetDbl(MKNC_DBL_TOLERANCE) )
 					bMatch = TRUE;
 			}
 		}
 		SendProgressPos(i);
 	}
 #ifdef _DEBUG
-	dbg.printf("FirstPoint %d Gap=%f", nResult, dGapMin);
+	dbg.printf("FirstPoint %d Gap=%f", nDbg, dGapMin);
 #endif
 
 	g_pParent->m_ctReadProgress.SetPos(nLoop);
+
+	if ( !pDataResult )		// !bCalc
+		pDataResult = g_obDrill[0];		// dummy
 
 	return make_tuple(pDataResult, bMatch);
 }
@@ -1315,16 +1270,41 @@ CDXFdata* OrgTuningDrillCircle(void)
 	if ( g_obCircle.IsEmpty() )
 		return NULL;
 
-	// ﾌｪｰｽﾞ1
-	int	nLoop = g_obCircle.GetSize();
+	int		i, j, nLoop = g_obCircle.GetSize();
+	CPointD	pt;
+	CDXFdata*	pData1;
+	CDXFdata*	pData2;
 	SendFaseMessage(nLoop);
 
-	// 必ず並べ替えされる(半径ごとに処理)ので原点調整のみ
-	for ( int i=0; i<nLoop && IsThread(); i++ ) {
-		g_obCircle[i]->OrgTuning(FALSE);
+	// ﾌｪｰｽﾞ1 原点調整
+	for ( i=0; i<nLoop && IsThread(); i++ ) {
+		g_obCircle[i]->OrgTuning(FALSE);	// 並べ替えるので近接計算は不要
 		SendProgressPos(i);
 	}
 	g_pParent->m_ctReadProgress.SetPos(nLoop);
+	// ﾌｪｰｽﾞ2 並べ替え
+	if ( GetNum(MKNC_NUM_DRILLSORT) == 0 )
+		g_obCircle.Sort(CircleSizeCompareFunc1);	// 昇順
+	else
+		g_obCircle.Sort(CircleSizeCompareFunc2);	// 降順
+
+	if ( GetFlg(MKNC_FLG_DRILLMATCH) ) {
+		// ﾌｪｰｽﾞ3 重複ﾁｪｯｸ
+		SendFaseMessage(nLoop);
+		for ( i=0; i<nLoop && IsThread(); i++ ) {
+			pData1 = g_obCircle[i];
+			if ( !pData1->IsMakeFlg() ) {
+				pt = pData1->GetStartMakePoint();
+				for ( j=i+1; j<nLoop && IsThread(); j++ ) {
+					pData2 = g_obCircle[j];
+					if ( pt == pData2->GetStartMakePoint() ) 
+						pData2->SetMakeFlg();
+				}
+			}
+			SendProgressPos(i);
+		}
+		g_pParent->m_ctReadProgress.SetPos(nLoop);
+	}
 
 	// ﾀﾞﾐｰﾃﾞｰﾀを返す
 	return g_obCircle[0];
@@ -1339,9 +1319,8 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 	// ---------------------------------------------------
 	CDXFdata*	pDataMove;
 	CDXFmap		mpEuler;		// 一筆書きｵﾌﾞｼﾞｪｸﾄを格納
-	BOOL		bMatch, bMove, bCust;
+	BOOL		bMove, bCust;
 	int			i, nCnt, nPos = 0, nSetPos = 64;
-	CPointD		pt;
 
 	i = GetPrimeNumber( g_pDoc->GetDxfLayerDataCnt(DXFCAMLAYER)*2 );
 	mpEuler.InitHashTable(max(17, i));
@@ -1353,16 +1332,15 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 		mpEuler.SetMakePointMap(pData);
 		pData->SetSearchFlg();
 		// pData の始点・終点で一筆書き探索
-		for ( i=0; i<pData->GetPointNumber(); i++ ) {
-			pt = pData->GetTunPoint(i);
-			if ( pt != HUGE_VAL ) {
-				if ( !MakeLoopEulerSearch(mpEuler, pt) )
-					return FALSE;
-			}
+		for ( i=0; i<pData->GetPointNumber() && IsThread(); i++ ) {
+			if ( !MakeLoopEulerSearch(pData->GetTunPoint(i), mpEuler) )
+				return FALSE;
 		}
 		// CMapｵﾌﾞｼﾞｪｸﾄのNC生成
-		if ( (nCnt=MakeLoopEulerAdd(&mpEuler)) < 0 )
-			return FALSE;
+		if ( IsThread() ) {
+			if ( (nCnt=MakeLoopEulerAdd(&mpEuler)) < 0 )
+				return FALSE;
+		}
 		//
 		nPos += nCnt;
 		if ( nSetPos < nPos ) {
@@ -1374,10 +1352,12 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 		// 移動指示ﾚｲﾔのﾁｪｯｸ
 		bCust = TRUE;
 		bMove = FALSE;
-		pDataMove = CDXFdata::ms_pData;
-		bMatch = GetMatchPointMove(pDataMove);
-		while ( bMatch && IsThread() ) {
+		while ( (pDataMove=GetMatchPointMove(CDXFdata::ms_pData)) && IsThread() ) {
 			if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPAPROCESS)==0 ) {
+				// 最後にZ軸移動のﾏｰｶｰがあれば削除
+				if ( !g_ltDeepGlist.IsEmpty() && g_ltDeepGlist.GetTail() == NULL )
+					g_ltDeepGlist.RemoveTail();
+				// 移動ﾃﾞｰﾀ登録
 				g_ltDeepGlist.AddTail(pDataMove);
 				pDataMove->SetMakeFlg();
 			}
@@ -1392,22 +1372,21 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 				(*g_pfnAddMoveZ)();
 				// 移動ﾃﾞｰﾀの生成
 				AddMakeMove(pDataMove);
-				// 移動ﾃﾞｰﾀを待避
-				CDXFdata::ms_pData = pDataMove;
 			}
-			bMatch = GetMatchPointMove(pDataMove);
+			// 移動ﾃﾞｰﾀを待避
+			CDXFdata::ms_pData = pDataMove;
 		}
 		// 移動ﾃﾞｰﾀ後のｶｽﾀﾑｺｰﾄﾞ挿入
 		if ( bMove && IsThread() ) {
 			// 移動ﾃﾞｰﾀの終点でﾃｷｽﾄﾃﾞｰﾀの生成
-			pt = pDataMove->GetEndMakePoint();
-			AddMoveTextIntegrated(pt);
+			AddMoveTextIntegrated(CDXFdata::ms_pData->GetEndCutterPoint());
 			// ｶｽﾀﾑｺｰﾄﾞ
 			(*g_pfnAddMoveCust_A)();
 		}
 
 		// 次の切削ﾎﾟｲﾝﾄ検索
-		pData = GetNearPointCutter(pLayer, pDataMove);
+		if ( IsThread() )
+			pData = GetNearPointCutter(pLayer, CDXFdata::ms_pData);
 
 		// Z軸の上昇
 		if ( pData && !GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_TOLERANCE)==0 )
@@ -1418,7 +1397,7 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 	g_pParent->m_ctReadProgress.SetPos(nPos);
 
 	// 全体深彫の後処理
-	if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPAPROCESS)==0 ) {
+	if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPAPROCESS)==0 && IsThread() ) {
 		if ( !MakeLoopDeepAdd() )
 			return FALSE;
 	}
@@ -1426,15 +1405,15 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 	return IsThread();
 }
 
-BOOL MakeLoopEulerSearch(CDXFmap& mpEuler, CPointD& pt)
+BOOL MakeLoopEulerSearch(const CPointD& ptKey, CDXFmap& mpEuler)
 {
 	int			i, j;
-	CPointD		ptSrc;
+	CPointD		pt;
 	CDXFarray*	pobArray;
 	CDXFdata*	pData;
 
 	// 座標をｷｰに全体のﾏｯﾌﾟ検索
-	if ( g_mpDXFdata.Lookup(pt, pobArray) ) {
+	if ( g_mpDXFdata.Lookup(const_cast<CPointD&>(ptKey), pobArray) ) {
 		for ( i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
 			pData = pobArray->GetAt(i);
 			if ( !pData->IsMakeFlg() && !pData->IsSearchFlg() ) {
@@ -1442,9 +1421,9 @@ BOOL MakeLoopEulerSearch(CDXFmap& mpEuler, CPointD& pt)
 				pData->SetSearchFlg();
 				// ｵﾌﾞｼﾞｪｸﾄの端点をさらに検索
 				for ( j=0; j<pData->GetPointNumber() && IsThread(); j++ ) {
-					ptSrc = pData->GetTunPoint(j);
-					if ( ptSrc != HUGE_VAL && pt != ptSrc ) {
-						if ( !MakeLoopEulerSearch(mpEuler, ptSrc) )
+					pt = pData->GetTunPoint(j);
+					if ( ptKey != pt ) {
+						if ( !MakeLoopEulerSearch(pt, mpEuler) )
 							break;
 					}
 				}
@@ -1460,43 +1439,35 @@ int MakeLoopEulerAdd(const CDXFmap* pEuler)
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeLoopEulerAdd()", DBG_MAGENTA);
 #endif
-	BOOL		bEuler;			// 一筆書き要件を満たしているか
+	BOOL		bEuler = FALSE;		// 一筆書き要件を満たしているか
 	POSITION	pos;
-	CPointD		pt;
+	CPointD		pt, ptNow(CDXFdata::ms_pData->GetEndCutterPoint());
 	CDXFdata*	pData;
 	CDXFarray*	pStartArray;
-	CDXFlist	ltEuler(1024);		// 一筆書き順
+	CDXFlist	ltEuler;			// 一筆書き順
 
 #ifdef _DEBUGOLD
-	dbg.printf("pEuler->GetCount()=%d", pEuler->GetCount());
-	CDXFarray*	pArray;
-	for ( pos=pEuler->GetStartPosition(); pos; ) {
-		pEuler->GetNextAssoc(pos, pt, pArray);
-		dbg.printf("pt.x=%f pt.y=%f", pt.x, pt.y);
-		for ( int i=0; i<pArray->GetSize(); i++ ) {
-			pData = pArray->GetAt(i);
-			dbg.printf("Type=%d", pData->GetMakeType());
-		}
-	}
-#endif
-#ifdef _DEBUG
 	CDumpContext	dc;
 	dc.SetDepth(1);
 	pEuler->Dump(dc);
 #endif
 
 	// この座標ﾏｯﾌﾟが一筆書き要件を満たしているか
-	tie(bEuler, pStartArray, pt) = pEuler->IsEulerRequirement(CDXFdata::ms_pData->GetEndCutterPoint());
-	ASSERT( pStartArray );
-	ASSERT( !pStartArray->IsEmpty() );
+	tie(bEuler, pStartArray, pt) = pEuler->IsEulerRequirement(ptNow);
+	if ( !IsThread() )
+		return -1;
 #ifdef _DEBUG
 	dbg.printf("FirstPoint x=%f y=%f Euler=%d", pt.x, pt.y, bEuler);
 #endif
-	if ( !IsThread() )
-		return -1;
 
 	// --- 一筆書きの生成(再帰呼び出しによる木構造解析)
-	MakeLoopEulerAdd_with_one_stroke(pEuler, pt, pStartArray, ltEuler, bEuler);
+	ASSERT( pStartArray );
+	ASSERT( !pStartArray->IsEmpty() );
+	if ( !MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, FALSE, pt, pStartArray, ltEuler) ) {
+		// 一筆書きできるハズやけど失敗したら条件緩和してやり直し
+		bEuler = FALSE;
+		MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, FALSE, pt, pStartArray, ltEuler);
+	}
 
 	// --- 切削ﾃﾞｰﾀ生成
 	ASSERT( !ltEuler.IsEmpty() );
@@ -1536,13 +1507,14 @@ int MakeLoopEulerAdd(const CDXFmap* pEuler)
 
 	// 一筆書き要件を満たしていないときだけ
 	if ( !bEuler )
-		pEuler->ClearSearchFlg();	// 一筆書きに漏れたｵﾌﾞｼﾞｪｸﾄのｻｰﾁﾌﾗｸﾞを初期化
+		pEuler->AllMapObject_ClearSearchFlg();	// 一筆書きに漏れたｵﾌﾞｼﾞｪｸﾄのｻｰﾁﾌﾗｸﾞを初期化
 
 	return ltEuler.GetCount();
 }
 
 BOOL MakeLoopEulerAdd_with_one_stroke
-	(const CDXFmap* pEuler, const CPointD& pt, const CDXFarray* pArray, CDXFlist& ltEuler, BOOL bEuler)
+	(const CDXFmap* pEuler, BOOL bEuler, BOOL bMakeShape, 
+		const CPointD& pt, const CDXFarray* pArray, CDXFlist& ltEuler)
 {
 	int			i, nLoop = pArray->GetSize();
 	CDXFdata*	pData;
@@ -1568,12 +1540,16 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 			ltEuler.AddTail(pData);
 			pData->SetSearchFlg();
 			ptNext = pData->GetEndCutterPoint();
-			if ( !pEuler->Lookup(ptNext, pNextArray) ) {	// Lookup()で失敗することはない
-				NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-				return FALSE;
+			if ( bMakeShape ) {
+				if ( !pEuler->Lookup(ptNext+CDXFdata::ms_ptOrg, pNextArray) )
+					NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+			}
+			else {
+				if ( !pEuler->Lookup(ptNext, pNextArray) )
+					NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 			}
 			// 次の座標配列を検索
-			if ( MakeLoopEulerAdd_with_one_stroke(pEuler, ptNext, pNextArray, ltEuler, bEuler) )
+			if ( MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, bMakeShape, ptNext, pNextArray, ltEuler) )
 				return TRUE;	// 再帰を抜ける
 			// この座標配列のｉ番目のノードではなかったので
 			// 今登録した仮登録ﾙｰﾄは解除
@@ -1594,7 +1570,7 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 	// この座標配列の検索が終了したので木構造の上位へ移動．
 	// 円ﾃﾞｰﾀを含む全ての仮登録ﾘｽﾄを削除
 	if ( posTail ) {
-		ltEuler.GetNext(posTail);
+		ltEuler.GetNext(posTail);	// posTailの次から
 		for ( pos=posTail; pos && IsThread(); pos=posTail) {
 			pData = ltEuler.GetNext(posTail);	// 先に次の要素を取得
 			pData->ClearSearchFlg();			// ﾌﾗｸﾞを消して
@@ -1605,110 +1581,107 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 	return FALSE;
 }
 
-BOOL MakeLoopShape(CDXFmap* pMap, LPMAKENCDWIZARDPARAM pWizParam)
+BOOL MakeLoopShape(CDXFshape* pShape)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeLoopShape()", DBG_RED);
 #endif
 	CDXFdata*	pData;
-	CPointD		pt, ptOrg(CDXFdata::ms_ptOrg);
-	double		dGap;
-	int			nCnt, nPos = 0;
-	DWORD		dwSearch = pWizParam->nType == 2 ? DXFMAPFLG_POCKET : DXFMAPFLG_OUTLINE;
+	const	CPointD		ptOrg(CDXFdata::ms_ptOrg);
+			CPointD		pt;
+	int		nCnt, nPos = 0;
 
-	while ( pMap && IsThread() ) {
+	while ( pShape && IsThread() ) {
 #ifdef _DEBUG
-		dbg.printf("ParentMapName=%s", pMap->GetShapeName());
+		dbg.printf("ParentMapName=%s", pShape->GetShapeName());
 #endif
 		// ﾏｯﾌﾟの内側から生成
-		pMap->SetMapFlag(DXFMAPFLG_SEARCH);	// 親ﾏｯﾌﾟは検索対象外
-		if ( (nCnt=MakeLoopShapeSearch(pMap, pWizParam)) < 0 )
+		pShape->SetShapeFlag(DXFMAPFLG_SEARCH);	// 親ﾏｯﾌﾟは検索対象外
+		if ( (nCnt=MakeLoopShapeSearch(pShape)) < 0 )
 			return FALSE;
 		// 親ﾏｯﾌﾟ自身の生成
 		pt = CDXFdata::ms_pData->GetEndCutterPoint() + ptOrg;
-		tie(pData, dGap) = pMap->GetNearMapObjectGap(pt);
-		if ( !MakeLoopShapeAdd(pMap, pData, pWizParam) )
+		pShape->GetSelectObjectFromShape(pt, NULL, &pData);	// 戻り値不要
+		if ( !MakeLoopShapeAdd(pShape, pData) )
 			return FALSE;
-		pMap->SetMapFlag(DXFMAPFLG_MAKE);
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
 		nPos += nCnt+1;
 		g_pParent->m_ctReadProgress.SetPos(nPos);
 		// 次のﾏｯﾌﾟを検索
 		pt = CDXFdata::ms_pData->GetEndCutterPoint() + ptOrg;
-		pMap = GetNearPointMap(pt, dwSearch);		// ﾈｲﾃｨﾌﾞ座標で検索
+		pShape = GetNearPointShape(pt);		// ﾈｲﾃｨﾌﾞ座標で検索
 	}
 
-	AddMakeGdata( CNCMake::MakeCustomString(40, 0, NULL, FALSE) );
+	// 全体深彫の後処理
+	if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPAPROCESS)==0 && IsThread() ) {
+		if ( !MakeLoopDeepAdd() )
+			return FALSE;
+	}
 
 	return IsThread();
 }
 
-int MakeLoopShapeSearch(const CDXFmap* pMapBase, LPMAKENCDWIZARDPARAM pWizParam)
+int MakeLoopShapeSearch(const CDXFshape* pShapeBase)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeLoopShapeSearch()", DBG_RED);
 #endif
 
 	CLayerData*	pLayer;
-	CDXFmapArray*	pMapArray;
-	CDXFmap*	pMap;
-	CRectD	rcBase( pMapBase->GetMaxRect() );
+	CDXFshape*	pShape;
+	CShapeArray	obShape;	// 内側の座標ﾏｯﾌﾟ一覧
+	CRectD	rcBase( pShapeBase->GetMaxRect() );
 	int		i, j, nCnt = 0;
-	CDXFmapArray	obMap;	// 内側の座標ﾏｯﾌﾟ一覧
-	obMap.SetSize(0, 64);
+	obShape.SetSize(0, 64);
 
-	// pMapより内側の矩形を持つ座標ﾏｯﾌﾟを検索
+	// pShapeBaseより内側の矩形を持つ座標ﾏｯﾌﾟを検索
 	for ( i=0; i<g_pDoc->GetLayerCnt() && IsThread(); i++ ) {
 		pLayer = g_pDoc->GetLayerData(i);
-		pMapArray = pLayer->GetChainMap();
-		for ( j=0; j<pMapArray->GetSize() && IsThread(); j++ ) {
-			pMap = pMapArray->GetAt(j);
-			if ( !pMap->IsMakeFlg() && !pMap->IsSearchFlg() && rcBase.PtInRect(pMap->GetMaxRect()) ) {
-				pMap->SetMapFlag(DXFMAPFLG_SEARCH);
-				obMap.Add(pMap);
-				nCnt += MakeLoopShapeSearch(pMap, pWizParam);
+		for ( j=0; j<pLayer->GetShapeSize() && IsThread(); j++ ) {
+			pShape = pLayer->GetShapeData(j);
+			if ( !pShape->IsMakeFlg() && !pShape->IsSearchFlg() &&
+					pShape->GetShapeAssemble()!=DXFSHAPE_EXCLUDE &&
+					rcBase.PtInRect(pShape->GetMaxRect()) ) {
+				pShape->SetShapeFlag(DXFMAPFLG_SEARCH);
+				obShape.Add(pShape);
+				nCnt += MakeLoopShapeSearch(pShape);
 			}
 		}
 	}
 
-	if ( obMap.IsEmpty() || !IsThread() )
+	if ( obShape.IsEmpty() || !IsThread() )
 		return 0;
 
-	// obMapに蓄積されたﾃﾞｰﾀの生成
-	CPointD		ptOrg(CDXFdata::ms_ptOrg),
-				pt(CDXFdata::ms_pData->GetEndCutterPoint() + ptOrg);
+	// obShapeに蓄積されたﾃﾞｰﾀの生成
+	const	CPointD		ptOrg(CDXFdata::ms_ptOrg);
+			CPointD		pt(CDXFdata::ms_pData->GetEndCutterPoint() + ptOrg);
 	double		dGap, dGapMin;
 	CDXFdata*	pData;
 	CDXFdata*	pDataResult;
-	CDXFmap*	pMapResult = obMap[0];
-	j = obMap.GetSize();
+	CDXFshape*	pShapeResult;
 
-	while ( pMapResult && IsThread() ) {
+	pShapeResult = obShape[0];
+	j = obShape.GetSize();
+
+	while ( pShapeResult && IsThread() ) {
 		dGapMin = HUGE_VAL;
-		pMapResult = NULL;
-		// ptに一番近い座標ﾏｯﾌﾟを検索
+		pShapeResult = NULL;
+		// ptに一番近いﾈｲﾃｨﾌﾞの座標ﾏｯﾌﾟを検索
 		for ( i=0; i<j && IsThread(); i++ ) {
-			pMap = obMap[i];
-//			if ( pMap->IsMakeFlg() )
-//				nCnt--;
-//			else {
-			if ( !pMap->IsMakeFlg() ) {
-				tie(pData, dGap) = pMap->GetNearMapObjectGap(pt);
+			pShape = obShape[i];
+			if ( !pShape->IsMakeFlg() ) {
+				dGap = pShape->GetSelectObjectFromShape(pt, NULL, &pData);
 				if ( dGap < dGapMin ) {
 					dGapMin = dGap;
-					pMapResult = pMap;
 					pDataResult = pData;
+					pShapeResult = pShape;
 				}
 			}
 		}
-		if ( pMapResult ) {
-#ifdef _DEBUG
-			dbg.printf("ChildMapName=%s", pMapResult->GetShapeName());
-#endif
+		if ( pShapeResult ) {
 			// 座標ﾏｯﾌﾟのNC生成
-			if ( !MakeLoopShapeAdd(pMapResult, pDataResult, pWizParam) )
+			if ( !MakeLoopShapeAdd(pShapeResult, pDataResult) )
 				return -1;
-			pMapResult->SetMapFlag(DXFMAPFLG_MAKE);
 			// pt座標の更新
 			pt = CDXFdata::ms_pData->GetEndCutterPoint() + ptOrg;
 		}
@@ -1717,235 +1690,445 @@ int MakeLoopShapeSearch(const CDXFmap* pMapBase, LPMAKENCDWIZARDPARAM pWizParam)
 	return nCnt;
 }
 
-BOOL MakeLoopShapeAdd(const CDXFmap* pMap, CDXFdata* pDataStart, LPMAKENCDWIZARDPARAM pWizParam)
+BOOL MakeLoopShapeAdd(CDXFshape* pShape, CDXFdata* pData)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeLoopShapeAdd()", DBG_RED);
+	dbg.printf("MapName=%s", pShape->GetShapeName());
 #endif
-	int		i, nNega = 0, nCorrect = pWizParam->nCorrect;
-	BOOL	bCW, bChange = FALSE;
-	DWORD	dwFlag = pMap->GetMapFlag();
-	CPointD	pt1, pt2, ptStart,
-			ptNow(CDXFdata::ms_pData->GetEndCutterPoint()), ptOrg(CDXFdata::ms_ptOrg),
-			ptc(pMap->GetMaxRect().CenterPoint()-ptOrg);	// 座標ﾏｯﾌﾟの矩形中心
-	double	dGap, dGapMin = HUGE_VAL, dValue[VALUESIZE];
-	CString	strBuf;
-	CDXFdata*		pData;
-	CDXFdata*		pDataDir;
-	CDXFarray*		pNextArray;
-	CDXFworking*	pWork;
-	CNCMake*		mkNCD;
-	CDXFlist		ltShape(1024);		// ﾏｯﾌﾟ要素
-	POSITION		pos;
+	pShape->SetShapeFlag(DXFMAPFLG_MAKE);
 
-	// Z軸の上昇(R点への下降)
-	AddMoveGdataZup();
-
-	// 方向指示があるかどうか
-	tie(pWork, pDataDir) = pMap->GetDirectionObject();
-	if ( pDataDir ) {
-		pt1 = pWork->GetArrawPoint() - ptOrg;
-		pDataDir->GetEdgeGap(pt1);	// pt値に近い方をｵﾌﾞｼﾞｪｸﾄの始点に
-		pDataDir->ReversePt();		// 矢印座標が終点
-		pData = pDataDir;
+	// 処理の分岐
+	CDXFchain*	pChain = pShape->GetShapeChain();
+	if ( pChain ) {
+		CDXFchain*	pOutline = pShape->GetOutlineObject();
+		if ( pOutline )
+			pChain = pOutline;	// 輪郭分離集合の構築(以下)へ処理続く
+		else
+			return MakeLoopShapeAdd_ChainList(pShape, pChain, pData);
 	}
 	else
-		pData = pDataStart;
+		return MakeLoopShapeAdd_EulerMap(pShape);
 
-	ASSERT(pData);
-	pt1 = pData->GetStartCutterPoint();
+	// --- 輪郭分離集合の構築
+	CSortArray<CPtrArray, CDXFchain*>	obSepArray;
+	CDXFchain*	pSepChain;
+	CDXFdata*	pDataResult;
+	int		i, nCnt = 0;
+	double	dGap, dGapMin;
+	const	CPointD		ptOrg(CDXFdata::ms_ptOrg);
+	CPointD	pt;
+	POSITION	pos;
 
-	// ｵﾌﾞｼﾞｪｸﾄ終点から順に検索＋右回りか左回りかの判定
-	while ( !pData->IsSearchFlg() && IsThread() ) {
-		ltShape.AddTail(pData);
-		pData->SetSearchFlg();
-		pt2 = pData->GetEndCutterPoint();
-		// 回転方向
-		if ( ptc.x*(pt1.y-pt2.y) + pt1.x*(pt2.y-ptc.y) + pt2.x*(ptc.y-pt1.y) < 0 )
-			nNega++;	// 負領域の数
-		// 方向指示の場合は近接座標を保持
-		if ( pDataDir ) {
-			pt1 = pt2 - ptNow;
-			dGap = GAPCALC(pt1);
-			if ( dGap < dGapMin ) {
-				dGapMin = dGap;
-				ptStart = pt2;
-			}
-		}
-		// 次のｵﾌﾞｼﾞｪｸﾄ
-		pt1 = pt2 + ptOrg;
-		if ( !pMap->Lookup(pt1, pNextArray) ) {
-			NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-			return FALSE;
-		}
-		for ( i=0; i<pNextArray->GetSize() && IsThread(); i++ ) {
-			pData = pNextArray->GetAt(i);
-			if ( !pData->IsSearchFlg() ) {
-				pData->GetEdgeGap(pt2);
-				break;
-			}
-		}
-		pt1 = pt2;
+	// 分離集合の検索
+	for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
+		if ( !pChain->GetNext(pos) )
+			nCnt++;
 	}
-
-	// ﾘｽﾄ開始ｵﾌﾞｼﾞｪｸﾄの調整
-	if ( pDataDir ) {
-		// ptStartを始点に持つｵﾌﾞｼﾞｪｸﾄを先頭に移動
-		for ( pData=ltShape.GetTail(); pData->GetStartCutterPoint()!=ptStart && IsThread(); pData=ltShape.GetTail() ) {
-			ltShape.RemoveTail();
-			ltShape.AddHead(pData);
-		}
-		ltShape.RemoveTail();
-		ltShape.AddHead(pData);
-	}
-
-	// ﾏｯﾌﾟが右回り(TRUE)か左回り(FALSE)か
-	bCW = (float)nNega / ltShape.GetCount() > 0.6 ? TRUE : FALSE;
-	// 加工ﾊﾟﾀｰﾝと補正指示の整合性ﾁｪｯｸ
-	if ( dwFlag & DXFMAPFLG_INSIDE ) {
-		if ( (bCW && nCorrect==0) || (!bCW && nCorrect==1) )
-			bChange = TRUE;
-	}
-	else if ( dwFlag & DXFMAPFLG_OUTSIDE ) {
-		if ( (bCW && nCorrect==1) || (!bCW && nCorrect==0) )
-			bChange = TRUE;
-	}
-	if ( bChange ) {
-		if ( pWizParam->nPref == 0 ) {
-			// 補正ｺｰﾄﾞ優先 => ﾘｽﾄ逆順
-			CDXFlist	ltTemp(ltShape.GetCount());
-			for ( pos=ltShape.GetHeadPosition(); pos && IsThread(); ) {
-				pData = ltShape.GetNext(pos);
-				pData->ReversePt();
-				ltTemp.AddHead(pData);
-			}
-			ltShape.RemoveAll();
-			for ( pos=ltTemp.GetHeadPosition(); pos && IsThread(); )
-				ltShape.AddTail( ltTemp.GetNext(pos) );
-		}
-		else {
-			// 方向優先 => 補正ｺｰﾄﾞの再設定
-			nCorrect = 1 - nCorrect;
-		}
-	}
-
-	// ｱﾌﾟﾛｰﾁ
-	if ( dwFlag & DXFMAPFLG_INSIDE ) {
-		// 矩形の中心
-		ptStart = pMap->GetMaxRect().CenterPoint() - ptOrg;
-	}
-	else if ( dwFlag & DXFMAPFLG_OUTSIDE ) {
-		// 切削原点
-		ptStart.x = GetDbl(MKNC_DBL_G92X);
-		ptStart.y = GetDbl(MKNC_DBL_G92Y);
-	}
-	if ( g_nCorrect != nCorrect ) {
-		if ( g_nCorrect >= 0 ) {
-			// 移動の中点を求めて補正ｷｬﾝｾﾙｺｰﾄﾞ生成
-			dValue[NCA_X] = ::RoundUp( (ptStart.x-ptNow.x) / 2.0 + ptNow.x );
-			dValue[NCA_Y] = ::RoundUp( (ptStart.y-ptNow.y) / 2.0 + ptNow.y );
-			AddMakeGdata( CNCMake::MakeCustomString(40, 0, NULL, FALSE) +
-				CNCMake::MakeCustomString(0, NCD_X|NCD_Y, dValue) );
-		}
-		g_nCorrect = nCorrect;
-		// 補正ｺｰﾄﾞ挿入
-		nCorrect += 41;		// G41 or G42
-		dValue[NCA_X] = ptStart.x;
-		dValue[NCA_Y] = ptStart.y;
-		dValue[NCA_D] = pWizParam->nTool;
-		AddMakeGdata( CNCMake::MakeCustomString(nCorrect, NCD_D, dValue, FALSE) +
-			CNCMake::MakeCustomString(0, NCD_X|NCD_Y, dValue) );
+	if ( nCnt == 0 ) {	// 分離集合なし
+		// 輪郭母体をそのまま登録
+		pChain->OrgTuning();
+		obSepArray.Add(pChain);
 	}
 	else {
-		// ｱﾌﾟﾛｰﾁ開始点まで移動
-		mkNCD = new CNCMake(0, ptStart.RoundUp());
-		g_obMakeGdata.Add(mkNCD);
+		// NULLごとにobSepArrayへ登録
+		pSepChain = new CDXFchain;
+		for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
+			pData = pChain->GetNext(pos);
+			if ( pData ) {
+				pSepChain->SetMaxRect(pData);
+				pSepChain->AddTail(pData);
+			}
+			else {
+				pSepChain->OrgTuning();		// 輪郭ｵﾌﾞｼﾞｪｸﾄ用原点調整
+				obSepArray.Add(pSepChain);
+				pSepChain = new CDXFchain;
+			}
+		}
+		pSepChain->OrgTuning();
+		obSepArray.Add(pSepChain);
+		// 面積で並べ替え
+		obSepArray.Sort(AreaSizeCompareFunc);
 	}
 
-	// 切削開始ｵﾌﾞｼﾞｪｸﾄまで移動
-	if ( dwFlag & DXFMAPFLG_INSIDE ) {
-		// ｱﾌﾟﾛｰﾁ円弧の生成
-		if ( !MakeApproachArc(ltShape.GetTail(), ltShape.GetHead(), ptStart, pWizParam->dTool, bCW, TRUE) )
-			return FALSE;
+	// 輪郭分離集合の生成(一番大きい面積を除く)
+	while ( IsThread() ) {
+		dGapMin = HUGE_VAL;
+		pSepChain = NULL;
+		pt = CDXFdata::ms_pData->GetEndCutterPoint() + ptOrg;
+		// 小さい面積の分離集合から現在位置に近い集合を検索
+		for ( i=0; i<nCnt && IsThread(); i++ ) {		// nCnt==最大値-1
+			pChain = obSepArray[i];
+			if ( pChain->IsMakeFlg() )
+				continue;
+			dGap = pChain->GetSelectObjectFromShape(pt, NULL, &pData);
+			if ( dGap < dGapMin ) {
+				dGapMin = dGap;
+				pSepChain   = pChain;
+				pDataResult = pData;
+			}
+		}
+		if ( pSepChain && IsThread() ) {
+			MakeLoopShapeAdd_ChainList(pShape, pSepChain, pDataResult);
+			pSepChain->SetChainFlag(DXFMAPFLG_MAKE);
+		}
+		else
+			break;
 	}
-	else if ( dwFlag & DXFMAPFLG_OUTSIDE ) {
-		AddMoveGdataG0(ltShape.GetHead());
+	// 最後の一番大きい面積を生成(pt計算済み)
+	if ( IsThread() ) {
+		pChain = obSepArray[nCnt];
+		pChain->GetSelectObjectFromShape(pt, NULL, &pData);
+		MakeLoopShapeAdd_ChainList(pShape, pChain, pData);
+	}
+
+	// 後片づけ
+	if ( nCnt > 0 ) {	// 分離集合あり
+		for ( i=0; i<obSepArray.GetSize(); i++ )
+			delete	obSepArray[i];
+	}
+
+	return IsThread();
+}
+
+BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* pData)
+{
+	double	dGap1, dGap2;
+	BOOL	bReverse = FALSE, bNext = FALSE;
+	CDXFworking*	pWork;
+	CDXFdata*		pDataFix;
+	const	CPointD		ptOrg( CDXFdata::ms_ptOrg );
+	// 開始位置指示
+	tie(pWork, pDataFix) = pShape->GetStartObject();
+	const	CPointD		ptNow( pDataFix ?
+		static_cast<CDXFworkingStart*>(pWork)->GetStartPoint() - ptOrg :	// 現在位置を更新
+		CDXFdata::ms_pData->GetEndCutterPoint() );
+
+	// 方向指示および生成順のﾁｪｯｸ
+	tie(pWork, pDataFix) = pShape->GetDirectionObject();
+	if ( pChain->GetCount()==1 && pData->GetMakeType()==DXFCIRCLEDATA ) {
+		if ( pDataFix ) {
+			CPointD	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() ),
+					pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() );
+			// 回転設定
+			static_cast<CDXFcircle*>(pData)->SetRoundFixed(pts, pte);
+		}
+		pData->GetEdgeGap(ptNow);	// 輪郭ｵﾌﾞｼﾞｪｸﾄの近接座標計算
+	}
+	else {
+		dGap1 = GAPCALC(pData->GetStartCutterPoint() - ptNow);
+		dGap2 = GAPCALC(pData->GetEndCutterPoint()   - ptNow);
+		if ( pDataFix ) {
+			CPointD	ptFix( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
+			if ( GAPCALC(pDataFix->GetEndCutterPoint() - ptFix) > EPS ) {
+				bReverse = TRUE;
+				// 開始ｵﾌﾞｼﾞｪｸﾄの終点(bReverseなので始点で判断)
+				// の方が近い場合は、次のｵﾌﾞｼﾞｪｸﾄから開始
+				if ( dGap1 < dGap2 )
+					bNext = TRUE;
+			}
+			else {
+				if ( dGap1 > dGap2 )
+					bNext = TRUE;
+			}
+		}
+		else {
+			if ( dGap1 > dGap2 )
+				bReverse = TRUE;
+		}
+		if ( bReverse )
+			pChain->ReversPoint();
+	}
+
+	// 開始ｵﾌﾞｼﾞｪｸﾄの検索
+	POSITION	pos1, pos2,
+				(CDXFchain::*pfnGetPosition)(void) const;
+	CDXFdata*&	(CDXFchain::*pfnGetData)(POSITION&);
+	for ( pos1=pChain->GetHeadPosition(); (pos2=pos1) && IsThread(); ) {
+		if ( pData == pChain->GetNext(pos1) )
+			break;
+	}
+	pos1 = pos2;
+
+	if ( bReverse ) {
+		pfnGetPosition	= &(CDXFchain::GetTailPosition);
+		pfnGetData		= &(CDXFchain::GetPrev);
+	}
+	else {
+		pfnGetPosition	= &(CDXFchain::GetHeadPosition);
+		pfnGetData		= &(CDXFchain::GetNext);
+	}
+
+	// 開始ｵﾌﾞｼﾞｪｸﾄの最終調整
+	if ( bNext ) {
+		for ( int i=0; i<2; i++ ) {	// 自分自身と次のｵﾌﾞｼﾞｪｸﾄの[ﾎﾟｼﾞｼｮﾝ]
+			pos2 = pos1;
+			pData = (pChain->*pfnGetData)(pos1);
+			if ( !pos1 )
+				pos1 = (pChain->*pfnGetPosition)();
+		}
+		pos1 = pos2;
 	}
 
 	// 切削ﾃﾞｰﾀ生成
-	for ( pos=ltShape.GetHeadPosition(); pos && IsThread(); ) {
-		pData = ltShape.GetNext(pos);
-		AddMakeGdata(pData);
+	if ( GetFlg(MKNC_FLG_DEEP) ) {
+		// 開始ﾎﾟｼﾞｼｮﾝからﾙｰﾌﾟ
+		while ( pos1 && IsThread() ) {
+			pData = (pChain->*pfnGetData)(pos1);
+			g_ltDeepGlist.AddTail(pData);
+		}
+		// [先頭|終端]から開始ｵﾌﾞｼﾞｪｸﾄまで
+		for ( pos1=(pChain->*pfnGetPosition)(); pos1!=pos2 && IsThread(); ) {
+			pData = (pChain->*pfnGetData)(pos1);
+			g_ltDeepGlist.AddTail(pData);
+		}
+		// 深彫が全体か否か
+		if ( GetNum(MKNC_NUM_DEEPAPROCESS) == 0 ) {
+			// 最後に生成したﾃﾞｰﾀを待避
+			CDXFdata::ms_pData = pData;
+			// Z軸移動のﾏｰｶｰ
+			g_ltDeepGlist.AddTail((CDXFdata *)NULL);
+		}
+		else
+			return MakeLoopDeepAdd();
 	}
-	// 最後に生成したﾃﾞｰﾀを待避
-	CDXFdata::ms_pData = pData;
-
-	// ｱﾌﾟﾛｰﾁﾎﾟｲﾝﾄへ復帰
-	if ( dwFlag & DXFMAPFLG_INSIDE ) {
-		if ( !MakeApproachArc(ltShape.GetTail(), ltShape.GetHead(), ptStart, pWizParam->dTool, bCW, FALSE) )
-			return FALSE;
-	}
-	else if ( dwFlag & DXFMAPFLG_OUTSIDE ) {
+	else {
+		// 切削ﾃﾞｰﾀまでの移動
+		if ( GetNum(MKNC_NUM_TOLERANCE) == 0 )
+			AddMoveGdataG0(pData);
+		else
+			AddMoveGdataG1(pData);
+		// 開始ﾎﾟｼﾞｼｮﾝからﾙｰﾌﾟ
+		while ( pos1 && IsThread() ) {
+			pData = (pChain->*pfnGetData)(pos1);
+			AddMakeGdata(pData);
+		}
+		// [先頭|終端]から開始ｵﾌﾞｼﾞｪｸﾄまで
+		for ( pos1=(pChain->*pfnGetPosition)(); pos1!=pos2 && IsThread(); ) {
+			pData = (pChain->*pfnGetData)(pos1);
+			AddMakeGdata(pData);
+		}
+		// 最後に生成したﾃﾞｰﾀを待避
+		CDXFdata::ms_pData = pData;
+		// Z軸上昇
 		AddMoveGdataZup();
-		mkNCD = new CNCMake(0, ptStart.RoundUp());
-		g_obMakeGdata.Add(mkNCD);
 	}
 
 	return TRUE;
 }
 
-BOOL MakeApproachArc(const CDXFdata* pData1, const CDXFdata* pData2, const CPointD& ptc, double r, BOOL bCW, BOOL bStart)
+BOOL MakeLoopShapeAdd_EulerMap(CDXFshape* pShape)
 {
-	CPointD	pt2(pData1->GetEndCutterPoint()),	// ｵﾌﾞｼﾞｪｸﾄ交点
-			pt1(pData1->GetStartCutterPoint()-pt2),
-			pt3(pData2->GetEndCutterPoint()-pt2),
-			pt, pto, pts, pte;
-	double	q;
-	int		nCode = bCW ? 3 : 2, nResult;
-	CNCMake*	mkNCD;
-	r *= 2.0;	// ｱﾌﾟﾛｰﾁ円弧の半径を補正径の２倍に
-
-	// ｵﾌﾞｼﾞｪｸﾄに接するｱﾌﾟﾛｰﾁ円弧，つまり，
-	// ｵﾌﾞｼﾞｪｸﾄの垂線からｱﾌﾟﾛｰﾁ円弧の中心座標を計算
-	pt = bStart ? pt1 : pt3;
-	q = atan2(pt.y, pt.x) + ( (bStart&&bCW) || (!bStart&&!bCW) ? -90.0*RAD : 90.0*RAD );
-	pto.x = r * cos(q);
-	pto.y = r * sin(q);
-	pto += pt2;
-
-	// ｵﾌﾞｼﾞｪｸﾄ交点と矩形中心(ptc)を結ぶ直線とｱﾌﾟﾛｰﾁ円弧との交点を計算し
-	// ｱﾌﾟﾛｰﾁ円弧の開始座標を求める
-	tie(nResult, pts, pte) = CalcIntersectionPoint(pt2, ptc, pto, r);
-	if ( nResult != 2 ) {	// 必ず交点は２つあるはず
-		NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+	BOOL		bEuler = FALSE;
+	CDXFmap*	pEuler = pShape->GetShapeMap();
+	ASSERT( pEuler );
+	// １回目の生成処理
+	if ( !MakeLoopShapeAdd_EulerMap_Make( pShape, pEuler, bEuler ) )
 		return FALSE;
-	}
-	if ( GAPCALC(pts-pt2) < GAPCALC(pte-pt2) )	// 解の１つはpt2
-		pts = pte;								// 遠い方を始点に選択
+	if ( bEuler )
+		return TRUE;	// １回目で全て生成完了
 
-	// ｱﾌﾟﾛｰﾁｵﾌﾞｼﾞｪｸﾄの生成
-	if ( bStart ) {
-		// 円弧始点まで移動(矩形中心までは移動済み)
-		mkNCD = new CNCMake(0, pts.RoundUp());
-		g_obMakeGdata.Add(mkNCD);
-		// Z軸の下降
-		AddMoveGdataZdown();
-		// ｱﾌﾟﾛｰﾁ円弧
-		mkNCD = new CNCMake(nCode, pts.RoundUp(), pt2.RoundUp(), pto.RoundUp(), RoundUp(r));
-		g_obMakeGdata.Add(mkNCD);
+	// 生成漏れのﾃﾞｰﾀ処理
+	int			i;
+	POSITION	pos;
+	CDXFdata*	pData;
+	CDXFdata*	pDataResult;
+	CDXFarray*	pArray;
+	CDXFmap		mpLeak;
+	double		dGap, dGapMin;
+	CPointD		pt, ptKey;
+	while ( IsThread() ) {
+		// 現在位置に近いｵﾌﾞｼﾞｪｸﾄ検索
+		pDataResult = NULL;
+		dGapMin = HUGE_VAL;
+		pt = CDXFdata::ms_pData->GetEndCutterPoint();
+		for ( pos=pEuler->GetStartPosition(); pos && IsThread(); ) {
+			pEuler->GetNextAssoc(pos, ptKey, pArray);
+			for ( i=0; i<pArray->GetSize() && IsThread(); i++ ) {
+				pData = pArray->GetAt(i);
+				if ( pData->IsMakeFlg() )
+					continue;
+				pData->ClearSearchFlg();
+				dGap = pData->GetEdgeGap(pt);
+				if ( dGap < dGapMin ) {
+					dGap = dGapMin;
+					pDataResult = pData;
+				}
+			}
+		}
+		if ( !pDataResult || !IsThread() )	// ﾙｰﾌﾟ終了条件
+			break;
+		// 仮座標ﾏｯﾌﾟを生成
+		mpLeak.RemoveAll();
+		mpLeak.SetPointMap(pDataResult);	// SetMakePointMap() ではない
+		pDataResult->SetSearchFlg();
+		for ( i=0; i<pDataResult->GetPointNumber() && IsThread(); i++ ) {
+			pt = pDataResult->GetNativePoint(i);
+			if ( !MakeLoopShapeAdd_EulerMap_Search(pt, pEuler, &mpLeak) )
+				return FALSE;
+		}
+		if ( !IsThread() )
+			return FALSE;
+		// ２回目以降の生成処理
+		bEuler = FALSE;
+		if ( !MakeLoopShapeAdd_EulerMap_Make( pShape, &mpLeak, bEuler ) )
+			return FALSE;
+	}
+
+	return IsThread();
+}
+
+BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bEuler)
+{
+	// MakeLoopEulerAdd() 参考
+	BOOL		bReverse = FALSE;
+	POSITION	pos;
+	CPointD		pt;
+	CDXFdata*	pData;
+	CDXFdata*	pDataFix;
+	CDXFarray*	pArray;
+	CDXFworking*	pWork;
+	CDXFchain	ltEuler;
+	const	CPointD	ptOrg(CDXFdata::ms_ptOrg);
+	// 開始位置指示
+	tie(pWork, pDataFix) = pShape->GetStartObject();
+	const	CPointD		ptNow( pDataFix ?
+		static_cast<CDXFworkingStart*>(pWork)->GetStartPoint() :	// 現在位置を更新
+		CDXFdata::ms_pData->GetEndCutterPoint()+ptOrg );
+
+	// この座標ﾏｯﾌﾟが一筆書き要件を満たしているか
+	tie(bEuler, pArray, pt) = pEuler->IsEulerRequirement(ptNow);
+	if ( !IsThread() )
+		return -1;
+	pt -= ptOrg;
+
+	// --- 一筆書きの生成(再帰呼び出しによる木構造解析)
+	ASSERT( pArray );
+	ASSERT( !pArray->IsEmpty() );
+	if ( !MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, TRUE, pt, pArray, ltEuler) ) {
+		// 一筆書きできるハズやけど失敗したら条件緩和してやり直し
+		bEuler = FALSE;
+		MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, TRUE, pt, pArray, ltEuler);
+	}
+
+	// 方向指示および生成順のﾁｪｯｸ
+	tie(pWork, pDataFix) = pShape->GetDirectionObject();
+	if ( pDataFix ) {
+		// 方向指示がltEulerに含まれる場合だけﾁｪｯｸ
+		for ( pos=ltEuler.GetHeadPosition(); pos && IsThread(); ) {
+			pData = ltEuler.GetNext(pos);
+			if ( pDataFix == pData ) {
+				if ( pData->GetMakeType() == DXFCIRCLEDATA ) {
+					CPointD	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() ),
+							pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() );
+					static_cast<CDXFcircle*>(pData)->SetRoundFixed(pts, pte);
+				}
+				else {
+					CPointD	ptFix( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
+					if ( GAPCALC(pData->GetEndCutterPoint() - ptFix) > EPS )
+						bReverse = TRUE;
+				}
+				break;
+			}
+		}
+	}
+
+	POSITION	(CDXFchain::*pfnGetPosition)(void) const;
+	CDXFdata*&	(CDXFchain::*pfnGetData)(POSITION&);
+	CDXFdata*&	(CDXFchain::*pfnGetFirst)();
+	if ( bReverse ) {
+		ltEuler.ReversPoint();
+		pfnGetPosition	= &(CDXFchain::GetTailPosition);
+		pfnGetData		= &(CDXFchain::GetPrev);
+		pfnGetFirst		= &(CDXFchain::GetTail);
 	}
 	else {
-		// ｱﾌﾟﾛｰﾁ円弧
-		mkNCD = new CNCMake(nCode, pt2.RoundUp(), pts.RoundUp(), pto.RoundUp(), RoundUp(r));
-		g_obMakeGdata.Add(mkNCD);
-		// Z軸の上昇
-		AddMoveGdataZup();
-		// 矩形中心まで移動
-		mkNCD = new CNCMake(0, ptc.RoundUp());
-		g_obMakeGdata.Add(mkNCD);
+		pfnGetPosition	= &(CDXFchain::GetHeadPosition);
+		pfnGetData		= &(CDXFchain::GetNext);
+		pfnGetFirst		= &(CDXFchain::GetHead);
 	}
 
-	return TRUE;
+	// --- 切削ﾃﾞｰﾀ生成
+	ASSERT( !ltEuler.IsEmpty() );
+	if ( GetFlg(MKNC_FLG_DEEP) ) {
+		// 切削ﾃﾞｰﾀ生成
+		for ( pos=(ltEuler.*pfnGetPosition)(); pos && IsThread(); ) {
+			pData = (ltEuler.*pfnGetData)(pos);
+			if ( pData )
+				pData->SetMakeFlg();
+		}
+		g_ltDeepGlist.AddTail(&ltEuler);
+		// 深彫が全体か否か
+		if ( GetNum(MKNC_NUM_DEEPAPROCESS) == 0 ) {
+			// 最後に生成したﾃﾞｰﾀを待避
+			CDXFdata::ms_pData = g_ltDeepGlist.GetTail();
+			// Z軸移動のﾏｰｶｰ
+			g_ltDeepGlist.AddTail((CDXFdata *)NULL);
+		}
+		else {
+			if ( !MakeLoopDeepAdd() )
+				return FALSE;
+		}
+	}
+	else {
+		BOOL	bNext = FALSE;
+		// 切削ﾃﾞｰﾀまでの移動
+		pData = (ltEuler.*pfnGetFirst)();
+		if ( GetNum(MKNC_NUM_TOLERANCE) == 0 )
+			AddMoveGdataG0(pData);
+		else
+			AddMoveGdataG1(pData);
+		// 切削ﾃﾞｰﾀ生成
+		for ( pos=(ltEuler.*pfnGetPosition)(); pos && IsThread(); ) {
+			pData = (ltEuler.*pfnGetData)(pos);
+			if ( pData ) {
+				if ( bNext ) {
+					AddMoveGdataZup();
+					AddMoveGdataG0(pData);
+					bNext = FALSE;
+				}
+				AddMakeGdata(pData);
+			}
+			else
+				bNext = TRUE;
+		}
+		// 最後に生成したﾃﾞｰﾀを待避
+		CDXFdata::ms_pData = pData;
+		// Z軸上昇
+		AddMoveGdataZup();
+	}
+
+	return IsThread();
+}
+
+BOOL MakeLoopShapeAdd_EulerMap_Search
+	(const CPointD& ptKey, CDXFmap* pOrgMap, CDXFmap* pResultMap)
+{
+	int			i, j;
+	CPointD		pt;
+	CDXFarray*	pobArray;
+	CDXFdata*	pData;
+
+	// 座標をｷｰに全体のﾏｯﾌﾟ検索
+	if ( pOrgMap->Lookup(const_cast<CPointD&>(ptKey), pobArray) ) {
+		for ( i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
+			pData = pobArray->GetAt(i);
+			if ( !pData->IsMakeFlg() && !pData->IsSearchFlg() ) {
+				pResultMap->SetPointMap(pData);		// SetMakePointMap() ではない
+				pData->SetSearchFlg();
+				// ｵﾌﾞｼﾞｪｸﾄの端点をさらに検索
+				for ( j=0; j<pData->GetPointNumber() && IsThread(); j++ ) {
+					pt = pData->GetNativePoint(j);
+					if ( ptKey != pt ) {
+						if ( !MakeLoopShapeAdd_EulerMap_Search(pt, pOrgMap, pResultMap) )
+							break;
+					}
+				}
+			}
+		}
+	}
+
+	return IsThread();
 }
 
 BOOL MakeLoopDeepAdd(void)
@@ -1962,12 +2145,25 @@ BOOL MakeLoopDeepAdd(void)
 	// 最後のZ軸移動ﾏｰｶは削除
 	if ( g_ltDeepGlist.GetTail() == NULL )
 		g_ltDeepGlist.RemoveTail();
+
+#ifdef _DEBUG
+	int	n;
+	g_dbg.printf("LayerName=%s", g_ltDeepGlist.GetHead()->GetParentLayer()->GetStrLayer());
+	for ( POSITION p=g_ltDeepGlist.GetHeadPosition(); p; ) {
+		pData = g_ltDeepGlist.GetNext(p);
+		if ( pData )
+			n = pData->GetParentLayer()->IsCutType() ? 1 : 2;
+		else
+			n = 0;
+		g_dbg.printf("ListType=%d", n);
+	}
+#endif
+
 	// 回転数
 	CString	strSpindle( CNCMake::MakeSpindle(DXFLINEDATA) );
 	if ( !strSpindle.IsEmpty() )
 		AddMakeGdata(strSpindle);
 	// 切削ﾃﾞｰﾀまでの移動
-	ASSERT( g_ltDeepGlist.GetHead() );
 	AddMoveGdataG0( g_ltDeepGlist.GetHead() );
 
 	// 深彫が「全体」の場合，ﾄｰﾀﾙ件数*深彫ｽﾃｯﾌﾟでﾌﾟﾛｸﾞﾚｽｺﾝﾄﾛｰﾙの再設定
@@ -1983,7 +2179,8 @@ BOOL MakeLoopDeepAdd(void)
 	// g_dZCut > g_dDeep での条件では数値誤差が発生したときﾙｰﾌﾟ脱出しないため
 	// g_dZCut - g_dDeep > NCMIN とした
 	while ( g_dZCut - g_dDeep > NCMIN && IsThread() ) {
-		pData = bAction ? (*g_pfnDeepHead)(FALSE) : (*g_pfnDeepTail)(FALSE);
+		// 深彫生成処理
+		pData = (*g_pfnDeepProc)(bAction, FALSE);
 		CDXFdata::ms_pData = pData;
 		// ｱｸｼｮﾝの切り替え(往復切削のみ)
 		if ( GetNum(MKNC_NUM_DEEPCPROCESS) == 0 ) {
@@ -1997,7 +2194,7 @@ BOOL MakeLoopDeepAdd(void)
 		}
 		// Z軸の下降
 		g_dZCut += GetDbl(MKNC_DBL_ZSTEP);
-		if ( g_dZCut - g_dDeep > NCMIN ) {
+		if ( pData->GetParentLayer()->IsCutType() && g_dZCut-g_dDeep > NCMIN ) {
 			// 一方通行切削のﾁｪｯｸ
 			MakeLoopDeepZDown();
 		}
@@ -2037,7 +2234,7 @@ BOOL MakeLoopDeepAdd(void)
 	}
 
 	// 仕上げ面のﾃﾞｰﾀ生成
-	CDXFdata::ms_pData = bAction ? (*g_pfnDeepHead)(bFinish) : (*g_pfnDeepTail)(bFinish);
+	CDXFdata::ms_pData = (*g_pfnDeepProc)(bAction, bFinish);
 
 	// 深彫切削におけるZ軸の上昇
 	MakeLoopDeepZUp();
@@ -2049,89 +2246,82 @@ BOOL MakeLoopDeepAdd(void)
 	return IsThread();
 }
 
-CDXFdata* MakeLoopAddDeepHead(BOOL bDeep)
+CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeep)
 {
-	CDXFdata*	pData;
-	for ( POSITION pos=g_ltDeepGlist.GetHeadPosition(); pos && IsThread(); ) {
-		pData = g_ltDeepGlist.GetNext(pos);
-		AddMakeGdataDeep(pData, bDeep);
-	}
-	return pData;
-}
-
-CDXFdata* MakeLoopAddDeepTail(BOOL bDeep)
-{
-	CDXFdata*	pData;
-	for ( POSITION pos=g_ltDeepGlist.GetTailPosition(); pos && IsThread(); ) {
-		pData = g_ltDeepGlist.GetPrev(pos);
-		AddMakeGdataDeep(pData, bDeep);
-	}
-	return pData;
-}
-
-CDXFdata* MakeLoopAddDeepHeadAll(BOOL bDeep)
-{
-	BOOL		bMoveZ = FALSE;
-	CDXFdata*	pData;
-	CDXFdata*	pDataResult = NULL;
-	for ( POSITION pos=g_ltDeepGlist.GetHeadPosition(); pos && IsThread(); ) {
-		pData = g_ltDeepGlist.GetNext(pos);
-		if ( pData ) {
-			// １つ前のｵﾌﾞｼﾞｪｸﾄが移動ﾃﾞｰﾀなら
-			if ( pDataResult && !pDataResult->GetLayerData()->IsCutType() )
-				AddMoveGdataZdown();	// Z軸の下降
-			MakeLoopAddDeepZProc(bMoveZ, bDeep, pData);
-			bMoveZ = FALSE;
-			pDataResult = pData;
-		}
-		else
-			bMoveZ = TRUE;
-	}
-	ASSERT(pDataResult);
-	return pDataResult;
-}
-
-CDXFdata* MakeLoopAddDeepTailAll(BOOL bDeep)
-{
-	BOOL		bMoveZ = FALSE;
-	CDXFdata*	pData;
-	CDXFdata*	pDataResult = NULL;
-	for ( POSITION pos=g_ltDeepGlist.GetTailPosition(); pos && IsThread(); ) {
-		pData = g_ltDeepGlist.GetPrev(pos);
-		if ( pData ) {
-/*
-			// 逆回りの場合は NULLﾌﾞﾚｲｸ が有効に働くので，以下の処理は不要
-			if ( pDataResult && !pDataResult->GetLayerData()->IsCutType() )
-				AddMoveGdataZdown();
-*/
-			MakeLoopAddDeepZProc(bMoveZ, bDeep, pData);
-			bMoveZ = FALSE;
-			pDataResult = pData;
-		}
-		else
-			bMoveZ = TRUE;
-	}
-	ASSERT(pDataResult);
-	return pDataResult;
-}
-
-void MakeLoopAddDeepZProc(BOOL bMoveZ, BOOL bDeep, CDXFdata* pData)
-{
-	if ( pData->GetLayerData()->IsCutType() ) {
-		if ( bMoveZ ) {		// Z軸移動ﾏｰｶ
-			MakeLoopDeepZUp();	// Z軸の上昇
-			AddMoveGdataG0(pData);	// pDataまで移動
-		}
-		// 切削ﾃﾞｰﾀの生成
-		AddMakeGdataDeep(pData, bDeep);
+	POSITION	(CDXFlist::*pfnGetPosition)(void) const;
+	CDXFdata*&	(CDXFlist::*pfnGetData)(POSITION&);
+	if ( bAction ) {
+		pfnGetPosition	= &(CDXFlist::GetHeadPosition);
+		pfnGetData		= &(CDXFlist::GetNext);
 	}
 	else {
-		// Z軸の復帰
-		if ( GetNum(MKNC_NUM_MOVEZ) != 0 )		// 「そのまま」以外なら
-			MakeLoopDeepZUp();	// Z軸の上昇
-		// 移動ﾃﾞｰﾀの生成
-		AddMakeMove(pData);
+		pfnGetPosition	= &(CDXFlist::GetTailPosition);
+		pfnGetData		= &(CDXFlist::GetPrev);
 	}
+
+	// ﾃﾞｰﾀ生成ﾙｰﾌﾟ(正転逆転)
+	CDXFdata*	pData;
+	for ( POSITION pos=(g_ltDeepGlist.*pfnGetPosition)(); pos && IsThread(); ) {
+		pData = (g_ltDeepGlist.*pfnGetData)(pos);
+		AddMakeGdataDeep(pData, bDeep);
+	}
+
+	return pData;
+}
+
+CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeep)
+{
+	POSITION	(CDXFlist::*pfnGetPosition)(void) const;
+	CDXFdata*&	(CDXFlist::*pfnGetData)(POSITION&);
+	if ( bAction ) {
+		pfnGetPosition	= &(CDXFlist::GetHeadPosition);
+		pfnGetData		= &(CDXFlist::GetNext);
+	}
+	else {
+		pfnGetPosition	= &(CDXFlist::GetTailPosition);
+		pfnGetData		= &(CDXFlist::GetPrev);
+	}
+	BOOL		bMove = FALSE, bBreak = FALSE;
+	CDXFdata*	pData;
+	CDXFdata*	pDataResult = NULL;
+
+	// ﾃﾞｰﾀ生成ﾙｰﾌﾟ(正転逆転)
+	for ( POSITION pos=(g_ltDeepGlist.*pfnGetPosition)(); pos && IsThread(); ) {
+		// ｵﾌﾞｼﾞｪｸﾄ取り出し
+		pData = (g_ltDeepGlist.*pfnGetData)(pos);
+		if ( pData ) {
+			if ( pData->GetParentLayer()->IsCutType() ) {
+				// 切削ﾃﾞｰﾀ
+				if ( bBreak ) {
+					if ( !bMove )	// 移動なければ
+						MakeLoopDeepZUp();
+					// pDataまで移動(Z軸下降込み)
+					AddMoveGdataG0(pData);
+				}
+				if ( bMove ) {
+					// 移動ﾃﾞｰﾀ処理中
+					AddMoveGdataZdown();
+					bMove = FALSE;
+				}
+				AddMakeGdataDeep(pData, bDeep);
+			}
+			else {
+				// 移動ﾃﾞｰﾀ
+				ASSERT( !bBreak );
+				if ( !bMove )
+					MakeLoopDeepZUp();
+				AddMakeMove(pData);
+				bMove = TRUE;
+			}
+			bBreak = FALSE;
+			pDataResult = pData;
+		}
+		else
+			bBreak = TRUE;
+	}
+
+	ASSERT(pDataResult);
+	return pDataResult;
 }
 
 void MakeLoopDeepZDown(void)
@@ -2171,146 +2361,212 @@ void MakeLoopDeepZUp(void)
 
 BOOL MakeLoopDrillPoint(CDXFdata* pData)
 {
-	BOOL	bResult = FALSE;
+	int		nAxis = GetNum(MKNC_NUM_OPTIMAIZEDRILL);
 
-	// 基準軸で並べ替え，同一線上にあるﾃﾞｰﾀを抽出
-	switch ( GetNum(MKNC_NUM_OPTIMAIZEDRILL) ) {
-	case 1:		// X軸基準
-		g_obDrillAxis.SetSize(0, g_obDrillGroup.GetSize());
-		g_obDrillGroup.Sort(DrillOptimaizeCompareFuncY);
-		// 現在位置に近い方から
-		bResult = MakeLoopDrillPointSeqChk(FALSE, g_obDrillGroup) ?
-			MakeLoopDrillPointXY(TRUE) : MakeLoopDrillPointXYRevers(TRUE);
-		break;
+	if ( nAxis == 0 )	// 優先軸なし
+		return MakeLoopAddDrill(pData);
 
-	case 2:		// Y軸基準
-		g_obDrillAxis.SetSize(0, g_obDrillGroup.GetSize());
-		g_obDrillGroup.Sort(DrillOptimaizeCompareFuncX);
-		bResult = MakeLoopDrillPointSeqChk(TRUE, g_obDrillGroup) ?
-			MakeLoopDrillPointXY(FALSE) : MakeLoopDrillPointXYRevers(FALSE);
-		break;
+	int		i, nCnt, nIndex, nMatch, nProgress = 0;
+	BOOL	bMatch, bMove, bCust;
+	CDrillAxis	obAxis;	// 軸集合
+	CDXFsort*	pAxis;
+	CDXFdata*	pDataDummy;
+	CDXFdata*	pDataMove;
 
-	default:	// なし
-		bResult = MakeLoopAddDrill(pData);
-		break;
+	nAxis = nAxis - 1;	// X=0, Y=1
+	obAxis.SetSize(0, g_obDrill.GetSize());
+
+	// 軸集合の生成
+	MakeLoopDrillPoint_MakeAxis(nAxis, obAxis);
+
+	// 切削ﾃﾞｰﾀの生成
+	while ( IsThread() ) {
+		bCust = TRUE;
+		bMove = FALSE;
+		// 現在位置に近い軸集合を検索
+		tie(nIndex, nMatch) = GetNearPointDrillAxis(CDXFdata::ms_pData, 1-nAxis, obAxis);
+		if ( nIndex < 0 )
+			break;		// 終了条件
+		pAxis = obAxis[nIndex];
+		if ( nMatch < 0 ) {
+			// 軸の開始位置と開始方向を調整
+			nMatch = MakeLoopDrillPoint_EdgeChk(nAxis, pAxis);
+		}
+		else if ( nMatch > 0 ) {	// ｾﾞﾛはﾁｪｯｸ不要
+			// 一致したｵﾌﾞｼﾞｪｸﾄの前後どちらに近いか
+			nMatch = MakeLoopDrillPoint_SeqChk(nMatch, nAxis, pAxis);
+		}
+		tie(nCnt, pDataMove) = MakeLoopAddDrillSeq(nProgress, nMatch, pAxis);
+		nProgress += nCnt;
+		// 移動ﾃﾞｰﾀﾁｪｯｸ
+		while ( pDataMove && IsThread() ) {
+			// 移動ﾃﾞｰﾀの１つ目の終端に穴加工ﾃﾞｰﾀがHit
+			tie(pDataDummy, bMatch) = GetNearPointDrill(pDataMove);	// g_obDrill全体から検索
+			if ( !bMove && bMatch ) {
+				// 移動ﾚｲﾔﾃﾞｰﾀは処理したことに
+				pDataMove->SetMakeFlg();
+				CDXFdata::ms_pData = pDataMove;
+				break;
+			}
+			// 固定ｻｲｸﾙｷｬﾝｾﾙ
+			if ( !bMove )
+				AddMakeGdataCycleCancel();
+			// 移動ﾌﾗｸﾞON
+			bMove = TRUE;
+			// 移動ﾃﾞｰﾀ前のｶｽﾀﾑｺｰﾄﾞ挿入
+			if ( bCust ) {
+				(*g_pfnAddMoveCust_B)();
+				bCust = FALSE;
+			}
+			// 指示されたZ位置で移動
+			(*g_pfnAddMoveZ)();
+			// 移動ﾃﾞｰﾀの生成
+			AddMakeMove(pDataMove);
+			CDXFdata::ms_pData = pDataMove;
+			// 次の移動ﾃﾞｰﾀを検索
+			pDataMove = GetMatchPointMove(pDataMove);
+		}
+		// 移動ﾃﾞｰﾀの後処理
+		if ( bMove && IsThread() ) {
+			// 移動ﾃﾞｰﾀの終点でﾃｷｽﾄﾃﾞｰﾀの生成
+			AddMoveTextIntegrated(CDXFdata::ms_pData->GetEndCutterPoint());
+			// ｶｽﾀﾑｺｰﾄﾞ
+			(*g_pfnAddMoveCust_A)();
+		}
 	}
 
-	return bResult;
+	// 後片づけ
+	for ( i=0; i<obAxis.GetSize(); i++ )
+		delete	obAxis[i];
+
+	return IsThread();
 }
 
-BOOL MakeLoopDrillPointSeqChk(BOOL bXY, CDXFsort& pObArray)	// bXY==TRUE -> X軸
+void MakeLoopDrillPoint_MakeAxis(int nAxis, CDrillAxis& obAxis)
 {
-	if ( pObArray.GetSize() <= 1 )	// １件なら比べるまでもない
-		return TRUE;
+	CDXFsort*	pAxis;
+	int		i = 0, nLoop = g_obDrill.GetSize();
+	double	dBase, dMargin = fabs(GetDbl(MKNC_DBL_DRILLMARGIN)) * 2.0;
+	CDXFsort::PFNCOMPARE	pfnCompare;
+	
+	// 基準軸で並べ替え
+	if ( nAxis == 0 ) {
+		g_obDrill.Sort(DrillOptimaizeCompareFuncY);
+		pfnCompare = DrillOptimaizeCompareFuncX;
+	}
+	else {
+		g_obDrill.Sort(DrillOptimaizeCompareFuncX);
+		pfnCompare = DrillOptimaizeCompareFuncY;
+	}
 
-	CDXFdata*	pData1 = pObArray.GetHead();
-	CDXFdata*	pData2 = pObArray.GetTail();
+	nAxis = 1 - nAxis;
 
-#ifdef _DEBUG
-	g_dbg.printf("DrillSeqChk(): ArraySize=%d", pObArray.GetSize());
-	g_dbg.printf("[ 0 ] x=%f y=%f",
-		pData1->GetEndCutterPoint().x, pData1->GetEndCutterPoint().y );
-	g_dbg.printf("[MAX] x=%f y=%f",
-		pData2->GetEndCutterPoint().x, pData2->GetEndCutterPoint().y );
-#endif
+	// 軸ｸﾞﾙｰﾌﾟの生成
+	while ( i < nLoop && IsThread() ) {
+		dBase = g_obDrill[i]->GetEndCutterPoint()[nAxis] + dMargin;
+		pAxis = new CDXFsort;
+		while ( i < nLoop &&
+				g_obDrill[i]->GetEndCutterPoint()[nAxis] <= dBase && IsThread() ) {
+			pAxis->Add(g_obDrill[i++]);
+		}
+		pAxis->Sort(pfnCompare);
+		obAxis.Add(pAxis);
+	}
+}
+
+int MakeLoopDrillPoint_EdgeChk(int nAxis, CDXFsort* pAxis)
+{
+	int		i, nFirst = -1, nLast = -1, nLoop = pAxis->GetSize();
+	CPointD	pts, pte,
+			ptNow(CDXFdata::ms_pData->GetEndCutterPoint());
+	CDXFdata*	pData;
+
+	// 先頭の未生成ﾃﾞｰﾀを検索
+	for ( i=0; i<nLoop; i++ ) {
+		pData = pAxis->GetAt(i);
+		if ( !pData->IsMakeFlg() ) {
+			pts = pData->GetEndCutterPoint();
+			nFirst = i;
+			break;
+		}
+	}
+	ASSERT( nFirst >= 0 );
+
+	// 末尾の未生成ﾃﾞｰﾀを検索
+	for ( i=nLoop-1; i>=0; i-- ) {
+		pData = pAxis->GetAt(i);
+		if ( !pData->IsMakeFlg() ) {
+			pte = pData->GetEndCutterPoint();
+			nLast = i;
+			break;
+		}
+	}
 
 	// 現在位置からのどちらが近いか(距離ではなく基準軸で)
-	if ( bXY ) {
-		if ( fabs(pData1->GetEndCutterPoint().x - CDXFdata::ms_pData->GetEndCutterPoint().x) <=
-			 fabs(pData2->GetEndCutterPoint().x - CDXFdata::ms_pData->GetEndCutterPoint().x) )
-			return TRUE;	// 先頭が近い
-		else
-			return FALSE;	// 末尾が近い
+	if ( nFirst!=nLast &&
+			fabs(pts[nAxis] - ptNow[nAxis]) > fabs(pte[nAxis] - ptNow[nAxis]) ) {
+		pAxis->Reverse();
+		nFirst = nLoop - nLast - 1;	// 逆順にしたときの新しい開始位置
 	}
-	else {
-		if ( fabs(pData1->GetEndCutterPoint().y - CDXFdata::ms_pData->GetEndCutterPoint().y) <=
-			 fabs(pData2->GetEndCutterPoint().y - CDXFdata::ms_pData->GetEndCutterPoint().y) )
-			return TRUE;	// 先頭が近い
-		else
-			return FALSE;	// 末尾が近い
-	}
+	
+	return nFirst;
 }
 
-BOOL MakeLoopDrillPointXY(BOOL bXY)
+int MakeLoopDrillPoint_SeqChk(int nMatch, int nAxis, CDXFsort* pAxis)
 {
-	int		i = 0, nPos = 0, nLoop = g_obDrillGroup.GetSize(), n;
-	double	dBase, dMargin = fabs(GetDbl(MKNC_DBL_DRILLMARGIN)) * 2.0;
-	CDXFsort::PFNCOMPARE	pfnCompare;
+	int		i, nFirst = -1, nLast = -1, nCntF = 0, nCntL = 0,
+			nLoop = pAxis->GetSize();
+	CPointD	pts, pte,
+			ptNow(pAxis->GetAt(nMatch)->GetEndCutterPoint());
+	CDXFdata*	pData;
 
-	if ( bXY ) {
-		n = 1;
-		pfnCompare = DrillOptimaizeCompareFuncX;
-	}
-	else {
-		n = 0;
-		pfnCompare = DrillOptimaizeCompareFuncY;
-	}
-
-	while ( i < nLoop && IsThread() ) {
-		dBase = g_obDrillGroup[i]->GetEndCutterPoint()[n] + dMargin;
-#ifdef _DEBUG
-		g_dbg.printf("BasePoint=%f", dBase);
-#endif
-		g_obDrillAxis.RemoveAll();
-		while ( i < nLoop &&
-				g_obDrillGroup[i]->GetEndCutterPoint()[n] <= dBase && IsThread() ) {
-#ifdef _DEBUG
-			g_dbg.printf("NowPoint=%f", g_obDrillGroup[i]->GetEndCutterPoint()[n]);
-#endif
-			g_obDrillAxis.Add(g_obDrillGroup[i++]);
+	// 先頭方向へ
+	for ( i=nMatch-1; i>=0; i-- ) {
+		pData = pAxis->GetAt(i);
+		if ( !pData->IsMakeFlg() ) {
+			if ( nFirst < 0 ) {
+				pts = pData->GetEndCutterPoint();
+				nFirst = i;
+			}
+			nCntF++;	// 先頭方向への残り件数
 		}
-		if ( g_obDrillAxis.IsEmpty() )
-			continue;
-		g_obDrillAxis.Sort(pfnCompare);
-		if ( !MakeLoopDrillPointSeqChk(bXY, g_obDrillAxis) )
-			g_obDrillAxis.MakeReverse();
-		if ( !MakeLoopAddDrillSeq(nPos) )
-			return FALSE;
-		nPos = i;
 	}
+	if ( nFirst < 0 )
+		return nMatch;		// 順序入れ替え不要
 
-	return IsThread();
-}
-
-BOOL MakeLoopDrillPointXYRevers(BOOL bXY)
-{
-	int		i = g_obDrillGroup.GetUpperBound(), nPos = 0, n;
-	double	dBase, dMargin = fabs(GetDbl(MKNC_DBL_DRILLMARGIN)) * 2.0;
-	CDXFsort::PFNCOMPARE	pfnCompare;
-
-	if ( bXY ) {
-		n = 1;
-		pfnCompare = DrillOptimaizeCompareFuncX;
-	}
-	else {
-		n = 0;
-		pfnCompare = DrillOptimaizeCompareFuncY;
-	}
-
-	while ( i >= 0 && IsThread() ) {
-		dBase = g_obDrillGroup[i]->GetEndCutterPoint()[n] - dMargin;
-#ifdef _DEBUG
-		g_dbg.printf("BasePoint=%f", dBase);
-#endif
-		g_obDrillAxis.RemoveAll();
-		while ( i >= 0 &&
-				g_obDrillGroup[i]->GetEndCutterPoint()[n] >= dBase && IsThread() ) {
-#ifdef _DEBUG
-			g_dbg.printf("NowPoint=%f", g_obDrillGroup[i]->GetEndCutterPoint()[n]);
-#endif
-			g_obDrillAxis.Add(g_obDrillGroup[i--]);
+	// 末尾方向へ
+	for ( i=nMatch+1; i<nLoop; i++ ) {
+		pData = pAxis->GetAt(i);
+		if ( !pData->IsMakeFlg() ) {
+			if ( nLast < 0 ) {
+				pte = pData->GetEndCutterPoint();
+				nLast = i;
+			}
+			nCntL++;	// 末尾方向への残り件数
 		}
-		if ( g_obDrillAxis.IsEmpty() )
-			continue;
-		g_obDrillAxis.Sort(pfnCompare);
-		if ( !MakeLoopDrillPointSeqChk(bXY, g_obDrillAxis) )
-			g_obDrillAxis.MakeReverse();
-		if ( !MakeLoopAddDrillSeq(nPos) )
-			return FALSE;
-		nPos = g_obDrillAxis.GetSize();
+	}
+	if ( nLast < 0 ) {
+		pAxis->Reverse();	// 末尾方向にﾃﾞｰﾀ無し
+		nMatch = nLoop - nMatch - 1;	// 逆順にしたときの新しい開始位置
+		return nMatch;
 	}
 
-	return IsThread();
+	double	dGap = fabs(pts[nAxis]-ptNow[nAxis]) - fabs(pte[nAxis]-ptNow[nAxis]);
+
+	if ( fabs(dGap) < EPS ) {
+		// 前後の距離が等しいので残り件数の多い方へ
+		if ( nCntF > nCntL ) {
+			pAxis->Reverse();
+			nMatch = nLoop - nMatch - 1;
+		}
+	}
+	else if ( dGap < 0 ) {	// pts < pte
+		// 先頭方向の方が近い
+		pAxis->Reverse();
+		nMatch = nLoop - nMatch - 1;
+	}
+
+	return nMatch;
 }
 
 BOOL MakeLoopDrillCircle(void)
@@ -2322,26 +2578,20 @@ BOOL MakeLoopDrillCircle(void)
 	double	r, dGap, dGapMin;
 	CString	strBreak;
 
-	// 半径で並べ替え
-	if ( GetNum(MKNC_NUM_DRILLSORT) == 0 )
-		g_obCircle.Sort(CircleSizeCompareFunc1);	// 昇順
-	else
-		g_obCircle.Sort(CircleSizeCompareFunc2);	// 降順
-
 	// ﾙｰﾌﾟ開始
-	g_obDrillGroup.SetSize(0, nLoop);
+	g_obDrill.SetSize(0, nLoop);
 	for ( i=0; i<nLoop && IsThread(); ) {
-		g_obDrillGroup.RemoveAll();
+		g_obDrill.RemoveAll();
 		// 円をｸﾞﾙｰﾌﾟ(半径)ごとに処理
-		r = fabs( ((CDXFcircle *)g_obCircle[i])->GetMakeR() );
+		r = fabs( static_cast<CDXFcircle*>(g_obCircle[i])->GetMakeR() );
 		bMatch = FALSE;
 		pDataResult = NULL;
 		dGapMin = HUGE_VAL;
 		for ( ; i<nLoop &&
-				r==fabs(((CDXFcircle *)g_obCircle[i])->GetMakeR()) && IsThread(); i++ ) {
+				r==fabs(static_cast<CDXFcircle*>(g_obCircle[i])->GetMakeR()) && IsThread(); i++ ) {
 			pData = g_obCircle[i];
 			if ( !pData->IsMakeFlg() ) {
-				g_obDrillGroup.Add(pData);
+				g_obDrill.Add(pData);
 				dGap = pData->GetEdgeGap(CDXFdata::ms_pData);
 				if ( dGap < dGapMin ) {
 					dGapMin = dGap;
@@ -2355,11 +2605,9 @@ BOOL MakeLoopDrillCircle(void)
 		if ( pDataResult ) {
 			// 大きさごとにｺﾒﾝﾄを埋め込む
 			if ( GetFlg(MKNC_FLG_DRILLBREAK) ) {
-				strBreak.Format(IDS_MAKENCD_CIRCLEBREAK, ((CDXFcircle *)pDataResult)->GetMakeR());
+				strBreak.Format(IDS_MAKENCD_CIRCLEBREAK, static_cast<CDXFcircle*>(pDataResult)->GetMakeR());
 				AddMakeGdata(strBreak);
 			}
-			if ( GetNum(MKNC_NUM_OPTIMAIZEDRILL) == 0 )
-				g_obDrillAxis.Copy(g_obDrillGroup);	// 基準軸ないので全て対象
 			// 加工前移動指示の生成
 			if ( !bMatch ) {
 				pData = MakeLoopAddFirstMove(MAKEDRILLPOINT);
@@ -2378,7 +2626,6 @@ BOOL MakeLoopDrillCircle(void)
 BOOL MakeLoopAddDrill(CDXFdata* pData)
 {
 	CDXFdata*	pDataMove;
-	CPointD		pt;
 	int			nPos = 0;
 	BOOL		bMatch,
 				bMove = FALSE,		// 移動ﾚｲﾔHit
@@ -2396,8 +2643,7 @@ BOOL MakeLoopAddDrill(CDXFdata* pData)
 			break;
 		if ( !bMatch ) {
 			// 移動指示ﾚｲﾔのﾁｪｯｸ
-			pDataMove = CDXFdata::ms_pData;		// 前回ｵﾌﾞｼﾞｪｸﾄで探索
-			if ( GetMatchPointMove(pDataMove) ) {
+			if ( (pDataMove=GetMatchPointMove(CDXFdata::ms_pData)) ) {
 				// 移動ﾚｲﾔ１つ目の終端に穴加工ﾃﾞｰﾀがHitすれば
 				tie(pData, bMatch) = GetNearPointDrill(pDataMove);
 				if ( !bMove && bMatch ) {
@@ -2426,8 +2672,7 @@ BOOL MakeLoopAddDrill(CDXFdata* pData)
 		// 移動ﾃﾞｰﾀ後のｶｽﾀﾑｺｰﾄﾞ挿入
 		if ( bMove && IsThread() ) {
 			// 移動ﾃﾞｰﾀの終点でﾃｷｽﾄﾃﾞｰﾀの生成
-			pt = CDXFdata::ms_pData->GetEndMakePoint();
-			AddMoveTextIntegrated(pt);
+			AddMoveTextIntegrated(CDXFdata::ms_pData->GetEndCutterPoint());
 			// ｶｽﾀﾑｺｰﾄﾞ
 			(*g_pfnAddMoveCust_A)();
 			bMove = FALSE;
@@ -2443,33 +2688,40 @@ BOOL MakeLoopAddDrill(CDXFdata* pData)
 	return IsThread();
 }
 
-BOOL MakeLoopAddDrillSeq(int nPos)
+tuple<int, CDXFdata*> MakeLoopAddDrillSeq(int nProgress, int nStart, CDXFsort* pAxis)
 {
+	int		i, nCnt = 0;
 	CDXFdata*	pData;
-	// g_obDrillAxisの順番で
-	for ( int i=0; i<g_obDrillAxis.GetSize() && IsThread(); i++ ) {
-		pData = g_obDrillAxis[i];
+	CDXFdata*	pDataMove = NULL;
+
+	for ( i=nStart; i<pAxis->GetSize() && IsThread(); i++ ) {
+		pData = pAxis->GetAt(i);
+		if ( pData->IsMakeFlg() )
+			continue;
 		// ﾃﾞｰﾀ生成
 		AddMakeGdata(pData);
-		SendProgressPos(i+nPos);
+		SendProgressPos(i+nProgress);
+		nCnt++;
+		// 移動ﾚｲﾔのﾁｪｯｸ
+		if ( (pDataMove=GetMatchPointMove(pData)) )
+			break;
 	}
-	g_pParent->m_ctReadProgress.SetPos(i+nPos);
 	// 最後に生成したﾃﾞｰﾀを待避
 	CDXFdata::ms_pData = pData;
 
-	return IsThread();
+	return make_tuple(nCnt, pDataMove);
 }
 
 CDXFdata* MakeLoopAddFirstMove(ENMAKETYPE enType)
 {
 	CDXFarray*	pobArray;
-	CDXFdata*	pDataMove = CDXFdata::ms_pData;
+	CDXFdata*	pDataMove;
 	CDXFdata*	pDataResult = NULL;
 	CDXFdata*	pData;
 	BOOL		bMatch, bCust = FALSE;
 
 	// 移動指示ﾚｲﾔのﾁｪｯｸ
-	while ( GetMatchPointMove(pDataMove) && IsThread() ) {
+	while ( (pDataMove=GetMatchPointMove(CDXFdata::ms_pData)) && IsThread() ) {
 		if ( !bCust ) {
 			// 移動ﾃﾞｰﾀ前のｶｽﾀﾑｺｰﾄﾞ挿入(１回だけ)
 			(*g_pfnAddMoveCust_B)();
@@ -2478,12 +2730,11 @@ CDXFdata* MakeLoopAddFirstMove(ENMAKETYPE enType)
 		// 指示されたZ位置で移動
 		(*g_pfnAddMoveZ)();
 		// 移動ﾃﾞｰﾀの生成
-		pDataResult = pDataMove;
-		AddMakeMove(pDataResult);
-		CDXFdata::ms_pData = pDataResult;
+		AddMakeMove(pDataMove);
+		CDXFdata::ms_pData = pDataResult = pDataMove;
 		// 同一座標で切削ﾃﾞｰﾀが見つかれば break
 		if ( enType == MAKECUTTER ) {
-			CPointD	pt(pDataResult->GetEndMakePoint());
+			CPointD	pt(pDataMove->GetEndCutterPoint());
 			if ( g_mpDXFdata.Lookup(pt, pobArray) ) {
 				bMatch = FALSE;
 				for ( int i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
@@ -2499,16 +2750,17 @@ CDXFdata* MakeLoopAddFirstMove(ENMAKETYPE enType)
 			}
 		}
 		else {
-			tie(pDataResult, bMatch) = GetNearPointDrill(pDataResult);
-			if ( bMatch )
+			tie(pData, bMatch) = GetNearPointDrill(pDataMove);
+			if ( bMatch ) {
+				pDataResult = pData;
 				break;
+			}
 		}
 	}
 	// 移動ﾃﾞｰﾀ後のｶｽﾀﾑｺｰﾄﾞ挿入
 	if ( bCust && IsThread() ) {
 		// 移動ﾃﾞｰﾀの終点でﾃｷｽﾄﾃﾞｰﾀの生成
-		CPointD	pt( CDXFdata::ms_pData->GetEndMakePoint() );
-		AddMoveTextIntegrated(pt);
+		AddMoveTextIntegrated(CDXFdata::ms_pData->GetEndCutterPoint());
 		// ｶｽﾀﾑｺｰﾄﾞ
 		(*g_pfnAddMoveCust_A)();
 	}
@@ -2518,16 +2770,16 @@ CDXFdata* MakeLoopAddFirstMove(ENMAKETYPE enType)
 
 BOOL MakeLoopAddLastMove(void)
 {
-	CDXFdata*	pDataMove = CDXFdata::ms_pData;
+	CDXFdata*	pDataMove;
 	BOOL		bCust = FALSE;
 
 	// 終点座標でのｺﾒﾝﾄ生成
-	CPointD	pt( pDataMove->GetEndMakePoint() );
+	CPointD	pt( CDXFdata::ms_pData->GetEndCutterPoint() );
 	AddCutterTextIntegrated(pt);	// 切削ﾚｲﾔ
 	AddMoveTextIntegrated(pt);		// 移動ﾚｲﾔ
 
 	// 最後の移動ｺｰﾄﾞを検索
-	while ( GetMatchPointMove(pDataMove) && IsThread() ) {
+	while ( (pDataMove=GetMatchPointMove(CDXFdata::ms_pData)) && IsThread() ) {
 		if ( !bCust ) {
 			(*g_pfnAddMoveCust_B)();
 			bCust = TRUE;
@@ -2537,8 +2789,7 @@ BOOL MakeLoopAddLastMove(void)
 		CDXFdata::ms_pData = pDataMove;
 	}
 	if ( bCust && IsThread() ) {
-		CPointD	pt( CDXFdata::ms_pData->GetEndMakePoint() );
-		AddMoveTextIntegrated(pt);
+		AddMoveTextIntegrated(CDXFdata::ms_pData->GetEndCutterPoint());
 		(*g_pfnAddMoveCust_A)();
 	}
 
@@ -2554,7 +2805,7 @@ CDXFdata* GetNearPointCutter(const CLayerData* pLayerTarget, const CDXFdata* pDa
 	double		dGap, dGapMin = HUGE_VAL;
 
 	while ( nLayerLoop-- > 0 && IsThread() ) {
-		pLayer = pLayerTarget ? (CLayerData *)pLayerTarget : g_pDoc->GetLayerData(nLayerLoop);
+		pLayer = pLayerTarget ? const_cast<CLayerData*>(pLayerTarget) : g_pDoc->GetLayerData(nLayerLoop);
 		if ( !pLayer->IsMakeTarget() )
 			continue;
 		for ( i=0; i<pLayer->GetDxfSize() && IsThread(); i++ ) {
@@ -2572,13 +2823,11 @@ CDXFdata* GetNearPointCutter(const CLayerData* pLayerTarget, const CDXFdata* pDa
 	return pDataResult;
 }
 
-CDXFmap* GetNearPointMap(const CPointD& pt, DWORD dwFlag)
+CDXFshape* GetNearPointShape(const CPointD& pt)
 {
 	CLayerData*	pLayer;
-	CDXFmapArray*	pMapArray;
-	CDXFmap*	pMap;
-	CDXFmap*	pMapResult = NULL;
-	CDXFdata*	pData;		// dummy
+	CDXFshape*	pShape;
+	CDXFshape*	pShapeResult = NULL;
 	int			i, j;
 	double		dGap, dGapMin = HUGE_VAL;
 
@@ -2586,42 +2835,41 @@ CDXFmap* GetNearPointMap(const CPointD& pt, DWORD dwFlag)
 		pLayer = g_pDoc->GetLayerData(i);
 		if ( !pLayer->IsMakeTarget() )
 			continue;
-		pMapArray = pLayer->GetChainMap();
-		for ( j=0; j<pMapArray->GetSize() && IsThread(); j++ ) {
-			pMap = pMapArray->GetAt(j);
-			if ( !pMap->IsMakeFlg() && pMap->GetMapFlag()&dwFlag ) {
-				tie(pData, dGap) = pMap->GetNearMapObjectGap(pt, FALSE);
+		for ( j=0; j<pLayer->GetShapeSize() && IsThread(); j++ ) {
+			pShape = pLayer->GetShapeData(j);
+			if ( !pShape->IsMakeFlg() && pShape->GetShapeAssemble()!=DXFSHAPE_EXCLUDE ) {
+				dGap = pShape->GetSelectObjectFromShape(pt);
 				if ( dGap < dGapMin ) {
 					dGapMin = dGap;
-					pMapResult = pMap;
+					pShapeResult = pShape;
 				}
 			}
 		}
 	}
 
-	return pMapResult;
+	return pShapeResult;
 }
 
-tuple<CDXFdata*, BOOL> GetNearPointDrill(CDXFdata* pData)
+tuple<CDXFdata*, BOOL> GetNearPointDrill(const CDXFdata* pDataTarget)
 {
-	CDXFdata*	pDataSrc = pData;
+	CDXFdata*	pData;
 	CDXFdata*	pDataResult = NULL;
 	BOOL	bMatch = FALSE;
 	double	dGap, dGapMin = HUGE_VAL;	// 指定点との距離
 
 	// 現在位置と等しい，または近い要素を検索
-	for ( int i=0; i<g_obDrillAxis.GetSize() && IsThread(); i++ ) {
-		pData = g_obDrillAxis[i];
+	for ( int i=0; i<g_obDrill.GetSize() && IsThread(); i++ ) {
+		pData = g_obDrill[i];
 		if ( pData->IsMakeFlg() )
 			continue;
 		// 条件判断
-		if ( pData->IsMatchObject(pDataSrc) ) {
+		if ( pData->IsMatchObject(pDataTarget) ) {
 			pDataResult = pData;
 			bMatch = TRUE;
 			break;
 		}
 		// 現在位置との距離計算
-		dGap = pData->GetEdgeGap(pDataSrc);
+		dGap = pData->GetEdgeGap(pDataTarget);
 		if ( dGap < dGapMin ) {
 			pDataResult = pData;
 			if ( sqrt(dGap) < GetDbl(MKNC_DBL_TOLERANCE) ) {
@@ -2635,12 +2883,43 @@ tuple<CDXFdata*, BOOL> GetNearPointDrill(CDXFdata* pData)
 	return make_tuple(pDataResult, bMatch);
 }
 
-BOOL GetMatchPointMove(CDXFdata*& pDataResult)
+tuple<int, int> GetNearPointDrillAxis(const CDXFdata* pDataTarget, int nAxis, CDrillAxis& obAxis)
+{
+	CDXFsort*	pAxis;
+	CDXFdata*	pData;
+	int		i, j, nMatch = -1, nResult = -1;
+	double	dGap, dGapMin = HUGE_VAL;
+	CPointD	pt1(pDataTarget->GetEndMakePoint()), pt2;
+
+	for ( i=0; i<obAxis.GetSize() && nMatch<0 && IsThread(); i++ ) {
+		pAxis = obAxis[i];
+		for ( j=0; j<pAxis->GetSize(); j++ ) {
+			pData = pAxis->GetAt(j);
+			if ( pData->IsMakeFlg() )
+				continue;
+			if ( pData->IsMatchPoint(pt1) ) {	// pData->IsMatchObject(pDataTarget)
+				nResult = i;
+				nMatch  = j;		// 外側ﾙｰﾌﾟもbreak
+				break;
+			}
+			pt2 = pData->GetEndMakePoint();
+			dGap = fabs(pt2[nAxis] - pt1[nAxis]);	// 指定軸の距離で判断
+			if ( dGap < dGapMin ) {
+				nResult = i;
+				dGapMin = dGap;
+			}
+		}
+	}
+
+	return make_tuple(nResult, nMatch);
+}
+
+CDXFdata* GetMatchPointMove(const CDXFdata* pDataTarget)
 {
 	// 現在位置と等しい要素だけを検索
-	CPointD	pt( pDataResult->GetEndMakePoint() );
+	CPointD	pt( pDataTarget->GetEndCutterPoint() );
 	CDXFarray*	pobArray;
-	BOOL		bMatch = FALSE;
+	CDXFdata*	pDataResult = NULL;
 	
 	if ( g_mpDXFmove.Lookup(pt, pobArray) ) {
 		CDXFdata*	pData;
@@ -2649,13 +2928,12 @@ BOOL GetMatchPointMove(CDXFdata*& pDataResult)
 			if ( !pData->IsMakeFlg() ) {
 				pData->GetEdgeGap(pt);	// 始点を調整
 				pDataResult = pData;
-				bMatch = TRUE;
 				break;
 			}
 		}
 	}
 
-	return bMatch;
+	return pDataResult;
 }
 
 // ｶｽﾀﾑﾍｯﾀﾞｰ, ﾌｯﾀﾞｰ処理
@@ -2684,7 +2962,7 @@ struct CMakeCustomCode	// parse() から呼び出し
 
 		// 前後の "{}" 除去して解析
 		int		nTestCode = stOrder.GetIndex(string(s+1, e-1).c_str());
-		CString	strBuf;
+		CString	strPath, strFile;
 		TCHAR	szUserName[_MAX_PATH];
 		DWORD	dwResult;
 		CTime	time;
@@ -2725,25 +3003,25 @@ struct CMakeCustomCode	// parse() から呼び出し
 			break;
 		case 8:		// MakeDate
 			time = CTime::GetCurrentTime();
-			VERIFY(strBuf.LoadString(ID_INDICATOR_DATE_F2));// %y/%m/%d
-			m_strResult += time.Format(strBuf);
+			VERIFY(strPath.LoadString(ID_INDICATOR_DATE_F2));	// %y/%m/%d
+			m_strResult += time.Format(strPath);
 			break;
 		case 9:		// MakeTime
 			time = CTime::GetCurrentTime();
-			VERIFY(strBuf.LoadString(ID_INDICATOR_TIME_F));	// %H:%M
-			m_strResult += time.Format(strBuf);
+			VERIFY(strPath.LoadString(ID_INDICATOR_TIME_F));	// %H:%M
+			m_strResult += time.Format(strPath);
 			break;
 		case 10:	// MakeNCD
-			Path_Name_From_FullPath(g_pDoc->GetNCFileName(), CString(), strBuf);
-			m_strResult += IsNCchar(strBuf) ? strBuf : szReplaceErr;
+			Path_Name_From_FullPath(g_pDoc->GetNCFileName(), strPath, strFile);
+			m_strResult += IsNCchar(strFile) ? strFile : szReplaceErr;
 			break;
 		case 11:	// MakeDXF
-			strBuf = g_pDoc->GetTitle();
-			m_strResult += IsNCchar(strBuf) ? strBuf : szReplaceErr;
+			Path_Name_From_FullPath(g_pDoc->GetPathName(), strPath, strFile);	// GetTitle()には"*"が付く可能性あり
+			m_strResult += IsNCchar(strFile) ? strFile : szReplaceErr;
 			break;
 		case 12:	// MakeCondition
-			Path_Name_From_FullPath(g_pMakeOpt->GetInitFile(), CString(), strBuf);
-			m_strResult += IsNCchar(strBuf) ? strBuf : szReplaceErr;
+			Path_Name_From_FullPath(g_pMakeOpt->GetInitFile(), strPath, strFile);
+			m_strResult += IsNCchar(strFile) ? strFile : szReplaceErr;
 			break;
 		}
 	}
@@ -2760,7 +3038,7 @@ void AddCustomCode(const CString& strFileName, const CDXFdata* pData)
 	try {
 		CStdioFile	fp(strFileName,
 			CFile::modeRead | CFile::shareDenyWrite | CFile::typeText);
-		while ( fp.ReadString(strBuf) ) {
+		while ( fp.ReadString(strBuf) && IsThread() ) {
 			// 構文解析
 			strResult.clear();
 			if ( parse((LPCTSTR)strBuf, *( *(anychar_p - '{')[custom] >> comment_p('{', '}')[custom] ) ).hit ) {
@@ -2781,7 +3059,8 @@ void AddCustomCode(const CString& strFileName, const CDXFdata* pData)
 BOOL IsNCchar(LPCTSTR lpsz)
 {
 	for ( int i=0; i<lstrlen(lpsz); i++ ) {
-		if ( isprint(lpsz[i]) == 0 )
+//		if ( isprint(lpsz[i]) == 0 )
+		if ( IsDBCSLeadByte(lpsz[i]) )
 			return FALSE;
 	}
 	return TRUE;
@@ -2790,9 +3069,8 @@ BOOL IsNCchar(LPCTSTR lpsz)
 // 加工開始指示ﾃﾞｰﾀの生成
 void AddMakeStart(void)
 {
-	CPointD	pt;
 	// 機械原点でのﾃｷｽﾄﾃﾞｰﾀ生成
-	AddStartTextIntegrated(pt);	// (0, 0)
+	AddStartTextIntegrated(CPointD());	// (0, 0)
 	
 	CDXFdata*	pData = NULL;
 	CNCMake*	mkNCD;
@@ -2800,17 +3078,17 @@ void AddMakeStart(void)
 	for ( int i=0; i<g_obStartData.GetSize() && IsThread(); i++ ) {
 		pData = g_obStartData[i];
 		// 開始位置と等しいﾃｷｽﾄﾃﾞｰﾀの生成
-		pt = pData->GetStartMakePoint();
-		AddStartTextIntegrated(pt);
+		AddStartTextIntegrated(pData->GetStartCutterPoint());
 		// 移動指示
 		mkNCD = new CNCMake(pData);
 		ASSERT( mkNCD );
 		g_obMakeGdata.Add(mkNCD);
 	}
 	if ( pData ) {
+		// 最後の生成ﾃﾞｰﾀ
+		CDXFdata::ms_pData = pData;
 		// 終了位置と等しいﾃｷｽﾄﾃﾞｰﾀの生成
-		pt = pData->GetEndMakePoint();
-		AddStartTextIntegrated(pt);
+		AddStartTextIntegrated(pData->GetEndCutterPoint());
 	}
 }
 
@@ -2845,11 +3123,11 @@ void AddMoveCust_A(void)
 }
 
 // ﾃｷｽﾄ情報の生成
-void AddCommentText(CPointD& pt)
+void AddCommentText(const CPointD& pt)
 {
 	CDXFarray*	pobArray;
 	
-	if ( g_mpDXFcomment.Lookup(pt, pobArray) ) {
+	if ( g_mpDXFcomment.Lookup(const_cast<CPointD&>(pt), pobArray) ) {
 		CDXFdata*	pData;
 		for ( int i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
 			pData = pobArray->GetAt(i);
@@ -2862,12 +3140,12 @@ void AddCommentText(CPointD& pt)
 	}
 }
 
-void AddStartTextIntegrated(CPointD& pt)
+void AddStartTextIntegrated(const CPointD& pt)
 {
 	AddCommentText(pt);
 
 	CDXFarray*	pobArray;
-	if ( g_mpDXFstarttext.Lookup(pt, pobArray) ) {
+	if ( g_mpDXFstarttext.Lookup(const_cast<CPointD&>(pt), pobArray) ) {
 		CDXFdata*	pData;
 		for ( int i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
 			pData = pobArray->GetAt(i);
@@ -2879,12 +3157,12 @@ void AddStartTextIntegrated(CPointD& pt)
 	}
 }
 
-void AddMoveTextIntegrated(CPointD& pt)
+void AddMoveTextIntegrated(const CPointD& pt)
 {
 	AddCommentText(pt);
 
 	CDXFarray*	pobArray;
-	if ( g_mpDXFmovetext.Lookup(pt, pobArray) ) {
+	if ( g_mpDXFmovetext.Lookup(const_cast<CPointD&>(pt), pobArray) ) {
 		CDXFdata*	pData;
 		for ( int i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
 			pData = pobArray->GetAt(i);
@@ -2896,12 +3174,12 @@ void AddMoveTextIntegrated(CPointD& pt)
 	}
 }
 
-void AddCutterTextIntegrated(CPointD& pt)
+void AddCutterTextIntegrated(const CPointD& pt)
 {
 	AddCommentText(pt);
 
 	CDXFarray*	pobArray;
-	if ( g_mpDXFtext.Lookup(pt, pobArray) ) {
+	if ( g_mpDXFtext.Lookup(const_cast<CPointD&>(pt), pobArray) ) {
 		CDXFdata*	pData;
 		for ( int i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
 			pData = pobArray->GetAt(i);
@@ -2939,14 +3217,14 @@ void SendFaseMessage
 
 int CircleSizeCompareFunc1(CDXFdata* pFirst, CDXFdata* pSecond)
 {
-	return (int)( (fabs(((CDXFcircle *)pFirst)->GetMakeR()) -
-						fabs(((CDXFcircle *)pSecond)->GetMakeR())) * 1000.0 );
+	return (int)( (fabs(static_cast<CDXFcircle*>(pFirst)->GetMakeR()) -
+						fabs(static_cast<CDXFcircle*>(pSecond)->GetMakeR())) * 1000.0 );
 }
 
 int CircleSizeCompareFunc2(CDXFdata* pFirst, CDXFdata* pSecond)
 {
-	return (int)( (fabs(((CDXFcircle *)pSecond)->GetMakeR()) -
-						fabs(((CDXFcircle *)pFirst)->GetMakeR())) * 1000.0 );
+	return (int)( (fabs(static_cast<CDXFcircle*>(pSecond)->GetMakeR()) -
+						fabs(static_cast<CDXFcircle*>(pFirst)->GetMakeR())) * 1000.0 );
 }
 
 int DrillOptimaizeCompareFuncX(CDXFdata* pFirst, CDXFdata* pSecond)
@@ -2967,6 +3245,20 @@ int DrillOptimaizeCompareFuncY(CDXFdata* pFirst, CDXFdata* pSecond)
 {
 	int		nResult;
 	double	dResult = pFirst->GetEndCutterPoint().y - pSecond->GetEndCutterPoint().y;
+	if ( dResult == 0.0 )
+		nResult = 0;
+	else if ( dResult > 0 )
+		nResult = 1;
+	else
+		nResult = -1;
+	return nResult;
+}
+
+int AreaSizeCompareFunc(CDXFchain* pFirst, CDXFchain* pSecond)
+{
+	int		nResult;
+	CRectD	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
+	double	dResult = rc1.Width() * rc1.Height() - rc2.Width() * rc2.Height();
 	if ( dResult == 0.0 )
 		nResult = 0;
 	else if ( dResult > 0 )
@@ -2999,10 +3291,8 @@ UINT MakeNCD_AfterThread(LPVOID)
 	g_mpDXFcomment.RemoveAll();
 	g_obStartData.RemoveAll();
 	g_ltDeepGlist.RemoveAll();
-	g_obPoint.RemoveAll();
+	g_obDrill.RemoveAll();
 	g_obCircle.RemoveAll();
-	g_obDrillGroup.RemoveAll();
-	g_obDrillAxis.RemoveAll();
 
 	g_csMakeAfter.Unlock();
 	return 0;

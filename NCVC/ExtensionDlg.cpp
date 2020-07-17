@@ -152,7 +152,8 @@ void CExtensionDlg::OnExtDel()
 	if ( nIndex >= 0 && m_ctExtList[nID].GetItemData(nIndex) > 0 ) {
 		m_ctExtList[nID].DeleteString( nIndex );
 		m_ctExtList[nID].SetFocus();
-		m_ctExtList[nID].SetCurSel( min(m_ctExtList[nID].GetCount()-1, nIndex) );
+		int n = m_ctExtList[nID].GetCount() - 1;
+		m_ctExtList[nID].SetCurSel( min(nIndex, n) );
 		OnExtSelchangeList();
 	}
 }

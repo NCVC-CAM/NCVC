@@ -27,80 +27,145 @@ double	CPoint3D::ms_rz_sin = 0.0;
 // ‚Qü‚ÌŒğ“_‚ğ‹‚ß‚é
 
 optional<CPointD> CalcIntersectionPoint_LL
-	(const CPointD& pts1, const CPointD& pte1, const CPointD& pts2, const CPointD& pte2)
+	(const CPointD& pts1, const CPointD& pte1, const CPointD& pts2, const CPointD& pte2,
+		BOOL bRangeChk/*=TRUE*/)
 {
 	BOOL	bResult = FALSE;
 	CPointD	pt;
-	double	xa, ya, xb, yb;
+	double	xa, ya, xb, yb,
+			minX1, minY1, maxX1, maxY1,
+			minX2, minY2, maxX2, maxY2;
 
+	// ŒvZ‘O€”õ
 	xa = pte1.x - pts1.x;
 	ya = pte1.y - pts1.y;
 	xb = pte2.x - pts2.x;
 	yb = pte2.y - pts2.y;
+	if ( pts1.x < pte1.x ) {
+		minX1 = pts1.x;		maxX1 = pte1.x;
+	}
+	else {
+		minX1 = pte1.x;		maxX1 = pts1.x;
+	}
+	if ( pts1.y < pte1.y ) {
+		minY1 = pts1.y;		maxY1 = pte1.y;
+	}
+	else {
+		minY1 = pte1.y;		maxY1 = pts1.y;
+	}
+	if ( pts2.x < pte2.x ) {
+		minX2 = pts2.x;		maxX2 = pte2.x;
+	}
+	else {
+		minX2 = pte2.x;		maxX2 = pts2.x;
+	}
+	if ( pts2.y < pte2.y ) {
+		minY2 = pts2.y;		maxY2 = pte2.y;
+	}
+	else {
+		minY2 = pte2.y;		maxY2 = pts2.y;
+	}
 
+	// Œğ“_ŒvZ
 	if ( fabs(xa) < EPS ) {
 		if ( fabs(xb) >= EPS ) {
 			pt.x = pts1.x;
-			pt.y = yb / xb * (pt.x - pts2.x) + pts2.y;
+			pt.y = yb * (pts1.x - pts2.x) / xb + pts2.y;
 			bResult = TRUE;
 		}
+		// —¼•û‚Æ‚à‚’¼ü‚Å‚Í‰ğ‚È‚µ
 	}
 	else {
-		ya /= xa;
 		if ( fabs(xb) < EPS ) {
 			pt.x = pts2.x;
-			pt.y = ya * (pt.x - pts1.x) + pts1.y;
+			pt.y = ya * (pts2.x - pts1.x) / xa + pts1.y;
 			bResult = TRUE;
 		}
 		else {
-			yb /= xb;
+			double	yaxa = ya / xa,
+					ybxb = yb / xb;
 			if ( fabs(ya) < EPS ) {
 				if ( fabs(yb) >= EPS ) {
-					pt.x = (pts1.y - pts2.y) / yb + pts2.x;
+					pt.x = (pts1.y - pts2.y) / ybxb + pts2.x;
 					pt.y = pts1.y;
 					bResult = TRUE;
 				}
+				// —¼•û…•½ü‚Å‚Í‰ğ‚È‚µ
 			}
 			else {
 				if ( fabs(yb) < EPS ) {
-					pt.x = (pts2.y - pts1.y) / ya + pts1.x;
+					pt.x = (pts2.y - pts1.y) / yaxa + pts1.x;
 					pt.y = pts2.y;
 				}
 				else {
-					pt.x = (pts2.y + pts1.y + pts1.x*ya - pts2.x*yb) / (ya - yb);
-					pt.y = ya * (pt.x - pts1.x) + pts1.y;
+					if ( fabs(yaxa-ybxb) < EPS ) {
+						optional<CPointD>	pt1, pt2;
+						// …•½E‚’¼ˆÈŠO‚ÅŒX‚«‚ª“¯‚¶(¾ŞÛœZ–h~)
+						if ( minX2<=pts1.x && pts1.x<=maxX2 && minY2<=pts1.y && pts1.y<=maxY2 )
+							pt1 = pts1;
+						else if ( minX2<=pte1.x && pte1.x<=maxX2 && minY2<=pte1.y && pte1.y<=maxY2 )
+							pt1 = pte1;
+						if ( minX1<=pts2.x && pts2.x<=maxX1 && minY1<=pts2.y && pts2.y<=maxY1 )
+							pt2 = pts2;
+						else if ( minX1<=pte2.x && pte2.x<=maxX1 && minY1<=pte2.y && pte2.y<=maxY1 )
+							pt2 = pte2;
+						if ( pt1 && pt2 ) {
+							// ”ÍˆÍ“à‚É‚ ‚é’†“_‚ğŒğ“_‚Æ‚·‚é
+							if ( (*pt1).x < (*pt2).x ) {
+								minX1 = (*pt1).x;	maxX1 = (*pt2).x;
+							}
+							else {
+								minX1 = (*pt2).x;	maxX1 = (*pt1).x;
+							}
+							if ( (*pt1).y < (*pt2).y ) {
+								minY1 = (*pt1).y;	maxY1 = (*pt2).y;
+							}
+							else {
+								minY1 = (*pt2).y;	maxY1 = (*pt1).y;
+							}
+							pt.x = ( maxX1 - minX1 ) / 2.0 + minX1;
+							pt.y = ( maxY1 - minY1 ) / 2.0 + minY1;
+							return pt;	// ŒŸZ‚Ì•K—v‚È‚µ
+						}
+					}
+					else {
+						pt.x = (pts2.y - pts1.y + pts1.x*yaxa - pts2.x*ybxb) / (yaxa - ybxb);
+						pt.y = yaxa * (pt.x - pts1.x) + pts1.y;
+						bResult = TRUE;
+					}
 				}
-				bResult = TRUE;
 			}
 		}
 	}
 
-	// ŒŸZ
-	if ( bResult ) {	// ü‚P
+	// ŒŸZ(”ÍˆÍÁª¯¸)
+	if ( bRangeChk && bResult ) {	// ü‚P
 		if ( fabs(ya) < EPS ) {
-			if ( min(pts1.x,pte1.x)>pt.x+EPS || max(pts1.x,pte1.x)<pt.x-EPS )
+			// …•½ü‚Å‚Í x ‚Ì”ÍˆÍÁª¯¸‚Ì‚İ
+			if ( pt.x<minX1 || maxX1<pt.x )
+				bResult = FALSE;
+		}
+		else if ( fabs(xa) < EPS ) {
+			// ‚’¼ü‚Å‚Í y ‚Ì”ÍˆÍÁª¯¸‚Ì‚İ
+			if ( pt.y<minY1 || maxY1<pt.y )
 				bResult = FALSE;
 		}
 		else {
-			if ( fabs(xa) < EPS )
-				ya = pt.y;
-			else
-				ya = ( pt.x*ya - pts1.x*pte1.y + pts1.y*pte1.x ) / xa;
-			if ( min(pts1.y,pte1.y)>ya+EPS || max(pts1.y,pte1.y)<ya-EPS )
+			if ( pt.x<minX1 || maxX1<pt.x || pt.y<minY1 || maxY1<pt.y )
 				bResult = FALSE;
 		}
 	}
-	if ( bResult ) {	// ü‚Q
+	if ( bRangeChk && bResult ) {	// ü‚Q
 		if ( fabs(yb) < EPS ) {
-			if ( min(pts2.x,pte2.x)>pt.x+EPS || max(pts2.x,pte2.x)<pt.x-EPS )
+			if ( pt.x<minX2 || maxX2<pt.x )
+				bResult = FALSE;
+		}
+		else if ( fabs(xb) < EPS ) {
+			if ( pt.y<minY2 || maxY2<pt.y )
 				bResult = FALSE;
 		}
 		else {
-			if ( fabs(xb) < EPS )
-				yb = pt.y;
-			else
-				yb = ( pt.x*yb - pts2.x*pte2.y + pts2.y*pte2.x ) / xb;
-			if ( min(pts2.y,pte2.y)>yb+EPS || max(pts2.y,pte2.y)<yb-EPS )
+			if ( pt.x<minX2 || maxX2<pt.x || pt.y<minY2 || maxY2<pt.y )
 				bResult = FALSE;
 		}
 	}
@@ -112,7 +177,8 @@ optional<CPointD> CalcIntersectionPoint_LL
 //	’¼ü‚Æ‰~‚ÌŒğ“_‚ğ‹‚ß‚é
 
 tuple<int, CPointD, CPointD> CalcIntersectionPoint_LC
-	(const CPointD& pts, const CPointD& pte, const CPointD& ptc, double r)
+	(const CPointD& pts, const CPointD& pte, const CPointD& ptc, double r,
+		BOOL bRangeChk/*=TRUE*/)
 {
 	int		nResult = 0;
 	CPointD	pr1, pr2,
@@ -124,19 +190,18 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LC
 
 	// Œğ“_‚ª‚È‚¢ğŒ
 	if ( y - r > EPS )
-		return make_tuple(0, pr1, pr2);
+		return make_tuple(nResult, pr1, pr2);
 
-	pt.RoundPoint(-q);
+	pt.RoundPoint(-q);	// pt‚ª•K‚¸³•ûŒü‚É
 
 	if ( fabs(y-r) <= EPS ) {
 		// Ú‚·‚é
-		nResult = 1;
 		pr1.x = pto.x;
-		// ”ÍˆÍÁª¯¸(”ÍˆÍŠO‚Å‚à“š‚¦‚Í•Ô‚·)
-		if ( pr1.x <= -EPS || pt.x+EPS <= pr1.x )
-			nResult--;
+		// ”ÍˆÍÁª¯¸
+		nResult = ( bRangeChk && (pr1.x < 0 || pt.x < pr1.x) ) ? 0 : 1;
+		// ‰ñ“]‚ğŒ³‚É–ß‚·
 		pr1.RoundPoint(q);
-		pr2 = pr1;
+		pr2 = pr1;		// Ú‚·‚éÏ°¸
 	}
 	else {
 		// ‚QŒğ“_
@@ -145,12 +210,14 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LC
 		pr1.x = pto.x + r;
 		pr2.x = pto.x - r;
 		// ”ÍˆÍÁª¯¸
-		if ( pr2.x <= -EPS || pt.x+EPS <= pr2.x )
-			nResult--;
-		if ( pr1.x <= -EPS || pt.x+EPS <= pr1.x ) {
-			nResult--;
-			if ( nResult > 0 )
-				pr1 = pr2;
+		if ( bRangeChk ) {
+			if ( pr2.x < 0 || pt.x < pr2.x )
+				nResult = 1;		// pr2‚Ì‰ğ‚ğÌ—p‚µ‚È‚¢
+			if ( pr1.x < 0 || pt.x < pr1.x ) {
+				nResult--;
+				if ( nResult > 0 )
+					std::swap(pr1, pr2);	// pr1‚Ì‰ğ‚ğÌ—p‚µ‚È‚¢(‘ã“ü‚Å‚ÍÚü‚Æ‹æ•Ê•t‚©‚È‚¢)
+			}
 		}
 		// ‰ñ“]‚ğŒ³‚É–ß‚·
 		pr1.RoundPoint(q);
@@ -170,7 +237,7 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LC
 tuple<int, CPointD, CPointD> CalcIntersectionPoint_CC
 	(const CPointD& pts, const CPointD& pte, double r1, double r2)
 {
-	int		nResult;
+	int		nResult = 0;
 	CPointD	pr1, pr2,
 			pt(pte-pts);			// n“_‚r‚ªŒ´“_‚Æ‚È‚é‚æ‚¤•½sˆÚ“®
 	double	l,
@@ -183,18 +250,18 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_CC
 
 	// ‹t‰ñ“]‚µ‚½‚à‚Ì‚Æ‚µ‚Äl‚¦‚é‚ÆA‚±‚ê‚ÅOK‚¾‚ª’x‚¢(‚Æv‚¤)
 //	l = pt.hypot();
-	// yÀ•W‚ªx²ã‚É‚È‚é‚æ‚¤‹t‰ñ“]
+	// ‘¼•û(pte)‚Ì’†SÀ•W‚ªx²ã‚É‚È‚é‚æ‚¤‹t‰ñ“]
 	pt.RoundPoint(-q);
 	l = fabs(pt.x);		// ‚Q‰~‚Ì’†S‚Ì‹——£
 
 	// Œğ“_‚ª‚È‚¢ğŒ(“¯S‰~{‹——£¾ŞÛ}, ‚Q‰~‚Ì”¼Œa‚æ‚è‹——£‚ª‘å‚«‚¢, ¬‚³‚¢
-	if ( l < EPS || l-(r1+r2) > EPS || l < fabs(r1-r2) )
-		return make_tuple(0, pr1, pr2);
+	if ( l < EPS || l > (r1+r2) || l < fabs(r1-r2) )
+		return make_tuple(nResult, pr1, pr2);
 
 	// Œğ“_ŒvZ
-	if ( fabs(l-(r1+r2)) <= EPS ) {	// ‚Q‰~‚Ì”¼Œa‚Æ’†S‹——£‚ª“™‚µ‚¢
+	if ( fabs(l-(r1+r2)) <= EPS || fabs(r1-(r2-l)) <= EPS || fabs(r1-(r2+l)) <= EPS ) {
 		// Ú‚·‚éğŒ(y=0)
-		pr1.x = r1;
+		pr1.x = _copysign(r1, r1-r2);	// r2‚Ì•û‚ª‘å‚«‚¢‚ÆÏ²Å½
 		// ‰ñ“]‚ğ•œŒ³
 		pr1.RoundPoint(q);
 		pr2 = pr1;
@@ -265,11 +332,11 @@ double CalcBetweenAngle_LL(const CPointD& pts, const CPointD& pte)
 // µÌ¾¯Ä•ª•½sˆÚ“®‚³‚¹‚½ü•ª“¯m‚ÌŒğ“_‚ğ‹‚ß‚é
 //		k=[1|-1]:µÌ¾¯Ä•ûŒüw¦ŒW”, 0:‘ŠèÀ•W‚©‚ç©“®ŒvZ
 
-inline CPointD CalcOffsetIntersectionPoint_X
+inline CPointD CalcOffsetIntersectionPoint_V
 	(const CPointD& pt1, const CPointD& pt2, int k1, int k2, double r)
 {
 	CPointD	pt;
-
+	// pt1‚ª‚’¼
 	pt.x = _copysign(r, k1==0?pt2.x:k1);		// pt1‚Ì¶‰E(})
 	if ( fabs(pt2.y) < EPS )
 		pt.y = _copysign(r, k2==0?pt1.y:k2);	// pt2‚Ìã‰º(})
@@ -281,17 +348,17 @@ inline CPointD CalcOffsetIntersectionPoint_X
 	return pt;
 }
 
-inline CPointD CalcOffsetIntersectionPoint_Y
+inline CPointD CalcOffsetIntersectionPoint_H
 	(const CPointD& pt1, const CPointD& pt2, int k1, int k2, double r)
 {
 	CPointD	pt;
-
+	// pt1‚ª…•½
 	pt.y = _copysign(r, k1==0?pt2.y:k1);		// pt1‚Ìã‰º(})
 	if ( fabs(pt2.x) < EPS )
 		pt.x = _copysign(r, k2==0?pt1.x:k2);	// pt2‚Ì¶‰E(})
 	else {
 		double a = pt2.y / pt2.x;
-		pt.x = ( pt.y - _copysign(r*sqrt(1+a*a), k2==0?pt1.x:k2) ) / a;
+		pt.x = ( pt.y - _copysign(r*sqrt(1+a*a), k2==0?-a*pt1.x:k2) ) / a;
 	}
 
 	return pt;
@@ -316,8 +383,8 @@ optional<CPointD> CalcOffsetIntersectionPoint_LL
 		}
 		else {
 			pt = sx < EPS ?
-				CalcOffsetIntersectionPoint_X(pts, pte, k1, k2, r) :
-				CalcOffsetIntersectionPoint_X(pte, pts, k2, k1, r);
+				CalcOffsetIntersectionPoint_V(pts, pte, k1, k2, r) :
+				CalcOffsetIntersectionPoint_V(pte, pts, k2, k1, r);
 		}
 	}
 	else if ( sy < EPS || ey < EPS ) {
@@ -331,8 +398,8 @@ optional<CPointD> CalcOffsetIntersectionPoint_LL
 		}
 		else {
 			pt = sy < EPS ?
-				CalcOffsetIntersectionPoint_Y(pts, pte, k1, k2, r) :
-				CalcOffsetIntersectionPoint_Y(pte, pts, k2, k1, r);
+				CalcOffsetIntersectionPoint_H(pts, pte, k1, k2, r) :
+				CalcOffsetIntersectionPoint_H(pte, pts, k2, k1, r);
 		}
 	}
 	else {

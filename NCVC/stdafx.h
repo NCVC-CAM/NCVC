@@ -60,19 +60,21 @@
 #include "boost/variant.hpp"
 #include "boost/spirit.hpp"			// ç\ï∂âêÕ
 
-#define	NCVCSERIALVERSION		1503	// v1.00RCÅ`
+#define	NCVCSERIALVERSION_1503	1503	// v1.00RCÅ`
+#define	NCVCSERIALVERSION		1505	// v1.10Å`
 #define	SIZEOF(array)			( sizeof(array)/sizeof(array[0]) )
 
 #include <string>
 #include "3Dto2D.h"
 #include "CustomClass.h"
 #include "CustomControl.h"
+#include <afxdlgs.h>
 
 enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 
 // Common Define
-#define	AfxGetNCVCApp()			((CNCVCApp *)AfxGetApp())
-#define	AfxGetNCVCMainWnd()		((CMainFrame *)AfxGetMainWnd())
+#define	AfxGetNCVCApp()			( static_cast<CNCVCApp *>(AfxGetApp()) )
+#define	AfxGetNCVCMainWnd()		( static_cast<CMainFrame *>(AfxGetMainWnd()) )
 #define	LOMETRICFACTOR			10.0
 // â~Ç64(2ÉŒ/64Å‡5.6ìx)ï™äÑÇ≈ï`âÊ from NCdata.cpp,DXFdata.cpp
 #define	ARCSTEP					(PI/32)
@@ -111,6 +113,10 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 	// MDIéq≥®›ƒﬁ≥ÇÃºΩ√—∫œ›ƒﬁ(ç≈ëÂâª,å≥Ç…ñﬂÇ∑)Ç…ëŒÇ∑ÇÈÃ®Øƒ“Øæ∞ºﬁ åì
 	// äeÀﬁ≠∞Ç÷ÇÃÃ®Øƒ“Øæ∞ºﬁ
 #define	WM_USERVIEWFITMSG		WM_USER+109
+	// ƒ⁄∞Ωé¿çsΩ⁄ØƒﬁÇ©ÇÁÇÃí ím(CTraceThread->CNCListView)
+#define WM_USERTRACESELECT		WM_USER+110
+	// G∫∞ƒﬁÇÃΩ√∞¿Ω ﬁ∞çXêV(CNCListView->CNCChild)
+#define WM_USERSTATUSLINENO		WM_USER+111
 
 /////////////////////////////////////////////////////////////////////////////
 // NCVC ã§í ä÷êî

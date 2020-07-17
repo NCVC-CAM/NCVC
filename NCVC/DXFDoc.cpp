@@ -75,6 +75,7 @@ CDXFDoc::CDXFDoc()
 	m_bThread = m_bReload = TRUE;
 	m_nShapePattern = 0;
 	m_dOffset = 1.0;
+	m_bAcute  = TRUE;
 	// ﾃﾞｰﾀ数初期化
 	for ( i=0; i<SIZEOF(m_nDataCnt); i++ )
 		m_nDataCnt[i] = 0;
@@ -119,7 +120,7 @@ void CDXFDoc::RemoveData(CLayerData* pLayer, int nIndex)
 	if ( enType>=DXFPOINTDATA || enType<=DXFELLIPSEDATA )
 		m_nDataCnt[enType]--;
 	else if ( enType == DXFPOLYDATA ) {
-		CDXFpolyline* pPoly = (CDXFpolyline *)pData;
+		CDXFpolyline* pPoly = static_cast<CDXFpolyline*>(pData);
 		m_nDataCnt[DXFLINEDATA]		-= pPoly->GetObjectCount(0);
 		m_nDataCnt[DXFARCDATA]		-= pPoly->GetObjectCount(1);
 		m_nDataCnt[DXFELLIPSEDATA]	-= pPoly->GetObjectCount(2);
@@ -148,7 +149,7 @@ void CDXFDoc::DataOperation
 	if ( enType>=DXFPOINTDATA || enType<=DXFELLIPSEDATA )
 		m_nDataCnt[enType]++;
 	else if ( enType == DXFPOLYDATA ) {
-		CDXFpolyline* pPoly = (CDXFpolyline *)pData;
+		CDXFpolyline* pPoly = static_cast<CDXFpolyline*>(pData);
 		m_nDataCnt[DXFLINEDATA]		+= pPoly->GetObjectCount(0);
 		m_nDataCnt[DXFARCDATA]		+= pPoly->GetObjectCount(1);
 		m_nDataCnt[DXFELLIPSEDATA]	+= pPoly->GetObjectCount(2);
@@ -162,8 +163,9 @@ void CDXFDoc::RemoveAt(LPCTSTR lpszLayer, int nIndex, int nCnt)
 {
 	CLayerData*	pLayer;
 	if ( m_mpLayer.Lookup(lpszLayer, pLayer) ) {
-		nCnt = min(nCnt, pLayer->GetDxfSize()-nIndex);
-		while ( nCnt-- > 0 )
+		int	n = pLayer->GetDxfSize() - nIndex;
+		nCnt = min(nCnt, n);
+		while ( nCnt-- )
 			RemoveData( pLayer, nIndex );
 	}
 }
@@ -172,8 +174,9 @@ void CDXFDoc::RemoveAtText(LPCTSTR lpszLayer, int nIndex, int nCnt)
 {
 	CLayerData*	pLayer;
 	if ( m_mpLayer.Lookup(lpszLayer, pLayer) ) {
-		nCnt = min(nCnt, pLayer->GetDxfTextSize()-nIndex);
-		while ( nCnt-- > 0 )
+		int	n = pLayer->GetDxfTextSize() - nIndex;
+		nCnt = min(nCnt, n);
+		while ( nCnt-- )
 			RemoveData( pLayer, nIndex );
 	}
 }
@@ -365,7 +368,7 @@ void CDXFDoc::SetCutterOrigin(const CPointD& pt, double r, BOOL bRedraw/*=FALSE*
 	}
 	SetMaxRect(m_pCircle);
 	if ( bRedraw )
-		UpdateAllViews(NULL, UAV_DXFORGUPDATE, (CObject *)m_pCircle);
+		UpdateAllViews(NULL, UAV_DXFORGUPDATE, static_cast<CObject *>(m_pCircle));
 }
 
 BOOL CDXFDoc::GetEditOrgPoint(LPCTSTR lpctStr, CPointD& pt)
@@ -410,6 +413,7 @@ tuple<CDXFshape*, double> CDXFDoc::GetSelectObject(const CPointD& pt, const CRec
 	CDXFshape*	pShapeResult = NULL;
 	int			i, j;
 	double		dGap, dGapMin = HUGE_VAL;
+	CRectD		rcShape;
 
 	// 全ての切削ｵﾌﾞｼﾞｪｸﾄから一番近い集合と距離を取得
 	for ( i=0; i<m_obLayer.GetSize(); i++ ) {
@@ -419,7 +423,8 @@ tuple<CDXFshape*, double> CDXFDoc::GetSelectObject(const CPointD& pt, const CRec
 		for ( j=0; j<pLayer->GetShapeSize(); j++ ) {
 			pShape = pLayer->GetShapeData(j);
 			// 表示矩形に少しでもかかっていれば => PtInRectpt()
-			if ( rcView.PtInRectpt(pShape->GetMaxRect()) ) {
+			rcShape = pShape->GetMaxRect();
+			if ( rcView.PtInRectpt(rcShape) || rcShape.PtInRectpt(rcView) ) {
 				dGap = pShape->GetSelectObjectFromShape(pt, &rcView);
 				if ( dGap < dGapMin ) {
 					dGapMin = dGap;
@@ -672,6 +677,8 @@ void CDXFDoc::UpdateFrameCounts()
 
 void CDXFDoc::Serialize(CArchive& ar)
 {
+	extern	DWORD	g_dwCamVer;		// NCVC.cpp
+
 	// DxfSetupReloadのﾁｪｯｸOFF
 	m_bReload = FALSE;
 
@@ -685,7 +692,7 @@ void CDXFDoc::Serialize(CArchive& ar)
 
 	if ( ar.IsStoring() ) {
 		// 各種状態
-		ar << m_bReady << m_bShape << m_dOffset;
+		ar << m_bReady << m_bShape << m_dOffset << m_bAcute;
 		// NC生成ﾌｧｲﾙ名
 		ar << m_strNCFileName;
 		// 原点
@@ -704,13 +711,15 @@ void CDXFDoc::Serialize(CArchive& ar)
 
 	// 各種状態
 	ar >> m_bReady >> m_bShape >> m_dOffset;
+	if ( g_dwCamVer > NCVCSERIALVERSION_1503 )	// Ver1.10～
+		ar >> m_bAcute;
 	// NC生成ﾌｧｲﾙ名
 	ar >> m_strNCFileName;
 	// 原点
 	BYTE	bExist;
 	ar >> bExist;
 	if ( bExist ) {
-		m_pCircle = (CDXFcircleEx *)ar.ReadObject(RUNTIME_CLASS(CDXFcircleEx));
+		m_pCircle = static_cast<CDXFcircleEx*>(ar.ReadObject(RUNTIME_CLASS(CDXFcircleEx)));
 		SetMaxRect(m_pCircle);
 	}
 	ar >> pt.x >> pt.y;
@@ -748,7 +757,7 @@ void CDXFDoc::Serialize(CArchive& ar)
 			if ( enType>=DXFPOINTDATA && enType<=DXFELLIPSEDATA )
 				m_nDataCnt[enType]++;
 			else if ( enType == DXFPOLYDATA ) {
-				CDXFpolyline*	pPoly = (CDXFpolyline *)pData;
+				CDXFpolyline*	pPoly = static_cast<CDXFpolyline*>(pData);
 				m_nDataCnt[DXFLINEDATA]		+= pPoly->GetObjectCount(0);
 				m_nDataCnt[DXFARCDATA]		+= pPoly->GetObjectCount(1);
 				m_nDataCnt[DXFELLIPSEDATA]	+= pPoly->GetObjectCount(2);
@@ -823,7 +832,7 @@ void CDXFDoc::OnEditShape()
 	if ( dlgThread.DoModal() == IDOK ) {
 		m_bShape = TRUE;
 		// ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳを広げる + DXFView のﾌｨｯﾄﾒｯｾｰｼﾞ送信
-		((CDXFChild *)(AfxGetNCVCMainWnd()->MDIGetActive()))->ShowShapeView();
+		static_cast<CDXFChild *>(AfxGetNCVCMainWnd()->MDIGetActive())->ShowShapeView();
 		// DXFShapeView更新
 		UpdateAllViews(NULL, UAV_DXFSHAPEUPDATE);
 		// 加工指示のﾃﾞﾌｫﾙﾄ
@@ -835,11 +844,12 @@ void CDXFDoc::OnEditShape()
 
 void CDXFDoc::OnEditAutoShape() 
 {
-	CDxfAutoWorkingDlg	dlg(m_dOffset);
+	CDxfAutoWorkingDlg	dlg(m_dOffset, m_bAcute);
 	if ( dlg.DoModal() != IDOK )
 		return;
 
 	m_dOffset = dlg.m_dOffset;
+	m_bAcute  = dlg.m_bAcuteRound;
 
 	// ｵﾌｾｯﾄ初期値の更新
 	int	i, j;
@@ -854,8 +864,9 @@ void CDXFDoc::OnEditAutoShape()
 			// 自動処理対象か否か(CDXFchain* だけを対象とする)
 			if ( pShape->GetShapeType()!=0 || pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING )
 				continue;
-			// ｵﾌｾｯﾄ値の設定
+			// 各種設定の反映
 			pShape->SetOffset(m_dOffset);
+			pShape->SetAcuteRound(m_bAcute);
 		}
 	}
 
@@ -886,9 +897,10 @@ void CDXFDoc::OnUpdateEditShaping(CCmdUI* pCmdUI)
 void CDXFDoc::OnShapePattern(UINT nID)
 {
 	if ( m_nShapePattern != nID ) {
+		// 各ﾋﾞｭｰへの通知を先にしないと、仮描画を消せない
+		UpdateAllViews(NULL, UAV_DXFSHAPEID);	// to CDXFView::CancelForSelect()
+		// IDの切り替え
 		m_nShapePattern = nID;
-		// 各ﾋﾞｭｰへの通知
-		UpdateAllViews(NULL, UAV_DXFSHAPEID);
 	}
 }
 
@@ -1072,7 +1084,7 @@ UINT CDXFDoc::RestoreCircleTypeThread(LPVOID pParam)
 #endif
 	int			i, j;
 	ENDXFTYPE	enType;
-	CDXFDoc*	pDoc = (CDXFDoc *)pParam;
+	CDXFDoc*	pDoc = reinterpret_cast<CDXFDoc*>(pParam);
 	CDXFdata*	pData;
 	CLayerData*	pLayer;
 

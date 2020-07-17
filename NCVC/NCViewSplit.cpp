@@ -21,7 +21,6 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CNCViewSplit, CSplitterWnd)
 	ON_WM_DESTROY()
-//	ON_WM_ERASEBKGND()
 	ON_WM_LBUTTONDBLCLK()
 	// ﾕｰｻﾞｲﾆｼｬﾙ処理
 	ON_MESSAGE (WM_USERINITIALUPDATE, OnUserInitialUpdate)
@@ -51,24 +50,28 @@ CNCViewSplit::~CNCViewSplit()
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewSplit クラスのメンバ関数
 
-void CNCViewSplit::DrawData(CNCdata* pData)
+void CNCViewSplit::DrawData(const CNCdata* pData, BOOL bSelect, BOOL bErase)
 {
 	CDC		dc;
 
 	if ( dc.Attach(m_hDC[0]) ) {
-		pData->Draw(&dc);
+		dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
+		pData->Draw(&dc, bSelect);
 		dc.Detach();
 	}
 	if ( dc.Attach(m_hDC[1]) ) {
-		pData->DrawYZ(&dc);
+		dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
+		pData->DrawYZ(&dc, bSelect);
 		dc.Detach();
 	}
 	if ( dc.Attach(m_hDC[2]) ) {
-		pData->DrawXZ(&dc);
+		dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
+		pData->DrawXZ(&dc, bSelect);
 		dc.Detach();
 	}
 	if ( dc.Attach(m_hDC[3]) ) {
-		pData->DrawXY(&dc);
+		dc.SetROP2(bErase ? R2_XORPEN : R2_COPYPEN);
+		pData->DrawXY(&dc, bSelect);
 		dc.Detach();
 	}
 }
@@ -87,7 +90,7 @@ void CNCViewSplit::AllPane_PostMessage(int nID, UINT msg, WPARAM wParam, LPARAM 
 	}
 	else {								// ４面-2
 		GetPane(0, 1)->PostMessage(msg, wParam, lParam);	// XYZ
-		CSplitterWnd* pWnd = (CSplitterWnd *)GetPane(0, 0);
+		CSplitterWnd* pWnd = static_cast<CSplitterWnd *>(GetPane(0, 0));
 		for ( i=0; i<pWnd->GetRowCount(); i++ ) {
 			pWnd->GetPane(i, 0)->PostMessage(msg, wParam, lParam);	// YZ, XZ, XY
 		}
@@ -130,7 +133,7 @@ void CNCViewSplit::CalcPane(int nID, BOOL bInitial/*=FALSE*/)
 			nRow2 = AfxGetApp()->GetProfileInt(strRegKey, strEntry, nRow2);
 		}
 		SetColumnInfo(0, nCol, 0);
-		CSplitterWnd* pWnd = (CSplitterWnd *)GetPane(0, 0);
+		CSplitterWnd* pWnd = static_cast<CSplitterWnd *>(GetPane(0, 0));
 		pWnd->SetRowInfo(0, nRow,  0);
 		pWnd->SetRowInfo(1, nRow2, 0);
 	}
@@ -168,7 +171,7 @@ LRESULT CNCViewSplit::OnUserInitialUpdate(WPARAM wParam, LPARAM lParam)
 		pDC = new CClientDC(GetPane(0, 1));
 		m_hDC[0] = pDC->GetSafeHdc();
 		delete	pDC;
-		CSplitterWnd* pWnd = (CSplitterWnd *)GetPane(0, 0);
+		CSplitterWnd* pWnd = static_cast<CSplitterWnd *>(GetPane(0, 0));
 		for ( i=0; i<pWnd->GetRowCount(); i++ ) {
 			if ( (BOOL)lParam )
 				pWnd->GetPane(i, 0)->SendMessage(WM_USERVIEWFITMSG, 0, lParam);	// YZ, XZ, XY
@@ -234,11 +237,11 @@ void CNCViewSplit::OnDestroy()
 void CNCViewSplit::OnLButtonDblClk(UINT nFlags, CPoint point) 
 {
 	// 各ﾍﾟｲﾝを初期状態に戻す
-	CWnd*	pWnd = GetParent();
-	if ( pWnd->IsKindOf(RUNTIME_CLASS(CNCViewTab)) )
-		OnUserViewFitMsg( ((CNCViewTab *)pWnd)->GetActivePage(), TRUE );
+	CWnd*	pParent = GetParent();
+	if ( pParent->IsKindOf(RUNTIME_CLASS(CNCViewTab)) )
+		OnUserViewFitMsg( static_cast<CNCViewTab *>(pParent)->GetActivePage(), TRUE );
 	else
-		pWnd->PostMessage(WM_LBUTTONDBLCLK);
+		pParent->PostMessage(WM_LBUTTONDBLCLK);
 }
 
 void CNCViewSplit::OnAllFitCmd()
@@ -253,7 +256,7 @@ void CNCViewSplit::OnAllFitCmd()
 		pParent->PostMessage(WM_COMMAND, MAKEWPARAM(ID_NCVIEW_ALLFIT, 0));
 	}
 	else {
-		AllPane_PostMessage(((CNCViewTab *)pParent)->GetActivePage(),
+		AllPane_PostMessage(static_cast<CNCViewTab *>(pParent)->GetActivePage(),
 			WM_COMMAND, MAKEWPARAM(ID_VIEW_FIT, 0));
 	}
 }
@@ -265,12 +268,3 @@ LRESULT CNCViewSplit::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 	AllPane_PostMessage(wParam, WM_USERVIEWFITMSG, 0, lParam);
 	return 0;
 }
-/*
-BOOL CNCViewSplit::OnEraseBkgnd(CDC* pDC) 
-{
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCViewSplit::OnEraseBkgnd()\nStart");
-#endif
-	return TRUE;
-}
-*/

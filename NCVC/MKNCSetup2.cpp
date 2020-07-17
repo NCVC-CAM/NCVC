@@ -74,7 +74,7 @@ BOOL CMKNCSetup2::OnInitDialog()
 
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	m_bXrev				= pOpt->m_bXrev;
 	m_bYrev				= pOpt->m_bYrev;
 	m_bLineAdd			= pOpt->m_bLineAdd;
@@ -101,7 +101,7 @@ void CMKNCSetup2::OnLineAdd()
 
 BOOL CMKNCSetup2::OnApply() 
 {
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_bXrev			= m_bXrev;
 	pOpt->m_bYrev			= m_bYrev;
 	pOpt->m_bLineAdd		= m_bLineAdd;

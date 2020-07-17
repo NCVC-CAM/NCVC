@@ -39,7 +39,7 @@ CMakeNCDlg::CMakeNCDlg(UINT nTitle, CDXFDoc* pDoc)
 	// ÄŞ·­ÒİÄ–¼‚©‚çNCÌ§²Ù–¼‚ğì¬
 	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
 	// ØíğŒ—š—ğ‚©‚ç‰Šú•\¦Ì§²Ù‚ğæ“¾
-	const	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
+	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
 	if ( pOpt->GetInitList()->GetCount() > 0 )
 		::Path_Name_From_FullPath(pOpt->GetInitList()->GetHead(),
 				m_strInitPath, m_strInitFileName);
@@ -240,7 +240,7 @@ BOOL CheckMakeNCDlgExLayerState
 
 	// Ø½ÄºİÄÛ°Ù‚©‚çCLayerData*‚ğæ“¾‚µC–¾×‚ÌÁª¯¸
 	for ( int i=0; i<ctLayerList.GetItemCount(); i++ ) {
-		pLayer = (CLayerData *)(ctLayerList.GetItemData(i));
+		pLayer = reinterpret_cast<CLayerData *>(ctLayerList.GetItemData(i));
 		// Øí‘ÎÛ‚©”Û‚©
 		bCutFlg = ctLayerList.GetCheck(i);
 		pLayer->SetCutTargetFlg(bCutFlg);

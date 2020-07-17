@@ -45,8 +45,6 @@ BEGIN_MESSAGE_MAP(CNCChild, CMDIChildWnd)
 	ON_WM_SYSCOMMAND()
 	// ﾌｧｲﾙ変更通知 from DocBase.cpp
 	ON_MESSAGE(WM_USERFILECHANGENOTIFY, OnUserFileChangeNotify)
-	// ｽﾃｰﾀｽﾊﾞｰの更新 from NCListView.cpp
-	ON_MESSAGE(WM_USERSTATUSLINENO, OnUpdateStatusLineNo)
 END_MESSAGE_MAP()
 
 BEGIN_MESSAGE_MAP(CNCFrameSplit, CSplitterWnd)
@@ -61,8 +59,6 @@ END_MESSAGE_MAP()
 
 CNCChild::CNCChild()
 {
-	m_nPos = m_nMaxSize = 0;
-	m_vStatus = (CNCdata *)NULL;	// dummy
 }
 
 CNCChild::~CNCChild()
@@ -158,6 +154,45 @@ void CNCChild::SetFactorInfo(ENNCVPLANE enView, double dFactor)
 		m_wndStatusBar.CommandToIndex(ID_INDICATOR_FACTOR), str);
 }
 
+void CNCChild::OnUpdateStatusLineNo
+	(int nPos, int nSize, variant<CNCblock*, CNCdata*>& vSelect)
+{
+	CString		strInfo;
+	CNCdata*	pData = NULL;
+
+	strInfo.Format(ID_NCDST_LINENO_F, nPos, nSize);
+	m_wndStatusBar.SetPaneText(m_wndStatusBar.CommandToIndex(ID_NCDST_LINENO), strInfo);
+	strInfo.Empty();
+
+	if ( vSelect.which() == 0 ) {
+		CNCblock*	pBlock = get<CNCblock*>(vSelect);
+		if ( pBlock ) {
+			UINT	nError = pBlock->GetNCBlkErrorCode();
+			if ( nError > 0 ) {
+				if ( nError>=NCERROR_RES_MIN && nError<=NCERROR_RES_MAX )
+					strInfo.LoadString(nError);
+				else
+					VERIFY(strInfo.LoadString(IDS_ERR_NCBLK_UNKNOWN));
+			}
+			else
+				pData = pBlock->GetBlockToNCdata();
+		}
+		else
+			VERIFY(strInfo.LoadString(ID_NCDST_COORDINATES));
+	}
+	else
+		pData = get<CNCdata*>(vSelect);
+
+	if ( pData ) {
+		CPoint3D	pt(pData->GetEndCorrectPoint());
+		strInfo.Format(ID_NCDST_COORDINATES_F, pt.x, pt.y, pt.z);
+	}
+	else if ( strInfo.IsEmpty() )
+		VERIFY(strInfo.LoadString(ID_NCDST_COORDINATES));
+
+	m_wndStatusBar.SetPaneText(m_wndStatusBar.CommandToIndex(ID_NCDST_COORDINATES), strInfo);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CNCChild クラスのメッセージハンドラ
 
@@ -167,8 +202,8 @@ int CNCChild::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	// ｽﾃｰﾀｽﾊﾞｰ作成
-	if ( !m_wndStatusBar.Create(this, WS_CHILD|WS_VISIBLE|CBRS_BOTTOM, ID_NC_STATUSBAR) ||
-			!m_wndStatusBar.SetIndicators(g_nIndicators, SIZEOF(g_nIndicators)) ) {
+	if (!m_wndStatusBar.Create(this, WS_CHILD|WS_VISIBLE|CBRS_BOTTOM, ID_NC_STATUSBAR) ||
+		!m_wndStatusBar.SetIndicators(g_nIndicators, SIZEOF(g_nIndicators)) ) {
 		TRACE0("Failed to NC child status bar\n");
 		return -1;      // 作成に失敗
 	}
@@ -216,47 +251,6 @@ void CNCChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactiva
 LRESULT CNCChild::OnUserFileChangeNotify(WPARAM, LPARAM)
 {
 	CChildBase::OnUserFileChangeNotify(this);
-	return 0;
-}
-
-LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM, LPARAM)
-{
-	CString		strInfo;
-	CNCdata*	pData = NULL;
-
-	// このﾒｯｾｰｼﾞの前に SetStatusInfo() を呼び出す
-	strInfo.Format(ID_NCDST_LINENO_F, m_nPos, m_nMaxSize);
-	m_wndStatusBar.SetPaneText(m_wndStatusBar.CommandToIndex(ID_NCDST_LINENO), strInfo);
-	strInfo.Empty();
-
-	if ( m_vStatus.which() == 0 ) {
-		CNCblock*	pBlock = get<CNCblock*>(m_vStatus);
-		if ( pBlock ) {
-			UINT	nError = pBlock->GetNCBlkErrorCode();
-			if ( nError > 0 ) {
-				if ( nError>=NCERROR_RES_MIN && nError<=NCERROR_RES_MAX )
-					strInfo.LoadString(nError);
-				else
-					VERIFY(strInfo.LoadString(IDS_ERR_NCBLK_UNKNOWN));
-			}
-			else
-				pData = pBlock->GetBlockToNCdata();
-		}
-		else
-			VERIFY(strInfo.LoadString(ID_NCDST_COORDINATES));
-	}
-	else
-		pData = get<CNCdata*>(m_vStatus);
-
-	if ( pData ) {
-		CPoint3D	pt(pData->GetEndCorrectPoint());
-		strInfo.Format(ID_NCDST_COORDINATES_F, pt.x, pt.y, pt.z);
-	}
-	else if ( strInfo.IsEmpty() )
-		VERIFY(strInfo.LoadString(ID_NCDST_COORDINATES));
-
-	m_wndStatusBar.SetPaneText(m_wndStatusBar.CommandToIndex(ID_NCDST_COORDINATES), strInfo);
-
 	return 0;
 }
 

@@ -88,7 +88,7 @@ void CMCSetup4::OnKillFocusMacroCode()
 
 BOOL CMCSetup4::OnApply() 
 {
-	CMCSetup*	pParent = (CMCSetup *)GetParent();
+	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParent());
 	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	// Ä“ÇÁª¯¸

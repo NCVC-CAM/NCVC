@@ -21,6 +21,7 @@ class CDXFDoc : public CDocument, public CDocBase
 			m_bShape;		// 形状処理を行ったか
 	UINT	m_nShapePattern;	// 形状処理ﾊﾟﾀｰﾝ
 	double	m_dOffset;		// ﾃﾞﾌｫﾙﾄ輪郭ｵﾌｾｯﾄ
+	BOOL	m_bAcute;		// ﾃﾞﾌｫﾙﾄ鋭角丸め設定
 
 	CRect3D		m_rcMax;			// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
 	CDXFcircleEx*	m_pCircle;		// 切削原点
@@ -86,8 +87,7 @@ public:
 	}
 	CLayerData*	GetLayerData(LPCTSTR lpszLayer) const {
 		CLayerData*	pLayer = NULL;
-		m_mpLayer.Lookup(lpszLayer, pLayer);
-		return pLayer;
+		return m_mpLayer.Lookup(lpszLayer, pLayer) ? pLayer : NULL;
 	}
 	CString GetNCFileName(void) const {
 		return m_strNCFileName;

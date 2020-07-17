@@ -59,7 +59,7 @@ BOOL CMKNCSetup5::OnInitDialog()
 	
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	m_dTolerance		= pOpt->m_dTolerance;
 	m_nTolerance		= pOpt->m_nTolerance;
 	m_nOptimaizeDrill	= pOpt->m_nOptimaizeDrill;
@@ -80,7 +80,7 @@ void CMKNCSetup5::OnSelchangeDrill()
 
 BOOL CMKNCSetup5::OnApply() 
 {
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_dTolerance		= fabs((double)m_dTolerance);
 	if ( pOpt->m_dTolerance < NCMIN )
 		pOpt->m_dTolerance = NCMIN;

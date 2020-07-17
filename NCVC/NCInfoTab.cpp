@@ -93,7 +93,7 @@ BOOL CNCInfoTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 
 void CNCInfoTab::OnActivatePage(int nIndex)
 {
-	GetParentFrame()->SetActiveView((CView *)GetPage(nIndex));
+	GetParentFrame()->SetActiveView(static_cast<CView *>(GetPage(nIndex)));
 }
 
 /////////////////////////////////////////////////////////////////////////////

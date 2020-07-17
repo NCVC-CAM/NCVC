@@ -32,8 +32,10 @@ protected:
 
 // ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞ管理用識別子
 // NCView NCｺｰﾄﾞ移動, NCView ﾜｰｸ矩形ﾀﾞｲｱﾛｸﾞ, DXFView ﾚｲﾔ表示切り替えﾀﾞｲｱﾛｸﾞ
+// NCView 検索
 enum	EN_MLD	{
-	MLD_NCJUMP=0, MLD_NCWORK=1, MLD_DXFLAYER=2
+	MLD_NCJUMP=0, MLD_NCWORK=1, MLD_DXFLAYER=2,
+	MLD_NCFIND=3
 };
 
 // ﾂｰﾙﾊﾞｰ
@@ -116,7 +118,7 @@ class CMainFrame : public CMDIFrameWnd
 	BOOL		m_bMenuSelect;
 
 	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞ管理用
-	CDialog*	m_pModelessDlg[3];
+	CDialog*	m_pModelessDlg[4];
 
 	DECLARE_DYNAMIC(CMainFrame)
 public:

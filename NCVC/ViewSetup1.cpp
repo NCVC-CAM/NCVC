@@ -34,9 +34,9 @@ CViewSetup1::CViewSetup1() : CPropertyPage(CViewSetup1::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CViewSetup1)
 	//}}AFX_DATA_INIT
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	m_bMouseWheel	= pOpt->IsMouseWheel();
-	m_nWheelType	= pOpt->GetWheelType();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	m_bMouseWheel	= pOpt->m_bMouseWheel;
+	m_nWheelType	= pOpt->m_nWheelType;
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
 		m_colView[i] = pOpt->GetDrawColor(i);
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
@@ -72,7 +72,7 @@ BOOL CViewSetup1::OnInitDialog()
 
 	// ü‘®«À²Ìß‚Ì‘I‘ðŽˆ“o˜^
 	extern	const	PENSTYLE	g_penStyle[];
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	int		i, j;
 	for ( i=0; i<SIZEOF(m_cbLineType); i++ ) {
 		for ( j=0; j<MAXPENSTYLE; j++ )

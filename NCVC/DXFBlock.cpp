@@ -32,43 +32,43 @@ void CDXFBlockData::CopyBlock(const CDXFBlockData* pBlock, LPDXFBLOCK pBlockArgv
 		pData = pBlock->GetBlockData(i);
 		switch ( pData->GetType() ) {
 		case DXFPOINTDATA:
-			AddData((CDXFpoint *)pData, pBlockArgv);
+			AddData(static_cast<CDXFpoint*>(pData), pBlockArgv);
 			break;
 
 		case DXFLINEDATA:
-			AddData((CDXFline *)pData, pBlockArgv);
+			AddData(static_cast<CDXFline*>(pData), pBlockArgv);
 			break;
 
 		case DXFCIRCLEDATA:
 			// ŠeŽ²“ÆŽ©‚ÌŠg‘å—¦‚Í CDXFcircle -> CDXFellipse
 			if ( pBlockArgv->dMagni[NCA_X] != pBlockArgv->dMagni[NCA_Y] ) {
-				((CDXFcircle *)pData)->SetEllipseArgv(pBlockArgv, &dxfEllipse);
+				(static_cast<CDXFcircle*>(pData))->SetEllipseArgv(pBlockArgv, &dxfEllipse);
 				AddData(&dxfEllipse);
 			}
 			else
-				AddData((CDXFcircle *)pData, pBlockArgv);
+				AddData(static_cast<CDXFcircle*>(pData), pBlockArgv);
 			break;
 
 		case DXFARCDATA:
 			// ŠeŽ²“ÆŽ©‚ÌŠg‘å—¦‚Í CDXFarc -> CDXFellipse
 			if ( pBlockArgv->dMagni[NCA_X] != pBlockArgv->dMagni[NCA_Y] ) {
-				((CDXFarc *)pData)->SetEllipseArgv(pBlockArgv, &dxfEllipse);
+				(static_cast<CDXFarc*>(pData))->SetEllipseArgv(pBlockArgv, &dxfEllipse);
 				AddData(&dxfEllipse);
 			}
 			else
-				AddData((CDXFarc *)pData, pBlockArgv);
+				AddData(static_cast<CDXFarc*>(pData), pBlockArgv);
 			break;
 
 		case DXFELLIPSEDATA:
-			AddData((CDXFellipse *)pData, pBlockArgv);
+			AddData(static_cast<CDXFellipse*>(pData), pBlockArgv);
 			break;
 
 		case DXFPOLYDATA:
-			AddData((CDXFpolyline *)pData, pBlockArgv);
+			AddData(static_cast<CDXFpolyline*>(pData), pBlockArgv);
 			break;
 
 		case DXFTEXTDATA:
-			AddData((CDXFtext *)pData, pBlockArgv);
+			AddData(static_cast<CDXFtext*>(pData), pBlockArgv);
 			break;
 		}
 	}

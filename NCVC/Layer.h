@@ -168,11 +168,9 @@ public:
 			delete	m_obShapeArray[i];
 		m_obShapeArray.RemoveAll();
 	}
-	void	CopyShape(CShapeArray& obArray) {
-		m_obShapeArray.Copy(obArray);
-	}
 	void	AscendingShapeSort(void);
 	void	DescendingShapeSort(void);
+	void	SerializeShapeSort(void);
 	//
 	void	AllChangeFactor(double) const;
 	int		AllShape_OrgTuning(void);

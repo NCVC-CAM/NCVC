@@ -60,6 +60,7 @@ friend	class	CViewSetup3;
 friend	class	CViewSetup4;
 
 	BOOL		m_bMouseWheel,			// Šg‘åk¬‚ÉÏ³½Î²°Ù‚ðŽg‚¤‚©
+				m_bTraceMarker,			// ÄÚ°½’†‚ÌŒ»ÝˆÊ’u•\Ž¦
 				m_bDrawCircleCenter,	// ‰~ŒÊ•âŠÔ‚Ì’†S‚ð•`‰æ
 				m_bGuide;				// TRUE:Šg‘å—¦‚É“¯Šú
 	COLORREF	m_colView[2],			// ËÞ­°‚ÌŠeF
@@ -81,54 +82,57 @@ public:
 	CViewOption();
 	BOOL		SaveViewOption(void);	// Ú¼Þ½ÄØ‚Ö‚Ì•Û‘¶
 
-	BOOL		IsMouseWheel(void) {
+	BOOL		IsMouseWheel(void) const {
 		return m_bMouseWheel;
 	}
-	int			GetWheelType(void) {
+	int			GetWheelType(void) const {
 		return m_nWheelType;
 	}
-	int			GetTraceSpeed(size_t a) {
+	BOOL		IsTraceMarker(void) const {
+		return m_bTraceMarker;
+	}
+	int			GetTraceSpeed(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_nTraceSpeed) );
 		return m_nTraceSpeed[a];
 	}
-	BOOL		IsDrawCircleCenter(void) {
+	BOOL		IsDrawCircleCenter(void) const {
 		return m_bDrawCircleCenter;
 	}
-	COLORREF	GetDrawColor(size_t a) {
+	COLORREF	GetDrawColor(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_colView) );
 		return m_colView[a];
 	}
-	COLORREF	GetNcDrawColor(size_t a) {
+	COLORREF	GetNcDrawColor(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_colNCView) );
 		return m_colNCView[a];
 	}
-	COLORREF	GetNcInfoDrawColor(size_t a) {
+	COLORREF	GetNcInfoDrawColor(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_colNCInfoView) );
 		return m_colNCInfoView[a];
 	}
-	COLORREF	GetDxfDrawColor(size_t a) {
+	COLORREF	GetDxfDrawColor(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_colDXFView) );
 		return m_colDXFView[a];
 	}
 	COLORREF*	GetCustomColor(void) {
 		return m_colCustom;
 	}
-	int			GetDrawType(size_t a) {
+	int			GetDrawType(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_nLineType) );
 		return m_nLineType[a];
 	}
-	int			GetNcDrawType(size_t a) {
+	int			GetNcDrawType(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_nNCLineType) );
 		return m_nNCLineType[a];
 	}
-	int			GetDxfDrawType(size_t a) {
+	int			GetDxfDrawType(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_nDXFLineType) );
 		return m_nDXFLineType[a];
 	}
-	BOOL	IsGuideSync(void) {
+	BOOL	IsGuideSync(void) const {
 		return m_bGuide;
 	}
-	double	GetGuideLength(size_t a) {
+	double	GetGuideLength(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_dGuide) );
 		return m_dGuide[a];
 	}

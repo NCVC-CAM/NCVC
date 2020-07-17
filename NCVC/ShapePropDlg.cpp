@@ -26,13 +26,14 @@ END_MESSAGE_MAP()
 // CShapePropDlg ダイアログ
 
 CShapePropDlg::CShapePropDlg
-	(DXFTREETYPE& vSelect, BOOL bChain, int nShape, optional<double>& dOffsetInit)
+	(DXFTREETYPE& vSelect, BOOL bChain, int nShape, optional<double>& dOffsetInit, BOOL bAcute)
 		: CDialog(CShapePropDlg::IDD, NULL)
 {
 	m_vSelect = vSelect;
 	m_nShape  = nShape;
 	m_bChain  = bChain;
 	m_dOffsetInit = dOffsetInit;
+	m_bAcuteRound = bAcute;
 }
 
 CShapePropDlg::~CShapePropDlg()
@@ -47,6 +48,8 @@ void CShapePropDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_SHAPEPROP_OFFSET, m_ctOffset);
 	DDX_Control(pDX, IDC_SHAPEPROP_NAME, m_ctName);
 	DDX_Text(pDX, IDC_SHAPEPROP_NAME, m_strShapeName);
+	DDX_Control(pDX, IDC_SHAPEPROP_ACUTE, m_ctAcuteRound);
+	DDX_Check(pDX, IDC_SHAPEPROP_ACUTE, m_bAcuteRound);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -74,8 +77,10 @@ BOOL CShapePropDlg::OnInitDialog()
 		for ( int i=s; i<3; i++ )
 			m_ctShape.AddString(gg_RootTitle[i]);
 		// ｵﾌｾｯﾄ入力できるかどうか
-		if ( !m_dOffsetInit )
+		if ( !m_dOffsetInit ) {
 			m_ctOffset.EnableWindow(FALSE);
+			m_ctAcuteRound.EnableWindow(FALSE);
+		}
 	}
 	if ( m_dOffsetInit && *m_dOffsetInit != HUGE_VAL )
 		m_ctOffset = *m_dOffsetInit;

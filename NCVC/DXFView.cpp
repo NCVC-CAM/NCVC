@@ -62,7 +62,6 @@ END_MESSAGE_MAP()
 
 CDXFView::CDXFView()
 {
-	m_enProcessDirect = DXFPROCESS_SELECT;
 	m_nSelect = -1;
 	m_pSelData = NULL;
 }
@@ -89,7 +88,7 @@ void CDXFView::OnInitialUpdate()
 	CView::OnInitialUpdate();
 
 	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-	((CDXFChild *)GetParentFrame())->SetDataInfo(
+	static_cast<CDXFChild *>(GetParentFrame())->SetDataInfo(
 		GetDocument()->GetDxfDataCnt(DXFLINEDATA),
 		GetDocument()->GetDxfDataCnt(DXFCIRCLEDATA),
 		GetDocument()->GetDxfDataCnt(DXFARCDATA),
@@ -115,29 +114,14 @@ void CDXFView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		break;
 	case UAV_DXFORGUPDATE:
 		ASSERT( pHint );
-		((CDXFcircleEx *)pHint)->DrawTuning(m_dFactor*LOMETRICFACTOR);
+		reinterpret_cast<CDXFcircleEx*>(pHint)->DrawTuning(m_dFactor*LOMETRICFACTOR);
 		break;
 	case UAV_DXFSHAPEID:	// from CDXFDoc::OnShapePattern()
 		CancelForSelect();
-		switch ( GetDocument()->GetShapePattern() ) {
-		case ID_EDIT_SHAPE_VEC:
-			m_enProcessDirect = DXFPROCESS_ARRAW;
-			break;
-		case ID_EDIT_SHAPE_START:
-			m_enProcessDirect = DXFPROCESS_START;
-			break;
-		case ID_EDIT_SHAPE_OUT:
-//		case ID_EDIT_SHAPE_POC:
-			m_enProcessDirect = DXFPROCESS_OUTLINE;
-			break;
-		default:
-			m_enProcessDirect = DXFPROCESS_SELECT;
-			break;
-		}
 		return;
 	case UAV_DXFSHAPEUPDATE:
 		if ( pHint ) {		// from CDXFShapeView::OnSelChanged()
-			if ( !OnUpdateShape( (DXFTREETYPE*)pHint ) )
+			if ( !OnUpdateShape( reinterpret_cast<DXFTREETYPE*>(pHint) ) )
 				return;	// 再描画不要
 		}
 		break;
@@ -213,6 +197,7 @@ CDXFworking* CDXFView::CreateWorkingData(void)
 	int		n = 1 - m_nSelect,	// 1->0, 0->1
 			nInOut = -1;		// 輪郭指示のみ
 	ASSERT( m_vSelect.which()==DXFTREETYPE_SHAPE );
+	CDXFdata*		pData;
 	CDXFshape*		pShape = get<CDXFshape*>(m_vSelect);
 	CDXFworking*	pWork = NULL;
 
@@ -222,12 +207,19 @@ CDXFworking* CDXFView::CreateWorkingData(void)
 			pWork = new CDXFworkingDirection(pShape, m_pSelData,
 							m_ptArraw[n][1], m_ptArraw[m_nSelect]);
 			break;
+		case ID_EDIT_SHAPE_START:
+			pWork = new CDXFworkingStart(pShape, m_pSelData, m_ptStart[m_nSelect]);
+			break;
 		case ID_EDIT_SHAPE_OUT:
-			pWork = new CDXFworkingOutline(pShape, &m_ltOutline[m_nSelect]);
+			if ( !m_ltOutline[m_nSelect].IsEmpty() )
+				pWork = new CDXFworkingOutline(pShape, &m_ltOutline[m_nSelect]);
 			// m_nSelect分はCDXFworkingOutlineのﾃﾞｽﾄﾗｸﾀにてdelete
 			nInOut = n;		// 内外どちらへ指示したか記録しておく
-			for ( POSITION pos=m_ltOutline[n].GetHeadPosition(); pos; )
-				delete	m_ltOutline[n].GetNext(pos);
+			for ( POSITION pos=m_ltOutline[n].GetHeadPosition(); pos; ) {
+				pData = m_ltOutline[n].GetNext(pos);
+				if ( pData )
+					delete	pData;
+			}
 			m_ltOutline[0].RemoveAll();
 			m_ltOutline[1].RemoveAll();
 			break;
@@ -239,7 +231,7 @@ CDXFworking* CDXFView::CreateWorkingData(void)
 			// 加工情報の登録
 			pShape->AddWorkingData(pWork, nInOut);
 			// 形状ﾂﾘｰ(加工指示)の更新と選択
-			GetDocument()->UpdateAllViews(this, UAV_DXFADDWORKING, (CObject *)pWork);
+			GetDocument()->UpdateAllViews(this, UAV_DXFADDWORKING, static_cast<CObject *>(pWork));
 			// ﾄﾞｷｭﾒﾝﾄ変更通知
 			GetDocument()->SetModifiedFlag();
 		}
@@ -255,31 +247,69 @@ CDXFworking* CDXFView::CreateWorkingData(void)
 	return pWork;
 }
 
-BOOL CDXFView::CreateOutlineTempObject(const CDXFshape* pShape)
+BOOL CDXFView::CreateOutlineTempObject(CDXFshape* pShape)
 {
+	int		i, nError = 0;
+	CDXFdata*	pData;
+	POSITION	pos;
+
+#ifdef _DEBUG
+	g_dbg.printf("CreateOutlineTempObject()");
+	g_dbg.printf("ShapeName=%s Orig", pShape->GetShapeName());
+	CRect	rc( pShape->GetMaxRect() );
+	g_dbg.printStruct(&rc);
+#endif
+
 	try {
-//		if ( GetDocument()->GetShapePattern() == ID_EDIT_SHAPE_OUT ) {
-			for ( int i=0; i<SIZEOF(m_ltOutline); i++ ) {
-				if ( !pShape->CreateOutlineTempObject(i, &m_ltOutline[i]) )
-					return FALSE;
+		for ( i=0; i<SIZEOF(m_ltOutline); i++ ) {
+			if ( !m_ltOutline[i].IsEmpty() ) {
+				for ( pos=m_ltOutline[i].GetHeadPosition(); pos; ) {
+					pData = m_ltOutline[i].GetNext(pos);
+					if ( pData )
+						delete	pData;
+				}
+				m_ltOutline[i].RemoveAll();
 			}
-//		}
-//		else {
-//		}
+			if ( !pShape->CreateOutlineTempObject(i, &m_ltOutline[i]) ) {
+				nError++;	// ｴﾗｰｶｳﾝﾄ
+				for ( pos=m_ltOutline[i].GetHeadPosition(); pos; ) {
+					pData = m_ltOutline[i].GetNext(pos);
+					if ( pData )
+						delete	pData;
+				}
+				m_ltOutline[i].RemoveAll();
+#ifdef _DEBUG
+				g_dbg.printf("Loop%d Error", i);
+#endif
+			}
+#ifdef _DEBUG
+			else {
+				g_dbg.printf("Loop%d", i);
+				rc = m_ltOutline[i].GetMaxRect();
+				g_dbg.printStruct(&rc);
+			}
+#endif
+		}
 	}
 	catch ( CMemoryException* e ) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
+		nError = 2;		// FALSE
 	}
 
-	return TRUE;
+	return nError < SIZEOF(m_ltOutline);	// ならTRUE
 }
 
 void CDXFView::DeleteOutlineTempObject(void)
 {
+	CDXFdata*	pData;
+	POSITION	pos;
 	for ( int i=0; i<SIZEOF(m_ltOutline); i++ ) {
-		for ( POSITION pos=m_ltOutline[i].GetHeadPosition(); pos; )
-			delete	m_ltOutline[i].GetNext(pos);
+		for ( pos=m_ltOutline[i].GetHeadPosition(); pos; ) {
+			pData = m_ltOutline[i].GetNext(pos);
+			if ( pData )
+				delete	pData;
+		}
 		m_ltOutline[i].RemoveAll();
 	}
 }
@@ -287,7 +317,7 @@ void CDXFView::DeleteOutlineTempObject(void)
 BOOL CDXFView::CancelForSelect(CDC* pDC/*=NULL*/)
 {
 	if ( m_pSelData && m_nSelect >= 0 ) {
-		if ( m_enProcessDirect == DXFPROCESS_SELECT )
+		if ( GetDocument()->GetShapePattern() == ID_EDIT_SHAPE_SEL )
 			m_pSelData->SetSelectFlg(TRUE);	// 選択状態を元に戻す
 		if ( !pDC ) {
 			CClientDC	dc(this);
@@ -307,9 +337,14 @@ BOOL CDXFView::CancelForSelect(CDC* pDC/*=NULL*/)
 
 void CDXFView::AllChangeFactor_OutlineTempObject(void)
 {
+	CDXFdata*	pData;
+	POSITION	pos;
 	for ( int i=0; i<SIZEOF(m_ltOutline); i++ ) {
-		for ( POSITION pos=m_ltOutline[i].GetHeadPosition(); pos; )
-			m_ltOutline[i].GetNext(pos)->DrawTuning(m_dFactor*LOMETRICFACTOR);
+		for ( pos=m_ltOutline[i].GetHeadPosition(); pos; ) {
+			pData = m_ltOutline[i].GetNext(pos);
+			if ( pData )
+				pData->DrawTuning(m_dFactor*LOMETRICFACTOR);
+		}
 	}
 }
 
@@ -321,9 +356,9 @@ void CDXFView::OnDraw(CDC* pDC)
 	ASSERT_VALID(GetDocument());
 	int		i, j, nLayerCnt, nDataCnt;
 	DWORD	dwSel, dwSelBak = 0;
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	CLayerData*		pLayer;
 	CDXFdata*		pData;
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	pDC->SetROP2(R2_COPYPEN);
 	pDC->SetTextAlign(TA_LEFT|TA_BOTTOM);
@@ -412,8 +447,8 @@ void CDXFView::OnDraw(CDC* pDC)
 
 void CDXFView::DrawTemporaryProcess(CDC* pDC)
 {
-	switch ( m_enProcessDirect ) {
-	case DXFPROCESS_SELECT:
+	switch ( GetDocument()->GetShapePattern() ) {
+	case ID_EDIT_SHAPE_SEL:
 		{
 			CPen*	pOldPen = pDC->SelectObject(m_pSelData->GetDrawPen());
 			pDC->SetROP2(R2_COPYPEN);
@@ -421,18 +456,21 @@ void CDXFView::DrawTemporaryProcess(CDC* pDC)
 			pDC->SelectObject(pOldPen);
 		}
 		break;
-	case DXFPROCESS_ARRAW:
-		DrawArraw(pDC);
+	case ID_EDIT_SHAPE_VEC:
+		DrawTempArraw(pDC);
 		break;
-	case DXFPROCESS_OUTLINE:
-		DrawOutline(pDC);
+	case ID_EDIT_SHAPE_START:
+		DrawTempStart(pDC);
+		break;
+	case ID_EDIT_SHAPE_OUT:
+		DrawTempOutline(pDC);
 		break;
 	}
 }
 
-void CDXFView::DrawArraw(CDC* pDC)
+void CDXFView::DrawTempArraw(CDC* pDC)
 {
-	ASSERT( 0<=m_nSelect && m_nSelect<=1 );
+	ASSERT( 0<=m_nSelect && m_nSelect<=SIZEOF(m_ptArraw) );
 
 	// 矢印の長さが拡大率に影響されないように計算
 	CPoint	ptDraw[SIZEOF(m_ptArraw)][SIZEOF(m_ptArraw[0])];
@@ -448,17 +486,42 @@ void CDXFView::DrawArraw(CDC* pDC)
 	pDC->SelectObject(pOldPen);
 }
 
-void CDXFView::DrawOutline(CDC* pDC)
+void CDXFView::DrawTempStart(CDC* pDC)
 {
-	ASSERT( 0<=m_nSelect && m_nSelect<=1 );
+	ASSERT( 0<=m_nSelect && m_nSelect<=SIZEOF(m_ptStart) );
 
-	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+	// CDXFpointに準拠
+	CRect	rcDraw;
+	CPointD	pt( m_ptStart[m_nSelect] * m_dFactor * LOMETRICFACTOR);
+	// 位置を表す丸印は常に2.5論理理位
+	rcDraw.TopLeft()		= pt - LOMETRICFACTOR*2.5;
+	rcDraw.BottomRight()	= pt + LOMETRICFACTOR*2.5;
+
 	CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
+	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
 	pDC->SetROP2(R2_XORPEN);
-	for ( POSITION pos=m_ltOutline[m_nSelect].GetHeadPosition(); pos; )
-		m_ltOutline[m_nSelect].GetNext(pos)->Draw(pDC);
+	pDC->Ellipse(&rcDraw);
 	pDC->SelectObject(pOldPen);
 	pDC->SelectObject(pOldBrush);
+}
+
+void CDXFView::DrawTempOutline(CDC* pDC)
+{
+	ASSERT( 0<=m_nSelect && m_nSelect<=SIZEOF(m_ltOutline) );
+	CDXFdata*	pData;
+
+	if ( !m_ltOutline[m_nSelect].IsEmpty() ) {
+		CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+		CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
+		pDC->SetROP2(R2_XORPEN);
+		for ( POSITION pos=m_ltOutline[m_nSelect].GetHeadPosition(); pos; ) {
+			pData = m_ltOutline[m_nSelect].GetNext(pos);
+			if ( pData )
+				pData->Draw(pDC);
+		}
+		pDC->SelectObject(pOldPen);
+		pDC->SelectObject(pOldBrush);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -523,10 +586,10 @@ void CDXFView::OnUpdateMouseCursor(CCmdUI* pCmdUI)
 					 pt.y/m_dFactor/LOMETRICFACTOR );
 		// 原点からの距離
 		ptd -= *ptOrg;
-		((CDXFChild *)GetParentFrame())->OnUpdateMouseCursor(&ptd);
+		static_cast<CDXFChild *>(GetParentFrame())->OnUpdateMouseCursor(&ptd);
 	}
 	else
-		((CDXFChild *)GetParentFrame())->OnUpdateMouseCursor();
+		static_cast<CDXFChild *>(GetParentFrame())->OnUpdateMouseCursor();
 }
 
 void CDXFView::OnUpdateViewLayer(CCmdUI* pCmdUI) 
@@ -579,7 +642,7 @@ void CDXFView::OnViewLensComm(void)
 	// 一時ｵﾌﾞｼﾞｪｸﾄ分
 	AllChangeFactor_OutlineTempObject();
 	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-	((CDXFChild *)GetParentFrame())->SetFactorInfo(m_dFactor);
+	static_cast<CDXFChild *>(GetParentFrame())->SetFactorInfo(m_dFactor);
 	// ﾋﾞｭｰの再描画
 	Invalidate();
 }
@@ -644,15 +707,18 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 	if ( m_vSelect.which() == DXFTREETYPE_SHAPE ) {
 		BOOL	bResult = FALSE;
 		switch ( GetDocument()->GetShapePattern() ) {
-		case ID_EDIT_SHAPE_SEL:	// 分離
-			bResult = OnLButtonUp_Sel(&dc, pt, rcView);
+		case ID_EDIT_SHAPE_SEL:		// 分離
+			bResult = OnLButtonUp_Select(&dc, pt, rcView);
 			break;
-		case ID_EDIT_SHAPE_VEC:	// 方向
-			bResult = OnLButtonUp_Vec(&dc, pt, rcView);
+		case ID_EDIT_SHAPE_VEC:		// 方向
+			bResult = OnLButtonUp_Vector(&dc, pt, rcView);
 			break;
-		case ID_EDIT_SHAPE_OUT:	// 輪郭
-//		case ID_EDIT_SHAPE_POC:	// ﾎﾟｹｯﾄ
-			bResult = OnLButtonUp_Out(&dc, pt, rcView);
+		case ID_EDIT_SHAPE_START:	// 開始位置
+			bResult = OnLButtonUp_Start(&dc, pt, rcView);
+			break;
+		case ID_EDIT_SHAPE_OUT:		// 輪郭
+//		case ID_EDIT_SHAPE_POC:		// ﾎﾟｹｯﾄ
+			bResult = OnLButtonUp_Outline(&dc, pt, rcView);
 			break;
 		}
 		if ( bResult )	// 処理済み
@@ -672,7 +738,7 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 	}
 }
 
-BOOL CDXFView::OnLButtonUp_Sel
+BOOL CDXFView::OnLButtonUp_Select
 	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
 {
 	CDXFshape*	pShapeSel = get<CDXFshape*>(m_vSelect);
@@ -709,10 +775,6 @@ BOOL CDXFView::OnLButtonUp_Sel
 		pShape = NULL;
 		DXFADDSHAPE	addShape;	// DocBase.h
 		if ( !pShapeLink ) {
-			// 方向指示の確認
-			CDXFworking*	pWork;
-			CDXFdata*	pData;
-			tie(pWork, pData) = pShapeSel->GetDirectionObject();
 			// 集合を新規作成
 			pMap = NULL;
 			try {
@@ -720,15 +782,8 @@ BOOL CDXFView::OnLButtonUp_Sel
 				pMap->SetPointMap(pDataSel);
 				pShape = new CDXFshape(DXFSHAPE_LOCUS, pShapeSel->GetShapeName()+"(分離)",
 									pMap->GetMapTypeFlag(), pMap);
-				// 方向指示の継承
-				if ( pData == pDataSel )
-					pShapeSel->DelWorkingData(pWork, pShape);	// 付け替え
 				// ﾚｲﾔ情報に追加
 				pLayer->AddShape(pShape);
-				// ﾂﾘｰﾋﾞｭｰへの通知
-				addShape.pLayer = pLayer;
-				addShape.pShape = pShape;
-				GetDocument()->UpdateAllViews(this, UAV_DXFADDSHAPE, (CObject *)&addShape);
 			}
 			catch (CMemoryException* e) {
 				AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -739,6 +794,20 @@ BOOL CDXFView::OnLButtonUp_Sel
 					delete	pShape;
 				return TRUE;	// 処理済扱い
 			}
+			// 方向指示の確認
+			CDXFworking*	pWork;
+			CDXFdata*	pData;
+			tie(pWork, pData) = pShapeSel->GetDirectionObject();
+			if ( pData == pDataSel )
+				pShapeSel->DelWorkingData(pWork, pShape);	// 付け替え
+			// 開始位置の確認
+			tie(pWork, pData) = pShapeSel->GetStartObject();
+			if ( pData == pDataSel )
+				pShapeSel->DelWorkingData(pWork, pShape);
+			// ﾂﾘｰﾋﾞｭｰへの通知
+			addShape.pLayer = pLayer;
+			addShape.pShape = pShape;
+			GetDocument()->UpdateAllViews(this, UAV_DXFADDSHAPE, reinterpret_cast<CObject *>(&addShape));
 		}
 		// 選択ﾌﾗｸﾞのｸﾘｱ
 		pShapeSel->SetShapeSwitch(FALSE);
@@ -749,7 +818,7 @@ BOOL CDXFView::OnLButtonUp_Sel
 			// ﾂﾘｰﾋﾞｭｰへの通知
 			addShape.pLayer = pLayer;
 			addShape.pShape = pShapeSel;
-			GetDocument()->UpdateAllViews(this, UAV_DXFADDSHAPE, (CObject *)&addShape);
+			GetDocument()->UpdateAllViews(this, UAV_DXFADDSHAPE, reinterpret_cast<CObject *>(&addShape));
 		}
 		// ﾘﾝｸ出来たときはﾘﾝｸ先集合も検査
 		if ( pShapeLink ) {
@@ -758,7 +827,7 @@ BOOL CDXFView::OnLButtonUp_Sel
 				// ﾂﾘｰﾋﾞｭｰへの通知
 				addShape.pLayer = pLayer;
 				addShape.pShape = pShapeLink;
-				GetDocument()->UpdateAllViews(this, UAV_DXFADDSHAPE, (CObject *)&addShape);
+				GetDocument()->UpdateAllViews(this, UAV_DXFADDSHAPE, reinterpret_cast<CObject *>(&addShape));
 			}
 		}
 		// 分離集合を選択
@@ -778,7 +847,6 @@ BOOL CDXFView::OnLButtonUp_Sel
 		if ( pShapeSel->GetObjectCount() <= 1 )
 			::MessageBeep(MB_ICONEXCLAMATION);
 		else {
-			m_enProcessDirect = DXFPROCESS_SELECT;
 			m_pSelData = pDataSel;
 			m_nSelect = 0;	// dummy
 			// 集合全体が選択状態のハズなので，選択ｵﾌﾞｼﾞｪｸﾄのみ解除
@@ -790,7 +858,7 @@ BOOL CDXFView::OnLButtonUp_Sel
 	return TRUE;
 }
 
-BOOL CDXFView::OnLButtonUp_Vec
+BOOL CDXFView::OnLButtonUp_Vector
 	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
 {
 	CDXFshape*	pShapeSel = get<CDXFshape*>(m_vSelect);
@@ -814,11 +882,13 @@ BOOL CDXFView::OnLButtonUp_Vec
 		// 加工指示生成
 		CDXFworking* pWork = CreateWorkingData();
 		// 加工指示描画
-		pWork->DrawTuning(m_dFactor*LOMETRICFACTOR);
-		CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
-		pDC->SetROP2(R2_COPYPEN);
-		pWork->Draw(pDC);
-		pDC->SelectObject(pOldPen);
+		if ( pWork ) {
+			pWork->DrawTuning(m_dFactor*LOMETRICFACTOR);
+			CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+			pDC->SetROP2(R2_COPYPEN);
+			pWork->Draw(pDC);
+			pDC->SelectObject(pOldPen);
+		}
 		// 指定ｵﾌﾞｼﾞｪｸﾄﾘｾｯﾄ
 		m_pSelData = NULL;
 	}
@@ -826,20 +896,69 @@ BOOL CDXFView::OnLButtonUp_Vec
 		if ( pShapeSel->GetShapeFlag() & DXFMAPFLG_DIRECTION )
 			::MessageBeep(MB_ICONEXCLAMATION);
 		else {
-			m_enProcessDirect = DXFPROCESS_ARRAW;
 			m_pSelData = pDataSel;
 			// 矢印座標の取得
 			m_pSelData->GetDirectionArraw(ptView, m_ptArraw);
 			// 現在位置に近い方の矢印を描画
 			m_nSelect = GAPCALC(m_ptArraw[0][1] - ptView) < GAPCALC(m_ptArraw[1][1] - ptView) ? 0 : 1;
-			DrawArraw(pDC);
+			DrawTempArraw(pDC);
 		}
 	}
 
 	return TRUE;
 }
 
-BOOL CDXFView::OnLButtonUp_Out
+BOOL CDXFView::OnLButtonUp_Start
+	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
+{
+	CDXFshape*	pShapeSel = get<CDXFshape*>(m_vSelect);
+	CDXFdata*	pDataSel = NULL;
+	double		dGap;
+	dGap = pShapeSel->GetSelectObjectFromShape(ptView, &rcView, &pDataSel);
+	if ( !pDataSel || dGap >= SELECTGAP/m_dFactor )
+		return FALSE;
+
+	if ( m_pSelData ) {
+		// 加工指示生成
+		CDXFworking* pWork = CreateWorkingData();
+		// 加工指示描画
+		if ( pWork ) {
+			pWork->DrawTuning(m_dFactor*LOMETRICFACTOR);
+			CPen*	pOldPen	  = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+			CBrush*	pOldBrush = pDC->SelectObject(AfxGetNCVCMainWnd()->GetBrushDXF(DXFBRUSH_START));
+			pDC->SetROP2(R2_COPYPEN);
+			pWork->Draw(pDC);
+			pDC->SelectObject(pOldBrush);
+			pDC->SelectObject(pOldPen);
+		}
+		// 指定ｵﾌﾞｼﾞｪｸﾄﾘｾｯﾄ
+		m_pSelData = NULL;
+	}
+	else {
+		if ( pShapeSel->GetShapeFlag() & DXFMAPFLG_START )
+			::MessageBeep(MB_ICONEXCLAMATION);
+		else {
+			m_pSelData = pDataSel;
+			// ｵﾌﾞｼﾞｪｸﾄの座標の取得
+			ASSERT( m_pSelData->GetPointNumber() <= SIZEOF(m_ptStart) );
+			double	dGapMin = HUGE_VAL;
+			for ( int i=0; i<m_pSelData->GetPointNumber(); i++ ) {
+				m_ptStart[i] = m_pSelData->GetNativePoint(i);
+				dGap = GAPCALC(m_ptStart[i] - ptView);
+				if ( dGap < dGapMin ) {
+					dGapMin = dGap;
+					m_nSelect = i;
+				}
+			}
+			// 現在位置に近い方を描画
+			DrawTempStart(pDC);
+		}
+	}
+
+	return TRUE;
+}
+
+BOOL CDXFView::OnLButtonUp_Outline
 	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
 {
 	double		dGap1, dGap2;
@@ -863,13 +982,15 @@ BOOL CDXFView::OnLButtonUp_Out
 		m_nSelect = nSelect;
 		CDXFworking* pWork = CreateWorkingData();
 		// 加工指示描画
-		pWork->DrawTuning(m_dFactor*LOMETRICFACTOR);
-		CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
-		CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
-		pDC->SetROP2(R2_COPYPEN);
-		pWork->Draw(pDC);
-		pDC->SelectObject(pOldBrush);
-		pDC->SelectObject(pOldPen);
+		if ( pWork ) {
+			pWork->DrawTuning(m_dFactor*LOMETRICFACTOR);
+			CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_WORKER));
+			CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
+			pDC->SetROP2(R2_COPYPEN);
+			pWork->Draw(pDC);
+			pDC->SelectObject(pOldBrush);
+			pDC->SelectObject(pOldPen);
+		}
 		// 指定ｵﾌﾞｼﾞｪｸﾄﾘｾｯﾄ
 		m_pSelData = NULL;
 	}
@@ -884,7 +1005,6 @@ BOOL CDXFView::OnLButtonUp_Out
 			::MessageBeep(MB_ICONEXCLAMATION);
 			return TRUE;	// 処理済扱い
 		}
-		m_enProcessDirect = DXFPROCESS_OUTLINE;
 		m_pSelData = pDataSel;
 		// 輪郭ｵﾌﾞｼﾞｪｸﾄ生成
 		if ( !CreateOutlineTempObject(pShapeSel) ) {
@@ -897,7 +1017,7 @@ BOOL CDXFView::OnLButtonUp_Out
 		m_nSelect = dGap1 < dGap2 ? 0 : 1;
 		//
 		AllChangeFactor_OutlineTempObject();
-		DrawOutline(pDC);
+		DrawTempOutline(pDC);
 	}
 
 	return TRUE;
@@ -947,14 +1067,17 @@ void CDXFView::OnMouseMove(UINT nFlags, CPoint point)
 	// 選択集合との距離計算
 	switch ( nShape ) {
 	case ID_EDIT_SHAPE_SEL:
-		bResult = OnMouseMove_Sel(&dc, pt, rcView);
+		bResult = OnMouseMove_Select(&dc, pt, rcView);
 		break;
 	case ID_EDIT_SHAPE_VEC:
-		bResult = OnMouseMove_Vec(&dc, pt, rcView);
+		bResult = OnMouseMove_Vector(&dc, pt, rcView);
+		break;
+	case ID_EDIT_SHAPE_START:
+		bResult = OnMouseMove_Start(&dc, pt, rcView);
 		break;
 	case ID_EDIT_SHAPE_OUT:
 //	case ID_EDIT_SHAPE_POC:
-		bResult = OnMouseMove_Out(&dc, pt, rcView);
+		bResult = OnMouseMove_Outline(&dc, pt, rcView);
 		break;
 	}
 
@@ -968,7 +1091,8 @@ void CDXFView::OnMouseMove(UINT nFlags, CPoint point)
 	}
 }
 
-BOOL CDXFView::OnMouseMove_Sel(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
+BOOL CDXFView::OnMouseMove_Select
+	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
 {
 	CDXFshape*	pShape = get<CDXFshape*>(m_vSelect);
 	CDXFdata*	pData = NULL;
@@ -989,7 +1113,8 @@ BOOL CDXFView::OnMouseMove_Sel(CDC* pDC, const CPointD& ptView, const CRectD& rc
 	return TRUE;
 }
 
-BOOL CDXFView::OnMouseMove_Vec(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
+BOOL CDXFView::OnMouseMove_Vector
+	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
 {
 	CDXFshape*	pShape = get<CDXFshape*>(m_vSelect);
 	CDXFdata*	pData = NULL;
@@ -1001,17 +1126,51 @@ BOOL CDXFView::OnMouseMove_Vec(CDC* pDC, const CPointD& ptView, const CRectD& rc
 	if ( m_nSelect != nSelect ) {
 		if ( m_nSelect >= 0 ) {
 			// 前回の矢印を消去
-			DrawArraw(pDC);
+			DrawTempArraw(pDC);
 		}
 		m_nSelect = nSelect;
 		// 新しい矢印の描画
-		DrawArraw(pDC);
+		DrawTempArraw(pDC);
 	}
 
 	return TRUE;
 }
 
-BOOL CDXFView::OnMouseMove_Out(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
+BOOL CDXFView::OnMouseMove_Start
+	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
+{
+	CDXFshape*	pShape = get<CDXFshape*>(m_vSelect);
+	CDXFdata*	pData = NULL;
+	double		dGap = pShape->GetSelectObjectFromShape(ptView, &rcView, &pData);
+	if ( !pData || dGap >= SELECTGAP/m_dFactor )
+		return FALSE;
+
+	int		i, nSelect;
+	double	dGapMin = HUGE_VAL;
+
+	for ( i=0; i<m_pSelData->GetPointNumber(); i++ ) {
+		dGap = GAPCALC(m_ptStart[i] - ptView);
+		if ( dGap < dGapMin ) {
+			dGapMin = dGap;
+			nSelect = i;
+		}
+	}
+
+	if ( m_nSelect != nSelect ) {
+		if ( m_nSelect >= 0 ) {
+			// 前回の開始位置を消去
+			DrawTempStart(pDC);
+		}
+		m_nSelect = nSelect;
+		// 新しい開始位置の描画
+		DrawTempStart(pDC);
+	}
+
+	return TRUE;
+}
+
+BOOL CDXFView::OnMouseMove_Outline
+	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
 {
 	int			nSelect;
 	double		dGap1 = m_ltOutline[0].GetSelectObjectFromShape(ptView, &rcView),
@@ -1029,11 +1188,11 @@ BOOL CDXFView::OnMouseMove_Out(CDC* pDC, const CPointD& ptView, const CRectD& rc
 	if ( m_nSelect != nSelect ) {
 		if ( m_nSelect >= 0 ) {
 			// 前回の輪郭を消去
-			DrawOutline(pDC);
+			DrawTempOutline(pDC);
 		}
 		m_nSelect = nSelect;
 		// 新しい矢印の描画
-		DrawOutline(pDC);
+		DrawTempOutline(pDC);
 	}
 
 	return TRUE;
@@ -1060,7 +1219,7 @@ BOOL CDXFView::OnEraseBkgnd(CDC* pDC)
 	CRect	rc;
 	GetClientRect(&rc);
 
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2),
 				col2 = pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1);
 

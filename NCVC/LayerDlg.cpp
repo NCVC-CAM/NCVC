@@ -117,7 +117,7 @@ void CLayerDlg::OnOK()
 			// q‚Ì‚ ‚éÚ²Ô€–Ú‚¾‚¯Áª¯¸ó‘Ô‚ğ”½‰f
 			hChild = m_ctLayerTree.GetNextItem(m_hTree[i], TVGN_CHILD);
 			do {
-				pLayer = (CLayerData *)m_ctLayerTree.GetItemData(hChild);
+				pLayer = reinterpret_cast<CLayerData *>(m_ctLayerTree.GetItemData(hChild));
 				ASSERT( pLayer );
 				pLayer->m_bView = m_ctLayerTree.GetCheck(hChild);
 			} while ( hChild = m_ctLayerTree.GetNextItem(hChild, TVGN_NEXT) );
@@ -252,7 +252,7 @@ void CLayerDlg::OnLayerTreeGetdispinfo(NMHDR* pNMHDR, LRESULT* pResult)
 	LPNMTVDISPINFO pTVDispInfo = reinterpret_cast<LPNMTVDISPINFO>(pNMHDR);
 
 	if ( pTVDispInfo->item.mask & TVIF_TEXT ) {
-		CLayerData*	pLayer = (CLayerData *)(pTVDispInfo->item.lParam);
+		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(pTVDispInfo->item.lParam);
 		ASSERT( pLayer );
 		lstrcpy(pTVDispInfo->item.pszText, pLayer->GetStrLayer());
 	}

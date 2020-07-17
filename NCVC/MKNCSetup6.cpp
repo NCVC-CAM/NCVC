@@ -65,7 +65,7 @@ BOOL CMKNCSetup6::OnInitDialog()
 	
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	m_nDot			= pOpt->m_nDot;
 	m_nFDot			= pOpt->m_nFDot;
 	m_bZeroCut		= pOpt->m_bZeroCut;
@@ -95,7 +95,7 @@ void CMKNCSetup6::OnCircleIJ()
 
 BOOL CMKNCSetup6::OnApply() 
 {
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_nDot		= m_nDot;
 	pOpt->m_nFDot		= m_nFDot;
 	pOpt->m_bZeroCut	= m_bZeroCut;

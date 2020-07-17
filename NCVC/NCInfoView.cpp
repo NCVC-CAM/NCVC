@@ -102,7 +102,6 @@ void CNCInfoView2::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		{
 			CClientDC	dc(this);
 			dc.SelectObject(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD));
-			CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 		}
 		break;
 	}
@@ -315,7 +314,7 @@ BOOL CNCInfoView1::OnEraseBkgnd(CDC* pDC)
 	CRect	rc;
 	GetClientRect(&rc);
 
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND1),
 				col2 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND2);
 
@@ -366,7 +365,7 @@ BOOL CNCInfoView2::OnEraseBkgnd(CDC* pDC)
 	CRect	rc;
 	GetClientRect(&rc);
 
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND1),
 				col2 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND2);
 
@@ -458,8 +457,10 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 				VERIFY(strBuf.LoadString(IDCV_MINUTE));
 				strFormat += g_szSpace + strBuf;
 			}
-			if ( strFormat.GetLength() < 15 )	// %12d + " mm"
-				strFormat.Insert(0, CString(' ', max(0, 15 - strFormat.GetLength())));
+			if ( strFormat.GetLength() < 15 ) {	// %12d + " mm"
+				i = 15 - strFormat.GetLength();
+				strFormat.Insert(0, CString(' ', max(0, i)));
+			}
 		}
 		strarrayInfo.Add(strItem + strDelimiter + strFormat);
 		// ‹@ŠBî•ñ(‘‘—‚è‘¬“x)

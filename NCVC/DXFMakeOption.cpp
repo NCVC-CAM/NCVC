@@ -76,7 +76,7 @@ CDXFMakeOption::CDXFMakeOption()
 		m_ubFlags[i] = AfxGetApp()->GetProfileInt(strRegKey, g_szBOrder[i], g_dfBOrder[i]) ?
 				TRUE : FALSE;
 	// CStringŒ^–½—ß“Ç‚Ýž‚Ý(DXFOption‚©‚çÃÞÌ«ÙÄî•ñ‚ð‰Šú‰»)
-	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
+	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
 	CString	strLayer[SIZEOF(g_szSOrder)];
 	strLayer[MKDX_STR_ORIGIN]	= pOpt->GetReadLayer(DXFORGLAYER);
 	strLayer[MKDX_STR_CAMLINE]	= pOpt->GetReadLayer(DXFCAMLAYER);

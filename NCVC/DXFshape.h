@@ -115,12 +115,19 @@ void AFXAPI DumpElements(CDumpContext& dc, const CPointD* lpt, INT_PTR nCount)
 /////////////////////////////////////////////////////////////////////////////
 class CDXFchain : public CDXFlist
 {
-	CRect3D	m_rcMax;	// 自動輪郭設定用
+	DWORD		m_dwFlags;
+	CRect3D		m_rcMax;
 
 public:
 	CDXFchain();
 	virtual	~CDXFchain();
 
+	void	SetChainFlag(DWORD dwFlags) {
+		m_dwFlags |=  dwFlags;
+	}
+	BOOL	IsMakeFlg(void) const {
+		return m_dwFlags & DXFMAPFLG_MAKE;
+	}
 	CRect3D	GetMaxRect(void) const {
 		return m_rcMax;
 	}
@@ -226,6 +233,28 @@ public:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// ＤＸＦデータの「開始位置」指示クラス
+class CDXFworkingStart : public CDXFworking
+{
+	CPointD		m_ptStart;		// 始点座標
+	CRect		m_rcDraw;		// 描画矩形
+
+protected:
+	CDXFworkingStart() : CDXFworking(WORK_START) {}
+public:
+	CDXFworkingStart(CDXFshape*, CDXFdata*, CPointD);
+
+	CPointD	GetStartPoint(void) const {
+		return m_ptStart;
+	}
+	virtual	void	DrawTuning(double);
+	virtual	void	Draw(CDC*) const;
+
+	virtual	void	Serialize(CArchive&);
+	DECLARE_SERIAL(CDXFworkingStart)
+};
+
+/////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「輪郭」加工指示クラス
 class CDXFworkingOutline : public CDXFworking
 {
@@ -282,14 +311,20 @@ class CDXFshape : public CObject
 	CDXFworkingList	m_ltWork;	// 加工指示ﾃﾞｰﾀ
 	double		m_dOffset;		// 形状ｵﾌｾｯﾄ値
 	int			m_nInOut;		// 輪郭ｵﾌﾞｼﾞｪｸﾄの方向
+	BOOL		m_bAcute;		// 鋭角丸め
 	HTREEITEM	m_hTree;		// 登録されているﾂﾘｰﾋﾞｭｰﾊﾝﾄﾞﾙ(実行時動的設定)
+	int			m_nSerialSeq;	// 現在のﾂﾘｰ順
 
 	void	Constructor(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD);
 	void	SetDetailInfo(CDXFchain*);
 	void	SetDetailInfo(CDXFmap*);
 	BOOL	ChangeCreate_MapToChain(CDXFmap*);
 	BOOL	ChangeCreate_ChainToMap(CDXFchain*);
-	CDXFdata*	CreateOutlineTempObject_new(const CDXFdata*, const CPointD&, const CPointD&, BOOL) const;
+	CDXFdata*	CreateOutlineTempObject_new(const CDXFdata*, const CPointD&, const CPointD&, int) const;
+	BOOL	SeparateOutlineIntersection(CDXFchain*, CTypedPtrArrayEx<CPtrArray, CDXFlist*>&);
+	BOOL	CheckSeparateChain(CDXFlist*);
+	BOOL	CheckIntersectionCircle(const CPointD&);
+	void	RemoveExceptDirection(void);
 
 protected:
 	CDXFshape();	// Serialize
@@ -346,11 +381,23 @@ public:
 	void	SetTreeHandle(HTREEITEM hTree) {
 		m_hTree = hTree;
 	}
+	int		GetSerializeSeq(void) const {
+		return m_nSerialSeq;
+	}
+	void	SetSerializeSeq(int nSeq) {
+		m_nSerialSeq = nSeq;
+	}
 	double	GetOffset(void) const {
 		return m_dOffset;
 	}
 	void	SetOffset(double dOffset) {
 		m_dOffset = dOffset;
+	}
+	BOOL	GetAcuteRound(void) const {
+		return m_bAcute;
+	}
+	void	SetAcuteRound(BOOL bAcute) {
+		m_bAcute = bAcute;
 	}
 	int		GetInOutFlag(void) const {
 		return m_nInOut;
@@ -361,12 +408,12 @@ public:
 	BOOL	AddWorkingData(CDXFworking*, int = -1);
 	BOOL	DelWorkingData(CDXFworking*, CDXFshape* = NULL);
 	boost::tuple<CDXFworking*, CDXFdata*> GetDirectionObject(void) const;
+	boost::tuple<CDXFworking*, CDXFdata*> GetStartObject(void) const;
 	CDXFchain*	GetOutlineObject(void) const;
-	void	RemoveExceptDirection(void);
 	BOOL	LinkObject(void);
 	BOOL	LinkShape(CDXFshape*);
 	//
-	BOOL	CreateOutlineTempObject(BOOL, CDXFchain*) const;
+	BOOL	CreateOutlineTempObject(BOOL, CDXFchain*);
 	//
 	void	AllChangeFactor(double) const;
 	void	DrawWorking(CDC*) const;

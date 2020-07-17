@@ -82,6 +82,16 @@ inline double CNCdata::GetEndValue(size_t a) const
 	return m_ptValE[a];
 }
 
+inline const CPoint3D CNCdata::GetOriginalEndPoint(void) const
+{
+	return m_ptValOrg;
+}
+
+inline double CNCdata::GetOriginalEndValue(size_t a) const
+{
+	return m_ptValOrg[a];
+}
+
 inline const CPoint3D CNCdata::GetEndCorrectPoint(void) const
 {
 	return m_obCdata.IsEmpty() ? GetEndPoint() : m_obCdata.GetTail()->GetEndPoint();
@@ -120,7 +130,9 @@ inline const CRect3D CNCdata::GetMaxRect(void) const
 
 inline boost::tuple<BOOL, CPointD, double, double> CNCdata::CalcRoundPoint(const CNCdata*, double) const
 {
-	return boost::make_tuple(FALSE, CPointD(), 0.0, 0.0);
+	BOOL	bResult = FALSE;
+	double	rr1 = 0.0, rr2 = 0.0;
+	return boost::make_tuple(bResult, CPointD(), rr1, rr2);
 }
 
 inline boost::optional<CPointD> CNCdata::SetChamferingPoint(BOOL, double)
@@ -234,7 +246,9 @@ inline double CNCcycle::GetDwell(void) const
 
 inline boost::tuple<BOOL, CPointD, double, double> CNCcycle::CalcRoundPoint(const CNCdata*, double) const
 {
-	return boost::make_tuple(FALSE, CPointD(), 0.0, 0.0);
+	BOOL	bResult = FALSE;
+	double	rr1 = 0.0, rr2 = 0.0;
+	return boost::make_tuple(bResult, CPointD(), rr1, rr2);
 }
 
 inline boost::optional<CPointD> CNCcycle::SetChamferingPoint(BOOL, double)

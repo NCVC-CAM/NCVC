@@ -8,6 +8,9 @@
 
 class CNCListView : public CListView
 {
+	boost::regex	m_regFind;
+	BOOL	m_bTraceSelect;	// SelectTrace()呼び出し中か否か
+
 protected:
 	CNCListView();			// 動的生成に使用されるプロテクト コンストラクタ
 	DECLARE_DYNCREATE(CNCListView)
@@ -18,12 +21,8 @@ public:
 
 // オペレーション
 public:
-	void	SetJumpList(int);		// from NCChild.cpp -> NCJumpDlg.cpp
-	void	SelectTrace(CNCdata* pData) {	// from NCViewTab.cpp
-		int	nIndex = pData->GetStrLine();
-		GetListCtrl().SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
-		GetListCtrl().EnsureVisible(nIndex, FALSE);		// 強制ｽｸﾛｰﾙの可能性もあるのでUpdate()ではNG
-	}
+	void	SetJumpList(int);					// from NCChild.cpp <- NCJumpDlg.cpp
+	void	SetFindList(int, const CString&);	// from NCChild.cpp <- NCFindDlg.cpp
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
@@ -58,8 +57,11 @@ protected:
 	afx_msg void OnTraceBreakOFF();
 	afx_msg void OnViewJump();
 	afx_msg void OnUpdateViewJump(CCmdUI* pCmdUI);
+	afx_msg void OnViewFind();
+	afx_msg void OnUpdateViewFind(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	//}}AFX_MSG
+	afx_msg LRESULT OnSelectTrace(WPARAM, LPARAM);	// from NCViewTab.cpp To NCChild.cpp
 
 	DECLARE_MESSAGE_MAP()
 };

@@ -7,6 +7,7 @@
 #include "MCSetup2.h"
 #include "MCSetup3.h"
 #include "MCSetup4.h"
+#include "MCSetup5.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CMCSetup
@@ -28,6 +29,7 @@ public:
 	CMCSetup2	m_dlg2;
 	CMCSetup3	m_dlg3;
 	CMCSetup4	m_dlg4;
+	CMCSetup5	m_dlg5;
 
 // オペレーション
 public:

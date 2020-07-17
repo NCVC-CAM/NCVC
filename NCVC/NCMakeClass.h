@@ -179,7 +179,7 @@ class CNCMake
 			ij.x = pCircle->GetIJK(NCA_I);
 		CString	strGcode;
 		CString	strBuf1( MakeCircleSub_IJ(nCode, pCircle->GetMakePoint(b), ij, 0.0) );
-		ij *= -1.0;
+		ij *= -1.0;		// ij = -ij;
 		CString	strBuf2( MakeCircleSub_IJ(nCode, pCircle->GetMakePoint(a), ij, 0.0) );
 		if ( !strBuf1.IsEmpty() )
 			strGcode = (*ms_pfnGetLineNo)() + strBuf1 + GetFeedString(dFeed) + ms_strEOB +
@@ -227,14 +227,14 @@ class CNCMake
 		return CString( (*ms_pfnGetGString)(1) + GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) );
 	}
 	// Polyline の生成
-	void	MakePolylineCut(const CDXFpolyline *, double);
-	void	MakePolylineMov(const CDXFpolyline *);
+	void	MakePolylineCut(const CDXFpolyline*, double);
+	void	MakePolylineMov(const CDXFpolyline*, BOOL);
 
 public:
 	// 切削ﾃﾞｰﾀ
 	CNCMake(const CDXFdata*, double, const CPointD* = NULL);
 	// 加工開始位置指示ﾃﾞｰﾀのXY移動
-	CNCMake(const CDXFdata*);
+	CNCMake(const CDXFdata*, BOOL = FALSE);
 	// Z軸の変化(上昇・下降)
 	CNCMake(int nCode, double ZVal, double dFeed) {
 		CString	strGcode;

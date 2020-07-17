@@ -95,7 +95,7 @@ BOOL CMKNCSetup4::OnInitDialog()
 
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	m_nSpindle		= pOpt->m_nDrillSpindle;
 	m_dFeed			= pOpt->m_dDrillFeed;
 	m_nDwell		= pOpt->m_nDwell;
@@ -134,7 +134,7 @@ void CMKNCSetup4::OnCircle()
 
 BOOL CMKNCSetup4::OnApply() 
 {
-	CNCMakeOption* pOpt = ((CMKNCSetup *)GetParent())->GetNCMakeOption();
+	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_nDrillSpindle	= m_nSpindle;
 	pOpt->m_dDrillFeed		= m_dFeed;
 	pOpt->m_bDrillMatch		= m_bDrillMatch;

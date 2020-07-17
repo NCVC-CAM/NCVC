@@ -10,23 +10,29 @@
 #include "DXFDoc.h"
 #include "DXFView.h"
 #include "DXFShapeView.h"
+#include "ShapePropDlg.h"
+#include "ThreadDlg.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
 extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
 
 // ｲﾒｰｼﾞ表示ｲﾝﾃﾞｯｸｽ
-#define	TREEIMG_ROOT		0
-#define	TREEIMG_LAYER		1
-#define	TREEIMG_CHAIN		2
-#define	TREEIMG_MAP			3
+#define	TREEIMG_OUTLINE		0
+#define	TREEIMG_TRACE		1
+#define	TREEIMG_EXCLUDE		2
+#define	TREEIMG_LAYER		3
 #define	TREEIMG_WORK		4
+#define	TREEIMG_CHAIN		5
+#define	TREEIMG_MAP			6
+
+extern	LPTSTR	gg_RootTitle[] = {
+	"輪郭集合", "軌跡集合", "除外集合"
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFShapeView
@@ -43,14 +49,19 @@ BEGIN_MESSAGE_MAP(CDXFShapeView, CTreeView)
 	ON_NOTIFY_REFLECT(TVN_KEYDOWN, OnKeydown)
 	ON_NOTIFY_REFLECT(TVN_SELCHANGED, OnSelChanged)
 	ON_NOTIFY_REFLECT(TVN_BEGINDRAG, OnBeginDrag)
-	ON_NOTIFY_REFLECT(NM_RCLICK, OnNMRclick)
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONUP()
+	ON_WM_RBUTTONDOWN()
+	ON_WM_RBUTTONUP()
 	ON_COMMAND(ID_EDIT_SORTSHAPE, OnSortShape)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_DEL, OnUpdateWorkingDel)
 	ON_COMMAND(ID_EDIT_SHAPE_DEL, OnWorkingDel)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_PROP, OnUpdateEditShapeProp)
+	ON_COMMAND(ID_EDIT_SHAPE_PROP, OnEditShapeProp)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_NAME, OnUpdateEditShapeName)
+	ON_COMMAND(ID_EDIT_SHAPE_NAME, OnEditShapeName)
 	//}}AFX_MSG_MAP
-	// 形状加工指示
+	// 形状加工指示(実ｺﾏﾝﾄﾞはDXFDoc.cpp)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, OnUpdateShapePattern)
 END_MESSAGE_MAP()
 
@@ -84,9 +95,6 @@ BOOL CDXFShapeView::PreCreateWindow(CREATESTRUCT& cs)
 
 void CDXFShapeView::OnInitialUpdate() 
 {
-	static	LPTSTR	ss_RootTitle[] = {
-		"輪郭集合", "軌跡集合", "除外集合"
-	};
 	CTreeView::OnInitialUpdate();
 
 	int		i;
@@ -94,14 +102,15 @@ void CDXFShapeView::OnInitialUpdate()
 	::ZeroMemory(&tvInsert, sizeof(TVINSERTSTRUCT));
 	tvInsert.hInsertAfter = TVI_LAST;
 	tvInsert.item.mask = TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE|TVIF_PARAM;
-	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_ROOT;
+	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_OUTLINE;
 
 	// ﾙｰﾄﾂﾘｰ
-	ASSERT( SIZEOF(m_hRootTree) == SIZEOF(ss_RootTitle) );
+	ASSERT( SIZEOF(m_hRootTree) == SIZEOF(gg_RootTitle) );
 	tvInsert.hParent = TVI_ROOT;
-	for ( i=0; i<SIZEOF(ss_RootTitle); i++ ) {
+	for ( i=0; i<SIZEOF(gg_RootTitle); i++ ) {
+		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_OUTLINE + i;
 		tvInsert.item.lParam = (LPARAM)(i+1);		// RootID
-		tvInsert.item.pszText = ss_RootTitle[i];
+		tvInsert.item.pszText = gg_RootTitle[i];
 		m_hRootTree[i] = GetTreeCtrl().InsertItem(&tvInsert);
 		ASSERT( m_hRootTree[i] );
 	}
@@ -148,7 +157,7 @@ void CDXFShapeView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		}
 		break;
 	case UAV_DXFAUTOWORKING:	// from CDXFDoc::OnEditAutoShape
-		AutoWorkingSet();
+		AutoWorkingSet(TRUE);
 		SetFocus();
 		break;
 	case UAV_DXFAUTODELWORKING:	// from CDXFDoc::OnEditAutoShape
@@ -309,62 +318,84 @@ BOOL CDXFShapeView::IsDropItem(HTREEITEM hTree)
 
 void CDXFShapeView::DragInsert(void)
 {
+	// ﾄﾞﾗｯｸﾞ移動前の状態を取得
+	TVITEM	tvItem;
+	::ZeroMemory(&tvItem, sizeof(TVITEM));
+	tvItem.mask  = TVIF_STATE;
+	tvItem.hItem = m_hItemDrag;
+	GetTreeCtrl().GetItem(&tvItem);
+
 	// m_hItemDropにm_hItemDragを挿入
 	HTREEITEM hTree = m_pDragShape ? DragInsertShape() : DragInsertLayer();
-	if ( hTree ) {
-		// ﾄﾞﾗｯｸﾞ前の状態を取得
-		TVITEM	tvItem;
-		::ZeroMemory(&tvItem, sizeof(TVITEM));
-		tvItem.mask  = TVIF_STATE;
-		tvItem.hItem = m_hItemDrag;
-		GetTreeCtrl().GetItem(&tvItem);
-		// 移動先で選択，状態復元
-		GetTreeCtrl().SelectItem(hTree);
-		if ( tvItem.state & TVIS_EXPANDED )
-			GetTreeCtrl().Expand(hTree, TVE_EXPAND);
-		// ﾄﾞﾗｯｸﾞﾂﾘｰを削除(SelectItem()後でないと描画不正)
-		hTree = GetTreeCtrl().GetParentItem(m_hItemDrag);
-		GetTreeCtrl().DeleteItem(m_hItemDrag);
-		// 変更記録を保存
-		if ( m_pDragShape ) {
-			m_mpUpdateLayer.SetAt(m_pDragLayer->GetStrLayer(), m_pDragLayer);
-			// 形状情報のﾄﾞﾗｯｸﾞ移動で所属ﾚｲﾔ配下に形状情報が無くなれば
-			if ( !GetTreeCtrl().ItemHasChildren(hTree) )
-				GetTreeCtrl().DeleteItem(hTree);	// ﾚｲﾔﾂﾘｰも削除
-		}
-		else
-			m_bUpdateLayerSequence = TRUE;
-		// ﾄﾞｷｭﾒﾝﾄ変更通知
-		GetDocument()->SetModifiedFlag();
-		DragCancel(FALSE);
+	if ( !hTree )
+		return;
+
+	// ﾄﾞﾗｯｸﾞﾂﾘｰを削除
+	HTREEITEM hParentTree = GetTreeCtrl().GetParentItem(m_hItemDrag);
+	GetTreeCtrl().DeleteItem(m_hItemDrag);
+	// 移動先で選択，状態復元
+	GetTreeCtrl().SelectItem(hTree);
+	if ( tvItem.state & TVIS_EXPANDED )
+		GetTreeCtrl().Expand(hTree, TVE_EXPAND);
+	Invalidate();
+
+	// 変更記録を保存
+	if ( m_pDragShape ) {
+		m_mpUpdateLayer.SetAt(m_pDragLayer->GetStrLayer(), m_pDragLayer);
+		// 形状情報のﾄﾞﾗｯｸﾞ移動で所属ﾚｲﾔ配下に形状情報が無くなれば
+		if ( !GetTreeCtrl().ItemHasChildren(hParentTree) )
+			GetTreeCtrl().DeleteItem(hParentTree);	// ﾚｲﾔﾂﾘｰも削除
 	}
-	else {
-		DragCancel(TRUE);
-		AfxMessageBox(IDS_ERR_DXF_DRAGOUTLINE, MB_OK|MB_ICONEXCLAMATION);
-	}
+	else
+		m_bUpdateLayerSequence = TRUE;
+
+	// ﾄﾞｷｭﾒﾝﾄ変更通知
+	GetDocument()->SetModifiedFlag();
+	DragCancel(FALSE);
 }
 
 HTREEITEM CDXFShapeView::DragInsertLayer(void)
 {
 	DWORD		dwRoot = GetParentAssemble(m_hItemDrop);
-	BOOL		bCanNotOutline = FALSE;
+	BOOL		bCanNotOutline = FALSE, bOutline = FALSE;
 	POSITION	pos;
 	HTREEITEM	hLayerTree = NULL, hShapeTree;
 	CDXFshape*	pShape;
 	CDXFworkingList*	pList;
+	CDXFworking*	pWork;
 
-	// 最終ﾄﾞﾛｯﾌﾟ許可ﾁｪｯｸ
+	// 配下の形状ﾌﾟﾛﾊﾟﾃｨ確認
 	hShapeTree = GetTreeCtrl().GetChildItem(m_hItemDrag);
 	while ( hShapeTree ) {
 		pShape = (CDXFshape *)(GetTreeCtrl().GetItemData(hShapeTree));
-		if ( pShape->GetShapeFlag() & DXFMAPFLG_CANNOTAUTOWORKING ) {
+		if ( dwRoot==ROOTTREE_SHAPE && pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING ) {
 			bCanNotOutline = TRUE;
+			break;	// 以降確認必要なし
+		}
+		if ( dwRoot==ROOTTREE_LOCUS && pShape->GetOutlineObject() ) {
+			bOutline = TRUE;
 			break;
 		}
 		hShapeTree = GetTreeCtrl().GetNextSiblingItem(hShapeTree);
 	}
-	if ( bCanNotOutline && dwRoot == ROOTTREE_SHAPE )
-		return NULL;
+	switch ( dwRoot ) {
+	case ROOTTREE_SHAPE:
+		// 最終ﾄﾞﾛｯﾌﾟ許可ﾁｪｯｸ
+		if ( bCanNotOutline ) {
+			DragCancel(TRUE);
+			AfxMessageBox(IDS_ERR_DXF_DRAGOUTLINE, MB_OK|MB_ICONEXCLAMATION);
+			return NULL;
+		}
+		break;
+	case ROOTTREE_LOCUS:
+		// 輪郭加工指示が消される確認
+		if ( bOutline ) {
+			DragCancel(FALSE, FALSE);	// しておかないとﾏｳｽｶｰｿﾙ非表示のまま
+			if ( AfxMessageBox(IDS_ANA_OUTLINE, MB_YESNO|MB_ICONQUESTION) != IDYES )
+				return NULL;
+		}
+		break;
+	}
 
 	TVINSERTSTRUCT	tvInsert;
 	::ZeroMemory(&tvInsert, sizeof(TVINSERTSTRUCT));
@@ -390,21 +421,32 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_LAYER;
 		tvInsert.item.lParam = (LPARAM)m_pDragLayer;
 		hLayerTree = GetTreeCtrl().InsertItem(&tvInsert);
+		if ( !hLayerTree ) {
+			DragCancel(TRUE);
+			AfxMessageBox(IDS_ERR_DRAGTREE, MB_OK|MB_ICONEXCLAMATION);
+			return NULL;
+		}
+		GetTreeCtrl().Expand(tvInsert.hParent, TVE_EXPAND);
 	}
-	ASSERT( hLayerTree );
 
 	// 形状情報と加工指示の登録
 	tvInsert.hInsertAfter = TVI_LAST;
 	hShapeTree = GetTreeCtrl().GetChildItem(m_hItemDrag);
 	while ( hShapeTree ) {
+		// 移動前の状態を取得
+		tvItem.hItem = hShapeTree;
+		GetTreeCtrl().GetItem(&tvItem);
 		// 形状情報
 		pShape = (CDXFshape *)(GetTreeCtrl().GetItemData(hShapeTree));
-		tvInsert.item.iImage = tvInsert.item.iSelectedImage = 
-			TREEIMG_CHAIN + pShape->GetShapeType();
+		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_CHAIN + pShape->GetShapeType();
 		tvInsert.hParent = hLayerTree;
 		tvInsert.item.lParam = (LPARAM)pShape;
 		tvInsert.hParent = GetTreeCtrl().InsertItem(&tvInsert);	// 加工指示の親ﾂﾘｰ
-		ASSERT( tvInsert.hParent );
+		if ( !tvInsert.hParent ) {
+			DragCancel(TRUE);
+			AfxMessageBox(IDS_ERR_DRAGTREE, MB_OK|MB_ICONEXCLAMATION);
+			return NULL;
+		}
 		pShape->SetTreeHandle(tvInsert.hParent);
 		// 所属集合の更新
 		if ( m_dwDragRoot != dwRoot )
@@ -413,12 +455,19 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 		pList = pShape->GetWorkList();
 		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
 		for ( pos=pList->GetHeadPosition(); pos; ) {
-			tvInsert.item.lParam = (LPARAM)(pList->GetNext(pos));
-			GetTreeCtrl().InsertItem(&tvInsert);
+			pWork = pList->GetNext(pos);
+			if ( dwRoot==ROOTTREE_LOCUS && bOutline &&
+						pWork->GetWorkingType() > WORK_START ) {	// WORK_OUTLINE, WORK_POCKET
+				// 元ﾂﾘｰが残っている状態でﾎﾟｲﾝﾀ削除するため
+				// 以降ﾂﾘｰ操作をするとOnGetDispInfo()でｴﾗｰの可能性がある
+				pShape->DelWorkingData(pWork);	// 輪郭加工指示削除
+			}
+			else {
+				tvInsert.item.lParam = (LPARAM)pWork;
+				GetTreeCtrl().InsertItem(&tvInsert);
+			}
 		}
 		// 移動前の状態を復元
-		tvItem.hItem = hShapeTree;
-		GetTreeCtrl().GetItem(&tvItem);
 		if ( tvItem.state & TVIS_EXPANDED )
 			GetTreeCtrl().Expand(tvInsert.hParent, TVE_EXPAND);
 		// 次の形状情報
@@ -431,13 +480,29 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 HTREEITEM CDXFShapeView::DragInsertShape(void)
 {
 	DWORD		dwRoot = GetParentAssemble(m_hItemDrop);
+	CDXFchain*	pChain;
+
+	switch ( dwRoot ) {
+	case ROOTTREE_SHAPE:
+		// 最終ﾄﾞﾛｯﾌﾟ許可ﾁｪｯｸ
+		if ( m_pDragShape->GetShapeFlag() & DXFMAPFLG_CANNOTAUTOWORKING ) {
+			DragCancel(TRUE);
+			AfxMessageBox(IDS_ERR_DXF_DRAGOUTLINE, MB_OK|MB_ICONEXCLAMATION);
+			return NULL;
+		}
+		break;
+	case ROOTTREE_LOCUS:
+		// 輪郭加工指示が消される確認
+		pChain = m_pDragShape->GetOutlineObject();
+		if ( pChain ) {
+			DragCancel(FALSE, FALSE);
+			if ( AfxMessageBox(IDS_ANA_OUTLINE, MB_YESNO|MB_ICONQUESTION) != IDYES )
+				return NULL;
+		}
+		break;
+	}
+
 	HTREEITEM	hTree;
-	CDXFworkingList*	pList;
-
-	// 最終ﾄﾞﾛｯﾌﾟ許可ﾁｪｯｸ
-	if ( m_pDragShape->GetShapeFlag() & DXFMAPFLG_CANNOTAUTOWORKING && dwRoot == ROOTTREE_SHAPE )
-		return NULL;
-
 	TVINSERTSTRUCT	tvInsert;
 	::ZeroMemory(&tvInsert, sizeof(TVINSERTSTRUCT));
 	tvInsert.item.mask = TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE|TVIF_PARAM;
@@ -453,7 +518,12 @@ HTREEITEM CDXFShapeView::DragInsertShape(void)
 			tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_LAYER;
 			tvInsert.item.lParam = (LPARAM)m_pDragLayer;
 			hTree = GetTreeCtrl().InsertItem(&tvInsert);
-			ASSERT( hTree );
+			if ( !hTree ) {
+				DragCancel(TRUE);
+				AfxMessageBox(IDS_ERR_DRAGTREE, MB_OK|MB_ICONEXCLAMATION);
+				return NULL;
+			}
+			GetTreeCtrl().Expand(tvInsert.hParent, TVE_EXPAND);
 			m_hItemDrop = NULL;
 		}
 		else {
@@ -475,11 +545,14 @@ HTREEITEM CDXFShapeView::DragInsertShape(void)
 	tvInsert.hParent = hTree;
 	hTree = GetTreeCtrl().GetPrevSiblingItem(m_hItemDrop);
 	tvInsert.hInsertAfter = hTree ? hTree : TVI_FIRST;	// ﾄﾞﾛｯﾌﾟ先
-	tvInsert.item.iImage = tvInsert.item.iSelectedImage = 
-		TREEIMG_CHAIN + m_pDragShape->GetShapeType();
+	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_CHAIN + m_pDragShape->GetShapeType();
 	tvInsert.item.lParam = (LPARAM)m_pDragShape;
 	hTree = GetTreeCtrl().InsertItem(&tvInsert);
-	ASSERT( hTree );
+	if ( !hTree ) {
+		DragCancel(TRUE);
+		AfxMessageBox(IDS_ERR_DRAGTREE, MB_OK|MB_ICONEXCLAMATION);
+		return NULL;
+	}
 	m_pDragShape->SetTreeHandle(hTree);
 	// 所属集合の更新
 	if ( m_dwDragRoot != dwRoot )
@@ -489,10 +562,18 @@ HTREEITEM CDXFShapeView::DragInsertShape(void)
 	tvInsert.hInsertAfter = TVI_LAST;
 	tvInsert.hParent = hTree;
 	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-	pList = m_pDragShape->GetWorkList();
+	CDXFworkingList* pList = m_pDragShape->GetWorkList();
+	CDXFworking* pWork;
 	for ( POSITION pos=pList->GetHeadPosition(); pos; ) {
-		tvInsert.item.lParam = (LPARAM)(pList->GetNext(pos));
-		GetTreeCtrl().InsertItem(&tvInsert);
+		pWork = pList->GetNext(pos);
+		if ( dwRoot==ROOTTREE_LOCUS && pChain &&
+					pWork->GetWorkingType() > WORK_START ) {	// WORK_OUTLINE, WORK_POCKET
+			m_pDragShape->DelWorkingData(pWork);	// 輪郭加工指示削除
+		}
+		else {
+			tvInsert.item.lParam = (LPARAM)pWork;
+			GetTreeCtrl().InsertItem(&tvInsert);
+		}
 	}
 
 	return hTree;
@@ -512,6 +593,11 @@ void CDXFShapeView::DragLink(void)
 		DragCancel(TRUE);
 		::MessageBeep(MB_ICONEXCLAMATION);
 		return;
+	}
+	if ( pShape->GetOutlineObject() ) {
+		DragCancel(FALSE, FALSE);
+		if ( AfxMessageBox(IDS_ANA_OUTLINE, MB_YESNO|MB_ICONQUESTION) != IDYES )
+			return;
 	}
 
 	// 結合処理(ﾄﾞﾛｯﾌﾟｱｲﾃﾑにﾄﾞﾗｯｸﾞｱｲﾃﾑを結合)
@@ -563,22 +649,28 @@ void CDXFShapeView::DragLink(void)
 	DragCancel(FALSE);
 }
 
-void CDXFShapeView::DragCancel(BOOL bCancel)
+void CDXFShapeView::DragCancel(BOOL bCancel, BOOL bHandleClean/*=TRUE*/)
 {
-	ASSERT( m_pImageList );
-	m_pImageList->DragLeave(this);
-	m_pImageList->EndDrag();
-	delete m_pImageList;
-	m_pImageList = NULL;
-	m_bDragging = FALSE;
-	m_pDragLayer = NULL;
-	m_pDragShape = NULL;
-	m_dwDragRoot = 0;
-	::ShowCursor(TRUE);
-	ReleaseCapture();
-	GetTreeCtrl().SelectDropTarget(NULL);
-	if ( bCancel )
+	if ( m_bDragging ) {
+		m_bDragging = FALSE;
+		ASSERT( m_pImageList );
+		m_pImageList->DragLeave(this);
+		m_pImageList->EndDrag();
+		delete m_pImageList;
+		m_pImageList = NULL;
+		::ShowCursor(TRUE);
+		ReleaseCapture();
+		GetTreeCtrl().SelectDropTarget(NULL);
+	}
+	if ( bCancel ) {
 		GetTreeCtrl().SelectItem(m_hItemDrag);
+		m_hItemDrag = m_hItemDrop = NULL;
+	}
+	if ( bHandleClean ) {
+		m_pDragLayer = NULL;
+		m_pDragShape = NULL;
+		m_dwDragRoot = 0;
+	}
 }
 
 HTREEITEM CDXFShapeView::SearchLayerTree(HTREEITEM hTree, const CLayerData* pLayer)
@@ -600,6 +692,7 @@ DWORD CDXFShapeView::GetParentAssemble(HTREEITEM hTree)
 {
 	DWORD	dwResult = 0;
 
+	// ﾂﾘｰﾊﾝﾄﾞﾙが属する集合を返す
 	if ( hTree && !IsRootTree(hTree) ) {
 		HTREEITEM	hTreeParent;
 		hTreeParent = GetTreeCtrl().GetParentItem(hTree);
@@ -698,50 +791,49 @@ void CDXFShapeView::AddWorking(CDXFworking* pWork)
 	GetTreeCtrl().EnsureVisible(hTree);
 }
 
-void CDXFShapeView::AutoWorkingDel(void)
+void CDXFShapeView::AutoWorkingDel
+	(const CLayerData* pLayerSrc/*=NULL*/, const CDXFshape* pShapeSrc/*=NULL*/)
 {
 	// 現在登録されている輪郭・ﾎﾟｹｯﾄ加工のﾂﾘｰを消去
-	int		i, j;
 	HTREEITEM		hLayerTree, hShapeTree, hTree;
 	CDXFshape*		pShape;
 	CDXFworking*	pPara;
-	CPtrArray		obDel;
-	obDel.SetSize(0, 64);
 
-	for ( i=0; i<SIZEOF(m_hRootTree); i++ ) {
-		hLayerTree = GetTreeCtrl().GetChildItem(m_hRootTree[i]);
-		// ﾚｲﾔﾙｰﾌﾟ
-		while ( hLayerTree ) {
+	// 輪郭集合のみが対象
+	hLayerTree = GetTreeCtrl().GetChildItem(m_hRootTree[0]);
+	// ﾚｲﾔﾙｰﾌﾟ
+	while ( hLayerTree ) {
+		if ( pLayerSrc && pLayerSrc!=(CLayerData *)(GetTreeCtrl().GetItemData(hLayerTree)) )
+			hShapeTree = NULL;
+		else
 			hShapeTree = GetTreeCtrl().GetChildItem(hLayerTree);
-			// 形状ﾙｰﾌﾟ
-			while ( hShapeTree ) {
-				pShape = (CDXFshape *)(GetTreeCtrl().GetItemData(hShapeTree));
-				ASSERT( pShape );
+		// 形状ﾙｰﾌﾟ
+		while ( hShapeTree ) {
+			pShape = (CDXFshape *)(GetTreeCtrl().GetItemData(hShapeTree));
+			ASSERT( pShape );
+			if ( pShapeSrc && pShapeSrc!=pShape )
+				hTree = NULL;
+			else
 				hTree = GetTreeCtrl().GetChildItem(hShapeTree);
-				// 現在の輪郭・ﾎﾟｹｯﾄ加工指示を削除するﾙｰﾌﾟ
-				while ( hTree ) {
-					pPara = (CDXFworking *)(GetTreeCtrl().GetItemData(hTree));
-					ASSERT(pPara);
-					switch ( pPara->GetWorkingType() ) {
-					case OUTLINE:
-					case POCKET:
-						pShape->DelWorkingData(pPara);
-						obDel.Add(hTree);
-						break;
-					}
-					hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
+			// 現在の輪郭・ﾎﾟｹｯﾄ加工指示を削除するﾙｰﾌﾟ
+			while ( hTree ) {
+				pPara = (CDXFworking *)(GetTreeCtrl().GetItemData(hTree));
+				ASSERT(pPara);
+				if ( pPara->GetWorkingType() > WORK_START ) {	// WORK_OUTLINE, WORK_POCKET
+					pShape->DelWorkingData(pPara);
+					GetTreeCtrl().DeleteItem(hTree);
+					break;	// 輪郭・ﾎﾟｹｯﾄ加工は1つだけ
 				}
-				for ( j=0; j<obDel.GetSize(); j++ )
-					GetTreeCtrl().DeleteItem((HTREEITEM)obDel[j]);
-				obDel.RemoveAll();
-				hShapeTree = GetTreeCtrl().GetNextSiblingItem(hShapeTree);
+				hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
 			}
-			hLayerTree = GetTreeCtrl().GetNextSiblingItem(hLayerTree);
+			hShapeTree = GetTreeCtrl().GetNextSiblingItem(hShapeTree);
 		}
+		hLayerTree = GetTreeCtrl().GetNextSiblingItem(hLayerTree);
 	}
 }
 
-void CDXFShapeView::AutoWorkingSet(BOOL bAuto/*=TRUE*/)
+void CDXFShapeView::AutoWorkingSet
+	(BOOL bAuto, const CLayerData* pLayerSrc/*=NULL*/, const CDXFshape* pShapeSrc/*=NULL*/)
 {
 	// 形状情報から加工指示を登録
 	int		i, j, nLoop, nLayerLoop = GetDocument()->GetLayerCnt();
@@ -761,11 +853,13 @@ void CDXFShapeView::AutoWorkingSet(BOOL bAuto/*=TRUE*/)
 
 	for ( i=0; i<nLayerLoop; i++ ) {
 		pLayer = GetDocument()->GetLayerData(i);
-		if ( !pLayer->IsCutType() )
+		if ( !pLayer->IsCutType() || (pLayerSrc && pLayerSrc!=pLayer) )
 			continue;
 		nLoop = pLayer->GetShapeSize();
 		for ( j=0; j<nLoop; j++ ) {
 			pShape = pLayer->GetShapeData(j);
+			if ( pShapeSrc && pShapeSrc!=pShape )
+				continue;
 			hTree = pShape->GetTreeHandle();
 			pList = pShape->GetWorkList();
 			tvInsert.hParent = hTree;
@@ -776,6 +870,7 @@ void CDXFShapeView::AutoWorkingSet(BOOL bAuto/*=TRUE*/)
 					GetTreeCtrl().InsertItem(&tvInsert);
 				}
 			}
+			GetTreeCtrl().Expand(hTree, TVE_EXPAND);
 		}
 	}
 }
@@ -887,22 +982,9 @@ void CDXFShapeView::OnSortShape()
 
 void CDXFShapeView::OnUpdateShapePattern(CCmdUI* pCmdUI)
 {
-	HTREEITEM hTree = GetTreeCtrl().GetSelectedItem();
-	BOOL	bEnable = TRUE;
-	if ( !GetDocument()->IsShape() || !hTree || IsRootTree(hTree) )
-		bEnable = FALSE;
-	else {
-		CObject* pObject = (CObject *)(GetTreeCtrl().GetItemData(hTree));
-		if ( !pObject || !pObject->IsKindOf(RUNTIME_CLASS(CDXFshape)) )
-			bEnable = FALSE;
-		// 輪郭，ﾎﾟｹｯﾄ加工の場合は，さらに
-		if ( pCmdUI->m_nID == ID_EDIT_SHAPE_OUT || pCmdUI->m_nID == ID_EDIT_SHAPE_POC ) {
-			if ( ((CDXFshape *)pObject)->GetShapeFlag() & DXFMAPFLG_CANNOTOUTLINE )
-				bEnable = FALSE;
-		}
-	}
-	pCmdUI->Enable(bEnable);
-	if ( bEnable )
+	if ( pCmdUI->m_nID == ID_EDIT_SHAPE_POC )	// ﾎﾟｹｯﾄ処理は未実装
+		pCmdUI->Enable(FALSE);
+	else
 		pCmdUI->SetCheck( pCmdUI->m_nID == GetDocument()->GetShapePattern() );
 }
 
@@ -933,6 +1015,277 @@ void CDXFShapeView::OnWorkingDel()
 			// ﾋﾞｭｰの再描画
 			GetDocument()->UpdateAllViews(this);
 		}
+	}
+}
+
+void CDXFShapeView::OnUpdateEditShapeProp(CCmdUI *pCmdUI)
+{
+	HTREEITEM	hTree = GetTreeCtrl().GetSelectedItem();
+	if ( hTree ) {
+		if ( hTree != m_hRootTree[0] ) {	// ﾄｯﾌﾟ集合は輪郭のみ
+			if ( IsRootTree(hTree) )
+				hTree = NULL;
+			else {
+				CObject* pSelect = (CObject *)(GetTreeCtrl().GetItemData(hTree));
+				if ( !pSelect || pSelect->IsKindOf(RUNTIME_CLASS(CDXFworking)) )
+					hTree = NULL;			// 加工指示にはﾌﾟﾛﾊﾟﾃｨ無し
+			}
+		}
+	}
+	pCmdUI->Enable( hTree ? TRUE : FALSE );
+}
+
+void CDXFShapeView::OnEditShapeProp()
+{
+	HTREEITEM	hTree, hParentTree,
+				hSelectTree = GetTreeCtrl().GetSelectedItem();
+	if ( !hSelectTree )
+		return;
+
+	CObject*	pSelect = (CObject *)(GetTreeCtrl().GetItemData(hSelectTree));
+	if ( !pSelect )
+		return;
+
+	BOOL	bChain = FALSE, bRecalc = FALSE;
+	int		nShape = -1;
+	optional<double>	dOffset;
+	BOOL				bAcute;
+	CLayerData*	pLayer;
+	CDXFshape*	pShape;
+	DXFTREETYPE	vSelect;
+
+	// 現在のｵﾌｾｯﾄ値と所属集合状況を取得
+	if ( hSelectTree == m_hRootTree[0] ) {
+		vSelect = (DWORD)pSelect;
+		dOffset = HUGE_VAL;
+		bAcute  = TRUE;
+		hParentTree = GetTreeCtrl().GetChildItem(hSelectTree);
+		while ( hParentTree ) {
+			hTree = GetTreeCtrl().GetChildItem(hParentTree);
+			while ( hTree ) {
+				pShape = (CDXFshape *)(GetTreeCtrl().GetItemData(hTree));
+				if ( pShape && pShape->IsKindOf(RUNTIME_CLASS(CDXFshape)) ) {
+					if ( *dOffset == HUGE_VAL )
+						dOffset = pShape->GetOffset();
+					else if ( *dOffset != pShape->GetOffset() ) {
+						dOffset = HUGE_VAL;	// ﾀﾞｲｱﾛｸﾞ初期値無し
+						hTree = NULL;	// break
+					}
+				}
+				if ( hTree )
+					hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
+				else
+					hParentTree = NULL;	// break
+			}
+			if ( hParentTree )
+				hParentTree = GetTreeCtrl().GetNextSiblingItem(hParentTree);
+		}
+	}
+	else {
+		if ( IsRootTree(hSelectTree) )
+			return;
+		if ( pSelect->IsKindOf(RUNTIME_CLASS(CLayerData)) ) {
+			pLayer = (CLayerData *)pSelect;
+			vSelect = pLayer;
+			dOffset = HUGE_VAL;
+			bChain  = TRUE;
+			hParentTree = GetTreeCtrl().GetParentItem(hSelectTree);
+			if ( hParentTree == m_hRootTree[0] ) {
+				// 輪郭集合に所属するﾚｲﾔ
+				bAcute = TRUE;
+				nShape = 0;		// ｺﾝﾎﾞﾎﾞｯｸｽの初期値
+				hTree = GetTreeCtrl().GetChildItem(hSelectTree);
+				while ( hTree ) {
+					pShape = (CDXFshape *)(GetTreeCtrl().GetItemData(hTree));
+					if ( pShape && pShape->IsKindOf(RUNTIME_CLASS(CDXFshape)) ) {
+						if ( *dOffset == HUGE_VAL )
+							dOffset = pShape->GetOffset();
+						else if ( *dOffset != pShape->GetOffset() ) {
+							dOffset = HUGE_VAL;
+							break;
+						}
+					}
+					hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
+				}
+			}
+			else {
+				// 軌跡・除外集合に所属するﾚｲﾔ
+				bAcute = FALSE;
+				nShape = hParentTree == m_hRootTree[1] ? 1 : 2;	// ｺﾝﾎﾞﾎﾞｯｸｽの初期値
+				hTree = GetTreeCtrl().GetChildItem(hSelectTree);
+				while ( hTree ) {
+					pShape = (CDXFshape *)(GetTreeCtrl().GetItemData(hTree));
+					if ( pShape && pShape->IsKindOf(RUNTIME_CLASS(CDXFshape)) &&
+								pShape->GetShapeType()==0 ) {
+						if ( *dOffset == HUGE_VAL )
+							dOffset = pShape->GetOffset();
+						else if ( *dOffset != pShape->GetOffset() )
+							dOffset = HUGE_VAL;
+					}
+					else {
+						// １つでもCDXFchain集合でないなら
+						dOffset.reset();	// ｵﾌｾｯﾄ入力不可
+						bChain = FALSE;		// 輪郭集合選択不可
+						nShape--;
+						break;
+					}
+					hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
+				}
+			}
+		}
+		else if ( pSelect->IsKindOf(RUNTIME_CLASS(CDXFshape)) ) {
+			// 親ﾚｲﾔも取得しておく
+			hParentTree = GetTreeCtrl().GetParentItem(hSelectTree);
+			pLayer = (CLayerData *)(GetTreeCtrl().GetItemData(hParentTree));
+			// 形状ﾌﾟﾛﾊﾟﾃｨ取得
+			pShape = (CDXFshape *)pSelect;
+			vSelect = pShape;
+			nShape = pShape->GetShapeAssemble();
+			if ( pShape->GetShapeType() == 0 ) {
+				bChain = TRUE;
+				dOffset = pShape->GetOffset();
+			}
+			bAcute = pShape->GetAcuteRound();
+		}
+		else
+			return;
+	}
+
+	CShapePropDlg	dlg(vSelect, bChain, nShape, dOffset, bAcute);
+	if ( dlg.DoModal() != IDOK )
+		return;
+
+	// 各形状情報の更新
+	switch ( vSelect.which() ) {
+	case DXFTREETYPE_MUSTER:
+		if ( *dOffset==dlg.m_dOffset && bAcute==dlg.m_bAcuteRound )
+			return;		// 更新必要なし
+		// 所属の輪郭集合を全て更新
+		hParentTree = GetTreeCtrl().GetChildItem(hSelectTree);
+		while ( hParentTree ) {
+			hTree = GetTreeCtrl().GetChildItem(hParentTree);
+			while ( hTree ) {
+				pShape = (CDXFshape *)(GetTreeCtrl().GetItemData(hTree));
+				if ( pShape && pShape->IsKindOf(RUNTIME_CLASS(CDXFshape)) ) {
+					pShape->SetOffset(dlg.m_dOffset);
+					pShape->SetAcuteRound(dlg.m_bAcuteRound);
+				}
+				hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
+			}
+			hParentTree = GetTreeCtrl().GetNextSiblingItem(hParentTree);
+		}
+		bRecalc = TRUE;		// 再計算
+		break;
+	case DXFTREETYPE_LAYER:
+		ASSERT( pLayer );
+		if ( *dOffset!=dlg.m_dOffset || bAcute!=dlg.m_bAcuteRound ) {
+			hTree = GetTreeCtrl().GetChildItem(hSelectTree);
+			while ( hTree ) {
+				pShape = (CDXFshape *)(GetTreeCtrl().GetItemData(hTree));
+				if ( pShape && pShape->IsKindOf(RUNTIME_CLASS(CDXFshape)) ) {
+					pShape->SetOffset(dlg.m_dOffset);
+					pShape->SetAcuteRound(dlg.m_bAcuteRound);
+				}
+				hTree = GetTreeCtrl().GetNextSiblingItem(hTree);
+			}
+			bRecalc = TRUE;
+		}
+		if ( nShape != dlg.m_nShape ) {
+			nShape = dlg.m_nShape;
+			// D&Dと同じ処理
+			m_hItemDrag  = hSelectTree;
+			m_pDragLayer = pLayer;
+			m_pDragShape = NULL;
+			m_dwDragRoot = GetParentAssemble(hParentTree);
+			if ( !bChain )
+				nShape++;
+			m_hItemDrop  = m_hRootTree[nShape];
+			DragInsert();
+		}
+		break;
+	case DXFTREETYPE_SHAPE:
+		ASSERT( pLayer );
+		ASSERT( pShape );
+		if ( pShape->GetShapeName() != dlg.m_strShapeName ) {
+			pShape->SetShapeName(dlg.m_strShapeName);
+			GetDocument()->SetModifiedFlag();
+		}
+		if ( *dOffset != dlg.m_dOffset ) {
+			pShape->SetOffset(dlg.m_dOffset);
+			bRecalc = TRUE;
+		}
+		if ( bAcute != dlg.m_bAcuteRound ) {
+			pShape->SetAcuteRound(dlg.m_bAcuteRound);
+			bRecalc = TRUE;
+		}
+		if ( nShape != dlg.m_nShape ) {
+			nShape = dlg.m_nShape;
+			m_hItemDrag  = hSelectTree;
+			m_pDragLayer = pLayer;
+			m_pDragShape = pShape;
+			m_dwDragRoot = (DWORD)(pShape->GetShapeAssemble()) + 1;
+			if ( !bChain )
+				nShape++;
+			m_hItemDrop  = m_hRootTree[nShape];
+			DragInsert();
+		}
+		break;
+	}
+
+	if ( !bRecalc )
+		return;
+
+	// 加工指示の再計算
+	CThreadDlg	dlgThread(ID_EDIT_SHAPE_AUTO, GetDocument(),
+					(WPARAM)AUTORECALCWORKING, (LPARAM)&vSelect);
+	if ( dlgThread.DoModal() != IDOK )
+		return;
+
+	// ﾂﾘｰﾋﾞｭｰの更新
+	switch ( vSelect.which() ) {
+	case DXFTREETYPE_MUSTER:
+		// 現在登録されている加工指示を削除
+		AutoWorkingDel();				// UpdateAllViews(NULL, UAV_DXFAUTODELWORKING);
+		// 自動加工指示登録(と再描画)
+		GetDocument()->UpdateAllViews(NULL, UAV_DXFAUTOWORKING);	// AutoWorkingSet(TRUE);
+		break;
+	case DXFTREETYPE_LAYER:
+		AutoWorkingDel(pLayer);
+		AutoWorkingSet(TRUE, pLayer);
+		Invalidate();	// 再描画
+		GetDocument()->UpdateAllViews(this, UAV_DXFAUTOWORKING);	// AutoWorkingSet()呼ばない
+		break;
+	case DXFTREETYPE_SHAPE:
+		AutoWorkingDel(NULL, pShape);
+		AutoWorkingSet(TRUE, pLayer, pShape);
+		Invalidate();
+		GetDocument()->UpdateAllViews(this, UAV_DXFAUTOWORKING);
+		break;
+	}
+
+	// 更新ﾌﾗｸﾞ
+	GetDocument()->SetModifiedFlag();
+}
+
+void CDXFShapeView::OnUpdateEditShapeName(CCmdUI *pCmdUI)
+{
+	BOOL	bEnable = FALSE;
+	HTREEITEM	hTree = GetTreeCtrl().GetSelectedItem();
+	if ( hTree && !IsRootTree(hTree) ) {
+		CObject* pParam = (CObject *)GetTreeCtrl().GetItemData(hTree);
+		if ( pParam && !pParam->IsKindOf(RUNTIME_CLASS(CLayerData)) )
+			bEnable = TRUE;
+	}
+	pCmdUI->Enable(bEnable);
+}
+
+void CDXFShapeView::OnEditShapeName()
+{
+	HTREEITEM	hTree = GetTreeCtrl().GetSelectedItem();
+	if ( hTree && !IsRootTree(hTree) ) {
+		CObject* pParam = (CObject *)GetTreeCtrl().GetItemData(hTree);
+		if ( pParam && !pParam->IsKindOf(RUNTIME_CLASS(CLayerData)) )
+			GetTreeCtrl().EditLabel(hTree);
 	}
 }
 
@@ -1020,23 +1373,16 @@ void CDXFShapeView::OnEndLabelEdit(NMHDR* pNMHDR, LRESULT* pResult)
 void CDXFShapeView::OnKeydown(NMHDR* pNMHDR, LRESULT* pResult) 
 {
 	LPNMTVKEYDOWN pTVKeyDown = reinterpret_cast<LPNMTVKEYDOWN>(pNMHDR);
-	HTREEITEM	hTree;
 
 	switch ( pTVKeyDown->wVKey ) {
 	case VK_DELETE:
 		OnWorkingDel();
 		break;
 	case VK_ESCAPE:
-		if ( m_bDragging )
-			DragCancel(TRUE);
+		DragCancel(TRUE);
 		break;
 	case VK_F2:
-		hTree = GetTreeCtrl().GetSelectedItem();
-		if ( !IsRootTree(hTree) ) {
-			CObject* pParam = (CObject *)GetTreeCtrl().GetItemData(hTree);
-			if ( pParam && !pParam->IsKindOf(RUNTIME_CLASS(CLayerData)) )
-				GetTreeCtrl().EditLabel(hTree);
-		}
+		OnEditShapeName();
 		break;
 	}
 
@@ -1176,18 +1522,22 @@ void CDXFShapeView::OnLButtonUp(UINT nFlags, CPoint point)
 		else
 			DragCancel(TRUE);
 	}
-	CTreeView::OnLButtonUp(nFlags, point);
 }
 
-void CDXFShapeView::OnNMRclick(NMHDR *pNMHDR, LRESULT *pResult)
+void CDXFShapeView::OnRButtonDown(UINT nFlags, CPoint point)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("OnNMRclick()\nStart");
-#endif
-	// OnRButtonUpが呼ばれない(??)，OnRButtonDownでは反応が悪い，のでその代わり
+	// ﾍﾞｰｽｸﾗｽを呼ばないようにしないと OnRButtonUp() が呼ばれない
+//	CTreeView::OnRButtonDown(nFlags, point);
+}
+
+void CDXFShapeView::OnRButtonUp(UINT nFlags, CPoint point)
+{
 	if ( m_bDragging )
 		DragCancel(TRUE);
-	else
-		OnContextMenu(this, CPoint(::GetMessagePos()));
-	*pResult = 0;
+	else {
+		// Select or NULL
+		GetTreeCtrl().SelectItem( GetTreeCtrl().HitTest(point) );
+		// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示
+		CTreeView::OnRButtonUp(nFlags, point);
+	}
 }

@@ -8,11 +8,6 @@
 
 class CNCJumpDlg : public CDialog
 {
-	void	EnableButton(BOOL bEnable) {
-		m_ctOK.EnableWindow(bEnable);
-		m_nJump.EnableWindow(bEnable);
-	}
-
 // コンストラクション
 public:
 	CNCJumpDlg(CWnd* pParent = NULL);   // 標準のコンストラクタ
@@ -29,6 +24,7 @@ public:
 	//{{AFX_VIRTUAL(CNCJumpDlg)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual void PostNcDestroy();
 	//}}AFX_VIRTUAL
 

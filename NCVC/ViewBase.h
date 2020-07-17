@@ -43,6 +43,7 @@ protected:
 		CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenCom(COMPEN_RECT));
 		pDC->Rectangle(&m_rcMagnify);
 		pDC->SelectObject(pOldPen);
+		pDC->SetROP2(R2_COPYPEN);
 	}
 
 	// ÒÀÌ§²Ù‚ð¸Ø¯ÌßÎÞ°ÄÞ‚ÉºËß°

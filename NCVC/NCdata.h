@@ -25,7 +25,7 @@ class CNCdata
 	void		Constracter(LPNCARGV);
 
 protected:
-	NCDATA		m_nc;			// NC基礎ﾃﾞｰﾀ -> NCVCaddin.h
+	NCDATA		m_nc;			// NC基礎ﾃﾞｰﾀ -> NCVCdefine.h
 	CPointD		m_pt2D;			// ２次元変換後の座標計算結果(終点)
 	double		m_dFeed;		// このｵﾌﾞｼﾞｪｸﾄの切削送り速度
 	double		m_dMove[NCXYZ];	// 各軸ごとの移動距離(早送りの時間計算用)
@@ -33,13 +33,19 @@ protected:
 				m_obCdata;		// 補正用ｵﾌﾞｼﾞｪｸﾄ
 	//	固定ｻｲｸﾙでは，指定された座標が最終座標ではないので
 	//	m_nc.dValue[] ではない最終座標の保持が必要
+	// 他、座標回転(G68)でもｵﾘｼﾞﾅﾙ座標と計算座標を別に保管
 	CPoint3D	m_ptValS, m_ptValE;		// 開始,終了座標
+	CPoint3D	m_ptValOrg;		// 回転・ｽｹｰﾙ等無視の純粋な加工終点
 	CRect3D		m_rcMax;		// 空間占有矩形
 
 	// CPoint3Dから平面の2D座標を抽出
 	CPointD	GetPlaneValue(const CPoint3D&) const;
+	// CPointDからCPoint3Dへ座標設定
+	void	SetPlaneValue(const CPointD&, CPoint3D&);
 	// CPoint3Dから平面の2D座標を抽出して原点補正
 	CPointD	GetPlaneValueOrg(const CPoint3D&, const CPoint3D&) const;
+	// G68座標回転
+	void	CalcG68Round(LPG68ROUND, CPoint3D&);
 
 	// 派生ｸﾗｽ用ｺﾝｽﾄﾗｸﾀ
 	CNCdata(ENNCDTYPE, const CNCdata*, LPNCARGV);
@@ -61,7 +67,9 @@ public:
 	double	GetValue(size_t a) const;
 	const CPoint3D	GetStartPoint(void) const;
 	const CPoint3D	GetEndPoint(void) const;
+	const CPoint3D	GetOriginalEndPoint(void) const;
 	double	GetEndValue(size_t a) const;
+	double	GetOriginalEndValue(size_t a) const;
 	const CPoint3D	GetEndCorrectPoint(void) const;
 	CNCdata*	GetEndCorrectObject(void);
 	const CPointD	Get2DPoint(void) const;
@@ -69,17 +77,17 @@ public:
 	double	GetFeed(void) const;
 	double	GetMove(size_t a) const;
 	const CRect3D	GetMaxRect(void) const;
-	CNCdata*	CopyObject(void);
+	CNCdata*	NC_CopyObject(void);	// from TH_Correct.cpp
 	void		AddCorrectObject(CNCdata*);
 
 	virtual	void	DrawTuning(double);
 	virtual	void	DrawTuningXY(double);
 	virtual	void	DrawTuningXZ(double);
 	virtual	void	DrawTuningYZ(double);
-	virtual	void	Draw(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawXY(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawXZ(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawYZ(CDC*, BOOL = FALSE) const;
+	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 
 	// 移動長，切削長の計算
 	virtual	double	SetCalcLength(void);
@@ -112,7 +120,7 @@ typedef	CTypedPtrArrayEx<CPtrArray, CNCdata*>	CNCarray;
 class CNCline : public CNCdata
 {
 	EN_NCPEN	GetPenType(void) const;
-	void	DrawLine(CDC*, size_t, BOOL) const;
+	void	DrawLine(CDC*, size_t, BOOL, BOOL) const;
 	
 protected:
 	CPointD		m_pt2Ds;				// 2次元変換後の始点(XYZ平面用)
@@ -131,10 +139,10 @@ public:
 	virtual	void	DrawTuningXY(double);
 	virtual	void	DrawTuningXZ(double);
 	virtual	void	DrawTuningYZ(double);
-	virtual	void	Draw(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawXY(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawXZ(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawYZ(CDC*, BOOL = FALSE) const;
+	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
@@ -171,11 +179,11 @@ class CNCcycle : public CNCline
 				m_dCycleMove,	// 移動距離(切削距離はm_nc.dLength)
 				m_dDwell;		// ﾄﾞｳｪﾙ時間
 
-	void	DrawCyclePlane(CDC*, size_t) const;
-	void	DrawCycle(CDC*, size_t) const;
+	void	DrawCyclePlane(CDC*, size_t, BOOL) const;
+	void	DrawCycle(CDC*, size_t, BOOL) const;
 
 public:
-	CNCcycle(const CNCdata*, LPNCARGV);
+	CNCcycle(const CNCdata*, LPNCARGV, BOOL);
 	virtual ~CNCcycle();
 
 	int		GetDrawCnt(void) const;
@@ -190,10 +198,10 @@ public:
 	virtual	void	DrawTuningXY(double);
 	virtual	void	DrawTuningXZ(double);
 	virtual	void	DrawTuningYZ(double);
-	virtual	void	Draw(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawXY(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawXZ(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawYZ(CDC*, BOOL = FALSE) const;
+	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;
@@ -256,10 +264,10 @@ public:
 	virtual	void	DrawTuningXY(double);
 	virtual	void	DrawTuningXZ(double);
 	virtual	void	DrawTuningYZ(double);
-	virtual	void	Draw(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawXY(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawXZ(CDC*, BOOL = FALSE) const;
-	virtual	void	DrawYZ(CDC*, BOOL = FALSE) const;
+	virtual	void	Draw(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawXY(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawXZ(CDC*, BOOL, BOOL = FALSE) const;
+	virtual	void	DrawYZ(CDC*, BOOL, BOOL = FALSE) const;
 
 	virtual	double	SetCalcLength(void);
 	virtual	boost::tuple<BOOL, CPointD, double, double>	CalcRoundPoint(const CNCdata*, double) const;

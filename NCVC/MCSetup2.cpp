@@ -74,7 +74,7 @@ BOOL CMCSetup2::OnInitDialog()
 BOOL CMCSetup2::OnApply() 
 {
 	int		i, j;
-	CMCSetup*	pParent = (CMCSetup *)GetParent();
+	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParent());
 	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	// Ä“ÇÁª¯¸

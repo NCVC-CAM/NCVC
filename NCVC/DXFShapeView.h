@@ -20,9 +20,6 @@ class CDXFShapeView : public CTreeView
 	CDXFshape*	m_pDragShape;
 	DWORD		m_dwDragRoot;
 
-	BOOL		m_bUpdateLayerSequence;		// Ú²Ô‡‚ª•ÏX‚³‚ê‚½
-	CLayerMap	m_mpUpdateLayer;			// Œ`ó‡‚ª•ÏX‚³‚ê‚½Ú²Ô
-
 	void	OnUpdateShape(LPDXFADDSHAPE);
 	BOOL	IsRootTree(HTREEITEM hTree) {
 		return hTree==m_hRootTree[0] || hTree==m_hRootTree[1] || hTree==m_hRootTree[2];

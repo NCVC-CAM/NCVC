@@ -384,6 +384,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MCSetup5.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\MKNCSetup.cpp"
 				>
 			</File>
@@ -425,6 +429,10 @@
 			</File>
 			<File
 				RelativePath=".\NCDoc.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\NCFindDlg.cpp"
 				>
 			</File>
 			<File
@@ -786,6 +794,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MCSetup5.h"
+				>
+			</File>
+			<File
 				RelativePath=".\MKNCSetup.h"
 				>
 			</File>
@@ -831,6 +843,10 @@
 			</File>
 			<File
 				RelativePath=".\NCDoc.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NCFindDlg.h"
 				>
 			</File>
 			<File

@@ -41,7 +41,7 @@ public:
 	}
 	void	DblClkChange(int nIndex) {	// from NCView*.cpp
 		ActivatePage(nIndex);
-		GetParentFrame()->SetActiveView((CView *)GetPage(nIndex));
+		GetParentFrame()->SetActiveView(static_cast<CView *>(GetPage(nIndex)));
 	}
 
 // オーバーライド
@@ -64,7 +64,6 @@ protected:
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
-//	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnSetFocus(CWnd* pOldWnd);
 	// ﾀﾌﾞ移動
 	afx_msg	void OnMoveTab(UINT);
@@ -95,7 +94,7 @@ inline CNCDoc* CNCViewTab::GetDocument()
 class CNCListView;
 // ｽﾚｯﾄﾞへの引数
 typedef struct tagTRACETHREADPARAM {
-	CMainFrame*		pFrame;
+	CMainFrame*		pMainFrame;
 	CNCViewTab*		pParent;
 	CNCListView*	pListView;
 } TRACETHREADPARAM, *LPTRACETHREADPARAM;
@@ -111,8 +110,8 @@ public:
 	AfxGetNCVCMainWnd() のﾎﾟｲﾝﾀが参照できない
 */
 	CTraceThread(LPTRACETHREADPARAM pParam) {
-		m_bAutoDelete	= TRUE;				// CWinThread
-		m_pMainWnd		= pParam->pFrame;	// 　〃
+		m_bAutoDelete	= TRUE;					// CWinThread
+		m_pMainWnd		= pParam->pMainFrame;	// 　〃
 		m_pParent		= pParam->pParent;
 		m_pListView		= pParam->pListView;
 		delete	pParam;

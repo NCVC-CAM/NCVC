@@ -39,6 +39,7 @@ CMCSetup::CMCSetup(LPCTSTR lpszCaption, LPCTSTR lpszFile) :
 	AddPage(&m_dlg2);	// ç¿ïW
 	AddPage(&m_dlg3);	// çHãÔ
 	AddPage(&m_dlg4);	// É}ÉNÉç
+	AddPage(&m_dlg5);	// CNC
 }
 
 CMCSetup::~CMCSetup()

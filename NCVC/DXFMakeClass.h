@@ -113,9 +113,9 @@ class CDXFMake
 	void	MakeSection_Entities(void);
 	void	MakeSection_EOF(void);
 	// µÌŞ¼Şª¸Ä¶¬
-	void	MakeDXF_Line(const CNCdata*);
-	void	MakeDXF_Arc(const CNCdata*);
-	void	MakeDXF_Cycle(const CNCdata*);
+	void	MakeDXF_Line(const CNCline*);
+	void	MakeDXF_Arc(const CNCcircle*);
+	void	MakeDXF_Cycle(const CNCcycle*);
 
 	// Ã“I•Ï”
 	static	const	CDXFMakeOption*		ms_pMakeOpt;

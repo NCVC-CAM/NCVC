@@ -78,7 +78,7 @@ BOOL CMCSetup1::OnInitDialog()
 BOOL CMCSetup1::OnApply() 
 {
 	int		i;
-	CMCSetup*	pParent = (CMCSetup *)GetParent();
+	CMCSetup*	pParent = static_cast<CMCSetup *>(GetParent());
 	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	pMCopt->m_strMCname = m_strName;

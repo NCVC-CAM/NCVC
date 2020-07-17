@@ -153,6 +153,9 @@
     <ClCompile Include="MCSetup4.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="MCSetup5.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="MKNCSetup.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -184,6 +187,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NCDoc.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="NCFindDlg.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NCInfoTab.cpp">
@@ -437,6 +443,9 @@
     <ClInclude Include="MCSetup4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="MCSetup5.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="MKNCSetup.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -468,6 +477,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="NCDoc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="NCFindDlg.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="NCInfoTab.h">

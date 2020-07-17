@@ -24,6 +24,7 @@ IMPLEMENT_SERIAL(CLayerData, CObject, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 
 static	int		AreaCompareFunc1(CDXFshape*, CDXFshape*);	// –ÊÏ•À‚×‘Ö‚¦(¸‡)
 static	int		AreaCompareFunc2(CDXFshape*, CDXFshape*);	// –ÊÏ•À‚×‘Ö‚¦(~‡)
+static	int		SequenceCompareFunc(CDXFshape*, CDXFshape*);	// ¼Ø±ÙÅÝÊÞ°‚Å•À‚×‘Ö‚¦
 
 //////////////////////////////////////////////////////////////////////
 // CLayerData ƒNƒ‰ƒX
@@ -114,6 +115,11 @@ void CLayerData::AscendingShapeSort(void)
 void CLayerData::DescendingShapeSort(void)
 {
 	m_obShapeArray.Sort(AreaCompareFunc2);
+}
+
+void CLayerData::SerializeShapeSort(void)
+{
+	m_obShapeArray.Sort(SequenceCompareFunc);
 }
 
 void CLayerData::AllChangeFactor(double f) const
@@ -265,7 +271,7 @@ void CLayerData::Serialize(CArchive& ar)
 int AreaCompareFunc1(CDXFshape* pFirst, CDXFshape* pSecond)
 {
 	int		nResult;
-	CRect	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
+	CRectD	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
 	double	dResult = rc1.Width() * rc1.Height() - rc2.Width() * rc2.Height();
 	if ( dResult == 0.0 )
 		nResult = 0;
@@ -279,7 +285,7 @@ int AreaCompareFunc1(CDXFshape* pFirst, CDXFshape* pSecond)
 int AreaCompareFunc2(CDXFshape* pFirst, CDXFshape* pSecond)
 {
 	int		nResult;
-	CRect	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
+	CRectD	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
 	double	dResult = rc2.Width() * rc2.Height() - rc1.Width() * rc1.Height();
 	if ( dResult == 0.0 )
 		nResult = 0;
@@ -288,4 +294,9 @@ int AreaCompareFunc2(CDXFshape* pFirst, CDXFshape* pSecond)
 	else
 		nResult = -1;
 	return nResult;
+}
+
+int SequenceCompareFunc(CDXFshape* pFirst, CDXFshape* pSecond)
+{
+	return pFirst->GetSerializeSeq() - pSecond->GetSerializeSeq();
 }

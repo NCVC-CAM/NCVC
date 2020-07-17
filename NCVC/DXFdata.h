@@ -159,6 +159,7 @@ public:
 	//
 	int			GetPointNumber(void) const;
 	const CPointD	GetNativePoint(size_t) const;
+	virtual	void	SetNativePoint(size_t, const CPointD&);		// virtual -> CDXFarc
 	const CPointD	GetTunPoint(size_t) const;
 	const CPointD	GetMakePoint(size_t) const;
 	BOOL		IsMatchObject(const CDXFdata*);
@@ -173,6 +174,7 @@ public:
 	virtual	const CPointD	GetStartMakePoint(void) const = 0;
 	virtual	const CPointD	GetEndCutterPoint(void) const = 0;	// 加工終了位置(加工終点)
 	virtual	const CPointD	GetEndMakePoint(void) const = 0;
+	virtual	double	GetLength(void) const = 0;
 	//
 	virtual	void	DrawTuning(double) = 0;
 	virtual	void	Draw(CDC*) const = 0;
@@ -181,10 +183,10 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&) = 0;
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const = 0;
 	virtual	void	SetDirectionFixed(const CPointD&) = 0;
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[]) const = 0;
-	//
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const = 0;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const = 0;
-//	virtual	boost::tuple<CPointD, CPointD>	CalcOffsetExtendPoint(const CDXFdata*, double, BOOL) const = 0;
+	virtual	int		CheckIntersectionCircle(const CPointD&, double) const = 0;
+	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const = 0;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_DYNAMIC(CDXFdata)
@@ -202,8 +204,6 @@ protected:
 	CPoint		m_ptDraw;	// 描画調整用(兼CDXFarc, CDXFellipse)
 	CRect		m_rcDraw;	// 矩形描画(兼CDXFcircle)
 
-	// CDXFcircle からも参照
-	void	SetDrawRect(const CPointD&, double, double);
 	// CDXFtext からも参照
 	void	SetMaxRect(void);
 
@@ -224,6 +224,7 @@ public:
 	virtual	const CPointD	GetStartMakePoint(void) const;
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
+	virtual	double	GetLength(void) const;
 
 	virtual	void	DrawTuning(double);
 	virtual	void	Draw(CDC*) const;
@@ -237,10 +238,10 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	void	SetDirectionFixed(const CPointD&);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[]) const;
-
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-//	virtual	boost::tuple<CPointD, CPointD>	CalcOffsetExtendPoint(const CDXFdata*, double, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFpoint)
@@ -273,6 +274,7 @@ public:
 	virtual	const CPointD	GetStartMakePoint(void) const;
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
+	virtual	double	GetLength(void) const;
 
 	virtual	void	DrawTuning(double);
 	virtual	void	Draw(CDC*) const;
@@ -281,10 +283,10 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	void	SetDirectionFixed(const CPointD&);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[]) const;
-
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-//	virtual	boost::tuple<CPointD, CPointD>	CalcOffsetExtendPoint(const CDXFdata*, double, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFline)
@@ -341,7 +343,6 @@ public:
 	double	GetMakeR(void) const;
 	BOOL	GetRound(void) const;
 	void	SetRoundFixed(const CPointD&, const CPointD&);
-	void	SetRoundFixed(BOOL);
 	int		GetG(void) const;
 	int		GetBaseAxis(void) const;
 	double	GetIJK(int nType) const;
@@ -355,6 +356,7 @@ public:
 	virtual	const CPointD	GetStartMakePoint(void) const;
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
+	virtual	double	GetLength(void) const;
 
 	virtual	void	ReversePt(void);
 	virtual	BOOL	IsRangeAngle(const CPointD&) const;
@@ -366,10 +368,10 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	void	SetDirectionFixed(const CPointD&);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[]) const;
-
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-//	virtual	boost::tuple<CPointD, CPointD>	CalcOffsetExtendPoint(const CDXFdata*, double, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFcircle)
@@ -448,6 +450,8 @@ public:
 	double	GetStartAngle(void) const;
 	double	GetEndAngle(void) const;
 
+	virtual	void	SetNativePoint(size_t, const CPointD&);		// 角度の更新を含む
+
 	virtual	BOOL	IsMatchPoint(const CPointD&);
 	virtual BOOL	IsStartEqEnd(void) const;
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
@@ -455,6 +459,7 @@ public:
 	virtual	const CPointD	GetStartMakePoint(void) const;
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
+	virtual	double	GetLength(void) const;
 
 	virtual	void	ReversePt(void);
 	virtual	BOOL	IsRangeAngle(const CPointD&) const;
@@ -466,10 +471,10 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	void	SetDirectionFixed(const CPointD&);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[]) const;
-
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-//	virtual	boost::tuple<CPointD, CPointD>	CalcOffsetExtendPoint(const CDXFdata*, double, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFarc)
@@ -532,7 +537,10 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	void	SetDirectionFixed(const CPointD&);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[]) const;
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFellipse)
@@ -582,7 +590,10 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	void	SetDirectionFixed(const CPointD&);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[]) const;
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
+	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	boost::optional<CPointD>	CalcExpandPoint(const CDXFdata*) const;
 
 	// Polylineの特殊処理(from DXFDoc.cpp2)
 	void	SetParentLayer(CLayerData*);
@@ -607,7 +618,6 @@ public:
 	CString		GetStrValue(void) const;
 
 	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
-	virtual	void	DrawTuning(double);
 	virtual	void	Draw(CDC*) const;
 	virtual	double	OrgTuning(BOOL = TRUE);
 

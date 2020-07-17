@@ -26,9 +26,9 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 #ifdef _DEBUG
 	CMagaDbg	dbg("CuttimeCalc_Thread()\nStart", DBG_BLUE);
 #endif
-	LPNCVCTHREADPARAM	pParam = (LPNCVCTHREADPARAM)pVoid;
-	CNCDoc*			pDoc = (CNCDoc *)(pParam->pDoc);
-	CNCInfoView1*	pView = (CNCInfoView1 *)(pParam->wParam);
+	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
+	CNCDoc*			pDoc = static_cast<CNCDoc*>(pParam->pDoc);
+	CNCInfoView1*	pView = reinterpret_cast<CNCInfoView1*>(pParam->wParam);
 	ASSERT(pDoc);
 	ASSERT(pView);
 	delete	pVoid;	// Š®‘SÊÞ¯¸¸Þ×³ÝÄÞˆ—
@@ -55,7 +55,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 			pDoc->m_dMove[j] += pData->SetCalcLength();
 			break;
 		case NCDCYCLEDATA:	// ŒÅ’è»²¸Ù
-			pCycle = (CNCcycle *)pData;
+			pCycle = static_cast<CNCcycle*>(pData);
 			pDoc->m_dMove[0] += pCycle->GetCycleMove();
 			pDoc->m_dMove[1] += pCycle->GetCutLength();
 			break;
@@ -81,7 +81,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 				dTmp = 0.0;
 				for ( j=0; j<NCXYZ; j++ ) {
 					dd = pData->GetMove(j) / pMCopt->GetG0Speed(j);
-					dTmp += (dd * dd);	// pow(x, 2.0);
+					dTmp += (dd * dd);
 				}
 				pDoc->m_dCutTime += sqrt(dTmp);
 				break;
@@ -114,7 +114,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 				if ( pData->GetFeed() != 0 )
 					pDoc->m_dCutTime += pData->GetCutLength() / pData->GetFeed();
 				// ÄÞ³ªÙŽžŠÔ[•ª]
-				pDoc->m_dCutTime += ((CNCcycle *)pData)->GetDwell() / 60.0;
+				pDoc->m_dCutTime += static_cast<CNCcycle*>(pData)->GetDwell() / 60.0;
 				break;
 			}
 		}

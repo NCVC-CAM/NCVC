@@ -171,7 +171,7 @@ BOOL CMCSetup3::OnApply()
 
 	// Ä“ÇžÁª¯¸
 	if ( m_bChange )
-		((CMCSetup *)GetParent())->m_bReload = TRUE;
+		static_cast<CMCSetup *>(GetParent())->m_bReload = TRUE;
 
 	return TRUE;
 }

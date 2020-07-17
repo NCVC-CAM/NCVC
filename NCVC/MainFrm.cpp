@@ -34,6 +34,7 @@ static	CUSTTBBUTTON	tbMainButtons[] = {
 	{ ID_EDIT_CUT,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
 	{ ID_EDIT_COPY,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
 	{ ID_EDIT_PASTE,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
+	{ ID_EDIT_FIND,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
 	{ ID_SEPARATOR,			TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
 	{ ID_DXFVIEW_LAYER,		TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
 	{ ID_VIEW_FIT,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
@@ -284,10 +285,11 @@ BOOL CMainFrame::RestoreWindowState(void)
 		wp.rcNormalPosition.right==-1 || wp.rcNormalPosition.bottom==-1 )
 		return FALSE;
 
-	wp.rcNormalPosition.left = min(wp.rcNormalPosition.left,
-		::GetSystemMetrics(SM_CXSCREEN) - ::GetSystemMetrics(SM_CXICON));
-	wp.rcNormalPosition.top = min(wp.rcNormalPosition.top,
-		::GetSystemMetrics(SM_CYSCREEN) - ::GetSystemMetrics(SM_CYICON));
+	int	n;
+	n = ::GetSystemMetrics(SM_CXSCREEN) - ::GetSystemMetrics(SM_CXICON);
+	wp.rcNormalPosition.left = min(wp.rcNormalPosition.left, n);
+	n = ::GetSystemMetrics(SM_CYSCREEN) - ::GetSystemMetrics(SM_CYICON);
+	wp.rcNormalPosition.top = min(wp.rcNormalPosition.top, n);
 
 	SetWindowPlacement(&wp);
 	return TRUE;
@@ -327,7 +329,7 @@ void CMainFrame::ChangeViewOption(void)
 	};
 	int		i, pen;
 	COLORREF		col;
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();	// Can't const(GetLogFont)
 
 	// ค’สอ฿Ýฬ์ฌ
 	for ( i=0; i<SIZEOF(m_penCom[0]); i++ ) {

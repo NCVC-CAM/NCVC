@@ -33,8 +33,6 @@ class CNCChild : public CMDIChildWnd, public CChildBase
 {
 	CNCFrameSplit	m_wndSplitter1, m_wndSplitter2;
 	CMainStatusBar  m_wndStatusBar;
-	int		m_nPos, m_nMaxSize;
-	boost::variant<CNCblock*, CNCdata*>	m_vStatus;
 
 protected:
 	CNCChild();           // 動的生成に使用されるプロテクト コンストラクタ。
@@ -54,17 +52,6 @@ public:
 	CProgressCtrl*	GetProgressCtrl(void) {
 		return GetStatusBar()->GetProgressCtrl();
 	}
-	void	SetStatusMaxLine(int nSize) {
-		m_nMaxSize = nSize;
-	}
-	void	SetStatusInfo(int nPos, CNCblock* pBlock) {
-		m_nPos = nPos;
-		m_vStatus = pBlock;
-	}
-	void	SetStatusInfo(int nPos, CNCdata* pData) {
-		m_nPos = nPos;
-		m_vStatus = pData;
-	}
 
 // オペレーション
 public:
@@ -72,6 +59,9 @@ public:
 	void	SetJumpList(int);					// from NCJumpDlg.cpp
 	void	SetFindList(int, const CString&);	// from NCFindDlg.cpp
 	void	SetFactorInfo(ENNCVPLANE, double);
+
+	// CNCListView ﾒｯｾｰｼﾞﾊﾝﾄﾞﾗ
+	void	OnUpdateStatusLineNo(int, int, boost::variant<CNCblock*, CNCdata*>&);
 
 //オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
@@ -101,8 +91,6 @@ protected:
 	//}}AFX_MSG
 	// ﾌｧｲﾙ変更通知 from DocBase.cpp
 	afx_msg LRESULT OnUserFileChangeNotify(WPARAM, LPARAM);
-	// ｽﾃｰﾀｽﾊﾞｰの更新 from NCListView.cpp
-	afx_msg LRESULT OnUpdateStatusLineNo(WPARAM, LPARAM);
 
 	DECLARE_MESSAGE_MAP()
 };

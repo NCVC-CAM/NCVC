@@ -26,7 +26,7 @@ CDxfSetup2::CDxfSetup2() : CPropertyPage(CDxfSetup2::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CDxfSetup2)
 	//}}AFX_DATA_INIT
-	CDXFOption*	pOpt	= AfxGetNCVCApp()->GetDXFOption();
+	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
 	m_strStartLayer		= pOpt->m_strReadLayer[DXFSTRLAYER];
 	m_strMoveLayer		= pOpt->m_strReadLayer[DXFMOVLAYER];
 	m_strCommentLayer	= pOpt->m_strReadLayer[DXFCOMLAYER];
@@ -87,7 +87,7 @@ void CDxfSetup2::OnReload()
 {
 	UpdateData();
 	OnApply();
-	CDxfSetup*	pParent = (CDxfSetup *)GetParent();
+	CDxfSetup*	pParent = static_cast<CDxfSetup *>(GetParent());
 	if ( pParent->OnReload(this) ) {
 		m_ctStartLayer.SetFocus();
 		m_ctStartLayer.SetSel(0, -1);

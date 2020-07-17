@@ -282,17 +282,10 @@ public:
 	};
 	// 幅と高さの正規化
 	void	NormalizeRect() {
-		double	dTemp;
-		if (left > right) {
-			dTemp = left;
-			left  = right;
-			right = dTemp;
-		}
-		if (top > bottom) {
-			dTemp = top;
-			top = bottom;
-			bottom = dTemp;
-		}
+		if (left > right)
+			std::swap(left, right);
+		if (top > bottom)
+			std::swap(top, bottom);
 	}
 	// 指定座標が矩形内にあるか(矩形線上を含める)
 	BOOL	PtInRect(const CPointD& pt) const {
@@ -405,11 +398,8 @@ public:
 	// 幅と高さの正規化
 	void	NormalizeRect() {
 		CRectD::NormalizeRect();
-		if ( high < low ) {
-			double dTemp = high;
-			high = low;
-			low = dTemp;
-		}
+		if ( high < low )
+			std::swap(high, low);
 	}
 	// 指定されたｵﾌｾｯﾄで CRectD を移動
 	void	OffsetRect(double x, double y, double z) {
@@ -464,10 +454,10 @@ inline int	CalcOffsetSign(const CPointD& pt)
 
 // ２線の交点を求める
 boost::optional<CPointD>	CalcIntersectionPoint_LL
-	(const CPointD&, const CPointD&, const CPointD&, const CPointD&);
+	(const CPointD&, const CPointD&, const CPointD&, const CPointD&, BOOL = TRUE);
 // 直線と円の交点を求める
 boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_LC
-	(const CPointD&, const CPointD&, const CPointD&, double);
+	(const CPointD&, const CPointD&, const CPointD&, double, BOOL = TRUE);
 // ２つの円の交点を求める
 boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_CC
 	(const CPointD&, const CPointD&, double, double);

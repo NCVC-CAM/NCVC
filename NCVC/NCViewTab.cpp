@@ -28,7 +28,6 @@ IMPLEMENT_DYNCREATE(CNCViewTab, CTabView)
 BEGIN_MESSAGE_MAP(CNCViewTab, CTabView)
 	ON_WM_CREATE()
 	ON_WM_DESTROY()
-//	ON_WM_ERASEBKGND()
 	ON_WM_SETFOCUS()
 	// ﾀﾌﾞ移動
 	ON_COMMAND_RANGE(ID_TAB_NEXT, ID_TAB_PREV, OnMoveTab)
@@ -148,7 +147,7 @@ void CNCViewTab::OnActivatePage(int nIndex)
 	}
 	else {
 		m_bSplit[nIndex] = FALSE;
-		GetParentFrame()->SetActiveView((CView *)GetPage(nIndex));
+		GetParentFrame()->SetActiveView(static_cast<CView *>(GetPage(nIndex)));
 	}
 	AfxGetNCVCApp()->SetNCTabPage(nIndex);
 }
@@ -244,9 +243,9 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 		// ﾄﾚｰｽ描画ｽﾚｯﾄﾞ生成
 		LPTRACETHREADPARAM	pParam = new TRACETHREADPARAM;
-		pParam->pFrame		= AfxGetNCVCMainWnd();
+		pParam->pMainFrame	= AfxGetNCVCMainWnd();
 		pParam->pParent		= this;
-		pParam->pListView	= ((CNCChild *)GetParentFrame())->GetListView();
+		pParam->pListView	= static_cast<CNCChild *>(GetParentFrame())->GetListView();
 		CTraceThread*	pThread = new CTraceThread(pParam);
 		if ( !pThread->CreateThread(CREATE_SUSPENDED) ) {
 			delete	pThread;
@@ -388,14 +387,14 @@ void CNCViewTab::OnTraceStop()
 
 void CNCViewTab::OnUpdateTraceCursor(CCmdUI* pCmdUI) 
 {
-	CNCListView*	pList = ((CNCChild *)GetParentFrame())->GetListView();
+	CNCListView*	pList = static_cast<CNCChild *>(GetParentFrame())->GetListView();
 	pCmdUI->Enable(pList->GetListCtrl().GetFirstSelectedItemPosition() ? TRUE : FALSE);
 }
 
 void CNCViewTab::OnTraceCursor(UINT nID) 
 {
 	// ﾘｽﾄｺﾝﾄﾛｰﾙの現在位置取得
-	CNCListView*	pList = ((CNCChild *)GetParentFrame())->GetListView();
+	CNCListView*	pList = static_cast<CNCChild *>(GetParentFrame())->GetListView();
 	POSITION pos;
 	if ( !(pos=pList->GetListCtrl().GetFirstSelectedItemPosition()) ) {
 		m_bTraceContinue = FALSE;
@@ -439,16 +438,7 @@ void CNCViewTab::OnUpdateAllFitCmd(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable( GetActivePage() >= NC_SINGLEPANE );
 }
-/*
-BOOL CNCViewTab::OnEraseBkgnd(CDC* pDC) 
-{
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCViewTab::OnEraseBkgnd()\nStart");
-#endif
-	GetActivePageWnd()->Invalidate();
-	return FALSE;
-}
-*/
+
 /////////////////////////////////////////////////////////////////////////////
 // CTraceThread
 
@@ -458,12 +448,13 @@ BOOL CTraceThread::InitInstance()
 	CMagaDbg	dbg("CTraceThread::InitInstance()\nStart", DBG_BLUE);
 #endif
 	CNCDoc*			pDoc  = m_pParent->GetDocument();
-	CWnd*			pWnd;
-	CNCdata*		pData;
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	CNCdata*		pData1;
+	CNCdata*		pData2 = NULL;
+	CNCViewSplit*	pWnd;
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	CDC		dc;
 	int		nPage, nTraceDraw;
-	BOOL	bBreak;
+	BOOL	bBreak, bSelect;
 
 	// ｽﾚｯﾄﾞのﾙｰﾌﾟ
 	while ( TRUE ) {
@@ -473,57 +464,129 @@ BOOL CTraceThread::InitInstance()
 #endif
 		if ( !m_pParent->m_bTraceContinue )
 			break;
+		// ﾄﾚｰｽ開始・再開
+		bSelect = pOpt->IsTraceMarker();
 		do {
-			bBreak = pDoc->IncrementTrace(nTraceDraw);
-			if ( nTraceDraw <= 0 ) {
-				m_pParent->m_nTrace = ID_NCVIEW_TRACE_STOP;
-				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);	// ﾂｰﾙﾎﾞﾀﾝを即時更新
-				break;
-			}
-			pData = pDoc->GetNCdata(nTraceDraw-1);
-			m_pListView->SelectTrace(pData);
 			nPage = m_pParent->GetActivePage();
 			if ( nPage < 0 )
 				continue;
-			if ( nPage < NC_SINGLEPANE ) {
-				if ( !dc.Attach(m_pParent->m_hDC[nPage]) ) {
-					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+			bBreak = pDoc->IncrementTrace(nTraceDraw);
+			if ( nTraceDraw <= 0 ) {
+				// 最後の選択消去
+				if ( bSelect && pData2 ) {
+					if ( nPage < NC_SINGLEPANE ) {
+						if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
+							::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+						switch ( nPage ) {
+						case 0:
+							dc.SetROP2(R2_XORPEN);
+							pData2->Draw(&dc, TRUE);
+							dc.SetROP2(R2_COPYPEN);
+							pData2->Draw(&dc, FALSE);
+							break;
+						case 1:
+							dc.SetROP2(R2_XORPEN);
+							pData2->DrawXY(&dc, TRUE);
+							dc.SetROP2(R2_COPYPEN);
+							pData2->DrawXY(&dc, FALSE);
+							break;
+						case 2:
+							dc.SetROP2(R2_XORPEN);
+							pData2->DrawXZ(&dc, TRUE);
+							dc.SetROP2(R2_COPYPEN);
+							pData2->DrawXZ(&dc, FALSE);
+							break;
+						case 3:
+							dc.SetROP2(R2_XORPEN);
+							pData2->DrawYZ(&dc, TRUE);
+							dc.SetROP2(R2_COPYPEN);
+							pData2->DrawYZ(&dc, FALSE);
+							break;
+						}
+						dc.Detach();
+					}
+					else {
+						pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
+						pWnd->DrawData(pData2, TRUE,  TRUE);
+						pWnd->DrawData(pData2, FALSE, FALSE);
+					}
 				}
-			}
-			pWnd  = m_pParent->GetPage(nPage);
-			switch ( nPage ) {
-			case 0:
-				pData->Draw(&dc);
-				break;
-			case 1:
-				pData->DrawXY(&dc);
-				break;
-			case 2:
-				pData->DrawXZ(&dc);
-				break;
-			case 3:
-				pData->DrawYZ(&dc);
-				break;
-			case 4:
-			case 5:
-				((CNCViewSplit *)pWnd)->DrawData(pData);
+				// ﾂｰﾙﾎﾞﾀﾝを即時更新
+				m_pParent->m_nTrace = ID_NCVIEW_TRACE_STOP;
+				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);
+				// 次の再開に備える
+				pData2 = NULL;
 				break;
 			}
-			if ( nPage < NC_SINGLEPANE )
+			pData1 = pDoc->GetNCdata(nTraceDraw-1);
+			m_pListView->SendMessage(WM_USERTRACESELECT, (WPARAM)pData1);
+			if ( nPage < NC_SINGLEPANE ) {
+				if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
+					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+				switch ( nPage ) {
+				case 0:
+					if ( bSelect && pData2 ) {
+						dc.SetROP2(R2_XORPEN);
+						pData2->Draw(&dc, TRUE);
+						dc.SetROP2(R2_COPYPEN);
+						pData2->Draw(&dc, FALSE);
+					}
+					pData1->Draw(&dc, bSelect);
+					break;
+				case 1:
+					if ( bSelect && pData2 ) {
+						dc.SetROP2(R2_XORPEN);
+						pData2->DrawXY(&dc, TRUE);
+						dc.SetROP2(R2_COPYPEN);
+						pData2->DrawXY(&dc, FALSE);
+					}
+					pData1->DrawXY(&dc, bSelect);
+					break;
+				case 2:
+					if ( bSelect && pData2 ) {
+						dc.SetROP2(R2_XORPEN);
+						pData2->DrawXZ(&dc, TRUE);
+						dc.SetROP2(R2_COPYPEN);
+						pData2->DrawXZ(&dc, FALSE);
+					}
+					pData1->DrawXZ(&dc, bSelect);
+					break;
+				case 3:
+					if ( bSelect && pData2 ) {
+						dc.SetROP2(R2_XORPEN);
+						pData2->DrawYZ(&dc, TRUE);
+						dc.SetROP2(R2_COPYPEN);
+						pData2->DrawYZ(&dc, FALSE);
+					}
+					pData1->DrawYZ(&dc, bSelect);
+					break;
+				}
 				dc.Detach();
-			GdiFlush();
+			}
+			else {
+				pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
+				if ( bSelect && pData2 ) {
+					pWnd->DrawData(pData2, TRUE,  TRUE);	// XOR PEN
+					pWnd->DrawData(pData2, FALSE, FALSE);	// COPY PEN
+				}
+				pWnd->DrawData(pData1, bSelect, FALSE);
+			}
+			::GdiFlush();
 			if ( bBreak ) {
 				m_pParent->m_bTracePause = TRUE;
 				m_pParent->m_nTrace = ID_NCVIEW_TRACE_PAUSE;
 				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);
 			}
-			else if ( m_pParent->m_nTrace != ID_NCVIEW_TRACE_PAUSE ) {
-				Sleep( pOpt->GetTraceSpeed(m_pParent->m_nTraceSpeed-ID_NCVIEW_TRACE_FAST) );
-			}
+			else if ( m_pParent->m_nTrace != ID_NCVIEW_TRACE_PAUSE )
+				::Sleep( pOpt->GetTraceSpeed(m_pParent->m_nTraceSpeed-ID_NCVIEW_TRACE_FAST) );
+			// 次の選択解除用
+			pData2 = pData1;
 		} while ( m_pParent->m_bTraceContinue && !m_pParent->m_bTracePause );
 #ifdef _DEBUG
 		dbg.printf("Stop the trace loop");
 #endif
+		if ( !m_pParent->m_bTraceContinue )
+			pData2 = FALSE;	// 次の再開に備える
 	}
 
 #ifdef _DEBUG

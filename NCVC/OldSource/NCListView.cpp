@@ -71,17 +71,14 @@ BOOL CNCListView::PreCreateWindow(CREATESTRUCT& cs)
 void CNCListView::OnInitialUpdate() 
 {
 	CListView::OnInitialUpdate();
-
-	int	nSize = GetDocument()->GetNCBlockSize();
 	// ﾘｽﾄﾋﾞｭｰｺﾝﾄﾛｰﾙの最大数をｾｯﾄ
-	GetListCtrl().SetItemCountEx(nSize);
+	GetListCtrl().SetItemCountEx( GetDocument()->GetNCBlockSize() );
 	// 列幅設定
 	GetListCtrl().SetColumnWidth(1, LVSCW_AUTOSIZE);
-	// 子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰ初期化
-	CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-	pFrame->SetStatusMaxLine(nSize);
-	pFrame->SetStatusInfo(0, (CNCdata *)NULL);
-	pFrame->SendMessage(WM_USERSTATUSLINENO);
+	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰ初期化
+	variant<CNCblock*, CNCdata*> vSelect = (CNCdata *)NULL;	// dummy
+	static_cast<CNCChild *>(GetParentFrame())->OnUpdateStatusLineNo(
+		0, GetDocument()->GetNCBlockSize(), vSelect);
 }
 
 void CNCListView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
@@ -102,15 +99,10 @@ void CNCListView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 	case UAV_DRAWMAXRECT:
 		return;		// 再描画不要
 	case UAV_FILEINSERT:	// ﾘｽﾄ再読込(ｶｰｿﾙ位置に読み込み)
-		{
-			int	nSize = GetDocument()->GetNCBlockSize();
-			// ﾘｽﾄﾋﾞｭｰｺﾝﾄﾛｰﾙの最大数をｾｯﾄ
-			GetListCtrl().SetItemCountEx(nSize);
-			// 列幅設定
-			GetListCtrl().SetColumnWidth(1, LVSCW_AUTOSIZE);
-			// 子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰ初期化
-			static_cast<CNCChild *>(GetParentFrame())->SetStatusMaxLine(nSize);
-		}
+		// ﾘｽﾄﾋﾞｭｰｺﾝﾄﾛｰﾙの最大数をｾｯﾄ
+		GetListCtrl().SetItemCountEx( GetDocument()->GetNCBlockSize() );
+		// 列幅設定
+		GetListCtrl().SetColumnWidth(1, LVSCW_AUTOSIZE);
 		break;
 	case UAV_CHANGEFONT:	// ﾌｫﾝﾄの変更
 		GetListCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);
@@ -354,15 +346,16 @@ void CNCListView::OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
 
-	// m_bTraceSelect が真の時は、SelectTrace() から WM_USERSTATUSLINENO 呼び出し
+	// m_bTraceSelect が真の時は、SelectTrace() から OnUpdateStatusLineNo() 呼び出し
 	if ( !m_bTraceSelect && (pNMListView->uNewState & LVIS_SELECTED) ) {
 		int	nItem = pNMListView->iItem;
+		variant<CNCblock*, CNCdata*> vSelect;
+		CNCblock*	pBlock = nItem<0 || nItem>=GetDocument()->GetNCBlockSize() ?
+			NULL : GetDocument()->GetNCblock(nItem);
+		vSelect = pBlock;
 		// ｽﾃｰﾀｽﾊﾞｰの更新
-		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-		pFrame->SetStatusInfo(nItem+1,
-			nItem<0 || nItem>=GetDocument()->GetNCBlockSize() ?
-			(CNCblock *)NULL : GetDocument()->GetNCblock(nItem) );
-		pFrame->SendMessage(WM_USERSTATUSLINENO);
+		static_cast<CNCChild *>(GetParentFrame())->OnUpdateStatusLineNo(
+			nItem + 1, GetDocument()->GetNCBlockSize(), vSelect);
 	}
 	*pResult = 0;
 }
@@ -377,9 +370,9 @@ LRESULT CNCListView::OnSelectTrace(WPARAM wParam, LPARAM)
 	GetListCtrl().SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
 	m_bTraceSelect = FALSE;
 	// ｽﾃｰﾀｽﾊﾞｰ更新
-	CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-	pFrame->SetStatusInfo(nIndex+1, pData);
-	pFrame->SendMessage(WM_USERSTATUSLINENO);
+	variant<CNCblock*, CNCdata*> vSelect = pData;
+	static_cast<CNCChild *>(GetParentFrame())->OnUpdateStatusLineNo(
+		nIndex + 1, GetDocument()->GetNCBlockSize(), vSelect);
 	// 強制ｽｸﾛｰﾙの可能性もあるのでUpdate()ではNG
 	GetListCtrl().EnsureVisible(nIndex, FALSE);
 

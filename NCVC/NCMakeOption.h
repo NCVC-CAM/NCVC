@@ -64,6 +64,7 @@
 #define	MKNC_FLG_DRILLCIRCLE	11
 #define	MKNC_FLG_DRILLBREAK		12
 #define	MKNC_FLG_LAYERCOMMENT	13
+#define	MKNC_FLG_L0CYCLE		14
 
 #define	MKNC_STR_LINEFORM		0
 #define	MKNC_STR_EOB			1
@@ -168,9 +169,10 @@ friend class CMKNCSetup8;
 					m_bDrillCircle,		// ‰~ÃŞ°À‚àŒŠ‰ÁHÃŞ°À‚ÆŒ©‚È‚·
 					m_bDrillBreak,		// ‘å‚«‚³‚²‚Æ‚ÉºÒİÄ‚ğ–„‚ß‚Ş
 			// -----
-					m_bLayerComment;	// Ú²Ô‚²‚Æ‚ÉºÒİÄ‚ğ–„‚ß‚Ş
+					m_bLayerComment,	// Ú²Ô‚²‚Æ‚ÉºÒİÄ‚ğ–„‚ß‚Ş
+					m_bL0Cycle;			// ŒÅ’è»²¸Ù’†‚ÍL0o—Í
 		};
-		BOOL		m_ubFlags[14];
+		BOOL		m_ubFlags[15];
 	};
 	// CStringŒ^µÌß¼®İ
 	CString		m_strOption[6];			// s”Ô†Ì«°Ï¯Ä, EOB, ¶½ÀÑˆÚ“®º°ÄŞ(‘OŒã)

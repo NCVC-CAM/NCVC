@@ -105,7 +105,7 @@ void CNCWorkDlg::OnOK()
 	// ﾄﾞｷｭﾒﾝﾄﾋﾞｭｰへの変更通知
 	// このｲﾍﾞﾝﾄが発生するときは，OnUserSwitchDocument() より
 	// 必ず AfxGetNCVCMainWnd()->MDIGetActive() が CNCChild を指している
-	CNCChild* pFrame = (CNCChild *)(AfxGetNCVCMainWnd()->MDIGetActive());
+	CNCChild* pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
 	if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {	// 念のため
 		UpdateData();
 		CRect3D	rc(0, 0,
@@ -120,7 +120,7 @@ void CNCWorkDlg::OnOK()
 void CNCWorkDlg::OnHide() 
 {
 	// 情報更新
-	CNCChild* pFrame = (CNCChild *)(AfxGetNCVCMainWnd()->MDIGetActive());
+	CNCChild* pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
 	if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) )
 		pFrame->SetWorkRect(FALSE, CRect3D());
 }

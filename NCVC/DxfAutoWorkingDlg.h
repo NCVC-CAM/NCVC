@@ -12,7 +12,7 @@ class CDxfAutoWorkingDlg : public CDialog
 
 // コンストラクション
 public:
-	CDxfAutoWorkingDlg(double);
+	CDxfAutoWorkingDlg(double, BOOL);
 
 // ダイアログ データ
 	//{{AFX_DATA(CDxfAutoWorkingDlg)
@@ -20,7 +20,9 @@ public:
 	int		m_nSelect;
 	int		m_nDetail;
 	CFloatEdit	m_ctOffset;
+	BOOL	m_bAcuteRound;
 	CButton m_ctDetail[4];
+	CButton m_ctAcuteRound;
 	//}}AFX_DATA
 	double	m_dOffset;	// ｵﾌｾｯﾄ値取得用
 

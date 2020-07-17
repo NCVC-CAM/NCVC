@@ -59,14 +59,14 @@ static	LPCTSTR	g_szBOrder[] = {
 	"CircleHalf", "EllipseFlg",
 	"Deep", "DeepFinishSet",
 	"DrillMatch", "DrillCircle", "DrillBreak",
-	"LayerComment"
+	"LayerComment", "L0Cycle"
 };
 static	const	BOOL	g_dfBOrder[] = {
 	FALSE, FALSE, FALSE, TRUE, TRUE, FALSE,
 	FALSE, TRUE,
 	FALSE, TRUE,
 	TRUE, FALSE, TRUE,
-	TRUE
+	TRUE, FALSE
 };
 
 // CString型命令
@@ -158,6 +158,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKNC_NUM_MOVEZ,			"移動ﾚｲﾔのZ軸(0:そのまま,1:R点,2:ｲﾆｼｬﾙ点)"},
 	{NC_STR,	MKNC_STR_CUSTMOVE_B,	"ｶｽﾀﾑ移動ｺｰﾄﾞ(前)"},
 	{NC_STR,	MKNC_STR_CUSTMOVE_A,	"ｶｽﾀﾑ移動ｺｰﾄﾞ(後)"},
+	{NC_FLG,	MKNC_FLG_L0CYCLE,		"固定ｻｲｸﾙ中はL0出力"},
 	{NC_PAGE,	7},		// Page7(最適化:Dialog5)
 	{NC_DBL,	MKNC_DBL_TOLERANCE,		"同一座標と見なす許容差"},
 	{NC_NUM,	MKNC_NUM_TOLERANCE,		"超えた時の動作(0:Z上昇G0移動,1:G1補間)"},
@@ -358,7 +359,7 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 
 BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 {
-	int		i, n;
+	int		i, n, nLen;
 	CString	strBuf, strResult;
 	TCHAR	szFile[_MAX_PATH];
 
@@ -417,9 +418,10 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 				else
 					strResult = m_strOption[n];
 				// 書式を整えるために残ｽﾍﾟｰｽの計算
+				nLen = 11 - strResult.GetLength();
 				strBuf.Format("%s%s= \"%s\"%s; %s\n",
 					g_szSOrder[n], GetInsertSpace(lstrlen(g_szSOrder[n])),
-					strResult, CString(' ', max(1, 11-strResult.GetLength())),
+					strResult, CString(' ', max(1, nLen)),
 					g_stSaveOrder[i].lpszComment);
 				break;
 			default:
@@ -592,6 +594,7 @@ void CNCMakeOption::DbgDump(void) const
 	dbg.printf("  MoveZ        =%d", m_nMoveZ);
 	dbg.printf("  CustMoveB    =%s", m_strOption[MKNC_STR_CUSTMOVE_B]);
 	dbg.printf("  CustMoveA    =%s", m_strOption[MKNC_STR_CUSTMOVE_A]);
+	dbg.printf("  L0Cycle      =%d", m_bL0Cycle);
 	dbg.printf("----------");
 	dbg.printf("  Tolerance    =%f", m_dTolerance);
 	dbg.printf("  TolerancePro =%d", m_nTolerance);

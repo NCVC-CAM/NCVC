@@ -59,7 +59,7 @@ BOOL CMakeDXFDlg2::OnInitDialog()
 {
 	CPropertyPage::OnInitDialog();
 
-	CDXFMakeOption*	pDXFMake = ((CMakeDXFDlg *)GetParent())->GetDXFMakeOption();
+	CDXFMakeOption*	pDXFMake = static_cast<CMakeDXFDlg *>(GetParent())->GetDXFMakeOption();
 	m_dLength		= pDXFMake->m_dOrgLength;
 	m_bOrgCircle	= pDXFMake->m_bOrgCircle;
 	m_bOrgCross		= pDXFMake->m_bOrgCross;
@@ -81,7 +81,7 @@ void CMakeDXFDlg2::OnSelchangeCycle()
 
 BOOL CMakeDXFDlg2::OnApply() 
 {
-	CDXFMakeOption*	pDXFMake = ((CMakeDXFDlg *)GetParent())->GetDXFMakeOption();
+	CDXFMakeOption*	pDXFMake = static_cast<CMakeDXFDlg *>(GetParent())->GetDXFMakeOption();
 	pDXFMake->m_dOrgLength	= m_dLength;
 	pDXFMake->m_bOrgCircle	= m_bOrgCircle;
 	pDXFMake->m_bOrgCross	= m_bOrgCross;

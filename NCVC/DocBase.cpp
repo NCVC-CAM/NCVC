@@ -132,7 +132,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 	HANDLE	hEvent[2];		// 0:ﾄﾞｷｭﾒﾝﾄｸﾗｽの終了通知ｲﾍﾞﾝﾄﾊﾝﾄﾞﾙ
 							// 1:ﾌｧｲﾙ変更通知ﾊﾝﾄﾞﾙ
 
-	LPFNCNGTHREADPARAM pThreadParam = (LPFNCNGTHREADPARAM)pParam;
+	LPFNCNGTHREADPARAM pThreadParam = reinterpret_cast<LPFNCNGTHREADPARAM>(pParam);
 	CString	strFileName(pThreadParam->lpstrFileName);
 	HWND	hWndFrame = pThreadParam->hWndFrame;
 	hEvent[0] = pThreadParam->hFinish;

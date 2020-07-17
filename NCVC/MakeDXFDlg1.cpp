@@ -71,13 +71,14 @@ BOOL CMakeDXFDlg1::OnInitDialog()
 	CPropertyPage::OnInitDialog();
 
 	int		i, j;
+	CMakeDXFDlg*	pParent = static_cast<CMakeDXFDlg *>(GetParent());
 	// ºÝ½Ä×¸À‚Å‚Í‚Å‚«‚È‚¢ºÝÄÛ°Ù‚Ì‰Šú‰»
-	CDXFMakeOption*	pDXFMake = ((CMakeDXFDlg *)GetParent())->GetDXFMakeOption();
+	CDXFMakeOption*	pDXFMake = pParent->GetDXFMakeOption();
 
 	// ÄÞ·­ÒÝÄ–¼‚©‚çDXFÌ§²Ù–¼‚ðì¬(GetParent()‚ÍºÝ½Ä×¸À‚ÅŽg‚¦‚È‚¢)
-	CString	strDXFFile(((CMakeDXFDlg *)GetParent())->GetDoc()->GetDXFFileName());
+	CString	strDXFFile(pParent->GetDoc()->GetDXFFileName());
 	if ( strDXFFile.IsEmpty() ) {
-		::Path_Name_From_FullPath(((CMakeDXFDlg *)GetParent())->GetDoc()->GetPathName(),
+		::Path_Name_From_FullPath(pParent->GetDoc()->GetPathName(),
 				m_strDXFPath, m_strDXFFileName, FALSE);
 		CString	strFilter;
 		VERIFY(strFilter.LoadString(IDS_DXF_FILTER));
@@ -133,7 +134,7 @@ void CMakeDXFDlg1::OnMKDXFileUp()
 BOOL CMakeDXFDlg1::OnApply() 
 {
 	int		i;
-	CDXFMakeOption*	pDXFMake = ((CMakeDXFDlg *)GetParent())->GetDXFMakeOption();
+	CDXFMakeOption*	pDXFMake = static_cast<CMakeDXFDlg *>(GetParent())->GetDXFMakeOption();
 	for ( i=0; i<SIZEOF(m_strLayer); i++ ) {
 		pDXFMake->m_strOption[i]	= m_strLayer[i];
 		pDXFMake->m_nLType[i]		= m_cbLineType[i].GetCurSel();

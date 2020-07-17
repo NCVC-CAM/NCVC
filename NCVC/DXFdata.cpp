@@ -13,7 +13,8 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
-//#define	_DEBUGDRAW_DXF
+//#define	_DEBUGDRAW_DXF			// 描画座標情報
+//#define	_DEBUGDRAW_DXF_EDGE_	// 端点描画
 #endif
 
 IMPLEMENT_SERIAL(CCAMHead, CObject, 1)
@@ -44,9 +45,9 @@ PFNORGDRILLTUNING	CDXFpoint::ms_pfnOrgDrillTuning = &CDXFpoint::OrgTuning_Seq;
 //////////////////////////////////////////////////////////////////////
 void CCAMHead::Serialize(CArchive& ar)
 {
+	extern	DWORD	g_dwCamVer;		// NCVC.cpp
 	static	TCHAR	ss_szID[] = "NCVC_CAM_DATA...";
 	char	szID[sizeof(ss_szID)-1];	// 識別用(最後の \0 を除く)
-	DWORD	dwVer;						// Ver.No.
 	CString	strComment;					// ｺﾒﾝﾄ文字列
 
 	if ( ar.IsStoring() ) {
@@ -65,13 +66,13 @@ void CCAMHead::Serialize(CArchive& ar)
 			AfxThrowUserException();
 		}
 		// ﾊﾞｰｼﾞｮﾝNo.
-		ar >> dwVer;
-		if ( dwVer > NCVCSERIALVERSION ) {
+		ar >> g_dwCamVer;
+		if ( g_dwCamVer > NCVCSERIALVERSION ) {
 			strMsg.Format(IDS_ERR_CAMVER, ar.GetFile()->GetFilePath());
 			AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 			AfxThrowUserException();
 		}
-		else if ( dwVer < NCVCSERIALVERSION ) {
+		else if ( g_dwCamVer < NCVCSERIALVERSION_1503 ) {
 			strMsg.Format(IDS_ERR_CAMOLD, ar.GetFile()->GetFilePath());
 			AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 			AfxThrowUserException();
@@ -121,7 +122,7 @@ void CDXFdata::Serialize(CArchive& ar)
 	}
 	else {
 		ar >> m_dwSelect;
-		m_pParentLayer = (CLayerData *)(ar.m_pDocument);
+		m_pParentLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
 	}
 }
 
@@ -236,8 +237,11 @@ void CDXFpoint::Serialize(CArchive& ar)
 
 void CDXFpoint::DrawTuning(double f)
 {
-	SetDrawRect(m_pt[0], 1.0, f);
-	m_ptDraw = m_pt[0] * f;
+	CPointD	pt( m_pt[0] * f);
+	m_ptDraw = pt;
+	// 位置を表す丸印は常に2.5論理理位
+	m_rcDraw.TopLeft()		= pt - LOMETRICFACTOR*2.5;
+	m_rcDraw.BottomRight()	= pt + LOMETRICFACTOR*2.5;
 }
 
 void CDXFpoint::Draw(CDC* pDC) const
@@ -246,7 +250,12 @@ void CDXFpoint::Draw(CDC* pDC) const
 	CMagaDbg	dbg("CDXFpoint::Draw()", DBG_RED);
 	dbg.printStruct((LPRECT)&m_rcDraw, "m_rcDraw");
 #endif
-	pDC->Rectangle(&m_rcDraw);
+	CPoint	pt(m_rcDraw.CenterPoint());
+	pDC->MoveTo(m_rcDraw.right-1, pt.y);
+	pDC->LineTo(m_rcDraw.left,  pt.y);
+	pDC->LineTo(pt.x, m_rcDraw.top+1);	// topが下側
+	pDC->LineTo(pt.x, m_rcDraw.bottom);
+	pDC->LineTo(m_rcDraw.right-1, pt.y);
 	pDC->Ellipse(&m_rcDraw);
 }
 
@@ -287,7 +296,7 @@ void CDXFpoint::SetDirectionFixed(const CPointD&)
 {
 }
 
-int CDXFpoint::GetIntersectionPoint(const CDXFdata*, CPointD[]) const
+int CDXFpoint::GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL) const
 {
 	return 0;
 }
@@ -297,13 +306,18 @@ CDXFpoint::CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const
 {
 	return optional<CPointD>();
 }
-/*
-tuple<CPointD, CPointD>
-CDXFpoint::CalcOffsetExtendPoint(const CDXFdata*, double, BOOL) const
+
+int CDXFpoint::CheckIntersectionCircle(const CPointD&, double) const
 {
-	return make_tuple(CPointD(), CPointD());
+	return 0;
 }
-*/
+
+optional<CPointD>
+CDXFpoint::CalcExpandPoint(const CDXFdata*) const
+{
+	return optional<CPointD>();
+}
+
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのLineクラス
 //////////////////////////////////////////////////////////////////////
@@ -372,6 +386,10 @@ void CDXFline::Draw(CDC* pDC) const
 #endif
 	pDC->MoveTo(m_ptDrawS);
 	pDC->LineTo(m_ptDrawE);
+#ifdef _DEBUGDRAW_DXF_EDGE_
+	CRect	rc(m_ptDrawE.x-10, m_ptDrawE.y-10, m_ptDrawE.x+10, m_ptDrawE.y+10);
+	pDC->Ellipse(&rc);
+#endif
 }
 
 double CDXFline::OrgTuning(BOOL bCalc/*=TRUE*/)
@@ -436,21 +454,22 @@ void CDXFline::SetDirectionFixed(const CPointD& pts)
 {
 	// 固有座標を近い方に入れ替え
 	if ( GAPCALC(m_pt[0]-pts) > GAPCALC(m_pt[1]-pts) )
-		swap(m_pt[0], m_pt[1]);
+		std::swap(m_pt[0], m_pt[1]);
 }
 
-int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[]) const
+int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdge/*=TRUE*/) const
 {
 	int		nResult = 0;
 	CPointD	pt1(pData->GetNativePoint(0)), pt2(pData->GetNativePoint(1));
-	CDXFcircle*	pCircle;
+	const CDXFcircle*	pCircle;
 	optional<CPointD>	ptResult;
 
-	// 端点が同じ場合は交点なしとする
+	// bEdge==TRUE : 端点が同じ場合は交点なしとする
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
-		if ( sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS ) {
+		if ( bEdge &&
+			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
 			break;
 		}
 		ptResult = ::CalcIntersectionPoint_LL(m_pt[0], m_pt[1], pt1, pt2);
@@ -460,13 +479,14 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[]) const
 		}
 		break;
 	case DXFARCDATA:
-		if ( sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS ) {
+		if ( bEdge &&
+			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
 			break;
 		}
 		// through
 	case DXFCIRCLEDATA:
-		pCircle = (CDXFcircle *)pData;
+		pCircle = static_cast<const CDXFcircle*>(pData);
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(m_pt[0], m_pt[1],
 						pCircle->GetCenter(), pCircle->GetR());
 		if ( pData->GetType() == DXFARCDATA ) {
@@ -478,7 +498,7 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[]) const
 				if ( !pCircle->IsRangeAngle(pt1) ) {
 					nResult--;
 					if ( nResult > 0 )
-						pt1 = pt2;
+						std::swap(pt1, pt2);
 				}
 			}
 		}
@@ -500,7 +520,7 @@ CDXFline::CalcOffsetIntersectionPoint
 	CPointD	pto( GetNativePoint(1) ), p1, p2, pts( GetNativePoint(0) ), pt;
 	int		k1, k2, nRound;
 	BOOL	bResult;
-	CDXFarc*	pArc;
+	const CDXFarc*		pArc;
 	optional<CPointD>	ptResult;
 
 	// 交点を原点に
@@ -521,7 +541,7 @@ CDXFline::CalcOffsetIntersectionPoint
 		ptResult = ::CalcOffsetIntersectionPoint_LL(p1, p2, k1, k2, r);
 		break;
 	case DXFARCDATA:
-		pArc = (CDXFarc *)pNext;
+		pArc = static_cast<const CDXFarc*>(pNext);
 		p2 = pArc->GetCenter() - pto;
 		if ( pArc->GetRound() ) {
 			nRound = -1;	// 反時計はﾏｲﾅｽ符号
@@ -546,61 +566,51 @@ CDXFline::CalcOffsetIntersectionPoint
 	}
 	return ptResult;
 }
-/*
-tuple<CPointD, CPointD>
-CDXFline::CalcOffsetExtendPoint
-	(const CDXFdata* pNext, double r, BOOL bLeft) const
+
+int CDXFline::CheckIntersectionCircle(const CPointD& ptc, double r) const
 {
-	CPointD	pto( GetEndCutterPoint() ),
-			pts( GetStartCutterPoint() - pto ),
-			pte( pNext->GetEndCutterPoint() - pto ),
-			ptResult1, ptResult2;
-	double	a1, a2, b,
-			sx = fabs(pts.x), sy = fabs(pts.y), ex = fabs(pte.x), ey = fabs(pte.y);
-	int		k1, k2;
-
-	k1 = ::CalcOffsetSign(pto - GetStartCutterPoint());
-	k2 = ::CalcOffsetSign(pte);
-	if ( !bLeft ) {
-		k1 = -k1;
-		k2 = -k2;
-	}
-
-	if ( sx < EPS || ex < EPS ) {
-		if ( sx < EPS && ex < EPS ) {	// 両方垂直線
-			ptResult1.x = 0;
-			ptResult1.y = pte.y > 0 ? -r : r;
-			ptResult2.y = pts.y > 0 ? -r : r;
-		}
-		else if ( sx < EPS ) {
-			ptResult2.y = pts.y > 0 ? -r : r;
-			a2 = pte.y / pte.x;
-			ptResult1.x = r * k1;
-			ptResult1.y = a2 * ptResult1.x;
-		}
-		else {
-			ptResult1.y = pte.y > 0 ? -r : r;
-			a1 = pts.y / pts.x;
-			ptResult2.x = r * k2;
-			ptResult2.y = a1 * ptResult2.x;
-		}
-	}
-	else {
-		a1 = pts.y / pts.x;
-		a2 = pte.y / pte.x;
-		b = k1 * (r*sqrt(1+a1*a1));
-		ptResult1.x = -b / (a1 - a2);
-		ptResult1.y = a1 * ptResult1.x + b;
-		b = k2 * (r*sqrt(1+a2*a2));
-		ptResult2.x = -b / (a2 - a1);
-		ptResult2.y = a2 * ptResult2.x + b;
-	}
-
-	ptResult1 += pto;
-	ptResult2 += pto;
-	return make_tuple(ptResult1, ptResult2);
+	int	nResult;
+	CPointD	pt1, pt2;
+	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(m_pt[0], m_pt[1], ptc, r);
+	// 「接する」場合の厳密ﾁｪｯｸ
+	if ( nResult==1 && pt1!=pt2 )
+		nResult = 2;	// 交点ありに解を変更
+	return nResult;
 }
-*/
+
+optional<CPointD>
+CDXFline::CalcExpandPoint(const CDXFdata* pData) const
+{
+	// 伸縮計算くずれ（範囲外の交点計算）
+	// 基本的には GetIntersectionPoint() と同じ
+	optional<CPointD>	ptResult;
+
+	switch ( pData->GetType() ) {
+	case DXFLINEDATA:
+		ptResult = ::CalcIntersectionPoint_LL(m_pt[0], m_pt[1],
+						pData->GetNativePoint(0), pData->GetNativePoint(1), FALSE);
+		break;
+	case DXFARCDATA:
+		{
+			int		nResult;
+			CPointD	pt1, pt2;
+			const CDXFarc* pArc = static_cast<const CDXFarc*>(pData);
+			tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(m_pt[0], m_pt[1],
+						pArc->GetCenter(), pArc->GetR(), FALSE);
+			if ( nResult > 1 ) {
+				// 終点に近い方を選択
+				ptResult = GAPCALC(pt1-m_pt[1]) < GAPCALC(pt2-m_pt[1]) ? pt1 : pt2;
+			}
+			else if ( nResult > 0 ) {
+				ptResult = pt1;
+			}
+		}
+		break;
+	}
+
+	return ptResult;
+}
+
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのCircleクラス
 //////////////////////////////////////////////////////////////////////
@@ -702,7 +712,8 @@ BOOL CDXFcircle::IsRangeAngle(const CPointD&) const
 
 void CDXFcircle::DrawTuning(double f)
 {
-	SetDrawRect(m_ct, m_r, f);	// CDXFpoint
+	m_rcDraw.TopLeft()		= (m_ct - m_r) * f;
+	m_rcDraw.BottomRight()	= (m_ct + m_r) * f;
 }
 
 void CDXFcircle::Draw(CDC* pDC) const
@@ -788,18 +799,11 @@ void CDXFcircle::SetRoundFixed(const CPointD& pts, const CPointD& pte)
 	m_bRoundFixed = TRUE;
 }
 
-void CDXFcircle::SetRoundFixed(BOOL bRound)
-{
-	// 輪郭ｵﾌﾞｼﾞｪｸﾄ用
-	m_bRound = bRound;
-	m_bRoundFixed = TRUE;
-}
-
-int CDXFcircle::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[]) const
+int CDXFcircle::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL) const
 {
 	int		nResult = 0;
 	CPointD	pt1, pt2;
-	CDXFcircle*	pCircle;
+	const CDXFcircle*	pCircle;
 
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
@@ -808,7 +812,7 @@ int CDXFcircle::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[]) const
 		break;
 	case DXFCIRCLEDATA:
 	case DXFARCDATA:
-		pCircle = (CDXFcircle *)pData;
+		pCircle = static_cast<const CDXFcircle*>(pData);
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(
 				m_ct, pCircle->GetCenter(), m_r, pCircle->GetR());
 		if ( pData->GetType() == DXFARCDATA ) {
@@ -820,7 +824,7 @@ int CDXFcircle::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[]) const
 				if ( !pCircle->IsRangeAngle(pt1) ) {
 					nResult--;
 					if ( nResult > 0 )
-						pt1 = pt2;
+						std::swap(pt1, pt2);
 				}
 			}
 		}
@@ -840,13 +844,18 @@ CDXFcircle::CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const
 {
 	return optional<CPointD>();
 }
-/*
-tuple<CPointD, CPointD>
-CDXFcircle::CalcOffsetExtendPoint(const CDXFdata*, double, BOOL) const
+
+int CDXFcircle::CheckIntersectionCircle(const CPointD&, double) const
 {
-	return make_tuple(CPointD(), CPointD());
+	return 0;
 }
-*/
+
+optional<CPointD>
+CDXFcircle::CalcExpandPoint(const CDXFdata*) const
+{
+	return optional<CPointD>();
+}
+
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのCircleExクラス
 //////////////////////////////////////////////////////////////////////
@@ -1099,8 +1108,8 @@ void CDXFarc::SetMaxRect(void)
 	m_rcMax.OffsetRect(m_ct);
 	m_rcMax.NormalizeRect();
 #ifdef _DEBUG
-	dbg.printf("m_rcMax(left, top   )=(%f, %f)", m_rcMax.left, m_rcMax.top);
-	dbg.printf("m_rcMax(right,bottom)=(%f, %f)", m_rcMax.right, m_rcMax.bottom);
+	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
 
@@ -1173,8 +1182,12 @@ void CDXFarc::Draw(CDC* pDC) const
 #ifdef _DEBUGDRAW_DXF
 	dbg.printf("pte.x=%d pte.y=%d", (int)pt.x, (int)pt.y);
 #endif
-	if ( !m_bRoundOrig )
-		pDC->MoveTo(ptBak);
+#ifdef _DEBUGDRAW_DXF_EDGE_
+	pt.SetPoint(m_rDraw * cos(m_eqDraw), m_rDraw * sin(m_eqDraw));
+	pt += m_ptDraw;
+	CRect	rc(pt.x-10, pt.y-10, pt.x+10, pt.y+10);
+	pDC->Ellipse(&rc);
+#endif
 }
 
 double CDXFarc::OrgTuning(BOOL bCalc/*=TRUE*/)
@@ -1222,37 +1235,39 @@ void CDXFarc::SetDirectionFixed(const CPointD& pts)
 {
 	// 固有座標の入れ替えと回転方向の判定
 	if ( GAPCALC(m_pt[0]-pts) > GAPCALC(m_pt[1]-pts) ) {
-		swap(m_pt[0], m_pt[1]);
+		std::swap(m_pt[0], m_pt[1]);
 		// 回転方向
 		m_bRound = m_bRoundOrig = !m_bRoundOrig;
-		swap(m_sq, m_eq);
-		swap(m_sqDraw, m_eqDraw);
+		std::swap(m_sq, m_eq);
+		std::swap(m_sqDraw, m_eqDraw);
 	}
 }
 
-int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[]) const
+int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdge/*=TRUE*/) const
 {
 	int		nResult = 0;
 	CPointD	pt1(pData->GetNativePoint(0)), pt2(pData->GetNativePoint(1));
-	CDXFcircle*	pCircle;
+	const CDXFcircle*	pCircle;
 
-	// 端点が同じ場合は交点なしとする
+	// bEdge==TRUE : 端点が同じ場合は交点なしとする
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
-		if ( sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS ) {
+		if ( bEdge &&
+			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
 			break;
 		}
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(pt1, pt2, m_ct, m_r);
 		break;
 	case DXFARCDATA:
-		if ( sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
-			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS ) {
+		if ( bEdge &&
+			(sqrt(GAPCALC(pt1-m_pt[0])) < EPS || sqrt(GAPCALC(pt1-m_pt[1])) < EPS ||
+			 sqrt(GAPCALC(pt2-m_pt[0])) < EPS || sqrt(GAPCALC(pt2-m_pt[1])) < EPS) ) {
 			break;
 		}
 		// through
 	case DXFCIRCLEDATA:
-		pCircle = (CDXFcircle *)pData;
+		pCircle = static_cast<const CDXFcircle*>(pData);
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(m_ct, pCircle->GetCenter(), m_r, pCircle->GetR());
 		break;
 	}
@@ -1264,10 +1279,10 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[]) const
 	}
 	if ( nResult > 0 ) {
 		if ( !IsRangeAngle(pt1) ||
-			(pData->GetType()==DXFARCDATA && !pCircle->IsRangeAngle(pt1)) ) {
+				(pData->GetType()==DXFARCDATA && !pCircle->IsRangeAngle(pt1)) ) {
 			nResult--;
 			if ( nResult > 0 )
-				pt1 = pt2;
+				std::swap(pt1, pt2);
 		}
 	}
 
@@ -1280,13 +1295,14 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[]) const
 }
 
 optional<CPointD>
-CDXFarc::CalcOffsetIntersectionPoint(const CDXFdata* pNext, double r, BOOL bLeft) const
+CDXFarc::CalcOffsetIntersectionPoint
+	(const CDXFdata* pNext, double r, BOOL bLeft) const
 {
 	// 交点計算にはｵﾌﾞｼﾞｪｸﾄが持つ真座標(NativePoint)を使用
 	CPointD	pto( GetNativePoint(1) ), p1, p2, ptResult;
 	int		k1, k2, nResult, nRound;
 	BOOL	bResult = FALSE;
-	CDXFarc*	pArc;
+	const CDXFarc*	pArc;
 
 	switch ( pNext->GetMakeType() ) {
 	case DXFLINEDATA:
@@ -1308,9 +1324,11 @@ CDXFarc::CalcOffsetIntersectionPoint(const CDXFdata* pNext, double r, BOOL bLeft
 		p2 = m_ct - pto;
 		tie(bResult, ptResult, r) = ::CalcOffsetIntersectionPoint_LC(p1, p2, m_r, r,
 				nRound, k1, k2);
+		if ( bResult )
+			ptResult += pto;
 		break;
 	case DXFARCDATA:
-		pArc = (CDXFarc *)pNext;
+		pArc = static_cast<const CDXFarc*>(pNext);
 		k1 = m_bRound ? -1 : 1;
 		k2 = pArc->GetRound() ? -1 : 1;
 		if ( !bLeft ) {
@@ -1320,7 +1338,7 @@ CDXFarc::CalcOffsetIntersectionPoint(const CDXFdata* pNext, double r, BOOL bLeft
 		tie(nResult, p1, p2) = ::CalcIntersectionPoint_CC(m_ct, pArc->GetCenter(),
 				m_r+r*k1, pArc->GetR()+r*k2);
 		if ( nResult > 0 ) {
-			ptResult = GAPCALC(p1) < GAPCALC(p2) ? p1 : p2;
+			ptResult = GAPCALC(p1-pto) < GAPCALC(p2-pto) ? p1 : p2;
 			bResult = TRUE;
 		}
 		else
@@ -1328,19 +1346,59 @@ CDXFarc::CalcOffsetIntersectionPoint(const CDXFdata* pNext, double r, BOOL bLeft
 		break;
 	}
 
-	if ( bResult ) {
-		ptResult += pto;
-		return ptResult;
-	}
-	return optional<CPointD>();
+	return bResult ? ptResult : optional<CPointD>();
 }
-/*
-tuple<CPointD, CPointD>
-CDXFarc::CalcOffsetExtendPoint(const CDXFdata*, double, BOOL) const
+
+int CDXFarc::CheckIntersectionCircle(const CPointD& ptc, double r) const
 {
-	return make_tuple(CPointD(), CPointD());
+	int	nResult;
+	CPointD	pt1, pt2;
+	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(m_ct, ptc, m_r, r);
+	// 交点を厳密に求めるわけではない
+	switch ( nResult ) {
+	case 1:		// 「接する」
+		if ( !IsRangeAngle(pt1) )
+			nResult = 0;
+		break;
+	case 2:
+		if ( !IsRangeAngle(pt1) && !IsRangeAngle(pt2) )
+			nResult = 0;
+		break;
+	}
+	return nResult;
 }
-*/
+
+optional<CPointD>
+CDXFarc::CalcExpandPoint(const CDXFdata* pData) const
+{
+	int		nResult;
+	CPointD	pt1, pt2;
+	optional<CPointD>	ptResult;
+
+	switch ( pData->GetType() ) {
+	case DXFLINEDATA:
+		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(
+				pData->GetNativePoint(0), pData->GetNativePoint(1),
+				m_ct, m_r, FALSE);
+		break;
+	case DXFARCDATA:
+		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(
+				m_ct, static_cast<const CDXFarc*>(pData)->GetCenter(),
+				m_r,  static_cast<const CDXFarc*>(pData)->GetR());
+		break;
+	}
+
+	if ( nResult > 1 ) {
+		// 終点に近い方を選択
+		ptResult = GAPCALC(pt1-m_pt[1]) < GAPCALC(pt2-m_pt[1]) ? pt1 : pt2;
+	}
+	else if ( nResult > 0 ) {
+		ptResult = pt1;
+	}
+
+	return ptResult;
+}
+
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのEllipseクラス
 //////////////////////////////////////////////////////////////////////
@@ -1386,7 +1444,8 @@ CDXFellipse::CDXFellipse(CLayerData* pLayer, const CDXFellipse* pData, LPDXFBLOC
 	m_ct += lpBlock->ptOrg;
 	if ( lpBlock->dwBlockFlg&DXFBLFLG_X || lpBlock->dwBlockFlg&DXFBLFLG_Y || lpBlock->dwBlockFlg&DXFBLFLG_R ) {
 		m_dLongLength = m_ptLong.hypot();
-		m_r = max(m_dLongLength, m_dLongLength*m_dShort);
+		double	len = m_dLongLength * m_dShort;
+		m_r = max(m_dLongLength, len);
 		m_rMake = ::RoundUp(m_r);
 		m_lqMake = m_lq = atan2(m_ptLong.y, m_ptLong.x);
 		EllipseCalc();
@@ -1428,7 +1487,8 @@ void CDXFellipse::Construct(void)
 	m_dLongLength = m_ptLong.hypot();
 	// ｺﾝｽﾄﾗｸﾀでは m_r=0.0 を渡したが，
 	// 便宜上長軸短軸の長い方を半径と見なす
-	m_r = max(m_dLongLength, m_dLongLength*m_dShort);
+	double	len = m_dLongLength * m_dShort;
+	m_r = max(m_dLongLength, len);
 	m_rMake = ::RoundUp(m_r);
 	// 楕円か楕円弧か
 	m_bArc = fabs(m_eq-m_sq)*DEG+NCMIN < 360.0 ? TRUE : FALSE;
@@ -1564,8 +1624,8 @@ void CDXFellipse::SetMaxRect(void)
 	m_rcMax.NormalizeRect();
 	m_rcMax.OffsetRect(m_ct);
 #ifdef _DEBUG
-	dbg.printf("m_rcMax(left, top   )=(%f, %f)", m_rcMax.left, m_rcMax.top);
-	dbg.printf("m_rcMax(right,bottom)=(%f, %f)", m_rcMax.right, m_rcMax.bottom);
+	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
 
@@ -1675,8 +1735,6 @@ void CDXFellipse::Draw(CDC* pDC) const
 #ifdef _DEBUGDRAW_DXF
 	dbg.printf("pte.x=%d pte.y=%d", (int)pt.x, (int)pt.y);
 #endif
-	if ( !m_bRoundOrig )
-		pDC->MoveTo(ptBak);
 }
 
 double CDXFellipse::OrgTuning(BOOL bCalc/*=TRUE*/)
@@ -1771,9 +1829,26 @@ void CDXFellipse::SetDirectionFixed(const CPointD& pts)
 		CDXFarc::SetDirectionFixed(pts);
 }
 
-int CDXFellipse::GetIntersectionPoint(const CDXFdata*, CPointD[]) const
+int CDXFellipse::GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL) const
 {
 	return 0;
+}
+
+optional<CPointD>
+CDXFellipse::CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const
+{
+	return optional<CPointD>();
+}
+
+int CDXFellipse::CheckIntersectionCircle(const CPointD&, double) const
+{
+	return 0;
+}
+
+optional<CPointD>
+CDXFellipse::CalcExpandPoint(const CDXFdata*) const
+{
+	return optional<CPointD>();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1797,7 +1872,7 @@ CDXFpolyline::CDXFpolyline(CLayerData* pLayer, const CDXFpolyline* pPoly, LPDXFB
 	for ( int i=0; i<SIZEOF(m_nObjCnt); i++ )
 		m_nObjCnt[i] = 0;
 	// 例外ｽﾛｰは上位でｷｬｯﾁ
-	const	CDXFdata*	pData;
+	CDXFdata*		pData;
 	CDXFpoint*		pPoint;
 	CDXFarc*		pArc;
 	CDXFellipse*	pEllipse;
@@ -1806,20 +1881,20 @@ CDXFpolyline::CDXFpolyline(CLayerData* pLayer, const CDXFpolyline* pPoly, LPDXFB
 		pData = pPoly->m_ltVertex.GetNext(pos);
 		switch ( pData->GetType() ) {
 		case DXFPOINTDATA:
-			pPoint = new CDXFpoint(NULL, (CDXFpoint *)pData, lpBlock);
+			pPoint = new CDXFpoint(NULL, static_cast<CDXFpoint*>(pData), lpBlock);
 			ASSERT(pPoint);
 			m_ltVertex.AddTail(pPoint);
 			break;
 		case DXFARCDATA:
 			// 各軸独自の拡大率は CDXFarc -> CDXFellipse
 			if ( lpBlock->dMagni[NCA_X] != lpBlock->dMagni[NCA_Y] ) {
-				((CDXFarc *)pData)->SetEllipseArgv(lpBlock, &dxfEllipse);
+				(static_cast<CDXFarc*>(pData))->SetEllipseArgv(lpBlock, &dxfEllipse);
 				pEllipse = new CDXFellipse(&dxfEllipse); 
 				ASSERT(pEllipse);
 				m_ltVertex.AddTail(pEllipse);
 			}
 			else {
-				pArc = new CDXFarc(NULL, (CDXFarc *)pData, lpBlock);
+				pArc = new CDXFarc(NULL, static_cast<CDXFarc*>(pData), lpBlock);
 				ASSERT(pArc);
 				m_ltVertex.AddTail(pArc);
 			}
@@ -1934,9 +2009,9 @@ BOOL CDXFpolyline::SetVertex(LPDXFPARGV lpArgv, double dBow, const CPointD& pts)
 
 	if ( dBow > 0 ) {	// 反時計回り指定
 		bRound = TRUE;
-		while ( sq1 >= eq1 )
+		while ( sq1 > eq1 )
 			eq1 += 360.0*RAD;
-		while ( sq2 >= eq2 )
+		while ( sq2 > eq2 )
 			eq2 += 360.0*RAD;
 		if ( fabs(eq1 - sq1 - q) < fabs(eq2 - sq2 - q) ) {
 			dxfArc.c	= pt1;
@@ -1957,9 +2032,9 @@ BOOL CDXFpolyline::SetVertex(LPDXFPARGV lpArgv, double dBow, const CPointD& pts)
 	}
 	else {
 		bRound = FALSE;
-		while ( sq1 <= eq1 )
+		while ( sq1 < eq1 )
 			sq1 += 360.0*RAD;
-		while ( sq2 <= eq2 )
+		while ( sq2 < eq2 )
 			sq2 += 360.0*RAD;
 		if ( fabs(sq1 - eq1 - q) < fabs(sq2 - eq2 - q) ) {
 			dxfArc.c	= pt1;
@@ -2040,8 +2115,8 @@ void CDXFpolyline::EndSeq(void)
 #ifdef _DEBUG
 	dbg.printf("LineCnt=%d ArcCnt=%d Ellipse=%d",
 			m_nObjCnt[0], m_nObjCnt[1], m_nObjCnt[2]);
-	dbg.printf("m_rcMax(left, top   )=(%f, %f)", m_rcMax.left, m_rcMax.top);
-	dbg.printf("m_rcMax(right,bottom)=(%f, %f)", m_rcMax.right, m_rcMax.bottom);
+	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
 
@@ -2061,7 +2136,7 @@ void CDXFpolyline::Draw(CDC* pDC) const
 	CDXFdata*	pData;
 	POSITION pos = m_ltVertex.GetHeadPosition();
 	// １点目は必ずCDXFpoint．閉ﾙｰﾌﾟのための座標を取得
-	CPoint	pt( ((CDXFpoint *)m_ltVertex.GetNext(pos))->GetDrawPoint() );
+	CPoint	pt( static_cast<CDXFpoint*>(m_ltVertex.GetNext(pos))->GetDrawPoint() );
 	pDC->MoveTo(pt);
 
 	// ２点目からﾙｰﾌﾟ
@@ -2073,10 +2148,10 @@ void CDXFpolyline::Draw(CDC* pDC) const
 		pData = m_ltVertex.GetNext(pos);
 		if ( pData->GetType() == DXFPOINTDATA ) {
 #ifdef _DEBUGDRAW_DXF
-			ptDbg = ((CDXFpoint *)pData)->GetDrawPoint();
+			ptDbg = static_cast<CDXFpoint*>(pData)->GetDrawPoint();
 			dbg.printf("No.%03d: x=%d y=%d", nDbgCnt, ptDbg.x, ptDbg.y);
 #endif
-			pDC->LineTo( ((CDXFpoint *)pData)->GetDrawPoint() );
+			pDC->LineTo( static_cast<CDXFpoint*>(pData)->GetDrawPoint() );
 		}
 		else {
 			pData->Draw(pDC);
@@ -2178,7 +2253,7 @@ void CDXFpolyline::SetDirectionFixed(const CPointD& pts)
 {
 	// 固有座標の入れ替えと順序変更
 	if ( GAPCALC(m_pt[0]-pts) > GAPCALC(m_pt[1]-pts) ) {
-		swap(m_pt[0], m_pt[1]);
+		std::swap(m_pt[0], m_pt[1]);
 		// 順序変更
 		m_bSeq = m_bSeqBak = !m_bSeqBak;
 		CDXFdata*	pData;
@@ -2196,9 +2271,26 @@ void CDXFpolyline::SetDirectionFixed(const CPointD& pts)
 	}
 }
 
-int CDXFpolyline::GetIntersectionPoint(const CDXFdata*, CPointD[]) const
+int CDXFpolyline::GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL) const
 {
 	return 0;
+}
+
+optional<CPointD>
+CDXFpolyline::CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const
+{
+	return optional<CPointD>();
+}
+
+int CDXFpolyline::CheckIntersectionCircle(const CPointD&, double) const
+{
+	return 0;
+}
+
+optional<CPointD>
+CDXFpolyline::CalcExpandPoint(const CDXFdata*) const
+{
+	return optional<CPointD>();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -2239,16 +2331,6 @@ void CDXFtext::Serialize(CArchive& ar)
 		ar >> m_pt[0].x >> m_pt[0].y >> m_strValue;
 		SetMaxRect();
 	}
-}
-
-void CDXFtext::DrawTuning(double f)
-{
-	m_ptDraw = m_pt[0] * f;
-	// 文字位置を表す●印は常に１論理理位
-	m_rcDraw.left   = (int)(m_ptDraw.x - LOMETRICFACTOR);
-	m_rcDraw.top    = (int)(m_ptDraw.y - LOMETRICFACTOR);
-	m_rcDraw.right  = (int)(m_ptDraw.x + LOMETRICFACTOR);
-	m_rcDraw.bottom = (int)(m_ptDraw.y + LOMETRICFACTOR);
 }
 
 void CDXFtext::Draw(CDC* pDC) const

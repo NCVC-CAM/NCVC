@@ -20,14 +20,13 @@ public:
 
 // オペレーション
 public:
-	void	DrawData(CNCdata *);	// from NCViewTab.cpp(CTraceThread)
+	void	DrawData(const CNCdata *, BOOL, BOOL);	// from NCViewTab.cpp(CTraceThread)
 
 // オーバーライド
 
 // 生成されたメッセージ マップ関数
 protected:
 	afx_msg void OnDestroy();
-//	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	// CNCViewTab::OnInitialUpdate() から PostMessage()
 	afx_msg LRESULT OnUserInitialUpdate(WPARAM, LPARAM);

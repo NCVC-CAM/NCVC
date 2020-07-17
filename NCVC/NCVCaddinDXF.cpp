@@ -20,7 +20,8 @@ using namespace boost;
 
 NCEXPORT int WINAPI NCVC_GetDXFLayerSize(NCVCHANDLE hDoc)
 {
-	return IsDXFDocument(hDoc) ? ((CDXFDoc *)hDoc)->GetLayerCnt() : -1;
+	return IsDXFDocument(hDoc) ?
+		reinterpret_cast<CDXFDoc *>(hDoc)->GetLayerCnt() : -1;
 }
 
 NCEXPORT int WINAPI NCVC_GetDXFLayerData
@@ -28,7 +29,7 @@ NCEXPORT int WINAPI NCVC_GetDXFLayerData
 {
 	int	nLength = -1;
 	if ( IsDXFDocument(hDoc) ) {
-		CDXFDoc*	pDoc = (CDXFDoc *)hDoc;
+		CDXFDoc*	pDoc = reinterpret_cast<CDXFDoc *>(hDoc);
 		if ( nIndex>=0 && nIndex<pDoc->GetLayerCnt() ) {
 			CString	strLayer( pDoc->GetLayerData(nIndex)->GetStrLayer() );
 			nLength = strLayer.GetLength();
@@ -47,7 +48,7 @@ NCEXPORT int WINAPI NCVC_GetDXFDataSize(NCVCHANDLE hDoc, LPCTSTR lpszLayer)
 {
 	CLayerData*	pLayer;
 	if ( IsDXFDocument(hDoc) && lpszLayer ) {
-		pLayer = ((CDXFDoc *)hDoc)->GetLayerData(lpszLayer);
+		pLayer = reinterpret_cast<CDXFDoc *>(hDoc)->GetLayerData(lpszLayer);
 		if ( pLayer )
 			return pLayer->GetDxfSize();
 	}
@@ -58,7 +59,7 @@ NCEXPORT int WINAPI NCVC_GetDXFTextDataSize(NCVCHANDLE hDoc, LPCTSTR lpszLayer)
 {
 	CLayerData*	pLayer;
 	if ( IsDXFDocument(hDoc) && lpszLayer ) {
-		pLayer = ((CDXFDoc *)hDoc)->GetLayerData(lpszLayer);
+		pLayer = reinterpret_cast<CDXFDoc *>(hDoc)->GetLayerData(lpszLayer);
 		if ( pLayer )
 			return pLayer->GetDxfTextSize();
 	}
@@ -70,7 +71,7 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFData(NCVCHANDLE hDoc, int nIndex, LPDXFDATA pDat
 	if ( !IsDXFDocument(hDoc) || !pDataSrc || pDataSrc->dwSize != sizeof(DXFDATA) ||
 			nIndex<0 || lstrlen(pDataSrc->szLayer)<=0 )
 		return FALSE;
-	CDXFDoc*	pDoc = (CDXFDoc *)hDoc;
+	CDXFDoc*	pDoc = reinterpret_cast<CDXFDoc *>(hDoc);
 	CLayerData*	pLayer = pDoc->GetLayerData(pDataSrc->szLayer);
 	if ( !pLayer || nIndex >= pLayer->GetDxfSize() )
 		return FALSE;
@@ -95,13 +96,13 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFData(NCVCHANDLE hDoc, int nIndex, LPDXFDATA pDat
 		pDataSrc->de.ptE.x = pt.x;	pDataSrc->de.ptE.y = pt.y;
 		break;
 	case DXFCIRCLEDATA:
-		pCircle = (CDXFcircle *)pData;
+		pCircle = static_cast<CDXFcircle*>(pData);
 		pt = pCircle->GetCenter();
 		pDataSrc->ptS.x = pt.x;		pDataSrc->ptS.y = pt.y;
 		pDataSrc->de.dR = pCircle->GetR();
 		break;
 	case DXFARCDATA:
-		pArc = (CDXFarc *)pData;
+		pArc = static_cast<CDXFarc*>(pData);
 		pt = pArc->GetCenter();
 		pDataSrc->ptS.x = pt.x;		pDataSrc->ptS.y = pt.y;
 		pDataSrc->de.arc.r = pArc->GetR();
@@ -109,7 +110,7 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFData(NCVCHANDLE hDoc, int nIndex, LPDXFDATA pDat
 		pDataSrc->de.arc.eq = pArc->GetEndAngle();
 		break;
 	case DXFELLIPSEDATA:
-		pEllipse = (CDXFellipse *)pData;
+		pEllipse = static_cast<CDXFellipse*>(pData);
 		pt = pEllipse->GetCenter();
 		pDataSrc->ptS.x = pt.x;			pDataSrc->ptS.y = pt.y;
 		pt = pEllipse->GetLongPoint();
@@ -129,7 +130,7 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFTextData(NCVCHANDLE hDoc, int nIndex, LPDXFDATA 
 	if ( !IsDXFDocument(hDoc) || !pDataSrc || pDataSrc->dwSize != sizeof(DXFDATA) ||
 			nIndex<0 || lstrlen(pDataSrc->szLayer)<=0 )
 		return FALSE;
-	CDXFDoc* pDoc = (CDXFDoc *)hDoc;
+	CDXFDoc* pDoc = reinterpret_cast<CDXFDoc *>(hDoc);
 	CLayerData*	pLayer = pDoc->GetLayerData(pDataSrc->szLayer);
 	if ( !pLayer || nIndex >= pLayer->GetDxfTextSize() )
 		return FALSE;
@@ -137,9 +138,11 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFTextData(NCVCHANDLE hDoc, int nIndex, LPDXFDATA 
 	CDXFtext*	pData = pLayer->GetDxfTextData(nIndex); 
 	pDataSrc->enType = DXFTEXTDATA;		// pData->GetType()
 	CPointD		pt( pData->GetNativePoint(0) );
-	pDataSrc->ptS.x = pt.x;		pDataSrc->ptS.y = pt.y;
+	pDataSrc->ptS.x = pt.x;
+	pDataSrc->ptS.y = pt.y;
+	int	n = pData->GetStrValue().GetLength() + 1;
 	lstrcpyn(pDataSrc->de.szText, pData->GetStrValue(),
-		min(sizeof(pDataSrc->de.szText), pData->GetStrValue().GetLength()+1));
+		min(sizeof(pDataSrc->de.szText), n));
 
 	return TRUE;
 }
@@ -149,14 +152,14 @@ static BOOL DXFdataOperation
 {
 	if ( !IsDXFDocument(hDoc) || pArgv->dwSize != sizeof(DXFDATA) )
 		return FALSE;
-	CDXFDoc*		pDoc = (CDXFDoc *)hDoc;
-	CDXFdata*		pData = NULL;
-	DXFPARGV		dxfPoint;
-	DXFLARGV		dxfLine;
-	DXFCARGV		dxfCircle;
-	DXFAARGV		dxfArc;
-	DXFEARGV		dxfEllipse;
-	DXFTARGV		dxfText;
+	CDXFDoc*	pDoc = reinterpret_cast<CDXFDoc *>(hDoc);
+	CDXFdata*	pData = NULL;
+	DXFPARGV	dxfPoint;
+	DXFLARGV	dxfLine;
+	DXFCARGV	dxfCircle;
+	DXFAARGV	dxfArc;
+	DXFEARGV	dxfEllipse;
+	DXFTARGV	dxfText;
 
 	switch ( pArgv->enType ) {
 	case DXFPOINTDATA:
@@ -242,19 +245,19 @@ NCEXPORT BOOL WINAPI NCVC_ModDXFData(NCVCHANDLE hDoc, int nIndex, LPDXFDATA pDat
 NCEXPORT void WINAPI NCVC_DelDXFData(NCVCHANDLE hDoc, LPCTSTR lpszLayer, int nIndex, int nCnt)
 {
 	if ( IsDXFDocument(hDoc) )
-		((CDXFDoc *)hDoc)->RemoveAt(lpszLayer, nIndex, nCnt);
+		reinterpret_cast<CDXFDoc *>(hDoc)->RemoveAt(lpszLayer, nIndex, nCnt);
 }
 
 NCEXPORT void WINAPI NCVC_DelDXFTextData(NCVCHANDLE hDoc, LPCTSTR lpszLayer, int nIndex, int nCnt)
 {
 	if ( IsDXFDocument(hDoc) )
-		((CDXFDoc *)hDoc)->RemoveAtText(lpszLayer, nIndex, nCnt);
+		reinterpret_cast<CDXFDoc *>(hDoc)->RemoveAtText(lpszLayer, nIndex, nCnt);
 }
 
 NCEXPORT BOOL WINAPI NCVC_GetDXFCutterOrigin(NCVCHANDLE hDoc, LPDPOINT lpptOrg)
 {
 	if ( IsDXFDocument(hDoc) ) {
-		optional<CPointD>	ptResult = ((CDXFDoc *)hDoc)->GetCutterOrigin();
+		optional<CPointD>	ptResult = reinterpret_cast<CDXFDoc *>(hDoc)->GetCutterOrigin();
 		if ( ptResult ) {
 			CPointD	pt( *ptResult );
 			lpptOrg->x = pt.x;
@@ -271,14 +274,14 @@ NCEXPORT void WINAPI NCVC_SetDXFCutterOrigin
 	if ( IsDXFDocument(hDoc) ) {
 		CPointD	pt;
 		pt.x = lpptOrg->x;	pt.y = lpptOrg->y;
-		((CDXFDoc *)hDoc)->SetCutterOrigin(pt, dR, bRedraw);
+		reinterpret_cast<CDXFDoc *>(hDoc)->SetCutterOrigin(pt, dR, bRedraw);
 	}
 }
 
 NCEXPORT void WINAPI NCVC_SetDXFReady(NCVCHANDLE hDoc, BOOL bReady)
 {
 	if ( IsDXFDocument(hDoc) )
-		((CDXFDoc *)hDoc)->SetReadyFlg(bReady);
+		reinterpret_cast<CDXFDoc *>(hDoc)->SetReadyFlg(bReady);
 }
 
 NCEXPORT BOOL WINAPI NCVC_GetDXFoption(LPDXFOPTION pOpt)

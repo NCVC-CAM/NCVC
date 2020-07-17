@@ -34,7 +34,7 @@ CNCdata::CNCdata(LPNCARGV lpArgv)
 	for ( i=0; i<VALUESIZE; i++ )
 		m_nc.dValue[i] = lpArgv->nc.dValue[i];
 	for ( i=0; i<NCXYZ; i++ ) {
-		m_ptValS[i] = m_ptValE[i] = m_nc.dValue[i];
+		m_ptValOrg[i] = m_ptValS[i] = m_ptValE[i] = m_nc.dValue[i];
 	}
 	m_pt2D = m_ptValE.PointConvert();
 	m_enType = NCDBASEDATA;
@@ -49,7 +49,7 @@ CNCdata::CNCdata(const CNCdata* pData, LPNCARGV lpArgv)
 	int		i;
 
 	Constracter(lpArgv);
-	// 座標指定のないﾃﾞｰﾀは前回座標から取得
+	// 座標指定のないﾃﾞｰﾀは前回計算座標から取得
 	for ( i=0; i<NCXYZ; i++ ) {
 		// 指定されている分だけ代入
 		if ( m_nc.dwValFlags & g_dwSetValFlags[i] ) {
@@ -60,6 +60,7 @@ CNCdata::CNCdata(const CNCdata* pData, LPNCARGV lpArgv)
 		else
 			m_ptValS[i] = m_ptValE[i] = m_nc.dValue[i] = pData->GetEndValue(i);
 	}
+	m_ptValOrg = m_ptValE;
 	// 座標値以外も指定されている分は代入
 	for ( ; i<VALUESIZE; i++ )
 		m_nc.dValue[i] = m_nc.dwValFlags & g_dwSetValFlags[i] ?
@@ -80,22 +81,22 @@ CNCdata::CNCdata(ENNCDTYPE enType, const CNCdata* pData, LPNCARGV lpArgv)
 	int	i;
 
 	Constracter(lpArgv);
-	// 座標指定のないﾃﾞｰﾀは前回座標から計算
+	// 座標指定のないﾃﾞｰﾀは前回純粋座標から補間
 	for ( i=0; i<NCXYZ; i++ ) {
 		// 指定されているときだけ代入
 		if ( m_nc.dwValFlags & g_dwSetValFlags[i] )
 			m_nc.dValue[i] = lpArgv->bAbs ?		// 座標の補正
-				lpArgv->nc.dValue[i] : (pData->GetEndValue(i)+lpArgv->nc.dValue[i]);
+				lpArgv->nc.dValue[i] : (pData->GetOriginalEndValue(i)+lpArgv->nc.dValue[i]);
 		else
-			m_nc.dValue[i] = pData->GetEndValue(i);
+			m_nc.dValue[i] = pData->GetOriginalEndValue(i);
 	}
 	for ( ; i<VALUESIZE; i++ )
 		m_nc.dValue[i] = m_nc.dwValFlags & g_dwSetValFlags[i] ?
 			lpArgv->nc.dValue[i] : 0.0;
-	// -------------------------------------------------
-	// m_ptValS, m_ptValE, m_pt2D, m_rcMax は派生ｸﾗｽで代入
+	// ---------------------------------------------------------------
+	// m_ptValS, m_ptValE, m_ptValOrg, m_pt2D, m_rcMax は派生ｸﾗｽで代入
 	// m_nc.dLength は TH_Cuttime.cpp にてセット
-	// -------------------------------------------------
+	// ---------------------------------------------------------------
 	m_enType = enType;
 }
 
@@ -118,6 +119,7 @@ CNCdata::CNCdata(const CNCdata* pData)
 	m_dFeed		= pData->GetFeed();
 	m_ptValS	= pData->GetStartPoint();
 	m_ptValE	= pData->GetEndPoint();
+	m_ptValOrg	= pData->GetOriginalEndPoint();
 }
 
 CNCdata::~CNCdata()
@@ -143,24 +145,51 @@ CPointD CNCdata::GetPlaneValue(const CPoint3D& ptVal) const
 	return pt;
 }
 
+void CNCdata::SetPlaneValue(const CPointD& pt, CPoint3D& ptResult)
+{
+	switch ( GetPlane() ) {
+	case XY_PLANE:
+		ptResult.x = pt.x;
+		ptResult.y = pt.y;
+		break;
+	case XZ_PLANE:
+		ptResult.x = pt.x;
+		ptResult.z = pt.y;
+		break;
+	case YZ_PLANE:
+		ptResult.y = pt.x;
+		ptResult.z = pt.y;
+		break;
+	}
+}
+
 CPointD	CNCdata::GetPlaneValueOrg(const CPoint3D& pt1, const CPoint3D& pt2) const
 {
 	CPointD	pt;
 	switch ( GetPlane() ) {
 	case XY_PLANE:
-		pt = pt2.GetXY() - pt1.GetXY();
+		pt = pt1.GetXY() - pt2.GetXY();
 		break;
 	case XZ_PLANE:
-		pt = pt2.GetXZ() - pt1.GetXZ();
+		pt = pt1.GetXZ() - pt2.GetXZ();
 		break;
 	case YZ_PLANE:
-		pt = pt2.GetYZ() - pt1.GetYZ();
+		pt = pt1.GetYZ() - pt2.GetYZ();
 		break;
 	}
 	return pt;
 }
 
-CNCdata* CNCdata::CopyObject(void)
+void CNCdata::CalcG68Round(LPG68ROUND lpG68, CPoint3D& ptResult)
+{
+	CPoint3D	ptOrg(lpG68->dOrg[NCA_X], lpG68->dOrg[NCA_Y], lpG68->dOrg[NCA_Z]);
+	CPointD		pt(GetPlaneValueOrg(ptResult, ptOrg));
+	pt.RoundPoint(lpG68->dRound);
+	SetPlaneValue(pt, ptResult);
+	ptResult += ptOrg;
+}
+
+CNCdata* CNCdata::NC_CopyObject(void)
 {
 	CNCdata*	pData;
 
@@ -172,7 +201,7 @@ CNCdata* CNCdata::CopyObject(void)
 		pData = new CNCcircle(this);
 		break;
 	default:
-		pData = NULL;
+		pData = NULL;	// 他は工具径補正に無関係(ｴﾗｰ)
 	}
 
 	return pData;
@@ -202,28 +231,28 @@ void CNCdata::DrawTuningYZ(double f)
 		m_obCdata[i]->DrawTuningYZ(f);
 }
 
-void CNCdata::Draw(CDC* pDC, BOOL bCorrect) const
+void CNCdata::Draw(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->Draw(pDC, bCorrect);
+		m_obCdata[i]->Draw(pDC, bSelect, bCorrect);
 }
 
-void CNCdata::DrawXY(CDC* pDC, BOOL bCorrect) const
+void CNCdata::DrawXY(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawXY(pDC, bCorrect);
+		m_obCdata[i]->DrawXY(pDC, bSelect, bCorrect);
 }
 
-void CNCdata::DrawXZ(CDC* pDC, BOOL bCorrect) const
+void CNCdata::DrawXZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawXZ(pDC, bCorrect);
+		m_obCdata[i]->DrawXZ(pDC, bSelect, bCorrect);
 }
 
-void CNCdata::DrawYZ(CDC* pDC, BOOL bCorrect) const
+void CNCdata::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawYZ(pDC, bCorrect);
+		m_obCdata[i]->DrawYZ(pDC, bSelect, bCorrect);
 }
 
 #ifdef _DEBUG
@@ -262,6 +291,10 @@ CNCline::CNCline(const CNCdata* pData, LPNCARGV lpArgv) :
 	m_ptValS = pData->GetEndPoint();
 	// 最終座標(==指定座標)ｾｯﾄ
 	m_ptValE.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
+	m_ptValOrg = m_ptValE;
+	// 座標回転
+	if ( lpArgv->g68.bG68 )
+		CalcG68Round(&(lpArgv->g68), m_ptValE);
 	// 描画終点を計算し保存
 	m_pt2D = m_ptValE.PointConvert();
 
@@ -336,49 +369,54 @@ void CNCline::DrawTuningYZ(double f)
 	CNCdata::DrawTuningYZ(f);
 }
 
-void CNCline::Draw(CDC* pDC, BOOL bCorrect) const
+void CNCline::Draw(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::Draw()", DBG_RED);
 	dbg.printf("Line=%d", GetStrLine());
 #endif
-	DrawLine(pDC, 0, bCorrect);
-	CNCdata::Draw(pDC, TRUE);
+	DrawLine(pDC, 0, bSelect, bCorrect);
+	CNCdata::Draw(pDC, bSelect, TRUE);
 }
 
-void CNCline::DrawXY(CDC* pDC, BOOL bCorrect) const
+void CNCline::DrawXY(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::DrawXY()", DBG_RED);
 	dbg.printf("Line=%d", GetStrLine());
 #endif
-	DrawLine(pDC, 1, bCorrect);
-	CNCdata::DrawXY(pDC, TRUE);
+	DrawLine(pDC, 1, bSelect, bCorrect);
+	CNCdata::DrawXY(pDC, bSelect, TRUE);
 }
 
-void CNCline::DrawXZ(CDC* pDC, BOOL bCorrect) const
+void CNCline::DrawXZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::DrawXZ()", DBG_RED);
 	dbg.printf("Line=%d", GetStrLine());
 #endif
-	DrawLine(pDC, 2, bCorrect);
-	CNCdata::DrawXZ(pDC, TRUE);
+	DrawLine(pDC, 2, bSelect, bCorrect);
+	CNCdata::DrawXZ(pDC, bSelect, TRUE);
 }
 
-void CNCline::DrawYZ(CDC* pDC, BOOL bCorrect) const
+void CNCline::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCline::DrawYZ()", DBG_RED);
 	dbg.printf("Line=%d", GetStrLine());
 #endif
-	DrawLine(pDC, 3, bCorrect);
-	CNCdata::DrawYZ(pDC, TRUE);
+	DrawLine(pDC, 3, bSelect, bCorrect);
+	CNCdata::DrawYZ(pDC, bSelect, TRUE);
 }
 
-void CNCline::DrawLine(CDC* pDC, size_t n, BOOL bCorrect) const
+void CNCline::DrawLine(CDC* pDC, size_t n, BOOL bSelect, BOOL bCorrect) const
 {
-	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : GetPenType()));
+	CPen*	pOldPen;
+	if ( bSelect )
+		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+	else
+		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : GetPenType());
+	pOldPen = pDC->SelectObject(pOldPen);
 	pDC->MoveTo(m_ptDrawS[n]);
 	pDC->LineTo(m_ptDrawE[n]);
 	pDC->SelectObject(pOldPen);
@@ -390,11 +428,11 @@ tuple<BOOL, CPointD, double, double> CNCline::CalcRoundPoint
 	BOOL	bResult;
 	double	rr1, rr2;
 	// ２線の交点(自身の終点)が原点になるように補正
-	CPointD	pt, pts( GetPlaneValueOrg(m_ptValE, m_ptValS) );
+	CPointD	pt, pts( GetPlaneValueOrg(m_ptValS, m_ptValE) );
 
 	if ( pNext->GetType() == NCDARCDATA ) {
-		CNCcircle*	pCircle = (CNCcircle *)pNext;
-		CPointD	pto( GetPlaneValueOrg(m_ptValE, pCircle->GetOrg()) );
+		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
+		CPointD	pto( GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE) );
 		// ｵﾌｾｯﾄ分平行移動させた交点を求める
 		double	rr, xa, ya, rn = fabs(pCircle->GetR());
 		tie(bResult, pt, r) = ::CalcOffsetIntersectionPoint_LC(pts, pto, rn, r,
@@ -418,7 +456,7 @@ tuple<BOOL, CPointD, double, double> CNCline::CalcRoundPoint
 		}
 	}
 	else {
-		CPointD	pte( GetPlaneValueOrg(m_ptValE, pNext->GetEndPoint()) );
+		CPointD	pte( GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE) );
 		// ｵﾌｾｯﾄ分平行移動させた交点を求める
 		optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LL(pts, pte, 0, 0, r);
 		if ( ptResult ) {
@@ -445,54 +483,24 @@ optional<CPointD> CNCline::SetChamferingPoint(BOOL bStart, double c)
 		return optional<CPointD>();
 
 	CPointD		pt, pto, pte;
-	CPoint3D	ptValS, ptValE;
+	CPoint3D&	ptValS = bStart ? m_ptValS : m_ptValE;	// 参照
+	CPoint3D&	ptValE = bStart ? m_ptValE : m_ptValS;
 	
-	if ( bStart ) {
-		ptValS = m_ptValS;
-		ptValE = m_ptValE;
-	}
-	else {
-		ptValS = m_ptValE;
-		ptValE = m_ptValS;
-	}
-
-	switch ( GetPlane() ) {
-	case XY_PLANE:
-		pto = ptValS.GetXY();
-		pte = ptValE.GetXY();
-		break;
-	case XZ_PLANE:
-		pto = ptValS.GetXZ();
-		pte = ptValE.GetXZ();
-		break;
-	case YZ_PLANE:
-		pto = ptValS.GetYZ();
-		pte = ptValE.GetYZ();
-		break;
-	}
+	pto = GetPlaneValue(ptValS);
+	pte = GetPlaneValue(ptValE);
 
 	// pto を中心とした円と pte の交点
 	pt = ::CalcIntersectionPoint_TC(pto, c, pte);
 
 	// 自分自身の点も更新
-	switch ( GetPlane() ) {
-	case XY_PLANE:
-		ptValS.x = pt.x;
-		ptValS.y = pt.y;
-		break;
-	case XZ_PLANE:
-		ptValS.x = pt.x;
-		ptValS.z = pt.y;
-		break;
-	case YZ_PLANE:
-		ptValS.y = pt.x;
-		ptValS.z = pt.y;
-		break;
-	}
+	SetPlaneValue(pt, ptValS);
+
 	if ( bStart )
-		m_pt2Ds = ptValS.PointConvert();
-	else
-		m_pt2D  = ptValS.PointConvert();
+		m_pt2Ds = m_ptValS.PointConvert();
+	else {
+		m_ptValOrg = m_ptValE;
+		m_pt2D = m_ptValE.PointConvert();
+	}
 
 	return pt;
 }
@@ -500,19 +508,19 @@ optional<CPointD> CNCline::SetChamferingPoint(BOOL bStart, double c)
 double CNCline::CalcBetweenAngle(const CNCdata* pNext) const
 {
 	// ２線の交点(自身の終点)が原点になるように補正
-	CPointD		pt1( GetPlaneValueOrg(m_ptValE, m_ptValS) ), pt2;
+	CPointD		pt1( GetPlaneValueOrg(m_ptValS, m_ptValE) ), pt2;
 
 	if ( pNext->GetType() == NCDARCDATA ) {
-		CNCcircle*	pCircle = (CNCcircle *)pNext;
+		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
 		// 次のｵﾌﾞｼﾞｪｸﾄが円弧なら中心をｾｯﾄし
-		CPointD	pt( GetPlaneValueOrg(m_ptValE, pCircle->GetOrg()) );
+		CPointD	pt( GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE) );
 		// 始点の接線計算
 		int k = pCircle->CalcOffsetSign();
 		pt2.x = -pt.y*k;	// G02:+90°
 		pt2.y =  pt.x*k;	// G03:-90°
 	}
 	else {
-		pt2 = GetPlaneValueOrg(m_ptValE, pNext->GetEndPoint());
+		pt2 = GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE);
 	}
 	
 	// ２線(または円弧の接線)がなす角度を求める
@@ -522,7 +530,7 @@ double CNCline::CalcBetweenAngle(const CNCdata* pNext) const
 int CNCline::CalcOffsetSign(void) const
 {
 	// 始点を原点に進行方向の角度を計算
-	return ::CalcOffsetSign( GetPlaneValueOrg(m_ptValS, m_ptValE) );
+	return ::CalcOffsetSign( GetPlaneValueOrg(m_ptValE, m_ptValS) );
 }
 
 optional<CPointD> CNCline::CalcPerpendicularPoint
@@ -533,7 +541,7 @@ optional<CPointD> CNCline::CalcPerpendicularPoint
 	if ( enPoint == ENDPOINT )
 		nSign = -nSign;		// 終点では-90°
 	// 線の傾きを計算して90°回転
-	CPointD	pt( GetPlaneValueOrg(pts, pte) );
+	CPointD	pt( GetPlaneValueOrg(pte, pts) );
 	double	q = atan2(pt.y, pt.x);
 	CPointD	pt1(r*cos(q), r*sin(q));
 	CPointD	pt2(-pt1.y*nSign, pt1.x*nSign);
@@ -547,17 +555,17 @@ optional<CPointD> CNCline::CalcOffsetIntersectionPoint
 {
 	BOOL	bResult;
 	// ２線の交点(自身の終点)が原点になるように補正
-	CPointD		pt, pt1( GetPlaneValueOrg(m_ptValE, m_ptValS) ), pt2;
+	CPointD		pt, pt1( GetPlaneValueOrg(m_ptValS, m_ptValE) ), pt2;
 
 	// ｵﾌｾｯﾄ分平行移動させた交点を求める
 	if ( pNext->GetType() == NCDARCDATA ) {
-		CNCcircle*	pCircle = (CNCcircle *)pNext;
-		pt2 = GetPlaneValueOrg(m_ptValE, pCircle->GetOrg());
+		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
+		pt2 = GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE);
 		tie(bResult, pt, r) = ::CalcOffsetIntersectionPoint_LC(pt1, pt2, fabs(pCircle->GetR()), r,
 						pCircle->CalcOffsetSign(), k1, k2);
 	}
 	else {
-		pt2 = GetPlaneValueOrg(m_ptValE, pNext->GetEndPoint());
+		pt2 = GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE);
 		optional<CPointD> ptResult = ::CalcOffsetIntersectionPoint_LL(pt1, pt2, k1, k2, r);
 		if ( ptResult ) {
 			bResult = TRUE;
@@ -580,13 +588,13 @@ optional<CPointD> CNCline::CalcOffsetIntersectionPoint2
 	(const CNCdata* pNext, double r, int k1, int k2) const
 {
 	// ２線の交点(自身の終点)が原点になるように補正
-	CPointD		pt, pt1( GetPlaneValueOrg(m_ptValE, m_ptValS) ), pt2;
+	CPointD		pt, pt1( GetPlaneValueOrg(m_ptValS, m_ptValE) ), pt2;
 
 	// ｵﾌｾｯﾄ分平行移動させた交点を求める
 	if ( pNext->GetType() == NCDARCDATA ) {
 		// 円弧は始点接線とのｵﾌｾｯﾄ交点計算
-		CNCcircle*	pCircle = (CNCcircle *)pNext;
-		pt = GetPlaneValueOrg(m_ptValE, pCircle->GetOrg());
+		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
+		pt = GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE);
 		int k = pCircle->CalcOffsetSign();
 		pt2.x = -pt.y * k;
 		pt2.y =  pt.x * k;
@@ -594,7 +602,7 @@ optional<CPointD> CNCline::CalcOffsetIntersectionPoint2
 		k2 *= k * ::CalcOffsetSign(pt2);
 	}
 	else {
-		pt2 = GetPlaneValueOrg(m_ptValE, pNext->GetEndPoint());
+		pt2 = GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE);
 	}
 
 	// 直線同士のｵﾌｾｯﾄ交点計算
@@ -612,29 +620,15 @@ void CNCline::SetCorrectPoint(ENPOINTORDER enPoint, const CPointD& pt, double)
 	CPoint3D&	ptVal    = enPoint==STARTPOINT ? m_ptValS : m_ptValE;
 	CPointD&	ptResult = enPoint==STARTPOINT ? m_pt2Ds : m_pt2D;
 
-	switch ( GetPlane() ) {
-	case XY_PLANE:
-		ptVal.x = pt.x;
-		ptVal.y = pt.y;
-		break;
-	case XZ_PLANE:
-		ptVal.x = pt.x;
-		ptVal.z = pt.y;
-		break;
-	case YZ_PLANE:
-		ptVal.y = pt.x;
-		ptVal.z = pt.y;
-		break;
-	}
-
+	SetPlaneValue(pt, ptVal);
 	ptResult = ptVal.PointConvert();
 }
 
 //////////////////////////////////////////////////////////////////////
 // CNCcycle クラス
 //////////////////////////////////////////////////////////////////////
-CNCcycle::CNCcycle(const CNCdata* pData, LPNCARGV lpArgv) :
-		CNCline(NCDCYCLEDATA, pData, lpArgv)
+CNCcycle::CNCcycle(const CNCdata* pData, LPNCARGV lpArgv, BOOL bL0Cycle) :
+	CNCline(NCDCYCLEDATA, pData, lpArgv)
 {
 /*
 	Z, R, P 値は，TH_NCRead.cpp でも補間していることに注意
@@ -642,11 +636,12 @@ CNCcycle::CNCcycle(const CNCdata* pData, LPNCARGV lpArgv) :
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCcycle", DBG_MAGENTA);
 #endif
-	double		dx, dy,		// 基準平面の移動距離
-				dR, dI,		// R点座標, ｲﾆｼｬﾙ座標
-				dRLength, dZLength;		// 移動長，切削長
-	int			i, x, y, z,
-				nH, nV;		// 縦横の繰り返し数
+	double	dx, dy,	dox, doy,	// 基準平面の移動距離
+			dR, dI,				// R点座標, ｲﾆｼｬﾙ座標
+			dRLength, dZLength;		// 移動長，切削長
+	CPoint3D	pt;
+	int		i, x, y, z,
+			nH, nV;		// 縦横の繰り返し数
 
 	for ( i=0; i<SIZEOF(m_Cycle); m_Cycle[i++]=NULL );
 
@@ -681,7 +676,7 @@ CNCcycle::CNCcycle(const CNCdata* pData, LPNCARGV lpArgv) :
 		nV = 1;
 	// 復帰座標(前回のｵﾌﾞｼﾞｪｸﾄが固定ｻｲｸﾙかどうか)
 	m_dInitial = pData->GetType()!=NCDCYCLEDATA ? m_ptValS[z] :
-									((CNCcycle *)pData)->GetInitialValue();
+						static_cast<const CNCcycle*>(pData)->GetInitialValue();
 	// ｲﾝｸﾘﾒﾝﾀﾙ補正(R座標はﾍﾞｰｽｸﾗｽで座標補正の対象外)
 	if ( lpArgv->bAbs ) {
 		dR = GetValFlags() & NCD_R ? GetValue(NCA_R) : m_ptValS[z];
@@ -696,21 +691,35 @@ CNCcycle::CNCcycle(const CNCdata* pData, LPNCARGV lpArgv) :
 	}
 	dI = lpArgv->bInitial ? m_dInitial : dR;
 
-	// 繰り返し数ｾﾞﾛなら以降の計算は不要
+	// 繰り返し数ｾﾞﾛなら
 	if ( m_nDrawCnt <= 0 ) {
-		for ( i=0; i<NCXYZ; m_dMove[i++]=0.0 );
-		m_dDwell = 0.0;
-		m_nc.dLength = m_dCycleMove = 0.0;
-		m_ptValE = m_ptValS;
-		m_pt2D = m_pt2Ds;
-		return;
+		if ( bL0Cycle ) {
+			// 移動ﾃﾞｰﾀだけ作成
+			nH = 1;
+			dI = dR = m_ptValS[z];
+		}
+		else {
+			// 以降の計算は不要
+			for ( i=0; i<NCXYZ; m_dMove[i++]=0.0 );
+			m_dDwell = 0.0;
+			m_nc.dLength = m_dCycleMove = 0.0;
+			m_ptValI = m_ptValR = m_ptValOrg = m_ptValE = m_ptValS;
+			m_pt2D = m_pt2Ds;
+			return;
+		}
 	}
 
+	m_ptValE.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
+	m_ptValOrg = m_ptValE;
+	pt = pData->GetOriginalEndPoint();
+	// 座標回転
+	if ( lpArgv->g68.bG68 )
+		CalcG68Round(&(lpArgv->g68), m_ptValE);
 	// 各軸ごとの移動長計算
-	dx = GetValue(x) - m_ptValS[x];
-	dy = GetValue(y) - m_ptValS[y];
+	dx = m_ptValE[x] - m_ptValS[x];		dox = m_ptValOrg[x] - pt[x];
+	dy = m_ptValE[y] - m_ptValS[y];		doy = m_ptValOrg[y] - pt[y];
 	dRLength = fabs(dI - dR);
-	dZLength = fabs(dR - GetValue(z));
+	dZLength = fabs(dR - m_ptValE[z]);
 	m_dMove[x] = fabs(dx) * nH;
 	m_dMove[y] = fabs(dy) * nH;
 	m_dMove[z] = fabs(m_ptValS[z] - dR);	// 初回下降分
@@ -723,25 +732,28 @@ CNCcycle::CNCcycle(const CNCdata* pData, LPNCARGV lpArgv) :
 	// 各座標値の設定
 	switch ( GetPlane() ) {
 	case XY_PLANE:
+		m_ptValI.SetPoint(m_ptValE.x, m_ptValE.y, m_ptValS.z);	// 描画用
+		m_ptValR.SetPoint(m_ptValE.x, m_ptValE.y, dR);
 		m_ptValE.SetPoint(m_ptValS.x + dx * nH, m_ptValS.y + dy * nH, dI);
-		m_ptValI.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), m_ptValS.z);	// 描画用
-		m_ptValR.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), dR);
+		m_ptValOrg.SetPoint(pt.x+dox*nH, pt.y+doy*nH, dI);
 		break;
 	case XZ_PLANE:
+		m_ptValI.SetPoint(m_ptValE.x, m_ptValS.y, m_ptValE.z);
+		m_ptValR.SetPoint(m_ptValE.x, dR, m_ptValE.z);
 		m_ptValE.SetPoint(m_ptValS.x + dx * nH, dI, m_ptValS.z + dy * nH);
-		m_ptValI.SetPoint(GetValue(NCA_X), m_ptValS.y, GetValue(NCA_Z));
-		m_ptValR.SetPoint(GetValue(NCA_X), dR, GetValue(NCA_Z));
+		m_ptValOrg.SetPoint(pt.x+dox*nH, dI, pt.z+doy*nH);
 		break;
 	case YZ_PLANE:
+		m_ptValI.SetPoint(m_ptValS.x, m_ptValE.y, m_ptValE.z);
+		m_ptValR.SetPoint(dR, m_ptValE.y, m_ptValE.z);
 		m_ptValE.SetPoint(dI, m_ptValS.y + dx * nH, m_ptValS.z + dy * nH);
-		m_ptValI.SetPoint(m_ptValS.x, GetValue(NCA_Y), GetValue(NCA_Z));
-		m_ptValR.SetPoint(dR, GetValue(NCA_Y), GetValue(NCA_Z));
+		m_ptValOrg.SetPoint(dI, pt.y+dox*nH, pt.z+doy*nH);
 		break;
 	}
 	m_pt2D = m_ptValE.PointConvert();
 
 	// 切り込み値が指定されていなければｴﾗｰ(補間はTH_NCRead.cppにて)
-	if ( !(GetValFlags() & g_dwSetValFlags[z]) ) {
+	if ( !bL0Cycle && !(GetValFlags() & g_dwSetValFlags[z]) ) {
 		m_nc.nErrorCode = IDS_ERR_NCBLK_NOTCYCLEZ;
 		m_nDrawCnt = 0;
 		m_dMove[z] = 0.0;
@@ -758,11 +770,16 @@ CNCcycle::CNCcycle(const CNCdata* pData, LPNCARGV lpArgv) :
 	dbg.printf("m_nDrawCnt=%d", m_nDrawCnt);
 #endif
 
+	if ( m_nDrawCnt <= 0 ) {
+		SetMaxRect();
+		return;		// bL0Cycle でもここまで
+	}
+
 	// 座標格納領域確保
 	for ( i=0; i<SIZEOF(m_Cycle); i++ )
 		m_Cycle[i] = new PTCYCLE[m_nDrawCnt];
 
-	CPoint3D	pt(m_ptValS);	// 現在位置で初期化
+	pt = m_ptValS;
 	for ( i=0; i<m_nDrawCnt; i++ ) {
 		pt[x] += dx;	pt[y] += dy;
 #ifdef _DEBUG
@@ -836,10 +853,10 @@ CNCcycle::~CNCcycle()
 
 void CNCcycle::DrawTuning(double f)
 {
+	CNCline::DrawTuning(f);
+	m_ptDrawI[0] = m_ptValI.PointConvert() * f;
+	m_ptDrawR[0] = m_ptValR.PointConvert() * f;
 	if ( m_nDrawCnt > 0 ) {
-		CNCline::DrawTuning(f);
-		m_ptDrawI[0] = m_ptValI.PointConvert() * f;
-		m_ptDrawR[0] = m_ptValR.PointConvert() * f;
 		for ( int i=0; i<m_nDrawCnt; i++ )
 			m_Cycle[0][i].DrawTuning(f);
 	}
@@ -847,10 +864,10 @@ void CNCcycle::DrawTuning(double f)
 
 void CNCcycle::DrawTuningXY(double f)
 {
+	CNCline::DrawTuningXY(f);
+	m_ptDrawI[1] = m_ptValI.GetXY() * f;
+	m_ptDrawR[1] = m_ptValR.GetXY() * f;
 	if ( m_nDrawCnt > 0 ) {
-		CNCline::DrawTuningXY(f);
-		m_ptDrawI[1] = m_ptValI.GetXY() * f;
-		m_ptDrawR[1] = m_ptValR.GetXY() * f;
 		for ( int i=0; i<m_nDrawCnt; i++ )
 			m_Cycle[1][i].DrawTuning(f);
 	}
@@ -858,10 +875,10 @@ void CNCcycle::DrawTuningXY(double f)
 
 void CNCcycle::DrawTuningXZ(double f)
 {
+	CNCline::DrawTuningXZ(f);
+	m_ptDrawI[2] = m_ptValI.GetXZ() * f;
+	m_ptDrawR[2] = m_ptValR.GetXZ() * f;
 	if ( m_nDrawCnt > 0 ) {
-		CNCline::DrawTuningXZ(f);
-		m_ptDrawI[2] = m_ptValI.GetXZ() * f;
-		m_ptDrawR[2] = m_ptValR.GetXZ() * f;
 		for ( int i=0; i<m_nDrawCnt; i++ )
 			m_Cycle[2][i].DrawTuning(f);
 	}
@@ -869,111 +886,89 @@ void CNCcycle::DrawTuningXZ(double f)
 
 void CNCcycle::DrawTuningYZ(double f)
 {
+	CNCline::DrawTuningYZ(f);
+	m_ptDrawI[3] = m_ptValI.GetYZ() * f;
+	m_ptDrawR[3] = m_ptValR.GetYZ() * f;
 	if ( m_nDrawCnt > 0 ) {
-		CNCline::DrawTuningYZ(f);
-		m_ptDrawI[3] = m_ptValI.GetYZ() * f;
-		m_ptDrawR[3] = m_ptValR.GetYZ() * f;
 		for ( int i=0; i<m_nDrawCnt; i++ )
 			m_Cycle[3][i].DrawTuning(f);
 	}
 }
 
-void CNCcycle::Draw(CDC* pDC, BOOL) const
+void CNCcycle::Draw(CDC* pDC, BOOL bSelect, BOOL) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::Draw()", DBG_RED);
+	dbg.printf("Line=%d", GetStrLine());
 #endif
-	if ( m_nDrawCnt > 0 ) {
-#ifdef _DEBUGDRAW_NCD
-		dbg.printf("Line=%d", GetStrLine());
-#endif
-		DrawCycle(pDC, 0);
-	}
-#ifdef _DEBUGDRAW_NCD
-	else
-		dbg.printf("Line=%d NoDraw!", GetStrLine());
-#endif
+	DrawCycle(pDC, 0, bSelect);
 }
 
-void CNCcycle::DrawXY(CDC* pDC, BOOL) const
+void CNCcycle::DrawXY(CDC* pDC, BOOL bSelect, BOOL) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::DrawXY()", DBG_RED);
+	dbg.printf("Line=%d", GetStrLine());
 #endif
-	if ( m_nDrawCnt > 0 ) {
-#ifdef _DEBUGDRAW_NCD
-		dbg.printf("Line=%d", GetStrLine());
-#endif
-		if ( GetPlane() == XY_PLANE ) {
-			CNCline::DrawXY(pDC);
-			DrawCyclePlane(pDC, 1);
-		}
-		else
-			DrawCycle(pDC, 1);
+	if ( GetPlane() == XY_PLANE ) {
+		CNCline::DrawXY(pDC, bSelect);
+		DrawCyclePlane(pDC, 1, bSelect);
 	}
-#ifdef _DEBUGDRAW_NCD
 	else
-		dbg.printf("Linee=%d NoDraw!", GetStrLine());
-#endif
+		DrawCycle(pDC, 1, bSelect);
 }
 
-void CNCcycle::DrawXZ(CDC* pDC, BOOL) const
+void CNCcycle::DrawXZ(CDC* pDC, BOOL bSelect, BOOL) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::DrawXZ()", DBG_RED);
+	dbg.printf("Line=%d", GetStrLine());
 #endif
-	if ( m_nDrawCnt > 0 ) {
-#ifdef _DEBUGDRAW_NCD
-		dbg.printf("Line=%d", GetStrLine());
-#endif
-		if ( GetPlane() == XZ_PLANE ) {
-			CNCline::DrawXZ(pDC);
-			DrawCyclePlane(pDC, 2);
-		}
-		else
-			DrawCycle(pDC, 2);
+	if ( GetPlane() == XZ_PLANE ) {
+		CNCline::DrawXZ(pDC, bSelect);
+		DrawCyclePlane(pDC, 2, bSelect);
 	}
-#ifdef _DEBUGDRAW_NCD
 	else
-		dbg.printf("Line=%d NoDraw!", GetStrLine());
-#endif
+		DrawCycle(pDC, 2, bSelect);
 }
 
-void CNCcycle::DrawYZ(CDC* pDC, BOOL) const
+void CNCcycle::DrawYZ(CDC* pDC, BOOL bSelect, BOOL) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcycle::DrawYZ()", DBG_RED);
+	dbg.printf("Line=%d", GetStrLine());
 #endif
-	if ( m_nDrawCnt > 0 ) {
-#ifdef _DEBUGDRAW_NCD
-		dbg.printf("Line=%d", GetStrLine());
-#endif
-		if ( GetPlane() == YZ_PLANE ) {
-			CNCline::DrawYZ(pDC);
-			DrawCyclePlane(pDC, 3);
-		}
-		else
-			DrawCycle(pDC, 3);
+	if ( GetPlane() == YZ_PLANE ) {
+		CNCline::DrawYZ(pDC, bSelect);
+		DrawCyclePlane(pDC, 3, bSelect);
 	}
-#ifdef _DEBUGDRAW_NCD
 	else
-		dbg.printf("Line=%d NoDraw!", GetStrLine());
-#endif
+		DrawCycle(pDC, 3, bSelect);
 }
 
-void CNCcycle::DrawCyclePlane(CDC* pDC, size_t n) const
+void CNCcycle::DrawCyclePlane(CDC* pDC, size_t n, BOOL bSelect) const
 {
-	CPen* pOldPen = (CPen *)(pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_CYCLE)));
-	CBrush*	pOldBrush = (CBrush *)(pDC->SelectObject(AfxGetNCVCMainWnd()->GetBrushNC(NCBRUSH_CYCLEXY)));
+	CPen*	pOldPen = bSelect ?
+		AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL) :
+		AfxGetNCVCMainWnd()->GetPenNC(NCPEN_CYCLE);
+	pOldPen = pDC->SelectObject(pOldPen);
+	CBrush*	pOldBrush = pDC->SelectObject(AfxGetNCVCMainWnd()->GetBrushNC(NCBRUSH_CYCLEXY));
 	for ( int i=0; i<m_nDrawCnt; i++ )
 		pDC->Ellipse(&m_Cycle[n][i].rcDraw);
 	pDC->SelectObject(pOldBrush);
 	pDC->SelectObject(pOldPen);
 }
 
-void CNCcycle::DrawCycle(CDC* pDC, size_t n) const
+void CNCcycle::DrawCycle(CDC* pDC, size_t n, BOOL bSelect) const
 {
-	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_G0));
+	CPen*	pPenM = AfxGetNCVCMainWnd()->GetPenNC(NCPEN_G0);
+	CPen*	pPenC = AfxGetNCVCMainWnd()->GetPenNC(NCPEN_CYCLE);
+	CPen*	pOldPen;
+	if ( bSelect )
+		pPenM = pPenC = pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+	else
+		pOldPen = pPenM;
+	pOldPen = pDC->SelectObject(pOldPen);
 	// 前回位置から１点目の穴加工までの移動
 	pDC->MoveTo(m_ptDrawS[n]);
 	pDC->LineTo(m_ptDrawI[n]);		// 現在位置から１点目のｲﾆｼｬﾙ点
@@ -981,10 +976,10 @@ void CNCcycle::DrawCycle(CDC* pDC, size_t n) const
 	pDC->LineTo(m_ptDrawE[n]);		// R点から最後の穴加工
 	// 切削方向の描画
 	for ( int i=0; i<m_nDrawCnt; i++ ) {
-		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_G0));
+		pDC->SelectObject(pPenM);
 		pDC->MoveTo(m_Cycle[n][i].ptDrawI);
 		pDC->LineTo(m_Cycle[n][i].ptDrawR);
-		pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(NCPEN_CYCLE));
+		pDC->SelectObject(pPenC);
 		pDC->LineTo(m_Cycle[n][i].ptDrawC);
 	}
 	pDC->SelectObject(pOldPen);
@@ -1009,25 +1004,15 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv) :
 	if ( GetPlane() == XZ_PLANE )
 		m_nG23 = 1 - m_nG23;	// 0->1 , 1->0;
 
-	m_ptValS = pData->GetEndPoint();
+	// ﾈｲﾃｨﾌﾞの座標ﾃﾞｰﾀで中心を計算してから座標回転
+	m_ptValS = pData->GetOriginalEndPoint();	// Not GetEndPoint()
 	m_ptValE.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
-	CPointD	pts, pte, pto;
+	m_ptValOrg = m_ptValE;
 
 	// 平面座標取得
-	switch ( GetPlane() ) {
-	case XY_PLANE:
-		pts = m_ptValS.GetXY();
-		pte = m_ptValE.GetXY();
-		break;
-	case XZ_PLANE:
-		pts = m_ptValS.GetXZ();
-		pte = m_ptValE.GetXZ();
-		break;
-	case YZ_PLANE:
-		pts = m_ptValS.GetYZ();
-		pte = m_ptValE.GetYZ();
-		break;
-	}
+	CPointD	pts( GetPlaneValue(m_ptValS) ),
+			pte( GetPlaneValue(m_ptValE) ),
+			pto;
 
 	// 半径と中心座標の計算(R優先)
 	if ( GetValFlags() & NCD_R ) {
@@ -1062,11 +1047,20 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv) :
 		fError = FALSE;
 	}
 
-	// 描画関数の決定とﾍﾘｶﾙ移動量の計算
-	Constracter();
+	m_ptValS = pData->GetEndPoint();	// 前回の計算値を補間
+	// 座標回転
+	if ( lpArgv->g68.bG68 ) {
+		CalcG68Round(&(lpArgv->g68), m_ptValE);
+		CalcG68Round(&(lpArgv->g68), m_ptOrg);
+		// 角度の再調整( [m_sq|m_eq] += lpArgv->g68.dRound; でもOK )
+		AngleTuning(GetPlaneValueOrg(m_ptValS, m_ptOrg), GetPlaneValueOrg(m_ptValE, m_ptOrg));
+	}
 
 	// 描画終点を計算し保存
 	m_pt2D = m_ptValE.PointConvert();
+
+	// 描画関数の決定とﾍﾘｶﾙ移動量の計算
+	Constracter();
 
 #ifdef _DEBUG
 	dbg.printf("gcode=%d", m_nG23);
@@ -1090,11 +1084,11 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv) :
 CNCcircle::CNCcircle(const CNCdata* pData) : CNCdata(pData)
 {
 	m_pt2D	= m_ptValE.PointConvert();
-	m_nG23	= ((CNCcircle *)pData)->GetG23();
-	m_ptOrg	= ((CNCcircle *)pData)->GetOrg();
-	m_r		= ((CNCcircle *)pData)->GetR();
-	m_sq	= ((CNCcircle *)pData)->GetStartAngle();
-	m_eq	= ((CNCcircle *)pData)->GetEndAngle();
+	m_nG23	= static_cast<const CNCcircle *>(pData)->GetG23();
+	m_ptOrg	= static_cast<const CNCcircle *>(pData)->GetOrg();
+	m_r		= static_cast<const CNCcircle *>(pData)->GetR();
+	m_sq	= static_cast<const CNCcircle *>(pData)->GetStartAngle();
+	m_eq	= static_cast<const CNCcircle *>(pData)->GetEndAngle();
 	Constracter();
 }
 
@@ -1184,7 +1178,7 @@ void CNCcircle::AngleTuning(const CPointD& pts, const CPointD& pte)
 		m_eq += 360.0*RAD;
 	// 常に s<e (反時計回り) とする
 	if ( m_nG23 == 0 )	// G02 なら開始角度と終了角度を入れ替え
-		swap(m_sq, m_eq);
+		std::swap(m_sq, m_eq);
 	while ( m_sq >= m_eq )
 		m_eq += 360.0*RAD;
 }
@@ -1210,7 +1204,7 @@ double CNCcircle::SetCalcLength(void)
 				m_nc.dLength += sqrt( pt.x*pt.x + pt.y*pt.y + pt.z*pt.z );
 				break;
 			case NCDARCDATA:
-				pCircle = (CNCcircle *)pData;
+				pCircle = static_cast<CNCcircle *>(pData);
 				m_nc.dLength += fabs(pCircle->GetR() * (pCircle->GetEndAngle() - pCircle->GetStartAngle()));
 				break;
 			}
@@ -1244,70 +1238,90 @@ void CNCcircle::DrawTuningYZ(double f)
 	CNCdata::DrawTuningYZ(f);
 }
 
-void CNCcircle::Draw(CDC* pDC, BOOL bCorrect) const
+void CNCcircle::Draw(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::Draw()", DBG_RED);
 	dbg.printf("Line=%d", GetStrLine());
 #endif
 	// 平面ごとの描画関数
-	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1));
+	CPen*	pOldPen;
+	if ( bSelect )
+		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+	else
+		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1);
+	pOldPen = pDC->SelectObject(pOldPen);
 	(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_XYZ, pDC);
 	pDC->SelectObject(pOldPen);
 	// 中心座標(黄色)
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( pOpt->IsDrawCircleCenter() )
 		pDC->SetPixelV(m_ptOrg.PointConvert()*m_dFactor,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
-	CNCdata::Draw(pDC, TRUE);
+	CNCdata::Draw(pDC, bSelect, TRUE);
 }
 
-void CNCcircle::DrawXY(CDC* pDC, BOOL bCorrect) const
+void CNCcircle::DrawXY(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::DrawXY()", DBG_RED);
 	dbg.printf("Line=%d", GetStrLine());
 #endif
-	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1));
+	CPen*	pOldPen;
+	if ( bSelect )
+		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+	else
+		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1);
+	pOldPen = pDC->SelectObject(pOldPen);
 	(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_XY, pDC);
 	pDC->SelectObject(pOldPen);
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( pOpt->IsDrawCircleCenter() )
 		pDC->SetPixelV(m_ptOrg.GetXY()*m_dFactorXY,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
-	CNCdata::DrawXY(pDC, TRUE);
+	CNCdata::DrawXY(pDC, bSelect, TRUE);
 }
 
-void CNCcircle::DrawXZ(CDC* pDC, BOOL bCorrect) const
+void CNCcircle::DrawXZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::DrawXZ()", DBG_RED);
 	dbg.printf("Line=%d", GetStrLine());
 #endif
-	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1));
+	CPen*	pOldPen;
+	if ( bSelect )
+		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+	else
+		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1);
+	pOldPen = pDC->SelectObject(pOldPen);
 	(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_XZ, pDC);
 	pDC->SelectObject(pOldPen);
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( pOpt->IsDrawCircleCenter() )
 		pDC->SetPixelV(m_ptOrg.GetXZ()*m_dFactorXZ,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
-	CNCdata::DrawXZ(pDC, TRUE);
+	CNCdata::DrawXZ(pDC, bSelect, TRUE);
 }
 
-void CNCcircle::DrawYZ(CDC* pDC, BOOL bCorrect) const
+void CNCcircle::DrawYZ(CDC* pDC, BOOL bSelect, BOOL bCorrect) const
 {
 #ifdef _DEBUGDRAW_NCD
 	CMagaDbg	dbg("CNCcircle::DrawYZ()", DBG_RED);
 	dbg.printf("Line=%d", GetStrLine());
 #endif
-	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1));
+	CPen*	pOldPen;
+	if ( bSelect )
+		pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
+	else
+		pOldPen = AfxGetNCVCMainWnd()->GetPenNC(bCorrect ? NCPEN_CORRECT : NCPEN_G1);
+	pOldPen = pDC->SelectObject(pOldPen);
 	(this->*m_pfnCircleDraw)(NCCIRCLEDRAW_YZ, pDC);
 	pDC->SelectObject(pOldPen);
-	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( pOpt->IsDrawCircleCenter() )
 		pDC->SetPixelV(m_ptOrg.GetYZ()*m_dFactorYZ,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
-	CNCdata::DrawYZ(pDC, TRUE);
+	CNCdata::DrawYZ(pDC, bSelect, TRUE);
 }
 
 // CDC::Arc() を使うとどうしても表示がズレる．
@@ -1694,15 +1708,15 @@ tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint
 	(const CNCdata* pNext, double r) const
 {
 	// ２線の交点(自身の終点)が原点になるように補正
-	CPointD	pt, pts( GetPlaneValueOrg(m_ptValE, m_ptOrg) ), pte;
+	CPointD	pt, pts( GetPlaneValueOrg(m_ptOrg, m_ptValE) ), pte;
 	double	rr1, rr2, xa, ya, r0 = fabs(m_r);
 	int		nResult;
 	BOOL	bResult = TRUE;
 
 	if ( pNext->GetType() == NCDARCDATA ) {
-		CNCcircle*	pCircle = (CNCcircle *)pNext;
+		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
 		int	nG23next = 1 - pCircle->GetG23();	// 交点への進入は反対回転
-		pte = GetPlaneValueOrg(m_ptValE, pCircle->GetOrg());
+		pte = GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE);
 		CPointD	p1, p2;
 		double	r1, r2, rn = fabs(pCircle->GetR());
 		// 自身の円と他方の接線で自身の±r符号を計算
@@ -1763,7 +1777,7 @@ tuple<BOOL, CPointD, double, double> CNCcircle::CalcRoundPoint
 		rr2 = _hypot(xa, ya);
 	}
 	else {
-		pte = GetPlaneValueOrg(m_ptValE, pNext->GetEndPoint());
+		pte = GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE);
 		// ｵﾌｾｯﾄ分平行移動させた交点を求める
 		tie(bResult, pt, r) = ::CalcOffsetIntersectionPoint_LC(pte, pts,// 直線からのｱﾌﾟﾛｰﾁで
 								r0, r, -CalcOffsetSign(), 0, 0);		// 回転方向を反転
@@ -1799,7 +1813,7 @@ optional<CPointD> CNCcircle::SetChamferingPoint(BOOL bStart, double c)
 	CPointD		pt, ptOrg1, ptOrg2, pt1, pt2;
 	double		pa, pb, ps;
 
-	switch ( GetPlane() ) {
+	switch ( GetPlane() ) {	// 数が多いので GetPlaneValue() は使わない
 	case XY_PLANE:
 		ptOrg1 = m_ptOrg.GetXY();
 		ptOrg2 = ptOrg3D.GetXY();
@@ -1840,7 +1854,7 @@ optional<CPointD> CNCcircle::SetChamferingPoint(BOOL bStart, double c)
 
 	// 時計回りの場合，始角と終角が入れ替わっているので一時的に元に戻す
 	if ( m_nG23 == 0 )
-		swap(m_sq, m_eq);
+		std::swap(m_sq, m_eq);
 
 	// 解の選択
 	ps = bStart ? m_sq : m_eq;
@@ -1874,20 +1888,7 @@ optional<CPointD> CNCcircle::SetChamferingPoint(BOOL bStart, double c)
 				pa = pb;
 			}
 		}
-		switch ( GetPlane() ) {
-		case XY_PLANE:
-			m_ptValS.x = pt.x;
-			m_ptValS.y = pt.y;
-			break;
-		case XZ_PLANE:
-			m_ptValS.x = pt.x;
-			m_ptValS.z = pt.y;
-			break;
-		case YZ_PLANE:
-			m_ptValS.y = pt.x;
-			m_ptValS.z = pt.y;
-			break;
-		}
+		SetPlaneValue(pt, m_ptValS);
 		m_sq = pa;
 	}
 	else {
@@ -1907,27 +1908,15 @@ optional<CPointD> CNCcircle::SetChamferingPoint(BOOL bStart, double c)
 				pa = pb;
 			}
 		}
-		switch ( GetPlane() ) {
-		case XY_PLANE:
-			m_ptValE.x = pt.x;
-			m_ptValE.y = pt.y;
-			break;
-		case XZ_PLANE:
-			m_ptValE.x = pt.x;
-			m_ptValE.z = pt.y;
-			break;
-		case YZ_PLANE:
-			m_ptValE.y = pt.x;
-			m_ptValE.z = pt.y;
-			break;
-		}
+		SetPlaneValue(pt, m_ptValE);
+		m_ptValOrg = m_ptValE;
 		m_eq = pa;
 		m_pt2D = m_ptValE.PointConvert();
 	}
 
 	// 角度補正
 	if ( m_nG23 == 0 )
-		swap(m_sq, m_eq);
+		std::swap(m_sq, m_eq);
 	while ( m_sq >= m_eq )
 		m_eq += 360.0*RAD;
 
@@ -1937,7 +1926,7 @@ optional<CPointD> CNCcircle::SetChamferingPoint(BOOL bStart, double c)
 double CNCcircle::CalcBetweenAngle(const CNCdata* pNext) const
 {
 	// ２線の交点(自身の終点)が原点になるように補正
-	CPointD		pt( GetPlaneValueOrg(m_ptValE, m_ptOrg) ), pt1, pt2;
+	CPointD		pt( GetPlaneValueOrg(m_ptOrg, m_ptValE) ), pt1, pt2;
 
 	// 終点接線計算
 	int k = -CalcOffsetSign();
@@ -1945,16 +1934,16 @@ double CNCcircle::CalcBetweenAngle(const CNCdata* pNext) const
 	pt1.y =  pt.x*k;	// G03:+90°
 
 	if ( pNext->GetType() == NCDARCDATA ) {
-		CNCcircle*	pCircle = (CNCcircle *)pNext;
+		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
 		// 次のｵﾌﾞｼﾞｪｸﾄが円弧なら中心をｾｯﾄし
-		pt = GetPlaneValueOrg(m_ptValE, pCircle->GetOrg());
+		pt = GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE);
 		// 始点接線計算
 		k = pCircle->CalcOffsetSign();
 		pt2.x = -pt.y*k;
 		pt2.y =  pt.x*k;
 	}
 	else {
-		pt2 = GetPlaneValueOrg(m_ptValE, pNext->GetEndPoint());
+		pt2 = GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE);
 	}
 
 	// ２線(または円弧の接線)がなす角度を求める
@@ -1973,7 +1962,7 @@ optional<CPointD> CNCcircle::CalcPerpendicularPoint
 	const CPoint3D&	pts = (enPoint==STARTPOINT) ? m_ptValS : m_ptValE;
 	// 始点終点関係なく 回転方向ｘ補正符号
 	// ptsと中心の傾きを計算して半径±r
-	CPointD	pt( GetPlaneValueOrg(m_ptOrg, pts) );
+	CPointD	pt( GetPlaneValueOrg(pts, m_ptOrg) );
 	double	q = atan2(pt.y, pt.x), rr = fabs(m_r) + r * CalcOffsetSign() * nSign;
 	CPointD	pt1(rr*cos(q), rr*sin(q));
 	pt1 += GetPlaneValue(m_ptOrg);
@@ -1989,9 +1978,9 @@ optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint
 	CPointD	pt;
 
 	if ( pNext->GetType() == NCDARCDATA ) {
-		CNCcircle*	pCircle = (CNCcircle *)pNext;
-		CPointD	pto1( GetPlaneValueOrg(m_ptValE, m_ptOrg) ),
-				pto2( GetPlaneValueOrg(m_ptValE, pCircle->GetOrg()) );
+		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
+		CPointD	pto1( GetPlaneValueOrg(m_ptOrg, m_ptValE) ),
+				pto2( GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE) );
 		// ｵﾌｾｯﾄ分半径を調節して２つの円の交点を求める
 		CPointD	p1, p2;
 		int		nResult;
@@ -2006,8 +1995,8 @@ optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint
 	}
 	else {
 		// ｵﾌｾｯﾄ分平行移動させた交点を求める
-		CPointD	pt1( GetPlaneValueOrg(m_ptValE, pNext->GetEndPoint()) ),
-				pt2( GetPlaneValueOrg(m_ptValE, m_ptOrg) );
+		CPointD	pt1( GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE) ),
+				pt2( GetPlaneValueOrg(m_ptOrg, m_ptValE) );
 		tie(bResult, pt, r) = ::CalcOffsetIntersectionPoint_LC(pt1, pt2,	// 線からのｱﾌﾟﾛｰﾁで
 								fabs(m_r), r, -CalcOffsetSign(), k2, k1);	// 回転方向を反転
 	}
@@ -2029,7 +2018,7 @@ optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint2
 	CPointD	pt, pt1, pt2;
 
 	// 始点接線座標
-	pt = GetPlaneValueOrg(m_ptValE, m_ptOrg);
+	pt = GetPlaneValueOrg(m_ptOrg, m_ptValE);
 	k = -CalcOffsetSign();
 	pt1.x = -pt.y * k;
 	pt1.y =  pt.x * k;
@@ -2038,15 +2027,15 @@ optional<CPointD> CNCcircle::CalcOffsetIntersectionPoint2
 
 	// 他方の座標計算
 	if ( pNext->GetType() == NCDARCDATA ) {
-		CNCcircle*	pCircle = (CNCcircle *)pNext;
-		pt = GetPlaneValueOrg(m_ptValE, pCircle->GetOrg());
+		const CNCcircle* pCircle = static_cast<const CNCcircle *>(pNext);
+		pt = GetPlaneValueOrg(pCircle->GetOrg(), m_ptValE);
 		k = pCircle->CalcOffsetSign();
 		pt2.x = -pt.y * k;
 		pt2.y =  pt.x * k;
 		k2 *= k * ::CalcOffsetSign(pt2);
 	}
 	else {
-		pt2 = GetPlaneValueOrg(m_ptValE, pNext->GetEndPoint());
+		pt2 = GetPlaneValueOrg(pNext->GetEndPoint(), m_ptValE);
 	}
 
 	// 直線同士のｵﾌｾｯﾄ交点計算

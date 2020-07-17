@@ -52,6 +52,6 @@ void CToolBarSetupDlg::DoDataExchange(CDataExchange* pDX)
 
 void CToolBarSetupDlg::OnToolBarCustomize() 
 {
-	((CMainFrame *)GetParent())->
+	static_cast<CMainFrame *>(GetParent())->
 		CustomizedToolBar( GetFocus()->GetDlgCtrlID() - IDC_TOOLBAR_C1 );
 }
