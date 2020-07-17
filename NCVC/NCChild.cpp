@@ -168,9 +168,8 @@ void CNCChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactiva
 	// Ó°ÄÞÚ½ÀÞ²±Û¸Þ‚Ö‚ÌÄÞ·­ÒÝÄØ‘Ö’Ê’m
 	if ( bActivate )
 		AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();
-	//
-	if ( !bActivate )
-		GetMainView()->OnUserTraceStop();
+//	else
+//		GetMainView()->OnUserTraceStop();
 }
 
 LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM wParam, LPARAM)

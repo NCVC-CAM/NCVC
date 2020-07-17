@@ -17,10 +17,14 @@ typedef	struct tagTOOLHEADER {
 	int			nFormat;
 } TOOLHEADER;
 static	TOOLHEADER	g_ToolHeader[] = {
-	{"‚s”Ô†", LVCFMT_CENTER},
+	{"‚s", LVCFMT_CENTER},
 	{"–¼@Ì", LVCFMT_LEFT},
 	{"Œa•â³’l ", LVCFMT_RIGHT},
-	{"’·•â³’l ", LVCFMT_RIGHT}
+	{"’·•â³’l ", LVCFMT_RIGHT},
+	{"H‹ïÀ²Ìß ", LVCFMT_RIGHT}
+};
+static	LPCTSTR		g_szMillType[] = {
+	"½¸³ª±", "ÎÞ°Ù", "–ÊŽæ‚è"
 };
 
 BEGIN_MESSAGE_MAP(CMCSetup3, CPropertyPage)
@@ -62,6 +66,7 @@ void CMCSetup3::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MCST3_LIST, m_ctToolList);
 	DDX_Text(pDX, IDC_MCST3_NAME, m_strToolName);
 	DDX_Radio(pDX, IDC_MCST3_TYPEA, m_nType);
+	DDX_CBIndex(pDX, IDC_MCST3_MILLTYPE, m_nMillType);
 	//}}AFX_DATA_MAP
 }
 
@@ -75,12 +80,14 @@ void CMCSetup3::SetDetailData(const CMCTOOLINFO* pToolInfo)
 		m_strToolName	= pToolInfo->m_strName;
 		m_dToolD		= pToolInfo->m_dToolD;
 		m_dToolH		= pToolInfo->m_dToolH;
+		m_nMillType		= pToolInfo->m_nType;
 	}
 	else {
 		m_nToolNo		= 0;
 		m_strToolName.Empty();
 		m_dToolD		= 0;
 		m_dToolH		= 0;
+		m_nMillType		= 0;
 	}
 	UpdateData(FALSE);
 }
@@ -149,13 +156,15 @@ BOOL CMCSetup3::OnInitDialog()
 	CRect		rc;
 	m_ctToolList.GetClientRect(rc);
 	i = m_ctToolList.GetStringWidth(g_ToolHeader[2].lpszName) + 16;	// "Œa•â³’l "
-	m_ctToolList.SetColumnWidth(0, i);
+	m_ctToolList.SetColumnWidth(0, i/2);
 	m_ctToolList.SetColumnWidth(2, i);
 	m_ctToolList.SetColumnWidth(3, i);
+	m_ctToolList.SetColumnWidth(4, i);
 	m_ctToolList.SetColumnWidth(1, rc.Width() -
 		m_ctToolList.GetColumnWidth(0)-
 		m_ctToolList.GetColumnWidth(2)-
-		m_ctToolList.GetColumnWidth(3)-32);
+		m_ctToolList.GetColumnWidth(3)-
+		m_ctToolList.GetColumnWidth(4)-32);
 	// Ø½ÄºÝÄÛ°Ù‚Ö‚Ì“o˜^
 	LV_ITEM	lvi;
 	lvi.mask = LVIF_TEXT | LVIF_PARAM;
@@ -236,21 +245,25 @@ void CMCSetup3::OnGetDispInfoToolList(NMHDR* pNMHDR, LRESULT* pResult)
 	if ( !pToolInfo )
 		return;
 
-	CString			strFmt;
+	CString		strFmt;
 	switch ( plvdi->item.iSubItem ) {
-	case 0:		// ‚s”Ô†
+	case MCTOOL_T:		// ‚s”Ô†
 		lstrcpy(plvdi->item.pszText, boost::lexical_cast<std::string>(pToolInfo->m_nTool).c_str());
 		break;
-	case 1:		// H‹ï–¼
+	case MCTOOL_NAME:	// H‹ï–¼
 		lstrcpy(plvdi->item.pszText, pToolInfo->m_strName);
 		break;
-	case 2:		// Œa•â³
+	case MCTOOL_D:		// Œa•â³
 		strFmt.Format(IDS_MAKENCD_FORMAT, pToolInfo->m_dToolD);
 		lstrcpy(plvdi->item.pszText, strFmt);
 		break;
-	case 3:		// ’·•â³
+	case MCTOOL_H:		// ’·•â³
 		strFmt.Format(IDS_MAKENCD_FORMAT, pToolInfo->m_dToolH);
 		lstrcpy(plvdi->item.pszText, strFmt);
+		break;
+	case MCTOOL_TYPE:	// H‹ïÀ²Ìß
+		if ( pToolInfo->m_nType>=0 && pToolInfo->m_nType<SIZEOF(g_szMillType) )
+			lstrcpy(plvdi->item.pszText, g_szMillType[pToolInfo->m_nType]);
 		break;
 	}
 }
@@ -276,18 +289,21 @@ int	CALLBACK CMCSetup3::CompareToolListFunc
 	CMCTOOLINFO*	pToolInfo2 = (CMCTOOLINFO *)lParam2;
 	int		nResult = 0, nSort = (int)lSubItem;
 
-	switch ( abs(nSort) ) {
-	case 1:		// ‚s”Ô†
+	switch ( abs(nSort)-1 ) {
+	case MCTOOL_T:		// ‚s”Ô†
 		nResult = pToolInfo1->m_nTool - pToolInfo2->m_nTool;
 		break;
-	case 2:		// H‹ï–¼
+	case MCTOOL_NAME:	// H‹ï–¼
 		nResult = pToolInfo1->m_strName.Compare(pToolInfo2->m_strName);
 		break;
-	case 3:		// Œa•â³
+	case MCTOOL_D:		// Œa•â³
 		nResult = (int)( (pToolInfo1->m_dToolD - pToolInfo2->m_dToolD) * 1000 );
 		break;
-	case 4:		// ’·•â³
+	case MCTOOL_H:		// ’·•â³
 		nResult = (int)( (pToolInfo1->m_dToolH - pToolInfo2->m_dToolH) * 1000 );
+		break;
+	case MCTOOL_TYPE:	// H‹ïÀ²Ìß
+		nResult = pToolInfo1->m_nType - pToolInfo2->m_nType;
 		break;
 	}
 
@@ -320,7 +336,7 @@ void CMCSetup3::OnAdd()
 
 	// H‹ïî•ñ‚Ì“o˜^
 	try {
-		pToolInfo = new CMCTOOLINFO(m_nToolNo, m_strToolName, m_dToolD, m_dToolH, TRUE);
+		pToolInfo = new CMCTOOLINFO(m_nToolNo, m_strToolName, m_dToolD, m_dToolH, m_nMillType, TRUE);
 		pos = pMCopt->m_ltTool.AddTail(pToolInfo);
 		// Ø½ÄºÝÄÛ°Ù‚Ö‚Ì“o˜^
 		lvi.iItem  = m_ctToolList.GetItemCount();
@@ -374,7 +390,7 @@ void CMCSetup3::OnMod()
 	pos = NULL;
 	pToolInfo = NULL;
 	try {
-		pToolInfo = new CMCTOOLINFO(m_nToolNo, m_strToolName, m_dToolD, m_dToolH, TRUE);
+		pToolInfo = new CMCTOOLINFO(m_nToolNo, m_strToolName, m_dToolD, m_dToolH, m_nMillType, TRUE);
 		pos = pMCopt->m_ltTool.AddTail(pToolInfo);
 		// Ø½ÄºÝÄÛ°Ù‚ÌŠY“–ÃÞ°À‚ð’uŠ·
 		if ( !m_ctToolList.SetItemData(nIndex, reinterpret_cast<DWORD_PTR>(pToolInfo)) ) {

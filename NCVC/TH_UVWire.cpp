@@ -342,7 +342,7 @@ try {
 		ncArgv.nSpindle		= pData1->GetSpindle();
 		ncArgv.dFeed		= pData1->GetFeed();
 		ncArgv.dEndmill		= pData1->GetEndmill();
-		ncArgv.nEndmillType	= pData1->GetBallEndmill();
+		ncArgv.nEndmillType	= pData1->GetEndmillType();
 		ncArgv.bG98			= pData1->GetG98();
 		ncArgv.nc.nLine		= pData1->GetBlockLineNo();
 		ncArgv.nc.nGtype	= G_TYPE;

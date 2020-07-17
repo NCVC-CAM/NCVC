@@ -354,6 +354,9 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 				case MCTOOL_H:		// í∑ï‚ê≥
 					tool.m_dToolH = (float)atof(strTok.c_str());
 					break;
+				case MCTOOL_TYPE:	// çHãÔ¿≤Ãﬂ
+					tool.m_nType = atoi(strTok.c_str());
+					break;
 				}
 			}
 			pToolInfo = new CMCTOOLINFO(tool);
@@ -471,7 +474,8 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 		strFormat.Format(IDS_MAKENCD_FORMAT, pToolInfo->m_dToolD);
 		strResult += gg_szComma + strFormat;
 		strFormat.Format(IDS_MAKENCD_FORMAT, pToolInfo->m_dToolH);
-		strResult += gg_szComma + strFormat;
+		strResult += gg_szComma + strFormat + gg_szComma;
+		strResult += lexical_cast<string>(pToolInfo->m_nType).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
 			return FALSE;
 		// âºìoò^Ã◊∏ﬁèâä˙âª
@@ -560,6 +564,15 @@ optional<float> CMCOption::GetToolH(int nTool) const
 			return pTool->m_dToolH;
 	END_FOREACH
 	return optional<float>();
+}
+
+int CMCOption::GetMillType(int nTool) const
+{
+	PLIST_FOREACH(CMCTOOLINFO* pTool, &m_ltTool)
+		if ( pTool->m_nTool == nTool )
+			return pTool->m_nType;
+	END_FOREACH
+	return 0;
 }
 
 BOOL CMCOption::AddTool(int nTool, float d, BOOL bAbs)

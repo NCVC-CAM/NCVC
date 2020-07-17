@@ -38,9 +38,10 @@ class CNCViewGL : public CView
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 
 	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
+	GLfloat*	m_pfXYZ;		// -- 変換されたﾜｰﾙﾄﾞ座標(temp area)
+	GLfloat*	m_pfNOR;		// -- 法線ﾍﾞｸﾄﾙ
 	GLsizeiptr	m_nVBOsize;		// 頂点配列ｻｲｽﾞ
-	GLuint		m_nVertexID,	// 頂点配列用
-				m_nNormalID,	// 法線ﾍﾞｸﾄﾙ用
+	GLuint		m_nVertexID[2],	// 頂点配列と法線ﾍﾞｸﾄﾙ用
 				m_nTextureID,	// ﾃｸｽﾁｬ座標用
 				m_nPictureID;	// ﾃｸｽﾁｬ画像用
 	GLuint*		m_pSolidElement;// 頂点ｲﾝﾃﾞｯｸｽ用
@@ -63,8 +64,8 @@ class CNCViewGL : public CView
 	BOOL	GetClipDepthMill(BOOL);
 	BOOL	GetClipDepthCylinder(BOOL);
 	BOOL	GetClipDepthLathe(BOOL);
-	BOOL	CreateVBOMill(const GLfloat*, GLfloat*);
-	BOOL	CreateVBOLathe(const GLfloat*, const GLfloat*);
+	BOOL	CreateVBOMill(void);
+	BOOL	CreateVBOLathe(void);
 	BOOL	ReadTexture(LPCTSTR);
 	void	CreateTextureMill(void);
 	void	CreateTextureLathe(void);

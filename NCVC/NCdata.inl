@@ -29,11 +29,17 @@ inline void CNCdata::Constracter(LPNCARGV lpArgv)
 	m_nSpindle		= lpArgv->nSpindle;
 	m_dFeed			= (float)lpArgv->dFeed;
 	m_dEndmill		= (float)lpArgv->dEndmill;
-	m_dwFlags		= 0;
-	if ( lpArgv->nEndmillType )
-		m_dwFlags |= NCFLG_ENDMILL;	// 1:Ball
-	else
-		m_dwFlags &= ~NCFLG_ENDMILL;// 0:Square
+	switch ( lpArgv->nEndmillType ) {
+	case 1:
+		m_dwFlags = NCMIL_BALL;
+		break;
+	case 2:
+		m_dwFlags = NCMIL_CHAMFER;
+		break;
+	default:
+		m_dwFlags = 0;
+		break;
+	}
 	if ( lpArgv->bG98 )
 		m_dwFlags |= NCFLG_G98;
 	else
@@ -213,11 +219,21 @@ inline float CNCdata::GetEndmill(void) const
 	return m_dEndmill;
 }
 
+inline int CNCdata::GetEndmillType(void) const
+{
+	return (int)(GetFlags() & NCFLG_ENDMILL);
+}
+/*
 inline BOOL CNCdata::GetBallEndmill(void) const
 {
-	return GetFlags() & NCFLG_ENDMILL;
+	return GetEndmillType() == NCFLG_BALLENDMILL;
 }
 
+inline BOOL CNCdata::GetChamfermill(void) const
+{
+	return GetEndmillType() == NCFLG_CHAMFERMILL;
+}
+*/
 inline BOOL CNCdata::GetG98(void) const
 {
 	return GetFlags() & NCFLG_G98;

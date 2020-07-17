@@ -127,7 +127,7 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 				m_nDXFLineType[DXFCOLLINE_NUMS],
 				m_nWheelType,			// 0->手前:拡大,奥:縮小 1->逆
 				m_nTraceSpeed[3],		// 0:高速, 1:中速, 2:低速
-				m_nMillType,			// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ
+				m_nMillType,			// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ, 2:面取り
 				m_nForceView01[4],		// 4面-1:左上,右上,左下,右下
 				m_nForceView02[4];		// 4面-2:左上,左中,左下,右
 	float		m_dGuide[NCXYZ],		// ｶﾞｲﾄﾞ軸の長さ

@@ -102,8 +102,8 @@ CNCDoc::CNCDoc()
 	m_rcMax.SetRectMinimum();
 	m_rcWork.SetRectMinimum();
 	// 増分割り当てサイズ
-	m_obBlock.SetSize(0, 1024);
-	m_obGdata.SetSize(0, 1024);
+	m_obBlock.SetSize(0, 4096);
+	m_obGdata.SetSize(0, 4096);
 }
 
 CNCDoc::~CNCDoc()
@@ -698,6 +698,8 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 	CNCdata*	pDataBase;
 	INT_PTR			i, j, nCorrect;
 	const INT_PTR	nLoop = m_obGdata.GetSize();
+	int			p = 0;
+	double		n;
 	BOOL		bOrigin = TRUE, bResult = TRUE;
 	DWORD		dwValFlag;
 	CString		strMsg;
@@ -720,7 +722,7 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 	dwValFlag |= (NCD_I | NCD_J | NCD_K);	// 円弧補間用(どの平面からも見える)
 
 	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ準備
-	pProgress->SetRange32(0, (int)nLoop);
+	pProgress->SetRange32(0, 100);
 	pProgress->SetPos(0);
 
 	// 下位の CMemoryException は全てここで集約
@@ -756,8 +758,10 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 					}
 				}
 			}
-			if ( (i & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
-				pProgress->SetPos((int)i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
+			n = (double)i/nLoop*100.0;
+			while ( n >= p )
+				p += 10;
+			pProgress->SetPos(p);
 		}
 		// ENTITIESｾｸｼｮﾝ終了とEOF出力
 		pMake = new CDXFMake(SEC_NOSECNAME);
@@ -989,12 +993,19 @@ void CNCDoc::Serialize(CArchive& ar)
 	if ( ar.IsStoring() ) {
 		CProgressCtrl*	pProgress = AfxGetNCVCMainWnd()->GetProgressCtrl();
 		// ﾌｧｲﾙ保存
-		pProgress->SetRange32(0, (int)GetNCBlockSize());
+		pProgress->SetRange32(0, 100);
 		pProgress->SetPos(0);
-		for ( int i=0; i<GetNCBlockSize(); i++ ) {
+		int		p = 0;
+		INT_PTR	n;
+		INT_PTR nLoop = GetNCBlockSize();
+		for ( INT_PTR i=0; i<nLoop; i++ ) {
 			ar.WriteString(m_obBlock[i]->GetStrBlock()+"\r\n");
-			if ( (i & 0x003f) == 0 )		// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
-				pProgress->SetPos(i);
+			n = i*100/nLoop;
+			if ( n >= p ) {
+				while ( n >= p )
+					p += 10;
+				pProgress->SetPos(p);	// 10%ずつ
+			}
 		}
 		pProgress->SetPos(0);
 		return;
@@ -1012,10 +1023,11 @@ void CNCDoc::SerializeBlock
 #endif
 	CString		strBlock;
 	CNCblock*	pBlock = NULL;
-	int			nCnt = 0;
+	int			p = 0;
+	ULONGLONG	n;
 
 	ULONGLONG	dwSize = ar.GetFile()->GetLength();		// ﾌｧｲﾙｻｲｽﾞ取得
-	DWORD		dwPosition = 0;
+	ULONGLONG	dwPosition = 0;
 	CProgressCtrl* pProgress = IsThumbnail() || dwFlags&NCF_AUTOREAD ?
 						NULL : AfxGetNCVCMainWnd()->GetProgressCtrl();
 
@@ -1030,20 +1042,24 @@ void CNCDoc::SerializeBlock
 			if ( pProgress ) {
 				// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの表示
 				dwPosition += strBlock.GetLength() + 2;	// 改行ｺｰﾄﾞ分
-				if ( (++nCnt & 0x003f)==0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
-					pProgress->SetPos((int)(dwPosition*100/dwSize));
+				n = dwPosition*100/dwSize;
+				if ( n >= p ) {
+					while ( n >= p )
+						p += 10;
+					pProgress->SetPos(p);	// 10%ずつ
+				}
 			}
 			// 行番号とGｺｰﾄﾞの分別(XYZ...含む)
 			pBlock = new CNCblock(strBlock, dwFlags);
 			obBlock.Add(pBlock);
-			// ｻﾑﾈｲﾙﾓｰﾄﾞで規程件数を超えたら、読み込みを中断
-			if ( IsThumbnail() && GetNCBlockSize()>=THUMBNAIL_MAXREADBLOCK )
-				break;
-			pBlock = NULL;
 #ifdef _DEBUGOLD
 			dbg.printf("LineCnt=%d Line=%s Gcode=%s", nCnt,
 				pBlock->GetStrLine(), pBlock->GetStrGcode() );
 #endif
+			// ｻﾑﾈｲﾙﾓｰﾄﾞで規程件数を超えたら、読み込みを中断
+			if ( IsThumbnail() && GetNCBlockSize()>=THUMBNAIL_MAXREADBLOCK )
+				break;
+			pBlock = NULL;
 		}
 		if ( pProgress )
 			pProgress->SetPos(100);
@@ -1181,7 +1197,7 @@ BOOL CNCDoc::SerializeInsertBlock
 	BOOL	bResult = TRUE;
 	if ( pFile->GetLength() > 0 ) {
 		CNCblockArray	obBlock;	// 一時領域
-		obBlock.SetSize(0, 1024);
+		obBlock.SetSize(0, 4096);
 		// ﾌｧｲﾙ読み込み
 		SerializeBlock(ar, obBlock, dwFlags);
 		// ﾌﾞﾛｯｸ挿入

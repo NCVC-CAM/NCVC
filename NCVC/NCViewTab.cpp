@@ -598,6 +598,7 @@ BOOL CTraceThread::InitInstance()
 					}
 					else
 						pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
+					Sleep(0);
 				}
 			}
 			if ( nPage < NCVIEW_OPENGL ) {

@@ -43,9 +43,12 @@ struct	_TAPER {
 #define	_LPTAPER		_TAPER*
 
 // NCﾃﾞｰﾀ状態ﾌﾗｸﾞ
-#define	NCFLG_G98		0x0001	// G98,G99（旋盤ﾓｰﾄﾞで使用）
-#define	NCFLG_ENDMILL	0x0002	// 0:Square, 1:Ball
-#define	NCFLG_G02G03	0x0004	// 0:G02, 1:G03
+#define	NCFLG_ENDMILL	0x0003	// 00:Square, 01:Ball, 10:Chamfering
+#define	NCMIL_SQUARE		0x0000
+#define	NCMIL_BALL			0x0001
+#define	NCMIL_CHAMFER		0x0002
+#define	NCFLG_G98		0x0004	// G98,G99（旋盤ﾓｰﾄﾞで使用）
+#define	NCFLG_G02G03	0x0008	// 0:G02, 1:G03
 
 // 始点終点指示
 enum	ENPOINTORDER
@@ -170,7 +173,9 @@ public:
 	float	GetMove(size_t) const;
 	float	SetMove(size_t, float);
 	float	GetEndmill(void) const;
-	BOOL	GetBallEndmill(void) const;
+	int		GetEndmillType(void) const;
+//	BOOL	GetBallEndmill(void) const;
+//	BOOL	GetChamfermill(void) const;
 	BOOL	GetG98(void) const;
 	CNCdata*	NC_CopyObject(void);			// from TH_Correct.cpp
 	void		AddCorrectObject(CNCdata*);
@@ -182,6 +187,7 @@ public:
 	void		DeleteReadData(void);
 	// NCViewGL.cpp からも呼び出し
 	void	SetEndmillOrgCircle(const CPoint3F&, CVfloat&) const;
+	void	SetChamfermillOrg(const CPoint3F&, CVfloat&) const;
 	void	AddEndmillSphere(const CPoint3F&, BOTTOMDRAW&, CVBtmDraw&) const;
 
 	virtual	void	DrawTuning(float);
@@ -200,7 +206,7 @@ public:
 	virtual	void	DrawGLLatheFace(void) const;
 	virtual	BOOL	CreateGLBottomFace(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(int, float&, float, GLfloat*) const;
+	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
 	virtual	CPoint	GetDrawEndPoint(size_t) const;
@@ -272,7 +278,7 @@ public:
 	virtual	void	DrawGLLatheFace(void) const;
 	virtual	BOOL	CreateGLBottomFace(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(int, float&, float, GLfloat*) const;
+	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
 	virtual	CPoint	GetDrawEndPoint(size_t) const;
@@ -351,7 +357,7 @@ public:
 	virtual	void	DrawGLLatheFace(void) const;
 	virtual	BOOL	CreateGLBottomFace(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(int, float&, float, GLfloat*) const;
+	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
 
 	virtual	CRect3F	GetMaxRect(void) const;
 	virtual	CRect3F	GetMaxCutRect(void) const;
@@ -389,10 +395,12 @@ class CNCcircle : public CNCline
 	void	SetEndmillXYPath(CVfloat&) const;
 	void	SetEndmillSquare(BOTTOMDRAW&, CVBtmDraw&) const;
 	void	SetEndmillBall(BOTTOMDRAW&, CVBtmDraw&) const;
+	void	SetEndmillChamfer(BOTTOMDRAW&, CVBtmDraw&) const;
 	void	SetEndmillSpherePathCircle(float, const CPoint3F&, CVfloat&) const;
 	void	SetEndmillPathXZ_Sphere(float, const CPoint3F&, CVfloat&) const;
 	void	SetEndmillPathYZ_Sphere(float, const CPoint3F&, CVfloat&) const;
-	void	AddEndmillPipe(size_t nVertex, BOTTOMDRAW& bd, CVBtmDraw& vBD) const;
+	void	AddEndmillPipe(GLuint, BOTTOMDRAW&, CVBtmDraw&) const;
+	void	AddEndmillChamfer(BOTTOMDRAW&, CVBtmDraw&) const;
 
 	// IJK指定なしの時，円の方程式から中心の算出
 	BOOL	CalcCenter(const CPointF&, const CPointF&);
@@ -432,7 +440,7 @@ public:
 	virtual	void	DrawGLLatheFace(void) const;
 	virtual	BOOL	CreateGLBottomFace(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(int, float&, float, GLfloat*) const;
+	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
 	//
 	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 

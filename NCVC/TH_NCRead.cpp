@@ -256,7 +256,7 @@ struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 	qi::rule<Iterator, sw::space_type>		ruleTop, rrMM,
 		ruleOrder, ruleValue,
 		rs1, rs2, rs3, rs4, rs5, rs6,
-		rr1, r11, r12, rr2, rr3, rr4, rr5, rr6;
+		rr1, r11, r12, r13, rr2, rr3, rr4, rr5, rr6;
 
 	CCommentParser() : CCommentParser::base_type(ruleTop) {
 		using sw::no_case;
@@ -270,10 +270,12 @@ struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 		ruleValue = rs1>>rr1|rs2>>rr2|rs3>>rr3|rs4>>rr4|rs5>>rr5|rs6>>rr6;
 		// Endmill
 		rs1 = no_case[sw::string(ENDMILL_S)|DRILL_S|TAP_S|REAMER_S] >> '=';
-		rr1 = r11|r12;
+		rr1 = r11|r12|r13;
 		r11 = float_[_SetEndmill()] >> rrMM >>
 						-(',' >> qi::digit[_SetEndmillType()]);
-		r12 = (char_('R')|'r') >> float_[_SetBallEndmill()] >>	// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
+		r12 = (char_('R')|'r') >> float_[_SetBallMill()] >>		// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
+						rrMM;
+		r13 = (char_('C')|'c') >> float_[_SetChamferMill()] >>	// 面取りﾐﾙ表記
 						rrMM;
 		// WorkRect
 		rs2 = no_case[WORKRECT_S] >> '=';
@@ -308,7 +310,7 @@ struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 		}
 	};
 	// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
-	struct	_SetBallEndmill {
+	struct	_SetBallMill {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.dEndmill = d;
 			g_ncArgv.nEndmillType = 1;
@@ -316,6 +318,19 @@ struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("SetBallEndmill()", DBG_MAGENTA);
 				dbg.printf("BallEndmill=R%f", g_ncArgv.dEndmill);
+			}
+#endif
+		}
+	};
+	// 面取りﾐﾙ表記
+	struct	_SetChamferMill {
+		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
+			g_ncArgv.dEndmill = d;
+			g_ncArgv.nEndmillType = 2;
+#ifdef _DEBUG_GSPIRIT
+			if ( !IsThumbnail() ) {
+				CMagaDbg	dbg("SetChamfermill()", DBG_MAGENTA);
+				dbg.printf("Chamfermill=C%f", g_ncArgv.dEndmill);
 			}
 #endif
 		}
@@ -1242,7 +1257,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 	ncArgv.nSpindle		= pData1->GetSpindle();
 	ncArgv.dFeed		= pData1->GetFeed();
 	ncArgv.dEndmill		= pData1->GetEndmill();
-	ncArgv.nEndmillType	= pData1->GetBallEndmill();
+	ncArgv.nEndmillType	= pData1->GetEndmillType();
 	ncArgv.bG98			= pData1->GetG98();
 	ncArgv.nc.nLine		= pData1->GetBlockLineNo();
 	ncArgv.nc.nGtype	= G_TYPE;
@@ -1328,8 +1343,9 @@ void SetEndmillDiameter(const string& str)
 	CMagaDbg	dbg("SetEndmillDiameter()", DBG_MAGENTA);
 #endif
 
+	int		nTool = atoi(str.c_str());
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
-	optional<float> dResult = pMCopt->GetToolD( atoi(str.c_str()) );
+	optional<float> dResult = pMCopt->GetToolD(nTool);
 	if ( dResult ) {
 		g_ncArgv.dEndmill = *dResult;	// ｵﾌｾｯﾄは半径なので、そのまま使用
 #ifdef _DEBUG
@@ -1343,6 +1359,7 @@ void SetEndmillDiameter(const string& str)
 			dbg.printf("Endmill T-No.%d nothing", atoi(str.c_str()));
 	}
 #endif
+	g_ncArgv.nEndmillType = pMCopt->GetMillType(nTool);
 }
 
 int SetTaperAngle(const string& str)

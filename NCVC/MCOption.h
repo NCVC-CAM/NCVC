@@ -63,7 +63,8 @@ enum {
 	MCTOOL_NAME,
 	MCTOOL_D,
 	MCTOOL_H,
-		MCTOOL_NUMS		// [4]
+	MCTOOL_TYPE,
+		MCTOOL_NUMS		// [5]
 };
 class CMCTOOLINFO
 {
@@ -71,7 +72,7 @@ friend	class	CMCOption;
 friend	class	CMCSetup3;
 
 	BOOL	m_bDlgAdd, m_bDlgDel;
-	int		m_nTool;
+	int		m_nTool, m_nType;
 	CString	m_strName;
 	float	m_dToolD, m_dToolH;
 
@@ -79,7 +80,7 @@ public:
 	CMCTOOLINFO(void) {
 		ClearOption();
 	}
-	CMCTOOLINFO(int nTool, const CString& strName, float dToolD, float dToolH,
+	CMCTOOLINFO(int nTool, const CString& strName, float dToolD, float dToolH, int nType, 
 			BOOL bDlgAdd = FALSE) {
 		m_bDlgAdd	= bDlgAdd;
 		m_bDlgDel	= FALSE;
@@ -87,11 +88,12 @@ public:
 		m_strName	= strName;
 		m_dToolD	= dToolD;
 		m_dToolH	= dToolH;
+		m_nType		= nType;
 	}
 
 	void	ClearOption(void) {
 		m_bDlgAdd = m_bDlgDel = FALSE;
-		m_nTool = 0;
+		m_nTool = m_nType = 0;
 		m_strName.Empty();
 		m_dToolD = m_dToolH = 0;
 	}
@@ -207,6 +209,7 @@ public:
 	}
 	boost::optional<float>	GetToolD(int) const;
 	boost::optional<float>	GetToolH(int) const;
+	int						GetMillType(int) const;
 	BOOL	AddTool(int, float, BOOL);	// from NCDoc.cpp(G10)
 	void	ReductionTools(BOOL);
 

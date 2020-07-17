@@ -28,6 +28,7 @@ public:
 	CListCtrl	m_ctToolList;
 	CString	m_strToolName;
 	int		m_nType;
+	int		m_nMillType;
 	//}}AFX_DATA
 
 // オーバーライド

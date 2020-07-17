@@ -742,7 +742,7 @@ CNCdata* CreateNCobj
 	ncArgv.bG98			= pData->GetG98();
 	ncArgv.dFeed		= pData->GetFeed();
 	ncArgv.dEndmill		= pData->GetEndmill();
-	ncArgv.nEndmillType	= pData->GetBallEndmill();
+	ncArgv.nEndmillType	= pData->GetEndmillType();
 	ncArgv.nc.nLine		= pData->GetBlockLineNo();
 	ncArgv.nc.nGtype	= G_TYPE;
 	ncArgv.nc.nGcode	= pData->GetGcode() > 0 ? 1 : 0;

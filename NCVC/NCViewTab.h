@@ -76,8 +76,11 @@ public:
 
 // オペレーション
 public:
-	void	OnUserTraceStop(void) {		// from NCChild.cpp
-		OnTraceStop();
+//	void	OnUserTraceStop(void) {		// from NCChild.cpp
+//		OnTraceStop();
+//	}
+	void	OnUserTracePause(void) {	// from NCViewGL.cpp
+		OnTracePause();
 	}
 	void	DblClkChange(int nIndex) {	// from NCView*.cpp
 		ActivatePage(nIndex);

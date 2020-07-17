@@ -732,7 +732,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.62a",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 3.63",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2017 MNCT K.Magara",IDC_STATIC,86,182,143,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1146,7 +1146,7 @@ BEGIN
     GROUPBOX        "‹∞∏ç¿ïW",IDC_STATIC,7,52,229,145
 END
 
-IDD_MC_SETUP3 DIALOGEX 0, 0, 243, 204
+IDD_MC_SETUP3 DIALOGEX 0, 0, 243, 230
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "çHãÔ"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
@@ -1160,13 +1160,15 @@ BEGIN
     EDITTEXT        IDC_MCST3_D,48,155,40,12,ES_RIGHT | ES_AUTOHSCROLL
     LTEXT           "í∑ï‚ê≥(&H)",IDC_STATIC,102,157,31,8
     EDITTEXT        IDC_MCST3_H,136,155,40,12,ES_RIGHT | ES_AUTOHSCROLL
-    GROUPBOX        "è⁄ç◊ê›íË",IDC_STATIC,7,100,182,80
+    GROUPBOX        "è⁄ç◊ê›íË",IDC_STATIC,7,100,182,100
     PUSHBUTTON      "í«â¡(&A)",IDC_EXE_ADD,196,103,40,14
     PUSHBUTTON      "ïœçX(&M)",IDC_EXE_MOD,196,125,40,14
     PUSHBUTTON      "çÌèú(&R)",IDC_EXE_DEL,196,147,40,14
-    LTEXT           "ï‚ê≥¿≤Ãﬂ(&C)",IDC_STATIC,14,188,37,8
-    CONTROL         "¿≤ÃﬂA",IDC_MCST3_TYPEA,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,60,187,34,10
-    CONTROL         "¿≤ÃﬂB",IDC_MCST3_TYPEB,"Button",BS_AUTORADIOBUTTON,114,187,34,10
+    LTEXT           "ï‚ê≥¿≤Ãﬂ(&C)",IDC_STATIC,16,214,37,8
+    CONTROL         "¿≤ÃﬂA",IDC_MCST3_TYPEA,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,60,213,34,10
+    CONTROL         "¿≤ÃﬂB",IDC_MCST3_TYPEB,"Button",BS_AUTORADIOBUTTON,114,213,34,10
+    LTEXT           "¿≤Ãﬂ",IDC_STATIC,14,177,28,8
+    COMBOBOX        IDC_MCST3_MILLTYPE,48,175,57,40,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_MC_SETUP4 DIALOGEX 0, 0, 243, 204
@@ -1931,8 +1933,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,6,2,1
- PRODUCTVERSION 3,6,2,1
+ FILEVERSION 3,6,3,0
+ PRODUCTVERSION 3,6,3,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1950,15 +1952,15 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.6.2.1"
+            VALUE "FileVersion", "3.6.3.0"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2017 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.6.2.1"
-            VALUE "SpecialBuild", "VC++2015, Boost C++ 1.64"
+            VALUE "ProductVersion", "3.6.3.0"
+            VALUE "SpecialBuild", "Boost C++ 1.64, FreeGLUT 3.00, GLEW 2.00"
         END
     END
     BLOCK "VarFileInfo"
@@ -2125,7 +2127,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 236
         TOPMARGIN, 7
-        BOTTOMMARGIN, 197
+        BOTTOMMARGIN, 223
     END
 
     IDD_MC_SETUP4, DIALOG
@@ -2596,6 +2598,8 @@ BEGIN
 0x5883, 0x4e83, 0x4583, 0x4683, 0x4183, "\000" 
     IDC_VIEWSETUP5_MILL_TYPE, 0x403, 7, 0
 0x7b83, 0x5b81, 0x8b83, "\000" 
+    IDC_VIEWSETUP5_MILL_TYPE, 0x403, 7, 0
+0xca96, 0xe68e, 0xe882, "\000" 
     0
 END
 
@@ -2742,6 +2746,17 @@ BEGIN
     0
 END
 
+IDD_MC_SETUP3 DLGINIT
+BEGIN
+    IDC_MCST3_MILLTYPE, 0x403, 11, 0
+0x5883, 0x4e83, 0x4583, 0x4683, 0x4183, "\000" 
+    IDC_MCST3_MILLTYPE, 0x403, 7, 0
+0x7b83, 0x5b81, 0x8b83, "\000" 
+    IDC_MCST3_MILLTYPE, 0x403, 7, 0
+0xca96, 0xe68e, 0xe882, "\000" 
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2854,6 +2869,11 @@ BEGIN
 END
 
 IDD_MKWI_SETUP2 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_MC_SETUP3 AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

@@ -14,6 +14,8 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 using std::vector;
+using std::begin;
+using std::end;
 using namespace boost;
 extern	const	PENSTYLE	g_penStyle[];	// ViewOption.cpp
 extern	float	_TABLECOS[ARCCOUNT],		// NCVC.cpp
@@ -242,15 +244,11 @@ BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 		return TRUE;	// éüÇÃµÃﬁºﬁ™∏ƒÇ≈énì_ìoò^
 	}
 	// µÃﬁºﬁ™∏ƒénì_Çìoò^
-	vpt.push_back(m_ptValS.x);
-	vpt.push_back(m_ptValS.y);
-	vpt.push_back(m_ptValS.z);
+	vpt.insert(vpt.end(), begin(m_ptValS.xyz), end(m_ptValS.xyz));
 
 	if ( m_pWireObj ) {
 		CPoint3F	pts(m_pWireObj->GetStartPoint());
-		vpt.push_back(pts.x);
-		vpt.push_back(pts.y);
-		vpt.push_back(pts.z);
+		vpt.insert(vpt.end(), begin(pts.xyz), end(pts.xyz));
 		// ñ@ê¸Õﬁ∏ƒŸ
 		optional<CPointF> ptResult = CalcPerpendicularPoint(STARTPOINT, 1.0, 1);
 		if ( ptResult ) {
@@ -271,7 +269,7 @@ BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 	return FALSE;
 }
 
-int CNCdata::AddGLWireTexture(int, float&, float, GLfloat*) const
+int CNCdata::AddGLWireTexture(size_t, float&, float, GLfloat*) const
 {
 	return 0;
 }
@@ -279,10 +277,17 @@ int CNCdata::AddGLWireTexture(int, float&, float, GLfloat*) const
 void CNCdata::SetEndmillOrgCircle(const CPoint3F& ptOrg, CVfloat& v) const
 {
 	// íÜêSç¿ïWÇä‹Çﬁâ~ç¿ïWÇ v Ç…æØƒ (FANï`âÊ)
-	v.push_back( ptOrg.x );
-	v.push_back( ptOrg.y );
-	v.push_back( ptOrg.z );
+	v.insert(v.end(), begin(ptOrg.xyz), end(ptOrg.xyz));
 	_SetEndmillCircle(m_dEndmill, ptOrg, v);
+}
+
+void CNCdata::SetChamfermillOrg(const CPoint3F& ptOrg, CVfloat& v) const
+{
+	// â~êçç¿ïWÇæØƒ
+	v.insert(v.end(), begin(ptOrg.xyz), end(ptOrg.xyz));
+	CPoint3F	pt(ptOrg);
+	pt.z += m_dEndmill;
+	_SetEndmillCircle(m_dEndmill, pt, v);
 }
 
 void CNCdata::AddEndmillSphere(const CPoint3F& ptOrg, BOTTOMDRAW& bd, CVBtmDraw& vBD) const
@@ -298,10 +303,8 @@ void CNCdata::AddEndmillSphere(const CPoint3F& ptOrg, BOTTOMDRAW& bd, CVBtmDraw&
 		ptZ.z = m_dEndmill * _TABLESIN[i+ARCCOUNT/2] + dz;	// ê[Ç≥
 		_SetEndmillCircle(x, ptZ, bd.vpt);	// Ç±ÇÃà íuÇ…XYïΩñ ÇÃâ~ç¿ïWÇìoò^
 	}
-	// 270ìxí∏ì_
-	bd.vpt.push_back( ptOrg.x );	// í∏ì_ç¿ïWÇÕ[0]ÇÃÇ›égóp
-	bd.vpt.push_back( ptOrg.y );
-	bd.vpt.push_back( ptOrg.z );
+	// 270ìxí∏ì_(í∏ì_ç¿ïWÇÕ[0]ÇÃÇ›égóp)
+	bd.vpt.insert(bd.vpt.end(), begin(ptOrg.xyz), end(ptOrg.xyz));
 
 	// í∏ì_ÇèúÇ≠îºãÖï`âÊ
 	bd.mode = GL_TRIANGLE_STRIP;
@@ -336,8 +339,8 @@ void CNCline::DrawGLMillWire(void) const
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
 		::glBegin(GL_LINES);
 			::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-			::glVertex3fv((const GLfloat *)&m_ptValS);
-			::glVertex3fv((const GLfloat *)&m_ptValE);
+			::glVertex3fv(m_ptValS.xyz);
+			::glVertex3fv(m_ptValE.xyz);
 		::glEnd();
 	}
 
@@ -350,8 +353,8 @@ void CNCline::DrawGLLatheFace(void) const
 		return;
 
 	::glBegin(GL_LINES);
-		::glVertex3fv((const GLfloat *)&m_ptValS);
-		::glVertex3fv((const GLfloat *)&m_ptValE);
+		::glVertex3fv(m_ptValS.xyz);
+		::glVertex3fv(m_ptValE.xyz);
 	::glEnd();
 }
 
@@ -367,7 +370,8 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 	BOTTOMDRAW	bd;
 	bd.vpt.reserve( ARCCOUNT*ARCCOUNT*NCXYZ );
 
-	if ( GetBallEndmill() ) {
+	switch ( GetEndmillType() ) {
+	case NCMIL_BALL:
 		// Œﬁ∞Ÿ¥›ƒﬁ–Ÿç¿ïWåvéZ
 		if ( bStartDraw && GetValFlags()&(NCD_X|NCD_Y) ) {
 			// énì_ÇÃîºãÖï`âÊ
@@ -379,7 +383,7 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 		if ( GetValFlags() & (NCD_X|NCD_Y) ) {
 			// Œﬁ∞Ÿ¥›ƒﬁ–ŸÇÃà⁄ìÆ ﬂΩï`âÊ
 			float	x,
-					q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x) + RAD(90.0f),
+					q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+RAD(90.0f),
 					cos_qp = cos(q),
 					sin_qp = sin(q);
 			CPoint3F	pt;
@@ -408,8 +412,61 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 			bd.re = 0;	// glDrawArrays()ï`âÊ
 			vBD.push_back(bd);
 		}
-	}
-	else {
+		break;
+	case NCMIL_CHAMFER:
+		// ñ éÊÇË–Ÿç¿ïWåvéZ
+		bd.mode = GL_TRIANGLE_FAN;
+		if ( bStartDraw && GetValFlags()&(NCD_X|NCD_Y) ) {
+			// énì_ÇÃâ~êçç¿ïWÇ∆ï`âÊ
+			SetChamfermillOrg(m_ptValS, bd.vpt);
+			bd.vel.assign(GLFanElement[0], GLFanElement[0]+SIZEOF(GLFanElement[0]));
+			bd.rs = 0;
+			bd.re = 64;
+			vBD.push_back(bd);
+		}
+		// èIì_ÇÃâ~êçç¿ïWÇ∆ï`âÊ
+		SetChamfermillOrg(m_ptValE, bd.vpt);
+		if ( bStartDraw && GetValFlags()&(NCD_X|NCD_Y) ) {
+			bd.vel.assign(GLFanElement[1], GLFanElement[1]+SIZEOF(GLFanElement[1]));
+			bd.rs = 65;
+			bd.re = 129;
+		}
+		else {
+			bd.vel.assign(GLFanElement[0], GLFanElement[0]+SIZEOF(GLFanElement[0]));
+			bd.rs = 0;
+			bd.re = 64;
+		}
+		vBD.push_back(bd);
+		// ãOê’ÇÃï`âÊ
+		if ( GetValFlags() & (NCD_X|NCD_Y) ) {
+			// énì_èIì_ÇVéöÇ…Ç¬Ç»ÇÆ
+			bd.mode = GL_TRIANGLE_STRIP;
+			bd.vpt.clear();
+			bd.vel.clear();
+			float	q = atan2(m_ptValE.y-m_ptValS.y, m_ptValE.x-m_ptValS.x)+RAD(90.0f),
+					cos_q = cos(q) * m_dEndmill,
+					sin_q = sin(q) * m_dEndmill,
+					ptsz = m_ptValS.z + m_dEndmill,
+					ptez = m_ptValE.z + m_dEndmill;
+			bd.vpt.push_back(  cos_q + m_ptValS.x );
+			bd.vpt.push_back(  sin_q + m_ptValS.y );
+			bd.vpt.push_back(  ptsz );
+			bd.vpt.push_back(  cos_q + m_ptValE.x );
+			bd.vpt.push_back(  sin_q + m_ptValE.y );
+			bd.vpt.push_back(  ptez );
+			bd.vpt.insert(bd.vpt.end(), begin(m_ptValS.xyz), end(m_ptValS.xyz));
+			bd.vpt.insert(bd.vpt.end(), begin(m_ptValE.xyz), end(m_ptValE.xyz));
+			bd.vpt.push_back( -cos_q + m_ptValS.x );
+			bd.vpt.push_back( -sin_q + m_ptValS.y );
+			bd.vpt.push_back(  ptsz );
+			bd.vpt.push_back( -cos_q + m_ptValE.x );
+			bd.vpt.push_back( -sin_q + m_ptValE.y );
+			bd.vpt.push_back(  ptez );
+			bd.re = 0;	// glDrawArrays()ï`âÊ
+			vBD.push_back(bd);
+		}
+		break;
+	default:
 		// Ω∏≥™±¥›ƒﬁ–Ÿç¿ïWåvéZ
 		bd.mode = GL_TRIANGLE_FAN;
 		if ( GetValFlags() & (NCD_X|NCD_Y) ) {
@@ -458,12 +515,12 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 				bd.vpt.push_back(  cos_q + m_ptValS.x );
 				bd.vpt.push_back(  sin_q + m_ptValS.y );
 				bd.vpt.push_back(  m_ptValS.z );
-				bd.vpt.push_back( -cos_q + m_ptValS.x );
-				bd.vpt.push_back( -sin_q + m_ptValS.y );
-				bd.vpt.push_back(  m_ptValS.z );
 				bd.vpt.push_back(  cos_q + m_ptValE.x );
 				bd.vpt.push_back(  sin_q + m_ptValE.y );
 				bd.vpt.push_back(  m_ptValE.z );
+				bd.vpt.push_back( -cos_q + m_ptValS.x );
+				bd.vpt.push_back( -sin_q + m_ptValS.y );
+				bd.vpt.push_back(  m_ptValS.z );
 				bd.vpt.push_back( -cos_q + m_ptValE.x );
 				bd.vpt.push_back( -sin_q + m_ptValE.y );
 				bd.vpt.push_back(  m_ptValE.z );
@@ -471,6 +528,7 @@ BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 				vBD.push_back(bd);
 			}
 		}
+		break;
 	}
 
 	return FALSE;	// éüÇÃï`âÊÇÕénì_ïsóv
@@ -489,14 +547,10 @@ BOOL CNCline::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 	n = nSize < 0 ?  0 : (GLuint)nSize;
 
 	// µÃﬁºﬁ™∏ƒèIì_Çìoò^Ç∆ãOê’ÇÃí∏ì_≤›√ﬁØ∏ΩÅiLINE_STRIPÅj
-	vpt.push_back(m_ptValE.x);
-	vpt.push_back(m_ptValE.y);
-	vpt.push_back(m_ptValE.z);
+	vpt.insert(vpt.end(), begin(m_ptValE.xyz), end(m_ptValE.xyz));
 	if ( m_pWireObj ) {
 		pte = m_pWireObj->GetEndPoint();
-		vpt.push_back(pte.x);
-		vpt.push_back(pte.y);
-		vpt.push_back(pte.z);
+		vpt.insert(vpt.end(), begin(pte.xyz), end(pte.xyz));
 		wl.vel.push_back(n+2);	// GL_LINE_STRIPÇ≈Ç¬Ç»Ç™ÇÈèáèò
 		wl.vel.push_back(n+3);
 		wl.vel.push_back(n+1);
@@ -537,7 +591,7 @@ BOOL CNCline::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 	return FALSE;
 }
 
-int CNCline::AddGLWireTexture(int n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
+int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
 {
 	if ( GetGcode()!=1 || !m_pWireObj )
 		return -1;
@@ -573,21 +627,21 @@ void CNCcycle::DrawGLMillWire(void) const
 	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern);
 	::glBegin(GL_LINE_STRIP);
 		::glColor3ubv( bG0col );
-		::glVertex3fv((const GLfloat *)&m_ptValS);
-		::glVertex3fv((const GLfloat *)&m_ptValI);
-		::glVertex3fv((const GLfloat *)&m_ptValR);
-		::glVertex3fv((const GLfloat *)&m_ptValE);
+		::glVertex3fv(m_ptValS.xyz);
+		::glVertex3fv(m_ptValI.xyz);
+		::glVertex3fv(m_ptValR.xyz);
+		::glVertex3fv(m_ptValE.xyz);
 	::glEnd();
 	::glBegin(GL_LINES);
 	for ( int i=0; i<m_nDrawCnt; i++ ) {
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern);
 		::glColor3ubv( bG0col );
-		::glVertex3fv((const GLfloat *)&m_Cycle3D[i].ptI);
-		::glVertex3fv((const GLfloat *)&m_Cycle3D[i].ptR);
+		::glVertex3fv(m_Cycle3D[i].ptI.xyz);
+		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_CYCLE)].nGLpattern);
 		::glColor3ubv( bCYcol );
-		::glVertex3fv((const GLfloat *)&m_Cycle3D[i].ptR);
-		::glVertex3fv((const GLfloat *)&m_Cycle3D[i].ptC);
+		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
+		::glVertex3fv(m_Cycle3D[i].ptC.xyz);
 	}
 	::glEnd();
 }
@@ -605,11 +659,24 @@ BOOL CNCcycle::CreateGLBottomFace(CVBtmDraw& vBD, BOOL) const
 	BOTTOMDRAW	bd;
 	bd.vpt.reserve( ARCCOUNT*ARCCOUNT*NCXYZ );
 
-	if ( GetBallEndmill() ) {
+	switch ( GetEndmillType() ) {
+	case NCMIL_BALL:
 		for ( i=0; i<m_nDrawCnt; i++ )
 			AddEndmillSphere(m_Cycle3D[i].ptC, bd, vBD);
-	}
-	else {
+		break;
+	case NCMIL_CHAMFER:
+		bd.mode = GL_TRIANGLE_FAN;
+		bd.rs = 0;
+		bd.re = 64;
+		bd.vel.assign(GLFanElement[0], GLFanElement[0]+SIZEOF(GLFanElement[0]));
+		for ( i=0; i<m_nDrawCnt; i++ ) {
+			// ç¿ïWåvéZÇ∆ï`âÊ
+			SetChamfermillOrg(m_Cycle3D[i].ptC, bd.vpt);
+			vBD.push_back(bd);
+			bd.vpt.clear();
+		}
+		break;
+	default:
 		bd.mode = GL_TRIANGLE_FAN;
 		bd.rs = 0;
 		bd.re = 64;
@@ -620,6 +687,7 @@ BOOL CNCcycle::CreateGLBottomFace(CVBtmDraw& vBD, BOOL) const
 			vBD.push_back(bd);
 			bd.vpt.clear();
 		}
+		break;
 	}
 
 	return TRUE;	// éüÇÃï`âÊÇÕénì_ïKóv
@@ -630,7 +698,7 @@ BOOL CNCcycle::AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) 
 	return TRUE;
 }
 
-int CNCcycle::AddGLWireTexture(int, float&, float, GLfloat*) const
+int CNCcycle::AddGLWireTexture(size_t, float&, float, GLfloat*) const
 {
 	return 0;
 }
@@ -677,21 +745,22 @@ void CNCcircle::DrawGLWire(void) const
 
 	switch ( GetPlane() ) {
 	case XY_PLANE:
+		pt.z = m_ptValS.z;
 		if ( GetG03() ) {
-			for ( pt.z=m_ptValS.z; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
+			for ( ; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.y = r * sin(sq) + m_ptOrg.y;
-				::glVertex3fv((const GLfloat *)&pt);
+				::glVertex3fv(pt.xyz);
 #ifdef _DEBUGOLD
 				dbgCnt++;
 #endif
 			}
 		}
 		else {
-			for ( pt.z=m_ptValS.z; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
+			for ( ; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.y = r * sin(sq) + m_ptOrg.y;
-				::glVertex3fv((const GLfloat *)&pt);
+				::glVertex3fv(pt.xyz);
 #ifdef _DEBUGOLD
 				dbgCnt++;
 #endif
@@ -701,52 +770,54 @@ void CNCcircle::DrawGLWire(void) const
 		pt.x = r * cos(eq) + m_ptOrg.x;
 		pt.y = r * sin(eq) + m_ptOrg.y;
 		pt.z = m_ptValE.z;		// Õÿ∂ŸèIóπç¿ïW
-		::glVertex3fv((const GLfloat *)&pt);
+		::glVertex3fv(pt.xyz);
 #ifdef _DEBUGOLD
 		dbg.printf("DrawCnt=%d", dbgCnt+1);
 #endif
 		break;
 
 	case XZ_PLANE:
+		pt.y = m_ptValS.y;
 		if ( GetG03() ) {
-			for ( pt.y=m_ptValS.y; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
+			for ( ; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3fv((const GLfloat *)&pt);
+				::glVertex3fv(pt.xyz);
 			}
 		}
 		else {
-			for ( pt.y=m_ptValS.y; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
+			for ( ; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(sq) + m_ptOrg.x;
 				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3fv((const GLfloat *)&pt);
+				::glVertex3fv(pt.xyz);
 			}
 		}
 		pt.x = r * cos(eq) + m_ptOrg.x;
 		pt.y = m_ptValE.y;
 		pt.z = r * sin(eq) + m_ptOrg.z;
-		::glVertex3fv((const GLfloat *)&pt);
+		::glVertex3fv(pt.xyz);
 		break;
 
 	case YZ_PLANE:
+		pt.x = m_ptValS.x;
 		if ( GetG03() ) {
-			for ( pt.x=m_ptValS.x; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
+			for ( ; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(sq) + m_ptOrg.y;
 				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3fv((const GLfloat *)&pt);
+				::glVertex3fv(pt.xyz);
 			}
 		}
 		else {
-			for ( pt.x=m_ptValS.x; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
+			for ( ; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(sq) + m_ptOrg.y;
 				pt.z = r * sin(sq) + m_ptOrg.z;
-				::glVertex3fv((const GLfloat *)&pt);
+				::glVertex3fv(pt.xyz);
 			}
 		}
 		pt.x = m_ptValE.x;
 		pt.y = r * cos(eq) + m_ptOrg.y;
 		pt.z = r * sin(eq) + m_ptOrg.z;
-		::glVertex3fv((const GLfloat *)&pt);
+		::glVertex3fv(pt.xyz);
 		break;
 	}
 }
@@ -810,7 +881,8 @@ BOOL CNCcircle::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 	BOTTOMDRAW	bd;
 	bd.vpt.reserve( ARCCOUNT*ARCCOUNT*NCXYZ );
 
-	if ( GetBallEndmill() ) {
+	switch ( GetEndmillType() ) {
+	case NCMIL_BALL:
 		if ( bStartDraw ) {
 			// énì_ÇÃŒﬁ∞Ÿ¥›ƒﬁ–ŸãÖ
 			AddEndmillSphere(m_ptValS, bd, vBD);
@@ -819,8 +891,36 @@ BOOL CNCcircle::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 		AddEndmillSphere(m_ptValE, bd, vBD);
 		// ãOê’ ﬂΩÇÃç¿ïWåvéZ
 		SetEndmillBall(bd, vBD);
-	}
-	else {
+		break;
+	case NCMIL_CHAMFER:
+		bd.mode = GL_TRIANGLE_FAN;
+		if ( bStartDraw ) {
+			// énì_ÇÃâ~êçç¿ïWÇ∆ï`âÊ
+			SetChamfermillOrg(m_ptValS, bd.vpt);
+			bd.vel.assign(GLFanElement[0], GLFanElement[0]+SIZEOF(GLFanElement[0]));
+			bd.rs = 0;
+			bd.re = 64;
+			vBD.push_back(bd);
+		}
+		// èIì_ÇÃâ~êçç¿ïWÇ∆ï`âÊ
+		SetChamfermillOrg(m_ptValE, bd.vpt);
+		if ( bStartDraw ) {
+			bd.vel.assign(GLFanElement[1], GLFanElement[1]+SIZEOF(GLFanElement[1]));
+			bd.rs = 65;
+			bd.re = 129;
+		}
+		else {
+			bd.vel.assign(GLFanElement[0], GLFanElement[0]+SIZEOF(GLFanElement[0]));
+			bd.rs = 0;
+			bd.re = 64;
+		}
+		vBD.push_back(bd);
+		bd.vpt.clear();
+		bd.vel.clear();
+		// ãOê’ÇÃï`âÊ
+		SetEndmillChamfer(bd, vBD);
+		break;
+	default:
 		bd.mode = GL_TRIANGLE_FAN;
 		bd.rs = 0;
 		bd.re = 64;
@@ -849,6 +949,7 @@ BOOL CNCcircle::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
 			// ãOê’è„ÇÃâ~Ç ﬂ≤ÃﬂèÛÇ…Ç¬Ç»ÇÆ
 			SetEndmillSquare(bd, vBD);
 		}
+		break;
 	}
 
 	return FALSE;	// éüÇÃï`âÊÇÕénì_ïsóv
@@ -890,36 +991,39 @@ void CNCcircle::SetEndmillSquare(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 	// â~å ï‚ä‘êÿçÌ ﬂΩç¿ïW
 	switch ( GetPlane() ) {
 	case XY_PLANE:
+		h = m_ptValS.z;
 		if ( GetG03() ) {
-			for ( h=m_ptValS.z; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
+			for ( ; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
 				_SetEndmillPathXY_Pipe(ptOrg, sq, rr, h, m_dEndmill, bd.vpt);
 		}
 		else {
-			for ( h=m_ptValS.z; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
+			for ( ; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
 				_SetEndmillPathXY_Pipe(ptOrg, sq, rr, h, m_dEndmill, bd.vpt);
 		}
 		_SetEndmillPathXY_Pipe(ptOrg, eq, rr, h, m_dEndmill, bd.vpt);
 		break;
 
 	case XZ_PLANE:
+		h = m_ptValS.y;
 		if ( GetG03() ) {
-			for ( h=m_ptValS.y; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
+			for ( ; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
 				_SetEndmillPathXZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, bd.vpt);
 		}
 		else {
-			for ( h=m_ptValS.y; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
+			for ( ; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
 				_SetEndmillPathXZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, bd.vpt);
 		}
 		_SetEndmillPathXZ_Pipe(ptOrg, eq, rr, h, m_dEndmill, bd.vpt);
 		break;
 
 	case YZ_PLANE:
+		h = m_ptValS.x;
 		if ( GetG03() ) {
-			for ( h=m_ptValS.x; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
+			for ( ; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
 				_SetEndmillPathYZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, bd.vpt);
 		}
 		else {
-			for ( h=m_ptValS.x; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
+			for ( ; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
 				_SetEndmillPathYZ_Pipe(ptOrg, sq, rr, h, m_dEndmill, bd.vpt);
 		}
 		_SetEndmillPathYZ_Pipe(ptOrg, eq, rr, h, m_dEndmill, bd.vpt);
@@ -932,8 +1036,8 @@ void CNCcircle::SetEndmillSquare(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 
 void CNCcircle::SetEndmillBall(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 {
-	size_t		n;
-	float		sq, eq, qp, h,
+	GLuint		n;
+	float		sq, eq, qp,
 				rr = fabs(m_r);
 	CPointF		ptOrg(GetPlaneValue(m_ptOrg));
 	CPoint3F	pt;
@@ -943,51 +1047,47 @@ void CNCcircle::SetEndmillBall(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 	switch ( GetPlane() ) {
 	case XY_PLANE:
 		// â~å ãOê’è„Ç…Zï˚å¸ÇÃîºâ~ç¿ïWÇåvéZÅiíºê¸ï‚ä‘Ç∆ìØÇ∂ï`âÊÇ≈ÇnÇjÅj
+		pt.z = m_ptValS.z;
 		if ( GetG03() ) {
-			for ( h=m_ptValS.z; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep ) {
+			for ( ; sq<eq; sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = rr * cos(sq) + ptOrg.x;
 				pt.y = rr * sin(sq) + ptOrg.y;
-				pt.z = h;
 				SetEndmillSpherePathCircle(sq, pt, bd.vpt);
 			}
 		}
 		else {
-			for ( h= m_ptValS.z; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep ) {
+			for ( ; sq>eq; sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = rr * cos(sq) + ptOrg.x;
 				pt.y = rr * sin(sq) + ptOrg.y;
-				pt.z = h;
 				SetEndmillSpherePathCircle(sq, pt, bd.vpt);
 			}
 		}
 		pt.x = rr * cos(eq) + ptOrg.x;
 		pt.y = rr * sin(eq) + ptOrg.y;
-		pt.z = h;
 		SetEndmillSpherePathCircle(eq, pt, bd.vpt);
 		n = ARCCOUNT/2+1;
 		break;
 
 	case XZ_PLANE:
 		// â~å ãOê’è„Ç…â~å ãOê’ÇÃíÜêSÇ…åXÇ¢ÇΩâ~ç¿ïWÇåvéZ
+		pt.y = m_ptValS.y;
 		if ( GetG03() ) {
-			for ( h= m_ptValS.y; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep ) {
+			for ( ; sq<eq; sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = rr * cos(sq) + ptOrg.x;
-				pt.y = h;
 				pt.z = rr * sin(sq) + ptOrg.y + m_dEndmill;
 				qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.x-pt.x);
 				SetEndmillPathXZ_Sphere(qp, pt, bd.vpt);
 			}
 		}
 		else {
-			for ( h= m_ptValS.y; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep ) {
+			for ( ; sq>eq; sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = rr * cos(sq) + ptOrg.x;
-				pt.y = h;
 				pt.z = rr * sin(sq) + ptOrg.y + m_dEndmill;
 				qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.x-pt.x);	// â~Ç™XYïΩñ Ç…ëŒÇµÇƒåXÇ≠äpìx
 				SetEndmillPathXZ_Sphere(qp, pt, bd.vpt);
 			}
 		}
 		pt.x = rr * cos(eq) + ptOrg.x;
-		pt.y = h;
 		pt.z = rr * sin(eq) + ptOrg.y + m_dEndmill;
 		qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.x-pt.x);
 		SetEndmillPathXZ_Sphere(qp, pt, bd.vpt);
@@ -995,9 +1095,9 @@ void CNCcircle::SetEndmillBall(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 		break;
 
 	case YZ_PLANE:
+		pt.x = m_ptValS.x;
 		if ( GetG03() ) {
-			for ( h= m_ptValS.x; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep ) {
-				pt.x = h;
+			for ( ; sq<eq; sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = rr * cos(sq) + ptOrg.x;
 				pt.z = rr * sin(sq) + ptOrg.y + m_dEndmill;
 				qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.y-pt.y);
@@ -1005,15 +1105,13 @@ void CNCcircle::SetEndmillBall(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 			}
 		}
 		else {
-			for ( h= m_ptValS.x; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep ) {
-				pt.x = h;
+			for ( ; sq>eq; sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = rr * cos(sq) + ptOrg.x;
 				pt.z = rr * sin(sq) + ptOrg.y + m_dEndmill;
 				qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.y-pt.y);
 				SetEndmillPathYZ_Sphere(qp, pt, bd.vpt);
 			}
 		}
-		pt.x = h;
 		pt.y = rr * cos(eq) + ptOrg.x;
 		pt.z = rr * sin(eq) + ptOrg.y + m_dEndmill;
 		qp = atan2(m_ptOrg.z-pt.z, m_ptOrg.y-pt.y);
@@ -1024,6 +1122,102 @@ void CNCcircle::SetEndmillBall(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 
 	// ãOê’è„Ç…ï¿Ç‘îºâ~Ç‹ÇΩÇÕâ~Ç ﬂ≤ÃﬂèÛÇ…Ç¬Ç»ÇÆ
 	AddEndmillPipe(n, bd, vBD);
+}
+
+static inline void _SendEndmillChamferXY(float q, float rr, float d, float z, const CPointF& pto, CVfloat& v)
+{
+	float	cos_q = cos(q), sin_q = sin(q),
+			r1 = rr + d,	r2 = rr - d;
+	v.push_back( r1 * cos_q + pto.x );
+	v.push_back( r1 * sin_q + pto.y );
+	v.push_back( z );
+	v.push_back( rr * cos_q + pto.x );
+	v.push_back( rr * sin_q + pto.y );
+	v.push_back( z - d );
+	v.push_back( r2 * cos_q + pto.x );
+	v.push_back( r2 * sin_q + pto.y );
+	v.push_back( z );
+}
+
+static inline void _SendEndmillChamferXZ(float q, float rr, float d, float y, const CPointF& pto, CVfloat& v)
+{
+	float	cos_q = cos(q), sin_q = sin(q);
+	v.push_back( rr * cos_q + pto.x - d );
+	v.push_back( y - d );
+	v.push_back( rr * sin_q + pto.y + d );	// Zï˚å¸Ç÷ÇÕÃﬂ◊Ω
+	v.push_back( rr * cos_q + pto.x );
+	v.push_back( y );
+	v.push_back( rr * sin_q + pto.y );
+	v.push_back( rr * cos_q + pto.x + d );
+	v.push_back( y + d );
+	v.push_back( rr * sin_q + pto.y + d );
+}
+
+static inline void _SendEndmillChamferYZ(float q, float rr, float d, float x, const CPointF& pto, CVfloat& v)
+{
+	float	cos_q = cos(q), sin_q = sin(q);
+	v.push_back( x - d );
+	v.push_back( rr * cos_q + pto.x - d );
+	v.push_back( rr * sin_q + pto.y + d );	// Zï˚å¸Ç÷ÇÕÃﬂ◊Ω
+	v.push_back( x );
+	v.push_back( rr * cos_q + pto.x );
+	v.push_back( rr * sin_q + pto.y );
+	v.push_back( x + d );
+	v.push_back( rr * cos_q + pto.x + d );
+	v.push_back( rr * sin_q + pto.y + d );
+}
+
+void CNCcircle::SetEndmillChamfer(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
+{
+	float		sq, eq, h,
+				rr = fabs(m_r);
+	CPointF		ptOrg(GetPlaneValue(m_ptOrg));
+
+	tie(sq, eq) = GetSqEq();
+
+	switch ( GetPlane() ) {
+	case XY_PLANE:
+		h = m_ptValS.z + m_dEndmill;
+		if ( GetG03() ) {
+			for ( ; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
+				_SendEndmillChamferXY(sq, rr, m_dEndmill, h, ptOrg, bd.vpt);
+		}
+		else {
+			for ( ; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
+				_SendEndmillChamferXY(sq, rr, m_dEndmill, h, ptOrg, bd.vpt);
+		}
+		_SendEndmillChamferXY(eq, rr, m_dEndmill, h, ptOrg, bd.vpt);
+		break;
+
+	case XZ_PLANE:
+		h = m_ptValS.y;
+		if ( GetG03() ) {
+			for ( ; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
+				_SendEndmillChamferXZ(sq, rr, m_dEndmill, h, ptOrg, bd.vpt);
+		}
+		else {
+			for ( ; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
+				_SendEndmillChamferXZ(sq, rr, m_dEndmill, h, ptOrg, bd.vpt);
+		}
+		_SendEndmillChamferXZ(eq, rr, m_dEndmill, h, ptOrg, bd.vpt);
+		break;
+
+	case YZ_PLANE:
+		h = m_ptValS.x;
+		if ( GetG03() ) {
+			for ( ; sq<eq; sq+=ARCSTEP, h+=m_dHelicalStep )
+				_SendEndmillChamferYZ(sq, rr, m_dEndmill, h, ptOrg, bd.vpt);
+		}
+		else {
+			for ( ; sq>eq; sq-=ARCSTEP, h+=m_dHelicalStep )
+				_SendEndmillChamferYZ(sq, rr, m_dEndmill, h, ptOrg, bd.vpt);
+		}
+		_SendEndmillChamferYZ(eq, rr, m_dEndmill, h, ptOrg, bd.vpt);
+		break;
+	}
+
+	// ãOê’è„Ç…ï¿Ç‘îºâ~Ç‹ÇΩÇÕâ~Ç ﬂ≤ÃﬂèÛÇ…Ç¬Ç»ÇÆ
+	AddEndmillChamfer(bd, vBD);
 }
 
 void CNCcircle::SetEndmillSpherePathCircle(float q, const CPoint3F& ptOrg, CVfloat& v) const
@@ -1040,18 +1234,14 @@ void CNCcircle::SetEndmillSpherePathCircle(float q, const CPoint3F& ptOrg, CVflo
 		pt.x = x * cos_qp;	// - y * sin_qp;
 		pt.y = x * sin_qp;	// + y * cos_qp;
 		pt += ptOrg;
-		v.push_back( pt.x );
-		v.push_back( pt.y );
-		v.push_back( pt.z );
+		v.insert(v.end(), begin(pt.xyz), end(pt.xyz));
 	}
 	// 360(0)ìxï™
 	x = pt.z = m_dEndmill;
 	pt.x = x * cos_qp;
 	pt.y = x * sin_qp;
 	pt += ptOrg;
-	v.push_back( pt.x );
-	v.push_back( pt.y );
-	v.push_back( pt.z );
+	v.insert(v.end(), begin(pt.xyz), end(pt.xyz));
 }
 
 void CNCcircle::SetEndmillPathXZ_Sphere(float qp, const CPoint3F& ptOrg,
@@ -1071,9 +1261,7 @@ void CNCcircle::SetEndmillPathXZ_Sphere(float qp, const CPoint3F& ptOrg,
 		pt.z = x * sin_qp;	// + z * cos_qp;
 		//
 		pt += ptOrg;
-		v.push_back(pt.x);
-		v.push_back(pt.y);
-		v.push_back(pt.z);
+		v.insert(v.end(), begin(pt.xyz), end(pt.xyz));
 	}
 }
 
@@ -1094,38 +1282,60 @@ void CNCcircle::SetEndmillPathYZ_Sphere(float qp, const CPoint3F& ptOrg,
 		pt.z = y * sin_qp;	// + z * cos_qp;
 		//
 		pt += ptOrg;
-		v.push_back(pt.x);
-		v.push_back(pt.y);
-		v.push_back(pt.z);
+		v.insert(v.end(), begin(pt.xyz), end(pt.xyz));
 	}
 }
 
-void CNCcircle::AddEndmillPipe(size_t n,
+void CNCcircle::AddEndmillPipe(GLuint n,
 	BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 {
-	size_t	l = bd.vpt.size() / n / NCXYZ,	// Ç¬Ç»Ç∞ÇÈå¬êî
+	GLuint	l = (GLuint)(bd.vpt.size() / n / NCXYZ),	// Ç¬Ç»Ç∞ÇÈå¬êî
 			i, j;
 
 	bd.mode = GL_TRIANGLE_STRIP;
 
 	for ( i=0; i<n-1; i++ ) {
 		for ( j=0; j<l; j++ ) {
-			bd.vel.push_back((GLuint)(j*n+i));
-			bd.vel.push_back((GLuint)(j*n+i+1));
+			bd.vel.push_back(j*n+i);
+			bd.vel.push_back(j*n+i+1);
 		}
-		bd.rs = (GLuint)i;
-		bd.re = (GLuint)((l-1)*n+i+1);
+		bd.rs = i;
+		bd.re = (l-1)*n+i+1;
 		vBD.push_back(bd);
 		bd.vel.clear();
 		if ( i==0 )
 			bd.vpt.clear();
 	}
 	for ( j=0; j<l; j++ ) {
-		bd.vel.push_back((GLuint)(j*n+i));
-		bd.vel.push_back((GLuint)(j*n));
+		bd.vel.push_back(j*n+i);
+		bd.vel.push_back(j*n);
 	}
 	bd.rs = 0;
-	bd.re = (GLuint)((l-1)*n+i);
+	bd.re = (l-1)*n+i;
+	vBD.push_back(bd);
+}
+
+void CNCcircle::AddEndmillChamfer(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
+{
+	GLuint	n = (GLuint)(bd.vpt.size() / NCXYZ),
+			i;
+	bd.mode = GL_TRIANGLE_STRIP;
+
+	for ( i=0; i<n; i+=3 ) {
+		bd.vel.push_back(i);
+		bd.vel.push_back(i+1);
+	}
+	bd.rs = 0;
+	bd.re = i-2;
+	vBD.push_back(bd);
+	bd.vpt.clear();
+	bd.vel.clear();
+	for ( i=1; i<n; i+=3 ) {
+		bd.vel.push_back(i);
+		bd.vel.push_back(i+1);
+	}
+	bd.rs = 1;
+	bd.re = i-2;
 	vBD.push_back(bd);
 }
 
@@ -1170,84 +1380,66 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 	// -- XYé≤Ç∆UVé≤ÇÃâ~å ÇÃëÂÇ´Ç≥Ç™à·Ç§èÍçáÇ™Ç†ÇÈÇ∆Ç´ÇÃèàóùÇí«â¡
 	if ( GetG03() ) {
 		for ( ; sqxy<eqxy || squv<equv; sqxy+=ARCSTEP, squv+=ARCSTEP, nCnt++ ) {
-			cxy = cos(min(sqxy, eqxy));	sxy = sin(min(sqxy, eqxy));
+			cxy = cos(min(sqxy, eqxy));
+			sxy = sin(min(sqxy, eqxy));
 			pt1.x = rxy * cxy + ptOrgXY.x;
 			pt1.y = rxy * sxy + ptOrgXY.y;
-			vpt.push_back(pt1.x);
-			vpt.push_back(pt1.y);
-			vpt.push_back(pt1.z);
+			vpt.insert(vpt.end(), begin(pt1.xyz), end(pt1.xyz));
 			pt1.x = (rxy-1.0f) * cxy + ptOrgXY.x;
 			pt1.y = (rxy-1.0f) * sxy + ptOrgXY.y;
-			vnr.push_back(pt1.x);
-			vnr.push_back(pt1.y);
-			vnr.push_back(pt1.z);
+			vnr.insert(vnr.end(), begin(pt1.xyz), end(pt1.xyz));
 			if ( m_pWireObj ) {
-				cuv = cos(min(squv, equv));	suv = sin(min(squv, equv));
+				cuv = cos(min(squv, equv));
+				suv = sin(min(squv, equv));
 				pt2.x = ruv * cuv + ptOrgUV.x;
 				pt2.y = ruv * suv + ptOrgUV.y;
-				vpt.push_back(pt2.x);
-				vpt.push_back(pt2.y);
-				vpt.push_back(pt2.z);
+				vpt.insert(vpt.end(), begin(pt2.xyz), end(pt2.xyz));
 				pt2.x = (ruv-1.0f) * cuv + ptOrgUV.x;
 				pt2.y = (ruv-1.0f) * suv + ptOrgUV.y;
-				vnr.push_back(pt2.x);
-				vnr.push_back(pt2.y);
-				vnr.push_back(pt2.z);
+				vnr.insert(vnr.end(), begin(pt2.xyz), end(pt2.xyz));
 			}
 		}
 	}
 	else {
 		for ( ; sqxy>eqxy || squv>equv; sqxy-=ARCSTEP, squv-=ARCSTEP, nCnt++ ) {
-			cxy = cos(max(sqxy, eqxy));	sxy = sin(max(sqxy, eqxy));
+			cxy = cos(max(sqxy, eqxy));
+			sxy = sin(max(sqxy, eqxy));
 			pt1.x = rxy * cxy + ptOrgXY.x;
 			pt1.y = rxy * sxy + ptOrgXY.y;
-			vpt.push_back(pt1.x);
-			vpt.push_back(pt1.y);
-			vpt.push_back(pt1.z);
+			vpt.insert(vpt.end(), begin(pt1.xyz), end(pt1.xyz));
 			pt1.x = (rxy-1.0f) * cxy + ptOrgXY.x;
 			pt1.y = (rxy-1.0f) * sxy + ptOrgXY.y;
-			vnr.push_back(pt1.x);
-			vnr.push_back(pt1.y);
-			vnr.push_back(pt1.z);
+			vnr.insert(vnr.end(), begin(pt1.xyz), end(pt1.xyz));
 			if ( m_pWireObj ) {
-				cuv = cos(max(squv, equv));	suv = sin(max(squv, equv));
+				cuv = cos(max(squv, equv));
+				suv = sin(max(squv, equv));
 				pt2.x = ruv * cuv + ptOrgUV.x;
 				pt2.y = ruv * suv + ptOrgUV.y;
-				vpt.push_back(pt2.x);
-				vpt.push_back(pt2.y);
-				vpt.push_back(pt2.z);
+				vpt.insert(vpt.end(), begin(pt2.xyz), end(pt2.xyz));
 				pt2.x = (ruv-1.0f) * cuv + ptOrgUV.x;
 				pt2.y = (ruv-1.0f) * suv + ptOrgUV.y;
-				vnr.push_back(pt2.x);
-				vnr.push_back(pt2.y);
-				vnr.push_back(pt2.z);
+				vnr.insert(vnr.end(), begin(pt2.xyz), end(pt2.xyz));
 			}
 		}
 	}
-	cxy = cos(eqxy);	sxy = sin(eqxy);
+	cxy = cos(eqxy);
+	sxy = sin(eqxy);
 	pt1.x = rxy * cxy + ptOrgXY.x;
 	pt1.y = rxy * sxy + ptOrgXY.y;
-	vpt.push_back(pt1.x);
-	vpt.push_back(pt1.y);
-	vpt.push_back(pt1.z);
+	vpt.insert(vpt.end(), begin(pt1.xyz), end(pt1.xyz));
 	pt1.x = (rxy-1.0f) * cxy + ptOrgXY.x;
 	pt1.y = (rxy-1.0f) * sxy + ptOrgXY.y;
-	vnr.push_back(pt1.x);
-	vnr.push_back(pt1.y);
-	vnr.push_back(pt1.z);
+	vnr.insert(vnr.end(), begin(pt1.xyz), end(pt1.xyz));
 	nCnt++;
 	if ( m_pWireObj ) {
-		cuv = cos(equv);	suv = sin(equv);
+		cuv = cos(equv);
+		suv = sin(equv);
 		pt2.x = ruv * cuv + ptOrgUV.x;
 		pt2.y = ruv * suv + ptOrgUV.y;
-		vpt.push_back(pt2.x);
-		vpt.push_back(pt2.y);
-		vpt.push_back(pt2.z);
+		vpt.insert(vpt.end(), begin(pt2.xyz), end(pt2.xyz));
 		pt2.x = (ruv-1.0f) * cuv + ptOrgUV.x;
 		pt2.y = (ruv-1.0f) * suv + ptOrgUV.y;
-		vnr.push_back(pt2.x);
-		vnr.push_back(pt2.y);
-		vnr.push_back(pt2.z);
+		vnr.insert(vnr.end(), begin(pt2.xyz), end(pt2.xyz));
 	}
 
 	// ãOê’ÇÃí∏ì_≤›√ﬁØ∏Ω
@@ -1275,7 +1467,7 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 	return FALSE;
 }
 
-int CNCcircle::AddGLWireTexture(int n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
+int CNCcircle::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
 {
 	if ( !m_pWireObj )
 		return -1;
