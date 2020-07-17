@@ -15,6 +15,7 @@ class	CDXFshape;
 // DXF状態ﾌﾗｸﾞ
 #define	DXFFLG_MAKE				0x0001
 #define	DXFFLG_SEARCH			0x0002
+#define	DXFFLG_CLRWORK			0x000f
 #define	DXFFLG_SELECT			0x0010
 #define	DXFFLG_DIRECTIONFIX		0x0100
 #define	DXFFLG_OFFSET_EXCLUDE	0x1000
@@ -30,17 +31,20 @@ typedef	struct	tagDXF_POINT {
 	CLayerData*	pLayer;
 	CPointD		c;			// 穴あけ位置
 } DXFPARGV, *LPDXFPARGV;
+#define	LPCDXFPARGV		const LPDXFPARGV
 
 typedef	struct	tagDXF_LINE {
 	CLayerData*	pLayer;
 	CPointD		s, e;		// 開始・終了点
 } DXFLARGV, *LPDXFLARGV;
+#define	LPCDXFLARGV		const LPDXFLARGV
 
 typedef	struct	tagDXF_CIRCLE {
 	CLayerData*	pLayer;
 	CPointD		c;			// 中心
 	double		r;			// 半径
 } DXFCARGV, *LPDXFCARGV;
+#define	LPCDXFCARGV		const LPDXFCARGV
 
 typedef	struct	tagDXF_ARC {
 	CLayerData*	pLayer;
@@ -48,6 +52,7 @@ typedef	struct	tagDXF_ARC {
 	double		r;			// 半径
 	double		sq, eq;		// 始点・終点角度
 } DXFAARGV, *LPDXFAARGV;
+#define	LPCDXFAARGV		const LPDXFAARGV
 
 typedef	struct	tagDXF_ELLIPSE {
 	CLayerData*	pLayer;
@@ -57,12 +62,14 @@ typedef	struct	tagDXF_ELLIPSE {
 	double		sq, eq;		// 始点・終点角度
 	BOOL		bRound;		// Default==TRUE(反時計回り)
 } DXFEARGV, *LPDXFEARGV;
+#define	LPCDXFEARGV		const LPDXFEARGV
 
 typedef	struct	tagDXF_TEXT {
 	CLayerData*	pLayer;
 	CPointD		c;			// 文字位置
 	CString		strValue;	// 文字列
 } DXFTARGV, *LPDXFTARGV;
+#define	LPCDXFTARGV		const LPDXFTARGV
 
 // ﾌﾞﾛｯｸの付加情報
 #define	DXFBLFLG_X		0x0001
@@ -75,6 +82,7 @@ typedef	struct	tagDXF_BLOCK {
 	double		dMagni[NCXYZ];	// 各軸の倍率
 	double		dRound;			// 回転角度(度)
 } DXFBLOCK, *LPDXFBLOCK;
+#define	LPCDXFBLOCK		const LPDXFBLOCK
 
 // CDXFpoint用動的関数呼び出し
 class	CDXFpoint;
@@ -83,11 +91,6 @@ typedef double (*PFNORGDRILLTUNING)(const CDXFpoint*);
 // CDXFcircleEx用ｽﾍﾟｼｬﾙﾀｲﾌﾟ
 enum	ENDXFTYPE2
 	{DXFORGDATA = 0, DXFSTADATA = 1};
-
-/*
-	SwapPt()    : 近接座標計算に使用．内部専用
-	ReversePt() : 往復の深彫切削，POLYLINEのSwapPt()．
-*/
 
 /////////////////////////////////////////////////////////////////////////////
 // ＣＡＭデータのヘッダークラス
@@ -118,7 +121,6 @@ protected:
 	// CDXFpolyline だけは CDXFpolyline から更新する
 	CLayerData*	m_pParentLayer;	// ﾃﾞｰﾀの属するﾚｲﾔ情報
 	CDXFshape*	m_pParentMap;	// ﾃﾞｰﾀの属するﾏｯﾌﾟ情報
-	virtual	void	SwapPt(int);	// m_ptTun, m_ptMake の入れ替え
 	virtual	void	XRev(void);		// X軸の符号反転
 	virtual	void	YRev(void);		// Y軸の符号反転
 
@@ -163,7 +165,8 @@ public:
 	BOOL		IsMakeMatchObject(const CDXFdata*);
 	double		GetEdgeGap(const CDXFdata*, BOOL = TRUE);
 	//	
-	virtual	void	ReversePt(void);
+	virtual	void	SwapMakePt(int);	// m_ptTun, m_ptMake の始点終点入れ替え
+	virtual	void	SwapNativePt(void);	// 固有座標値の入れ替え
 	// 各ｵﾌﾞｼﾞｪｸﾄにしか解らない独自の処理 -> 純粋仮想関数
 	virtual	BOOL	IsMakeTarget(void) const = 0;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&) = 0;
@@ -181,7 +184,6 @@ public:
 	//
 	virtual	double	GetSelectPointGap(const CPointD&) = 0;
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const = 0;
-	virtual	void	SetDirectionFixed(const CPointD&) = 0;
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const = 0;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const = 0;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const = 0;
@@ -209,9 +211,9 @@ protected:
 	CDXFpoint();
 	CDXFpoint(ENDXFTYPE, CLayerData*, int);
 public:
-	CDXFpoint(LPDXFPARGV);
+	CDXFpoint(LPCDXFPARGV);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
-	CDXFpoint(CLayerData*, const CDXFpoint*, LPDXFBLOCK);
+	CDXFpoint(CLayerData*, const CDXFpoint*, LPCDXFBLOCK);
 
 	const	CPoint	GetDrawPoint(void) const;
 
@@ -236,7 +238,6 @@ public:
 
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
-	virtual	void	SetDirectionFixed(const CPointD&);
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
@@ -258,9 +259,9 @@ protected:
 	CDXFline();
 	CDXFline(ENDXFTYPE, CLayerData*, int);
 public:
-	CDXFline(LPDXFLARGV);
+	CDXFline(LPCDXFLARGV);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
-	CDXFline(CLayerData*, const CDXFline*, LPDXFBLOCK);
+	CDXFline(CLayerData*, const CDXFline*, LPCDXFBLOCK);
 
 	virtual	BOOL	IsMakeTarget(void) const;
 	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
@@ -278,7 +279,6 @@ public:
 
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
-	virtual	void	SetDirectionFixed(const CPointD&);
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
@@ -310,7 +310,6 @@ protected:
 	CPointD	m_ct, m_ctTun;	// 中心座標
 	BOOL	m_bRound;		// G2(FALSE)/G3(TRUE) DXFの基本は G3(反時計回り)
 
-	virtual	void	SwapPt(int);
 	virtual	void	XRev(void);
 	virtual	void	YRev(void);
 
@@ -320,19 +319,19 @@ protected:
 	void	GetQuarterPoint(const CPointD&, CPointD[]) const;
 
 	// 円，円弧，共通処理
-	void	SetEllipseArgv_Circle(const LPDXFBLOCK, LPDXFEARGV, double, double, BOOL);
+	void	SetEllipseArgv_Circle(LPCDXFBLOCK, LPCDXFEARGV, double, double, BOOL);
 	double	GetSelectPointGap_Circle(const CPointD&, double, double) const;
 	BOOL	GetDirectionArraw_Circle(const double[], const CPointD[], CPointD[][3]) const;
 
 	CDXFcircle();
 	CDXFcircle(ENDXFTYPE, CLayerData*, const CPointD&, double, BOOL, int);
 public:
-	CDXFcircle(LPDXFCARGV);
+	CDXFcircle(LPCDXFCARGV);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
-	CDXFcircle(CLayerData*, const CDXFcircle*, LPDXFBLOCK);
+	CDXFcircle(CLayerData*, const CDXFcircle*, LPCDXFBLOCK);
 
 	// ﾌﾞﾛｯｸｺﾋﾟｰ時の尺度で円が楕円になる
-	void	SetEllipseArgv(const LPDXFBLOCK, LPDXFEARGV);
+	void	SetEllipseArgv(LPCDXFBLOCK, LPCDXFEARGV);
 
 	BOOL	IsRoundFixed(void) const;
 	double	GetR(void) const;
@@ -355,7 +354,8 @@ public:
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
 
-	virtual	void	ReversePt(void);
+	virtual	void	SwapMakePt(int);
+	virtual	void	SwapNativePt(void);
 	virtual	BOOL	IsRangeAngle(const CPointD&) const;
 
 	virtual	void	DrawTuning(const double);
@@ -364,7 +364,6 @@ public:
 
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
-	virtual	void	SetDirectionFixed(const CPointD&);
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
@@ -426,7 +425,6 @@ protected:
 	void	SwapRound(void);
 	void	SwapAngle(void);
 
-	virtual	void	SwapPt(int);
 	virtual	void	XRev(void);
 	virtual	void	YRev(void);
 
@@ -434,14 +432,14 @@ protected:
 	CDXFarc();
 	CDXFarc(ENDXFTYPE, CLayerData*, const CPointD&, double, double, double, BOOL, int);
 public:
-	CDXFarc(LPDXFAARGV);
+	CDXFarc(LPCDXFAARGV);
 	// from CDXFpolyline::SetVertex()
-	CDXFarc(LPDXFAARGV, BOOL, const CPointD&, const CPointD&);
+	CDXFarc(LPCDXFAARGV, BOOL, const CPointD&, const CPointD&);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
-	CDXFarc(CLayerData*, const CDXFarc*, LPDXFBLOCK);
+	CDXFarc(CLayerData*, const CDXFarc*, LPCDXFBLOCK);
 
 	// ﾌﾞﾛｯｸｺﾋﾟｰ時の尺度で円弧が楕円弧になる
-	void	SetEllipseArgv(const LPDXFBLOCK, LPDXFEARGV);
+	void	SetEllipseArgv(LPCDXFBLOCK, LPCDXFEARGV);
 
 	BOOL	GetRoundOrig(void) const;
 	double	GetStartAngle(void) const;
@@ -460,7 +458,8 @@ public:
 	virtual	const CPointD	GetEndMakePoint(void) const;
 	virtual	double	GetLength(void) const;
 
-	virtual	void	ReversePt(void);
+	virtual	void	SwapMakePt(int);
+	virtual	void	SwapNativePt(void);
 	virtual	BOOL	IsRangeAngle(const CPointD&) const;
 
 	virtual	void	DrawTuning(const double);
@@ -469,7 +468,6 @@ public:
 
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
-	virtual	void	SetDirectionFixed(const CPointD&);
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
@@ -499,15 +497,14 @@ class CDXFellipse : public CDXFarc
 	void	XYRev(const CPointD&, const CPointD&);
 
 protected:
-	virtual	void	SwapPt(int);
 	virtual	void	XRev(void);
 	virtual	void	YRev(void);
 
 	CDXFellipse();
 public:
-	CDXFellipse(LPDXFEARGV);
+	CDXFellipse(LPCDXFEARGV);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
-	CDXFellipse(CLayerData*, const CDXFellipse*, LPDXFBLOCK);
+	CDXFellipse(CLayerData*, const CDXFellipse*, LPCDXFBLOCK);
 
 	const CPointD	GetLongPoint(void) const;
 	double	GetShortMagni(void) const;
@@ -530,7 +527,8 @@ public:
 	virtual	const CPointD	GetEndCutterPoint(void) const;
 	virtual	const CPointD	GetEndMakePoint(void) const;
 
-	virtual	void	ReversePt(void);
+	virtual	void	SwapMakePt(int);
+	virtual	void	SwapNativePt(void);
 
 	virtual	void	DrawTuning(const double);
 	virtual	void	Draw(CDC*) const;
@@ -538,7 +536,6 @@ public:
 
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
-	virtual	void	SetDirectionFixed(const CPointD&);
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
@@ -563,14 +560,13 @@ class CDXFpolyline : public CDXFline
 	void		CheckPolylineIntersection_SubLoop(const CDXFellipse*, POSITION);
 
 protected:
-	virtual	void	SwapPt(int);
 	virtual	void	XRev(void);
 	virtual	void	YRev(void);
 
 public:
 	CDXFpolyline();		// 生成直後はﾚｲﾔ情報無し
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
-	CDXFpolyline(CLayerData*, const CDXFpolyline*, LPDXFBLOCK);
+	CDXFpolyline(CLayerData*, const CDXFpolyline*, LPCDXFBLOCK);
 	virtual ~CDXFpolyline();
 
 	void	SetPolyFlag(DWORD);
@@ -584,11 +580,14 @@ public:
 	CDXFdata*	GetTailObject(void) const;
 	BOOL	IsIntersection(void) const;
 
-	BOOL	SetVertex(LPDXFPARGV);
-	BOOL	SetVertex(LPDXFPARGV, double, const CPointD&);
+	BOOL	SetVertex(LPCDXFPARGV);
+	BOOL	SetVertex(LPCDXFPARGV, double, const CPointD&);
 	void	EndSeq(void);
 	void	SetVectorPoint(std::vector<CPointD>&);
 	void	CheckPolylineIntersection(void);
+
+	virtual	void	SwapMakePt(int);
+	virtual	void	SwapNativePt(void);
 
 	virtual	BOOL	IsMakeTarget(void) const;
 	virtual BOOL	IsStartEqEnd(void) const;
@@ -598,7 +597,6 @@ public:
 
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
-	virtual	void	SetDirectionFixed(const CPointD&);
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
@@ -619,9 +617,9 @@ protected:
 
 	CDXFtext();
 public:
-	CDXFtext(LPDXFTARGV lpText);
+	CDXFtext(LPCDXFTARGV lpText);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
-	CDXFtext(CLayerData*, const CDXFtext*, LPDXFBLOCK);
+	CDXFtext(CLayerData*, const CDXFtext*, LPCDXFBLOCK);
 
 	CString		GetStrValue(void) const;
 

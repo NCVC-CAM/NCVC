@@ -5,6 +5,8 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
+#include "NCMakeLatheOpt.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -14,202 +16,56 @@ extern	CMagaDbg	g_dbg;
 //#define	_DEBUGOLD
 #undef	_DEBUGOLD
 
-// int型命令
-static	LPCTSTR	g_szNOrder[] = {
-	"Spindle",
-	"LineAddType", "G90", "ZReturn",
-		"Dot", "FDot", "CircleCode", "CircleIJ",
-	"MakeEnd", "FinishSpindle",
-		"DeepZProcess", "DeepAProcess", "DeepCProcess",
-	"DrillSpindle", "Dwell", "DwellFormat", "DrillZProcess",
-		"DrillProcess", "DrillSort", "DrillCircleProcess",
-	"MoveZ",
-	"ToleranceProcess", "DrillOptimaize"
-};
-static	const	int		g_dfNOrder[] = {
-	3000,
-	1, 0, 1, 0, 2, 0, 1,
-	0, 8000, 0, 0, 0,
-	3000, 10, 0, 0, 0, 0, 0,
-	0,
-	0, 0
-};
-
-// double型命令
-static	LPCTSTR	g_szDOrder[] = {
-	"Feed", "ZFeed",
-	"ZG0Stop", "ZCut", "G92X", "G92Y", "G92Z",
-	"Ellipse",
-	"MakeEndValue", "MakeEndFeed", "DeepFinal", "ZStep", "FinishFeed",
-	"DrillFeed", "DrillR", "DrillZ", "DrillCircleR",
-	"Tolerance", "DrillMargin"
-};
-static	const	double	g_dfDOrder[] = {
-	300.0, 100.0,
-	-9.0, -12.0, 0.0, 0.0, 0.0,
-	0.5,
-	0.0, 1000.0, -20.0, -2.0, 100.0,
-	60.0, -9.0, -12.0, 10.0,
-	NCMIN, 1.0
-};
-
-// BOOL型命令
-static	LPCTSTR	g_szBOrder[] = {
-	"XRev", "YRev", "LineAdd", "ZeroCut", "GClip", "DisableSpindle",
-	"CircleHalf", "EllipseFlg",
-	"Deep", "Helical", "DeepFinishSet",
-	"DrillMatch", "DrillCircle", "DrillBreak",
-	"LayerComment", "L0Cycle"
-};
-static	const	BOOL	g_dfBOrder[] = {
-	FALSE, FALSE, FALSE, TRUE, TRUE, FALSE,
-	FALSE, TRUE,
-	FALSE, TRUE, FALSE,
-	TRUE, FALSE, TRUE,
-	TRUE, FALSE
-};
-
-// CString型命令
-static	LPCTSTR	g_szSOrder[] = {
-	"LineForm", "EOB", "CustomMoveB", "CustomMoveA",
-	"Header", "Footer"
-};
-static	LPCTSTR	g_dfSOrder[] = {
-	"N%04d", "", "", "",
-	"Header.txt", "Footer.txt"
-};
-
-// 保存に関する情報
-static	LPCTSTR	g_szInitComment[] = {
-	"##\n",
-	"## NCVC:切削条件ﾌｧｲﾙ\n",
-};
-static	enum	ENORDERTYPE {	// 命令の型
-	NC_PAGE,	// ﾍﾟｰｼﾞ区切り
-	NC_NUM, NC_DBL, NC_FLG, NC_STR
-};
-typedef	struct	tagSAVEORDER {
-	ENORDERTYPE		enType;
-	int				nID;
-	LPCTSTR			lpszComment;
-} SAVEORDER;
-static	SAVEORDER	g_stSaveOrder[] = {
-	{NC_PAGE,	1},		// Page1(基本:Dialog1)
-	{NC_NUM,	MKNC_NUM_SPINDLE,		"主軸回転数"},
-	{NC_DBL,	MKNC_DBL_FEED,			"切削送り"},
-	{NC_DBL,	MKNC_DBL_ZFEED,			"Z軸送り"},
-	{NC_DBL,	MKNC_DBL_ZG0STOP,		"R点"},
-	{NC_DBL,	MKNC_DBL_ZCUT,			"Z軸切り込み"},
-	{NC_DBL,	MKNC_DBL_G92X,			"切削原点(G92X)"},
-	{NC_DBL,	MKNC_DBL_G92Y,			"切削原点(G92Y)"},
-	{NC_DBL,	MKNC_DBL_G92Z,			"切削原点(G92Z)"},
-	{NC_STR,	MKNC_STR_HEADER,		"ｶｽﾀﾑﾍｯﾀﾞｰ"},
-	{NC_STR,	MKNC_STR_FOOTER,		"ｶｽﾀﾑﾌｯﾀﾞｰ"},
-	{NC_PAGE,	2},		// Page2(生成:Dialog2)
-	{NC_FLG,	MKNC_FLG_XREV,			"X軸反転"},
-	{NC_FLG,	MKNC_FLG_YREV,			"Y軸反転"},
-	{NC_FLG,	MKNC_FLG_LINEADD,		"行番号追加"},
-	{NC_STR,	MKNC_STR_LINEFORM,		"行番号書式"},
-	{NC_NUM,	MKNC_NUM_LINEADD,		"行番号倍率"},
-	{NC_STR,	MKNC_STR_EOB,			"EOB"},
-	{NC_NUM,	MKNC_NUM_G90,			"位置指令(0:G90,1:G91)"},
-	{NC_NUM,	MKNC_NUM_ZRETURN,		"Z軸復帰(0:ｲﾆｼｬﾙ,1:R点)"},
-	{NC_FLG,	MKNC_FLG_GCLIP,			"ﾓｰﾀﾞﾙ"},
-	{NC_FLG,	MKNC_FLG_DISABLESPINDLE,"Sﾊﾟﾗﾒｰﾀを生成しない"},
-	{NC_PAGE,	3},		// Page3(表記:Dialog6)
-	{NC_NUM,	MKNC_NUM_DOT,			"座標表記(0:小数点,1:1/1000)"},
-	{NC_NUM,	MKNC_NUM_FDOT,			"Fﾊﾟﾗﾒｰﾀ表記(0:小数点,1:1/1000,2:整数)"},
-	{NC_FLG,	MKNC_FLG_ZEROCUT,		"小数点以下のｾﾞﾛｶｯﾄ"},
-	{NC_NUM,	MKNC_NUM_CIRCLECODE,	"円ﾃﾞｰﾀの切削(0:G2,1:G3)"},
-	{NC_NUM,	MKNC_NUM_IJ,			"円弧指示(0:R,1:I/J)"},
-	{NC_FLG,	MKNC_FLG_CIRCLEHALF,	"全円は2分割"},
-	{NC_DBL,	MKNC_DBL_ELLIPSE,		"楕円公差"},
-	{NC_FLG,	MKNC_FLG_ELLIPSE,		"長径と短径が等しい楕円は円とみなす"},
-	{NC_PAGE,	4},		// Page4(深彫:Dialog3)
-	{NC_NUM,	MKNC_NUM_MAKEEND,		"加工済み深さの指示(0:なし,1:ｵﾌｾｯﾄ,2:固定Z)"},
-	{NC_DBL,	MKNC_DBL_MAKEEND,		"ｵﾌｾｯﾄ値 or 固定Z値"},
-	{NC_DBL,	MKNC_DBL_MAKEENDFEED,	"加工済み深さのZ送り速度"},
-	{NC_FLG,	MKNC_FLG_DEEP,			"深彫を行う"},
-	{NC_DBL,	MKNC_DBL_DEEP,			"最終切り込み"},
-	{NC_DBL,	MKNC_DBL_ZSTEP,			"Z軸切り込みｽﾃｯﾌﾟ"},
-	{NC_NUM,	MKNC_NUM_DEEPAPROCESS,	"深彫切削手順(0:全体,1:一筆)"},
-	{NC_NUM,	MKNC_NUM_DEEPCPROCESS,	"深彫切削方向(0:往復,1:一方)"},
-	{NC_NUM,	MKNC_NUM_DEEPZPROCESS,	"R点へのZ軸復帰(0:早送り,1:切削送り)"},
-	{NC_FLG,	MKNC_FLG_HELICAL,		"円ﾃﾞｰﾀをﾍﾘｶﾙ切削"},
-	{NC_FLG,	MKNC_FLG_DEEPFINISH,	"最終Z値仕上げ適用"},
-	{NC_NUM,	MKNC_NUM_DEEPSPINDLE,	"仕上げ回転数"},
-	{NC_DBL,	MKNC_DBL_DEEPFEED,		"仕上げ送り"},
-	{NC_PAGE,	5},		// Page5(穴加工:Dialog4)
-	{NC_NUM,	MKNC_NUM_DRILLSPINDLE,	"穴加工回転数"},
-	{NC_DBL,	MKNC_DBL_DRILLFEED,		"穴加工送り"},
-	{NC_DBL,	MKNC_DBL_DRILLR,		"穴加工R点"},
-	{NC_DBL,	MKNC_DBL_DRILLZ,		"穴加工切り込み"},
-	{NC_FLG,	MKNC_FLG_DRILLMATCH,	"穴加工同一座標無視"},
-	{NC_NUM,	MKNC_NUM_DWELL,			"ﾄﾞｳｪﾙ時間"},
-	{NC_NUM,	MKNC_NUM_DWELLFORMAT,	"ﾄﾞｳｪﾙ時間表記(0:小数点,1:整数)"},
-	{NC_NUM,	MKNC_NUM_DRILLPROCESS,	"穴加工手順(0:先,1:後,2:のみ)"},
-	{NC_NUM,	MKNC_NUM_DRILLZPROCESS,	"Z軸復帰(0:G81|G82,1:G85|G89)"},
-	{NC_FLG,	MKNC_FLG_DRILLCIRCLE,	"円ﾃﾞｰﾀも穴加工"},
-	{NC_DBL,	MKNC_DBL_DRILLCIRCLE,	"対象半径"},
-	{NC_NUM,	MKNC_NUM_DRILLSORT,		"ｸﾞﾙｰﾋﾟﾝｸﾞ(0:昇順,1:降順)"},
-	{NC_FLG,	MKNC_FLG_DRILLBREAK,	"大きさごとにｺﾒﾝﾄを埋め込む"},
-	{NC_NUM,	MKNC_NUM_DRILLCIRCLEPROCESS,	"実点と円ﾃﾞｰﾀとの手順(0:無視,1:先,2:後)"},
-	{NC_PAGE,	6},		// Page6(ﾚｲﾔ:Dialog8)
-	{NC_FLG,	MKNC_FLG_LAYERCOMMENT,	"ﾚｲﾔごとにｺﾒﾝﾄを埋め込む"},
-	{NC_NUM,	MKNC_NUM_MOVEZ,			"移動ﾚｲﾔのZ軸(0:そのまま,1:R点,2:ｲﾆｼｬﾙ点)"},
-	{NC_STR,	MKNC_STR_CUSTMOVE_B,	"ｶｽﾀﾑ移動ｺｰﾄﾞ(前)"},
-	{NC_STR,	MKNC_STR_CUSTMOVE_A,	"ｶｽﾀﾑ移動ｺｰﾄﾞ(後)"},
-	{NC_FLG,	MKNC_FLG_L0CYCLE,		"固定ｻｲｸﾙ中はL0出力"},
-	{NC_PAGE,	7},		// Page7(最適化:Dialog5)
-	{NC_DBL,	MKNC_DBL_TOLERANCE,		"同一座標と見なす許容差"},
-	{NC_NUM,	MKNC_NUM_TOLERANCE,		"超えた時の動作(0:Z上昇G0移動,1:G1補間)"},
-	{NC_NUM,	MKNC_NUM_OPTIMAIZEDRILL,"穴加工基準軸(0:なし,1:X,2:Y)"},
-	{NC_DBL,	MKNC_DBL_DRILLMARGIN,	"穴加工同一軸上と見なす許容差"}
-};
-
 /////////////////////////////////////////////////////////////////////////////
 // CNCMakeOption クラスの構築/消滅
 
-CNCMakeOption::CNCMakeOption(LPCTSTR lpszInit)
+CNCMakeOption::CNCMakeOption(
+	int nCnt0, LPCTSTR* pszNOrder, const int*    pdfNOrder, int*     punNums,
+	int nCnt1, LPCTSTR* pszDOrder, const double* pdfDOrder, double*  pudNums,
+	int nCnt2, LPCTSTR* pszBOrder, const BOOL*   pdfBOrder, BOOL*    pubNums,
+	int nCnt3, LPCTSTR* pszSOrder, LPCTSTR*      pdfSOrder)
 {
 	int		i, nLen;
 
-	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(g_dfNOrder) );
-	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(m_unNums) );
-	ASSERT( SIZEOF(g_szDOrder) == SIZEOF(g_dfDOrder) );
-	ASSERT( SIZEOF(g_szDOrder) == SIZEOF(m_udNums) );
-	ASSERT( SIZEOF(g_szBOrder) == SIZEOF(g_dfBOrder) );
-	ASSERT( SIZEOF(g_szBOrder) == SIZEOF(m_ubFlags) );
-	ASSERT( SIZEOF(g_szSOrder) == SIZEOF(g_dfSOrder) );
-	ASSERT( SIZEOF(g_szSOrder) == SIZEOF(m_strOption) );
+	// int型ｵﾌﾟｼｮﾝ
+	m_nOrderCnt[0] = nCnt0;
+	m_szNOrder	= pszNOrder;
+	m_dfNOrder	= pdfNOrder;
+	m_pnNums	= punNums;
+	// double型ｵﾌﾟｼｮﾝ
+	m_nOrderCnt[1] = nCnt1;
+	m_szDOrder	= pszDOrder;
+	m_dfDOrder	= pdfDOrder;
+	m_pdNums	= pudNums;
+	// BOOL型ｵﾌﾟｼｮﾝ
+	m_nOrderCnt[2] = nCnt2;
+	m_szBOrder	= pszBOrder;
+	m_dfBOrder	= pdfBOrder;
+	m_pbFlags	= pubNums;
+	// CString型ｵﾌﾟｼｮﾝ
+	m_nOrderCnt[3] = nCnt3;
+	m_szSOrder	= pszSOrder;
+	m_dfSOrder	= pdfSOrder;
 
 	// 命令長の計算(GetInsertSpace()で使用)
 	m_nOrderLength = 0;
-	for ( i=0; i<SIZEOF(g_szNOrder); i++ ) {
-		if ( m_nOrderLength < (nLen=lstrlen(g_szNOrder[i])) )
+	for ( i=0; i<m_nOrderCnt[0]; i++ ) {
+		if ( m_nOrderLength < (nLen=lstrlen(m_szNOrder[i])) )
 			m_nOrderLength = nLen;
 	}
-	for ( i=0; i<SIZEOF(g_szDOrder); i++ ) {
-		if ( m_nOrderLength < (nLen=lstrlen(g_szDOrder[i])) )
+	for ( i=0; i<m_nOrderCnt[1]; i++ ) {
+		if ( m_nOrderLength < (nLen=lstrlen(m_szDOrder[i])) )
 			m_nOrderLength = nLen;
 	}
-	for ( i=0; i<SIZEOF(g_szBOrder); i++ ) {
-		if ( m_nOrderLength < (nLen=lstrlen(g_szBOrder[i])) )
+	for ( i=0; i<m_nOrderCnt[2]; i++ ) {
+		if ( m_nOrderLength < (nLen=lstrlen(m_szBOrder[i])) )
 			m_nOrderLength = nLen;
 	}
-	for ( i=0; i<SIZEOF(g_szSOrder); i++ ) {
-		if ( m_nOrderLength < (nLen=lstrlen(g_szSOrder[i])) )
+	for ( i=0; i<m_nOrderCnt[3]; i++ ) {
+		if ( m_nOrderLength < (nLen=lstrlen(m_szSOrder[i])) )
 			m_nOrderLength = nLen;
 	}
 	m_nOrderLength += 2;	// 2文字分ｽﾍﾟｰｽ
-
-	// 下位互換のための処理
-	BOOL bResult = Convert();
-	// 下位互換ｵﾌﾟｼｮﾝに上書き
-	ReadMakeOption(lpszInit);
-	// 移行完了
-	if ( bResult && lpszInit )
-		SaveMakeOption();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -220,17 +76,21 @@ void CNCMakeOption::InitialDefault(void)
 	extern	LPTSTR	g_pszExecDir;	// 実行ﾃﾞｨﾚｸﾄﾘ(NCVC.cpp)
 	int		i;
 
-	for ( i=0; i<SIZEOF(g_dfNOrder); i++ )
-		m_unNums[i] = g_dfNOrder[i];
-	for ( i=0; i<SIZEOF(g_dfDOrder); i++ )
-		m_udNums[i] = g_dfDOrder[i];
-	for ( i=0; i<SIZEOF(g_dfBOrder); i++ )
-		m_ubFlags[i] = g_dfBOrder[i];
-	for ( i=0; i<MKNC_STR_HEADER; i++ )
-		m_strOption[i] = g_dfSOrder[i];
+	for ( i=0; i<m_nOrderCnt[0]; i++ )
+		m_pnNums[i] = m_dfNOrder[i];
+	for ( i=0; i<m_nOrderCnt[1]; i++ )
+		m_pdNums[i] = m_dfDOrder[i];
+	for ( i=0; i<m_nOrderCnt[2]; i++ )
+		m_pbFlags[i] = m_dfBOrder[i];
+	m_strOption.RemoveAll();
+	for ( i=0; i<m_nOrderCnt[3]; i++ )
+		m_strOption.Add(m_dfSOrder[i]);
+
+	CString	strTmp;
+	ASSERT( MKNC_STR_HEADER == MKLA_STR_HEADER );
 	for ( i=MKNC_STR_HEADER; i<=MKNC_STR_FOOTER; i++ ) {
-		m_strOption[i]  = g_pszExecDir;
-		m_strOption[i] += g_dfSOrder[i];
+		strTmp = m_strOption[i];
+		m_strOption[i] = g_pszExecDir + strTmp;
 	}
 }
 
@@ -240,10 +100,10 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 	typedef boost::tokenizer< boost::escaped_list_separator<TCHAR> > tokenizer;
 	static	boost::escaped_list_separator<TCHAR> sep("", "=;", "\"");	// ｴｽｹｰﾌﾟ無視
 	// 切削条件の命令検査(大文字小文字は無視するが命令は完全一致)
-	static	CStringKeyIndex		stNOrder(SIZEOF(g_szNOrder), g_szNOrder);
-	static	CStringKeyIndex		stDOrder(SIZEOF(g_szDOrder), g_szDOrder);
-	static	CStringKeyIndex		stBOrder(SIZEOF(g_szBOrder), g_szBOrder);
-	static	CStringKeyIndex		stSOrder(SIZEOF(g_szSOrder), g_szSOrder);
+	CStringKeyIndex		stNOrder(m_nOrderCnt[0], m_szNOrder);
+	CStringKeyIndex		stDOrder(m_nOrderCnt[1], m_szDOrder);
+	CStringKeyIndex		stBOrder(m_nOrderCnt[2], m_szBOrder);
+	CStringKeyIndex		stSOrder(m_nOrderCnt[3], m_szSOrder);
 
 #ifdef _DEBUGOLD
 	CMagaDbg	dbg("CNCMakeOption::ReadMakeOption()\nStart", DBG_GREEN);
@@ -269,9 +129,6 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 	TCHAR	szCurrent[_MAX_PATH], szFile[_MAX_PATH];
 	INT_PTR	n;
 	BOOL	bResult = TRUE;
-
-	// 新規ｵﾌﾟｼｮﾝへのﾃﾞﾌｫﾙﾄ値設定準備
-	BOOL	bDrill[] = {FALSE, FALSE};	// 穴あけZ位置の読み込みﾌﾗｸﾞ(Ver0.08.20以降)
 
 	// ｶﾚﾝﾄﾃﾞｨﾚｸﾄﾘを lpszFile に -> PathSearchAndQualify()
 	::GetCurrentDirectory(_MAX_PATH, szCurrent);
@@ -303,37 +160,35 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 #endif
 			// 命令検査(int型)
 			n = stNOrder.GetIndex(strOrder.c_str());
-			if ( n>=0 && n<SIZEOF(g_szNOrder) ) {
-				m_unNums[n] = strResult.empty() ? 0 : atoi(strResult.c_str());
+			if ( n>=0 && n<m_nOrderCnt[0] ) {
+				m_pnNums[n] = strResult.empty() ? 0 : atoi(strResult.c_str());
 				continue;
 			}
 			// 命令検査(double型)
 			n = stDOrder.GetIndex(strOrder.c_str());
-			if ( n>=0 && n<SIZEOF(g_szDOrder) ) {
-				m_udNums[n] = strResult.empty() ? 0 : atof(strResult.c_str());
-				// 穴あけZ軸ｵﾌﾟｼｮﾝを読み込んだか
-				if ( n>=MKNC_DBL_DRILLR && n<=MKNC_DBL_DRILLZ )
-					bDrill[n-MKNC_DBL_DRILLR] = TRUE;
+			if ( n>=0 && n<m_nOrderCnt[1] ) {
+				m_pdNums[n] = strResult.empty() ? 0 : atof(strResult.c_str());
 				continue;
 			}
 			// 命令検査(BOOL型)
 			n = stBOrder.GetIndex(strOrder.c_str());
-			if ( n>=0 && n<SIZEOF(g_szBOrder) ) {
-				m_ubFlags[n] = strResult.empty() ? FALSE :
+			if ( n>=0 && n<m_nOrderCnt[2] ) {
+				m_pbFlags[n] = strResult.empty() ? FALSE :
 						atoi(strResult.c_str())!=0 ? TRUE : FALSE;
 				continue;
 			}
 			// 命令検査(CString型)
 			n = stSOrder.GetIndex(strOrder.c_str());
-			if ( n>=0 && n<SIZEOF(g_szSOrder) ) {
-				// 相対ﾊﾟｽなら絶対ﾊﾟｽに変換
+			if ( n>=0 && n<m_nOrderCnt[3] ) {
 				if ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER ) {
+					// 相対ﾊﾟｽなら絶対ﾊﾟｽに変換
 					if ( !strResult.empty() &&
 								::PathIsRelative(strResult.c_str()) &&		// Shlwapi.h
 								::PathSearchAndQualify(strResult.c_str(), szFile, _MAX_PATH) )
 						strResult = szFile;
 				}
-				m_strOption[n] = strResult.c_str();
+//				m_strOption.SetAtGrow(n, strResult.c_str());	// InitialDefault()があるので
+				m_strOption[n] = strResult.c_str();				// これでOK
 				continue;
 			}
 		}	// End of while
@@ -345,20 +200,16 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 		bResult = FALSE;
 	}
 
-	// 新規ｵﾌﾟｼｮﾝへのﾃﾞﾌｫﾙﾄ値設定
-	for ( size_t i=0; i<SIZEOF(bDrill); i++ ) {	// 穴あけZ軸ｵﾌﾟｼｮﾝ
-		// 読み込みがなければ，標準のR点と切り込み位置をｾｯﾄ
-		if ( !bDrill[i] )
-			m_udNums[i+MKNC_DBL_DRILLR] = m_udNums[i];
-	}
-
 	// ｶﾚﾝﾄﾃﾞｨﾚｸﾄﾘを元に戻す
 	::SetCurrentDirectory(szCurrent);
 
 	return bResult;
 }
 
-BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
+BOOL CNCMakeOption::SaveMakeOption
+	(LPCTSTR lpszInitFile,
+		int nComment, LPCTSTR* pszComment,
+		int nOrder, SAVEORDER* pSaveOrder)
 {
 	int		i, n, nLen;
 	CString	strBuf, strResult;
@@ -370,40 +221,39 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 	// 新規保存の場合
 	if ( lpszInitFile )
 		m_strInitFile = lpszInitFile;
-
 	ASSERT( !m_strInitFile.IsEmpty() );
 
 	try {
 		CStdioFile	fp(m_strInitFile,
 			CFile::modeCreate | CFile::modeWrite | CFile::shareDenyNone | CFile::typeText);
 		// ｺﾒﾝﾄﾍｯﾀﾞｰ
-		for ( i=0; i<SIZEOF(g_szInitComment); i++ )
-			fp.WriteString(g_szInitComment[i]);
-		fp.WriteString(g_szInitComment[0]);
+		for ( i=0; i<nComment; i++ )
+			fp.WriteString(pszComment[i]);
+		fp.WriteString(pszComment[0]);
 		// 命令の書き出し
-		for ( i=0; i<SIZEOF(g_stSaveOrder); i++ ) {
-			n = g_stSaveOrder[i].nID;
-			switch ( g_stSaveOrder[i].enType ) {
+		for ( i=0; i<nOrder; i++ ) {
+			n = pSaveOrder[i].nID;
+			switch ( pSaveOrder[i].enType ) {
 			case NC_PAGE:	// ﾍﾟｰｼﾞﾍｯﾀﾞｰ
 				strBuf.Format("#--> Page:%d\n", n);
 				break;
 			case NC_NUM:	// int型
 				strBuf.Format("%s%s= %8d     ; %s\n",
-					g_szNOrder[n], GetInsertSpace(lstrlen(g_szNOrder[n])),
-					m_unNums[n],
-					g_stSaveOrder[i].lpszComment);
+					m_szNOrder[n], GetInsertSpace(lstrlen(m_szNOrder[n])),
+					m_pnNums[n],
+					pSaveOrder[i].lpszComment);
 				break;
 			case NC_DBL:	// double型
 				strBuf.Format("%s%s= %12.3f ; %s\n",
-					g_szDOrder[n], GetInsertSpace(lstrlen(g_szDOrder[n])),
-					m_udNums[n],
-					g_stSaveOrder[i].lpszComment);
+					m_szDOrder[n], GetInsertSpace(lstrlen(m_szDOrder[n])),
+					m_pdNums[n],
+					pSaveOrder[i].lpszComment);
 				break;
 			case NC_FLG:	// BOOL型
 				strBuf.Format("%s%s= %8d     ; %s\n",
-					g_szBOrder[n], GetInsertSpace(lstrlen(g_szBOrder[n])),
-					m_ubFlags[n] ? 1 : 0,
-					g_stSaveOrder[i].lpszComment);
+					m_szBOrder[n], GetInsertSpace(lstrlen(m_szBOrder[n])),
+					m_pbFlags[n] ? 1 : 0,
+					pSaveOrder[i].lpszComment);
 				break;
 			case NC_STR:	// CString型
 				if ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER ) {
@@ -418,9 +268,9 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 				// 書式を整えるために残ｽﾍﾟｰｽの計算
 				nLen = 11 - strResult.GetLength();
 				strBuf.Format("%s%s= \"%s\"%s; %s\n",
-					g_szSOrder[n], GetInsertSpace(lstrlen(g_szSOrder[n])),
+					m_szSOrder[n], GetInsertSpace(lstrlen(m_szSOrder[n])),
 					strResult, CString(' ', max(1, nLen)),
-					g_stSaveOrder[i].lpszComment);
+					pSaveOrder[i].lpszComment);
 				break;
 			default:
 				strBuf.Empty();
@@ -436,168 +286,6 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 		e->Delete();
 		return FALSE;
 	}
-	return TRUE;
-}
-
-// ﾚｼﾞｽﾄﾘからの移行
-BOOL CNCMakeOption::Convert()
-{
-	extern	LPCTSTR	gg_szRegKey;
-
-	// NC生成ｵﾌﾟｼｮﾝ(旧ﾊﾞｰｼﾞｮﾝ互換用)
-	static	const	int		nRegDxfNums[] = {
-		IDS_REG_DXF_LINEADD, IDS_REG_DXF_G90, IDS_REG_DXF_DOTP
-	};
-	static	const	int		nRegDxfNumsDef[] = {
-		1, 0, 0
-	};
-	static	const	int		nRegDxfNumsID[] = {
-		MKNC_NUM_LINEADD, MKNC_NUM_G90, MKNC_NUM_DOT
-	};
-
-	static	const	int		nRegDxfFlags[] = {
-		IDS_REG_DXF_XREV,
-		IDS_REG_DXF_LINE, IDS_REG_DXF_ZERO, IDS_REG_DXF_CUT
-	};
-	static	const	int		nRegDxfFlagsDef[] = {
-		FALSE,
-		FALSE, TRUE, TRUE
-	};
-	static	const	int		nRegDxfFlagsID[] = {
-		MKNC_FLG_XREV,
-		MKNC_FLG_LINEADD, MKNC_FLG_ZEROCUT, MKNC_FLG_GCLIP
-	};
-
-	CString	strRegKey, strEntry;
-	// 移行完了ﾁｪｯｸ
-	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-	VERIFY(strEntry.LoadString(IDS_REG_CONVERT));
-	if ( AfxGetApp()->GetProfileInt(strRegKey, strEntry, 0) > 0 )
-		return FALSE;
-
-	// ﾃﾞｰﾀの移行
-	AfxGetApp()->WriteProfileInt(strRegKey, strEntry, 1);
-	int	i, nID;
-	for ( i=0; i<SIZEOF(nRegDxfNums); i++ ) {
-		VERIFY(strEntry.LoadString(nRegDxfNums[i]));
-		nID = nRegDxfNumsID[i];
-		m_unNums[nID] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, nRegDxfNumsDef[i]);
-	}
-	for ( i=0; i<SIZEOF(nRegDxfFlags); i++ ) {
-		VERIFY(strEntry.LoadString(nRegDxfFlags[i]));
-		nID = nRegDxfFlagsID[i];
-		m_ubFlags[nID] = (BOOL)(AfxGetApp()->GetProfileInt(strRegKey, strEntry, nRegDxfFlagsDef[i]));
-	}
-	VERIFY(strEntry.LoadString(IDS_REG_DXF_CIRCLEIJ));
-	m_unNums[MKNC_NUM_IJ] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, 1);
-	VERIFY(strEntry.LoadString(IDS_REG_DXF_LINEFORM));
-	m_strOption[MKNC_STR_LINEFORM] = AfxGetApp()->GetProfileString(strRegKey, strEntry);
-
-	// 旧ﾚｼﾞｽﾄﾘの消去
-	CRegKey	reg;
-
-	// --- "Software\MNCT-S\NCVC\DXF"
-	if ( reg.Open(HKEY_CURRENT_USER, gg_szRegKey+strRegKey) != ERROR_SUCCESS )
-		return FALSE;
-
-	for ( i=0; i<SIZEOF(nRegDxfNums); i++ ) {
-		VERIFY(strEntry.LoadString(nRegDxfNums[i]));
-		reg.DeleteValue(strEntry);
-	}
-	for ( i=0; i<SIZEOF(nRegDxfFlags); i++ ) {
-		VERIFY(strEntry.LoadString(nRegDxfFlags[i]));
-		reg.DeleteValue(strEntry);
-	}
-	VERIFY(strEntry.LoadString(IDS_REG_DXF_CIRCLEIJ));
-	reg.DeleteValue(strEntry);
-	VERIFY(strEntry.LoadString(IDS_REG_DXF_LINEFORM));
-	reg.DeleteValue(strEntry);
-
-	// Init条件ﾌｧｲﾙ名の削除
-	VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT));
-	reg.DeleteValue(strEntry);
 
 	return TRUE;
 }
-
-#ifdef _DEBUGOLD
-void CNCMakeOption::DbgDump(void) const
-{
-	CMagaDbg	dbg("CNCMakeOption", DBG_RED);
-
-	dbg.printf("InitFile=%s", m_strInitFile);
-	dbg.printf("----------");
-	dbg.printf("  Spindle      =%d", m_nSpindle);
-	dbg.printf("  Feed         =%f", m_dFeed);
-	dbg.printf("  ZFeed        =%f", m_dZFeed);
-	dbg.printf("  ZG0Stop      =%f", m_dZG0Stop);
-	dbg.printf("  ZCut         =%f", m_dZCut);
-	dbg.printf("  G92[X]       =%f", m_dG92[NCA_X]);
-	dbg.printf("  G92[Y]       =%f", m_dG92[NCA_Y]);
-	dbg.printf("  G92[Z]       =%f", m_dG92[NCA_Z]);
-	dbg.printf("  Header       =%s", m_strOption[MKNC_STR_HEADER]);
-	dbg.printf("  Footer       =%s", m_strOption[MKNC_STR_FOOTER]);
-	dbg.printf("----------");
-	dbg.printf("  Xrev         =%d", m_bXrev);
-	dbg.printf("  Yrev         =%d", m_bYrev);
-	dbg.printf("  bLineAdd     =%d", m_bLineAdd);
-	dbg.printf("  LineForm     =%s", m_strOption[MKNC_STR_LINEFORM]);
-	dbg.printf("  nLineAdd     =%d", m_nLineAdd);
-	dbg.printf("  EOB          =%s", m_strOption[MKNC_STR_EOB]);
-	dbg.printf("  G90          =%d", m_nG90);
-	dbg.printf("  ZReturn      =%d", m_nZReturn);
-	dbg.printf("  Gclip        =%d", m_bGclip);
-	dbg.printf("  DisSpindle   =%d", m_bDisableSpindle);
-	dbg.printf("----------");
-	dbg.printf("  Dot          =%d", m_nDot);
-	dbg.printf("  FDot         =%d", m_nFDot);
-	dbg.printf("  ZeroCut      =%d", m_bZeroCut);
-	dbg.printf("  CircleCode   =%d", m_nCircleCode);
-	dbg.printf("  IJ           =%d", m_nIJ);
-	dbg.printf("  CircleHalf   =%d", m_bCircleHalf);
-	dbg.printf("----------");
-	dbg.printf("  Ellipse      =%f", m_dEllipse);
-	dbg.printf("  EllipseFlg   =%d", m_bEllipse);
-	dbg.printf("----------");
-	dbg.printf("  MakeEnd      =%d", m_nMakeEnd);
-	dbg.printf("  MakeValue    =%f", m_dMakeValue);
-	dbg.printf("  MakeFeed     =%f", m_dMakeFeed);
-	dbg.printf("  Deep         =%d", m_bDeep);
-	dbg.printf("  DeepFinal    =%f", m_dDeep);
-	dbg.printf("  ZStep        =%f", m_dZStep);
-	dbg.printf("  DeepZProcess =%d", m_nDeepZProcess);
-	dbg.printf("  DeepAProcess =%d", m_nDeepAProcess);
-	dbg.printf("  DeepCProcess =%d", m_nDeepCProcess);
-	dbg.printf("  Helical      =%d", m_bHelical);
-	dbg.printf("  DeepFinish   =%d", m_bDeepFinish);
-	dbg.printf("  DeepSpindle  =%d", m_nDeepSpindle);
-	dbg.printf("  DeepFeed     =%f", m_dDeepFeed);
-	dbg.printf("----------");
-	dbg.printf("  DrillSpindle =%d", m_nDrillSpindle);
-	dbg.printf("  DrillFeed    =%f", m_dDrillFeed);
-	dbg.printf("  DrillR       =%f", m_dDrillR);
-	dbg.printf("  DrillZ       =%f", m_dDrillZ);
-	dbg.printf("  DrillMatch   =%d", m_bDrillMatch);
-	dbg.printf("  Dwell        =%d", m_nDwell);
-	dbg.printf("  DwellFormat  =%d", m_nDwellFormat);
-	dbg.printf("  DrillProcess =%d", m_nDrillProcess);
-	dbg.printf("  DrillZProcess=%d", m_nDrillZProcess);
-	dbg.printf("----------");
-	dbg.printf("  DrillCircle  =%d", m_bDrillCircle);
-	dbg.printf("  DrillCircleR =%f", m_dDrillCircle);
-	dbg.printf("  DrillSort    =%d", m_nDrillSort);
-	dbg.printf("  DrillCProcess=%d", m_nDrillCircleProcess);
-	dbg.printf("  DrillBreak   =%d", m_bDrillBreak);
-	dbg.printf("----------");
-	dbg.printf("  LayerComment =%d", m_bLayerComment);
-	dbg.printf("  MoveZ        =%d", m_nMoveZ);
-	dbg.printf("  CustMoveB    =%s", m_strOption[MKNC_STR_CUSTMOVE_B]);
-	dbg.printf("  CustMoveA    =%s", m_strOption[MKNC_STR_CUSTMOVE_A]);
-	dbg.printf("  L0Cycle      =%d", m_bL0Cycle);
-	dbg.printf("----------");
-	dbg.printf("  Tolerance    =%f", m_dTolerance);
-	dbg.printf("  TolerancePro =%d", m_nTolerance);
-	dbg.printf("  DrillOptimaiz=%d", m_nOptimaizeDrill);
-	dbg.printf("  DrillMargin  =%f", m_dDrillMargin);
-}
-#endif

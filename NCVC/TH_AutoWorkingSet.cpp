@@ -931,7 +931,7 @@ BOOL CheckOffsetIntersection
 						}
 					}
 					else {
-						pData1 = CreateDXFObject(pData1, next(it)->pt, pt[0]);	// 次の交点と変更前終点(CDXFshape)
+						pData1 = CreateDxfOffsetObject(pData1, next(it)->pt, pt[0]);	// 次の交点と変更前終点(CDXFshape)
 						pos = pChain1->InsertBefore(pos1, pData1);		// ｵﾌﾞｼﾞｪｸﾄ挿入
 						pChain1->InsertBefore(pos, (CDXFdata *)NULL);	// 分離ﾏｰｸ
 					}
@@ -1118,7 +1118,7 @@ CDXFdata* ChangeCircleToArc
 		dxfEllipse.l = pEllipse->GetLongPoint();
 		dxfEllipse.s = pEllipse->GetShortMagni();
 		dxfEllipse.bRound = TRUE;
-		// 楕円用に角度の再計算(DXFshape.cpp CreateDXFObject() 参照)
+		// 楕円用に角度の再計算(DXFshape.cpp CreateDxfOffsetObject() 参照)
 		pts.RoundPoint(-pEllipse->GetLean());
 		pte.RoundPoint(-pEllipse->GetLean());
 		double	l = pEllipse->GetLongLength();

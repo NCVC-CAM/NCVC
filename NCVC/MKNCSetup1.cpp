@@ -5,7 +5,7 @@
 #include "NCVC.h"
 #include "MainFrm.h"
 #include "ExecOption.h"
-#include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
 #include "MKNCSetup.h"
 
 #include "MagaDbgMac.h"
@@ -31,6 +31,8 @@ CMKNCSetup1::CMKNCSetup1() : CPropertyPage(CMKNCSetup1::IDD),
 {
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CMKNCSetup1)
+	m_bXrev = FALSE;
+	m_bYrev = FALSE;
 	//}}AFX_DATA_INIT
 }
 
@@ -44,8 +46,8 @@ void CMKNCSetup1::DoDataExchange(CDataExchange* pDX)
 	//{{AFX_DATA_MAP(CMKNCSetup1)
 	DDX_Control(pDX, IDC_MKNC1_ZFEED, m_dZFeed);
 	DDX_Control(pDX, IDC_MKNC1_FEED, m_dFeed);
-	DDX_Control(pDX, IDC_MKNC1_FOOTER_EDIT, m_ctButton2);
-	DDX_Control(pDX, IDC_MKNC1_HEADER_EDIT, m_ctButton1);
+	DDX_Control(pDX, IDC_MKNC1_HEADER_EDIT, m_ctHeaderBt);
+	DDX_Control(pDX, IDC_MKNC1_FOOTER_EDIT, m_ctFooterBt);
 	DDX_Control(pDX, IDC_MKNC1_HEADER, m_ctHeader);
 	DDX_Control(pDX, IDC_MKNC1_FOOTER, m_ctFooter);
 	DDX_Control(pDX, IDC_MKNC1_ZCUT, m_dZCut);
@@ -53,6 +55,8 @@ void CMKNCSetup1::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKNC1_SPINDLE, m_nSpindle);
 	DDX_Text(pDX, IDC_MKNC1_FOOTER, m_strFooter);
 	DDX_Text(pDX, IDC_MKNC1_HEADER, m_strHeader);
+	DDX_Check(pDX, IDC_MKNC1_XREV, m_bXrev);
+	DDX_Check(pDX, IDC_MKNC1_YREV, m_bYrev);
 	//}}AFX_DATA_MAP
 	for ( int i=0; i<NCXYZ; i++ )
 		DDX_Control(pDX, i+IDC_MKNC1_G92X, m_dG92[i]);
@@ -67,7 +71,7 @@ BOOL CMKNCSetup1::OnInitDialog()
 
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	m_nSpindle	= pOpt->m_nSpindle;
 	m_dFeed		= pOpt->m_dFeed;
 	m_dZFeed	= pOpt->m_dZFeed;
@@ -77,10 +81,12 @@ BOOL CMKNCSetup1::OnInitDialog()
 		m_dG92[i] = pOpt->m_dG92[i];
 	m_strHeader = pOpt->m_strOption[MKNC_STR_HEADER];
 	m_strFooter = pOpt->m_strOption[MKNC_STR_FOOTER];
+	m_bXrev		= pOpt->m_bXrev;
+	m_bYrev		= pOpt->m_bYrev;
 	// •ÒWÎÞÀÝ‚Ì—LŒø–³Œø
 	if ( AfxGetNCVCApp()->GetExecList()->GetCount() < 1 ) {
-		m_ctButton1.EnableWindow(FALSE);
-		m_ctButton2.EnableWindow(FALSE);
+		m_ctHeaderBt.EnableWindow(FALSE);
+		m_ctFooterBt.EnableWindow(FALSE);
 	}
 
 	UpdateData(FALSE);
@@ -96,7 +102,7 @@ void CMKNCSetup1::OnHeaderLoopup()
 	::Path_Name_From_FullPath(m_strHeader, strPath, strFile);
 	if ( !strFile.IsEmpty() )
 		strFile = m_strHeader;
-	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, strFile, strPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, strFile, strPath) == IDOK ) {
 		// ÃÞ°À‚Ì”½‰f
 		m_strHeader = strFile;
 		UpdateData(FALSE);
@@ -113,7 +119,7 @@ void CMKNCSetup1::OnFooterLoopup()
 	::Path_Name_From_FullPath(m_strFooter, strPath, strFile);
 	if ( !strFile.IsEmpty() )
 		strFile = m_strFooter;
-	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, strFile, strPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, strFile, strPath) == IDOK ) {
 		// ÃÞ°À‚Ì”½‰f
 		m_strFooter = strFile;
 		UpdateData(FALSE);
@@ -149,7 +155,7 @@ BOOL CMKNCSetup1::OnApply()
 	BOOL	bDeep;
 	double	dDeep, dMakeValue;
 	CMKNCSetup*	pParent = static_cast<CMKNCSetup *>(GetParent());
-	CNCMakeOption* pOpt = pParent->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
 
 	if ( ::IsWindow(pParent->m_dlg3.m_hWnd) ) {
 		nMakeEnd	= pParent->m_dlg3.m_nMakeEnd;
@@ -194,6 +200,8 @@ BOOL CMKNCSetup1::OnApply()
 		pOpt->m_dG92[i] = m_dG92[i];
 	pOpt->m_strOption[MKNC_STR_HEADER] = m_strHeader;
 	pOpt->m_strOption[MKNC_STR_FOOTER] = m_strFooter;
+	pOpt->m_bXrev		= m_bXrev;
+	pOpt->m_bYrev		= m_bYrev;
 
 	return TRUE;
 }

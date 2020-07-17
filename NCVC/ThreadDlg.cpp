@@ -69,8 +69,12 @@ BOOL CThreadDlg::OnInitDialog()
 		break;
 
 	case ID_FILE_DXF2NCD:		// NC生成ｽﾚｯﾄﾞ開始
-		m_pThread = AfxBeginThread(MakeNCD_Thread, &m_paramThread,
-			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+		if ( m_paramThread.wParam == ID_FILE_DXF2NCD_LATHE )
+			m_pThread = AfxBeginThread(MakeLathe_Thread, &m_paramThread,
+				THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
+		else
+			m_pThread = AfxBeginThread(MakeNCD_Thread, &m_paramThread,
+				THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		break;
 
 	case ID_EDIT_DXFSHAPE:		// 連結ｵﾌﾞｼﾞｪｸﾄの検索ｽﾚｯﾄﾞ開始

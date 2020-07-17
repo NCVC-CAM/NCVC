@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
 #include "MKNCSetup.h"
 
 #include "MagaDbgMac.h"
@@ -57,7 +57,7 @@ BOOL CMKNCSetup8::OnInitDialog()
 
 	// ¶½ÀÑºİÄÛ°Ù‚Íºİ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²İÀ‚ğæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	m_bLayerComment	= pOpt->m_bLayerComment;
 	m_bL0Cycle		= pOpt->m_bL0Cycle;
 	m_nMoveZ		= pOpt->m_nMoveZ;
@@ -72,7 +72,7 @@ BOOL CMKNCSetup8::OnInitDialog()
 
 BOOL CMKNCSetup8::OnApply() 
 {
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_bLayerComment	= m_bLayerComment;
 	pOpt->m_bL0Cycle		= m_bL0Cycle;
 	pOpt->m_nMoveZ			= m_nMoveZ;

@@ -32,7 +32,6 @@ extern	LPCTSTR	g_szDefaultLayer[] = {
 
 CDXFOption::CDXFOption()
 {
-	extern	LPTSTR	g_pszExecDir;	// é¿çs√ﬁ®⁄∏ƒÿ(NCVC.cpp)
 	extern	LPCTSTR	gg_szRegKey;
 	int		i;
 	CString	strRegKey, strEntry, strTmp, strResult;
@@ -61,33 +60,19 @@ CDXFOption::CDXFOption()
 		reg.Close();
 	}
 
+	m_enMakeType = NCMAKEMILL;
 	try {
 		// êÿçÌèåèÃß≤ŸÇÃóöó
-		VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT));
-		for ( i=0; i<DXFMAXINITFILE; i++ ) {
-			strTmp.Format(IDS_COMMON_FORMAT, strEntry, i);
-			strResult = AfxGetApp()->GetProfileString(strRegKey, strTmp);
-			if ( !strResult.IsEmpty() && ::IsFileExist(strResult, TRUE, FALSE) )
-				m_strInitList.AddTail(strResult); 
-		}
-		if ( m_strInitList.IsEmpty() ) {	// â∫à å›ä∑
-			strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
-			if ( !strResult.IsEmpty() && ::IsFileExist(strResult, TRUE, FALSE) )
-				m_strInitList.AddTail(strResult); 
-		}
-		if ( m_strInitList.IsEmpty() ) {
-			strResult  = g_pszExecDir;
-			strResult += "INIT.nci";
-			m_strInitList.AddTail(strResult);
-		}
-		for ( i=m_strInitList.GetCount(); i>DXFMAXINITFILE; i-- )
-			m_strInitList.RemoveTail();		// DXFMAXINITFILE Çí¥Ç¶ÇÈï™ÇçÌèú
+		ReadInitHistory(NCMAKEMILL);
+		ReadInitHistory(NCMAKELATHE);
 		// ⁄≤‘ñºÇ∆èåèÃß≤Ÿä÷åWÇÃóöó
 		VERIFY(strEntry.LoadString(IDS_REG_DXF_LAYERTOINIT));
 		for ( i=0; i<DXFMAXINITFILE; i++ ) {
 			strTmp.Format(IDS_COMMON_FORMAT, strEntry, i);
 			strResult = AfxGetApp()->GetProfileString(strRegKey, strTmp);
-			if ( !strResult.IsEmpty() && ::IsFileExist(strResult, TRUE, FALSE) )
+			if ( strResult.IsEmpty() )
+				break;
+			if ( ::IsFileExist(strResult, TRUE, FALSE) )
 				m_strLayerToInitList.AddTail(strResult); 
 		}
 	}
@@ -101,46 +86,83 @@ CDXFOption::CDXFOption()
 /////////////////////////////////////////////////////////////////////////////
 // “› ﬁä÷êî
 
-BOOL CDXFOption::SaveDXFoption(void)
+BOOL CDXFOption::ReadInitHistory(eMAKETYPE enType)
 {
-	int			i;
-	CString		strRegKey, strEntry;
+	extern	LPTSTR	g_pszExecDir;	// é¿çs√ﬁ®⁄∏ƒÿ(NCVC.cpp)
+	int		i;
+	CStringList*	pList;
+	CString	strRegKey, strEntry, strDefExt('.'),
+			strTmp, strResult;
+
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-	for ( i=0; i<DXFLAYERSIZE; i++ ) {
-		VERIFY(strEntry.LoadString(IDS_REG_DXF_ORGLAYER+i));
-		if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, m_strReadLayer[i]) )
-			return FALSE;
+	if ( enType == NCMAKEMILL ) {
+		pList = &m_strMillList;
+		VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT));
+		VERIFY(strTmp.LoadString(IDS_NCIM_FILTER));
+	}
+	else {
+		pList = &m_strLatheList;
+		VERIFY(strEntry.LoadString(IDS_REG_DXF_LATHEINIT));
+		VERIFY(strTmp.LoadString(IDS_NCIL_FILTER));
+	}
+	strDefExt += strTmp.Left(3);
+
+	for ( i=0; i<DXFMAXINITFILE; i++ ) {
+		strTmp.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strResult = AfxGetApp()->GetProfileString(strRegKey, strTmp);
+		if ( strResult.IsEmpty() )
+			break;
+		if ( ::IsFileExist(strResult, TRUE, FALSE) )
+			pList->AddTail(strResult); 
+	}
+	if ( pList->IsEmpty() ) {
+		strResult  = g_pszExecDir;
+		strResult += "INIT" + strDefExt;
+		pList->AddTail(strResult);
 	}
 
-	for ( i=0; i<SIZEOF(m_nDXF); i++ ) {
-		VERIFY(strEntry.LoadString(g_nDxfID[i]));
-		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nDXF[i]) )
-			return FALSE;
-	}
-
-	return SaveInitHistory();
+	return TRUE;
 }
 
-BOOL CDXFOption::SaveInitHistory(void)
+BOOL CDXFOption::SaveInitHistory(eMAKETYPE enType)
+{
+	int			i;
+	POSITION	pos;
+	const CStringList*	pList;
+	CString		strRegKey, strEntry, strFmt;
+
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
+	if ( enType == NCMAKEMILL ) {
+		VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT));
+		pList = GetMillInitList();
+	}
+	else {
+		VERIFY(strEntry.LoadString(IDS_REG_DXF_LATHEINIT));
+		pList = GetLatheInitList();
+	}
+
+	for ( i=0; i<DXFMAXINITFILE; i++ ) {
+		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
+		AfxGetApp()->WriteProfileString(strRegKey, strFmt, NULL);
+	}
+	for ( i=0, pos=pList->GetHeadPosition(); pos && i<DXFMAXINITFILE; i++ ) {
+		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
+		if ( !AfxGetApp()->WriteProfileString(strRegKey, strFmt, pList->GetNext(pos)) )
+			return FALSE;
+	}
+	m_enMakeType = enType;
+
+	return TRUE;
+}
+
+BOOL CDXFOption::SaveLayerHistory(void)
 {
 	int			i;
 	POSITION	pos;
 	CString		strRegKey, strEntry, strFmt;
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-
-	VERIFY(strEntry.LoadString(IDS_REG_DXF_INIT));
-	for ( i=0; i<DXFMAXINITFILE; i++ ) {
-		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
-		AfxGetApp()->WriteProfileString(strRegKey, strFmt, NULL);
-	}
-	for ( i=0, pos=m_strInitList.GetHeadPosition();
-				pos && i<DXFMAXINITFILE; i++ ) {
-		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
-		if ( !AfxGetApp()->WriteProfileString(strRegKey, strFmt, m_strInitList.GetNext(pos)) )
-			return FALSE;
-	}
-
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_LAYERTOINIT));
+
 	for ( i=0; i<DXFMAXINITFILE; i++ ) {
 		strFmt.Format(IDS_COMMON_FORMAT, strEntry, i);
 		AfxGetApp()->WriteProfileString(strRegKey, strFmt, NULL);
@@ -198,4 +220,24 @@ void CDXFOption::DelListHistory(CStringList& strList, LPCTSTR lpszSearch)
 			break;
 		}
 	}
+}
+
+BOOL CDXFOption::SaveDXFoption(void)
+{
+	int			i;
+	CString		strRegKey, strEntry;
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
+	for ( i=0; i<DXFLAYERSIZE; i++ ) {
+		VERIFY(strEntry.LoadString(IDS_REG_DXF_ORGLAYER+i));
+		if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, m_strReadLayer[i]) )
+			return FALSE;
+	}
+
+	for ( i=0; i<SIZEOF(m_nDXF); i++ ) {
+		VERIFY(strEntry.LoadString(g_nDxfID[i]));
+		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nDXF[i]) )
+			return FALSE;
+	}
+
+	return TRUE;
 }

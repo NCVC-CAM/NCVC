@@ -9,9 +9,10 @@
 #include "Layer.h"
 #include "DXFDoc.h"
 #include "NCdata.h"
-#include "NCMakeClass.h"
+#include "NCMakeMillOpt.h"
+#include "NCMakeMill.h"
+#include "MakeCustomCode.h"
 #include "ThreadDlg.h"
-#include "NCVCdefine.h"
 
 /*
 !!!ATTENTION!!!
@@ -38,12 +39,9 @@ extern	CMagaDbg	g_dbg;
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
 
 // ｸﾞﾛｰﾊﾞﾙ変数定義
-static	CThreadDlg*	g_pParent;
-static	CDXFDoc*	g_pDoc;
-static	CNCMakeOption*	g_pMakeOpt;
-
-static	LPCTSTR	g_szWait = "ﾃﾞｰﾀ準備中!!!";
-static	LPCTSTR	g_szFinal = "NCﾃﾞｰﾀ出力中!!!";
+static	CThreadDlg*		g_pParent;
+static	CDXFDoc*		g_pDoc;
+static	CNCMakeMillOpt*	g_pMakeOpt;
 
 // NC生成に必要なﾃﾞｰﾀ群
 static	CDXFmap		g_mpDXFdata,	// 座標をｷｰにCDXFdataを格納
@@ -56,7 +54,7 @@ static	CDXFsort	g_obDrill;		// 穴加工ﾃﾞｰﾀ
 static	CDXFsort	g_obCircle;		// 円ﾃﾞｰﾀを穴加工するときの仮登録
 static	CDXFsort	g_obStartData;	// 加工開始位置指示ﾃﾞｰﾀ
 static	CDXFlist	g_ltDeepGlist;	// 深彫切削用の仮登録
-static	CTypedPtrArrayEx<CPtrArray, CNCMake*>	g_obMakeGdata;	// 加工ﾃﾞｰﾀ
+static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeGdata;	// 加工ﾃﾞｰﾀ
 
 static	BOOL		g_bData;		// 各生成処理で生成されたか
 static	double		g_dZCut;		// Z軸の切削座標 == RoundUp(GetDbl(MKNC_DBL_ZCUT))
@@ -129,7 +127,6 @@ static	CDXFdata*	GetMatchPointMove(const CDXFdata*);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomCode(const CString&, const CDXFdata*);
-static	BOOL	IsNCchar(LPCTSTR);
 
 // ﾃｷｽﾄ情報
 static	void	AddCommentText(const CPointD&);
@@ -150,7 +147,7 @@ static	void	AddMoveCust_A(void);
 // Z軸の移動(切削)ﾃﾞｰﾀ生成
 inline	void	AddMoveGdataZ(int nCode, double dZ, double dFeed)
 {
-	CNCMake*	mkNCD = new CNCMake(nCode, dZ, dFeed);
+	CNCMakeMill*	mkNCD = new CNCMakeMill(nCode, dZ, dFeed);
 	ASSERT( mkNCD );
 	g_obMakeGdata.Add(mkNCD);
 }
@@ -166,7 +163,7 @@ inline	void	AddMoveGdataZup(void)
 inline	void	AddMoveGdataZdown(void)
 {
 	// Z軸の現在位置がR点より大きい(高い)ならR点まで早送り
-	if ( CNCMake::ms_xyz[NCA_Z] > g_dZG0Stop )
+	if ( CNCMakeMill::ms_xyz[NCA_Z] > g_dZG0Stop )
 		AddMoveGdataZ(0, g_dZG0Stop, -1.0);
 	// 加工済み深さへのZ軸切削移動
 	double	dZValue;
@@ -181,16 +178,16 @@ inline	void	AddMoveGdataZdown(void)
 		dZValue = HUGE_VAL;
 		break;
 	}
-	if ( CNCMake::ms_xyz[NCA_Z] > dZValue )
+	if ( CNCMakeMill::ms_xyz[NCA_Z] > dZValue )
 		AddMoveGdataZ(1, dZValue, GetDbl(MKNC_DBL_MAKEENDFEED));
 	// 切削点まで切削送り
-	if ( CNCMake::ms_xyz[NCA_Z] > g_dZCut )
+	if ( CNCMakeMill::ms_xyz[NCA_Z] > g_dZCut )
 		AddMoveGdataZ(1, g_dZCut, GetDbl(MKNC_DBL_ZFEED));
 }
 // 移動ﾃﾞｰﾀ
 inline	void	AddMoveGdata(int nCode, const CDXFdata* pData)
 {
-	CNCMake* mkNCD = new CNCMake(nCode, pData->GetStartMakePoint());
+	CNCMakeMill* mkNCD = new CNCMakeMill(nCode, pData->GetStartMakePoint());
 	ASSERT( mkNCD );
 	g_obMakeGdata.Add(mkNCD);
 }
@@ -215,7 +212,7 @@ inline	void	AddMakeGdata(CDXFdata* pData, double dFeed)
 	// 開始位置と等しいﾃｷｽﾄﾃﾞｰﾀの生成
 	AddCutterTextIntegrated( pData->GetStartCutterPoint() );
 	// 切削ﾃﾞｰﾀ生成
-	CNCMake*	mkNCD = new CNCMake(pData, dFeed);
+	CNCMakeMill*	mkNCD = new CNCMakeMill(pData, dFeed);
 	ASSERT( mkNCD );
 	g_obMakeGdata.Add(mkNCD);
 	pData->SetMakeFlg();
@@ -240,7 +237,7 @@ inline	void	AddMakeGdataHelical(CDXFdata* pData)
 	// 切削ﾃﾞｰﾀの生成(深彫円ﾃﾞｰﾀのﾍﾘｶﾙ切削)
 	ASSERT( pData );
 	AddCutterTextIntegrated( pData->GetStartCutterPoint() );
-	CNCMake*	mkNCD = new CNCMake(pData, GetDbl(MKNC_DBL_FEED), &g_dZCut);
+	CNCMakeMill*	mkNCD = new CNCMakeMill(pData, GetDbl(MKNC_DBL_FEED), &g_dZCut);
 	ASSERT( mkNCD );
 	g_obMakeGdata.Add(mkNCD);
 	pData->SetMakeFlg();
@@ -248,7 +245,7 @@ inline	void	AddMakeGdataHelical(CDXFdata* pData)
 // 任意ﾃﾞｰﾀの生成
 inline	void	AddMakeGdataStr(const CString& strData)
 {
-	CNCMake*	mkNCD = new CNCMake(strData);
+	CNCMakeMill*	mkNCD = new CNCMakeMill(strData);
 	ASSERT( mkNCD );
 	g_obMakeGdata.Add(mkNCD);
 }
@@ -258,7 +255,7 @@ inline	void	AddMakeMove(CDXFdata* pData, BOOL bL0 = FALSE)
 	// 開始位置と等しいﾃｷｽﾄﾃﾞｰﾀの生成
 	AddMoveTextIntegrated( pData->GetStartCutterPoint() );
 	// 移動指示
-	CNCMake*	mkNCD = new CNCMake(pData, bL0);
+	CNCMakeMill*	mkNCD = new CNCMakeMill(pData, bL0);
 	ASSERT( mkNCD );
 	g_obMakeGdata.Add(mkNCD);
 	pData->SetMakeFlg();
@@ -267,7 +264,7 @@ inline	void	AddMakeMove(CDXFdata* pData, BOOL bL0 = FALSE)
 inline	void	AddMakeGdataCycleCancel(void)
 {
 	if ( CDXFdata::ms_pData->GetMakeType() == DXFPOINTDATA ) {
-		AddMakeGdataStr( CNCMake::MakeCustomString(80) );
+		AddMakeGdataStr( CNCMakeBase::MakeCustomString(80) );
 		InitialCycleBaseVariable();
 	}
 }
@@ -282,7 +279,7 @@ inline	void	AddMakeText(CDXFdata* pData)
 
 // ﾌｪｰｽﾞ更新
 static	int		g_nFase;			// ﾌｪｰｽﾞ№
-static	void	SendFaseMessage(int = -1, LPCTSTR = NULL, LPCTSTR = NULL);
+static	void	SendFaseMessage(int = -1, int = -1, LPCTSTR = NULL);
 inline	void	SendProgressPos(int i)
 {
 	if ( (i & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
@@ -309,12 +306,12 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeNCD_Thread()\nStart", DBG_GREEN);
 #endif
-	int		i, nResult = IDCANCEL;
-
 #ifdef _DBG_NCMAKE_TIME
 	// 現在時刻を取得
 	CTime t1 = CTime::GetCurrentTime();
 #endif
+
+	int		i, nResult = IDCANCEL;
 
 	// ｸﾞﾛｰﾊﾞﾙ変数初期化
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
@@ -325,7 +322,7 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 
 	// 準備中表示
 	g_nFase = 0;
-	SendFaseMessage(-1, g_szWait);
+	SendFaseMessage(-1, IDS_ANA_DATAINIT);
 	g_pMakeOpt = NULL;
 
 	// 下位の CMemoryException は全てここで集約
@@ -335,8 +332,7 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 		int		nID = (int)(pParam->wParam);
 
 		// NC生成ｵﾌﾟｼｮﾝｵﾌﾞｼﾞｪｸﾄの生成
-		g_pMakeOpt = new CNCMakeOption(NULL);	// 読み込みはしない
-		CNCMake::ms_pMakeOpt = g_pMakeOpt;
+		g_pMakeOpt = new CNCMakeMillOpt(NULL);	// 読み込みはしない
 
 		// 変数初期化ｽﾚｯﾄﾞの処理待ち
 		g_csMakeAfter.Lock();		// ｽﾚｯﾄﾞ側でﾛｯｸ解除するまで待つ
@@ -411,9 +407,9 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// このｽﾚｯﾄﾞからﾀﾞｲｱﾛｸﾞ終了
 	// 生成したNCｺｰﾄﾞの消去ｽﾚｯﾄﾞ(優先度を下げる)
 	AfxBeginThread(MakeNCD_AfterThread, NULL,
-		/*THREAD_PRIORITY_LOWEST*/
-		THREAD_PRIORITY_IDLE
-		/*THREAD_PRIORITY_BELOW_NORMAL*/);
+//		THREAD_PRIORITY_LOWEST);
+		THREAD_PRIORITY_IDLE);
+//		THREAD_PRIORITY_BELOW_NORMAL);
 
 	// 条件ｵﾌﾞｼﾞｪｸﾄ削除
 	if ( g_pMakeOpt )
@@ -429,14 +425,14 @@ void InitialVariable(void)
 	g_bData = FALSE;
 	g_nCorrect = -1;
 	CDXFdata::ms_pData = g_pDoc->GetCircleObject();
-	CNCMake::InitialVariable();
+	CNCMakeMill::InitialVariable();
 }
 
 void InitialCycleBaseVariable(void)
 {
-	CNCMake::ms_dCycleZ[1] =
-		CNCMake::ms_dCycleR[1] =
-			CNCMake::ms_dCycleP[1] = HUGE_VAL;
+	CNCMakeMill::ms_dCycleZ[1] =
+	CNCMakeMill::ms_dCycleR[1] =
+	CNCMakeMill::ms_dCycleP[1] = HUGE_VAL;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -447,7 +443,7 @@ BOOL SingleLayer(int nID)
 	CMagaDbg	dbg("SingleLayer()\nStart", DBG_CYAN);
 #endif
 	// NC生成ｵﾌﾟｼｮﾝ読み込み
-	g_pMakeOpt->ReadMakeOption(AfxGetNCVCApp()->GetDXFOption()->GetInitList()->GetHead());
+	g_pMakeOpt->ReadMakeOption(AfxGetNCVCApp()->GetDXFOption()->GetMillInitList()->GetHead());
 	// 条件ごとに変化するﾊﾟﾗﾒｰﾀを設定
 	SetStaticOption();
 	// 加工原点開始位置指示ﾚｲﾔ処理
@@ -457,9 +453,9 @@ BOOL SingleLayer(int nID)
 	g_dZCut = RoundUp(GetDbl(MKNC_DBL_ZCUT));
 	g_dDeep = RoundUp(GetDbl(MKNC_DBL_DEEP));
 	// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
-	CNCMake::ms_dCycleZ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLZ));
-	CNCMake::ms_dCycleR[0] = RoundUp(GetDbl(MKNC_DBL_DRILLR));
-	CNCMake::ms_dCycleP[0] = GetNum(MKNC_NUM_DWELL);
+	CNCMakeMill::ms_dCycleZ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLZ));
+	CNCMakeMill::ms_dCycleR[0] = RoundUp(GetDbl(MKNC_DBL_DRILLR));
+	CNCMakeMill::ms_dCycleP[0] = GetNum(MKNC_NUM_DWELL);
 	InitialCycleBaseVariable();
 	// ｸﾞﾛｰﾊﾞﾙ変数に生成対象ｵﾌﾞｼﾞｪｸﾄのｺﾋﾟｰ
 	SetGlobalMap();
@@ -517,7 +513,7 @@ BOOL MultiLayer(int nID)
 
 	if ( nID == ID_FILE_DXF2NCD_EX2 ) {
 		// 基準となるNC生成ｵﾌﾟｼｮﾝ読み込み
-		g_pMakeOpt->ReadMakeOption(AfxGetNCVCApp()->GetDXFOption()->GetInitList()->GetHead());
+		g_pMakeOpt->ReadMakeOption(AfxGetNCVCApp()->GetDXFOption()->GetMillInitList()->GetHead());
 		// 条件ごとに変化するﾊﾟﾗﾒｰﾀを設定
 		SetStaticOption();
 	}
@@ -537,7 +533,7 @@ BOOL MultiLayer(int nID)
 		pLayer->SetLayerPartFlag();
 		// 処理ﾚｲﾔ名をﾀﾞｲｱﾛｸﾞに表示
 		g_nFase = 1;
-		SendFaseMessage(-1, g_szWait, pLayer->GetStrLayer());
+		SendFaseMessage(-1, IDS_ANA_DATAINIT, pLayer->GetStrLayer());
 		//
 		if ( nID == ID_FILE_DXF2NCD_EX1 ) {
 			// NC生成ｵﾌﾟｼｮﾝ読み込み
@@ -549,18 +545,18 @@ BOOL MultiLayer(int nID)
 			g_dZCut = RoundUp(GetDbl(MKNC_DBL_ZCUT));
 			g_dDeep = RoundUp(GetDbl(MKNC_DBL_DEEP));
 			// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
-			CNCMake::ms_dCycleZ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLZ));
+			CNCMakeMill::ms_dCycleZ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLZ));
 		}
 		else {
 			// 強制Z座標補正
 			g_dZCut = g_dDeep = RoundUp(pLayer->GetZCut());
 			// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
-			CNCMake::ms_dCycleZ[0] = pLayer->IsLayerFlag(LAYER_DRILLZ) ?
+			CNCMakeMill::ms_dCycleZ[0] = pLayer->IsLayerFlag(LAYER_DRILLZ) ?
 						g_dZCut : RoundUp(GetDbl(MKNC_DBL_DRILLZ));
 		}
 		// 固定ｻｲｸﾙその他の座標ｾｯﾄ
-		CNCMake::ms_dCycleR[0] = RoundUp(GetDbl(MKNC_DBL_DRILLR));
-		CNCMake::ms_dCycleP[0] = GetNum(MKNC_NUM_DWELL);
+		CNCMakeMill::ms_dCycleR[0] = RoundUp(GetDbl(MKNC_DBL_DRILLR));
+		CNCMakeMill::ms_dCycleP[0] = GetNum(MKNC_NUM_DWELL);
 		InitialCycleBaseVariable();
 		// ｸﾞﾛｰﾊﾞﾙ変数に生成対象ｵﾌﾞｼﾞｪｸﾄのｺﾋﾟｰ
 		g_mpDXFdata.RemoveAll();
@@ -701,14 +697,14 @@ void SetStaticOption(void)
 	CDXFpoint::ms_pfnOrgDrillTuning = GetNum(MKNC_NUM_OPTIMAIZEDRILL) == 0 ?
 		&CDXFpoint::OrgTuning_Seq : &CDXFpoint::OrgTuning_XY;
 
-	// CNCMakeの静的変数初期化
+	// CNCMakeMillの静的変数初期化
 	if ( !g_bData ) {
 		// ABS, INC 関係なく G92値で初期化
 		for ( int i=0; i<NCXYZ; i++ )
-			CNCMake::ms_xyz[i] = RoundUp(GetDbl(MKNC_DBL_G92X+i));
+			CNCMakeMill::ms_xyz[i] = RoundUp(GetDbl(MKNC_DBL_G92X+i));
 	}
 	// 生成ｵﾌﾟｼｮﾝによる静的変数の初期化
-	CNCMake::SetStaticOption();
+	CNCMakeMill::SetStaticOption(g_pMakeOpt);
 }
 
 BOOL SetStartData(void)
@@ -720,7 +716,7 @@ BOOL SetStartData(void)
 	CDXFdata*	pMatchData = NULL;
 	CDXFdata*	pDataResult = NULL;
 	CDXFcircleEx*	pStartCircle = NULL;
-	double		dGap, dGapMin = HUGE_VAL;
+	double		dGap, dGapMin = DBL_MAX;
 	CString		strLayer;
 	CLayerData*	pLayer;
 	CDXFarray	obArray;
@@ -759,7 +755,7 @@ BOOL SetStartData(void)
 		// 次の要素検索(GetNearPoint)
 		pMatchData = pDataResult;
 		pDataResult = NULL;
-		dGapMin = HUGE_VAL;
+		dGapMin = DBL_MAX;
 		for ( i=0; i<obArray.GetSize() && IsThread(); i++ ) {
 			pData = obArray[i];
 			if ( pData->IsSearchFlg() )
@@ -921,7 +917,7 @@ BOOL OutputNCcode(LPCTSTR lpszFileName)
 	CString	strPath, strFile,
 			strNCFile(lpszFileName ? lpszFileName : g_pDoc->GetNCFileName());
 	Path_Name_From_FullPath(strNCFile, strPath, strFile);
-	SendFaseMessage(g_obMakeGdata.GetSize(), g_szFinal, strFile);
+	SendFaseMessage(g_obMakeGdata.GetSize(), IDS_ANA_DATAFINAL, strFile);
 	try {
 		CStdioFile	fp(strNCFile,
 				CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive | CFile::typeText);
@@ -1047,7 +1043,7 @@ BOOL MakeNCD_ShapeFunc(void)
 		AddMakeStart();
 	}
 	// 回転数
-	CString	strSpindle( CNCMake::MakeSpindle(DXFLINEDATA) );
+	CString	strSpindle( CNCMakeMill::MakeSpindle(DXFLINEDATA) );
 	if ( !strSpindle.IsEmpty() )
 		AddMakeGdataStr(strSpindle);
 	if ( !g_bData ) {
@@ -1178,7 +1174,7 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer
 		strLayer.Empty();
 	}
 	// 回転数
-	strBuf = CNCMake::MakeSpindle(pData->GetMakeType());
+	strBuf = CNCMakeMill::MakeSpindle(pData->GetMakeType());
 	if ( !strBuf.IsEmpty() )
 		AddMakeGdataStr(strBuf);
 
@@ -1231,7 +1227,7 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 	int		i, nCnt = 0, nLayerLoop, nDataLoop;
 	BOOL	bMatch = FALSE, bCalc = !g_bData,
 			bRound = GetNum(MKNC_NUM_CIRCLECODE) == 0 ? FALSE : TRUE;
-	double	dGap, dGapMin = HUGE_VAL;	// 原点までの距離
+	double	dGap, dGapMin = DBL_MAX;	// 原点までの距離
 	CDXFdata*	pDataResult = NULL;
 	CDXFdata*	pData;
 	CDXFellipse*	pEllipse;
@@ -1314,7 +1310,7 @@ tuple<CDXFdata*, BOOL> OrgTuningDrillPoint(void)
 	int			i;
 	const int	nLoop = g_obDrill.GetSize();
 	BOOL		bMatch = FALSE, bCalc;
-	double		dGap, dGapMin = HUGE_VAL;	// 原点までの距離
+	double		dGap, dGapMin = DBL_MAX;	// 原点までの距離
 	CDXFdata*	pData;
 	CDXFdata*	pDataResult = NULL;
 
@@ -1797,7 +1793,7 @@ int MakeLoopShapeSearch(const CDXFshape* pShapeBase)
 	j = obShape.GetSize();
 
 	while ( pShapeResult && IsThread() ) {
-		dGapMin = HUGE_VAL;
+		dGapMin = DBL_MAX;
 		pShapeResult = NULL;
 		// ptに一番近いﾈｲﾃｨﾌﾞの形状集合を検索
 		for ( i=0; i<j && IsThread(); i++ ) {
@@ -1990,7 +1986,7 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 				(CDXFchain::*pfnGetPosition)(void) const;
 	CDXFdata*& (CDXFchain::*pfnGetData)(POSITION&);
 	if ( bReverse ) {
-		pChain->ReversePoint();
+		pChain->ReverseMakePt();
 		pfnGetPosition	= &(CDXFchain::GetTailPosition);
 		pfnGetData		= &(CDXFchain::GetPrev);
 	}
@@ -2115,7 +2111,7 @@ BOOL MakeLoopShapeAdd_EulerMap(CDXFshape* pShape)
 	while ( IsThread() ) {
 		// 現在位置に近いｵﾌﾞｼﾞｪｸﾄ検索
 		pDataResult = NULL;
-		dGapMin = HUGE_VAL;
+		dGapMin = DBL_MAX;
 		pt = CDXFdata::ms_pData->GetEndCutterPoint();
 		for ( pos=pEuler->GetStartPosition(); pos && IsThread(); ) {
 			pEuler->GetNextAssoc(pos, ptKey, pArray);
@@ -2220,7 +2216,7 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bE
 	CDXFdata*&	(CDXFchain::*pfnGetData)(POSITION&);
 	CDXFdata*&	(CDXFchain::*pfnGetFirst)();
 	if ( bReverse ) {
-		ltEuler.ReversePoint();
+		ltEuler.ReverseMakePt();
 		pfnGetPosition	= &(CDXFchain::GetTailPosition);
 		pfnGetData		= &(CDXFchain::GetPrev);
 		pfnGetFirst		= &(CDXFchain::GetTail);
@@ -2340,7 +2336,7 @@ BOOL MakeLoopDeepAdd(void)
 #endif
 
 	// 回転数
-	CString	strSpindle( CNCMake::MakeSpindle(DXFLINEDATA) );
+	CString	strSpindle( CNCMakeMill::MakeSpindle(DXFLINEDATA) );
 	if ( !strSpindle.IsEmpty() )
 		AddMakeGdataStr(strSpindle);
 	// 切削ﾃﾞｰﾀまでの移動
@@ -2384,7 +2380,7 @@ BOOL MakeLoopDeepAdd(void)
 				for ( pos=g_ltDeepGlist.GetHeadPosition(); pos && IsThread(); ) {
 					pData = g_ltDeepGlist.GetNext(pos);
 					if ( pData )
-						pData->ReversePt();
+						pData->SwapMakePt(0);
 				}
 			}
 			// Z軸の下降
@@ -2413,7 +2409,7 @@ BOOL MakeLoopDeepAdd(void)
 			// Z軸上昇
 			MakeLoopDeepZUp();
 			// 仕上げ用回転数に変更
-			AddMakeGdataStr( CNCMake::MakeSpindle(DXFLINEDATA, TRUE) );
+			AddMakeGdataStr( CNCMakeMill::MakeSpindle(DXFLINEDATA, TRUE) );
 			// ｵﾌﾞｼﾞｪｸﾄ切削位置へ移動
 			pData = bAction ? g_ltDeepGlist.GetHead() : g_ltDeepGlist.GetTail();
 			AddMoveGdataG0(pData);
@@ -2791,7 +2787,7 @@ BOOL MakeLoopDrillCircle(void)
 		r = fabs( static_cast<CDXFcircle*>(g_obCircle[i])->GetMakeR() );
 		bMatch = FALSE;
 		pDataResult = NULL;
-		dGapMin = HUGE_VAL;
+		dGapMin = DBL_MAX;
 		for ( ; i<nLoop &&
 				r==fabs(static_cast<CDXFcircle*>(g_obCircle[i])->GetMakeR()) && IsThread(); i++ ) {
 			pData = g_obCircle[i];
@@ -3019,7 +3015,7 @@ CDXFdata* GetNearPointCutter(const CLayerData* pLayerTarget, const CDXFdata* pDa
 	CDXFdata*	pData;
 	CLayerData*	pLayer;
 	int			i, nLayerLoop = pLayerTarget ? 1 : g_pDoc->GetLayerCnt();
-	double		dGap, dGapMin = HUGE_VAL;
+	double		dGap, dGapMin = DBL_MAX;
 
 	while ( nLayerLoop-- > 0 && IsThread() ) {
 		pLayer = pLayerTarget ? const_cast<CLayerData*>(pLayerTarget) : g_pDoc->GetLayerData(nLayerLoop);
@@ -3046,7 +3042,7 @@ CDXFshape* GetNearPointShape(const CPointD& pt)
 	CDXFshape*	pShape;
 	CDXFshape*	pShapeResult = NULL;
 	int			i, j, nLoop1 = g_pDoc->GetLayerCnt(), nLoop2;
-	double		dGap, dGapMin = HUGE_VAL;
+	double		dGap, dGapMin = DBL_MAX;
 
 	for ( i=0; i<nLoop1 && IsThread(); i++ ) {
 		pLayer = g_pDoc->GetLayerData(i);
@@ -3073,7 +3069,7 @@ tuple<CDXFdata*, BOOL> GetNearPointDrill(const CDXFdata* pDataTarget)
 	CDXFdata*	pData;
 	CDXFdata*	pDataResult = NULL;
 	BOOL	bMatch = FALSE;
-	double	dGap, dGapMin = HUGE_VAL;	// 指定点との距離
+	double	dGap, dGapMin = DBL_MAX;	// 指定点との距離
 
 	// 現在位置と等しい，または近い要素を検索
 	for ( int i=0; i<g_obDrill.GetSize() && IsThread(); i++ ) {
@@ -3106,7 +3102,7 @@ tuple<int, int> GetNearPointDrillAxis(const CDXFdata* pDataTarget, int nAxis, CD
 	CDXFsort*	pAxis;
 	CDXFdata*	pData;
 	int		i, j, nMatch = -1, nResult = -1;
-	double	dGap, dGapMin = HUGE_VAL;
+	double	dGap, dGapMin = DBL_MAX;
 	CPointD	pt1(pDataTarget->GetEndMakePoint()), pt2;
 
 	for ( i=0; i<obAxis.GetSize() && nMatch<0 && IsThread(); i++ ) {
@@ -3154,92 +3150,63 @@ CDXFdata* GetMatchPointMove(const CDXFdata* pDataTarget)
 	return pDataResult;
 }
 
-// ｶｽﾀﾑﾍｯﾀﾞｰ, ﾌｯﾀﾞｰ処理
-struct CMakeCustomCode	// parse() から呼び出し
+//	AddCustomCode() parse()関数から呼び出し
+class CMakeCustomCode_Mill : public CMakeCustomCode	// MakeCustomCode.h
 {
-	CString&		m_strResult;
-	const CDXFdata*	m_pData;
-
-	CMakeCustomCode(CString& r, const CDXFdata* pData) : m_strResult(r), m_pData(pData) {}
-
-	void operator()(const char* s, const char* e) const
-	{
-		extern	const	DWORD	g_dwSetValFlags[];
+public:
+	CMakeCustomCode_Mill(CString& r, const CDXFdata* pData) :
+				CMakeCustomCode(r, g_pDoc, pData, g_pMakeOpt) {
 		static	LPCTSTR	szCustomCode[] = {
+			"ProgNo", 
 			"G90orG91", "G92_INITIAL", "G92X", "G92Y", "G92Z",
-			"SPINDLE", "G0XY_INITIAL",
-			"MakeUser", "MakeDate", "MakeTime", "MakeNCD", "MakeDXF", "MakeCondition"
+			"SPINDLE", "G0XY_INITIAL"
 		};
-		static	CStringKeyIndex	stOrder(SIZEOF(szCustomCode), szCustomCode);
-		static	LPCTSTR	szReplaceErr = "???";
+		// ｵｰﾀﾞｰ追加
+		m_strOrderIndex.AddElement(SIZEOF(szCustomCode), szCustomCode);
+	}
 
-		if ( *s != '{' ) {
-			m_strResult += string(s, e).c_str();
-			return;
-		}
-
-		// 前後の "{}" 除去して解析
-		int		nTestCode = stOrder.GetIndex(string(s+1, e-1).c_str());
-		CString	strPath, strFile;
-		TCHAR	szUserName[_MAX_PATH];
-		DWORD	dwResult;
-		CTime	time;
+	void	operator()(const char* s, const char* e) const {
+		extern	const	DWORD	g_dwSetValFlags[];
 		double	dValue[VALUESIZE];
+
+		// 基底ｸﾗｽ呼び出し
+		int		nTestCode = CMakeCustomCode::ReplaceCustomCode(s, e);
+
 		// replace
 		switch ( nTestCode ) {
-		case 0:		// G90orG91
-			m_strResult += CNCMake::MakeCustomString(GetNum(MKNC_NUM_G90)+90);
+		case 0:		// ProgNo
+			if ( GetFlg(MKNC_FLG_PROG) ) {
+				CString	strTmp;
+				strTmp.Format(IDS_MAKENCD_PROG,
+					GetFlg(MKNC_FLG_PROGAUTO) ? ::GetRandom(1,9999) : GetNum(MKNC_NUM_PROG));
+				m_strResult += strTmp;
+			}
 			break;
-		case 1:		// G92_INITIAL
+		case 1:		// G90orG91
+			m_strResult += CNCMakeBase::MakeCustomString(GetNum(MKNC_NUM_G90)+90);
+			break;
+		case 2:		// G92_INITIAL
 			dValue[NCA_X] = GetDbl(MKNC_DBL_G92X);
 			dValue[NCA_Y] = GetDbl(MKNC_DBL_G92Y);
 			dValue[NCA_Z] = GetDbl(MKNC_DBL_G92Z);
-			m_strResult += CNCMake::MakeCustomString(92, NCD_X|NCD_Y|NCD_Z, dValue, FALSE);
+			m_strResult += CNCMakeBase::MakeCustomString(92, NCD_X|NCD_Y|NCD_Z, dValue, FALSE);
 			break;
-		case 2:		// G92X
-		case 3:		// G92Y
-		case 4:		// G92Z
+		case 3:		// G92X
+		case 4:		// G92Y
+		case 5:		// G92Z
 			dValue[nTestCode-2] = GetDbl(MKNC_DBL_G92X+nTestCode-2);
-			m_strResult += CNCMake::MakeCustomString(-1, g_dwSetValFlags[nTestCode-2], dValue, FALSE);
+			m_strResult += CNCMakeBase::MakeCustomString(-1, g_dwSetValFlags[nTestCode-2], dValue, FALSE);
 			break;
-		case 5:		// SPINDLE
+		case 6:		// SPINDLE
 			if ( m_pData )					// Header
-				m_strResult += CNCMake::MakeSpindle(m_pData->GetMakeType());
+				m_strResult += CNCMakeMill::MakeSpindle(m_pData->GetMakeType());
 			else if ( CDXFdata::ms_pData )	// Footer
-				m_strResult += CNCMake::MakeSpindle(CDXFdata::ms_pData->GetMakeType());
+				m_strResult += CNCMakeMill::MakeSpindle(CDXFdata::ms_pData->GetMakeType());
 			break;
-		case 6:		// G0XY_INITIAL
+		case 7:		// G0XY_INITIAL
 			dValue[NCA_X] = GetDbl(MKNC_DBL_G92X);
 			dValue[NCA_Y] = GetDbl(MKNC_DBL_G92Y);
-			m_strResult += CNCMake::MakeCustomString(0, NCD_X|NCD_Y, dValue);
-			break;
-		case 7:		// MakeUser
-			dwResult = _MAX_PATH;
-			// ﾕｰｻﾞ名に漢字が含まれていると生成しない
-			m_strResult += GetUserName(szUserName, &dwResult) && IsNCchar(szUserName) ?
-				szUserName : szReplaceErr;
-			break;
-		case 8:		// MakeDate
-			time = CTime::GetCurrentTime();
-			VERIFY(strPath.LoadString(ID_INDICATOR_DATE_F2));	// %y/%m/%d
-			m_strResult += time.Format(strPath);
-			break;
-		case 9:		// MakeTime
-			time = CTime::GetCurrentTime();
-			VERIFY(strPath.LoadString(ID_INDICATOR_TIME_F));	// %H:%M
-			m_strResult += time.Format(strPath);
-			break;
-		case 10:	// MakeNCD
-			Path_Name_From_FullPath(g_pDoc->GetNCFileName(), strPath, strFile);
-			m_strResult += IsNCchar(strFile) ? strFile : szReplaceErr;
-			break;
-		case 11:	// MakeDXF
-			Path_Name_From_FullPath(g_pDoc->GetPathName(), strPath, strFile);	// GetTitle()には"*"が付く可能性あり
-			m_strResult += IsNCchar(strFile) ? strFile : szReplaceErr;
-			break;
-		case 12:	// MakeCondition
-			Path_Name_From_FullPath(g_pMakeOpt->GetInitFile(), strPath, strFile);
-			m_strResult += IsNCchar(strFile) ? strFile : szReplaceErr;
+			m_strResult += CNCMakeBase::MakeCustomString(0, NCD_X|NCD_Y, dValue);
 			break;
 		}
 	}
@@ -3251,7 +3218,7 @@ void AddCustomCode(const CString& strFileName, const CDXFdata* pData)
 
 	CString	strBuf;
 	CString	strResult;
-	CMakeCustomCode	custom(strResult, pData);
+	CMakeCustomCode_Mill	custom(strResult, pData);
 
 	try {
 		CStdioFile	fp(strFileName,
@@ -3274,16 +3241,6 @@ void AddCustomCode(const CString& strFileName, const CDXFdata* pData)
 	}
 }
 
-BOOL IsNCchar(LPCTSTR lpsz)
-{
-	for ( int i=0; i<lstrlen(lpsz); i++ ) {
-//		if ( isprint(lpsz[i]) == 0 )
-		if ( IsDBCSLeadByte(lpsz[i]) )
-			return FALSE;
-	}
-	return TRUE;
-}
-
 // 加工開始指示ﾃﾞｰﾀの生成
 void AddMakeStart(void)
 {
@@ -3291,14 +3248,14 @@ void AddMakeStart(void)
 	AddStartTextIntegrated(CPointD());	// (0, 0)
 	
 	CDXFdata*	pData = NULL;
-	CNCMake*	mkNCD;
+	CNCMakeMill*	mkNCD;
 	// 特定条件しか呼ばれないので IsMakeFlg() の判断は必要なし
 	for ( int i=0; i<g_obStartData.GetSize() && IsThread(); i++ ) {
 		pData = g_obStartData[i];
 		// 開始位置と等しいﾃｷｽﾄﾃﾞｰﾀの生成
 		AddStartTextIntegrated(pData->GetStartCutterPoint());
 		// 移動指示
-		mkNCD = new CNCMake(pData, FALSE);
+		mkNCD = new CNCMakeMill(pData, FALSE);
 		ASSERT( mkNCD );
 		g_obMakeGdata.Add(mkNCD);
 	}
@@ -3319,14 +3276,14 @@ void AddMoveZ_NotMove(void)
 void AddMoveZ_R(void)
 {
 	// Z軸の現在位置がR点より小さい(低い)なら
-	if ( CNCMake::ms_xyz[NCA_Z] < g_dZG0Stop )
+	if ( CNCMakeMill::ms_xyz[NCA_Z] < g_dZG0Stop )
 		AddMoveGdataZ(0, g_dZG0Stop, -1);
 }
 
 void AddMoveZ_Initial(void)
 {
 	// Z軸の現在位置がｲﾆｼｬﾙ点より小さい(低い)なら
-	if ( CNCMake::ms_xyz[NCA_Z] < g_dZInitial )
+	if ( CNCMakeMill::ms_xyz[NCA_Z] < g_dZInitial )
 		AddMoveGdataZ(0, g_dZInitial, -1);
 }
 
@@ -3411,7 +3368,7 @@ void AddCutterTextIntegrated(const CPointD& pt)
 
 // ﾌｪｰｽﾞ出力
 void SendFaseMessage
-	(int nRange/*=-1*/, LPCTSTR lpszMsg1/*=NULL*/, LPCTSTR lpszMsg2/*=NULL*/)
+	(int nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeNCD_Thread()", DBG_GREEN);
@@ -3421,11 +3378,11 @@ void SendFaseMessage
 		g_pParent->m_ctReadProgress.SetRange32(0, nRange);
 
 	CString	strMsg;
-	if ( lpszMsg1 )
-		strMsg = lpszMsg1;
+	if ( nMsgID > 0 )
+		VERIFY(strMsg.LoadString(nMsgID));
 	else
 		strMsg.Format(IDS_MAKENCD_FASE, g_nFase);
-	g_pParent->SetFaseMessage(strMsg, lpszMsg2);
+	g_pParent->SetFaseMessage(strMsg, lpszMsg);
 	g_nFase++;
 }
 

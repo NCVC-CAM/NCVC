@@ -395,7 +395,7 @@ public:
 	}
 	void	SetRectMinimum(void) {
 		left  = top    =  DBL_MAX;
-		right = bottom = -DBL_MAX;
+		right = bottom = -DBL_MAX;	// DBL_MIN==最小の正の値
 	}
 };
 
@@ -524,6 +524,8 @@ boost::optional<CPointD>	CalcOffsetIntersectionPoint_LE
 	(const CPointD&, const CPointD&, double, double, double, double, BOOL, BOOL);
 //	点が多角形の内側か否か
 BOOL IsPointInPolygon(const CPointD&, const std::vector<CPointD>&);
+//	点と直線の距離を求める
+double	CalcLineDistancePt(const CPointD&, const CPointD&, const CPointD&);
 
 //	２次方程式の解を求める
 boost::tuple<int, double, double>	GetKon(double, double, double);

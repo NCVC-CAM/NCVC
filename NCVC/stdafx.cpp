@@ -3,6 +3,8 @@
 // stdafx.obj にはプリコンパイルされた型情報が含まれます。
 
 #include "stdafx.h"
+#include <stdlib.h>
+#include <time.h>
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -29,6 +31,19 @@ extern	const	int		gg_nIconY = 15;
 
 /////////////////////////////////////////////////////////////////////////////
 // NCVC 共通関数
+
+// 乱数
+int GetRandom(int min, int max)
+{
+	static	int		nFirst = 0;
+
+	if ( nFirst == 0 ) {
+		srand((unsigned int)time(NULL));
+		nFirst = 1;
+	}
+
+	return min + (int)(rand()*(max-min+1.0)/(1.0+RAND_MAX));
+}
 
 // ﾌﾙﾊﾟｽ名をﾊﾟｽ名とﾌｧｲﾙ名に分割
 void Path_Name_From_FullPath

@@ -3,8 +3,10 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
+#include "NCMakeLatheOpt.h"
 #include "MKNCSetup.h"
+#include "MKLASetup.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -65,17 +67,32 @@ BOOL CMKNCSetup6::OnInitDialog()
 	
 	// ¶½ÀÑºİÄÛ°Ù‚Íºİ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²İÀ‚ğæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
-	m_nDot			= pOpt->m_nDot;
-	m_nFDot			= pOpt->m_nFDot;
-	m_bZeroCut		= pOpt->m_bZeroCut;
-	m_nCircleCode	= pOpt->m_nCircleCode;
-	m_nIJ			= pOpt->m_nIJ;
-	m_bCircleHalf	= pOpt->m_bCircleHalf;
+	CWnd*	pParent = GetParent();
+	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
+		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
+		m_nDot			= pOpt->m_nDot;
+		m_nFDot			= pOpt->m_nFDot;
+		m_bZeroCut		= pOpt->m_bZeroCut;
+		m_nCircleCode	= pOpt->m_nCircleCode;
+		m_nIJ			= pOpt->m_nIJ;
+		m_bCircleHalf	= pOpt->m_bCircleHalf;
+		m_dEllipse		= pOpt->m_dEllipse;
+		m_bEllipse		= pOpt->m_bEllipse;
+	}
+	else {
+		// ù”ÕÓ°ÄŞ
+		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(GetParent())->GetNCMakeOption();
+		m_nDot			= pOpt->m_nDot;
+		m_nFDot			= pOpt->m_nFDot;
+		m_bZeroCut		= pOpt->m_bZeroCut;
+		m_nCircleCode	= pOpt->m_nCircleCode;
+		m_nIJ			= pOpt->m_nIJ;
+		m_bCircleHalf	= pOpt->m_bCircleHalf;
+		m_dEllipse		= pOpt->m_dEllipse;
+		m_bEllipse		= pOpt->m_bEllipse;
+	}
 	if ( m_nIJ == 0 )
 		m_ctCircleHalf.EnableWindow(FALSE);
-	m_dEllipse		= pOpt->m_dEllipse;
-	m_bEllipse		= pOpt->m_bEllipse;
 
 	UpdateData(FALSE);
 
@@ -95,15 +112,29 @@ void CMKNCSetup6::OnCircleIJ()
 
 BOOL CMKNCSetup6::OnApply() 
 {
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
-	pOpt->m_nDot		= m_nDot;
-	pOpt->m_nFDot		= m_nFDot;
-	pOpt->m_bZeroCut	= m_bZeroCut;
-	pOpt->m_nCircleCode	= m_nCircleCode;
-	pOpt->m_nIJ			= m_nIJ;
-	pOpt->m_bCircleHalf	= m_bCircleHalf;
-	pOpt->m_dEllipse	= m_dEllipse;
-	pOpt->m_bEllipse	= m_bEllipse;
+	CWnd*	pParent = GetParent();
+	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
+		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
+		pOpt->m_nDot		= m_nDot;
+		pOpt->m_nFDot		= m_nFDot;
+		pOpt->m_bZeroCut	= m_bZeroCut;
+		pOpt->m_nCircleCode	= m_nCircleCode;
+		pOpt->m_nIJ			= m_nIJ;
+		pOpt->m_bCircleHalf	= m_bCircleHalf;
+		pOpt->m_dEllipse	= m_dEllipse;
+		pOpt->m_bEllipse	= m_bEllipse;
+	}
+	else {
+		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(GetParent())->GetNCMakeOption();
+		pOpt->m_nDot		= m_nDot;
+		pOpt->m_nFDot		= m_nFDot;
+		pOpt->m_bZeroCut	= m_bZeroCut;
+		pOpt->m_nCircleCode	= m_nCircleCode;
+		pOpt->m_nIJ			= m_nIJ;
+		pOpt->m_bCircleHalf	= m_bCircleHalf;
+		pOpt->m_dEllipse	= m_dEllipse;
+		pOpt->m_bEllipse	= m_bEllipse;
+	}
 
 	return TRUE;
 }

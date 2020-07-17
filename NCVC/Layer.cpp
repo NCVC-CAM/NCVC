@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
-#include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
 #include "DXFdata.h"
 #include "Layer.h"
 
@@ -33,6 +33,7 @@ static	int		SequenceCompareFunc(CDXFshape*, CDXFshape*);	// ºÿ±Ÿ≈› ﬁ∞Ç≈ï¿Ç◊ë÷Ç¶
 CLayerData::CLayerData()
 {
 	m_nType		= -1;
+	m_bLayerFlg.reset();
 	m_nListNo	= -1;
 	m_dInitZCut	= m_dZCut = 0.0;
 	m_obDXFArray.SetSize(0, 1024);
@@ -44,10 +45,10 @@ CLayerData::CLayerData(const CString& strLayer, int nType)
 {
 	m_strLayer	= strLayer;
 	m_nType		= nType;
+	m_bLayerFlg.reset();
 	m_bLayerFlg.set(LAYER_VIEW);
 	m_bLayerFlg.set(LAYER_CUTTARGET);
 	m_bLayerFlg.set(LAYER_DRILLZ);
-	m_bLayerFlg.reset(LAYER_PARTOUT);
 	m_nListNo	= -1;
 	m_dInitZCut	= m_dZCut = 0.0;
 	m_obDXFArray.SetSize(0, 1024);
@@ -61,11 +62,14 @@ CLayerData::CLayerData(const CLayerData* pLayer, BOOL bCut)
 	m_strLayer		= pLayer->m_strLayer;
 	m_nType			= pLayer->m_nType;
 	m_nListNo		= pLayer->m_nListNo;
+	m_bLayerFlg.reset();
 	m_bLayerFlg.set(LAYER_CUTTARGET, bCut);
 	m_bLayerFlg.set(LAYER_DRILLZ,    pLayer->IsLayerFlag(LAYER_DRILLZ));
 	m_bLayerFlg.set(LAYER_PARTOUT,   pLayer->IsLayerFlag(LAYER_PARTOUT));
 	m_strInitFile	= pLayer->m_strInitFile;
 	m_strNCFile		= pLayer->m_strNCFile;
+	m_strLayerComment = pLayer->m_strLayerComment;
+	m_strLayerCode	= pLayer->m_strLayerCode;
 	m_dInitZCut		= pLayer->m_dInitZCut;
 	m_dZCut			= pLayer->m_dZCut;
 }
@@ -153,7 +157,7 @@ void CLayerData::SetInitFile(LPCTSTR lpszInitFile)
 	}
 	else {
 		m_strInitFile = lpszInitFile;
-		CNCMakeOption	ncOpt(m_strInitFile);
+		CNCMakeMillOpt	ncOpt(m_strInitFile);
 		m_dInitZCut = ncOpt.GetFlag(MKNC_FLG_DEEP) ? 
 			ncOpt.GetDbl(MKNC_DBL_DEEP) : ncOpt.GetDbl(MKNC_DBL_ZCUT);
 	}
@@ -179,7 +183,7 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 			m_bLayerFlg.set(LAYER_CUTTARGET, atoi(it->c_str()) ? 1 : 0);
 			break;
 		case 1:		// êÿçÌèåèÃß≤Ÿ
-			strTemp = ::Trim(*it);	// CustomClass.h
+			strTemp = ::Trim(*it);	// stdafx.h
 			// ëäëŒ ﬂΩÇ»ÇÁê‚ëŒ ﬂΩÇ…
 			if ( ::PathIsRelative(strTemp.c_str()) &&
 					::PathSearchAndQualify(strTemp.c_str(), szFile, _MAX_PATH) )
@@ -217,9 +221,9 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 	}
 #ifdef _DEBUG
 	g_dbg.printf("Layer=%s", m_strLayer);
-	g_dbg.printf("--- Check=%d InitFile=%s", m_bLayerFlg[LAYER_CUTTARGET], m_strInitFile);
-	g_dbg.printf("--- Z=%f Drill=%d", m_dZCut, m_bLayerFlg[LAYER_DRILLZ] );
-	g_dbg.printf("--- PartOut=%d NCFile=%s", m_bLayerFlg[LAYER_PARTOUT], m_strNCFile);
+	g_dbg.printf("--- Check=%d InitFile=%s", m_bLayerFlg[LAYER_CUTTARGET] ? 1 : 0, m_strInitFile);
+	g_dbg.printf("--- Z=%f Drill=%d", m_dZCut, m_bLayerFlg[LAYER_DRILLZ] ? 1 : 0);
+	g_dbg.printf("--- PartOut=%d NCFile=%s", m_bLayerFlg[LAYER_PARTOUT] ? 1 : 0, m_strNCFile);
 	g_dbg.printf("--- Seq=%d, Comment=%s Code=%s", m_nListNo, m_strLayerComment, m_strLayerCode);
 #endif
 }

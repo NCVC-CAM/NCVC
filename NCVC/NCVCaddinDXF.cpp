@@ -272,9 +272,18 @@ NCEXPORT void WINAPI NCVC_SetDXFCutterOrigin
 	(NCVCHANDLE hDoc, LPDPOINT lpptOrg, double dR, BOOL bRedraw)
 {
 	if ( IsDXFDocument(hDoc) ) {
-		CPointD	pt;
-		pt.x = lpptOrg->x;	pt.y = lpptOrg->y;
+		CPointD	pt(lpptOrg->x, lpptOrg->y);
 		reinterpret_cast<CDXFDoc *>(hDoc)->CreateCutterOrigin(pt, dR, bRedraw);
+	}
+}
+
+NCEXPORT void WINAPI NCVC_SetDXFLatheLine
+	(NCVCHANDLE hDoc, LPDPOINT lppts, LPDPOINT lppte)
+{
+	if ( IsDXFDocument(hDoc) ) {
+		CPointD	pts(lppts->x, lppts->y),
+				pte(lppte->x, lppte->y);
+		reinterpret_cast<CDXFDoc *>(hDoc)->CreateLatheLine(pts, pte);
 	}
 }
 
@@ -300,7 +309,7 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFoption(LPDXFOPTION pOpt)
 	pOpt->nAccept	= 0;
 	pOpt->nOrgType	= pSrc->GetDxfFlag(DXFOPT_ORGTYPE);
 	pOpt->bView		= pSrc->GetDxfFlag(DXFOPT_VIEW);
-	const	CStringList*	pList1 = pSrc->GetInitList();
+	const	CStringList*	pList1 = pSrc->GetMillInitList();
 	const	CStringList*	pList2 = pSrc->GetLayerToInitList();
 	for( i=0, pos=pList1->GetHeadPosition(); pos && i<DXFMAXINITFILE; i++ )
 		pOpt->pszInitList[i] = (LPCTSTR)(pList1->GetNext(pos));

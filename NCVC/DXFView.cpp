@@ -377,6 +377,11 @@ void CDXFView::OnDraw(CDC* pDC)
 	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_ORIGIN));
 	if ( pData=GetDocument()->GetCircleObject() )
 		pData->Draw(pDC);	// CDXFcircleEx::Draw()
+	// 旋盤原点
+	for ( i=0; i<2; i++ ) {
+		if ( pData=GetDocument()->GetLatheLine(i) )
+			pData->Draw(pDC);	// CDXFline::Draw()
+	}
 
 	// DXF描画
 	nLayerCnt = GetDocument()->GetLayerCnt();
@@ -624,12 +629,24 @@ void CDXFView::OnMoveKey(UINT nID)
 
 void CDXFView::OnLensKey(UINT nID)
 {
+	CRectD		rc;
+	CDXFdata*	pData;
+
 	switch ( nID ) {
 	case ID_VIEW_BEFORE:
 		CViewBase::OnBeforeMagnify();
 		break;
 	case ID_VIEW_FIT:
-		CViewBase::OnViewFit(GetDocument()->GetMaxRect());
+		rc  = GetDocument()->GetMaxRect();
+		pData = GetDocument()->GetCircleObject();
+		if ( pData )
+			rc |= pData->GetMaxRect();
+		for ( int i=0; i<2; i++ ) {
+			pData = GetDocument()->GetLatheLine(0);
+			if ( pData )
+				rc |= pData->GetMaxRect();
+		}
+		CViewBase::OnViewFit(rc);
 		break;
 	case ID_VIEW_LENSP:
 		CViewBase::OnViewLensP();
@@ -918,12 +935,8 @@ void CDXFView::OnLButtonUp_Vector
 	if ( m_pSelData ) {
 /*
 	---
-		ここで SetDirectionFixed() を呼び出して座標を入れ替えると、
+		ここで SwapNativePt() を呼び出して座標を入れ替えると、
 		輪郭ｵﾌﾞｼﾞｪｸﾄとのリンクが取れなくなる。
-		// ｵﾌﾞｼﾞｪｸﾄに対する方向指示
-		// 始点は現在位置に遠い方(1-m_nSelect)，終点は近い方(m_nSelect)
-		m_nSelect = GAPCALC(m_ptArraw[0][1] - ptView) < GAPCALC(m_ptArraw[1][1] - ptView) ? 0 : 1;
-		m_pSelData->SetDirectionFixed(m_ptArraw[1-m_nSelect][1], m_ptArraw[m_nSelect][1]);
 	---
 */
 		// 加工指示生成
@@ -985,7 +998,7 @@ void CDXFView::OnLButtonUp_Start
 			m_pSelData = pDataSel;
 			// ｵﾌﾞｼﾞｪｸﾄの座標の取得
 			ASSERT( m_pSelData->GetPointNumber() <= SIZEOF(m_ptStart) );
-			double	dGap, dGapMin = HUGE_VAL;
+			double	dGap, dGapMin = DBL_MAX;
 			for ( int i=0; i<m_pSelData->GetPointNumber(); i++ ) {
 				m_ptStart[i] = m_pSelData->GetNativePoint(i);
 				dGap = GAPCALC(m_ptStart[i] - ptView);
@@ -1153,7 +1166,7 @@ void CDXFView::OnMouseMove_Start
 	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
 {
 	int		i, nSelect;
-	double	dGap, dGapMin = HUGE_VAL;
+	double	dGap, dGapMin = DBL_MAX;
 
 	for ( i=0; i<m_pSelData->GetPointNumber(); i++ ) {
 		dGap = GAPCALC(m_ptStart[i] - ptView);

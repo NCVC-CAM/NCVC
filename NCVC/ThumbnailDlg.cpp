@@ -366,7 +366,7 @@ BOOL CThumbnailDlg::OnInitDialog()
 	CString		strExt;
 	m_aExt.Add( gg_szWild + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD).Right(3) );	// "." èúÇ≠ÅuncdÅv
 	for ( i=0; i<2/*EXT_ADN,EXT_DLG*/; i++ ) {	// ìoò^ägí£éqÇ≈ÇÃÃ´Ÿ¿ﬁåüçı
-		const CMapStringToPtr* pMap = AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((EXTTYPE)i);
+		const CMapStringToPtr* pMap = AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((eEXTTYPE)i);
 		for ( POSITION pos=pMap->GetStartPosition(); pos; ) {
 			pMap->GetNextAssoc(pos, strExt, pFunc);
 			m_aExt.Add( gg_szWild + strExt );

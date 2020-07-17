@@ -137,17 +137,17 @@ CPen* CDXFdata::GetDrawPen(void) const
 	return pDrawPen[ m_dwFlags & DXFFLG_SELECT ? 1 : 0 ];
 }
 
-void CDXFdata::SwapPt(int n)		// m_ptTun の入れ替え
+void CDXFdata::SwapMakePt(int n)	// m_ptTun の入れ替え
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SwapPt()", DBG_CYAN);
+	CMagaDbg	dbg("SwapMakePt()", DBG_CYAN);
 #endif
 	if ( m_nPoint > n+1 ) {	// 念のためﾁｪｯｸ
 #ifdef _DEBUG
 		dbg.printf("calling ok");
 #endif
-		std::swap(m_ptTun[n],  m_ptTun[n+1]);
-		std::swap(m_ptMake[n], m_ptMake[n+1]);
+		swap(m_ptTun[n],  m_ptTun[n+1]);
+		swap(m_ptMake[n], m_ptMake[n+1]);
 	}
 #ifdef _DEBUG
 	else
@@ -155,9 +155,21 @@ void CDXFdata::SwapPt(int n)		// m_ptTun の入れ替え
 #endif
 }
 
-void CDXFdata::ReversePt(void)
+void CDXFdata::SwapNativePt(void)	// 固有座標値の入れ替え
 {
-	SwapPt(0);
+#ifdef _DEBUG
+	CMagaDbg	dbg("SwapNativePoint()", DBG_CYAN);
+#endif
+	if ( m_nPoint > 1 ) {
+#ifdef _DEBUG
+		dbg.printf("calling ok");
+#endif
+		swap(m_pt[0], m_pt[1]);
+	}
+#ifdef _DEBUG
+	else
+		dbg.printf("Missing call! m_nPoint=%d", m_nPoint);
+#endif
 }
 
 void CDXFdata::XRev(void)		// X軸の符号反転
@@ -178,7 +190,7 @@ void CDXFdata::YRev(void)		// Y軸の符号反転
 
 void CDXFdata::OrgTuningBase(void)
 {
-	m_dwFlags &= ~(DXFFLG_MAKE|DXFFLG_SEARCH);	// 生成，検索ﾌﾗｸﾞのｸﾘｱ
+	m_dwFlags &= ~DXFFLG_CLRWORK;	// 生成，検索ﾌﾗｸﾞのｸﾘｱ
 	for ( int i=0; i<GetPointNumber(); i++ )
 		m_ptMake[i] = m_ptTun[i].RoundUp();
 	if ( ms_fXRev ) XRev();		// 符号反転(virtual)
@@ -198,13 +210,13 @@ CDXFpoint::CDXFpoint(ENDXFTYPE enType, CLayerData* pLayer, int nPoint) :
 {
 }
 
-CDXFpoint::CDXFpoint(LPDXFPARGV lpPoint) : CDXFdata(DXFPOINTDATA, lpPoint->pLayer, 1)
+CDXFpoint::CDXFpoint(LPCDXFPARGV lpPoint) : CDXFdata(DXFPOINTDATA, lpPoint->pLayer, 1)
 {
 	m_pt[0] = lpPoint->c;
 	SetMaxRect();
 }
 
-CDXFpoint::CDXFpoint(CLayerData* pLayer, const CDXFpoint* pData, LPDXFBLOCK lpBlock) :
+CDXFpoint::CDXFpoint(CLayerData* pLayer, const CDXFpoint* pData, LPCDXFBLOCK lpBlock) :
 	CDXFdata(DXFPOINTDATA, pLayer, 1)
 {
 	m_pt[0] = pData->GetNativePoint(0);
@@ -286,10 +298,6 @@ BOOL CDXFpoint::GetDirectionArraw(const CPointD&, CPointD[][3]) const
 	return FALSE;
 }
 
-void CDXFpoint::SetDirectionFixed(const CPointD&)
-{
-}
-
 int CDXFpoint::GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL) const
 {
 	return 0;
@@ -319,14 +327,14 @@ CDXFline::CDXFline(ENDXFTYPE enType, CLayerData* pLayer, int nPoint) :
 {
 }
 
-CDXFline::CDXFline(LPDXFLARGV lpLine) : CDXFpoint(DXFLINEDATA, lpLine->pLayer, 2)
+CDXFline::CDXFline(LPCDXFLARGV lpLine) : CDXFpoint(DXFLINEDATA, lpLine->pLayer, 2)
 {
 	m_pt[0] = lpLine->s;
 	m_pt[1] = lpLine->e;
 	SetMaxRect();
 }
 
-CDXFline::CDXFline(CLayerData* pLayer, const CDXFline* pData, LPDXFBLOCK lpBlock) :
+CDXFline::CDXFline(CLayerData* pLayer, const CDXFline* pData, LPCDXFBLOCK lpBlock) :
 	CDXFpoint(DXFLINEDATA, pLayer, 2)
 {
 	m_pt[0] = pData->GetNativePoint(0);
@@ -447,17 +455,13 @@ BOOL CDXFline::GetDirectionArraw(const CPointD&, CPointD pt[][3]) const
 	return TRUE;
 }
 
-void CDXFline::SetDirectionFixed(const CPointD& pts)
-{
-	// 固有座標を近い方に入れ替え
-	if ( GAPCALC(m_pt[0]-pts) > GAPCALC(m_pt[1]-pts) )
-		swap(m_pt[0], m_pt[1]);
-}
-
 int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdge/*=TRUE*/) const
 {
 	int		nResult = 0;
-	CPointD	pt1(pData->GetNativePoint(0)), pt2(pData->GetNativePoint(1));
+	CPointD	pt1(pData->GetNativePoint(0)), pt2(pData->GetNativePoint(1)),
+			pto(m_pt[1]-m_pt[0]), ptc;
+	double	q = atan2(pto.y, pto.x);
+	pto.RoundPoint(-q);
 	const CDXFcircle*	pCircle;
 	const CDXFellipse*	pEllipse;
 	optional<CPointD>	ptResult;
@@ -467,6 +471,23 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEd
 	case DXFLINEDATA:
 		if ( bEdge && (IsMatchPoint(pt1) || IsMatchPoint(pt2)) )
 			break;
+		// 線上ﾁｪｯｸ
+		ptc = pt1 - m_pt[0];
+		ptc.RoundPoint(-q);
+		if ( 0<=ptc.x+NCMIN && ptc.x-NCMIN<=pto.x && fabs(ptc.y)<=NCMIN ) {
+			// 解は線上にあり
+			pt[0] = pt1;
+			nResult = 1;
+			break;
+		}
+		ptc = pt2 - m_pt[0];
+		ptc.RoundPoint(-q);
+		if ( 0<=ptc.x+NCMIN && ptc.x-NCMIN<=pto.x && fabs(ptc.y)<=NCMIN ) {
+			pt[0] = pt2;
+			nResult = 1;
+			break;
+		}
+		// 交点計算
 		ptResult = ::CalcIntersectionPoint_LL(m_pt[0], m_pt[1], pt1, pt2);
 		if ( ptResult ) {
 			pt[0] = *ptResult;
@@ -625,7 +646,7 @@ CDXFcircle::CDXFcircle(ENDXFTYPE enType, CLayerData* pLayer,
 	m_bRoundFixed = FALSE;
 }
 
-CDXFcircle::CDXFcircle(LPDXFCARGV lpCircle) :
+CDXFcircle::CDXFcircle(LPCDXFCARGV lpCircle) :
 	CDXFline(DXFCIRCLEDATA, lpCircle->pLayer, 4)
 {
 	m_nArrayExt = 0;
@@ -638,7 +659,7 @@ CDXFcircle::CDXFcircle(LPDXFCARGV lpCircle) :
 	SetMaxRect();
 }
 
-CDXFcircle::CDXFcircle(CLayerData* pLayer, const CDXFcircle* pData, LPDXFBLOCK lpBlock) :
+CDXFcircle::CDXFcircle(CLayerData* pLayer, const CDXFcircle* pData, LPCDXFBLOCK lpBlock) :
 	CDXFline(DXFCIRCLEDATA, pLayer, 4)
 {
 	m_nArrayExt = 0;
@@ -673,17 +694,17 @@ void CDXFcircle::Serialize(CArchive& ar)
 	}
 }
 
-void CDXFcircle::SwapPt(int n)
+void CDXFcircle::SwapMakePt(int n)
 {
 	if ( m_nArrayExt != n )
 		m_nArrayExt = n;
 	// 座標の入れ替えは必要なし
 	// ってゆうか m_nArrayExt で開始点をコントロールしているので
 	// 座標入れ替えしちゃダメ！
-//	CDXFdata::SwapPt( n & 0xfe );	// 0 or 2 (下位1ﾋﾞｯﾄﾏｽｸ)
+//	CDXFdata::SwapMakePt( n & 0xfe );	// 0 or 2 (下位1ﾋﾞｯﾄﾏｽｸ)
 }
 
-void CDXFcircle::ReversePt(void)
+void CDXFcircle::SwapNativePt(void)
 {
 	// 何もしない
 }
@@ -801,11 +822,6 @@ BOOL CDXFcircle::GetDirectionArraw(const CPointD& ptClick, CPointD ptResult[][3]
 	};
 	// 接線から矢印座標の計算
 	return GetDirectionArraw_Circle(q, pt, ptResult);
-}
-
-void CDXFcircle::SetDirectionFixed(const CPointD&)
-{
-	// 座標入れ替え不要
 }
 
 void CDXFcircle::SetRoundFixed(const CPointD& pts, const CPointD& pte)
@@ -978,7 +994,7 @@ CDXFarc::CDXFarc(ENDXFTYPE enType, CLayerData* pLayer,
 	m_eqDraw = m_eq;
 }
 
-CDXFarc::CDXFarc(LPDXFAARGV lpArc) :
+CDXFarc::CDXFarc(LPCDXFAARGV lpArc) :
 	CDXFcircle(DXFARCDATA, lpArc->pLayer, lpArc->c, lpArc->r, TRUE, 2)
 {
 	m_bRoundOrig = m_bRound;
@@ -1000,7 +1016,7 @@ CDXFarc::CDXFarc(LPDXFAARGV lpArc) :
 	SetRsign();
 }
 
-CDXFarc::CDXFarc(LPDXFAARGV lpArc, BOOL bRound, const CPointD& pts, const CPointD& pte) :
+CDXFarc::CDXFarc(LPCDXFAARGV lpArc, BOOL bRound, const CPointD& pts, const CPointD& pte) :
 	CDXFcircle(DXFARCDATA, lpArc->pLayer, lpArc->c, lpArc->r, bRound, 2)
 {
 	m_bRoundOrig = m_bRound;
@@ -1012,7 +1028,7 @@ CDXFarc::CDXFarc(LPDXFAARGV lpArc, BOOL bRound, const CPointD& pts, const CPoint
 	SetRsign();
 }
 
-CDXFarc::CDXFarc(CLayerData* pLayer, const CDXFarc* pData, LPDXFBLOCK lpBlock) :
+CDXFarc::CDXFarc(CLayerData* pLayer, const CDXFarc* pData, LPCDXFBLOCK lpBlock) :
 	CDXFcircle(DXFARCDATA, pLayer, pData->GetCenter(), pData->GetR(), pData->GetRoundOrig(), 2)
 {
 	m_bRoundOrig = m_bRound;
@@ -1141,19 +1157,25 @@ void CDXFarc::SetMaxRect(void)
 #endif
 }
 
-void CDXFarc::SwapPt(int)	// ﾎﾟｲﾝﾄの入れ替え(+回転方向の反転)
+void CDXFarc::SwapMakePt(int)	// ﾎﾟｲﾝﾄの入れ替え(+回転方向の反転)
 {
 	// 計算値の入れ替え
-	CDXFdata::SwapPt(0);
+	CDXFdata::SwapMakePt(0);
 	// 回転方向の反転
 	SwapRound();
 	// 角度の入れ替え
 	SwapAngle();
 }
 
-void CDXFarc::ReversePt(void)
+void CDXFarc::SwapNativePt(void)
 {
-	SwapPt(0);
+	// 座標値の入れ替え
+	CDXFdata::SwapNativePt();
+	// 回転方向の反転
+	m_bRound = m_bRoundOrig = !m_bRoundOrig;
+	// 角度の入れ替え
+	swap(m_sq, m_eq);
+	swap(m_sqDraw, m_eqDraw);
 }
 
 void CDXFarc::XRev(void)
@@ -1348,18 +1370,6 @@ BOOL CDXFarc::GetDirectionArraw(const CPointD&, CPointD pt[][3]) const
 	return GetDirectionArraw_Circle(q, m_pt, pt);
 }
 
-void CDXFarc::SetDirectionFixed(const CPointD& pts)
-{
-	// 固有座標の入れ替えと回転方向の判定
-	if ( GAPCALC(m_pt[0]-pts) > GAPCALC(m_pt[1]-pts) ) {
-		swap(m_pt[0], m_pt[1]);
-		// 回転方向
-		m_bRound = m_bRoundOrig = !m_bRoundOrig;
-		swap(m_sq, m_eq);
-		swap(m_sqDraw, m_eqDraw);
-	}
-}
-
 int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdge/*=TRUE*/) const
 {
 	int		nResult = 0;
@@ -1503,7 +1513,7 @@ CDXFellipse::CDXFellipse() : CDXFarc(DXFELLIPSEDATA, NULL, CPointD(), 0, 0, 0, T
 {
 }
 
-CDXFellipse::CDXFellipse(LPDXFEARGV lpEllipse) :
+CDXFellipse::CDXFellipse(LPCDXFEARGV lpEllipse) :
 	CDXFarc(DXFELLIPSEDATA, lpEllipse->pLayer,
 		lpEllipse->c, 0.0, lpEllipse->sq, lpEllipse->eq, lpEllipse->bRound, 4)
 {
@@ -1517,7 +1527,7 @@ CDXFellipse::CDXFellipse(LPDXFEARGV lpEllipse) :
 	EllipseCalc();
 }
 
-CDXFellipse::CDXFellipse(CLayerData* pLayer, const CDXFellipse* pData, LPDXFBLOCK lpBlock) :
+CDXFellipse::CDXFellipse(CLayerData* pLayer, const CDXFellipse* pData, LPCDXFBLOCK lpBlock) :
 	CDXFarc(DXFELLIPSEDATA, pLayer, pData->GetCenter(), pData->GetR(),
 		pData->GetStartAngle(), pData->GetEndAngle(), pData->GetRoundOrig(), 4 )
 {
@@ -1726,30 +1736,25 @@ void CDXFellipse::SetMaxRect(void)
 #endif
 }
 
-void CDXFellipse::SwapPt(int n)
+void CDXFellipse::SwapMakePt(int n)
 {
 	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
 		// 生成時にGetStartCutterPoint()から
 		// （傾きを考慮した）開始角度を再計算する必要があるため
 		// 円と同等でよい
-		CDXFcircle::SwapPt(n);
+		CDXFcircle::SwapMakePt(n);
 	}
 	else if ( m_bArc ) {
 		// 座標値の入れ替えと回転方向の反転
-		CDXFarc::SwapPt(0);
+		CDXFarc::SwapMakePt(0);
 	}
 }
 
-void CDXFellipse::ReversePt(void)
+
+void CDXFellipse::SwapNativePt(void)
 {
-	if ( !m_bArc || GetMakeType()==DXFPOINTDATA || GetMakeType()==DXFCIRCLEDATA ) {
-		// 回転方向の反転
-		SwapRound();
-		// 角度の入れ替え
-		SwapAngle();
-	}
-	else
-		CDXFarc::ReversePt();
+	if ( m_bArc )
+		CDXFarc::SwapNativePt();
 }
 
 void CDXFellipse::XRev(void)
@@ -2009,13 +2014,6 @@ BOOL CDXFellipse::GetDirectionArraw(const CPointD& ptClick, CPointD ptResult[][3
 	return GetDirectionArraw_Circle(q, pt, ptResult);
 }
 
-void CDXFellipse::SetDirectionFixed(const CPointD& pts)
-{
-	if ( m_bArc )	// 楕円弧の場合だけ
-		CDXFarc::SetDirectionFixed(pts);
-	// 楕円の場合は円同様、座標入れ替え不要
-}
-
 void CDXFellipse::SetRoundFixed(BOOL bRound)
 {
 	if ( m_bRound != bRound ) {
@@ -2136,7 +2134,7 @@ CDXFpolyline::CDXFpolyline() : CDXFline(DXFPOLYDATA, NULL, 2)
 		m_nObjCnt[i] = 0;
 }
 
-CDXFpolyline::CDXFpolyline(CLayerData* pLayer, const CDXFpolyline* pPoly, LPDXFBLOCK lpBlock) :
+CDXFpolyline::CDXFpolyline(CLayerData* pLayer, const CDXFpolyline* pPoly, LPCDXFBLOCK lpBlock) :
 	CDXFline(DXFPOLYDATA, pLayer, 2)
 {
 	m_dwPolyFlags = pPoly->GetPolyFlag();
@@ -2208,11 +2206,11 @@ void CDXFpolyline::YRev(void)
 	CDXFdata::YRev();
 }
 
-void CDXFpolyline::SwapPt(int)
+void CDXFpolyline::SwapMakePt(int)
 {
 	// 自分自身の座標入れ替え
 	m_dwPolyFlags ^= DXFPOLY_SEQ;	// XOR DXFPOLY_SEQ => ﾋﾞｯﾄ反転
-	CDXFdata::SwapPt(0);
+	CDXFdata::SwapMakePt(0);
 
 	// 構成ｵﾌﾞｼﾞｪｸﾄの座標入れ替え
 	CDXFdata* pData;
@@ -2220,11 +2218,24 @@ void CDXFpolyline::SwapPt(int)
 		// CDXFpoint以外は回転方向をﾁｪﾝｼﾞ
 		pData = m_ltVertex.GetNext(pos);
 		if ( pData->GetType() != DXFPOINTDATA )
-			pData->ReversePt();		// SwapPt() は protected宣言
+			pData->SwapMakePt(0);
 	}
 }
 
-BOOL CDXFpolyline::SetVertex(LPDXFPARGV lpArgv)
+void CDXFpolyline::SwapNativePt(void)
+{
+	m_dwPolyFlags ^= (DXFPOLY_SEQ|DXFPOLY_SEQBAK);
+	CDXFdata::SwapNativePt();
+
+	CDXFdata* pData;
+	for ( POSITION pos=m_ltVertex.GetHeadPosition(); pos; ) {
+		pData = m_ltVertex.GetNext(pos);
+		if ( pData->GetType() != DXFPOINTDATA )
+			pData->SwapNativePt();
+	}
+}
+
+BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv)
 {
 	CDXFpoint*	pPoint = new CDXFpoint(lpArgv);
 	ASSERT(pPoint);
@@ -2232,7 +2243,7 @@ BOOL CDXFpolyline::SetVertex(LPDXFPARGV lpArgv)
 	return TRUE;
 }
 
-BOOL CDXFpolyline::SetVertex(LPDXFPARGV lpArgv, double dBow, const CPointD& pts)
+BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, double dBow, const CPointD& pts)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CDXFpolyline::SetVertex()", DBG_RED);
@@ -2384,8 +2395,7 @@ void CDXFpolyline::EndSeq(void)
 			break;
 		}
 	}
-	// 始点が含まれるため「-1」で線の数
-	m_nObjCnt[0]--;
+	m_nObjCnt[0]--;		// 始点が含まれるため「-1」で線の数
 #ifdef _DEBUG
 	dbg.printf("LineCnt=%d ArcCnt=%d Ellipse=%d",
 			m_nObjCnt[0], m_nObjCnt[1], m_nObjCnt[2]);
@@ -2781,7 +2791,7 @@ double CDXFpolyline::OrgTuning(BOOL)
 
 double CDXFpolyline::GetSelectPointGap(const CPointD& pt)
 {
-	double		dGap, dGapMin = HUGE_VAL;
+	double		dGap, dGapMin = DBL_MAX;
 	POSITION	pos1, pos2;
 	CPointD		pte;
 	optional<CPointD>	pts;
@@ -2848,29 +2858,6 @@ BOOL CDXFpolyline::GetDirectionArraw(const CPointD& ptClick, CPointD ptResult[][
 		bResult = pData->GetDirectionArraw(ptClick, ptResult);
 
 	return bResult;
-}
-
-void CDXFpolyline::SetDirectionFixed(const CPointD& pts)
-{
-	// 固有座標の入れ替えと順序変更
-	if ( GAPCALC(m_pt[0]-pts) > GAPCALC(m_pt[1]-pts) ) {
-		swap(m_pt[0], m_pt[1]);
-		// 順序変更
-		m_dwPolyFlags ^= DXFPOLY_SEQBAK;
-		m_dwPolyFlags = ((m_dwPolyFlags & DXFPOLY_SEQBAK)>>1) | (m_dwPolyFlags & ~DXFPOLY_SEQ);
-		CDXFdata*	pData;
-		CPointD		pt(m_pt[0]);
-		for ( POSITION pos=GetFirstVertex(); pos; ) {
-			// CDXFpoint以外は固有座標を入れ替え
-			pData = GetNextVertex(pos);
-			if ( pData->GetType() != DXFPOINTDATA ) {
-				pData->SetDirectionFixed(pt);
-				pt = pData->GetNativePoint(1);
-			}
-			else
-				pt = pData->GetNativePoint(0);
-		}
-	}
 }
 
 int CDXFpolyline::GetIntersectionPoint(const CDXFdata* pData1, CPointD pt[], BOOL bEdge/*=TRUE*/) const
@@ -2963,14 +2950,14 @@ CDXFtext::CDXFtext() : CDXFpoint(DXFTEXTDATA, NULL, 1)
 {
 }
 
-CDXFtext::CDXFtext(LPDXFTARGV lpText) : CDXFpoint(DXFTEXTDATA, lpText->pLayer, 1)
+CDXFtext::CDXFtext(LPCDXFTARGV lpText) : CDXFpoint(DXFTEXTDATA, lpText->pLayer, 1)
 {
 	m_pt[0] = lpText->c;
 	m_strValue = lpText->strValue;
 	SetMaxRect();
 }
 
-CDXFtext::CDXFtext(CLayerData* pLayer, const CDXFtext* pData, LPDXFBLOCK lpBlock) :
+CDXFtext::CDXFtext(CLayerData* pLayer, const CDXFtext* pData, LPCDXFBLOCK lpBlock) :
 	CDXFpoint(DXFTEXTDATA, pLayer, 1)
 {
 	m_pt[0] = pData->GetNativePoint(0);

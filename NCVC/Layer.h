@@ -23,7 +23,7 @@ enum	ENDXFOPERATION	{
 	DXFADD, DXFINS, DXFMOD
 };
 
-class	CNCMakeOption;
+class	CNCMakeMillOpt;
 
 //////////////////////////////////////////////////////////////////////
 // Layer√ﬁ∞¿

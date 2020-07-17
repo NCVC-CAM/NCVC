@@ -8,6 +8,7 @@
 
 class CMKNCSetup2 : public CPropertyPage
 {
+	void	EnableControl_ProgNo(void);
 	void	EnableControl_LineAdd(void);
 
 // コンストラクション
@@ -18,10 +19,14 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CMKNCSetup2)
 	enum { IDD = IDD_MKNC_SETUP2 };
+	CButton		m_ctProgAuto;
+	CStatic		m_ctZReturnS;
 	CComboBox	m_ctLineAdd;
-	CEdit	m_ctLineForm;
-	BOOL	m_bXrev;
-	BOOL	m_bYrev;
+	CComboBox	m_ctZReturn;
+	CEdit		m_ctLineForm;
+	CIntEdit	m_nProg;
+	BOOL	m_bProg;
+	BOOL	m_bProgAuto;
 	BOOL	m_bLineAdd;
 	BOOL	m_bGclip;
 	BOOL	m_bDisableSpindle;
@@ -48,6 +53,7 @@ protected:
 	// 生成されたメッセージ マップ関数
 	//{{AFX_MSG(CMKNCSetup2)
 	virtual BOOL OnInitDialog();
+	afx_msg void OnProgNo();
 	afx_msg void OnLineAdd();
 	//}}AFX_MSG
 

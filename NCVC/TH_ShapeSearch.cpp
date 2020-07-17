@@ -16,7 +16,12 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 static	CThreadDlg*	g_pParent;
-#define	IsThread()	g_pParent->IsThreadContinue()
+typedef	BOOL	(*PFNISTHREAD)(void);
+static	BOOL	IsThread_Dlg(void);
+static	BOOL	IsThread_NoChk(void);
+static	PFNISTHREAD		g_pfnIsThread;
+#define	IsThread()		(*g_pfnIsThread)()
+#define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
 
 struct	CHECKMAPTHREADPARAM
 {
@@ -45,7 +50,8 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	CDXFDoc*	pDoc = static_cast<CDXFDoc*>(pParam->pDoc);
 	g_pParent = pParam->pParent;
-	
+	g_pfnIsThread = g_pParent ? &IsThread_Dlg : &IsThread_NoChk;
+
 	int		i, j, nResult = IDOK;
 	INT_PTR	nLayerCnt = pDoc->GetLayerCnt(), nDataCnt;
 	CString		strMsg;
@@ -70,9 +76,12 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 			pLayer = pDoc->GetLayerData(i);
 			if ( !pLayer->IsCutType() )
 				continue;
+			pLayer->RemoveAllShape();
 			nDataCnt = pLayer->GetDxfSize();
-			g_pParent->SetFaseMessage(strMsg, pLayer->GetStrLayer());
-			g_pParent->m_ctReadProgress.SetRange32(0, nDataCnt);
+			if ( g_pParent ) {
+				g_pParent->SetFaseMessage(strMsg, pLayer->GetStrLayer());
+				g_pParent->m_ctReadProgress.SetRange32(0, nDataCnt);
+			}
 			j = GetPrimeNumber(nDataCnt*2);
 			mpDXFdata.InitHashTable(max(17, j));
 			for ( j=0; j<nDataCnt && IsThread(); j++ ) {
@@ -85,10 +94,11 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 					if ( pData->GetType() == DXFPOLYDATA )
 						static_cast<CDXFpolyline*>(pData)->CheckPolylineIntersection();
 				}
-				if ( (j & 0x003f) == 0 )	// 64‰ñ‚¨‚«(‰ºˆÊ6ËÞ¯ÄÏ½¸)
-					g_pParent->m_ctReadProgress.SetPos(j);		// ÌßÛ¸ÞÚ½ÊÞ°
+				if ( g_pParent && (j & 0x003f) == 0 )	// 64‰ñ‚¨‚«(‰ºˆÊ6ËÞ¯ÄÏ½¸)
+					SetProgressPos(j);		// ÌßÛ¸ÞÚ½ÊÞ°
 			}
-			g_pParent->m_ctReadProgress.SetPos(nDataCnt);
+			if ( g_pParent )
+				SetProgressPos(nDataCnt);
 			// Ú²Ô‚²‚Æ‚ÌŒÅ—LÀ•WÏ¯Ìß•ê‘Ì‚©‚ç˜AŒ‹µÌÞ¼Þª¸Ä‚ÌŒŸõ
 			chkParam.pLayer = pLayer;
 			SetChainMap(&mpDXFdata, &chkParam);
@@ -130,7 +140,8 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 		}
 	}
 
-	g_pParent->PostMessage(WM_USERFINISH, IsThread() ? nResult : IDCANCEL);
+	if ( g_pParent )
+		g_pParent->PostMessage(WM_USERFINISH, IsThread() ? nResult : IDCANCEL);
 
 	return 0;	// AfxEndThread(0);
 }
@@ -146,7 +157,8 @@ void SetChainMap(const CDXFmap* pMasterMap, LPCHECKMAPTHREADPARAM pParam)
 	CDXFmap*	pMap;
 	CDXFarray*	pDummy;
 
-	g_pParent->m_ctReadProgress.SetRange32(0, pMasterMap->GetCount());
+	if ( g_pParent )
+		g_pParent->m_ctReadProgress.SetRange32(0, pMasterMap->GetCount());
 	mapRegist.InitHashTable(max(17, nPrime));
 	pParam->evEnd.SetEvent();
 
@@ -165,8 +177,8 @@ void SetChainMap(const CDXFmap* pMasterMap, LPCHECKMAPTHREADPARAM pParam)
 			pParam->pMap = pMap;
 			pParam->evStart.SetEvent();
 		}
-		if ( (nCnt & 0x003f) == 0 )
-			g_pParent->m_ctReadProgress.SetPos(nCnt);
+		if ( g_pParent && (nCnt & 0x003f) == 0 )
+			SetProgressPos(nCnt);
 	}
 #ifdef _DEBUG
 	g_dbg.printf("m_obShapeArray.GetSize()=%d", pParam->pLayer->GetShapeSize());
@@ -227,15 +239,19 @@ UINT CheckMapWorking_Thread(LPVOID pVoid)
 		dwFlags = pParam->pMap->GetMapTypeFlag();
 		// Œ`óî•ñ¶¬
 		if ( dwFlags == 0 ) {
-			pParam->pMap->AllMapObject_ClearMakeFlg();
 			// CDXFmap‚©‚çCDXFchain‚É¸Ši
 			pChain = new CDXFchain;
-			pParam->pMap->CopyToChain(pChain);
-			delete	pParam->pMap;	// Œ³‚ÌCDXFmap‚ÍÁ‹Ž
-			strShape.Format("—ÖŠs%04d", ++nChain);
-			pShape = new CDXFshape(DXFSHAPE_OUTLINE, strShape, 0, pChain);
+			if ( pParam->pMap->CopyToChain(pChain) ) {
+				delete	pParam->pMap;	// Œ³‚ÌCDXFmap‚ÍÁ‹Ž
+				strShape.Format("—ÖŠs%04d", ++nChain);
+				pShape = new CDXFshape(DXFSHAPE_OUTLINE, strShape, 0, pChain);
+			}
+			else {
+				delete	pChain;			// ¸ŠiŽ¸”s
+				dwFlags = 1;			// ‹OÕˆ—‚Ö
+			}
 		}
-		else {
+		if ( dwFlags != 0 ) {
 			strShape.Format("‹OÕ%04d", ++nMap);
 			pShape = new CDXFshape(DXFSHAPE_LOCUS, strShape, dwFlags, pParam->pMap);
 		}
@@ -246,4 +262,16 @@ UINT CheckMapWorking_Thread(LPVOID pVoid)
 	}
 
 	return 0;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+BOOL	IsThread_Dlg(void)
+{
+	return g_pParent->IsThreadContinue();
+}
+
+BOOL	IsThread_NoChk(void)
+{
+	return TRUE;
 }

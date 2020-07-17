@@ -185,7 +185,7 @@ inline int _SectionNameCheck(void)
 	return SEC_NOSECTION;	// -1
 }
 
-inline void _SetDxfArgv(LPDXFPARGV lpPoint)
+inline void _SetDxfArgv(LPCDXFPARGV lpPoint)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -198,7 +198,7 @@ inline void _SetDxfArgv(LPDXFPARGV lpPoint)
 #endif
 }
 
-inline void _SetDxfArgv(LPDXFLARGV lpLine)
+inline void _SetDxfArgv(LPCDXFLARGV lpLine)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -214,7 +214,7 @@ inline void _SetDxfArgv(LPDXFLARGV lpLine)
 #endif
 }
 
-inline void _SetDxfArgv(LPDXFCARGV lpCircle)
+inline void _SetDxfArgv(LPCDXFCARGV lpCircle)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -229,7 +229,7 @@ inline void _SetDxfArgv(LPDXFCARGV lpCircle)
 #endif
 }
 
-inline void _SetDxfArgv(LPDXFAARGV lpArc)
+inline void _SetDxfArgv(LPCDXFAARGV lpArc)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -246,7 +246,7 @@ inline void _SetDxfArgv(LPDXFAARGV lpArc)
 #endif
 }
 
-inline void _SetDxfArgv(LPDXFEARGV lpEllipse)
+inline void _SetDxfArgv(LPCDXFEARGV lpEllipse)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -268,7 +268,7 @@ inline void _SetDxfArgv(LPDXFEARGV lpEllipse)
 #endif
 }
 
-inline void _SetDxfArgv(LPDXFTARGV lpText)
+inline void _SetDxfArgv(LPCDXFTARGV lpText)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -283,7 +283,7 @@ inline void _SetDxfArgv(LPDXFTARGV lpText)
 #endif
 }
 
-inline void _SetBlockArgv(LPDXFBLOCK lpBlock)
+inline void _SetBlockArgv(LPCDXFBLOCK lpBlock)
 {
 	lpBlock->ptOrg.x = g_dValue[VALUE10];
 	lpBlock->ptOrg.y = g_dValue[VALUE20];
@@ -465,7 +465,11 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 			break;
 
 		case DXFLINEDATA:
-			if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
+			if ( g_nLayer == DXFORGLAYER ) {
+				// 旋盤用原点ﾗｲﾝ
+				pDoc->CreateLatheLine(static_cast<CDXFline*>(pDataBlock), &argvBlock);
+			}
+			else if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
 				pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
 				pData = new CDXFline(pLayer, static_cast<CDXFline*>(pDataBlock), &argvBlock);
 			}
@@ -568,7 +572,12 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 		break;
 
 	case TYPE_LINE:
-		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
+		if ( g_nLayer == DXFORGLAYER ) {
+			// 旋盤用原点ﾗｲﾝ
+			_SetDxfArgv(&dxfLine);
+			pDoc->CreateLatheLine(dxfLine.s, dxfLine.e);
+		}
+		else if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
 			dxfLine.pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
 			_SetDxfArgv(&dxfLine);
 			pData = new CDXFline(&dxfLine);

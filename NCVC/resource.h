@@ -48,6 +48,7 @@
 #define IDS_MAKENCD_CIRCLEBREAK         601
 #define IDS_MAKENCD_CIRCLEEND           602
 #define IDS_MAKENCD_LAYERBREAK          603
+#define IDS_MAKENCD_PROG                604
 #define IDS_MAKE_NCD                    700
 #define IDS_MAKE_DXF                    701
 #define IDS_SETUP_MC                    702
@@ -62,6 +63,7 @@
 #define IDS_MAKENCD_TITLE_EX1           711
 #define IDS_MAKENCD_TITLE_EX2           712
 #define IDS_MAKENCD_TITLE_SHAPE         713
+#define IDS_MAKENCD_TITLE_LATHE         714
 #define IDS_COMMON_FORMAT               999
 #define IDD_THUMBNAIL                   1000
 #define ID_FILE_THUMBNAIL               1000
@@ -75,6 +77,7 @@
 #define IDC_THUMBNAIL_PLANE             1005
 #define ID_FILE_DXF2NCD_SHAPE           1006
 #define IDC_THUMBNAIL_PATH              1006
+#define ID_FILE_DXF2NCD_LATHE           1007
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
 #define ID_FILE_CLANDOP                 1090
@@ -106,12 +109,14 @@
 #define IDS_VIEW_SETUP_INPORT           1314
 #define IDS_VIEW_SETUP_EXPORT           1315
 #define IDS_VIEW_TEXTURE                1316
-#define IDS_TEXTURE_FILTER              1389
-#define IDS_NCVC_FILTER                 1390
-#define IDS_NCD_FILTER                  1391
-#define IDS_CAM_FILTER                  1392
-#define IDS_DXF_FILTER                  1393
-#define IDS_NCI_FILTER                  1394
+#define IDS_TEXTURE_FILTER              1387
+#define IDS_NCVC_FILTER                 1388
+#define IDS_NCD_FILTER                  1389
+#define IDS_CAM_FILTER                  1390
+#define IDS_DXF_FILTER                  1391
+#define IDS_NCI_FILTER                  1392
+#define IDS_NCIM_FILTER                 1393
+#define IDS_NCIL_FILTER                 1394
 #define IDS_NCL_FILTER                  1395
 #define IDS_EXE_FILTER                  1396
 #define IDS_TXT_FILTER                  1397
@@ -413,17 +418,28 @@
 #define IDC_MKNC1_HEADER_EDIT           4012
 #define IDC_MKNC1_FOOTER_LOOPUP         4013
 #define IDC_MKNC1_FOOTER_EDIT           4014
+#define IDC_MKNC1_XREV                  4020
+#define IDC_MKNC1_YREV                  4021
+#define IDD_MKLA_SETUP1                 4050
+#define IDC_MKLA1_CUT                   4051
+#define IDC_MKLA1_PULL_Z                4052
+#define IDC_MKLA1_PULL_X                4053
+#define IDC_MKLA1_MARGIN                4054
+#define IDC_MKLA1_MARGINNUM             4055
+#define IDC_MKLA1_XFEED                 4056
 #define IDD_MKNC_SETUP2                 4100
-#define IDC_MKNC2_XREV                  4101
-#define IDC_MKNC2_YREV                  4102
+#define IDC_MKNC2_PROG                  4101
+#define IDC_MKNC2_PROGNO                4102
 #define IDC_MKNC2_LINE                  4103
 #define IDC_MKNC2_LINEFORMAT            4104
 #define IDC_MKNC2_LINEADD               4105
 #define IDC_MKNC2_G90                   4106
 #define IDC_MKNC2_EOB                   4107
+#define IDC_MKNC2_PROGAUTO              4108
 #define IDC_MKNC2_GCODE                 4110
 #define IDC_MKNC2_SPINDLE               4111
 #define IDC_MKNC2_ZRETURN               4112
+#define IDC_MKNC2_ZRETURN_S             4113
 #define IDD_MKNC_SETUP3                 4200
 #define IDC_MKNC3_DEEP                  4201
 #define IDC_MKNC3_DEEPFINAL             4202
@@ -565,8 +581,9 @@
 #define IDS_REG_DXF_STRLAYER            10104
 #define IDS_REG_DXF_MOVLAYER            10105
 #define IDS_REG_DXF_COMMENTLAYER        10106
-#define IDS_REG_DXF_LAYERTOINIT         10108
-#define IDS_REG_DXF_INIT                10109
+#define IDS_REG_DXF_LAYERTOINIT         10107
+#define IDS_REG_DXF_INIT                10108
+#define IDS_REG_DXF_LATHEINIT           10109
 #define IDS_REG_DXF_VIEWER              10110
 #define IDS_REG_DXF_MATCH               10111
 #define IDS_REG_DXF_ACCEPT              10112
@@ -712,6 +729,8 @@
 #define IDS_ANA_VALUECHANGE             29014
 #define IDS_ANA_OUTLINE                 29015
 #define IDS_ANA_STRICTOFFSET            29016
+#define IDS_ANA_DATAINIT                29100
+#define IDS_ANA_DATAFINAL               29101
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -722,19 +741,23 @@
 #define ID_NCDST_LINENO_F               59207
 #define ID_NCDST_LINENO                 59208
 #define ID_NCDST_COORDINATES_F          59209
+#define ID_NCDST_COORDINATE_MF          59209
 #define ID_NCDST_COORDINATES            59210
-#define ID_DXFST_DATAINFO_F             59211
-#define ID_DXFST_DATAINFO               59212
-#define ID_DXFST_MOUSE_F                59213
-#define ID_DXFST_MOUSE                  59214
+#define ID_NCDST_COORDINATE_M           59210
+#define ID_NCDST_COORDINATE_LF          59211
+#define ID_NCDST_COORDINATE_L           59212
+#define ID_DXFST_DATAINFO_F             59213
+#define ID_DXFST_DATAINFO               59214
+#define ID_DXFST_MOUSE_F                59215
+#define ID_DXFST_MOUSE                  59216
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        152
-#define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         1043
+#define _APS_NEXT_RESOURCE_VALUE        153
+#define _APS_NEXT_COMMAND_VALUE         32792
+#define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

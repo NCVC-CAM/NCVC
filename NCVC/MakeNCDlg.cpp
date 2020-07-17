@@ -3,10 +3,10 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
-#include "NCMakeOption.h"
 #include "Layer.h"
 #include "DXFDoc.h"
 #include "MKNCSetup.h"
+#include "MKLASetup.h"
 #include "MakeNCDlg.h"
 
 #include "MagaDbgMac.h"
@@ -39,10 +39,11 @@ CMakeNCDlg::CMakeNCDlg(UINT nTitle, CDXFDoc* pDoc)
 	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成
 	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
 	// 切削条件履歴から初期表示ﾌｧｲﾙを取得
-	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
-	if ( pOpt->GetInitList()->GetCount() > 0 )
-		::Path_Name_From_FullPath(pOpt->GetInitList()->GetHead(),
-				m_strInitPath, m_strInitFileName);
+	const CDXFOption*  pOpt = AfxGetNCVCApp()->GetDXFOption();
+	const CStringList* pList = nTitle == IDS_MAKENCD_TITLE_LATHE ?
+				pOpt->GetLatheInitList() : pOpt->GetMillInitList();
+	if ( pList->GetCount() > 0 )
+		::Path_Name_From_FullPath(pList->GetHead(), m_strInitPath, m_strInitFileName);
 	m_bNCView = pOpt->GetDxfFlag(DXFOPT_VIEW);
 }
 
@@ -72,7 +73,11 @@ BOOL CMakeNCDlg::OnInitDialog()
 	SetWindowText(strTitle);
 
 	// 切削条件ｺﾝﾎﾞﾎﾞｯｸｽにｱｲﾃﾑ追加
-	InitialMakeNCDlgComboBox(AfxGetNCVCApp()->GetDXFOption()->GetInitList(), m_ctInitFileName);
+	InitialMakeNCDlgComboBox(
+		(m_nTitle == IDS_MAKENCD_TITLE_LATHE ? 
+			AfxGetNCVCApp()->GetDXFOption()->GetLatheInitList() :
+			AfxGetNCVCApp()->GetDXFOption()->GetMillInitList()),
+		m_ctInitFileName);
 	// ﾊﾟｽ表示の最適化(shlwapi.h)
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_NCPATH,   m_strNCPath);
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, m_strInitPath);
@@ -123,7 +128,10 @@ void CMakeNCDlg::OnMKNCInitUp()
 {
 	UpdateData();
 	CString	strFilter;
-	VERIFY(strFilter.LoadString(IDS_NCI_FILTER));
+	if ( m_nTitle == IDS_MAKENCD_TITLE_LATHE )
+		VERIFY(strFilter.LoadString(IDS_NCIL_FILTER));	// 旋盤用
+	else
+		VERIFY(strFilter.LoadString(IDS_NCIM_FILTER));	// ﾌﾗｲｽ用
 	MakeDlgFileRefer(IDS_OPTION_INIT, strFilter, this, IDC_MKNC_INITPATH,
 			m_strInitPath, m_strInitFileName, TRUE);
 	// 文字選択状態
@@ -134,8 +142,32 @@ void CMakeNCDlg::OnMKNCInitUp()
 void CMakeNCDlg::OnMKNCInitEdit() 
 {
 	UpdateData();
-	MakeNCDlgInitFileEdit(m_strInitPath, m_strInitFileName,
-		this, IDC_MKNC_INITPATH, m_ctInitFileName);
+	if ( m_nTitle == IDS_MAKENCD_TITLE_LATHE ) {
+		// 処理手順は MakeNCDlgInitFileEdit() と同じ
+		CString	strInitFile(m_strInitPath+m_strInitFileName),
+				strCaption, strResult;
+		VERIFY(strCaption.LoadString(IDS_MAKE_NCD));
+		CMKLASetup	ps(::AddDialogTitle2File(strCaption, strInitFile), strInitFile);
+		if ( ps.DoModal() != IDOK )
+			return;
+		ps.GetNCMakeOption()->SaveMakeOption();
+#ifdef _DEBUGOLD
+		ps.GetNCMakeOption()->DbgDump();
+#endif
+		strResult = ps.GetNCMakeOption()->GetInitFile();
+		if ( strInitFile.CompareNoCase(strResult) != 0 ) {
+			CString	strPath, strFile;
+			::Path_Name_From_FullPath(strResult, strPath, strFile);
+			::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, strPath);
+			UpdateData(FALSE);
+			m_ctInitFileName.SetEditSel(0, -1);
+			m_ctInitFileName.SetFocus();
+		}
+	}
+	else {
+		MakeNCDlgInitFileEdit(m_strInitPath, m_strInitFileName,
+			this, IDC_MKNC_INITPATH, m_ctInitFileName);
+	}
 	m_ctOK.SetFocus();
 }
 
@@ -146,7 +178,11 @@ void CMakeNCDlg::OnSelChangeInit()
 	// 履歴ﾌｧｲﾙの存在ﾁｪｯｸ
 	CString	strFullPath(m_strInitPath+m_strInitFileName);
 	if ( !::IsFileExist(strFullPath) ) {
-		AfxGetNCVCApp()->GetDXFOption()->DelInitHistory(strFullPath);	// 履歴削除
+		// 履歴削除
+		if ( m_nTitle == IDS_MAKENCD_TITLE_LATHE )
+			AfxGetNCVCApp()->GetDXFOption()->DelLatheInitHistory(strFullPath);
+		else
+			AfxGetNCVCApp()->GetDXFOption()->DelMillInitHistory(strFullPath);
 		m_ctInitFileName.DeleteString(nIndex);
 	}
 }
@@ -226,7 +262,7 @@ CString MakeDlgFileRefer
 	CString	strInitialFile;
 	if ( !strFile.IsEmpty() )
 		strInitialFile = strPath + strFile;
-	if ( ::NCVC_FileDlgCommon(nTitle, strFilter, strInitialFile, strPath,
+	if ( ::NCVC_FileDlgCommon(nTitle, strFilter, FALSE, strInitialFile, strPath,
 				bRead, OFN_HIDEREADONLY|OFN_PATHMUSTEXIST) == IDOK ) {
 		::Path_Name_From_FullPath(strInitialFile, strPath, strFile);
 		::PathSetDlgItemPath(pDlg->m_hWnd, nID, strPath);
@@ -242,8 +278,8 @@ CString MakeDlgFileRefer
 void MakeNCDlgInitFileEdit
 	(CString& strPath, CString& strFile, CDialog* pDlg, int nID, CComboBox& ctFile)
 {
-	CString	strInitFile(strPath+strFile);
-	CString	strCaption;
+	CString	strInitFile(strPath+strFile),
+			strCaption;
 	VERIFY(strCaption.LoadString(IDS_MAKE_NCD));
 	CMKNCSetup	ps(::AddDialogTitle2File(strCaption, strInitFile), strInitFile);
 	if ( ps.DoModal() != IDOK )

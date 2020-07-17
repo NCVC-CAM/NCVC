@@ -192,7 +192,7 @@ void CMCOption::Convert(void)
 
 	// Ãß≤ŸÇ÷ÇÃà⁄çsämîF
 	if ( AfxMessageBox(IDS_ANA_MCFILESHIFT, MB_YESNO|MB_ICONQUESTION) == IDYES ) {
-		if ( ::NCVC_FileDlgCommon(IDS_OPTION_MCSAVE, IDS_MC_FILTER,
+		if ( ::NCVC_FileDlgCommon(IDS_OPTION_MCSAVE, IDS_MC_FILTER, FALSE, 
 					strFile, g_pszExecDir,
 					FALSE, OFN_OVERWRITEPROMPT|OFN_HIDEREADONLY) == IDOK ) {
 			if ( !SaveMCoption(strFile) )

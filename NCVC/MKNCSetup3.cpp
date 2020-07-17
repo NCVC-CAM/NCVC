@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
 #include "MKNCSetup.h"
 
 #include "MagaDbgMac.h"
@@ -119,7 +119,7 @@ BOOL CMKNCSetup3::OnInitDialog()
 	// ¶½ÀÑºİÄÛ°Ù‚Íºİ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²İÀ‚ğæ“¾‚Å‚«‚È‚¢
 	CMKNCSetup*	pParent = static_cast<CMKNCSetup *>(GetParent());
-	CNCMakeOption* pOpt = pParent->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
 	m_nMakeEnd		= pOpt->m_nMakeEnd;
 	m_dMakeValue	= pOpt->m_dMakeValue;
 	m_dMakeFeed		= pOpt->m_dMakeFeed;
@@ -185,7 +185,7 @@ BOOL CMKNCSetup3::OnSetActive()
 		m_dZG0Stop	= (double)(pParent->m_dlg1.m_dZG0Stop);
 	}
 	else {
-		CNCMakeOption* pOpt = pParent->GetNCMakeOption();
+		CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
 		m_dZCut		= pOpt->m_dZCut;
 		m_dZG0Stop	= pOpt->m_dZG0Stop;
 	}
@@ -217,7 +217,7 @@ BOOL CMKNCSetup3::OnApply()
 		return FALSE;
 	}
 
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_nMakeEnd		= m_nMakeEnd;
 	pOpt->m_dMakeValue		= m_dMakeValue;
 	pOpt->m_dMakeFeed		= m_dMakeFeed;

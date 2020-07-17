@@ -112,19 +112,42 @@ class CStringKeyIndex : public CMapStringToPtr
 	BOOL	m_bCaseUpper;
 
 public:
-	CStringKeyIndex(size_t nSize, LPCTSTR pszElement[], BOOL bCaseUpper = TRUE) {
+	CStringKeyIndex() : CMapStringToPtr() {
+		m_bCaseUpper = TRUE;
+	}
+	CStringKeyIndex(size_t nSize, LPCTSTR pszElement[], BOOL bCaseUpper = TRUE) : CMapStringToPtr() {
+		m_bCaseUpper = bCaseUpper;
+		SetElement(nSize, pszElement);
+	}
+	CStringKeyIndex(const CStringKeyIndex& cp) {	// ∫Àﬂ∞∫›Ωƒ◊∏¿Ç»Ç¢Ç∆C2248∫› ﬂ≤Ÿ¥◊∞
+		m_bCaseUpper = cp.m_bCaseUpper;
+		RemoveAll();
+		InitHashTable(cp.GetHashTableSize());
+		CString	rKey;
+		LPVOID	rValue;
+		for ( POSITION pos=cp.GetStartPosition(); pos; ) {
+			cp.GetNextAssoc(pos, rKey, rValue);
+			SetAt(rKey, rValue);
+		}
+	}
+
+	void	SetElement(size_t nSize, LPCTSTR pszElement[]) {
+		RemoveAll();
 		InitHashTable(::GetPrimeNumber(max(17, nSize)));
+		AddElement(nSize, pszElement);
+	}
+	void	AddElement(size_t nSize, LPCTSTR pszElement[]) {
+		INT_PTR	nBase = GetSize();
 		CString	strElement;
 		for ( size_t i=0; i<nSize; i++ ) {
 			strElement = pszElement[i];
-			if ( bCaseUpper )
+			if ( m_bCaseUpper )
 				strElement.MakeUpper();
-			SetAt(strElement, reinterpret_cast<LPVOID>(i));
+			SetAt(strElement, reinterpret_cast<LPVOID>(i+nBase));
 		}
-		m_bCaseUpper = bCaseUpper;
 	}
 
-	INT_PTR	GetIndex(LPCTSTR pszKey) {
+	INT_PTR	GetIndex(LPCTSTR pszKey) const {
 		LPVOID	pIndex;
 		CString	strKey(pszKey);
 		if ( m_bCaseUpper )
@@ -132,17 +155,3 @@ public:
 		return Lookup(strKey, pIndex) ? reinterpret_cast<INT_PTR>(pIndex) : -1;
 	}
 };
-
-//////////////////////////////////////////////////////////////////////
-//	std::string ï‚èïä÷êî
-
-//ëOå„ÇÃãÛîíï∂éöÇçÌèú
-inline std::string Trim(const std::string &str)
-{
-	std::string	strResult;
-    size_t sPos = str.find_first_not_of(' ');
-    size_t ePos = str.find_last_not_of(' ');
-    if ( sPos != -1 )
-		strResult = str.substr(sPos, ePos - sPos + 1);
-    return strResult;
-}

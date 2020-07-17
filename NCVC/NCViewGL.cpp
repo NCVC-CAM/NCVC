@@ -1242,7 +1242,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 		// ﾃｰﾊﾟｰ状の法線ﾍﾞｸﾄﾙを計算
 		if ( fzb && fz != *fzb ) {
 			q = fz - *fzb;
-			fx = cos( atan2(q, wx2 - fxb) + 90.0*RAD );
+			fx = (GLfloat)cos( atan2(q, wx2 - fxb) + 90.0*RAD );
 		}
 		else
 			fx = 0;
@@ -1251,16 +1251,16 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 			jj = (ii + j) * NCXYZ;
 			// ﾃﾞﾌｫﾙﾄの法線ﾍﾞｸﾄﾙ
 			pfNOR[jj+NCA_X] = fx;
-			pfNOR[jj+NCA_Y] = cos(q);
-			pfNOR[jj+NCA_Z] = sin(q);
+			pfNOR[jj+NCA_Y] = (GLfloat)cos(q);
+			pfNOR[jj+NCA_Z] = (GLfloat)sin(q);
 			// ﾜｰﾙﾄﾞ座標
-			pfCylinder[jj+NCA_X] = wx2;
+			pfCylinder[jj+NCA_X] = (GLfloat)wx2;
 			pfCylinder[jj+NCA_Y] = fz * pfNOR[jj+NCA_Y];
 			pfCylinder[jj+NCA_Z] = fz * pfNOR[jj+NCA_Z];
 		}
 		// 前回値を保存
 		fzb = fz;
-		fxb = wx2;
+		fxb = (GLfloat)wx2;
 	}
 #ifdef _DEBUG
 	DWORD	t3 = ::timeGetTime();

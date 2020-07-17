@@ -24,7 +24,7 @@ class	CDXFDoc;
 /////////////////////////////////////////////////////////////////////////////
 // CNCVCDocTemplate: NCVCägí£ƒﬁ∑≠“›ƒ√›Ãﬂ⁄∞ƒ
 
-enum	EXTTYPE		{EXT_ADN=0, EXT_DLG=1};
+enum	eEXTTYPE	{EXT_ADN=0, EXT_DLG=1};
 
 class CNCVCDocTemplate : public CMultiDocTemplate  
 {
@@ -42,7 +42,7 @@ public:
 	BOOL	SaveExt(void);
 
 	// ägí£éqœØÃﬂéQè∆
-	const	CMapStringToPtr*	GetExtMap(EXTTYPE n) {
+	const	CMapStringToPtr*	GetExtMap(eEXTTYPE n) {
 		return &m_mpExt[n];
 	}
 	// Ã®Ÿ¿ï∂éöóÒÇÃê∂ê¨
@@ -226,19 +226,19 @@ void	NCVC_CriticalErrorMsg(LPCTSTR, int);
 BOOL	IsFileExist(LPCTSTR lpszFile, BOOL bExist = TRUE, BOOL bMsg = TRUE);
 
 // CFileDialogÇÃåƒÇ—èoÇµ
-int		NCVC_FileDlgCommon(int nTitle, const CString& strFilter,
+int		NCVC_FileDlgCommon(int nTitle, const CString& strFilter, BOOL bAll,
 			CString& strFileName, LPCTSTR lpszInitialDir = NULL,
 			BOOL bRead = TRUE,
 			DWORD dwFlags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_PATHMUSTEXIST);
 inline
-int		NCVC_FileDlgCommon(int nTitle, UINT nIDfilter,
+int		NCVC_FileDlgCommon(int nTitle, UINT nIDfilter, BOOL bAll,
 			CString& strFileName, LPCTSTR lpszInitialDir = NULL,
 			BOOL bRead = TRUE,
 			DWORD dwFlags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_PATHMUSTEXIST)
 {
 	CString	strFilter;
 	VERIFY(strFilter.LoadString(nIDfilter));
-	return NCVC_FileDlgCommon(nTitle, strFilter, strFileName, lpszInitialDir, bRead, dwFlags);
+	return NCVC_FileDlgCommon(nTitle, strFilter, bAll, strFileName, lpszInitialDir, bRead, dwFlags);
 }
 
 /////////////////////////////////////////////////////////////////////////////

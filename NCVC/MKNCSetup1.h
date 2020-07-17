@@ -18,8 +18,8 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CMKNCSetup1)
 	enum { IDD = IDD_MKNC_SETUP1 };
-	CButton	m_ctButton2;
-	CButton	m_ctButton1;
+	CButton	m_ctHeaderBt;
+	CButton	m_ctFooterBt;
 	CEdit	m_ctHeader;
 	CEdit	m_ctFooter;
 	CFloatEdit	m_dZCut;
@@ -29,6 +29,8 @@ public:
 	CIntEdit	m_nSpindle;
 	CString	m_strFooter;
 	CString	m_strHeader;
+	BOOL	m_bXrev;
+	BOOL	m_bYrev;
 	//}}AFX_DATA
 	CFloatEdit	m_dG92[NCXYZ];
 

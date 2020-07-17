@@ -17,7 +17,8 @@ enum DXFDOCFLG {
 	DXFDOC_RELOAD,			// 再読込ﾌﾗｸﾞ(from DXFSetup.cpp)
 	DXFDOC_THREAD,			// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
 	DXFDOC_SHAPE,			// 形状処理を行ったか
-		DXFDOC_FLGNUM			// ﾌﾗｸﾞの数[4]
+	DXFDOC_LATHE,			// 旋盤用の原点(ﾜｰｸ径と端面)を読み込んだか
+		DXFDOC_FLGNUM			// ﾌﾗｸﾞの数[5]
 };
 
 // 自動処理ﾃﾞｰﾀ受け渡し構造体
@@ -54,6 +55,7 @@ class CDXFDoc : public CDocument, public CDocBase
 	AUTOWORKINGDATA	m_AutoWork;	// 自動輪郭処理ﾃﾞｰﾀ
 	CRect3D		m_rcMax;			// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
 	CDXFcircleEx*	m_pCircle;		// 切削原点
+	CDXFline*		m_pLatheLine[2];// 旋盤用原点([0]:外径, [1]:端面)
 	boost::optional<CPointD>	m_ptOrgOrig;	// ﾌｧｲﾙから読み込んだｵﾘｼﾞﾅﾙ原点
 
 	CString		m_strNCFileName;	// NC生成ﾌｧｲﾙ名
@@ -93,8 +95,12 @@ public:
 	UINT	GetShapeProcessID(void) const {
 		return m_nShapeProcessID;
 	}
-	CDXFcircleEx*	GetCircleObject(void) {
+	CDXFcircleEx*	GetCircleObject(void) const {
 		return m_pCircle;
+	}
+	CDXFline*		GetLatheLine(size_t n) const {
+		ASSERT(0<=n && n<SIZEOF(m_pLatheLine));
+		return m_pLatheLine[n];
 	}
 	int	GetDxfDataCnt(ENDXFTYPE enType) const {
 		ASSERT(enType>=DXFPOINTDATA && enType<=DXFELLIPSEDATA);
@@ -153,6 +159,8 @@ public:
 		return ptResult;
 	}
 	void	CreateCutterOrigin(const CPointD&, double, BOOL = FALSE);
+	void	CreateLatheLine(const CPointD&, const CPointD&);
+	void	CreateLatheLine(const CDXFline*, LPCDXFBLOCK);
 	double	GetCutterOrgR(void) {
 		return m_pCircle ? m_pCircle->GetR() : 0.0;
 	}
@@ -184,7 +192,7 @@ public:
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
 	// Serialize()後のﾃﾞｰﾀ詳細
-	void	SerializeInfo(void);
+	void	DbgSerializeInfo(void);
 #endif
 
 	// メッセージ マップ関数の生成

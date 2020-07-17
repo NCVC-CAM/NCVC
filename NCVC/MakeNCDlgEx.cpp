@@ -35,8 +35,8 @@ CMakeNCDlgEx::CMakeNCDlgEx(UINT nID, CDXFDoc* pDoc) : CPropertySheet(nID)
 	CreateNCFile(pDoc, strPath, strFile);	// MakeNCDlg.cpp
 	m_strNCFileName = strPath + strFile;
 	// ØíğŒÌ§²Ù
-	if ( pOpt->GetInitList()->GetCount() > 0 )
-		m_strInitFileName = pOpt->GetInitList()->GetHead();
+	if ( pOpt->GetMillInitList()->GetCount() > 0 )
+		m_strInitFileName = pOpt->GetMillInitList()->GetHead();
 	// Ú²Ôî•ñ‚Ì¾¯Ä(NCÌ§²Ù‚Æ“¯‚¶Êß½)
 	::Path_Name_From_FullPath(m_strNCFileName, strPath, strFile, FALSE);
 	VERIFY(strExt.LoadString(IDS_NCL_FILTER));

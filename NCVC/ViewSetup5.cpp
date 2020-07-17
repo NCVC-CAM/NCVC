@@ -204,7 +204,7 @@ void CViewSetup5::OnTextureFind()
 	}
 	else
 		strFile = m_strTexture;
-	if ( ::NCVC_FileDlgCommon(IDS_VIEW_TEXTURE, IDS_TEXTURE_FILTER, strFile, strPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_VIEW_TEXTURE, IDS_TEXTURE_FILTER, FALSE, strFile, strPath) == IDOK ) {
 		SetModified();
 		// ÃÞ°À‚Ì”½‰f
 		m_strTexture = strFile;

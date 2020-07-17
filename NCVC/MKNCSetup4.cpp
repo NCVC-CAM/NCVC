@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
 #include "MKNCSetup.h"
 
 #include "MagaDbgMac.h"
@@ -95,7 +95,7 @@ BOOL CMKNCSetup4::OnInitDialog()
 
 	// ¶½ÀÑºİÄÛ°Ù‚Íºİ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²İÀ‚ğæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	m_nSpindle		= pOpt->m_nDrillSpindle;
 	m_dFeed			= pOpt->m_dDrillFeed;
 	m_nDwell		= pOpt->m_nDwell;
@@ -134,7 +134,7 @@ void CMKNCSetup4::OnCircle()
 
 BOOL CMKNCSetup4::OnApply() 
 {
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_nDrillSpindle	= m_nSpindle;
 	pOpt->m_dDrillFeed		= m_dFeed;
 	pOpt->m_bDrillMatch		= m_bDrillMatch;

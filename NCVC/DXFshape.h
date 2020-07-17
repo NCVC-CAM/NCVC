@@ -10,8 +10,8 @@
 #define	DXFWORKFLG_SELECT			0x1000
 // DXFshapeÃ◊∏ﬁ
 #define	DXFMAPFLG_CANNOTWORKING		0x0001
-#define	DXFMAPFLG_CANNOTOUTLINE		0x0002
-#define	DXFMAPFLG_TEMP				0x0004
+#define	DXFMAPFLG_EDGE				0x0002
+#define	DXFMAPFLG_INTERSEC			0x0004
 #define	DXFMAPFLG_CANNOTAUTOWORKING	0x000f
 #define	DXFMAPFLG_DIRECTION			0x0010
 #define	DXFMAPFLG_START				0x0020
@@ -41,9 +41,10 @@ class CDXFmap;
 class CDXFchain;
 class CDXFshape;
 
-//	TH_AutoWorkingSet.cpp Ç©ÇÁÇ‡éQè∆
-CDXFdata*	CreateDXFObject
+CDXFdata*	CreateDxfOffsetObject	//	TH_AutoWorkingSet.cpp Ç©ÇÁÇ‡éQè∆
 	(const CDXFdata*, const CPointD&, const CPointD&, int = 0, double = 0);
+CDXFdata*	CreateDxfLatheObject
+	(const CDXFdata*, double);
 
 /////////////////////////////////////////////////////////////////////////////
 // ÇcÇwÇeÉfÅ[É^ÇÃç¿ïWÉ}ÉbÉvÅ{òAåãèWícÉNÉâÉX
@@ -51,8 +52,6 @@ CDXFdata*	CreateDXFObject
 typedef	CMap<CPointD, CPointD&, CDXFarray*, CDXFarray*&>	CMapPointToDXFarray;
 class CDXFmap : public CMapPointToDXFarray
 {
-	CDXFdata*	GetFirstObject(BOOL) const;
-
 public:
 	CDXFmap();
 	virtual	~CDXFmap();
@@ -154,7 +153,8 @@ public:
 	void	ClearMaxRect(void) {
 		m_rcMax.SetRectMinimum();
 	}
-	void	ReversePoint(void);
+	void	ReverseMakePt(void);
+	void	ReverseNativePt(void);
 	void	CopyToMap(CDXFmap*);
 	BOOL	IsLoop(void) const;
 	BOOL	IsPointInPolygon(const CPointD&) const;
@@ -361,6 +361,7 @@ class CDXFshape : public CObject
 	boost::variant<CDXFchain*, CDXFmap*>	m_vShape;	// CDXFchain* or CDXFmap*
 	CDXFworkingList	m_ltWork;			// â¡çHéwé¶√ﬁ∞¿(OutlineèúÇ≠)
 	COutlineList	m_ltOutline;		// ó÷äs√ﬁ∞¿
+	COutlineData	m_obLathe;			// ê˘î’ópó÷äs√ﬁ∞¿
 	double		m_dOffset;				// å`èÛÇÃ√ﬁÃ´ŸƒµÃæØƒíl
 	int			m_nInOut;				// ó÷äsµÃﬁºﬁ™∏ƒÇÃï˚å¸
 	BOOL		m_bAcute;				// âsäpä€Çﬂ
@@ -370,8 +371,6 @@ class CDXFshape : public CObject
 	void	Constructor(DXFSHAPE_ASSEMBLE, LPCTSTR, DWORD);
 	void	SetDetailInfo(CDXFchain*);
 	void	SetDetailInfo(CDXFmap*);
-	BOOL	ChangeCreate_MapToChain(CDXFmap*);
-	BOOL	ChangeCreate_ChainToMap(CDXFchain*);
 	BOOL	CreateOutlineTempObject_polyline(const CDXFpolyline*, BOOL, double,
 				CDXFchain*, CTypedPtrArrayEx<CPtrArray, CDXFlist*>&);
 	BOOL	SeparateOutlineIntersection(CDXFchain*, CTypedPtrArrayEx<CPtrArray, CDXFlist*>&, BOOL = FALSE);
@@ -465,6 +464,9 @@ public:
 	COutlineList*		GetOutlineList(void) {
 		return &m_ltOutline;
 	}
+	COutlineData*		GetLatheList(void) {
+		return &m_obLathe;
+	}
 	BOOL	IsOutlineList(void) const {
 		return !m_ltOutline.IsEmpty();
 	}
@@ -479,6 +481,8 @@ public:
 	boost::tuple<CDXFworking*, CDXFdata*>  GetStartObject(void) const;
 	BOOL	LinkObject(void);
 	BOOL	LinkShape(CDXFshape*);
+	BOOL	ChangeCreate_MapToChain(CDXFmap* = NULL);
+	BOOL	ChangeCreate_ChainToMap(CDXFchain* = NULL);
 	//
 	BOOL	CreateOutlineTempObject(BOOL, CDXFchain*, double = 0.0);
 	BOOL	CheckIntersectionCircle(const CPointD&, const double dOffset);
@@ -486,6 +490,8 @@ public:
 	BOOL	CreateScanLine_Y(CDXFchain*);
 	BOOL	CreateScanLine_Outline(CDXFchain*);
 	BOOL	CreateScanLine_ScrollCircle(CDXFchain*);
+	void	CreateScanLine_Lathe(int, double);
+	void	CrearScanLine_Lathe(void);
 	//
 	void	AllChangeFactor(double) const;
 	void	DrawWorking(CDC*) const;

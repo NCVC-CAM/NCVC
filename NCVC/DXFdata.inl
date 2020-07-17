@@ -232,7 +232,7 @@ inline BOOL CDXFline::IsMakeMatchPoint(const CPointD& pt)
 	if ( m_ptMake[0] == pt )		// 始点と等しい
 		return TRUE;
 	if ( m_ptMake[1] == pt ) {		// 終点と等しい
-		SwapPt(0);
+		SwapMakePt(0);
 		return TRUE;
 	}
 	return FALSE;
@@ -249,7 +249,7 @@ inline double CDXFline::GetEdgeGap(const CPointD& pt, BOOL bSwap/*=TRUE*/)
 	double	dGap2 = GAPCALC(m_ptTun[1] - pt);
 	if ( dGap1 > dGap2 ) {
 		if ( bSwap )
-			SwapPt(0);
+			SwapMakePt(0);
 		dGap1 = dGap2;
 	}
 	return dGap1;
@@ -322,7 +322,7 @@ inline void CDXFcircle::GetQuarterPoint(const CPointD& ptClick, CPointD pt[]) co
 }
 
 inline void CDXFcircle::SetEllipseArgv_Circle
-	(const LPDXFBLOCK lpBlock, LPDXFEARGV lpArgv, double sq, double eq, BOOL bRound)
+	(LPCDXFBLOCK lpBlock, LPCDXFEARGV lpArgv, double sq, double eq, BOOL bRound)
 {
 	lpArgv->pLayer = GetParentLayer();
 	// 中心座標
@@ -423,7 +423,7 @@ inline const CPointD CDXFcircle::GetMakeCenter(void) const
 	return m_ctTun;
 }
 
-inline void CDXFcircle::SetEllipseArgv(const LPDXFBLOCK lpBlock, LPDXFEARGV lpArgv)
+inline void CDXFcircle::SetEllipseArgv(LPCDXFBLOCK lpBlock, LPCDXFEARGV lpArgv)
 {
 	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0, 360.0*RAD, TRUE);
 }
@@ -441,7 +441,7 @@ inline BOOL CDXFcircle::IsMakeMatchPoint(const CPointD& pt)
 	for ( int i=0; i<m_nPoint; i++ ) {
 //		if ( m_ptMake[i]==pt && m_nArrayExt!=i ) {
 		if ( m_ptMake[i]==pt ) {
-			SwapPt(i);
+			SwapMakePt(i);
 			return TRUE;
 		}
 	}
@@ -469,7 +469,7 @@ inline double CDXFcircle::GetEdgeGap(const CPointD& pt, BOOL bSwap/*=TRUE*/)
 	}
 //	if ( bSwap && m_nArrayExt!=a )
 	if ( bSwap )
-		SwapPt(a);
+		SwapMakePt(a);
 
 	return dGapMin;
 }
@@ -575,7 +575,7 @@ inline double CDXFarc::GetEndAngle(void) const
 	return m_eq;
 }
 
-inline void CDXFarc::SetEllipseArgv(const LPDXFBLOCK lpBlock, LPDXFEARGV lpArgv)
+inline void CDXFarc::SetEllipseArgv(LPCDXFBLOCK lpBlock, LPCDXFEARGV lpArgv)
 {
 	SetEllipseArgv_Circle(lpBlock, lpArgv, m_sqDraw, m_eqDraw, m_bRoundOrig);
 }

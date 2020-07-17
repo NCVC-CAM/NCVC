@@ -212,34 +212,38 @@ optional<CPointD> CalcIntersectionPoint_LL
 	}
 
 	// 専嶼(斖埻联)
-	if ( bRangeChk && bResult ) {	// 慄侾
-		if ( fabs(ya) < NCMIN ) {
-			// 悈暯慄偱偼 x 偺斖埻联偺傒
-			if ( pt.x<minX1 || maxX1<pt.x )
-				bResult = FALSE;
+	if ( bRangeChk ) {
+		// 慄侾
+		if ( bResult ) {
+			if ( fabs(ya) < NCMIN ) {
+				// 悈暯慄偱偼 x 偺斖埻联偺傒
+				if ( pt.x<minX1 || maxX1<pt.x )
+					bResult = FALSE;
+			}
+			else if ( fabs(xa) < NCMIN ) {
+				// 悅捈慄偱偼 y 偺斖埻联偺傒
+				if ( pt.y<minY1 || maxY1<pt.y )
+					bResult = FALSE;
+			}
+			else {
+				if ( pt.x<minX1 || maxX1<pt.x || pt.y<minY1 || maxY1<pt.y )
+					bResult = FALSE;
+			}
 		}
-		else if ( fabs(xa) < NCMIN ) {
-			// 悅捈慄偱偼 y 偺斖埻联偺傒
-			if ( pt.y<minY1 || maxY1<pt.y )
-				bResult = FALSE;
-		}
-		else {
-			if ( pt.x<minX1 || maxX1<pt.x || pt.y<minY1 || maxY1<pt.y )
-				bResult = FALSE;
-		}
-	}
-	if ( bRangeChk && bResult ) {	// 慄俀
-		if ( fabs(yb) < NCMIN ) {
-			if ( pt.x<minX2 || maxX2<pt.x )
-				bResult = FALSE;
-		}
-		else if ( fabs(xb) < NCMIN ) {
-			if ( pt.y<minY2 || maxY2<pt.y )
-				bResult = FALSE;
-		}
-		else {
-			if ( pt.x<minX2 || maxX2<pt.x || pt.y<minY2 || maxY2<pt.y )
-				bResult = FALSE;
+		// 慄俀	
+		if ( bResult ) {
+			if ( fabs(yb) < NCMIN ) {
+				if ( pt.x<minX2 || maxX2<pt.x )
+					bResult = FALSE;
+			}
+			else if ( fabs(xb) < NCMIN ) {
+				if ( pt.y<minY2 || maxY2<pt.y )
+					bResult = FALSE;
+			}
+			else {
+				if ( pt.x<minX2 || maxX2<pt.x || pt.y<minY2 || maxY2<pt.y )
+					bResult = FALSE;
+			}
 		}
 	}
 
@@ -620,6 +624,17 @@ BOOL IsPointInPolygon(const CPointD& ptTarget, const vector<CPointD>& pt)
 
 	// 僋儘僗僇僂儞僩偑僛儘偺偲偒奜丄僛儘埲奜偺偲偒撪丅
 	return (0 != iCountCrossing);
+}
+
+//////////////////////////////////////////////////////////////////////
+//	揰偲捈慄偺嫍棧傪媮傔傞
+
+double CalcLineDistancePt(const CPointD& pts, const CPointD& pte, const CPointD& ptc)
+{
+	CPointD	pt(pte-pts), pto(ptc-pts);
+	double	q = atan2(pt.y, pt.x);
+	pto.RoundPoint(-q);
+	return fabs(pto.y);
 }
 
 //////////////////////////////////////////////////////////////////////

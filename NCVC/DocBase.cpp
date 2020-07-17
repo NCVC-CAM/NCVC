@@ -218,5 +218,6 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 #ifdef _DEBUG
 	dbg.printf("End Thread \"%s\"", strFile);
 #endif
+
 	return 0;
 }

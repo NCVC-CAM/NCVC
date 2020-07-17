@@ -27,6 +27,8 @@ __declspec(thread)	static	CNCDoc*		g_pDoc;
 __declspec(thread)	static	NCARGV		g_ncArgv;		// NCVCdefine.h
 __declspec(thread)	static	DWORD		g_dwValFlags;	// UVW座標用
 __declspec(thread)	static	double		g_dValue[NCXYZ];
+__declspec(thread)	static	DWORD		g_dwToolPosFlags;	// ToolPos用
+__declspec(thread)	static	double		g_dToolPos[NCXYZ];
 __declspec(thread)	static	int			g_nSubprog;		// ｻﾌﾞﾌﾟﾛｸﾞﾗﾑ呼び出しの階層
 __declspec(thread)	static	LPTSTR		g_lpstrComma;	// 次のﾌﾞﾛｯｸとの計算
 
@@ -72,8 +74,8 @@ static	double	FeedAnalyze_Int(const string&);
 __declspec(thread)	static	PFNFEEDANALYZE	g_pfnFeedAnalyze;
 // 工具径解析
 static	void	SetEndmillDiameter(const string&);
-static	void	SetEndmillDiameter_fromComment(double);
-static	void	SetEndmillType(char);
+// 工具位置情報
+static	CNCdata*	SetToolPosition_fromComment(CNCblock*, CNCdata*);
 // ﾜｰｸ矩形情報設定
 static	void	SetWorkRect_fromComment(vector<double>&);
 static	void	SetLatheRect_fromComment(vector<double>&);
@@ -201,7 +203,7 @@ struct CGcodeParser : grammar<CGcodeParser>
 		definition( const CGcodeParser& self ) {
 			// 未知ｺｰﾄﾞにも対応するため「全ての英大文字に続く数値」で解析
 			rr = +( +( upper_p >> real_p )[push_back_a(self.vResult)]
-					>> !( ch_p(',') >> ((ch_p('R')|'C') >> real_p) )[push_back_a(self.vResult)] )
+					>> !( ',' >> ((ch_p('R')|'C') >> real_p) )[push_back_a(self.vResult)] )
 				>> *(anychar_p - alnum_p)	// EOFなど
 				>> end_p;	// 終端(これを入れないと parse()関数で full を返さない)
 		}
@@ -231,6 +233,50 @@ struct CSkipParser : grammar<CSkipParser>
 //	ｺﾒﾝﾄ文字列解析
 struct CCommentParser : grammar<CCommentParser>
 {
+	// ｴﾝﾄﾞﾐﾙ径
+	struct	SetEndmillDiameterComment {
+		void	operator()(double d) const {
+			g_ncArgv.dEndmill = d / 2.0;
+#ifdef _DEBUG
+			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+				CMagaDbg	dbg("SetEndmillDiameterComment()\nStart", DBG_MAGENTA);
+				dbg.printf("Endmill=%f from CommentParser", g_ncArgv.dEndmill);
+			}
+#endif
+		}
+	};
+	// ｴﾝﾄﾞﾐﾙﾀｲﾌﾟ
+	struct	SetEndmillType {
+		void	operator()(char c) const {
+			g_ncArgv.nEndmillType = c - '0';	// １文字を数値に変換
+#ifdef _DEBUG
+			if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
+				CMagaDbg	dbg("SetEndmillType()\nStart", DBG_MAGENTA);
+				dbg.printf("EndmillType=%d from CommentParser", g_ncArgv.nEndmillType);
+			}
+#endif
+		}
+	};
+	// 工具位置変更
+	struct	ToolPosX {
+		void	operator()(double d) const {
+			g_dToolPos[NCA_X] = d;
+			g_dwToolPosFlags |= NCD_X;
+		}
+	};
+	struct	ToolPosY {
+		void	operator()(double d) const {
+			g_dToolPos[NCA_Y] = d;
+			g_dwToolPosFlags |= NCD_Y;
+		}
+	};
+	struct	ToolPosZ {
+		void	operator()(double d) const {
+			g_dToolPos[NCA_Z] = d;
+			g_dwToolPosFlags |= NCD_Z;
+		}
+	};
+
 	vector<double>&	vRect;
 	vector<double>&	vLathe;
 	CCommentParser(vector<double>& v1, vector<double>& v2) : vRect(v1), vLathe(v2) {}
@@ -239,22 +285,26 @@ struct CCommentParser : grammar<CCommentParser>
 	struct definition
 	{
 		typedef	rule<T>	rule_t;
-		rule_t	rr, rs1, rs2, rs3, rr1, rr2, rr3;
+		rule_t	rr, rs1, rs2, rs3, rs4, rr1, rr2, rr3, rr4;
 		definition( const CCommentParser& self )
 		{
 			// Endmill ｷｰﾜｰﾄﾞ
-			rs1 = as_lower_d[str_p("endmill")]  >> ch_p('=');
-			rr1 = real_p[&SetEndmillDiameter_fromComment] >> !str_p("mm") >>
-					!(ch_p(',') >> digit_p[&SetEndmillType]);	// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ
+			rs1 = as_lower_d[str_p("endmill")]  >> '=';
+			rr1 = real_p[SetEndmillDiameterComment()] >> !str_p("mm") >>
+					!(',' >> digit_p[SetEndmillType()]);	// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ
 			// WorkRect ｷｰﾜｰﾄﾞ
-			rs2 = as_lower_d[str_p("workrect")] >> ch_p('=');
-			rr2 = real_p[push_back_a(self.vRect)] % ch_p(',');
+			rs2 = as_lower_d[str_p("workrect")] >> '=';
+			rr2 = real_p[push_back_a(self.vRect)] % ',';
 			// ViewMode
-			rs3 = as_lower_d[str_p("latheview")] >> ch_p('=');
-			rr3 = real_p[push_back_a(self.vLathe)] % ch_p(',');
+			rs3 = as_lower_d[str_p("latheview")] >> '=';
+			rr3 = real_p[push_back_a(self.vLathe)] % ',';
+			// ToolPos
+			rs4 = as_lower_d[str_p("toolpos")] >> '=';
+			rr4 = *real_p[ToolPosX()] >>
+					*(',' >> *real_p[ToolPosY()] >> *(',' >> *real_p[ToolPosZ()]));
 			//
-			rr = ch_p('(') >> *(anychar_p-(rs1|rs2|rs3)) >>
-					+( rs1>>rr1 | rs2>>rr2 | rs3>>rr3 );
+			rr = '(' >> *(anychar_p-(rs1|rs2|rs3|rs4)) >>
+					+( rs1>>rr1 | rs2>>rr2 | rs3>>rr3 | rs4>>rr4 );
 		}
 		const rule_t& start() const {
 			return rr;
@@ -288,6 +338,7 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	g_ncArgv.nc.nLine		= nLine;
 	g_ncArgv.nc.nErrorCode	= 0;
 	g_ncArgv.nc.dwValFlags &= 0xFFFF0000;
+	g_dwToolPosFlags = 0;
 #ifdef _DEBUG
 	CMagaDbg	dbg("NC_Gseparate()", DBG_BLUE);
 	CMagaDbg	dbg1(DBG_GREEN);
@@ -301,11 +352,15 @@ int NC_GSeparater(int nLine, CNCdata*& pDataResult)
 	}
 
 	// ｺﾒﾝﾄ解析(解析ﾓｰﾄﾞ, ｴﾝﾄﾞﾐﾙ径, ﾜｰｸ矩形情報の取得)
-	parse((LPCTSTR)(pBlock->GetStrGcode()), comment_p, space_p);
-	if ( !dRect.empty() )
-		SetWorkRect_fromComment(dRect);
-	if ( !dLathe.empty() )
-		SetLatheRect_fromComment(dLathe);
+	if ( parse((LPCTSTR)(pBlock->GetStrGcode()), comment_p, space_p).hit ) {
+		if ( !dRect.empty() )
+			SetWorkRect_fromComment(dRect);
+		if ( !dLathe.empty() )
+			SetLatheRect_fromComment(dLathe);
+		if ( g_dwToolPosFlags )
+			pDataResult = SetToolPosition_fromComment(pBlock, pDataResult);	// create dummy object
+		return 0;
+	}
 
 	// ﾏｸﾛ置換解析
 	if ( (nIndex=(*g_pfnSearchMacro)(pBlock)) >= 0 ) {
@@ -1057,27 +1112,24 @@ void SetEndmillDiameter(const string& str)
 #endif
 }
 
-void SetEndmillDiameter_fromComment(double d)
+CNCdata* SetToolPosition_fromComment(CNCblock* pBlock, CNCdata* pDataBefore)
 {
-	// CCommentParser 解析ｱｸｼｮﾝからの呼び出し
-	g_ncArgv.dEndmill = d / 2.0;
-#ifdef _DEBUG
-	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
-		CMagaDbg	dbg("SetEndmillDiameter()\nStart", DBG_MAGENTA);
-		dbg.printf("Endmill=%f from CommentParser", g_ncArgv.dEndmill);
-	}
-#endif
-}
+	extern	const	DWORD	g_dwSetValFlags[];
+	CNCdata*	pData;
 
-void SetEndmillType(char c)
-{
-	g_ncArgv.nEndmillType = c - '0';	// １文字を数値に変換
-#ifdef _DEBUG
-	if ( !g_pDoc->IsNCDocFlag(NCDOC_THUMBNAIL) ) {
-		CMagaDbg	dbg("SetEndmillType()\nStart", DBG_MAGENTA);
-		dbg.printf("EndmillType=%d from CommentParser", g_ncArgv.nEndmillType);
+	for ( int i=0; i<NCXYZ; i++ ) {
+		if ( g_dwToolPosFlags & g_dwSetValFlags[i] ) {
+			g_ncArgv.nc.dValue[i] = g_dToolPos[i];
+			g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[i];
+		}
 	}
-#endif
+	// 描画しないｵﾌﾞｼﾞｪｸﾄで生成
+	g_ncArgv.nc.nGtype = O_TYPE;
+	pData = AddGcode(pBlock, pDataBefore, -1);
+	// 復元
+	g_ncArgv.nc.nGtype = G_TYPE;
+
+	return pData;
 }
 
 void SetWorkRect_fromComment(vector<double>& vWork)
@@ -1174,7 +1226,7 @@ CString SearchFolder(regex& r)
 			return strResult;
 		// 登録拡張子でのﾌｫﾙﾀﾞ検索
 		for ( int j=0; j<2/*EXT_ADN,EXT_DLG*/; j++ ) {
-			const CMapStringToPtr* pMap = AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((EXTTYPE)j);
+			const CMapStringToPtr* pMap = AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((eEXTTYPE)j);
 			for ( POSITION pos=pMap->GetStartPosition(); pos; ) {
 				pMap->GetNextAssoc(pos, strExt, pFunc);
 				strResult = SearchFolder_Sub(i, gg_szWild + strExt, r);

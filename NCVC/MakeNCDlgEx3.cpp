@@ -5,7 +5,7 @@
 #include "NCVC.h"
 #include "Layer.h"
 #include "DXFDoc.h"
-#include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
 #include "MakeNCDlgEx.h"
 #include "MakeNCDlgEx11.h"
 #include "MakeNCDlgEx21.h"
@@ -146,14 +146,14 @@ BOOL CMakeNCDlgEx3::OnWizardFinish()
 	if ( !OnKillActive() )	// ²ÍŞİÄ”­¶‚µ‚È‚¢‚Ì‚Å‹­§ŒÄ‚Ño‚µ
 		return FALSE;
 
-	CNCMakeOption*	pMakeOpt = NULL;
+	CNCMakeMillOpt*	pMakeOpt = NULL;
 	int			i, nResult = -1;
 	const int	nLoop = m_ctLayerList.GetItemCount();
 	CString		strMiss, strPartOut;
 	CLayerData*	pLayer;
 
 	if ( IsMakeEx2() )
-		pMakeOpt = new CNCMakeOption(GetNCMakeParent()->m_strInitFileName);
+		pMakeOpt = new CNCMakeMillOpt(GetNCMakeParent()->m_strInitFileName);
 
 	// ÅIÃŞ°ÀÁª¯¸
 	for ( i=0; i<nLoop; i++ ) {

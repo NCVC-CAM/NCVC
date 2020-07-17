@@ -12,7 +12,7 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-void CDXFBlockData::CopyBlock(const CDXFBlockData* pBlock, LPDXFBLOCK pBlockArgv)
+void CDXFBlockData::CopyBlock(const CDXFBlockData* pBlock, LPCDXFBLOCK pBlockArgv)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CopyBlock()", DBG_MAGENTA);

@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
 #include "MKNCSetup.h"
 
 #include "MagaDbgMac.h"
@@ -59,7 +59,7 @@ BOOL CMKNCSetup5::OnInitDialog()
 	
 	// ¶½ÀÑºİÄÛ°Ù‚Íºİ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParent() Îß²İÀ‚ğæ“¾‚Å‚«‚È‚¢
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	m_dTolerance		= pOpt->m_dTolerance;
 	m_nTolerance		= pOpt->m_nTolerance;
 	m_nOptimaizeDrill	= pOpt->m_nOptimaizeDrill;
@@ -80,7 +80,7 @@ void CMKNCSetup5::OnSelchangeDrill()
 
 BOOL CMKNCSetup5::OnApply() 
 {
-	CNCMakeOption* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
+	CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(GetParent())->GetNCMakeOption();
 	pOpt->m_dTolerance		= fabs((double)m_dTolerance);
 	if ( pOpt->m_dTolerance < NCMIN )
 		pOpt->m_dTolerance = NCMIN;

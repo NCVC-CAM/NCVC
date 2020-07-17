@@ -116,7 +116,7 @@ BOOL CMakeNCDlgEx2::OnInitDialog()
 			::Path_Name_From_FullPath(GetNCMakeParent()->m_strInitFileName,
 				m_strInitPath, m_strInitFileName);
 		// ØíðŒºÝÎÞÎÞ¯¸½‚É±²ÃÑ’Ç‰Á
-		InitialMakeNCDlgComboBox(pOpt->GetInitList(), m_ctInitFileName);
+		InitialMakeNCDlgComboBox(pOpt->GetMillInitList(), m_ctInitFileName);
 		::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, m_strInitPath);
 	}
 	// ŠÖŒWÌ§²ÙºÝÎÞÎÞ¯¸½‚É±²ÃÑ’Ç‰Á
@@ -212,7 +212,7 @@ void CMakeNCDlgEx2::OnMKNCInitUp()
 {
 	UpdateData();
 	CString	strFilter;
-	VERIFY(strFilter.LoadString(IDS_NCI_FILTER));
+	VERIFY(strFilter.LoadString(IDS_NCIM_FILTER));
 	MakeDlgFileRefer(IDS_OPTION_INIT, strFilter, this, IDC_MKNC_INITPATH,
 			m_strInitPath, m_strInitFileName, TRUE);
 	// •¶Žš‘I‘ðó‘Ô
@@ -302,7 +302,8 @@ void CMakeNCDlgEx2::OnSelChangeInit()
 	// —š—ðÌ§²Ù‚Ì‘¶ÝÁª¯¸
 	CString	strFullPath(m_strInitPath+m_strInitFileName);
 	if ( !::IsFileExist(strFullPath) ) {
-		AfxGetNCVCApp()->GetDXFOption()->DelInitHistory(strFullPath);	// —š—ðíœ
+		// —š—ðíœ
+		AfxGetNCVCApp()->GetDXFOption()->DelMillInitHistory(strFullPath);
 		m_ctInitFileName.DeleteString(nIndex);
 	}
 }

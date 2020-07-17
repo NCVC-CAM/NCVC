@@ -20,6 +20,8 @@ BEGIN_MESSAGE_MAP(CMKNCSetup, CPropertySheet)
 	ON_BN_CLICKED (ID_APPLY_NOW, OnApplyNow)
 END_MESSAGE_MAP()
 
+IMPLEMENT_DYNAMIC(CMKNCSetup, CPropertySheet)
+
 /////////////////////////////////////////////////////////////////////////////
 // CMKNCSetup
 
@@ -38,7 +40,7 @@ CMKNCSetup::CMKNCSetup(LPCTSTR lpszCaption, LPCTSTR lpszInitFile)
 
 	// ØíÊß×Ò°ÀµÌÞ¼Þª¸Ä‚Ì¶¬
 	try {
-		m_pNCMake = new CNCMakeOption(lpszInitFile);
+		m_pNCMake = new CNCMakeMillOpt(lpszInitFile);
 	}
 	catch (CMemoryException* e) {
 		if ( m_pNCMake ) {
@@ -101,7 +103,7 @@ void CMKNCSetup::OnApplyNow()
 	CString	strFileName, strPath, strName;
 	::Path_Name_From_FullPath(m_pNCMake->GetInitFile(), strPath, strName);
 
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_INITSAVE, IDS_NCI_FILTER,
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_INITSAVE, IDS_NCIM_FILTER, FALSE,
 				strFileName, strPath,
 				FALSE, OFN_OVERWRITEPROMPT|OFN_HIDEREADONLY) == IDOK ) {
 		if ( m_pNCMake->SaveMakeOption(strFileName) ) {

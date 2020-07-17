@@ -47,7 +47,8 @@ void CChildBase::OnUserFileChangeNotify(CMDIChildWnd* pChildFrame)
 	int	nResult = AfxMessageBox(strMsg, MB_YESNO|MB_ICONQUESTION);
 	AfxGetMainWnd()->FlashWindowEx(FLASHW_STOP, 0, 0);	// æ‚É³¨ÝÄÞ³Ì×¯¼­‚ðŽ~‚ß‚Ä‚¨‚­
 	if ( nResult == IDYES )
-		AfxGetNCVCMainWnd()->SendMessage(WM_USERFILECHANGENOTIFY);
+//		AfxGetNCVCMainWnd()->SendMessage(WM_USERFILECHANGENOTIFY);
+		AfxGetNCVCMainWnd()->PostMessage(WM_USERFILECHANGENOTIFY);
 
 	m_bNotify = FALSE;
 }

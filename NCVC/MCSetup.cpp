@@ -87,7 +87,7 @@ void CMCSetup::OnApplyNow()
 	if ( !strFileName.IsEmpty() )
 		::Path_Name_From_FullPath(strFileName, strPath, strName);
 
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_MCSAVE, IDS_MC_FILTER,
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_MCSAVE, IDS_MC_FILTER, FALSE,
 				strFileName, strPath,
 				FALSE, OFN_OVERWRITEPROMPT|OFN_HIDEREADONLY) == IDOK ) {
 		if ( pMCopt->SaveMCoption(strFileName) ) {

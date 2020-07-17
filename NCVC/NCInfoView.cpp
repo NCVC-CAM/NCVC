@@ -250,16 +250,16 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 			pDC->TextOut(11*nWidth+W*2, (i+1)*nHeight, strBuf);
 		}
 		if ( !GetDocument()->IsNCDocFlag(NCDOC_ERROR) ) {
-			double	dResult[2];
+			double	dResult[2], dHosei[] = {1.0, 2.0};	// Xé≤íºåaï\é¶ï‚ê≥
 			int		XZ[] = {NCA_X, NCA_Z};
 			for ( i=0; i<SIZEOF(XZ); i++ ) {
 				GetDocument()->GetWorkRectPP(XZ[i], dResult);
 				// ---
-				strBuf.Format(IDCV_VALFORMAT, dResult[0]);
+				strBuf.Format(IDCV_VALFORMAT, dResult[0] * dHosei[i]);
 				rc.SetRect(4*nWidth, (i+1)*nHeight, 5*nWidth+W, (i+2)*nHeight);
 				pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
 				// ---
-				strBuf.Format(IDCV_VALFORMAT, dResult[1]);
+				strBuf.Format(IDCV_VALFORMAT, dResult[1] * dHosei[i]);
 				rc.SetRect(9*nWidth+W, (i+1)*nHeight, 10*nWidth+W*2, (i+2)*nHeight);
 				pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
 			}
@@ -546,12 +546,13 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 		strarrayInfo.Add(szBracket[0] + strItem + szBracket[1]);
 		VERIFY(strBuf.LoadString(IDCV_KARA));
 		if ( pDoc->IsNCDocFlag(NCDOC_LATHE) ) {
+			double	dHosei[] = {1.0, 2.0};	// Xé≤íºåaï\é¶ï‚ê≥
 			for ( i=0; i<SIZEOF(XZ); i++ ) {
 				pDoc->GetWorkRectPP(XZ[i], dResult);
 				strItem = g_szNdelimiter[ZX[i]] + strDelimiter;
-				strFormat.Format(IDCV_VALFORMAT, dResult[0]);
+				strFormat.Format(IDCV_VALFORMAT, dResult[0] * dHosei[i]);
 				strItem += strFormat + g_szSpace + strBuf + g_szSpace;
-				strFormat.Format(IDCV_VALFORMAT, dResult[1]);
+				strFormat.Format(IDCV_VALFORMAT, dResult[1] * dHosei[i]);
 				strarrayInfo.Add(strItem + strFormat + strMM);
 			}
 		}

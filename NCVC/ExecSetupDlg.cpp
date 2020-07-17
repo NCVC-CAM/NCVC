@@ -410,7 +410,7 @@ void CExecSetupDlg::OnFileUP()
 	::Path_Name_From_FullPath(m_strFile, strPath, strFile);
 	if ( strFile.IsEmpty() )
 		strFile = m_strFile;
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_EXEC, IDS_EXE_FILTER, strFile, strPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_EXEC, IDS_EXE_FILTER, TRUE, strFile, strPath) == IDOK ) {
 		m_strFile = strFile;
 		::Path_Name_From_FullPath(m_strFile, strPath, strFile, FALSE);	// Šg’£Žq–³Ž‹
 		m_strToolTip = strFile;

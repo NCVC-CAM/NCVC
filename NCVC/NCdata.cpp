@@ -54,25 +54,37 @@ CNCdata::CNCdata(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset
 	// 座標指定のないﾃﾞｰﾀは前回計算座標から取得
 	for ( i=0; i<NCXYZ; i++ ) {
 		// 指定されている分だけ代入
-		m_nc.dValue[i] = m_nc.dwValFlags & g_dwSetValFlags[i] ?
-			lpArgv->nc.dValue[i] : pData->GetValue(i);
+		m_nc.dValue[i] = lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ?
+			lpArgv->nc.dValue[i] : pData->GetOriginalEndValue(i);
 	}
+
+	m_pRead->m_ptOffset = ptOffset;
 	if ( m_nc.nGcode == 92 ) {
 		// NCDocのｵﾌｾｯﾄ(m_ptNcWorkOrg)で処理されるのでG92指定値をｾｯﾄ
 		m_pRead->m_ptValOrg.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
 		m_ptValS = m_ptValE = m_pRead->m_ptValOrg + ptOffset;
+		m_pt2D   = m_ptValE.PointConvert();
 	}
 	else {
-		m_ptValS = m_ptValE = pData->GetEndPoint();
-		m_pRead->m_ptValOrg = pData->GetOriginalEndPoint();
+		if ( lpArgv->nc.dwValFlags & (NCD_X|NCD_Y|NCD_Z) ) {
+			m_pRead->m_ptValOrg.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
+			m_ptValS = pData->GetEndPoint();
+			m_ptValE = m_pRead->m_ptValOrg + ptOffset;
+			if ( lpArgv->g68.bG68 )
+				CalcG68Round(&(lpArgv->g68), m_ptValE);
+			m_pt2D   = m_ptValE.PointConvert();
+		}
+		else {
+			m_pRead->m_ptValOrg = pData->GetOriginalEndPoint();
+			m_ptValS = m_ptValE = pData->GetEndPoint();
+			m_pt2D   = pData->Get2DPoint();
+		}
 	}
-	m_pRead->m_ptOffset = ptOffset;
 	// 座標値以外も指定されている分は代入
 	for ( ; i<VALUESIZE; i++ )
-		m_nc.dValue[i] = m_nc.dwValFlags & g_dwSetValFlags[i] ?
+		m_nc.dValue[i] = lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ?
 			lpArgv->nc.dValue[i] : pData->GetValue(i);
-	// 前回の計算値を引き継ぎ
-	m_pt2D   = pData->Get2DPoint();
+
 	m_enType = NCDBASEDATA;
 
 #ifdef _DEBUG_DUMP
@@ -91,7 +103,7 @@ CNCdata::CNCdata
 	// 座標指定のないﾃﾞｰﾀは前回純粋座標から補間
 	for ( i=0; i<NCXYZ; i++ ) {
 		// 指定されている分だけ代入
-		if ( m_nc.dwValFlags & g_dwSetValFlags[i] ) {
+		if ( lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ) {
 			m_nc.dValue[i] = lpArgv->nc.dValue[i];
 			if ( !lpArgv->bAbs )		// ｲﾝｸﾘﾒﾝﾀﾙ補正
 				m_nc.dValue[i] += pData->GetOriginalEndValue(i);	// ｵﾘｼﾞﾅﾙ値で加算
@@ -100,7 +112,7 @@ CNCdata::CNCdata
 			m_nc.dValue[i] = pData->GetOriginalEndValue(i);
 	}
 	for ( ; i<VALUESIZE; i++ )
-		m_nc.dValue[i] = m_nc.dwValFlags & g_dwSetValFlags[i] ?
+		m_nc.dValue[i] = lpArgv->nc.dwValFlags & g_dwSetValFlags[i] ?
 			lpArgv->nc.dValue[i] : 0.0;
 	// ---------------------------------------------------------------
 	// m_ptValS, m_ptValE, m_ptValOrg, m_pt2D は派生ｸﾗｽで代入
@@ -305,12 +317,11 @@ CNCline::CNCline(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOffset
 	CMagaDbg	dbg("CNCline", DBG_MAGENTA);
 #endif
 	// 描画始点を前回の計算値から取得
-	m_pt2Ds  = pData->Get2DPoint();
 	m_ptValS = pData->GetEndPoint();
+	m_pt2Ds  = pData->Get2DPoint();
 	// 最終座標(==指定座標)ｾｯﾄ
-	m_ptValE.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
-	m_pRead->m_ptValOrg = m_ptValE;
-	m_ptValE += ptOffset;
+	m_pRead->m_ptValOrg.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
+	m_ptValE = m_pRead->m_ptValOrg + ptOffset;
 	// 座標回転
 	if ( lpArgv->g68.bG68 )
 		CalcG68Round(&(lpArgv->g68), m_ptValE);
@@ -668,6 +679,11 @@ void CNCline::SetCorrectPoint(ENPOINTORDER enPoint, const CPointD& ptSrc, double
 
 	SetPlaneValue(ptSrc, ptVal);
 	ptResult = ptVal.PointConvert();
+
+	if ( enPoint == ENDPOINT ) {
+		ASSERT( m_pRead );
+		SetPlaneValue(ptSrc, m_pRead->m_ptValOrg);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -762,8 +778,8 @@ CNCcycle::CNCcycle
 		}
 	}
 
-	m_ptValE.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
-	m_pRead->m_ptValOrg = m_ptValE;
+	m_pRead->m_ptValOrg.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
+	m_ptValE = m_pRead->m_ptValOrg;
 	pt = pData->GetOriginalEndPoint();
 	// 座標回転
 	if ( lpArgv->g68.bG68 )
@@ -1065,9 +1081,9 @@ CNCcircle::CNCcircle(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3D& ptOf
 		m_nG23 = 1 - m_nG23;	// 0->1 , 1->0;
 
 	// ﾈｲﾃｨﾌﾞの座標ﾃﾞｰﾀで中心を計算してから座標回転
+	m_pRead->m_ptValOrg.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
 	m_ptValS = pData->GetOriginalEndPoint();	// あとで設定し直し
-	m_ptValE.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
-	m_pRead->m_ptValOrg = m_ptValE;
+	m_ptValE = m_pRead->m_ptValOrg;
 
 	// 平面座標取得
 	CPointD	pts( GetPlaneValue(m_ptValS) ),

@@ -51,14 +51,15 @@
 #endif
 
 // STL
+#define	_SCL_SECURE_NO_WARNINGS			// 対Boost1.44用
 #include <string>
 #include <vector>
 #include <bitset>
 #include <algorithm>
 
 // BOOST Libraries
-#pragma	warning( disable : 4800 )		// 対Ver1.40用
-#define	BOOST_SPIRIT_THREADSAFE
+#pragma	warning( disable : 4800 )
+#define	BOOST_SPIRIT_THREADSAFE			// MT対応Spirit
 #include "boost/regex.hpp"				// 正規表現
 #include "boost/tokenizer.hpp"			// 文字列分割
 #include "boost/tuple/tuple.hpp"		// 拡張ﾃﾞｰﾀ
@@ -73,7 +74,8 @@
 #define	NCVCSERIALVERSION_1505	1505	// v1.10～
 #define	NCVCSERIALVERSION_1507	1507	// v1.10a～
 #define	NCVCSERIALVERSION_1600	1600	// v1.60～ (CDXFworkingOutlineのﾃﾞｰﾀ変更)
-#define	NCVCSERIALVERSION		1700	// v1.70～ (CDXFworkingOutlineのｵﾌｾｯﾄ値追加)
+#define	NCVCSERIALVERSION_1700	1700	// v1.70～ (CDXFworkingOutlineのｵﾌｾｯﾄ値追加)
+#define	NCVCSERIALVERSION		2300	// v2.30～ (旋盤原点ﾃﾞｰﾀ)
 #define	SIZEOF(array)			( sizeof(array)/sizeof(array[0]) )
 
 // NCVC original
@@ -136,8 +138,22 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 // ﾃｷｽﾄﾌｧｲﾙの行ﾁｪｯｸ
 inline	BOOL	NC_IsNullLine(const CString& str)	// EOF 等の行
 {
-	return ( str.IsEmpty() || str[0]=='#' || str[0]=='\x1a' ) ? TRUE : FALSE;
+	return ( str.IsEmpty() || str[0]=='#' || str[0]=='\x1a' );
 }
+
+//前後の空白文字を削除
+inline std::string Trim(const std::string &str)
+{
+	std::string	strResult;
+    size_t sPos = str.find_first_not_of(' ');
+    size_t ePos = str.find_last_not_of(' ');
+    if ( sPos != -1 )
+		strResult = str.substr(sPos, ePos - sPos + 1);
+    return strResult;
+}
+
+// 乱数
+int		GetRandom(int min, int max);
 
 // ﾌﾙﾊﾟｽ名をﾊﾟｽ名とﾌｧｲﾙ名に分割
 void	Path_Name_From_FullPath(LPCTSTR, CString&, CString&, BOOL = TRUE);

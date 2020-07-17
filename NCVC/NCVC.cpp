@@ -15,6 +15,7 @@
 #include "ViewSetup.h"
 #include "DxfSetup.h"
 #include "MKNCSetup.h"
+#include "MKLASetup.h"
 #include "ExecSetupDlg.h"
 #include "ExtensionDlg.h"
 #include "ThreadDlg.h"
@@ -39,10 +40,11 @@ extern	DWORD	g_dwCamVer = NCVCSERIALVERSION;	// CAMﾌｧｲﾙ Ver.No.
 	ﾌﾟﾛﾊﾟﾃｨｼｰﾄのﾗｽﾄﾍﾟｰｼﾞ::小さい情報のため，(ﾚｼﾞｽﾄﾘへの)保存はしない
 		NCVC稼働中に限り保持する
 */
-extern	int		g_nLastPage_DXFSetup = 0;	// DXFｵﾌﾟｼｮﾝ
-extern	int		g_nLastPage_MCSetup = 0;	// 工作機械ｵﾌﾟｼｮﾝ
-extern	int		g_nLastPage_NCMake = 0;		// NC生成ｵﾌﾟｼｮﾝ
-extern	int		g_nLastPage_ViewSetup = 0;	// 表示系ｾｯﾄｱｯﾌﾟ
+extern	int		g_nLastPage_DXFSetup = 0;		// DXFｵﾌﾟｼｮﾝ
+extern	int		g_nLastPage_MCSetup = 0;		// 工作機械ｵﾌﾟｼｮﾝ
+extern	int		g_nLastPage_NCMake = 0;			// NC生成ｵﾌﾟｼｮﾝ
+extern	int		g_nLastPage_NCMakeLathe = 0;	// 旋盤用NC生成ｵﾌﾟｼｮﾝ
+extern	int		g_nLastPage_ViewSetup = 0;		// 表示系ｾｯﾄｱｯﾌﾟ
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCVCApp
@@ -68,7 +70,6 @@ BEGIN_MESSAGE_MAP(CNCVCApp, CWinAppEx)
 	ON_UPDATE_COMMAND_UI(ID_OPTION_EDITNC, OnUpdateOptionEdit)
 	ON_UPDATE_COMMAND_UI(ID_OPTION_EDITMC, OnUpdateOptionEdit)
 END_MESSAGE_MAP()
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCVCApp コンストラクション
@@ -147,6 +148,8 @@ BOOL CNCVCApp::InitInstance()
 	LoadStdProfileSettings(10);  // 標準の INI ファイルのオプションをロードします (MRU を含む)
 
 	// VC++2008SP1以降のコントロール初期化
+	InitContextMenuManager();
+	InitKeyboardManager();
 	InitShellManager();		// CMFCShellTreeCtrl
 
 	// g_pszExecDir への値ｾｯﾄ
@@ -221,6 +224,12 @@ BOOL CNCVCApp::InitInstance()
 	}
 	m_pMainWnd = pMainFrame;
 
+	// 接尾辞が存在する場合にのみ DragAcceptFiles を呼び出します。
+	//  MDI アプリケーションでは、この呼び出しは、m_pMainWnd を設定した直後に発生しなければなりません。
+	m_pMainWnd->DragAcceptFiles();
+	EnableShellOpen();
+	RegisterShellFileTypes(TRUE);
+
 	////////// CMainFrame作成後に実行
 	// 外部ｱﾌﾟﾘｹｰｼｮﾝ，ﾂｰﾙﾊﾞｰへの登録とﾒﾆｭｰの更新
 	// (LoadFrame()の後でないとｱｻｰﾄｴﾗｰ)
@@ -237,12 +246,6 @@ BOOL CNCVCApp::InitInstance()
 		AfxGetNCVCMainWnd()->SetAddinButtons();
 	}
 	//////////
-
-	// 接尾辞が存在する場合にのみ DragAcceptFiles を呼び出します。
-	//  MDI アプリケーションでは、この呼び出しは、m_pMainWnd を設定した直後に発生しなければなりません。
-	m_pMainWnd->DragAcceptFiles();
-	EnableShellOpen();
-	RegisterShellFileTypes(TRUE);
 
 	// DDE、file open など標準のシェル コマンドのコマンド ラインを解析します。
 	CCommandLineInfo cmdInfo;
@@ -878,7 +881,7 @@ BOOL CNCVCApp::ChangeMachine(int nIndex)
 	if ( pList->GetCount() <= nIndex ) {
 		if ( !pList->IsEmpty() )
 			strFileName = pList->GetHead();
-		if ( ::NCVC_FileDlgCommon(IDS_OPTION_MC, IDS_MC_FILTER, strFileName) != IDOK )
+		if ( ::NCVC_FileDlgCommon(IDS_OPTION_MC, IDS_MC_FILTER, FALSE, strFileName) != IDOK )
 			return FALSE;
 	}
 	else {
@@ -1055,7 +1058,7 @@ void CNCVCApp::OnViewSetup()
 void CNCVCApp::OnViewSetupInport() 
 {
 	CString	strFile;
-	if ( ::NCVC_FileDlgCommon(IDS_VIEW_SETUP_INPORT, IDS_INI_FILTER, strFile) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_VIEW_SETUP_INPORT, IDS_INI_FILTER, TRUE, strFile) == IDOK ) {
 		m_pOptView->Inport(strFile);
 		if ( !m_pOptView->SaveViewOption() )
 			AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
@@ -1066,7 +1069,7 @@ void CNCVCApp::OnViewSetupInport()
 void CNCVCApp::OnViewSetupExport() 
 {
 	CString	strFile;
-	if ( ::NCVC_FileDlgCommon(IDS_VIEW_SETUP_EXPORT, IDS_INI_FILTER,
+	if ( ::NCVC_FileDlgCommon(IDS_VIEW_SETUP_EXPORT, IDS_INI_FILTER, TRUE,
 			strFile, NULL, FALSE, OFN_HIDEREADONLY|OFN_PATHMUSTEXIST) == IDOK ) {
 		CString	strMsg;
 		if ( m_pOptView->Export(strFile) ) {
@@ -1095,7 +1098,7 @@ void CNCVCApp::OnOptionMC()
 	if ( strFileName.IsEmpty() )
 		bNewSelect = TRUE;	// 新規選択の場合は再計算
 
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_MC, IDS_MC_FILTER, strFileName) != IDOK )
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_MC, IDS_MC_FILTER, FALSE, strFileName) != IDOK )
 		return;
 
 	CString	strCaption;
@@ -1110,7 +1113,7 @@ void CNCVCApp::OnOptionMC()
 	// 新規の場合，ｵﾌﾟｼｮﾝの保存
 	strFileName.Empty();
 	if ( ps.m_strFileName.IsEmpty() )
-		::NCVC_FileDlgCommon(IDS_OPTION_MCSAVE, IDS_MC_FILTER,
+		::NCVC_FileDlgCommon(IDS_OPTION_MCSAVE, IDS_MC_FILTER, FALSE, 
 				strFileName, g_pszExecDir, FALSE, OFN_OVERWRITEPROMPT|OFN_HIDEREADONLY);
 	else
 		strFileName = ps.m_strFileName;
@@ -1155,8 +1158,9 @@ void CNCVCApp::OnOptionEditMC()
 {
 	if ( m_liExec.GetCount() <= 0 )
 		return;
+
 	CString	strFileName(m_pOptMC->GetMCHeadFileName());
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_MC, IDS_MC_FILTER, strFileName) == IDOK )
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_MC, IDS_MC_FILTER, FALSE, strFileName) == IDOK )
 		AfxGetNCVCMainWnd()->CreateOutsideProcess(m_liExec.GetHead()->GetFileName(), "\""+strFileName+"\"");
 }
 
@@ -1173,26 +1177,55 @@ void CNCVCApp::OnOptionDXF()
 
 void CNCVCApp::OnOptionMakeNC() 
 {
-	CString	strFileName;
-	if ( !m_pOptDXF->GetInitList()->IsEmpty() )
-		strFileName = m_pOptDXF->GetInitList()->GetHead();
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_INIT, IDS_NCI_FILTER, strFileName) != IDOK ||
+	CString		strFileName;
+	const CStringList*	pList = NULL;
+	switch ( m_pOptDXF->GetNCMakeType() ) {
+	case NCMAKEMILL:
+		pList = m_pOptDXF->GetMillInitList();
+		break;
+	case NCMAKELATHE:
+		pList = m_pOptDXF->GetLatheInitList();
+		break;
+	}
+	if ( pList && !pList->IsEmpty() )
+		strFileName = pList->GetHead();
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_INIT, IDS_NCI_FILTER, FALSE, strFileName) != IDOK ||
 				strFileName.IsEmpty() )
 		return;
-	CString	strCaption;
-	VERIFY(strCaption.LoadString(IDS_MAKE_NCD));
-	CMKNCSetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
-	if ( ps.DoModal() != IDOK )
-		return;
 
-	// ｵﾌﾟｼｮﾝの保存
-	ps.GetNCMakeOption()->SaveMakeOption();
+	// 拡張子の判断
+	CString	strCaption, strTmp, strMill, strLathe;
+
+	VERIFY(strCaption.LoadString(IDS_MAKE_NCD));
+
+	VERIFY(strTmp.LoadString(IDS_NCIM_FILTER));
+	strMill = strTmp.Left(3);		// nci
+	VERIFY(strTmp.LoadString(IDS_NCIL_FILTER));
+	strLathe = strTmp.Left(3);		// ncj
+	strTmp = strFileName.Right(3);	// 指定ﾌｧｲﾙの拡張子
+
+	if ( strMill.CompareNoCase(strTmp) == 0 ) {
+		CMKNCSetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
+		if ( ps.DoModal() == IDOK ) {
+			// ｵﾌﾟｼｮﾝの保存
+			ps.GetNCMakeOption()->SaveMakeOption();
 #ifdef _DEBUGOLD
-	ps.GetNCMakeOption()->DbgDump();
+			ps.GetNCMakeOption()->DbgDump();
 #endif
-	// 切削条件ﾌｧｲﾙの履歴更新
-	m_pOptDXF->AddInitHistory(ps.GetNCMakeOption()->GetInitFile());
-	m_pOptDXF->SaveInitHistory();
+			// 切削条件ﾌｧｲﾙの履歴更新
+			m_pOptDXF->AddMillInitHistory(ps.GetNCMakeOption()->GetInitFile());
+		}
+	}
+	else if ( strLathe.CompareNoCase(strTmp) == 0 ) {
+		CMKLASetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
+		if ( ps.DoModal() == IDOK ) {
+			ps.GetNCMakeOption()->SaveMakeOption();
+#ifdef _DEBUGOLD
+			ps.GetNCMakeOption()->DbgDump();
+#endif
+			m_pOptDXF->AddLatheInitHistory(ps.GetNCMakeOption()->GetInitFile());
+		}
+	}
 }
 
 void CNCVCApp::OnUpdateOptionEdit(CCmdUI* pCmdUI) 
@@ -1204,10 +1237,20 @@ void CNCVCApp::OnOptionEditNC()
 {
 	if ( m_liExec.GetCount() <= 0 )
 		return;
-	CString	strFileName;
-	if ( !m_pOptDXF->GetInitList()->IsEmpty() )
-		strFileName = m_pOptDXF->GetInitList()->GetHead();
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_INIT, IDS_NCI_FILTER, strFileName) == IDOK )
+
+	CString		strFileName;
+	const CStringList*	pList = NULL;
+	switch ( m_pOptDXF->GetNCMakeType() ) {
+	case NCMAKEMILL:
+		pList = m_pOptDXF->GetMillInitList();
+		break;
+	case NCMAKELATHE:
+		pList = m_pOptDXF->GetLatheInitList();
+		break;
+	}
+	if ( pList && !pList->IsEmpty() )
+		strFileName = pList->GetHead();
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_INIT, IDS_NCI_FILTER, TRUE, strFileName) == IDOK )
 		AfxGetNCVCMainWnd()->CreateOutsideProcess(m_liExec.GetHead()->GetFileName(), "\""+strFileName+"\"");
 }
 
@@ -1299,7 +1342,6 @@ void CNCVCApp::OnAppAbout()
 	aboutDlg.DoModal();
 }
 
-
 /////////////////////////////////////////////////////////////////////////////
 // ﾌﾟﾛｼﾞｪｸﾄ広域関数
 /////////////////////////////////////////////////////////////////////////////
@@ -1352,16 +1394,17 @@ BOOL IsFileExist(LPCTSTR lpszFile, BOOL bExist/*=TRUE*/, BOOL bMsg/*=TRUE*/)
 
 // CFileDialogの呼び出し
 int NCVC_FileDlgCommon
-	(int nIDtitle, const CString& strFilter,
+	(int nIDtitle, const CString& strFilter, BOOL bAll,
 	 CString& strFileName, LPCTSTR lpszInitialDir, BOOL bRead, DWORD dwFlags)
 {
 	extern	LPCTSTR	gg_szReturn;
 
 	int		nIndex, nResult;
-	CString	strAllFilter, strTitle;
+	CString	strAllFilter, strTitle, strTmp;
 
 	// ﾌｨﾙﾀ設定とﾃﾞﾌｫﾙﾄ拡張子の取得
-	VERIFY(strAllFilter.LoadString(IDS_ALL_FILTER));
+	VERIFY(strTmp.LoadString(IDS_ALL_FILTER));
+	strAllFilter = bAll ? strTmp : strTmp.Right(2);
 	nIndex = strFilter.Find(gg_szReturn);
 	CFileDialog	dlg(bRead, strFilter.Left(nIndex), strFileName,
 		dwFlags, strFilter.Mid(nIndex+1)+strAllFilter);

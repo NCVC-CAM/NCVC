@@ -75,7 +75,7 @@ void CMCSetup4::OnMacroIF()
 	::Path_Name_From_FullPath(m_strMacro[MCMACROIF], strPath, strFile);
 	if ( strFile.IsEmpty() )
 		strFile = m_strMacro[MCMACROIF];
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_MC_MACRO, IDS_EXE_FILTER, strFile, strPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_MC_MACRO, IDS_EXE_FILTER, TRUE, strFile, strPath) == IDOK ) {
 		m_strMacro[MCMACROIF] = strFile;
 		UpdateData(FALSE);
 	}

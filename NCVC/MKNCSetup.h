@@ -10,19 +10,20 @@
 #include "MKNCSetup5.h"
 #include "MKNCSetup6.h"
 #include "MKNCSetup8.h"
-#include "NCMakeOption.h"
+#include "NCMakeMillOpt.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CMKNCSetup
 
 class CMKNCSetup : public CPropertySheet
 {
-	CNCMakeOption*		m_pNCMake;		// NC生成ｵﾌﾟｼｮﾝ
+	CNCMakeMillOpt*		m_pNCMake;		// NC生成ｵﾌﾟｼｮﾝ
 
 // コンストラクション
 public:
 	CMKNCSetup(LPCTSTR, LPCTSTR);
 	~CMKNCSetup();
+	DECLARE_DYNAMIC(CMKNCSetup)
 
 // アトリビュート
 public:
@@ -35,7 +36,7 @@ public:
 	CMKNCSetup6	m_dlg6;
 	CMKNCSetup8	m_dlg8;
 
-	CNCMakeOption*	GetNCMakeOption(void) {
+	CNCMakeMillOpt*	GetNCMakeOption(void) {
 		return m_pNCMake;
 	}
 

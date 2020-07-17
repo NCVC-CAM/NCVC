@@ -24,7 +24,7 @@ using namespace boost;
 static const UINT g_nIndicators[] =
 {
 	ID_NCDST_LINENO,
-	ID_NCDST_COORDINATES,
+	ID_NCDST_COORDINATE_M,
 	ID_INDICATOR_FACTOR,
 	ID_SEPARATOR	// ÌßÛ¸ÞÚ½ÊÞ°—Ìˆæ
 };
@@ -232,8 +232,12 @@ LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM wParam, LPARAM)
 			else
 				pData = pBlock->GetBlockToNCdata();
 		}
-		else
-			VERIFY(strInfo.LoadString(ID_NCDST_COORDINATES));
+		else {
+			if ( reinterpret_cast<CNCDoc *>(wParam)->IsNCDocFlag(NCDOC_LATHE) )
+				VERIFY(strInfo.LoadString(ID_NCDST_COORDINATE_L));
+			else
+				VERIFY(strInfo.LoadString(ID_NCDST_COORDINATE_M));
+		}
 	}
 	else
 		pData = get<CNCdata*>(m_vStatus);
@@ -241,13 +245,18 @@ LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM wParam, LPARAM)
 	if ( pData ) {
 		CPoint3D	pt(pData->GetEndCorrectPoint());
 		if ( reinterpret_cast<CNCDoc *>(wParam)->IsNCDocFlag(NCDOC_LATHE) )
-			std::swap(pt.x, pt.z);
-		strInfo.Format(ID_NCDST_COORDINATES_F, pt.x, pt.y, pt.z);
+			strInfo.Format(ID_NCDST_COORDINATE_LF, pt.x, pt.z*2.0);	// XŽ²’¼Œa•\Ž¦
+		else
+			strInfo.Format(ID_NCDST_COORDINATE_MF, pt.x, pt.y, pt.z);
 	}
-	else if ( strInfo.IsEmpty() )
-		VERIFY(strInfo.LoadString(ID_NCDST_COORDINATES));
+	else if ( strInfo.IsEmpty() ) {
+		if ( reinterpret_cast<CNCDoc *>(wParam)->IsNCDocFlag(NCDOC_LATHE) )
+			VERIFY(strInfo.LoadString(ID_NCDST_COORDINATE_L));
+		else
+			VERIFY(strInfo.LoadString(ID_NCDST_COORDINATE_M));
+	}
 
-	m_wndStatusBar.SetPaneText(m_wndStatusBar.CommandToIndex(ID_NCDST_COORDINATES), strInfo);
+	m_wndStatusBar.SetPaneText(m_wndStatusBar.CommandToIndex(ID_NCDST_COORDINATE_M), strInfo);
 
 	return 0;
 }

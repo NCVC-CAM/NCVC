@@ -65,6 +65,7 @@ CNCDoc::CNCDoc()
 {
 	int		i;
 
+	m_bNcDocFlg.reset();
 	m_bNcDocFlg.set(NCDOC_ERROR);	// ‰Šúó‘Ô‚Í´×°Ì×¸Þ‚¾‚¯—§‚Ä‚é
 	m_dMove[0] = m_dMove[1] = 0.0;
 	m_dCutTime = -1.0;
@@ -1118,7 +1119,7 @@ void CNCDoc::OnFileInsert()
 
 	CString	strFileName(AfxGetNCVCApp()->GetRecentFileName());
 	if ( ::NCVC_FileDlgCommon(ID_FILE_NCINSERT,
-				AfxGetNCVCApp()->GetFilterString(TYPE_NCD), strFileName) != IDOK )
+				AfxGetNCVCApp()->GetFilterString(TYPE_NCD), TRUE, strFileName) != IDOK )
 		return;
 
 #ifdef _DEBUG

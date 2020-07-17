@@ -326,6 +326,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MakeCustomCode.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\MakeDXFDlg.cpp"
 				>
 			</File>
@@ -387,6 +391,14 @@
 			</File>
 			<File
 				RelativePath=".\MCSetup5.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MKLASetup.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MKLASetup1.cpp"
 				>
 			</File>
 			<File
@@ -458,7 +470,23 @@
 				>
 			</File>
 			<File
-				RelativePath=".\NCMakeClass.cpp"
+				RelativePath=".\NCMakeBase.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeLathe.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeLatheOpt.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeMill.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeMillOpt.cpp"
 				>
 			</File>
 			<File
@@ -559,6 +587,10 @@
 			</File>
 			<File
 				RelativePath=".\TH_Cuttime.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\TH_MakeLathe.cpp"
 				>
 			</File>
 			<File
@@ -760,6 +792,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MakeCustomCode.h"
+				>
+			</File>
+			<File
 				RelativePath=".\MakeDXFDlg.h"
 				>
 			</File>
@@ -821,6 +857,14 @@
 			</File>
 			<File
 				RelativePath=".\MCSetup5.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MKLASetup.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MKLASetup1.h"
 				>
 			</File>
 			<File
@@ -892,7 +936,23 @@
 				>
 			</File>
 			<File
-				RelativePath=".\NCMakeClass.h"
+				RelativePath=".\NCMakeBase.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeLathe.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeLatheOpt.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeMill.h"
+				>
+			</File>
+			<File
+				RelativePath=".\NCMakeMillOpt.h"
 				>
 			</File>
 			<File

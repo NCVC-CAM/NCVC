@@ -7,6 +7,7 @@
 UINT NCDtoXYZ_Thread(LPVOID);
 UINT CorrectCalc_Thread(LPVOID);
 UINT MakeNCD_Thread(LPVOID);
+UINT MakeLathe_Thread(LPVOID);
 UINT ShapeSearch_Thread(LPVOID);
 UINT AutoWorkingSet_Thread(LPVOID);
 

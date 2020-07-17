@@ -155,6 +155,7 @@
     <ClCompile Include="LayerDlg.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="MainStatusBar.cpp" />
+    <ClCompile Include="MakeCustomCode.cpp" />
     <ClCompile Include="MakeDXFDlg.cpp" />
     <ClCompile Include="MakeDXFDlg1.cpp" />
     <ClCompile Include="MakeDXFDlg2.cpp" />
@@ -171,6 +172,8 @@
     <ClCompile Include="MCSetup3.cpp" />
     <ClCompile Include="MCSetup4.cpp" />
     <ClCompile Include="MCSetup5.cpp" />
+    <ClCompile Include="MKLASetup.cpp" />
+    <ClCompile Include="MKLASetup1.cpp" />
     <ClCompile Include="MKNCSetup.cpp" />
     <ClCompile Include="MKNCSetup1.cpp" />
     <ClCompile Include="MKNCSetup2.cpp" />
@@ -188,7 +191,11 @@
     <ClCompile Include="NCInfoView.cpp" />
     <ClCompile Include="NCJumpDlg.cpp" />
     <ClCompile Include="NCListView.cpp" />
-    <ClCompile Include="NCMakeClass.cpp" />
+    <ClCompile Include="NCMakeBase.cpp" />
+    <ClCompile Include="NCMakeLathe.cpp" />
+    <ClCompile Include="NCMakeLatheOpt.cpp" />
+    <ClCompile Include="NCMakeMill.cpp" />
+    <ClCompile Include="NCMakeMillOpt.cpp" />
     <ClCompile Include="NCMakeOption.cpp" />
     <ClCompile Include="NCVC.cpp" />
     <ClCompile Include="NCVCaddinDXF.cpp" />
@@ -215,6 +222,7 @@
     <ClCompile Include="TH_AutoWorkingSet.cpp" />
     <ClCompile Include="TH_Correct.cpp" />
     <ClCompile Include="TH_Cuttime.cpp" />
+    <ClCompile Include="TH_MakeLathe.cpp" />
     <ClCompile Include="TH_MakeNCD.cpp" />
     <ClCompile Include="TH_NCRead.cpp" />
     <ClCompile Include="TH_ShapeSearch.cpp" />
@@ -262,6 +270,7 @@
     <ClInclude Include="LayerDlg.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MainStatusBar.h" />
+    <ClInclude Include="MakeCustomCode.h" />
     <ClInclude Include="MakeDXFDlg.h" />
     <ClInclude Include="MakeDXFDlg1.h" />
     <ClInclude Include="MakeDXFDlg2.h" />
@@ -278,6 +287,8 @@
     <ClInclude Include="MCSetup3.h" />
     <ClInclude Include="MCSetup4.h" />
     <ClInclude Include="MCSetup5.h" />
+    <ClInclude Include="MKLASetup.h" />
+    <ClInclude Include="MKLASetup1.h" />
     <ClInclude Include="MKNCSetup.h" />
     <ClInclude Include="MKNCSetup1.h" />
     <ClInclude Include="MKNCSetup2.h" />
@@ -294,7 +305,11 @@
     <ClInclude Include="NCInfoView.h" />
     <ClInclude Include="NCJumpDlg.h" />
     <ClInclude Include="NCListView.h" />
-    <ClInclude Include="NCMakeClass.h" />
+    <ClInclude Include="NCMakeBase.h" />
+    <ClInclude Include="NCMakeLathe.h" />
+    <ClInclude Include="NCMakeLatheOpt.h" />
+    <ClInclude Include="NCMakeMill.h" />
+    <ClInclude Include="NCMakeMillOpt.h" />
     <ClInclude Include="NCMakeOption.h" />
     <ClInclude Include="NCVC.h" />
     <ClInclude Include="NCVCaddinIF.h" />

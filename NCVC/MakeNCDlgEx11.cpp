@@ -81,7 +81,7 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx* pParent, int nIndex)
 		return;
 	}
 
-	const CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetInitList();
+	const CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetMillInitList();
 	// ‰Šú•\¦ÃŞ°À‚Í nIndex ‚©‚çæ“¾
 	m_nIndex = nIndex<0 || nIndex>m_obLayer.GetUpperBound() ? 0 : nIndex;
 	pLayer = m_obLayer[m_nIndex];
@@ -145,7 +145,7 @@ void CMakeNCDlgEx11::SetNowState(int nIndex)
 	m_bPartOut			= pLayer->m_bLayerFlg[LAYER_PARTOUT];
 	m_strLayerComment	= pLayer->m_strLayerComment;
 	m_strLayerCode		= pLayer->m_strLayerCode;
-	const CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetInitList();
+	const CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetMillInitList();
 	if ( !pLayer->m_strInitFile.IsEmpty() )
 		::Path_Name_From_FullPath(pLayer->m_strInitFile, m_strInitPath, m_strInitFileName);
 	else if ( pList->GetCount() > 0 )
@@ -208,7 +208,7 @@ BOOL CMakeNCDlgEx11::OnInitDialog()
 	for ( i=0; i<m_obLayer.GetSize(); i++ )
 		m_ctLayer.AddString( m_obLayer[i]->m_strLayer );
 	// ØíğŒºİÎŞÎŞ¯¸½‚É±²ÃÑ’Ç‰Á
-	InitialMakeNCDlgComboBox(AfxGetNCVCApp()->GetDXFOption()->GetInitList(), m_ctInitFileName);	// MakeNCDlg.cpp
+	InitialMakeNCDlgComboBox(AfxGetNCVCApp()->GetDXFOption()->GetMillInitList(), m_ctInitFileName);	// MakeNCDlg.cpp
 	// Êß½•\¦‚ÌÅ“K‰»
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, m_strInitPath);
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_NCPATH, m_strNCPath);
@@ -227,7 +227,7 @@ void CMakeNCDlgEx11::OnOK()
 	m_ctOK.SetFocus();
 
 	CString	strNCFile;
-	const	CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetInitList();
+	const	CStringList*	pList = AfxGetNCVCApp()->GetDXFOption()->GetMillInitList();
 	// ÅŒã‚Ìî•ñ‚ğæ“¾
 	GetNowState();
 	
@@ -292,7 +292,7 @@ void CMakeNCDlgEx11::OnNewLayer()
 	else
 		::Path_Name_From_FullPath(GetNCMakeParent()->m_strLayerToInitFileName, strPath, strFile);
 
-	if ( ::NCVC_FileDlgCommon(IDS_OPTION_LAYER2INITSAVE, IDS_NCL_FILTER,
+	if ( ::NCVC_FileDlgCommon(IDS_OPTION_LAYER2INITSAVE, IDS_NCL_FILTER, FALSE,
 				strFile, strPath, FALSE, OFN_HIDEREADONLY|OFN_OVERWRITEPROMPT) == IDOK ) {
 		pDoc->SaveLayerMap(strFile, &m_obLayer);
 		if ( GetNCMakeParent()->m_strLayerToInitFileName.CompareNoCase(strFile) != 0 ) {
@@ -331,7 +331,7 @@ void CMakeNCDlgEx11::OnMKNCInitUp()
 {
 	UpdateData();
 	CString	strFilter;
-	VERIFY(strFilter.LoadString(IDS_NCI_FILTER));
+	VERIFY(strFilter.LoadString(IDS_NCIM_FILTER));
 	MakeDlgFileRefer(IDS_OPTION_INIT, strFilter, this, IDC_MKNC_INITPATH,
 			m_strInitPath, m_strInitFileName, TRUE);
 	m_ctLayer.SetFocus();
@@ -355,7 +355,8 @@ void CMakeNCDlgEx11::OnSelChangeInit()
 	// —š—ğÌ§²Ù‚Ì‘¶İÁª¯¸
 	CString	strFullPath(m_strInitPath+m_strInitFileName);
 	if ( !::IsFileExist(strFullPath) ) {
-		AfxGetNCVCApp()->GetDXFOption()->DelInitHistory(strFullPath);	// —š—ğíœ
+		// —š—ğíœ
+		AfxGetNCVCApp()->GetDXFOption()->DelMillInitHistory(strFullPath);
 		m_ctInitFileName.DeleteString(nIndex);
 	}
 }
