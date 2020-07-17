@@ -534,7 +534,6 @@
 #define IDC_MKNC4_DWELLFORMAT           4309
 #define IDC_MKNC4_MATCH                 4310
 #define IDC_MKNC4_DRILLQ                4311
-#define IDC_MKNC4_DWELLUNIT2            4312
 #define IDC_MKNC4_DWELLWORNING          4312
 #define IDC_MKNC4_CIRCLE                4320
 #define IDC_MKNC4_CIRCLE_R              4321
@@ -802,6 +801,7 @@
 #define IDS_ERR_NCBLK_M98               25004
 #define IDS_ERR_NCBLK_M98L              25005
 #define IDS_ERR_NCBLK_CHAMFERING        25006
+#define IDS_ERR_NCBLK_WORKFILE          25007
 #define IDS_ERR_NCBLK_NOTLATHE          25010
 #define IDS_ERR_NCBLK_CORRECT           25011
 #define IDS_ERR_NCBLK_CORRECTSTART      25012

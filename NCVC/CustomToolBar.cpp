@@ -202,8 +202,10 @@ BOOL CCustomToolBar::SetCustomButtons(LPCTSTR lpszResourceName,
 
 #ifdef _DEBUG
 	dbg.printf("NewButtonCount()=%d", nCnt);
-#endif
+	BOOL bResult = GetToolBarCtrl().AddButtons(nCnt, lptb);
+#else
 	GetToolBarCtrl().AddButtons(nCnt, lptb);
+#endif
 
 	// Â°ÙÊŞ°ó‘Ô•œ‹Œ
 	if ( bRestore )

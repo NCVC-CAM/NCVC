@@ -15,6 +15,7 @@
 #include "ViewOption.h"
 #include <numeric>				// accumulate()
 #include "boost/array.hpp"
+//#include "../Kodatuno/Describe_BODY.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -596,8 +597,13 @@ BOOL CNCViewGL::CreateBoxel(BOOL bRange)
 #endif
 
 	// ÃÞÌß½’l‚ÌŽæ“¾
-	bResult = GetDocument()->IsDocFlag(NCDOC_CYLINDER) ?
-					GetClipDepthCylinder(bRange) : GetClipDepthMill(bRange);
+	if ( GetDocument()->IsDocFlag(NCDOC_CYLINDER) )
+		bResult = GetClipDepthCylinder(bRange);
+	else if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) )
+		bResult = GetClipDepthMill(bRange);
+	else
+		bResult = GetClipDepthMill(bRange);
+
 	if ( !bResult )
 		ClearVBO();
 
@@ -2883,6 +2889,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	RenderAxis();
 
 #ifdef _DEBUG_DRAWTEST_
+
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
 		GetDocument()->GetNCdata(i)->DrawGLBottomFace();
 //		GetDocument()->GetNCdata(1)->DrawGLBottomFace();
@@ -2911,6 +2918,16 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glDisable(GL_TEXTURE_2D);
 		::glDisable(GL_LIGHTING);
 	}
+
+/*
+	BODYList* kbl = GetDocument()->GetKodatunoBodyList();
+	if ( kbl ) {
+		Describe_BODY	bd;
+		for ( int i=0; i<kbl->getNum(); i++ ) {
+			bd.DrawBody( (BODY *)kbl->getData(i) );
+		}
+	}
+*/
 #else
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && m_nVertexID[0]>0 &&
 		(pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
@@ -3474,8 +3491,12 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 			bResult = GetClipDepthLathe(TRUE);
 		}
 		else {
-			bResult = GetDocument()->IsDocFlag(NCDOC_CYLINDER) ?
-							GetClipDepthCylinder(TRUE) : GetClipDepthMill(TRUE);
+			if ( GetDocument()->IsDocFlag(NCDOC_CYLINDER) )
+				bResult = GetClipDepthCylinder(TRUE);
+			else if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) )
+				bResult = GetClipDepthMill(TRUE);
+			else
+				bResult = GetClipDepthMill(TRUE);
 		}
 		if ( !bResult )
 			ClearVBO();

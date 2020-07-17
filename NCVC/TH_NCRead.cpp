@@ -44,7 +44,9 @@ static	float			g_dWorkRect[NCXYZ*2],
 						g_dLatheView[3],
 						g_dWireView,
 						g_dToolPos[NCXYZ];
-static	DWORD			g_dwToolPosFlags;	// ToolPos用
+//						g_dWorkPos[NCXYZ];
+static	DWORD			g_dwToolPosFlags;
+//						g_dwWorkPosFlags;	
 static	LPTSTR			g_lpstrComma;		// 次のﾌﾞﾛｯｸとの計算
 //
 static	BOOL	IsThreadContinue(void)
@@ -245,7 +247,7 @@ struct CGcodeParser : qi::grammar<Iterator, Skipper, string()>
 		using sw::char_;
 		using qi::float_;
 		rule = qi::raw[ (sw::upper >> float_) |
-				(',' >> (char_('R')|'C') >> float_) ];
+				(qi::lit(',') >> (char_('R')|'C') >> float_) ];
 	}
 };
 
@@ -254,45 +256,59 @@ template<typename Iterator>
 struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 {
 	qi::rule<Iterator, sw::space_type>		ruleTop, rrMM,
-		ruleOrder, ruleValue,
-		rs1, rs2, rs3, rs4, rs5, rs6,
-		rr1, r11, r12, r13, rr2, rr3, rr4, rr5, rr6;
+		ruleOrder, ruleValue1, ruleValue2,
+		rs1, rs2, rs3, rs5, rs6, rs7,
+		rv1, rv2, rv3, rv5, rv6, rv7,
+		r11, r12, r13;
+//		r41, r42;
 
 	CCommentParser() : CCommentParser::base_type(ruleTop) {
 		using sw::no_case;
 		using sw::char_;
 		using qi::float_;
+		using qi::omit;
+		using qi::lit;
 
-		ruleTop = *(char_ - '(') >> '(' >> *(char_ - ruleOrder) >>
-						*ruleValue;
+		ruleTop = omit[*(char_-'(')] >> lit('(') >>
+						+( omit[*(char_-ruleOrder)] >> ruleValue1|ruleValue2 ) >>
+					omit[*(char_-')')] >> lit(')');
+		ruleOrder = rs1|rs2|rs3|rs5|rs6|rs7;
+		ruleValue1 = rs1>>rv1|rs2>>rv2|rs3>>rv3;	// １つにすると
+		ruleValue2 = rs5>>rv5|rs6>>rv6|rs7>>rv7;	// 名前が長すぎるｴﾗｰ
 		//
-		ruleOrder = rs1|rs2|rs3|rs4|rs5|rs6;
-		ruleValue = rs1>>rr1|rs2>>rr2|rs3>>rr3|rs4>>rr4|rs5>>rr5|rs6>>rr6;
 		// Endmill
-		rs1 = no_case[sw::string(ENDMILL_S)|DRILL_S|TAP_S|REAMER_S] >> '=';
-		rr1 = r11|r12|r13;
+		rs1 = no_case[sw::string(ENDMILL_S)|DRILL_S|TAP_S|REAMER_S] >> lit('=');
+		rv1 = r11|r12|r13;
 		r11 = float_[_SetEndmill()] >> rrMM >>
-						-(',' >> qi::digit[_SetEndmillType()]);
+						-(lit(',') >> qi::digit[_SetEndmillType()]);
 		r12 = (char_('R')|'r') >> float_[_SetBallMill()] >>		// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
 						rrMM;
 		r13 = (char_('C')|'c') >> float_[_SetChamferMill()] >>	// 面取りﾐﾙ表記
 						rrMM;
 		// WorkRect
-		rs2 = no_case[WORKRECT_S] >> '=';
-		rr2 = float_[_SetWorkRect()] % ',';
+		rs2 = no_case[WORKRECT_S] >> lit('=');
+		rv2 = float_[_SetWorkRect()] % ',';
 		// WorkCylinder
-		rs3 = no_case[WORKCYLINDER_S] >> '=';
-		rr3 = float_[_SetWorkCylinder()] % ',';
+		rs3 = no_case[WORKCYLINDER_S] >> lit('=');
+		rv3 = float_[_SetWorkCylinder()] % ',';
+		// WorkFile
+//		rs4 = no_case[WORKFILE_S] >> lit('=');
+//		rv4 = r41|r42;
+//		r41 = lit('\"') >> qi::lexeme[ qi::as_string[+(char_ - '\"')][_SetWorkFile()] ] >> lit('\"') >>
+//				-lit(',') >> -float_[_WorkPosX()] >>
+//					-(lit(',') >> -float_[_WorkPosY()] >>
+//						-(lit(',') >> -float_[_WorkPosZ()]) );
+//		r42 = qi::lexeme[ qi::as_string[+(char_ - ')')][_SetWorkFile()] ];
 		// ViewMode
-		rs4 = no_case[LATHEVIEW_S] >> '=';
-		rr4 = float_[_SetLatheView()] % ',';
-		rs5 = no_case[WIREVIEW_S]  >> '=';
-		rr5 = float_[_SetWireView()];
+		rs5 = no_case[LATHEVIEW_S] >> lit('=');
+		rv5 = float_[_SetLatheView()] % ',';
+		rs6 = no_case[WIREVIEW_S]  >> lit('=');
+		rv6 = float_[_SetWireView()];
 		// ToolPos
-		rs6 = no_case[TOOLPOS_S] >> '=';
-		rr6 = -float_[_ToolPosX()] >>
-				-(',' >> -float_[_ToolPosY()] >>
-				-(',' >> -float_[_ToolPosZ()]));
+		rs7 = no_case[TOOLPOS_S] >> lit('=');
+		rv7 = -float_[_ToolPosX()] >>
+				-(lit(',') >> -float_[_ToolPosY()] >>
+					-(lit(',') >> -float_[_ToolPosZ()]) );
 		// "mm"
 		rrMM = -no_case["mm"];	// LoadString(IDCV_MILI)使えない
 	}
@@ -363,6 +379,13 @@ struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 				g_dWorkCylinder[g_nWorkCylinder++] = d;
 		}
 	};
+	// ﾜｰｸﾌｧｲﾙ
+//	struct _SetWorkFile {
+//		void operator()(const string& s, qi::unused_type, qi::unused_type) const {
+//			if ( !g_pDoc->ReadWorkFile(s.c_str()) )
+//				g_dwWorkPosFlags |= ~(NCD_X|NCD_Y|NCD_Z);	//上位ﾋﾞｯﾄを利用してｴﾗｰ指示
+//		}
+//	};
 	// 旋盤表示ﾓｰﾄﾞ
 	struct _SetLatheView {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
@@ -414,6 +437,45 @@ struct CCommentParser : qi::grammar<Iterator, sw::space_type>
 #endif
 		}
 	};
+/*
+	// ﾜｰｸ位置変更
+	struct _WorkPosX {
+		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
+			g_dWorkPos[NCA_X] = d;
+			g_dwWorkPosFlags |= NCD_X;
+#ifdef _DEBUG_GSPIRIT
+			if ( !IsThumbnail() ) {
+				CMagaDbg	dbg("WorkPosX()", DBG_MAGENTA);
+				dbg.printf("x=%f", d);
+			}
+#endif
+		}
+	};
+	struct _WorkPosY {
+		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
+			g_dWorkPos[NCA_Y] = d;
+			g_dwWorkPosFlags |= NCD_Y;
+#ifdef _DEBUG_GSPIRIT
+			if ( !IsThumbnail() ) {
+				CMagaDbg	dbg("WorkPosY()", DBG_MAGENTA);
+				dbg.printf("y=%f", d);
+			}
+#endif
+		}
+	};
+	struct _WorkPosZ {
+		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
+			g_dWorkPos[NCA_Z] = d;
+			g_dwWorkPosFlags |= NCD_Z;
+#ifdef _DEBUG_GSPIRIT
+			if ( !IsThumbnail() ) {
+				CMagaDbg	dbg("WorkPosZ()", DBG_MAGENTA);
+				dbg.printf("z=%f", d);
+			}
+#endif
+		}
+	};
+*/
 };
 
 typedef qi::rule<string::iterator>	SkipperType;
@@ -452,7 +514,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 	g_ncArgv.nc.dwValFlags &= NCD_CLEARVALUE;	// 0xffff0000
 	g_ncArgv.taper.bTonly	= FALSE;
 	g_nWorkRect = g_nWorkCylinder = g_nLatheView = g_nWireView = 0;
-	g_dwToolPosFlags		= 0;
+	g_dwToolPosFlags = 0;
 
 	strBlock = pBlock->GetStrGcode();
 
@@ -482,6 +544,23 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			SetWireRect_fromComment();
 		if ( g_dwToolPosFlags )
 			pDataResult = SetToolPosition_fromComment(pBlock, pDataResult);	// create dummy object
+/*
+		if ( g_dwWorkPosFlags ) {
+			if ( g_dwWorkPosFlags & 0x08 )
+				pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_WORKFILE);
+			else {
+				float	xyz[NCXYZ] = {0,0,0};
+				if ( g_dwWorkPosFlags & NCD_X )
+					xyz[NCA_X] = g_dWorkPos[NCA_X];
+				if ( g_dwWorkPosFlags & NCD_Y )
+					xyz[NCA_Y] = g_dWorkPos[NCA_Y];
+				if ( g_dwWorkPosFlags & NCD_Z )
+					xyz[NCA_Z] = g_dWorkPos[NCA_Z];
+				Coord shift = SetCoord(xyz[NCA_X], xyz[NCA_Y], xyz[NCA_Z]);
+				g_pDoc->SetWorkFileOffset(shift);
+			}
+		}
+*/
 	}
 
 	// ﾏｸﾛ置換解析

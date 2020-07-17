@@ -75,7 +75,7 @@ int CNCVCaddinIF::GetToolBarID(void) const
 	else {
 		// ‚Å‚È‚¯‚ê‚Îˆê”Ôá‚¢ID‚ğ•Ô‚·
 		for ( int i=0; i<NCVCADIN_TYPESIZE; i++ ) {
-			if ( m_nMenuID[i] > 0 )
+			if ( m_nMenuID[i] > 0 )	// •„†‚È‚µ‚Å‚ÍƒAƒEƒg
 				return m_nMenuID[i];
 		}
 	}

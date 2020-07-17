@@ -23,7 +23,7 @@ private:
 				m_strComment;			// ºÒİÄ‘¼
 
 	int			m_nToolBar;				// Â°ÙÊŞ°‚É“o˜^‚·‚é²ÍŞİÄ
-	WORD		m_nMenuID[NCVCADIN_TYPESIZE];	// ÒÆ­°ID (from CNCVCApp)
+	int			m_nMenuID[NCVCADIN_TYPESIZE];	// ÒÆ­°ID (from CNCVCApp)•„†‚È‚µ‚ÍƒAƒEƒg
 	WORD		m_nImage;				// ²Ò°¼ŞØ½Ä‡‚ (from CMainFrame)
 
 public:

@@ -19,7 +19,7 @@
 #include "DXFMakeOption.h"
 #include "DXFMakeClass.h"
 #include "MakeDXFDlg.h"
-
+//#include "../Kodatuno/IGES_Parser.h"
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -37,7 +37,7 @@ extern	LPCTSTR	g_szNdelimiter = "XYZUVWIJKRPLDH";
 extern	LPTSTR	g_pszDelimiter;	// g_szGdelimiter[] + g_szNdelimiter[] (NCVC.cppで生成)
 extern	LPCTSTR	g_szNCcomment[] = {
 	"Endmill", "Drill", "Tap", "Reamer",
-	"WorkRect", "WorkCylinder",
+	"WorkRect", "WorkCylinder", "WorkFile",
 	"LatheView", "WireView",
 	"ToolPos"
 };
@@ -99,6 +99,8 @@ CNCDoc::CNCDoc()
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
 	m_rcWork.SetRectMinimum();
+//	m_kBody  = NULL;
+//	m_kbList = NULL;
 	// 増分割り当てサイズ
 	m_obBlock.SetSize(0, 4096);
 	m_obGdata.SetSize(0, 4096);
@@ -110,6 +112,16 @@ CNCDoc::~CNCDoc()
 	for ( int i=0; i<m_obGdata.GetSize(); i++ )
 		delete	m_obGdata[i];
 	m_obGdata.RemoveAll();
+	// IGES Body
+//	if ( m_kBody ) {
+		//m_kBody->DeleteBody(m_kbList);
+//		m_kBody->DelBodyElem();
+//		delete	m_kBody;
+//	}
+//	if ( m_kbList ) {
+//		m_kbList->clear();
+//		delete	m_kbList;
+//	}
 	// ﾌﾞﾛｯｸﾃﾞｰﾀの消去
 	ClearBlockData();
 	// 一時展開のﾏｸﾛﾌｧｲﾙを消去
@@ -155,7 +167,53 @@ void CNCDoc::SetLatheViewMode(void)
 		swap(m_ptNcLocalOrg.x, m_ptNcLocalOrg.z);
 	}
 }
+/*
+BOOL CNCDoc::ReadWorkFile(LPCTSTR strFile)
+{
+	CString		strPath, strName;
+	IGES_PARSER	iges;
 
+	// ﾌｧｲﾙ名の検査
+	if ( ::PathIsRelative(strFile) ) {
+		CString	strCurrent;
+		TCHAR	pBuf[MAX_PATH];
+		::Path_Name_From_FullPath(m_strCurrentFile, strCurrent, strName);	// GetPathName()不可
+		::Path_Name_From_FullPath(strFile, strPath, strName);
+		strPath = ::GetFullPathName(strCurrent+strName, MAX_PATH, pBuf, NULL) ? pBuf : strFile;
+	}
+	else {
+		strPath = strFile;
+	}
+
+	if ( m_kBody ) {
+		if ( m_kbList )
+			m_kbList->clear();
+		m_kBody->DelBodyElem();
+		delete	m_kBody;
+	}
+	m_kBody = new BODY;
+	if ( iges.IGES_Parser_Main(m_kBody, strPath) != KOD_TRUE ) {
+		delete	m_kBody;
+		m_kBody = NULL;
+		return FALSE;
+	}
+	if ( !m_kbList )
+		m_kbList = new BODYList;
+
+	iges.Optimize4OpenGL(m_kBody);
+	m_kBody->RegistBody(m_kbList, strFile);
+
+	m_bDocFlg.set(NCDOC_WORKFILE);
+
+	return TRUE;
+}
+
+void CNCDoc::SetWorkFileOffset(const Coord& sft)
+{
+	if ( m_kBody )
+		m_kBody->ShiftBody(sft);
+}
+*/
 CNCdata* CNCDoc::DataOperation
 	(const CNCdata* pData, LPNCARGV lpArgv, INT_PTR nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
 {
@@ -389,6 +447,7 @@ void CNCDoc::SetWorkRect(BOOL bShow, const CRect3F& rc)
 	if ( bShow ) {
 		m_rcWork = rc;
 		m_bDocFlg.reset(NCDOC_CYLINDER);
+		m_bDocFlg.reset(NCDOC_WORKFILE);
 	}
 	UpdateAllViews(NULL, UAV_DRAWWORKRECT, (CObject *)(INT_PTR)bShow);
 }
@@ -402,6 +461,7 @@ void CNCDoc::SetWorkCylinder(BOOL bShow, float d, float h, const CPoint3F& ptOff
 		rc.OffsetRect(ptOffset);
 		m_rcWork = rc;
 		m_bDocFlg.reset(NCDOC_WRKRECT);
+		m_bDocFlg.reset(NCDOC_WORKFILE);
 	}
 	UpdateAllViews(NULL, UAV_DRAWWORKRECT, (CObject *)(INT_PTR)bShow);
 }

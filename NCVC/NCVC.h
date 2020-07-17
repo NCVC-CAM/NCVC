@@ -112,7 +112,7 @@ class CNCVCApp : public CWinAppEx
 
 	// ｱﾄﾞｲﾝ情報
 	CNCVCaddinIF*	m_pActiveAddin;	// 現在ｱｸﾃｨﾌﾞなｱﾄﾞｲﾝ
-	WORD			m_wAddin;	// ｱﾄﾞｲﾝｺﾏﾝﾄﾞID
+	WORD			m_wAddin;		// ｱﾄﾞｲﾝｺﾏﾝﾄﾞID
 	CNCVCaddinArray		m_obAddin;
 	CNCVCaddinWordMap	m_mpAddin;	// ﾒﾆｭｰIDをｷｰとするｴﾝﾄﾘ関数ﾏｯﾌﾟ
 	BOOL	NCVCAddinInit(int);		// ｱﾄﾞｲﾝ情報読み込み
@@ -120,7 +120,7 @@ class CNCVCApp : public CWinAppEx
 	PFNNCVCSERIALIZEFUNC	m_pfnSerialFunc;	// ｱﾄﾞｲﾝｼﾘｱﾙ関数の一時保持
 
 	// 外部ｱﾌﾟﾘｹｰｼｮﾝ情報
-	WORD	m_wExec;	// 外部ｱﾌﾟﾘｹｰｼｮﾝｺﾏﾝﾄﾞID
+	WORD	m_wExec;		// 外部ｱﾌﾟﾘｹｰｼｮﾝｺﾏﾝﾄﾞID
 	CExecList	m_liExec;	// 外部ｱﾌﾟﾘｹｰｼｮﾝﾘｽﾄ(順序) CTypedPtrList<CPtrList, CExecOption*>
 	CTypedPtrMap<CMapWordToPtr,	WORD, CExecOption*>	m_mpExec;	// 　〃　(CommandID対応)
 	void	SaveExecData(void);
