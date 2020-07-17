@@ -71,12 +71,16 @@ BOOL CThreadDlg::OnInitDialog()
 		break;
 
 	case ID_FILE_DXF2NCD:		// NC生成ｽﾚｯﾄﾞ開始
-		if ( m_paramThread.wParam == ID_FILE_DXF2NCD_LATHE )
+		switch ( m_paramThread.wParam ) {
+		case ID_FILE_DXF2NCD_LATHE:
 			pfnThread = MakeLathe_Thread;
-		else if ( m_paramThread.wParam == ID_FILE_DXF2NCD_WIRE )
+			break;
+		case ID_FILE_DXF2NCD_WIRE:
 			pfnThread = MakeWire_Thread;
-		else
+			break;
+		default:
 			pfnThread = MakeNCD_Thread;
+		}
 		break;
 
 	case ID_EDIT_DXFSHAPE:		// 連結ｵﾌﾞｼﾞｪｸﾄの検索ｽﾚｯﾄﾞ開始

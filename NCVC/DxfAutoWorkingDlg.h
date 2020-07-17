@@ -12,7 +12,7 @@ class CDxfAutoWorkingDlg : public CDialog
 
 // コンストラクション
 public:
-	CDxfAutoWorkingDlg(AUTOWORKINGDATA*);
+	CDxfAutoWorkingDlg(LPAUTOWORKINGDATA);
 
 // ダイアログ データ
 	//{{AFX_DATA(CDxfAutoWorkingDlg)

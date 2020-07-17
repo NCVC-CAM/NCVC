@@ -13,47 +13,49 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+using std::string;
+using namespace boost;
+
+extern	LPCTSTR	gg_szReturn;	// "\n"
+
 //////////////////////////////////////////////////////////////////////
 // ç\íz/è¡ñ≈
 //////////////////////////////////////////////////////////////////////
 
 CExecOption::CExecOption(const CString& strExec)
 {
-	extern	LPCTSTR	gg_szReturn;
-
 	m_strFileName.Empty();
 	m_strCommand.Empty();
 	m_strToolTip.Empty();
 	m_bNCType = m_bDXFType = m_bShort = FALSE;
 	m_nImage = m_nMenuID = -1;
 
-	typedef boost::tokenizer< boost::char_separator<TCHAR> > tokenizer;
-	static	boost::char_separator<TCHAR> sep(gg_szReturn, "", boost::keep_empty_tokens);
-	std::string	str( strExec );
-	tokenizer	tok( str, sep );
-	tokenizer::iterator it;
-	int		i;
+	typedef tokenizer< char_separator<TCHAR> > tokenizer;
+	static	char_separator<TCHAR> sep(gg_szReturn, "", keep_empty_tokens);
+	std::string	str(strExec), strTok;
+	tokenizer	tok(str, sep);
+	int		i = 0;
 
 	// ∫›Ωƒ◊∏¿ì‡ÇÃó·äOÇÕè„à Ç≈èàóù
-	for ( i=0, it=tok.begin(); it!=tok.end(); i++, ++it ) {
-		switch ( i ) {
+	BOOST_FOREACH(strTok, tok) {
+		switch ( i++ ) {
 		case 0:
-			m_strFileName = it->c_str();
+			m_strFileName = strTok.c_str();
 			break;
 		case 1:
-			m_strCommand = it->c_str();
+			m_strCommand = strTok.c_str();
 			break;
 		case 2:
-			m_strToolTip = it->c_str();
+			m_strToolTip = strTok.c_str();
 			break;
 		case 3:
-			m_bNCType = atoi(it->c_str()) ? TRUE : FALSE;
+			m_bNCType = atoi(strTok.c_str()) ? TRUE : FALSE;
 			break;
 		case 4:
-			m_bDXFType = atoi(it->c_str()) ? TRUE : FALSE;
+			m_bDXFType = atoi(strTok.c_str()) ? TRUE : FALSE;
 			break;
 		case 5:
-			m_bShort = atoi(it->c_str()) ? TRUE : FALSE;
+			m_bShort = atoi(strTok.c_str()) ? TRUE : FALSE;
 			break;
 		}
 	}
@@ -104,12 +106,12 @@ CExecOption::CExecOption(const CString& strApp, DOCTYPE emDoc)
 
 CString CExecOption::GetStringData(void) const
 {
-	CString	str;
-	int		nNCType  = m_bNCType  ? 1 : 0;
-	int		nDXFType = m_bDXFType ? 1 : 0;
-	int		nShort   = m_bShort   ? 1 : 0;
-
-	str.Format("%s\n%s\n%s\n%d\n%d\n%d", m_strFileName, m_strCommand, m_strToolTip,
-					nNCType, nDXFType, nShort);
-	return str;
+	CString	strResult;	// .Format("%s\n%s\n%s\n%d\n%d\n%d", ...)
+	strResult = m_strFileName + gg_szReturn +
+				m_strCommand  + gg_szReturn +
+				m_strToolTip  + gg_szReturn +
+				lexical_cast<string>(m_bNCType  ? 1 : 0).c_str() + gg_szReturn + 
+				lexical_cast<string>(m_bDXFType ? 1 : 0).c_str() + gg_szReturn + 
+				lexical_cast<string>(m_bShort   ? 1 : 0).c_str();
+	return strResult;
 }

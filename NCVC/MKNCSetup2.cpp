@@ -90,33 +90,33 @@ BOOL CMKNCSetup2::OnInitDialog()
 	CWnd*	pParent = GetParentSheet();
 	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
 		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
-		m_bProg				= pOpt->m_bProg;
-		m_nProg				= pOpt->m_nProg;
-		m_bProgAuto			= pOpt->m_bProgAuto;
-		m_bLineAdd			= pOpt->m_bLineAdd;
+		m_bProg				= pOpt->MIL_F_PROG;
+		m_nProg				= pOpt->MIL_I_PROG;
+		m_bProgAuto			= pOpt->MIL_F_PROGAUTO;
+		m_bLineAdd			= pOpt->MIL_F_LINEADD;
+		m_nLineAdd			= pOpt->MIL_I_LINEADD;
+		m_nG90				= pOpt->MIL_I_G90;
+		m_nZReturn			= pOpt->MIL_I_ZRETURN;
+		m_bGclip			= pOpt->MIL_F_GCLIP;
+		m_bDisableSpindle	= pOpt->MIL_F_DISABLESPINDLE;
 		m_strLineForm		= pOpt->m_strOption[MKNC_STR_LINEFORM];
-		m_nLineAdd			= pOpt->m_nLineAdd;
 		m_strEOB			= pOpt->m_strOption[MKNC_STR_EOB];
-		m_nG90				= pOpt->m_nG90;
-		m_nZReturn			= pOpt->m_nZReturn;
-		m_bGclip			= pOpt->m_bGclip;
-		m_bDisableSpindle	= pOpt->m_bDisableSpindle;
 	}
 	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMKLASetup)) ) {
 		// ê˘î’”∞ƒﬁ
 		m_ctZReturnS.ShowWindow(SW_HIDE);
 		m_ctZReturn.ShowWindow(SW_HIDE);
 		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(pParent)->GetNCMakeOption();
-		m_bProg				= pOpt->m_bProg;
-		m_nProg				= pOpt->m_nProg;
-		m_bProgAuto			= pOpt->m_bProgAuto;
-		m_bLineAdd			= pOpt->m_bLineAdd;
+		m_bProg				= pOpt->LTH_F_PROG;
+		m_nProg				= pOpt->LTH_I_PROG;
+		m_bProgAuto			= pOpt->LTH_F_PROGAUTO;
+		m_bLineAdd			= pOpt->LTH_F_LINEADD;
+		m_nLineAdd			= pOpt->LTH_I_LINEADD;
+		m_nG90				= pOpt->LTH_I_G90;
+		m_bGclip			= pOpt->LTH_F_GCLIP;
+		m_bDisableSpindle	= pOpt->LTH_F_DISABLESPINDLE;
 		m_strLineForm		= pOpt->m_strOption[MKLA_STR_LINEFORM];
-		m_nLineAdd			= pOpt->m_nLineAdd;
 		m_strEOB			= pOpt->m_strOption[MKLA_STR_EOB];
-		m_nG90				= pOpt->m_nG90;
-		m_bGclip			= pOpt->m_bGclip;
-		m_bDisableSpindle	= pOpt->m_bDisableSpindle;
 	}
 	else {
 		// ‹≤‘ï˙ìdâ¡çHã@”∞ƒﬁ
@@ -124,15 +124,15 @@ BOOL CMKNCSetup2::OnInitDialog()
 		m_ctZReturn.ShowWindow(SW_HIDE);
 		m_ctDisableSpindle.ShowWindow(SW_HIDE);
 		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(pParent)->GetNCMakeOption();
-		m_bProg				= pOpt->m_bProg;
-		m_nProg				= pOpt->m_nProg;
-		m_bProgAuto			= pOpt->m_bProgAuto;
-		m_bLineAdd			= pOpt->m_bLineAdd;
+		m_bProg				= pOpt->WIR_F_PROG;
+		m_nProg				= pOpt->WIR_I_PROG;
+		m_bProgAuto			= pOpt->WIR_F_PROGAUTO;
+		m_bLineAdd			= pOpt->WIR_F_LINEADD;
+		m_nLineAdd			= pOpt->WIR_I_LINEADD;
+		m_nG90				= pOpt->WIR_I_G90;
+		m_bGclip			= pOpt->WIR_F_GCLIP;
 		m_strLineForm		= pOpt->m_strOption[MKLA_STR_LINEFORM];
-		m_nLineAdd			= pOpt->m_nLineAdd;
 		m_strEOB			= pOpt->m_strOption[MKLA_STR_EOB];
-		m_nG90				= pOpt->m_nG90;
-		m_bGclip			= pOpt->m_bGclip;
 	}
 	EnableControl_ProgNo();
 	EnableControl_LineAdd();
@@ -160,40 +160,40 @@ BOOL CMKNCSetup2::OnApply()
 	CWnd*	pParent = GetParentSheet();
 	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
 		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
-		pOpt->m_bProg			= m_bProg;
-		pOpt->m_nProg			= m_nProg;
-		pOpt->m_bProgAuto		= m_bProgAuto;
-		pOpt->m_bLineAdd		= m_bLineAdd;
-		pOpt->m_nLineAdd		= m_nLineAdd;
-		pOpt->m_nG90			= m_nG90;
-		pOpt->m_nZReturn		= m_nZReturn;
-		pOpt->m_bGclip			= m_bGclip;
-		pOpt->m_bDisableSpindle	= m_bDisableSpindle;
+		pOpt->MIL_F_PROG			= m_bProg;
+		pOpt->MIL_I_PROG			= m_nProg;
+		pOpt->MIL_F_PROGAUTO		= m_bProgAuto;
+		pOpt->MIL_F_LINEADD			= m_bLineAdd;
+		pOpt->MIL_I_LINEADD			= m_nLineAdd;
+		pOpt->MIL_I_G90				= m_nG90;
+		pOpt->MIL_I_ZRETURN			= m_nZReturn;
+		pOpt->MIL_F_GCLIP			= m_bGclip;
+		pOpt->MIL_F_DISABLESPINDLE	= m_bDisableSpindle;
 		pOpt->m_strOption[MKNC_STR_LINEFORM] = m_strLineForm;
 		pOpt->m_strOption[MKNC_STR_EOB] = m_strEOB;
 	}
 	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMKLASetup)) ) {
 		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(pParent)->GetNCMakeOption();
-		pOpt->m_bProg			= m_bProg;
-		pOpt->m_nProg			= m_nProg;
-		pOpt->m_bProgAuto		= m_bProgAuto;
-		pOpt->m_bLineAdd		= m_bLineAdd;
-		pOpt->m_nLineAdd		= m_nLineAdd;
-		pOpt->m_nG90			= m_nG90;
-		pOpt->m_bGclip			= m_bGclip;
-		pOpt->m_bDisableSpindle	= m_bDisableSpindle;
+		pOpt->LTH_F_PROG			= m_bProg;
+		pOpt->LTH_I_PROG			= m_nProg;
+		pOpt->LTH_F_PROGAUTO		= m_bProgAuto;
+		pOpt->LTH_F_LINEADD			= m_bLineAdd;
+		pOpt->LTH_I_LINEADD			= m_nLineAdd;
+		pOpt->LTH_I_G90				= m_nG90;
+		pOpt->LTH_F_GCLIP			= m_bGclip;
+		pOpt->LTH_F_DISABLESPINDLE	= m_bDisableSpindle;
 		pOpt->m_strOption[MKLA_STR_LINEFORM] = m_strLineForm;
 		pOpt->m_strOption[MKLA_STR_EOB] = m_strEOB;
 	}
 	else {
 		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(pParent)->GetNCMakeOption();
-		pOpt->m_bProg			= m_bProg;
-		pOpt->m_nProg			= m_nProg;
-		pOpt->m_bProgAuto		= m_bProgAuto;
-		pOpt->m_bLineAdd		= m_bLineAdd;
-		pOpt->m_nLineAdd		= m_nLineAdd;
-		pOpt->m_nG90			= m_nG90;
-		pOpt->m_bGclip			= m_bGclip;
+		pOpt->WIR_F_PROG			= m_bProg;
+		pOpt->WIR_I_PROG			= m_nProg;
+		pOpt->WIR_F_PROGAUTO		= m_bProgAuto;
+		pOpt->WIR_F_LINEADD			= m_bLineAdd;
+		pOpt->WIR_I_LINEADD			= m_nLineAdd;
+		pOpt->WIR_I_G90				= m_nG90;
+		pOpt->WIR_F_GCLIP			= m_bGclip;
 		pOpt->m_strOption[MKLA_STR_LINEFORM] = m_strLineForm;
 		pOpt->m_strOption[MKLA_STR_EOB] = m_strEOB;
 	}

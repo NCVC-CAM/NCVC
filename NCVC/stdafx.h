@@ -4,6 +4,7 @@
 
 #pragma once
 
+#define	NO_WARN_MBCS_MFC_DEPRECATION 1		// VS2015Å`
 #define	_BIND_TO_CURRENT_VCLIBS_VERSION	1
 
 #ifndef _SECURE_ATL
@@ -59,9 +60,11 @@
 #include <bitset>
 #include <algorithm>
 
-// BOOST Libraries
 #pragma	warning( disable : 4800 )		// BOOL setting
+
+// BOOST Libraries
 #pragma	warning( disable : 4819 )		// codepage
+#pragma	warning( disable : 4348 )		// boost 1.60Å` ???
 //#include "boost/geometry.hpp"			// åvéZäÙâΩ
 //#include "boost/geometry/geometries/register/point.hpp"
 //#include "boost/geometry/geometries/register/box.hpp"
@@ -70,7 +73,11 @@
 #include "boost/tuple/tuple.hpp"		// ägí£√ﬁ∞¿
 #include "boost/optional.hpp"
 #include "boost/variant.hpp"
+#include "boost/function.hpp"
 #include "boost/utility.hpp"			// ’∞√®ÿ√®
+#include "boost/foreach.hpp"
+#include "boost/range/algorithm/find_if.hpp"
+#include "boost/lexical_cast.hpp"
 #include "boost/algorithm/minmax.hpp"
 
 #define	NCVCSERIALVERSION_1503	1503	// v1.00RCÅ`
@@ -78,17 +85,15 @@
 #define	NCVCSERIALVERSION_1507	1507	// v1.10aÅ`
 #define	NCVCSERIALVERSION_1600	1600	// v1.60Å` (CDXFworkingOutlineÇÃ√ﬁ∞¿ïœçX)
 #define	NCVCSERIALVERSION_1700	1700	// v1.70Å` (CDXFworkingOutlineÇÃµÃæØƒílí«â¡)
-#define	NCVCSERIALVERSION		2300	// v2.30Å` (ê˘î’å¥ì_√ﬁ∞¿)
-#define	SIZEOF(array)			( sizeof(array)/sizeof(array[0]) )
-
-// NCVC original
-#include "3Dto2D.h"
-#include "CustomClass.h"
-#include "CustomControl.h"
+#define	NCVCSERIALVERSION_2300	2300	// v2.30Å` (ê˘î’å¥ì_√ﬁ∞¿)
+#define	NCVCSERIALVERSION_3600	3600	// v3.60Å` (CAD√ﬁ∞¿ÇÃìùçá)
+#define	NCVCSERIALVERSION_3602	3602	// v3.60bÅ` (ï¬Ç∂ÇΩPOLYLINEÇÃï˚å¸îªíË√ﬁ∞¿)
+#define	NCVCSERIALVERSION		NCVCSERIALVERSION_3602
 
 enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 
 // Common Define
+#define	SIZEOF(array)			( sizeof(array)/sizeof(array[0]) )
 #define	AfxGetNCVCApp()			( static_cast<CNCVCApp *>(AfxGetApp()) )
 #define	AfxGetNCVCMainWnd()		( static_cast<CMainFrame *>(AfxGetMainWnd()) )
 #define	LOMETRICFACTOR			10.0
@@ -134,9 +139,13 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 #define WM_USERSTATUSLINENO		WM_USER+111
 	// CAD√ﬁ∞¿ÇÃìùçá(CNCVCApp::OnFileCADbind() -> CDXFView )
 #define	WM_USERBINDINIT			WM_USER+112
+	// CAD√ﬁ∞¿ÇÃìùçá(CDXFView[child] -> CDXFView[parent] )
+#define	WM_USERBIND_LDOWN		WM_USER+113
+#define	WM_USERBIND_ROUND		WM_USER+114
+#define	WM_USERBIND_CANCEL		WM_USER+115
 
 /////////////////////////////////////////////////////////////////////////////
-// NCVC ã§í ä÷êî
+// NCVC ã§í ä÷êîÅEÉ}ÉNÉç
 
 // √∑ΩƒÃß≤ŸÇÃçs¡™Ø∏
 inline	BOOL	NC_IsNullLine(const CString& str)	// EOF ìôÇÃçs
@@ -219,6 +228,11 @@ BOOL	GetVersionValue(CString& strBuffer, LPVOID pVersionInfo, DWORD dwTrans, LPC
 // GetLastMessage() ÇÃ“Øæ∞ºﬁêÆå`
 void	NC_FormatMessage(void);
 #endif
+
+// NCVC original
+#include "3Dto2D.h"
+#include "CustomClass.h"
+#include "CustomControl.h"
 
 // XpStyle Manifest
 //#ifdef _UNICODE

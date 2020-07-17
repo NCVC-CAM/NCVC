@@ -13,6 +13,9 @@ extern	CMagaDbg	g_dbg;
 
 extern	int		g_nLastPage_ViewSetup;
 
+using std::string;
+using namespace boost;
+
 BEGIN_MESSAGE_MAP(CViewSetup, CPropertySheet)
 	//{{AFX_MSG_MAP(CViewSetup)
 	ON_WM_DESTROY()
@@ -75,8 +78,8 @@ CString CViewSetup::GetChangeFontButtonText(LOGFONT* plfFont)
 		strFace = plfFont->lfFaceName;
 	else
 		strFace = "¼½ÃÑ•W€";
-	strText.Format("%s (%d pt)", strFace,
-		(int)(abs(plfFont->lfHeight) * 72.0 / dc.GetDeviceCaps(LOGPIXELSY) + 0.5) );
-
+	strText = strFace + " (" +
+		lexical_cast<string>((int)(abs(plfFont->lfHeight) * 72.0 / dc.GetDeviceCaps(LOGPIXELSY) + 0.5)).c_str() +
+		" pt)";
 	return strText;
 }

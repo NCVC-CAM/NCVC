@@ -8,8 +8,13 @@
 
 enum {
 	DXFOPT_VIEW = 0,
-	DXFOPT_ORGTYPE,
+	DXFOPT_FILECOMMENT,
+		DXFOPT_FLGS			// [2]
+};
+enum {
+	DXFOPT_ORGTYPE = 0,
 	DXFOPT_BINDORG,
+	DXFOPT_BINDSORT,
 		DXFOPT_NUMS			// [3]
 };
 enum {
@@ -31,14 +36,22 @@ class CDXFOption
 friend	class	CDxfSetup1;
 friend	class	CDxfSetup2;
 friend	class	CCADbindDlg;
+friend	class	CMakeBindOptDlg;
 
 	union {
 		struct {
-			int		m_nView,		// 変換後ﾋﾞｭｰ起動
-					m_nOrgType,		// 原点ﾚｲﾔが無いときの処理
+			BOOL	m_bView,		// 変換後ﾋﾞｭｰ起動
+					m_bFileComment;	// 生成時ﾌｧｲﾙごとにｺﾒﾝﾄを埋め込む
+		};
+		BOOL		m_ubNums[DXFOPT_FLGS];
+	};
+	union {
+		struct {
+			int		m_nOrgType,		// 原点ﾚｲﾔが無いときの処理
 									//    0:ｴﾗｰ,  1～4:右上,右下,左上,左下, 5:中央
-					m_nBindOrg;		// CADﾃﾞｰﾀ統合時の加工原点
-									//    0:中央, 1～4:右上,右下,左上,左下
+					m_nBindOrg,		// CADﾃﾞｰﾀ統合時の加工原点
+									//    0～3:右上,右下,左上,左下, 4:中央
+					m_nBindSort;	// 生成時の並べ替え
 		};
 		int			m_unNums[DXFOPT_NUMS];
 	};
@@ -83,12 +96,16 @@ public:
 			FALSE : (m_strReadLayer[DXFCOMLAYER] == lpszLayer);
 	}
 	//
-	int		GetDxfFlag(size_t n) const {
+	BOOL	GetDxfOptFlg(size_t n) const {
+		ASSERT( n>=0 && n<SIZEOF(m_ubNums) );
+		return m_ubNums[n];
+	}
+	int		GetDxfOptNum(size_t n) const {
 		ASSERT( n>=0 && n<SIZEOF(m_unNums) );
 		return m_unNums[n];
 	}
 	void	SetViewFlag(BOOL bView) {
-		m_nView = bView;
+		m_bView = bView;
 	}
 	enMAKETYPE	GetNCMakeType(void) const {
 		return m_enMakeType;

@@ -76,9 +76,8 @@ void CNCViewSplit::AllPane_PostMessage(int nID, UINT msg, WPARAM wParam, LPARAM 
 	else {								// ‚S–Ê-2
 		GetPane(0, 1)->PostMessage(msg, wParam, lParam);	// XYZ
 		CSplitterWnd* pWnd = static_cast<CSplitterWnd *>(GetPane(0, 0));
-		for ( i=0; i<3; i++ ) {
+		for ( i=0; i<3; i++ )
 			pWnd->GetPane(i, 0)->PostMessage(msg, wParam, lParam);	// YZ, XZ, XY
-		}
 		SetActivePane(0, 1);	// XYZ•\Ž¦‚ð±¸Ã¨ÌÞ‚É
 	}
 }

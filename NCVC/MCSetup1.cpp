@@ -27,8 +27,7 @@ CMCSetup1::CMCSetup1() : CPropertyPage(CMCSetup1::IDD),
 	//{{AFX_DATA_INIT(CMCSetup1)
 	m_nFselect = -1;
 	//}}AFX_DATA_INIT
-	for ( int i=0; i<MODALGROUP; i++ )
-		m_nModalGroup[i] = -1;
+	for ( int i=0; i<MODALGROUP; m_nModalGroup[i++]=-1 );
 }
 
 void CMCSetup1::DoDataExchange(CDataExchange* pDX)

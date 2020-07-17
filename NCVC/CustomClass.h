@@ -5,6 +5,22 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////
+// 配列・コンテナのzeroクリア
+
+#define	ZEROCLR(ar)		for ( auto& ref : ar ) ref = 0;
+
+//////////////////////////////////////////////////////////////////////
+// CList, CMap用のFOREACH
+
+#define	PLIST_FOREACH(FOO, LIST) \
+	for ( POSITION pos=(LIST)->GetHeadPosition(); pos; ) { \
+		FOO = (LIST)->GetNext(pos);
+#define	PMAP_FOREACH(KEY, VAL, MAP) \
+	for ( POSITION pos=(MAP)->GetStartPosition(); pos; ) { \
+		(MAP)->GetNextAssoc(pos, KEY, VAL);
+#define	END_FOREACH		}
+
+//////////////////////////////////////////////////////////////////////
 //	CTypedPtrArrayEx : 拡張 CTypedPtrArray
 
 template<class BASE_CLASS, class TYPE>
@@ -70,7 +86,7 @@ public:
 			QSort( pfnCompare, 0, GetUpperBound());
 	}
 };
-/*
+
 //////////////////////////////////////////////////////////////////////
 //	CTypedPtrListEx : 拡張 CTypedPtrList
 
@@ -96,14 +112,8 @@ public:
 			SetAt(posTb, pObjH);
 		}
 	}
-	// 全ての要素のﾒﾝﾊﾞ関数を呼び出す
-	template<class TYPE>
-	void	AllElementCall( void (TYPE::*pfnFunc)(void) ) {	// 仮想関数が指定できないので却下
-		for ( POSITION pos=GetHeadPosition(); pos; )
-			(GetNext(pos)->*pfnFunc)();
-	}
 };
-*/
+
 //////////////////////////////////////////////////////////////////////
 //	CStringKeyIndex : CMapStringToPtrを使って文字列キーのｲﾝﾃﾞｯｸｽを検索
 
@@ -125,10 +135,9 @@ public:
 		InitHashTable(cp.GetHashTableSize());
 		CString	rKey;
 		LPVOID	rValue;
-		for ( POSITION pos=cp.GetStartPosition(); pos; ) {
-			cp.GetNextAssoc(pos, rKey, rValue);
+		PMAP_FOREACH(rKey, rValue, &cp)
 			SetAt(rKey, rValue);
-		}
+		END_FOREACH
 	}
 
 	void	SetElement(size_t nSize, LPCTSTR pszElement[]) {

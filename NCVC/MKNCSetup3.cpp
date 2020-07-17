@@ -118,19 +118,19 @@ BOOL CMKNCSetup3::OnInitDialog()
 	// + GetParentSheet() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
 	CMKNCSetup*	pParent = GetParentSheet();
 	CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
-	m_nMakeEnd		= pOpt->m_nMakeEnd;
-	m_dMakeValue	= pOpt->m_dMakeValue;
-	m_dMakeFeed		= pOpt->m_dMakeFeed;
-	m_bDeep			= pOpt->m_bDeep;
-	m_dDeep			= pOpt->m_dDeep;
-	m_dZStep		= pOpt->m_dZStep;
-	m_nDeepReturn	= pOpt->m_nDeepReturn;
-	m_nDeepAll		= pOpt->m_nDeepAll;
-	m_nDeepRound	= pOpt->m_nDeepRound;
-	m_bHelical		= pOpt->m_bHelical;
-	m_bFinish		= pOpt->m_bDeepFinish;
-	m_nSpindle		= pOpt->m_nDeepSpindle;
-	m_dFeed			= pOpt->m_dDeepFeed;
+	m_nMakeEnd		= pOpt->MIL_I_MAKEEND;
+	m_dMakeValue	= pOpt->MIL_D_MAKEEND;
+	m_dMakeFeed		= pOpt->MIL_D_MAKEENDFEED;
+	m_bDeep			= pOpt->MIL_F_DEEP;
+	m_dDeep			= pOpt->MIL_D_DEEP;
+	m_dZStep		= pOpt->MIL_D_ZSTEP;
+	m_nDeepReturn	= pOpt->MIL_I_DEEPRETURN;
+	m_nDeepAll		= pOpt->MIL_I_DEEPALL;
+	m_nDeepRound	= pOpt->MIL_I_DEEPROUND;
+	m_bHelical		= pOpt->MIL_F_HELICAL;
+	m_bFinish		= pOpt->MIL_F_DEEPFINISH;
+	m_nSpindle		= pOpt->MIL_I_DEEPSPINDLE;
+	m_dFeed			= pOpt->MIL_D_DEEPFEED;
 	EnableControl_MakeEnd();
 	EnableControl_Deep();
 
@@ -140,8 +140,8 @@ BOOL CMKNCSetup3::OnInitDialog()
 		m_dZG0Stop	= (double)(pParent->m_dlg1.m_dZG0Stop);
 	}
 	else {
-		m_dZCut		= pOpt->m_dZCut;
-		m_dZG0Stop	= pOpt->m_dZG0Stop;
+		m_dZCut		= pOpt->MIL_D_ZCUT;
+		m_dZG0Stop	= pOpt->MIL_D_ZG0STOP;
 	}
 
 	UpdateData(FALSE);
@@ -184,8 +184,8 @@ BOOL CMKNCSetup3::OnSetActive()
 	}
 	else {
 		CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
-		m_dZCut		= pOpt->m_dZCut;
-		m_dZG0Stop	= pOpt->m_dZG0Stop;
+		m_dZCut		= pOpt->MIL_D_ZCUT;
+		m_dZG0Stop	= pOpt->MIL_D_ZG0STOP;
 	}
 	return __super::OnSetActive();
 }
@@ -216,19 +216,19 @@ BOOL CMKNCSetup3::OnApply()
 	}
 
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->m_nMakeEnd		= m_nMakeEnd;
-	pOpt->m_dMakeValue		= m_dMakeValue;
-	pOpt->m_dMakeFeed		= m_dMakeFeed;
-	pOpt->m_bDeep			= m_bDeep;
-	pOpt->m_dDeep			= m_dDeep;
-	pOpt->m_dZStep			= m_dZStep;
-	pOpt->m_nDeepReturn		= m_nDeepReturn;
-	pOpt->m_nDeepAll		= m_nDeepAll;
-	pOpt->m_nDeepRound		= m_nDeepRound;
-	pOpt->m_bHelical		= m_bHelical;
-	pOpt->m_bDeepFinish		= m_bFinish;
-	pOpt->m_nDeepSpindle	= m_nSpindle;
-	pOpt->m_dDeepFeed		= m_dFeed;
+	pOpt->MIL_I_MAKEEND		= m_nMakeEnd;
+	pOpt->MIL_D_MAKEEND		= m_dMakeValue;
+	pOpt->MIL_D_MAKEENDFEED	= m_dMakeFeed;
+	pOpt->MIL_F_DEEP		= m_bDeep;
+	pOpt->MIL_D_DEEP		= m_dDeep;
+	pOpt->MIL_D_ZSTEP		= m_dZStep;
+	pOpt->MIL_I_DEEPRETURN	= m_nDeepReturn;
+	pOpt->MIL_I_DEEPALL		= m_nDeepAll;
+	pOpt->MIL_I_DEEPROUND	= m_nDeepRound;
+	pOpt->MIL_F_HELICAL		= m_bHelical;
+	pOpt->MIL_F_DEEPFINISH	= m_bFinish;
+	pOpt->MIL_I_DEEPSPINDLE	= m_nSpindle;
+	pOpt->MIL_D_DEEPFEED	= m_dFeed;
 
 	return TRUE;
 }

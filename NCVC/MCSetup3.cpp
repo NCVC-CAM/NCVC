@@ -46,11 +46,9 @@ CMCSetup3::CMCSetup3() : CPropertyPage(CMCSetup3::IDD)
 
 	// Œ»Ý“o˜^Ï‚Ý‚ÌH‹ïî•ñ‚ÍC“o˜^EíœÌ×¸Þ‚ð¸Ø±
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
-	CMCTOOLINFO*	pToolInfo;
-	for ( POSITION pos=pMCopt->m_ltTool.GetHeadPosition(); pos; ) {
-		pToolInfo = pMCopt->m_ltTool.GetNext(pos);
+	PLIST_FOREACH(CMCTOOLINFO* pToolInfo, &pMCopt->m_ltTool)
 		pToolInfo->m_bDlgAdd = pToolInfo->m_bDlgDel = FALSE;
-	}
+	END_FOREACH
 	m_nType = pMCopt->m_nCorrectType;
 }
 
@@ -134,8 +132,6 @@ BOOL CMCSetup3::OnInitDialog()
 	__super::OnInitDialog();
 
 	int			i;
-	POSITION	pos;
-	CRect		rc;
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	// ¿°Ä—ñ‚ÌŽæ“¾
@@ -150,6 +146,7 @@ BOOL CMCSetup3::OnInitDialog()
 			g_ToolHeader[i].lpszName, g_ToolHeader[i].nFormat);
 	}
 	// —ñ•
+	CRect		rc;
 	m_ctToolList.GetClientRect(rc);
 	i = m_ctToolList.GetStringWidth(g_ToolHeader[2].lpszName) + 16;	// "Œa•â³’l "
 	m_ctToolList.SetColumnWidth(0, i);
@@ -164,17 +161,18 @@ BOOL CMCSetup3::OnInitDialog()
 	lvi.mask = LVIF_TEXT | LVIF_PARAM;
 	lvi.iSubItem = 0;
 	lvi.pszText = LPSTR_TEXTCALLBACK;
-	for ( i=0, pos=pMCopt->m_ltTool.GetHeadPosition(); pos; i++ ) {
-		lvi.iItem  = i;
-		lvi.lParam = (LPARAM)(pMCopt->m_ltTool.GetNext(pos));
+	i = 0;
+	PLIST_FOREACH(CMCTOOLINFO* pToolInfo, &pMCopt->m_ltTool)
+		lvi.iItem  = i++;
+		lvi.lParam = (LPARAM)pToolInfo;
 		if ( m_ctToolList.InsertItem(&lvi) < 0 ) {
 			CString	strMsg;
-			strMsg.Format(IDS_ERR_ADDITEM, i+1);
+			strMsg.Format(IDS_ERR_ADDITEM, i);
 			AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 			break;
 		}
-	}
-	// ‘S‚Ä‚Ì—ñ‚ð‘I‘ð‰Â”\‚É‚·‚é
+	END_FOREACH
+	// ‚Ps‘I‘ð
 	DWORD	dwStyle = m_ctToolList.GetExtendedStyle();
 	dwStyle |= LVS_EX_FULLROWSELECT;
 	m_ctToolList.SetExtendedStyle(dwStyle);
@@ -241,8 +239,7 @@ void CMCSetup3::OnGetDispInfoToolList(NMHDR* pNMHDR, LRESULT* pResult)
 	CString			strFmt;
 	switch ( plvdi->item.iSubItem ) {
 	case 0:		// ‚s”Ô†
-		strFmt.Format("%d", pToolInfo->m_nTool);
-		lstrcpy(plvdi->item.pszText, strFmt);
+		lstrcpy(plvdi->item.pszText, boost::lexical_cast<std::string>(pToolInfo->m_nTool).c_str());
 		break;
 	case 1:		// H‹ï–¼
 		lstrcpy(plvdi->item.pszText, pToolInfo->m_strName);

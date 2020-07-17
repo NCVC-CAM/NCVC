@@ -93,7 +93,7 @@ public:
 		m_pActiveShape = pShape;
 	}
 	//
-	const	CString		GetStrLayer(void) const {
+	const	CString		GetLayerName(void) const {
 		return m_strLayer;
 	}
 	int		GetLayerType(void) const {
@@ -175,6 +175,7 @@ public:
 	void	SerializeShapeSort(void);
 	//
 	void	AllChangeFactor(double) const;
+	void	AllSetDxfFlg(DWORD, BOOL) const;
 	void	AllShapeClearSideFlg(void) const;
 	void	DrawWorking(CDC*);
 	// Ú²Ô–¼‚ÆğŒÌ§²ÙCÅ[Z’l‚ÌŠÖŒWî•ñ

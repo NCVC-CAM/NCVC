@@ -13,6 +13,7 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
+using std::string;
 
 extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 extern	LPCTSTR	gg_szComma;			// ","
@@ -23,6 +24,8 @@ extern	LPCTSTR	gg_szRegKey;
 
 // ⁄ºﬁΩƒÿÅEINIÃß≤ŸÇÃà⁄çsΩ∑∞œ
 static	const	UINT	g_nConvert = 2;
+//
+static	LPCTSTR	g_szGformat = "G%d";
 
 // intå^ñΩóﬂ
 static	LPCTSTR	g_szNOrder[] = {
@@ -80,19 +83,22 @@ static	LPCTSTR	g_szOldOrder[] = {
 	"Lathe"		// -> ForceViewMode(int)
 };
 
-
 /////////////////////////////////////////////////////////////////////////////
 // CMCOption ÉNÉâÉXÇÃç\íz/è¡ñ≈
 
 CMCOption::CMCOption()
 {
+//	ASSERT( MC_INT_NUMS == SIZEOF(g_szNOrder) );	// SIZEOF(g_szNOrder)+MODALGROUP+NCXYZ-2
+	ASSERT( MC_INT_NUMS == SIZEOF(g_dfNOrder) );
+//	ASSERT( MC_DBL_NUMS == SIZEOF(g_szDOrder) );	// SIZEOF(g_szDOrder)+NCXYZ-1
+	ASSERT( MC_DBL_NUMS == SIZEOF(g_dfDOrder) );
+	ASSERT( MC_FLG_NUMS == SIZEOF(g_szBOrder) );
+	ASSERT( MC_FLG_NUMS == SIZEOF(g_dfBOrder) );
+
 	CString	strRegKey, strEntry, strResult, strFmt;
 	int		i;
 
 	// “› ﬁïœêîÇÃèâä˙âª
-	ASSERT( SIZEOF(m_unNums) == SIZEOF(g_dfNOrder) );
-	ASSERT( SIZEOF(m_udNums) == SIZEOF(g_dfDOrder) );
-	ASSERT( SIZEOF(m_ubFlgs) == SIZEOF(g_dfBOrder) );
 	for ( i=0; i<SIZEOF(g_dfNOrder); i++ )
 		m_unNums[i] = g_dfNOrder[i];
 	for ( i=0; i<SIZEOF(g_dfDOrder); i++ )
@@ -126,7 +132,7 @@ CMCOption::CMCOption()
 		VERIFY(strEntry.LoadString(IDS_REG_NCV_FDOT));
 		m_nFDot = AfxGetApp()->GetProfileInt(strRegKey, strEntry, 0);
 		for ( i=0; i<WORKOFFSET; i++ ) {
-			strEntry.Format("G%d", i+54);
+			strEntry.Format(g_szGformat, i+54);
 			strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
 			if ( !strResult.IsEmpty() )
 				ConvertWorkOffset(i, strResult);
@@ -221,7 +227,7 @@ void CMCOption::Convert(void)
 	for ( i=0; i<NCXYZ; i++ )
 		reg.DeleteValue(g_szNdelimiter[i]+strEntry);
 	for ( i=0; i<WORKOFFSET; i++ ) {
-		strEntry.Format("G%d", i+54);
+		strEntry.Format(g_szGformat, i+54);
 		reg.DeleteValue(strEntry);
 	}
 	reg.Close();
@@ -281,7 +287,7 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 		}
 	// ----------
 	for ( i=0; i<WORKOFFSET; i++ ) {
-		strEntry.Format("G%d", i+54);
+		strEntry.Format(g_szGformat, i+54);
 		if ( ::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile) > 0 ) {
 			ConvertWorkOffset(i, szResult);
 			j += NCXYZ;
@@ -309,21 +315,21 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 	::GetPrivateProfileString(strRegKey, g_szSOrder[k++], "", szResult, _MAX_PATH, lpszFile);
 	m_strAutoBreak = szResult;
 
-	// çHãÔèÓïÒÇàÍíUçÌèú
-	for ( POSITION pos=m_ltTool.GetHeadPosition(); pos; )
-		delete	m_ltTool.GetNext(pos);
-	m_ltTool.RemoveAll();
-
 	// çHãÔèÓïÒ
 	CMCTOOLINFO*	pToolInfo;
 	CMCTOOLINFO		tool;
 
+	// çHãÔèÓïÒÇàÍíUçÌèú
+	PLIST_FOREACH(pToolInfo, &m_ltTool)
+		delete	pToolInfo;
+	END_FOREACH
+	m_ltTool.RemoveAll();
+
 	// ñΩóﬂÇï™äÑ
 	typedef tokenizer< char_separator<TCHAR> > tokenizer;
 	static	char_separator<TCHAR> sep(gg_szComma, "", keep_empty_tokens);
-	std::string	str;
-	tokenizer	tok( str, sep );
-	tokenizer::iterator it;
+	string	str, strTok;
+	tokenizer	tok(str, sep);
 
 	try {
 		for ( i=0; TRUE; i++ ) {	// Tool¥›ƒÿÇ™ì«ÇﬂÇ»Ç≠Ç»ÇÈÇ‹Ç≈
@@ -332,20 +338,20 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 				break;
 			str = szResult;
 			tok.assign(str);
-			tool.ClearOption();
-			for ( j=0, it=tok.begin(); j<MCTOOL_NUMS && it!=tok.end(); j++, ++it ) {
-				switch ( j ) {
+			tool.ClearOption();	j = 0;
+			BOOST_FOREACH(strTok, tok) {
+				switch ( j++ ) {
 				case MCTOOL_T:		// Çsî‘çÜ
-					tool.m_nTool = atoi(it->c_str());
+					tool.m_nTool = atoi(strTok.c_str());
 					break;
 				case MCTOOL_NAME:	// çHãÔñº
-					tool.m_strName = it->c_str();
+					tool.m_strName = strTok.c_str();
 					break;
 				case MCTOOL_D:		// åaï‚ê≥
-					tool.m_dToolD = atof(it->c_str());
+					tool.m_dToolD = atof(strTok.c_str());
 					break;
 				case MCTOOL_H:		// í∑ï‚ê≥
-					tool.m_dToolH = atof(it->c_str());
+					tool.m_dToolH = atof(strTok.c_str());
 					break;
 				}
 			}
@@ -383,18 +389,18 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 	// intå^ñΩóﬂ
 	for ( i=0, j=0, k=0; i<MODALGROUP; i++, j++ ) {
 		strEntry.Format(g_szNOrder[k], i);
-		strResult.Format("%d", m_nModal[i]);
+		strResult = lexical_cast<string>(m_nModal[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
 			return FALSE;
 	}
 	for ( i=0, k++; i<NCXYZ; i++, j++ ) {
 		strEntry.Format(g_szNOrder[k], g_szNdelimiter[i]);
-		strResult.Format("%d", m_nG0Speed[i]);
+		strResult = lexical_cast<string>(m_nG0Speed[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
 			return FALSE;
 	}
 	for ( k++; j<SIZEOF(m_unNums); j++, k++ ) {
-		strResult.Format("%d", m_unNums[j]);
+		strResult = lexical_cast<string>(m_unNums[j]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, g_szNOrder[k], strResult, lpszFile) )
 			return FALSE;
 	}
@@ -419,7 +425,7 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 			strFormat.Format(IDS_MAKENCD_FORMAT, m_dWorkOffset[i][j]);
 			strResult += strFormat;
 		}
-		strEntry.Format("G%d", i+54);
+		strEntry.Format(g_szGformat, i+54);
 		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
 			return FALSE;
 	}
@@ -427,7 +433,7 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 	// BOOLå^ñΩóﬂ
 	for ( i=0; i<SIZEOF(m_ubFlgs); i++ ) {
 		strEntry = g_szBOrder[i];
-		strResult.Format("%d", m_ubFlgs[i]);
+		strResult = lexical_cast<string>(m_ubFlgs[i] ? 1 : 0).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFile) )
 			return FALSE;
 	}
@@ -459,7 +465,7 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 	for ( i=0; pos; i++ ) {
 		pToolInfo = m_ltTool.GetNext(pos);
 		strEntry.Format(g_szSOrder[k], i);
-		strResult.Format("%d", pToolInfo->m_nTool);
+		strResult  = lexical_cast<string>(pToolInfo->m_nTool).c_str();
 		strResult += gg_szComma + pToolInfo->m_strName;
 		strFormat.Format(IDS_MAKENCD_FORMAT, pToolInfo->m_dToolD);
 		strResult += gg_szComma + strFormat;
@@ -485,8 +491,7 @@ void CMCOption::ConvertWorkOffset(size_t n, LPCTSTR lpszResult)
 	LPTSTR	lpsztok, lpszcontext, lpszBuf = NULL;
 	int		i;
 
-	for ( i=0; i<NCXYZ; i++ )
-		m_dWorkOffset[n][i] = 0;
+	for ( i=0; i<NCXYZ; m_dWorkOffset[n][i++]=0 );
 
 	try {
 		lpszBuf = new TCHAR[lstrlen(lpszResult)+1];
@@ -540,23 +545,19 @@ BOOL CMCOption::AddMCListHistory(LPCTSTR lpszSearch)
 
 optional<double> CMCOption::GetToolD(int nTool) const
 {
-	CMCTOOLINFO*	pTool;
-	for ( POSITION pos=m_ltTool.GetHeadPosition(); pos; ) {
-		pTool = m_ltTool.GetNext(pos);
+	PLIST_FOREACH(CMCTOOLINFO* pTool, &m_ltTool)
 		if ( pTool->m_nTool == nTool )
 			return pTool->m_dToolD;
-	}
+	END_FOREACH
 	return optional<double>();
 }
 
 optional<double> CMCOption::GetToolH(int nTool) const
 {
-	CMCTOOLINFO*	pTool;
-	for ( POSITION pos=m_ltTool.GetHeadPosition(); pos; ) {
-		pTool = m_ltTool.GetNext(pos);
+	PLIST_FOREACH(CMCTOOLINFO* pTool, &m_ltTool)
 		if ( pTool->m_nTool == nTool )
 			return pTool->m_dToolH;
-	}
+	END_FOREACH
 	return optional<double>();
 }
 
@@ -566,13 +567,12 @@ BOOL CMCOption::AddTool(int nTool, double d, BOOL bAbs)
 	BOOL			bMatch = FALSE, bResult = TRUE;
 
 	// ë∂ç›¡™Ø∏
-	for ( POSITION pos=m_ltTool.GetHeadPosition(); pos; ) {
-		pTool = m_ltTool.GetNext(pos);
+	PLIST_FOREACH(pTool, &m_ltTool)
 		if ( pTool->m_nTool == nTool ) {
 			bMatch = TRUE;
 			break;
 		}
-	}
+	END_FOREACH
 	if ( bMatch && !bAbs )
 		d += pTool->m_dToolD;	// ≤›∏ÿ“›¿Ÿ
 
@@ -617,11 +617,11 @@ void CMCOption::AddMCHistory_ComboBox(CComboBox& combo)
 	combo.ResetContent();
 
 	// ∫›ŒﬁŒﬁØ∏ΩÇ…ã@äBèÓïÒÇÃóöóÇí«â¡
-	CString	strPath, strFile;
-	for ( POSITION pos=m_strMCList.GetHeadPosition(); pos; ) {
-		::Path_Name_From_FullPath(m_strMCList.GetNext(pos), strPath, strFile);
-		combo.AddString( strFile );
-	}
+	CString	strBuf, strPath, strFile;
+	PLIST_FOREACH(strBuf, &m_strMCList)
+		::Path_Name_From_FullPath(strBuf, strPath, strFile);
+		combo.AddString(strFile);
+	END_FOREACH
 	combo.AddString( ss_lpszRefer );
 
 	combo.SetCurSel( combo.GetCount() > 1 ? 0 : -1 );
@@ -644,10 +644,10 @@ CString	CMCOption::MakeMacroCommand(int a) const
 CString CMCOption::GetDefaultOption(void) const
 {
 	CString	strResult;
-	for ( int i=0; i<SIZEOF(g_nDefaultMacroID); i++ ) {
+	BOOST_FOREACH( auto ref, g_nDefaultMacroID ) {
 		if ( !strResult.IsEmpty() )
 			strResult += " ";
-		strResult += MakeMacroCommand(g_nDefaultMacroID[i]);
+		strResult += MakeMacroCommand(ref);
 	}
 	return strResult;
 }

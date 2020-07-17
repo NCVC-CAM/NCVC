@@ -5,6 +5,7 @@
 
 #include "ChildBase.h"
 
+class	CDXFDoc;
 class	CDXFView;
 class	CDXFShapeView;
 
@@ -43,7 +44,7 @@ public:
 
 // オペレーション
 public:
-	void	SetDataInfo(int, int, int, int, int);
+	void	SetDataInfo(const CDXFDoc*);
 	void	SetFactorInfo(double);
 	void	ShowShapeView(void);
 

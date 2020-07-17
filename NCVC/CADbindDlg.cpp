@@ -4,8 +4,8 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
-#include "DXFDoc.h"
 #include "CADbindDlg.h"
+#include "DXFDoc.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -13,11 +13,26 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+struct BINDFILEHEADER {
+	LPCTSTR		lpszName;
+	int			nFormat;
+};
+static	BINDFILEHEADER	g_BindFileHeader[] = {
+	{"ï°", LVCFMT_RIGHT},
+	{"Ãß≤Ÿñº", LVCFMT_LEFT}
+};
+
+using namespace std;
+using namespace boost;
+
 BEGIN_MESSAGE_MAP(CCADbindDlg, CDialog)
 	ON_WM_DROPFILES()
 	ON_BN_CLICKED(IDC_BIND_ADD, &CCADbindDlg::OnBindFileAdd)
 	ON_BN_CLICKED(IDC_BIND_CLR, &CCADbindDlg::OnBindFileClr)
 	ON_BN_CLICKED(IDC_BIND_ALLCLR, &CCADbindDlg::OnBindFileAllClr)
+	ON_NOTIFY(NM_DBLCLK, IDC_BIND_LIST, &CCADbindDlg::OnNMDblclkBindList)
+	ON_NOTIFY(LVN_BEGINLABELEDIT, IDC_BIND_LIST, &CCADbindDlg::OnLvnBeginlabeledit)
+	ON_NOTIFY(LVN_ENDLABELEDIT, IDC_BIND_LIST, &CCADbindDlg::OnLvnEndlabeledit)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -28,6 +43,7 @@ CCADbindDlg::CCADbindDlg(CWnd* pParent /*=NULL*/)
 {
 	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
 	m_nOrgType	= pOpt->m_nBindOrg;
+	m_bMarge = FALSE;
 }
 
 void CCADbindDlg::DoDataExchange(CDataExchange* pDX)
@@ -37,6 +53,8 @@ void CCADbindDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BIND_WORK_X, m_dBindWork[NCA_X]);
 	DDX_Control(pDX, IDC_BIND_WORK_Y, m_dBindWork[NCA_Y]);
 	DDX_Control(pDX, IDC_BIND_MARGIN, m_dBindMargin);
+	DDX_Control(pDX, IDC_BIND_MARGE, m_ctMarge);
+	DDX_Check(pDX, IDC_BIND_MARGE, m_bMarge);
 	DDX_CBIndex(pDX, IDC_BIND_ORGTYPE, m_nOrgType);
 }
 
@@ -46,21 +64,30 @@ void CCADbindDlg::PathOptimizeAdd(const CString& strPath)
 		return;
 
 	// èdï°¡™Ø∏
-	for ( int i=0; i<m_aryFile.GetCount(); i++ ) {
-		if ( strPath.CompareNoCase(m_aryFile[i]) == 0 )
+	int		i = 0;
+	for ( auto& v : m_arBind ) {
+		if ( strPath.CompareNoCase(v.strFile) == 0 ) {
+			m_ctBindList.SetItemText(i, 0, lexical_cast<string>(++v.num).c_str());
 			return;
+		}
+		i++;
 	}
 	// ìoò^ägí£éq¡™Ø∏
 	CDocument*	dummy;
+	BINDFILE	bind;
+	bind.num = 1;
+	i = m_ctBindList.GetItemCount();
 	CDocTemplate::Confidence result = AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->MatchDocType(strPath, dummy);
 	if ( result==CDocTemplate::yesAttemptNative || result==CDocTemplate::yesAlreadyOpen ) {
-		m_aryFile.Add(strPath);
+		bind.strFile = strPath;
+		m_arBind.push_back(bind);
 		// àÍíUΩ¿√®Ø∏∫›ƒ€∞ŸÇ…æØƒÇµÇƒ ﬂΩï\é¶ÇÃç≈ìKâª(shlwapi.h)
 		::PathSetDlgItemPath(m_hWnd, IDC_BIND_LIST_ST, strPath);
 		// ÇªÇÃ√∑ΩƒÇéÊìæÇµÇƒÿΩƒ∫›ƒ€∞ŸÇ…æØƒ
 		CString	strFile;
 		GetDlgItem(IDC_BIND_LIST_ST)->GetWindowText(strFile);
-		m_ctBindList.AddString(strFile);
+		m_ctBindList.InsertItem(i, "1");
+		m_ctBindList.SetItemText(i, 1, strFile);
 	}
 }
 
@@ -71,18 +98,39 @@ BOOL CCADbindDlg::OnInitDialog()
 {
 	__super::OnInitDialog();
 
+	CMDIChildWnd* pChild = AfxGetNCVCMainWnd()->MDIGetActive();
+	CDocument* pDoc = pChild ? pChild->GetActiveDocument() : NULL;
+	if ( !pDoc || !pDoc->IsKindOf(RUNTIME_CLASS(CDXFDoc)) )
+		m_ctMarge.EnableWindow(FALSE);
+
 	const CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
 	m_dBindWork[NCA_X] = pOpt->m_dBindWork[NCA_X];
 	m_dBindWork[NCA_Y] = pOpt->m_dBindWork[NCA_Y];
 	m_dBindMargin	   = pOpt->m_dBindMargin;
 
-	// ±≤√—í«â¡(DxfSetupReload.cpp)
-	CDXFDoc*	pDoc;
+	// ÕØ¿ﬁ∞íËã`
+	int		i = 0;
+	BOOST_FOREACH(auto v, g_BindFileHeader) {
+		m_ctBindList.InsertColumn(i++, v.lpszName, v.nFormat);
+	}
+	// óÒïù
+	CRect		rc;
+	m_ctBindList.GetClientRect(rc);
+	i = m_ctBindList.GetStringWidth(g_BindFileHeader[0].lpszName) + 16;
+	m_ctBindList.SetColumnWidth(0, i);
+	m_ctBindList.SetColumnWidth(1, rc.Width()-m_ctBindList.GetColumnWidth(0)-8);
+	// ÇPçsëIë
+	DWORD	dwStyle = m_ctBindList.GetExtendedStyle();
+	dwStyle |= LVS_EX_FULLROWSELECT;
+	m_ctBindList.SetExtendedStyle(dwStyle);
+
+/*	à”äOÇ∆Ç§Ç¡Ç∆Ç®ÇµÇ¢ÇÃÇ≈îpé~
+	// åªç›äJÇ¢ÇƒÇ¢ÇÈ±≤√—ÇÃí«â¡(DxfSetupReload.cpp)
 	for ( POSITION pos=AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetFirstDocPosition(); pos; ) {
-		pDoc = (CDXFDoc *)(AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetNextDoc(pos));
+		pDoc = AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetNextDoc(pos);
 		PathOptimizeAdd(pDoc->GetPathName());
 	}
-
+*/
 	return TRUE;
 }
 
@@ -119,19 +167,19 @@ void CCADbindDlg::OnBindFileAdd()
 
 void CCADbindDlg::OnBindFileClr()
 {
-	int		i, nCnt = m_ctBindList.GetSelCount();
-	CArray<int, int>	arySelect;
-	arySelect.SetSize(nCnt);
-	m_ctBindList.GetSelItems(nCnt, arySelect.GetData());
-	for ( i=arySelect.GetCount()-1; i>=0; i-- )	 {	// å„ÇÎÇ©ÇÁçÌèúÇµÇ»Ç¢Ç∆èáî‘ïœÇÌÇÈ
-		m_ctBindList.DeleteString(arySelect[i]);
-		m_aryFile.RemoveAt(arySelect[i]);
+	// ÿΩƒ∫›ƒ€∞ŸÇåüç∏ÇµÇƒññîˆÇ©ÇÁçÌèú
+	for ( int n = m_ctBindList.GetItemCount()-1; n>=0; n-- ) {
+		if ( m_ctBindList.GetItemState(n, LVIS_SELECTED) ) {
+			m_ctBindList.DeleteItem(n);
+			m_arBind.erase(m_arBind.begin()+n);
+		}
 	}
 }
 
 void CCADbindDlg::OnBindFileAllClr()
 {
-	m_ctBindList.ResetContent();
+	m_ctBindList.DeleteAllItems();
+	m_arBind.clear();
 }
 
 void CCADbindDlg::OnDropFiles(HDROP hDropInfo)
@@ -146,4 +194,32 @@ void CCADbindDlg::OnDropFiles(HDROP hDropInfo)
 		PathOptimizeAdd(strFile);
 	}
 	::DragFinish(hDropInfo);
+}
+
+void CCADbindDlg::OnNMDblclkBindList(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	if ( pNMItemActivate->iItem >= 0 )
+		m_ctBindEdit = m_ctBindList.EditLabel(pNMItemActivate->iItem);
+	*pResult = 0;
+}
+
+void CCADbindDlg::OnLvnBeginlabeledit(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	NMLVDISPINFO *pDispInfo = reinterpret_cast<NMLVDISPINFO*>(pNMHDR);
+	m_ctBindEdit = m_ctBindList.GetEditControl();
+	*pResult = 0;
+}
+
+void CCADbindDlg::OnLvnEndlabeledit(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	NMLVDISPINFO *pDispInfo = reinterpret_cast<NMLVDISPINFO*>(pNMHDR);
+	CString	strBuf;
+	m_ctBindEdit->GetWindowText(strBuf);
+	auto	it = m_arBind.begin() + pDispInfo->item.iItem;
+	int		n  = atoi(strBuf); 
+	(*it).num = n <= 0 ? 1 : n;
+	m_ctBindList.SetItemText(pDispInfo->item.iItem, 0, lexical_cast<string>((*it).num).c_str());
+	m_ctBindList.Update(pDispInfo->item.iItem);
+	*pResult = TRUE;
 }

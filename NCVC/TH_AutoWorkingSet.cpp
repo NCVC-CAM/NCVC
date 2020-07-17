@@ -38,7 +38,6 @@ struct	SEPARATEOUTLINETHREADPARAM
 #define	LPSEPARATEOUTLINETHREADPARAM	SEPARATEOUTLINETHREADPARAM *
 static	UINT	SeparateOutline_Thread(LPVOID);
 
-typedef	void	(*PFNAUTOPROC)(const CLayerData*, LPVOID);
 static	void	AutoWorkingProc(const CLayerData*, LPVOID);
 static	void	AutoRecalcWorking(const CLayerData*, LPVOID);
 static	void	CheckStrictOffset(const CLayerData*, LPVOID);
@@ -47,13 +46,12 @@ static	BOOL	SelectOutline(const CLayerData*);
 static	BOOL	SelectPocket(const CLayerData*);
 static	void	SelectPocket_Reflex(const CLayerData*, int, int);
 static	void	CreateAutoWorking(const CLayerData*, double);
-static	BOOL	CreateScanLine(CDXFshape*, AUTOWORKINGDATA*);
+static	BOOL	CreateScanLine(CDXFshape*, LPAUTOWORKINGDATA);
 static	void	CheckStrictOffset_forScan(const CLayerData*);
 static	BOOL	CheckOffsetIntersection(CDXFchain*, CDXFchain*, BOOL);
 static	void	CheckCircleIntersection(const CLayerData*, const CDXFshape*, const CDXFworkingOutline*);
 static	CDXFdata*	ChangeCircleToArc(const CDXFcircle*, const CDXFchain*, CPointD&, CPointD&);
 static	void	SetAllExcludeData(CDXFchain*);
-typedef	CDXFworkingOutline*	(*PFNGETOUTLINE)(CDXFshape*, int);
 static	CDXFworkingOutline*	GetOutlineHierarchy(CDXFshape*, int);
 static	CDXFworkingOutline*	GetOutlineLastObj(CDXFshape*, int);
 
@@ -69,7 +67,7 @@ UINT AutoWorkingSet_Thread(LPVOID pThread)
 	int			i, nType = (int)(pVoid->wParam);	// 処理ﾀｲﾌﾟ
 	DXFTREETYPE*		vSelect = NULL;
 	LPVOID				pParam = NULL;
-	PFNAUTOPROC	pfnAutoProc;
+	function<void (const CLayerData*, LPVOID)>	pfnAutoProc;
 
 	switch ( nType ) {
 	case AUTOWORKING:
@@ -102,9 +100,9 @@ UINT AutoWorkingSet_Thread(LPVOID pThread)
 		if ( !pLayer->IsCutType() || 
 				(vSelect && vSelect->which()==DXFTREETYPE_LAYER && pLayer!=get<CLayerData*>(*vSelect)) )
 			continue;
-		g_pParent->SetFaseMessage(strMsg, pLayer->GetStrLayer());
+		g_pParent->SetFaseMessage(strMsg, pLayer->GetLayerName());
 		// ﾀｲﾌﾟ別の自動処理
-		(*pfnAutoProc)(pLayer, pParam);
+		pfnAutoProc(pLayer, pParam);
 		//
 		if ( vSelect && vSelect->which()==DXFTREETYPE_LAYER )
 			break;	// ﾚｲﾔ指定あれば以降必要なし
@@ -120,7 +118,7 @@ UINT AutoWorkingSet_Thread(LPVOID pThread)
 void AutoWorkingProc(const CLayerData* pLayer, LPVOID pParam)
 {
 	int		i;
-	AUTOWORKINGDATA*	pAuto = reinterpret_cast<AUTOWORKINGDATA*>(pParam);	// ﾀﾞｲｱﾛｸﾞ情報
+	LPAUTOWORKINGDATA	pAuto = reinterpret_cast<LPAUTOWORKINGDATA>(pParam);	// ﾀﾞｲｱﾛｸﾞ情報
 
 	pLayer->AllShapeClearSideFlg();
 
@@ -159,7 +157,6 @@ void AutoRecalcWorking(const CLayerData* pLayer, LPVOID pParam)
 	int			i, j, nInOut, nOutline;
 	const int	nLoop = pLayer->GetShapeSize();
 	double		dOffset, dOffsetOrg;
-	CDXFdata*	pData;
 	CDXFshape*	pShape;
 	CDXFshape*	pShapeSrc = NULL;
 	CDXFchain	ltOutline;
@@ -191,11 +188,10 @@ void AutoRecalcWorking(const CLayerData* pLayer, LPVOID pParam)
 			for ( j=0; j<nOutline; j++ ) {
 				if ( !pShape->CreateOutlineTempObject(nInOut, &ltOutline, dOffset) ) {
 					// ！！失敗！！一時ｵﾌﾞｼﾞｪｸﾄ全削除
-					for ( POSITION pos=ltOutline.GetHeadPosition(); pos; ) {
-						pData = ltOutline.GetNext(pos);
+					PLIST_FOREACH(CDXFdata* pData, &ltOutline)
 						if ( pData )
 							delete	pData;
-					}
+					END_FOREACH
 					continue;
 				}
 				// 加工指示登録
@@ -233,14 +229,14 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 	int			i, j, ii, jj, n, nMax = 0;
 	const int	nLoop = pLayer->GetShapeSize();
 	double		dOffset1, dOffset2;
-	CRect3D		rc1, rc2;
+	CRect3D		rc, rcCross;
 	CDXFshape*		pShape1;
 	CDXFshape*		pShape2;
 	CDXFworkingOutline*	pOutline1;
 	CDXFworkingOutline*	pOutline2;
 	CDXFchain*		pChain1;
 	CDXFchain*		pChain2;
-	PFNGETOUTLINE	pfnGetOutline;
+	function<CDXFworkingOutline* (CDXFshape*, int)>	pfnGetOutline;
 
 	// ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄ分離ｽﾚｯﾄﾞ起動
 	SEPARATEOUTLINETHREADPARAM	thSepParam;
@@ -272,22 +268,22 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 		for ( i=0; i<nLoop && IsThread(); i++ ) {
 			pShape1 = pLayer->GetShapeData(i);
 			g_pParent->m_ctReadProgress.SetPos(i);
-			pOutline1 = (*pfnGetOutline)(pShape1, n);	// 処理に応じた輪郭ｵﾌﾞｼﾞｪｸﾄ取得
+			pOutline1 = pfnGetOutline(pShape1, n);	// 処理に応じた輪郭ｵﾌﾞｼﾞｪｸﾄ取得
 			if ( !pOutline1 )
 				continue;
 			dOffset1 = pOutline1->GetOutlineOffset();
 			for ( ii=0; ii<pOutline1->GetOutlineSize() && IsThread(); ii++ ) {
 				pChain1 = pOutline1->GetOutlineObject(ii);
-				rc1 = pChain1->GetMaxRect();
+				rc = pChain1->GetMaxRect();
 				for ( j=i+1; j<nLoop && IsThread(); j++ ) {
 					pShape2 = pLayer->GetShapeData(j);
-					pOutline2 = (*pfnGetOutline)(pShape2, n);
+					pOutline2 = pfnGetOutline(pShape2, n);
 					if ( !pOutline2 )
 						continue;
 					dOffset2 = pOutline2->GetOutlineOffset();
 					for ( jj=0; jj<pOutline2->GetOutlineSize() && IsThread(); jj++ ) {
 						pChain2 = pOutline2->GetOutlineObject(jj);
-						if ( rc2.CrossRect(rc1, pChain2->GetMaxRect()) ) {
+						if ( rcCross.CrossRect(rc, pChain2->GetMaxRect()) ) {
 #ifdef _DEBUG
 							g_dbg.printf("ShapeName1=%s No.%d Obj=%d", pShape1->GetShapeName(),
 								ii, pChain1->GetSize());
@@ -331,6 +327,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 
 #ifdef _DEBUG
 	// 分割数の確認
+	extern	LPCTSTR	gg_szCat;		// ", "
 	POSITION	dbgPos;
 	CPointD		dbgPts, dbgPte;
 	BOOL		dbgConnect;
@@ -363,13 +360,12 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 			}
 			if ( !dbgConnect ) {
 				g_dbg.printf("---> No.%d Connect Error!", j);
-				for ( dbgPos=pChain1->GetHeadPosition(); dbgPos; ) {
-					dbgData = pChain1->GetNext(dbgPos);
+				PLIST_FOREACH(dbgData, pChain1)
 					dbgPts = dbgData->GetNativePoint(0);
 					dbgPte = dbgData->GetNativePoint(1);
 					g_dbg.printf("(%.3f, %.3f)-(%.3f, %.3f)",
 						dbgPts.x, dbgPts.y, dbgPte.x, dbgPte.y);
-				}
+				END_FOREACH
 			}
 			else if ( pChain1->GetChainFlag() & DXFMAPFLG_SEPARATE ) {
 				dbgPts = pChain1->GetHead()->GetNativePoint(0);
@@ -382,7 +378,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 		if ( pOutline1->GetMergeHandleSize() > 0 ) {
 			for ( j=0; j<pOutline1->GetMergeHandleSize(); j++ ) {
 				if ( !dbgMsg.IsEmpty() )
-					dbgMsg += ", ";
+					dbgMsg += gg_szCat;
 				dbgMsg += pOutline1->GetMergeHandle(j);
 			}
 			g_dbg.printf("---> %s", dbgMsg);
@@ -397,7 +393,7 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 	int			i, ii, j, jj;
 	const int	nLoop = pLayer->GetShapeSize();
 	double		dOffset1, dOffset2;
-	CRect3D		rc1, rc2, rc;
+	CRect3D		rc1, rc2, rcCross;
 	CDXFshape*	pShape1;
 	CDXFshape*	pShape2;
 	CDXFworkingOutline*	pOutline1;
@@ -434,11 +430,11 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 				for ( jj=0; jj<pOutline2->GetOutlineSize() && IsThread(); jj++ ) {
 					pChain2 = pOutline2->GetOutlineObject(jj);
 					rc2 = pChain2->GetMaxRect();
-					if ( rc2.PtInRect(rc1) ) {
+					if ( rc2.RectInRect(rc1) ) {
 						// InsideのﾃﾞｰﾀがOutsideの内側にあるので削除
 						SetAllExcludeData(pChain1);
 					}
-					else if ( rc.CrossRect(rc1, rc2) ) {	// 矩形の交差も含む
+					else if ( rcCross.CrossRect(rc2, rc1) ) {	// 矩形の交差も含む
 #ifdef _DEBUG
 						g_dbg.printf("ShapeName1=%s No.%d Obj=%d", pShape1->GetShapeName(),
 							ii, pChain1->GetSize());
@@ -476,7 +472,6 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 
 #ifdef _DEBUG
 	// 分割数の確認
-	POSITION	dbgPos;
 	COutlineList*	dbgOutlineList;
 	for ( i=0; i<nLoop; i++ ) {
 		pShape1 = pLayer->GetShapeData(i);
@@ -485,10 +480,10 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 		dbgOutlineList = pShape1->GetOutlineList();
 		g_dbg.printf("Name=%s Outline=%d",
 			pShape1->GetShapeName(), dbgOutlineList->GetCount());
-		for ( ii=0, dbgPos=dbgOutlineList->GetHeadPosition(); dbgPos; ii++ ) {
-			pOutline1 = dbgOutlineList->GetNext(dbgPos);
-			g_dbg.printf("No.%d Sep=%d", ii, pOutline1->GetOutlineSize());
-		}
+		ii=0;
+		PLIST_FOREACH(pOutline1, dbgOutlineList)
+			g_dbg.printf("No.%d Sep=%d", ii++, pOutline1->GetOutlineSize());
+		END_FOREACH
 	}
 #endif
 }
@@ -525,7 +520,7 @@ BOOL SelectOutline(const CLayerData* pLayer)
 			pShapeTmp = pLayer->GetShapeData(j);
 			if ( pShapeTmp->GetShapeType() != DXFSHAPETYPE_CHAIN )
 				continue;
-			if ( pShapeTmp->GetMaxRect().PtInRect(rcBase) )
+			if ( pShapeTmp->GetMaxRect().RectInRect(rcBase) )
 				break;	// 以後の検査は必要なし
 		}
 		pShape->SetShapeFlag(j<nLoop ? DXFMAPFLG_INSIDE : DXFMAPFLG_OUTSIDE);
@@ -568,7 +563,7 @@ BOOL SelectPocket(const CLayerData* pLayer)
 			pShapeTmp = pLayer->GetShapeData(j);
 			if ( pShapeTmp->GetShapeType()!=DXFSHAPETYPE_CHAIN || pShapeTmp->IsSideFlg() )
 				continue;
-			if ( rcBase.PtInRect(pShapeTmp->GetMaxRect()) ) {
+			if ( rcBase.RectInRect(pShapeTmp->GetMaxRect()) ) {
 				// 再帰呼び出しによる階層ﾁｪｯｸ
 				SelectPocket_Reflex(pLayer, i, 0);
 				bInRect = TRUE;
@@ -596,7 +591,7 @@ void SelectPocket_Reflex(const CLayerData* pLayer, int i, int n)
 		pShape = pLayer->GetShapeData(i);
 		if ( pShape->GetShapeType()!=DXFSHAPETYPE_CHAIN || pShape->IsSideFlg() )
 			continue;
-		if ( rcBase.PtInRect(pShape->GetMaxRect()) ) {
+		if ( rcBase.RectInRect(pShape->GetMaxRect()) ) {
 			// 再帰
 			SelectPocket_Reflex(pLayer, i, n+1);
 		}
@@ -617,7 +612,6 @@ void CreateAutoWorking(const CLayerData* pLayer, double dOffset)
 	CDXFdata*	pData;
 	CDXFshape*	pShape;
 	CDXFworkingOutline*	pWork;
-	POSITION	pos;
 #ifdef _DEBUG
 	RECT		rcDbg;
 #endif
@@ -687,20 +681,18 @@ void CreateAutoWorking(const CLayerData* pLayer, double dOffset)
 				}
 				// Select分はCDXFworkingOutlineのﾃﾞｽﾄﾗｸﾀにてdelete
 				n = 1 - j;	// 1->0, 0->1
-				for ( pos=ltOutline[n].GetHeadPosition(); pos; ) {
-					pData = ltOutline[n].GetNext(pos);
+				PLIST_FOREACH(pData, &ltOutline[n])
 					if ( pData )
 						delete	pData;
-				}
+				END_FOREACH
 			}
 			else {
 				// ！！失敗！！一時ｵﾌﾞｼﾞｪｸﾄ全削除
 				for ( n=0; n<SIZEOF(ltOutline); n++ ) {
-					for ( pos=ltOutline[n].GetHeadPosition(); pos; ) {
-						pData = ltOutline[n].GetNext(pos);
+					PLIST_FOREACH(pData, &ltOutline[n])
 						if ( pData )
 							delete	pData;
-					}
+					END_FOREACH
 				}
 			}
 			// 次のﾙｰﾌﾟに備え、矩形の初期化
@@ -712,11 +704,10 @@ void CreateAutoWorking(const CLayerData* pLayer, double dOffset)
 		if ( pWork )
 			delete	pWork;
 		for ( n=0; n<SIZEOF(ltOutline); n++ ) {
-			for ( pos=ltOutline[n].GetHeadPosition(); pos; ) {
-				pData = ltOutline[n].GetNext(pos);
+			PLIST_FOREACH(pData, &ltOutline[n])
 				if ( pData )
 					delete	pData;
-			}
+			END_FOREACH
 		}
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
@@ -728,7 +719,7 @@ void CreateAutoWorking(const CLayerData* pLayer, double dOffset)
 //////////////////////////////////////////////////////////////////////
 //	最大矩形の走査線を生成
 
-BOOL CreateScanLine(CDXFshape* pShape, AUTOWORKINGDATA* pAuto)
+BOOL CreateScanLine(CDXFshape* pShape, LPAUTOWORKINGDATA pAuto)
 {
 	CDXFchain	ltScan;
 	CDXFworkingOutline*	pWork;
@@ -986,15 +977,15 @@ BOOL CheckOffsetIntersection
 	}
 
 	// 遅延ﾃﾞｰﾀの座標更新
-	for ( vector<DELAYUPDATE>::iterator it=v.begin(); it!=v.end(); ++it )
-		it->pData->SetNativePoint(it->n, it->pt);
+	BOOST_FOREACH(DELAYUPDATE& dd, v) {
+		dd.pData->SetNativePoint(dd.n, dd.pt);
+	}
 
 #ifdef _DEBUG
 	optional<CPointD>	ptDbgE;
 	for ( i=0; i<SIZEOF(vInfo); i++ ) {
 		ptDbgE.reset();
-		for ( pos=pChain1->GetHeadPosition(); pos; ) {
-			pData1 = pChain1->GetNext(pos);
+		PLIST_FOREACH(pData1, pChain1)
 			if ( pData1 ) {
 				pt[0] = pData1->GetNativePoint(0);
 				pt[1] = pData1->GetNativePoint(1);
@@ -1013,7 +1004,7 @@ BOOL CheckOffsetIntersection
 				dbg.printf("null");
 				ptDbgE.reset();
 			}
-		}
+		END_FOREACH
 		dbg.printf("---");
 		if ( bScan )
 			break;
@@ -1030,24 +1021,21 @@ void CheckCircleIntersection
 	int		i, j,
 			nShapeLoop = pLayer->GetShapeSize(),
 			nOutlineLoop = pOutline->GetOutlineSize();
-	POSITION	pos;
 	double		dOffset = pOutline->GetOutlineOffset();
 	CPointD		pts, pte;
-	CRectD		rc1(pOutline->GetMaxRect()), rc2;
+	CRectD		rc(pOutline->GetMaxRect()), rcCross;
 	CDXFshape*	pShape;
-	CDXFchain*	pChain;
-	CDXFdata*	pData;
 
 	//	ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄの最終ﾁｪｯｸ
 	for ( i=0; i<nShapeLoop && IsThread(); i++ ) {
 		pShape = pLayer->GetShapeData(i);
 		if ( pShape==pShapeSrc || !pShape->IsOutlineList() )
 			continue;
-		if ( rc2.CrossRect(rc1, pShape->GetMaxRect()) ) {
+		if ( rcCross.CrossRect(rc, pShape->GetMaxRect()) ) {
 			for ( j=0; j<nOutlineLoop && IsThread(); j++ ) {
-				pChain = pOutline->GetOutlineObject(j);
-				for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
-					pData = pChain->GetNext(pos);
+				PLIST_FOREACH(CDXFdata* pData, pOutline->GetOutlineObject(j));
+					if ( IsThread() )
+						break;
 					if ( pData && !(pData->GetDxfFlg()&DXFFLG_OFFSET_EXCLUDE) ) {
 						pts = pData->GetNativePoint(0);
 						pte = pData->GetNativePoint(1);
@@ -1058,7 +1046,7 @@ void CheckCircleIntersection
 							pData->SetDxfFlg(DXFFLG_OFFSET_EXCLUDE);
 						}
 					}
-				}
+				END_FOREACH
 			}
 		}
 	}
@@ -1077,11 +1065,11 @@ CDXFdata* ChangeCircleToArc
 
 	// 回転方向（切り取り円弧）の決定
 	if ( (sq=atan2(pts.y-ptc.y, pts.x-ptc.x)) < 0.0 )
-		sq += RAD(360.0);
+		sq += PI2;
 	if ( (eq=atan2(pte.y-ptc.y, pte.x-ptc.x)) < 0.0 )
-		eq += RAD(360.0);
+		eq += PI2;
 	while ( sq > eq )
-		eq += RAD(360.0);		// sq < eq => 基本の反時計回りに角度設定
+		eq += PI2;		// sq < eq => 基本の反時計回りに角度設定
 	q = (eq - sq) / 2.0 + sq;	// sqとeqのあいだ
 	pt.x = r * cos(q);		pt.y = r * sin(q);
 	pt += ptc;
@@ -1128,13 +1116,13 @@ CDXFdata* ChangeCircleToArc
 			q = _copysign(1.0, q);	// -1.0 or 1.0
 		dxfEllipse.sq = _copysign(acos(q), pts.y);
 		if ( dxfEllipse.sq < 0.0 )
-			dxfEllipse.sq += RAD(360.0);
+			dxfEllipse.sq += PI2;
 		q = pte.x / l;
 		if ( q < -1.0 || 1.0 < q )
 			q = _copysign(1.0, q);
 		dxfEllipse.eq = _copysign(acos(q), pte.y);
 		if ( dxfEllipse.eq < 0.0 )
-			dxfEllipse.eq += RAD(360.0);
+			dxfEllipse.eq += PI2;
 		pData = new CDXFellipse(&dxfEllipse);
 	}
 
@@ -1143,12 +1131,10 @@ CDXFdata* ChangeCircleToArc
 
 void SetAllExcludeData(CDXFchain* pChain)
 {
-	CDXFdata*	pData;
-	for ( POSITION pos=pChain->GetHeadPosition(); pos; ) {
-		pData = pChain->GetNext(pos);
+	PLIST_FOREACH(CDXFdata* pData, pChain)
 		if ( pData )
 			pData->SetDxfFlg(DXFFLG_OFFSET_EXCLUDE);
-	}
+	END_FOREACH
 }
 
 CDXFworkingOutline*	GetOutlineHierarchy(CDXFshape* pShape, int n)
@@ -1158,7 +1144,7 @@ CDXFworkingOutline*	GetOutlineHierarchy(CDXFshape* pShape, int n)
 	CDXFworkingOutline*	pOutline = NULL;
 	int			i;
 	POSITION	pos;
-
+	// 0回実行でbreakの可能性 -> PLIST_FOREACH 使えない
 	for ( i=0, pos=pOutlineList->GetHeadPosition(); pos && i<=n; i++ )
 		pOutline = pOutlineList->GetNext(pos);
 

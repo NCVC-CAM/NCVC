@@ -14,6 +14,7 @@ class CLayerDlg : public CDialog
 		m_ctLayerTree.EnableWindow(bEnable);
 		m_ctOK.EnableWindow(bEnable);
 	}
+	void	SetLayerTree(const CDXFDoc*);
 	void	SetChildCheck(HTREEITEM);
 	void	SetParentCheck(HTREEITEM);
 

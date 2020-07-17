@@ -548,6 +548,8 @@ BOOL CNCViewGL::GetClipDepthMill(void)
 #endif
 
 #ifdef _DEBUG_FILEOUT_
+	extern	LPCTSTR	gg_szCat;		// ", "
+	extern	LPCTSTR	gg_szReturn;	// "\n"
 	CStdioFile	dbg_f ("C:\\Users\\magara\\Documents\\tmp\\depth_f.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
 	CStdioFile	dbg_fx("C:\\Users\\magara\\Documents\\tmp\\depth_x.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
 	CStdioFile	dbg_fy("C:\\Users\\magara\\Documents\\tmp\\depth_y.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
@@ -560,9 +562,11 @@ BOOL CNCViewGL::GetClipDepthMill(void)
 		for ( i=0; i<m_icx; i++, n++ ) {
 //			if ( pfDepth[n] != 0.0 ) {
 				if ( !s.IsEmpty() ) {
-					s  += ", ";
+					s  += gg_szCat;
 //				if ( !sx.IsEmpty() ) {
-					sx += ", ";	sy += ", ";	sz += ", ";
+					sx += gg_szCat;
+					sy += gg_szCat;
+					sz += gg_szCat;
 				}
 				r.Format(IDS_MAKENCD_FORMAT, pfDepth[n]);
 				s += r;
@@ -575,11 +579,11 @@ BOOL CNCViewGL::GetClipDepthMill(void)
 			}
 //		}
 		if ( !s.IsEmpty() ) {
-			dbg_f.WriteString (s +"\n");
+			dbg_f.WriteString (s + gg_szReturn);
 //		if ( !sx.IsEmpty() ) {
-			dbg_fx.WriteString(sx+"\n");
-			dbg_fy.WriteString(sy+"\n");
-			dbg_fz.WriteString(sz+"\n");
+			dbg_fx.WriteString(sx+ gg_szReturn);
+			dbg_fy.WriteString(sy+ gg_szReturn);
+			dbg_fz.WriteString(sz+ gg_szReturn);
 		}
 	}
 #endif	// _DEBUG_FILEOUT_
@@ -2245,10 +2249,8 @@ void CNCViewGL::RenderCode(void)
 	// NCÃÞ°À•`‰æ
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
 		pData = GetDocument()->GetNCdata(i);
-		if ( pData->GetGtype() == G_TYPE ) {
-//			pData->DrawGLMillWire();
+		if ( pData->GetGtype() == G_TYPE )
 			(pData->*m_pfnDrawProc)();
-		}
 	}
 	::glDisable( GL_LINE_STIPPLE );
 }
@@ -2832,7 +2834,7 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 
 void CNCViewGL::OnUpdateEditCopy(CCmdUI* pCmdUI) 
 {
-	pCmdUI->Enable(FALSE);
+	pCmdUI->Enable(FALSE);	// OpenGL‚Å‚Ícopy•s‰Â
 }
 
 void CNCViewGL::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 

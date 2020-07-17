@@ -12,6 +12,10 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
+#ifdef _DEBUG_DUMP
+#include "boost/format.hpp"
+using std::string;
+#endif
 #endif
 
 using namespace boost;
@@ -353,18 +357,16 @@ void CNCdata::DbgDump(void)
 	extern	LPCTSTR	g_szGdelimiter;	// "GSMOF" from NCDoc.cpp
 	extern	LPCTSTR	g_szNdelimiter; // "XYZUVWIJKRPLDH";
 
-	CString	strBuf, strTmp;
+	string	strBuf;
 	if ( GetGtype()<0 || GetGtype()>GTYPESIZE )
-		strBuf.Format("%s%d: ", "NO_TYPE:", GetGcode());
+		strBuf = "NO_TYPE:" + lexical_cast<string>(GetGcode());
 	else
-		strBuf.Format("%c%02d: ", g_szGdelimiter[GetGtype()], GetGcode());
+		strBuf = str(format("%c%02d") % g_szGdelimiter[GetGtype()] % GetGcode());
 	for ( int i=0; i<VALUESIZE; i++ ) {
-		if ( GetValFlags() & g_dwSetValFlags[i] ) {
-			strTmp.Format("%c%.3f", g_szNdelimiter[i], GetValue(i));
-			strBuf += strTmp;
-		}
+		if ( GetValFlags() & g_dwSetValFlags[i] )
+			strBuf += str(format("%c%.3f") % g_szNdelimiter[i] % GetValue(i));
 	}
-	dbg.printf("%s", strBuf);
+	dbg.printf("%s", strBuf.c_str());
 }
 #endif
 
@@ -820,7 +822,7 @@ CNCcycle::CNCcycle
 			nH, nV;		// ècâ°ÇÃåJÇËï‘Çµêî
 
 	// èâä˙âª
-	for ( i=0; i<SIZEOF(m_Cycle); m_Cycle[i++]=NULL );
+	ZEROCLR(m_Cycle);	// m_Cycle[i++]=NULL
 	m_Cycle3D = NULL;
 
 	// äÓèÄïΩñ Ç…ÇÊÇÈç¿ïWê›íË
@@ -1295,11 +1297,12 @@ CNCcircle::CNCcircle
 CNCcircle::CNCcircle(const CNCdata* pData) : CNCline(pData)
 {
 	m_pt2D	= m_ptValE.PointConvert();
-	m_nG23	= static_cast<const CNCcircle *>(pData)->GetG23();
-	m_ptOrg	= static_cast<const CNCcircle *>(pData)->GetOrg();
-	m_r		= static_cast<const CNCcircle *>(pData)->GetR();
-	m_sq	= static_cast<const CNCcircle *>(pData)->GetStartAngle();
-	m_eq	= static_cast<const CNCcircle *>(pData)->GetEndAngle();
+	const CNCcircle*	pCircle = static_cast<const CNCcircle *>(pData);
+	m_nG23	= pCircle->GetG23();
+	m_ptOrg	= pCircle->GetOrg();
+	m_r		= pCircle->GetR();
+	m_sq	= pCircle->GetStartAngle();
+	m_eq	= pCircle->GetEndAngle();
 	Constracter();
 }
 
@@ -1311,19 +1314,16 @@ void CNCcircle::Constracter(void)
 	case XY_PLANE:
 		m_pfnCircleDraw = &CNCcircle::Draw_G17;
 		m_dHelicalStep = GetValFlags() & NCD_Z ?
-//			(m_ptValE.z - m_ptValS.z) / ((m_eq-m_sq)/ARCSTEP)  : 0.0;
 			(m_ptValE.z - m_ptValS.z) / ARCCOUNT : 0.0;
 		break;
 	case XZ_PLANE:
 		m_pfnCircleDraw = &CNCcircle::Draw_G18;
 		m_dHelicalStep = GetValFlags() & NCD_Y ?
-//			(m_ptValE.y - m_ptValS.y) / ((m_eq-m_sq)/ARCSTEP)  : 0.0;
 			(m_ptValE.y - m_ptValS.y) / ARCCOUNT : 0.0;
 		break;
 	case YZ_PLANE:
 		m_pfnCircleDraw = &CNCcircle::Draw_G19;
 		m_dHelicalStep = GetValFlags() & NCD_X ?
-//			(m_ptValE.x - m_ptValS.x) / ((m_eq-m_sq)/ARCSTEP)  : 0.0;
 			(m_ptValE.x - m_ptValS.x) / ARCCOUNT : 0.0;
 		break;
 	}
@@ -1385,21 +1385,21 @@ void CNCcircle::SetCenter(const CPointD& pt)
 void CNCcircle::AngleTuning(const CPointD& pts, const CPointD& pte)
 {
 	if ( (m_sq=atan2(pts.y, pts.x)) < 0.0 )
-		m_sq += RAD(360.0);
+		m_sq += PI2;
 	if ( (m_eq=atan2(pte.y, pte.x)) < 0.0 )
-		m_eq += RAD(360.0);
+		m_eq += PI2;
 
 	// èÌÇ… s<e (îΩéûåvâÒÇË) Ç∆Ç∑ÇÈ
 	if ( m_nG23 == 0 )	// G02 Ç»ÇÁäJénäpìxÇ∆èIóπäpìxÇì¸ÇÍë÷Ç¶
 		swap(m_sq, m_eq);
 	double	sq = ::RoundUp(DEG(m_sq));
 	while ( sq >= ::RoundUp(DEG(m_eq)) )
-		m_eq += RAD(360.0);
+		m_eq += PI2;
 
 	// äpìxí≤êÆ
 	if ( sq>=360.0 && ::RoundUp(DEG(m_eq))>=360.0 ) {
-		m_sq -= RAD(360.0);
-		m_eq -= RAD(360.0);
+		m_sq -= PI2;
+		m_eq -= PI2;
 	}
 }
 
@@ -1661,7 +1661,6 @@ void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 		// ARCSTEP Ç√Ç¬î˜ç◊ê¸ï™Ç≈ï`âÊ
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				pt3D.x = r * cos(sq) + ptDrawOrg.x;
 				pt3D.y = r * sin(sq) + ptDrawOrg.y;
@@ -1672,7 +1671,6 @@ void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				pt3D.x = r * cos(sq) + ptDrawOrg.x;
 				pt3D.y = r * sin(sq) + ptDrawOrg.y;
@@ -1697,7 +1695,6 @@ void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				ptDraw.x = r * cos(sq) + ptDrawOrg.x;
 				ptDraw.y = r * sin(sq) + ptDrawOrg.y;
@@ -1706,7 +1703,6 @@ void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				ptDraw.x = r * cos(sq) + ptDrawOrg.x;
 				ptDraw.y = r * sin(sq) + ptDrawOrg.y;
@@ -1727,7 +1723,6 @@ void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				ptDraw.x  = r * cos(sq) + ptDrawOrg.x;
 				ptDraw.y += dHelical;
@@ -1736,7 +1731,6 @@ void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				ptDraw.x  = r * cos(sq) + ptDrawOrg.x;
 				ptDraw.y += dHelical;
@@ -1757,7 +1751,6 @@ void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				ptDraw.x  = r * sin(sq) + ptDrawOrg.y;
 				ptDraw.y += dHelical;
@@ -1766,7 +1759,6 @@ void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				ptDraw.x  = r * sin(sq) + ptDrawOrg.y;
 				ptDraw.y += dHelical;
@@ -1801,7 +1793,6 @@ void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				pt3D.x = r * cos(sq) + ptDrawOrg.x;
 				pt3D.y += dHelical;
@@ -1812,7 +1803,6 @@ void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				pt3D.x = r * cos(sq) + ptDrawOrg.x;
 				pt3D.y += dHelical;
@@ -1837,7 +1827,6 @@ void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				ptDraw.x  = r * cos(sq) + ptDrawOrg.x;
 				ptDraw.y += dHelical;
@@ -1846,7 +1835,6 @@ void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				ptDraw.x  = r * cos(sq) + ptDrawOrg.x;
 				ptDraw.y += dHelical;
@@ -1866,7 +1854,6 @@ void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				ptDraw.x = r * cos(sq) + ptDrawOrg.x;
 				ptDraw.y = r * sin(sq) + ptDrawOrg.z;
@@ -1875,7 +1862,6 @@ void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				ptDraw.x = r * cos(sq) + ptDrawOrg.x;
 				ptDraw.y = r * sin(sq) + ptDrawOrg.z;
@@ -1896,7 +1882,6 @@ void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				ptDraw.x += dHelical;
 				ptDraw.y  = r * sin(sq) + ptDrawOrg.z;
@@ -1905,7 +1890,6 @@ void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				ptDraw.x += dHelical;
 				ptDraw.y  = r * sin(sq) + ptDrawOrg.z;
@@ -1940,7 +1924,6 @@ void CNCcircle::Draw_G19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				pt3D.x += dHelical;
 				pt3D.y = r * cos(sq) + ptDrawOrg.y;
@@ -1951,7 +1934,6 @@ void CNCcircle::Draw_G19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				pt3D.x += dHelical;
 				pt3D.y = r * cos(sq) + ptDrawOrg.y;
@@ -1976,7 +1958,6 @@ void CNCcircle::Draw_G19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				ptDraw.x += dHelical;
 				ptDraw.y  = r * cos(sq) + ptDrawOrg.y;
@@ -1985,7 +1966,6 @@ void CNCcircle::Draw_G19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				ptDraw.x += dHelical;
 				ptDraw.y  = r * cos(sq) + ptDrawOrg.y;
@@ -2006,7 +1986,6 @@ void CNCcircle::Draw_G19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				ptDraw.x += dHelical;
 				ptDraw.y  = r * sin(sq) + ptDrawOrg.z;
@@ -2015,7 +1994,6 @@ void CNCcircle::Draw_G19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				ptDraw.x += dHelical;
 				ptDraw.y  = r * sin(sq) + ptDrawOrg.z;
@@ -2035,7 +2013,6 @@ void CNCcircle::Draw_G19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
 		pDC->MoveTo(ptDraw);
 		if ( m_nG23 == 0 ) {
 			st = (sq - eq) / ARCCOUNT;
-//			for ( sq-=ARCSTEP; sq>eq; sq-=ARCSTEP ) {
 			for ( sq-=st; sq>eq; sq-=st ) {
 				ptDraw.x = r * cos(sq) + ptDrawOrg.y;
 				ptDraw.y = r * sin(sq) + ptDrawOrg.z;
@@ -2044,7 +2021,6 @@ void CNCcircle::Draw_G19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
 		}
 		else {
 			st = (eq - sq) / ARCCOUNT;
-//			for ( sq+=ARCSTEP; sq<eq; sq+=ARCSTEP ) {
 			for ( sq+=st; sq<eq; sq+=st ) {
 				ptDraw.x = r * cos(sq) + ptDrawOrg.y;
 				ptDraw.y = r * sin(sq) + ptDrawOrg.z;
@@ -2293,7 +2269,7 @@ optional<CPointD> CNCcircle::SetChamferingPoint(BOOL bStart, double c)
 	}
 
 	// í∑Ç≥Ç™ë´ÇÁÇ»Ç¢Ç∆Ç´ÇÕ¥◊∞
-	if ( m_eq - m_sq > RAD(180.0) ) {
+	if ( m_eq - m_sq > PI ) {
 		// 180ÅãÇí¥Ç¶ÇÈÇ∆Ç´ÇÕíºåaÇ∆î‰är
 		if ( c >= fabs(m_r)*2 )
 			return optional<CPointD>();
@@ -2317,15 +2293,15 @@ optional<CPointD> CNCcircle::SetChamferingPoint(BOOL bStart, double c)
 	// âÇÃëIë
 	ps = bStart ? m_sq : m_eq;
 	if ( (pa=atan2(pt1.y-ptOrg1.y, pt1.x-ptOrg1.x)) < 0.0 )
-		pa += RAD(360.0);
+		pa += PI2;
 	if ( (pb=atan2(pt2.y-ptOrg1.y, pt2.x-ptOrg1.x)) < 0.0 )
-		pb += RAD(360.0);
+		pb += PI2;
 	// 180ìxà»è„ÇÃç∑ÇÕï‚ê≥
-	if ( fabs(ps-pa) > RAD(180.0) ) {
+	if ( fabs(ps-pa) > PI ) {
 		if ( ps > pa )
-			ps -= RAD(360.0);
+			ps -= PI2;
 		else
-			pa -= RAD(360.0);
+			pa -= PI2;
 	}
 
 	// énäpÅEèIäpÇ…ãﬂÇ¢âÇÃëIëÇ∆é©ï™é©êgÇÃì_ÇçXêV
@@ -2384,7 +2360,7 @@ optional<CPointD> CNCcircle::SetChamferingPoint(BOOL bStart, double c)
 		swap(m_sq, m_eq);
 	ps = ::RoundUp(DEG(m_sq));
 	while ( ps >= ::RoundUp(DEG(m_eq)) )
-		m_eq += RAD(360.0);
+		m_eq += PI2;
 
 	return pt;
 }
@@ -2551,18 +2527,18 @@ void CNCcircle::SetCorrectPoint(ENPOINTORDER enPoint, const CPointD& ptSrc, doub
 	if ( enPoint == STARTPOINT ) {
 		double&	q = m_nG23==0 ? m_eq : m_sq;	// éQè∆å^
 		if ( (q=atan2(pt.y, pt.x)) < 0.0 )
-			q += RAD(360.0);
+			q += PI2;
 	}
 	else {
 		m_r = _copysign(fabs(m_r)+rr, m_r);		// èIì_ÇÃéûÇæÇØîºåaï‚ê≥
 		double&	q = m_nG23==0 ? m_sq : m_eq;
 		if ( (q=atan2(pt.y, pt.x)) < 0.0 )
-			q += RAD(360.0);
+			q += PI2;
 		m_pt2D = m_ptValE.PointConvert();
 	}
 	double	sq = ::RoundUp(DEG(m_sq));
 	while ( sq >= ::RoundUp(DEG(m_eq)) )
-		m_eq += RAD(360.0);
+		m_eq += PI2;
 }
 
 //////////////////////////////////////////////////////////////////////

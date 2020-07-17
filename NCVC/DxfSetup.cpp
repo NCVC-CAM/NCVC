@@ -49,8 +49,11 @@ BOOL CDxfSetup::OnReload(CPropertyPage* pActPage)
 	}
 
 	// ÄÞ·­ÒÝÄ‚Ì”‚ª‚P‚Â‚¾‚¯‚È‚çC‚»‚ê‚ðÄ“Çž
-	if ( AfxGetNCVCApp()->GetDXFOpenDocumentCount() == 1 )
-		static_cast<CDXFDoc*>(AfxGetNCVCApp()->GetAlreadyDocument(TYPE_DXF))->SetDocFlag(DXFDOC_RELOAD);
+	if ( AfxGetNCVCApp()->GetDXFOpenDocumentCount() == 1 ) {
+		CDXFDoc* pDoc = static_cast<CDXFDoc*>(AfxGetNCVCApp()->GetAlreadyDocument(TYPE_DXF));
+		if ( !pDoc->GetPathName().IsEmpty() )
+			pDoc->SetDocFlag(DXFDOC_RELOAD);
+	}
 	else {
 		CDxfSetupReload	dlg(this);
 		if ( dlg.DoModal() != IDOK )

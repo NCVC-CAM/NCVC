@@ -44,8 +44,6 @@ BEGIN_MESSAGE_MAP(CNCViewTab, CTabViewBase)
 	ON_COMMAND_RANGE(ID_NCVIEW_TRACE_CURSOR, ID_NCVIEW_TRACE_CURSOR2, &CNCViewTab::OnTraceCursor)
 	// 「全てのﾍﾟｲﾝの図形ﾌｨｯﾄ」ﾒﾆｭｰｺﾏﾝﾄﾞの使用許可
 	ON_UPDATE_COMMAND_UI(ID_NCVIEW_ALLFIT, &CNCViewTab::OnUpdateAllFitCmd)
-	// 「直前の拡大率」ﾒﾆｭｰｺﾏﾝﾄﾞの使用許可
-	ON_UPDATE_COMMAND_UI(ID_VIEW_BEFORE, &CNCViewTab::OnUpdateBeforeView)
 	// 他
 	ON_UPDATE_COMMAND_UI(ID_OPTION_DEFVIEWINFO, &CNCViewTab::OnUpdateDefViewInfo)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCViewTab::OnUpdateEditCopy)
@@ -71,8 +69,7 @@ CNCViewTab::CNCViewTab() : m_evTrace(FALSE, TRUE)
 	m_pTraceThread = NULL;
 	m_bTraceContinue = m_bTracePause = FALSE;
 	m_pDataTraceSel  = NULL;
-	for ( int i=0; i<SIZEOF(m_bSplit); i++ )
-		m_bSplit[i] = FALSE;
+	ZEROCLR(m_bSplit);	// m_bSplit[i++]=FALSE
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -113,8 +110,7 @@ void CNCViewTab::OnInitialUpdate()
 	}
 	else {
 		// ｽﾌﾟﾘｯﾀ表示の場合は，拡大率の再更新
-		for ( int i=0; i<SIZEOF(m_bSplit); i++ )
-			m_bSplit[i] = TRUE;
+		for ( auto& ref : m_bSplit ) ref = TRUE;	// m_bSplit[i++]=TRUE
 	}
 }
 
@@ -181,8 +177,7 @@ void CNCViewTab::OnActivatePage(int nIndex)
 	}
 	else if ( nIndex < NCVIEW_OPENGL ) {
 		// ｽﾌﾟﾘｯﾀ表示の場合は常に拡大率の再更新
-		for ( int i=0; i<SIZEOF(m_bSplit); i++ )
-			m_bSplit[i] = TRUE;
+		for ( auto& ref : m_bSplit ) ref = TRUE;	// m_bSplit[i++]=TRUE
 		// ｱｸﾃｨﾌﾞﾋﾞｭｰはｽﾌﾟﾘｯﾀ内のSetActivePane()で
 	}
 	else if ( nIndex == NCVIEW_OPENGL ) {
@@ -464,11 +459,6 @@ void CNCViewTab::OnUpdateAllFitCmd(CCmdUI* pCmdUI)
 {
 	int nIndex = GetActivePage();
 	pCmdUI->Enable( NCDRAWVIEW_NUM<=nIndex && nIndex<NCVIEW_OPENGL );
-}
-
-void CNCViewTab::OnUpdateBeforeView(CCmdUI* pCmdUI)
-{
-	pCmdUI->Enable( GetActivePage() < NCVIEW_OPENGL );
 }
 
 void CNCViewTab::OnUpdateDefViewInfo(CCmdUI *pCmdUI)

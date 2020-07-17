@@ -5,15 +5,21 @@
 #pragma once
 
 // •Û‘¶‚ÉŠÖ‚·‚éî•ñ
-enum	ENORDERTYPE {	// –½—ß‚ÌŒ^
-	NC_PAGE,	// Íß°¼Þ‹æØ‚è
-	NC_NUM, NC_DBL, NC_FLG, NC_STR
+enum	ENORDERTYPE {
+	NC_PAGE = -1,
+	NC_NUM = 0, NC_DBL, NC_FLG, NC_STR,
+		NC_MAXOD	// 4
 };
 typedef	struct	tagSAVEORDER {
 	ENORDERTYPE		enType;
 	int				nID;
 	LPCTSTR			lpszComment;
 } SAVEORDER, *LPSAVEORDER;
+// µÌß¼®Ý“‡ŠÇ—
+typedef	struct	tagNCMAKEOPTION {
+	int				nOrderCnt;
+	LPCTSTR*		pszOrder;
+} NCMAKEOPTION, *LPNCMAKEOPTION;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -22,22 +28,8 @@ class CNCMakeOption
 	CString	m_strInitFile;		// ðŒÌ§²Ù–¼
 	int		m_nOrderLength;		// Å‘å–½—ß’·
 
-	int		m_nOrderCnt[4];		// int, double, BOOL, CStringŒ^‚Ì–½—ß”
-	// intŒ^µÌß¼®Ý
-	LPCTSTR*		m_szNOrder;		// –½—ßŒê
-	const int*		m_dfNOrder;		// ÃÞÌ«ÙÄ’l
-	int*			m_pnNums;		// Ši”[•Ï”
-	// doubleŒ^µÌß¼®Ý
-	LPCTSTR*		m_szDOrder;
-	const double*	m_dfDOrder;
-	double*			m_pdNums;
-	// BOOLŒ^µÌß¼®Ý
-	LPCTSTR*		m_szBOrder;
-	const BOOL*		m_dfBOrder;
-	BOOL*			m_pbFlags;
-	// CStringŒ^µÌß¼®Ý
-	LPCTSTR*		m_szSOrder;
-	LPCTSTR*		m_dfSOrder;
+	// µÌß¼®ÝŠÇ—
+	NCMAKEOPTION	m_MakeOpt[NC_MAXOD];	// int, double, BOOL, CStringŒ^
 
 	// SaveMakeOption() ºÒÝÄî•ñ‘¼
 	int				m_nComment;
@@ -46,22 +38,22 @@ class CNCMakeOption
 	LPSAVEORDER		m_pSaveOrder;
 
 protected:
-	CStringArray	m_strOption;	// CStringŒ^‚¾‚¯‚ÍÍÞ°½¸×½‚ÅŽÀ‘Ì‚ðŽ‚Â
+	int*			m_pIntOpt;
+	double*			m_pDblOpt;
+	BOOL*			m_pFlgOpt;
+	CStringArray	m_strOption;
 
-	CNCMakeOption(
-		int, LPCTSTR*, const int*,    int*,		// intŒ^
-		int, LPCTSTR*, const double*, double*,	// doubleŒ^
-		int, LPCTSTR*, const BOOL*,   BOOL*,	// BOOLŒ^
-		int, LPCTSTR*, LPCTSTR*,				// CStringŒ^
-		int, LPCTSTR*, int, LPSAVEORDER);		// SaveMakeOption()î•ñ
+	CNCMakeOption(NCMAKEOPTION[],
+		int, LPCTSTR*, int, LPSAVEORDER);	// SaveMakeOption()î•ñ
+	virtual	void	InitialDefault(void) = 0;	// ÃÞÌ«ÙÄÝ’è(Še”h¶¸×½‚É‚Ä)
 
 	CString	GetInsertSpace(int nLen) {
 		CString	strResult(' ', m_nOrderLength - nLen);
 		return strResult;
 	}
-	void	InitialDefault(void);	// ÃÞÌ«ÙÄÝ’è
 
 public:
+	virtual	~CNCMakeOption();
 	CString	GetInitFile(void) const {
 		return m_strInitFile;
 	}
@@ -69,23 +61,24 @@ public:
 	BOOL	SaveMakeOption(LPCTSTR = NULL);
 
 	int		GetNum(int n) const {		// ®”’lµÌß¼®Ý
-		ASSERT( n>=0 && n<m_nOrderCnt[0] );
-		return m_pnNums[n];
+		ASSERT( n>=0 && n<m_MakeOpt[NC_NUM].nOrderCnt );
+		return m_pIntOpt[n];
 	}
 	double	GetDbl(int n) const {		// ŽÀ”’lµÌß¼®Ý
-		ASSERT( n>=0 && n<m_nOrderCnt[1] );
-		return m_pdNums[n];
+		ASSERT( n>=0 && n<m_MakeOpt[NC_DBL].nOrderCnt );
+		return m_pDblOpt[n];
 	}
 	BOOL	GetFlag(int n) const {		// Ì×¸ÞµÌß¼®Ý
-		ASSERT( n>=0 && n<m_nOrderCnt[2] );
-		return m_pbFlags[n];
+		ASSERT( n>=0 && n<m_MakeOpt[NC_FLG].nOrderCnt );
+		return m_pFlgOpt[n];
 	}
 	CString	GetStr(int n) const {		// •¶Žš—ñµÌß¼®Ý
+		ASSERT( n>=0 && n<m_MakeOpt[NC_STR].nOrderCnt );
 		ASSERT( n>=0 && n<m_strOption.GetCount() );
 		return m_strOption[n];
 	}
 
-#ifdef _DEBUGOLD
+#ifdef _DEBUG
 	virtual	void DbgDump(void) const = 0;	// µÌß¼®Ý•Ï”‚ÌÀÞÝÌß(”h¶—p)
 #endif
 };

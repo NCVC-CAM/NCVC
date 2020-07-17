@@ -56,9 +56,9 @@ BOOL CMKNCSetup8::OnInitDialog()
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParentSheet() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	m_bLayerComment	= pOpt->m_bLayerComment;
-	m_bL0Cycle		= pOpt->m_bL0Cycle;
-	m_nMoveZ		= pOpt->m_nMoveZ;
+	m_bLayerComment	= pOpt->MIL_F_LAYERCOMMENT;
+	m_bL0Cycle		= pOpt->MIL_F_L0CYCLE;
+	m_nMoveZ		= pOpt->MIL_I_MOVEZ;
 	m_strCustMoveB	= pOpt->m_strOption[MKNC_STR_CUSTMOVE_B];
 	m_strCustMoveA	= pOpt->m_strOption[MKNC_STR_CUSTMOVE_A];
 
@@ -71,9 +71,9 @@ BOOL CMKNCSetup8::OnInitDialog()
 BOOL CMKNCSetup8::OnApply() 
 {
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->m_bLayerComment	= m_bLayerComment;
-	pOpt->m_bL0Cycle		= m_bL0Cycle;
-	pOpt->m_nMoveZ			= m_nMoveZ;
+	pOpt->MIL_F_LAYERCOMMENT	= m_bLayerComment;
+	pOpt->MIL_F_L0CYCLE			= m_bL0Cycle;
+	pOpt->MIL_I_MOVEZ			= m_nMoveZ;
 	pOpt->m_strOption[MKNC_STR_CUSTMOVE_B] = m_strCustMoveB;
 	pOpt->m_strOption[MKNC_STR_CUSTMOVE_A] = m_strCustMoveA;
 

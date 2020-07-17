@@ -17,7 +17,6 @@ extern	CMagaDbg	g_dbg;
 
 #define	IsThread()	pDoc->IsDocFlag(NCDOC_CUTCALC)
 
-typedef	double	(*PFNCUTTIME)(const CNCdata*);
 static	double	GetCutTime_Milling(const CNCdata*);
 static	double	GetCutTime_Lathe(const CNCdata*);
 
@@ -80,7 +79,8 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	}
 
 	pDoc->m_dCutTime = 0.0;
-	PFNCUTTIME	pfnGetCutTime = pDoc->IsDocFlag(NCDOC_LATHE) ?
+	boost::function<double (const CNCdata*)>	pfnGetCutTime =
+		pDoc->IsDocFlag(NCDOC_LATHE) ?
 		GetCutTime_Lathe : GetCutTime_Milling;
 
 	for ( i=0; i<nLoopCnt && IsThread(); i++ ) {
@@ -101,7 +101,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 		case 2:		// ‰~ŒÊ•âŠÔ
 		case 3:
 			if ( pData->GetFeed() != 0 )
-				pDoc->m_dCutTime += (*pfnGetCutTime)(pData);
+				pDoc->m_dCutTime += pfnGetCutTime(pData);
 			break;
 		case 4:		// ÄÞ³ªÙ
 			dwValFlags = pData->GetValFlags();

@@ -375,6 +375,9 @@
     <ClCompile Include="NCWorkDlg2.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="MakeBindOptDlg.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3Dto2D.h">
@@ -710,6 +713,9 @@
     <ClInclude Include="NCWorkDlg2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="MakeBindOptDlg.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="DXFdata.inl">
@@ -722,9 +728,6 @@
       <Filter>リソース ファイル</Filter>
     </None>
     <None Include="ClassDiagram1.cd" />
-    <None Include="DocBase.inl">
-      <Filter>ヘッダー ファイル</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\check.ico">

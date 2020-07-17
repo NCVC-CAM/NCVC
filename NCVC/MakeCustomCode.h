@@ -13,7 +13,7 @@ class CMakeCustomCode
 	const CDXFDoc*			m_pDoc;
 	const CNCMakeOption*	m_pMakeOpt;
 
-	BOOL	IsNCchar(LPCTSTR) const;
+//	BOOL	IsNCchar(LPCTSTR) const;
 
 protected:
 	CStringKeyIndex	m_strOrderIndex;	// µ°ÀÞ°•¶Žš—ñ
@@ -54,5 +54,4 @@ struct tag_separator {
 		}
 	}
 };
-
-typedef boost::tokenizer<tag_separator>::iterator tokIte;
+//typedef boost::tokenizer<tag_separator>::iterator tokIte;

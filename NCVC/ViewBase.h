@@ -3,6 +3,14 @@
 
 #pragma once
 
+// ﾏｳｽ操作の遷移
+enum ENMOUSESTATE
+{
+	MS_UP = 0,
+	MS_DOWN,
+	MS_DRAG
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // CViewBase
 
@@ -10,37 +18,29 @@ class CViewBase : public CView
 {
 	int			m_nBoth;		// 両ﾎﾞﾀﾝ処理ｶｳﾝﾀ
 								// 最後に離したﾎﾞﾀﾝでReleaseCapture()するため
-	CPoint		m_ptBeforeOrg,	// 直前の原点
-				m_ptMouse,		// ﾏｳｽが押されたﾃﾞﾊﾞｲｽ座標
-				m_ptMovOrg;		// Rﾏｳｽが押された論理座標(移動基点)
-	CRect		m_rcMagnify;	// 拡大矩形(純粋な論理座標)
-	double		m_dBeforeFactor;// 直前の拡大率
-
-	int		OnMouseButtonUp(int, CPoint&);	// ﾎﾞﾀﾝを離したときの共通処理
+	int		OnMouseButtonUp(ENMOUSESTATE, CPoint&);	// ﾎﾞﾀﾝを離したときの共通処理
 	CSize	OnViewLens(CClientDC&);			// 拡大縮小共通処理
 
 protected:
 	CViewBase();
-public:
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-
-protected:
+	CPoint		m_ptMouse,		// ﾏｳｽが押されたﾃﾞﾊﾞｲｽ座標
+				m_ptMovOrg;		// Rﾏｳｽが押された論理座標(移動基点)
+	CRect		m_rcMagnify;	// 拡大矩形(純粋な論理座標)
 	BOOL		m_bMagRect;		// 拡大矩形表示中
-	double		m_dFactor;		// 拡大率
-	int			m_nLState,		// -1:Up, 0:Down, 1:拡大矩形表示中
-				m_nRState;		// -1:Up, 0:Down, 1:右ﾄﾞﾗｯｸﾞ移動中
+	double		m_dFactor;		// 拡大率(*LOMETRICFACTOR)
+	ENMOUSESTATE	m_enLstate,
+					m_enRstate;
 
 	// 係数による数値の補正(描画座標)
 	int		DrawConvert(double d) {
-		return (int)(d * m_dFactor * LOMETRICFACTOR);
+		return (int)(d * m_dFactor);
 	}
 	CPoint	DrawConvert(const CPointD& pt) {
-		return CPoint( pt * m_dFactor * LOMETRICFACTOR );
+		return CPoint(pt * m_dFactor);
 	}
 	CRect	DrawConvert(const CRectD& rc) {
 		return CRect( DrawConvert(rc.TopLeft()), DrawConvert(rc.BottomRight()) );
 	}
-
 	// 拡大矩形の描画
 	void	DrawMagnifyRect(CDC* pDC) {
 		pDC->SetROP2(R2_XORPEN);
@@ -58,20 +58,29 @@ protected:
 	void	OnViewLensP(void);						// 拡大
 	void	OnViewLensN(void);						// 縮小
 	void	OnMoveKey(UINT);						// 移動
-	void	OnBeforeMagnify(void);					// 前回の拡大率
-
-	int		OnCreate(LPCREATESTRUCT, BOOL bDC = TRUE);
-	void	OnLButtonDown(const CPoint&);
-	int		OnLButtonUp( CPoint&);
-	void	OnRButtonDown(const CPoint&);
-	int		OnRButtonUp(CPoint&);
-	BOOL	OnMouseMove(UINT, const CPoint&);
-	BOOL	OnMouseWheel(UINT, short, const CPoint&);
-	void	OnContextMenu(CPoint pt, UINT nID);
-	BOOL	OnEraseBkgnd(CDC*, COLORREF, COLORREF);
+	//
+	int		_OnLButtonUp(CPoint&);
+	int		_OnRButtonUp(CPoint&);
+	BOOL	_OnMouseMove(UINT, const CPoint&);
+	void	_OnContextMenu(CPoint pt, UINT nID);
+	BOOL	_OnEraseBkgnd(CDC*, COLORREF, COLORREF);
+	//
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+	//
+	virtual	void	OnViewLensComm(void) {}
 
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
 #endif
+public:
+	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+
+	DECLARE_MESSAGE_MAP()
 };
+
+// ﾏｳｽﾄﾞﾗｯｸﾞ時の最低移動量
+#define	MAGNIFY_RANGE	10		// ﾋﾟｸｾﾙ

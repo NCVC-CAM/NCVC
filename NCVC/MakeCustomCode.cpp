@@ -47,7 +47,8 @@ tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) c
 	case 0:		// MakeUser
 		dwResult = _MAX_PATH;
 		// ﾕｰｻﾞ名に漢字が含まれていると生成しない
-		strResult = ::GetUserName(szUserName, &dwResult) && IsNCchar(szUserName) ?
+//		strResult = ::GetUserName(szUserName, &dwResult) && IsNCchar(szUserName) ?
+		strResult = ::GetUserName(szUserName, &dwResult) ?
 			szUserName : szReplaceErr;
 		break;
 	case 1:		// MakeDate
@@ -61,22 +62,41 @@ tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) c
 		strResult = time.Format(strPath);
 		break;
 	case 3:		// MakeNCD
-		::Path_Name_From_FullPath(m_pDoc->GetNCFileName(), strPath, strFile);
-		strResult = IsNCchar(strFile) ? strFile : szReplaceErr;
+		if ( m_pDoc->IsDocFlag(DXFDOC_BIND) ) {
+			CDXFDoc* pDoc = m_pDoc->GetBindParentDoc();
+			ASSERT( pDoc );
+			::Path_Name_From_FullPath(pDoc->GetNCFileName(), strPath, strFile);
+		}
+		else
+			::Path_Name_From_FullPath(m_pDoc->GetNCFileName(), strPath, strFile);
+//		strResult = IsNCchar(strFile) ? strFile : szReplaceErr;
+		strResult = strFile;
 		break;
 	case 4:		// MakeDXF
-		::Path_Name_From_FullPath(m_pDoc->GetPathName(), strPath, strFile);	// GetTitle()には"*"が付く可能性あり
-		strResult = IsNCchar(strFile) ? strFile : szReplaceErr;
+		if ( m_pDoc->IsDocFlag(DXFDOC_BIND) ) {
+			CDXFDoc* pDoc = m_pDoc->GetBindParentDoc();
+			ASSERT( pDoc );
+			CString	strDocFile(pDoc->GetPathName());
+			if ( strDocFile.IsEmpty() )
+				strFile = szReplaceErr;
+			else
+				::Path_Name_From_FullPath(strDocFile, strPath, strFile);
+		}
+		else
+			::Path_Name_From_FullPath(m_pDoc->GetPathName(), strPath, strFile);	// GetTitle()には"*"が付く可能性あり
+//		strResult = IsNCchar(strFile) ? strFile : szReplaceErr;
+		strResult = strFile;
 		break;
 	case 5:		// MakeCondition
 		::Path_Name_From_FullPath(m_pMakeOpt->GetInitFile(), strPath, strFile);
-		strResult = IsNCchar(strFile) ? strFile : szReplaceErr;
+//		strResult = IsNCchar(strFile) ? strFile : szReplaceErr;
+		strResult = strFile;
 		break;
 	}
 
 	return make_tuple(nTestCode - SIZEOF(g_szCustomCode), strResult);	// 共通ｷｰﾜｰﾄﾞ分を減算
 }
-
+/*
 BOOL CMakeCustomCode::IsNCchar(LPCTSTR lpsz) const
 {
 	for ( int i=0; i<lstrlen(lpsz); i++ ) {
@@ -86,3 +106,4 @@ BOOL CMakeCustomCode::IsNCchar(LPCTSTR lpsz) const
 	}
 	return TRUE;
 }
+*/

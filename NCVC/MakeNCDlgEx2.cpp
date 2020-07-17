@@ -98,7 +98,7 @@ BOOL CMakeNCDlgEx2::OnInitDialog()
 
 	// ºÝ½Ä×¸À‚Å‚Í GetNCMakeParent() ‚ªŽg‚¦‚È‚¢
 	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
-	m_bNCView = pOpt->GetDxfFlag(DXFOPT_VIEW);
+	m_bNCView = pOpt->GetDxfOptFlg(DXFOPT_VIEW);
 
 	// ãˆÊÀÞ²±Û¸Þ‹¤’Ê€‚©‚ç‚ÌÝ’è’lŽæ“¾
 	::Path_Name_From_FullPath(GetNCMakeParent()->m_strNCFileName, m_strNCPath, m_strNCFileName);

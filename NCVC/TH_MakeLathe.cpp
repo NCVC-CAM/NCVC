@@ -20,11 +20,7 @@ using namespace boost;
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
-/* --------------
-!!!ATTENTION!!!
-	生成時間の表示：正式ﾘﾘｰｽでは外すのを忘れずに
------------------ */
-//#define	_DBG_NCMAKE_TIME
+//#define	_DBG_NCMAKE_TIME	//	生成時間の表示
 #endif
 
 // ｸﾞﾛｰﾊﾞﾙ変数定義
@@ -204,7 +200,8 @@ BOOL OutputLatheCode(void)
 	SendFaseMessage(g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
 	try {
 		CStdioFile	fp(strNCFile,
-				CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive | CFile::typeText);
+			CFile::modeCreate | CFile::modeWrite |
+			CFile::shareExclusive | CFile::typeText | CFile::osSequentialScan);
 		for ( int i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 			g_obMakeData[i]->WriteGcode(fp);
 			SetProgressPos(i+1);
@@ -257,7 +254,6 @@ BOOL CreateShapeThread(void)
 	CMagaDbg	dbg("CreateShapeThread() for TH_MakeLathe\nStart");
 	CDXFchain*	pChainDbg;
 	CDXFdata*	pDataDbg;
-	POSITION	posdbg;
 	CPointD		ptsd, pted;
 #endif
 	NCVCTHREADPARAM	param;
@@ -288,7 +284,7 @@ BOOL CreateShapeThread(void)
 		if ( !pLayer->IsCutType() )
 			continue;
 #ifdef _DEBUG
-		dbg.printf(" Layer=%s", pLayer->GetStrLayer());
+		dbg.printf(" Layer=%s", pLayer->GetLayerName());
 #endif
 		nLoop = pLayer->GetShapeSize();
 		for ( j=0; j<nLoop && IsThread(); j++ ) {
@@ -301,13 +297,12 @@ BOOL CreateShapeThread(void)
 #ifdef _DEBUG
 				pChainDbg = pShape->GetShapeChain();
 				dbg.printf("  ShapeNo.%d ChainCnt=%d", i, pChainDbg->GetCount());
-				for ( posdbg=pChainDbg->GetHeadPosition(); posdbg; ) {
-					pDataDbg = pChainDbg->GetNext(posdbg);
+				PLIST_FOREACH(pDataDbg, pChainDbg)
 					ptsd = pDataDbg->GetNativePoint(0);
 					pted = pDataDbg->GetNativePoint(1);
 					dbg.printf("%d (%.3f, %.3f)-(%.3f, %.3f)", pDataDbg->GetType(),
 						ptsd.x, ptsd.y, pted.x, pted.y);
-				}
+				END_FOREACH
 #endif
 				delete	pMap;
 				// 生成対象形状を保存
@@ -324,13 +319,10 @@ void InitialShapeData(void)
 #ifdef _DEBUG
 	CMagaDbg	dbg("InitialShapeData()\nStart");
 #endif
-	int			i;
-	POSITION	pos;
 	CPointD		pts, pte;
-	CDXFchain	ltTemp;
 	CDXFchain*	pChain;
 
-	for ( i=0; i<g_obShape.GetSize() && IsThread(); i++ ) {
+	for ( int i=0; i<g_obShape.GetSize() && IsThread(); i++ ) {
 		pChain = g_obShape[i]->GetShapeChain();
 		ASSERT(pChain);
 		pts = pChain->GetHead()->GetNativePoint(0);
@@ -340,11 +332,7 @@ void InitialShapeData(void)
 #ifdef _DEBUG
 			dbg.printf("(pts.x < pte.x) Object Reverse");
 #endif
-			ltTemp.RemoveAll();
-			for ( pos=pChain->GetHeadPosition(); pos && IsThread(); )
-				ltTemp.AddHead(pChain->GetNext(pos));
-			pChain->RemoveAll();
-			pChain->AddTail(&ltTemp);
+			pChain->Reverse();
 			pChain->ReverseNativePt();
 		}
 		// 順序を正しくしてから原点調整
@@ -362,7 +350,6 @@ BOOL CreateOutsidePitch(void)
 	int			i, j,
 				n = GetNum(MKLA_NUM_MARGIN);
 	double		d = GetDbl(MKLA_DBL_MARGIN);
-	POSITION	pos;
 	COutlineData*	pOutline;
 	CDXFchain*	pChain;
 	CDXFdata*	pData;
@@ -378,8 +365,7 @@ BOOL CreateOutsidePitch(void)
 		// n==0の対処
 		pChain = pOutline->IsEmpty() ?
 			g_obShape[i]->GetShapeChain() : pOutline->GetHead();
-		for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
-			pData = pChain->GetNext(pos);
+		PLIST_FOREACH(pData, pChain)
 			rc = pData->GetMaxRect();
 #ifdef _DEBUG
 			ptsd = pData->GetNativePoint(0);
@@ -391,7 +377,7 @@ BOOL CreateOutsidePitch(void)
 #endif
 			if ( dLimit > rc.top )
 				dLimit = rc.top;
-		}
+		END_FOREACH
 		// 所属ﾒﾝﾊﾞの原点調整
 		for ( j=0; j<pOutline->GetSize() && IsThread(); j++ ) {
 			pChain = pOutline->GetAt(j);
@@ -438,7 +424,6 @@ BOOL CreateRoughPass(void)
 				nResult;
 	BOOL		bCreate, bInter;
 	ENDXFTYPE	enType;
-	POSITION	pos;
 	double		q, qq;
 	CPointD		ptChk[4];
 	optional<CPointD>	pts;
@@ -456,7 +441,7 @@ BOOL CreateRoughPass(void)
 		pData = g_obOutsideTemp[0];
 		ptChk[0] = pData->GetNativePoint(1) - pData->GetNativePoint(0);
 		if ( (qq=atan2(ptChk[0].y, ptChk[0].x)) < 0 )
-			qq += RAD(360.0);
+			qq += PI2;
 	}
 
 	// 外径準備ﾃﾞｰﾀをﾙｰﾌﾟさせ荒加工ﾃﾞｰﾀを作成
@@ -471,9 +456,8 @@ BOOL CreateRoughPass(void)
 			pOutline = g_obShape[j]->GetLatheList();
 			pChain = pOutline->IsEmpty() ?
 				g_obShape[j]->GetShapeChain() : pOutline->GetHead();
-			for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
+			PLIST_FOREACH(pDataChain, pChain)
 				bCreate = FALSE;
-				pDataChain = pChain->GetNext(pos);
 				enType = pDataChain->GetType();
 				nResult = pData->GetIntersectionPoint(pDataChain, ptChk, FALSE);
 				if ( nResult > 1 ) {
@@ -539,7 +523,7 @@ BOOL CreateRoughPass(void)
 					g_obLathePass.Add(pDataNew);
 					bInter = TRUE;
 				}
-			}			// End of Chain Loop
+			END_FOREACH	// End of Chain Loop
 		}				// End of Shape Loop
 		// 交点端数処理
 		if ( pts ) {
@@ -574,7 +558,7 @@ BOOL CreateRoughPass(void)
 								pDataChain->GetNativePoint(0);
 				}
 				if ( (q=atan2(ptChk[0].y, ptChk[0].x)) < 0 )
-					q += RAD(360.0);
+					q += PI2;
 				if ( q >= qq ) {
 					// 基準線より傾きが大きいときだけ
 					// 端数交点から外径終点まで生成
@@ -594,7 +578,6 @@ BOOL CreateRoughPass(void)
 BOOL MakeLatheCode(void)
 {
 	int			i, j, nLoop = g_obLathePass.GetSize();
-	POSITION	pos;
 	double		dCutX;
 	CPointD		pt, pts, pte;
 	CDXFchain*	pChain;
@@ -681,16 +664,11 @@ BOOL MakeLatheCode(void)
 			if ( !pChain->IsEmpty() )
 				MoveLatheCode(pChain->GetHead(), dMaxZ, dMaxX);
 			// 切削ﾊﾟｽ
-			for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
-#ifdef _DEBUG
-				pData = pChain->GetNext(pos);
+			PLIST_FOREACH(pData, pChain)
 				pNCD = new CNCMakeLathe(pData);
-#else
-				pNCD = new CNCMakeLathe(pChain->GetNext(pos));
-#endif
 				ASSERT(pNCD);
 				g_obMakeData.Add(pNCD);
-			}
+			END_FOREACH
 		}
 	}
 
@@ -702,16 +680,11 @@ BOOL MakeLatheCode(void)
 		if ( !pChain->IsEmpty() )
 			MoveLatheCode(pChain->GetHead(), dMaxZ, dMaxX);
 		// 切削ﾊﾟｽ
-		for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
-#ifdef _DEBUG
-			pData = pChain->GetNext(pos);
+		PLIST_FOREACH(pData, pChain)
 			pNCD = new CNCMakeLathe(pData);
-#else
-			pNCD = new CNCMakeLathe(pChain->GetNext(pos));
-#endif
 			ASSERT(pNCD);
 			g_obMakeData.Add(pNCD);
-		}
+		END_FOREACH
 	}
 
 	if ( !g_obMakeData.IsEmpty() ) {
@@ -744,7 +717,6 @@ BOOL MakeLatheCode(void)
 BOOL CheckXZMove(const CPointD& pts, const CPointD& pte)
 {
 	int			i, j, nLoop;
-	POSITION	pos;
 	BOOL		bResult = FALSE;
 	CPointD		pt[4];
 	COutlineData*	pOutline;
@@ -757,13 +729,12 @@ BOOL CheckXZMove(const CPointD& pts, const CPointD& pte)
 		nLoop = pOutline->IsEmpty() ? 1 : pOutline->GetSize();
 		for ( j=0; j<nLoop && !bResult && IsThread(); j++ ) {
 			pChain = pOutline->IsEmpty() ? g_obShape[i]->GetShapeChain() : pOutline->GetAt(j);
-			for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
-				pData = pChain->GetNext(pos);
+			PLIST_FOREACH(pData, pChain)
 				if ( pData->GetIntersectionPoint(pts, pte, pt, FALSE) > 0 ) {
 					bResult = TRUE;
 					break;
 				}
-			}
+			END_FOREACH
 		}
 	}
 
@@ -886,19 +857,19 @@ void AddCustomLatheCode(const CString& strFileName)
 {
 	CString	strBuf, strResult;
 	CMakeCustomCode_Lathe	custom;
-	string	str;
+	string	str, strTok;
 	tokenizer<tag_separator>	tokens(str);
-	tokIte	it;		// MakeCustomCode.h
 
 	try {
 		CStdioFile	fp(strFileName,
-			CFile::modeRead | CFile::shareDenyWrite | CFile::typeText);
+			CFile::modeRead | CFile::shareDenyWrite | CFile::typeText | CFile::osSequentialScan);
 		while ( fp.ReadString(strBuf) && IsThread() ) {
 			str = strBuf;
 			tokens.assign(str);
 			strResult.Empty();
-			for ( it=tokens.begin(); it!=tokens.end(); ++it )
-				strResult += custom.ReplaceCustomCode(*it);
+			BOOST_FOREACH(strTok, tokens) {
+				strResult += custom.ReplaceCustomCode(strTok);
+			}
 			if ( !strResult.IsEmpty() )
 				AddMakeLatheStr(strResult);
 		}

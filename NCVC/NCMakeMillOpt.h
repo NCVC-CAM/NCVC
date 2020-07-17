@@ -8,201 +8,174 @@
 #include "NCMakeOption.h"
 
 enum {
-	MKNC_NUM_PROG = 0,
-	MKNC_NUM_LINEADD,
-	MKNC_NUM_G90,
-	MKNC_NUM_DOT,
-	MKNC_NUM_FDOT,
-	MKNC_NUM_CIRCLECODE,
-	// -- ここまで派生WireOption共通
-	MKNC_NUM_SPINDLE,
-	MKNC_NUM_ZRETURN,
-	MKNC_NUM_IJ,
-	MKNC_NUM_MAKEEND,
-	MKNC_NUM_DEEPSPINDLE,
-	MKNC_NUM_DEEPRETURN,
-	MKNC_NUM_DEEPALL,
-	MKNC_NUM_DEEPROUND,
-	MKNC_NUM_DRILLSPINDLE,
-	MKNC_NUM_DWELL,
-	MKNC_NUM_DWELLFORMAT,
-	MKNC_NUM_DRILLRETURN,
-	MKNC_NUM_DRILLPROCESS,
-	MKNC_NUM_DRILLSORT,
-	MKNC_NUM_DRILLCIRCLEPROCESS,
-	MKNC_NUM_MOVEZ,
-	MKNC_NUM_TOLERANCE,
-	MKNC_NUM_OPTIMAIZEDRILL,
+	MKNC_NUM_PROG = 0,			// ﾌﾟﾛｸﾞﾗﾑ番号
+	MKNC_NUM_LINEADD,			// 行番号増加
+	MKNC_NUM_G90,				// 位置指定(G90 or G91)
+	MKNC_NUM_DOT,				// 数値表記(小数点 or 1/1000)
+	MKNC_NUM_FDOT,				// Ｆﾊﾟﾗﾒｰﾀの数値表記
+	MKNC_NUM_CIRCLECODE,		// 円切削(G2 or G3)
+	MKNC_NUM_SPINDLE,			// 主軸回転速度
+	MKNC_NUM_ZRETURN,			// Z軸の復帰(Initial or R)
+	MKNC_NUM_IJ,				// 円弧補間にRかI/J/K
+	MKNC_NUM_MAKEEND,			// 加工済み深さの指示
+	MKNC_NUM_DEEPSPINDLE,		// 深彫仕上げ回転数
+	MKNC_NUM_DEEPRETURN,		// 深彫仕上げからのZ軸復帰
+	MKNC_NUM_DEEPALL,			// 深彫の切削手順
+	MKNC_NUM_DEEPROUND,			// 深彫の切削方向
+	MKNC_NUM_DRILLSPINDLE,		// 穴あけ回転数
+	MKNC_NUM_DWELL,				// ﾄﾞｳｪﾙ時間
+	MKNC_NUM_DWELLFORMAT,		// ﾄﾞｳｪﾙ時間の表記
+	MKNC_NUM_DRILLRETURN,		// 穴あけのZ軸復帰
+	MKNC_NUM_DRILLPROCESS,		// 穴あけの仕方
+	MKNC_NUM_DRILLSORT,			// 穴あけのｸﾞﾙｰﾋﾟﾝｸﾞ順序
+	MKNC_NUM_DRILLCIRCLEPROCESS,// 円ﾃﾞｰﾀを含むときの穴あけ順序
+	MKNC_NUM_MOVEZ,				// 移動ﾚｲﾔのZ軸
+	MKNC_NUM_TOLERANCE,			// 許容差を超えたときの動作
+	MKNC_NUM_OPTIMAIZEDRILL,	// 穴加工の基準軸
 		MKNC_NUM_NUMS		// [24]
 };
 enum {
-	MKNC_DBL_FEED = 0,
-	MKNC_DBL_ZFEED,
-	MKNC_DBL_ZG0STOP,
-	MKNC_DBL_ZCUT,
-	MKNC_DBL_G92X,
+	MKNC_DBL_FEED = 0,			// 切削送り速度
+	MKNC_DBL_ZFEED,				// Z軸を下げるときの送り速度
+	MKNC_DBL_ZG0STOP,			// G0で動かすZ位置(R点)
+	MKNC_DBL_ZCUT,				// Z軸の下げ位置(切り込み)
+	MKNC_DBL_G92X,				// G92のX/Y/Z
 	MKNC_DBL_G92Y,
 	MKNC_DBL_G92Z,
-	MKNC_DBL_ELLIPSE,
-	MKNC_DBL_MAKEEND,
-	MKNC_DBL_MAKEENDFEED,
-	MKNC_DBL_DEEP,
-	MKNC_DBL_ZSTEP,
-	MKNC_DBL_DEEPFEED,
-	MKNC_DBL_DRILLFEED,
-	MKNC_DBL_DRILLR,
-	MKNC_DBL_DRILLZ,
-	MKNC_DBL_DRILLCIRCLE,
-	MKNC_DBL_TOLERANCE,
-	MKNC_DBL_DRILLMARGIN,
+	MKNC_DBL_ELLIPSE,			// 楕円公差
+	MKNC_DBL_MAKEEND,			// 加工済み深さのｵﾌｾｯﾄor固定Z値
+	MKNC_DBL_MAKEENDFEED,		// 加工済みZ送り速度
+	MKNC_DBL_DEEP,				// 深彫の最終切り込み
+	MKNC_DBL_ZSTEP,				// 深彫切削のためのｽﾃｯﾌﾟ
+	MKNC_DBL_DEEPFEED,			// 深彫仕上げ送り
+	MKNC_DBL_DRILLFEED,			// 穴あけ送り
+	MKNC_DBL_DRILLR,			// 穴加工R点
+	MKNC_DBL_DRILLZ,			// 穴加工切り込み
+	MKNC_DBL_DRILLCIRCLE,		// 穴加工に見立てる円ﾃﾞｰﾀの半径
+	MKNC_DBL_TOLERANCE,			// 同一座標と見なす許容差
+	MKNC_DBL_DRILLMARGIN,		// 基準軸に対する許容差
 		MKNC_DBL_NUMS		// [19]
 };
 enum {
-	MKNC_FLG_PROG = 0,
-	MKNC_FLG_PROGAUTO,
-	MKNC_FLG_LINEADD,
-	MKNC_FLG_ZEROCUT,
-	MKNC_FLG_GCLIP,
-	MKNC_FLG_ELLIPSE,
-	// -- ここまで派生WireOption共通
-	MKNC_FLG_XREV,
-	MKNC_FLG_YREV,
-	MKNC_FLG_DISABLESPINDLE,
-	MKNC_FLG_CIRCLEHALF,
-	MKNC_FLG_ZEROCUT_IJ,
-	MKNC_FLG_DEEP,
-	MKNC_FLG_HELICAL,
-	MKNC_FLG_DEEPFINISH,
-	MKNC_FLG_DRILLMATCH,
-	MKNC_FLG_DRILLCIRCLE,
-	MKNC_FLG_DRILLBREAK,
-	MKNC_FLG_LAYERCOMMENT,
-	MKNC_FLG_L0CYCLE,
+	MKNC_FLG_PROG = 0,			// O番号付与
+	MKNC_FLG_PROGAUTO,			// ﾗﾝﾀﾞﾑ割り当て
+	MKNC_FLG_LINEADD,			// 行番号
+	MKNC_FLG_ZEROCUT,			// 小数点以下のｾﾞﾛｶｯﾄ
+	MKNC_FLG_GCLIP,				// Gｺｰﾄﾞ省略形
+	MKNC_FLG_ELLIPSE,			// 長径と短径が等しい楕円は円とみなす
+	MKNC_FLG_XREV,				// X軸反転
+	MKNC_FLG_YREV,				// Y軸反転
+	MKNC_FLG_DISABLESPINDLE,	// Sﾊﾟﾗﾒｰﾀを生成しない
+	MKNC_FLG_CIRCLEHALF,		// 全円は分割
+	MKNC_FLG_ZEROCUT_IJ,		// [I|J]0は省略
+	MKNC_FLG_DEEP,				// 深彫切削を行う
+	MKNC_FLG_HELICAL,			// 円ﾃﾞｰﾀをﾍﾘｶﾙ切削
+	MKNC_FLG_DEEPFINISH,		// 仕上げｵﾌﾟｼｮﾝ適用か
+	MKNC_FLG_DRILLMATCH,		// 穴加工同一座標は無視
+	MKNC_FLG_DRILLCIRCLE,		// 円ﾃﾞｰﾀも穴加工ﾃﾞｰﾀと見なす
+	MKNC_FLG_DRILLBREAK,		// 大きさごとにｺﾒﾝﾄを埋め込む
+	MKNC_FLG_LAYERCOMMENT,		// ﾚｲﾔごとにｺﾒﾝﾄを埋め込む
+	MKNC_FLG_L0CYCLE,			// 固定ｻｲｸﾙ中はL0出力
 		MKNC_FLG_NUMS		// [19]
 };
 enum {
-	MKNC_STR_LINEFORM = 0,
-	MKNC_STR_EOB,
-	MKNC_STR_HEADER,
-	MKNC_STR_FOOTER,
-	MKNC_STR_CUSTMOVE_B,
+	MKNC_STR_LINEFORM = 0,		// 行番号ﾌｫｰﾏｯﾄ
+	MKNC_STR_EOB,				// EOB
+	MKNC_STR_HEADER,			// ｶｽﾀﾑﾍｯﾀﾞｰ
+	MKNC_STR_FOOTER,			// ｶｽﾀﾑﾌｯﾀｰ
+	MKNC_STR_CUSTMOVE_B,		// ｶｽﾀﾑ移動ｺｰﾄﾞ(前後)
 	MKNC_STR_CUSTMOVE_A,
 		MKNC_STR_NUMS		// [6]
 };
-
+//
+#define	MIL_I_PROG					m_pIntOpt[MKNC_NUM_PROG]
+#define	MIL_I_LINEADD				m_pIntOpt[MKNC_NUM_LINEADD]
+#define	MIL_I_G90					m_pIntOpt[MKNC_NUM_G90]
+#define	MIL_I_DOT					m_pIntOpt[MKNC_NUM_DOT]
+#define	MIL_I_FDOT					m_pIntOpt[MKNC_NUM_FDOT]
+#define	MIL_I_CIRCLECODE			m_pIntOpt[MKNC_NUM_CIRCLECODE]
+#define	MIL_I_SPINDLE				m_pIntOpt[MKNC_NUM_SPINDLE]
+#define	MIL_I_ZRETURN				m_pIntOpt[MKNC_NUM_ZRETURN]
+#define	MIL_I_IJ					m_pIntOpt[MKNC_NUM_IJ]
+#define	MIL_I_MAKEEND				m_pIntOpt[MKNC_NUM_MAKEEND]
+#define	MIL_I_DEEPSPINDLE			m_pIntOpt[MKNC_NUM_DEEPSPINDLE]
+#define	MIL_I_DEEPRETURN			m_pIntOpt[MKNC_NUM_DEEPRETURN]
+#define	MIL_I_DEEPALL				m_pIntOpt[MKNC_NUM_DEEPALL]
+#define	MIL_I_DEEPROUND				m_pIntOpt[MKNC_NUM_DEEPROUND]
+#define	MIL_I_DRILLSPINDLE			m_pIntOpt[MKNC_NUM_DRILLSPINDLE]
+#define	MIL_I_DWELL					m_pIntOpt[MKNC_NUM_DWELL]
+#define	MIL_I_DWELLFORMAT			m_pIntOpt[MKNC_NUM_DWELLFORMAT]
+#define	MIL_I_DRILLRETURN			m_pIntOpt[MKNC_NUM_DRILLRETURN]
+#define	MIL_I_DRILLPROCESS			m_pIntOpt[MKNC_NUM_DRILLPROCESS]
+#define	MIL_I_DRILLSORT				m_pIntOpt[MKNC_NUM_DRILLSORT]
+#define	MIL_I_DRILLCIRCLEPROCESS	m_pIntOpt[MKNC_NUM_DRILLCIRCLEPROCESS]
+#define	MIL_I_MOVEZ					m_pIntOpt[MKNC_NUM_MOVEZ]
+#define	MIL_I_TOLERANCE				m_pIntOpt[MKNC_NUM_TOLERANCE]
+#define	MIL_I_OPTIMAIZEDRILL		m_pIntOpt[MKNC_NUM_OPTIMAIZEDRILL]
+//
+#define	MIL_D_FEED					m_pDblOpt[MKNC_DBL_FEED]
+#define	MIL_D_ZFEED					m_pDblOpt[MKNC_DBL_ZFEED]
+#define	MIL_D_ZG0STOP				m_pDblOpt[MKNC_DBL_ZG0STOP]
+#define	MIL_D_ZCUT					m_pDblOpt[MKNC_DBL_ZCUT]
+#define	MIL_D_G92X					m_pDblOpt[MKNC_DBL_G92X]
+#define	MIL_D_G92Y					m_pDblOpt[MKNC_DBL_G92Y]
+#define	MIL_D_G92Z					m_pDblOpt[MKNC_DBL_G92Z]
+#define	MIL_D_ELLIPSE				m_pDblOpt[MKNC_DBL_ELLIPSE]
+#define	MIL_D_MAKEEND				m_pDblOpt[MKNC_DBL_MAKEEND]
+#define	MIL_D_MAKEENDFEED			m_pDblOpt[MKNC_DBL_MAKEENDFEED]
+#define	MIL_D_DEEP					m_pDblOpt[MKNC_DBL_DEEP]
+#define	MIL_D_ZSTEP					m_pDblOpt[MKNC_DBL_ZSTEP]
+#define	MIL_D_DEEPFEED				m_pDblOpt[MKNC_DBL_DEEPFEED]
+#define	MIL_D_DRILLFEED				m_pDblOpt[MKNC_DBL_DRILLFEED]
+#define	MIL_D_DRILLR				m_pDblOpt[MKNC_DBL_DRILLR]
+#define	MIL_D_DRILLZ				m_pDblOpt[MKNC_DBL_DRILLZ]
+#define	MIL_D_DRILLCIRCLE			m_pDblOpt[MKNC_DBL_DRILLCIRCLE]
+#define	MIL_D_TOLERANCE				m_pDblOpt[MKNC_DBL_TOLERANCE]
+#define	MIL_D_DRILLMARGIN			m_pDblOpt[MKNC_DBL_DRILLMARGIN]
+//
+#define	MIL_F_PROG					m_pFlgOpt[MKNC_FLG_PROG]
+#define	MIL_F_PROGAUTO				m_pFlgOpt[MKNC_FLG_PROGAUTO]
+#define	MIL_F_LINEADD				m_pFlgOpt[MKNC_FLG_LINEADD]
+#define	MIL_F_ZEROCUT				m_pFlgOpt[MKNC_FLG_ZEROCUT]
+#define	MIL_F_GCLIP					m_pFlgOpt[MKNC_FLG_GCLIP]
+#define	MIL_F_ELLIPSE				m_pFlgOpt[MKNC_FLG_ELLIPSE]
+#define	MIL_F_XREV					m_pFlgOpt[MKNC_FLG_XREV]
+#define	MIL_F_YREV					m_pFlgOpt[MKNC_FLG_YREV]
+#define	MIL_F_DISABLESPINDLE		m_pFlgOpt[MKNC_FLG_DISABLESPINDLE]
+#define	MIL_F_CIRCLEHALF			m_pFlgOpt[MKNC_FLG_CIRCLEHALF]
+#define	MIL_F_ZEROCUT_IJ			m_pFlgOpt[MKNC_FLG_ZEROCUT_IJ]
+#define	MIL_F_DEEP					m_pFlgOpt[MKNC_FLG_DEEP]
+#define	MIL_F_HELICAL				m_pFlgOpt[MKNC_FLG_HELICAL]
+#define	MIL_F_DEEPFINISH			m_pFlgOpt[MKNC_FLG_DEEPFINISH]
+#define	MIL_F_DRILLMATCH			m_pFlgOpt[MKNC_FLG_DRILLMATCH]
+#define	MIL_F_DRILLCIRCLE			m_pFlgOpt[MKNC_FLG_DRILLCIRCLE]
+#define	MIL_F_DRILLBREAK			m_pFlgOpt[MKNC_FLG_DRILLBREAK]
+#define	MIL_F_LAYERCOMMENT			m_pFlgOpt[MKNC_FLG_LAYERCOMMENT]
+#define	MIL_F_L0CYCLE				m_pFlgOpt[MKNC_FLG_L0CYCLE]
+//
 class CNCMakeMillOpt : public CNCMakeOption
 {
-// 切削ﾊﾟﾗﾒｰﾀ設定のﾀﾞｲｱﾛｸﾞはお友達
-friend class CMKNCSetup1;
-friend class CMKNCSetup2;
-friend class CMKNCSetup3;
-friend class CMKNCSetup4;
-friend class CMKNCSetup5;
-friend class CMKNCSetup6;
-friend class CMKNCSetup8;
+	friend class CMKNCSetup1;
+	friend class CMKNCSetup2;
+	friend class CMKNCSetup3;
+	friend class CMKNCSetup4;
+	friend class CMKNCSetup5;
+	friend class CMKNCSetup6;
+	friend class CMKNCSetup8;
 
-	// int型ｵﾌﾟｼｮﾝ
-	union {
-		struct {
-			// -----
-			int		m_nProg,			// ﾌﾟﾛｸﾞﾗﾑ番号
-					m_nLineAdd,			// 行番号増加
-					m_nG90,				// 位置指定(G90 or G91)
-					m_nDot,				// 数値表記(小数点 or 1/1000)
-					m_nFDot,			// Ｆﾊﾟﾗﾒｰﾀの数値表記
-					m_nCircleCode,		// 円切削(G2 or G3)
-			//
-					m_nSpindle,			// 主軸回転速度
-					m_nZReturn,			// Z軸の復帰(Initial or R)
-					m_nIJ,				// 円弧補間にRかI/J/K
-			// -----
-					m_nMakeEnd,			// 加工済み深さの指示
-					m_nDeepSpindle,		// 深彫仕上げ回転数
-					m_nDeepReturn,		// 深彫仕上げからのZ軸復帰
-					m_nDeepAll,			// 深彫の切削手順
-					m_nDeepRound,		// 深彫の切削方向
-			// -----
-					m_nDrillSpindle,	// 穴あけ回転数
-					m_nDwell,			// ﾄﾞｳｪﾙ時間
-					m_nDwellFormat,		// ﾄﾞｳｪﾙ時間の表記
-					m_nDrillReturn,		// 穴あけのZ軸復帰
-					m_nDrillProcess,	// 穴あけの仕方
-					m_nDrillSort,		// 穴あけのｸﾞﾙｰﾋﾟﾝｸﾞ順序
-					m_nDrillCircleProcess,	// 円ﾃﾞｰﾀを含むときの穴あけ順序
-			// -----
-					m_nMoveZ,			// 移動ﾚｲﾔのZ軸
-			// -----
-					m_nTolerance,		// 許容差を超えたときの動作
-					m_nOptimaizeDrill;	// 穴加工の基準軸
-		};
-		int			m_unNums[MKNC_NUM_NUMS];
-	};
-	// double型ｵﾌﾟｼｮﾝ
-	union {
-		struct {
-			double	m_dFeed,			// 切削送り速度
-					m_dZFeed,			// Z軸を下げるときの送り速度
-					m_dZG0Stop,			// G0で動かすZ位置(R点)
-					m_dZCut,			// Z軸の下げ位置(切り込み)
-					m_dG92[NCXYZ],		// G92のX/Y/Z
-			// -----
-					m_dEllipse,			// 楕円公差
-			// -----
-					m_dMakeValue,		// 加工済み深さのｵﾌｾｯﾄor固定Z値
-					m_dMakeFeed,		// 加工済みZ送り速度
-					m_dDeep,			// 深彫の最終切り込み
-					m_dZStep,			// 深彫切削のためのｽﾃｯﾌﾟ
-					m_dDeepFeed,		// 深彫仕上げ送り
-			// -----
-					m_dDrillFeed,		// 穴あけ送り
-					m_dDrillR,			// 穴加工R点
-					m_dDrillZ,			// 穴加工切り込み
-					m_dDrillCircle,		// 穴加工に見立てる円ﾃﾞｰﾀの半径
-			// -----
-					m_dTolerance,		// 同一座標と見なす許容差
-					m_dDrillMargin;		// 基準軸に対する許容差
-		};
-		double		m_udNums[MKNC_DBL_NUMS];
-	};
-	// BOOL型ｵﾌﾟｼｮﾝ
-	union {
-		struct {
-			BOOL	m_bProg,			// O番号付与
-					m_bProgAuto,		// ﾗﾝﾀﾞﾑ割り当て
-					m_bLineAdd,			// 行番号
-					m_bZeroCut,			// 小数点以下のｾﾞﾛｶｯﾄ
-					m_bGclip,			// Gｺｰﾄﾞ省略形
-					m_bEllipse,			// 長径と短径が等しい楕円は円とみなす
-			//
-					m_bXrev,			// X軸反転
-					m_bYrev,			// Y軸反転
-					m_bDisableSpindle,	// Sﾊﾟﾗﾒｰﾀを生成しない
-					m_bCircleHalf,		// 全円は分割
-					m_bZeroCutIJ,		// [I|J]0は省略
-			// -----
-					m_bDeep,			// 深彫切削を行う
-					m_bHelical,			// 円ﾃﾞｰﾀをﾍﾘｶﾙ切削
-					m_bDeepFinish,		// 仕上げｵﾌﾟｼｮﾝ適用か
-			// -----
-					m_bDrillMatch,		// 穴加工同一座標は無視
-					m_bDrillCircle,		// 円ﾃﾞｰﾀも穴加工ﾃﾞｰﾀと見なす
-					m_bDrillBreak,		// 大きさごとにｺﾒﾝﾄを埋め込む
-			// -----
-					m_bLayerComment,	// ﾚｲﾔごとにｺﾒﾝﾄを埋め込む
-					m_bL0Cycle;			// 固定ｻｲｸﾙ中はL0出力
-		};
-		BOOL		m_ubFlags[MKNC_FLG_NUMS];
-	};
-	// CString型ｵﾌﾟｼｮﾝ -> 実体はﾍﾞｰｽｸﾗｽへ
-		// 行番号ﾌｫｰﾏｯﾄ, EOB, ｶｽﾀﾑﾍｯﾀﾞｰ，ｶｽﾀﾑﾌｯﾀｰ
-		// ｶｽﾀﾑ移動ｺｰﾄﾞ(前後)
+	// 親ｸﾗｽにﾃﾞｰﾀを持たせるので、
+	// union/struct技は使えない
+	// むしろC++らしくｺｰﾃﾞｨﾝｸﾞ
 
 	BOOL	Convert();						// 旧ﾊﾞｰｼﾞｮﾝ互換用
+
+protected:
+	virtual	void	InitialDefault(void);
 
 public:
 	CNCMakeMillOpt(LPCTSTR);
 
-#ifdef _DEBUGOLD
+#ifdef _DEBUG
 	virtual	void	DbgDump(void) const;	// ｵﾌﾟｼｮﾝ変数のﾀﾞﾝﾌﾟ
 #endif
 };

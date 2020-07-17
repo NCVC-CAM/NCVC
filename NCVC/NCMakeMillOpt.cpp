@@ -11,11 +11,9 @@
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
 #endif
-//#define	_DEBUGOLD
-#undef	_DEBUGOLD
 
 // intå^ñΩóﬂ
-static	LPCTSTR	g_szNOrder[] = {
+static	LPCTSTR	g_szMilNOrder[] = {
 	"ProgNo", "LineAddType", "G90", "Dot", "FDot", "CircleCode",
 	"Spindle",
 		"ZReturn", "CircleIJ",
@@ -26,7 +24,7 @@ static	LPCTSTR	g_szNOrder[] = {
 	"MoveZ",
 	"ToleranceProcess", "DrillOptimaize"
 };
-static	const	int		g_dfNOrder[] = {
+static	const	int		g_dfMilNOrder[] = {
 	1, 1, 0, 0, 2, 0,
 	3000,
 		1, 1,
@@ -39,7 +37,7 @@ static	const	int		g_dfNOrder[] = {
 };
 
 // doubleå^ñΩóﬂ
-static	LPCTSTR	g_szDOrder[] = {
+static	LPCTSTR	g_szMilDOrder[] = {
 	"Feed", "ZFeed",
 	"ZG0Stop", "ZCut", "G92X", "G92Y", "G92Z",
 	"Ellipse",
@@ -47,7 +45,7 @@ static	LPCTSTR	g_szDOrder[] = {
 	"DrillFeed", "DrillR", "DrillZ", "DrillCircleR",
 	"Tolerance", "DrillMargin"
 };
-static	const	double	g_dfDOrder[] = {
+static	const	double	g_dfMilDOrder[] = {
 	300.0, 100.0,
 	1.0, -12.0, 0.0, 0.0, 10.0,
 	0.5,
@@ -57,7 +55,7 @@ static	const	double	g_dfDOrder[] = {
 };
 
 // BOOLå^ñΩóﬂ
-static	LPCTSTR	g_szBOrder[] = {
+static	LPCTSTR	g_szMilBOrder[] = {
 	"ProgSet", "ProgAuto", "LineAdd", "ZeroCut", "GClip", "EllipseFlg",
 	// --
 	"XRev", "YRev", "DisableSpindle",
@@ -66,7 +64,7 @@ static	LPCTSTR	g_szBOrder[] = {
 	"DrillMatch", "DrillCircle", "DrillBreak",
 	"LayerComment", "L0Cycle"
 };
-static	const	BOOL	g_dfBOrder[] = {
+static	const	BOOL	g_dfMilBOrder[] = {
 	TRUE, FALSE, FALSE, TRUE, TRUE, TRUE,
 	FALSE, FALSE, FALSE,
 	FALSE, TRUE,
@@ -76,13 +74,21 @@ static	const	BOOL	g_dfBOrder[] = {
 };
 
 // CStringå^ñΩóﬂ
-static	LPCTSTR	g_szSOrder[] = {
+static	LPCTSTR	g_szMilSOrder[] = {
 	"LineForm", "EOB", "Header", "Footer",
 	"CustomMoveB", "CustomMoveA"
 };
-static	LPCTSTR	g_dfSOrder[] = {
+static	LPCTSTR	g_dfMilSOrder[] = {
 	"N%04d", "", "Header.txt", "Footer.txt",
 	"", ""
+};
+
+// µÃﬂºÆ›ìùçá
+static	NCMAKEOPTION	MilOption[] = {
+	{MKNC_NUM_NUMS, g_szMilNOrder},
+	{MKNC_DBL_NUMS, g_szMilDOrder},
+	{MKNC_FLG_NUMS, g_szMilBOrder},
+	{MKNC_STR_NUMS, g_szMilSOrder}
 };
 
 // ï€ë∂Ç…ä÷Ç∑ÇÈèÓïÒ
@@ -172,21 +178,18 @@ static	SAVEORDER	g_stSaveOrder[] = {
 // CNCMakeMillOpt ÉNÉâÉXÇÃç\íz/è¡ñ≈
 
 CNCMakeMillOpt::CNCMakeMillOpt(LPCTSTR lpszInit) :
-	CNCMakeOption(
-		SIZEOF(g_szNOrder), g_szNOrder, g_dfNOrder, m_unNums,
-		SIZEOF(g_szDOrder), g_szDOrder, g_dfDOrder, m_udNums,
-		SIZEOF(g_szBOrder), g_szBOrder, g_dfBOrder, m_ubFlags,
-		SIZEOF(g_szSOrder), g_szSOrder, g_dfSOrder,
+	CNCMakeOption(MilOption,
 		SIZEOF(g_szInitComment), g_szInitComment,
 		SIZEOF(g_stSaveOrder),   g_stSaveOrder)
 {
-	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(g_dfNOrder) );
-	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(m_unNums) );
-	ASSERT( SIZEOF(g_szDOrder) == SIZEOF(g_dfDOrder) );
-	ASSERT( SIZEOF(g_szDOrder) == SIZEOF(m_udNums) );
-	ASSERT( SIZEOF(g_szBOrder) == SIZEOF(g_dfBOrder) );
-	ASSERT( SIZEOF(g_szBOrder) == SIZEOF(m_ubFlags) );
-	ASSERT( SIZEOF(g_szSOrder) == SIZEOF(g_dfSOrder) );
+	ASSERT(	MKNC_NUM_NUMS == SIZEOF(g_szMilNOrder) );
+	ASSERT( MKNC_NUM_NUMS == SIZEOF(g_dfMilNOrder) );
+	ASSERT( MKNC_DBL_NUMS == SIZEOF(g_szMilDOrder) );
+	ASSERT( MKNC_DBL_NUMS == SIZEOF(g_dfMilDOrder) );
+	ASSERT( MKNC_FLG_NUMS == SIZEOF(g_szMilBOrder) );
+	ASSERT( MKNC_FLG_NUMS == SIZEOF(g_dfMilBOrder) );
+	ASSERT( MKNC_STR_NUMS == SIZEOF(g_szMilSOrder) );
+	ASSERT( MKNC_STR_NUMS == SIZEOF(g_dfMilSOrder) );
 
 	// â∫à å›ä∑ÇÃÇΩÇﬂÇÃèàóù
 	BOOL bResult = Convert();
@@ -199,6 +202,25 @@ CNCMakeMillOpt::CNCMakeMillOpt(LPCTSTR lpszInit) :
 
 /////////////////////////////////////////////////////////////////////////////
 // ’∞ªﬁ“› ﬁä÷êî
+
+void CNCMakeMillOpt::InitialDefault(void)
+{
+	extern	LPTSTR	g_pszExecDir;	// é¿çs√ﬁ®⁄∏ƒÿ(NCVC.cpp)
+	int		i;
+
+	for ( i=0; i<MKNC_NUM_NUMS; i++ )
+		m_pIntOpt[i] = g_dfMilNOrder[i];
+	for ( i=0; i<MKNC_DBL_NUMS; i++ )
+		m_pDblOpt[i] = g_dfMilDOrder[i];
+	for ( i=0; i<MKNC_FLG_NUMS; i++ )
+		m_pFlgOpt[i] = g_dfMilBOrder[i];
+	m_strOption.RemoveAll();
+	for ( i=0; i<MKNC_STR_NUMS; i++ )
+		m_strOption.Add(g_dfMilSOrder[i]);
+
+	for ( i=MKNC_STR_HEADER; i<=MKNC_STR_FOOTER; i++ )
+		m_strOption[i] = g_pszExecDir + m_strOption[i];
+}
 
 // ⁄ºﬁΩƒÿÇ©ÇÁÇÃà⁄çs
 BOOL CNCMakeMillOpt::Convert()
@@ -242,15 +264,15 @@ BOOL CNCMakeMillOpt::Convert()
 	for ( i=0; i<SIZEOF(nRegDxfNums); i++ ) {
 		VERIFY(strEntry.LoadString(nRegDxfNums[i]));
 		nID = nRegDxfNumsID[i];
-		m_unNums[nID] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, nRegDxfNumsDef[i]);
+		m_pIntOpt[nID] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, nRegDxfNumsDef[i]);
 	}
 	for ( i=0; i<SIZEOF(nRegDxfFlags); i++ ) {
 		VERIFY(strEntry.LoadString(nRegDxfFlags[i]));
 		nID = nRegDxfFlagsID[i];
-		m_ubFlags[nID] = (BOOL)(AfxGetApp()->GetProfileInt(strRegKey, strEntry, nRegDxfFlagsDef[i]));
+		m_pFlgOpt[nID] = (BOOL)(AfxGetApp()->GetProfileInt(strRegKey, strEntry, nRegDxfFlagsDef[i]));
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_CIRCLEIJ));
-	m_unNums[MKNC_NUM_IJ] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, 1);
+	MIL_I_IJ = AfxGetApp()->GetProfileInt(strRegKey, strEntry, 1);
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_LINEFORM));
 	m_strOption[MKNC_STR_LINEFORM] = AfxGetApp()->GetProfileString(strRegKey, strEntry);
 
@@ -281,85 +303,85 @@ BOOL CNCMakeMillOpt::Convert()
 	return TRUE;
 }
 
-#ifdef _DEBUGOLD
+#ifdef _DEBUG
 void CNCMakeMillOpt::DbgDump(void) const
 {
 	CMagaDbg	dbg("CNCMakeMillOpt", DBG_RED);
 
 	dbg.printf("InitFile=%s", GetInitFile());
 	dbg.printf("----------");
-	dbg.printf("  Spindle      =%d", m_nSpindle);
-	dbg.printf("  Feed         =%f", m_dFeed);
-	dbg.printf("  ZFeed        =%f", m_dZFeed);
-	dbg.printf("  ZG0Stop      =%f", m_dZG0Stop);
-	dbg.printf("  ZCut         =%f", m_dZCut);
-	dbg.printf("  G92[X]       =%f", m_dG92[NCA_X]);
-	dbg.printf("  G92[Y]       =%f", m_dG92[NCA_Y]);
-	dbg.printf("  G92[Z]       =%f", m_dG92[NCA_Z]);
+	dbg.printf("  Spindle      =%d", MIL_I_SPINDLE);
+	dbg.printf("  Feed         =%f", MIL_D_FEED);
+	dbg.printf("  ZFeed        =%f", MIL_D_ZFEED);
+	dbg.printf("  ZG0Stop      =%f", MIL_D_ZG0STOP);
+	dbg.printf("  ZCut         =%f", MIL_D_ZCUT);
+	dbg.printf("  G92[X]       =%f", MIL_D_G92X);
+	dbg.printf("  G92[Y]       =%f", MIL_D_G92Y);
+	dbg.printf("  G92[Z]       =%f", MIL_D_G92Z);
 	dbg.printf("  Header       =%s", m_strOption[MKNC_STR_HEADER]);
 	dbg.printf("  Footer       =%s", m_strOption[MKNC_STR_FOOTER]);
 	dbg.printf("----------");
-	dbg.printf("  Xrev         =%d", m_bXrev);
-	dbg.printf("  Yrev         =%d", m_bYrev);
-	dbg.printf("  bLineAdd     =%d", m_bLineAdd);
+	dbg.printf("  Xrev         =%d", MIL_F_XREV);
+	dbg.printf("  Yrev         =%d", MIL_F_YREV);
+	dbg.printf("  bLineAdd     =%d", MIL_F_LINEADD);
 	dbg.printf("  LineForm     =%s", m_strOption[MKNC_STR_LINEFORM]);
-	dbg.printf("  nLineAdd     =%d", m_nLineAdd);
+	dbg.printf("  nLineAdd     =%d", MIL_I_LINEADD);
 	dbg.printf("  EOB          =%s", m_strOption[MKNC_STR_EOB]);
-	dbg.printf("  G90          =%d", m_nG90);
-	dbg.printf("  ZReturn      =%d", m_nZReturn);
-	dbg.printf("  Gclip        =%d", m_bGclip);
-	dbg.printf("  DisSpindle   =%d", m_bDisableSpindle);
+	dbg.printf("  G90          =%d", MIL_I_G90);
+	dbg.printf("  ZReturn      =%d", MIL_I_ZRETURN);
+	dbg.printf("  Gclip        =%d", MIL_F_GCLIP);
+	dbg.printf("  DisSpindle   =%d", MIL_F_DISABLESPINDLE);
 	dbg.printf("----------");
-	dbg.printf("  Dot          =%d", m_nDot);
-	dbg.printf("  FDot         =%d", m_nFDot);
-	dbg.printf("  ZeroCut      =%d", m_bZeroCut);
-	dbg.printf("  CircleCode   =%d", m_nCircleCode);
-	dbg.printf("  IJ           =%d", m_nIJ);
-	dbg.printf("  CircleHalf   =%d", m_bCircleHalf);
-	dbg.printf("  ZeroCutIJ    =%d", m_bZeroCutIJ);
+	dbg.printf("  Dot          =%d", MIL_I_DOT);
+	dbg.printf("  FDot         =%d", MIL_I_FDOT);
+	dbg.printf("  ZeroCut      =%d", MIL_F_ZEROCUT);
+	dbg.printf("  CircleCode   =%d", MIL_I_CIRCLECODE);
+	dbg.printf("  IJ           =%d", MIL_I_IJ);
+	dbg.printf("  CircleHalf   =%d", MIL_F_CIRCLEHALF);
+	dbg.printf("  ZeroCutIJ    =%d", MIL_F_ZEROCUT_IJ);
 	dbg.printf("----------");
-	dbg.printf("  Ellipse      =%f", m_dEllipse);
-	dbg.printf("  EllipseFlg   =%d", m_bEllipse);
+	dbg.printf("  Ellipse      =%f", MIL_D_ELLIPSE);
+	dbg.printf("  EllipseFlg   =%d", MIL_F_ELLIPSE);
 	dbg.printf("----------");
-	dbg.printf("  MakeEnd      =%d", m_nMakeEnd);
-	dbg.printf("  MakeValue    =%f", m_dMakeValue);
-	dbg.printf("  MakeFeed     =%f", m_dMakeFeed);
-	dbg.printf("  Deep         =%d", m_bDeep);
-	dbg.printf("  DeepFinal    =%f", m_dDeep);
-	dbg.printf("  ZStep        =%f", m_dZStep);
-	dbg.printf("  DeepZProcess =%d", m_nDeepReturn);
-	dbg.printf("  DeepAProcess =%d", m_nDeepAll);
-	dbg.printf("  DeepCProcess =%d", m_nDeepRound);
-	dbg.printf("  Helical      =%d", m_bHelical);
-	dbg.printf("  DeepFinish   =%d", m_bDeepFinish);
-	dbg.printf("  DeepSpindle  =%d", m_nDeepSpindle);
-	dbg.printf("  DeepFeed     =%f", m_dDeepFeed);
+	dbg.printf("  MakeEnd      =%d", MIL_I_MAKEEND);
+	dbg.printf("  MakeValue    =%f", MIL_D_MAKEEND);
+	dbg.printf("  MakeFeed     =%f", MIL_D_MAKEENDFEED);
+	dbg.printf("  Deep         =%d", MIL_F_DEEP);
+	dbg.printf("  DeepFinal    =%f", MIL_D_DEEP);
+	dbg.printf("  ZStep        =%f", MIL_D_ZSTEP);
+	dbg.printf("  DeepZProcess =%d", MIL_I_DEEPRETURN);
+	dbg.printf("  DeepAProcess =%d", MIL_I_DEEPALL);
+	dbg.printf("  DeepCProcess =%d", MIL_I_DEEPROUND);
+	dbg.printf("  Helical      =%d", MIL_F_HELICAL);
+	dbg.printf("  DeepFinish   =%d", MIL_F_DEEPFINISH);
+	dbg.printf("  DeepSpindle  =%d", MIL_I_DEEPSPINDLE);
+	dbg.printf("  DeepFeed     =%f", MIL_D_DEEPFEED);
 	dbg.printf("----------");
-	dbg.printf("  DrillSpindle =%d", m_nDrillSpindle);
-	dbg.printf("  DrillFeed    =%f", m_dDrillFeed);
-	dbg.printf("  DrillR       =%f", m_dDrillR);
-	dbg.printf("  DrillZ       =%f", m_dDrillZ);
-	dbg.printf("  DrillMatch   =%d", m_bDrillMatch);
-	dbg.printf("  Dwell        =%d", m_nDwell);
-	dbg.printf("  DwellFormat  =%d", m_nDwellFormat);
-	dbg.printf("  DrillProcess =%d", m_nDrillProcess);
-	dbg.printf("  DrillZProcess=%d", m_nDrillReturn);
+	dbg.printf("  DrillSpindle =%d", MIL_I_DRILLSPINDLE);
+	dbg.printf("  DrillFeed    =%f", MIL_D_DRILLFEED);
+	dbg.printf("  DrillR       =%f", MIL_D_DRILLR);
+	dbg.printf("  DrillZ       =%f", MIL_D_DRILLZ);
+	dbg.printf("  DrillMatch   =%d", MIL_F_DRILLMATCH);
+	dbg.printf("  Dwell        =%d", MIL_I_DWELL);
+	dbg.printf("  DwellFormat  =%d", MIL_I_DWELLFORMAT);
+	dbg.printf("  DrillProcess =%d", MIL_I_DRILLPROCESS);
+	dbg.printf("  DrillZProcess=%d", MIL_I_DRILLRETURN);
 	dbg.printf("----------");
-	dbg.printf("  DrillCircle  =%d", m_bDrillCircle);
-	dbg.printf("  DrillCircleR =%f", m_dDrillCircle);
-	dbg.printf("  DrillSort    =%d", m_nDrillSort);
-	dbg.printf("  DrillCProcess=%d", m_nDrillCircleProcess);
-	dbg.printf("  DrillBreak   =%d", m_bDrillBreak);
+	dbg.printf("  DrillCircle  =%d", MIL_F_DRILLCIRCLE);
+	dbg.printf("  DrillCircleR =%f", MIL_D_DRILLCIRCLE);
+	dbg.printf("  DrillSort    =%d", MIL_I_DRILLSORT);
+	dbg.printf("  DrillCProcess=%d", MIL_I_DRILLCIRCLEPROCESS);
+	dbg.printf("  DrillBreak   =%d", MIL_F_DRILLBREAK);
 	dbg.printf("----------");
-	dbg.printf("  LayerComment =%d", m_bLayerComment);
-	dbg.printf("  MoveZ        =%d", m_nMoveZ);
+	dbg.printf("  LayerComment =%d", MIL_F_LAYERCOMMENT);
+	dbg.printf("  MoveZ        =%d", MIL_I_MOVEZ);
 	dbg.printf("  CustMoveB    =%s", m_strOption[MKNC_STR_CUSTMOVE_B]);
 	dbg.printf("  CustMoveA    =%s", m_strOption[MKNC_STR_CUSTMOVE_A]);
-	dbg.printf("  L0Cycle      =%d", m_bL0Cycle);
+	dbg.printf("  L0Cycle      =%d", MIL_F_L0CYCLE);
 	dbg.printf("----------");
-	dbg.printf("  Tolerance    =%f", m_dTolerance);
-	dbg.printf("  TolerancePro =%d", m_nTolerance);
-	dbg.printf("  DrillOptimaiz=%d", m_nOptimaizeDrill);
-	dbg.printf("  DrillMargin  =%f", m_dDrillMargin);
+	dbg.printf("  Tolerance    =%f", MIL_D_TOLERANCE);
+	dbg.printf("  TolerancePro =%d", MIL_I_TOLERANCE);
+	dbg.printf("  DrillOptimaiz=%d", MIL_I_OPTIMAIZEDRILL);
+	dbg.printf("  DrillMargin  =%f", MIL_D_DRILLMARGIN);
 }
 #endif

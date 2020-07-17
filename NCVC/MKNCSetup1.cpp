@@ -70,17 +70,17 @@ BOOL CMKNCSetup1::OnInitDialog()
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParentSheet() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	m_nSpindle	= pOpt->m_nSpindle;
-	m_dFeed		= pOpt->m_dFeed;
-	m_dZFeed	= pOpt->m_dZFeed;
-	m_dZCut		= pOpt->m_dZCut;
-	m_dZG0Stop	= pOpt->m_dZG0Stop;
+	m_nSpindle	= pOpt->MIL_I_SPINDLE;
+	m_dFeed		= pOpt->MIL_D_FEED;
+	m_dZFeed	= pOpt->MIL_D_ZFEED;
+	m_dZCut		= pOpt->MIL_D_ZCUT;
+	m_dZG0Stop	= pOpt->MIL_D_ZG0STOP;
 	for ( int i=0; i<NCXYZ; i++ )
-		m_dG92[i] = pOpt->m_dG92[i];
+		m_dG92[i] = pOpt->m_pDblOpt[MKNC_DBL_G92X+i];
 	m_strHeader = pOpt->m_strOption[MKNC_STR_HEADER];
 	m_strFooter = pOpt->m_strOption[MKNC_STR_FOOTER];
-	m_bXrev		= pOpt->m_bXrev;
-	m_bYrev		= pOpt->m_bYrev;
+	m_bXrev		= pOpt->MIL_F_XREV;
+	m_bYrev		= pOpt->MIL_F_YREV;
 	// •ÒWÎÞÀÝ‚Ì—LŒø–³Œø
 	if ( AfxGetNCVCApp()->GetExecList()->GetCount() < 1 ) {
 		m_ctHeaderBt.EnableWindow(FALSE);
@@ -162,10 +162,10 @@ BOOL CMKNCSetup1::OnApply()
 		dDeep		= pParent->m_dlg3.m_dDeep;
 	}
 	else {
-		nMakeEnd	= pOpt->m_nMakeEnd;
-		dMakeValue	= pOpt->m_dMakeValue;
-		bDeep		= pOpt->m_bDeep;
-		dDeep		= pOpt->m_dDeep;
+		nMakeEnd	= pOpt->MIL_I_MAKEEND;
+		dMakeValue	= pOpt->MIL_D_MAKEEND;
+		bDeep		= pOpt->MIL_F_DEEP;
+		dDeep		= pOpt->MIL_D_DEEP;
 	}
 
 	if ( nMakeEnd == 2 ) {
@@ -189,17 +189,17 @@ BOOL CMKNCSetup1::OnApply()
 		return FALSE;
 	}
 
-	pOpt->m_nSpindle	= m_nSpindle;
-	pOpt->m_dFeed		= m_dFeed;
-	pOpt->m_dZFeed		= m_dZFeed;
-	pOpt->m_dZCut		= m_dZCut;
-	pOpt->m_dZG0Stop	= m_dZG0Stop;
+	pOpt->MIL_I_SPINDLE	= m_nSpindle;
+	pOpt->MIL_D_FEED	= m_dFeed;
+	pOpt->MIL_D_ZFEED	= m_dZFeed;
+	pOpt->MIL_D_ZCUT	= m_dZCut;
+	pOpt->MIL_D_ZG0STOP	= m_dZG0Stop;
 	for ( int i=0; i<NCXYZ; i++ )
-		pOpt->m_dG92[i] = m_dG92[i];
+		pOpt->m_pDblOpt[MKNC_DBL_G92X+i] = m_dG92[i];
 	pOpt->m_strOption[MKNC_STR_HEADER] = m_strHeader;
 	pOpt->m_strOption[MKNC_STR_FOOTER] = m_strFooter;
-	pOpt->m_bXrev		= m_bXrev;
-	pOpt->m_bYrev		= m_bYrev;
+	pOpt->MIL_F_XREV	= m_bXrev;
+	pOpt->MIL_F_YREV	= m_bYrev;
 
 	return TRUE;
 }

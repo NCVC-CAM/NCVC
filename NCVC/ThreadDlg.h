@@ -22,6 +22,11 @@ typedef struct tagNCVCTHREADPARAM {
 	LPARAM		lParam;
 } NCVCTHREADPARAM, *LPNCVCTHREADPARAM;
 
+// ﾌｧｲﾙ出力指示
+#define		TH_HEADER		0x0001
+#define		TH_FOOTER		0x0002
+#define		TH_APPEND		0x0004
+
 /////////////////////////////////////////////////////////////////////////////
 // CThreadDlg ダイアログ
 

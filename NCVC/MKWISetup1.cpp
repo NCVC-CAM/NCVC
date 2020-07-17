@@ -58,12 +58,12 @@ BOOL CMKWISetup1::OnInitDialog()
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParentSheet() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
 	CNCMakeWireOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	m_dDepth		= pOpt->m_dDepth;
-	m_dTaper		= pOpt->m_dTaper;
+	m_dDepth		= pOpt->WIR_D_DEPTH;
+	m_dTaper		= pOpt->WIR_D_TAPER;
+	m_dFeed			= pOpt->WIR_D_FEED;
+	m_dG92X			= pOpt->WIR_D_G92X;
+	m_dG92Y			= pOpt->WIR_D_G92Y;
 	m_strTaperMode	= pOpt->m_strOption[MKWI_STR_TAPERMODE];
-	m_dFeed			= pOpt->m_dFeed;
-	m_dG92X			= pOpt->m_dG92X;
-	m_dG92Y			= pOpt->m_dG92Y;
 	m_strHeader		= pOpt->m_strOption[MKWI_STR_HEADER];
 	m_strFooter		= pOpt->m_strOption[MKWI_STR_FOOTER];
 	// •ÒWÎÞÀÝ‚Ì—LŒø–³Œø
@@ -132,11 +132,11 @@ void CMKWISetup1::OnFooterEdit()
 BOOL CMKWISetup1::OnApply() 
 {
 	CNCMakeWireOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->m_dDepth		= m_dDepth;
-	pOpt->m_dTaper		= m_dTaper;
-	pOpt->m_dFeed		= m_dFeed;
-	pOpt->m_dG92X		= m_dG92X;
-	pOpt->m_dG92Y		= m_dG92Y;
+	pOpt->WIR_D_DEPTH	= m_dDepth;
+	pOpt->WIR_D_TAPER	= m_dTaper;
+	pOpt->WIR_D_FEED	= m_dFeed;
+	pOpt->WIR_D_G92X	= m_dG92X;
+	pOpt->WIR_D_G92Y	= m_dG92Y;
 	pOpt->m_strOption[MKWI_STR_TAPERMODE]	= m_strTaperMode;
 	pOpt->m_strOption[MKWI_STR_HEADER]		= m_strHeader;
 	pOpt->m_strOption[MKWI_STR_FOOTER]		= m_strFooter;

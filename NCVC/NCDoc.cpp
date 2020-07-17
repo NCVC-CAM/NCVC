@@ -14,11 +14,11 @@
 #include "NCInfoView.h"
 #include "NCWorkDlg.h"
 #include "ThreadDlg.h"
+#include "DXFkeyword.h"
+#include "DXFOption.h"
 #include "DXFMakeOption.h"
 #include "DXFMakeClass.h"
-#include "DXFOption.h"
 #include "MakeDXFDlg.h"
-#include "DXFkeyword.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -499,7 +499,6 @@ void CNCDoc::AllChangeFactor(ENNCDRAWVIEW enType, double f) const
 		pfnDrawProc = &(CNCdata::DrawTuning);
 		break;
 	}
-	f *= LOMETRICFACTOR;
 	for ( int i=0; i<GetNCsize(); i++ )
 		(GetNCdata(i)->*pfnDrawProc)(f);
 }
@@ -687,7 +686,7 @@ void CNCDoc::MakeDXF(const CDXFMakeOption* pDXFMake)
 {
 	CWaitCursor		wait;
 	CProgressCtrl*	pProgress = AfxGetNCVCMainWnd()->GetProgressCtrl();
-	CTypedPtrArrayEx<CPtrArray, CDXFMake*>	obDXFdata;// DXFèoóÕ≤“∞ºﬁ
+	CDxfMakeArray	obDXFdata;// DXFèoóÕ≤“∞ºﬁ
 	CDXFMake*	pMake;
 	CNCdata*	pData;
 	CNCdata*	pDataBase;

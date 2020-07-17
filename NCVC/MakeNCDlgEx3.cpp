@@ -138,7 +138,7 @@ BOOL CMakeNCDlgEx3::OnSetActive()
 
 BOOL CMakeNCDlgEx3::OnWizardFinish()
 {
-	extern	LPCTSTR	gg_szCat;
+	extern	LPCTSTR	gg_szCat;	// ", "
 
 	if ( !OnKillActive() )	// ≤Õﬁ›ƒî≠ê∂ÇµÇ»Ç¢ÇÃÇ≈ã≠êßåƒÇ—èoÇµ
 		return FALSE;

@@ -3,6 +3,7 @@
 
 #pragma once
 #include "DXFOption.h"
+class CDXFDoc;
 
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCDlg ダイアログ
@@ -11,6 +12,7 @@ class CMakeNCDlg : public CDialog
 {
 	UINT		m_nTitle;
 	enMAKETYPE	m_enType;
+	CDXFDoc*	m_pDoc;
 	// ｽﾀﾃｨｯｸｺﾝﾄﾛｰﾙに表示する前の省略形文字列
 	CString		m_strNCPath,	// 本物のﾊﾟｽ名
 				m_strInitPath;
@@ -23,6 +25,7 @@ public:
 	//{{AFX_DATA(CMakeNCDlg)
 	enum { IDD = IDD_MAKENCD };
 	CButton	m_ctOK;
+	CButton m_ctBindOpt;
 	CEdit	m_ctNCFileName;
 	CString	m_strNCFileName;
 	CComboBox	m_ctInitFileName;
@@ -50,6 +53,7 @@ protected:
 	afx_msg void OnSelChangeInit();
 	afx_msg void OnKillFocusNCFile();
 	afx_msg void OnKillFocusInit();
+	afx_msg void OnBindOpt();
 	//}}AFX_MSG
 
 	DECLARE_MESSAGE_MAP()

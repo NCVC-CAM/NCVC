@@ -11,6 +11,9 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+using namespace boost;
+using std::string;
+
 BEGIN_MESSAGE_MAP(CIntEdit, CEdit)
 	//{{AFX_MSG_MAP(CIntEdit)
 	ON_WM_CHAR()
@@ -42,9 +45,7 @@ CIntEdit::~CIntEdit()
 CIntEdit& CIntEdit::operator =(int n)
 {
 	ASSERT(::IsWindow(m_hWnd));
-	CString	strBuf;
-	strBuf.Format("%d", n);
-	SetWindowText(strBuf);
+	SetWindowText(lexical_cast<string>(n).c_str());
 	return (*this);
 }
 
@@ -53,7 +54,7 @@ CIntEdit::operator int()
 	ASSERT(::IsWindow(m_hWnd));
 	CString	strNumber;
 	GetWindowText(strNumber);
-	return atoi(strNumber);
+	return lexical_cast<int>((LPCTSTR)strNumber);
 }
 
 ///////////////////////////////////
@@ -90,7 +91,7 @@ CFloatEdit& CFloatEdit::operator =(double d)
 	if ( m_bIntFormat ) {
 		double	integer;
 		if ( fabs(modf(d, &integer)) == 0.0 )
-			strBuf.Format("%d", (int)integer);
+			strBuf = lexical_cast<string>((int)integer).c_str();
 		else
 			strBuf.Format(IDS_MAKENCD_FORMAT, d);
 	}
@@ -105,7 +106,7 @@ CFloatEdit::operator double()
 	ASSERT(::IsWindow(m_hWnd));
 	CString	strNumber;
 	GetWindowText(strNumber);
-	return atof(strNumber);
+	return lexical_cast<double>((LPCTSTR)strNumber);
 }
 
 ///////////////////////////////////

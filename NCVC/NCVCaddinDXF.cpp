@@ -32,7 +32,7 @@ NCEXPORT int WINAPI NCVC_GetDXFLayerData
 	if ( IsDXFDocument(hDoc) ) {
 		CDXFDoc*	pDoc = reinterpret_cast<CDXFDoc *>(hDoc);
 		if ( nIndex>=0 && nIndex<pDoc->GetLayerCnt() ) {
-			CString	strLayer( pDoc->GetLayerData(nIndex)->GetStrLayer() );
+			CString	strLayer( pDoc->GetLayerData(nIndex)->GetLayerName() );
 			nLength = strLayer.GetLength();
 			if ( lpszLayer ) {
 				if ( nLength+1 <= nSize )
@@ -308,8 +308,8 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFoption(LPDXFOPTION pOpt)
 	pOpt->nRegex	= 1;	// Ver0.15.00`³‹K•\Œ»‚Ì‚Ý
 	pOpt->nMatch	= 1;
 	pOpt->nAccept	= 0;
-	pOpt->nOrgType	= pSrc->GetDxfFlag(DXFOPT_ORGTYPE);
-	pOpt->bView		= pSrc->GetDxfFlag(DXFOPT_VIEW);
+	pOpt->nOrgType	= pSrc->GetDxfOptNum(DXFOPT_ORGTYPE);
+	pOpt->bView		= pSrc->GetDxfOptFlg(DXFOPT_VIEW);
 	const	CStringList*	pList1 = pSrc->GetInitList(NCMAKEMILL);
 	const	CStringList*	pList2 = pSrc->GetInitList(NCMAKELAYER);
 	for( i=0, pos=pList1->GetHeadPosition(); pos && i<DXFMAXINITFILE; i++ )

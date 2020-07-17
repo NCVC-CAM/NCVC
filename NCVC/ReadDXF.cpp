@@ -9,12 +9,16 @@
 #include "DXFDoc.h"
 #include "DXFBlock.h"
 #include "DXFkeyword.h"
+#include "boost/lambda/lambda.hpp"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
+//#define	_DEBUG_ARGV
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
 #endif
+
+using namespace boost;
 
 /*
 	定義は DXFkeyword.h
@@ -22,13 +26,13 @@ extern	CMagaDbg	g_dbg;
 */
 
 // ｸﾞﾙｰﾌﾟｺｰﾄﾞ
-extern	LPCTSTR	g_szGroupCode[] = {
-	"0", "1", "2", "3", "6", "8", "9", "70"
+extern	int		g_nGroupCode[] = {
+	0, 1, 2, 3, 6, 8, 9, 70
 };
-extern	LPCTSTR	g_szValueGroupCode[] = {
-	"10", "20", "11", "21",
-	"40", "41", "42", "50", "51",
-	"210", "220", "230"
+extern	int		g_nValueGroupCode[] = {
+	10, 20, 11, 21,
+	40, 41, 42, 50, 51,
+	210, 220, 230
 };
 extern	const	DWORD	g_dwValSet[] = {
 	VALFLG10, VALFLG20, VALFLG11, VALFLG21,
@@ -69,8 +73,8 @@ extern	LPCTSTR	g_szPolyline[] = {
 };
 
 //
-static	CString			g_strGroup,		// ﾌｧｲﾙ内容
-						g_strOrder,
+static	int				g_nGroup;
+static	CString			g_strOrder,
 						g_strMissOrder;	// 未ｻﾎﾟｰﾄのｷｰﾜｰﾄﾞ一時保管
 static	CMapStringToPtr	g_strMissEntiMap,	// ｻﾎﾟｰﾄしていないENTITIESｷｰﾜｰﾄﾞﾘｽﾄ
 						g_strMissBlckMap;	// 見つからなかったﾌﾞﾛｯｸ名
@@ -112,44 +116,50 @@ static	BOOL	LWPolylineProcedure(CDXFDoc*, BOOL);
 /////////////////////////////////////////////////////////////////////////////
 //	ReadDXF() 補助関数
 
-static inline BOOL _DubleRead(CStdioFile& fp)
+static inline ULONGLONG _DubleRead(CStdioFile& fp)
 {
-	CString	strBuf;
-	BOOL	bResult = fp.ReadString(strBuf);
+	CString		strBuf;
+	ULONGLONG	dwResult = 0;
+	BOOL		bResult = fp.ReadString(strBuf);
+
 	if ( bResult ) {
-		g_strGroup = strBuf.Trim();		// 左詰ﾁｪｯｸ
+		dwResult = strBuf.GetLength() + 2;	// CR+LF分
+		g_nGroup = atoi(strBuf);	// atoi()ではｾﾞﾛか失敗かわからん
+//		g_nGroup = lexical_cast<int>((LPCTSTR)strBuf);		// 厳格杉
+//		g_nGroup = lexical_cast<int>((LPCTSTR)strBuf.Trim());
 		// 命令に続く値を読み込み
 		bResult = fp.ReadString(strBuf);
-		if ( bResult )
+		if ( bResult ) {
+			dwResult += strBuf.GetLength() + 2;
 			g_strOrder = strBuf.Trim();
+		}
 		else
 			g_strOrder.Empty();
 	}
 	else {
-		g_strGroup.Empty();
+		g_nGroup = -1;
 		g_strOrder.Empty();
 	}
-	return bResult;
+
+	return dwResult;
 }
 
 static inline void _ClearValue(void)
 {
-	for ( int i=0; i<SIZEOF(g_dValue); i++ )
-		g_dValue[i] = 0.0;
+	ZEROCLR(g_dValue);	// g_dValue[i++]=0.0
 	g_dwValueFlg = 0;
 }
 
 static inline int _SetValue(void)
 {
-	int		i;
-	for ( i=0; i<SIZEOF(g_dValue); i++ ) {
-		if ( g_strGroup == g_szValueGroupCode[i] ) {
+	for ( int i=0; i<SIZEOF(g_dValue); i++ ) {
+		if ( g_nGroup == g_nValueGroupCode[i] ) {
 			g_dValue[i] = atof(g_strOrder);
 			g_dwValueFlg |= g_dwValSet[i];
 			return i;
 		}
 	}
-	if ( g_strGroup == g_szGroupCode[GROUP1] ) {
+	if ( g_nGroup == g_nGroupCode[GROUP1] ) {
 		g_strValue = g_strOrder;
 		return 0;
 	}
@@ -158,25 +168,19 @@ static inline int _SetValue(void)
 
 static inline enSECTION _SectionCheck(void)
 {
-	if ( g_strGroup != g_szGroupCode[GROUP0] )
+	if ( g_nGroup != g_nGroupCode[GROUP0] )
 		return SEC_NOSECTION;
-	// EOF除くﾙｰﾌﾟ
-	for ( int i=0; i<SIZEOF(g_szSection)-1; i++ ) {
-		if ( g_strOrder == g_szSection[i] )
-			return (enSECTION)i;
-	}
-	return SEC_NOSECTION;
+	// EOF除く検索(の条件があってboost::find_if使えない！！)
+	auto f = std::find_if(begin(g_szSection), end(g_szSection)-1, lambda::_1==g_strOrder);
+	return f==end(g_szSection)-1 ? SEC_NOSECTION : (enSECTION)(f-g_szSection);
 }
 
 static inline enSECNAME _SectionNameCheck(void)
 {
-	if ( g_strGroup != g_szGroupCode[GROUP2] )
+	if ( g_nGroup != g_nGroupCode[GROUP2] )
 		return SEC_NOSECNAME;
-	for ( int i=0; i<SIZEOF(g_szSectionName); i++ ) {
-		if ( g_strOrder == g_szSectionName[i] )
-			return (enSECNAME)i;
-	}
-	return SEC_NOSECNAME;
+	auto f = find_if(g_szSectionName, lambda::_1==g_strOrder);
+	return f==end(g_szSectionName) ? SEC_NOSECNAME : (enSECNAME)(f-g_szSectionName);
 }
 
 static inline void _ArbitraryAxis(CPointD& pt)	// 任意の軸のｱﾙｺﾞﾘｽﾞﾑ
@@ -207,9 +211,9 @@ static inline void _ArbitraryAxis(CPointD& pt)	// 任意の軸のｱﾙｺﾞﾘｽﾞﾑ
 
 static inline BOOL _SetDxfArgv(LPCDXFPARGV lpPoint)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Point Layer=%s", lpPoint->pLayer ? lpPoint->pLayer->GetStrLayer() : "?");
+	dbg.printf("Point Layer=%s", lpPoint->pLayer ? lpPoint->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_POINT ) {
 		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
@@ -217,13 +221,13 @@ static inline BOOL _SetDxfArgv(LPCDXFPARGV lpPoint)
 			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 		lpPoint->c.x = pt.x;
 		lpPoint->c.y = pt.y;
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("      cx=%f cy=%f", lpPoint->c.x, lpPoint->c.y);
 #endif
 		return TRUE;
 	}
 	else {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("      error cx|cy");
 #endif
 		return FALSE;
@@ -232,9 +236,9 @@ static inline BOOL _SetDxfArgv(LPCDXFPARGV lpPoint)
 
 static inline BOOL _SetDxfArgv(LPCDXFLARGV lpLine)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Line Layer=%s", lpLine->pLayer ? lpLine->pLayer->GetStrLayer() : "?");
+	dbg.printf("Line Layer=%s", lpLine->pLayer ? lpLine->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_LINE ) {
 		CPointD	pts(g_dValue[VALUE10], g_dValue[VALUE20]),
@@ -247,14 +251,14 @@ static inline BOOL _SetDxfArgv(LPCDXFLARGV lpLine)
 		lpLine->s.y = pts.y;
 		lpLine->e.x = pte.x;
 		lpLine->e.y = pte.y;
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("     sx=%f sy=%f ex=%f ey=%f", 
 			lpLine->s.x, lpLine->s.y, lpLine->e.x, lpLine->e.y);
 #endif
 		return TRUE;
 	}
 	else {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("     error sx|sy|ex|ey"); 
 #endif
 		return FALSE;
@@ -263,9 +267,9 @@ static inline BOOL _SetDxfArgv(LPCDXFLARGV lpLine)
 
 static inline BOOL _SetDxfArgv(LPCDXFCARGV lpCircle)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Circle Layer=%s", lpCircle->pLayer ? lpCircle->pLayer->GetStrLayer() : "?");
+	dbg.printf("Circle Layer=%s", lpCircle->pLayer ? lpCircle->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_CIRCLE ) {
 		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
@@ -274,14 +278,14 @@ static inline BOOL _SetDxfArgv(LPCDXFCARGV lpCircle)
 		lpCircle->c.x = pt.x;
 		lpCircle->c.y = pt.y;
 		lpCircle->r   = g_dValue[VALUE40];
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("       cx=%f cy=%f r=%f",
 			lpCircle->c.x, lpCircle->c.y, lpCircle->r);
 #endif
 		return TRUE;
 	}
 	else {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("       error cx|cy|r");
 #endif
 		return FALSE;
@@ -290,9 +294,9 @@ static inline BOOL _SetDxfArgv(LPCDXFCARGV lpCircle)
 
 static inline BOOL _SetDxfArgv(LPCDXFAARGV lpArc)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Arc Layer=%s", lpArc->pLayer ? lpArc->pLayer->GetStrLayer() : "?");
+	dbg.printf("Arc Layer=%s", lpArc->pLayer ? lpArc->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_ARC ) {
 		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
@@ -303,14 +307,14 @@ static inline BOOL _SetDxfArgv(LPCDXFAARGV lpArc)
 		lpArc->r   = g_dValue[VALUE40];
 		lpArc->sq  = g_dValue[VALUE50];
 		lpArc->eq  = g_dValue[VALUE51];
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("    cx=%f cy=%f r=%f sp=%f ep=%f", 
 			lpArc->c.x, lpArc->c.y, lpArc->r, DEG(lpArc->sq), DEG(lpArc->eq));
 #endif
 		return TRUE;
 	}
 	else {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("    error cx|cy|r|sp|ep");
 #endif
 		return FALSE;
@@ -319,9 +323,9 @@ static inline BOOL _SetDxfArgv(LPCDXFAARGV lpArc)
 
 static inline BOOL _SetDxfArgv(LPCDXFEARGV lpEllipse)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Ellipse Layer=%s", lpEllipse->pLayer ? lpEllipse->pLayer->GetStrLayer() : "?");
+	dbg.printf("Ellipse Layer=%s", lpEllipse->pLayer ? lpEllipse->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_ELLIPSE ) {
 		CPointD	ptc(g_dValue[VALUE10], g_dValue[VALUE20]),
@@ -338,7 +342,7 @@ static inline BOOL _SetDxfArgv(LPCDXFEARGV lpEllipse)
 		lpEllipse->sq		= g_dValue[VALUE41];
 		lpEllipse->eq		= g_dValue[VALUE42];
 		lpEllipse->bRound	= TRUE;		// Default
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("        cx=%f cy=%f lx=%f ly=%f s=%f", 
 			lpEllipse->c.x, lpEllipse->c.y, lpEllipse->l.x, lpEllipse->l.y, lpEllipse->s);
 		dbg.printf("        sp=%f ep=%f",
@@ -347,7 +351,7 @@ static inline BOOL _SetDxfArgv(LPCDXFEARGV lpEllipse)
 		return TRUE;
 	}
 	else {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("        error cx|cy|lx|ly|s|sp|ep"); 
 #endif
 		return FALSE;
@@ -356,9 +360,9 @@ static inline BOOL _SetDxfArgv(LPCDXFEARGV lpEllipse)
 
 static inline BOOL _SetDxfArgv(LPCDXFTARGV lpText)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Text Layer=%s", lpText->pLayer ? lpText->pLayer->GetStrLayer() : "?");
+	dbg.printf("Text Layer=%s", lpText->pLayer ? lpText->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_TEXT ) {
 		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
@@ -367,14 +371,14 @@ static inline BOOL _SetDxfArgv(LPCDXFTARGV lpText)
 		lpText->strValue = g_strValue;
 		lpText->c.x = pt.x;
 		lpText->c.y = pt.y;
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("      cx=%f cy=%f", lpText->c.x, lpText->c.y);
 		dbg.printf("      Value=%s", lpText->strValue);
 #endif
 		return TRUE;
 	}
 	else {
-#ifdef _DEBUG
+#ifdef _DEBUG_ARGV
 		dbg.printf("      error cx|cy");
 #endif
 		return FALSE;
@@ -464,7 +468,7 @@ static inline void _InitialVariable(void)
 static inline int _HeaderVariableCheck(void)
 {
 /*	--- ﾍｯﾀﾞｰ読み込みは廃止
-	if ( g_strGroup != g_szGroupCode[GROUP9] )
+	if ( g_nGroup != g_nGroupCode[GROUP9] )
 		return -2;
 	for ( int i=0; i<SIZEOF(g_szHeader); i++ ) {
 		if ( g_strOrder == g_szHeader[i] )
@@ -502,20 +506,15 @@ BOOL HeaderProcedure(void)
 
 static inline enENTITIESTYPE _EntitiesKeywordCheck(void)
 {
-	if ( g_strGroup != g_szGroupCode[GROUP0] )
+	if ( g_nGroup != g_nGroupCode[GROUP0] )
 		return TYPE_SECTION_ERR;
-	for ( int i=0; i<SIZEOF(g_szEntitiesKey); i++ ) {
-		if ( g_strOrder == g_szEntitiesKey[i] ) {
-			ASSERT( SIZEOF(g_szEntitiesKey) == TYPE_ENTITIES_NUM );
-			return (enENTITIESTYPE)i;
-		}
-	}
-	return TYPE_NOTSUPPORT;
+	auto f = find_if(g_szEntitiesKey, lambda::_1==g_strOrder);
+	return f==end(g_szEntitiesKey) ? TYPE_NOTSUPPORT : (enENTITIESTYPE)(f-g_szEntitiesKey);
 }
 
 static inline int _EntitiesLayerCheck(void)
 {
-	if ( g_strGroup != g_szGroupCode[GROUP8] )
+	if ( g_nGroup != g_nGroupCode[GROUP8] )
 		return -2;
 
 	// 切削ﾚｲﾔ
@@ -809,11 +808,11 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 	
 	switch ( enResultType ) {
 	case -2:	// ﾃﾞｰﾀ開始ｺｰﾄﾞ " 0" でない
-		if ( g_strGroup == g_szGroupCode[GROUP2] ) {
+		if ( g_nGroup == g_nGroupCode[GROUP2] ) {
 			g_strBlock = g_strOrder;	// ﾌﾞﾛｯｸ名ｾｯﾄ
 			break;
 		}
-		else if ( g_pPolyline && g_strGroup==g_szGroupCode[GROUP70] ) {
+		else if ( g_pPolyline && g_nGroup==g_nGroupCode[GROUP70] ) {
 			if ( atoi(g_strOrder) & 1 )	// Polylineの閉ﾙｰﾌﾟか？
 				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
 			break;
@@ -882,13 +881,10 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 
 static inline int _BlocksKeywordCheck(void)
 {
-	if ( g_strGroup != g_szGroupCode[GROUP0] )
+	if ( g_nGroup != g_nGroupCode[GROUP0] )
 		return -2;
-	for ( int i=0; i<SIZEOF(g_szBlocks); i++ ) {
-		if ( g_strOrder == g_szBlocks[i] )
-			return i;
-	}
-	return -1;
+	auto f = find_if(g_szBlocks, lambda::_1==g_strOrder);
+	return f==end(g_szBlocks) ? -1 : (f-g_szBlocks);
 }
 
 BOOL SetBlockData(void)
@@ -1001,7 +997,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 	switch ( nResultBlock ) {
 	case -2:	// ﾌﾞﾛｯｸ開始ｺｰﾄﾞ " 0" でない
 		// ﾌﾞﾛｯｸ名の検査
-		if ( g_strGroup == g_szGroupCode[GROUP2] ) {
+		if ( g_nGroup == g_nGroupCode[GROUP2] ) {
 			if ( g_strOrder.GetLength()<=0 || g_strOrder[0]=='*' || g_strOrder[0]=='$' )	// 疑似ﾌﾞﾛｯｸ
 				g_nBlock = -1;
 			else {
@@ -1019,7 +1015,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 				}
 			}
 		}
-		else if ( g_pPolyline && g_strGroup==g_szGroupCode[GROUP70] ) {
+		else if ( g_pPolyline && g_nGroup==g_nGroupCode[GROUP70] ) {
 			if ( atoi(g_strOrder) & 1 )
 				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
 		}
@@ -1099,13 +1095,10 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 static inline int _PolylineKeywordCheck(void)
 {
 	// ｸﾞﾙｰﾌﾟｺｰﾄﾞ" 0" はﾁｪｯｸ済み
-//	if ( g_strGroup != g_szGroupCode[GROUP0] )
+//	if ( g_nGroup != g_nGroupCode[GROUP0] )
 //		return -2;
-	for ( int i=0; i<SIZEOF(g_szPolyline); i++ ) {
-		if ( g_strOrder == g_szPolyline[i] )
-			return i;
-	}
-	return -1;
+	auto f = find_if(g_szPolyline, lambda::_1==g_strOrder);
+	return f==end(g_szPolyline) ? -1 : (f-g_szPolyline);
 }
 
 BOOL PolylineProcedure(CDXFDoc* pDoc)
@@ -1209,7 +1202,7 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc, BOOL bEnd)
 
 	if ( !bEnd ) {
 		// ｸﾞﾙｰﾌﾟｺｰﾄﾞ"10"で既に値が読み込まれている場合に処理する
-		if ( g_strGroup!=g_szValueGroupCode[0] || !(g_dwValueFlg&VALFLG10) )
+		if ( g_nGroup!=g_nValueGroupCode[0] || !(g_dwValueFlg&VALFLG10) )
 			return TRUE;
 	}
 
@@ -1247,10 +1240,10 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 #ifdef _DEBUG
 	CMagaDbg	dbg("Serialize_Read()\nStart", DBG_GREEN);
 #endif
-	extern	LPCTSTR	gg_szCat;
+	extern	LPCTSTR	gg_szCat;	// ", "
 
-	ASSERT( SIZEOF(g_szGroupCode) == GROUP_NUM );
-	ASSERT( SIZEOF(g_szValueGroupCode) == DXFMAXVALUESIZE );
+	ASSERT( SIZEOF(g_nGroupCode) == GROUP_NUM );
+	ASSERT( SIZEOF(g_nValueGroupCode) == DXFMAXVALUESIZE );
 	ASSERT( SIZEOF(g_dwValSet) == DXFMAXVALUESIZE );
 	ASSERT( SIZEOF(g_szSection) == SEC_SECTION_NUM );
 	ASSERT( SIZEOF(g_szSectionName) == SEC_SECNAME_NUM );
@@ -1259,19 +1252,20 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 
 	CStdioFile	fp;
 	// ﾌｧｲﾙｵｰﾌﾟﾝ
-	if ( !fp.Open(lpszPathName, CFile::modeRead | CFile::shareDenyWrite) ) {
+	if ( !fp.Open(lpszPathName, CFile::modeRead | CFile::shareDenyWrite | CFile::osSequentialScan) ) {
 		AfxMessageBox(IDS_ERR_FILEREAD, MB_OK|MB_ICONSTOP);
 		return FALSE;
 	}
 
 	CProgressCtrl*	pProgress = pDoc->IsDocFlag(DXFDOC_BIND) ? NULL : AfxGetNCVCMainWnd()->GetProgressCtrl();
-	ULONGLONG	dwSize = fp.GetLength();	// ﾌｧｲﾙｻｲｽﾞ
-	ULONGLONG	dwPosition = 0;				// ﾌｧｲﾙ現在位置
-	UINT	nReadCnt = 0;				// ﾚｺｰﾄﾞ件数
-	BOOL	bSection = FALSE;			// ｾｸｼｮﾝ処理中
+	ULONGLONG	dwFileSize = fp.GetLength(),	// ﾌｧｲﾙｻｲｽﾞ
+				dwPosition = 0,					// ﾌｧｲﾙ現在位置
+				dwReadSize;
+	UINT	nReadCnt = 0;						// ﾚｺｰﾄﾞ件数
+	BOOL	bSection = FALSE,	// ｾｸｼｮﾝ処理中
+			bResult = TRUE;
 	int		n;
 	enSECNAME	nSectionName = SEC_NOSECNAME;	// -1: ENDSECまで読み飛ばし
-	BOOL	bResult = TRUE;
 
 	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ準備
 	if ( pProgress ) {
@@ -1296,14 +1290,13 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 
 	// ﾒｲﾝﾙｰﾌﾟ
 	try {
-		while ( _DubleRead(fp) && bResult ) {
+		while ( (dwReadSize=_DubleRead(fp))>0 && bResult ) {
 			if ( pProgress ) {
 				// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
-				dwPosition += g_strGroup.GetLength() + 2 +	// +2 = 改行ｺｰﾄﾞ分
-							  g_strOrder.GetLength() + 2;
+				dwPosition += dwReadSize;
 				nReadCnt += 2;	// ２行づつ
 				if ( (nReadCnt & 0x0100) == 0 ) {	// 128(256/2)行おき
-					n = (int)(dwPosition*100/dwSize);
+					n = (int)(dwPosition*100/dwFileSize);
 					pProgress->SetPos(min(100, n));
 				}
 			}
@@ -1375,12 +1368,18 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 		g_strMissBlckMap.RemoveAll();
 		bResult = FALSE;
 	}
+//	catch ( const bad_lexical_cast& ) {
+//		AfxMessageBox(IDS_ERR_FILEREAD, MB_OK|MB_ICONSTOP);
+//		g_strMissEntiMap.RemoveAll();
+//		g_strMissBlckMap.RemoveAll();
+//		bResult = FALSE;
+//	}
 
 	if ( pProgress )
 		pProgress->SetPos(100);
 
 #ifdef _DEBUG
-	dbg.printf("dwSize=%d dwPosition=%d", dwSize, dwPosition);
+	dbg.printf("dwFileSize=%d dwPosition=%d", dwFileSize, dwPosition);
 #endif
 
 	// BLOCKSﾘｽﾄのｶﾞｰﾍﾞｰｼﾞｺﾚｸｼｮﾝ
@@ -1398,26 +1397,23 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	// 未ｻﾎﾟｰﾄのｷｰﾜｰﾄﾞを案内「ﾃﾞｰﾀ欠落の可能性」
 	CString		strMiss, strMsg, strAdd;
 	LPVOID		pDummy;
-	POSITION	pos;
 	VERIFY(strAdd.LoadString(IDS_ERR_DXFMISSING));
 	if ( !g_strMissEntiMap.IsEmpty() ) {
-		for ( pos=g_strMissEntiMap.GetStartPosition(); pos; ) {
-			g_strMissEntiMap.GetNextAssoc(pos, strMsg, pDummy);
+		PMAP_FOREACH(strMsg, pDummy, &g_strMissEntiMap)
 			if ( !strMiss.IsEmpty() )
 				strMiss += gg_szCat;
 			strMiss += strMsg;
-		}
+		END_FOREACH
 		strMsg.Format(IDS_ERR_DXFKEYWORD, strMiss);
 		AfxMessageBox(strMsg+strAdd, MB_OK|MB_ICONINFORMATION);
 	}
 	if ( !g_strMissBlckMap.IsEmpty() ) {
 		strMiss.Empty();
-		for ( pos=g_strMissBlckMap.GetStartPosition(); pos; ) {
-			g_strMissBlckMap.GetNextAssoc(pos, strMsg, pDummy);
+		PMAP_FOREACH(strMsg, pDummy, &g_strMissBlckMap)
 			if ( !strMiss.IsEmpty() )
 				strMiss += gg_szCat;
 			strMiss += strMsg;
-		}
+		END_FOREACH
 		strMsg.Format(IDS_ERR_DXFBLOCK, strMiss);
 		AfxMessageBox(strMsg+strAdd, MB_OK|MB_ICONINFORMATION);
 	}
@@ -1434,10 +1430,9 @@ UINT RemoveBlockMapThread(LPVOID)
 #endif
 	CDXFBlockData*	pBlock;
 	CString			strBlock;
-	for ( POSITION pos=g_strBlockMap.GetStartPosition(); pos; ) {
-		g_strBlockMap.GetNextAssoc(pos, strBlock, pBlock);
+	PMAP_FOREACH(strBlock, pBlock, &g_strBlockMap)
 		delete	pBlock;
-	}
+	END_FOREACH
 	g_strBlockMap.RemoveAll();
 	g_csRemoveBlockMap.Unlock();
 

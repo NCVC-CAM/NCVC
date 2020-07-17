@@ -74,27 +74,28 @@ BOOL CMKNCSetup6::OnInitDialog()
 	CWnd*	pParent = GetParentSheet();
 	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
 		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
-		m_nDot			= pOpt->m_nDot;
-		m_nFDot			= pOpt->m_nFDot;
-		m_bZeroCut		= pOpt->m_bZeroCut;
-		m_nCircleCode	= pOpt->m_nCircleCode;
-		m_nIJ			= pOpt->m_nIJ;
-		m_bCircleHalf	= pOpt->m_bCircleHalf;
-		m_bZeroCutIJ	= pOpt->m_bZeroCutIJ;
-		m_dEllipse		= pOpt->m_dEllipse;
-		m_bEllipse		= pOpt->m_bEllipse;
+		m_nDot			= pOpt->MIL_I_DOT;
+		m_nFDot			= pOpt->MIL_I_FDOT;
+		m_bZeroCut		= pOpt->MIL_F_ZEROCUT;
+		m_nCircleCode	= pOpt->MIL_I_CIRCLECODE;
+		m_nIJ			= pOpt->MIL_I_IJ;
+		m_bCircleHalf	= pOpt->MIL_F_CIRCLEHALF;
+		m_bZeroCutIJ	= pOpt->MIL_F_ZEROCUT_IJ;
+		m_dEllipse		= pOpt->MIL_D_ELLIPSE;
+		m_bEllipse		= pOpt->MIL_F_ELLIPSE;
 	}
 	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMKLASetup)) ) {
 		// ê˘î’”∞ƒﬁ
 		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(pParent)->GetNCMakeOption();
-		m_nDot			= pOpt->m_nDot;
-		m_nFDot			= pOpt->m_nFDot;
-		m_bZeroCut		= pOpt->m_bZeroCut;
-		m_nCircleCode	= pOpt->m_nCircleCode;
-		m_nIJ			= pOpt->m_nIJ;
-		m_bCircleHalf	= pOpt->m_bCircleHalf;
-		m_dEllipse		= pOpt->m_dEllipse;
-		m_bEllipse		= pOpt->m_bEllipse;
+		m_nDot			= pOpt->LTH_I_DOT;
+		m_nFDot			= pOpt->LTH_I_FDOT;
+		m_bZeroCut		= pOpt->LTH_F_ZEROCUT;
+		m_nCircleCode	= pOpt->LTH_I_CIRCLECODE;
+		m_nIJ			= pOpt->LTH_I_IJ;
+		m_bCircleHalf	= pOpt->LTH_F_CIRCLEHALF;
+		m_bZeroCutIJ	= pOpt->LTH_F_ZEROCUT_IJ;
+		m_dEllipse		= pOpt->LTH_D_ELLIPSE;
+		m_bEllipse		= pOpt->LTH_F_ELLIPSE;
 	}
 	else {
 		// ‹≤‘ï˙ìdâ¡çHã@”∞ƒﬁ
@@ -104,12 +105,12 @@ BOOL CMKNCSetup6::OnInitDialog()
 		m_ctCircleHalf.ShowWindow(SW_HIDE);
 		m_ctZeroCutIJ.ShowWindow(SW_HIDE);
 		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(pParent)->GetNCMakeOption();
-		m_nDot			= pOpt->m_nDot;
-		m_nFDot			= pOpt->m_nFDot;
-		m_bZeroCut		= pOpt->m_bZeroCut;
-		m_nCircleCode	= pOpt->m_nCircleCode;
-		m_dEllipse		= pOpt->m_dEllipse;
-		m_bEllipse		= pOpt->m_bEllipse;
+		m_nDot			= pOpt->WIR_I_DOT;
+		m_nFDot			= pOpt->WIR_I_FDOT;
+		m_bZeroCut		= pOpt->WIR_F_ZEROCUT;
+		m_nCircleCode	= pOpt->WIR_I_CIRCLECODE;
+		m_dEllipse		= pOpt->WIR_D_ELLIPSE;
+		m_bEllipse		= pOpt->WIR_F_ELLIPSE;
 	}
 
 	if ( m_nIJ == 0 )
@@ -138,36 +139,36 @@ BOOL CMKNCSetup6::OnApply()
 	CWnd*	pParent = GetParentSheet();
 	if ( pParent->IsKindOf(RUNTIME_CLASS(CMKNCSetup)) ) {
 		CNCMakeMillOpt* pOpt = static_cast<CMKNCSetup *>(pParent)->GetNCMakeOption();
-		pOpt->m_nDot		= m_nDot;
-		pOpt->m_nFDot		= m_nFDot;
-		pOpt->m_bZeroCut	= m_bZeroCut;
-		pOpt->m_nCircleCode	= m_nCircleCode;
-		pOpt->m_nIJ			= m_nIJ;
-		pOpt->m_bCircleHalf	= m_bCircleHalf;
-		pOpt->m_bZeroCutIJ	= m_bZeroCutIJ;
-		pOpt->m_dEllipse	= m_dEllipse;
-		pOpt->m_bEllipse	= m_bEllipse;
+		pOpt->MIL_I_DOT			= m_nDot;
+		pOpt->MIL_I_FDOT		= m_nFDot;
+		pOpt->MIL_F_ZEROCUT		= m_bZeroCut;
+		pOpt->MIL_I_CIRCLECODE	= m_nCircleCode;
+		pOpt->MIL_I_IJ			= m_nIJ;
+		pOpt->MIL_F_CIRCLEHALF	= m_bCircleHalf;
+		pOpt->MIL_F_ZEROCUT_IJ	= m_bZeroCutIJ;
+		pOpt->MIL_D_ELLIPSE		= m_dEllipse;
+		pOpt->MIL_F_ELLIPSE		= m_bEllipse;
 	}
 	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMKLASetup)) ) {
 		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(pParent)->GetNCMakeOption();
-		pOpt->m_nDot		= m_nDot;
-		pOpt->m_nFDot		= m_nFDot;
-		pOpt->m_bZeroCut	= m_bZeroCut;
-		pOpt->m_nCircleCode	= m_nCircleCode;
-		pOpt->m_nIJ			= m_nIJ;
-		pOpt->m_bCircleHalf	= m_bCircleHalf;
-		pOpt->m_bZeroCutIJ	= m_bZeroCutIJ;
-		pOpt->m_dEllipse	= m_dEllipse;
-		pOpt->m_bEllipse	= m_bEllipse;
+		pOpt->LTH_I_DOT			= m_nDot;
+		pOpt->LTH_I_FDOT		= m_nFDot;
+		pOpt->LTH_F_ZEROCUT		= m_bZeroCut;
+		pOpt->LTH_I_CIRCLECODE	= m_nCircleCode;
+		pOpt->LTH_I_IJ			= m_nIJ;
+		pOpt->LTH_F_CIRCLEHALF	= m_bCircleHalf;
+		pOpt->LTH_F_ZEROCUT_IJ	= m_bZeroCutIJ;
+		pOpt->LTH_D_ELLIPSE		= m_dEllipse;
+		pOpt->LTH_F_ELLIPSE		= m_bEllipse;
 	}
 	else {
 		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(pParent)->GetNCMakeOption();
-		pOpt->m_nDot		= m_nDot;
-		pOpt->m_nFDot		= m_nFDot;
-		pOpt->m_bZeroCut	= m_bZeroCut;
-		pOpt->m_nCircleCode	= m_nCircleCode;
-		pOpt->m_dEllipse	= m_dEllipse;
-		pOpt->m_bEllipse	= m_bEllipse;
+		pOpt->WIR_I_DOT			= m_nDot;
+		pOpt->WIR_I_FDOT		= m_nFDot;
+		pOpt->WIR_F_ZEROCUT		= m_bZeroCut;
+		pOpt->WIR_I_CIRCLECODE	= m_nCircleCode;
+		pOpt->WIR_D_ELLIPSE		= m_dEllipse;
+		pOpt->WIR_F_ELLIPSE		= m_bEllipse;
 	}
 
 	return TRUE;

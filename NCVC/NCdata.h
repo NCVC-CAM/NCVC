@@ -14,7 +14,7 @@
 
 // 始点終点指示
 enum	ENPOINTORDER
-	{STARTPOINT, ENDPOINT};
+	{STARTPOINT=0, ENDPOINT=1};
 // 描画ﾋﾞｭｰ指定
 enum	ENNCDRAWVIEW
 {

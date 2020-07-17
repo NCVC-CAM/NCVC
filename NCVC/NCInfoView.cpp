@@ -10,6 +10,7 @@
 #include "NCListView.h"
 #include "NCInfoView.h"
 #include "ViewOption.h"
+#include "boost/format.hpp"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -17,9 +18,14 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+using namespace boost;
+using std::string;
+
 extern	LPCTSTR	gg_szDelimiter;	// ":"
 extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 static	LPCTSTR	g_szSpace = " ";
+static	LPCTSTR	g_szNumFormat = "%12d";
+static	LPCTSTR	g_szMinFormat = "%2d ";
 
 // €∞∂Ÿã§í ä÷êî
 static	void	CopyNCInfoForClipboard(CView*, CNCDoc*);	// ∏ÿØÃﬂŒﬁ∞ƒﬁÇ÷ÇÃ∫Àﬂ∞
@@ -94,7 +100,7 @@ void CNCInfoBase::OnEditCopy()
 
 void CNCInfoBase::OnContextMenu(CWnd* pWnd, CPoint point) 
 {
-	CViewBase::OnContextMenu(point, IDR_NCPOPUP3);
+	CViewBase::_OnContextMenu(point, IDR_NCPOPUP3);
 }
 
 void CNCInfoBase::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -120,7 +126,7 @@ BOOL CNCInfoBase::OnEraseBkgnd(CDC* pDC)
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND1),
 				col2 = pOpt->GetNcInfoDrawColor(NCINFOCOL_BACKGROUND2);
-	return CViewBase::OnEraseBkgnd(pDC, col1, col2);
+	return CViewBase::_OnEraseBkgnd(pDC, col1, col2);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -207,23 +213,20 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 		if ( dTime == -1 )			// èâä˙èÛë‘
 			VERIFY(strFormat.LoadString(IDCV_FEEDERROR));
 		else if ( dTime < 1 ) {		// 1ï™à»â∫
-			strFormat = "< 1";
 			VERIFY(strBuf.LoadString(IDCV_MINUTE));
+			strFormat = "< 1";
 			strFormat += g_szSpace + strBuf;
 		}
 		else if ( dTime > 60 ) {	// 1éûä‘à»è„
-			strFormat.Format("%d", (int)(dTime/60));
 			VERIFY(strBuf.LoadString(IDCV_HOUR));
-			strFormat += g_szSpace + strBuf;
-			strBuf.Format("%2d", (int)fmod(dTime, 60));
-			strFormat += g_szSpace + strBuf;
+			strFormat = (lexical_cast<string>((int)(dTime/60)) + g_szSpace).c_str() + strBuf + g_szSpace +
+							str(format(g_szMinFormat) % (int)fmod(dTime, 60)).c_str();
 			VERIFY(strBuf.LoadString(IDCV_MINUTE));
-			strFormat += g_szSpace + strBuf;
+			strFormat += strBuf;
 		}
 		else {
-			strFormat.Format("%12d", (int)dTime);
 			VERIFY(strBuf.LoadString(IDCV_MINUTE));
-			strFormat += g_szSpace + strBuf;
+			strFormat = (str(format(g_szNumFormat) % (int)dTime) + g_szSpace).c_str() + strBuf;
 		}
 	}
 	i = 5;
@@ -353,11 +356,11 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 			strItem += strDelimiter + fStatus.m_mtime.Format(strBuf) + g_szSpace +
 				fStatus.m_mtime.Format(strFormat) + g_szSpace + g_szSpace;
 			if ( fStatus.m_size >= 1024*1024 )
-				strFormat.Format("%d MB", fStatus.m_size/(1024*1024));
+				strFormat = (lexical_cast<string>(fStatus.m_size/(1024*1024)) + " MB").c_str();
 			else if ( fStatus.m_size >= 1024 )
-				strFormat.Format("%d KB", fStatus.m_size/1024);
+				strFormat = (lexical_cast<string>(fStatus.m_size/1024) + " KB").c_str();
 			else
-				strFormat.Format("%d bytes", fStatus.m_size);
+				strFormat = (lexical_cast<string>(fStatus.m_size) + " bytes").c_str();
 			strarrayInfo.Add(strItem + strFormat);
 		}
 		strItem.Empty();
@@ -380,23 +383,20 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 			VERIFY(strFormat.LoadString(IDCV_FEEDERROR));
 		else {
 			if ( dTime < 1 ) {
-				strFormat = "< 1";
 				VERIFY(strBuf.LoadString(IDCV_MINUTE));
+				strFormat = "< 1";
 				strFormat += g_szSpace + strBuf;
 			}
 			else if ( dTime > 60 ) {
-				strFormat.Format("%d", (int)(dTime/60));
 				VERIFY(strBuf.LoadString(IDCV_HOUR));
-				strFormat += g_szSpace + strBuf;
-				strBuf.Format("%2d", (int)fmod(dTime, 60));
-				strFormat += g_szSpace + strBuf;
+				strFormat  = (lexical_cast<string>((int)(dTime/60)) + g_szSpace).c_str() + strBuf + g_szSpace +
+								str(format(g_szMinFormat) % (int)fmod(dTime, 60)).c_str();
 				VERIFY(strBuf.LoadString(IDCV_MINUTE));
-				strFormat += g_szSpace + strBuf;
+				strFormat += strBuf;
 			}
 			else {
-				strFormat.Format("%12d", (int)dTime);
 				VERIFY(strBuf.LoadString(IDCV_MINUTE));
-				strFormat += g_szSpace + strBuf;
+				strFormat = (str(format(g_szNumFormat) % (int)dTime) + g_szSpace).c_str() + strBuf;
 			}
 			if ( strFormat.GetLength() < 15 ) {	// %12d + " mm"
 				i = 15 - strFormat.GetLength();
@@ -410,16 +410,18 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 		VERIFY(strBuf.LoadString(IDCV_MILIpMIN));
 		if ( pDoc->IsDocFlag(NCDOC_LATHE) ) {
 			for ( i=0; i<SIZEOF(ZX); i++ ) {
-				strItem = strSpace + g_szNdelimiter[ZX[i]] + strDelimiter;
-				strFormat.Format("%12d", pMCopt->GetG0Speed(ZX[i]));
-				strarrayInfo.Add(strItem + strFormat + strMM + strBuf);
+				strItem = strSpace + g_szNdelimiter[ZX[i]] + strDelimiter +
+					str(format(g_szNumFormat) % pMCopt->GetG0Speed(ZX[i])).c_str() +
+					strMM + strBuf;
+				strarrayInfo.Add(strItem);
 			}
 		}
 		else {
 			for ( i=0; i<NCXYZ; i++ ) {
-				strItem = strSpace + g_szNdelimiter[i] + strDelimiter;
-				strFormat.Format("%12d", pMCopt->GetG0Speed(i));
-				strarrayInfo.Add(strItem + strFormat + strMM + strBuf);
+				strItem = strSpace + g_szNdelimiter[i] + strDelimiter +
+					str(format(g_szNumFormat) % pMCopt->GetG0Speed(i)).c_str() +
+					strMM + strBuf;
+				strarrayInfo.Add(strItem);
 			}
 		}
 		strItem.Empty();

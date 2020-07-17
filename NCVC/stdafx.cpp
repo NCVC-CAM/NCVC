@@ -3,7 +3,6 @@
 // stdafx.obj にはプリコンパイルされた型情報が含まれます。
 
 #include "stdafx.h"
-#include <stdlib.h>
 #include <time.h>
 
 #include "MagaDbgMac.h"
@@ -24,6 +23,8 @@ extern	LPCTSTR	gg_szCat = ", ";
 extern	LPCTSTR	gg_szComma = ",";
 // ﾜｲﾙﾄﾞｶｰﾄﾞ
 extern	LPCTSTR	gg_szWild = "*.";
+// 円記号
+extern	LPCTSTR	gg_szEn = "\\";
 
 // ｱｲｺﾝｻｲｽﾞ
 extern	const	int		gg_nIconX = 16;
@@ -86,8 +87,8 @@ CString	RelativePath(LPCTSTR lpszBase, LPCTSTR lpszSrc)
 	Path_Name_From_FullPath(lpszSrc,  strPath2, strFile2);
 	if ( ::PathRelativePathTo(szRelativePath, strPath1, FILE_ATTRIBUTE_DIRECTORY, strPath2, FILE_ATTRIBUTE_DIRECTORY) ) {
 		strResult = szRelativePath;
-		if ( strResult.Right(1) != "\\" )
-			strResult += "\\";	// 同じパスのとき「.」だけ返されるための対策
+		if ( strResult.Right(1) != gg_szEn )
+			strResult += gg_szEn;	// 同じパスのとき「.」だけ返されるための対策
 		strResult += strFile2;
 	}
 	else

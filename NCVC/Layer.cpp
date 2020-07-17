@@ -15,6 +15,7 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+using std::string;
 using namespace boost;
 
 // ﾚｲﾔ情報の保存
@@ -137,6 +138,15 @@ void CLayerData::AllChangeFactor(double f) const
 		m_obShapeArray[i]->AllChangeFactor(f);
 }
 
+void CLayerData::AllSetDxfFlg(DWORD dwFlags, BOOL bSet) const
+{
+	int		i;
+	for ( i=0; i<m_obDXFArray.GetSize(); i++ )
+		m_obDXFArray[i]->SetDxfFlg(dwFlags, bSet);
+	for ( i=0; i<m_obDXFTextArray.GetSize(); i++ )
+		m_obDXFTextArray[i]->SetDxfFlg(dwFlags, bSet);
+}
+
 void CLayerData::AllShapeClearSideFlg(void) const
 {
 	for ( int i=0; i<m_obShapeArray.GetSize(); i++ )
@@ -165,57 +175,56 @@ void CLayerData::SetInitFile(LPCTSTR lpszInitFile)
 
 void CLayerData::SetLayerInfo(const CString& strBuf)
 {
-	extern	LPCTSTR		gg_szComma;		// StdAfx.cpp
+	extern	LPCTSTR		gg_szComma;		// ","
 	// 命令を分割
 	typedef tokenizer< char_separator<TCHAR> > tokenizer;
 	static	char_separator<TCHAR> sep(gg_szComma, "", keep_empty_tokens);
 
-	int		i;
+	int		i = 0;
 	TCHAR	szFile[_MAX_PATH];
-	std::string	str( strBuf ), strTemp;
-	tokenizer	tok( str, sep );
-	tokenizer::iterator it;
+	string	str(strBuf), strTok;
+	tokenizer	tok(str, sep);
 
 	// 命令解析ﾙｰﾌﾟ
-	for ( i=0, it=tok.begin(); i<LAYERTOINITORDER-1 && it!=tok.end(); i++, ++it ) {
-		switch ( i ) {
+	BOOST_FOREACH(strTok, tok) {
+		switch ( i++ ) {
 		case 0:		// 切削対象ﾌﾗｸﾞ
-			m_bLayerFlg.set(LAYER_CUT_TARGET, atoi(it->c_str()) ? 1 : 0);
+			m_bLayerFlg.set(LAYER_CUT_TARGET, atoi(strTok.c_str()) ? 1 : 0);
 			break;
 		case 1:		// 切削条件ﾌｧｲﾙ
-			strTemp = ::Trim(*it);	// stdafx.h
+			strTok = ::Trim(strTok);	// stdafx.h
 			// 相対ﾊﾟｽなら絶対ﾊﾟｽに
-			if ( ::PathIsRelative(strTemp.c_str()) &&
-					::PathSearchAndQualify(strTemp.c_str(), szFile, _MAX_PATH) )
-				strTemp = szFile;
-			SetInitFile(strTemp.c_str());
+			if ( ::PathIsRelative(strTok.c_str()) &&
+					::PathSearchAndQualify(strTok.c_str(), szFile, _MAX_PATH) )
+				strTok = szFile;
+			SetInitFile(strTok.c_str());
 			break;
 		case 2:		// 強制最深Z
-			m_dZCut = atof(it->c_str());
+			m_dZCut = atof(strTok.c_str());
 			break;
 		case 3:		// 強制最深Zを穴加工にも適用
-			m_bLayerFlg.set(LAYER_DRILL_Z, atoi(it->c_str()) ? 1 : 0);
+			m_bLayerFlg.set(LAYER_DRILL_Z, atoi(strTok.c_str()) ? 1 : 0);
 			break;
 		case 4:		// 個別出力
-			m_bLayerFlg.set(LAYER_PART_OUT, atoi(it->c_str()) ? 1 : 0);
+			m_bLayerFlg.set(LAYER_PART_OUT, atoi(strTok.c_str()) ? 1 : 0);
 			break;
 		case 5:		// 個別出力ﾌｧｲﾙ名
-			strTemp = ::Trim(*it);
-			if ( ::PathIsRelative(strTemp.c_str()) &&
-					::PathSearchAndQualify(strTemp.c_str(), szFile, _MAX_PATH) )
-				strTemp = szFile;
-			m_strNCFile = strTemp.c_str();
+			strTok = ::Trim(strTok);
+			if ( ::PathIsRelative(strTok.c_str()) &&
+					::PathSearchAndQualify(strTok.c_str(), szFile, _MAX_PATH) )
+				strTok = szFile;
+			m_strNCFile = strTok.c_str();
 			break;
 		case 6:		// 出力ｼｰｹﾝｽ
-			strTemp = ::Trim(*it);
-			if ( !strTemp.empty() )
-				m_nListNo = atoi(strTemp.c_str());
+			strTok = ::Trim(strTok);
+			if ( !strTok.empty() )
+				m_nListNo = atoi(strTok.c_str());
 			break;
 		case 7:		// 出力ｺﾒﾝﾄ
-			m_strLayerComment = ::Trim(*it).c_str();
+			m_strLayerComment = ::Trim(strTok).c_str();
 			break;
 		case 8:		// 出力ｺｰﾄﾞ
-			m_strLayerCode = ::Trim(*it).c_str();
+			m_strLayerCode = ::Trim(strTok).c_str();
 			break;
 		}
 	}
@@ -256,17 +265,23 @@ CString CLayerData::FormatLayerInfo(LPCTSTR lpszBase)
 
 void CLayerData::Serialize(CArchive& ar)
 {
-	BOOL	bView;
+	extern	DWORD	g_dwCamVer;		// NCVC.cpp
+	BOOL	bView, bTarget;
 
 	if ( ar.IsStoring() ) {
 		bView = m_bLayerFlg[LAYER_VIEW];
-		ar << m_strLayer << m_nType << bView;
+		bTarget = m_bLayerFlg[LAYER_CUT_TARGET];
+		ar << m_strLayer << m_nType << bView << bTarget;
 		// CDXFmapｼﾘｱﾗｲｽﾞ情報用にCDXFdataのｼｰｹﾝｽ№初期化
 		CDXFdata::ms_nSerialSeq = 0;
 	}
 	else {
 		ar >> m_strLayer >> m_nType >> bView;
 		m_bLayerFlg.set(LAYER_VIEW, bView);
+		if ( g_dwCamVer >= NCVCSERIALVERSION_3600 ) {
+			ar >> bTarget;
+			m_bLayerFlg.set(LAYER_CUT_TARGET, bTarget);
+		}
 		// CDXFdataｼﾘｱﾗｲｽﾞ情報用にCLayerData*をCArchive::m_pDocumentに格納
 		ar.m_pDocument = reinterpret_cast<CDocument *>(this);
 	}

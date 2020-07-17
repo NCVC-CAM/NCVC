@@ -515,10 +515,9 @@ CCustomMenuEx::~CCustomMenuEx()
 {
 	WORD		wKey;
 	LPCUSTMENUINFO	pInfo;
-	for ( POSITION pos=m_mpImage.GetStartPosition(); pos; ) {
-		m_mpImage.GetNextAssoc(pos, wKey, pInfo);
+	PMAP_FOREACH(wKey, pInfo, &m_mpImage)
 		delete	pInfo;
-	}
+	END_FOREACH
 	m_mpImage.RemoveAll();
 }
 

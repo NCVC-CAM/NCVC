@@ -20,6 +20,37 @@
 #define	UAV_CHANGEFONT			-90
 #define	UAV_ADDINREDRAW			-99
 
+// CDXFDoc ﾌﾗｸﾞ
+enum DXFDOCFLG {
+	DXFDOC_READY = 0,	// NC生成可能かどうか(ｴﾗｰﾌﾗｸﾞ)
+	DXFDOC_RELOAD,		// 再読込ﾌﾗｸﾞ(from DXFSetup.cpp)
+	DXFDOC_THREAD,		// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
+	DXFDOC_BINDPARENT,	// 統合ﾓｰﾄﾞ
+	DXFDOC_BIND,		// 統合ﾓｰﾄﾞ(子)
+	DXFDOC_SHAPE,		// 形状処理を行ったか
+	DXFDOC_LATHE,		// 旋盤用の原点(ﾜｰｸ径と端面)を読み込んだか
+	DXFDOC_WIRE,		// ﾜｲﾔ加工機用の生成が可能かどうか
+		DXFDOC_FLGNUM		// ﾌﾗｸﾞの数[7]
+};
+
+// CNCDoc ﾌﾗｸﾞ
+enum NCDOCFLG {
+	NCDOC_ERROR = 0,	// ﾄﾞｷｭﾒﾝﾄ読み込みｴﾗｰ
+	NCDOC_CUTCALC,		// 切削時間計算ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
+	NCDOC_REVISEING,	// 補正計算行うかどうか
+	NCDOC_COMMENTWORK,	// ｺﾒﾝﾄでﾜｰｸ矩形が指示された
+		NCDOC_COMMENTWORK_R,
+		NCDOC_COMMENTWORK_Z,
+		NCDOC_CYLINDER,		// ﾐﾙ加工の円柱ﾓｰﾄﾞ
+	NCDOC_MAXRECT,		// 最大移動矩形の描画
+	NCDOC_WRKRECT,		// ﾜｰｸ矩形の描画
+	NCDOC_THUMBNAIL,	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
+	NCDOC_LATHE,		// NC旋盤ﾓｰﾄﾞ
+	NCDOC_WIRE,			// ﾜｲﾔ加工ﾓｰﾄﾞ
+		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[12]
+};
+#define	DOCFLG_NUM	NCDOC_FLGNUM	// 大きい方
+
 // UAV_DXFADDSHAPE 引数
 class	CLayerData;
 class	CDXFshape;
@@ -47,7 +78,7 @@ UINT	FileChangeNotificationThread(LPVOID pParam);
 /////////////////////////////////////////////////////////////////////////////
 // CDocBase
 
-template<size_t T> class CDocBase : public CDocument
+class CDocBase : public CDocument
 {
 	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
 	CWinThread*	m_pFileChangeThread;
@@ -55,8 +86,8 @@ template<size_t T> class CDocBase : public CDocument
 	CEvent		m_evFinish;				// 終了通知ｲﾍﾞﾝﾄ
 
 protected:
-	// 派生ｸﾗｽ用ﾄﾞｷｭﾒﾝﾄﾌﾗｸﾞ
-	std::bitset<T>	m_bDocFlg;
+	std::bitset<DOCFLG_NUM>	m_bDocFlg;	// 派生ｸﾗｽ用ﾄﾞｷｭﾒﾝﾄﾌﾗｸﾞ
+	CRect3D			m_rcMax;	// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
 
 	// ｱﾄﾞｲﾝｼﾘｱﾙ関数の保持
 	PFNNCVCSERIALIZEFUNC	m_pfnSerialFunc;
@@ -85,6 +116,9 @@ protected:
 	BOOL	UpdateModifiedTitle(BOOL bModified, CString& strTitle);
 
 public:
+	CRect3D	GetMaxRect(void) const {
+		return m_rcMax;
+	}
 	BOOL	IsDocFlag(size_t n) const {
 		ASSERT( n < m_bDocFlg.size() );
 		return m_bDocFlg[n];
@@ -106,20 +140,7 @@ public:
 		return m_hAddinThread;
 	}
 	//
-	virtual void ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault) {
-		if ( e->IsKindOf(RUNTIME_CLASS(CUserException)) ) {
-			AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
-			return;	// 標準ｴﾗｰﾒｯｾｰｼﾞを出さない
-		}
-		__super::ReportSaveLoadException(lpszPathName, e, bSaving, nIDPDefault);
-	}
+	virtual void ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault);
 	// 更新ﾏｰｸ付与
-	virtual void SetModifiedFlag(BOOL bModified = TRUE) {
-		CString	strTitle( GetTitle() );
-		if ( UpdateModifiedTitle(bModified, strTitle) )
-			SetTitle(strTitle);
-		__super::SetModifiedFlag(bModified);
-	}
+	virtual void SetModifiedFlag(BOOL bModified = TRUE);
 };
-
-#include "DocBase.inl"

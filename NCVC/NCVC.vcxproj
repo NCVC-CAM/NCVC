@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -18,14 +18,14 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v140_xp</PlatformToolset>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v140_xp</PlatformToolset>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -46,15 +46,15 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_58_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_58_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\boost_1_61_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2015\lib;C:\Users\magara\Documents\Visual Studio 2015\boost_1_61_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2012\include;C:\Users\magara\Documents\Visual Studio 2012\boost_1_58_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2012\lib;C:\Users\magara\Documents\Visual Studio 2012\boost_1_58_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\boost_1_61_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2015\lib;C:\Users\magara\Documents\Visual Studio 2015\boost_1_61_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -81,7 +81,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>MagaDbg.lib;opengl32.lib;glu32.lib;glew32sd.lib;gdiplus.lib;version.lib;winmm.lib</AdditionalDependencies>
+      <AdditionalDependencies>MagaDbg.lib;opengl32.lib;glu32.lib;glew32sd.lib;gdiplus.lib;version.lib;winmm.lib;legacy_stdio_definitions.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
@@ -170,6 +170,7 @@
     <ClCompile Include="LayerDlg.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="MainStatusBar.cpp" />
+    <ClCompile Include="MakeBindOptDlg.cpp" />
     <ClCompile Include="MakeCustomCode.cpp" />
     <ClCompile Include="MakeDXFDlg.cpp" />
     <ClCompile Include="MakeDXFDlg1.cpp" />
@@ -297,6 +298,7 @@
     <ClInclude Include="LayerDlg.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MainStatusBar.h" />
+    <ClInclude Include="MakeBindOptDlg.h" />
     <ClInclude Include="MakeCustomCode.h" />
     <ClInclude Include="MakeDXFDlg.h" />
     <ClInclude Include="MakeDXFDlg1.h" />
@@ -376,7 +378,6 @@
     <ClInclude Include="ViewSetup6.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="DocBase.inl" />
     <None Include="DXFdata.inl" />
     <None Include="NCdata.inl" />
     <None Include="res\NCVC.rc2" />

@@ -17,7 +17,6 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 static	CThreadDlg*	g_pParent;
-typedef	BOOL	(*PFNISTHREAD)(void);
 static	BOOL	IsThread_Dlg(void)
 {
 	return g_pParent->IsThreadContinue();
@@ -26,8 +25,7 @@ static	BOOL	IsThread_NoChk(void)
 {
 	return TRUE;
 }
-static	PFNISTHREAD		g_pfnIsThread;
-#define	IsThread()		(*g_pfnIsThread)()
+static	boost::function<BOOL ()>	IsThread;
 #define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
 
 struct	CHECKMAPTHREADPARAM
@@ -57,7 +55,7 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	CDXFDoc*	pDoc = static_cast<CDXFDoc*>(pParam->pDoc);
 	g_pParent = pParam->pParent;
-	g_pfnIsThread = g_pParent ? &IsThread_Dlg : &IsThread_NoChk;
+	IsThread = g_pParent ? &IsThread_Dlg : &IsThread_NoChk;
 
 	int		i, j, nResult = IDOK;
 	INT_PTR	nLayerCnt = pDoc->GetLayerCnt(), nDataCnt;
@@ -88,7 +86,7 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 			pLayer->RemoveAllShape();
 			nDataCnt = pLayer->GetDxfSize();
 			if ( g_pParent ) {
-				g_pParent->SetFaseMessage(strMsg, pLayer->GetStrLayer());
+				g_pParent->SetFaseMessage(strMsg, pLayer->GetLayerName());
 				g_pParent->m_ctReadProgress.SetRange32(0, nDataCnt);
 			}
 			j = GetPrimeNumber(nDataCnt*2);
@@ -267,7 +265,7 @@ UINT CheckMapWorking_Thread(LPVOID pVoid)
 		// Œ`óî•ñ“o˜^
 		pParam->pLayer->AddShape(pShape);
 #ifdef _DEBUG
-		g_dbg.printf("Layer=%s %s Add ok", pParam->pLayer->GetStrLayer(), strShape);
+		g_dbg.printf("Layer=%s %s Add ok", pParam->pLayer->GetLayerName(), strShape);
 #endif
 		// ŒŸ¸I—¹
 		pParam->evEnd.SetEvent();

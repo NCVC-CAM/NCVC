@@ -41,7 +41,6 @@ enum {
 
 class CDXFMakeOption  
 {
-// Êß×Ò°Àİ’è‚ÌÀŞ²±Û¸Ş‚Í‚¨—F’B
 friend class CMakeDXFDlg1;
 friend class CMakeDXFDlg2;
 
@@ -75,8 +74,12 @@ friend class CMakeDXFDlg2;
 	// CStringŒ^µÌß¼®İ
 	CString		m_strOption[MKDX_STR_NUMS];	// ŠeíÚ²Ô
 
+	//
+	void	Initialize_Registry(void);
+	void	Initialize_Default(void);
+
 public:
-	CDXFMakeOption();
+	CDXFMakeOption(BOOL bRegist = TRUE);
 	BOOL	SaveDXFMakeOption(void);		// Ú¼Ş½ÄØ‚Ö‚Ì•Û‘¶
 
 	int		GetNum(size_t n) const {		// ”šµÌß¼®İ

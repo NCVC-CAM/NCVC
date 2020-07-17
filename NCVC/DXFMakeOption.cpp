@@ -54,16 +54,24 @@ extern	LPCTSTR	g_szDefaultLayer[];		// from DXFOption.cpp
 /////////////////////////////////////////////////////////////////////////////
 // CDXFMakeOption ƒNƒ‰ƒX‚Ì\’z/Á–Å
 
-CDXFMakeOption::CDXFMakeOption()
+CDXFMakeOption::CDXFMakeOption(BOOL bRegist)
 {
-	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(g_dfNOrder) );
-	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(m_unNums) );
-	ASSERT( SIZEOF(g_szDOrder) == SIZEOF(g_dfDOrder) );
-	ASSERT( SIZEOF(g_szDOrder) == SIZEOF(m_udNums) );
-	ASSERT( SIZEOF(g_szBOrder) == SIZEOF(g_dfBOrder) );
-	ASSERT( SIZEOF(g_szBOrder) == SIZEOF(m_ubFlags) );
-	ASSERT( SIZEOF(g_szSOrder) == SIZEOF(m_strOption) );
+	ASSERT( MKDX_NUM_NUMS == SIZEOF(g_szNOrder) );
+	ASSERT( MKDX_NUM_NUMS == SIZEOF(g_dfNOrder) );
+	ASSERT( MKDX_DBL_NUMS == SIZEOF(g_szDOrder) );
+	ASSERT( MKDX_DBL_NUMS == SIZEOF(g_dfDOrder) );
+	ASSERT( MKDX_FLG_NUMS == SIZEOF(g_szBOrder) );
+	ASSERT( MKDX_FLG_NUMS == SIZEOF(g_dfBOrder) );
+	ASSERT( MKDX_STR_NUMS == SIZEOF(g_szSOrder) );
 
+	if ( bRegist )
+		Initialize_Registry();
+	else
+		Initialize_Default();
+}
+
+void CDXFMakeOption::Initialize_Registry(void)
+{
 	// Ú¼Ş½ÄØ‚©‚çî•ñ“Ç‚İ‚İ
 	int		i;
 	CString	strRegKey(GetSubTreeRegKey(IDS_REGKEY_NC, IDS_REGKEY_MAKEDXF)),	// StdAfx.h
@@ -96,6 +104,21 @@ CDXFMakeOption::CDXFMakeOption()
 			strLayer[i] = g_szDefaultLayer[i];
 		m_strOption[i] = AfxGetApp()->GetProfileString(strRegKey, g_szSOrder[i], strLayer[i]);
 	}
+}
+
+void CDXFMakeOption::Initialize_Default(void)
+{
+	// ÃŞÌ«ÙÄİ’è‚Å‰Šú‰»
+	int		i;
+
+	for ( i=0; i<SIZEOF(g_szNOrder); i++ )
+		m_unNums[i] = g_dfNOrder[i];
+	for ( i=0; i<SIZEOF(g_szDOrder); i++ )
+		m_udNums[i] = g_dfDOrder[i];
+	for ( i=0; i<SIZEOF(g_szBOrder); i++ )
+		m_ubFlags[i] = g_dfBOrder[i];
+
+	// CStringŒ^µÌß¼®İ‚ÍÈ—ª
 }
 
 /////////////////////////////////////////////////////////////////////////////

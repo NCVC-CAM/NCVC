@@ -80,17 +80,30 @@ BOOL CDXFChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 	if ( !pDoc )
 		return FALSE;
 	CMDIChildWnd*	pChild = AfxGetNCVCMainWnd()->MDIGetActive();
-	return pDoc->RouteCmdToAllViews(pChild ? pChild->GetActiveView() : NULL,
-		nID, nCode, pExtra, pHandlerInfo);
+	CView*	pView;
+	if ( pDoc->IsDocFlag(DXFDOC_BIND) ) {
+		pDoc = pDoc->GetBindParentDoc();
+		if ( !pDoc )
+			return FALSE;
+		pView = NULL;
+	}
+	else
+		pView = pChild ? pChild->GetActiveView() : NULL;
+	return pDoc->RouteCmdToAllViews(pView, nID, nCode, pExtra, pHandlerInfo);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFChild ÒÝÊÞŠÖ”
 
-void CDXFChild::SetDataInfo(int nLine, int nCircle, int nArc, int nEllipse, int nPoint)
+void CDXFChild::SetDataInfo(const CDXFDoc* pDoc)
 {
 	CString		str;
-	str.Format(ID_DXFST_DATAINFO_F, nLine, nCircle, nArc, nEllipse, nPoint);
+	str.Format(ID_DXFST_DATAINFO_F,
+				pDoc->GetDxfDataCnt(DXFLINEDATA),
+				pDoc->GetDxfDataCnt(DXFCIRCLEDATA),
+				pDoc->GetDxfDataCnt(DXFARCDATA),
+				pDoc->GetDxfDataCnt(DXFELLIPSEDATA),
+				pDoc->GetDxfDataCnt(DXFPOINTDATA) );
 	m_wndStatusBar.SetPaneText(
 		m_wndStatusBar.CommandToIndex(ID_DXFST_DATAINFO), str);
 }

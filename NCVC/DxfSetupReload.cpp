@@ -47,6 +47,7 @@ BOOL CDxfSetupReload::OnInitDialog()
 	// •W€Ø½ÄÎÞ¯¸½‚ð»ÌÞ¸×½‰»
 	m_ctReloadList.SubclassDlgItem(IDC_DXF_RELOADLIST, this);
 
+	int			n;
 	CDXFDoc*	pDoc;
 	CWnd*		pStatic = GetDlgItem(IDC_DXF_RELOADLIST_ST);
 	CString		strPath;
@@ -56,10 +57,15 @@ BOOL CDxfSetupReload::OnInitDialog()
 	for ( POSITION pos=AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetFirstDocPosition(); pos; ) {
 		pDoc = static_cast<CDXFDoc*>(AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetNextDoc(pos));
 		// ˆê’U½ÀÃ¨¯¸ºÝÄÛ°Ù‚É¾¯Ä‚µ‚ÄÊß½•\Ž¦‚ÌÅ“K‰»(shlwapi.h)
-		::PathSetDlgItemPath(m_hWnd, IDC_DXF_RELOADLIST_ST, pDoc->GetPathName());
-		// ‚»‚ÌÃ·½Ä‚ðŽæ“¾‚µ‚ÄØ½ÄºÝÄÛ°Ù‚É¾¯Ä
-		pStatic->GetWindowText(strPath);
-		m_ctReloadList.SetCheck(m_ctReloadList.AddString(strPath), pDoc->IsDocFlag(DXFDOC_RELOAD));
+		strPath = pDoc->GetPathName();
+		if ( !strPath.IsEmpty() ) {
+			::PathSetDlgItemPath(m_hWnd, IDC_DXF_RELOADLIST_ST, strPath);
+			// ‚»‚ÌÃ·½Ä‚ðŽæ“¾‚µ‚ÄØ½ÄºÝÄÛ°Ù‚É¾¯Ä
+			pStatic->GetWindowText(strPath);
+			n = m_ctReloadList.AddString(strPath);
+			m_ctReloadList.SetCheck(n, pDoc->IsDocFlag(DXFDOC_RELOAD));
+			m_ctReloadList.SetItemDataPtr(n, pDoc);
+		}
 	}
 	m_ctReloadList.SendMessage(WM_SETREDRAW, TRUE);
 	m_ctReloadList.SetCurSel(0);
@@ -70,11 +76,11 @@ BOOL CDxfSetupReload::OnInitDialog()
 
 void CDxfSetupReload::OnOK() 
 {
-	int		nCnt = 0;
 	CDXFDoc*	pDoc;
-	for ( POSITION pos=AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetFirstDocPosition(); pos; ) {
-		pDoc = (CDXFDoc *)(AfxGetNCVCApp()->GetDocTemplate(TYPE_DXF)->GetNextDoc(pos));
-		pDoc->SetDocFlag(DXFDOC_RELOAD, m_ctReloadList.GetCheck(nCnt++)==1 ? TRUE : FALSE);
+
+	for ( int i=0; i<m_ctReloadList.GetCount(); i++ ) {
+		pDoc = reinterpret_cast<CDXFDoc*>(m_ctReloadList.GetItemDataPtr(i));
+		pDoc->SetDocFlag(DXFDOC_RELOAD, m_ctReloadList.GetCheck(i)==BST_CHECKED ? TRUE : FALSE);
 	}
 
 //	__super::OnOK();

@@ -9,23 +9,6 @@
 #include "DXFMakeOption.h"
 #include "MCOption.h"
 
-// CNCDoc ﾌﾗｸﾞ
-enum NCDOCFLG {
-	NCDOC_ERROR = 0,	// ﾄﾞｷｭﾒﾝﾄ読み込みｴﾗｰ
-	NCDOC_CUTCALC,		// 切削時間計算ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
-	NCDOC_REVISEING,	// 補正計算行うかどうか
-	NCDOC_COMMENTWORK,	// ｺﾒﾝﾄでﾜｰｸ矩形が指示された
-		NCDOC_COMMENTWORK_R,
-		NCDOC_COMMENTWORK_Z,
-		NCDOC_CYLINDER,		// ﾐﾙ加工の円柱ﾓｰﾄﾞ
-	NCDOC_MAXRECT,		// 最大移動矩形の描画
-	NCDOC_WRKRECT,		// ﾜｰｸ矩形の描画
-	NCDOC_THUMBNAIL,	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
-	NCDOC_LATHE,		// NC旋盤ﾓｰﾄﾞ
-	NCDOC_WIRE,			// ﾜｲﾔ加工ﾓｰﾄﾞ
-		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[12]
-};
-
 enum NCCOMMENT {		// g_szNCcomment[]
 	ENDMILL = 0, DRILL, TAP, REAMER, 
 	WORKRECT, WORKCYLINDER,
@@ -47,7 +30,7 @@ enum ENNCOPERATION {
 	NCADD, NCINS, NCMOD
 };
 
-class CNCDoc : public CDocBase<NCDOC_FLGNUM>
+class CNCDoc : public CDocBase
 {
 	CWinThread*	m_pCutcalcThread;	// 切削時間計算ｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
@@ -63,8 +46,7 @@ class CNCDoc : public CDocBase<NCDOC_FLGNUM>
 	CStringArray	m_obMacroFile;	// ﾏｸﾛ展開一時ﾌｧｲﾙ
 	double		m_dMove[2],		// 移動距離, 切削移動距離
 				m_dCutTime;		// 切削時間
-	CRect3D		m_rcMax,		// 最大ｵﾌﾞｼﾞｪｸﾄ(移動)矩形
-				m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
+	CRect3D		m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
 				m_rcWorkCo;		// ｺﾒﾝﾄ指示
 	//
 	void	SetMaxRect(const CNCdata* pData) {
@@ -153,9 +135,6 @@ public:
 		return m_nTraceStart;
 	}
 
-	CRect3D	GetMaxRect(void) const {
-		return m_rcMax;
-	}
 	CRect3D	GetWorkRect(void) const {
 		return m_rcWork;
 	}

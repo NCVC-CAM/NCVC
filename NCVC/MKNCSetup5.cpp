@@ -58,10 +58,10 @@ BOOL CMKNCSetup5::OnInitDialog()
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParentSheet() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	m_dTolerance		= pOpt->m_dTolerance;
-	m_nTolerance		= pOpt->m_nTolerance;
-	m_nOptimaizeDrill	= pOpt->m_nOptimaizeDrill;
-	m_dDrillMargin		= pOpt->m_dDrillMargin;
+	m_dTolerance		= pOpt->MIL_D_TOLERANCE;
+	m_nTolerance		= pOpt->MIL_I_TOLERANCE;
+	m_nOptimaizeDrill	= pOpt->MIL_I_OPTIMAIZEDRILL;
+	m_dDrillMargin		= pOpt->MIL_D_DRILLMARGIN;
 	EnableControl_Drill();
 
 	UpdateData(FALSE);
@@ -79,12 +79,12 @@ void CMKNCSetup5::OnSelchangeDrill()
 BOOL CMKNCSetup5::OnApply() 
 {
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->m_dTolerance		= fabs((double)m_dTolerance);
-	if ( pOpt->m_dTolerance < NCMIN )
-		pOpt->m_dTolerance = NCMIN;
-	pOpt->m_nTolerance		= m_nTolerance;
-	pOpt->m_nOptimaizeDrill	= m_nOptimaizeDrill;
-	pOpt->m_dDrillMargin	= fabs((double)m_dDrillMargin);
+	pOpt->MIL_D_TOLERANCE		= fabs((double)m_dTolerance);
+	if ( pOpt->MIL_D_TOLERANCE < NCMIN )
+		pOpt->MIL_D_TOLERANCE = NCMIN;
+	pOpt->MIL_I_TOLERANCE		= m_nTolerance;
+	pOpt->MIL_I_OPTIMAIZEDRILL	= m_nOptimaizeDrill;
+	pOpt->MIL_D_DRILLMARGIN		= fabs((double)m_dDrillMargin);
 
 	return TRUE;
 }

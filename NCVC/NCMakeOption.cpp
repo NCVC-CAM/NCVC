@@ -8,45 +8,37 @@
 #include "NCMakeMillOpt.h"
 #include "NCMakeLatheOpt.h"
 
+using namespace boost;
+
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
 #endif
-//#define	_DEBUGOLD
-#undef	_DEBUGOLD
+
+/////////////////////////////////////////////////////////////////////////////
+//	boost::proterty_tree égÇ¶ÇªÇ§Ç‚ÇØÇ«ÅAílÇÃâ°Ç…ÉRÉÅÉìÉgì¸ÇÍÇÁÇÍÇ»Ç¢ÇÃÇ≈ãpâ∫
+//	ëºÅAspiritÇÃç\ï∂ñÿÇ∆Ç©égÇ¶ÇªÇ§Ç‚ÇØÇ«ÅAñ ì|Ç»ÇÃÇ≈ tokenizer
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCMakeOption ÉNÉâÉXÇÃç\íz/è¡ñ≈
 
-CNCMakeOption::CNCMakeOption(
-	int nCnt0, LPCTSTR* pszNOrder, const int*    pdfNOrder, int*     punNums,
-	int nCnt1, LPCTSTR* pszDOrder, const double* pdfDOrder, double*  pudNums,
-	int nCnt2, LPCTSTR* pszBOrder, const BOOL*   pdfBOrder, BOOL*    pubNums,
-	int nCnt3, LPCTSTR* pszSOrder, LPCTSTR*      pdfSOrder,
+CNCMakeOption::CNCMakeOption(NCMAKEOPTION makeopt[],
 	int nComment, LPCTSTR* pszComment, int nSaveOrder, LPSAVEORDER pSaveOrder)
 {
-	int		i, nLen;
+	int		i, j, nLen;
 
 	// intå^µÃﬂºÆ›
-	m_nOrderCnt[0] = nCnt0;
-	m_szNOrder	= pszNOrder;
-	m_dfNOrder	= pdfNOrder;
-	m_pnNums	= punNums;
+	m_MakeOpt[0] = makeopt[0];
+	m_pIntOpt = new int[m_MakeOpt[0].nOrderCnt];
 	// doubleå^µÃﬂºÆ›
-	m_nOrderCnt[1] = nCnt1;
-	m_szDOrder	= pszDOrder;
-	m_dfDOrder	= pdfDOrder;
-	m_pdNums	= pudNums;
+	m_MakeOpt[1] = makeopt[1];
+	m_pDblOpt = new double[m_MakeOpt[1].nOrderCnt];
 	// BOOLå^µÃﬂºÆ›
-	m_nOrderCnt[2] = nCnt2;
-	m_szBOrder	= pszBOrder;
-	m_dfBOrder	= pdfBOrder;
-	m_pbFlags	= pubNums;
+	m_MakeOpt[2] = makeopt[2];
+	m_pFlgOpt = new BOOL[m_MakeOpt[2].nOrderCnt];
 	// CStringå^µÃﬂºÆ›
-	m_nOrderCnt[3] = nCnt3;
-	m_szSOrder	= pszSOrder;
-	m_dfSOrder	= pdfSOrder;
+	m_MakeOpt[3] = makeopt[3];
 	// SaveMakeOption()èÓïÒ
 	m_nComment  = nComment;
 	m_szComment = pszComment;
@@ -55,68 +47,42 @@ CNCMakeOption::CNCMakeOption(
 
 	// ñΩóﬂí∑ÇÃåvéZ(GetInsertSpace()Ç≈égóp)
 	m_nOrderLength = 0;
-	for ( i=0; i<m_nOrderCnt[0]; i++ ) {
-		if ( m_nOrderLength < (nLen=lstrlen(m_szNOrder[i])) )
-			m_nOrderLength = nLen;
-	}
-	for ( i=0; i<m_nOrderCnt[1]; i++ ) {
-		if ( m_nOrderLength < (nLen=lstrlen(m_szDOrder[i])) )
-			m_nOrderLength = nLen;
-	}
-	for ( i=0; i<m_nOrderCnt[2]; i++ ) {
-		if ( m_nOrderLength < (nLen=lstrlen(m_szBOrder[i])) )
-			m_nOrderLength = nLen;
-	}
-	for ( i=0; i<m_nOrderCnt[3]; i++ ) {
-		if ( m_nOrderLength < (nLen=lstrlen(m_szSOrder[i])) )
-			m_nOrderLength = nLen;
+	for ( j=0; j<NC_MAXOD; j++ ) {
+		for ( i=0; i<m_MakeOpt[j].nOrderCnt; i++ ) {
+			if ( m_nOrderLength < (nLen=lstrlen(m_MakeOpt[j].pszOrder[i])) )
+				m_nOrderLength = nLen;
+		}
 	}
 	m_nOrderLength += 2;	// 2ï∂éöï™ΩÕﬂ∞Ω
+}
+
+CNCMakeOption::~CNCMakeOption()
+{
+	delete[]	m_pIntOpt;
+	delete[]	m_pDblOpt;
+	delete[]	m_pFlgOpt;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // ’∞ªﬁ“› ﬁä÷êî
 
-void CNCMakeOption::InitialDefault(void)
-{
-	extern	LPTSTR	g_pszExecDir;	// é¿çs√ﬁ®⁄∏ƒÿ(NCVC.cpp)
-	int		i;
-
-	for ( i=0; i<m_nOrderCnt[0]; i++ )
-		m_pnNums[i] = m_dfNOrder[i];
-	for ( i=0; i<m_nOrderCnt[1]; i++ )
-		m_pdNums[i] = m_dfDOrder[i];
-	for ( i=0; i<m_nOrderCnt[2]; i++ )
-		m_pbFlags[i] = m_dfBOrder[i];
-	m_strOption.RemoveAll();
-	for ( i=0; i<m_nOrderCnt[3]; i++ )
-		m_strOption.Add(m_dfSOrder[i]);
-
-	CString	strTmp;
-	ASSERT( MKNC_STR_HEADER == MKLA_STR_HEADER );
-	for ( i=MKNC_STR_HEADER; i<=MKNC_STR_FOOTER; i++ ) {
-		strTmp = m_strOption[i];
-		m_strOption[i] = g_pszExecDir + strTmp;
-	}
-}
-
 BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 {
 	// ñΩóﬂÇ"="Ç∆";"(∫“›ƒ)Ç≈ï™äÑ
-	typedef boost::tokenizer< boost::escaped_list_separator<TCHAR> > tokenizer;
-	static	boost::escaped_list_separator<TCHAR> sep("", "=;", "\"");	// ¥Ωπ∞Ãﬂñ≥éã
+	typedef tokenizer< escaped_list_separator<TCHAR> > tokenizer;
+	static	escaped_list_separator<TCHAR> sep("", "=;", "\"");	// ¥Ωπ∞Ãﬂñ≥éã
 	// êÿçÌèåèÇÃñΩóﬂåüç∏(ëÂï∂éöè¨ï∂éöÇÕñ≥éãÇ∑ÇÈÇ™ñΩóﬂÇÕäÆëSàÍív)
-	CStringKeyIndex		stNOrder(m_nOrderCnt[0], m_szNOrder);
-	CStringKeyIndex		stDOrder(m_nOrderCnt[1], m_szDOrder);
-	CStringKeyIndex		stBOrder(m_nOrderCnt[2], m_szBOrder);
-	CStringKeyIndex		stSOrder(m_nOrderCnt[3], m_szSOrder);
+	CStringKeyIndex	stNOrder(m_MakeOpt[0].nOrderCnt, m_MakeOpt[0].pszOrder);
+	CStringKeyIndex	stDOrder(m_MakeOpt[1].nOrderCnt, m_MakeOpt[1].pszOrder);
+	CStringKeyIndex	stBOrder(m_MakeOpt[2].nOrderCnt, m_MakeOpt[2].pszOrder);
+	CStringKeyIndex	stSOrder(m_MakeOpt[3].nOrderCnt, m_MakeOpt[3].pszOrder);
 
 #ifdef _DEBUGOLD
 	CMagaDbg	dbg("CNCMakeOption::ReadMakeOption()\nStart", DBG_GREEN);
 #endif
 
 	// Ç‹Ç∏√ﬁÃ´ŸƒÇ≈èâä˙âª
-	InitialDefault();
+	InitialDefault();		// äeîhê∂∏◊Ω
 	if ( !lpszInitFile || lstrlen(lpszInitFile)<=0 ) {
 		m_strInitFile.Empty();
 		return TRUE;
@@ -129,7 +95,7 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 
 	tokenizer::iterator it;
 	std::string	str, strOrder, strResult;
-	tokenizer	tok( str, sep );
+	tokenizer	tok(str, sep);
 
 	CString	strTmp, strBuf;
 	TCHAR	szCurrent[_MAX_PATH], szFile[_MAX_PATH];
@@ -166,26 +132,26 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 #endif
 			// ñΩóﬂåüç∏(intå^)
 			n = stNOrder.GetIndex(strOrder.c_str());
-			if ( n>=0 && n<m_nOrderCnt[0] ) {
-				m_pnNums[n] = strResult.empty() ? 0 : atoi(strResult.c_str());
+			if ( 0<=n && n<m_MakeOpt[0].nOrderCnt ) {
+				m_pIntOpt[n] = strResult.empty() ? 0 : lexical_cast<int>(strResult);
 				continue;
 			}
 			// ñΩóﬂåüç∏(doubleå^)
 			n = stDOrder.GetIndex(strOrder.c_str());
-			if ( n>=0 && n<m_nOrderCnt[1] ) {
-				m_pdNums[n] = strResult.empty() ? 0 : atof(strResult.c_str());
+			if ( 0<=n && n<m_MakeOpt[1].nOrderCnt ) {
+				m_pDblOpt[n] = strResult.empty() ? 0 : lexical_cast<double>(strResult);
 				continue;
 			}
 			// ñΩóﬂåüç∏(BOOLå^)
 			n = stBOrder.GetIndex(strOrder.c_str());
-			if ( n>=0 && n<m_nOrderCnt[2] ) {
-				m_pbFlags[n] = strResult.empty() ? FALSE :
-						atoi(strResult.c_str())!=0 ? TRUE : FALSE;
+			if ( 0<=n && n<m_MakeOpt[2].nOrderCnt ) {
+				m_pFlgOpt[n] = strResult.empty() ? FALSE :
+						(lexical_cast<int>(strResult) ? TRUE : FALSE);
 				continue;
 			}
 			// ñΩóﬂåüç∏(CStringå^)
 			n = stSOrder.GetIndex(strOrder.c_str());
-			if ( n>=0 && n<m_nOrderCnt[3] ) {
+			if ( 0<=n && n<m_MakeOpt[3].nOrderCnt ) {
 				if ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER ) {
 					// ëäëŒ ﬂΩÇ»ÇÁê‚ëŒ ﬂΩÇ…ïœä∑
 					if ( !strResult.empty() &&
@@ -205,6 +171,11 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 		e->Delete();
 		bResult = FALSE;
 	}
+	catch ( const bad_lexical_cast& ) {
+		strBuf.Format(IDS_ERR_DXF2NCDINIT, m_strInitFile);
+		AfxMessageBox(strBuf, MB_OK|MB_ICONSTOP);
+		bResult = FALSE;
+	}
 
 	// ∂⁄›ƒ√ﬁ®⁄∏ƒÿÇå≥Ç…ñﬂÇ∑
 	::SetCurrentDirectory(szCurrent);
@@ -214,7 +185,7 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 
 BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 {
-	int		i, n, nLen;
+	int		i, n, m, nLen;
 	CString	strBuf, strResult;
 
 #ifdef _DEBUG
@@ -236,26 +207,27 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 		// ñΩóﬂÇÃèëÇ´èoÇµ
 		for ( i=0; i<m_nSaveOrder; i++ ) {
 			n = m_pSaveOrder[i].nID;
-			switch ( m_pSaveOrder[i].enType ) {
+			m = m_pSaveOrder[i].enType;
+			switch ( m ) {
 			case NC_PAGE:	// Õﬂ∞ºﬁÕØ¿ﬁ∞
 				strBuf.Format("#--> Page:%d\n", n);
 				break;
 			case NC_NUM:	// intå^
 				strBuf.Format("%s%s= %8d     ; %s\n",
-					m_szNOrder[n], GetInsertSpace(lstrlen(m_szNOrder[n])),
-					m_pnNums[n],
+					m_MakeOpt[m].pszOrder[n], GetInsertSpace(lstrlen(m_MakeOpt[m].pszOrder[n])),
+					m_pIntOpt[n],
 					m_pSaveOrder[i].lpszComment);
 				break;
 			case NC_DBL:	// doubleå^
 				strBuf.Format("%s%s= %12.3f ; %s\n",
-					m_szDOrder[n], GetInsertSpace(lstrlen(m_szDOrder[n])),
-					m_pdNums[n],
+					m_MakeOpt[m].pszOrder[n], GetInsertSpace(lstrlen(m_MakeOpt[m].pszOrder[n])),
+					m_pDblOpt[n],
 					m_pSaveOrder[i].lpszComment);
 				break;
 			case NC_FLG:	// BOOLå^
 				strBuf.Format("%s%s= %8d     ; %s\n",
-					m_szBOrder[n], GetInsertSpace(lstrlen(m_szBOrder[n])),
-					m_pbFlags[n] ? 1 : 0,
+					m_MakeOpt[m].pszOrder[n], GetInsertSpace(lstrlen(m_MakeOpt[m].pszOrder[n])),
+					m_pFlgOpt[n] ? 1 : 0,
 					m_pSaveOrder[i].lpszComment);
 				break;
 			case NC_STR:	// CStringå^
@@ -271,7 +243,7 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 				// èëéÆÇêÆÇ¶ÇÈÇΩÇﬂÇ…écΩÕﬂ∞ΩÇÃåvéZ
 				nLen = 11 - strResult.GetLength();
 				strBuf.Format("%s%s= \"%s\"%s; %s\n",
-					m_szSOrder[n], GetInsertSpace(lstrlen(m_szSOrder[n])),
+					m_MakeOpt[m].pszOrder[n], GetInsertSpace(lstrlen(m_MakeOpt[m].pszOrder[n])),
 					strResult, CString(' ', max(1, nLen)),
 					m_pSaveOrder[i].lpszComment);
 				break;

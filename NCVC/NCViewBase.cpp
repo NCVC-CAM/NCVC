@@ -23,25 +23,21 @@ using namespace boost;
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewBase クラス
 
-BEGIN_MESSAGE_MAP(CNCViewBase, CView)
-	ON_WM_CREATE()
+BEGIN_MESSAGE_MAP(CNCViewBase, CViewBase)
 	ON_WM_CONTEXTMENU()
 	ON_WM_KEYDOWN()
-	ON_WM_LBUTTONDOWN()
-	ON_WM_RBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_RBUTTONUP()
 	ON_WM_LBUTTONDBLCLK()
 	ON_WM_MOUSEMOVE()
-	ON_WM_MOUSEWHEEL()
 	ON_WM_MOUSEACTIVATE()
 	ON_WM_ERASEBKGND()
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCViewBase::OnUpdateEditCopy)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCViewBase::OnUpdateMoveKey)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewBase::OnUpdateRoundKey)
 	ON_COMMAND(ID_EDIT_COPY, &CNCViewBase::OnEditCopy)
-	ON_COMMAND_RANGE(ID_VIEW_UP,     ID_VIEW_RT,    &CNCViewBase::OnMoveKey)
-	ON_COMMAND_RANGE(ID_VIEW_BEFORE, ID_VIEW_LENSN, &CNCViewBase::OnLensKey)
+	ON_COMMAND_RANGE(ID_VIEW_UP,  ID_VIEW_RT,    &CNCViewBase::OnMoveKey)
+	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &CNCViewBase::OnLensKey)
 	ON_MESSAGE (WM_USERVIEWFITMSG, &CNCViewBase::OnUserViewFitMsg)
 	ON_MESSAGE (WM_USERACTIVATEPAGE, &CNCViewBase::OnUserActivatePage)
 END_MESSAGE_MAP()
@@ -61,6 +57,8 @@ BOOL CNCViewBase::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO
 
 void CNCViewBase::OnInitialUpdate()
 {
+	// ｶﾞｲﾄﾞﾃﾞｰﾀ
+	SetGuideData();
 	// 最大ﾃﾞｰﾀ矩形の補填
 	SetDataMaxRect();
 	//
@@ -181,7 +179,6 @@ void CNCViewBase::DrawGuideDivi(CDC* pDC, size_t x, size_t y)
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	CPointD	pt(-pOpt->GetGuideLength(x), 0), ptDraw;
-	double	dFactor = m_dFactor * LOMETRICFACTOR;
 
 	pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenOrg(x));
 	for ( ; pt.x<=pOpt->GetGuideLength(x); pt.x+=1.0 ) {
@@ -191,7 +188,7 @@ void CNCViewBase::DrawGuideDivi(CDC* pDC, size_t x, size_t y)
 			pt.y = 1.0;
 		else
 			pt.y = 0.5;
-		ptDraw = pt * dFactor;
+		ptDraw = pt * m_dFactor;
 		pDC->MoveTo(ptDraw);
 		pDC->LineTo((int)ptDraw.x, -(int)ptDraw.y);
 	}
@@ -205,7 +202,7 @@ void CNCViewBase::DrawGuideDivi(CDC* pDC, size_t x, size_t y)
 			pt.x = 1.0;
 		else
 			pt.x = 0.5;
-		ptDraw = pt * dFactor;
+		ptDraw = pt * m_dFactor;
 		pDC->MoveTo(ptDraw);
 		pDC->LineTo(-(int)ptDraw.x, (int)ptDraw.y);
 	}
@@ -269,7 +266,7 @@ void CNCViewBase::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pD
 	if ( bActivate && !IsThumbnail() ) {
 		// CNCViewSplit::SetActivePane() からのｱｸﾃｨﾌﾞ設定に対応
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dFactor,
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dFactor/LOMETRICFACTOR,
 			m_strGuide.Left(m_enView==NCDRAWVIEW_XYZ ? 3 : 2));
 	}
 	CView::OnActivateView(bActivate, pActivateView, pDeactiveView);
@@ -319,7 +316,7 @@ void CNCViewBase::OnViewLensComm(void)
 		else if ( GetDocument()->IsDocFlag(NCDOC_WRKRECT) )
 			ConvertWorkRect();
 		// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰに情報表示
-		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dFactor,
+		static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dFactor/LOMETRICFACTOR,
 			m_strGuide.Left(m_enView==NCDRAWVIEW_XYZ ? 3 : 2));
 	}
 	// ﾋﾞｭｰの再描画
@@ -338,18 +335,9 @@ CNCDoc* CNCViewBase::GetDocument()
 // CNCViewBase クラスのメッセージ ハンドラ
 // 各派生Viewの共通処理
 
-int CNCViewBase::OnCreate(LPCREATESTRUCT lpCreateStruct) 
-{
-	// ｶﾞｲﾄﾞﾃﾞｰﾀ
-	SetGuideData();
-
-	// ﾏｯﾋﾟﾝｸﾞﾓｰﾄﾞの変更など
-	return CViewBase::OnCreate(lpCreateStruct);
-}
-
 void CNCViewBase::OnContextMenu(CWnd* pWnd, CPoint point) 
 {
-	CViewBase::OnContextMenu(point, IDR_NCPOPUP1);
+	CViewBase::_OnContextMenu(point, IDR_NCPOPUP1);
 }
 
 void CNCViewBase::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -367,25 +355,15 @@ void CNCViewBase::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	__super::OnKeyDown(nChar, nRepCnt, nFlags);
 }
 
-void CNCViewBase::OnLButtonDown(UINT nFlags, CPoint point) 
-{
-	CViewBase::OnLButtonDown(point);
-}
-
-void CNCViewBase::OnRButtonDown(UINT nFlags, CPoint point) 
-{
-	CViewBase::OnRButtonDown(point);
-}
-
 void CNCViewBase::OnLButtonUp(UINT nFlags, CPoint point) 
 {
-	if ( CViewBase::OnLButtonUp(point) == 1 )
+	if ( CViewBase::_OnLButtonUp(point) == 1 )
 		OnLensKey(ID_VIEW_LENSP);		// 拡大処理
 }
 
 void CNCViewBase::OnRButtonUp(UINT nFlags, CPoint point) 
 {
-	switch ( CViewBase::OnRButtonUp(point) ) {
+	switch ( CViewBase::_OnRButtonUp(point) ) {
 	case 1:		// 拡大処理
 		OnLensKey(ID_VIEW_LENSP);
 		break;
@@ -414,15 +392,7 @@ void CNCViewBase::OnLButtonDblClk(UINT nFlags, CPoint point)
 
 void CNCViewBase::OnMouseMove(UINT nFlags, CPoint point) 
 {
-	CViewBase::OnMouseMove(nFlags, point);
-}
-
-BOOL CNCViewBase::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt) 
-{
-	if ( CViewBase::OnMouseWheel(nFlags, zDelta, pt) )
-		OnViewLensComm();
-
-	return TRUE;
+	CViewBase::_OnMouseMove(nFlags, point);
 }
 
 int CNCViewBase::OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message)
@@ -436,7 +406,7 @@ int CNCViewBase::OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message)
 
 void CNCViewBase::OnUpdateEditCopy(CCmdUI* pCmdUI) 
 {
-	pCmdUI->Enable(TRUE);
+	pCmdUI->Enable(TRUE);	// OpenGLﾋﾞｭｰでﾌﾞﾛｯｸしているので保険
 }
 
 void CNCViewBase::OnUpdateMoveKey(CCmdUI* pCmdUI) 
@@ -475,9 +445,6 @@ void CNCViewBase::OnMoveKey(UINT nID)
 void CNCViewBase::OnLensKey(UINT nID)
 {
 	switch ( nID ) {
-	case ID_VIEW_BEFORE:
-		CViewBase::OnBeforeMagnify();
-		break;
 	case ID_VIEW_FIT:
 		CViewBase::OnViewFit(m_rcDataMax);
 		break;
@@ -524,5 +491,5 @@ BOOL CNCViewBase::OnEraseBkgnd(CDC* pDC)
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col1 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND1),
 				col2 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND2);
-	return CViewBase::OnEraseBkgnd(pDC, col1, col2);
+	return CViewBase::_OnEraseBkgnd(pDC, col1, col2);
 }

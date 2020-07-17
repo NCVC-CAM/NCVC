@@ -41,13 +41,10 @@ CExecSetupDlg::CExecSetupDlg() : CDialog(CExecSetupDlg::IDD, NULL)
 	//}}AFX_DATA_INIT
 
 	// Œ»Ý“o˜^Ï‚Ý‚Ìî•ñ‚ÍC“o˜^EíœÌ×¸Þ‚ð¸Ø±
-	CExecList*		pExeList = AfxGetNCVCApp()->GetExecList();
-	CExecOption*	pExec;
-	for ( POSITION pos=pExeList->GetHeadPosition(); pos; ) {
-		pExec = pExeList->GetNext(pos);
+	PLIST_FOREACH(CExecOption* pExec, AfxGetNCVCApp()->GetExecList())
 		pExec->m_bDlgAdd = FALSE;
 		pExec->m_bDlgDel = FALSE;
-	}
+	END_FOREACH
 }
 
 void CExecSetupDlg::DoDataExchange(CDataExchange* pDX)
@@ -124,8 +121,7 @@ BOOL CExecSetupDlg::OnInitDialog()
 {
 	__super::OnInitDialog();
 
-	int			i;
-	POSITION	pos;
+	int			i = 0;
 	CExecList*	pExeList = AfxGetNCVCApp()->GetExecList();
 
 	// Ø½ÄºÝÄÛ°Ù‚Ì²Ò°¼Þ¾¯Ä
@@ -140,16 +136,16 @@ BOOL CExecSetupDlg::OnInitDialog()
 	lvi.iSubItem = 0;
 	lvi.iImage = I_IMAGECALLBACK;
 	lvi.pszText = LPSTR_TEXTCALLBACK;
-	for ( i=0, pos=pExeList->GetHeadPosition(); pos; i++ ) {
-		lvi.iItem  = i;
-		lvi.lParam = (LPARAM)(pExeList->GetNext(pos));
+	PLIST_FOREACH(CExecOption* pExec, pExeList)
+		lvi.iItem  = i++;
+		lvi.lParam = (LPARAM)pExec;
 		if ( m_ctList.InsertItem(&lvi) < 0 ) {
 			CString	strMsg;
-			strMsg.Format(IDS_ERR_ADDITEM, i+1);
+			strMsg.Format(IDS_ERR_ADDITEM, i);
 			AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 			break;
 		}
-	}
+	END_FOREACH
 	// —ñ•
 	m_ctList.SetColumnWidth(0, LVSCW_AUTOSIZE);
 	// Ú×•\Ž¦

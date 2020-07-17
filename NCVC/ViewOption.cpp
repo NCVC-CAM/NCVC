@@ -12,6 +12,10 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+using namespace boost;
+using std::string;
+
+extern	LPCTSTR	gg_szDelimiter;	// ":"
 extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 extern	LPCTSTR	g_szViewColDef[] = {
@@ -460,11 +464,11 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_WHEEL));
-	strResult.Format("%d", m_bMouseWheel ? 1 : 0);
+	strResult = lexical_cast<string>(m_bMouseWheel ? 1 : 0).c_str();
 	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
 		return FALSE;
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_WHEELTYPE));
-	strResult.Format("%d", m_nWheelType);
+	strResult = lexical_cast<string>(m_nWheelType).c_str();
 	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
 		return FALSE;
 	VERIFY(strEntry.LoadString(IDS_REG_CUSTOMCOLOR));
@@ -484,7 +488,7 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_LINETYPE));
 	for ( i=0; i<SIZEOF(m_nLineType); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
-		strResult.Format("%d", m_nLineType[i]);
+		strResult = lexical_cast<string>(m_nLineType[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
@@ -492,7 +496,7 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
 	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
 		VERIFY(strEntry.LoadString(g_nFlagID[i]));
-		strResult.Format("%d", m_bNCFlag[i] ? 1 : 0);
+		strResult = lexical_cast<string>(m_bNCFlag[i] ? 1 : 0).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
 			return FALSE;
 	}
@@ -513,7 +517,7 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_LINETYPE));
 	for ( i=0; i<SIZEOF(m_nNCLineType); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
-		strResult.Format("%d", m_nNCLineType[i]);
+		strResult = lexical_cast<string>(m_nNCLineType[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
@@ -526,7 +530,7 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_TRACESPEED));
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
-		strResult.Format("%d", m_nTraceSpeed[i]);
+		strResult = lexical_cast<string>(m_nTraceSpeed[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
@@ -535,7 +539,7 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
 		return FALSE;
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
-	strResult.Format("%d", m_nMillType);
+	strResult = lexical_cast<string>(m_nMillType).c_str();
 	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
 		return FALSE;
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
@@ -544,14 +548,14 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW01));
 	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
-		strResult.Format("%d", m_nForceView01[i]);
+		strResult = lexical_cast<string>(m_nForceView01[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW02));
 	for ( i=0; i<SIZEOF(m_nForceView02); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
-		strResult.Format("%d", m_nForceView02[i]);
+		strResult = lexical_cast<string>(m_nForceView02[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
@@ -567,7 +571,7 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_LINETYPE));
 	for ( i=0; i<SIZEOF(m_nDXFLineType); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
-		strResult.Format("%d", m_nDXFLineType[i]);
+		strResult = lexical_cast<string>(m_nDXFLineType[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
@@ -697,7 +701,6 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 
 COLORREF ConvertSTRtoRGB(LPCTSTR lpszCol)
 {
-	extern	LPCTSTR	gg_szDelimiter;	// ":"
 	LPTSTR	lpsztok, lpszcontext, lpszBuf = NULL;
 	BYTE	col[3] = {0, 0, 0};
 
@@ -722,7 +725,9 @@ COLORREF ConvertSTRtoRGB(LPCTSTR lpszCol)
 
 CString ConvertRGBtoSTR(COLORREF col)
 {
-	CString	strRGB;
-	strRGB.Format("%d:%d:%d", GetRValue(col), GetGValue(col), GetBValue(col));
+	CString	strRGB = (
+		lexical_cast<string>((int)GetRValue(col)) + gg_szDelimiter +
+		lexical_cast<string>((int)GetGValue(col)) + gg_szDelimiter +
+		lexical_cast<string>((int)GetBValue(col)) ).c_str();
 	return strRGB;
 }

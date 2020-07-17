@@ -240,10 +240,10 @@ protected:
 	afx_msg void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);
 	afx_msg void OnSysColorChange();
 	afx_msg void OnNextPane();
-	afx_msg void OnUpdateEditCut(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateEditPaste(CCmdUI* pCmdUI);
 	afx_msg void OnViewToolbarCustom();
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
+	afx_msg void OnUpdateEditCut(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateEditPaste(CCmdUI* pCmdUI);
 	// ﾌｧｲﾙ再読込通知(from ChildBase.cpp)
 	afx_msg LRESULT	OnUserFileChange(WPARAM, LPARAM);
 	// ｱﾄﾞｲﾝ，外部ｱﾌﾟﾘｹｰｼｮﾝ起動ﾂｰﾙﾊﾞｰ用

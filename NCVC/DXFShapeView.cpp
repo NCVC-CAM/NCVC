@@ -261,19 +261,16 @@ void CDXFShapeView::OnUpdateShape(LPDXFADDSHAPE lpShape)
 	lpShape->pShape->SetTreeHandle(hTree);
 
 	// ‰ÁHŽwŽ¦‚Ì“o˜^
-	POSITION	pos;
-	CDXFworkingList*	pWorkList = lpShape->pShape->GetWorkList();
 	tvInsert.hParent = hTree;
 	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-	for ( pos=pWorkList->GetHeadPosition(); pos; ) {
-		tvInsert.item.lParam = reinterpret_cast<LPARAM>(pWorkList->GetNext(pos));
+	PLIST_FOREACH(auto ref, lpShape->pShape->GetWorkList())
+		tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 		GetTreeCtrl().InsertItem(&tvInsert);
-	}
-	COutlineList*	pOutline = lpShape->pShape->GetOutlineList();
-	for ( pos=pOutline->GetHeadPosition(); pos; ) {
-		tvInsert.item.lParam = reinterpret_cast<LPARAM>(pOutline->GetNext(pos));
+	END_FOREACH
+	PLIST_FOREACH(auto ref, lpShape->pShape->GetOutlineList())
+		tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 		GetTreeCtrl().InsertItem(&tvInsert);
-	}
+	END_FOREACH
 	if ( bExpand )
 		GetTreeCtrl().Expand(hTree, TVE_EXPAND);
 }
@@ -357,11 +354,8 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 {
 	DWORD		dwRoot = GetParentAssemble(m_hItemDrop);
 	BOOL		bCanNotOutline = FALSE, bOutline = FALSE;
-	POSITION	pos;
 	HTREEITEM	hLayerTree = NULL, hShapeTree;
 	CDXFshape*	pShape;
-	CDXFworkingList*	pWorkList;
-	COutlineList*		pOutlineList;
 
 	// ”z‰º‚ÌŒ`óÌßÛÊßÃ¨Šm”F
 	hShapeTree = GetTreeCtrl().GetChildItem(m_hItemDrag);
@@ -454,22 +448,20 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 			pShape->SetShapeAssemble((DXFSHAPE_ASSEMBLE)(dwRoot-1));
 		// ‰ÁHŽwŽ¦
 		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-		pWorkList = pShape->GetWorkList();
-		for ( pos=pWorkList->GetHeadPosition(); pos; ) {
-			tvInsert.item.lParam = reinterpret_cast<LPARAM>(pWorkList->GetNext(pos));
+		PLIST_FOREACH(auto ref, pShape->GetWorkList())
+			tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 			GetTreeCtrl().InsertItem(&tvInsert);
-		}
+		END_FOREACH
 		if ( dwRoot==ROOTTREE_LOCUS && bOutline ) {
 			// Œ³ÂØ°‚ªŽc‚Á‚Ä‚¢‚éó‘Ô‚ÅÎß²ÝÀíœ‚·‚é‚½‚ß
 			// ˆÈ~ÂØ°‘€ì‚ð‚·‚é‚ÆOnGetDispInfo()‚Å´×°‚Ì‰Â”\«‚ª‚ ‚é
 			pShape->DelOutlineData();	// —ÖŠs‰ÁHŽwŽ¦‘Síœ
 		}
 		else {
-			pOutlineList = pShape->GetOutlineList();
-			for ( pos=pOutlineList->GetHeadPosition(); pos; ) {
-				tvInsert.item.lParam = reinterpret_cast<LPARAM>(pOutlineList->GetNext(pos));
+			PLIST_FOREACH(auto ref, pShape->GetOutlineList())
+				tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 				GetTreeCtrl().InsertItem(&tvInsert);
-			}
+			END_FOREACH
 		}
 		// ˆÚ“®‘O‚Ìó‘Ô‚ð•œŒ³
 		if ( tvItem.state & TVIS_EXPANDED )
@@ -561,23 +553,20 @@ HTREEITEM CDXFShapeView::DragInsertShape(void)
 		m_pDragShape->SetShapeAssemble((DXFSHAPE_ASSEMBLE)(dwRoot-1));
 
 	// ‰ÁHŽwŽ¦‚Ì“o˜^
-	POSITION	pos;
 	tvInsert.hInsertAfter = TVI_LAST;
 	tvInsert.hParent = hTree;
 	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-	CDXFworkingList*	pWorkList = m_pDragShape->GetWorkList();
-	for ( pos=pWorkList->GetHeadPosition(); pos; ) {
-		tvInsert.item.lParam = reinterpret_cast<LPARAM>(pWorkList->GetNext(pos));
+	PLIST_FOREACH(auto ref, m_pDragShape->GetWorkList())
+		tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 		GetTreeCtrl().InsertItem(&tvInsert);
-	}
+	END_FOREACH
 	if ( dwRoot==ROOTTREE_LOCUS )
 		m_pDragShape->DelOutlineData();	// —ÖŠs‰ÁHŽwŽ¦‘Síœ
 	else {
-		COutlineList*	pOutlineList = m_pDragShape->GetOutlineList();
-		for ( pos=pOutlineList->GetHeadPosition(); pos; ) {
-			tvInsert.item.lParam = reinterpret_cast<LPARAM>(pOutlineList->GetNext(pos));
+		PLIST_FOREACH(auto ref, m_pDragShape->GetOutlineList())
+			tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 			GetTreeCtrl().InsertItem(&tvInsert);
-		}
+		END_FOREACH
 	}
 
 	return hTree;
@@ -636,14 +625,12 @@ void CDXFShapeView::DragLink(void)
 	}
 	else {
 		// ‰ÁHŽwŽ¦‚ÌÄ“o˜^(—ÖŠsŽwŽ¦‚Í–³‚µ)
-		POSITION	pos;
-		CDXFworkingList* pWorkList = pShape->GetWorkList();
-		for ( pos=pWorkList->GetHeadPosition(); pos; ) {
+		PLIST_FOREACH(auto ref, pShape->GetWorkList())
 			hTree = GetTreeCtrl().InsertItem(TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE|TVIF_PARAM,
 				LPSTR_TEXTCALLBACK, TREEIMG_WORK, TREEIMG_WORK, 0, 0,
-				reinterpret_cast<LPARAM>(pWorkList->GetNext(pos)), m_hItemDrop, TVI_LAST);
+				reinterpret_cast<LPARAM>(ref), m_hItemDrop, TVI_LAST);
 			ASSERT( hTree );
-		}
+		END_FOREACH
 		// Œ‹‡æ±²ÃÑ‚Ì‘I‘ð
 		GetTreeCtrl().SelectItem(m_hItemDrop);
 	}
@@ -855,12 +842,9 @@ void CDXFShapeView::AutoWorkingSet
 	// Œ`óî•ñ‚©‚ç‰ÁHŽwŽ¦‚ð“o˜^
 	int			i, j, nLoop;
 	const int	nLayerLoop = GetDocument()->GetLayerCnt();
-	POSITION	pos;
 	HTREEITEM	hTree;
 	CLayerData*			pLayer;
 	CDXFshape*			pShape;
-	COutlineList*		pOutlineList;
-	CDXFworkingOutline*	pOutline;
 
 	TVINSERTSTRUCT	tvInsert;
 	::ZeroMemory(&tvInsert, sizeof(TVINSERTSTRUCT));
@@ -882,20 +866,17 @@ void CDXFShapeView::AutoWorkingSet
 			tvInsert.hParent = hTree;
 			if ( !bAuto ) {
 				// •ûŒüEŠJŽnˆÊ’u‚È‚Ç‚Ì‰ÁHŽwŽ¦‚É‚Í IsAutoWorking() ‚ª–³‚¢
-				CDXFworkingList* pWorkList = pShape->GetWorkList();
-				for ( pos=pWorkList->GetHeadPosition(); pos; ) {
-					tvInsert.item.lParam = reinterpret_cast<LPARAM>(pWorkList->GetNext(pos));
+				PLIST_FOREACH(auto ref, pShape->GetWorkList())
+					tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
+					GetTreeCtrl().InsertItem(&tvInsert);
+				END_FOREACH
+			}
+			PLIST_FOREACH(auto ref, pShape->GetOutlineList())
+				if ( !bAuto || ref->IsAutoWorking() ) {
+					tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 					GetTreeCtrl().InsertItem(&tvInsert);
 				}
-			}
-			pOutlineList = pShape->GetOutlineList();
-			for ( pos=pOutlineList->GetHeadPosition(); pos; ) {
-				pOutline = pOutlineList->GetNext(pos);
-				if ( !bAuto || pOutline->IsAutoWorking() ) {
-					tvInsert.item.lParam = reinterpret_cast<LPARAM>(pOutline);
-					GetTreeCtrl().InsertItem(&tvInsert);
-				}
-			}
+			END_FOREACH
 			GetTreeCtrl().Expand(hTree, TVE_EXPAND);
 		}
 	}
@@ -1315,7 +1296,7 @@ void CDXFShapeView::OnGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
 	CObject*	pParam = reinterpret_cast<CObject *>(pTVDispInfo->item.lParam);
 	if ( pParam && (pTVDispInfo->item.mask&TVIF_TEXT) && !IsRootTree(pTVDispInfo->item.hItem) ) {
 		if ( pParam->IsKindOf(RUNTIME_CLASS(CLayerData)) ) {
-			lstrcpy(pTVDispInfo->item.pszText, static_cast<CLayerData *>(pParam)->GetStrLayer());
+			lstrcpy(pTVDispInfo->item.pszText, static_cast<CLayerData *>(pParam)->GetLayerName());
 		}
 		else if ( pParam->IsKindOf(RUNTIME_CLASS(CDXFshape)) ) {
 			lstrcpy(pTVDispInfo->item.pszText, static_cast<CDXFshape *>(pParam)->GetShapeName());

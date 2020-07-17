@@ -13,15 +13,20 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+static	const	int		g_bDxfID[] = {
+	IDS_REG_DXF_VIEWER, IDS_REG_DXF_BINDFILECOMMENT
+};
 static	const	int		g_nDxfID[] = {
-	IDS_REG_DXF_VIEWER, IDS_REG_DXF_ORGTYPE, IDS_REG_DXF_BINDORGTYPE
+	IDS_REG_DXF_ORGTYPE, IDS_REG_DXF_BINDORGTYPE, IDS_REG_DXF_BINDSORT
 };
 static	const	int		g_nDxfOldID[] = {
 	IDS_REG_DXF_REGEX, IDS_REG_DXF_MATCH, IDS_REG_DXF_ACCEPT
 };
+static	const	int		g_bDxfDef[] = {
+	1, 1
+};
 static	const	int		g_nDxfDef[] = {
-	1, 0,
-	0
+	0, 0, 0
 };
 static	const	double	g_dDxfDef[] = {
 	300.0, 300.0,
@@ -51,6 +56,10 @@ CDXFOption::CDXFOption()
 	m_regCutter = m_strReadLayer[DXFCAMLAYER];
 
 	// µÌß¼®Ý
+	for ( i=0; i<SIZEOF(m_ubNums); i++ ) {
+		VERIFY(strEntry.LoadString(g_bDxfID[i]));
+		m_ubNums[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, g_bDxfDef[i]);
+	}
 	for ( i=0; i<SIZEOF(m_unNums); i++ ) {
 		VERIFY(strEntry.LoadString(g_nDxfID[i]));
 		m_unNums[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, g_nDxfDef[i]);
@@ -209,11 +218,13 @@ BOOL CDXFOption::SaveDXFoption(void)
 		if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, m_strReadLayer[i]) )
 			return FALSE;
 	}
-	for ( i=0; i<SIZEOF(m_unNums)-1; i++ ) {	// DXFOPT_BINDORGœ‚­
-		VERIFY(strEntry.LoadString(g_nDxfID[i]));
-		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_unNums[i]) )
-			return FALSE;
-	}
+	// BINDŠÖŒWœ‚­
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_VIEWER));
+	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_bView) )
+		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_ORGTYPE));
+	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nOrgType) )
+		return FALSE;
 
 	return TRUE;
 }
@@ -224,11 +235,16 @@ BOOL CDXFOption::SaveBindOption(void)
 	CString		strRegKey, strEntry, strResult;
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
-	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDORGTYPE));
-	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nBindOrg) )
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDFILECOMMENT));
+	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_bFileComment) )
 		return FALSE;
+	for ( i=DXFOPT_BINDORG; i<SIZEOF(m_unNums); i++ ) {
+		VERIFY(strEntry.LoadString(g_nDxfID[i]));
+		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_unNums[i]) )
+			return FALSE;
+	}
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDSIZE));
 	for ( i=0; i<SIZEOF(m_dBindWork); i++ ) {
-		VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDSIZE));
 		strResult.Format(IDS_MAKENCD_FORMAT, m_dBindWork[i]);
 		if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry+g_szNdelimiter[i], strResult) )
 			return FALSE;

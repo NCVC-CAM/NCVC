@@ -42,7 +42,6 @@ static	CUSTTBBUTTON	tbMainButtons[] = {
 	{ ID_NCVIEW_ALLFIT,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
 	{ ID_VIEW_LENSP,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
 	{ ID_VIEW_LENSN,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
-	{ ID_VIEW_BEFORE,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
 	{ ID_SEPARATOR,				TBSTATE_ENABLED,	TBSTYLE_SEP,	TRUE  },
 	{ ID_HELP_USING,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	TRUE  },
 	{ ID_CONTEXT_HELP,			TBSTATE_ENABLED,	TBSTYLE_BUTTON,	FALSE },
@@ -153,10 +152,9 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_COMMAND(ID_WINDOW_NEXT, &CMainFrame::OnNextPane)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_DATE, &CMainFrame::OnUpdateDate)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TIME, &CMainFrame::OnUpdateTime)
+	ON_COMMAND(ID_VIEW_TOOLBARCUSTOM, &CMainFrame::OnViewToolbarCustom)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_CUT, &CMainFrame::OnUpdateEditCut)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_PASTE, &CMainFrame::OnUpdateEditPaste)
-	ON_COMMAND(ID_VIEW_TOOLBARCUSTOM, &CMainFrame::OnViewToolbarCustom)
-//	ON_COMMAND(ID_CONTEXT_HELP, &CMDIFrameWnd::OnContextHelp)
 	// Ãß≤Ÿçƒì«çûí ím
 	ON_MESSAGE(WM_USERFILECHANGENOTIFY, &CMainFrame::OnUserFileChange)
 	// ±ƒﬁ≤›ÅCäOïî±Ãﬂÿπ∞ºÆ›ãNìÆ¬∞Ÿ ﬁ∞óp¬∞Ÿ¡ØÃﬂ
@@ -173,8 +171,7 @@ CMainFrame::CMainFrame()
 	m_nSelectGDI = 0;
 
 	// ”∞ƒﬁ⁄Ω¿ﬁ≤±€∏ﬁŒﬂ≤›¿ÇÃèâä˙âª
-	for ( int i=0; i<SIZEOF(m_pModelessDlg); i++ )
-		m_pModelessDlg[i] = NULL;
+	ZEROCLR(m_pModelessDlg);	// m_pModelessDlg[i++]=NULL
 	// ±ƒﬁ≤›“∆≠∞ÇÃÇΩÇﬂ ON_COMMAND “Øæ∞ºﬁœØÃﬂÇéùÇΩÇ»Ç¢“∆≠∞Ç‡óLå¯Ç…Ç∑ÇÈ
 	m_bAutoMenuEnable = FALSE;
 	m_nStatusPane1Width = -1;
@@ -516,7 +513,7 @@ CString	CMainFrame::CommandReplace(const CExecOption* pExec, const CDocument* pD
 				CNCListView* pList = pChild->GetListView();
 				POSITION pos = pList->GetListCtrl().GetFirstSelectedItemPosition();
 				if ( pos ) {
-					strTmp.Format("%d", pList->GetListCtrl().GetNextSelectedItem(pos)+1);
+					strTmp = boost::lexical_cast<std::string>(pList->GetListCtrl().GetNextSelectedItem(pos)+1).c_str();
 					nReplace += strResult.Replace(strKey, strTmp);
 					break;
 				}
@@ -593,7 +590,6 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 	static	LPCTSTR	szMenu = "äOïî±Ãﬂÿ(&X)";
 	UINT	nMenuNCD, nMenuDXF;
 	int		i, nCount, nIndex, nBtnCnt;
-	POSITION	pos;
 	CDocument*	pDoc = GetActiveFrame()->GetActiveDocument();
 	CExecList*	pExeList = AfxGetNCVCApp()->GetExecList();
 	CExecOption* pExec;
@@ -605,17 +601,18 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 	nBtnCnt = pExeList->GetCount();
 	LPCUSTTBINFO lpInfo = NULL;
 	try {
+		i = 0;
 		lpInfo = new CUSTTBINFO[pExeList->GetCount()];
-		for ( i=0, pos=pExeList->GetHeadPosition(); pos; i++ ) {
-			pExec = pExeList->GetNext(pos);
+		PLIST_FOREACH(pExec, pExeList)
 			nIndex = m_ilEnableToolBar[TOOLIMAGE_EXEC].Add(
 							GetIconHandle(FALSE, pExec->GetFileName()) );
 			pExec->SetImageNo(nIndex);
 			lpInfo[i].tb.idCommand = pExec->GetMenuID();
 			lpInfo[i].strInfo = pExec->GetToolTip();
+			i++;
 			// ∂Ω¿—“∆≠∞Ç…“∆≠∞IDÇ∆≤“∞ºﬁáÇÇÃìoò^
 			m_menuMain.SetMapImageID((WORD)pExec->GetMenuID(), TOOLIMAGE_EXEC, nIndex);
-		}
+		END_FOREACH
 		CreateDisableToolBar(TOOLIMAGE_EXEC);	// ∏ﬁ⁄≤±≤∫›ÇÃçÏê¨
 		m_wndToolBar[TOOLBAR_EXEC].SetCustomButtons(
 			MAKEINTRESOURCE(g_tbInfo[TOOLBAR_EXEC].nBitmap),
@@ -671,14 +668,13 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 	menuMain.CreatePopupMenu();
 	menuNCD.CreatePopupMenu();
 	menuDXF.CreatePopupMenu();
-	for ( pos=pExeList->GetHeadPosition(); pos; ) {
-		pExec = pExeList->GetNext(pos);
+	PLIST_FOREACH(pExec, pExeList)
 		nID = pExec->GetMenuID();
 		strTip = pExec->GetToolTip();
 		menuMain.AppendMenu(MF_STRING, nID, strTip);
 		menuNCD.AppendMenu (MF_STRING, nID, strTip);
 		menuDXF.AppendMenu (MF_STRING, nID, strTip);
-	}
+	END_FOREACH
 	pMenuMain->InsertMenu(MAINMENUCOUNT-1, MF_BYPOSITION|MF_POPUP, (UINT)menuMain.Detach(), szMenu);
 	pMenuNCD->InsertMenu(nMenuNCD, MF_BYPOSITION|MF_POPUP, (UINT)menuNCD.Detach(), szMenu);
 	pMenuDXF->InsertMenu(nMenuDXF, MF_BYPOSITION|MF_POPUP, (UINT)menuDXF.Detach(), szMenu);
@@ -725,12 +721,11 @@ void CMainFrame::SetAddinButtons(void)
 			&m_ilDisableToolBar[TOOLIMAGE_ADDIN], lpInfo );
 		// ±ƒﬁ≤›ÇÃèÍçáÅCÇPÇ¬ÇÃ±ƒﬁ≤›Ç≈ï°êîÇÃIDÇéùÇ¬èÍçáÇ™Ç†ÇÈÇÃÇ≈
 		// IDœØÃﬂÇ©ÇÁ≤“∞ºﬁìoò^
-		for ( POSITION pos=pAddinMap->GetStartPosition(); pos; ) {
-			pAddinMap->GetNextAssoc(pos, wKey, pMap);
+		PMAP_FOREACH(wKey, pMap, pAddinMap)
 			// ∂Ω¿—“∆≠∞Ç…“∆≠∞IDÇ∆≤“∞ºﬁáÇÇÃìoò^
 			m_menuMain.SetMapImageID(wKey, TOOLIMAGE_ADDIN,
 					pMap->GetAddinIF()->GetImageNo());
-		}
+		END_FOREACH
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);

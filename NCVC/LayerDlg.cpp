@@ -45,6 +45,47 @@ void CLayerDlg::DoDataExchange(CDataExchange* pDX)
 	//}}AFX_DATA_MAP
 }
 
+void CLayerDlg::SetLayerTree(const CDXFDoc* pDoc)
+{
+	HTREEITEM	hTree;
+	CLayerData*	pLayer1;
+	CLayerData*	pLayer2;
+	int			nType;
+	BOOL		bAdd;
+
+	for ( int i=0; i<pDoc->GetLayerCnt(); i++ ) {
+		pLayer1 = pDoc->GetLayerData(i);
+		nType = pLayer1->GetLayerType();
+#ifdef _DEBUG
+		g_dbg.printf("Layer=\"%s\",%d, %d",
+			pLayer1->GetLayerName(), nType, pLayer1->m_bLayerFlg[LAYER_VIEW]);
+#endif
+		if ( DXFCAMLAYER<=nType && nType<=DXFCOMLAYER ) {
+			nType -= DXFCAMLAYER;
+			bAdd = TRUE;
+			if ( m_ctLayerTree.ItemHasChildren(m_hTree[nType]) ) {
+				// 同じ名前のﾚｲﾔ名は登録しない
+				hTree = m_ctLayerTree.GetNextItem(m_hTree[nType], TVGN_CHILD);
+				do {
+					pLayer2 = reinterpret_cast<CLayerData *>(m_ctLayerTree.GetItemData(hTree));
+					ASSERT( pLayer2 );
+					if ( pLayer1->GetLayerName() == pLayer2->GetLayerName() ) {
+						bAdd = FALSE;
+						break;
+					}
+				} while ( hTree = m_ctLayerTree.GetNextItem(hTree, TVGN_NEXT) );
+			}
+			if ( bAdd ) {
+				hTree = m_ctLayerTree.InsertItem(TVIF_TEXT|TVIF_PARAM, LPSTR_TEXTCALLBACK,
+							-1, -1, 0, 0, (LPARAM)pLayer1,
+							m_hTree[nType], TVI_LAST);
+				ASSERT( hTree );
+				m_ctLayerTree.SetCheck(hTree, pLayer1->m_bLayerFlg[LAYER_VIEW]);
+			}
+		}
+	}
+}
+
 void CLayerDlg::SetChildCheck(HTREEITEM hParent)
 {
 	// 親項目に合わせて子ｱｲﾃﾑのﾁｪｯｸ状態を一括変更
@@ -108,18 +149,36 @@ void CLayerDlg::OnOK()
 {
 	// ﾄﾞｷｭﾒﾝﾄﾋﾞｭｰへの変更通知
 	// このｲﾍﾞﾝﾄが発生するときは，必ず CDXFDoc を指している
-	CDXFDoc*	pDoc = (CDXFDoc *)(AfxGetNCVCMainWnd()->GetActiveFrame()->GetActiveDocument());
-	CLayerData*	pLayer;
+	int			i, j;
+	BOOL		bCheck;
 	HTREEITEM	hChild;
+	CLayerData*	pLayer1;
+	CLayerData*	pLayer2;
+	CDXFDoc*	pDoc = static_cast<CDXFDoc *>(AfxGetNCVCMainWnd()->GetActiveFrame()->GetActiveDocument());
 
-	for ( int i=0; i<SIZEOF(m_hTree); i++ ) {
+	if ( pDoc->IsDocFlag(DXFDOC_BIND) ) {
+		pDoc = pDoc->GetBindParentDoc();
+		ASSERT( pDoc );
+	}
+
+	for ( i=0; i<SIZEOF(m_hTree); i++ ) {
 		if ( m_ctLayerTree.ItemHasChildren(m_hTree[i]) ) {
 			// 子のあるﾚｲﾔ項目だけﾁｪｯｸ状態を反映
 			hChild = m_ctLayerTree.GetNextItem(m_hTree[i], TVGN_CHILD);
 			do {
-				pLayer = reinterpret_cast<CLayerData *>(m_ctLayerTree.GetItemData(hChild));
-				ASSERT( pLayer );
-				pLayer->m_bLayerFlg.set(LAYER_VIEW, m_ctLayerTree.GetCheck(hChild));
+				bCheck = m_ctLayerTree.GetCheck(hChild);
+				pLayer1 = reinterpret_cast<CLayerData *>(m_ctLayerTree.GetItemData(hChild));
+				ASSERT( pLayer1 );
+				if ( pDoc->IsDocFlag(DXFDOC_BINDPARENT) ) {
+					for ( j=0; j<pDoc->GetBindInfoCnt(); j++ ) {
+						LPCADBINDINFO pInfo = pDoc->GetBindInfoData(j);
+						pLayer2 = pInfo->pDoc->GetLayerData(pLayer1->GetLayerName());
+						if ( pLayer2 )
+							pLayer2->m_bLayerFlg.set(LAYER_VIEW, bCheck);
+					}
+				}
+				else
+					pLayer1->m_bLayerFlg.set(LAYER_VIEW, bCheck);
 			} while ( hChild = m_ctLayerTree.GetNextItem(hChild, TVGN_NEXT) );
 		}
 	}
@@ -152,6 +211,7 @@ LRESULT CLayerDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 	CMagaDbg	dbg("CLayerDlg::OnUserSwitchDocument()\nCalling");
 #endif
 	int			i;
+	BOOL		bActive = FALSE;
 	HTREEITEM	hChild;
 
 	// 子ｱｲﾃﾑを削除
@@ -164,33 +224,33 @@ LRESULT CLayerDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 	}
 	// DXFﾄﾞｷｭﾒﾝﾄでなければ終了
 	CMDIChildWnd*	pChild   = AfxGetNCVCMainWnd()->MDIGetActive();
-	CDocument*		pDocTest = pChild ? pChild->GetActiveDocument() : NULL;
-	if ( !pDocTest || !pDocTest->IsKindOf(RUNTIME_CLASS(CDXFDoc)) ) {
+	CDXFDoc*		pDoc = pChild ? static_cast<CDXFDoc*>(pChild->GetActiveDocument()) : NULL;
+	if ( pDoc ) {
+		if ( !pDoc->IsKindOf(RUNTIME_CLASS(CDXFDoc)) )
+			pDoc = NULL;
+		else {
+			bActive = TRUE;
+			if ( pDoc->IsDocFlag(DXFDOC_BIND) ) {
+				pDoc = pDoc->GetBindParentDoc();
+				ASSERT( pDoc );
+			}
+		}
+	}
+	if ( !bActive ) {
 		EnableButton(FALSE);
 		return 0;
 	}
 
 	// ﾚｲﾔﾂﾘｰへの登録と表示・非表示のﾁｪｯｸ
 	EnableButton(TRUE);
-	CDXFDoc*	pDoc = (CDXFDoc *)pDocTest;
-	CLayerData*	pLayer;
-	int			nType;
 
-	for ( i=0; i<pDoc->GetLayerCnt(); i++ ) {
-		pLayer = pDoc->GetLayerData(i);
-		nType = pLayer->GetLayerType();
-#ifdef _DEBUG
-		dbg.printf("Layer=\"%s\",%d, %d",
-			pLayer->GetStrLayer(), nType, pLayer->m_bLayerFlg[LAYER_VIEW]);
-#endif
-		if ( nType>=DXFCAMLAYER && nType<=DXFCOMLAYER ) {
-			hChild = m_ctLayerTree.InsertItem(TVIF_TEXT|TVIF_PARAM, LPSTR_TEXTCALLBACK,
-							-1, -1, 0, 0, (LPARAM)pLayer,
-							m_hTree[nType - DXFCAMLAYER], TVI_LAST);
-			ASSERT( hChild );
-			m_ctLayerTree.SetCheck(hChild, pLayer->m_bLayerFlg[LAYER_VIEW]);
-		}
+	if ( pDoc->IsDocFlag(DXFDOC_BINDPARENT) ) {
+		for ( i=0; i<pDoc->GetBindInfoCnt(); i++ )
+			SetLayerTree( pDoc->GetBindInfoData(i)->pDoc );
 	}
+	else
+		SetLayerTree(pDoc);
+
 	// 子を持つﾚｲﾔには，親にもﾁｪｯｸ
 	BOOL	bAllCheck;
 	for ( i=0; i<SIZEOF(m_hTree); i++ ) {
@@ -254,7 +314,7 @@ void CLayerDlg::OnLayerTreeGetdispinfo(NMHDR* pNMHDR, LRESULT* pResult)
 	if ( pTVDispInfo->item.mask & TVIF_TEXT ) {
 		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(pTVDispInfo->item.lParam);
 		ASSERT( pLayer );
-		lstrcpy(pTVDispInfo->item.pszText, pLayer->GetStrLayer());
+		lstrcpy(pTVDispInfo->item.pszText, pLayer->GetLayerName());
 	}
 
 	*pResult = 0;

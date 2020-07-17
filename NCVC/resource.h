@@ -18,6 +18,7 @@
 #define IDR_NCPOPUP2                    133
 #define IDR_NCPOPUP3                    134
 #define IDR_DXFPOPUP2                   135
+#define IDR_DXFPOPUP3                   136
 #define IDI_CHECK                       140
 #define IDI_DEFICONLARGE                142
 #define IDI_DEFICONSMALL                143
@@ -45,11 +46,14 @@
 #define IDCV_LATHE                      516
 #define IDCV_WIRE                       517
 #define IDCV_VALFORMAT                  520
+#define IDS_MAKEDXF_CODE                521
+#define IDS_MAKEDXF_INTVALUE            522
 #define IDS_MAKENCD_FORMAT              600
 #define IDS_MAKENCD_CIRCLEBREAK         601
 #define IDS_MAKENCD_CIRCLEEND           602
-#define IDS_MAKENCD_LAYERBREAK          603
-#define IDS_MAKENCD_PROG                604
+#define IDS_MAKENCD_BREAKLAYER          603
+#define IDS_MAKENCD_BINDFILE            604
+#define IDS_MAKENCD_PROG                605
 #define IDS_MAKE_NCD                    700
 #define IDS_MAKE_DXF                    701
 #define IDS_SETUP_MC                    702
@@ -97,6 +101,7 @@
 #define IDC_BIND_WORK_X                 1110
 #define IDC_BIND_WORK_Y                 1111
 #define IDC_BIND_MARGIN                 1112
+#define IDC_BIND_MARGE                  1113
 #define IDD_DXF_SETUP1                  1200
 #define IDC_DXF_CAMLINE                 1201
 #define IDC_DXF_ORIGIN                  1202
@@ -149,6 +154,7 @@
 #define IDC_MKNC_INITUP                 1406
 #define IDC_MKNC_INITED                 1407
 #define IDC_MKNC_VIEW                   1408
+#define IDC_MKNC_BINDOPT                1409
 #define IDC_MKNCEX_INIT_CT1             1410
 #define IDC_MKNCEX_INIT_CT2             1411
 #define IDC_MKNCEX_INIT_CT3             1412
@@ -189,6 +195,9 @@
 #define IDC_MKDX2_CROSS                 1803
 #define IDC_MKDX2_CYCLE                 1804
 #define IDC_MKDX2_CYCLE_R               1805
+#define IDD_MAKEBINDOPT                 1900
+#define IDC_MKBD_SORT                   1901
+#define IDC_MKBD_FILECOMMENT            1902
 #define IDD_VIEW_SETUP1                 2000
 #define IDC_VIEWSETUP1_ST_RECT          2001
 #define ID_EDIT_DXFORG                  2001
@@ -209,6 +218,8 @@
 #define ID_EDIT_SHAPE_DEL               2016
 #define IDC_VIEWSETUP1_CB_RECT          2021
 #define IDC_VIEWSETUP1_CB_SEL           2022
+#define ID_EDIT_BIND_TARGET             2031
+#define ID_EDIT_BIND_DEL                2032
 #define IDC_VIEWSETUP1_DEFCOLOR         2050
 #define IDC_VIEWSETUP1_WHEEL            2051
 #define IDC_VIEWSETUP1_PtoN             2052
@@ -318,7 +329,6 @@
 #define IDC_VIEWSETUP6_L2               2456
 #define IDC_VIEWSETUP6_L3               2457
 #define IDC_VIEWSETUP6_RR               2458
-#define IDD_NCVIEW_WORK                 2500
 #define IDD_NCVIEW_WORK1                2500
 #define IDC_WORK_X                      2501
 #define IDC_WORK_Y                      2502
@@ -377,7 +387,6 @@
 #define ID_VIEW_RLT                     3088
 #define ID_VIEW_RRT                     3089
 #define ID_VIEW_TOOLBARCUSTOM           3090
-#define ID_VIEW_BEFORE                  3092
 #define ID_VIEW_FIT                     3093
 #define ID_VIEW_LENSP                   3094
 #define ID_VIEW_LENSN                   3095
@@ -619,6 +628,7 @@
 #define ID_HELP_USING2                  9902
 #define ID_HELP_USING3                  9903
 #define ID_HELP_USING4                  9904
+#define ID_HELP_USING5                  9905
 #define IDS_REGISTRY_KEY                10000
 #define IDS_REGKEY_SETTINGS             10001
 #define IDS_REGKEY_WINDOW               10002
@@ -651,11 +661,10 @@
 #define IDS_REG_DXF_BINDSIZE            10116
 #define IDS_REG_DXF_BINDMARGIN          10117
 #define IDS_REG_DXF_BINDORGTYPE         10118
-#define IDS_REG_DXF_SORTLAYER1          10120
-#define IDS_REG_DXF_SORTLAYER2          10121
-#define IDS_REG_DXF_SUBPRO              10150
-#define IDS_REG_DXF_SUBPRONO            10151
-#define IDS_REG_DXF_STARTZ              10152
+#define IDS_REG_DXF_BINDSORT            10119
+#define IDS_REG_DXF_BINDFILECOMMENT     10120
+#define IDS_REG_DXF_SORTLAYER1          10130
+#define IDS_REG_DXF_SORTLAYER2          10131
 #define IDS_REG_DXF_CUT                 10190
 #define IDS_REG_DXF_G90                 10191
 #define IDS_REG_DXF_CIRCLEIJ            10192
@@ -804,6 +813,8 @@
 #define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
+#define ID__32816                       32816
+#define ID_32821                        32821
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -826,9 +837,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        158
-#define _APS_NEXT_COMMAND_VALUE         32813
-#define _APS_NEXT_CONTROL_VALUE         1053
+#define _APS_NEXT_RESOURCE_VALUE        166
+#define _APS_NEXT_COMMAND_VALUE         32822
+#define _APS_NEXT_CONTROL_VALUE         1056
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -72,6 +72,7 @@ BOOL CCustomToolBar::CreateExEx
 BOOL CCustomToolBar::LoadToolBarEx
 	(LPCTSTR lpszResourceName, LPCUSTTBBUTTON lpCustTbButtons, BOOL bRestore)
 {
+	extern	LPCTSTR	gg_szReturn;	// "\n"
 	int		i, nIndex;
 	CString strText;
 	CUSTTBBUTTON	ctb;
@@ -117,7 +118,7 @@ BOOL CCustomToolBar::LoadToolBarEx
 					lpInfo->tb.iBitmap = NULL;
 				// ÎÞÀÝ•¶Žš—ñî•ñ’Ç‰Á
 				VERIFY(strText.LoadString(ctb.idCommand));
-				nIndex = strText.Find('\n');	// Â°ÙÁ¯Ìß•”•ª‚¾‚¯‚ðÝ’è
+				nIndex = strText.Find(gg_szReturn);	// Â°ÙÁ¯Ìß•”•ª‚¾‚¯‚ðÝ’è
 				if ( nIndex >= 0 )
 					lpInfo->strInfo = strText.Mid(nIndex+1);
 			}
@@ -312,7 +313,7 @@ CString	CCustomToolBar::GetSubKey(void)
 CString CCustomToolBar::GetValueName(void)
 {
 	CString strValue;
-	strValue.Format("%u", m_lpszResourceName);
+	strValue.Format("%u", m_lpszResourceName);	// unsigned short(??)
 	return strValue;
 }
 

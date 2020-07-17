@@ -9,22 +9,11 @@
 #include "Layer.h"
 #include "NCVCdefine.h"
 
-class	CDXFBlockData;
 class	CDXFDoc;
 class	CDXFView;
 
-// CDXFDoc ﾌﾗｸﾞ
-enum DXFDOCFLG {
-	DXFDOC_READY = 0,	// NC生成可能かどうか(ｴﾗｰﾌﾗｸﾞ)
-	DXFDOC_RELOAD,		// 再読込ﾌﾗｸﾞ(from DXFSetup.cpp)
-	DXFDOC_THREAD,		// ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
-	DXFDOC_BINDPARENT,	// 統合ﾓｰﾄﾞ
-	DXFDOC_BIND,		// 統合ﾓｰﾄﾞ(子)
-	DXFDOC_SHAPE,		// 形状処理を行ったか
-	DXFDOC_LATHE,		// 旋盤用の原点(ﾜｰｸ径と端面)を読み込んだか
-	DXFDOC_WIRE,		// ﾜｲﾔ加工機用の生成が可能かどうか
-		DXFDOC_FLGNUM		// ﾌﾗｸﾞの数[7]
-};
+// 原点を示すﾃﾞﾌｫﾙﾄの半径
+#define	ORGRADIUS		10.0
 
 // 自動処理ﾃﾞｰﾀ受け渡し構造体
 struct	AUTOWORKINGDATA
@@ -45,6 +34,7 @@ struct	AUTOWORKINGDATA
 		bCircleScroll	= TRUE;
 	}
 };
+typedef	AUTOWORKINGDATA*	LPAUTOWORKINGDATA;
 // 自動形状処理ﾀｲﾌﾟ
 enum {
 	AUTOWORKING = 0,
@@ -53,23 +43,45 @@ enum {
 };
 
 // 結合のための情報
-typedef	struct tagCADBINDINFO {
-	CStatic*	pParent;
+struct CADBINDINFO {
+	BOOL		bTarget;
 	CDXFDoc*	pDoc;
 	CDXFView*	pView;
-	CPointD		pt;		// 配置位置(論理座標)
-} CADBINDINFO, *LPCADBINDINFO;
+	CPointD		pt,			// 配置位置(論理座標)
+				ptOffset;	// 子の描画原点
+	// 初期化
+	CADBINDINFO(CDXFDoc* ppDoc, CDXFView* ppView) {
+		bTarget = TRUE;
+		pDoc = ppDoc;
+		pView = ppView;
+	}
+	CADBINDINFO(BOOL bTgt, CDXFDoc* ppDoc, CDXFView* ppView, const CPointD& ppt, const CPointD& pptOffset) {
+		bTarget = bTgt;
+		pDoc = ppDoc;
+		pView = ppView;
+		pt = ppt;
+		ptOffset = pptOffset;
+	}
+	CADBINDINFO(CADBINDINFO* pInfo) {
+		bTarget = pInfo->bTarget;
+		pDoc = pInfo->pDoc;
+		pView = pInfo->pView;
+		pt = pInfo->pt;
+		ptOffset = pInfo->ptOffset;
+	}
+};
+typedef	CADBINDINFO*	LPCADBINDINFO;
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFDoc ドキュメント
 
-class CDXFDoc : public CDocBase<DXFDOC_FLGNUM>
+class CDXFDoc : public CDocBase
 {
 	UINT	m_nShapeProcessID;		// 形状加工指示ID
 	AUTOWORKINGDATA	m_AutoWork;		// 自動輪郭処理ﾃﾞｰﾀ
-	CRect3D			m_rcMax;		// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
 	CDXFcircleEx*	m_pCircle;		// 切削原点
 	CDXFline*		m_pLatheLine[2];// 旋盤用原点([0]:外径, [1]:端面)
+	CDXFDoc*		m_pParentDoc;	// 親ﾄﾞｷｭﾒﾝﾄ(bind)
 	boost::optional<CPointD>	m_ptOrgOrig;	// ﾌｧｲﾙから読み込んだｵﾘｼﾞﾅﾙ原点
 
 	CString		m_strNCFileName;	// NC生成ﾌｧｲﾙ名
@@ -86,6 +98,8 @@ class CDXFDoc : public CDocBase<DXFDOC_FLGNUM>
 	void	SetMaxRect(const CDXFdata* pData) {
 		m_rcMax |= pData->GetMaxRect();
 	}
+
+	void	MakeDXF(const CString&);
 
 	// 原点補正の文字列を数値に変換
 	BOOL	GetEditOrgPoint(LPCTSTR, CPointD&);
@@ -157,11 +171,22 @@ public:
 		ASSERT(n>=0 && n<GetBindInfoCnt());
 		return m_bindInfo[n];
 	}
+	int		GetBindInfo_fromView(const CDXFView* pView) {
+		for ( int i=0; i<m_bindInfo.GetSize(); i++ ) {
+			if ( m_bindInfo[i]->pView == pView )
+				return i;
+		}
+		return -1;
+	}
+	void	RemoveBindData(INT_PTR n);
+	void	SetBindParentDoc(CDXFDoc* pDoc) {
+		m_pParentDoc = pDoc;
+	}
+	CDXFDoc*	GetBindParentDoc(void) const {
+		return m_pParentDoc;
+	}
 	CString GetNCFileName(void) const {
 		return m_strNCFileName;
-	}
-	CRect3D	GetMaxRect(void) const {
-		return m_rcMax;
 	}
 
 // オペレーション
@@ -180,18 +205,17 @@ public:
 	BOOL	SaveLayerMap(LPCTSTR, const CLayerArray* = NULL);
 	void	UpdateLayerSequence(void);
 	//
-	void	AllChangeFactor(double) const;	// 拡大率の更新
-	void	AllRoundObjPoint(const CPointD&, double);
+	void	AllChangeFactor(double);	// 拡大率の更新
+	void	AllSetDxfFlg(DWORD, BOOL = TRUE);
+	void	AllRoundObjPoint(double);
 	//
-	void	CreateCutterOrigin(const CPointD&, double, BOOL = FALSE);
+	void	CreateCutterOrigin(const CPointD&, double = ORGRADIUS, BOOL = FALSE);
 	void	CreateLatheLine(const CPointD&, const CPointD&);
 	void	CreateLatheLine(const CDXFline*, LPCDXFBLOCK);
 	// ﾏｳｽｸﾘｯｸの位置と該当ｵﾌﾞｼﾞｪｸﾄの最小距離を返す
 	boost::tuple<CDXFshape*, CDXFdata*, double>	GetSelectObject(const CPointD&, const CRectD&);
 	//
-	void	AddBindInfo(LPCADBINDINFO pInfo) {
-		m_bindInfo.Add(pInfo);
-	}
+	void	AddBindInfo(LPCADBINDINFO);
 	void	SortBindInfo(void);
 
 // オーバーライド
@@ -203,11 +227,11 @@ public:
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
 	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
 	virtual void OnCloseDocument();
+	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	//}}AFX_VIRTUAL
+	virtual void UpdateFrameCounts();
 	// 変更されたﾄﾞｷｭﾒﾝﾄが閉じられる前にﾌﾚｰﾑﾜｰｸが呼び出し
 	virtual BOOL SaveModified();
-	// ﾌﾚｰﾑが２つあるのでｳｨﾝﾄﾞｳﾀｲﾄﾙの「:1」を防ぐ
-	virtual void UpdateFrameCounts();
 
 // インプリメンテーション
 public:
@@ -229,6 +253,7 @@ protected:
 	afx_msg void OnUpdateEditShape(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateEditShaping(CCmdUI* pCmdUI);
 	//}}AFX_MSG
+	afx_msg void OnFileDXF2DXF();
 	// NC生成ﾒﾆｭｰ
 	afx_msg void OnUpdateFileDXF2NCD(CCmdUI* pCmdUI);
 	afx_msg void OnFileDXF2NCD(UINT);

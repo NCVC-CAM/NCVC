@@ -10,6 +10,7 @@
 #include "MKLASetup.h"
 #include "MKWISetup.h"
 #include "MakeNCDlg.h"
+#include "MakeBindOptDlg.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -22,6 +23,7 @@ BEGIN_MESSAGE_MAP(CMakeNCDlg, CDialog)
 	ON_BN_CLICKED(IDC_MKNC_NCFILEUP, &CMakeNCDlg::OnMKNCFileUp)
 	ON_BN_CLICKED(IDC_MKNC_INITUP, &CMakeNCDlg::OnMKNCInitUp)
 	ON_BN_CLICKED(IDC_MKNC_INITED, &CMakeNCDlg::OnMKNCInitEdit)
+	ON_BN_CLICKED(IDC_MKNC_BINDOPT, &CMakeNCDlg::OnBindOpt)
 	ON_CBN_SELCHANGE(IDC_MKNC_INIT, &CMakeNCDlg::OnSelChangeInit)
 	ON_CBN_KILLFOCUS(IDC_MKNC_INIT, &CMakeNCDlg::OnKillFocusInit)
 	ON_EN_KILLFOCUS(IDC_MKNC_NCFILE, &CMakeNCDlg::OnKillFocusNCFile)
@@ -36,6 +38,7 @@ CMakeNCDlg::CMakeNCDlg(UINT nTitle, enMAKETYPE enType, CDXFDoc* pDoc)
 {
 	m_nTitle = nTitle;
 	m_enType = enType;
+	m_pDoc = pDoc;
 	//{{AFX_DATA_INIT(CMakeNCDlg)
 	//}}AFX_DATA_INIT
 
@@ -45,7 +48,7 @@ CMakeNCDlg::CMakeNCDlg(UINT nTitle, enMAKETYPE enType, CDXFDoc* pDoc)
 	const CDXFOption*  pOpt = AfxGetNCVCApp()->GetDXFOption();
 	if ( pOpt->GetInitList(enType)->GetCount() > 0 )
 		::Path_Name_From_FullPath(pOpt->GetInitList(enType)->GetHead(), m_strInitPath, m_strInitFileName);
-	m_bNCView = pOpt->GetDxfFlag(DXFOPT_VIEW);
+	m_bNCView = pOpt->GetDxfOptFlg(DXFOPT_VIEW);
 }
 
 void CMakeNCDlg::DoDataExchange(CDataExchange* pDX)
@@ -53,6 +56,7 @@ void CMakeNCDlg::DoDataExchange(CDataExchange* pDX)
 	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMakeNCDlg)
 	DDX_Control(pDX, IDOK, m_ctOK);
+	DDX_Control(pDX, IDC_MKNC_BINDOPT, m_ctBindOpt);
 	DDX_Control(pDX, IDC_MKNC_NCFILE, m_ctNCFileName);
 	DDX_Text(pDX, IDC_MKNC_NCFILE, m_strNCFileName);
 	DDX_Control(pDX, IDC_MKNC_INIT, m_ctInitFileName);
@@ -80,6 +84,10 @@ BOOL CMakeNCDlg::OnInitDialog()
 	// ﾊﾟｽ表示の最適化(shlwapi.h)
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_NCPATH,   m_strNCPath);
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, m_strInitPath);
+
+	// 統合ｵﾌﾟｼｮﾝの有効化
+	if ( m_pDoc->IsDocFlag(DXFDOC_BINDPARENT) )
+		m_ctBindOpt.ShowWindow(SW_SHOW);
 
 	return TRUE;  // コントロールにフォーカスを設定しないとき、戻り値は TRUE となります
 	              // 例外: OCX プロパティ ページの戻り値は FALSE となります
@@ -196,6 +204,12 @@ void CMakeNCDlg::OnMKNCInitEdit()
 	m_ctOK.SetFocus();
 }
 
+void CMakeNCDlg::OnBindOpt()
+{
+	CMakeBindOptDlg	dlg;
+	dlg.DoModal();
+}
+
 void CMakeNCDlg::OnSelChangeInit() 
 {
 	int nIndex = MakeNCDlgSelChange(m_ctInitFileName, m_hWnd, IDC_MKNC_INITPATH,
@@ -231,8 +245,18 @@ void CreateNCFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
 	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成．ただし既に生成したﾌｧｲﾙ名があるならそれを採用
 	CString	strNCFile(pDoc->GetNCFileName());
 	if ( strNCFile.IsEmpty() ) {
-		::Path_Name_From_FullPath(pDoc->GetPathName(), strPath, strFile, FALSE);
-		strFile += AfxGetNCVCApp()->GetDocExtString(TYPE_NCD);
+		CString	strDocFile(pDoc->GetPathName());
+		if ( strDocFile.IsEmpty() ) {	// from Bind
+			if ( pDoc->GetBindInfoCnt() >= 0 ) {
+				strDocFile = pDoc->GetBindInfoData(0)->pDoc->GetPathName();
+				::Path_Name_From_FullPath(strDocFile, strPath, strFile, FALSE);
+				strFile.Empty();
+			}
+		}
+		else {
+			::Path_Name_From_FullPath(strDocFile, strPath, strFile, FALSE);
+			strFile += AfxGetNCVCApp()->GetDocExtString(TYPE_NCD);
+		}
 	}
 	else
 		::Path_Name_From_FullPath(strNCFile, strPath, strFile);
@@ -353,10 +377,10 @@ BOOL InitialMakeNCDlgComboBox(const CStringList* pList, CComboBox& ctCombo)
 	CString	strPath, strFile;
 	LPCTSTR	pszFullPath;
 	// ｺﾝﾎﾞﾎﾞｯｸｽにﾌﾙﾊﾟｽ文字列へのﾎﾟｲﾝﾀを割り当てる
-	for ( POSITION pos = pList->GetHeadPosition(); pos; ) {
-		pszFullPath = pList->GetNext(pos);
+	PLIST_FOREACH(pszFullPath, pList)
 		::Path_Name_From_FullPath(pszFullPath, strPath, strFile);
 		ctCombo.SetItemDataPtr( ctCombo.AddString(strFile), (LPVOID)pszFullPath );
-	}
+	END_FOREACH
+
 	return TRUE;
 }

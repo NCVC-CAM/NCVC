@@ -261,7 +261,6 @@ public:
 	afx_msg void OnViewSetupExport();
 	afx_msg void OnWindowAllClose();
 	afx_msg void OnUpdateOptionEdit(CCmdUI* pCmdUI);
-	afx_msg void OnUpdateFileCADbind(CCmdUI* pCmdUI);
 
 	DECLARE_MESSAGE_MAP()
 };

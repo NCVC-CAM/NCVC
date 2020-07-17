@@ -166,7 +166,7 @@ public:
 	BOOL	IsLoop(void) const;
 	BOOL	IsPointInPolygon(const CPointD&) const;
 	//
-	POSITION	SetLoopFunc(const CDXFdata*, BOOL, BOOL);
+	POSITION	SetLoopFunc(const CDXFdata*, BOOL);
 	POSITION	GetFirstPosition(void) {
 		return (this->*m_pfnGetFirstPos)();
 	}
@@ -248,7 +248,7 @@ public:
 	DECLARE_DYNAMIC(CDXFworking)
 };
 
-typedef	CTypedPtrList<CObList, CDXFworking*>	CDXFworkingList;
+typedef	CTypedPtrListEx<CObList, CDXFworking*>	CDXFworkingList;
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「方向」加工指示クラス
@@ -344,7 +344,7 @@ public:
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFworkingOutline)
 };
-typedef	CTypedPtrList<CObList, CDXFworkingOutline*>	COutlineList;
+typedef	CTypedPtrListEx<CObList, CDXFworkingOutline*>	COutlineList;
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「ポケット」加工指示クラス

@@ -5,11 +5,13 @@
 #pragma once
 
 //#define	_DEBUGDRAW_DXF		// 描画処理もﾛｸﾞ
+//#define	_DEBUG_MAXRECT
 #include "MagaDbgMac.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのベースクラス
 /////////////////////////////////////////////////////////////////////////////
+
 inline ENDXFTYPE CDXFdata::GetType(void) const
 {
 	return m_enType;
@@ -144,16 +146,6 @@ inline double CDXFdata::GetEdgeGap(const CDXFdata* pData, BOOL bSwap/*=TRUE*/)
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのPointクラス
 /////////////////////////////////////////////////////////////////////////////
-inline void CDXFpoint::SetMaxRect(void)
-{
-	m_rcMax.TopLeft()     = m_pt[0];
-	m_rcMax.BottomRight() = m_pt[0];
-	m_rcMax.NormalizeRect();
-#ifdef _DEBUG
-	CMagaDbg	dbg("CDXFpoint::SetMaxRect()", DBG_RED);
-	dbg.printf("l=%.3f t=%.3f", m_rcMax.left, m_rcMax.top);
-#endif
-}
 
 inline const CPoint CDXFpoint::GetDrawPoint(void) const
 {
@@ -208,17 +200,6 @@ inline double CDXFpoint::GetLength(void) const
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのLineクラス
 //////////////////////////////////////////////////////////////////////
-inline void CDXFline::SetMaxRect(void)
-{
-	m_rcMax.TopLeft()     = m_pt[0];
-	m_rcMax.BottomRight() = m_pt[1];
-	m_rcMax.NormalizeRect();
-#ifdef _DEBUG
-	CMagaDbg	dbg("CDXFline::SetMaxRect()", DBG_RED);
-	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
-		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
-#endif
-}
 
 inline BOOL CDXFline::IsMakeTarget(void) const
 {
@@ -284,24 +265,13 @@ inline double CDXFline::GetLength(void) const
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのCircleクラス
 //////////////////////////////////////////////////////////////////////
-inline void CDXFcircle::SetCirclePoint(void)
-{
-	m_pt[0].x = m_ct.x + m_r;	// 0°
-	m_pt[0].y = m_ct.y;
-	m_pt[1].x = m_ct.x;			// 90°
-	m_pt[1].y = m_ct.y + m_r;
-	m_pt[2].x = m_ct.x - m_r;	// 180°
-	m_pt[2].y = m_ct.y;
-	m_pt[3].x = m_ct.x;			// 270°
-	m_pt[3].y = m_ct.y - m_r;
-}
 
 inline void CDXFcircle::GetQuarterPoint(const CPointD& ptClick, CPointD pt[]) const
 {
 	// ｸﾘｯｸﾎﾟｲﾝﾄの角度を取得
 	double	lq = atan2(ptClick.y - m_ct.y, ptClick.x - m_ct.x);
 	if ( lq < 0 )
-		lq += RAD(360.0);
+		lq += PI2;
 	// 角度(位置)から1/4の始点終点座標を取得(反時計回りで考える)
 	if ( lq>=0 && lq<RAD(90.0) ) {
 		pt[0] = m_pt[0];
@@ -355,22 +325,10 @@ inline double CDXFcircle::GetSelectPointGap_Circle
 	CPointD	pt1(pt - m_ct);
 	double	q1, q2;
 	if ( (q1=atan2(pt1.y, pt1.x)) < 0.0 )
-		q1 += RAD(360.0);
-	q2 = q1 + RAD(360.0);
+		q1 += PI2;
+	q2 = q1 + PI2;
 	return (sq <= q1 && q1 <= eq) || (sq <= q2 && q2 <= eq) ?
 		fabs(m_r - pt1.hypot()) : HUGE_VAL;
-}
-
-inline void CDXFcircle::SetMaxRect(void)
-{
-	m_rcMax.TopLeft()     = m_ct - m_r;
-	m_rcMax.BottomRight() = m_ct + m_r;
-	m_rcMax.NormalizeRect();
-#ifdef _DEBUG
-	CMagaDbg	dbg("CDXFcircle::SetMaxRect()", DBG_RED);
-	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
-		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
-#endif
 }
 
 inline BOOL CDXFcircle::IsRoundFixed(void) const
@@ -425,7 +383,7 @@ inline const CPointD CDXFcircle::GetMakeCenter(void) const
 
 inline void CDXFcircle::SetEllipseArgv(LPCDXFBLOCK lpBlock, LPCDXFEARGV lpArgv)
 {
-	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0, RAD(360.0), TRUE);
+	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0, PI2, TRUE);
 }
 
 inline BOOL CDXFcircle::IsMakeTarget(void) const
@@ -508,6 +466,7 @@ inline double CDXFcircle::GetLength(void) const
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのCircleExクラス
 //////////////////////////////////////////////////////////////////////
+
 inline BOOL CDXFcircleEx::IsMakeTarget(void) const
 {
 	return FALSE;
@@ -546,6 +505,7 @@ inline const CPointD CDXFcircleEx::GetEndMakePoint(void) const
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのArcクラス
 //////////////////////////////////////////////////////////////////////
+
 inline void CDXFarc::SetRsign(void)
 {
 	// 回転角度が 180°を越えるﾃﾞｰﾀは生成ﾃﾞｰﾀ用の半径をﾏｲﾅｽ
@@ -653,6 +613,7 @@ inline double CDXFarc::GetLength(void) const
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのEllipseクラス
 //////////////////////////////////////////////////////////////////////
+
 inline const CPointD CDXFellipse::GetLongPoint(void) const
 {
 	return m_ptLong;
@@ -752,6 +713,7 @@ inline const CPointD CDXFellipse::GetEndMakePoint(void) const
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのPolylineクラス
 //////////////////////////////////////////////////////////////////////
+
 inline void CDXFpolyline::SetPolyFlag(DWORD dwFlag)
 {
 	m_dwPolyFlags |= dwFlag;
@@ -816,6 +778,7 @@ inline BOOL CDXFpolyline::IsStartEqEnd(void) const
 //////////////////////////////////////////////////////////////////////
 // ＤＸＦデータのTextクラス
 //////////////////////////////////////////////////////////////////////
+
 inline CString CDXFtext::GetStrValue(void) const
 {
 	return m_strValue;

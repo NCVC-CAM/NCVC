@@ -11,7 +11,8 @@
 #include "DXFView.h"
 #include "DxfEditOrgDlg.h"
 #include "DxfAutoWorkingDlg.h"
-#include "NCDoc.h"
+#include "DXFMakeOption.h"
+#include "DXFMakeClass.h"
 #include "MakeNCDlg.h"
 #include "MakeNCDlgEx.h"
 #include "ThreadDlg.h"
@@ -24,8 +25,6 @@ extern	CMagaDbg	g_dbg;
 
 using namespace boost;
 
-// 原点を示すﾃﾞﾌｫﾙﾄの半径
-static	const	double	ORGRADIUS = 10.0;
 // ﾚｲﾔ情報の保存
 static	LPCTSTR	g_szLayerToInitComment[] = {
 	"##\n",
@@ -41,8 +40,20 @@ static	int		LayerCompareFunc_CutNo(CLayerData*, CLayerData*);
 static	int		LayerCompareFunc_Name(CLayerData*, CLayerData*);
 // 結合時の並び替え
 static	int		BindHeightCompareFunc(LPCADBINDINFO, LPCADBINDINFO);
+// 生成時の並び替え
+static	CPointD	g_ptCutterOrg;
+static	int		BindMakeSeqFunc0(LPCADBINDINFO, LPCADBINDINFO);
+static	int		BindMakeSeqFunc1(LPCADBINDINFO, LPCADBINDINFO);
+static	int		BindMakeSeqFunc2(LPCADBINDINFO, LPCADBINDINFO);
+static	int		BindMakeSeqFunc3(LPCADBINDINFO, LPCADBINDINFO);
+static	int		BindMakeSeqFunc4(LPCADBINDINFO, LPCADBINDINFO);
+static	int		BindMakeSeqFunc5(LPCADBINDINFO, LPCADBINDINFO);
+static	int		BindMakeSeqFunc6(LPCADBINDINFO, LPCADBINDINFO);
+static	int		BindMakeSeqFunc7(LPCADBINDINFO, LPCADBINDINFO);
+static	int		BindMakeSeqFunc8(LPCADBINDINFO, LPCADBINDINFO);
 //
 #define	IsBindMode()	m_bDocFlg[DXFDOC_BIND]
+#define	IsBindParent()	m_bDocFlg[DXFDOC_BINDPARENT]
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFDoc
@@ -62,6 +73,7 @@ BEGIN_MESSAGE_MAP(CDXFDoc, CDocument)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_AUTO, &CDXFDoc::OnUpdateEditShaping)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_STRICTOFFSET, &CDXFDoc::OnUpdateEditShaping)
 	//}}AFX_MSG_MAP
+	ON_COMMAND(ID_FILE_NCD2DXF, &CDXFDoc::OnFileDXF2DXF)
 	// NC生成ﾒﾆｭｰ
 	ON_UPDATE_COMMAND_UI_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_WIRE, &CDXFDoc::OnUpdateFileDXF2NCD)
 	ON_COMMAND_RANGE(ID_FILE_DXF2NCD, ID_FILE_DXF2NCD_WIRE, &CDXFDoc::OnFileDXF2NCD)
@@ -75,20 +87,16 @@ END_MESSAGE_MAP()
 
 CDXFDoc::CDXFDoc()
 {
-	int		i;
-
 	// ﾌﾗｸﾞ初期設定
 	m_bDocFlg.set(DXFDOC_RELOAD);
 	m_bDocFlg.set(DXFDOC_THREAD);
 	m_nShapeProcessID = 0;
 	// ﾃﾞｰﾀ数初期化
-	for ( i=0; i<SIZEOF(m_nDataCnt); i++ )
-		m_nDataCnt[i] = 0;
-	for ( i=0; i<SIZEOF(m_nLayerDataCnt); i++ )
-		m_nLayerDataCnt[i] = 0;
+	ZEROCLR(m_nDataCnt);		// m_nDataCnt[i++]=0
+	ZEROCLR(m_nLayerDataCnt);
+	ZEROCLR(m_pLatheLine);
 	m_pCircle = NULL;
-	for ( i=0; i<SIZEOF(m_pLatheLine); i++ )
-		m_pLatheLine[i] = NULL;
+	m_pParentDoc = NULL;
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
 	// 増分割り当てサイズ
@@ -109,7 +117,6 @@ CDXFDoc::~CDXFDoc()
 		delete	m_obLayer[i];
 	for ( i=0; i<m_bindInfo.GetSize(); i++ ) {
 		// CreateObject()で生成したｲﾝｽﾀﾝｽはdelete不要!!
-		delete	m_bindInfo[i]->pParent;
 		delete	m_bindInfo[i];
 	}
 }
@@ -216,7 +223,7 @@ CLayerData* CDXFDoc::AddLayerMap(const CString& strLayer, int nType/*=DXFCAMLAYE
 void CDXFDoc::DelLayerMap(CLayerData* pLayer)
 {
 	if ( pLayer->GetDxfSize()<=0 && pLayer->GetDxfTextSize()<=0 ) {
-		m_mpLayer.RemoveKey(pLayer->GetStrLayer());
+		m_mpLayer.RemoveKey(pLayer->GetLayerName());
 		for ( int i=0; i<m_obLayer.GetSize(); i++ ) {
 			if ( pLayer == m_obLayer[i] ) {
 				m_obLayer.RemoveAt(i);
@@ -245,7 +252,7 @@ CString CDXFDoc::CheckDuplexFile(const CString& strOrgFile, const CLayerArray* p
 		strFile = pLayer->GetNCFile();
 		if ( !pLayer->IsLayerFlag(LAYER_CUT_TARGET) || !pLayer->IsLayerFlag(LAYER_PART_OUT) || strFile.IsEmpty() )
 			continue;
-		strLayer = pLayer->GetStrLayer();
+		strLayer = pLayer->GetLayerName();
 		// ｵﾘｼﾞﾅﾙﾌｧｲﾙとの重複ﾁｪｯｸ(上位ﾀﾞｲｱﾛｸﾞのみ)
 		if ( !strOrgFile.IsEmpty() ) {
 			if ( strOrgFile.CompareNoCase(strFile) == 0 ) {
@@ -271,7 +278,7 @@ CString CDXFDoc::CheckDuplexFile(const CString& strOrgFile, const CLayerArray* p
 
 BOOL CDXFDoc::ReadLayerMap(LPCTSTR lpszFile)
 {
-	extern	LPCTSTR		gg_szComma;		// StdAfx.cpp
+	extern	LPCTSTR		gg_szComma;		// ","
 	int		n;
 	BOOL	bResult = TRUE;
 	CString	strTmp, strBuf;
@@ -337,8 +344,9 @@ BOOL CDXFDoc::SaveLayerMap(LPCTSTR lpszFile, const CLayerArray* pLayer/*=NULL*/)
 		CStdioFile	fp(lpszFile,
 				CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive | CFile::typeText);
 		// ｺﾒﾝﾄ出力
-		for ( i=0; i<SIZEOF(g_szLayerToInitComment); i++ )
-			fp.WriteString(g_szLayerToInitComment[i]);
+		BOOST_FOREACH(auto v, g_szLayerToInitComment) {
+			fp.WriteString(v);
+		}
 		fp.WriteString(g_szLayerToInitComment[0]);
 		// ﾃﾞｰﾀ出力
 		for ( i=0; i<obLayer.GetSize(); i++ ) {
@@ -368,10 +376,9 @@ void CDXFDoc::UpdateLayerSequence(void)
 	m_obLayer.Sort(LayerCompareFunc_CutNo);
 }
 
-void CDXFDoc::AllChangeFactor(double f) const
+void CDXFDoc::AllChangeFactor(double f)
 {
 	int		i;
-	f *= LOMETRICFACTOR;
 
 	for ( i=0; i<m_obLayer.GetSize(); i++ )
 		m_obLayer[i]->AllChangeFactor(f);
@@ -383,13 +390,21 @@ void CDXFDoc::AllChangeFactor(double f) const
 	}
 }
 
-void CDXFDoc::AllRoundObjPoint(const CPointD& ptOrg, double dRound)
+void CDXFDoc::AllSetDxfFlg(DWORD dwFlags, BOOL bSet)
+{
+	for ( int i=0; i<m_obLayer.GetSize(); i++ )
+		m_obLayer[i]->AllSetDxfFlg(dwFlags, bSet);
+}
+
+void CDXFDoc::AllRoundObjPoint(double dRound)
 {
 	int		i, j;
 	CLayerData*	pLayer;
 	CDXFdata*	pData;
 
+	CPointD	ptOrg(m_rcMax.CenterPoint());
 	m_rcMax.SetRectMinimum();
+
 	for ( i=0; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
 		for ( j=0; j<pLayer->GetDxfSize(); j++ ) {
@@ -405,7 +420,7 @@ void CDXFDoc::AllRoundObjPoint(const CPointD& ptOrg, double dRound)
 	}
 }
 
-void CDXFDoc::CreateCutterOrigin(const CPointD& pt, double r, BOOL bRedraw/*=FALSE*/)
+void CDXFDoc::CreateCutterOrigin(const CPointD& pt, double r/*=ORGRADIUS*/, BOOL bRedraw/*=FALSE*/)
 {
 	CDXFcircleEx*	pCircle = NULL;
 
@@ -486,7 +501,7 @@ void CDXFDoc::CreateLatheLine(const CDXFline* pLine, LPCDXFBLOCK pBlock)
 
 BOOL CDXFDoc::GetEditOrgPoint(LPCTSTR lpctStr, CPointD& pt)
 {
-	extern	LPCTSTR	gg_szCat;
+	extern	LPCTSTR	gg_szCat;	// ", "
 	LPTSTR	lpszNum = NULL, lpsztok, lpszcontext;
 	BOOL	bResult = TRUE;
 	
@@ -495,12 +510,7 @@ BOOL CDXFDoc::GetEditOrgPoint(LPCTSTR lpctStr, CPointD& pt)
 		lpszNum = new TCHAR[lstrlen(lpctStr)+1];
 		lpsztok = strtok_s(lstrcpy(lpszNum, lpctStr), gg_szCat, &lpszcontext);
 		for ( int i=0; i<2 && lpsztok; i++ ) {
-			switch ( i ) {
-			case 0:
-				pt.x = atof(lpsztok);	break;
-			case 1:
-				pt.y = atof(lpsztok);	break;
-			}
+			pt[i] = atof(lpsztok);
 			lpsztok = strtok_s(NULL, gg_szCat, &lpszcontext);
 		}
 	}
@@ -527,8 +537,8 @@ tuple<CDXFshape*, CDXFdata*, double> CDXFDoc::GetSelectObject(const CPointD& pt,
 	CDXFdata*	pData;
 	CDXFdata*	pDataResult  = NULL;
 	int			i, j;
+	CRectD		rc;
 	double		dGap, dGapMin = DBL_MAX;
-	CRectD		rcShape;
 
 	// 全ての切削ｵﾌﾞｼﾞｪｸﾄから一番近い集合と距離を取得
 	for ( i=0; i<m_obLayer.GetSize(); i++ ) {
@@ -538,7 +548,7 @@ tuple<CDXFshape*, CDXFdata*, double> CDXFDoc::GetSelectObject(const CPointD& pt,
 		for ( j=0; j<pLayer->GetShapeSize(); j++ ) {
 			pShape = pLayer->GetShapeData(j);
 			// 表示矩形に少しでもかかっていれば(交差含む)
-			if ( rcShape.CrossRect(rcView, pShape->GetMaxRect()) ) {
+			if ( rc.CrossRect(rcView, pShape->GetMaxRect()) ) {
 				dGap = pShape->GetSelectObjectFromShape(pt, &rcView, &pData);
 				if ( dGap < dGapMin ) {
 					dGapMin = dGap;
@@ -552,6 +562,13 @@ tuple<CDXFshape*, CDXFdata*, double> CDXFDoc::GetSelectObject(const CPointD& pt,
 	return make_tuple(pShapeResult, pDataResult, dGapMin);
 }
 
+void CDXFDoc::AddBindInfo(LPCADBINDINFO pInfo)
+{
+	m_bindInfo.Add(pInfo);
+	for ( int i=0; i<SIZEOF(m_nDataCnt); i++ )
+		m_nDataCnt[i] += pInfo->pDoc->GetDxfDataCnt((ENDXFTYPE)i);
+}
+
 void CDXFDoc::SortBindInfo(void)
 {
 	m_bindInfo.Sort(BindHeightCompareFunc);
@@ -563,6 +580,100 @@ void CDXFDoc::SortBindInfo(void)
 		g_dbg.printf("  area=%f", rc.Width() * rc.Height() );
 	}
 #endif
+}
+
+void CDXFDoc::RemoveBindData(INT_PTR n)
+{
+	ASSERT(n>=0 && n<GetBindInfoCnt());
+	m_bindInfo[n]->pView->SendMessage(WM_CLOSE);	// 閉じる処理しないとｳｨﾝﾄﾞｳが残る
+	delete	m_bindInfo[n];
+	m_bindInfo.RemoveAt(n);
+}
+
+void MakeDXF_Sub(const CDXFDoc* pDoc, const CPointD& pt, CDxfMakeArray& obDXFdata)
+{
+	INT_PTR		i, j;
+	CLayerData*	pLayer;
+	CDXFMake*	pMake;
+
+	// 図形情報出力
+	for ( i=0; i<pDoc->GetLayerCnt(); i++ ) {
+		pLayer = pDoc->GetLayerData(i);
+		for ( j=0; j<pLayer->GetDxfSize(); j++ ) {
+			pMake = new CDXFMake(pLayer->GetDxfData(j), pt);
+			obDXFdata.Add(pMake);
+		}
+		for ( j=0; j<pLayer->GetDxfTextSize(); j++ ) {
+			pMake = new CDXFMake(pLayer->GetDxfTextData(j), pt);
+			obDXFdata.Add(pMake);
+		}
+	}
+}
+
+void CDXFDoc::MakeDXF(const CString& strFile)
+{
+	CWaitCursor		wait;
+	CDXFMakeOption	pMakeOpt(FALSE);	// ﾃﾞﾌｫﾙﾄ値で初期化
+	CDxfMakeArray	obDXFdata;// DXF出力ｲﾒｰｼﾞ
+	CDXFMake*		pMake;
+	CPointD		pto;	// (0,0)
+	BOOL		bResult = TRUE;
+	int			i;
+	CString		strMsg;
+
+	// 静的変数初期化
+	CDXFMake::SetStaticOption(&pMakeOpt);
+
+	// 下位の CMemoryException は全てここで集約
+	try {
+		// 各ｾｸｼｮﾝ生成(ENTITIESのｾｸｼｮﾝ名まで)
+		for ( i=SEC_HEADER; i<=SEC_ENTITIES; i++ ) {
+			pMake = new CDXFMake((enSECNAME)i, this);
+			obDXFdata.Add(pMake);
+		}
+		// 図形情報出力
+		if ( IsBindParent() ) {
+			pMake = new CDXFMake(GetMaxRect());	// ﾜｰｸ矩形
+			obDXFdata.Add(pMake);
+			for ( i=0; i<m_bindInfo.GetSize(); i++ ) {
+				if ( m_bindInfo[i]->bTarget ) {
+					pto = m_bindInfo[i]->pt - m_bindInfo[i]->ptOffset;	// 配置座標 - 子ｳｨﾝﾄﾞｳ描画原点
+					MakeDXF_Sub(m_bindInfo[i]->pDoc, pto, obDXFdata);
+				}
+			}
+		}
+		else
+			MakeDXF_Sub(this, pto, obDXFdata);
+		// ENTITIESｾｸｼｮﾝ終了とEOF出力
+		pMake = new CDXFMake(SEC_NOSECNAME);
+		obDXFdata.Add(pMake);
+		// 出力
+		CStdioFile	fp(strFile,
+				CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive | CFile::typeText);
+		for ( i=0; i<obDXFdata.GetSize(); i++ )
+			obDXFdata[i]->WriteDXF(fp);
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		bResult = FALSE;
+	}
+	catch (CFileException* e) {
+		strMsg.Format(IDS_ERR_DATAWRITE, strFile);
+		AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		bResult = FALSE;
+	}
+
+	// ｵﾌﾞｼﾞｪｸﾄ消去
+	for ( i=0; i<obDXFdata.GetSize(); i++ )
+		delete	obDXFdata[i];
+	obDXFdata.RemoveAll();
+
+	if ( bResult ) {
+		strMsg.Format(IDS_ANA_FILEOUTPUT, strFile);
+		AfxMessageBox(strMsg, MB_OK|MB_ICONINFORMATION);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -589,13 +700,23 @@ void CDXFDoc::DbgSerializeInfo(void)
 	for ( int i=0; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
 		dbg.printf("LayerName=%s DataCnt=%d TextCnt=%d",
-			pLayer->GetStrLayer(), pLayer->GetDxfSize(), pLayer->GetDxfTextSize());
+			pLayer->GetLayerName(), pLayer->GetDxfSize(), pLayer->GetDxfTextSize());
 	}
 }
 #endif //_DEBUG
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFDoc クラスのオーバライド関数
+
+BOOL CDXFDoc::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo)
+{
+	if ( IsBindMode() ) {
+		CDXFDoc* pDoc = GetBindParentDoc();
+		return pDoc ? pDoc->OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) : FALSE;
+	}
+
+	return __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+}
 
 BOOL CDXFDoc::OnNewDocument()
 {
@@ -607,27 +728,28 @@ BOOL CDXFDoc::OnNewDocument()
 	m_rcMax.bottom	= pOpt->GetBindSize(NCA_Y);
 	// 原点処理
 	CPointD		pt;
-	switch ( pOpt->GetDxfFlag(DXFOPT_BINDORG) ) {
-	case 1:		// 右上
+	switch ( pOpt->GetDxfOptNum(DXFOPT_BINDORG) ) {
+	case 0:		// 右上
 		pt = m_rcMax.BottomRight();
 		break;
-	case 2:		// 右下
+	case 1:		// 右下
 		pt.x = m_rcMax.right;
 		pt.y = m_rcMax.top;
 		break;
-	case 3:		// 左上
+	case 2:		// 左上
 		pt.x = m_rcMax.left;
 		pt.y = m_rcMax.bottom;
 		break;
-	case 4:		// 左下
+	case 3:		// 左下
 		pt = m_rcMax.TopLeft();
 		break;
-	default:	// 中央(OnOpenDocumentとは並びが違う)
+	default:	// 中央
 		pt = m_rcMax.CenterPoint();
 		break;
 	}
-	CreateCutterOrigin(pt, ORGRADIUS);
+	CreateCutterOrigin(pt);
 	SetDocFlag(DXFDOC_BINDPARENT);	// 統合ﾓｰﾄﾞ(親)に設定
+	SetDocFlag(DXFDOC_RELOAD, FALSE);
 
 	return __super::OnNewDocument();
 }
@@ -652,7 +774,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 	}
 
 	// NC生成可能かどうかのﾁｪｯｸ
-	if ( bResult ) {
+	if ( bResult && !IsBindParent() ) {
 #ifdef _DEBUG
 		DbgSerializeInfo();
 #endif
@@ -673,7 +795,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 			// 原点ﾃﾞｰﾀがないとき(矩形の上下に注意)
 			optional<CPointD>	pt;
 			CPointD				ptRC;	// optional型への代入用
-			switch ( AfxGetNCVCApp()->GetDXFOption()->GetDxfFlag(DXFOPT_ORGTYPE) ) {
+			switch ( AfxGetNCVCApp()->GetDXFOption()->GetDxfOptNum(DXFOPT_ORGTYPE) ) {
 			case 1:	// 右上
 				pt = m_rcMax.BottomRight();
 				break;
@@ -699,7 +821,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 				break;
 			}
 			if ( pt ) {
-				CreateCutterOrigin(*pt, ORGRADIUS);
+				CreateCutterOrigin(*pt);
 				m_bDocFlg.set(DXFDOC_READY);	// 生成OK!
 			}
 		}
@@ -747,9 +869,15 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());	// CDocBase
 	}
 
-	if ( !IsBindMode() ) {
-		// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
-		AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
+	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
+	AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(0);
+
+	if ( IsBindParent() ) {
+		// ｽﾃｰﾀｽﾊﾞｰの表示更新
+		POSITION	pos = GetFirstViewPosition();
+		ASSERT( pos );
+		CView*		pViewParent = GetNextView(pos);
+		pViewParent->PostMessage(WM_USERBINDINIT, 1);
 	}
 
 	return bResult;
@@ -839,13 +967,31 @@ BOOL CDXFDoc::SaveModified()
 
 void CDXFDoc::UpdateFrameCounts()
 {
-	// ﾌﾚｰﾑの数を抑制することでｳｨﾝﾄﾞｳﾀｲﾄﾙの「:1」を付与しないようにする
-	CFrameWnd*	pFrame;
-	for ( POSITION pos=GetFirstViewPosition(); pos; ) {
-		pFrame = GetNextView(pos)->GetParentFrame();
-		if ( pFrame ) {
-			pFrame->m_nWindow = 0;
-			pFrame->OnUpdateFrameTitle(TRUE);
+	if ( !IsBindMode() ) {
+/*
+		// ﾌﾚｰﾑの数を抑制することでｳｨﾝﾄﾞｳﾀｲﾄﾙの「:1」を付与しないようにする
+		CFrameWnd*	pFrame;
+		for ( POSITION pos=GetFirstViewPosition(); pos; ) {
+			pFrame = GetNextView(pos)->GetParentFrame();
+			if ( pFrame ) {
+				pFrame->m_nWindow = 0;
+				pFrame->OnUpdateFrameTitle(TRUE);
+				break;
+			}
+		}
+*/
+		// 子のﾄﾞｷｭﾒﾝﾄがｱｸﾃｨﾌﾞになって
+		// ﾌﾚｰﾑのﾌｧｲﾙ名が消える現象への対応
+		POSITION pos = GetFirstViewPosition();
+		if ( pos ) {
+			CView*	pView = GetNextView(pos);
+			if ( pView ) {
+				CFrameWnd* pFrame = pView->GetParentFrame();
+				if ( pFrame ) {
+					pFrame->SetActiveView(pView, FALSE);
+					__super::UpdateFrameCounts();
+				}
+			}
 		}
 	}
 }
@@ -861,14 +1007,18 @@ void CDXFDoc::Serialize(CArchive& ar)
 	m_bDocFlg.reset(DXFDOC_RELOAD);
 
 	int			i, j, nLoopCnt;
-	BYTE		nCnt = 0;
+	BYTE		nByte = 0;
 	BOOL		bReady, bShape;
 	CPointD		pt;
+	CDXFDoc*	pDoc = static_cast<CDXFDoc*>(ar.m_pDocument);
 	CLayerData*	pLayer;
 
-	// ﾍｯﾀﾞｰ情報
-	CCAMHead	cam;
-	cam.Serialize(ar);
+	// 自分自身が親、または、呼び出し元が親でない
+	if ( IsBindParent() || !pDoc->IsDocFlag(DXFDOC_BINDPARENT) ) {
+		// ﾍｯﾀﾞｰ情報
+		CCAMHead	cam;
+		cam.Serialize(ar);
+	}
 
 	if ( ar.IsStoring() ) {
 		// 各種状態
@@ -896,16 +1046,33 @@ void CDXFDoc::Serialize(CArchive& ar)
 			ar << (BYTE)0;
 		// 旋盤原点
 		if ( m_pLatheLine[0] )
-			nCnt++;
+			nByte++;
 		if ( m_pLatheLine[1] )
-			nCnt++;
-		ar << nCnt;
+			nByte++;
+		ar << nByte;
 		for ( i=0; i<SIZEOF(m_pLatheLine); i++ ) {
 			if ( m_pLatheLine[i] )
 				ar.WriteObject(m_pLatheLine[i]);
 		}
-		// ﾚｲﾔ情報(兼DXFﾃﾞｰﾀ)の保存
-		m_obLayer.Serialize(ar);
+		// 統合情報
+		ar << m_rcMax.left << m_rcMax.top << m_rcMax.right << m_rcMax.bottom;
+		nLoopCnt = m_bindInfo.GetSize();
+		ar << nLoopCnt;
+		if ( nLoopCnt > 0 ) {
+			LPCADBINDINFO	pInfo;
+			for ( i=0; i<nLoopCnt; i++ ) {
+				ar.m_pDocument = this;	// 親子の区別が変化しないように
+				pInfo = m_bindInfo[i];
+				ar << (BYTE)(pInfo->bTarget ? 1 : 0);
+				ar << pInfo->pDoc->GetPathName();
+				ar << pInfo->pt.x << pInfo->pt.y << pInfo->ptOffset.x << pInfo->ptOffset.y;
+				pInfo->pDoc->Serialize(ar);
+			}
+		}
+		else {
+			// ﾚｲﾔ情報(兼DXFﾃﾞｰﾀ)の保存
+			m_obLayer.Serialize(ar);
+		}
 		return;		//保存はここまで
 	}
 
@@ -913,41 +1080,99 @@ void CDXFDoc::Serialize(CArchive& ar)
 	ar >> bReady >> bShape;
 	m_bDocFlg.set(DXFDOC_READY, bReady);
 	m_bDocFlg.set(DXFDOC_SHAPE, bShape);
-	if ( g_dwCamVer > NCVCSERIALVERSION_1600 ) {	// Ver1.70～
+	if ( g_dwCamVer >= NCVCSERIALVERSION_1700 ) {	// Ver1.70～
 		ar >> m_AutoWork.nSelect >> m_AutoWork.dOffset >> m_AutoWork.bAcuteRound >>
 			m_AutoWork.nLoopCnt >> m_AutoWork.nScanLine >> m_AutoWork.bCircleScroll;
 	}
 	else {
 		ar >> m_AutoWork.dOffset;
-		if ( g_dwCamVer > NCVCSERIALVERSION_1503 )	// Ver1.10～
+		if ( g_dwCamVer >= NCVCSERIALVERSION_1505 )	// Ver1.10～
 			ar >> m_AutoWork.bAcuteRound;
 	}
 	// NC生成ﾌｧｲﾙ名
 	ar >> m_strNCFileName;
 	// 原点ｵﾌﾞｼﾞｪｸﾄ
-	ar >> nCnt;
-	if ( nCnt > 0 )
+	ar >> nByte;
+	if ( nByte > 0 )
 		m_pCircle = static_cast<CDXFcircleEx*>(ar.ReadObject(RUNTIME_CLASS(CDXFcircleEx)));
-	// CADｵﾘｼﾞﾅﾙ原点
-	if ( g_dwCamVer > NCVCSERIALVERSION_1505 ) // Ver1.10a～
-		ar >> nCnt;
+	// CADｵﾘｼﾞﾅﾙ原点(Ver1.10a～)
+	if ( g_dwCamVer >= NCVCSERIALVERSION_1507 )
+		ar >> nByte;
 	else
-		nCnt = 1;		// 強制読み込み
-	if ( nCnt > 0 ) {
+		nByte = 1;		// 強制読み込み
+	if ( nByte > 0 ) {
 		ar >> pt.x >> pt.y;
 		m_ptOrgOrig = pt;
 	}
-	// 旋盤原点
-	if ( g_dwCamVer > NCVCSERIALVERSION_1700 ) {	// Ver2.30～
-		ar >> nCnt;
-		for ( i=0; i<nCnt && i<SIZEOF(m_pLatheLine); i++ )
+	// 旋盤原点(Ver2.30～)
+	if ( g_dwCamVer >= NCVCSERIALVERSION_2300 ) {
+		ar >> nByte;
+		for ( i=0; i<nByte && i<SIZEOF(m_pLatheLine); i++ )
 			m_pLatheLine[i] = static_cast<CDXFline*>(ar.ReadObject(RUNTIME_CLASS(CDXFline)));
 		for ( ; i<SIZEOF(m_pLatheLine); i++ )
 			m_pLatheLine[i] = NULL;
 	}
-
-	// ﾚｲﾔ情報(兼DXFﾃﾞｰﾀ)の読み込み
-	m_obLayer.Serialize(ar);
+	// 統合情報(Ver3.60～)
+	if ( g_dwCamVer >= NCVCSERIALVERSION_3600 ) {
+		ar >> m_rcMax.left >> m_rcMax.top >> m_rcMax.right >> m_rcMax.bottom;
+		ar >> nLoopCnt;
+	}
+	else
+		nLoopCnt = 0;
+	if ( nLoopCnt > 0 ) {
+		SetDocFlag(DXFDOC_BINDPARENT);
+		CString			strPath;
+		LPCADBINDINFO	pInfo;
+		CDXFView*		pView;
+		CRect			rc;
+		CPointD			ptOffset;
+		BOOL			bResult;
+		POSITION	pos = GetFirstViewPosition();
+		ASSERT( pos );
+		CView*		pViewParent = GetNextView(pos);
+		ASSERT( pViewParent );
+		for ( i=0; i<nLoopCnt; i++ ) {
+			// 対象ﾌﾗｸﾞ
+			ar >> nByte;
+			// ﾌｧｲﾙ名
+			ar >> strPath;
+			// 配置座標
+			ar >> pt.x >> pt.y >> ptOffset.x >> ptOffset.y;
+			// 子ﾄﾞｷｭﾒﾝﾄの生成
+			pDoc  = static_cast<CDXFDoc*>(RUNTIME_CLASS(CDXFDoc)->CreateObject());
+			if ( pDoc ) {
+				pDoc->SetPathName(strPath, FALSE);
+				ar.m_pDocument = this;
+				pDoc->SetDocFlag(DXFDOC_BIND);
+				pDoc->SetBindParentDoc(this);
+				pDoc->Serialize(ar);
+				// 子ﾋﾞｭｰの生成
+				pView = static_cast<CDXFView*>(RUNTIME_CLASS(CDXFView)->CreateObject());
+				if ( pView ) {
+					if ( bResult=pView->Create(NULL, NULL, AFX_WS_DEFAULT_VIEW, rc, pViewParent, AFX_IDW_PANE_FIRST+i+1) ) {
+						pDoc->AddView(pView);
+						pView->OnInitialUpdate();
+					}
+					else {
+						pView->DestroyWindow();
+						pView = NULL;
+					}
+				}
+				else
+					bResult = FALSE;
+				if ( bResult ) {
+					pInfo = new CADBINDINFO(nByte ? TRUE : FALSE, pDoc, pView, pt, ptOffset);
+					AddBindInfo(pInfo);
+				}
+				else
+					delete	pDoc;
+			}
+		}
+	}
+	else {
+		// ﾚｲﾔ情報(兼DXFﾃﾞｰﾀ)の読み込み
+		m_obLayer.Serialize(ar);
+	}
 
 	// --- ﾃﾞｰﾀ読み込み後の処理
 
@@ -965,7 +1190,7 @@ void CDXFDoc::Serialize(CArchive& ar)
 	for ( i=0; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
 		// 通常配列からﾚｲﾔ名のﾏｯﾋﾟﾝｸﾞ
-		m_mpLayer.SetAt(pLayer->GetStrLayer(), pLayer);
+		m_mpLayer.SetAt(pLayer->GetLayerName(), pLayer);
 		// ﾃﾞｰﾀのｶｳﾝﾄと占有領域の設定
 		nLoopCnt = pLayer->GetDxfSize();
 		m_nLayerDataCnt[pLayer->GetLayerType()-1] += nLoopCnt;
@@ -1046,6 +1271,12 @@ void CDXFDoc::OnEditOrigin()
 	}
 }
 
+void CDXFDoc::OnUpdateEditShape(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(m_bDocFlg[DXFDOC_LATHE]||IsBindParent() ?
+		FALSE : !m_bDocFlg[DXFDOC_SHAPE]);
+}
+
 void CDXFDoc::OnEditShape() 
 {
 	// 状況案内ﾀﾞｲｱﾛｸﾞ(検索ｽﾚｯﾄﾞ生成)
@@ -1123,11 +1354,6 @@ void CDXFDoc::OnEditStrictOffset()
 	}
 }
 
-void CDXFDoc::OnUpdateEditShape(CCmdUI* pCmdUI) 
-{
-	pCmdUI->Enable(m_bDocFlg[DXFDOC_LATHE] ? FALSE : !m_bDocFlg[DXFDOC_SHAPE]);
-}
-
 void CDXFDoc::OnUpdateEditShaping(CCmdUI* pCmdUI) 
 {
 	pCmdUI->Enable(m_bDocFlg[DXFDOC_SHAPE]);
@@ -1156,6 +1382,24 @@ void CDXFDoc::OnShapePattern(UINT nID)
 		m_nShapeProcessID = 0;	// 加工指示無効化
 }
 
+void CDXFDoc::OnFileDXF2DXF() 
+{
+	CString	strPath, strFile, strExt, strNewFile;
+	if ( IsBindParent() && GetPathName().IsEmpty() ) {
+		// 統合直後
+		ASSERT( GetBindInfoCnt() >= 0 );
+		::Path_Name_From_FullPath(GetBindInfoData(0)->pDoc->GetPathName(), strNewFile, strFile);
+	}
+	else {
+		::Path_Name_From_FullPath(GetPathName(), strPath, strFile, FALSE);
+		VERIFY(strExt.LoadString(IDS_DXF_FILTER));
+		strNewFile = strPath + strFile + '.' + strExt.Left(3);	// .dxf
+	}
+	if ( ::NCVC_FileDlgCommon(AFX_IDS_SAVEFILE, IDS_DXF_FILTER, TRUE, strNewFile, NULL,
+				FALSE, OFN_HIDEREADONLY|OFN_PATHMUSTEXIST|OFN_OVERWRITEPROMPT) == IDOK )
+		MakeDXF(strNewFile);
+}
+
 void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI) 
 {
 	BOOL	bEnable = TRUE;
@@ -1164,7 +1408,7 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 		bEnable = FALSE;
 	else {
 		switch ( pCmdUI->m_nID ){
-		case ID_FILE_DXF2NCD:
+		case ID_FILE_DXF2NCD:	// ないとdefaultに引っかかる...
 			break;		// OK
 		case ID_FILE_DXF2NCD_SHAPE:
 			bEnable = m_bDocFlg[DXFDOC_SHAPE];	// 形状処理が済んでいるか
@@ -1187,13 +1431,14 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 
 void CDXFDoc::OnFileDXF2NCD(UINT nID) 
 {
-	int		i;
+	int			i;
 	enMAKETYPE	enType;
-	BOOL	bNCView,
+	BOOL	bNCView, bAllOut,
 			bSingle = (nID==ID_FILE_DXF2NCD || nID==ID_FILE_DXF2NCD_SHAPE ||
 						nID==ID_FILE_DXF2NCD_LATHE || nID==ID_FILE_DXF2NCD_WIRE);
+	CDocument*	pDoc;
 	CLayerData* pLayer;
-	CString	strInit, strLayerFile;
+	CString		strInit, strLayerFile;
 	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
 
 	if ( nID == ID_FILE_DXF2NCD_SHAPE ) {
@@ -1251,8 +1496,6 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 	}
 	pOpt->SetViewFlag(bNCView);
 
-	BOOL		bAllOut;
-	CDocument*	pDoc;
 	// すでに開いているﾄﾞｷｭﾒﾝﾄなら閉じるｱﾅｳﾝｽ
 	if ( bSingle ) {
 		pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, m_strNCFileName);
@@ -1288,26 +1531,94 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 	m_csRestoreCircleType.Unlock();
 
 	// 状況案内ﾀﾞｲｱﾛｸﾞ(変換ｽﾚｯﾄﾞ生成)
-	CThreadDlg	dlgThread(ID_FILE_DXF2NCD, this, (WPARAM)nID);
-	int nRet = dlgThread.DoModal();
-
-	// CDXFCircleの穴加工対象ﾃﾞｰﾀを元に戻す
-	AfxBeginThread(RestoreCircleTypeThread, this,
-		/*THREAD_PRIORITY_LOWEST*/
-		THREAD_PRIORITY_IDLE
-		/*THREAD_PRIORITY_BELOW_NORMAL*/);
-
-	// 「NC生成後に開く」が無効の場合だけ出力完了ﾒｯｾｰｼﾞ
-	if ( nRet == IDOK ) {
-		if ( !bNCView && bAllOut ) {
-			CString	strMsg;
-			strMsg.Format(IDS_ANA_FILEOUTPUT, m_strNCFileName);
-			AfxMessageBox(strMsg, MB_OK|MB_ICONINFORMATION);
-			return;
+	CThreadDlg*	pDlg;
+	int		nResult = IDOK;
+	if ( IsBindParent() ) {
+		// ID_FILE_DXF2NCD -> ID_FILE_DXF2NCD_SHAPE
+		// ID_FILE_DXF2NCD_WIRE -> そのまま
+		// この2ﾊﾟﾀｰﾝのみ
+		if ( nID == ID_FILE_DXF2NCD )
+			nID = ID_FILE_DXF2NCD_SHAPE;
+		int	nLoop = m_bindInfo.GetSize();
+		CDXFDoc* pChildDoc;
+		if ( nLoop == 1 ) {
+			if ( m_bindInfo[0]->bTarget ) {
+				pChildDoc = m_bindInfo[0]->pDoc;
+				pChildDoc->m_strNCFileName = m_strNCFileName;
+				pDlg = new CThreadDlg(ID_FILE_DXF2NCD, pChildDoc,
+								(WPARAM)nID, (LPARAM)-2);
+				nResult = pDlg->DoModal();
+				// CDXFCircleの穴加工対象ﾃﾞｰﾀを元に戻す
+				AfxBeginThread(RestoreCircleTypeThread, pChildDoc,
+					THREAD_PRIORITY_LOWEST);
+				delete	pDlg;
+			}
+			else
+				nResult = IDCANCEL;
+		}
+		else {
+			// 原点に近い順で並べ替え
+			switch ( pOpt->GetDxfOptNum(DXFOPT_BINDSORT) ) {
+			case 1:		// 左上から右に
+				m_bindInfo.Sort(BindMakeSeqFunc1);
+				break;
+			case 2:		// 左上から下に
+				m_bindInfo.Sort(BindMakeSeqFunc2);
+				break;
+			case 3:		// 右上から左に
+				m_bindInfo.Sort(BindMakeSeqFunc3);
+				break;
+			case 4:		// 右上から下に
+				m_bindInfo.Sort(BindMakeSeqFunc4);
+				break;
+			case 5:		// 左下から右に
+				m_bindInfo.Sort(BindMakeSeqFunc5);
+				break;
+			case 6:		// 左下から上に
+				m_bindInfo.Sort(BindMakeSeqFunc6);
+				break;
+			case 7:		// 右下から左に
+				m_bindInfo.Sort(BindMakeSeqFunc7);
+				break;
+			case 8:		// 右下から上に
+				m_bindInfo.Sort(BindMakeSeqFunc8);
+				break;
+			default:	// 原点に近い順
+				g_ptCutterOrg = m_pCircle->GetCenter();
+				m_bindInfo.Sort(BindMakeSeqFunc0);
+			}
+			for ( i=0; i<nLoop && nResult==IDOK; i++ ) {
+				if ( m_bindInfo[i]->bTarget ) {
+					pChildDoc = m_bindInfo[i]->pDoc;
+					pChildDoc->m_strNCFileName = m_strNCFileName;
+					pDlg = new CThreadDlg(ID_FILE_DXF2NCD, pChildDoc,
+								(WPARAM)nID,
+								(LPARAM)(i<nLoop-1 ? i+1 : -1));
+					nResult = pDlg->DoModal();
+					AfxBeginThread(RestoreCircleTypeThread, pChildDoc,
+						THREAD_PRIORITY_LOWEST);
+					delete	pDlg;
+				}
+			}
 		}
 	}
-	else
+	else {
+		pDlg = new CThreadDlg(ID_FILE_DXF2NCD, this, (WPARAM)nID);
+		nResult = pDlg->DoModal();
+		AfxBeginThread(RestoreCircleTypeThread, this,
+			THREAD_PRIORITY_IDLE);
+		delete	pDlg;
+	}
+
+	if ( nResult != IDOK )
 		return;
+	// 「NC生成後に開く」が無効の場合だけ出力完了ﾒｯｾｰｼﾞ
+	if ( !bNCView && bAllOut ) {
+		CString	strMsg;
+		strMsg.Format(IDS_ANA_FILEOUTPUT, m_strNCFileName);
+		AfxMessageBox(strMsg, MB_OK|MB_ICONINFORMATION);
+		return;
+	}
 
 	// NC生成後のﾃﾞｰﾀを開く
 	if ( bSingle ) {
@@ -1390,7 +1701,7 @@ int LayerCompareFunc_CutNo(CLayerData* pFirst, CLayerData* pSecond)
 
 int LayerCompareFunc_Name(CLayerData* pFirst, CLayerData* pSecond)
 {
-	return pFirst->GetStrLayer().Compare( pSecond->GetStrLayer() );
+	return pFirst->GetLayerName().Compare( pSecond->GetLayerName() );
 }
 
 int BindHeightCompareFunc(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
@@ -1399,15 +1710,220 @@ int BindHeightCompareFunc(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
 			rc2( pSecond->pDoc->GetMaxRect() );
 	double	h1 = rc1.Height(), h2 = rc2.Height(),
 			w1 = rc1.Width(),  w2 = rc2.Width();
-	if ( h1 > h2 )
-		return -1;
-	else if ( h1 < h2 )
-		return 1;
+	int		nResult;
+	if ( h1 < h2 )
+		nResult = 1;
+	else if ( h1 > h2 )
+		nResult = -1;
 	else {
-		if ( w1 > w2 )
-			return -1;
-		else if ( w1 < w2 )
-			return 1;
+		if ( w1 < w2 )
+			nResult = 1;
+		else if ( w1 > w2 )
+			nResult = -1;
+		else
+			nResult = 0;
 	}
-	return 0;
+	return nResult;
+}
+
+int BindMakeSeqFunc0(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	int		nResult;
+	// 加工原点に近い順
+	CPointD	ptDiff1(pFirst->pt  - g_ptCutterOrg),
+			ptDiff2(pSecond->pt - g_ptCutterOrg);
+	double	diff1 = ptDiff1.hypot(),
+			diff2 = ptDiff2.hypot();
+	if ( diff1 < diff2 )
+		nResult = -1;
+	else if ( diff1 > diff2 )
+		nResult = 1;
+	else
+		nResult = 0;
+
+	return nResult;
+}
+
+int BindMakeSeqFunc1(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	int		nResult;
+	// 左上から右に
+	if ( pFirst->pt.y < pSecond->pt.y )
+		nResult = 1;
+	else if ( pFirst->pt.y > pSecond->pt.y )
+		nResult = -1;
+	else {
+		if ( pFirst->pt.x < pSecond->pt.x )
+			nResult = -1;
+		else if ( pFirst->pt.x > pSecond->pt.x )
+			nResult = 1;
+		else
+			nResult = 0;
+	}
+
+	return nResult;
+}
+
+int BindMakeSeqFunc2(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	int		nResult;
+	// 左上から下に
+	if ( pFirst->pt.x < pSecond->pt.x )
+		nResult = -1;
+	else if ( pFirst->pt.x > pSecond->pt.x )
+		nResult = 1;
+	else {
+		if ( pFirst->pt.y < pSecond->pt.y )
+			nResult = 1;
+		else if ( pFirst->pt.y > pSecond->pt.y )
+			nResult = -1;
+		else
+			nResult = 0;
+	}
+
+	return nResult;
+}
+
+int BindMakeSeqFunc3(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	int		nResult;
+	CRectD	rc1(pFirst->pDoc->GetMaxRect()),
+			rc2(pSecond->pDoc->GetMaxRect());
+	CPointD	pt1(pFirst->pt.x +rc1.Width(), pFirst->pt.y),
+			pt2(pSecond->pt.x+rc2.Width(), pSecond->pt.y);
+	// 右上から左に
+	if ( pt1.y < pt2.y )
+		nResult = 1;
+	else if ( pt1.y > pt2.y )
+		nResult = -1;
+	else {
+		if ( pt1.x < pt2.x )
+			nResult = 1;
+		else if ( pt1.x > pt2.x )
+			nResult = -1;
+		else
+			nResult = 0;
+	}
+
+	return nResult;
+}
+
+int BindMakeSeqFunc4(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	int		nResult;
+	CRectD	rc1(pFirst->pDoc->GetMaxRect()),
+			rc2(pSecond->pDoc->GetMaxRect());
+	CPointD	pt1(pFirst->pt.x +rc1.Width(), pFirst->pt.y),
+			pt2(pSecond->pt.x+rc2.Width(), pSecond->pt.y);
+	// 右上から下に
+	if ( pt1.x < pt2.x )
+		nResult = 1;
+	else if ( pt1.x > pt2.x )
+		nResult = -1;
+	else {
+		if ( pt1.y < pt2.y )
+			nResult = 1;
+		else if ( pt1.y > pt2.y )
+			nResult = -1;
+		else
+			nResult = 0;
+	}
+
+	return nResult;
+}
+
+int BindMakeSeqFunc5(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	int		nResult;
+	CRectD	rc1(pFirst->pDoc->GetMaxRect()),
+			rc2(pSecond->pDoc->GetMaxRect());
+	CPointD	pt1(pFirst->pt.x,  pFirst->pt.y -rc1.Height()),
+			pt2(pSecond->pt.x, pSecond->pt.y-rc2.Height());
+	// 左下から右に
+	if ( pt1.y < pt2.y )
+		nResult = -1;
+	else if ( pt1.y > pt2.y )
+		nResult = 1;
+	else {
+		if ( pt1.x < pt2.x )
+			nResult = -1;
+		else if ( pt1.x > pt2.x )
+			nResult = 1;
+		else
+			nResult = 0;
+	}
+
+	return nResult;
+}
+
+int BindMakeSeqFunc6(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	int		nResult;
+	CRectD	rc1(pFirst->pDoc->GetMaxRect()),
+			rc2(pSecond->pDoc->GetMaxRect());
+	CPointD	pt1(pFirst->pt.x,  pFirst->pt.y -rc1.Height()),
+			pt2(pSecond->pt.x, pSecond->pt.y-rc2.Height());
+	// 左下から上に
+	if ( pt1.x < pt2.x )
+		nResult = -1;
+	else if ( pt1.x > pt2.x )
+		nResult = 1;
+	else {
+		if ( pt1.y < pt2.y )
+			nResult = -1;
+		else if ( pt1.y > pt2.y )
+			nResult = 1;
+		else
+			nResult = 0;
+	}
+
+	return nResult;
+}
+
+int BindMakeSeqFunc7(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	int		nResult;
+	CRectD	rc1(pFirst->pDoc->GetMaxRect()),
+			rc2(pSecond->pDoc->GetMaxRect());
+	CPointD	pt1(pFirst->pt.x +rc1.Width(), pFirst->pt.y -rc1.Height()),
+			pt2(pSecond->pt.x+rc2.Width(), pSecond->pt.y-rc2.Height());
+	// 右下から左に
+	if ( pt1.y < pt2.y )
+		nResult = -1;
+	else if ( pt1.y > pt2.y )
+		nResult = 1;
+	else {
+		if ( pt1.x < pt2.x )
+			nResult = 1;
+		else if ( pt1.x > pt2.x )
+			nResult = -1;
+		else
+			nResult = 0;
+	}
+
+	return nResult;
+}
+
+int BindMakeSeqFunc8(LPCADBINDINFO pFirst, LPCADBINDINFO pSecond)
+{
+	int		nResult;
+	CRectD	rc1(pFirst->pDoc->GetMaxRect()),
+			rc2(pSecond->pDoc->GetMaxRect());
+	CPointD	pt1(pFirst->pt.x +rc1.Width(), pFirst->pt.y -rc1.Height()),
+			pt2(pSecond->pt.x+rc2.Width(), pSecond->pt.y-rc2.Height());
+	// 右下から上に
+	if ( pt1.x < pt2.x )
+		nResult = 1;
+	else if ( pt1.x > pt2.x )
+		nResult = -1;
+	else {
+		if ( pt1.y < pt2.y )
+			nResult = -1;
+		else if ( pt1.y > pt2.y )
+			nResult = 1;
+		else
+			nResult = 0;
+	}
+
+	return nResult;
 }

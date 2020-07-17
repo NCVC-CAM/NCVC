@@ -14,6 +14,26 @@ enum {
 	DXFTREETYPE_WORKING
 };
 
+// 子ﾋﾞｭｰの選択情報 -> vector<> m_bindSel
+struct SELECTBIND
+{
+	int		nSel;
+	CPoint	ptDiff;
+	CRect	rc;
+	bool operator < (const SELECTBIND& sel) const {
+		return nSel > sel.nSel;		// 降順
+	}
+};
+
+// ﾏｳｽ操作の遷移(子ｳｨﾝﾄﾞｳ移動用)
+enum ENBINDSTATE
+{
+	BD_NONE = 0,
+	BD_SELECT,
+	BD_MOVE,
+	BD_CANCEL
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // CDXFView ビュー
 
@@ -22,26 +42,30 @@ class CDXFView : public CViewBase
 	CPointD		m_ptArraw[2][3],	// 一時的な始点終点の矢印座標
 				m_ptStart[4];		// 一時的な開始位置(円で最大4点)
 	CDXFchain	m_ltOutline[2];		// 一時的な輪郭ｵﾌﾞｼﾞｪｸﾄ
+	CDXFdata*	m_pSelData;			// 　〃　ｵﾌﾞｼﾞｪｸﾄ(OnLButtonUp)
+	DXFTREETYPE	m_vSelect;			// 現在選択されているﾂﾘｰｵﾌﾞｼﾞｪｸﾄ
 	double		m_dOffset;			// ↑のｵﾌｾｯﾄ値
 	int			m_nSelect;			// m_ptArraw[0|1] or -1
-	DXFTREETYPE	m_vSelect;			// 現在選択されているﾂﾘｰｵﾌﾞｼﾞｪｸﾄ
-	CDXFdata*	m_pSelData;			// 　〃　ｵﾌﾞｼﾞｪｸﾄ(OnLButtonUp)
 	CRect		m_rcDrawWork;		// ﾜｰｸ矩形(bind)
+	std::vector<SELECTBIND>						m_bindSel;	// 選択情報
+	CTypedPtrListEx<CPtrList, LPCADBINDINFO>	m_bindUndo;	// 移動のUNDO蓄積
+	ENBINDSTATE	m_enBind;
 
 	BOOL	OnUpdateShape(DXFTREETYPE[]);
 	BOOL	IsRootTree(DWORD);
-	BOOL	SendParentMessage(UINT, UINT, CPoint&);
 	void	DrawTemporaryProcess(CDC* pDC);
 	void	DrawTempArraw(CDC*);
 	void	DrawTempStart(CDC*);
 	void	DrawTempOutline(CDC*);
-	void	OnViewLensComm(void);
 	CDXFworking*	CreateWorkingData(void);
 	BOOL	CreateOutlineTempObject(CDXFshape*);
 	void	DeleteOutlineTempObject(void);
 	BOOL	CancelForSelect(CDC* = NULL);
 	void	AllChangeFactor_OutlineTempObject(void);
 	void	BindMove(BOOL);
+	void	BindMsgPost(CDC*, LPCADBINDINFO, CPoint*);
+	BOOL	IsBindSelected(int);
+	void	ClearBindSelectData(void);
 
 	void	OnLButtonUp_Separate(CDC*, CDXFdata*, const CPointD&, const CRectD&);
 	void	OnLButtonUp_Vector  (CDC*, CDXFdata*, const CPointD&, const CRectD&);
@@ -62,47 +86,60 @@ public:
 
 // オペレーション
 public:
+	virtual ~CDXFView();
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 	//{{AFX_VIRTUAL(CDXFView)
 	public:
 	virtual void OnInitialUpdate();
+	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	protected:
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
 	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
-//	virtual void OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView);
 	//}}AFX_VIRTUAL
 
 	// 生成されたメッセージ マップ関数
 protected:
 	//{{AFX_MSG(CDXFView)
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+#ifdef _DEBUG
+	afx_msg void OnRButtonDblClk(UINT nFlags, CPoint point);
+#endif
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
 	afx_msg void OnViewLayer();
 	afx_msg void OnUpdateViewLayer(CCmdUI* pCmdUI);
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
-	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
+	afx_msg void OnEditUndo();
+	afx_msg void OnUpdateEditUndo(CCmdUI* pCmdUI);
 	afx_msg void OnEditCopy();
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg LRESULT OnNcHitTest(CPoint point);
 	//}}AFX_MSG
 	// OnInitialUpdate() から PostMessage() or 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
 	afx_msg LRESULT OnUserViewFitMsg(WPARAM, LPARAM);
 	// MDI子ﾌﾚｰﾑのｽﾃｰﾀｽﾊﾞｰ表示更新(ｵﾌﾞｼﾞｪｸﾄIDがClassWizard一覧に載らないので手動ｺｰﾃﾞｨﾝｸﾞ)
 	afx_msg void OnUpdateMouseCursor(CCmdUI* pCmdUI);
 	// CADﾃﾞｰﾀの統合
+	afx_msg void OnUpdateEditBind(CCmdUI* pCmdUI);
+	afx_msg void OnEditBindDel();
+	afx_msg void OnEditBindTarget();
 	afx_msg LRESULT OnBindInitMsg(WPARAM, LPARAM);
+	afx_msg LRESULT OnBindLButtonDown(WPARAM, LPARAM);
+	afx_msg LRESULT OnBindRoundMsg(WPARAM, LPARAM);
+	afx_msg LRESULT OnBindCancel(WPARAM, LPARAM);
 	// 移動
 	afx_msg	void OnMoveKey(UINT);
 	afx_msg	void OnLensKey(UINT);
+	//
+	virtual	void	OnViewLensComm(void);
 
 	DECLARE_MESSAGE_MAP()
 };

@@ -10,7 +10,8 @@
 
 // 一般定義
 const double NCMIN = 0.001;			// NCの桁落ち誤差
-const double PI = 3.1415926535897932384626433832795;
+const double PI  = 3.1415926535897932384626433832795;
+const double PI2 = 2.0*PI;
 
 // 円を64(360度/64≒5.6度)分割で描画
 const int		ARCCOUNT = 64;
@@ -345,9 +346,16 @@ public:
 	BOOL	PtInRect(const CPointT<T>& pt) const {
 		return left<=pt.x && pt.x<=right && top<=pt.y && pt.y<=bottom;
 	}
+	// ↓は危険
+//	BOOL	PtInRect(const CRectT<T>& rc) const {
+//		return PtInRect(rc.TopLeft()) || PtInRect(rc.BottomRight());
+//	}
 	// 指定矩形が矩形内に完全に含まれるか
-	BOOL	PtInRect(const CRectT<T>& rc) const {
+	BOOL	RectInRect(const CRectT<T>& rc) const {
 		return PtInRect(rc.TopLeft()) && PtInRect(rc.BottomRight());
+	}
+	BOOL	RectInRect(const CRectT<T>* rc) const {
+		return PtInRect(rc->TopLeft()) && PtInRect(rc->BottomRight());
 	}
 	// 2つの四角形が交わる部分に相当する四角形を設定
 	BOOL	CrossRect(const CRectT<T>& rc1, const CRectT<T>& rc2) {
@@ -355,7 +363,7 @@ public:
 		top		= max(rc1.top,		rc2.top);
 		right	= min(rc1.right,	rc2.right);
 		bottom	= min(rc1.bottom,	rc2.bottom);
-		if ( rc1.PtInRect(TopLeft()) && rc1.PtInRect(BottomRight()) )
+		if ( rc1.RectInRect(this) )
 			return TRUE;
 		SetRectEmpty();
 		return FALSE;
@@ -424,9 +432,18 @@ public:
 		return rect[a];
 	}
 	// 代入関数
+	void	SetRect(const CRectT<T>* rc) {
+		TopLeft() = rc->TopLeft();
+		BottomRight() = rc->BottomRight();
+	}
 	void	SetRect(T l, T t, T r, T b) {
 		left	= l;		top		= t;
 		right	= r;		bottom	= b;
+	}
+	void	SetRect(const CPointT<T> pt, T w, T h) {
+		TopLeft() = pt;
+		right = left + w;
+		bottom = top + h;
 	}
 	// 変換関数
 	operator	CRect() const {
@@ -511,9 +528,13 @@ public:
 		return *this;
 	}
 	// 代入関数
+	void	SetRect(const CRect3T<T>* rc) {
+		CRectT<T>::SetRect(rc);
+		high = rc->high;	low  = rc->low;
+	}
 	void	SetRect(T l, T t, T r, T b, T h, T w) {
 		CRectT<T>::SetRect(l, t, r, b);
-		high = h;		low = w;
+		high = h;			low = w;
 	}
 	// 初期化
 	void	SetRectEmpty(void) {

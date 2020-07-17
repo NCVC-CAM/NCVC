@@ -17,6 +17,9 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+using std::string;
+using namespace boost;
+
 /////////////////////////////////////////////////////////////////////////////
 // 静的変数の初期化
 const	CNCMakeOption*	CNCMakeBase::ms_pMakeOpt = NULL;
@@ -57,7 +60,7 @@ CNCMakeBase::CNCMakeBase()
 // 任意の文字列ｺｰﾄﾞ
 CNCMakeBase::CNCMakeBase(const CString& strGcode)
 {
-	extern	LPCTSTR	gg_szReturn;
+	extern	LPCTSTR	gg_szReturn;	// "\n"
 
 	if ( strGcode.IsEmpty() )
 		m_strGcode = gg_szReturn;
@@ -65,7 +68,7 @@ CNCMakeBase::CNCMakeBase(const CString& strGcode)
 		m_strGcode = strGcode + gg_szReturn;
 	else {
 		CString	str(strGcode);
-		str.Replace("\\n", "\n");	// 改行ｺｰﾄﾞの置換
+		str.Replace("\\n", gg_szReturn);	// 改行ｺｰﾄﾞの置換
 		m_strGcode = (*ms_pfnGetLineNo)() + str + ms_strEOB;
 	}
 }
@@ -105,9 +108,9 @@ void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, double dFeed)
 		pt = pEllipse->GetStartCutterPoint() - pEllipse->GetMakeCenter();
 		sq = atan2(pt.y, pt.x) - pEllipse->GetMakeLean();	// 傾きを吸収
 		if ( pEllipse->GetRound() )
-			eq = sq + RAD(360.0);
+			eq = sq + PI2;
 		else
-			eq = sq - RAD(360.0);
+			eq = sq - PI2;
 	}
 
 	// 生成開始
@@ -241,7 +244,7 @@ CString	CNCMakeBase::GetSpindleString(int nSpindle)
 {
 	CString	strResult;
 	if ( ms_nSpindle != nSpindle ) {
-		strResult.Format("S%d", nSpindle);
+		strResult = ("S" + lexical_cast<string>(nSpindle)).c_str();
 		ms_nSpindle = nSpindle;
 	}
 	return strResult;
@@ -267,7 +270,7 @@ CString	CNCMakeBase::GetFeedString_Integer(double dFeed)
 {
 	CString	strResult;
 	// 	GetFeedString()からの参照のため if() 不要
-	strResult.Format("%d", (int)dFeed);
+	strResult = lexical_cast<string>((int)dFeed).c_str();
 	return strResult;
 }
 
@@ -291,7 +294,7 @@ CString	CNCMakeBase::GetLineNoString_Clip(void)
 CString	CNCMakeBase::GetGString(int nCode)
 {
 	CString		strResult;
-	strResult.Format("G%02d", nCode);
+	strResult.Format(IDS_COMMON_FORMAT, "G", nCode);	// %s%02d
 	return strResult;
 }
 
@@ -332,13 +335,8 @@ CString	CNCMakeBase::GetValString_UZeroCut(double dVal)
 CString	CNCMakeBase::GetValString_Multi1000(double dVal)
 {
 	CString		strResult;
-/*	--- RoundUp() にて処理済みのため不要
-	dVal *= 1000.0;
-	dVal  = (dVal<0 ? floor(dVal) : ceil(dVal));
-	strResult.Format("%ld", (long)dVal);
-*/
 	// 単純な1000倍では，丸め誤差が発生(??)
-	strResult.Format("%d", (int)(dVal*1000.0+_copysign(0.0001, dVal)));
+	strResult = lexical_cast<string>((int)(dVal*1000.0+_copysign(0.0001, dVal))).c_str();
 	return strResult;
 }
 

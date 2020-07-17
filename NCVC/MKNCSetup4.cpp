@@ -94,21 +94,20 @@ BOOL CMKNCSetup4::OnInitDialog()
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParentSheet() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	m_nSpindle		= pOpt->m_nDrillSpindle;
-	m_dFeed			= pOpt->m_dDrillFeed;
-	m_nDwell		= pOpt->m_nDwell;
-	m_dDrillR		= pOpt->m_dDrillR;
-	m_dDrillZ		= pOpt->m_dDrillZ;
-	m_bDrillMatch	= pOpt->m_bDrillMatch;
-	m_nDwellFormat	= pOpt->m_nDwellFormat;
-	m_nProcess		= pOpt->m_nDrillProcess;
-	m_nDrillReturn	= pOpt->m_nDrillReturn;
-	//
-	m_dCircleR		= pOpt->m_dDrillCircle;
-	m_bCircle		= pOpt->m_bDrillCircle;
-	m_nSort			= pOpt->m_nDrillSort;
-	m_bCircleBreak	= pOpt->m_bDrillBreak;
-	m_nCircleProcess= pOpt->m_nDrillCircleProcess;
+	m_nSpindle		= pOpt->MIL_I_DRILLSPINDLE;
+	m_dFeed			= pOpt->MIL_D_DRILLFEED;
+	m_bDrillMatch	= pOpt->MIL_F_DRILLMATCH;
+	m_nDwell		= pOpt->MIL_I_DWELL;
+	m_nDwellFormat	= pOpt->MIL_I_DWELLFORMAT;
+	m_nProcess		= pOpt->MIL_I_DRILLPROCESS;
+	m_nDrillReturn	= pOpt->MIL_I_DRILLRETURN;
+	m_dDrillR		= pOpt->MIL_D_DRILLR;
+	m_dDrillZ		= pOpt->MIL_D_DRILLZ;
+	m_bCircle		= pOpt->MIL_F_DRILLCIRCLE;
+	m_dCircleR		= pOpt->MIL_D_DRILLCIRCLE;
+	m_nSort			= pOpt->MIL_I_DRILLSORT;
+	m_bCircleBreak	= pOpt->MIL_F_DRILLBREAK;
+	m_nCircleProcess= pOpt->MIL_I_DRILLCIRCLEPROCESS;
 	EnableControl_Circle();
 	EnableControl_Dwell();
 
@@ -133,21 +132,20 @@ void CMKNCSetup4::OnCircle()
 BOOL CMKNCSetup4::OnApply() 
 {
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->m_nDrillSpindle	= m_nSpindle;
-	pOpt->m_dDrillFeed		= m_dFeed;
-	pOpt->m_bDrillMatch		= m_bDrillMatch;
-	pOpt->m_nDwell			= m_nDwell;
-	pOpt->m_nDwellFormat	= m_nDwellFormat;
-	pOpt->m_nDrillProcess	= m_nProcess;
-	pOpt->m_nDrillReturn	= m_nDrillReturn;
-	pOpt->m_dDrillR			= m_dDrillR;
-	pOpt->m_dDrillZ			= m_dDrillZ;
-	//
-	pOpt->m_bDrillCircle	= m_bCircle;
-	pOpt->m_dDrillCircle	= m_dCircleR;
-	pOpt->m_nDrillSort		= m_nSort;
-	pOpt->m_bDrillBreak		= m_bCircleBreak;
-	pOpt->m_nDrillCircleProcess = m_nCircleProcess;
+	pOpt->MIL_I_DRILLSPINDLE	= m_nSpindle;
+	pOpt->MIL_D_DRILLFEED		= m_dFeed;
+	pOpt->MIL_F_DRILLMATCH		= m_bDrillMatch;
+	pOpt->MIL_I_DWELL			= m_nDwell;
+	pOpt->MIL_I_DWELLFORMAT		= m_nDwellFormat;
+	pOpt->MIL_I_DRILLPROCESS	= m_nProcess;
+	pOpt->MIL_I_DRILLRETURN		= m_nDrillReturn;
+	pOpt->MIL_D_DRILLR			= m_dDrillR;
+	pOpt->MIL_D_DRILLZ			= m_dDrillZ;
+	pOpt->MIL_F_DRILLCIRCLE		= m_bCircle;
+	pOpt->MIL_D_DRILLCIRCLE		= m_dCircleR;
+	pOpt->MIL_I_DRILLSORT		= m_nSort;
+	pOpt->MIL_F_DRILLBREAK		= m_bCircleBreak;
+	pOpt->MIL_I_DRILLCIRCLEPROCESS = m_nCircleProcess;
 
 	return TRUE;
 }

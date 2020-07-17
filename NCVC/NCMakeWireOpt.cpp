@@ -11,26 +11,23 @@
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
 #endif
-//#define	_DEBUGOLD
-#undef	_DEBUGOLD
-
 
 // intå^ñΩóﬂ
-static	LPCTSTR	g_szNOrder[] = {
+static	LPCTSTR	g_szWirNOrder[] = {
 	"ProgNo", "LineAddType", "G90", "Dot", "FDot", "CircleCode"
 };
-static	const	int		g_dfNOrder[] = {
+static	const	int		g_dfWirNOrder[] = {
 	1, 1, 0, 0, 2, 0
 };
 
 // doubleå^ñΩóﬂ
-static	LPCTSTR	g_szDOrder[] = {
+static	LPCTSTR	g_szWirDOrder[] = {
 	"Depth", "Taper", "Feed",
 	"G92X", "G92Y",
 	"AWFcircleLo", "AWFcircleHi",
 	"Ellipse"
 };
-static	const	double	g_dfDOrder[] = {
+static	const	double	g_dfWirDOrder[] = {
 	10.0, 0.0, 0.0,
 	0.0, 0.0,
 	1.0, 1.0,
@@ -38,24 +35,32 @@ static	const	double	g_dfDOrder[] = {
 };
 
 // BOOLå^ñΩóﬂ
-static	LPCTSTR	g_szBOrder[] = {
+static	LPCTSTR	g_szWirBOrder[] = {
 	"ProgSet", "ProgAuto", "LineAdd", "ZeroCut", "GClip", "EllipseFlg",
 	// --
 	"AWFstart", "AWFend"
 };
-static	const	BOOL	g_dfBOrder[] = {
+static	const	BOOL	g_dfWirBOrder[] = {
 	TRUE, FALSE, FALSE, TRUE, TRUE, TRUE,
 	TRUE, TRUE
 };
 
 // CStringå^ñΩóﬂ
-static	LPCTSTR	g_szSOrder[] = {
+static	LPCTSTR	g_szWirSOrder[] = {
 	"LineForm", "EOB", "Header", "Footer",
 	"TaperMode", "AWFconnect", "AWFcut"
 };
-static	LPCTSTR	g_dfSOrder[] = {
+static	LPCTSTR	g_dfWirSOrder[] = {
 	"N%04d", "", "HeaderWire.txt", "FooterWire.txt",
 	"M15P0", "M60", "M50"
+};
+
+// µÃﬂºÆ›ìùçá
+static	NCMAKEOPTION	WirOption[] = {
+	{MKWI_NUM_NUMS, g_szWirNOrder},
+	{MKWI_DBL_NUMS, g_szWirDOrder},
+	{MKWI_FLG_NUMS, g_szWirBOrder},
+	{MKWI_STR_NUMS, g_szWirSOrder}
 };
 
 // ï€ë∂Ç…ä÷Ç∑ÇÈèÓïÒ
@@ -103,21 +108,18 @@ static	SAVEORDER	g_stSaveOrder[] = {
 // CNCMakeWireOpt ÉNÉâÉXÇÃç\íz/è¡ñ≈
 
 CNCMakeWireOpt::CNCMakeWireOpt(LPCTSTR lpszInit) :
-	CNCMakeOption(
-		SIZEOF(g_szNOrder), g_szNOrder, g_dfNOrder, m_unNums,
-		SIZEOF(g_szDOrder), g_szDOrder, g_dfDOrder, m_udNums,
-		SIZEOF(g_szBOrder), g_szBOrder, g_dfBOrder, m_ubFlags,
-		SIZEOF(g_szSOrder), g_szSOrder, g_dfSOrder,
+	CNCMakeOption(WirOption,
 		SIZEOF(g_szInitComment), g_szInitComment,
 		SIZEOF(g_stSaveOrder),   g_stSaveOrder)
 {
-	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(g_dfNOrder) );
-	ASSERT( SIZEOF(g_szNOrder) == SIZEOF(m_unNums) );
-	ASSERT( SIZEOF(g_szDOrder) == SIZEOF(g_dfDOrder) );
-	ASSERT( SIZEOF(g_szDOrder) == SIZEOF(m_udNums) );
-	ASSERT( SIZEOF(g_szBOrder) == SIZEOF(g_dfBOrder) );
-	ASSERT( SIZEOF(g_szBOrder) == SIZEOF(m_ubFlags) );
-	ASSERT( SIZEOF(g_szSOrder) == SIZEOF(g_dfSOrder) );
+	ASSERT( MKWI_NUM_NUMS == SIZEOF(g_szWirNOrder) );
+	ASSERT( MKWI_NUM_NUMS == SIZEOF(g_dfWirNOrder) );
+	ASSERT( MKWI_DBL_NUMS == SIZEOF(g_szWirDOrder) );
+	ASSERT( MKWI_DBL_NUMS == SIZEOF(g_dfWirDOrder) );
+	ASSERT( MKWI_FLG_NUMS == SIZEOF(g_szWirBOrder) );
+	ASSERT( MKWI_FLG_NUMS == SIZEOF(g_dfWirBOrder) );
+	ASSERT( MKWI_STR_NUMS == SIZEOF(g_szWirSOrder) );
+	ASSERT( MKWI_STR_NUMS == SIZEOF(g_dfWirSOrder) );
 
 	ReadMakeOption(lpszInit);
 }
@@ -125,42 +127,61 @@ CNCMakeWireOpt::CNCMakeWireOpt(LPCTSTR lpszInit) :
 /////////////////////////////////////////////////////////////////////////////
 // ’∞ªﬁ“› ﬁä÷êî
 
-#ifdef _DEBUGOLD
+void CNCMakeWireOpt::InitialDefault(void)
+{
+	extern	LPTSTR	g_pszExecDir;	// é¿çs√ﬁ®⁄∏ƒÿ(NCVC.cpp)
+	int		i;
+
+	for ( i=0; i<MKWI_NUM_NUMS; i++ )
+		m_pIntOpt[i] = g_dfWirNOrder[i];
+	for ( i=0; i<MKWI_DBL_NUMS; i++ )
+		m_pDblOpt[i] = g_dfWirDOrder[i];
+	for ( i=0; i<MKWI_FLG_NUMS; i++ )
+		m_pFlgOpt[i] = g_dfWirBOrder[i];
+	m_strOption.RemoveAll();
+	for ( i=0; i<MKWI_STR_NUMS; i++ )
+		m_strOption.Add(g_dfWirSOrder[i]);
+
+	for ( i=MKWI_STR_HEADER; i<=MKWI_STR_FOOTER; i++ )
+		m_strOption[i] = g_pszExecDir + m_strOption[i];
+}
+
+#ifdef _DEBUG
 void CNCMakeWireOpt::DbgDump(void) const
 {
 	CMagaDbg	dbg("CNCMakeWireOpt", DBG_RED);
 
 	dbg.printf("InitFile=%s", GetInitFile());
 	dbg.printf("----------");
-	dbg.printf("  Depth        =%f", m_dDepth);
-	dbg.printf("  Taper        =%f", m_dTaper);
+	dbg.printf("  Depth        =%f", WIR_D_DEPTH);
+	dbg.printf("  Taper        =%f", WIR_D_TAPER);
 	dbg.printf("  TaperMode    =%s", m_strOption[MKWI_STR_TAPERMODE]);
-	dbg.printf("  Feed         =%f", m_dFeed);
+	dbg.printf("  Feed         =%f", WIR_D_FEED);
 	dbg.printf("  Header       =%s", m_strOption[MKWI_STR_HEADER]);
 	dbg.printf("  Footer       =%s", m_strOption[MKWI_STR_FOOTER]);
 	dbg.printf("----------");
 	dbg.printf("  AWFconnect   =%s", m_strOption[MKWI_STR_AWFCNT]);
 	dbg.printf("  AWFcut       =%s", m_strOption[MKWI_STR_AWFCUT]);
-	dbg.printf("  AWFcircleLo  =%f", m_dAWFcircleLo);
-	dbg.printf("  AWFcircleHi  =%f", m_dAWFcircleHi);
-	dbg.printf("  AWFstart     =%d", m_bAWFstart);
-	dbg.printf("  AWFend       =%d", m_bAWFend);
+	dbg.printf("  AWFcircleLo  =%f", WIR_D_AWFCIRCLE_LO);
+	dbg.printf("  AWFcircleHi  =%f", WIR_D_AWFCIRCLE_HI);
+	dbg.printf("  AWFstart     =%d", WIR_F_AWFSTART);
+	dbg.printf("  AWFend       =%d", WIR_F_AWFEND);
 	dbg.printf("----------");
-	dbg.printf("  bProgNo?     =%d", m_bProg);
-	dbg.printf("  bProgNo      =%d", m_nProg);
-	dbg.printf("  bProgNoAuto  =%d", m_bProgAuto);
-	dbg.printf("  bLineAdd     =%d", m_bLineAdd);
+	dbg.printf("  bProgNo?     =%d", WIR_F_PROG);
+	dbg.printf("  nProgNo      =%d", WIR_I_PROG);
+	dbg.printf("  bProgNoAuto  =%d", WIR_F_PROGAUTO);
+	dbg.printf("  bLineAdd     =%d", WIR_F_LINEADD);
 	dbg.printf("  LineForm     =%s", m_strOption[MKWI_STR_LINEFORM]);
-	dbg.printf("  nLineAdd     =%d", m_nLineAdd);
+	dbg.printf("  nLineAdd     =%d", WIR_I_LINEADD);
 	dbg.printf("  EOB          =%s", m_strOption[MKWI_STR_EOB]);
-	dbg.printf("  G90          =%d", m_nG90);
-	dbg.printf("  Gclip        =%d", m_bGclip);
+	dbg.printf("  G90          =%d", WIR_I_G90);
+	dbg.printf("  Gclip        =%d", WIR_F_GCLIP);
 	dbg.printf("----------");
-	dbg.printf("  Dot          =%d", m_nDot);
-	dbg.printf("  FDot         =%d", m_nFDot);
-	dbg.printf("  ZeroCut      =%d", m_bZeroCut);
-	dbg.printf("  CircleCode   =%d", m_nCircleCode);
-	dbg.printf("  Ellipse      =%f", m_dEllipse);
-	dbg.printf("  EllipseFlg   =%d", m_bEllipse);
+	dbg.printf("  Dot          =%d", WIR_I_DOT);
+	dbg.printf("  FDot         =%d", WIR_I_FDOT);
+	dbg.printf("  ZeroCut      =%d", WIR_F_ZEROCUT);
+	dbg.printf("  CircleCode   =%d", WIR_I_CIRCLECODE);
+	dbg.printf("  Ellipse      =%f", WIR_D_ELLIPSE);
+	dbg.printf("  EllipseFlg   =%d", WIR_F_ELLIPSE);
 }
 #endif

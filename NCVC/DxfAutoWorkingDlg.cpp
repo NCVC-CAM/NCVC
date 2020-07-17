@@ -23,7 +23,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CDxfAutoWorkingDlg ダイアログ
 
-CDxfAutoWorkingDlg::CDxfAutoWorkingDlg(AUTOWORKINGDATA* pAuto)
+CDxfAutoWorkingDlg::CDxfAutoWorkingDlg(LPAUTOWORKINGDATA pAuto)
 	: CDialog(CDxfAutoWorkingDlg::IDD, NULL)
 {
 	//{{AFX_DATA_INIT(CDxfAutoWorkingDlg)

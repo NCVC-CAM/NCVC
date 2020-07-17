@@ -13,16 +13,20 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-// ﾏｳｽﾄﾞﾗｯｸﾞ時の最低移動量
-static	const	int		MAGNIFY_RANGE = 10;	// ﾋﾟｸｾﾙ
+BEGIN_MESSAGE_MAP(CViewBase, CView)
+	ON_WM_CREATE()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_RBUTTONDOWN()
+	ON_WM_MOUSEWHEEL()
+END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // CViewBase
 
 CViewBase::CViewBase()
 {
-	m_dFactor = m_dBeforeFactor = 0.0;
-	m_nLState = m_nRState = -1;
+	m_dFactor = 0.0;
+	m_enLstate = m_enRstate = MS_UP;
 	m_nBoth = 0;
 	m_bMagRect = FALSE;
 }
@@ -51,53 +55,41 @@ void CViewBase::OnViewFit(const CRectD& rcMax, BOOL bInflate/*=TRUE*/)
 		rcObj.InflateRect(rcMax.Width()*0.05, rcMax.Height()*0.05);
 	}
 	CClientDC	dc(this);
-	// 直前の拡大率
-	if ( m_dFactor != 0.0 ) {
-		m_dBeforeFactor = m_dFactor;
-		m_ptBeforeOrg = dc.GetWindowOrg();
-	}
 
 	// 画面の表示領域を 1mm単位で取得
 	CRect		rc;
 	GetClientRect(rc);
-	CSize	sz(rc.Width(), rc.Height());
-	dc.DPtoLP(&sz);
-	double	cx = sz.cx / LOMETRICFACTOR;
-	double	cy = sz.cy / LOMETRICFACTOR;
+	dc.DPtoLP(&rc);
 	// 拡大率の計算
+	double	cx = fabs(rc.Width()  / LOMETRICFACTOR);
+	double	cy = fabs(rc.Height() / LOMETRICFACTOR);
 	double	dFactorH = cx / rcObj.Width();
 	double	dFactorV = cy / rcObj.Height();
 #ifdef _DEBUG
-	dbg.printf("cx=%f cy=%f", cx, cy);
+	dbg.printf("W=%f H=%f", cx, cy);
 	dbg.printf("dFactorH=%f dFactorV=%f", dFactorH, dFactorV);
 #endif
 	// ﾋﾞｭｰ原点の設定(ｵﾌﾞｼﾞｪｸﾄ矩形(上下反対)の左上隅をﾃﾞﾊﾞｲｽ座標の原点(左上隅)へ)と
 	// 画面中央への補正
 	CPoint	pt;
 	if ( dFactorH < dFactorV ) {
-		m_dFactor = dFactorH;
+		m_dFactor = dFactorH * LOMETRICFACTOR;
 		// 横倍率採用->縦原点の補正
 		pt.x = DrawConvert(rcObj.left);
-		pt.y = (int)((rcObj.bottom*m_dFactor +
-						(cy-rcObj.Height()*m_dFactor)/2) * LOMETRICFACTOR);
+		pt.y = (int)((rcObj.bottom*dFactorH +
+						(cy-rcObj.Height()*dFactorH)/2) * LOMETRICFACTOR);
 	}
 	else {
-		m_dFactor = dFactorV;
+		m_dFactor = dFactorV * LOMETRICFACTOR;
 		// 縦倍率採用->横原点の補正
-		pt.x = (int)((rcObj.left*m_dFactor -
-						(cx-rcObj.Width()*m_dFactor)/2) * LOMETRICFACTOR);
+		pt.x = (int)((rcObj.left*dFactorV -
+						(cx-rcObj.Width()*dFactorV)/2) * LOMETRICFACTOR);
 		pt.y = DrawConvert(rcObj.bottom);
 	}
 #ifdef _DEBUG
 	dbg.printf("ptorg.x=%d ptorg.y=%d", pt.x, pt.y);
 #endif
 	dc.SetWindowOrg(pt);
-
-	// 初期の拡大率
-	if ( m_dBeforeFactor == 0.0 ) {
-		m_dBeforeFactor = m_dFactor;
-		m_ptBeforeOrg = pt;
-	}
 }
 
 void CViewBase::OnViewLensP(void)
@@ -141,7 +133,7 @@ void CViewBase::OnViewLensP(void)
 #endif
 	}
 #ifdef _DEBUG
-	dbg.printf("NewFactor=%f", m_dFactor);
+	dbg.printf("NewFactor=%f", m_dFactor/LOMETRICFACTOR);
 	dbg.printf("ptorg.x=%d ptorg.y=%d", pt.x, pt.y);
 #endif
 	dc.SetWindowOrg(pt);
@@ -178,7 +170,7 @@ void CViewBase::OnViewLensN(void)
 #ifdef _DEBUG
 	dbg.printf("OffsetX=%f", (sz.cx-m_rcMagnify.Width()/dFactor*m_dFactor)/2);
 	dbg.printf("OffsetY=%f", (sz.cy-m_rcMagnify.Height()/dFactor*m_dFactor)/2);
-	dbg.printf("NewFactor=%f", m_dFactor);
+	dbg.printf("NewFactor=%f", m_dFactor/LOMETRICFACTOR);
 	dbg.printf("ptorg.x=%d ptorg.y=%d", pt.x, pt.y);
 #endif
 	dc.SetWindowOrg(pt);
@@ -197,9 +189,6 @@ CSize CViewBase::OnViewLens(CClientDC& dc)
 
 	// 拡大矩形が指定されているか否か
 	if ( m_bMagRect ) {
-		// 直前の拡大率
-		m_dBeforeFactor = m_dFactor;
-		m_ptBeforeOrg = dc.GetWindowOrg();
 		m_bMagRect = FALSE;
 	}
 	else {
@@ -249,46 +238,26 @@ void CViewBase::OnMoveKey(UINT nID)
 	Invalidate();
 }
 
-void CViewBase::OnBeforeMagnify(void)
-{
-	if ( m_dBeforeFactor == 0.0 )
-		return;
-
-	CClientDC	dc(this);
-
-	// 現在表示中の値をﾊﾞｯｸｱｯﾌﾟ
-	CPoint	ptOrg(dc.GetWindowOrg());
-	double	dFactor(m_dFactor);
-
-	dc.SetWindowOrg(m_ptBeforeOrg);
-	m_dFactor = m_dBeforeFactor;
-
-	// 直前の拡大率
-	m_ptBeforeOrg = ptOrg;
-	m_dBeforeFactor = dFactor;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // CViewBase クラスのメッセージ ハンドラ
 
-int CViewBase::OnCreate(LPCREATESTRUCT lpCreateStruct, BOOL bDC/*=TRUE*/)
+int CViewBase::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if ( __super::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
-	if ( bDC ) {
-		// View の WNDCLASS に CS_OWNDC を指定しているため
-		// OnCreate() にて、マッピングモード等の変更
-		CClientDC	dc(this);
-		dc.SetMapMode(MM_LOMETRIC);		// 0.1mm
-		dc.SetBkMode(TRANSPARENT);
-		dc.SelectStockObject(NULL_BRUSH);
-	}
+	// View の WNDCLASS に CS_OWNDC を指定しているため
+	// [PreCreateWindow]
+	// OnCreate() にて、マッピングモード等の変更
+	CClientDC	dc(this);
+	dc.SetMapMode(MM_LOMETRIC);		// 0.1mm
+	dc.SetBkMode(TRANSPARENT);
+	dc.SelectStockObject(NULL_BRUSH);
 
 	return 0;
 }
 
-void CViewBase::OnLButtonDown(const CPoint& pt)
+void CViewBase::OnLButtonDown(UINT nFlags, CPoint pt)
 {
 	CClientDC	dc(this);
 
@@ -297,8 +266,8 @@ void CViewBase::OnLButtonDown(const CPoint& pt)
 		DrawMagnifyRect(&dc);
 	m_bMagRect = FALSE;
 	// 既にR処理中なら
-	if ( m_nRState >= 0 ) {
-		m_nRState = -1;		// R処理ｷｬﾝｾﾙ
+	if ( m_enRstate >= MS_DOWN ) {
+		m_enRstate = MS_UP;	// R処理ｷｬﾝｾﾙ
 		m_nBoth = 2;		// 両ﾎﾞﾀﾝ処理ｶｳﾝﾀ
 	}
 	else {
@@ -306,7 +275,7 @@ void CViewBase::OnLButtonDown(const CPoint& pt)
 		m_nBoth = 1;
 	}
 
-	m_nLState = 0;
+	m_enLstate = MS_DOWN;
 	m_ptMouse = pt;		// ﾃﾞﾊﾞｲｽ座標
 	// Lﾏｳｽ押した座標を論理座標に変換し保存
 	CPoint	ptLog(pt);
@@ -314,19 +283,19 @@ void CViewBase::OnLButtonDown(const CPoint& pt)
 	m_rcMagnify.TopLeft() = ptLog;
 }
 
-int CViewBase::OnLButtonUp(CPoint& pt)
+int CViewBase::_OnLButtonUp(CPoint& pt)
 {
-	int nResult = OnMouseButtonUp(m_nLState, pt);
-	m_nLState = -1;
+	int nResult = OnMouseButtonUp(m_enLstate, pt);
+	m_enLstate = MS_UP;
 	return nResult;
 }
 
-void CViewBase::OnRButtonDown(const CPoint& pt)
+void CViewBase::OnRButtonDown(UINT nFlags, CPoint pt)
 {
 	// 既にL処理中なら
-	if ( m_nLState >= 0 ) {
+	if ( m_enLstate >= MS_DOWN ) {
 		m_nBoth = 2;		// 両ﾎﾞﾀﾝ処理ｶｳﾝﾀ
-		return;				// m_nRState==-1 のまま
+		return;				// m_enRstate==MS_UP のまま
 	}
 	else
 		m_nBoth = 1;
@@ -334,30 +303,30 @@ void CViewBase::OnRButtonDown(const CPoint& pt)
 	CClientDC	dc(this);
 
 	SetCapture();
-	m_nRState = 0;
+	m_enRstate = MS_DOWN;
 	m_ptMouse = pt;		// ﾃﾞﾊﾞｲｽ座標
 	// 移動基点をｾｯﾄ
 	m_ptMovOrg = pt;
 	dc.DPtoLP(&m_ptMovOrg);
 }
 
-int CViewBase::OnRButtonUp(CPoint& pt)
+int CViewBase::_OnRButtonUp(CPoint& pt)
 {
-	int nResult = OnMouseButtonUp(m_nRState, pt);
+	int nResult = OnMouseButtonUp(m_enRstate, pt);
 	switch ( nResult ) {
 	case 1:
-		m_nLState = -1;		// 処理済み
+		m_enLstate = MS_UP;		// 処理済み
 		break;
 	case 2:
-		if ( m_nRState < 0 )
+		if ( m_enRstate == MS_UP )
 			nResult = 0;	// ｺﾝﾃｷｽﾄﾒﾆｭｰ非表示
 		break;
 	}
-	m_nRState = -1;
+	m_enRstate = MS_UP;
 	return nResult;
 }
 
-int CViewBase::OnMouseButtonUp(int nState, CPoint& pt)
+int CViewBase::OnMouseButtonUp(ENMOUSESTATE enState, CPoint& pt)
 {
 	if ( m_nBoth-1 <= 0 )
 		ReleaseCapture();
@@ -367,8 +336,8 @@ int CViewBase::OnMouseButtonUp(int nState, CPoint& pt)
 	CPoint	ptLog(pt);
 	dc.DPtoLP(&ptLog);
 
-	if ( m_nLState >= 0 ) {
-		if ( abs(m_ptMouse.x - pt.x) >= MAGNIFY_RANGE &&
+	if ( m_enLstate >= MS_DOWN ) {
+		if ( abs(m_ptMouse.x - pt.x) >= MAGNIFY_RANGE ||
 			 abs(m_ptMouse.y - pt.y) >= MAGNIFY_RANGE ) {
 			m_rcMagnify.BottomRight() = ptLog;
 			m_bMagRect = TRUE;
@@ -377,7 +346,7 @@ int CViewBase::OnMouseButtonUp(int nState, CPoint& pt)
 			nResult = 1;	// 拡大処理
 	}
 	else {
-		if ( nState <= 0 )
+		if ( enState <= MS_DOWN )
 			nResult = 2;	// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示(Rのみ)
 	}
 
@@ -388,21 +357,21 @@ int CViewBase::OnMouseButtonUp(int nState, CPoint& pt)
 	return nResult;
 }
 
-BOOL CViewBase::OnMouseMove(UINT nFlags, const CPoint& pt)
+BOOL CViewBase::_OnMouseMove(UINT nFlags, const CPoint& pt)
 {
 	if ( !(nFlags & (MK_LBUTTON|MK_RBUTTON)) )
 		return FALSE;
 	
 	// 移動量が最低に満たない場合の判断はLとRで区別
 	if ( nFlags & MK_LBUTTON ) {
-		if ( m_nLState < 0 ||
+		if ( m_enLstate == MS_UP ||
 			(abs(m_ptMouse.x - pt.x) < MAGNIFY_RANGE ||
 			 abs(m_ptMouse.y - pt.y) < MAGNIFY_RANGE) )
 			return FALSE;
 	}
 	else {
-		if ( m_nRState < 0 ||
-			(abs(m_ptMouse.x - pt.x) < MAGNIFY_RANGE &&
+		if ( m_enRstate == MS_UP ||
+			(abs(m_ptMouse.x - pt.x) < MAGNIFY_RANGE ||
 			 abs(m_ptMouse.y - pt.y) < MAGNIFY_RANGE) )
 			return FALSE;
 	}
@@ -417,13 +386,13 @@ BOOL CViewBase::OnMouseMove(UINT nFlags, const CPoint& pt)
 			DrawMagnifyRect(&dc);
 		else
 			m_bMagRect = TRUE;
-		m_nLState = 1;
+		m_enLstate = MS_DRAG;
 		// 現在値を論理座標に変換し矩形情報ｾｯﾄ
 		m_rcMagnify.BottomRight() = ptLog;
 		DrawMagnifyRect(&dc);
 	}
 	else {
-		m_nRState = 1;
+		m_enRstate = MS_DRAG;
 		// 移動基点との差分を論理座標原点に加算
 		dc.SetWindowOrg(dc.GetWindowOrg() + (m_ptMovOrg - ptLog));
 		Invalidate();
@@ -434,7 +403,7 @@ BOOL CViewBase::OnMouseMove(UINT nFlags, const CPoint& pt)
 	return TRUE;	// 矩形表示を処理した
 }
 
-BOOL CViewBase::OnMouseWheel(UINT nFlags, short zDelta, const CPoint& pt)
+BOOL CViewBase::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt) 
 {
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( !pOpt->IsMouseWheel() )
@@ -453,10 +422,13 @@ BOOL CViewBase::OnMouseWheel(UINT nFlags, short zDelta, const CPoint& pt)
 			OnViewLensP();
 	}
 
+	// 派生ｸﾗｽ処理呼び出し(virtual)
+	OnViewLensComm();
+
 	return TRUE;
 }
 
-void CViewBase::OnContextMenu(CPoint pt, UINT nID)
+void CViewBase::_OnContextMenu(CPoint pt, UINT nID)
 {
 	CMenu	menu;
 	menu.LoadMenu(nID);
@@ -465,7 +437,7 @@ void CViewBase::OnContextMenu(CPoint pt, UINT nID)
 		pt.x, pt.y, AfxGetMainWnd());
 }
 
-BOOL CViewBase::OnEraseBkgnd(CDC* pDC, COLORREF col1, COLORREF col2) 
+BOOL CViewBase::_OnEraseBkgnd(CDC* pDC, COLORREF col1, COLORREF col2) 
 {
 	CRect	rc;
 	GetClientRect(rc);

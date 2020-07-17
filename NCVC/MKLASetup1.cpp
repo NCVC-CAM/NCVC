@@ -60,14 +60,14 @@ BOOL CMKLASetup1::OnInitDialog()
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParentSheet() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
 	CNCMakeLatheOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	m_nSpindle	= pOpt->m_nSpindle;
-	m_dFeed		= pOpt->m_dFeed;
-	m_dXFeed	= pOpt->m_dXFeed;
-	m_dCut		= pOpt->m_dCut * 2.0;	// ’¼Œa’l‚Ö•ÏŠ·
-	m_dPullZ	= pOpt->m_dPullZ;
-	m_dPullX	= pOpt->m_dPullX * 2.0;
-	m_dMargin	= pOpt->m_dMargin * 2.0;
-	m_nMargin	= pOpt->m_nMargin;
+	m_nSpindle	= pOpt->LTH_I_SPINDLE;
+	m_dFeed		= pOpt->LTH_D_FEED;
+	m_dXFeed	= pOpt->LTH_D_XFEED;
+	m_dCut		= pOpt->LTH_D_CUT * 2.0;	// ’¼Œa’l‚Ö•ÏŠ·
+	m_dPullZ	= pOpt->LTH_D_PULL_Z;
+	m_dPullX	= pOpt->LTH_D_PULL_X * 2.0;
+	m_dMargin	= pOpt->LTH_D_MARGIN * 2.0;
+	m_nMargin	= pOpt->LTH_I_MARGIN;
 	m_strHeader = pOpt->m_strOption[MKLA_STR_HEADER];
 	m_strFooter = pOpt->m_strOption[MKLA_STR_FOOTER];
 	// •ÒWÎÞÀÝ‚Ì—LŒø–³Œø
@@ -136,14 +136,14 @@ void CMKLASetup1::OnFooterEdit()
 BOOL CMKLASetup1::OnApply() 
 {
 	CNCMakeLatheOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->m_nSpindle	= m_nSpindle;
-	pOpt->m_dFeed		= m_dFeed;
-	pOpt->m_dXFeed		= m_dXFeed;
-	pOpt->m_dCut		= m_dCut / 2.0;	// ”¼Œa’l‚Ö•ÏŠ·
-	pOpt->m_dPullZ		= m_dPullZ;
-	pOpt->m_dPullX		= m_dPullX / 2.0;
-	pOpt->m_dMargin		= m_dMargin / 2.0;
-	pOpt->m_nMargin		= m_nMargin;
+	pOpt->LTH_I_SPINDLE	= m_nSpindle;
+	pOpt->LTH_D_FEED	= m_dFeed;
+	pOpt->LTH_D_XFEED	= m_dXFeed;
+	pOpt->LTH_D_CUT		= m_dCut / 2.0;	// ”¼Œa’l‚Ö•ÏŠ·
+	pOpt->LTH_D_PULL_Z	= m_dPullZ;
+	pOpt->LTH_D_PULL_X	= m_dPullX / 2.0;
+	pOpt->LTH_D_MARGIN	= m_dMargin / 2.0;
+	pOpt->LTH_I_MARGIN	= m_nMargin;
 	pOpt->m_strOption[MKLA_STR_HEADER] = m_strHeader;
 	pOpt->m_strOption[MKLA_STR_FOOTER] = m_strFooter;
 

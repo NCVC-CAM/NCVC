@@ -53,7 +53,6 @@ BOOL CExtensionDlg::OnInitDialog()
 {
 	__super::OnInitDialog();
 
-	const	CMapStringToPtr*	pMapExt;
 	CString		strResult;
 	LPVOID		pDummy;
 
@@ -63,11 +62,9 @@ BOOL CExtensionDlg::OnInitDialog()
 		strResult.MakeUpper();
 		m_ctExtList[i].SetItemData(m_ctExtList[i].AddString(strResult), 0);	// çÌèúïsî\œ∞∏
 		for ( int j=0; j<2/*SIZEOF(m_mpExt)*/; j++ ) {
-			pMapExt = &(AfxGetNCVCApp()->GetDocTemplate((DOCTYPE)i)->m_mpExt[j]);
-			for ( POSITION pos=pMapExt->GetStartPosition(); pos; ) {
-				pMapExt->GetNextAssoc(pos, strResult, pDummy);
+			PMAP_FOREACH(strResult, pDummy, &AfxGetNCVCApp()->GetDocTemplate((DOCTYPE)i)->m_mpExt[j])
 				m_ctExtList[i].SetItemData(m_ctExtList[i].AddString(strResult), j);
-			}
+			END_FOREACH
 		}
 	}
 
@@ -87,8 +84,7 @@ void CExtensionDlg::OnOK()
 			nCnt = m_ctExtList[i].GetCount();
 			// œØÃﬂÇ…Ç†Ç¡ÇƒÿΩƒŒﬁØ∏ΩÇ…Ç»Ç¢Ç‡ÇÃÇçÌèú
 			pMapExt = &(AfxGetNCVCApp()->GetDocTemplate((DOCTYPE)i)->m_mpExt[EXT_DLG]);
-			for ( POSITION pos=pMapExt->GetStartPosition(); pos; ) {
-				pMapExt->GetNextAssoc(pos, strResult, pDummy);
+			PMAP_FOREACH(strResult, pDummy, pMapExt)
 				for ( j=0; j<nCnt; j++ ) {	// FindString() Ç≈ÇÕïîï™àÍívÇµÇƒÇµÇ‹Ç§
 					m_ctExtList[i].GetText(j, strList);
 					if ( strResult == strList )
@@ -96,7 +92,7 @@ void CExtensionDlg::OnOK()
 				}
 				if ( j >= nCnt )
 					pMapExt->RemoveKey(strResult);
-			}
+			END_FOREACH
 			// ÿΩƒŒﬁØ∏ΩÇ…Ç†Ç¡ÇƒœØÃﬂÇ…Ç»Ç¢Ç‡ÇÃÇìoò^
 			for ( j=0; j<nCnt; j++ ) {
 				if ( m_ctExtList[i].GetItemData(j) > 0 ) {
@@ -111,7 +107,6 @@ void CExtensionDlg::OnOK()
 		e->Delete();
 	}
 
-//	_super::OnOK();
 	EndDialog(IDOK);
 }
 

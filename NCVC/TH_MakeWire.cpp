@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
+#include "DXFOption.h"
 #include "DXFdata.h"
 #include "DXFshape.h"
 #include "Layer.h"
@@ -20,11 +21,7 @@ using namespace boost;
 #ifdef _DEBUG
 #define new DEBUG_NEW
 extern	CMagaDbg	g_dbg;
-/* --------------
-!!!ATTENTION!!!
-	生成時間の表示：正式ﾘﾘｰｽでは外すのを忘れずに
------------------ */
-//#define	_DBG_NCMAKE_TIME
+//#define	_DBG_NCMAKE_TIME	//	生成時間の表示
 #endif
 
 // ｸﾞﾛｰﾊﾞﾙ変数定義
@@ -45,6 +42,7 @@ static	CSortArray<CObArray, CDXFcircle*>
 static	CDXFmap		g_mpPause;		// 一時停止指示点
 static	CTypedPtrArrayEx<CPtrArray, CNCMakeWire*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
 
+static	WORD	g_wBindOperator;	// Bind時のﾌｧｲﾙ出力指示
 static	BOOL	g_bAWF;				// AWF接続状況
 
 // ｻﾌﾞ関数
@@ -176,6 +174,20 @@ UINT MakeWire_Thread(LPVOID pVoid)
 	g_pDoc = static_cast<CDXFDoc*>(pParam->pDoc);
 	ASSERT(g_pParent);
 	ASSERT(g_pDoc);
+	int i = (int)(pParam->lParam);
+	//	= 0 : Normal
+	//	= 1 : ﾌｯﾀ出力なし
+	//	> 1 : ﾌｧｲﾙ追加ﾓｰﾄﾞ, ﾍｯﾀﾞ/ﾌｯﾀ出力なし
+	//	=-1 : ﾌｧｲﾙ追加ﾓｰﾄﾞ, ﾍｯﾀﾞ出力なし
+	//	=-2 : one bind
+	if ( i == 1 )
+		g_wBindOperator = TH_HEADER;
+	else if ( i > 1 )
+		g_wBindOperator = TH_APPEND;
+	else if ( i == -1 )
+		g_wBindOperator = TH_FOOTER | TH_APPEND;
+	else
+		g_wBindOperator = TH_HEADER | TH_FOOTER;
 
 	// 準備中表示
 	g_nFase = 0;
@@ -230,8 +242,8 @@ UINT MakeWire_Thread(LPVOID pVoid)
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// このｽﾚｯﾄﾞからﾀﾞｲｱﾛｸﾞ終了
 	// 生成したNCｺｰﾄﾞの消去ｽﾚｯﾄﾞ(優先度を下げる)
 	AfxBeginThread(MakeWire_AfterThread, NULL,
-//		THREAD_PRIORITY_LOWEST);
-		THREAD_PRIORITY_IDLE);
+		THREAD_PRIORITY_LOWEST);
+//		THREAD_PRIORITY_IDLE);
 //		THREAD_PRIORITY_BELOW_NORMAL;
 
 	// 条件ｵﾌﾞｼﾞｪｸﾄ削除
@@ -245,7 +257,8 @@ UINT MakeWire_Thread(LPVOID pVoid)
 
 void InitialVariable(void)
 {
-	CDXFdata::ms_pData = g_pDoc->GetCircleObject();
+	if ( !(g_wBindOperator & TH_APPEND) )
+		CDXFdata::ms_pData = g_pDoc->GetCircleObject();
 	CNCMakeWire::InitialVariable();
 }
 
@@ -272,8 +285,13 @@ BOOL OutputWireCode(void)
 	Path_Name_From_FullPath(strNCFile, strPath, strFile);
 	SendFaseMessage(g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
 	try {
-		CStdioFile	fp(strNCFile,
-				CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive | CFile::typeText);
+		UINT	nOpenFlg = CFile::modeCreate | CFile::modeWrite |
+			CFile::shareExclusive | CFile::typeText | CFile::osSequentialScan;
+		if ( g_wBindOperator & TH_APPEND )
+			nOpenFlg |= CFile::modeNoTruncate;
+		CStdioFile	fp(strNCFile, nOpenFlg);
+		if ( g_wBindOperator & TH_APPEND )
+			fp.SeekToEnd();
 		for ( int i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 			g_obMakeData[i]->WriteGcode(fp);
 			SetProgressPos(i+1);
@@ -337,7 +355,8 @@ BOOL MakeWire_MainFunc(void)
 		if ( GetFlg(MKWI_FLG_AWFEND) )
 			AddAWFcut();
 		// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
-		AddCustomWireCode(g_pMakeOpt->GetStr(MKWI_STR_FOOTER));
+		if ( g_wBindOperator & TH_FOOTER )
+			AddCustomWireCode(g_pMakeOpt->GetStr(MKWI_STR_FOOTER));
 	}
 
 	return IsThread();
@@ -415,8 +434,8 @@ int MakeLoopWireSearch(CDXFshape* pShapeBase, int nRef)
 		BOOL	bResult;
 		if ( pShapeBase->GetShapeType()==0 && pShapeResult->GetShapeType()==0 ) {
 			// 両方とも輪郭集合の場合のみ
-			CString	strLayer1(pShapeBase->GetParentLayer()->GetStrLayer()),
-					strLayer2(pShapeResult->GetParentLayer()->GetStrLayer());
+			CString	strLayer1(pShapeBase->GetParentLayer()->GetLayerName()),
+					strLayer2(pShapeResult->GetParentLayer()->GetLayerName());
 			int		nCmp = strLayer1.CompareNoCase(strLayer2);
 			if ( nCmp > 0 ) {
 				// 上下異形状生成処理(ﾚｲﾔ名の大きい方を第2引数UV扱いで)
@@ -488,8 +507,17 @@ BOOL MakeLoopWireAdd(CDXFshape* pShapeXY, CDXFshape* pShapeUV, BOOL bParent)
 	}
 
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
-	if ( g_obMakeData.IsEmpty() )
-		AddCustomWireCode(g_pMakeOpt->GetStr(MKWI_STR_HEADER));
+	if ( g_obMakeData.IsEmpty() ) {
+		// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
+		if ( g_wBindOperator & TH_HEADER )
+			AddCustomWireCode(g_pMakeOpt->GetStr(MKWI_STR_HEADER));
+		// ﾌｧｲﾙ名のｺﾒﾝﾄ
+		if ( g_pDoc->IsDocFlag(DXFDOC_BIND) && AfxGetNCVCApp()->GetDXFOption()->GetDxfOptFlg(DXFOPT_FILECOMMENT) ) {
+			CString	strBuf;
+			strBuf.Format(IDS_MAKENCD_BINDFILE, g_pDoc->GetTitle());
+			AddMakeWireStr(strBuf);
+		}
+	}
 
 	// AWFﾎﾟｲﾝﾄの検索
 	CDXFcircle* pCircle = bParent ? GetOutsideAWF() : GetInsideAWF(pShapeXY);
@@ -732,7 +760,6 @@ BOOL MakeLoopWireAdd_EulerMap(CDXFshape* pShape)
 
 	// 生成漏れのﾃﾞｰﾀ処理
 	int			i;
-	POSITION	pos;
 	CDXFdata*	pData;
 	CDXFdata*	pDataResult;
 	CDXFarray*	pArray;
@@ -744,8 +771,7 @@ BOOL MakeLoopWireAdd_EulerMap(CDXFshape* pShape)
 		pDataResult = NULL;
 		dGapMin = DBL_MAX;
 		pt = CDXFdata::ms_pData->GetEndCutterPoint();
-		for ( pos=pEuler->GetStartPosition(); pos && IsThread(); ) {
-			pEuler->GetNextAssoc(pos, ptKey, pArray);
+		PMAP_FOREACH(ptKey, pArray, pEuler)
 			for ( i=0; i<pArray->GetSize() && IsThread(); i++ ) {
 				pData = pArray->GetAt(i);
 				if ( pData->IsMakeFlg() )
@@ -757,7 +783,7 @@ BOOL MakeLoopWireAdd_EulerMap(CDXFshape* pShape)
 					pDataResult = pData;
 				}
 			}
-		}
+		END_FOREACH
 		if ( !pDataResult || !IsThread() )	// ﾙｰﾌﾟ終了条件
 			break;
 		// 仮座標ﾏｯﾌﾟを生成
@@ -820,26 +846,18 @@ BOOL MakeLoopWireAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bEu
 	tie(pWork, pDataFix) = pShape->GetDirectionObject();
 	if ( pDataFix ) {
 		// 方向指示がltEulerに含まれる場合だけﾁｪｯｸ
-		for ( pos=ltEuler.GetHeadPosition(); pos && IsThread(); ) {
-			pData = ltEuler.GetNext(pos);
+		PLIST_FOREACH(pData, &ltEuler)
 			if ( pDataFix == pData ) {
-				if ( pData->GetMakeType()==DXFCIRCLEDATA || pData->GetMakeType()==DXFELLIPSEDATA ) {
-					CPointD	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() ),
-							pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() );
-					static_cast<CDXFcircle*>(pData)->SetRoundFixed(pts, pte);
-				}
-				else {
-					pt = static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg;
-					if ( !pData->GetEndCutterPoint().IsMatchPoint(&pt) )
-						bReverse = TRUE;
-				}
+				CPointD	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() - ptOrg ),
+						pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
+				bReverse = pData->IsDirectionPoint(pts, pte);
 				break;
 			}
-		}
+		END_FOREACH
 	}
 
 	// 生成順序の設定
-	ltEuler.SetLoopFunc(NULL, bReverse, FALSE);
+	ltEuler.SetLoopFunc(NULL, bReverse);
 
 	BOOL	bNext = FALSE;
 	// 切削ﾃﾞｰﾀまでの移動
@@ -1036,9 +1054,8 @@ void AddCustomWireCode(const CString& strFileName)
 {
 	CString	strBuf, strResult;
 	CMakeCustomCode_Wire	custom;
-	string	str;
+	string	str, strTok;
 	tokenizer<tag_separator>	tokens(str);
-	tokIte	it;		// MakeCustomCode.h
 
 	try {
 		CStdioFile	fp(strFileName,
@@ -1047,8 +1064,9 @@ void AddCustomWireCode(const CString& strFileName)
 			str = strBuf;
 			tokens.assign(str);
 			strResult.Empty();
-			for ( it=tokens.begin(); it!=tokens.end(); ++it )
-				strResult += custom.ReplaceCustomCode(*it);
+			BOOST_FOREACH(strTok, tokens) {
+				strResult += custom.ReplaceCustomCode(strTok);
+			}
 			if ( !strResult.IsEmpty() )
 				AddMakeWireStr(strResult);
 		}

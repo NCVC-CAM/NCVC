@@ -48,10 +48,10 @@ BOOL CMKWISetup2::OnInitDialog()
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParentSheet() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
 	CNCMakeWireOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	m_dAWFcircleLo	= pOpt->m_dAWFcircleLo;
-	m_dAWFcircleHi	= pOpt->m_dAWFcircleHi;
-	m_bAWFstart		= pOpt->m_bAWFstart;
-	m_bAWFend		= pOpt->m_bAWFend;
+	m_dAWFcircleLo	= pOpt->WIR_D_AWFCIRCLE_LO;
+	m_dAWFcircleHi	= pOpt->WIR_D_AWFCIRCLE_HI;
+	m_bAWFstart		= pOpt->WIR_F_AWFSTART;
+	m_bAWFend		= pOpt->WIR_F_AWFEND;
 	m_strAwfCnt		= pOpt->m_strOption[MKWI_STR_AWFCNT];
 	m_strAwfCut		= pOpt->m_strOption[MKWI_STR_AWFCUT];
 
@@ -63,10 +63,10 @@ BOOL CMKWISetup2::OnInitDialog()
 BOOL CMKWISetup2::OnApply() 
 {
 	CNCMakeWireOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->m_dAWFcircleLo= m_dAWFcircleLo;
-	pOpt->m_dAWFcircleHi= m_dAWFcircleHi;
-	pOpt->m_bAWFstart	= m_bAWFstart;
-	pOpt->m_bAWFend		= m_bAWFend;
+	pOpt->WIR_D_AWFCIRCLE_LO= m_dAWFcircleLo;
+	pOpt->WIR_D_AWFCIRCLE_HI= m_dAWFcircleHi;
+	pOpt->WIR_F_AWFSTART	= m_bAWFstart;
+	pOpt->WIR_F_AWFEND		= m_bAWFend;
 	pOpt->m_strOption[MKWI_STR_AWFCNT] = m_strAwfCnt;
 	pOpt->m_strOption[MKWI_STR_AWFCUT] = m_strAwfCut;
 
