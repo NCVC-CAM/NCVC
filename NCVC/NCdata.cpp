@@ -860,7 +860,8 @@ void CNCline::SetCorrectPoint(ENPOINTORDER enPoint, const CPointF& ptSrc, float)
 
 	if ( enPoint == ENDPOINT ) {
 		ASSERT( m_pRead );
-		SetPlaneValue(ptSrc, m_pRead->m_ptValOrg);
+//		SetPlaneValue(ptSrc, m_pRead->m_ptValOrg);
+		SetPlaneValue(ptSrc, m_pRead->m_ptValOrg + m_pRead->m_ptOffset);
 	}
 }
 
@@ -1084,8 +1085,9 @@ CNCcycle::CNCcycle
 	}
 
 	// ﾄﾞｳｪﾙ時間
-	if ( GetValFlags() & NCD_P &&
-		(GetGcode()==82 || GetGcode()==88 || GetGcode()==89) )
+//	if ( GetValFlags() & NCD_P &&
+//		(GetGcode()==82 || GetGcode()==88 || GetGcode()==89) )
+	if ( GetValFlags() & NCD_P )	// P_あればコードに関係なく加算に仕様変更
 		m_dDwell = (float)lpArgv->nc.dValue[NCA_P] * nV;
 	else
 		m_dDwell = 0.0f;

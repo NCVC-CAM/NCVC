@@ -23,6 +23,7 @@ public:
 	CComboBox	m_ctCircleProcess;
 	CButton	m_ctCircleBreak;
 	CStatic	m_ctDwellUnit;
+	CStatic	m_ctDwellWorning;
 	CFloatEdit	m_dFeed;
 	CFloatEdit	m_dDrillZ;
 	CFloatEdit	m_dDrillR;

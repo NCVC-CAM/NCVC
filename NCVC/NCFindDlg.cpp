@@ -28,7 +28,7 @@ CNCFindDlg::CNCFindDlg(CWnd* pParent /*=NULL*/)
 	CString	strSection(GetSubTreeRegKey(IDS_REGKEY_WINDOW, IDS_REGKEY_WINDOW_FINDDLG)),
 			strEntry;
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_FINDSTR));
-	m_strFind = AfxGetApp()->GetProfileString(strSection, strEntry);
+	m_strFindOK = m_strFind = AfxGetApp()->GetProfileString(strSection, strEntry);
 }
 
 void CNCFindDlg::DoDataExchange(CDataExchange* pDX)
@@ -79,20 +79,19 @@ void CNCFindDlg::OnOK()
 		CNCChild* pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
 		if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) )	// ”O‚Ì‚½‚ß
 			pFrame->SetFindList(m_nUpDown, m_strFind);
+		if ( m_strFindOK != m_strFind ) {
+			m_strFindOK = m_strFind;
+			// ŒŸõ•¶Žš—ñ‚ð•Û‘¶
+			CString	strSection(GetSubTreeRegKey(IDS_REGKEY_WINDOW, IDS_REGKEY_WINDOW_FINDDLG)),
+					strEntry;
+			VERIFY(strEntry.LoadString(IDS_REG_NCV_FINDSTR));
+			AfxGetApp()->WriteProfileString(strSection, strEntry, m_strFindOK);
+		}
 	}
 }
 
 void CNCFindDlg::OnCancel() 
 {
-	UpdateData();
-	// ŒŸõ•¶Žš—ñ‚ð•Û‘¶
-	if ( !m_strFind.IsEmpty() ) {
-		CString	strSection(GetSubTreeRegKey(IDS_REGKEY_WINDOW, IDS_REGKEY_WINDOW_FINDDLG)),
-				strEntry;
-		VERIFY(strEntry.LoadString(IDS_REG_NCV_FINDSTR));
-		AfxGetApp()->WriteProfileString(strSection, strEntry, m_strFind);
-	}
-
 	// ³¨ÝÄÞ³ˆÊ’u•Û‘¶
 	AfxGetNCVCApp()->SaveDlgWindow(IDS_REGKEY_WINDOW_FINDDLG, this);
 

@@ -201,7 +201,7 @@ void CNCListView::SetFindList(int nUpDown, const CString& strFind)
 		bReverse = FALSE;
 	}
 	// ŽŸ‚ÌŒŸõ
-	nIndex = GetDocument()->SearchBlockRegex(m_regFind, nIndex, bReverse);
+	nIndex = GetDocument()->SearchBlockRegex(m_regFind, FALSE, nIndex, bReverse);
 	if ( nIndex < 0 )
 		::MessageBeep(MB_ICONASTERISK);
 	else {

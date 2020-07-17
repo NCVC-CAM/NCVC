@@ -791,7 +791,8 @@ CNCdata* CreateNCobj
 	}
 
 	ncArgv.nc.dwValFlags |= (pData->GetValFlags() & NCD_CORRECT);
-	pDataResult = new CNCline(pData, &ncArgv, pData->GetOffsetPoint());
+//	pDataResult = new CNCline(pData, &ncArgv, pData->GetOffsetPoint());
+	pDataResult = new CNCline(pData, &ncArgv, CPoint3F());	// ‚Qd‚É‘«‚³‚ê‚éH
 	ASSERT( pDataResult );
 
 	return pDataResult;

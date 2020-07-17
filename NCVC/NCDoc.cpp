@@ -424,7 +424,7 @@ void CNCDoc::SetCommentStr(const CString& strComment)
 			strRegex(strKey+"\\s*=\\s*("+strDouble+")*(\\s*,\\s*"+strDouble+")*");
 
 	regex	r1(strRegex, regex::icase);
-	INT_PTR	nIndex = SearchBlockRegex(r1), i;
+	INT_PTR	nIndex = SearchBlockRegex(r1, FALSE), i;
 	BOOL	bInsert = TRUE;
 	
 	if ( nIndex >= 0 ) {
@@ -554,19 +554,28 @@ void CNCDoc::WaitCalcThread(BOOL bWaitOnly/*=FALSE*/)
 	}
 }
 
-INT_PTR CNCDoc::SearchBlockRegex(regex& r, INT_PTR nStart/*=0*/, BOOL bReverse/*=FALSE*/)
+INT_PTR CNCDoc::SearchBlockRegex(regex& r,
+	BOOL bCommentThrough/*=TRUE*/, INT_PTR nStart/*=0*/, BOOL bReverse/*=FALSE*/)
 {
 	INT_PTR		i;
+	std::string	str;
+	regex		c("\\(.*\\)");	// (ƒRƒƒ“ƒg)
 
 	if ( bReverse ) {
 		for (i=nStart; i>=0; i--) {
-			if ( regex_search((LPCTSTR)(m_obBlock[i]->GetStrBlock()), r) )
+			str = (LPCTSTR)(m_obBlock[i]->GetStrBlock());
+			if ( bCommentThrough )
+				str = regex_replace(str, c, "");	// ºÒİÄ‚ğœ‚­
+			if ( !str.empty() && regex_search(str, r) )
 				return i;
 		}
 	}
 	else {
 		for (i=nStart; i<GetNCBlockSize(); i++) {
-			if ( regex_search((LPCTSTR)(m_obBlock[i]->GetStrBlock()), r) )
+			str = (LPCTSTR)(m_obBlock[i]->GetStrBlock());
+			if ( bCommentThrough )
+				str = regex_replace(str, c, "");
+			if ( !str.empty() && regex_search(str, r) )
 				return i;
 		}
 	}

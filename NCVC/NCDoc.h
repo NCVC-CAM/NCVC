@@ -119,7 +119,7 @@ public:
 
 	void	GetWorkRectPP(int a, float []);	// from NCInfoView.cpp
 
-	INT_PTR	SearchBlockRegex(boost::regex&, INT_PTR = 0, BOOL = FALSE);
+	INT_PTR	SearchBlockRegex(boost::regex&, BOOL = TRUE, INT_PTR = 0, BOOL = FALSE);
 	void	CheckBreakPoint(INT_PTR a) {	// ÌÞÚ°¸Îß²ÝÄ‚ÌÝ’è
 		CNCblock*	pBlock = GetNCblock(a);
 		pBlock->SetBlockFlag(pBlock->GetBlockFlag() ^ NCF_BREAK, FALSE);

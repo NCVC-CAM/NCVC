@@ -732,8 +732,8 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.65",IDC_STATIC,86,166,130,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 1997-2017 MNCT K.Magara",IDC_STATIC,86,182,143,8
+    LTEXT           "NCVC Version 3.66",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 1997-2018 MNCT K.Magara",IDC_STATIC,86,182,143,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
 
@@ -1326,7 +1326,7 @@ BEGIN
     LTEXT           "mm",IDC_STATIC,103,69,32,8
     LTEXT           "ƒﬁ≥™Ÿéûä‘(&W)",IDC_STATIC,7,89,51,8
     EDITTEXT        IDC_MKNC4_DWELL,60,87,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
-    LTEXT           "sec",IDC_MKNC4_DWELLUNIT,103,89,32,8
+    LTEXT           "sec",IDC_MKNC4_DWELLUNIT,103,89,29,8
     CONTROL         "ìØàÍç¿ïWÇÕñ≥éã(&I)",IDC_MKNC4_MATCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,110,70,10
     LTEXT           "êÿçÌèáèò(&P)",IDC_STATIC,135,9,37,8
     COMBOBOX        IDC_MKNC4_PROCESS,176,7,60,48,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -1347,6 +1347,7 @@ BEGIN
     LTEXT           "∏ﬁŸ∞Àﬂ›∏ﬁèáèò(&G)",IDC_STATIC,128,183,52,8
     COMBOBOX        IDC_MKNC4_CIRCLEGROUP,189,181,40,48,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "ägí£ê›íË",IDC_STATIC,7,130,229,68
+    RTEXT           "CNCÇ…ÇÊÇ¡Çƒ¥◊∞Ç…Ç»ÇÈâ¬î\ê´ÉAÉäÅ™",IDC_MKNC4_DWELLWORNING,112,107,124,8
 END
 
 IDD_MKNC_SETUP5 DIALOGEX 0, 0, 243, 203
@@ -1938,8 +1939,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,6,5,0
- PRODUCTVERSION 3,6,5,0
+ FILEVERSION 3,6,6,0
+ PRODUCTVERSION 3,6,6,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1957,15 +1958,15 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.6.5.0"
+            VALUE "FileVersion", "3.6.6.0"
             VALUE "InternalName", "NCVC.exe"
-            VALUE "LegalCopyright", "Copyright (C) 1997-2017 MNCT K.Magara"
+            VALUE "LegalCopyright", "Copyright (C) 1997-2018 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.6.5.0"
-            VALUE "SpecialBuild", "Boost C++ 1.65.1, FreeGLUT 3.00, GLEW 2.00"
+            VALUE "ProductVersion", "3.6.6.0"
+            VALUE "SpecialBuild", "Boost C++ 1.66, GLEW 2.00"
         END
     END
     BLOCK "VarFileInfo"

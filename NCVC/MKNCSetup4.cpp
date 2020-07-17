@@ -52,6 +52,7 @@ void CMKNCSetup4::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKNC4_DRILLQ, m_dDrillQ);
 	DDX_Control(pDX, IDC_MKNC4_CIRCLE_R, m_dCircleR);
 	DDX_Control(pDX, IDC_MKNC4_DWELLUNIT, m_ctDwellUnit);
+	DDX_Control(pDX, IDC_MKNC4_DWELLWORNING, m_ctDwellWorning);
 	DDX_Control(pDX, IDC_MKNC4_ZCUT, m_dDrillZ);
 	DDX_Control(pDX, IDC_MKNC4_R, m_dDrillR);
 	DDX_Control(pDX, IDC_MKNC4_DWELL, m_nDwell);
@@ -69,13 +70,14 @@ void CMKNCSetup4::DoDataExchange(CDataExchange* pDX)
 
 void CMKNCSetup4::EnableControl_Dwell(void)
 {
-	static	LPCTSTR	g_szDwellUnit[] = {
-		"sec", "sec/msec"
+	static	LPCTSTR	szDwellUnit[] = {
+		"sec", "msec"
 	};
 
-	if ( m_nDwellFormat<0 || m_nDwellFormat>SIZEOF(g_szDwellUnit) )
+	if ( m_nDwellFormat<0 || m_nDwellFormat>SIZEOF(szDwellUnit) )
 		m_nDwellFormat = 0;
-	m_ctDwellUnit.SetWindowText(g_szDwellUnit[m_nDwellFormat]);
+	m_ctDwellUnit.SetWindowText(szDwellUnit[m_nDwellFormat]);
+	m_ctDwellWorning.ShowWindow( m_nDwellFormat==0 );	// åxçêï\é¶
 }
 
 void CMKNCSetup4::EnableControl_Circle(void)
@@ -89,7 +91,7 @@ void CMKNCSetup4::EnableControl_Circle(void)
 void CMKNCSetup4::EnableControl_DrillQ(void)
 {
 	// G83à»äOì¸óÕïsâ¬
-	m_dDrillQ.EnableWindow( m_nDrillReturn == 2 );
+	m_dDrillQ.EnableWindow( m_nDrillReturn==2 );
 }
 
 /////////////////////////////////////////////////////////////////////////////

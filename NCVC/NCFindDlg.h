@@ -14,7 +14,7 @@ public:
 	CButton m_ctFindUp;
 	CButton m_ctFindDown;
 	int m_nUpDown;
-	CString m_strFind;
+	CString m_strFind, m_strFindOK;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート

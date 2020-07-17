@@ -136,7 +136,7 @@ static inline	int		_GetGcode(const string& str)
 		dResult += 1000.0;		// 小数点があれば ｺｰﾄﾞ+1000
 	return (int)dResult;
 }
-// 数値変換( 1/1000 ﾃﾞｰﾀを判断する)
+// 数値変換(1/1000 ﾃﾞｰﾀを判断する)
 static inline	float	_GetNCValue(const string& str)
 {
 	float	dResult = (float)atof(str.c_str());
@@ -556,8 +556,8 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				// 復帰用ｵﾌﾞｼﾞｪｸﾄ生成
 				pDataResult = AddM98code(pBlock, pDataResult, -1);
 				return 99;
-			default:
-				return 0;	// 認識できないMｺｰﾄﾞﾌﾞﾛｯｸは以降のｺｰﾄﾞを処理しない
+//			default:		// ↓bNCvalのAddGcode()が呼ばれなくなる
+//				return 0;	// ×(認識できないMｺｰﾄﾞﾌﾞﾛｯｸは以降のｺｰﾄﾞを処理しない)
 			}
 			break;
 		case 'G':
@@ -637,13 +637,12 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			if ( g_Cycle.bCycle ) {		// 81～89
 				// 固定ｻｲｸﾙの特別処理
 				switch ( nCode ) {
-				case NCA_K:		// Kはﾈｲﾃｨﾌﾞで
+				case NCA_K:		// Kはﾈｲﾃｨﾌﾞで(これ何やろ？)
 					g_ncArgv.nc.dValue[NCA_K] = atoi(strWord.substr(1).c_str());
 					break;
-				case NCA_P:		// P(ﾄﾞｳｪﾙ時間)は送り速度と同じ判定
-					g_ncArgv.nc.dValue[NCA_P] = g_pfnFeedAnalyze(strWord.substr(1));
-					break;
-				default:
+//				case NCA_P:		// P(ﾄﾞｳｪﾙ時間)は送り速度と同じ判定
+//					g_ncArgv.nc.dValue[NCA_P] = g_pfnFeedAnalyze(strWord.substr(1));
+				default:		// P(ﾄﾞｳｪﾙ時間)も_GetNCValue()でOK
 					g_ncArgv.nc.dValue[nCode] = _GetNCValue(strWord.substr(1));
 				}
 			}
@@ -1066,7 +1065,8 @@ INT_PTR NC_SearchSubProgram(INT_PTR* pRepeat)
 	}
 
 	// 正規表現(Oxxxxにﾏｯﾁする)
-	regex	r("(O(0)*"+lexical_cast<string>(nProg)+")($|[^0-9])");
+//	regex	r("(O(0)*"+lexical_cast<string>(nProg)+")($|[^0-9])");
+	regex	r("^O(0)*"+lexical_cast<string>(nProg)+"$");
 
 	// 現在の(同じ)ﾒﾓﾘﾌﾞﾛｯｸから検索
 	n = g_pDoc->SearchBlockRegex(r);
