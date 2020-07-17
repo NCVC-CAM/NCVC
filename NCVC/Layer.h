@@ -51,7 +51,7 @@ friend	class	CMakeNCDlgEx21;
 			m_strNCFile,	// 個別出力ﾌｧｲﾙ名
 			m_strLayerComment,	// ﾚｲﾔごとのｺﾒﾝﾄ
 			m_strLayerCode;		// ﾚｲﾔごとの特殊ｺｰﾄﾞ
-	double	m_dInitZCut,	// 切削条件ﾌｧｲﾙに設定された最深Z座標(CMakeNCDlgEx::表示)
+	float	m_dInitZCut,	// 切削条件ﾌｧｲﾙに設定された最深Z座標(CMakeNCDlgEx::表示)
 			m_dZCut;		// 最深Z座標(CMakeNCDlgEx2::入力)
 
 protected:
@@ -131,7 +131,7 @@ public:
 	void	SetNCFile(CString& strFile) {
 		m_strNCFile = strFile;
 	}
-	double	GetZCut(void) const {
+	float	GetZCut(void) const {
 		return m_dZCut;
 	}
 	CString	GetLayerComment(void) const {
@@ -143,17 +143,18 @@ public:
 
 // ｵﾍﾟﾚｰｼｮﾝ
 	CDXFdata*	DataOperation(CDXFdata*, ENDXFOPERATION, int);
-	CDXFdata*	RemoveData(int nIndex) {
+	CDXFdata*	RemoveData(INT_PTR nIndex) {
 		CDXFdata*	pData = m_obDXFArray[nIndex];
 		m_obDXFArray.RemoveAt(nIndex);
 		return pData;
 	}
-	CDXFtext*	RemoveDataText(int nIndex) {
+	CDXFtext*	RemoveDataText(INT_PTR nIndex) {
 		CDXFtext*	pData = m_obDXFTextArray[nIndex];
 		m_obDXFTextArray.RemoveAt(nIndex);
 		return pData;
 	}
 	void	AddShape(CDXFshape* pShape) {
+		ASSERT( pShape );
 		m_obShapeArray.Add(pShape);
 	}
 	void	RemoveShape(CDXFshape* pShape) {
@@ -174,7 +175,7 @@ public:
 	void	DescendingShapeSort(void);
 	void	SerializeShapeSort(void);
 	//
-	void	AllChangeFactor(double) const;
+	void	AllChangeFactor(float) const;
 	void	AllSetDxfFlg(DWORD, BOOL) const;
 	void	AllShapeClearSideFlg(void) const;
 	void	DrawWorking(CDC*);

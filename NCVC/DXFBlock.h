@@ -9,7 +9,7 @@
 class CDXFBlockData
 {
 	CString		m_strBlock;		// ÌÞÛ¯¸–¼
-	CPointD		m_ptOrg;		// ÌÞÛ¯¸Šî“_
+	CPointF		m_ptOrg;		// ÌÞÛ¯¸Šî“_
 	CDXFarray	m_obDXFArray;	// —v‘fÃÞ°À
 
 public:
@@ -26,19 +26,19 @@ public:
 	const	CString		GetBlockName(void) {
 		return m_strBlock;
 	}
-	int		GetSize(void) const {
+	INT_PTR		GetSize(void) const {
 		return m_obDXFArray.GetSize();
 	}
 	CDXFdata*	GetBlockData(int n) const {
 		ASSERT(n>=0 && n<m_obDXFArray.GetSize());
 		return m_obDXFArray[n];
 	}
-	CPointD		GetBlockOrigin(void) const {
+	CPointF		GetBlockOrigin(void) const {
 		return m_ptOrg;
 	}
 
 // µÍßÚ°¼®Ý
-	void	SetBlockOrigin(CPointD& pt) {
+	void	SetBlockOrigin(CPointF& pt) {
 		m_ptOrg = pt;
 	}
 	// BlockÃÞ°À“o˜^(—áŠO½Û°‚ÍãˆÊ‚Å·¬¯Á)

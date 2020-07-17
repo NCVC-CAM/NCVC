@@ -91,7 +91,7 @@ protected:
 public:
 	CNCMakeWireOpt(LPCTSTR);
 
-	BOOL	IsAWFcircle(double r) {
+	BOOL	IsAWFcircle(float r) {
 		return WIR_D_AWFCIRCLE_LO<=r && r<=WIR_D_AWFCIRCLE_HI;
 	}
 

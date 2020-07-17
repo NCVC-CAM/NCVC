@@ -100,12 +100,12 @@ void CMKNCSetup5::OnScriptLookup()
 BOOL CMKNCSetup5::OnApply() 
 {
 	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->MIL_D_TOLERANCE		= fabs((double)m_dTolerance);
+	pOpt->MIL_D_TOLERANCE		= fabs((float)m_dTolerance);
 	if ( pOpt->MIL_D_TOLERANCE < NCMIN )
 		pOpt->MIL_D_TOLERANCE = NCMIN;
 	pOpt->MIL_I_TOLERANCE		= m_nTolerance;
 	pOpt->MIL_I_OPTIMAIZEDRILL	= m_nOptimaizeDrill;
-	pOpt->MIL_D_DRILLMARGIN		= fabs((double)m_dDrillMargin);
+	pOpt->MIL_D_DRILLMARGIN		= fabs((float)m_dDrillMargin);
 	pOpt->m_strOption[MKNC_STR_PERLSCRIPT] = m_strScriptPath+m_strScript;
 
 	return TRUE;

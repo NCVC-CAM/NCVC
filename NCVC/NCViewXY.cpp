@@ -64,7 +64,7 @@ void CNCViewXY::OnInitialUpdate()
 void CNCViewXY::SetGuideData(void)
 {
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	double	dSrc = pOpt->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) ?
+	float	dSrc = pOpt->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) ?
 						m_dFactor : LOMETRICFACTOR;
 	// Ｘ軸のガイド初期化（左から右へ）
 	m_ptGuide[0][0].x = (int)(-pOpt->GetGuideLength(NCA_X) * dSrc);
@@ -80,10 +80,10 @@ void CNCViewXY::SetGuideData(void)
 
 void CNCViewXY::SetWorkCylinder(void)
 {
-	CRectD		rc(GetDocument()->GetWorkRect());
-	CPointD		ptc(rc.CenterPoint());
+	CRectF		rc(GetDocument()->GetWorkRect());
+	CPointF		ptc(rc.CenterPoint());
 	int			i;
-	double		r = rc.Width()/2.0, q;
+	float		r = rc.Width()/2.0f, q;
 
 	for ( i=0, q=0; i<ARCCOUNT; i++, q+=ARCSTEP ) {
 		m_ptdWorkCylinder[i].x = r * cos(q) + ptc.x;

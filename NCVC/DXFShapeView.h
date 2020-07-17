@@ -18,7 +18,7 @@ class CDXFShapeView : public CTreeView
 	HTREEITEM	m_hRootTree[3], m_hItemDrag, m_hItemDrop;
 	CLayerData*	m_pDragLayer;	// ﾄﾞﾗｯｸﾞｱｲﾃﾑ(以下同時使用のためboost::variant使用不可)
 	CDXFshape*	m_pDragShape;
-	DWORD		m_dwDragRoot;
+	DWORD_PTR	m_dwDragRoot;
 
 	void	OnUpdateShape(LPDXFADDSHAPE);
 	BOOL	IsRootTree(HTREEITEM hTree) {
@@ -31,7 +31,7 @@ class CDXFShapeView : public CTreeView
 	void		DragLink(void);
 	void	DragCancel(BOOL, BOOL = TRUE);
 	HTREEITEM	SearchLayerTree(HTREEITEM, const CLayerData*);
-	DWORD	GetParentAssemble(HTREEITEM);
+	DWORD_PTR	GetParentAssemble(HTREEITEM);
 	void	SetShapeSwitch_SubordinateTree(HTREEITEM, BOOL);
 
 	void	SetShapeTree(void);

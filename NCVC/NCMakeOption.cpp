@@ -31,9 +31,9 @@ CNCMakeOption::CNCMakeOption(NCMAKEOPTION makeopt[],
 	// intå^µÃﬂºÆ›
 	m_MakeOpt[0] = makeopt[0];
 	m_pIntOpt = new int[m_MakeOpt[0].nOrderCnt];
-	// doubleå^µÃﬂºÆ›
+	// floatå^µÃﬂºÆ›
 	m_MakeOpt[1] = makeopt[1];
-	m_pDblOpt = new double[m_MakeOpt[1].nOrderCnt];
+	m_pDblOpt = new float[m_MakeOpt[1].nOrderCnt];
 	// BOOLå^µÃﬂºÆ›
 	m_MakeOpt[2] = makeopt[2];
 	m_pFlgOpt = new BOOL[m_MakeOpt[2].nOrderCnt];
@@ -133,26 +133,26 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 			// ñΩóﬂåüç∏(intå^)
 			n = stNOrder.GetIndex(strOrder.c_str());
 			if ( 0<=n && n<m_MakeOpt[0].nOrderCnt ) {
-				m_pIntOpt[n] = strResult.empty() ? 0 : lexical_cast<int>(strResult);
+				m_pIntOpt[n] = strResult.empty() ? 0 : atoi(strResult.c_str());
 				continue;
 			}
-			// ñΩóﬂåüç∏(doubleå^)
+			// ñΩóﬂåüç∏(floatå^)
 			n = stDOrder.GetIndex(strOrder.c_str());
 			if ( 0<=n && n<m_MakeOpt[1].nOrderCnt ) {
-				m_pDblOpt[n] = strResult.empty() ? 0 : lexical_cast<double>(strResult);
+				m_pDblOpt[n] = strResult.empty() ? 0 : (float)atof(strResult.c_str());
 				continue;
 			}
 			// ñΩóﬂåüç∏(BOOLå^)
 			n = stBOrder.GetIndex(strOrder.c_str());
 			if ( 0<=n && n<m_MakeOpt[2].nOrderCnt ) {
 				m_pFlgOpt[n] = strResult.empty() ? FALSE :
-						(lexical_cast<int>(strResult) ? TRUE : FALSE);
+						(atoi(strResult.c_str()) ? TRUE : FALSE);
 				continue;
 			}
 			// ñΩóﬂåüç∏(CStringå^)
 			n = stSOrder.GetIndex(strOrder.c_str());
 			if ( 0<=n && n<m_MakeOpt[3].nOrderCnt ) {
-				if ( IsPathID(n) ) {
+				if ( IsPathID((int)n) ) {
 					// ëäëŒ ﬂΩÇ»ÇÁê‚ëŒ ﬂΩÇ…ïœä∑
 					if ( !strResult.empty() &&
 								::PathIsRelative(strResult.c_str()) &&		// Shlwapi.h
@@ -169,11 +169,6 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 		strBuf.Format(IDS_ERR_DXF2NCDINIT, m_strInitFile);
 		AfxMessageBox(strBuf, MB_OK|MB_ICONSTOP);
 		e->Delete();
-		bResult = FALSE;
-	}
-	catch ( const bad_lexical_cast& ) {
-		strBuf.Format(IDS_ERR_DXF2NCDINIT, m_strInitFile);
-		AfxMessageBox(strBuf, MB_OK|MB_ICONSTOP);
 		bResult = FALSE;
 	}
 
@@ -218,7 +213,7 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 					m_pIntOpt[n],
 					m_pSaveOrder[i].lpszComment);
 				break;
-			case NC_DBL:	// doubleå^
+			case NC_DBL:	// floatå^
 				strBuf.Format("%s%s= %12.3f ; %s\n",
 					m_MakeOpt[m].pszOrder[n], GetInsertSpace(lstrlen(m_MakeOpt[m].pszOrder[n])),
 					m_pDblOpt[n],

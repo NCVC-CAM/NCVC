@@ -88,7 +88,8 @@
 #define	NCVCSERIALVERSION_2300	2300	// v2.30Å` (ê˘î’å¥ì_√ﬁ∞¿)
 #define	NCVCSERIALVERSION_3600	3600	// v3.60Å` (CAD√ﬁ∞¿ÇÃìùçá)
 #define	NCVCSERIALVERSION_3602	3602	// v3.60bÅ` (ï¬Ç∂ÇΩPOLYLINEÇÃï˚å¸îªíË√ﬁ∞¿)
-#define	NCVCSERIALVERSION		NCVCSERIALVERSION_3602
+#define	NCVCSERIALVERSION_3620	3620	// v3.62Å` (double->float)
+#define	NCVCSERIALVERSION		NCVCSERIALVERSION_3620
 
 enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 
@@ -96,7 +97,7 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 #define	SIZEOF(array)			( sizeof(array)/sizeof(array[0]) )
 #define	AfxGetNCVCApp()			( static_cast<CNCVCApp *>(AfxGetApp()) )
 #define	AfxGetNCVCMainWnd()		( static_cast<CMainFrame *>(AfxGetMainWnd()) )
-#define	LOMETRICFACTOR			10.0
+#define	LOMETRICFACTOR			10.0f
 
 // Timer Event
 #define	IDC_SPLASH_TIMER		100
@@ -162,6 +163,10 @@ inline std::string Trim(const std::string &str)
     if ( sPos != -1 )
 		strResult = str.substr(sPos, ePos - sPos + 1);
     return strResult;
+}
+inline std::string Trim(LPCTSTR str)
+{
+	return Trim(std::string(str));
 }
 
 // óêêî

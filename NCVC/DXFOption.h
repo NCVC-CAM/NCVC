@@ -57,10 +57,10 @@ friend	class	CMakeBindOptDlg;
 	};
 	union {
 		struct {
-			double	m_dBindWork[2],	// CADﾃﾞｰﾀの統合ﾜｰｸｻｲｽﾞ
+			float	m_dBindWork[2],	// CADﾃﾞｰﾀの統合ﾜｰｸｻｲｽﾞ
 					m_dBindMargin;	// 配置ﾏｰｼﾞﾝ
 		};
-		double		m_udNums[DXFOPT_DBL_NUMS];
+		float		m_udNums[DXFOPT_DBL_NUMS];
 	};
 	CString	m_strReadLayer[DXFLAYERSIZE];	// 原点，切削(入力ｲﾒｰｼﾞ保存用)，
 											// 加工開始位置ﾚｲﾔ名, 強制移動指示ﾚｲﾔ名, ｺﾒﾝﾄ用
@@ -121,10 +121,10 @@ public:
 	}
 	void	DelInitHistory(enMAKETYPE, LPCTSTR);
 	//
-	double	GetBindSize(size_t n) const {
+	float	GetBindSize(size_t n) const {
 		return m_dBindWork[n];
 	}
-	double	GetBindMargin(void) const {
+	float	GetBindMargin(void) const {
 		return m_dBindMargin;
 	}
 	//

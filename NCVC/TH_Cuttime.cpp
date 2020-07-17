@@ -17,8 +17,8 @@ extern	CMagaDbg	g_dbg;
 
 #define	IsThread()	pDoc->IsDocFlag(NCDOC_CUTCALC)
 
-static	double	GetCutTime_Milling(const CNCdata*);
-static	double	GetCutTime_Lathe(const CNCdata*);
+static	float	GetCutTime_Milling(const CNCdata*);
+static	float	GetCutTime_Lathe(const CNCdata*);
 
 //////////////////////////////////////////////////////////////////////
 //	ØíŽžŠÔ‚ÌŒvŽZ½Ú¯ÄÞ
@@ -37,8 +37,8 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	delete	pVoid;	// Š®‘SÊÞ¯¸¸Þ×³ÝÄÞˆ—
 
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();	// G00ˆÊ’uŒˆ‚ßˆÚ“®‘¬“xŽæ“¾—p
-	int			i, j, nLoopCnt = pDoc->GetNCsize();
-	double		dTmp, dd;
+	INT_PTR		i, j, nLoopCnt = pDoc->GetNCsize();
+	float		dTmp, dd;
 	DWORD		dwValFlags;
 	CNCdata*	pData;
 
@@ -47,7 +47,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 #endif
 
 	// ˆÚ“®EØí’·‚Ì‡ŒvŒvŽZ
-	pDoc->m_dMove[0] = pDoc->m_dMove[1] = 0.0;
+	ZEROCLR(pDoc->m_dMove);
 	for ( i=0; i<nLoopCnt && IsThread(); i++ ) {
 		pData = pDoc->GetNCdata(i);
 		if ( pData->GetGtype() == G_TYPE ) {
@@ -79,7 +79,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	}
 
 	pDoc->m_dCutTime = 0.0;
-	boost::function<double (const CNCdata*)>	pfnGetCutTime =
+	boost::function<float (const CNCdata*)>	pfnGetCutTime =
 		pDoc->IsDocFlag(NCDOC_LATHE) ?
 		GetCutTime_Lathe : GetCutTime_Milling;
 
@@ -106,9 +106,9 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 		case 4:		// ÄÞ³ªÙ
 			dwValFlags = pData->GetValFlags();
 			if ( dwValFlags & NCD_P )		// P’l‚Ímsec’PˆÊ
-				pDoc->m_dCutTime += pData->GetValue(NCA_P) / 1000.0 / 60.0;
+				pDoc->m_dCutTime += pData->GetValue(NCA_P) / 1000.0f / 60.0f;
 			else if ( dwValFlags & NCD_X )	// X’l‚Ísec’PˆÊ
-				pDoc->m_dCutTime += pData->GetValue(NCA_X) / 60.0;
+				pDoc->m_dCutTime += pData->GetValue(NCA_X) / 60.0f;
 			break;
 		case 81:	// ŒÅ’è»²¸Ù
 		case 82:
@@ -126,13 +126,13 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 			if ( pData->GetFeed() != 0 )
 				pDoc->m_dCutTime += pData->GetCutLength() / pData->GetFeed();
 			// ÄÞ³ªÙŽžŠÔ[•ª]
-			pDoc->m_dCutTime += static_cast<CNCcycle*>(pData)->GetDwell() / 60.0;
+			pDoc->m_dCutTime += static_cast<CNCcycle*>(pData)->GetDwell() / 60.0f;
 			break;
 		}
 	} // End of Loop
 
 	// ÌÞÛ¯¸ˆ—‚Ìd‚Ý
-	pDoc->m_dCutTime += pMCopt->GetDbl(MC_DBL_BLOCKWAIT) * pDoc->GetNCBlockSize() / 60.0;
+	pDoc->m_dCutTime += pMCopt->GetDbl(MC_DBL_BLOCKWAIT) * pDoc->GetNCBlockSize() / 60.0f;
 
 	pView->PostMessage(WM_USERPROGRESSPOS);
 #ifdef _DEBUG
@@ -144,23 +144,23 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 
 //////////////////////////////////////////////////////////////////////
 
-double GetCutTime_Milling(const CNCdata* pData)
+float GetCutTime_Milling(const CNCdata* pData)
 {
 	return pData->GetCutLength() / pData->GetFeed();
 }
 
-double GetCutTime_Lathe(const CNCdata* pData)
+float GetCutTime_Lathe(const CNCdata* pData)
 {
 	// –ˆ•ª‘—‚èŒvŽZ
-	double	dResult = GetCutTime_Milling(pData);
+	float	dResult = GetCutTime_Milling(pData);
 
 	// G99–ˆ‰ñ“]‘—‚è‚È‚ç
 	if ( !pData->GetG98() ) {	
 		if ( pData->GetSpindle() == 0 )	// ŽåŽ²‰ñ“]”‚Í•K{
 			dResult = 0.0;
 		else
-		//	dResult *= (1.0/pData->GetSpindle());
 			dResult /= pData->GetSpindle();		// ‚P‰ñ“]‚ ‚½‚è‚ÌŽžŠÔ[min]‚ðŠ|‚¯‚é
+												// *= (1.0/pData->GetSpindle());
 	}
 
 	return dResult;

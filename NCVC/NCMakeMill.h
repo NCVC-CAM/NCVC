@@ -23,21 +23,21 @@ class CNCMakeMill : public CNCMakeBase
 protected:
 	CNCMakeMill();		// 派生ｸﾗｽ用
 	// 座標値設定
-	static	CString	GetValString(int, double, BOOL);
+	static	CString	GetValString(int, float, BOOL);
 	//
 	void	MakePolylineMov(const CDXFpolyline*, BOOL);
 
 public:
 	// 切削ﾃﾞｰﾀ
-	CNCMakeMill(const CDXFdata*, double, const double* = NULL);
+	CNCMakeMill(const CDXFdata*, float, const float* = NULL);
 	// 加工開始位置指示ﾃﾞｰﾀのXY移動
 	CNCMakeMill(const CDXFdata*, BOOL);
 	// Z軸の変化(上昇・下降)
-	CNCMakeMill(int, double, double);
+	CNCMakeMill(int, float, float);
 	// XYのG[0|1]移動
-	CNCMakeMill(int, const CPointD&, double);
+	CNCMakeMill(int, const CPointF&, float);
 	// 座標指示による円弧の生成
-	CNCMakeMill(int, const CPointD&, const CPointD&, const CPointD&, double);
+	CNCMakeMill(int, const CPointF&, const CPointF&, const CPointF&, float);
 	// 任意の文字列ｺｰﾄﾞ
 	CNCMakeMill(const CString&);
 
@@ -45,9 +45,9 @@ public:
 	static	void	SetStaticOption(const CNCMakeMillOpt*);
 
 	// TH_MakeNCD.cpp で初期化
-	static	double	ms_dCycleZ[2];	// 固定ｻｲｸﾙの切り込みZ座標
-	static	double	ms_dCycleR[2];	// 固定ｻｲｸﾙのR点
-	static	double	ms_dCycleP[2];	// 固定ｻｲｸﾙのﾄﾞｳｪﾙ時間
+	static	float	ms_dCycleZ[2];	// 固定ｻｲｸﾙの切り込みZ座標
+	static	float	ms_dCycleR[2];	// 固定ｻｲｸﾙのR点
+	static	float	ms_dCycleP[2];	// 固定ｻｲｸﾙのﾄﾞｳｪﾙ時間
 
 	// TH_MakeNCD.cpp から参照
 	static	CString	MakeSpindle(ENDXFTYPE enType, BOOL bDeep = FALSE);

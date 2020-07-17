@@ -150,7 +150,7 @@ BOOL CMKNCSetup1::OnApply()
 	// OnKillActive() ‚Å‚ÍÍß°¼Þ‚ðØ‚è‘Ö‚¦‚ç‚ê‚È‚¢‚Ì‚Å‚¤‚Á‚Æ‚¨‚µ‚¢
 	int		nMakeEnd;
 	BOOL	bDeep;
-	double	dDeep, dMakeValue;
+	float	dDeep, dMakeValue;
 	CMKNCSetup*	pParent = GetParentSheet();
 	CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
 
@@ -238,7 +238,7 @@ BOOL CMKNCSetup1::OnKillActive()
 		m_ctFooter.SetFocus();
 		return FALSE;
 	}
-	if ( (double)m_dZCut > (double)m_dZG0Stop ) {
+	if ( (float)m_dZCut > (float)m_dZG0Stop ) {
 		AfxMessageBox(IDS_ERR_ZCUT, MB_OK|MB_ICONEXCLAMATION);
 		m_dZCut.SetFocus();
 		m_dZCut.SetSel(0, -1);

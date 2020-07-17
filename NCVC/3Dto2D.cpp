@@ -16,30 +16,30 @@ using namespace boost;
 //////////////////////////////////////////////////////////////////////
 // 静的変数の初期化
 
-double	CPoint3D::ms_rx_cos = 0.0;
-double	CPoint3D::ms_rx_sin = 0.0;
-double	CPoint3D::ms_ry_cos = 0.0;
-double	CPoint3D::ms_ry_sin = 0.0;
-double	CPoint3D::ms_rz_cos = 0.0;
-double	CPoint3D::ms_rz_sin = 0.0;
-float	CPoint3F::ms_rx_cos = 0.0;
-float	CPoint3F::ms_rx_sin = 0.0;
-float	CPoint3F::ms_ry_cos = 0.0;
-float	CPoint3F::ms_ry_sin = 0.0;
-float	CPoint3F::ms_rz_cos = 0.0;
-float	CPoint3F::ms_rz_sin = 0.0;
+//double	CPoint3D::ms_rx_cos = 0.0;
+//double	CPoint3D::ms_rx_sin = 0.0;
+//double	CPoint3D::ms_ry_cos = 0.0;
+//double	CPoint3D::ms_ry_sin = 0.0;
+//double	CPoint3D::ms_rz_cos = 0.0;
+//double	CPoint3D::ms_rz_sin = 0.0;
+float	CPoint3F::ms_rx_cos = 0.0f;
+float	CPoint3F::ms_rx_sin = 0.0f;
+float	CPoint3F::ms_ry_cos = 0.0f;
+float	CPoint3F::ms_ry_sin = 0.0f;
+float	CPoint3F::ms_rz_cos = 0.0f;
+float	CPoint3F::ms_rz_sin = 0.0f;
 
 //////////////////////////////////////////////////////////////////////
 //	２線の交点を求める
 
-optional<CPointD> CalcIntersectionPoint_LL
-	(const CPointD& pts1, const CPointD& pte1, const CPointD& pts2, const CPointD& pte2,
+optional<CPointF> CalcIntersectionPoint_LL
+	(const CPointF& pts1, const CPointF& pte1, const CPointF& pts2, const CPointF& pte2,
 		BOOL bRangeChk/*=TRUE*/)
 {
 	BOOL	bResult = FALSE;
-	CPointD	pt;
-	optional<CPointD>	pt1, pt2;
-	double	minX1, minY1, maxX1, maxY1,
+	CPointF	pt;
+	optional<CPointF>	pt1, pt2;
+	float	minX1, minY1, maxX1, maxY1,
 			minX2, minY2, maxX2, maxY2,
 			xa = RoundUp(pte1.x - pts1.x),	ya = RoundUp(pte1.y - pts1.y),
 			xb = RoundUp(pte2.x - pts2.x),	yb = RoundUp(pte2.y - pts2.y);
@@ -83,7 +83,7 @@ optional<CPointD> CalcIntersectionPoint_LL
 				// 範囲内にある中点を交点とする
 				ya = (*pt1).y;	yb = (*pt2).y;
 				pt.x = pts1.x;
-				pt.y = ( yb - ya ) / 2.0 + ya;
+				pt.y = ( yb - ya ) / 2.0f + ya;
 				return pt;	// 検算の必要なし
 			}
 			else {
@@ -104,7 +104,7 @@ optional<CPointD> CalcIntersectionPoint_LL
 			bResult = TRUE;
 		}
 		else {
-			double	yaxa = RoundUp(ya / xa),
+			float	yaxa = RoundUp(ya / xa),
 					ybxb = RoundUp(yb / xb);
 			if ( fabs(ya) < NCMIN ) {
 				if ( fabs(yb) >= NCMIN ) {
@@ -136,7 +136,7 @@ optional<CPointD> CalcIntersectionPoint_LL
 					}
 					if ( pt1 && pt2 ) {
 						xa = (*pt1).x;	xb = (*pt2).x;
-						pt.x = ( xb - xa ) / 2.0 + xa;
+						pt.x = ( xb - xa ) / 2.0f + xa;
 						pt.y = pts1.y;
 						return pt;
 					}
@@ -195,8 +195,8 @@ optional<CPointD> CalcIntersectionPoint_LL
 							if ( fabs(xa)>=NCMIN && RoundCt(fabs(ya/xa-yaxa))<=NCMIN ) {
 								xa = (*pt1).x;	xb = (*pt2).x;
 								ya = (*pt1).y;	yb = (*pt2).y;
-								pt.x = ( xb - xa ) / 2.0 + xa;
-								pt.y = ( yb - ya ) / 2.0 + ya;
+								pt.x = ( xb - xa ) / 2.0f + xa;
+								pt.y = ( yb - ya ) / 2.0f + ya;
 								return pt;
 							}
 						}
@@ -252,24 +252,24 @@ optional<CPointD> CalcIntersectionPoint_LL
 		}
 	}
 
-	return bResult ? pt : optional<CPointD>();
+	return bResult ? pt : optional<CPointF>();
 }
 
 //////////////////////////////////////////////////////////////////////
 //	直線と円の交点を求める
 
-tuple<int, CPointD, CPointD> CalcIntersectionPoint_LC
-	(const CPointD& pts, const CPointD& pte, const CPointD& ptc, double r,
+tuple<int, CPointF, CPointF> CalcIntersectionPoint_LC
+	(const CPointF& pts, const CPointF& pte, const CPointF& ptc, float r,
 		BOOL bRangeChk/*=TRUE*/)
 {
 	r = fabs(r);
 
 	int		nResult = 0;
-	CPointD	pr1, pr2,
+	CPointF	pr1, pr2,
 			pt(pte-pts), pto(ptc-pts);	// 始点を中心に
-	double	q = atan2(pt.y, pt.x);		// 線の傾き
+	float	q = atan2(pt.y, pt.x);		// 線の傾き
 	pto.RoundPoint(-q);					// 円の中心を線の傾き分逆回転
-	double	y  = fabs(pto.y),			// 円の中心とX軸(直線)との距離
+	float	y  = fabs(pto.y),			// 円の中心とX軸(直線)との距離
 			yr = RoundUp(y-r);
 
 	// 交点がない条件
@@ -317,16 +317,16 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LC
 //////////////////////////////////////////////////////////////////////
 //	２つの円の交点を求める
 
-tuple<int, CPointD, CPointD> CalcIntersectionPoint_CC
-	(const CPointD& pts, const CPointD& pte, double r1, double r2)
+tuple<int, CPointF, CPointF> CalcIntersectionPoint_CC
+	(const CPointF& pts, const CPointF& pte, float r1, float r2)
 {
 	r1 = fabs(r1);
 	r2 = fabs(r2);
 
 	int		nResult = 0;
-	CPointD	pr1, pr2,
+	CPointF	pr1, pr2,
 			pt(pte-pts);			// 始点Ｓが原点となるよう平行移動
-	double	l,
+	float	l,
 			r1r2p = r1 + r2,		// 使用頻度の高い計算
 			r1r2n = fabs(r1 - r2),
 			q = atan2(pt.y, pt.x);	// 回転角度
@@ -352,7 +352,7 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_CC
 	else {
 		// 交点２つ
 		r1 *= r1;	// r1*r1を２回使うので先に計算
-		pr1.x = pr2.x = (r1 - r2*r2 + l*l) / (2.0*l);
+		pr1.x = pr2.x = (r1 - r2*r2 + l*l) / (2.0f*l);
 		pr1.y = sqrt(r1 - pr1.x*pr1.x);
 		pr2.y = -pr1.y;
 		// 回転を復元
@@ -372,18 +372,18 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_CC
 //////////////////////////////////////////////////////////////////////
 //	直線と楕円の交点を求める
 
-tuple<int, CPointD, CPointD> CalcIntersectionPoint_LE
-	(const CPointD& pts, const CPointD& pte,
-		const CPointD& pto, double a, double b, double q,
+tuple<int, CPointF, CPointF> CalcIntersectionPoint_LE
+	(const CPointF& pts, const CPointF& pte,
+		const CPointF& pto, float a, float b, float q,
 		BOOL bRangeChk/*=TRUE*/)
 {
 	int		nResult = 0;
-	CPointD	pt1(pts-pto), pt2(pte-pto), pr1, pr2;
+	CPointF	pt1(pts-pto), pt2(pte-pto), pr1, pr2;
 	// 楕円の傾きを相殺
 	pt1.RoundPoint(-q);
 	pt2.RoundPoint(-q);
 	// 計算前準備
-	double	xa = pt2.x - pt1.x,		ya = pt2.y - pt1.y,
+	float	xa = pt2.x - pt1.x,		ya = pt2.y - pt1.y,
 			minX, minY, maxX, maxY;
 	tie(minX, maxX) = minmax(pt1.x, pt2.x);
 	tie(minY, maxY) = minmax(pt1.y, pt2.y);
@@ -425,7 +425,7 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LE
 		// ２次方程式からx値を計算
 		tie(nResult, pr1.x, pr2.x) = GetKon(
 				ya*ya + xa*xa*b*b/(a*a),
-				2.0*ya*(xa*pt1.y - pt1.x*ya),
+				2.0f*ya*(xa*pt1.y - pt1.x*ya),
 				(pt1.y*pt1.y-b*b)*xa*xa + (pt1.x*ya-2*pt1.y*xa)*pt1.x*ya );
 		// y値を計算
 		if ( nResult > 1 )
@@ -462,22 +462,22 @@ tuple<int, CPointD, CPointD> CalcIntersectionPoint_LE
 //////////////////////////////////////////////////////////////////////
 //	線と線の端点を中心とした円との交点を求める
 
-CPointD	CalcIntersectionPoint_TC
-	(const CPointD& ptOrg, double r, const CPointD& ptSrc)
+CPointF	CalcIntersectionPoint_TC
+	(const CPointF& ptOrg, float r, const CPointF& ptSrc)
 {
-	CPointD	pt;
+	CPointF	pt;
 
 	// ptOrg を中心とした円と ptSrc の交点
 	if ( fabs( ptSrc.x - ptOrg.x ) < NCMIN ) {
 		pt.x = ptOrg.x;
-		pt.y = ptOrg.y + _copysign(r, ptSrc.y - ptOrg.y);
+		pt.y = ptOrg.y + copysign(r, ptSrc.y - ptOrg.y);
 	}
 	else if ( fabs( ptSrc.y - ptOrg.y ) < NCMIN ) {
-		pt.x = ptOrg.x + _copysign(r, ptSrc.x - ptOrg.x);
+		pt.x = ptOrg.x + copysign(r, ptSrc.x - ptOrg.x);
 		pt.y = ptOrg.y;
 	}
 	else {
-		double a = (ptSrc.y - ptOrg.y) / (ptSrc.x - ptOrg.x);
+		float a = (ptSrc.y - ptOrg.y) / (ptSrc.x - ptOrg.x);
 		pt.x = r * sqrt( 1 / (1+a*a) );
 		pt.y = (ptOrg.x < ptSrc.x ? a : -a) * pt.x;
 		pt.x = pt.y / a + ptOrg.x;	// xを再計算(yとaの符号を考慮)
@@ -490,28 +490,28 @@ CPointD	CalcIntersectionPoint_TC
 //////////////////////////////////////////////////////////////////////
 //	直線のｵﾌｾｯﾄ座標
 
-tuple<CPointD, CPointD> CalcOffsetLine
-	(const CPointD& pts, const CPointD& pte, double r, BOOL bLeft)
+tuple<CPointF, CPointF> CalcOffsetLine
+	(const CPointF& pts, const CPointF& pte, float r, BOOL bLeft)
 {
-	int		k = bLeft ? 1 : -1;	// 左:+, 右:- 90°
+	float	k = bLeft ? 1.0f : -1.0f;	// 左:+, 右:- 90°
 	// 始点を原点にした傾き+90°
-	double	q = atan2(pte.y-pts.y, pte.x-pts.x) + _copysign(RAD(90.0), k),
+	float	q = atan2(pte.y-pts.y, pte.x-pts.x) + copysign(RAD(90.0f), k),
 			cos_q = r * cos(q),
 			sin_q = r * sin(q);
 
 	return make_tuple(
-		CPointD(cos_q+pts.x, sin_q+pts.y),	// 始点側のｵﾌｾｯﾄﾎﾟｲﾝﾄ
-		CPointD(cos_q+pte.x, sin_q+pte.y)	// 終点側のｵﾌｾｯﾄﾎﾟｲﾝﾄ
+		CPointF(cos_q+pts.x, sin_q+pts.y),	// 始点側のｵﾌｾｯﾄﾎﾟｲﾝﾄ
+		CPointF(cos_q+pte.x, sin_q+pte.y)	// 終点側のｵﾌｾｯﾄﾎﾟｲﾝﾄ
 	);
 }
 
 //////////////////////////////////////////////////////////////////////
 //	２線がなす角度を求める(交点を原点ｾﾞﾛ扱い)
 
-double CalcBetweenAngle(const CPointD& pts, const CPointD& pte)
+float CalcBetweenAngle(const CPointF& pts, const CPointF& pte)
 {
 	// pto(２線の共通点)を原点に
-	CPointD	pt(pte);
+	CPointF	pt(pte);
 	// ptsの角度でpteをｱﾌｨﾝ変換
 	pt.RoundPoint(-atan2(pts.y, pts.x));
 	// ptsが0度扱いなのでptの角度が２線間の角度(-180～180°で返す)
@@ -521,10 +521,10 @@ double CalcBetweenAngle(const CPointD& pts, const CPointD& pte)
 //////////////////////////////////////////////////////////////////////
 //	ｵﾌｾｯﾄ分平行移動させた線分同士の交点を求める
 
-optional<CPointD> CalcOffsetIntersectionPoint_LL
-	(const CPointD& pts, const CPointD& pte, double t1, double t2, BOOL bLeft)
+optional<CPointF> CalcOffsetIntersectionPoint_LL
+	(const CPointF& pts, const CPointF& pte, float t1, float t2, BOOL bLeft)
 {
-	CPointD	pt1s, pt1e, pt2s, pt2e, pt;
+	CPointF	pt1s, pt1e, pt2s, pt2e, pt;
 
 	tie(pt1s, pt1e) = CalcOffsetLine(pts, pt, t1, bLeft);
 	tie(pt2s, pt2e) = CalcOffsetLine(pt, pte, t2, bLeft);
@@ -536,14 +536,14 @@ optional<CPointD> CalcOffsetIntersectionPoint_LL
 //	ｵﾌｾｯﾄ分平行移動させた線と円弧の交点を求める
 //		bRound: CW=FALSE, CCW=TRUE
 
-optional<CPointD> CalcOffsetIntersectionPoint_LC
-	(const CPointD& pts, const CPointD& pto, double ro, double t1, double t2, BOOL bRound, BOOL bLeft)
+optional<CPointF> CalcOffsetIntersectionPoint_LC
+	(const CPointF& pts, const CPointF& pto, float ro, float t1, float t2, BOOL bRound, BOOL bLeft)
 {
 	int		nResult = 0, k;
-	CPointD	pt1, pt2, pr1, pr2;
+	CPointF	pt1, pt2, pr1, pr2;
 
 	// 直線のｵﾌｾｯﾄを計算
-	tie(pt1, pt2) = CalcOffsetLine(pts, CPointD(), t1, bLeft);
+	tie(pt1, pt2) = CalcOffsetLine(pts, CPointF(), t1, bLeft);
 	// 円のｵﾌｾｯﾄを計算
 	k = bRound ? -1 : 1;	// 反時計回りならﾏｲﾅｽｵﾌｾｯﾄ(左側基準)
 	if ( !bLeft )
@@ -556,22 +556,22 @@ optional<CPointD> CalcOffsetIntersectionPoint_LC
 			pr1 = pr2;
 	}
 
-	return nResult > 0 ? pr1 : optional<CPointD>();
+	return nResult > 0 ? pr1 : optional<CPointF>();
 }
 
 //////////////////////////////////////////////////////////////////////
 //	ｵﾌｾｯﾄ分平行移動させた線と楕円弧の交点を求める
 //		bRound: CW=FALSE, CCW=TRUE
 
-optional<CPointD> CalcOffsetIntersectionPoint_LE
-	(const CPointD& pts, const CPointD& pto, double a, double b, double q, double rr,
+optional<CPointF> CalcOffsetIntersectionPoint_LE
+	(const CPointF& pts, const CPointF& pto, float a, float b, float q, float rr,
 		BOOL bRound, BOOL bLeft)
 {
 	int		nResult = 0, k;
-	CPointD	pt1, pt2, pr1, pr2;
+	CPointF	pt1, pt2, pr1, pr2;
 
 	// 直線のｵﾌｾｯﾄを計算
-	tie(pt1, pt2) = CalcOffsetLine(pts, CPointD(), rr, bLeft);
+	tie(pt1, pt2) = CalcOffsetLine(pts, CPointF(), rr, bLeft);
 	// 楕円のｵﾌｾｯﾄを計算
 	k = bRound ? -1 : 1;	// 反時計回りならﾏｲﾅｽｵﾌｾｯﾄ(左側基準)
 	if ( !bLeft )
@@ -585,17 +585,17 @@ optional<CPointD> CalcOffsetIntersectionPoint_LE
 			pr1 = pr2;
 	}
 
-	return nResult > 0 ? pr1 : optional<CPointD>();
+	return nResult > 0 ? pr1 : optional<CPointF>();
 }
 
 //////////////////////////////////////////////////////////////////////
 //	点が多角形の内側か否か
 
-BOOL IsPointInPolygon(const CPointD& ptTarget, const CVPointD& pt)
+BOOL IsPointInPolygon(const CPointF& ptTarget, const CVPointF& pt)
 {
 	int		iCountCrossing = 0;
-	UINT	ui, uiCountPoint = pt.size();
-	CPointD	pt0(pt[0]), pt1;
+	size_t	ui, uiCountPoint = pt.size();
+	CPointF	pt0(pt[0]), pt1;
 	BOOL	bFlag0x = (ptTarget.x <= pt0.x), bFlag1x,
 			bFlag0y = (ptTarget.y <= pt0.y), bFlag1y;
 
@@ -634,10 +634,10 @@ BOOL IsPointInPolygon(const CPointD& ptTarget, const CVPointD& pt)
 //////////////////////////////////////////////////////////////////////
 //	点と直線の距離を求める
 
-double CalcLineDistancePt(const CPointD& pts, const CPointD& pte, const CPointD& ptc)
+float CalcLineDistancePt(const CPointF& pts, const CPointF& pte, const CPointF& ptc)
 {
-	CPointD	pt(pte-pts), pto(ptc-pts);
-	double	q = atan2(pt.y, pt.x);
+	CPointF	pt(pte-pts), pto(ptc-pts);
+	float	q = atan2(pt.y, pt.x);
 	pto.RoundPoint(-q);
 	return fabs(pto.y);
 }
@@ -645,12 +645,12 @@ double CalcLineDistancePt(const CPointD& pts, const CPointD& pte, const CPointD&
 //////////////////////////////////////////////////////////////////////
 //	２次方程式の解を求める
 //	戻り値：int    -> 0:解なし, 1:重根, 2:２根
-//	        double -> 解
+//	        float -> 解
 
-tuple<int, double, double>	GetKon(double a, double b, double c)
+tuple<int, float, float>	GetKon(float a, float b, float c)
 {
 	int		nResult;
-	double	x1 = 0.0, x2 = 0.0;
+	float	x1 = 0.0f, x2 = 0.0f;
 
 	if ( fabs(a) < NCMIN ) {
 		if ( fabs(b) < NCMIN )
@@ -662,15 +662,15 @@ tuple<int, double, double>	GetKon(double a, double b, double c)
 	}
 	else {
 		b /= a;		c /= a;
-		double d = b*b - 4.0*c;
+		float d = b*b - 4.0f*c;
 		if ( d > NCMIN ) {
 			d = sqrt(d);
-			x1 = (b > 0.0 ? (-b - d) : (-b + d)) / 2.0;
+			x1 = (b > 0.0 ? (-b - d) : (-b + d)) / 2.0f;
 			x2 = c / x1;
 			nResult = 2;
 		}
 		else if ( fabs(d) < NCMIN ) {
-			x1 = x2 = -b / 2.0;
+			x1 = x2 = -b / 2.0f;
 			nResult = 1;
 		}
 		else

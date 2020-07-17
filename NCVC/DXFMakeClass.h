@@ -44,7 +44,7 @@ class CDXFMake
 	void	MakeDXF_NCtoLine(const CNCline*, BOOL);
 	void	MakeDXF_NCtoArc(const CNCcircle*, BOOL);
 	void	MakeDXF_NCtoCycle(const CNCcycle*);
-	void	MakeDXF_PolylineDismantle(const CDXFpolyline*, const CPointD&);
+	void	MakeDXF_PolylineDismantle(const CDXFpolyline*, const CPointF&);
 	CString	MakeValueCycle_XY_Circle(const CNCcycle*, int);
 	CString	MakeValueCycle_XZ_Circle(const CNCcycle*, int);
 	CString	MakeValueCycle_YZ_Circle(const CNCcycle*, int);
@@ -64,10 +64,10 @@ public:
 	CDXFMake(enSECNAME, const CDocBase* = NULL);
 	// ENTITIESﾃﾞｰﾀ
 	CDXFMake(const CNCdata*,  BOOL = FALSE);
-	CDXFMake(const CDXFdata*, const CPointD&);
+	CDXFMake(const CDXFdata*, const CPointF&);
 	// 原点情報、ﾜｰｸ矩形
-	CDXFMake(const CPoint3D&);
-	CDXFMake(const CRectD&);
+	CDXFMake(const CPoint3F&);
+	CDXFMake(const CRectF&);
 
 	// 静的変数初期化
 	static	void	SetStaticOption(const CDXFMakeOption*);
@@ -83,4 +83,4 @@ typedef	CTypedPtrArrayEx<CPtrArray, CDXFMake*>	CDxfMakeArray;
 
 /////////////////////////////////////////////////
 
-void	InitialColorIndex(void);
+void	InitialColorIndex(void);	// from CNCVCApp::CNCVCApp()

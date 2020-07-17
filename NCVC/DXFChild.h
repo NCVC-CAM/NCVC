@@ -45,11 +45,11 @@ public:
 // オペレーション
 public:
 	void	SetDataInfo(const CDXFDoc*);
-	void	SetFactorInfo(double);
+	void	SetFactorInfo(float);
 	void	ShowShapeView(void);
 
 	// CDXFView ﾒｯｾｰｼﾞﾊﾝﾄﾞﾗ
-	void	OnUpdateMouseCursor(const CPointD* = NULL);
+	void	OnUpdateMouseCursor(const CPointF* = NULL);
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します

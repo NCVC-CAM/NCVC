@@ -27,7 +27,7 @@ extern	CMagaDbg	g_dbg;
 CNCMakeLathe::CNCMakeLathe(const CDXFdata* pData)
 {
 	CString	strGcode;
-	CPointD	pt;
+	CPointF	pt;
 
 	switch ( pData->GetMakeType() ) {
 	case DXFLINEDATA:
@@ -62,7 +62,7 @@ CNCMakeLathe::CNCMakeLathe(const CDXFdata* pData)
 }
 
 // 指定位置に直線移動
-CNCMakeLathe::CNCMakeLathe(const CPointD& pt)
+CNCMakeLathe::CNCMakeLathe(const CPointF& pt)
 {
 	CString	strGcode;
 
@@ -73,7 +73,7 @@ CNCMakeLathe::CNCMakeLathe(const CPointD& pt)
 }
 
 // 指定位置に２軸移動
-CNCMakeLathe::CNCMakeLathe(TWOMOVEMODE enMode, const CPointD& pt)
+CNCMakeLathe::CNCMakeLathe(TWOMOVEMODE enMode, const CPointF& pt)
 {
 	CString	strGcode1, strGcode2, strGcode;
 
@@ -98,7 +98,7 @@ CNCMakeLathe::CNCMakeLathe(TWOMOVEMODE enMode, const CPointD& pt)
 }
 
 // X|Z軸の変化
-CNCMakeLathe::CNCMakeLathe(int nCode, int xz, double dVal)
+CNCMakeLathe::CNCMakeLathe(int nCode, int xz, float dVal)
 {
 	CString	strGcode;
 	CString	strValue(GetValString(xz, dVal, FALSE));
@@ -125,7 +125,7 @@ CString	CNCMakeLathe::MakeSpindle(void)
 	return (*ms_pfnGetSpindle)(GetNum(MKLA_NUM_SPINDLE));
 }
 
-CString CNCMakeLathe::GetValString(int xyz, double dVal, BOOL)
+CString CNCMakeLathe::GetValString(int xyz, float dVal, BOOL)
 {
 	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 	CString	strResult;
@@ -142,7 +142,7 @@ CString CNCMakeLathe::GetValString(int xyz, double dVal, BOOL)
 				ms_xyz[xyz] = dVal;
 			}
 			else {								// ｲﾝｸﾘﾒﾝﾀﾙ
-				double	d = dVal;
+				float	d = dVal;
 				dVal -= ms_xyz[xyz];
 				ms_xyz[xyz] = d;
 			}

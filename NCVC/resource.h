@@ -319,8 +319,10 @@
 #define IDC_VIEWSETUP5_TEXTUREFIND      2415
 #define IDC_VIEWSETUP5_ST_WORK          2420
 #define IDC_VIEWSETUP5_ST_CUT           2421
+#define IDC_VIEWSETUP5_ST_MILL          2422
 #define IDC_VIEWSETUP5_BT_WORK          2430
 #define IDC_VIEWSETUP5_BT_CUT           2431
+#define IDC_VIEWSETUP5_BT_MILL          2432
 #define IDD_VIEW_SETUP6                 2450
 #define IDC_VIEWSETUP6_LT               2451
 #define IDC_VIEWSETUP6_RT               2452
@@ -738,10 +740,11 @@
 #define IDS_ERR_OPENGLVER               21006
 #define IDS_ERR_OUTOFVRAM               21007
 #define IDS_ERR_TEXTURE                 21008
-#define IDS_ERR_CONTROL                 21009
-#define IDS_ERR_FILEPATH                21010
-#define IDS_ERR_UNDERZERO               21011
-#define IDS_ERR_SETTING                 21012
+#define IDS_ERR_GLTRACE                 21009
+#define IDS_ERR_CONTROL                 21010
+#define IDS_ERR_FILEPATH                21011
+#define IDS_ERR_UNDERZERO               21012
+#define IDS_ERR_SETTING                 21013
 #define IDS_ERR_CAMDATA                 21050
 #define IDS_ERR_CAMVER                  21051
 #define IDS_ERR_CAMOLD                  21052
@@ -843,7 +846,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        170
+#define _APS_NEXT_RESOURCE_VALUE        171
 #define _APS_NEXT_COMMAND_VALUE         32822
 #define _APS_NEXT_CONTROL_VALUE         1056
 #define _APS_NEXT_SYMED_VALUE           101

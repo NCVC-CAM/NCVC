@@ -5,7 +5,6 @@
 #pragma once
 
 #include "NCdata.h"		// NCDRAWVIEW_NUM
-#define		NCVIEW_OPENGL			6
 
 //////////////////////////////////////////////////////////////////////
 
@@ -14,8 +13,8 @@ class CNCViewSplit : public CSplitterWnd
 	HDC		m_hDC[NCDRAWVIEW_NUM];	// ｽﾌﾟﾘｯﾀｳｨﾝﾄﾞｳで管理する
 									// XYZ, XY, XZ, YZ 各ﾍﾟｲﾝのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
 
-	void	CalcPane(int, BOOL = FALSE);	// 各ﾍﾟｲﾝ領域の計算
-	void	AllPane_PostMessage(int, UINT, WPARAM = 0, LPARAM = 0);
+	void	CalcPane(UINT_PTR, BOOL = FALSE);	// 各ﾍﾟｲﾝ領域の計算
+	void	AllPane_PostMessage(UINT_PTR, UINT, WPARAM = 0, LPARAM = 0);
 
 public:
 	CNCViewSplit();

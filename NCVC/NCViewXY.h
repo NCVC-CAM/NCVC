@@ -8,7 +8,7 @@
 class CNCViewXY : public CNCViewBase
 {
 	// Ü°¸‰~’Œ
-	CPointD		m_ptdWorkCylinder[ARCCOUNT];
+	CPointF		m_ptdWorkCylinder[ARCCOUNT];
 	CPoint		m_ptDrawWorkCylinder[ARCCOUNT];
 
 protected:

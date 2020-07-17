@@ -11,8 +11,8 @@ protected:
 	CNCViewXZ();           // 動的生成に使用されるプロテクト コンストラクタ
 	DECLARE_DYNCREATE(CNCViewXZ)
 
-	virtual	CRectD	ConvertRect(const CRect3D& rc) {
-		CRectD	rcResult(rc.left, rc.low, rc.right, rc.high);
+	virtual	CRectF	ConvertRect(const CRect3F& rc) {
+		CRectF	rcResult(rc.left, rc.low, rc.right, rc.high);
 		return rcResult;
 	}
 	virtual	boost::tuple<size_t, size_t>	GetPlaneAxis(void) {

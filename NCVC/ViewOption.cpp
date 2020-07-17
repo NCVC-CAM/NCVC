@@ -15,7 +15,6 @@ extern	CMagaDbg	g_dbg;
 using namespace boost;
 using std::string;
 
-extern	LPCTSTR	gg_szDelimiter;	// ":"
 extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 extern	LPCTSTR	g_szViewColDef[] = {
@@ -38,7 +37,8 @@ extern	LPCTSTR	g_szNcViewColDef[] = {
 	"0:0:255",		// ç≈ëÂêÿçÌãÈå`
 	"255:255:0",	// ï‚ê≥ï\é¶
 	"255:255:128",	// OpenGL ‹∞∏ãÈå`
-	"255:128:128"	// OpenGL êÿçÌñ 
+	"255:128:128",	// OpenGL êÿçÌñ 
+	"255:255:255"	// OpenGL ¥›ƒﬁ–Ÿ
 };
 extern	LPCTSTR	g_szNcInfoViewColDef[] = {
 	"0:0:255",		// îwåi1
@@ -98,7 +98,7 @@ extern	const	int		g_nForceView01[] = {
 extern	const	int		g_nForceView02[] = {
 	3, 2, 1, 0		// 4ñ -2ÅFç∂è„, ç∂íÜ, ç∂â∫, âE
 };
-extern	const	double	g_dDefaultGuideLength = 50.0;
+extern	const	float	g_dDefaultGuideLength = 50.0f;
 
 static	const	int	g_nFontSize[] = {	// Œﬂ≤›ƒéwíË
 	9, 12
@@ -109,8 +109,8 @@ static	const	BOOL	g_bDefaultSetting[] = {
 	FALSE,		// m_bDrawCircleCenter
 	FALSE,		// m_bScale
 	TRUE,		// m_bGuide
-	FALSE,		// m_bSolidView
-	FALSE,		// m_bG00View
+	TRUE,		// m_bSolidView
+	FALSE,		// m_bWirePath
 	FALSE,		// m_bDragRender
 	FALSE		// m_bTexture
 };
@@ -211,7 +211,7 @@ CViewOption::CViewOption()
 	for ( i=0; i<NCXYZ; i++ ) {
 		strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry+g_szNdelimiter[i]);
 		if ( !strResult.IsEmpty() )
-			m_dGuide[i] = atof(strResult);
+			m_dGuide[i] = (float)atof((LPCTSTR)strResult.Trim());
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_TRACESPEED));
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ ) {
@@ -222,7 +222,7 @@ CViewOption::CViewOption()
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DEFAULTENDMILL));
 	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
 	if ( !strResult.IsEmpty() )
-		m_dDefaultEndmill = fabs(atof(strResult)) / 2.0;	// “”ÿè„ÇÕîºåa
+		m_dDefaultEndmill = (float)fabs(atof((LPCTSTR)strResult.Trim())) / 2.0f;	// “”ÿè„ÇÕîºåa
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
 	m_nMillType = AfxGetApp()->GetProfileInt(strRegKey, strEntry, m_nMillType);
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
@@ -647,7 +647,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 		::GetPrivateProfileString(strRegKey, strEntry+g_szNdelimiter[i], "",
 				szResult, _MAX_PATH, lpszFileName);
 		if ( lstrlen(szResult) > 0 )
-			m_dGuide[i] = atof(szResult);
+			m_dGuide[i] = (float)atof(::Trim(szResult).c_str());
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_TRACESPEED));
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ ) {
@@ -659,7 +659,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	::GetPrivateProfileString(strRegKey, strEntry, "",
 			szResult, _MAX_PATH, lpszFileName);
 	if ( lstrlen(szResult) > 0 )
-		m_dDefaultEndmill = fabs(atof(szResult)) / 2.0;	// “”ÿè„ÇÕîºåa
+		m_dDefaultEndmill = (float)fabs(atof(::Trim(szResult).c_str())) / 2.0f;	// “”ÿè„ÇÕîºåa
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
 	m_nMillType = ::GetPrivateProfileInt(strRegKey, strEntry, m_nMillType, lpszFileName);
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
@@ -695,39 +695,4 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 		m_nDXFLineType[i] = ::GetPrivateProfileInt(strRegKey, strEntryFormat,
 								m_nDXFLineType[i], lpszFileName);
 	}
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-COLORREF ConvertSTRtoRGB(LPCTSTR lpszCol)
-{
-	LPTSTR	lpsztok, lpszcontext, lpszBuf = NULL;
-	BYTE	col[3] = {0, 0, 0};
-
-	try {
-		lpszBuf = new TCHAR[lstrlen(lpszCol)+1];
-		lpsztok = strtok_s(lstrcpy(lpszBuf, lpszCol), gg_szDelimiter, &lpszcontext);
-		// Get Color
-		for ( int i=0; i<SIZEOF(col) && lpsztok; i++ ) {
-			col[i] = atoi(lpsztok);
-			lpsztok = strtok_s(NULL, gg_szDelimiter, &lpszcontext);
-		}
-	}
-	catch (CMemoryException* e) {
-		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
-		e->Delete();
-	}
-	if ( lpszBuf )
-		delete[]	lpszBuf;
-
-	return RGB(col[0], col[1], col[2]);
-}
-
-CString ConvertRGBtoSTR(COLORREF col)
-{
-	CString	strRGB = (
-		lexical_cast<string>((int)GetRValue(col)) + gg_szDelimiter +
-		lexical_cast<string>((int)GetGValue(col)) + gg_szDelimiter +
-		lexical_cast<string>((int)GetBValue(col)) ).c_str();
-	return strRGB;
 }

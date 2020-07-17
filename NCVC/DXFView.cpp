@@ -24,7 +24,7 @@ using std::vector;
 using namespace boost;
 
 // 指定座標との閾値
-static	const	double	SELECTGAP = 5.0;
+static	const	float	SELECTGAP = 5.0f;
 //
 #define	IsBindMode()	GetDocument()->IsDocFlag(DXFDOC_BIND)
 #define	IsBindParent()	GetDocument()->IsDocFlag(DXFDOC_BINDPARENT)
@@ -176,7 +176,7 @@ void CDXFView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		if ( IsBindParent() ) {
 			// 子の加工原点も更新
 			CClientDC	dc(this);
-			optional<CPointD>	ptOrg = GetDocument()->GetCutterOrigin();
+			optional<CPointF>	ptOrg = GetDocument()->GetCutterOrigin();
 			ASSERT( ptOrg );
 			CPoint	ptDev = *ptOrg * m_dFactor;
 			dc.LPtoDP(&ptDev);
@@ -420,7 +420,7 @@ void CDXFView::BindMove(BOOL bFitMsg)
 	CClientDC		dc(this);
 	LPCADBINDINFO	pInfo;
 	CPoint			pt;
-	CRectD			rc;
+	CRectF			rc;
 	CSize			sz;
 
 	for ( int i=0; i<GetDocument()->GetBindInfoCnt(); i++ ) {
@@ -446,7 +446,7 @@ void CDXFView::BindMsgPost(CDC* pDC, LPCADBINDINFO pInfo, CPoint* ptDev)
 	pDC->LPtoDP(&pt);
 
 	// ﾃﾞｰﾀの最大矩形をﾃﾞﾊﾞｲｽ座標に変換
-	CRectD	rc(pInfo->pDoc->GetMaxRect());
+	CRectF	rc(pInfo->pDoc->GetMaxRect());
 	CSize	sz((int)(rc.Width()*m_dFactor), (int)(rc.Height()*m_dFactor));
 	pDC->LPtoDP(&sz);
 
@@ -457,7 +457,7 @@ void CDXFView::BindMsgPost(CDC* pDC, LPCADBINDINFO pInfo, CPoint* ptDev)
 
 	// 配置座標をｽｸﾘｰﾝ座標で子ｳｨﾝﾄﾞｳに通知
 	ClientToScreen(&pt);
-	CPointD	ptOffset(pt);
+	CPointF	ptOffset(pt);
 	pInfo->pView->SendMessage(WM_USERVIEWFITMSG,
 			reinterpret_cast<WPARAM>(ptDev),
 			reinterpret_cast<LPARAM>(&ptOffset));
@@ -497,8 +497,8 @@ void CDXFView::ClearBindSelectData(void)
 void CDXFView::OnDraw(CDC* pDC)
 {
 	ASSERT_VALID(GetDocument());
-	int		i, j, nLayerCnt, nDataCnt;
-	DWORD	dwSel, dwSelBak = 0;
+	INT_PTR			i, j, nLayerCnt, nDataCnt;
+	DWORD			dwSel, dwSelBak = 0;
 	CLayerData*		pLayer;
 	CDXFdata*		pData;
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
@@ -662,9 +662,9 @@ void CDXFView::DrawTempStart(CDC* pDC)
 
 	// CDXFpointに準拠
 	CRect	rcDraw;
-	CPointD	pt( m_ptStart[m_nSelect] * m_dFactor );
+	CPointF	pt( m_ptStart[m_nSelect] * m_dFactor );
 	// 位置を表す丸印は常に2.5論理単位
-	double	dFactor = LOMETRICFACTOR * 2.5;
+	float	dFactor = LOMETRICFACTOR * 2.5;
 	rcDraw.TopLeft()		= pt - dFactor;
 	rcDraw.BottomRight()	= pt + dFactor;
 
@@ -709,7 +709,7 @@ void CDXFView::OnEditUndo()
 	pInfo->pt = pUndo->pt;
 
 	CClientDC	dc(this);
-	optional<CPointD>	ptOrg = GetDocument()->GetCutterOrigin();
+	optional<CPointF>	ptOrg = GetDocument()->GetCutterOrigin();
 	ASSERT( ptOrg );
 	CPoint	ptDev = *ptOrg * m_dFactor;
 	dc.LPtoDP(&ptDev);
@@ -794,14 +794,14 @@ void CDXFView::OnUpdateMouseCursor(CCmdUI* pCmdUI)
 	if ( !IsBindMode() ) {
 		CFrameWnd*	pChild = AfxGetNCVCMainWnd()->GetActiveFrame();
 		CView*		pView  = pChild ? pChild->GetActiveView() : NULL;
-		optional<CPointD>	ptOrg = GetDocument()->GetCutterOrigin();
+		optional<CPointF>	ptOrg = GetDocument()->GetCutterOrigin();
 		if ( pView==this && ptOrg ) {
 			POINT	pt;
 			::GetCursorPos(&pt);
 			ScreenToClient(&pt);
 			CClientDC	dc(this);
 			dc.DPtoLP(&pt);
-			CPointD	ptd( pt.x/m_dFactor, pt.y/m_dFactor );
+			CPointF	ptd( pt.x/m_dFactor, pt.y/m_dFactor );
 			// 原点からの距離
 			ptd -= *ptOrg;
 			static_cast<CDXFChild *>(GetParentFrame())->OnUpdateMouseCursor(&ptd);
@@ -837,7 +837,7 @@ void CDXFView::OnLensKey(UINT nID)
 		return;
 	}
 
-	CRectD		rc;
+	CRectF		rc;
 	CDXFdata*	pData;
 
 	switch ( nID ) {
@@ -917,7 +917,7 @@ void CDXFView::OnContextMenu(CWnd* pWnd, CPoint point)
 LRESULT CDXFView::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 {
 	if ( IsBindMode() ) {
-		CRectD	rc;
+		CRectF	rc;
 		rc = GetDocument()->GetMaxRect();
 		CViewBase::OnViewFit(rc, FALSE);
 		OnViewLensComm();
@@ -928,7 +928,7 @@ LRESULT CDXFView::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 			CPoint	ptD(ptParam->x, ptParam->y);
 			ScreenToClient(&ptD);
 			dc.DPtoLP(&ptD);
-			CPointD	ptL(ptD.x/m_dFactor, ptD.y/m_dFactor);
+			CPointF	ptL(ptD.x/m_dFactor, ptD.y/m_dFactor);
 			GetDocument()->CreateCutterOrigin(ptL);
 #ifdef _DEBUG
 			g_dbg.printf("%s", GetDocument()->GetPathName());
@@ -937,7 +937,7 @@ LRESULT CDXFView::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 		}
 		if ( lParam ) {
 			// 配置座標のｵﾌｾｯﾄ計算
-			CPointD* ptParam = reinterpret_cast<CPointD *>(lParam);
+			CPointF* ptParam = reinterpret_cast<CPointF *>(lParam);
 			CPoint	ptD((int)ptParam->x, (int)ptParam->y);
 			ScreenToClient(&ptD);
 			dc.DPtoLP(&ptD);
@@ -956,15 +956,15 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 #ifdef _DEBUG
 	CMagaDbg	dbg("OnBindInitMsg");
 #endif
-	int		i, nLoop = GetDocument()->GetBindInfoCnt();
+	INT_PTR	i, nLoop = GetDocument()->GetBindInfoCnt();
 	size_t	j;
 	BOOL	bResult, bXover = FALSE;
-	double	dNextBaseY, dMargin = AfxGetNCVCApp()->GetDXFOption()->GetBindMargin();
+	float	dNextBaseY, dMargin = AfxGetNCVCApp()->GetDXFOption()->GetBindMargin();
 	CClientDC		dc(this);
 	LPCADBINDINFO	pInfo;
-	CRectD	rcWork( GetDocument()->GetMaxRect() ), rc;
-	CPointD	pt1(0, rcWork.bottom), pt2;
-	double	W = rcWork.Width(), w, h, dw, dh;
+	CRectF	rcWork( GetDocument()->GetMaxRect() ), rc;
+	CPointF	pt1(0, rcWork.bottom), pt2;
+	float	W = rcWork.Width(), w, h, dw, dh;
 
 	// 子ﾃﾞｰﾀ加算後の表示更新
 	static_cast<CDXFChild*>(GetParentFrame())->SetDataInfo(
@@ -973,7 +973,7 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 		return 0;		// from CDXFDoc::OnOpenDocument()
 
 	// 加工原点をｽｸﾘｰﾝ座標に変換
-	optional<CPointD>	ptOrg = GetDocument()->GetCutterOrigin();
+	optional<CPointF>	ptOrg = GetDocument()->GetCutterOrigin();
 	ASSERT( ptOrg );
 	CPoint	ptDev = *ptOrg * m_dFactor;
 	dc.LPtoDP(&ptDev);
@@ -985,9 +985,9 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 #endif
 
 	// --- 長方形詰め込み問題---
-	std::vector<CVPointD>	YY;	// 配置可能なYの二次元可変配列
-	CVPointD	Y;				// 配置点
-	CVPointD::iterator	it;
+	std::vector<CVPointF>	YY;	// 配置可能なYの二次元可変配列
+	CVPointF	Y;				// 配置点
+	CVPointF::iterator	it;
 
 	// 1つめ配置
 	ASSERT( nLoop > 0 );
@@ -1145,14 +1145,14 @@ LRESULT CDXFView::OnBindRoundMsg(WPARAM wParam, LPARAM lParam)
 {
 	// -- from OnLButtonDblClk()
 	CClientDC	dc(this);
-	double	w, h;
+	float	w, h;
 	LPCADBINDINFO pInfo = GetDocument()->GetBindInfoData(wParam);
-	CRectD	rc(pInfo->pDoc->GetMaxRect());
-	w = rc.Width()  / 2.0;
-	h = rc.Height() / 2.0;
-	CPointD	pto(pInfo->pt.x+w, pInfo->pt.y-h);	// 配置の中心
+	CRectF	rc(pInfo->pDoc->GetMaxRect());
+	w = rc.Width()  / 2.0f;
+	h = rc.Height() / 2.0f;
+	CPointF	pto(pInfo->pt.x+w, pInfo->pt.y-h);	// 配置の中心
 
-	pInfo->pDoc->AllRoundObjPoint(_copysign(RAD(90.0), (int)lParam));
+	pInfo->pDoc->AllRoundObjPoint(copysign(RAD(90.0f), (float)(int)lParam));
 
 	// 新配置座標の計算と配置
 	pInfo->pt.x = pto.x - h;
@@ -1235,10 +1235,10 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 	CMagaDbg	dbg((LPSTR)(LPCTSTR)strDbg);
 #endif
 	if ( !m_bindSel.empty() && m_enBind==BD_MOVE ) {
-		optional<CPointD> ptOrg = GetDocument()->GetCutterOrigin();
+		optional<CPointF> ptOrg = GetDocument()->GetCutterOrigin();
 		CClientDC	dc(this);
 		CPoint		pt, ptDev;
-		CPointD		ptD;
+		CPointF		ptD;
 		LPCADBINDINFO	pInfo, pUndo;
 		for ( auto v : m_bindSel ) {
 			// 子ﾋﾞｭｰの移動処理
@@ -1288,7 +1288,7 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 		CPoint	pt(point);
 		ClientToScreen(&pt);
 		LPCADBINDINFO	pInfo;
-		CRectD	rcRange(m_rcMagnify), rc, rcCross;
+		CRectF	rcRange(m_rcMagnify), rc, rcCross;
 		rcRange /= m_dFactor;
 		rcRange.NormalizeRect();
 		for ( int i=0; i<GetDocument()->GetBindInfoCnt(); i++ ) {
@@ -1318,18 +1318,18 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 	CClientDC	dc(this);
 	// 座標値計算(pointはCViewBase::OnLButtonUp()で論理座標に変換済み)
 	//   -> DPtoLP()不要
-	CPointD	pt(point);
+	CPointF	pt(point);
 	pt /= m_dFactor;
 	CRect	rc;
 	GetClientRect(rc);
 	dc.DPtoLP(&rc);
 	rc.NormalizeRect();
-	CRectD	rcView(rc);
+	CRectF	rcView(rc);
 	rcView /= m_dFactor;
 	// ｸﾘｯｸﾎﾟｲﾝﾄから集合検索
 	if ( !m_pSelData ) {
 		CDXFshape*	pShape = NULL;
-		double		dGap;
+		float		dGap;
 		tie(pShape, pData, dGap) = GetDocument()->GetSelectObject(pt, rcView);
 		if ( !pShape || !pData || dGap>=SELECTGAP/m_dFactor )
 			return;
@@ -1457,13 +1457,13 @@ void CDXFView::OnLButtonDblClk(UINT nFlags, CPoint point)
 	// ﾀﾞﾌﾞﾙｸﾘｯｸｲﾍﾞﾝﾄを捕まえて、同じ処理(確定)を行う
 	CClientDC	dc(this);
 	dc.DPtoLP(&point);
-	CPointD		pt(point);
+	CPointF		pt(point);
 	pt /= m_dFactor;
 	CRect	rc;
 	GetClientRect(rc);
 	dc.DPtoLP(&rc);
 	rc.NormalizeRect();
-	CRectD	rcView(rc);
+	CRectF	rcView(rc);
 	rcView /= m_dFactor;
 
 	// 加工指示ごとの処理
@@ -1509,7 +1509,7 @@ void CDXFView::OnRButtonDblClk(UINT nFlags, CPoint point)
 }
 #endif
 void CDXFView::OnLButtonUp_Separate
-	(CDC* pDC, CDXFdata* pDataSel, const CPointD& ptView, const CRectD& rcView)
+	(CDC* pDC, CDXFdata* pDataSel, const CPointF& ptView, const CRectF& rcView)
 {
 	ASSERT( m_vSelect.which()==DXFTREETYPE_SHAPE );
 	CDXFshape*	pShapeSel = get<CDXFshape*>(m_vSelect);
@@ -1529,7 +1529,7 @@ void CDXFView::OnLButtonUp_Separate
 			pShape = pLayer->GetShapeData(i);
 			if ( pShapeSel!=pShape && (pMap=pShape->GetShapeMap()) ) {
 				// 座標検索
-				CPointD	pt;
+				CPointF	pt;
 				for ( int j=0; j<pDataSel->GetPointNumber(); j++ ) {
 					pt = pDataSel->GetNativePoint(j);
 					if ( pMap->PLookup(pt) ) {
@@ -1627,7 +1627,7 @@ void CDXFView::OnLButtonUp_Separate
 }
 
 void CDXFView::OnLButtonUp_Vector
-	(CDC* pDC, CDXFdata* pDataSel, const CPointD& ptView, const CRectD& rcView)
+	(CDC* pDC, CDXFdata* pDataSel, const CPointF& ptView, const CRectF& rcView)
 {
 	ASSERT( m_vSelect.which()==DXFTREETYPE_SHAPE );
 	CDXFshape*	pShapeSel = get<CDXFshape*>(m_vSelect);
@@ -1669,7 +1669,7 @@ void CDXFView::OnLButtonUp_Vector
 }
 
 void CDXFView::OnLButtonUp_Start
-	(CDC* pDC, CDXFdata* pDataSel, const CPointD& ptView, const CRectD& rcView)
+	(CDC* pDC, CDXFdata* pDataSel, const CPointF& ptView, const CRectF& rcView)
 {
 	ASSERT( m_vSelect.which()==DXFTREETYPE_SHAPE );
 	CDXFshape*	pShapeSel = get<CDXFshape*>(m_vSelect);
@@ -1701,7 +1701,7 @@ void CDXFView::OnLButtonUp_Start
 			m_pSelData = pDataSel;
 			// ｵﾌﾞｼﾞｪｸﾄの座標の取得
 			ASSERT( m_pSelData->GetPointNumber() <= SIZEOF(m_ptStart) );
-			double	dGap, dGapMin = DBL_MAX;
+			float	dGap, dGapMin = FLT_MAX;
 			for ( int i=0; i<m_pSelData->GetPointNumber(); i++ ) {
 				m_ptStart[i] = m_pSelData->GetNativePoint(i);
 				dGap = GAPCALC(m_ptStart[i] - ptView);
@@ -1717,9 +1717,9 @@ void CDXFView::OnLButtonUp_Start
 }
 
 void CDXFView::OnLButtonUp_Outline
-	(CDC* pDC, CDXFdata* pDataSel, const CPointD& ptView, const CRectD& rcView)
+	(CDC* pDC, CDXFdata* pDataSel, const CPointF& ptView, const CRectF& rcView)
 {
-	double		dGap1, dGap2;
+	float		dGap1, dGap2;
 
 	if ( m_pSelData ) {
 		CDXFdata*	pData1;
@@ -1830,13 +1830,13 @@ void CDXFView::OnMouseMove(UINT nFlags, CPoint point)
 	// ここで論理座標に変換する必要がある
 	CClientDC	dc(this);
 	dc.DPtoLP(&point);
-	CPointD		pt(point);
+	CPointF		pt(point);
 	pt /= m_dFactor;
 	CRect	rc;
 	GetClientRect(rc);
 	dc.DPtoLP(&rc);
 	rc.NormalizeRect();
-	CRectD	rcView(rc);
+	CRectF	rcView(rc);
 	rcView /= m_dFactor;
 
 	// 加工指示ごとの処理
@@ -1858,7 +1858,7 @@ void CDXFView::OnMouseMove(UINT nFlags, CPoint point)
 }
 
 void CDXFView::OnMouseMove_Separate
-	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
+	(CDC* pDC, const CPointF& ptView, const CRectF& rcView)
 {
 	ASSERT( m_vSelect.which()==DXFTREETYPE_SHAPE );
 	CDXFshape*	pShape = get<CDXFshape*>(m_vSelect);
@@ -1879,9 +1879,9 @@ void CDXFView::OnMouseMove_Separate
 }
 
 void CDXFView::OnMouseMove_Vector
-	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
+	(CDC* pDC, const CPointF& ptView, const CRectF& rcView)
 {
-	double	dGap1 = GAPCALC(m_ptArraw[0][1] - ptView),
+	float	dGap1 = GAPCALC(m_ptArraw[0][1] - ptView),
 			dGap2 = GAPCALC(m_ptArraw[1][1] - ptView);
 	int		nSelect = dGap1 > dGap2 ? 1 : 0;
 
@@ -1895,10 +1895,10 @@ void CDXFView::OnMouseMove_Vector
 }
 
 void CDXFView::OnMouseMove_Start
-	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
+	(CDC* pDC, const CPointF& ptView, const CRectF& rcView)
 {
 	int		i, nSelect;
-	double	dGap, dGapMin = DBL_MAX;
+	float	dGap, dGapMin = FLT_MAX;
 
 	for ( i=0; i<m_pSelData->GetPointNumber(); i++ ) {
 		dGap = GAPCALC(m_ptStart[i] - ptView);
@@ -1918,9 +1918,9 @@ void CDXFView::OnMouseMove_Start
 }
 
 void CDXFView::OnMouseMove_Outline
-	(CDC* pDC, const CPointD& ptView, const CRectD& rcView)
+	(CDC* pDC, const CPointF& ptView, const CRectF& rcView)
 {
-	double	dGap1 = m_ltOutline[0].GetSelectObjectFromShape(ptView, &rcView),
+	float	dGap1 = m_ltOutline[0].GetSelectObjectFromShape(ptView, &rcView),
 			dGap2 = m_ltOutline[1].GetSelectObjectFromShape(ptView, &rcView);
 	int		nSelect = dGap1 > dGap2 ? 1 : 0;
 

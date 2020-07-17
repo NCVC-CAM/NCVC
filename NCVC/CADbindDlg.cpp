@@ -217,7 +217,7 @@ void CCADbindDlg::OnLvnEndlabeledit(NMHDR *pNMHDR, LRESULT *pResult)
 	CString	strBuf;
 	m_ctBindEdit->GetWindowText(strBuf);
 	auto	it = m_arBind.begin() + pDispInfo->item.iItem;
-	int		n  = atoi(strBuf); 
+	int		n  = atoi((LPCTSTR)strBuf.Trim());
 	(*it).num = n <= 0 ? 1 : n;
 	m_ctBindList.SetItemText(pDispInfo->item.iItem, 0, lexical_cast<string>((*it).num).c_str());
 	m_ctBindList.Update(pDispInfo->item.iItem);

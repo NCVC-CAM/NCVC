@@ -22,7 +22,7 @@ using namespace boost;
 NCEXPORT int WINAPI NCVC_GetDXFLayerSize(NCVCHANDLE hDoc)
 {
 	return IsDXFDocument(hDoc) ?
-		reinterpret_cast<CDXFDoc *>(hDoc)->GetLayerCnt() : -1;
+		(int)(reinterpret_cast<CDXFDoc *>(hDoc)->GetLayerCnt()) : -1;
 }
 
 NCEXPORT int WINAPI NCVC_GetDXFLayerData
@@ -51,7 +51,7 @@ NCEXPORT int WINAPI NCVC_GetDXFDataSize(NCVCHANDLE hDoc, LPCTSTR lpszLayer)
 	if ( IsDXFDocument(hDoc) && lpszLayer ) {
 		pLayer = reinterpret_cast<CDXFDoc *>(hDoc)->GetLayerData(lpszLayer);
 		if ( pLayer )
-			return pLayer->GetDxfSize();
+			return (int)(pLayer->GetDxfSize());
 	}
 	return -1;
 }
@@ -62,7 +62,7 @@ NCEXPORT int WINAPI NCVC_GetDXFTextDataSize(NCVCHANDLE hDoc, LPCTSTR lpszLayer)
 	if ( IsDXFDocument(hDoc) && lpszLayer ) {
 		pLayer = reinterpret_cast<CDXFDoc *>(hDoc)->GetLayerData(lpszLayer);
 		if ( pLayer )
-			return pLayer->GetDxfTextSize();
+			return (int)(pLayer->GetDxfTextSize());
 	}
 	return -1;
 }
@@ -80,7 +80,7 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFData(NCVCHANDLE hDoc, int nIndex, LPDXFDATA pDat
 	CDXFdata*	pData = pLayer->GetDxfData(nIndex); 
 	pDataSrc->enType = pData->GetType();
 
-	CPointD			pt;
+	CPointF			pt;
 	CDXFcircle*		pCircle;
 	CDXFarc*		pArc;
 	CDXFellipse*	pEllipse;
@@ -138,7 +138,7 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFTextData(NCVCHANDLE hDoc, int nIndex, LPDXFDATA 
 
 	CDXFtext*	pData = pLayer->GetDxfTextData(nIndex); 
 	pDataSrc->enType = DXFTEXTDATA;		// pData->GetType()
-	CPointD		pt( pData->GetNativePoint(0) );
+	CPointF		pt( pData->GetNativePoint(0) );
 	pDataSrc->ptS.x = pt.x;
 	pDataSrc->ptS.y = pt.y;
 	int	n = pData->GetStrValue().GetLength() + 1;
@@ -165,58 +165,58 @@ static BOOL DXFdataOperation
 	switch ( pArgv->enType ) {
 	case DXFPOINTDATA:
 		dxfPoint.pLayer = pDoc->AddLayerMap(pArgv->szLayer, pArgv->nLayer);
-		dxfPoint.c.x	= pArgv->ptS.x;
-		dxfPoint.c.y	= pArgv->ptS.y;
+		dxfPoint.c.x	= (float)pArgv->ptS.x;
+		dxfPoint.c.y	= (float)pArgv->ptS.y;
 		pData = new CDXFpoint(&dxfPoint);
 		break;
 	case DXFLINEDATA:
 		dxfLine.pLayer	= pDoc->AddLayerMap(pArgv->szLayer, pArgv->nLayer);
-		dxfLine.s.x		= pArgv->ptS.x;
-		dxfLine.s.y		= pArgv->ptS.y;
-		dxfLine.e.x		= pArgv->de.ptE.x;
-		dxfLine.e.y		= pArgv->de.ptE.y;
+		dxfLine.s.x		= (float)pArgv->ptS.x;
+		dxfLine.s.y		= (float)pArgv->ptS.y;
+		dxfLine.e.x		= (float)pArgv->de.ptE.x;
+		dxfLine.e.y		= (float)pArgv->de.ptE.y;
 		pData = new CDXFline(&dxfLine);
 		break;
 	case DXFCIRCLEDATA:
 		if ( pArgv->nLayer == DXFSTRLAYER ) {
-			CPointD	pt(pArgv->ptS.x, pArgv->ptS.y);
+			CPointF	pt((float)pArgv->ptS.x, (float)pArgv->ptS.y);
 			pData = new CDXFcircleEx(DXFSTADATA,
 				pDoc->AddLayerMap(pArgv->szLayer, pArgv->nLayer),
-				pt, pArgv->de.dR);
+				pt, (float)pArgv->de.dR);
 		}
 		else {
 			dxfCircle.pLayer= pDoc->AddLayerMap(pArgv->szLayer, pArgv->nLayer);
-			dxfCircle.c.x	= pArgv->ptS.x;
-			dxfCircle.c.y	= pArgv->ptS.y;
-			dxfCircle.r		= pArgv->de.dR;
+			dxfCircle.c.x	= (float)pArgv->ptS.x;
+			dxfCircle.c.y	= (float)pArgv->ptS.y;
+			dxfCircle.r		= (float)pArgv->de.dR;
 			pData = new CDXFcircle(&dxfCircle);
 		}
 		break;
 	case DXFARCDATA:
 		dxfArc.pLayer	= pDoc->AddLayerMap(pArgv->szLayer, pArgv->nLayer);
-		dxfArc.c.x		= pArgv->ptS.x;
-		dxfArc.c.y		= pArgv->ptS.y;
-		dxfArc.r		= pArgv->de.arc.r;
-		dxfArc.sq		= pArgv->de.arc.sq;
-		dxfArc.eq		= pArgv->de.arc.eq;
+		dxfArc.c.x		= (float)pArgv->ptS.x;
+		dxfArc.c.y		= (float)pArgv->ptS.y;
+		dxfArc.r		= (float)pArgv->de.arc.r;
+		dxfArc.sq		= (float)pArgv->de.arc.sq;
+		dxfArc.eq		= (float)pArgv->de.arc.eq;
 		pData = new CDXFarc(&dxfArc);
 		break;
 	case DXFELLIPSEDATA:
 		dxfEllipse.pLayer = pDoc->AddLayerMap(pArgv->szLayer, pArgv->nLayer);
-		dxfEllipse.c.x	= pArgv->ptS.x;
-		dxfEllipse.c.y	= pArgv->ptS.y;
-		dxfEllipse.l.x	= pArgv->de.elli.ptL.x;
-		dxfEllipse.l.y	= pArgv->de.elli.ptL.y;
-		dxfEllipse.s	= pArgv->de.elli.s;
-		dxfEllipse.sq	= pArgv->de.elli.sq;
-		dxfEllipse.eq	= pArgv->de.elli.eq;
+		dxfEllipse.c.x	= (float)pArgv->ptS.x;
+		dxfEllipse.c.y	= (float)pArgv->ptS.y;
+		dxfEllipse.l.x	= (float)pArgv->de.elli.ptL.x;
+		dxfEllipse.l.y	= (float)pArgv->de.elli.ptL.y;
+		dxfEllipse.s	= (float)pArgv->de.elli.s;
+		dxfEllipse.sq	= (float)pArgv->de.elli.sq;
+		dxfEllipse.eq	= (float)pArgv->de.elli.eq;
 		dxfEllipse.bRound = TRUE;		// default
 		pData = new CDXFellipse(&dxfEllipse);
 		break;
 	case DXFTEXTDATA:
 		dxfText.pLayer	= pDoc->AddLayerMap(pArgv->szLayer, pArgv->nLayer);
-		dxfText.c.x		= pArgv->ptS.x;
-		dxfText.c.y		= pArgv->ptS.y;
+		dxfText.c.x		= (float)pArgv->ptS.x;
+		dxfText.c.y		= (float)pArgv->ptS.y;
 		dxfText.strValue= pArgv->de.szText;
 		pData = new CDXFtext(&dxfText);
 		break;
@@ -258,9 +258,9 @@ NCEXPORT void WINAPI NCVC_DelDXFTextData(NCVCHANDLE hDoc, LPCTSTR lpszLayer, int
 NCEXPORT BOOL WINAPI NCVC_GetDXFCutterOrigin(NCVCHANDLE hDoc, LPDPOINT lpptOrg)
 {
 	if ( IsDXFDocument(hDoc) ) {
-		optional<CPointD>	ptResult = reinterpret_cast<CDXFDoc *>(hDoc)->GetCutterOrigin();
+		optional<CPointF>	ptResult = reinterpret_cast<CDXFDoc *>(hDoc)->GetCutterOrigin();
 		if ( ptResult ) {
-			CPointD	pt( *ptResult );
+			CPointF	pt( *ptResult );
 			lpptOrg->x = pt.x;
 			lpptOrg->y = pt.y;
 			return TRUE;
@@ -273,8 +273,8 @@ NCEXPORT void WINAPI NCVC_SetDXFCutterOrigin
 	(NCVCHANDLE hDoc, LPDPOINT lpptOrg, double dR, BOOL bRedraw)
 {
 	if ( IsDXFDocument(hDoc) ) {
-		CPointD	pt(lpptOrg->x, lpptOrg->y);
-		reinterpret_cast<CDXFDoc *>(hDoc)->CreateCutterOrigin(pt, dR, bRedraw);
+		CPointF	pt((float)lpptOrg->x, (float)lpptOrg->y);
+		reinterpret_cast<CDXFDoc *>(hDoc)->CreateCutterOrigin(pt, (float)dR, bRedraw);
 	}
 }
 
@@ -282,8 +282,8 @@ NCEXPORT void WINAPI NCVC_SetDXFLatheLine
 	(NCVCHANDLE hDoc, LPDPOINT lppts, LPDPOINT lppte)
 {
 	if ( IsDXFDocument(hDoc) ) {
-		CPointD	pts(lppts->x, lppts->y),
-				pte(lppte->x, lppte->y);
+		CPointF	pts((float)lppts->x, (float)lppts->y),
+				pte((float)lppte->x, (float)lppte->y);
 		reinterpret_cast<CDXFDoc *>(hDoc)->CreateLatheLine(pts, pte);
 	}
 }

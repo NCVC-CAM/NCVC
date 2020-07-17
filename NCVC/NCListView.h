@@ -64,7 +64,7 @@ protected:
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
 	//}}AFX_MSG
-	afx_msg LRESULT OnSelectTrace(WPARAM, LPARAM);	// from NCViewTab.cpp To NCChild.cpp
+	afx_msg LRESULT OnSelectTrace(WPARAM, LPARAM);	// from NCViewTab.cpp
 
 	DECLARE_MESSAGE_MAP()
 };

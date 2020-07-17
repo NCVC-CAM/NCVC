@@ -352,7 +352,7 @@ void CDXFShapeView::DragInsert(void)
 
 HTREEITEM CDXFShapeView::DragInsertLayer(void)
 {
-	DWORD		dwRoot = GetParentAssemble(m_hItemDrop);
+	DWORD_PTR	dwRoot = GetParentAssemble(m_hItemDrop);
 	BOOL		bCanNotOutline = FALSE, bOutline = FALSE;
 	HTREEITEM	hLayerTree = NULL, hShapeTree;
 	CDXFshape*	pShape;
@@ -475,7 +475,7 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 
 HTREEITEM CDXFShapeView::DragInsertShape(void)
 {
-	DWORD		dwRoot = GetParentAssemble(m_hItemDrop);
+	DWORD_PTR	dwRoot = GetParentAssemble(m_hItemDrop);
 
 	switch ( dwRoot ) {
 	case ROOTTREE_SHAPE:
@@ -680,9 +680,9 @@ HTREEITEM CDXFShapeView::SearchLayerTree(HTREEITEM hTree, const CLayerData* pLay
 	return hLayerTree;
 }
 
-DWORD CDXFShapeView::GetParentAssemble(HTREEITEM hTree)
+DWORD_PTR CDXFShapeView::GetParentAssemble(HTREEITEM hTree)
 {
-	DWORD	dwResult = 0;
+	DWORD_PTR	dwResult = 0;
 
 	// ﾂﾘｰﾊﾝﾄﾞﾙが属する集合を返す
 	if ( hTree && !IsRootTree(hTree) ) {
@@ -735,8 +735,8 @@ void CDXFShapeView::SetShapeSwitch_SubordinateTree(HTREEITEM hParentTree, BOOL b
 
 void CDXFShapeView::SetShapeTree(void)
 {
-	int			i, j, k, nLoop;
-	const int	nLayerLoop = GetDocument()->GetLayerCnt();
+	INT_PTR			i, j, k, nLoop;
+	const INT_PTR	nLayerLoop = GetDocument()->GetLayerCnt();
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	HTREEITEM	hLayerTree;
@@ -840,11 +840,11 @@ void CDXFShapeView::AutoWorkingSet
 	(BOOL bAuto, const CLayerData* pLayerSrc/*=NULL*/, const CDXFshape* pShapeSrc/*=NULL*/)
 {
 	// 形状情報から加工指示を登録
-	int			i, j, nLoop;
-	const int	nLayerLoop = GetDocument()->GetLayerCnt();
-	HTREEITEM	hTree;
-	CLayerData*			pLayer;
-	CDXFshape*			pShape;
+	INT_PTR			i, j, nLoop;
+	const INT_PTR	nLayerLoop = GetDocument()->GetLayerCnt();
+	HTREEITEM		hTree;
+	CLayerData*		pLayer;
+	CDXFshape*		pShape;
 
 	TVINSERTSTRUCT	tvInsert;
 	::ZeroMemory(&tvInsert, sizeof(TVINSERTSTRUCT));
@@ -1025,16 +1025,16 @@ void CDXFShapeView::OnEditShapeProp()
 
 	BOOL	bChain = FALSE, bRecalc = FALSE;
 	int		nShape = -1;
-	optional<double>	dOffset;
-	BOOL				bAcute;
-	CLayerData*	pLayer;
-	CDXFshape*	pShape;
-	DXFTREETYPE	vSelect;
+	optional<float>	dOffset;
+	BOOL			bAcute;
+	CLayerData*		pLayer;
+	CDXFshape*		pShape;
+	DXFTREETYPE		vSelect;
 
 	// 現在のｵﾌｾｯﾄ値と所属集合状況を取得
 	if ( hSelectTree == m_hRootTree[0] ) {
-		vSelect = (DWORD)pSelect;
-		dOffset = HUGE_VAL;
+		vSelect = (DWORD_PTR)pSelect;
+		dOffset = HUGE_VALF;
 		bAcute  = TRUE;
 		hParentTree = GetTreeCtrl().GetChildItem(hSelectTree);
 		while ( hParentTree ) {
@@ -1042,10 +1042,10 @@ void CDXFShapeView::OnEditShapeProp()
 			while ( hTree ) {
 				pShape = reinterpret_cast<CDXFshape *>(GetTreeCtrl().GetItemData(hTree));
 				if ( pShape && pShape->IsKindOf(RUNTIME_CLASS(CDXFshape)) ) {
-					if ( *dOffset == HUGE_VAL )
+					if ( *dOffset == HUGE_VALF )
 						dOffset = pShape->GetOffset();
 					else if ( *dOffset != pShape->GetOffset() ) {
-						dOffset = HUGE_VAL;	// ﾀﾞｲｱﾛｸﾞ初期値無し
+						dOffset = HUGE_VALF;	// ﾀﾞｲｱﾛｸﾞ初期値無し
 						hTree = NULL;	// break
 					}
 				}
@@ -1064,7 +1064,7 @@ void CDXFShapeView::OnEditShapeProp()
 		if ( pSelect->IsKindOf(RUNTIME_CLASS(CLayerData)) ) {
 			pLayer = static_cast<CLayerData *>(pSelect);
 			vSelect = pLayer;
-			dOffset = HUGE_VAL;
+			dOffset = HUGE_VALF;
 			bChain  = TRUE;
 			hParentTree = GetTreeCtrl().GetParentItem(hSelectTree);
 			if ( hParentTree == m_hRootTree[0] ) {
@@ -1075,10 +1075,10 @@ void CDXFShapeView::OnEditShapeProp()
 				while ( hTree ) {
 					pShape = reinterpret_cast<CDXFshape *>(GetTreeCtrl().GetItemData(hTree));
 					if ( pShape && pShape->IsKindOf(RUNTIME_CLASS(CDXFshape)) ) {
-						if ( *dOffset == HUGE_VAL )
+						if ( *dOffset == HUGE_VALF )
 							dOffset = pShape->GetOffset();
 						else if ( *dOffset != pShape->GetOffset() ) {
-							dOffset = HUGE_VAL;
+							dOffset = HUGE_VALF;
 							break;
 						}
 					}
@@ -1094,10 +1094,10 @@ void CDXFShapeView::OnEditShapeProp()
 					pShape = reinterpret_cast<CDXFshape *>(GetTreeCtrl().GetItemData(hTree));
 					if ( pShape && pShape->IsKindOf(RUNTIME_CLASS(CDXFshape)) &&
 								pShape->GetShapeType()==DXFSHAPETYPE_CHAIN ) {
-						if ( *dOffset == HUGE_VAL )
+						if ( *dOffset == HUGE_VALF )
 							dOffset = pShape->GetOffset();
 						else if ( *dOffset != pShape->GetOffset() )
-							dOffset = HUGE_VAL;
+							dOffset = HUGE_VALF;
 					}
 					else {
 						// １つでもCDXFchain集合でないなら
@@ -1397,7 +1397,7 @@ void CDXFShapeView::OnSelChanged(NMHDR* pNMHDR, LRESULT* pResult)
 	for ( int i=0; i<SIZEOF(pObject); i++ ) {
 		if ( pObject[i] && hItem[i] ) {
 			if ( IsRootTree(hItem[i]) ) {
-				vSelect[i] = reinterpret_cast<DWORD>(pObject[i]);
+				vSelect[i] = reinterpret_cast<DWORD_PTR>(pObject[i]);
 				SetShapeSwitch_SubordinateTree(hItem[i], i);
 			}
 			else if ( pObject[i]->IsKindOf(RUNTIME_CLASS(CLayerData)) ) {

@@ -65,7 +65,6 @@ CNCViewTab::CNCViewTab() : m_evTrace(FALSE, TRUE)
 	以下，ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ情報も同じ
 */
 	m_nTraceSpeed = AfxGetNCVCApp()->GetTraceSpeed();
-	m_nTrace = ID_NCVIEW_TRACE_STOP;
 	m_pTraceThread = NULL;
 	m_bTraceContinue = m_bTracePause = FALSE;
 	m_pDataTraceSel  = NULL;
@@ -94,7 +93,8 @@ void CNCViewTab::OnInitialUpdate()
 
 	// ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ情報
 	int	nPage = AfxGetNCVCApp()->GetNCTabPage();
-	ActivatePage(nPage);
+	if ( nPage < GetPageCount() )
+		ActivatePage(nPage);
 
 	// CNCViewSplitのｻｲｽﾞ調整
 	// 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞと等しいときは，さらに各ﾋﾞｭｰWM_USERVIEWFITMSG送信
@@ -279,8 +279,11 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		ASSERT(nIndex >= 0);
 		nIndex = AddPage("４面-2", &m_wndSplitter2);
 		ASSERT(nIndex >= 0);
-		nIndex = AddPage("OpenGL",
-			RUNTIME_CLASS(CNCViewGL), GetDocument(), GetParentFrame());
+		if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
+			nIndex = AddPage("OpenGL",
+				RUNTIME_CLASS(CNCViewGL), GetDocument(), GetParentFrame());
+			ASSERT(nIndex >= 0);
+		}
 		// 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙを取得
 		CClientDC*	pDC;
 		for ( i=0; i<NCDRAWVIEW_NUM; i++ ) {	// ４面以外
@@ -349,16 +352,16 @@ void CNCViewTab::OnTraceSpeed(UINT nID)
 
 void CNCViewTab::OnUpdateTraceRun(CCmdUI* pCmdUI) 
 {
-	pCmdUI->SetCheck( m_nTrace == ID_NCVIEW_TRACE_RUN );
+	pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_RUN );
 }
 
 void CNCViewTab::OnTraceRun() 
 {
-	switch ( m_nTrace ) {
+	switch ( GetDocument()->GetTraceMode() ) {
 	case ID_NCVIEW_TRACE_STOP:
 		m_bTraceContinue = TRUE;
 		m_bTracePause = FALSE;
-		m_nTrace = ID_NCVIEW_TRACE_RUN;
+		GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_RUN);
 		GetDocument()->StartTrace();
 		GetDocument()->UpdateAllViews(this, UAV_STARTSTOPTRACE);
 		// through
@@ -370,25 +373,25 @@ void CNCViewTab::OnTraceRun()
 
 void CNCViewTab::OnUpdateTracePause(CCmdUI* pCmdUI) 
 {
-	pCmdUI->SetCheck( m_nTrace == ID_NCVIEW_TRACE_PAUSE );
+	pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_PAUSE );
 }
 
 void CNCViewTab::OnTracePause() 
 {
-	switch ( m_nTrace ) {
+	switch ( GetDocument()->GetTraceMode() ) {
 	case ID_NCVIEW_TRACE_RUN:
 		m_bTracePause = TRUE;
-		m_nTrace = ID_NCVIEW_TRACE_PAUSE;
+		GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_PAUSE);
 		break;
 	case ID_NCVIEW_TRACE_STOP:
 		m_bTracePause = m_bTraceContinue = TRUE;
-		m_nTrace = ID_NCVIEW_TRACE_PAUSE;
+		GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_PAUSE);
 		GetDocument()->StartTrace();
 		GetDocument()->UpdateAllViews(this, UAV_STARTSTOPTRACE);
 		break;
 	case ID_NCVIEW_TRACE_PAUSE:
 		m_bTracePause = FALSE;
-		m_nTrace = ID_NCVIEW_TRACE_RUN;
+		GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_RUN);
 		m_evTrace.PulseEvent();
 		break;
 	}
@@ -396,14 +399,14 @@ void CNCViewTab::OnTracePause()
 
 void CNCViewTab::OnTraceStop() 
 {
-	if ( m_nTrace != ID_NCVIEW_TRACE_STOP ) {
+	if ( GetDocument()->GetTraceMode() != ID_NCVIEW_TRACE_STOP ) {
 		m_bTraceContinue = FALSE;
 		m_pDataTraceSel  = NULL;
-		m_nTrace = ID_NCVIEW_TRACE_STOP;
+		GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 		// 現在位置以降を描画
 		GetDocument()->StopTrace();
+		GetDocument()->UpdateAllViews(this, UAV_STARTSTOPTRACE);
 	}
-	GetDocument()->UpdateAllViews(this, UAV_STARTSTOPTRACE);
 }
 
 void CNCViewTab::OnUpdateTraceCursor(CCmdUI* pCmdUI) 
@@ -419,7 +422,7 @@ void CNCViewTab::OnTraceCursor(UINT nID)
 	POSITION pos;
 	if ( !(pos=pList->GetListCtrl().GetFirstSelectedItemPosition()) ) {
 		m_bTraceContinue = FALSE;
-		m_nTrace = ID_NCVIEW_TRACE_STOP;
+		GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 		GetDocument()->StopTrace();
 		GetDocument()->UpdateAllViews(this, UAV_STARTSTOPTRACE);
 		return;
@@ -430,29 +433,32 @@ void CNCViewTab::OnTraceCursor(UINT nID)
 		// ﾘｽﾄｺﾝﾄﾛｰﾙの行番号からｵﾌﾞｼﾞｪｸﾄ番号を検索し再描画
 		if ( GetDocument()->SetLineToTrace(FALSE, nLine) ) {
 			m_bTracePause = m_bTraceContinue = TRUE;
-			m_nTrace = ID_NCVIEW_TRACE_PAUSE;	// そこで一時停止
+			GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_PAUSE);	// そこで一時停止
 		}
 		else {
 			m_bTraceContinue = FALSE;
-			m_nTrace = ID_NCVIEW_TRACE_STOP;
+			GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 		}
 	}
 	else {
 		if ( GetDocument()->SetLineToTrace(TRUE, nLine) ) {
 			m_bTraceContinue = TRUE;
 			m_bTracePause = FALSE;
-			m_nTrace = ID_NCVIEW_TRACE_RUN;
-			m_evTrace.PulseEvent();		// ﾄﾚｰｽ開始
+			GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_RUN);
 		}
 		else {
 			m_bTraceContinue = FALSE;
-			m_nTrace = ID_NCVIEW_TRACE_STOP;
+			GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 		}
 	}
 
-	GetDocument()->UpdateAllViews(this, UAV_TRACECURSOR);
-	if ( nID == ID_NCVIEW_TRACE_CURSOR2 )
+	GetDocument()->UpdateAllViews(this, UAV_TRACECURSOR, (CObject*)(UINT_PTR)nID);
+
+	if ( nID == ID_NCVIEW_TRACE_CURSOR2 ) {
+		if ( m_bTraceContinue )
+			m_evTrace.PulseEvent();		// ﾄﾚｰｽ開始
 		GetDocument()->ResetTraceStart();	// 次の再描画に備える
+	}
 }
 
 void CNCViewTab::OnUpdateAllFitCmd(CCmdUI* pCmdUI)
@@ -491,11 +497,14 @@ BOOL CTraceThread::InitInstance()
 #endif
 	CNCDoc*			pDoc  = m_pParent->GetDocument();
 	CNCdata*		pData;
-	CNCViewSplit*	pWnd;
+	CNCViewSplit*	pWndSplit;
+	CNCViewGL*		pWndGL;
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	CDC		dc;
-	int		i, nPage, nTraceDraw;
+	int		i, nPage;
+	INT_PTR	nTraceDraw;
 	BOOL	bBreak, bSelect;
+	boost::optional<INT_PTR>	nGLDraw;
 	PFNNCDRAWPROC	pfnDrawXYZ[NCDRAWVIEW_NUM],
 					pfnDrawSplit01[NCDRAWVIEW_NUM],
 					pfnDrawSplit02[NCDRAWVIEW_NUM];
@@ -546,21 +555,21 @@ BOOL CTraceThread::InitInstance()
 						dc.Detach();
 					}
 					else if ( nPage < NCVIEW_OPENGL ) {
-						pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
-						if ( pWnd )
-							pWnd->DrawData(m_pParent->m_pDataTraceSel, FALSE,
+						pWndSplit = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
+						if ( pWndSplit )
+							pWndSplit->DrawData(m_pParent->m_pDataTraceSel, FALSE,
 								nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
 					}
 				}
 				// ﾂｰﾙﾎﾞﾀﾝを即時更新
-				m_pParent->m_nTrace = ID_NCVIEW_TRACE_STOP;
+				pDoc->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);
 				// 次の再開に備える
 				m_pParent->m_pDataTraceSel = NULL;
+				nGLDraw.reset();
 				break;
 			}
 			pData = pDoc->GetNCdata(nTraceDraw-1);
-			m_pListView->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
 			if ( nPage < NCDRAWVIEW_NUM ) {
 				if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
 					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
@@ -572,21 +581,37 @@ BOOL CTraceThread::InitInstance()
 				dc.Detach();
 			}
 			else if ( nPage < NCVIEW_OPENGL ) {
-				pWnd = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
-				if ( pWnd && bSelect && m_pParent->m_pDataTraceSel ) {
-					pWnd->DrawData(m_pParent->m_pDataTraceSel, FALSE,
+				pWndSplit = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
+				if ( pWndSplit && bSelect && m_pParent->m_pDataTraceSel ) {
+					pWndSplit->DrawData(m_pParent->m_pDataTraceSel, FALSE,
 						nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
 				}
-				pWnd->DrawData(pData, bSelect,
+				pWndSplit->DrawData(pData, bSelect,
 					nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
 			}
-			::GdiFlush();
+			else {
+				pWndGL = static_cast<CNCViewGL *>(m_pParent->GetPage(nPage));
+				if ( pWndGL ) {
+					if ( nGLDraw ) {
+						pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)(*nGLDraw), (LPARAM)nTraceDraw);
+						nGLDraw.reset();
+					}
+					else
+						pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
+				}
+			}
+			if ( nPage < NCVIEW_OPENGL ) {
+				::GdiFlush();
+				if ( !nGLDraw )
+					nGLDraw = nTraceDraw - 1;
+			}
+			m_pListView->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
 			if ( bBreak ) {
 				m_pParent->m_bTracePause = TRUE;
-				m_pParent->m_nTrace = ID_NCVIEW_TRACE_PAUSE;
+				pDoc->SetTraceMode(ID_NCVIEW_TRACE_PAUSE);
 				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);
 			}
-			else if ( m_pParent->m_nTrace != ID_NCVIEW_TRACE_PAUSE )
+			else if ( pDoc->GetTraceMode() != ID_NCVIEW_TRACE_PAUSE )
 				::Sleep( pOpt->GetTraceSpeed(m_pParent->m_nTraceSpeed-ID_NCVIEW_TRACE_FAST) );
 			// 次の選択解除用
 			m_pParent->m_pDataTraceSel = pData;

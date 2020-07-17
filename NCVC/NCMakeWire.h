@@ -10,15 +10,15 @@ class CNCMakeWire : public CNCMakeMill
 {
 public:
 	// ØíÃŞ°À
-	CNCMakeWire(const CDXFdata*, double);
+	CNCMakeWire(const CDXFdata*, float);
 	// ã‰ºˆÙŒ`ó‚ÌØíÃŞ°À
-	CNCMakeWire(const CDXFdata*, const CDXFdata*, double);
+	CNCMakeWire(const CDXFdata*, const CDXFdata*, float);
 	// ã‰ºˆÙŒ`ó‚ğ”÷×ü•ª‚Å¶¬
-	CNCMakeWire(const CVPointD&, const CVPointD&, double);
+	CNCMakeWire(const CVPointF&, const CVPointF&, float);
 	// XY‚ÌG[0|1]ˆÚ“®
-	CNCMakeWire(int, const CPointD&, double, double);
+	CNCMakeWire(int, const CPointF&, float, float);
 	// XY/UV‚ÌG01ˆÚ“®
-	CNCMakeWire(const CPointD&, const CPointD&, double);
+	CNCMakeWire(const CPointF&, const CPointF&, float);
 	// ”CˆÓ‚Ì•¶š—ñº°ÄŞ
 	CNCMakeWire(const CString&);
 

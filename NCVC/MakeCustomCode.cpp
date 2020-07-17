@@ -36,7 +36,7 @@ tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) c
 {
 	static	LPCTSTR	szReplaceErr = "???";
 
-	int		nTestCode = m_strOrderIndex.GetIndex(str.substr(1, str.length()-2).c_str());
+	INT_PTR	nTestCode = m_strOrderIndex.GetIndex(str.substr(1, str.length()-2).c_str());
 	CString	strResult, strPath, strFile;
 	TCHAR	szUserName[_MAX_PATH];
 	DWORD	dwResult;
@@ -94,7 +94,9 @@ tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) c
 		break;
 	}
 
-	return make_tuple(nTestCode - SIZEOF(g_szCustomCode), strResult);	// ‹¤’Ê·°Ü°ÄÞ•ª‚ðŒ¸ŽZ
+	int	nResult = (int)(nTestCode - SIZEOF(g_szCustomCode));	// ‹¤’Ê·°Ü°ÄÞ•ª‚ðŒ¸ŽZ
+
+	return make_tuple(nResult, strResult);
 }
 /*
 BOOL CMakeCustomCode::IsNCchar(LPCTSTR lpsz) const

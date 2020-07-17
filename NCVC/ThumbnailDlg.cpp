@@ -148,12 +148,12 @@ void CThumbnailDlg::ChangeFolder(const CString& strPath)
 	if ( m_thumbInfo.GetSize() <= 9 )
 		m_ctScroll.EnableScrollBar(ESB_DISABLE_BOTH);
 	else {
-		int	nRange;
+		INT_PTR	nRange;
 		if ( m_thumbInfo.GetSize() % 3 == 0 )
 			nRange = m_thumbInfo.GetSize() - 3;
 		else
 			nRange = m_thumbInfo.GetSize() / 3 * 3;
-		m_ctScroll.SetScrollRange(0, nRange, FALSE);
+		m_ctScroll.SetScrollRange(0, (int)nRange, FALSE);
 		m_ctScroll.EnableScrollBar(ESB_ENABLE_BOTH);
 		m_ctScroll.SetScrollPos(0);
 	}
@@ -425,7 +425,8 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 		return;
 	}
 
-	int		i, j, nCnt, nPosNow = pScrollBar->GetScrollPos();
+	INT_PTR	i, j, nCnt;
+	int		nPosNow = pScrollBar->GetScrollPos();
 	CRect	rc;
 
 	switch ( nSBCode ) {
@@ -470,7 +471,7 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 				m_thumbInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 			}
 		}
-		pScrollBar->SetScrollPos(nCnt);
+		pScrollBar->SetScrollPos((int)nCnt);
 		break;
 	case SB_LINEDOWN:
 	case SB_PAGEDOWN:
@@ -489,7 +490,7 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 				m_thumbInfo[i]->pView->SetParent(&m_ctParentView);
 			}
 		}
-		nPosNow = i;
+		nPosNow = (int)i;
 		for ( j=0; i<m_thumbInfo.GetSize() && j<SIZEOF(m_ctChild); i++, j++ ) {
 			if ( m_thumbInfo[i]->pView ) {
 				m_ctChild[j].GetClientRect(rc);
@@ -521,7 +522,7 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 				m_thumbInfo[i]->pView->PostMessage(WM_USERVIEWFITMSG, 0, 1);
 			}
 		}
-		pScrollBar->SetScrollPos(nCnt);
+		pScrollBar->SetScrollPos((int)nCnt);
 		break;
 	case SB_ENDSCROLL:
 		m_ctChild[0].SetFocus();

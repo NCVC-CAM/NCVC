@@ -77,15 +77,15 @@ class CRecentViewInfo
 
 	struct VINFO {		// ﾚｼﾞｽﾄﾘからﾊﾞｲﾅﾘで読み書きする単位
 		GLdouble	objectXform[4][4];	// OpenGL回転ﾏﾄﾘｸｽ
-		CRect3D		rcView;				// ﾓﾃﾞﾙ空間
-		CPointD		ptCenter;			// 中心座標
+		CRect3F		rcView;				// ﾓﾃﾞﾙ空間
+		CPointF		ptCenter;			// 中心座標
 	} m;
 
 public:
 	CRecentViewInfo(LPCTSTR);
 
-	void	SetViewInfo(const GLdouble[4][4], const CRect3D&, const CPointD&);
-	BOOL	GetViewInfo(GLdouble[4][4], CRect3D&, CPointD&) const;
+	void	SetViewInfo(const GLdouble[4][4], const CRect3F&, const CPointF&);
+	BOOL	GetViewInfo(GLdouble[4][4], CRect3F&, CPointF&) const;
 };
 typedef	CTypedPtrList<CPtrList, CRecentViewInfo*>	CRecentViewList;
 
@@ -112,7 +112,7 @@ class CNCVCApp : public CWinAppEx
 
 	// ｱﾄﾞｲﾝ情報
 	CNCVCaddinIF*	m_pActiveAddin;	// 現在ｱｸﾃｨﾌﾞなｱﾄﾞｲﾝ
-	WORD				m_wAddin;	// ｱﾄﾞｲﾝｺﾏﾝﾄﾞID
+	WORD			m_wAddin;	// ｱﾄﾞｲﾝｺﾏﾝﾄﾞID
 	CNCVCaddinArray		m_obAddin;
 	CNCVCaddinWordMap	m_mpAddin;	// ﾒﾆｭｰIDをｷｰとするｴﾝﾄﾘ関数ﾏｯﾌﾟ
 	BOOL	NCVCAddinInit(int);		// ｱﾄﾞｲﾝ情報読み込み
@@ -120,7 +120,7 @@ class CNCVCApp : public CWinAppEx
 	PFNNCVCSERIALIZEFUNC	m_pfnSerialFunc;	// ｱﾄﾞｲﾝｼﾘｱﾙ関数の一時保持
 
 	// 外部ｱﾌﾟﾘｹｰｼｮﾝ情報
-	WORD		m_wExec;	// 外部ｱﾌﾟﾘｹｰｼｮﾝｺﾏﾝﾄﾞID
+	WORD	m_wExec;	// 外部ｱﾌﾟﾘｹｰｼｮﾝｺﾏﾝﾄﾞID
 	CExecList	m_liExec;	// 外部ｱﾌﾟﾘｹｰｼｮﾝﾘｽﾄ(順序) CTypedPtrList<CPtrList, CExecOption*>
 	CTypedPtrMap<CMapWordToPtr,	WORD, CExecOption*>	m_mpExec;	// 　〃　(CommandID対応)
 	void	SaveExecData(void);
@@ -276,12 +276,12 @@ void	NCVC_ControlErrorMsg(LPCTSTR, int);
 BOOL	IsFileExist(LPCTSTR lpszFile, BOOL bExist = TRUE, BOOL bMsg = TRUE);
 
 // CFileDialogの呼び出し
-int		NCVC_FileDlgCommon(int nTitle, const CString& strFilter, BOOL bAll,
+INT_PTR	NCVC_FileDlgCommon(int nTitle, const CString& strFilter, BOOL bAll,
 			CString& strFileName, LPCTSTR lpszInitialDir = NULL,
 			BOOL bRead = TRUE,
 			DWORD dwFlags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_PATHMUSTEXIST);
 inline
-int		NCVC_FileDlgCommon(int nTitle, UINT nIDfilter, BOOL bAll,
+INT_PTR	NCVC_FileDlgCommon(int nTitle, UINT nIDfilter, BOOL bAll,
 			CString& strFileName, LPCTSTR lpszInitialDir = NULL,
 			BOOL bRead = TRUE,
 			DWORD dwFlags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_PATHMUSTEXIST)

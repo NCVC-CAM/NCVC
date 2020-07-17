@@ -25,19 +25,19 @@ extern	CMagaDbg	g_dbg;
 //////////////////////////////////////////////////////////////////////
 
 // 切削ﾃﾞｰﾀ
-CNCMakeWire::CNCMakeWire(const CDXFdata* pData, double dFeed) : CNCMakeMill(pData, dFeed)
+CNCMakeWire::CNCMakeWire(const CDXFdata* pData, float dFeed) : CNCMakeMill(pData, dFeed)
 {
 	// CNCMakeMillと同じ
 }
 
 // 上下異形状の切削ﾃﾞｰﾀ
-CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, double dFeed)
+CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, float dFeed)
 {
 	// ここで生成されるのは、pDataXYとpDataUVが同じ生成ﾀｲﾌﾟのみ
 	ASSERT( pDataXY->GetMakeType() == pDataUV->GetMakeType() );
 
 	CString	strGcode;
-	CPointD	ptxy, ptuv;
+	CPointF	ptxy, ptuv;
 
 	switch ( pDataXY->GetMakeType() ) {
 	case DXFLINEDATA:
@@ -79,7 +79,7 @@ CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, doubl
 		else
 			nCode = pCircleXY->GetG();
 
-		CPointD	ptOrgUV(pCircleUV->GetMakeCenter() - pCircleXY->GetMakeCenter());
+		CPointF	ptOrgUV(pCircleUV->GetMakeCenter() - pCircleXY->GetMakeCenter());
 		CString	strGcodeKL(GetValString(NCA_K, ::RoundUp(ptOrgUV.x), TRUE) +	// bSpecial==TRUE
 						   GetValString(NCA_L, ::RoundUp(ptOrgUV.y), TRUE));
 		strGcode += strGcodeKL;
@@ -92,12 +92,12 @@ CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, doubl
 }
 
 // 上下異形状を微細線分で生成
-CNCMakeWire::CNCMakeWire(const CVPointD& vptXY, const CVPointD& vptUV, double dFeed)
+CNCMakeWire::CNCMakeWire(const CVPointF& vptXY, const CVPointF& vptUV, float dFeed)
 {
 	ASSERT( vptXY.size() == vptUV.size() );
 
 	CString	strGcode;
-	CPointD	pt;
+	CPointF	pt;
 
 	// 最初だけ送り速度を追加
 	pt = vptUV[0] - vptXY[0];
@@ -122,7 +122,7 @@ CNCMakeWire::CNCMakeWire(const CVPointD& vptXY, const CVPointD& vptUV, double dF
 }
 
 // XYのG[0|1]移動
-CNCMakeWire::CNCMakeWire(int nCode, const CPointD& pt, double dFeed, double dTaper)
+CNCMakeWire::CNCMakeWire(int nCode, const CPointF& pt, float dFeed, float dTaper)
 {
 	// ﾃｰﾊﾟ指示ｺｰﾄﾞ
 	CString	strTaper;
@@ -149,9 +149,9 @@ CNCMakeWire::CNCMakeWire(int nCode, const CPointD& pt, double dFeed, double dTap
 }
 
 // XY/UVのG[0|1]移動
-CNCMakeWire::CNCMakeWire(const CPointD& ptxy, const CPointD& ptuv, double dFeed)
+CNCMakeWire::CNCMakeWire(const CPointF& ptxy, const CPointF& ptuv, float dFeed)
 {
-	CPointD	pt(ptuv - ptxy);
+	CPointF	pt(ptuv - ptxy);
 	CString	strGcode(GetValString(NCA_X, ptxy.x, FALSE) +
 					 GetValString(NCA_Y, ptxy.y, FALSE) +
 					 GetValString(NCA_U, ::RoundUp(pt.x), FALSE) +

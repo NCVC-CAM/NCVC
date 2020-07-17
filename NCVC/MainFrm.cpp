@@ -435,9 +435,9 @@ void CMainFrame::CreateDisableToolBar(EN_TOOLBARIMAGE enImage)
 	for ( int y=0; y<gg_nIconY/*+1*/; y++ ) {
 		for ( int x=0; x<gg_nIconX*nBtnCnt; x++ ) {
 			COLORREF col = dcMem.GetPixel(x, y);
-			double	dColor = GetRValue(col)*0.30 +
-				             GetGValue(col)*0.59 +
-							 GetBValue(col)*0.11;
+			float	dColor = GetRValue(col)*0.30f +
+				             GetGValue(col)*0.59f +
+							 GetBValue(col)*0.11f;
 			dcMem.SetPixelV(x, y, RGB(dColor, dColor, dColor));
 		}
 	}
@@ -588,8 +588,8 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 	CMagaDbg	dbg("CMainFrame::SetExecButtons()\nStart");
 #endif
 	static	LPCTSTR	szMenu = "ŠO•”±ÌßØ(&X)";
-	UINT	nMenuNCD, nMenuDXF;
-	int		i, nCount, nIndex, nBtnCnt;
+	UINT		nMenuNCD, nMenuDXF;
+	int			i, nCount, nIndex, nBtnCnt;
 	CDocument*	pDoc = GetActiveFrame()->GetActiveDocument();
 	CExecList*	pExeList = AfxGetNCVCApp()->GetExecList();
 	CExecOption* pExec;
@@ -598,7 +598,7 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 	for ( i=0; i<nBtnCnt; i++ )
 		m_ilEnableToolBar[TOOLIMAGE_EXEC].Remove(0);
 
-	nBtnCnt = pExeList->GetCount();
+	nBtnCnt = (int)(pExeList->GetCount());
 	LPCUSTTBINFO lpInfo = NULL;
 	try {
 		i = 0;
@@ -611,7 +611,7 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 			lpInfo[i].strInfo = pExec->GetToolTip();
 			i++;
 			// ¶½ÀÑÒÆ­°‚ÉÒÆ­°ID‚Æ²Ò°¼Þ‡‚‚Ì“o˜^
-			m_menuMain.SetMapImageID((WORD)pExec->GetMenuID(), TOOLIMAGE_EXEC, nIndex);
+			m_menuMain.SetMapImageID(pExec->GetMenuID(), TOOLIMAGE_EXEC, nIndex);
 		END_FOREACH
 		CreateDisableToolBar(TOOLIMAGE_EXEC);	// ¸ÞÚ²±²ºÝ‚Ìì¬
 		m_wndToolBar[TOOLBAR_EXEC].SetCustomButtons(
@@ -663,7 +663,7 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 		return;
 
 	CMenu	menuMain, menuNCD, menuDXF;
-	int		nID;
+	WORD	nID;
 	CString	strTip;
 	menuMain.CreatePopupMenu();
 	menuNCD.CreatePopupMenu();
@@ -675,9 +675,9 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 		menuNCD.AppendMenu (MF_STRING, nID, strTip);
 		menuDXF.AppendMenu (MF_STRING, nID, strTip);
 	END_FOREACH
-	pMenuMain->InsertMenu(MAINMENUCOUNT-1, MF_BYPOSITION|MF_POPUP, (UINT)menuMain.Detach(), szMenu);
-	pMenuNCD->InsertMenu(nMenuNCD, MF_BYPOSITION|MF_POPUP, (UINT)menuNCD.Detach(), szMenu);
-	pMenuDXF->InsertMenu(nMenuDXF, MF_BYPOSITION|MF_POPUP, (UINT)menuDXF.Detach(), szMenu);
+	pMenuMain->InsertMenu(MAINMENUCOUNT-1, MF_BYPOSITION|MF_POPUP, (UINT_PTR)menuMain.Detach(), szMenu);
+	pMenuNCD->InsertMenu(nMenuNCD, MF_BYPOSITION|MF_POPUP, (UINT_PTR)menuNCD.Detach(), szMenu);
+	pMenuDXF->InsertMenu(nMenuDXF, MF_BYPOSITION|MF_POPUP, (UINT_PTR)menuDXF.Detach(), szMenu);
 	DrawMenuBar();
 }
 
@@ -747,7 +747,7 @@ void CMainFrame::CustomizedToolBar(int nTool)
 	m_wndToolBar[nTool].GetToolBarCtrl().Customize();
 }
 
-void CALLBACK CMainFrame::StatusBarEventTimerProc(HWND, UINT, UINT, DWORD)
+void CALLBACK CMainFrame::StatusBarEventTimerProc(HWND, UINT, UINT_PTR, DWORD)
 {
 	AfxGetApp()->OnIdle(0);
 }
@@ -1081,7 +1081,7 @@ void CMainFrame::OnSysColorChange()
 BOOL CMainFrame::OnToolTipText(UINT nID, NMHDR* pNMHDR, LRESULT* pResult)
 {
 	LPTOOLTIPTEXT pTTT = reinterpret_cast<LPTOOLTIPTEXT>(pNMHDR);
-	UINT nForm =pNMHDR->idFrom;
+	WORD	nForm = (WORD)(pNMHDR->idFrom);
 #ifdef _DEBUG
 	g_dbg.printf("OnToolTipText() Call ID=%d Flag=%d", nForm, pTTT->uFlags);
 #endif

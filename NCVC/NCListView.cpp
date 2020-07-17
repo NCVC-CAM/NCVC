@@ -67,7 +67,7 @@ void CNCListView::OnInitialUpdate()
 {
 	CListView::OnInitialUpdate();
 
-	int	nSize = GetDocument()->GetNCBlockSize();
+	int	nSize = (int)(GetDocument()->GetNCBlockSize());
 	// ﾘｽﾄﾋﾞｭｰｺﾝﾄﾛｰﾙの最大数をｾｯﾄ
 	GetListCtrl().SetItemCountEx(nSize);
 	// 列幅設定
@@ -99,7 +99,7 @@ void CNCListView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		return;		// 再描画不要
 	case UAV_FILEINSERT:	// ﾘｽﾄ再読込(ｶｰｿﾙ位置に読み込み)
 		{
-			int	nSize = GetDocument()->GetNCBlockSize();
+			int	nSize = (int)(GetDocument()->GetNCBlockSize());
 			// ﾘｽﾄﾋﾞｭｰｺﾝﾄﾛｰﾙの最大数をｾｯﾄ
 			GetListCtrl().SetItemCountEx(nSize);
 			// 列幅設定
@@ -167,7 +167,7 @@ void CNCListView::SetFindList(int nUpDown, const CString& strFind)
 		m_regFind = strFind;
 
 	BOOL	bReverse;
-	int		nIndex = 0;
+	INT_PTR	nIndex = 0;
 	// 現在の選択行
 	POSITION pos = GetListCtrl().GetFirstSelectedItemPosition();
 	if ( pos )
@@ -189,8 +189,8 @@ void CNCListView::SetFindList(int nUpDown, const CString& strFind)
 	if ( nIndex < 0 )
 		::MessageBeep(MB_ICONASTERISK);
 	else {
-		GetListCtrl().SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
-		GetListCtrl().EnsureVisible(nIndex, FALSE);
+		GetListCtrl().SetItemState((int)nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
+		GetListCtrl().EnsureVisible((int)nIndex, FALSE);
 	}
 }
 

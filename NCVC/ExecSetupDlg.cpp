@@ -223,7 +223,7 @@ void CExecSetupDlg::OnGetDispInfoExeList(NMHDR* pNMHDR, LRESULT* pResult)
 	if ( plvdi->item.mask & LVIF_TEXT )
 		lstrcpy(plvdi->item.pszText, pExec->m_strFileName);
 	if ( plvdi->item.mask & LVIF_IMAGE )
-		plvdi->item.iImage = pExec->m_nImage;
+		plvdi->item.iImage = (int)(pExec->m_nImage);
 }
 
 void CExecSetupDlg::OnKeyDownList(NMHDR* pNMHDR, LRESULT* pResult) 

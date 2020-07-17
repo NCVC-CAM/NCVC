@@ -26,7 +26,10 @@ static	BOOL	IsThread_NoChk(void)
 	return TRUE;
 }
 static	boost::function<BOOL ()>	IsThread;
-#define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
+static	inline	void	SetProgressPos(INT_PTR n)
+{
+	g_pParent->m_ctReadProgress.SetPos((int)n);
+}
 
 struct	CHECKMAPTHREADPARAM
 {
@@ -35,7 +38,7 @@ struct	CHECKMAPTHREADPARAM
 	BOOL		bThread;	// Ω⁄ØƒﬁÇÃåpë±Ã◊∏ﬁ
 	CLayerData*	pLayer;		// ëŒè€⁄≤‘
 	CDXFmap*	pMap;		// åüç∏ëŒè€œØÃﬂ
-	// CHECKMAPTHREADPARAM::CEvent ÇéËìÆ≤Õﬁ›ƒÇ…Ç∑ÇÈÇΩÇﬂÇÃ∫›Ωƒ◊∏¿
+	// CEvent ÇéËìÆ≤Õﬁ›ƒÇ…Ç∑ÇÈÇΩÇﬂÇÃ∫›Ωƒ◊∏¿
 	CHECKMAPTHREADPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE),
 		bThread(TRUE), pMap(NULL)
 	{}
@@ -44,7 +47,7 @@ struct	CHECKMAPTHREADPARAM
 static	UINT	CheckMapWorking_Thread(LPVOID);
 
 static	void	SetChainMap(const CDXFmap*, CLayerData*, LPCHECKMAPTHREADPARAM);
-static	void	SearchChainMap(const CDXFmap*, const CPointD&, CDXFmap*, CDXFmap&);
+static	void	SearchChainMap(const CDXFmap*, const CPointF&, CDXFmap*, CDXFmap&);
 
 //////////////////////////////////////////////////////////////////////
 //	òAåãµÃﬁºﬁ™∏ƒÇÃåüçıΩ⁄Øƒﬁ
@@ -57,8 +60,8 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 	g_pParent = pParam->pParent;
 	IsThread = g_pParent ? &IsThread_Dlg : &IsThread_NoChk;
 
-	int		i, j, nResult = IDOK;
-	INT_PTR	nLayerCnt = pDoc->GetLayerCnt(), nDataCnt;
+	int			nResult = IDOK;
+	INT_PTR		i, j, nLayerCnt = pDoc->GetLayerCnt(), nDataCnt;
 	CString		strMsg;
 	CLayerData*	pLayer;
 	CDXFdata*	pData;
@@ -87,10 +90,10 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 			nDataCnt = pLayer->GetDxfSize();
 			if ( g_pParent ) {
 				g_pParent->SetFaseMessage(strMsg, pLayer->GetLayerName());
-				g_pParent->m_ctReadProgress.SetRange32(0, nDataCnt);
+				g_pParent->m_ctReadProgress.SetRange32(0, (int)nDataCnt);
 			}
-			j = GetPrimeNumber(nDataCnt*2);
-			mpDXFdata.InitHashTable(max(17, j));
+			j = GetPrimeNumber((UINT)nDataCnt*2);
+			mpDXFdata.InitHashTable((UINT)max(17, j));
 			for ( j=0; j<nDataCnt && IsThread(); j++ ) {
 				pData = pLayer->GetDxfData(j);
 				if ( pData->GetType() != DXFPOINTDATA ) {
@@ -154,14 +157,14 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 void SetChainMap(const CDXFmap* pMasterMap, CLayerData* pLayer, LPCHECKMAPTHREADPARAM pParam)
 {
 	int			nCnt = 0,
-				nPrime = GetPrimeNumber(pLayer->GetDxfSize());
-	CPointD		pt;
+				nPrime = GetPrimeNumber((UINT)pLayer->GetDxfSize());
+	CPointF		pt;
 	CDXFmap		mapRegist;	// òAåãç¿ïWìoò^çœÇ›œØÃﬂ
 	CDXFmap*	pMap;
 	CDXFarray*	pDummy;
 
 	if ( g_pParent )
-		g_pParent->m_ctReadProgress.SetRange32(0, pMasterMap->GetCount());
+		g_pParent->m_ctReadProgress.SetRange32(0, (int)pMasterMap->GetCount());
 	mapRegist.InitHashTable(max(17, nPrime));
 	pParam->evEnd.SetEvent();
 
@@ -193,20 +196,20 @@ void SetChainMap(const CDXFmap* pMasterMap, CLayerData* pLayer, LPCHECKMAPTHREAD
 }
 
 void SearchChainMap
-	(const CDXFmap* pMasterMap, const CPointD& pt, CDXFmap* pMap, CDXFmap& mapRegist)
+	(const CDXFmap* pMasterMap, const CPointF& pt, CDXFmap* pMap, CDXFmap& mapRegist)
 {
 	int			i, j;
-	CPointD		ptSrc;
+	CPointF		ptSrc;
 	CDXFarray*	pArray;
 	CDXFarray*	pDummy = NULL;
 	CDXFdata*	pData;
 
-	if ( !pMasterMap->Lookup(const_cast<CPointD&>(pt), pArray) )	// ïKÇ∏ë∂ç›Ç∑ÇÈ
+	if ( !pMasterMap->Lookup(const_cast<CPointF&>(pt), pArray) )	// ïKÇ∏ë∂ç›Ç∑ÇÈ
 		NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 
 	// ñ¢ìoò^ÇÃç¿ïW√ﬁ∞¿Çåüçı
-	if ( !mapRegist.PLookup(const_cast<CPointD&>(pt)) ) {
-		mapRegist.SetAt(const_cast<CPointD&>(pt), pDummy);
+	if ( !mapRegist.PLookup(const_cast<CPointF&>(pt)) ) {
+		mapRegist.SetAt(const_cast<CPointF&>(pt), pDummy);
 		for ( i=0; i<pArray->GetSize() && IsThread(); i++ ) {
 			pData = pArray->GetAt(i);
 			if ( !pData->IsMakeFlg() ) {

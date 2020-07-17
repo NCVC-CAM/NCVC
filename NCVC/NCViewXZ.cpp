@@ -61,7 +61,7 @@ void CNCViewXZ::OnInitialUpdate()
 void CNCViewXZ::SetGuideData(void)
 {
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	double	dSrc = pOpt->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) ?
+	float	dSrc = pOpt->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) ?
 						m_dFactor : LOMETRICFACTOR;
 	// Ｘ軸のガイド初期化（左から右へ）
 	m_ptGuide[0][0].x = (int)(-pOpt->GetGuideLength(NCA_X) * dSrc);

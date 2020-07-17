@@ -34,7 +34,7 @@ enum {
 	NCVIEWFLG_GUIDESCALE,
 	NCVIEWFLG_GUIDELENGTH,
 	NCVIEWFLG_SOLIDVIEW,
-	NCVIEWFLG_G00VIEW,
+	NCVIEWFLG_WIREPATH,
 	NCVIEWFLG_DRAGRENDER,
 	NCVIEWFLG_TEXTURE,
 		NCVIEWFLG_NUMS		// [9]
@@ -57,7 +57,8 @@ enum {
 	NCCOL_CORRECT,
 	NCCOL_GL_WRK,
 	NCCOL_GL_CUT,
-		NCCOL_NUMS			// [16]
+	NCCOL_GL_MILL,
+		NCCOL_NUMS			// [17]
 };
 enum {
 	NCINFOCOL_BACKGROUND1 = 0,
@@ -110,7 +111,7 @@ friend	class	CNCViewGL;		// OpenGL»Îß°Äó‹µ‚É‚æ‚Á‚ÄÌ×¸Þ‚ð‹­§OFF
 					m_bScale,			// TRUE:¶Þ²ÄÞ‚É–Ú·
 					m_bGuide,			// TRUE:Šg‘å—¦‚É“¯Šú
 					m_bSolidView,		// OpenGL¿Ø¯ÄÞ•\Ž¦
-					m_bG00View,			// G00ˆÚ“®•\Ž¦
+					m_bWirePath,		// Ü²ÔÊß½•\Ž¦
 					m_bDragRender,		// ÄÞ×¯¸Þ’†‚àÚÝÀÞØÝ¸Þ
 					m_bTexture;			// Ã¸½Á¬‚Ì“\‚è•t‚¯
 		};
@@ -129,7 +130,7 @@ friend	class	CNCViewGL;		// OpenGL»Îß°Äó‹µ‚É‚æ‚Á‚ÄÌ×¸Þ‚ð‹­§OFF
 				m_nMillType,			// 0:½¸³ª±, 1:ÎÞ°Ù
 				m_nForceView01[4],		// 4–Ê-1:¶ã,‰Eã,¶‰º,‰E‰º
 				m_nForceView02[4];		// 4–Ê-2:¶ã,¶’†,¶‰º,‰E
-	double		m_dGuide[NCXYZ],		// ¶Þ²ÄÞŽ²‚Ì’·‚³
+	float		m_dGuide[NCXYZ],		// ¶Þ²ÄÞŽ²‚Ì’·‚³
 				m_dDefaultEndmill;		// ÃÞÌ«ÙÄ´ÝÄÞÐÙŒa(”¼Œa)
 	LOGFONT		m_lfFont[2];			// NC/DXF‚ÅŽg—p‚·‚éÌ«ÝÄî•ñ
 	CString		m_strTexture;			// Ã¸½Á¬‰æ‘œÌ§²Ù
@@ -182,11 +183,11 @@ public:
 		ASSERT( a>=0 && a<SIZEOF(m_nDXFLineType) );
 		return m_nDXFLineType[a];
 	}
-	double	GetGuideLength(size_t a) const {
+	float	GetGuideLength(size_t a) const {
 		ASSERT( a>=0 && a<SIZEOF(m_dGuide) );
 		return m_dGuide[a];
 	}
-	double	GetDefaultEndmill(void) const {
+	float	GetDefaultEndmill(void) const {
 		return m_dDefaultEndmill;
 	}
 	int		GetDefaultEndmillType(void) const {
@@ -211,6 +212,3 @@ public:
 	BOOL	Export(LPCTSTR);
 	void	Inport(LPCTSTR);
 };
-
-COLORREF	ConvertSTRtoRGB(LPCTSTR);	// •¶Žš—ñ‚ðFî•ñ‚É•ÏŠ·
-CString		ConvertRGBtoSTR(COLORREF);	// ‚»‚Ì‹t

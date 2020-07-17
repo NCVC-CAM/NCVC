@@ -43,16 +43,16 @@ BOOL CViewBase::PreCreateWindow(CREATESTRUCT& cs)
 /////////////////////////////////////////////////////////////////////////////
 // CViewBase クラスのメッセージ ハンドラ (メニューコマンド)
 
-void CViewBase::OnViewFit(const CRectD& rcMax, BOOL bInflate/*=TRUE*/)
+void CViewBase::OnViewFit(const CRectF& rcMax, BOOL bInflate/*=TRUE*/)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CViewBase::OnViewFit()");
 #endif
-	CRectD	rcObj(rcMax);
+	CRectF	rcObj(rcMax);
 
 	if ( bInflate ) {
 		// ｵﾌﾞｼﾞｪｸﾄ矩形を10%(上下左右5%ずつ)大きく
-		rcObj.InflateRect(rcMax.Width()*0.05, rcMax.Height()*0.05);
+		rcObj.InflateRect(rcMax.Width()*0.05f, rcMax.Height()*0.05f);
 	}
 	CClientDC	dc(this);
 
@@ -61,10 +61,10 @@ void CViewBase::OnViewFit(const CRectD& rcMax, BOOL bInflate/*=TRUE*/)
 	GetClientRect(rc);
 	dc.DPtoLP(&rc);
 	// 拡大率の計算
-	double	cx = fabs(rc.Width()  / LOMETRICFACTOR);
-	double	cy = fabs(rc.Height() / LOMETRICFACTOR);
-	double	dFactorH = cx / rcObj.Width();
-	double	dFactorV = cy / rcObj.Height();
+	float	cx = fabs(rc.Width()  / LOMETRICFACTOR),
+			cy = fabs(rc.Height() / LOMETRICFACTOR),
+			dFactorH = cx / rcObj.Width(),
+			dFactorV = cy / rcObj.Height();
 #ifdef _DEBUG
 	dbg.printf("W=%f H=%f", cx, cy);
 	dbg.printf("dFactorH=%f dFactorV=%f", dFactorH, dFactorV);
@@ -103,9 +103,9 @@ void CViewBase::OnViewLensP(void)
 	CSize	sz( OnViewLens(dc) );
 
 	// 拡大率の計算
-	double	dFactorH = (double)sz.cx / m_rcMagnify.Width();
-	double	dFactorV = (double)sz.cy / m_rcMagnify.Height();
-	double	dFactor  = m_dFactor;
+	float	dFactorH = (float)sz.cx / m_rcMagnify.Width();
+	float	dFactorV = (float)sz.cy / m_rcMagnify.Height();
+	float	dFactor  = m_dFactor;
 #ifdef _DEBUG
 	dbg.printf("dFactorH=%f dFactorV=%f", dFactorH, dFactorV);
 #endif
@@ -150,9 +150,9 @@ void CViewBase::OnViewLensN(void)
 	CSize	sz( OnViewLens(dc) );
 
 	// 拡大率の計算
-	double	dFactorH = (double)m_rcMagnify.Width()  / sz.cx;
-	double	dFactorV = (double)m_rcMagnify.Height() / sz.cy;
-	double	dFactor  = m_dFactor;
+	float	dFactorH = (float)m_rcMagnify.Width()  / sz.cx;
+	float	dFactorV = (float)m_rcMagnify.Height() / sz.cy;
+	float	dFactor  = m_dFactor;
 #ifdef _DEBUG
 	dbg.printf("dFactorH=%f dFactorV=%f", dFactorH, dFactorV);
 #endif

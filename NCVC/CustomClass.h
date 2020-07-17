@@ -80,8 +80,8 @@ public:
 		if ( GetSize() <= 1 )	// µÌÞ¼Þª¸Ä1‚ÂˆÈ‰º‚È‚çŒðŠ·‚Ì•K—v‚È‚µ
 			return;
 		TYPE*	pObj = (TYPE *)GetData();
-		int	ii = GetSize() >> 1;	// 1/2
-		for ( int i=0, j=GetUpperBound(); i<ii; i++, j-- )
+		INT_PTR	ii = GetSize()/2;
+		for ( INT_PTR i=0, j=GetUpperBound(); i<ii; i++, j-- )
 			boost::swap(pObj[i], pObj[j]);
 	}
 };
@@ -96,11 +96,11 @@ public:
 	typedef	int	(*PFNCOMPARE)(TYPE pFirst, TYPE pSecond);
 
 private:
-	void	QSort(PFNCOMPARE pfnCompare, int nFirst, int nLast) {
+	void	QSort(PFNCOMPARE pfnCompare, INT_PTR nFirst, INT_PTR nLast) {
 		if ( nFirst >= nLast )
 			return;
 
-		int		i = nFirst + 1, j = nLast;
+		INT_PTR	i = nFirst + 1, j = nLast;
 		TYPE*	pObj = (TYPE *)GetData();
 
 		while ( i <= j ) {
@@ -166,7 +166,7 @@ public:
 	CStringKeyIndex() : CMapStringToPtr() {
 		m_bCaseUpper = TRUE;
 	}
-	CStringKeyIndex(size_t nSize, LPCTSTR pszElement[], BOOL bCaseUpper = TRUE) : CMapStringToPtr() {
+	CStringKeyIndex(UINT nSize, LPCTSTR pszElement[], BOOL bCaseUpper = TRUE) : CMapStringToPtr() {
 		m_bCaseUpper = bCaseUpper;
 		SetElement(nSize, pszElement);
 	}
@@ -181,15 +181,15 @@ public:
 		END_FOREACH
 	}
 
-	void	SetElement(size_t nSize, LPCTSTR pszElement[]) {
+	void	SetElement(UINT nSize, LPCTSTR pszElement[]) {
 		RemoveAll();
 		InitHashTable(::GetPrimeNumber(max(17, nSize)));
 		AddElement(nSize, pszElement);
 	}
-	void	AddElement(size_t nSize, LPCTSTR pszElement[]) {
+	void	AddElement(UINT nSize, LPCTSTR pszElement[]) {
 		INT_PTR	nBase = GetSize();
 		CString	strElement;
-		for ( size_t i=0; i<nSize; i++ ) {
+		for ( UINT i=0; i<nSize; i++ ) {
 			strElement = pszElement[i];
 			if ( m_bCaseUpper )
 				strElement.MakeUpper();

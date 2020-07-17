@@ -8,8 +8,8 @@
 
 class CViewSetup5 : public CPropertyPage
 {
-	COLORREF	m_colView[2];
-	CBrush		m_brColor[2];
+	COLORREF	m_colView[3];
+	CBrush		m_brColor[3];
 
 	void	EnableSolidControl(void);
 	void	EnableTextureControl(void);
@@ -21,9 +21,9 @@ public:
 
 // ダイアログ データ
 	enum { IDD = IDD_VIEW_SETUP5 };
-	CStatic	m_ctColor[2];
+	CStatic	m_ctColor[3];
 	BOOL	m_bSolid,
-			m_bG00View,
+			m_bWirePath,
 			m_bDrag,
 			m_bTexture;
 	int		m_nMillType;

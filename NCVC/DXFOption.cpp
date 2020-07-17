@@ -13,6 +13,8 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+using namespace boost;
+
 static	const	int		g_bDxfID[] = {
 	IDS_REG_DXF_VIEWER, IDS_REG_DXF_BINDFILECOMMENT
 };
@@ -28,7 +30,7 @@ static	const	int		g_bDxfDef[] = {
 static	const	int		g_nDxfDef[] = {
 	0, 0, 0
 };
-static	const	double	g_dDxfDef[] = {
+static	const	float	g_dDxfDef[] = {
 	300.0, 300.0,
 	1.0
 };
@@ -67,11 +69,11 @@ CDXFOption::CDXFOption()
 	for ( i=0; i<SIZEOF(m_dBindWork); i++ ) {
 		VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDSIZE));
 		strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry+g_szNdelimiter[i]);
-		m_dBindWork[i] = strResult.IsEmpty() ? g_dDxfDef[i] : atof(strResult);
+		m_dBindWork[i] = strResult.IsEmpty() ? g_dDxfDef[i] : (float)atof((LPCTSTR)strResult.Trim());
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDMARGIN));
 	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
-	m_dBindMargin = strResult.IsEmpty() ? g_dDxfDef[i] : atof(strResult);
+	m_dBindMargin = strResult.IsEmpty() ? g_dDxfDef[i] : (float)atof((LPCTSTR)strResult.Trim());
 
 	// ãåéÆµÃﬂºÆ›ÇÃçÌèú
 	CRegKey	reg;

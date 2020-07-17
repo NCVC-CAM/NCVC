@@ -108,7 +108,7 @@ void CDXFChild::SetDataInfo(const CDXFDoc* pDoc)
 		m_wndStatusBar.CommandToIndex(ID_DXFST_DATAINFO), str);
 }
 
-void CDXFChild::SetFactorInfo(double dFactor)
+void CDXFChild::SetFactorInfo(float dFactor)
 {
 	CString		str;
 	str.Format(ID_INDICATOR_FACTOR_F, "", dFactor);
@@ -116,7 +116,7 @@ void CDXFChild::SetFactorInfo(double dFactor)
 		m_wndStatusBar.CommandToIndex(ID_INDICATOR_FACTOR), str);
 }
 
-void CDXFChild::OnUpdateMouseCursor(const CPointD* lppt)
+void CDXFChild::OnUpdateMouseCursor(const CPointF* lppt)
 {
 	CString		str;
 	if ( lppt )

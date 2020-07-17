@@ -8,6 +8,7 @@
 #include "NCMakeMillOpt.h"
 #include "DXFdata.h"
 #include "Layer.h"
+#include "DXFDoc.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -126,7 +127,7 @@ void CLayerData::SerializeShapeSort(void)
 	m_obShapeArray.Sort(SequenceCompareFunc);
 }
 
-void CLayerData::AllChangeFactor(double f) const
+void CLayerData::AllChangeFactor(float f) const
 {
 	int		i;
 	for ( i=0; i<m_obDXFArray.GetSize(); i++ )
@@ -187,12 +188,12 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 
 	// –½—ß‰ğÍÙ°Ìß
 	BOOST_FOREACH(strTok, tok) {
+		strTok = ::Trim(strTok);	// stdafx.h
 		switch ( i++ ) {
 		case 0:		// Øí‘ÎÛÌ×¸Ş
 			m_bLayerFlg.set(LAYER_CUT_TARGET, atoi(strTok.c_str()) ? 1 : 0);
 			break;
 		case 1:		// ØíğŒÌ§²Ù
-			strTok = ::Trim(strTok);	// stdafx.h
 			// ‘Š‘ÎÊß½‚È‚çâ‘ÎÊß½‚É
 			if ( ::PathIsRelative(strTok.c_str()) &&
 					::PathSearchAndQualify(strTok.c_str(), szFile, _MAX_PATH) )
@@ -200,7 +201,7 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 			SetInitFile(strTok.c_str());
 			break;
 		case 2:		// ‹­§Å[Z
-			m_dZCut = atof(strTok.c_str());
+			m_dZCut = (float)atof(strTok.c_str());
 			break;
 		case 3:		// ‹­§Å[Z‚ğŒŠ‰ÁH‚É‚à“K—p
 			m_bLayerFlg.set(LAYER_DRILL_Z, atoi(strTok.c_str()) ? 1 : 0);
@@ -209,22 +210,20 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 			m_bLayerFlg.set(LAYER_PART_OUT, atoi(strTok.c_str()) ? 1 : 0);
 			break;
 		case 5:		// ŒÂ•Êo—ÍÌ§²Ù–¼
-			strTok = ::Trim(strTok);
 			if ( ::PathIsRelative(strTok.c_str()) &&
 					::PathSearchAndQualify(strTok.c_str(), szFile, _MAX_PATH) )
 				strTok = szFile;
 			m_strNCFile = strTok.c_str();
 			break;
 		case 6:		// o—Í¼°¹İ½
-			strTok = ::Trim(strTok);
 			if ( !strTok.empty() )
 				m_nListNo = atoi(strTok.c_str());
 			break;
 		case 7:		// o—ÍºÒİÄ
-			m_strLayerComment = ::Trim(strTok).c_str();
+			m_strLayerComment = strTok.c_str();
 			break;
 		case 8:		// o—Íº°ÄŞ
-			m_strLayerCode = ::Trim(strTok).c_str();
+			m_strLayerCode = strTok.c_str();
 			break;
 		}
 	}
@@ -282,8 +281,8 @@ void CLayerData::Serialize(CArchive& ar)
 			ar >> bTarget;
 			m_bLayerFlg.set(LAYER_CUT_TARGET, bTarget);
 		}
-		// CDXFdata¼Ø±×²½Şî•ñ—p‚ÉCLayerData*‚ğCArchive::m_pDocument‚ÉŠi”[
-		ar.m_pDocument = reinterpret_cast<CDocument *>(this);
+		// CDXFdata¼Ø±×²½Şî•ñ—p‚ÉCLayerData*‚ğŠi”[
+		static_cast<CDXFDoc *>(ar.m_pDocument)->SetSerializeLayer(this);
 	}
 	// DXFµÌŞ¼Şª¸Ä‚Ì¼Ø±×²½Ş
 	m_obDXFArray.Serialize(ar);
@@ -298,8 +297,8 @@ void CLayerData::Serialize(CArchive& ar)
 int AreaCompareFunc1(CDXFshape* pFirst, CDXFshape* pSecond)
 {
 	int		nResult;
-	CRectD	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
-	double	dResult = rc1.Width() * rc1.Height() - rc2.Width() * rc2.Height();
+	CRectF	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
+	float	dResult = rc1.Width() * rc1.Height() - rc2.Width() * rc2.Height();
 	if ( dResult == 0.0 )
 		nResult = 0;
 	else if ( dResult > 0.0 )
@@ -312,8 +311,8 @@ int AreaCompareFunc1(CDXFshape* pFirst, CDXFshape* pSecond)
 int AreaCompareFunc2(CDXFshape* pFirst, CDXFshape* pSecond)
 {
 	int		nResult;
-	CRectD	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
-	double	dResult = rc2.Width() * rc2.Height() - rc1.Width() * rc1.Height();
+	CRectF	rc1(pFirst->GetMaxRect()), rc2(pSecond->GetMaxRect());
+	float	dResult = rc2.Width() * rc2.Height() - rc1.Width() * rc1.Height();
 	if ( dResult == 0.0 )
 		nResult = 0;
 	else if ( dResult > 0.0 )

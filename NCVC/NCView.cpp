@@ -67,10 +67,10 @@ void CNCView::OnInitialUpdate()
 void CNCView::SetGuideData(void)
 {
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	double	dSrc = pOpt->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) ?
+	float	dSrc = pOpt->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) ?
 						m_dFactor : LOMETRICFACTOR;
-	CPoint3D	pt;
-	double		dLength;
+	CPoint3F	pt;
+	float		dLength;
 
 	// Ｘ軸のガイド初期化（左から右へ）
 	dLength = pOpt->GetGuideLength(NCA_X);
@@ -94,11 +94,11 @@ void CNCView::SetGuideData(void)
 
 void CNCView::SetDataMaxRect(void)
 {
-	extern	const	double	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
-	CRect3D		rc(GetDocument()->GetMaxRect());
+	extern	const	float	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
+	CRect3F		rc(GetDocument()->GetMaxRect());
 	// 占有矩形の補正(不正表示の防止)
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	double	dLength;
+	float	dLength;
 	if ( rc.Width() <= NCMIN ) {
 		dLength = pOpt->GetGuideLength(NCA_X);
 		if ( dLength == 0.0 )
@@ -121,7 +121,7 @@ void CNCView::SetDataMaxRect(void)
 		rc.high =  dLength;
 	}
 
-	CPoint3D	pt;
+	CPoint3F	pt;
 	pt.SetPoint(rc.left,  rc.top,    rc.low);
 	m_ptdMaxRect[0][0] = pt.PointConvert();
 	pt.SetPoint(rc.right, rc.top,    rc.low);
@@ -156,8 +156,8 @@ void CNCView::SetDataMaxRect(void)
 
 void CNCView::SetWorkRect(void)
 {
-	CRect3D		rc(GetDocument()->GetWorkRect());
-	CPoint3D	pt;
+	CRect3F		rc(GetDocument()->GetWorkRect());
+	CPoint3F	pt;
 
 	// ﾜｰｸ領域の3Dﾃﾞｰﾀ
 	pt.SetPoint(rc.left,  rc.top,    rc.high);
@@ -183,11 +183,11 @@ void CNCView::SetWorkRect(void)
 
 void CNCView::SetWorkCylinder(void)
 {
-	CRect3D		rc(GetDocument()->GetWorkRect());
-	CPointD		ptc(rc.CenterPoint());
-	CPoint3D	pt;
+	CRect3F		rc(GetDocument()->GetWorkRect());
+	CPointF		ptc(rc.CenterPoint());
+	CPoint3F	pt;
 	int			i;
-	double		r = rc.Width()/2.0, q;
+	float		r = rc.Width()/2.0f, q;
 
 	for ( i=0, q=0; i<ARCCOUNT; i++, q+=ARCSTEP ) {
 		pt.x = r * cos(q) + ptc.x;

@@ -25,9 +25,9 @@ using namespace boost;
 
 /////////////////////////////////////////////////////////////////////////////
 // 静的変数の初期化
-double	CNCMakeMill::ms_dCycleZ[] = {HUGE_VAL, HUGE_VAL};
-double	CNCMakeMill::ms_dCycleR[] = {HUGE_VAL, HUGE_VAL};
-double	CNCMakeMill::ms_dCycleP[] = {HUGE_VAL, HUGE_VAL};
+float	CNCMakeMill::ms_dCycleZ[] = {HUGE_VALF, HUGE_VALF};
+float	CNCMakeMill::ms_dCycleR[] = {HUGE_VALF, HUGE_VALF};
+float	CNCMakeMill::ms_dCycleP[] = {HUGE_VALF, HUGE_VALF};
 int		CNCMakeMill::ms_nCycleCode = 81;
 int		CNCMakeMill::ms_nCycleReturn = 88;
 PFNGETCYCLESTRING	CNCMakeMill::ms_pfnGetCycleString = &CNCMakeMill::GetCycleString;
@@ -40,10 +40,10 @@ CNCMakeMill::CNCMakeMill()
 {
 }
 
-CNCMakeMill::CNCMakeMill(const CDXFdata* pData, double dFeed, const double* pdHelical/*=NULL*/)
+CNCMakeMill::CNCMakeMill(const CDXFdata* pData, float dFeed, const float* pdHelical/*=NULL*/)
 {
 	CString	strGcode;
-	CPointD	pt;
+	CPointF	pt;
 
 	// 本ﾃﾞｰﾀ
 	switch ( pData->GetMakeType() ) {
@@ -105,7 +105,7 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, double dFeed, const double* pdHe
 
 CNCMakeMill::CNCMakeMill(const CDXFdata* pData, BOOL bL0)
 {
-	CPointD	pt;
+	CPointF	pt;
 
 	switch ( pData->GetMakeType() ) {
 	case DXFLINEDATA:
@@ -146,7 +146,7 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, BOOL bL0)
 }
 
 // Z軸の変化(上昇・下降)
-CNCMakeMill::CNCMakeMill(int nCode, double ZVal, double dFeed)
+CNCMakeMill::CNCMakeMill(int nCode, float ZVal, float dFeed)
 {
 	CString	strGcode;
 	CString	strValue(GetValString(NCA_Z, ZVal, FALSE));
@@ -160,7 +160,7 @@ CNCMakeMill::CNCMakeMill(int nCode, double ZVal, double dFeed)
 }
 
 // XYのG[0|1]移動
-CNCMakeMill::CNCMakeMill(int nCode, const CPointD& pt, double dFeed)
+CNCMakeMill::CNCMakeMill(int nCode, const CPointF& pt, float dFeed)
 {
 	CString	strGcode(GetValString(NCA_X, pt.x, FALSE) +
 					 GetValString(NCA_Y, pt.y, FALSE) );
@@ -174,7 +174,7 @@ CNCMakeMill::CNCMakeMill(int nCode, const CPointD& pt, double dFeed)
 
 // 座標指示による円弧の生成
 CNCMakeMill::CNCMakeMill
-	(int nCode, const CPointD& pts, const CPointD& pte, const CPointD& pto, double r)
+	(int nCode, const CPointF& pts, const CPointF& pte, const CPointF& pto, float r)
 {
 	CString	strGcode( (*ms_pfnMakeCircleSub)(nCode, pte, pto-pts, r) );
 	if ( !strGcode.IsEmpty() )
@@ -195,7 +195,7 @@ void CNCMakeMill::MakePolylineMov(const CDXFpolyline* pPoly, BOOL bL0)
 	if ( pPoly->GetVertexCount() <= 1 )
 		return;
 
-	CPointD	pt;
+	CPointF	pt;
 	CString	strGcode;
 	const	CDXFdata*	pData;
 
@@ -233,7 +233,7 @@ CString	CNCMakeMill::MakeSpindle(ENDXFTYPE enType, BOOL bDeep)
 	return strResult;
 }
 
-CString CNCMakeMill::GetValString(int xyz, double dVal, BOOL bSpecial)
+CString CNCMakeMill::GetValString(int xyz, float dVal, BOOL bSpecial)
 {
 	// *** CNCMakeWire と共用 ***
 	// WireMode でKとLの生成には、bSpecialにTRUEを指示
@@ -253,7 +253,7 @@ CString CNCMakeMill::GetValString(int xyz, double dVal, BOOL bSpecial)
 				ms_xyz[xyz] = dVal;
 			}
 			else {								// ｲﾝｸﾘﾒﾝﾀﾙ
-				double	d = dVal;
+				float	d = dVal;
 				dVal -= ms_xyz[xyz];
 				ms_xyz[xyz] = d;
 			}

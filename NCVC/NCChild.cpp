@@ -113,7 +113,7 @@ void CNCChild::SetFindList(int nUpDown, const CString& strFind)
 	GetListView()->SetFindList(nUpDown, strFind);
 }
 
-void CNCChild::SetFactorInfo(double dFactor, const CString& strGuide)
+void CNCChild::SetFactorInfo(float dFactor, const CString& strGuide)
 {
 	CString		strFmt;
 	strFmt.Format(ID_INDICATOR_FACTOR_F, strGuide, dFactor);
@@ -207,7 +207,7 @@ LRESULT CNCChild::OnUpdateStatusLineNo(WPARAM wParam, LPARAM)
 		pData = get<CNCdata*>(m_vStatus);
 
 	if ( pData ) {
-		CPoint3D	pt(pData->GetEndCorrectPoint());
+		CPoint3F	pt(pData->GetEndCorrectPoint());
 		if ( reinterpret_cast<CNCDoc *>(wParam)->IsDocFlag(NCDOC_LATHE) )
 			strInfo.Format(ID_NCDST_COORDINATE_LF, pt.x, pt.z*2.0);	// XŽ²’¼Œa•\Ž¦
 		else

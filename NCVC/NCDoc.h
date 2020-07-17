@@ -38,15 +38,14 @@ class CNCDoc : public CDocBase
 	CRecentViewInfo*	m_pRecentViewInfo;		// ﾌｧｲﾙごとの描画情報
 	//
 	int			m_nWorkOrg;						// 使用中のﾜｰｸ座標
-	CPoint3D	m_ptNcWorkOrg[WORKOFFSET+1],	// ﾜｰｸ座標系(G54～G59)とG92原点
+	CPoint3F	m_ptNcWorkOrg[WORKOFFSET+1],	// ﾜｰｸ座標系(G54～G59)とG92原点
 				m_ptNcLocalOrg;					// ﾛｰｶﾙ座標系(G52)原点
 	CNCblockArray	m_obBlock;		// ﾌｧｲﾙｲﾒｰｼﾞﾌﾞﾛｯｸﾃﾞｰﾀ
-	CTypedPtrArrayEx<CPtrArray, CNCdata*>
-					m_obGdata;		// Gｺｰﾄﾞ描画ｵﾌﾞｼﾞｪｸﾄ
+	CNCarray		m_obGdata;		// Gｺｰﾄﾞ描画ｵﾌﾞｼﾞｪｸﾄ
 	CStringArray	m_obMacroFile;	// ﾏｸﾛ展開一時ﾌｧｲﾙ
-	double		m_dMove[2],		// 移動距離, 切削移動距離
+	float		m_dMove[2],		// 移動距離, 切削移動距離
 				m_dCutTime;		// 切削時間
-	CRect3D		m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
+	CRect3F		m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
 				m_rcWorkCo;		// ｺﾒﾝﾄ指示
 	//
 	void	SetMaxRect(const CNCdata* pData) {
@@ -55,10 +54,11 @@ class CNCDoc : public CDocBase
 		m_rcWork |= pData->GetMaxCutRect();
 	}
 
-	// ﾄﾚｰｽ中のｵﾌﾞｼﾞｪｸﾄ
+	// ﾄﾚｰｽ
 	CCriticalSection	m_csTraceDraw;
-	size_t	m_nTraceDraw;	// 次の描画ﾎﾟｲﾝﾄ
-	size_t	m_nTraceStart;	// 描画開始ﾎﾟｲﾝﾄ(ｶｰｿﾙ位置からﾄﾚｰｽ実行)
+	UINT	m_nTrace;		// ﾄﾚｰｽ実行状態
+	INT_PTR	m_nTraceDraw;	// 次の描画ﾎﾟｲﾝﾄ
+	INT_PTR	m_nTraceStart;	// 描画開始ﾎﾟｲﾝﾄ(ｶｰｿﾙ位置からﾄﾚｰｽ実行)
 
 	void	MakeDXF(const CDXFMakeOption*);
 
@@ -79,6 +79,9 @@ protected: // シリアライズ機能のみから作成します。
 
 // アトリビュート
 public:
+	BOOL	IsDocMill(void) const {
+		return !(IsDocFlag(NCDOC_WIRE)||IsDocFlag(NCDOC_LATHE));
+	}
 	CString	GetDXFFileName(void) const {
 		return m_strDXFFileName;
 	}
@@ -102,43 +105,46 @@ public:
 		ASSERT(0<=n && n<GetNCsize());
 		return m_obGdata[n];
 	}
-	double	GetMoveData(size_t a) const {
+	float	GetMoveData(size_t a) const {
 		ASSERT(0<=a && a<SIZEOF(m_dMove));
 		return m_dMove[a];
 	}
-	CPoint3D	GetOffsetOrig(void) const {
+	CPoint3F	GetOffsetOrig(void) const {
 		ASSERT(0<=m_nWorkOrg && m_nWorkOrg<SIZEOF(m_ptNcWorkOrg));
 		return m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg;
 	}
-	double	GetCutTime(void) const {
+	float	GetCutTime(void) const {
 		return m_dCutTime;
 	}
 
-	void	GetWorkRectPP(int a, double []);	// from NCInfoView.cpp
+	void	GetWorkRectPP(int a, float []);	// from NCInfoView.cpp
 
-	int		SearchBlockRegex(boost::regex&, int = 0, BOOL = FALSE);
-	void	CheckBreakPoint(int a) {	// ﾌﾞﾚｰｸﾎﾟｲﾝﾄの設定
+	INT_PTR	SearchBlockRegex(boost::regex&, INT_PTR = 0, BOOL = FALSE);
+	void	CheckBreakPoint(INT_PTR a) {	// ﾌﾞﾚｰｸﾎﾟｲﾝﾄの設定
 		CNCblock*	pBlock = GetNCblock(a);
 		pBlock->SetBlockFlag(pBlock->GetBlockFlag() ^ NCF_BREAK, FALSE);
 	}
-	BOOL	IsBreakPoint(int a) {		// ﾌﾞﾚｰｸﾎﾟｲﾝﾄの状態
+	BOOL	IsBreakPoint(INT_PTR a) {		// ﾌﾞﾚｰｸﾎﾟｲﾝﾄの状態
 		return GetNCblock(a)->GetBlockFlag() & NCF_BREAK;
 	}
 	void	ClearBreakPoint(void);		// ﾌﾞﾚｰｸﾎﾟｲﾝﾄ全解除
-	size_t	GetTraceDraw(void) {
+	INT_PTR	GetTraceDraw(void) {
 		m_csTraceDraw.Lock();
-		size_t	nTraceDraw = m_nTraceDraw;
+		INT_PTR	nTraceDraw = m_nTraceDraw;
 		m_csTraceDraw.Unlock();
 		return nTraceDraw;
 	}
-	size_t	GetTraceStart(void) const {
+	UINT	GetTraceMode(void) const {
+		return m_nTrace;
+	}
+	INT_PTR	GetTraceStart(void) const {
 		return m_nTraceStart;
 	}
 
-	CRect3D	GetWorkRect(void) const {
+	CRect3F	GetWorkRect(void) const {
 		return m_rcWork;
 	}
-	CRect3D	GetWorkRectOrg(void) const {
+	CRect3F	GetWorkRectOrg(void) const {
 		return m_rcWorkCo;
 	}
 
@@ -151,40 +157,40 @@ public:
 		ASSERT(nWork>=0 && nWork<WORKOFFSET);
 		m_nWorkOrg = nWork;
 	}
-	CNCdata*	DataOperation(const CNCdata*, LPNCARGV, int = -1, ENNCOPERATION = NCADD);
-	void	StrOperation(LPCTSTR, int = -1, ENNCOPERATION = NCADD);
-	void	RemoveAt(int, int);
-	void	RemoveStr(int, int);
+	CNCdata*	DataOperation(const CNCdata*, LPNCARGV, INT_PTR = -1, ENNCOPERATION = NCADD);
+	void	StrOperation(LPCTSTR, INT_PTR = -1, ENNCOPERATION = NCADD);
+	void	RemoveAt(INT_PTR, INT_PTR);
+	void	RemoveStr(INT_PTR, INT_PTR);
 
-	void	AllChangeFactor(ENNCDRAWVIEW, double) const;	// 拡大率の更新
+	void	AllChangeFactor(ENNCDRAWVIEW, float) const;	// 拡大率の更新
 
 	void	CreateCutcalcThread(void);		// 切削時間計算ｽﾚｯﾄﾞの生成
 	void	WaitCalcThread(BOOL = FALSE);	// ｽﾚｯﾄﾞの終了
 
 	// from TH_NCRead.cpp
-	BOOL	SerializeInsertBlock(LPCTSTR, int, DWORD = 0);	// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの挿入
+	BOOL	SerializeInsertBlock(LPCTSTR, INT_PTR, DWORD = 0);	// ｻﾌﾞﾌﾟﾛ，ﾏｸﾛの挿入
 	void	AddMacroFile(const CString&);	// ﾄﾞｷｭﾒﾝﾄ破棄後に消去する一時ﾌｧｲﾙ
-	void	SetWorkRectComment(const CRect3D& rc, BOOL bUpdate = TRUE) {
+	void	SetWorkRectComment(const CRect3F& rc, BOOL bUpdate = TRUE) {
 		m_rcWorkCo = rc;	// ｺﾒﾝﾄで指定されたﾜｰｸ矩形
 		if ( bUpdate ) {
 			m_rcWorkCo.NormalizeRect();
 			m_bDocFlg.set(NCDOC_COMMENTWORK);
 		}
 	}
-	void	SetWorkCylinderComment(double d, double h, const CPoint3D& ptOffset) {
+	void	SetWorkCylinderComment(float d, float h, const CPoint3F& ptOffset) {
 		m_bDocFlg.set(NCDOC_CYLINDER);
 		// 外接四角形 -> m_rcWorkCo
 		d /= 2.0;
-		CRect3D	rc(-d, -d, d, d, h, 0);
+		CRect3F	rc(-d, -d, d, d, h, 0);
 		rc.OffsetRect(ptOffset);
 		SetWorkRectComment(rc);
 	}
-	void	SetWorkLatheR(double r) {
+	void	SetWorkLatheR(float r) {
 		m_rcWorkCo.high = r;
 		m_rcWorkCo.low  = 0;
 		m_bDocFlg.set(NCDOC_COMMENTWORK_R);
 	}
-	void	SetWorkLatheZ(double z1, double z2) {
+	void	SetWorkLatheZ(float z1, float z2) {
 		m_rcWorkCo.left  = z1;
 		m_rcWorkCo.right = z2;
 		m_rcWorkCo.NormalizeRect();
@@ -193,12 +199,15 @@ public:
 	void	SetLatheViewMode(void);
 
 	// from NCWorkDlg.cpp
-	void	SetWorkRect(BOOL, const CRect3D&);
-	void	SetWorkCylinder(BOOL, double, double, const CPoint3D&);
+	void	SetWorkRect(BOOL, const CRect3F&);
+	void	SetWorkCylinder(BOOL, float, float, const CPoint3F&);
 	void	SetCommentStr(const CString&);
 
 	// from NCViewTab.cpp
-	BOOL	IncrementTrace(int&);	// ﾄﾚｰｽ実行の次のｺｰﾄﾞ検査
+	void	SetTraceMode(UINT id) {
+		m_nTrace = id;
+	}
+	BOOL	IncrementTrace(INT_PTR&);	// ﾄﾚｰｽ実行の次のｺｰﾄﾞ検査
 	BOOL	SetLineToTrace(BOOL, int);	// 行番号からﾄﾚｰｽ行を設定
 	void	StartTrace(void) {
 		m_csTraceDraw.Lock();

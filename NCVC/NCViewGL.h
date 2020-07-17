@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "NCdata.h"
+
 // TrackingMode
 enum ENTRACKINGMODE
 {
@@ -15,51 +17,54 @@ enum ENTRACKINGMODE
 //
 class CNCViewGL : public CView
 {
-	DECLARE_DYNCREATE(CNCViewGL)
-
 	CString		m_strGuide;
 	BOOL		m_bActive,
-				m_bSolidViewTemp;	// ﾜｰｸ表示の一時ﾌﾗｸﾞ
+				m_bSizeChg;
 	int			m_cx,  m_cy,	// ｳｨﾝﾄﾞｳｻｲｽﾞ(ｽｸﾘｰﾝ)
 				m_icx, m_icy;
-	double		m_dRate,		// 基準拡大率
+	GLint		m_wx, m_wy;		// glReadPixels, glWindowPos
+	float		m_dRate,		// 基準拡大率
 				m_dRoundAngle,	// 中ﾎﾞﾀﾝの回転角度
 				m_dRoundStep;	// 中ﾎﾞﾀﾝの１回あたりの回転角度
-	CRect3D		m_rcView,		// ﾓﾃﾞﾙ空間
+	CRect3F		m_rcView,		// ﾓﾃﾞﾙ空間
 				m_rcDraw;		// ﾜｰｸ矩形(ｿﾘｯﾄﾞ表示用)
-	CPointD		m_ptCenter,		// 描画中心
+	CPointF		m_ptCenter,		// 描画中心
+				m_ptCenterBk,
 				m_ptLastMove;	// 移動前座標
-	CPoint3D	m_ptLastRound,	// 回転前座標
+	CPoint3F	m_ptLastRound,	// 回転前座標
 				m_ptRoundBase;	// 中ﾎﾞﾀﾝ連続回転の基準座標
 	CPoint		m_ptDownClick;	// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示用他
 	HGLRC		m_hRC;
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
-	PFNGLDRAWPROC	m_pfnDrawProc;	// 描画関数ﾎﾟｲﾝﾀ
 
+	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
+	GLsizeiptr	m_nVBOsize;		// 頂点配列ｻｲｽﾞ
 	GLuint		m_nVertexID,	// 頂点配列用
 				m_nNormalID,	// 法線ﾍﾞｸﾄﾙ用
-				m_nPictureID,	// ﾃｸｽﾁｬ画像用
-				m_nTextureID;	// ﾃｸｽﾁｬ座標用
-	GLuint*		m_pGenBuf;		// 頂点ｲﾝﾃﾞｯｸｽ用
-	std::vector<GLsizei>	m_vVertexWrk,	// ﾜｰｸ矩形用glDrawElements頂点個数
-							m_vVertexCut;	// 切削面用
-	std::vector<double>		m_vWireLength;	// 移動を伴わない切削集合長さ(ﾜｲﾔ表示用)
+				m_nTextureID,	// ﾃｸｽﾁｬ座標用
+				m_nPictureID;	// ﾃｸｽﾁｬ画像用
+	GLuint*		m_pSolidElement;// 頂点ｲﾝﾃﾞｯｸｽ用
+	GLuint*		m_pLocusElement;// 軌跡ｲﾝﾃﾞｯｸｽ用
+	CVelement	m_vElementWrk,	// ﾜｰｸ矩形用glDrawElements頂点個数
+				m_vElementCut;	// 切削面用
+	WIREDRAW	m_WireDraw;		// ﾜｲﾔ加工機用
 
 	ENTRACKINGMODE	m_enTrackingMode;
-	GLdouble		m_objectXform[4][4];
+	GLdouble		m_objXform[4][4],
+					m_objXformBk[4][4];	// ﾎﾞｸｾﾙ処理時のﾊﾞｯｸｱｯﾌﾟ
 
 	void	ClearObjectForm(void);
 	BOOL	SetupPixelFormat(CDC*);
 	void	UpdateViewOption(void);
 	void	CreateDisplayList(void);
-	BOOL	CreateBoxel(void);
-	BOOL	CreateLathe(void);
+	BOOL	CreateBoxel(BOOL = FALSE);
+	BOOL	CreateLathe(BOOL = FALSE);
 	BOOL	CreateWire(void);
-	BOOL	GetClipDepthMill(void);
-	BOOL	GetClipDepthCylinder(void);
-	BOOL	GetClipDepthLathe(void);
+	BOOL	GetClipDepthMill(BOOL);
+	BOOL	GetClipDepthCylinder(BOOL);
+	BOOL	GetClipDepthLathe(BOOL);
 	BOOL	CreateVBOMill(const GLfloat*, GLfloat*);
-	BOOL	CreateVBOLathe(const GLfloat*, const GLfloat*, const GLfloat*);
+	BOOL	CreateVBOLathe(const GLfloat*, const GLfloat*);
 	BOOL	ReadTexture(LPCTSTR);
 	void	CreateTextureMill(void);
 	void	CreateTextureLathe(void);
@@ -73,27 +78,30 @@ class CNCViewGL : public CView
 	void	RenderBack(void);
 	void	RenderAxis(void);
 	void	RenderCode(void);
+	void	RenderMill(const CNCdata*);
 
-	CPoint3D	PtoR(const CPoint& pt);
+	CPoint3F	PtoR(const CPoint& pt);
 	void	BeginTracking(const CPoint&, ENTRACKINGMODE);
 	void	EndTracking(void);
 	void	DoTracking(const CPoint&);
 	void	DoScale(int);
-	void	DoRotation(double);
+	void	DoRotation(float);
 	void	SetupViewingTransform(void);
 
 protected:
 	CNCViewGL();
+	DECLARE_DYNCREATE(CNCViewGL)
 
 public:
+	virtual ~CNCViewGL();
 	CNCDoc*	GetDocument();
 	virtual void OnInitialUpdate();
-	virtual void OnDraw(CDC* pDC);
-	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
+	virtual void OnDraw(CDC*);
+	virtual BOOL OnCmdMsg(UINT, int, void*, AFX_CMDHANDLERINFO*);
 protected:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
-	virtual void OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView);
+	virtual void OnUpdate(CView*, LPARAM, CObject*);
+	virtual void OnActivateView(BOOL, CView*, CView*);
 
 public:
 #ifdef _DEBUG
@@ -117,7 +125,7 @@ protected:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-	afx_msg void OnTimer(UINT nIDEvent);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	// CNCViewTab::OnActivatePage() から SendMessage()
 	afx_msg LRESULT OnUserActivatePage(WPARAM, LPARAM);
 	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
@@ -129,11 +137,15 @@ protected:
 	afx_msg	void OnRoundKey(UINT);
 	afx_msg	void OnLensKey(UINT);
 	afx_msg void OnDefViewInfo();
+	//
+	afx_msg LRESULT OnSelectTrace(WPARAM, LPARAM);	// from NCViewTab.cpp
 
 	DECLARE_MESSAGE_MAP()
 };
 
 /////////////////////////////////////////////////////////////////////////////
+
+void	InitialMillNormal(void);	// from CNCVCApp::CNCVCApp()
 
 #ifndef _DEBUG
 inline CNCDoc* CNCViewGL::GetDocument()

@@ -207,7 +207,7 @@ public:
 	// Ó°ÀŞÙÀŞ²±Û¸ŞÎŞ¯¸½•\¦’†‚Å‚à
 	// ±²ÄŞÙˆ—‚ğ‹­§Às‚³‚¹‚é‚½‚ß‚Ì
 	// WM_TIMER CALLBACKŠÖ”
-	static void CALLBACK StatusBarEventTimerProc(HWND, UINT, UINT, DWORD);
+	static void CALLBACK StatusBarEventTimerProc(HWND, UINT, UINT_PTR, DWORD);
 
 	// GDIµÌŞ¼Şª¸Ä‚ÌØ‘Ö
 	void	SelectGDI(BOOL bSelect = TRUE) {

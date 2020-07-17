@@ -45,7 +45,7 @@ public:
 protected:
 	BOOL	LoadToolBarItem(LPCTSTR lpszResourceName);
 	BOOL	LoadToolBarImage(LPCTSTR lpszResourceName);
-	int		SetMenuString(CMenu* pMenu, UINT nItem);
+	INT_PTR	SetMenuString(CMenu* pMenu, UINT nItem);
 	void	DrawItemIconFrame(CDC* pDC, LPDRAWITEMSTRUCT lpDIS);
 	void	DrawItemString(CDC* pDC, LPDRAWITEMSTRUCT lpDIS, BOOL bIcon);
 	void	DrawItemStringText(CDC* pDC, CString strText, CRect rcText);
@@ -75,8 +75,8 @@ public:
 
 //	∂Ω¿—“∆≠∞ÇÃ≤“∞ºﬁèÓïÒ
 typedef	struct	tagCUSTMENUINFO {
-	int		nImage;		// ≤“∞ºﬁÿΩƒîzóÒ
-	int		nIndex;		// ≤“∞ºﬁÿΩƒì‡ÇÃ≤“∞ºﬁáÇ
+	WORD	nImage;		// ≤“∞ºﬁÿΩƒîzóÒ
+	WORD	nIndex;		// ≤“∞ºﬁÿΩƒì‡ÇÃ≤“∞ºﬁáÇ
 } CUSTMENUINFO, *LPCUSTMENUINFO;
 
 class CCustomMenuEx : public CCustomMenu
@@ -93,8 +93,8 @@ protected:
 public:
 	virtual ~CCustomMenuEx();
 
-	void	SetMapImageID(WORD, int, int);
-	void	RemoveCustomImageMap(int, WORD[]);
+	void	SetMapImageID(WORD, WORD, WORD);
+	void	RemoveCustomImageMap(size_t, LPWORD);
 
 	void	AddCustomEnableImageList(CImageList* pilEnable) {
 		m_pilEnable.Add( pilEnable );

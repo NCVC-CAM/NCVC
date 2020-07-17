@@ -27,18 +27,18 @@ protected:
 				m_ptMovOrg;		// Rﾏｳｽが押された論理座標(移動基点)
 	CRect		m_rcMagnify;	// 拡大矩形(純粋な論理座標)
 	BOOL		m_bMagRect;		// 拡大矩形表示中
-	double		m_dFactor;		// 拡大率(*LOMETRICFACTOR)
+	float		m_dFactor;		// 拡大率(*LOMETRICFACTOR)
 	ENMOUSESTATE	m_enLstate,
 					m_enRstate;
 
 	// 係数による数値の補正(描画座標)
-	int		DrawConvert(double d) {
+	int		DrawConvert(float d) {
 		return (int)(d * m_dFactor);
 	}
-	CPoint	DrawConvert(const CPointD& pt) {
+	CPoint	DrawConvert(const CPointF& pt) {
 		return CPoint(pt * m_dFactor);
 	}
-	CRect	DrawConvert(const CRectD& rc) {
+	CRect	DrawConvert(const CRectF& rc) {
 		return CRect( DrawConvert(rc.TopLeft()), DrawConvert(rc.BottomRight()) );
 	}
 	// 拡大矩形の描画
@@ -54,7 +54,7 @@ protected:
 	void	CopyNCDrawForClipboard(HENHMETAFILE);
 
 	// ﾒｯｾｰｼﾞﾏｯﾌﾟの共通部分
-	void	OnViewFit(const CRectD&, BOOL = TRUE);	// 図形ﾌｨｯﾄ
+	void	OnViewFit(const CRectF&, BOOL = TRUE);	// 図形ﾌｨｯﾄ
 	void	OnViewLensP(void);						// 拡大
 	void	OnViewLensN(void);						// 縮小
 	void	OnMoveKey(UINT);						// 移動

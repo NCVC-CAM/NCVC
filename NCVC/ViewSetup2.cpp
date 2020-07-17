@@ -12,7 +12,7 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-extern	const	double	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
+extern	const	float	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
 
 BEGIN_MESSAGE_MAP(CViewSetup2, CPropertyPage)
 	//{{AFX_MSG_MAP(CViewSetup2)

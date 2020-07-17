@@ -43,15 +43,15 @@ CMakeNCDlgEx21::CMakeNCDlgEx21(CMakeNCDlgEx* pParent, int nIndex)
 	//}}AFX_DATA_INIT
 
 	// ﾚｲﾔ情報のｾｯﾄ(上位ﾀﾞｲｱﾛｸﾞの表示順)
-	int		i, nLoop;
-	CLayerData*		pLayer;
+	INT_PTR		i, nLoop;
+	CLayerData*	pLayer;
 	try {
 		if ( ::IsWindow(pParent->m_dlg2.m_hWnd) ) {
 			// ﾚｲﾔﾀﾌﾞが有効な場合は、その明細から
 			const CListCtrl& ctLayer = pParent->m_dlg2.m_ctLayerList;
 			nLoop = ctLayer.GetItemCount();
 			for ( i=0; i<nLoop; i++ ) {
-				pLayer = new CLayerData(reinterpret_cast<const CLayerData *>(ctLayer.GetItemData(i)), ctLayer.GetCheck(i));
+				pLayer = new CLayerData(reinterpret_cast<const CLayerData *>(ctLayer.GetItemData((int)i)), ctLayer.GetCheck((int)i));
 				m_obLayer.Add(pLayer);
 			}
 		}
@@ -323,7 +323,7 @@ void CMakeNCDlgEx21::OnCopy()
 	BOOL	bCheck		= pLayer->m_bLayerFlg[LAYER_CUT_TARGET],
 			bDrill		= pLayer->m_bLayerFlg[LAYER_DRILL_Z],
 			bPartOut	= pLayer->m_bLayerFlg[LAYER_PART_OUT];
-	double	dZCut		= pLayer->m_dZCut;
+	float	dZCut		= pLayer->m_dZCut;
 	CString	strComment	= pLayer->m_strLayerComment,
 			strCode		= pLayer->m_strLayerCode;
 	CString	strPath, strFile, strNCFile;
@@ -348,9 +348,9 @@ void CMakeNCDlgEx21::OnStep()
 {
 	// 現在の情報を取得
 	GetNowState();
-	double	dZStep = m_dZStep;	// 変換ｺﾝｽﾄﾗｸﾀなのでﾙｰﾌﾟ外で
+	float	dZStep = m_dZStep;	// 変換ｺﾝｽﾄﾗｸﾀなのでﾙｰﾌﾟ外で
 	// 現在位置以降にｽﾃｯﾌﾟﾃﾞｰﾀを加算
-	double	dZCut = m_obLayer[m_nIndex]->m_dZCut;
+	float	dZCut = m_obLayer[m_nIndex]->m_dZCut;
 	for ( int i=m_nIndex+1, nCnt=1; i<m_obLayer.GetSize(); i++, nCnt++ )
 		m_obLayer[i]->m_dZCut = dZCut+dZStep*nCnt;
 	m_ctOK.SetFocus();

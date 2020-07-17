@@ -249,7 +249,7 @@ NCEXPORT void WINAPI NCVC_ReDraw(NCVCHANDLE hDoc)
 
 NCEXPORT void WINAPI NCVC_GetObjectSize(NCVCHANDLE hDoc, LPRECT3D lprc)
 {
-	CRect3D		rc;
+	CRect3F		rc;
 	if ( IsNCDocument(hDoc) )
 		rc = reinterpret_cast<CNCDoc *>(hDoc)->GetMaxRect();
 	else if ( IsDXFDocument(hDoc) )

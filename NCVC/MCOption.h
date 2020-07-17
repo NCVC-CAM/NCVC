@@ -21,7 +21,7 @@ enum {		// intŒ^
 	MC_INT_FORCEVIEWMODE,
 		MC_INT_NUMS		// [11]
 };
-enum {		// doubleŒ^
+enum {		// floatŒ^
 	MC_DBL_FEED = NCXYZ,
 	MC_DBL_BLOCKWAIT,
 	MC_DBL_DEFWIREDEPTH,
@@ -73,13 +73,13 @@ friend	class	CMCSetup3;
 	BOOL	m_bDlgAdd, m_bDlgDel;
 	int		m_nTool;
 	CString	m_strName;
-	double	m_dToolD, m_dToolH;
+	float	m_dToolD, m_dToolH;
 
 public:
 	CMCTOOLINFO(void) {
 		ClearOption();
 	}
-	CMCTOOLINFO(int nTool, const CString& strName, double dToolD, double dToolH,
+	CMCTOOLINFO(int nTool, const CString& strName, float dToolD, float dToolH,
 			BOOL bDlgAdd = FALSE) {
 		m_bDlgAdd	= bDlgAdd;
 		m_bDlgDel	= FALSE;
@@ -118,16 +118,16 @@ friend	class	CMCSetup5;
 		};
 		int			m_unNums[MC_INT_NUMS];
 	};
-	// doubleŒ^µÌß¼®Ý
+	// floatŒ^µÌß¼®Ý
 	union {
 		struct {
-			double	m_dInitialXYZ[NCXYZ],	// XYZ‰Šú’l
+			float	m_dInitialXYZ[NCXYZ],	// XYZ‰Šú’l
 					m_dFeed,				// È—ªŽž‚ÌØí‘¬“x
 					m_dBlock,				// 1ÌÞÛ¯¸ˆ—ŽžŠÔ
 					m_dDefWireDepth,		// Ü²Ô‰ÁH‹@‚ÌÃÞÌ«ÙÄŒú‚³
 					m_dWorkOffset[WORKOFFSET][NCXYZ];	// G54`G59
 		};
-		double		m_udNums[MC_DBL_NUMS];
+		float		m_udNums[MC_DBL_NUMS];
 	};
 	// BOOLŒ^µÌß¼®Ý
 	union {
@@ -161,7 +161,7 @@ public:
 		ASSERT( n>=0 && n<SIZEOF(m_unNums) );
 		return m_unNums[n];
 	}
-	double	GetDbl(size_t n) const {
+	float	GetDbl(size_t n) const {
 		ASSERT( n>=0 && n<SIZEOF(m_udNums) );
 		return m_udNums[n];
 	}
@@ -188,13 +188,13 @@ public:
 			return TRUE;
 		return FALSE;
 	}
-	double	GetInitialXYZ(size_t n) const {
+	float	GetInitialXYZ(size_t n) const {
 		ASSERT( n>=0 && n<NCXYZ );
 		return m_dInitialXYZ[n];
 	}
-	CPoint3D	GetWorkOffset(size_t n) const {
+	CPoint3F	GetWorkOffset(size_t n) const {
 		ASSERT( n>=0 && n<WORKOFFSET );
-		return	CPoint3D(m_dWorkOffset[n][NCA_X], m_dWorkOffset[n][NCA_Y], m_dWorkOffset[n][NCA_Z]);
+		return	CPoint3F(m_dWorkOffset[n][NCA_X], m_dWorkOffset[n][NCA_Y], m_dWorkOffset[n][NCA_Z]);
 	}
 	CString	GetMacroStr(int n) const {
 		ASSERT( n>=0 && n<SIZEOF(m_strMacroOpt) );
@@ -205,9 +205,9 @@ public:
 	CString	GetAutoBreakStr(void) const {
 		return m_strAutoBreak;
 	}
-	boost::optional<double>	GetToolD(int) const;
-	boost::optional<double>	GetToolH(int) const;
-	BOOL	AddTool(int, double, BOOL);	// from NCDoc.cpp(G10)
+	boost::optional<float>	GetToolD(int) const;
+	boost::optional<float>	GetToolH(int) const;
+	BOOL	AddTool(int, float, BOOL);	// from NCDoc.cpp(G10)
 	void	ReductionTools(BOOL);
 
 	void	AddMCHistory_ComboBox(CComboBox&);

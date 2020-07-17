@@ -24,12 +24,12 @@ static	const	int		g_dfLthNOrder[] = {
 	0, 0, 0, 0, 0
 };
 
-// doubleå^ñΩóﬂ
+// floatå^ñΩóﬂ
 static	LPCTSTR	g_szLthDOrder[] = {
 	"Feed", "XFeed", "Cut", "PullZ", "PullX",
 	"Margin", "Ellipse"
 };
-static	const	double	g_dfLthDOrder[] = {
+static	const	float	g_dfLthDOrder[] = {
 	300.0, 150.0, 1.0, 2.0, 2.0,
 	1.0, 0.5,
 };

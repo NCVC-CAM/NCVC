@@ -9,7 +9,7 @@
 class CNCWorkDlg2 : public CPropertyPage
 {
 	void	EnableButton(BOOL);
-	void	SetValue(const CRect3D&);
+	void	SetValue(const CRect3F&);
 
 public:
 	CNCWorkDlg2();

@@ -61,8 +61,8 @@ public:
 
 // オペレーション
 public:
-	operator double();
-	CFloatEdit& operator =(double);
+	operator float();
+	CFloatEdit& operator =(float);
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
@@ -116,3 +116,6 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 };
+
+COLORREF	ConvertSTRtoRGB(LPCTSTR);	// 文字列を色情報に変換
+CString		ConvertRGBtoSTR(COLORREF);	// その逆

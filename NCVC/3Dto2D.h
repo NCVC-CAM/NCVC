@@ -9,44 +9,44 @@
 //////////////////////////////////////////////////////////////////////
 
 // 一般定義
-const double NCMIN = 0.001;			// NCの桁落ち誤差
-const double PI  = 3.1415926535897932384626433832795;
-const double PI2 = 2.0*PI;
+const float NCMIN = 0.001f;			// NCの桁落ち誤差
+const float PI  = 3.1415926535897932384626433832795f;
+const float PI2 = 2.0f*PI;
 
 // 円を64(360度/64≒5.6度)分割で描画
-const int		ARCCOUNT = 64;
-const double	ARCSTEP  = PI/32.0;		// 2π[rad]÷ARCCOUNT
+const int	ARCCOUNT = 64;
+const float	ARCSTEP  = PI/32.0f;	// 2π[rad]÷ARCCOUNT
 
 //////////////////////////////////////////////////////////////////////
 
 // Radian変換
 //template<typename T> inline	T	RAD(T dVal)
-inline	double	RAD(double dVal)
+inline	float	RAD(float dVal)
 {
-	return dVal * PI / 180.0;
+	return dVal * PI / 180.0f;
 }
 // Degree変換
 //template<typename T> inline	T	DEG(T dVal)
-inline	double	DEG(double dVal)
+inline	float	DEG(float dVal)
 {
-	return dVal * 180.0 / PI;
+	return dVal * 180.0f / PI;
 }
 // ﾃﾞﾌｫﾙﾄの回転角度
-const double RX = RAD(-60.0);
-const double RY = 0.0;
-const double RZ = RAD(-35.0);
+const float RX = RAD(-60.0f);
+const float RY = 0.0f;
+const float RZ = RAD(-35.0f);
 
 // 1/1000 四捨五入
 //template<typename T> inline	T RoundUp(T dVal)
-inline	double	RoundUp(double dVal)
+inline	float	RoundUp(float dVal)
 {
-	return _copysign( floor(fabs(dVal) * 1000.0 + 0.5) / 1000.0, dVal );
+	return copysign( floor(fabs(dVal) * 1000.0f + 0.5f) / 1000.0f, dVal );
 }
 // 1/1000 切り捨て
 //template<typename T> inline	T RoundCt(T dVal)
-inline	double	RoundCt(double dVal)
+inline	float	RoundCt(float dVal)
 {
-	return _copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
+	return copysign( floor(fabs(dVal) * 1000.0f) / 1000.0f, dVal );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ public:
 		SetPoint(xx, yy);
 	}
 	CPointT(const CPoint& pt) {
-		SetPoint(pt.x, pt.y);
+		SetPoint((T)pt.x, (T)pt.y);
 	}
 	CPointT(const CPointT<double>& pt) {
 		// double -> float 初期化
@@ -90,7 +90,11 @@ public:
 		return *this;
 	}
 	CPointT<T>&	operator = (const CPoint& pt) {
-		SetPoint(pt.x, pt.y);
+		SetPoint((T)pt.x, (T)pt.y);
+		return *this;
+	}
+	CPointT<float>&	operator = (const CPointT<double>& pt) {
+		SetPoint((T)pt.x, (T)pt.y);
 		return *this;
 	}
 	CPointT<T>&	operator += (T d) {
@@ -143,8 +147,8 @@ public:
 		ASSERT(a>=0 && a<SIZEOF(xy));
 		return xy[a];
 	}
-	T		hypot(void) const {
-		return ::_hypot(x, y);
+	T	hypot(void) const {
+		return ::_hypotf(x, y);
 	}
 	// 変換関数
 	operator CPoint() const {
@@ -170,8 +174,7 @@ public:
 };
 typedef	CPointT<double>			CPointD;
 typedef	CPointT<float>			CPointF;
-typedef	std::vector<CPointD>	CVPointD;
-//BOOST_GEOMETRY_REGISTER_POINT_2D(CPointD, double, cs::cartesian, x, y)
+typedef	std::vector<CPointF>	CVPointF;
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointF, float,  cs::cartesian, x, y)
 
 //////////////////////////////////////////////////////////////////////
@@ -213,6 +216,10 @@ public:
 	}
 	CPoint3T<T>&	operator = (const CPointT<T>& pt) {
 		x = pt.x;	y = pt.y;
+		return *this;
+	}
+	CPoint3T<float>& operator = (const CPoint3T<double>& pt) {
+		x = (float)pt.x;	y = (float)pt.y;	z = (float)pt.z
 		return *this;
 	}
 	CPoint3T<T>&	operator += (T d) {
@@ -302,7 +309,7 @@ public:
 };
 typedef	CPoint3T<double>	CPoint3D;
 typedef	CPoint3T<float>		CPoint3F;
-//BOOST_GEOMETRY_REGISTER_POINT_3D(CPoint3D, double, cs::cartesian, x, y, z)
+typedef	std::vector<CPoint3F>	CVPoint3F;
 //BOOST_GEOMETRY_REGISTER_POINT_3D(CPoint3F, float,  cs::cartesian, x, y, z)
 
 //////////////////////////////////////////////////////////////////////
@@ -328,13 +335,16 @@ public:
 		SetRect(l, t, r, b);
 	}
 	CRectT(const CRect& rc) {
-		SetRect(rc.left, rc.top, rc.right, rc.bottom);
+		SetRect((T)rc.left, (T)rc.top, (T)rc.right, (T)rc.bottom);
 	}
 	CRectT(const CPointT<T>& ptTopLeft, const CPointT<T>& ptBottomRight) {
 		TopLeft() = ptTopLeft;
 		BottomRight() = ptBottomRight;
 		NormalizeRect();
 	};
+	CRectT(const CRectT<double>& rc) {
+		SetRect((T)rc.left, (T)rc.top, (T)rc.right, (T)rc.bottom);
+	}
 	// 幅と高さの正規化
 	void	NormalizeRect() {
 		if ( left > right )
@@ -405,6 +415,10 @@ public:
 		top		-= h;		bottom	+= h;
 	}
 	// 演算子定義
+	CRectT<float>& operator = (const CRectT<double>& rc) {
+		SetRect((float)rc.left, (float)rc.top, (float)rc.right, (float)rc.bottom);
+		return *this;
+	}
 	BOOL	operator == (const CRectT<T>& rc) const {
 		return	left   == rc.left &&
 				top    == rc.top &&
@@ -454,8 +468,8 @@ public:
 		left = top = right = bottom = 0;
 	}
 	void	SetRectMinimum(void) {
-		left  = top    =  DBL_MAX;
-		right = bottom = -DBL_MAX;	// DBL_MIN==最小の正の値
+		left  = top    =  FLT_MAX;
+		right = bottom = -FLT_MAX;
 	}
 };
 typedef	CRectT<double>	CRectD;
@@ -511,6 +525,10 @@ public:
 		high += t;		low  -= t;
 	}
 	// 演算子定義
+	CRect3T<float>& operator = (const CRect3T<double>& rc) {
+		SetRect((float)rc.left, (float)rc.top, (float)rc.right, (float)rc.bottom, (float)rc.high, (float)rc.low);
+		return *this;
+	}
 	BOOL	operator == (const CRect3T<T>& rc) const {
 		return	CRectT<T>::operator ==(rc) &&
 				high == rc.high &&
@@ -543,8 +561,8 @@ public:
 	}
 	void	SetRectMinimum(void) {
 		CRectT<T>::SetRectMinimum();
-		high  = -DBL_MAX;
-		low   =  DBL_MAX;
+		high  = -FLT_MAX;
+		low   =  FLT_MAX;
 	}
 };
 typedef	CRect3T<double>	CRect3D;
@@ -555,56 +573,56 @@ typedef	CRect3T<float>	CRect3F;
 
 //	ｷﾞｬｯﾌﾟ計算のｲﾝﾗｲﾝ関数
 //template<typename T> inline	T	GAPCALC(T x, T y)
-inline	double	GAPCALC(double x, double y)
+inline	float	GAPCALC(float x, float y)
 {
 //	return	_hypot(x, y);	// 時間がかかりすぎ
 	return	x*x + y*y;		// 平方根を取らず２乗で処理
 }
-inline	double	GAPCALC(const CPointD& pt)
+inline	float	GAPCALC(const CPointF& pt)
 {
 	return GAPCALC(pt.x, pt.y);
 }
 
 //	ｵﾌｾｯﾄ符号(進行方向左側)
-inline int	CalcOffsetSign(const CPointD& pt)
+inline int	CalcOffsetSign(const CPointF& pt)
 {
-	double	dAngle = RoundUp( DEG(atan2(pt.y, pt.x)) );
-	return ( dAngle < -90.0 || 90.0 <= dAngle ) ? -1 : 1;
+	float	dAngle = RoundUp( DEG(atan2(pt.y, pt.x)) );
+	return ( dAngle < -90.0f || 90.0f <= dAngle ) ? -1 : 1;
 }
 
 //	２線の交点を求める
-boost::optional<CPointD>	CalcIntersectionPoint_LL
-	(const CPointD&, const CPointD&, const CPointD&, const CPointD&, BOOL = TRUE);
+boost::optional<CPointF>	CalcIntersectionPoint_LL
+	(const CPointF&, const CPointF&, const CPointF&, const CPointF&, BOOL = TRUE);
 //	直線と円の交点を求める
-boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_LC
-	(const CPointD&, const CPointD&, const CPointD&, double, BOOL = TRUE);
+boost::tuple<int, CPointF, CPointF>	CalcIntersectionPoint_LC
+	(const CPointF&, const CPointF&, const CPointF&, float, BOOL = TRUE);
 //	２つの円の交点を求める
-boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_CC
-	(const CPointD&, const CPointD&, double, double);
+boost::tuple<int, CPointF, CPointF>	CalcIntersectionPoint_CC
+	(const CPointF&, const CPointF&, float, float);
 //	直線と楕円の交点を求める
-boost::tuple<int, CPointD, CPointD>	CalcIntersectionPoint_LE
-	(const CPointD&, const CPointD&, const CPointD&, double, double, double, BOOL = TRUE);
+boost::tuple<int, CPointF, CPointF>	CalcIntersectionPoint_LE
+	(const CPointF&, const CPointF&, const CPointF&, float, float, float, BOOL = TRUE);
 //	線と線の端点を中心とした円との交点を求める
-CPointD	CalcIntersectionPoint_TC(const CPointD&, double, const CPointD&);
+CPointF	CalcIntersectionPoint_TC(const CPointF&, float, const CPointF&);
 //	直線のｵﾌｾｯﾄ座標
-boost::tuple<CPointD, CPointD> CalcOffsetLine(const CPointD&, const CPointD&, double, BOOL);
+boost::tuple<CPointF, CPointF> CalcOffsetLine(const CPointF&, const CPointF&, float, BOOL);
 //	２線がなす角度を求める(交点を原点ｾﾞﾛ扱い)
-double	CalcBetweenAngle(const CPointD&, const CPointD&);
+float	CalcBetweenAngle(const CPointF&, const CPointF&);
 //	ｵﾌｾｯﾄ分平行移動させた線分同士の交点を求める
-boost::optional<CPointD>	CalcOffsetIntersectionPoint_LL
-	(const CPointD&, const CPointD&, double, double, BOOL);
+boost::optional<CPointF>	CalcOffsetIntersectionPoint_LL
+	(const CPointF&, const CPointF&, float, float, BOOL);
 //	ｵﾌｾｯﾄ分平行移動させた線と円弧の交点を求める
-boost::optional<CPointD>	CalcOffsetIntersectionPoint_LC
-	(const CPointD&, const CPointD&, double, double, double, BOOL, BOOL);
+boost::optional<CPointF>	CalcOffsetIntersectionPoint_LC
+	(const CPointF&, const CPointF&, float, float, float, BOOL, BOOL);
 //	ｵﾌｾｯﾄ分平行移動させた線と楕円弧の交点を求める
-boost::optional<CPointD>	CalcOffsetIntersectionPoint_LE
-	(const CPointD&, const CPointD&, double, double, double, double, BOOL, BOOL);
+boost::optional<CPointF>	CalcOffsetIntersectionPoint_LE
+	(const CPointF&, const CPointF&, float, float, float, float, BOOL, BOOL);
 //	点が多角形の内側か否か
-BOOL IsPointInPolygon(const CPointD&, const CVPointD&);
+BOOL IsPointInPolygon(const CPointF&, const CVPointF&);
 //	点と直線の距離を求める
-double	CalcLineDistancePt(const CPointD&, const CPointD&, const CPointD&);
+float	CalcLineDistancePt(const CPointF&, const CPointF&, const CPointF&);
 
 //	２次方程式の解を求める
-boost::tuple<int, double, double>	GetKon(double, double, double);
+boost::tuple<int, float, float>	GetKon(float, float, float);
 //	引数を越える素数を返す
 UINT	GetPrimeNumber(UINT);

@@ -15,8 +15,8 @@ friend	class	CExecSetupDlg;
 	BOOL		m_bDXFType;
 	BOOL		m_bShort;
 
-	int			m_nMenuID;	// “∆≠∞ID (from CNCVCApp)
-	int			m_nImage;	// ≤“∞ºﬁÿΩƒáÇ (from CMainFrame)
+	WORD		m_nMenuID;	// “∆≠∞ID (from CNCVCApp)
+	WORD		m_nImage;	// ≤“∞ºﬁÿΩƒáÇ (from CMainFrame)
 
 	BOOL		m_bDlgAdd,	// CExecSetupDlgÇ≈AddÇ≥ÇÍÇΩµÃﬁºﬁ™∏ƒ
 				m_bDlgDel;	//      ÅV        Del
@@ -47,16 +47,16 @@ public:
 	BOOL		IsShort(void) const {
 		return m_bShort;
 	}
-	int			GetMenuID(void) const {
+	WORD		GetMenuID(void) const {
 		return m_nMenuID;
 	}
-	void		SetMenuID(int nID) {
+	void		SetMenuID(WORD nID) {
 		m_nMenuID = nID;
 	}
-	int			GetImageNo(void) const {
+	WORD		GetImageNo(void) const {
 		return m_nImage;
 	}
-	void		SetImageNo(int nImage) {
+	void		SetImageNo(WORD nImage) {
 		m_nImage = nImage;
 	}
 };

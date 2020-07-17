@@ -29,7 +29,7 @@ class CNCMakeOption
 	int		m_nOrderLength;		// Å‘å–½—ß’·
 
 	// µÌß¼®ÝŠÇ—
-	NCMAKEOPTION	m_MakeOpt[NC_MAXOD];	// int, double, BOOL, CStringŒ^
+	NCMAKEOPTION	m_MakeOpt[NC_MAXOD];	// int, float, BOOL, CStringŒ^
 
 	// SaveMakeOption() ºÒÝÄî•ñ‘¼
 	int				m_nComment;
@@ -39,7 +39,7 @@ class CNCMakeOption
 
 protected:
 	int*			m_pIntOpt;
-	double*			m_pDblOpt;
+	float*			m_pDblOpt;
 	BOOL*			m_pFlgOpt;
 	CStringArray	m_strOption;
 
@@ -65,7 +65,7 @@ public:
 		ASSERT( n>=0 && n<m_MakeOpt[NC_NUM].nOrderCnt );
 		return m_pIntOpt[n];
 	}
-	double	GetDbl(int n) const {		// ŽÀ”’lµÌß¼®Ý
+	float	GetDbl(int n) const {		// ŽÀ”’lµÌß¼®Ý
 		ASSERT( n>=0 && n<m_MakeOpt[NC_DBL].nOrderCnt );
 		return m_pDblOpt[n];
 	}

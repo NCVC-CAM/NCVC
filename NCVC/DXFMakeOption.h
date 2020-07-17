@@ -54,13 +54,13 @@ friend class CMakeDXFDlg2;
 		};
 		int			m_unNums[MKDX_NUM_NUMS];
 	};
-	// doubleŒ^µÌß¼®Ý
+	// floatŒ^µÌß¼®Ý
 	union {
 		struct {
-			double	m_dOrgLength,	// Œ´“_’·‚³(Œa)
+			float	m_dOrgLength,	// Œ´“_’·‚³(Œa)
 					m_dCycleR;		// ŒÅ’è»²¸Ù‰~o—Í‚ÌŒa
 		};
-		double		m_udNums[MKDX_DBL_NUMS];
+		float		m_udNums[MKDX_DBL_NUMS];
 	};
 	// BOOLŒ^µÌß¼®Ý
 	union {
@@ -86,7 +86,7 @@ public:
 		ASSERT( n>=0 && n<SIZEOF(m_unNums) );
 		return m_unNums[n];
 	}
-	double	GetDbl(size_t n) const {		// ”ŽšµÌß¼®Ý
+	float	GetDbl(size_t n) const {		// ”ŽšµÌß¼®Ý
 		ASSERT( n>=0 && n<SIZEOF(m_udNums) );
 		return m_udNums[n];
 	}

@@ -19,7 +19,7 @@ class	CDXFView;
 struct	AUTOWORKINGDATA
 {
 	int		nSelect;		// 機能選択(0:輪郭, 1:ｵﾌｾｯﾄ)
-	double	dOffset;		// ｵﾌｾｯﾄ
+	float	dOffset;		// ｵﾌｾｯﾄ
 	BOOL	bAcuteRound;	// 鋭角の外側を丸める
 	int		nLoopCnt;		// 繰り返し数
 	int		nScanLine;		// 走査線(0:なし, 1:X方向, 2:Y方向)
@@ -47,7 +47,7 @@ struct CADBINDINFO {
 	BOOL		bTarget;
 	CDXFDoc*	pDoc;
 	CDXFView*	pView;
-	CPointD		pt,			// 配置位置(論理座標)
+	CPointF		pt,			// 配置位置(論理座標)
 				ptOffset;	// 子の描画原点
 	// 初期化
 	CADBINDINFO(CDXFDoc* ppDoc, CDXFView* ppView) {
@@ -55,7 +55,7 @@ struct CADBINDINFO {
 		pDoc = ppDoc;
 		pView = ppView;
 	}
-	CADBINDINFO(BOOL bTgt, CDXFDoc* ppDoc, CDXFView* ppView, const CPointD& ppt, const CPointD& pptOffset) {
+	CADBINDINFO(BOOL bTgt, CDXFDoc* ppDoc, CDXFView* ppView, const CPointF& ppt, const CPointF& pptOffset) {
 		bTarget = bTgt;
 		pDoc = ppDoc;
 		pView = ppView;
@@ -82,17 +82,18 @@ class CDXFDoc : public CDocBase
 	CDXFcircleEx*	m_pCircle;		// 切削原点
 	CDXFline*		m_pLatheLine[2];// 旋盤用原点([0]:外径, [1]:端面)
 	CDXFDoc*		m_pParentDoc;	// 親ﾄﾞｷｭﾒﾝﾄ(bind)
-	boost::optional<CPointD>	m_ptOrgOrig;	// ﾌｧｲﾙから読み込んだｵﾘｼﾞﾅﾙ原点
+	boost::optional<CPointF>	m_ptOrgOrig;	// ﾌｧｲﾙから読み込んだｵﾘｼﾞﾅﾙ原点
 
 	CString		m_strNCFileName;	// NC生成ﾌｧｲﾙ名
 	int			m_nDataCnt[5],		// Point,Line,Circle,Arc,Ellipse ﾃﾞｰﾀｶｳﾝﾄ
 				m_nLayerDataCnt[DXFLAYERSIZE-1];	// ﾚｲﾔ別のﾃﾞｰﾀｶｳﾝﾄ(ORIGIN除く)
+	CLayerData*	m_pSerializeLayer;	// 現在Serialize()で処理中のﾚｲﾔ
 	CLayerArray	m_obLayer;			// ﾚｲﾔ情報配列
 	CLayerMap	m_mpLayer;			// ﾚｲﾔ名をｷｰにしたﾏｯﾌﾟ
 	CSortArray<CPtrArray, LPCADBINDINFO>	m_bindInfo;	// 結合情報
 
 	// DXFｵﾌﾞｼﾞｪｸﾄ delete
-	void	RemoveData(CLayerData*, int);
+	void	RemoveData(CLayerData*, INT_PTR);
 
 	// ｵﾌﾞｼﾞｪｸﾄ矩形
 	void	SetMaxRect(const CDXFdata* pData) {
@@ -102,7 +103,7 @@ class CDXFDoc : public CDocBase
 	void	MakeDXF(const CString&);
 
 	// 原点補正の文字列を数値に変換
-	BOOL	GetEditOrgPoint(LPCTSTR, CPointD&);
+	BOOL	GetEditOrgPoint(LPCTSTR, CPointF&);
 
 //	---
 //	ｽﾚｯﾄﾞﾊﾝﾄﾞﾙによるWaitForSingleObject()の代わりに
@@ -124,14 +125,14 @@ public:
 	CDXFcircleEx*	GetCircleObject(void) const {
 		return m_pCircle;
 	}
-	boost::optional<CPointD>	GetCutterOrigin(void) const {
-		boost::optional<CPointD>	ptResult;
+	boost::optional<CPointF>	GetCutterOrigin(void) const {
+		boost::optional<CPointF>	ptResult;
 		if ( m_pCircle )
 			ptResult = m_pCircle->GetCenter();
 		return ptResult;
 	}
-	double	GetCutterOrgR(void) const {
-		return m_pCircle ? m_pCircle->GetR() : 0.0;
+	float	GetCutterOrgR(void) const {
+		return m_pCircle ? m_pCircle->GetR() : 0.0f;
 	}
 	CDXFline*		GetLatheLine(size_t n) const {
 		ASSERT(0<=n && n<SIZEOF(m_pLatheLine));
@@ -155,6 +156,9 @@ public:
 				nCnt++;
 		}
 		return nCnt;
+	}
+	CLayerData* GetSerializeLayer(void) const {
+		return m_pSerializeLayer;
 	}
 	CLayerData*	GetLayerData(INT_PTR n) const {
 		ASSERT(n>=0 && n<GetLayerCnt());
@@ -195,9 +199,12 @@ public:
 	BOOL	RouteCmdToAllViews(CView*, UINT, int, void*, AFX_CMDHANDLERINFO*);
 	// DXFｵﾌﾞｼﾞｪｸﾄの操作
 	void	DataOperation(CDXFdata*, ENDXFOPERATION = DXFADD, int = -1);
-	void	RemoveAt(LPCTSTR, int, int);
-	void	RemoveAtText(LPCTSTR, int, int);
+	void	RemoveAt(LPCTSTR, INT_PTR, INT_PTR);
+	void	RemoveAtText(LPCTSTR, INT_PTR, INT_PTR);
 	// ﾚｲﾔ情報の操作
+	void	SetSerializeLayer(CLayerData* pLayer) {
+		m_pSerializeLayer = pLayer;
+	}
 	CLayerData*	AddLayerMap(const CString&, int = DXFCAMLAYER);
 	void	DelLayerMap(CLayerData*);
 	CString	CheckDuplexFile(const CString&, const CLayerArray* = NULL);
@@ -205,15 +212,15 @@ public:
 	BOOL	SaveLayerMap(LPCTSTR, const CLayerArray* = NULL);
 	void	UpdateLayerSequence(void);
 	//
-	void	AllChangeFactor(double);	// 拡大率の更新
+	void	AllChangeFactor(float);	// 拡大率の更新
 	void	AllSetDxfFlg(DWORD, BOOL = TRUE);
-	void	AllRoundObjPoint(double);
+	void	AllRoundObjPoint(float);
 	//
-	void	CreateCutterOrigin(const CPointD&, double = ORGRADIUS, BOOL = FALSE);
-	void	CreateLatheLine(const CPointD&, const CPointD&);
+	void	CreateCutterOrigin(const CPointF&, float = ORGRADIUS, BOOL = FALSE);
+	void	CreateLatheLine(const CPointF&, const CPointF&);
 	void	CreateLatheLine(const CDXFline*, LPCDXFBLOCK);
 	// ﾏｳｽｸﾘｯｸの位置と該当ｵﾌﾞｼﾞｪｸﾄの最小距離を返す
-	boost::tuple<CDXFshape*, CDXFdata*, double>	GetSelectObject(const CPointD&, const CRectD&);
+	boost::tuple<CDXFshape*, CDXFdata*, float>	GetSelectObject(const CPointF&, const CRectF&);
 	//
 	void	AddBindInfo(LPCADBINDINFO);
 	void	SortBindInfo(void);

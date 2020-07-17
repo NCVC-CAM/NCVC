@@ -34,7 +34,6 @@ static	CNCMakeLatheOpt*	g_pMakeOpt;
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
 #define	GetStr(a)	g_pMakeOpt->GetStr(a)
-#define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
 
 // NC生成に必要なﾃﾞｰﾀ群
 static	CShapeArray	g_obShape;
@@ -51,8 +50,8 @@ static	void	InitialShapeData(void);		// 形状認識の初期化
 static	BOOL	CreateOutsidePitch(void);	// 外径ｵﾌｾｯﾄを中心まで生成
 static	BOOL	CreateRoughPass(void);		// 荒加工ﾃﾞｰﾀの生成
 static	BOOL	MakeLatheCode(void);		// NCｺｰﾄﾞの生成
-static	BOOL	CheckXZMove(const CPointD&, const CPointD&);
-static	void	MoveLatheCode(const CDXFdata*, double, double);
+static	BOOL	CheckXZMove(const CPointF&, const CPointF&);
+static	void	MoveLatheCode(const CDXFdata*, float, float);
 static	BOOL	OutputLatheCode(void);		// NCｺｰﾄﾞの出力
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
@@ -68,7 +67,11 @@ static inline	void	AddMakeLatheStr(const CString& strData)
 
 // ﾌｪｰｽﾞ更新
 static	int		g_nFase;			// ﾌｪｰｽﾞ№
-static	void	SendFaseMessage(int = -1, int = -1, LPCTSTR = NULL);
+static	void	SendFaseMessage(INT_PTR = -1, int = -1, LPCTSTR = NULL);
+static	inline	void	SetProgressPos(INT_PTR n)
+{
+	g_pParent->m_ctReadProgress.SetPos((int)n);
+}
 
 // ｻﾌﾞｽﾚｯﾄﾞ関数
 static	CCriticalSection	g_csMakeAfter;	// MakeLathe_AfterThread()ｽﾚｯﾄﾞﾛｯｸｵﾌﾞｼﾞｪｸﾄ
@@ -184,7 +187,7 @@ void SetStaticOption(void)
 	CDXFdata::ms_fXRev = CDXFdata::ms_fYRev = FALSE;
 
 	// CNCMakeLatheの静的変数初期化
-	CPointD	ptOrg(g_pDoc->GetCircleObject()->GetStartMakePoint());
+	CPointF	ptOrg(g_pDoc->GetCircleObject()->GetStartMakePoint());
 	CNCMakeLathe::ms_xyz[NCA_X] = ptOrg.y;
 	CNCMakeLathe::ms_xyz[NCA_Y] = 0.0;
 	CNCMakeLathe::ms_xyz[NCA_Z] = ptOrg.x;
@@ -203,7 +206,7 @@ BOOL OutputLatheCode(void)
 		CStdioFile	fp(strNCFile,
 			CFile::modeCreate | CFile::modeWrite |
 			CFile::shareExclusive | CFile::typeText | CFile::osSequentialScan);
-		for ( int i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
+		for ( INT_PTR i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 			g_obMakeData[i]->WriteGcode(fp);
 			SetProgressPos(i+1);
 		}
@@ -255,7 +258,7 @@ BOOL CreateShapeThread(void)
 	CMagaDbg	dbg("CreateShapeThread() for TH_MakeLathe\nStart");
 	CDXFchain*	pChainDbg;
 	CDXFdata*	pDataDbg;
-	CPointD		ptsd, pted;
+	CPointF		ptsd, pted;
 #endif
 	NCVCTHREADPARAM	param;
 	param.pParent = NULL;
@@ -274,8 +277,8 @@ BOOL CreateShapeThread(void)
 	delete	pThread;
 
 	// 旋盤生成できる集合が検出されたか？
-	int		i, j, nLoop;
-	const int	nLayerLoop = g_pDoc->GetLayerCnt();
+	INT_PTR		i, j, nLoop;
+	const INT_PTR	nLayerLoop = g_pDoc->GetLayerCnt();
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	CDXFmap*	pMap;
@@ -320,7 +323,7 @@ void InitialShapeData(void)
 #ifdef _DEBUG
 	CMagaDbg	dbg("InitialShapeData()\nStart");
 #endif
-	CPointD		pts, pte;
+	CPointF		pts, pte;
 	CDXFchain*	pChain;
 
 	for ( int i=0; i<g_obShape.GetSize() && IsThread(); i++ ) {
@@ -345,17 +348,17 @@ BOOL CreateOutsidePitch(void)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CreateOutsidePitch()\nStart");
-	CPointD		ptsd, pted;
+	CPointF		ptsd, pted;
 	int			nCntDbg = 0;
 #endif
 	int			i, j,
 				n = GetNum(MKLA_NUM_MARGIN);
-	double		d = GetDbl(MKLA_DBL_MARGIN);
+	float		d = GetDbl(MKLA_DBL_MARGIN);
 	COutlineData*	pOutline;
 	CDXFchain*	pChain;
 	CDXFdata*	pData;
-	CRectD		rc;
-	double		dLimit = DBL_MAX,
+	CRectF		rc;
+	float		dLimit = FLT_MAX,
 				cutD  = fabs(GetDbl(MKLA_DBL_CUT));
 
 	// 形状ｵﾌｾｯﾄ一番外側の下限値を求める
@@ -392,7 +395,7 @@ BOOL CreateOutsidePitch(void)
 
 	// 外径ｵﾌｾｯﾄを中心まで生成
 	CDXFline*	pLine = g_pDoc->GetLatheLine(0);	// 外径ｵﾌﾞｼﾞｪｸﾄ
-	CPointD	pts(pLine->GetNativePoint(0)),
+	CPointF	pts(pLine->GetNativePoint(0)),
 			pte(pLine->GetNativePoint(1));
 	pts.x += GetDbl(MKLA_DBL_PULL_Z);		// 引き代分
 	pts.y -= cutD;
@@ -421,13 +424,13 @@ BOOL CreateOutsidePitch(void)
 
 BOOL CreateRoughPass(void)
 {
-	int			i, j,
+	INT_PTR		i, j,
 				nResult;
 	BOOL		bCreate, bInter;
 	ENDXFTYPE	enType;
-	double		q, qq;
-	CPointD		ptChk[4];
-	optional<CPointD>	pts;
+	float		q, qq;
+	CPointF		ptChk[4];
+	optional<CPointF>	pts;
 	CDXFdata*	pData;
 	CDXFdata*	pDataChain;
 	CDXFdata*	pDataNew;
@@ -578,16 +581,16 @@ BOOL CreateRoughPass(void)
 
 BOOL MakeLatheCode(void)
 {
-	int			i, j, nLoop = g_obLathePass.GetSize();
-	double		dCutX;
-	CPointD		pt, pts, pte;
+	INT_PTR		i, j, nLoop = g_obLathePass.GetSize();
+	float		dCutX;
+	CPointF		pt, pts, pte;
 	CDXFchain*	pChain;
 	CDXFdata*	pData;
 	COutlineData*	pOutline;
 	CNCMakeLathe*	pNCD;
 
 	// 端面と外径の最大値を取得
-	double		dMaxZ = g_pDoc->GetLatheLine(0)->GetStartMakePoint().x,
+	float		dMaxZ = g_pDoc->GetLatheLine(0)->GetStartMakePoint().x,
 				dMaxX = g_pDoc->GetLatheLine(1)->GetStartMakePoint().y;
 
 	// 先頭ﾃﾞｰﾀの始点に移動
@@ -715,11 +718,11 @@ BOOL MakeLatheCode(void)
 	return IsThread();
 }
 
-BOOL CheckXZMove(const CPointD& pts, const CPointD& pte)
+BOOL CheckXZMove(const CPointF& pts, const CPointF& pte)
 {
-	int			i, j, nLoop;
+	INT_PTR		i, j, nLoop;
 	BOOL		bResult = FALSE;
-	CPointD		pt[4];
+	CPointF		pt[4];
 	COutlineData*	pOutline;
 	CDXFchain*		pChain;
 	CDXFdata*		pData;
@@ -742,10 +745,10 @@ BOOL CheckXZMove(const CPointD& pts, const CPointD& pte)
 	return bResult;
 }
 
-void MoveLatheCode(const CDXFdata* pData, double dMaxZ, double dMaxX)
+void MoveLatheCode(const CDXFdata* pData, float dMaxZ, float dMaxX)
 {
 	CNCMakeLathe*	pNCD;
-	CPointD		pts(pData->GetStartMakePoint()),
+	CPointF		pts(pData->GetStartMakePoint()),
 				pt(pts);
 
 	// X軸(Y)方向の離脱とZ軸(X)方向の移動
@@ -775,14 +778,14 @@ void MoveLatheCode(const CDXFdata* pData, double dMaxZ, double dMaxX)
 
 // ﾌｪｰｽﾞ出力
 void SendFaseMessage
-	(int nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
+	(INT_PTR nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeLathe_Thread()", DBG_GREEN);
 	dbg.printf("Phase%d Start", g_nFase);
 #endif
 	if ( nRange > 0 )
-		g_pParent->m_ctReadProgress.SetRange32(0, nRange);
+		g_pParent->m_ctReadProgress.SetRange32(0, (int)nRange);
 
 	CString	strMsg;
 	if ( nMsgID > 0 )

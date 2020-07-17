@@ -8,6 +8,7 @@
 #include "DXFdata.h"
 #include "DXFshape.h"
 #include "Layer.h"
+#include "DXFDoc.h"
 
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
@@ -31,7 +32,7 @@ using namespace boost;
 
 /////////////////////////////////////////////////////////////////////////////
 // ê√ìIïœêîÇÃèâä˙âª
-double		CDXFmap::ms_dTolerance = NCMIN;
+float		CDXFmap::ms_dTolerance = NCMIN;
 
 extern	DWORD	g_dwCamVer;		// NCVC.cpp
 
@@ -86,7 +87,7 @@ void CDXFworking::Serialize(CArchive& ar)
 	else {
 		BYTE	bExist;
 		DWORD	nIndex;
-		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
+		CLayerData*	pLayer = static_cast<CDXFDoc *>(ar.m_pDocument)->GetSerializeLayer();
 		m_pShape = pLayer->GetActiveShape();
 		ar >> m_dwFlags >> m_strWorking;
 		ar >> bExist;
@@ -101,7 +102,7 @@ void CDXFworking::Serialize(CArchive& ar)
 // ÇcÇwÇeÉfÅ[É^ÇÃÅuï˚å¸Åvâ¡çHéwé¶ÉNÉâÉX
 //////////////////////////////////////////////////////////////////////
 CDXFworkingDirection::CDXFworkingDirection
-	(CDXFshape* pShape, CDXFdata* pData, CPointD pts, CPointD pte[]) :
+	(CDXFshape* pShape, CDXFdata* pData, CPointF pts, CPointF pte[]) :
 		CDXFworking(WORK_DIRECTION, pShape, pData, 0)
 {
 	m_ptStart = pts;
@@ -109,7 +110,7 @@ CDXFworkingDirection::CDXFworkingDirection
 		m_ptArraw[i] = pte[i];
 }
 
-void CDXFworkingDirection::DrawTuning(const double f)
+void CDXFworkingDirection::DrawTuning(float f)
 {
 	m_ptDraw[1] = m_ptArraw[1] * f;
 	m_ptDraw[0] = m_ptArraw[0] + m_ptDraw[1];
@@ -135,9 +136,20 @@ void CDXFworkingDirection::Serialize(CArchive& ar)
 			ar << m_ptArraw[i].x << m_ptArraw[i].y;
 	}
 	else {
-		ar >> m_ptStart.x >> m_ptStart.y;
-		for ( i=0; i<SIZEOF(m_ptArraw); i++ )
-			ar >> m_ptArraw[i].x >> m_ptArraw[i].y;
+		if ( g_dwCamVer < NCVCSERIALVERSION_3620 ) {
+			CPointD	pt;
+			ar >> pt.x >> pt.y;
+			m_ptStart = pt;
+			for ( i=0; i<SIZEOF(m_ptArraw); i++ ) {
+				ar >> pt.x >> pt.y;
+				m_ptArraw[i] = pt;
+			}
+		}
+		else {
+			ar >> m_ptStart.x >> m_ptStart.y;
+			for ( i=0; i<SIZEOF(m_ptArraw); i++ )
+				ar >> m_ptArraw[i].x >> m_ptArraw[i].y;
+		}
 	}
 }
 
@@ -145,17 +157,17 @@ void CDXFworkingDirection::Serialize(CArchive& ar)
 // ÇcÇwÇeÉfÅ[É^ÇÃÅuäJénà íuÅvéwé¶ÉNÉâÉX
 //////////////////////////////////////////////////////////////////////
 CDXFworkingStart::CDXFworkingStart
-	(CDXFshape* pShape, CDXFdata* pData, CPointD pts) :
+	(CDXFshape* pShape, CDXFdata* pData, CPointF pts) :
 		CDXFworking(WORK_START, pShape, pData, 0)
 {
 	m_ptStart = pts;
 }
 
-void CDXFworkingStart::DrawTuning(const double f)
+void CDXFworkingStart::DrawTuning(float f)
 {
-	CPointD	pt( m_ptStart * f ); 
+	CPointF	pt( m_ptStart * f ); 
 	// à íuÇï\Ç∑ä€àÛÇÕèÌÇ…2.5ò_óùóùà  (CDXFpointèÄãí)
-	double	dFactor = LOMETRICFACTOR * 2.5;
+	float	dFactor = LOMETRICFACTOR * 2.5;
 	m_rcDraw.TopLeft()		= pt - dFactor;
 	m_rcDraw.BottomRight()	= pt + dFactor;
 }
@@ -170,15 +182,23 @@ void CDXFworkingStart::Serialize(CArchive& ar)
 	CDXFworking::Serialize(ar);
 	if ( ar.IsStoring() )
 		ar << m_ptStart.x << m_ptStart.y;
-	else
-		ar >> m_ptStart.x >> m_ptStart.y;
+	else {
+		if ( g_dwCamVer < NCVCSERIALVERSION_3620 ) {
+			CPointD	pt;
+			ar >> pt.x >> pt.y;
+			m_ptStart = pt;
+		}
+		else {
+			ar >> m_ptStart.x >> m_ptStart.y;
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
 // ÇcÇwÇeÉfÅ[É^ÇÃÅuó÷äsÅvâ¡çHéwé¶ÉNÉâÉX
 //////////////////////////////////////////////////////////////////////
 CDXFworkingOutline::CDXFworkingOutline
-	(CDXFshape* pShape, const CDXFchain* pOutline, const double dOffset, DWORD dwFlags) :
+	(CDXFshape* pShape, const CDXFchain* pOutline, float dOffset, DWORD dwFlags) :
 		CDXFworking(WORK_OUTLINE, pShape, NULL, dwFlags)
 {
 	m_obOutline.SetSize(0, 64);
@@ -242,12 +262,12 @@ void CDXFworkingOutline::SeparateModify(void)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SeparateModify()");
-	CPointD		ptDbgS, ptDbgE;
+	CPointF		ptDbgS, ptDbgE;
 #endif
-	int			i, j, nLoop,
+	INT_PTR		i, j, nLoop,
 				nMainLoop = m_obOutline.GetSize();	// ìríÜÇ≈í«â¡Ç≥ÇÍÇÈÇÃÇ≈êÊÇ…ç≈ëÂíléÊìæ
 	POSITION	pos, pos1, pos2;
-	optional<CPointD>	pts, pte;
+	optional<CPointF>	pts, pte;
 	CDXFdata*	pData;
 	CDXFchain*	pOutline;
 	CDXFchain*	pChain;
@@ -394,7 +414,7 @@ void CDXFworkingOutline::SetMergeHandle(const CString& strHandle)
 		m_obMergeHandle.Add(strHandle);
 }
 
-void CDXFworkingOutline::DrawTuning(const double f)
+void CDXFworkingOutline::DrawTuning(float f)
 {
 	for ( int i=0; i<m_obOutline.GetSize(); i++ ) {
 		PLIST_FOREACH(CDXFdata* pData, m_obOutline[i])
@@ -428,12 +448,12 @@ void CDXFworkingOutline::Serialize(CArchive& ar)
 		// ó÷äsµÃæØƒíl
 		ar << m_dOffset;
 		// ó÷äsµÃﬁºﬁ™∏ƒêî
-		nLoop1 = m_obOutline.GetSize();
+		nLoop1 = (int)m_obOutline.GetSize();
 		ar << nLoop1;
 		// √ﬁ∞¿ñ{ëÃ
 		for ( i=0; i<nLoop1; i++ ) {
 			pChain = m_obOutline[i];
-			nLoop2 =  pChain->GetSize();
+			nLoop2 =  (int)pChain->GetSize();
 			ar << nLoop2 << pChain->GetChainFlag();
 			PLIST_FOREACH(pData, pChain)
 				ar << pData;
@@ -444,9 +464,17 @@ void CDXFworkingOutline::Serialize(CArchive& ar)
 		return;
 	}
 
-	if ( g_dwCamVer > NCVCSERIALVERSION_1507 ) {	// Ver1.60Å`
-		if ( g_dwCamVer > NCVCSERIALVERSION_1600 )		// Ver1.70Å`
-			ar >> m_dOffset;
+	if ( g_dwCamVer > NCVCSERIALVERSION_1507 ) {		// Ver1.60Å`
+		if ( g_dwCamVer > NCVCSERIALVERSION_1600 ) {	// Ver1.70Å`
+			if ( g_dwCamVer < NCVCSERIALVERSION_3620 ) {
+				double	d;
+				ar >> d;
+				m_dOffset = (float)d;
+			}
+			else {
+				ar >> m_dOffset;
+			}
+		}
 		else
 			m_dOffset = m_pShape->GetOffset();
 		DWORD	dwFlags;
@@ -508,7 +536,7 @@ CDXFworkingPocket::~CDXFworkingPocket()
 	m_obPocket.RemoveAll();
 }
 
-void CDXFworkingPocket::DrawTuning(const double f)
+void CDXFworkingPocket::DrawTuning(float f)
 {
 	for ( int i=0; i<m_obPocket.GetSize(); i++ )
 		m_obPocket[i]->DrawTuning(f);
@@ -543,28 +571,34 @@ CDXFmap::~CDXFmap()
 void CDXFmap::Serialize(CArchive& ar)
 {
 	int			i, nDataCnt;
-	CPointD		pt;
+	CPointF		pt;
 	CDXFarray*	pArray;
 
 	if ( ar.IsStoring() ) {
 		ar << GetCount() << GetHashTableSize();
 		PMAP_FOREACH(pt, pArray, this)
-			nDataCnt = pArray->GetSize();
+			nDataCnt = (int)pArray->GetSize();
 			ar << pt.x << pt.y << nDataCnt;
 			for ( i=0; i<nDataCnt; i++ )
 				ar << pArray->GetAt(i)->GetSerializeSeq();
 		END_FOREACH
 	}
 	else {
-		INT_PTR		nMapLoop;
-		UINT		nHash;
+		UINT		nMapLoop, nHash;
 		DWORD		nIndex;
 		CDXFdata*	pData;
-		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
+		CLayerData*	pLayer = static_cast<CDXFDoc *>(ar.m_pDocument)->GetSerializeLayer();
 		ar >> nMapLoop >> nHash;
 		InitHashTable(nHash);
 		while ( nMapLoop-- ) {
-			ar >> pt.x >> pt.y >> nDataCnt;
+			if ( g_dwCamVer < NCVCSERIALVERSION_3620 ) {
+				CPointD	ptD;
+				ar >> ptD.x >> ptD.y >> nDataCnt;
+				pt = ptD;
+			}
+			else {
+				ar >> pt.x >> pt.y >> nDataCnt;
+			}
 			if ( nDataCnt > 0 ) {
 				pArray = new CDXFarray;
 				pArray->SetSize(0, nDataCnt);
@@ -581,7 +615,7 @@ void CDXFmap::Serialize(CArchive& ar)
 
 void CDXFmap::RemoveAll()
 {
-	CPointD	pt;
+	CPointF	pt;
 	CDXFarray*	pArray;
 
 	PMAP_FOREACH(pt, pArray, this)
@@ -594,7 +628,7 @@ void CDXFmap::RemoveAll()
 void CDXFmap::SetPointMap(CDXFdata* pData)
 {
 	CDXFarray*	pArray;
-	CPointD	pt;
+	CPointF	pt;
 #ifdef _DEBUGOLD
 	CDumpContext	dc;
 	dc.SetDepth(1);
@@ -620,7 +654,7 @@ void CDXFmap::SetPointMap(CDXFdata* pData)
 void CDXFmap::SetMakePointMap(CDXFdata* pData)
 {
 	CDXFarray*	pArray;
-	CPointD	pt;
+	CPointF	pt;
 
 	// äeµÃﬁºﬁ™∏ƒí∏ì_ÇÃç¿ïWìoò^
 	for ( int i=0; i<pData->GetPointNumber(); i++ ) {
@@ -637,13 +671,13 @@ void CDXFmap::SetMakePointMap(CDXFdata* pData)
 	}
 }
 
-tuple<BOOL, CDXFarray*, CPointD>
-CDXFmap::IsEulerRequirement(const CPointD& ptKey) const
+tuple<BOOL, CDXFarray*, CPointF>
+CDXFmap::IsEulerRequirement(const CPointF& ptKey) const
 {
 	int			i, nObCnt, nOddCnt = 0;
 	BOOL		bEuler = FALSE;	// àÍïMèëÇ´óvåèÇñûÇΩÇµÇƒÇ¢ÇÈÇ©
-	double		dGap, dGapMin = DBL_MAX, dGapMin2 = DBL_MAX;
-	CPointD		pt, ptStart, ptStart2;
+	float		dGap, dGapMin = FLT_MAX, dGapMin2 = FLT_MAX;
+	CPointF		pt, ptStart, ptStart2;
 	CDXFdata*	pData;
 	CDXFarray*	pArray;
 	CDXFarray*	pStartArray = NULL;
@@ -699,11 +733,11 @@ DWORD CDXFmap::GetMapTypeFlag(void) const
 	//		DXFMAPFLG_CANNOTWORKING -> â¡çHéwé¶Ç≈Ç´Ç»Ç¢
 	// åì_Ç‚í[ì_Ç™Ç†ÇÍÇŒ
 	//		DXFMAPFLG_EDGE|INTERSEC -> ï˚å¸éwé¶ÇÕâ¬î\ÅCó÷äsÅEŒﬂπØƒâ¡çHÇ™Ç≈Ç´Ç»Ç¢
-	int			i, j, nLoop;
+	INT_PTR		i, j, nLoop;
 	DWORD		dwFlags = 0;
 	CDXFarray	obWorkArray;
 	CDXFarray*	pArray;
-	CPointD		pt, ptChk[4];
+	CPointF		pt, ptChk[4];
 	CDXFdata*	pData;
 
 	// èäëÆµÃﬁºﬁ™∏ƒÇ™ÇPÇ¬ Ç©Ç¬ ï¬Ÿ∞ÃﬂÇ»ÇÁ
@@ -776,7 +810,7 @@ BOOL CDXFmap::IsAllSearchFlg(void) const
 {
 	int			i;
 	BOOL		bResult = TRUE;
-	CPointD		pt;
+	CPointF		pt;
 	CDXFarray*	pArray;
 
 	PMAP_FOREACH(pt, pArray, this)
@@ -796,7 +830,7 @@ BOOL CDXFmap::IsAllMakeFlg(void) const
 {
 	int			i;
 	BOOL		bResult = TRUE;
-	CPointD		pt;
+	CPointF		pt;
 	CDXFarray*	pArray;
 
 	PMAP_FOREACH(pt, pArray, this)
@@ -815,7 +849,7 @@ BOOL CDXFmap::IsAllMakeFlg(void) const
 void CDXFmap::AllMapObject_ClearSearchFlg(BOOL bMake/*=TRUE*/) const
 {
 	int			i;
-	CPointD		pt;
+	CPointF		pt;
 	CDXFdata*	pData;
 	CDXFarray*	pArray;
 
@@ -831,7 +865,7 @@ void CDXFmap::AllMapObject_ClearSearchFlg(BOOL bMake/*=TRUE*/) const
 void CDXFmap::AllMapObject_ClearMakeFlg(void) const
 {
 	int			i;
-	CPointD		pt;
+	CPointF		pt;
 	CDXFarray*	pArray;
 
 	PMAP_FOREACH(pt, pArray, this)
@@ -842,8 +876,8 @@ void CDXFmap::AllMapObject_ClearMakeFlg(void) const
 
 BOOL CDXFmap::CopyToChain(CDXFchain* pChain)
 {
-	int			i, nLoop;
-	CPointD		pt, pts, pte;
+	INT_PTR		i, nLoop;
+	CPointF		pt, pts, pte;
 	CDXFarray*	pArray;
 	CDXFdata*	pData = NULL;
 
@@ -895,7 +929,7 @@ BOOL CDXFmap::CopyToChain(CDXFchain* pChain)
 
 void CDXFmap::Append(const CDXFmap* pMap)
 {
-	CPointD		pt;
+	CPointF		pt;
 	CDXFarray*	pArraySrc;
 	CDXFarray*	pArrayDst;
 
@@ -921,10 +955,10 @@ void CDXFmap::Append(const CDXFchain* pChain)
 	END_FOREACH
 }
 
-int CDXFmap::GetObjectCount(void) const
+INT_PTR CDXFmap::GetObjectCount(void) const
 {
-	int			i, nCnt = 0;
-	CPointD		pt;
+	INT_PTR		i, nCnt = 0;
+	CPointF		pt;
 	CDXFdata*	pData;
 	CDXFarray*	pArray;
 
@@ -943,13 +977,13 @@ int CDXFmap::GetObjectCount(void) const
 	return nCnt;
 }
 
-double CDXFmap::GetSelectObjectFromShape
-	(const CPointD& pt, const CRectD* rcView/*=NULL*/, CDXFdata** pDataResult/*=NULL*/)
+float CDXFmap::GetSelectObjectFromShape
+	(const CPointF& pt, const CRectF* rcView/*=NULL*/, CDXFdata** pDataResult/*=NULL*/)
 {
 	int		i;
-	CPointD	ptKey;
-	CRectD	rc, _rcView;
-	double	dGap, dGapMin = DBL_MAX;
+	CPointF	ptKey;
+	CRectF	rc, _rcView;
+	float	dGap, dGapMin = FLT_MAX;
 	CDXFarray*	pArray;
 	CDXFarray*	pArrayMin = NULL;
 	CDXFdata*	pData;
@@ -981,7 +1015,7 @@ double CDXFmap::GetSelectObjectFromShape
 void CDXFmap::SetShapeSwitch(BOOL bSelect)
 {
 	CDXFarray*	pArray;
-	CPointD	pt;
+	CPointF	pt;
 
 	PMAP_FOREACH(pt, pArray, this)
 		for ( int i=0; i<pArray->GetSize(); i++ )
@@ -992,7 +1026,7 @@ void CDXFmap::SetShapeSwitch(BOOL bSelect)
 void CDXFmap::RemoveObject(const CDXFdata* pData)
 {
 	CDXFarray*	pArray;
-	CPointD	pt;
+	CPointF	pt;
 	int		i, j;
 
 	for ( i=0; i<pData->GetPointNumber(); i++ ) {
@@ -1016,7 +1050,7 @@ void CDXFmap::DrawShape(CDC* pDC) const
 {
 	CDXFarray*	pArray;
 	CDXFdata*	pData;
-	CPointD	pt;
+	CPointF	pt;
 	int		i;
 	DWORD	dwSel, dwSelBak = 0;
 
@@ -1041,7 +1075,7 @@ void CDXFmap::DrawShape(CDC* pDC) const
 void CDXFmap::OrgTuning(void)
 {
 	CDXFarray*	pArray;
-	CPointD	pt;
+	CPointF	pt;
 
 	PMAP_FOREACH(pt, pArray, this)
 		for ( int i=0; i<pArray->GetSize(); i++ )
@@ -1073,9 +1107,9 @@ void CDXFchain::Serialize(CArchive& ar)
 		END_FOREACH
 	}
 	else {
-		INT_PTR		nListLoop;
+		UINT		nListLoop;
 		DWORD		nIndex;
-		CLayerData*	pLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
+		CLayerData*	pLayer = static_cast<CDXFDoc *>(ar.m_pDocument)->GetSerializeLayer();
 		ar >> nListLoop >> m_dwFlags;
 		while ( nListLoop-- ) {
 			ar >> nIndex;
@@ -1124,16 +1158,16 @@ BOOL CDXFchain::IsLoop(void) const
 	if ( GetCount()==1 && GetHead()->IsStartEqEnd() )
 		return TRUE;
 
-	CPointD	pts( GetHead()->GetNativePoint(0) ),
+	CPointF	pts( GetHead()->GetNativePoint(0) ),
 			pte( GetTail()->GetNativePoint(1) );
 	return sqrt(GAPCALC(pts-pte)) < NCMIN;
 }
 
-BOOL CDXFchain::IsPointInPolygon(const CPointD& ptTarget) const
+BOOL CDXFchain::IsPointInPolygon(const CPointF& ptTarget) const
 {
 	CDXFdata*	pData;
-	CPointD		pt;
-	CVPointD	vpt;
+	CPointF		pt;
+	CVPointF	vpt;
 
 	if ( GetCount() == 1 ) {
 		pData = GetHead();
@@ -1178,7 +1212,7 @@ BOOL CDXFchain::IsPointInPolygon(const CPointD& ptTarget) const
 	}
 /*
 	// Ç»ÇÈÇ◊Ç≠ï¬Ÿ∞ÃﬂÇ…Ç»ÇÈÇÊÇ§Ç…
-	CPointD	pts(vpt.front()), pte(vpt.back());
+	CPointF	pts(vpt.front()), pte(vpt.back());
 	if ( sqrt(GAPCALC(pts-pte)) >= NCMIN )
 		vpt.push_back(pts);
 */
@@ -1213,8 +1247,8 @@ POSITION CDXFchain::SetLoopFunc(const CDXFdata* pData, BOOL bReverse)
 		pos1 = pos2 = (this->*m_pfnGetFirstPos)();
 
 #ifdef _DEBUGOLD
-	optional<CPointD>	ptDbg;
-	CPointD		ptDbg1, ptDbg2;
+	optional<CPointF>	ptDbg;
+	CPointF		ptDbg1, ptDbg2;
 	CDXFdata*	pDataDbg;
 	POSITION	posDbg;
 	// CDXFchainÿΩƒç\ë¢Ç™èáèòó«Ç≠ï¿ÇÒÇ≈Ç¢ÇÈÇ©
@@ -1245,14 +1279,14 @@ POSITION CDXFchain::SetLoopFunc(const CDXFdata* pData, BOOL bReverse)
 	return pos1;
 }
 
-int CDXFchain::GetObjectCount(void) const
+INT_PTR CDXFchain::GetObjectCount(void) const
 {
 	return GetCount();
 }
 
-double CDXFchain::GetLength(void) const
+float CDXFchain::GetLength(void) const
 {
-	double	dLength = 0;
+	float	dLength = 0;
 	PLIST_FOREACH(CDXFdata* pData, this)
 		dLength += pData->GetLength();
 	END_FOREACH
@@ -1266,11 +1300,11 @@ void CDXFchain::AllChainObject_ClearSearchFlg(void)
 	END_FOREACH
 }
 
-double CDXFchain::GetSelectObjectFromShape
-	(const CPointD& pt, const CRectD* rcView/*=NULL*/, CDXFdata** pDataResult/*=NULL*/)
+float CDXFchain::GetSelectObjectFromShape
+	(const CPointF& pt, const CRectF* rcView/*=NULL*/, CDXFdata** pDataResult/*=NULL*/)
 {
-	CRectD	rc, _rcView;
-	double	dGap, dGapMin = DBL_MAX;
+	CRectF	rc, _rcView;
+	float	dGap, dGapMin = FLT_MAX;
 
 	if ( pDataResult )
 		*pDataResult = NULL;
@@ -1295,7 +1329,7 @@ double CDXFchain::GetSelectObjectFromShape
 	return dGapMin;
 }
 
-void CDXFchain::SetVectorPoint(POSITION pos1, CVPointD& vpt, double k)
+void CDXFchain::SetVectorPoint(POSITION pos1, CVPointF& vpt, float k)
 {
 	POSITION	pos2 = pos1;
 	CDXFdata*	pData;
@@ -1308,7 +1342,7 @@ void CDXFchain::SetVectorPoint(POSITION pos1, CVPointD& vpt, double k)
 	} while ( pos1 != pos2 );
 }
 
-void CDXFchain::SetVectorPoint(POSITION pos1, CVPointD& vpt, size_t n)
+void CDXFchain::SetVectorPoint(POSITION pos1, CVPointF& vpt, size_t n)
 {
 	POSITION	pos2 = pos1;
 	CDXFdata*	pData;
@@ -1316,7 +1350,7 @@ void CDXFchain::SetVectorPoint(POSITION pos1, CVPointD& vpt, size_t n)
 	vector<size_t>	vCnt;
 	vector<size_t>::iterator	it;
 
-	double		L = GetLength();	// ëçí∑Ç≥
+	float		L = GetLength();	// ëçí∑Ç≥
 
 	// äeµÃﬁºﬁ™∏ƒÇÃí∑Ç≥Ç©ÇÁï™äÑÇ∑ÇÈäÑçáÇåvéZ
 	do {
@@ -1429,7 +1463,7 @@ void CDXFshape::Constructor(DXFSHAPE_ASSEMBLE enAssemble, LPCTSTR lpszShape, DWO
 	m_enAssemble	= enAssemble;
 	m_pParentLayer	= pLayer;
 	m_dwFlags	= dwFlags;
-	m_dOffset	= 1.0;	// √ﬁÃ´ŸƒµÃæØƒíl
+	m_dOffset	= 1.0f;		// √ﬁÃ´ŸƒµÃæØƒíl
 	m_nInOut	= -1;		// √ﬁÃ´Ÿƒó÷äsï˚å¸ñ≥Çµ
 	m_bAcute	= TRUE;
 	m_hTree		= NULL;
@@ -1452,7 +1486,7 @@ void CDXFshape::SetDetailInfo(CDXFmap* pMap)
 {
 	CDXFarray*	pArray;
 	CDXFdata*	pData;
-	CPointD	pt;
+	CPointF	pt;
 	int		i;
 	PMAP_FOREACH(pt, pArray, pMap)
 		for ( i=0; i<pArray->GetSize(); i++ ) {
@@ -1500,11 +1534,19 @@ void CDXFshape::Serialize(CArchive& ar)
 			get<CDXFmap*>(m_vShape)->Serialize(ar);
 	}
 	else {
-		m_pParentLayer = reinterpret_cast<CLayerData *>(ar.m_pDocument);
+		m_pParentLayer = static_cast<CDXFDoc *>(ar.m_pDocument)->GetSerializeLayer();
 		ar >> m_dwFlags >> nAssemble >> m_strShape;
 		if ( g_dwCamVer > NCVCSERIALVERSION_1507 )	// Ver1.60Å`
 			ar >> m_strShapeHandle;
-		ar >> m_dOffset >> m_nInOut;
+		if ( g_dwCamVer < NCVCSERIALVERSION_3620 ) {
+			double	d;
+			ar >> d;
+			m_dOffset = (float)d;
+		}
+		else {
+			ar >> m_dOffset;
+		}
+		ar >> m_nInOut;
 		if ( g_dwCamVer > NCVCSERIALVERSION_1503 )	// Ver1.10Å`
 			ar >> m_bAcute;
 		ar >> nType;
@@ -1656,8 +1698,8 @@ tuple<CDXFworking*, CDXFdata*> CDXFshape::GetStartObject(void) const
 POSITION CDXFshape::GetFirstChainPosition(void)
 {
 	BOOL			bReverse = FALSE;
-	const CPointD	ptOrg( CDXFdata::ms_ptOrg );
-	CPointD			ptNow;
+	const CPointF	ptOrg( CDXFdata::ms_ptOrg );
+	CPointF			ptNow;
 	CDXFworking*	pWork;
 	CDXFdata*		pData;
 	CDXFdata*		pDataFix;
@@ -1682,7 +1724,7 @@ POSITION CDXFshape::GetFirstChainPosition(void)
 		pDataFix->GetEdgeGap(ptNow);
 	tie(pWork, pData) = GetDirectionObject();
 	if ( pData ) {
-		CPointD	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() - ptOrg ),
+		CPointF	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() - ptOrg ),
 				pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
 		bReverse = pData->IsDirectionPoint(pts, pte);
 	}
@@ -1781,7 +1823,7 @@ BOOL CDXFshape::LinkShape(CDXFshape* pShape)
 	CDXFmap*	pMap;
 	CDXFchain*	pChainOrg;
 	CDXFchain*	pChain;
-	CPointD		pt;
+	CPointF		pt;
 	BOOL		bResult = FALSE;
 
 	try {
@@ -1907,11 +1949,11 @@ BOOL CDXFshape::LinkShape(CDXFshape* pShape)
 	return bResult;
 }
 
-BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, double dOffset/*=0.0*/)
+BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dOffset/*=0.0*/)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CreateOutlineTempObject()", DBG_MAGENTA);
-	CPointD		ptDbg1, ptDbg2, ptDbg3;
+	CPointF		ptDbg1, ptDbg2, ptDbg3;
 #endif
 	if ( dOffset <= 0.0 )
 		dOffset = m_dOffset;	// √ﬁÃ´ŸƒµÃæØƒíl
@@ -1926,11 +1968,12 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, double d
 	CTypedPtrArrayEx<CPtrArray, CDXFlist*>	obSepArray;
 	obSepArray.SetSize(0, 32);
 
-	int			k = bLeft ? -1 : 1, nLoop;
+	int			k = bLeft ? -1 : 1;
+	INT_PTR		nLoop;
 	BOOL		bResult = TRUE;
 	CDXFdata*	pData;
-	CPointD		pt, pte;
-	optional<CPointD>	ptResult, pts;
+	CPointF		pt, pte;
+	optional<CPointF>	ptResult, pts;
 	POSITION	pos;
 
 	// óBàÍÇÃµÃﬁºﬁ™∏ƒÇ™ï¬Ÿ∞ÃﬂÇ»ÇÁ
@@ -2120,7 +2163,7 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, double d
 }
 
 BOOL CDXFshape::CreateOutlineTempObject_polyline
-	(const CDXFpolyline* pPolyline, BOOL bLeft, double dOffset,
+	(const CDXFpolyline* pPolyline, BOOL bLeft, float dOffset,
 		CDXFchain* pResult, CTypedPtrArrayEx<CPtrArray, CDXFlist*>& obSepArray)
 {
 	int		k = bLeft ? -1 : 1;
@@ -2130,8 +2173,8 @@ BOOL CDXFshape::CreateOutlineTempObject_polyline
 	CDXFdata*	pData2 = NULL;
 	CDXFdata*	pDataFirst = NULL;
 	CDXFarray	obTemp;		// àÍéûµÃﬁºﬁ™∏ƒäiî[
-	optional<CPointD>	pt1, pr1, ptResult;
-	CPointD				pt2, pte, pt;
+	optional<CPointF>	pt1, pr1, ptResult;
+	CPointF				pt2, pte, pt;
 	DXFLARGV	dxfLine;
 	dxfLine.pLayer = pPolyline->GetParentLayer();
 	obTemp.SetSize(0, pPolyline->GetVertexCount());
@@ -2218,7 +2261,7 @@ BOOL CDXFshape::CreateScanLine_X(CDXFchain* pResult)
 {
 	CDXFdata*	pData;
 	DXFLARGV	dxfLine, dxfLine2;
-	int			nLoop1 = m_ltOutline.GetCount(), nLoop2;
+	INT_PTR		nLoop1 = m_ltOutline.GetCount(), nLoop2;
 	if ( nLoop1 == 0 )
 		nLoop1 = nLoop2 = 1;
 	else
@@ -2230,7 +2273,7 @@ BOOL CDXFshape::CreateScanLine_X(CDXFchain* pResult)
 	dxfLine.s.y += m_dOffset*nLoop2;
 	dxfLine.e.x = m_rcMax.right - m_dOffset*nLoop1;
 	dxfLine.e.y = dxfLine.s.y;
-	double	ptEnd = ::RoundUp(m_rcMax.bottom - m_dOffset*nLoop1);
+	float	ptEnd = ::RoundUp(m_rcMax.bottom - m_dOffset*nLoop1);
 
 	while ( TRUE ) {
 		pData = new CDXFline(&dxfLine);
@@ -2258,7 +2301,7 @@ BOOL CDXFshape::CreateScanLine_Y(CDXFchain* pResult)
 {
 	CDXFdata*	pData;
 	DXFLARGV	dxfLine, dxfLine2;
-	int			nLoop1 = m_ltOutline.GetCount(), nLoop2;
+	INT_PTR		nLoop1 = m_ltOutline.GetCount(), nLoop2;
 	if ( nLoop1 == 0 )
 		nLoop1 = nLoop2 = 1;
 	else
@@ -2270,7 +2313,7 @@ BOOL CDXFshape::CreateScanLine_Y(CDXFchain* pResult)
 	dxfLine.s.y += m_dOffset*nLoop1;
 	dxfLine.e.x = dxfLine.s.x;
 	dxfLine.e.y = m_rcMax.bottom - m_dOffset*nLoop1;
-	double	ptEnd = ::RoundUp(m_rcMax.right - m_dOffset*nLoop1);
+	float	ptEnd = ::RoundUp(m_rcMax.right - m_dOffset*nLoop1);
 
 	while ( TRUE ) {
 		pData = new CDXFline(&dxfLine);
@@ -2295,7 +2338,7 @@ BOOL CDXFshape::CreateScanLine_Y(CDXFchain* pResult)
 
 BOOL CDXFshape::CreateScanLine_Outline(CDXFchain* pResult)
 {
-	int		n = m_ltOutline.GetCount() + 1;
+	INT_PTR		n = m_ltOutline.GetCount() + 1;
 	CDXFchain	ltOutline;
 
 	while ( CreateOutlineTempObject(m_nInOut, &ltOutline, m_dOffset*n++) ) {
@@ -2315,9 +2358,9 @@ BOOL CDXFshape::CreateScanLine_ScrollCircle(CDXFchain* pResult)
 	CDXFdata*	pData;
 	const CDXFcircle*	pCircleOrg = static_cast<const CDXFcircle *>(GetShapeChain()->GetHead());
 	int			nCnt = 1;
-	double		r = m_dOffset / 2.0,
+	float		r = m_dOffset / 2.0f,
 				dMax = pCircleOrg->GetR() - m_dOffset * m_ltOutline.GetCount();
-	CPointD		pto(pCircleOrg->GetCenter()),
+	CPointF		pto(pCircleOrg->GetCenter()),
 				pts(pto), pte(pts.x+m_dOffset, pts.y);
 
 	dxfArc.pLayer = NULL;
@@ -2349,7 +2392,7 @@ BOOL CDXFshape::CreateScanLine_ScrollCircle(CDXFchain* pResult)
 
 	// écÇËÇÃóÜê˘Çê∂ê¨
 	pte.x = pto.x + dMax;				// äOé¸â~ÇÃâEê⁄èIì_
-	dxfArc.r = (pte.x - pts.x) / 2.0;	// èIì_Ç©ÇÁãtéZÇµÇΩîºåaÇ∆
+	dxfArc.r = (pte.x - pts.x) / 2.0f;	// èIì_Ç©ÇÁãtéZÇµÇΩîºåaÇ∆
 	dxfArc.c.x = pte.x - dxfArc.r;		// íÜêS
 	pData = new CDXFarc(&dxfArc, FALSE, pts, pte);
 	pResult->AddTail(pData);
@@ -2357,7 +2400,7 @@ BOOL CDXFshape::CreateScanLine_ScrollCircle(CDXFchain* pResult)
 	return TRUE;
 }
 
-void CDXFshape::CreateScanLine_Lathe(int n, double d)
+void CDXFshape::CreateScanLine_Lathe(int n, float d)
 {
 	CDXFchain*	pChainOrig = GetShapeChain();
 	if ( !pChainOrig )
@@ -2395,14 +2438,14 @@ BOOL CDXFshape::SeparateOutlineIntersection
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SeparateOutlineIntersection()", DBG_MAGENTA);
-	CPointD		ptDbg1, ptDbg2, ptDbg3;
+	CPointF		ptDbg1, ptDbg2, ptDbg3;
 #endif
 	POSITION	pos1 = pOffset->GetTailPosition(), pos2, pos;
 	CDXFdata*	pData;
 	CDXFdata*	pData1;
 	CDXFdata*	pData2;
 	CDXFlist*	pSepList = NULL;
-	CPointD		pt[4];	// åì_ÇÕç≈ëÂÇSÇ¬
+	CPointF		pt[4];	// åì_ÇÕç≈ëÂÇSÇ¬
 	int			nCnt, nLoop = 0;
 	BOOL		bResult = TRUE, bUpdate;
 
@@ -2498,7 +2541,7 @@ BOOL CDXFshape::SeparateOutlineIntersection
 	return TRUE;
 }
 
-BOOL CDXFshape::CheckSeparateChain(CDXFlist* pResult, const double dOffset)
+BOOL CDXFshape::CheckSeparateChain(CDXFlist* pResult, const float dOffset)
 {
 	int				nCnt = 0;
 	POSITION		pos1, pos2, pos;
@@ -2578,7 +2621,7 @@ BOOL CDXFshape::CheckSeparateChain(CDXFlist* pResult, const double dOffset)
 	return TRUE;
 }
 
-BOOL CDXFshape::CheckIntersectionCircle(const CPointD& ptc, double dOffset)
+BOOL CDXFshape::CheckIntersectionCircle(const CPointF& ptc, float dOffset)
 {
 	const CDXFchain*	pChain = GetShapeChain();
 	ASSERT( pChain );
@@ -2593,7 +2636,7 @@ BOOL CDXFshape::CheckIntersectionCircle(const CPointD& ptc, double dOffset)
 	return FALSE;
 }
 
-void CDXFshape::AllChangeFactor(double dFactor) const
+void CDXFshape::AllChangeFactor(float dFactor) const
 {
 	PLIST_FOREACH(auto ref, &m_ltWork)
 		ref->DrawTuning(dFactor);
@@ -2646,13 +2689,13 @@ void CDXFshape::DrawWorking(CDC* pDC) const
 	pDC->SelectObject(pOldPen);
 }
 
-int CDXFshape::GetObjectCount(void) const
+INT_PTR CDXFshape::GetObjectCount(void) const
 {
 	return apply_visitor( GetObjectCount_Visitor(), m_vShape );
 }
 
-double CDXFshape::GetSelectObjectFromShape
-	(const CPointD& pt, const CRectD* rcView/*=NULL*/, CDXFdata** pDataResult/*=NULL*/)
+float CDXFshape::GetSelectObjectFromShape
+	(const CPointF& pt, const CRectF* rcView/*=NULL*/, CDXFdata** pDataResult/*=NULL*/)
 {
 	if ( m_vShape.which() == 0 )
 		return get<CDXFchain*>(m_vShape)->GetSelectObjectFromShape(pt, rcView, pDataResult);
@@ -2692,8 +2735,8 @@ void CDXFshape::OrgTuning(void)
 /////////////////////////////////////////////////////////////////////////////
 
 CDXFdata* CreateDxfOffsetObject
-	(const CDXFdata* pData, const CPointD& pts, const CPointD& pte,
-		int k/*=0*/, double dOffset/*=0*/)
+	(const CDXFdata* pData, const CPointF& pts, const CPointF& pte,
+		int k/*=0*/, float dOffset/*=0*/)
 {
 	CDXFdata*	pDataResult = NULL;
 	DXFLARGV	dxfLine;
@@ -2734,13 +2777,13 @@ CDXFdata* CreateDxfOffsetObject
 				dxfArc.eq += PI2;
 			// µÿºﬁ≈Ÿâ~å Ç∆µÃæØƒâ~å ÇÃâÒì]ï˚å¸¡™Ø∏
 			if ( k != 0 ) {
-				optional<CPointD> ptResult = ::CalcIntersectionPoint_LL(
+				optional<CPointF> ptResult = ::CalcIntersectionPoint_LL(
 						pts, pArc->GetNativePoint(0),
 						pte, pArc->GetNativePoint(1) );
 				if ( ptResult )		// µÿºﬁ≈Ÿâ~å Ç∆µÃæØƒâ~å ÇÃâÒì]ï˚å¸Ç™à·Ç§
 					bRound = !bRound;
 			}
-			double	d;
+			float	d;
 			if ( bRound ) {
 				// for CDXFarc::AngleTuning()
 				d = ::RoundUp(DEG(dxfArc.sq));
@@ -2768,7 +2811,7 @@ CDXFdata* CreateDxfOffsetObject
 				k = -k;
 			dxfEllipse.pLayer = pEllipse->GetParentLayer();
 			dxfEllipse.c	= pEllipse->GetCenter();
-			double	l		= pEllipse->GetLongLength() + dOffset * k,
+			float	l		= pEllipse->GetLongLength() + dOffset * k,
 					lq		= pEllipse->GetLean();
 			dxfEllipse.l.x	= l * cos(lq);
 			dxfEllipse.l.y	= l * sin(lq);
@@ -2776,24 +2819,24 @@ CDXFdata* CreateDxfOffsetObject
 			dxfEllipse.bRound = pEllipse->GetRoundOrig();
 			if ( pEllipse->IsArc() ) {
 				// äpìxåvéZÇÕí∑é≤ÇÃåXÇ´Ççló∂ÇµÇƒåvéZ
-				CPointD	pt1(pts - dxfEllipse.c), pt2(pte - dxfEllipse.c);
+				CPointF	pt1(pts - dxfEllipse.c), pt2(pte - dxfEllipse.c);
 				pt1.RoundPoint(-lq);
 				pt2.RoundPoint(-lq);
 				// ë»â~ÇÃäpìxÇÕ atan2() Ç≈ÇÕÇ»Ç¢
-				double	q = pt1.x / l;
-				if ( q < -1.0 || 1.0 < q )
-					q = _copysign(1.0, q);	// -1.0 or 1.0
-				dxfEllipse.sq = _copysign(acos(q), pt1.y);
+				float	q = pt1.x / l;
+				if ( q < -1.0f || 1.0f < q )
+					q = copysign(1.0f, q);	// -1.0 or 1.0
+				dxfEllipse.sq = copysign(acos(q), pt1.y);
 				if ( dxfEllipse.sq < 0.0 )
 					dxfEllipse.sq += PI2;
 				q = pt2.x / l;
-				if ( q < -1.0 || 1.0 < q )
-					q = _copysign(1.0, q);
-				dxfEllipse.eq = _copysign(acos(q), pt2.y);
+				if ( q < -1.0f || 1.0f < q )
+					q = copysign(1.0f, q);
+				dxfEllipse.eq = copysign(acos(q), pt2.y);
 				if ( dxfEllipse.eq < 0.0 )
 					dxfEllipse.eq += PI2;
 				if ( k != 0 ) {
-					optional<CPointD> ptResult = ::CalcIntersectionPoint_LL(
+					optional<CPointF> ptResult = ::CalcIntersectionPoint_LL(
 							pts, pEllipse->GetNativePoint(0),
 							pte, pEllipse->GetNativePoint(1) );
 					if ( ptResult ) {
@@ -2824,7 +2867,7 @@ CDXFdata* CreateDxfOffsetObject
 	return pDataResult;
 }
 
-CDXFdata*	CreateDxfLatheObject(const CDXFdata* pData, double yd)
+CDXFdata*	CreateDxfLatheObject(const CDXFdata* pData, float yd)
 {
 	CDXFdata*	pDataResult = NULL;
 	DXFLARGV	dxfLine;
@@ -2850,7 +2893,7 @@ CDXFdata*	CreateDxfLatheObject(const CDXFdata* pData, double yd)
 			dxfArc.sq = pArc->GetStartAngle();	// RADÇ≈OK
 			dxfArc.eq = pArc->GetEndAngle();
 			dxfArc.c.y += yd;
-			CPointD	pts(pArc->GetNativePoint(0)), pte(pArc->GetNativePoint(1));
+			CPointF	pts(pArc->GetNativePoint(0)), pte(pArc->GetNativePoint(1));
 			pts.y += yd;
 			pte.y += yd;
 			pDataResult = new CDXFarc(&dxfArc, pArc->GetRoundOrig(), pts, pte);

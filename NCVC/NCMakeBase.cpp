@@ -23,7 +23,7 @@ using namespace boost;
 /////////////////////////////////////////////////////////////////////////////
 // 静的変数の初期化
 const	CNCMakeOption*	CNCMakeBase::ms_pMakeOpt = NULL;
-double	CNCMakeBase::ms_xyz[] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
+float	CNCMakeBase::ms_xyz[] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
 int		CNCMakeBase::NCAX = NCA_X;
 int		CNCMakeBase::NCAY = NCA_Y;
 int		CNCMakeBase::NCAI = NCA_I;
@@ -32,12 +32,12 @@ int		CNCMakeBase::NCAJ = NCA_J;
 #undef	NCA_Y	// NCA_I, NCA_J は、GetIJK() にのみ有効
 int		CNCMakeBase::ms_nGcode = -1;
 int		CNCMakeBase::ms_nSpindle = -1;
-double	CNCMakeBase::ms_dFeed = -1.0;
+float	CNCMakeBase::ms_dFeed = -1.0;
 int		CNCMakeBase::ms_nCnt = 1;
 int		CNCMakeBase::ms_nMagni = 1;
 int		CNCMakeBase::ms_nCircleCode = 2;
 BOOL	CNCMakeBase::ms_bIJValue = FALSE;
-double	CNCMakeBase::ms_dEllipse = 0.5;
+float	CNCMakeBase::ms_dEllipse = 0.5;
 CString	CNCMakeBase::ms_strEOB;
 PFNGETARGINT		CNCMakeBase::ms_pfnGetSpindle = &CNCMakeBase::GetSpindleString;
 PFNGETARGDOUBLE		CNCMakeBase::ms_pfnGetFeed = &CNCMakeBase::GetFeedString_Integer;
@@ -89,12 +89,12 @@ void CNCMakeBase::SetStaticOption(const CNCMakeOption* pNCMake)
 	ms_pMakeOpt = pNCMake;
 }
 
-void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, double dFeed)
+void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, float dFeed)
 {
 	CString	strGcode;
 	BOOL	bFeed = TRUE;
-	CPointD	pt, ptMake;
-	double	sq, eq,
+	CPointF	pt, ptMake;
+	float	sq, eq,
 			// 角度のｽﾃｯﾌﾟ数を求める -> (sq-eq) / (r*(sq-eq) / STEP)
 			dStep = ms_dEllipse / pEllipse->GetR();
 
@@ -143,11 +143,11 @@ void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, double dFeed)
 		m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
 }
 
-CString	CNCMakeBase::MakeEllipse_Tolerance(const CDXFellipse* pEllipse, double q)
+CString	CNCMakeBase::MakeEllipse_Tolerance(const CDXFellipse* pEllipse, float q)
 {
-	CPointD	pt    ( pEllipse->GetLongLength()  * cos(q),
+	CPointF	pt    ( pEllipse->GetLongLength()  * cos(q),
 					pEllipse->GetShortLength() * sin(q) );
-	CPointD	ptMake( pt.x * pEllipse->GetMakeLeanCos() - pt.y * pEllipse->GetMakeLeanSin(),
+	CPointF	ptMake( pt.x * pEllipse->GetMakeLeanCos() - pt.y * pEllipse->GetMakeLeanSin(),
 					pt.x * pEllipse->GetMakeLeanSin() + pt.y * pEllipse->GetMakeLeanCos() );
 	ptMake += pEllipse->GetMakeCenter();
 	pt = ptMake.RoundUp();
@@ -155,7 +155,7 @@ CString	CNCMakeBase::MakeEllipse_Tolerance(const CDXFellipse* pEllipse, double q
 		(*ms_pfnGetValString)(NCAX, pt.x, FALSE) + (*ms_pfnGetValString)(NCAY, pt.y, FALSE) );
 }
 
-void CNCMakeBase::MakePolylineCut(const CDXFpolyline* pPoly, double dFeed)
+void CNCMakeBase::MakePolylineCut(const CDXFpolyline* pPoly, float dFeed)
 {
 	if ( pPoly->GetVertexCount() <= 1 )
 		return;
@@ -205,7 +205,7 @@ void CNCMakeBase::MakePolylineCut(const CDXFpolyline* pPoly, double dFeed)
 }
 
 CString CNCMakeBase::MakeCustomString
-	(int nCode, DWORD dwValFlags/*=0*/, double* dValue/*=NULL*/, BOOL bReflect/*=TRUE*/)
+	(int nCode, DWORD dwValFlags/*=0*/, float* dValue/*=NULL*/, BOOL bReflect/*=TRUE*/)
 {
 	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 	extern	const	DWORD	g_dwSetValFlags[];
@@ -225,7 +225,7 @@ CString CNCMakeBase::MakeCustomString
 	return strResult;
 }
 
-CString CNCMakeBase::MakeCustomString(int nCode, int nValFlag[], double dValue[])
+CString CNCMakeBase::MakeCustomString(int nCode, int nValFlag[], float dValue[])
 {
 	int		n;
 	// nValFlagに指定された順に値を追加
@@ -256,7 +256,7 @@ CString	CNCMakeBase::GetSpindleString_Clip(int)
 }
 
 // 送り速度
-CString	CNCMakeBase::GetFeedString(double dFeed)
+CString	CNCMakeBase::GetFeedString(float dFeed)
 {
 	CString		strResult;
 	if ( dFeed!=0.0 && ms_dFeed!=dFeed ) {
@@ -266,7 +266,7 @@ CString	CNCMakeBase::GetFeedString(double dFeed)
 	return strResult;
 }
 
-CString	CNCMakeBase::GetFeedString_Integer(double dFeed)
+CString	CNCMakeBase::GetFeedString_Integer(float dFeed)
 {
 	CString	strResult;
 	// 	GetFeedString()からの参照のため if() 不要
@@ -309,14 +309,14 @@ CString	CNCMakeBase::GetGString_Clip(int nCode)
 }
 
 // 座標値設定
-CString	CNCMakeBase::GetValString_Normal(double dVal)
+CString	CNCMakeBase::GetValString_Normal(float dVal)
 {
 	CString		strResult;
 	strResult.Format(IDS_MAKENCD_FORMAT, dVal);
 	return strResult;
 }
 
-CString	CNCMakeBase::GetValString_UZeroCut(double dVal)
+CString	CNCMakeBase::GetValString_UZeroCut(float dVal)
 {
 	CString		strResult;
 	if ( fabs(dVal) < NCMIN ) {
@@ -332,16 +332,16 @@ CString	CNCMakeBase::GetValString_UZeroCut(double dVal)
 	return	strResult.Left(nCnt);
 }
 
-CString	CNCMakeBase::GetValString_Multi1000(double dVal)
+CString	CNCMakeBase::GetValString_Multi1000(float dVal)
 {
 	CString		strResult;
 	// 単純な1000倍では，丸め誤差が発生(??)
-	strResult = lexical_cast<string>((int)(dVal*1000.0+_copysign(0.0001, dVal))).c_str();
+	strResult = lexical_cast<string>((int)(dVal*1000.0f+copysign(0.0001f, dVal))).c_str();
 	return strResult;
 }
 
 // 円・円弧の生成補助
-CString	CNCMakeBase::MakeCircleSub_R(int nCode, const CPointD& pt, const CPointD&, double r)
+CString	CNCMakeBase::MakeCircleSub_R(int nCode, const CPointF& pt, const CPointF&, float r)
 {
 	return CString( (*ms_pfnGetGString)(nCode) +
 		(*ms_pfnGetValString)(NCAX,  pt.x, FALSE) +
@@ -349,7 +349,7 @@ CString	CNCMakeBase::MakeCircleSub_R(int nCode, const CPointD& pt, const CPointD
 		(*ms_pfnGetValString)(NCA_R, r,    FALSE) );
 }
 
-CString	CNCMakeBase::MakeCircleSub_IJ(int nCode, const CPointD& pt, const CPointD& ptij, double)
+CString	CNCMakeBase::MakeCircleSub_IJ(int nCode, const CPointF& pt, const CPointF& ptij, float)
 {
 	return CString( (*ms_pfnGetGString)(nCode) +
 		(*ms_pfnGetValString)(NCAX, pt.x,   FALSE) +
@@ -358,7 +358,7 @@ CString	CNCMakeBase::MakeCircleSub_IJ(int nCode, const CPointD& pt, const CPoint
 		(*ms_pfnGetValString)(NCAJ, ptij.y, ms_bIJValue) );
 }
 
-CString	CNCMakeBase::MakeCircleSub_Helical(int nCode, const CPoint3D& pt)
+CString	CNCMakeBase::MakeCircleSub_Helical(int nCode, const CPoint3F& pt)
 {
 	return CString( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
 		(*ms_pfnGetValString)(NCAX,  pt.x, FALSE) +
@@ -367,12 +367,12 @@ CString	CNCMakeBase::MakeCircleSub_Helical(int nCode, const CPoint3D& pt)
 }
 
 // 円ﾃﾞｰﾀの生成
-CString	CNCMakeBase::MakeCircle_R(const CDXFcircle* pCircle, double dFeed)
+CString	CNCMakeBase::MakeCircle_R(const CDXFcircle* pCircle, float dFeed)
 {
 	int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1),
 			nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
-	double	r = pCircle->GetMakeR();
-	CPointD	pt;		// dummy
+	float	r = pCircle->GetMakeR();
+	CPointF	pt;		// dummy
 	// R指定，180゜ずつ分けて生成
 	CString	strGcode;
 	CString	strBuf1( MakeCircleSub_R(nCode, pCircle->GetMakePoint(b), pt, r) );
@@ -383,7 +383,7 @@ CString	CNCMakeBase::MakeCircle_R(const CDXFcircle* pCircle, double dFeed)
 	return strGcode;
 }
 
-CString	CNCMakeBase::MakeCircle_IJ(const CDXFcircle* pCircle, double dFeed)
+CString	CNCMakeBase::MakeCircle_IJ(const CDXFcircle* pCircle, float dFeed)
 {
 	int		nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
 	return CString( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
@@ -392,11 +392,11 @@ CString	CNCMakeBase::MakeCircle_IJ(const CDXFcircle* pCircle, double dFeed)
 				GetFeedString(dFeed) + ms_strEOB );
 }
 
-CString	CNCMakeBase::MakeCircle_IJHALF(const CDXFcircle* pCircle, double dFeed)
+CString	CNCMakeBase::MakeCircle_IJHALF(const CDXFcircle* pCircle, float dFeed)
 {
 	int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1),
 			nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
-	CPointD	ij;
+	CPointF	ij;
 	// 基準軸の決定
 	if ( a > 1 ) 	// Y軸ﾍﾞｰｽ
 		ij.y = pCircle->GetIJK(NCA_J);
@@ -412,14 +412,14 @@ CString	CNCMakeBase::MakeCircle_IJHALF(const CDXFcircle* pCircle, double dFeed)
 	return strGcode;
 }
 
-CString	CNCMakeBase::MakeCircle_R_Helical(const CDXFcircle* pCircle, double dFeed, double dHelical)
+CString	CNCMakeBase::MakeCircle_R_Helical(const CDXFcircle* pCircle, float dFeed, float dHelical)
 {
 	int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1),
 			nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
-	double	r = pCircle->GetMakeR(),
+	float	r = pCircle->GetMakeR(),
 			s = ms_pMakeOpt->GetDbl(MKNC_DBL_ZSTEP),	// ﾍﾘｶﾙはMILLのみ
-			z = dHelical - s + s/2.0;
-	CPoint3D	pt1(pCircle->GetMakePoint(b).x, pCircle->GetMakePoint(b).y, z),
+			z = dHelical - s + s/2.0f;
+	CPoint3F	pt1(pCircle->GetMakePoint(b).x, pCircle->GetMakePoint(b).y, z),
 				pt2(pCircle->GetMakePoint(a).x, pCircle->GetMakePoint(a).y, dHelical);
 	CString	strGcode, strBuf( (*ms_pfnGetValString)(NCA_R, r, FALSE) );
 	if ( !strBuf.IsEmpty() ) {
@@ -430,7 +430,7 @@ CString	CNCMakeBase::MakeCircle_R_Helical(const CDXFcircle* pCircle, double dFee
 	return strGcode;
 }
 
-CString	CNCMakeBase::MakeCircle_IJ_Helical(const CDXFcircle* pCircle, double dFeed, double dHelical)
+CString	CNCMakeBase::MakeCircle_IJ_Helical(const CDXFcircle* pCircle, float dFeed, float dHelical)
 {
 	int		nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
 	return CString( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
@@ -440,14 +440,14 @@ CString	CNCMakeBase::MakeCircle_IJ_Helical(const CDXFcircle* pCircle, double dFe
 				GetFeedString(dFeed) + ms_strEOB );
 }
 
-CString	CNCMakeBase::MakeCircle_IJHALF_Helical(const CDXFcircle* pCircle, double dFeed, double dHelical)
+CString	CNCMakeBase::MakeCircle_IJHALF_Helical(const CDXFcircle* pCircle, float dFeed, float dHelical)
 {
 	int		a = pCircle->GetBaseAxis(), b = a & 0x01 ? (a-1) : (a+1),
 			nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
-	double	s = ms_pMakeOpt->GetDbl(MKNC_DBL_ZSTEP),	// ﾍﾘｶﾙはMILLのみ
-			z = dHelical - s + s/2.0;
-	CPointD		ij;
-	CPoint3D	pt1(pCircle->GetMakePoint(b).x, pCircle->GetMakePoint(b).y, z),
+	float	s = ms_pMakeOpt->GetDbl(MKNC_DBL_ZSTEP),	// ﾍﾘｶﾙはMILLのみ
+			z = dHelical - s + s/2.0f;
+	CPointF		ij;
+	CPoint3F	pt1(pCircle->GetMakePoint(b).x, pCircle->GetMakePoint(b).y, z),
 				pt2(pCircle->GetMakePoint(a).x, pCircle->GetMakePoint(a).y, dHelical);
 	if ( a > 1 )
 		ij.y = pCircle->GetIJK(NCA_J);
@@ -466,18 +466,18 @@ CString	CNCMakeBase::MakeCircle_IJHALF_Helical(const CDXFcircle* pCircle, double
 }
 
 // 円弧ﾃﾞｰﾀの生成
-CString	CNCMakeBase::MakeArc_R(const CDXFarc* pArc, double dFeed)
+CString	CNCMakeBase::MakeArc_R(const CDXFarc* pArc, float dFeed)
 {
 	CString	strGcode,
-			strBuf( MakeCircleSub_R(pArc->GetG(), pArc->GetEndMakePoint(), CPointD(), pArc->GetMakeR()) );
+			strBuf( MakeCircleSub_R(pArc->GetG(), pArc->GetEndMakePoint(), CPointF(), pArc->GetMakeR()) );
 	if ( !strBuf.IsEmpty() )
 		strGcode = (*ms_pfnGetLineNo)() + strBuf + GetFeedString(dFeed) + ms_strEOB;
 	return strGcode;
 }
 
-CString	CNCMakeBase::MakeArc_IJ(const CDXFarc* pArc, double dFeed)
+CString	CNCMakeBase::MakeArc_IJ(const CDXFarc* pArc, float dFeed)
 {
-	CPointD	ij(pArc->GetIJK(NCA_I), pArc->GetIJK(NCA_J));
+	CPointF	ij(pArc->GetIJK(NCA_I), pArc->GetIJK(NCA_J));
 	CString	strGcode,
 			strBuf( (*ms_pfnMakeCircleSub)(pArc->GetG(), pArc->GetEndMakePoint(), ij, 0.0) );
 	if ( !strBuf.IsEmpty() )

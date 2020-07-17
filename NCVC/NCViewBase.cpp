@@ -135,8 +135,9 @@ void CNCViewBase::OnDraw(CDC* pDC)
 	CPen* pOldPen = (CPen *)pDC->SelectStockObject(NULL_PEN);
 
 	// 各面初期設定
-	size_t		i, x, y;
-	double		dLength[2];
+	int			i;
+	size_t		x, y;
+	float		dLength[2];
 	CPen*		pOrgPen[2];
 	COLORREF	colOrg[2];
 	tie(x, y) = GetPlaneAxis();
@@ -178,7 +179,7 @@ void CNCViewBase::OnDraw(CDC* pDC)
 void CNCViewBase::DrawGuideDivi(CDC* pDC, size_t x, size_t y)
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	CPointD	pt(-pOpt->GetGuideLength(x), 0), ptDraw;
+	CPointF	pt(-pOpt->GetGuideLength(x), 0), ptDraw;
 
 	pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenOrg(x));
 	for ( ; pt.x<=pOpt->GetGuideLength(x); pt.x+=1.0 ) {
@@ -277,13 +278,13 @@ void CNCViewBase::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pD
 
 void CNCViewBase::SetDataMaxRect(void)
 {
-	extern	const	double	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
+	extern	const	float	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
 	m_rcDataMax = ConvertRect(GetDocument()->GetMaxRect());
 	size_t	x, y;
 	tie(x, y) = GetPlaneAxis();
 	// 占有矩形の補正(不正表示の防止)
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	double	dLength;
+	float	dLength;
 	if ( m_rcDataMax.Width() <= NCMIN ) {
 		dLength = pOpt->GetGuideLength(x);
 		if ( dLength == 0.0 )

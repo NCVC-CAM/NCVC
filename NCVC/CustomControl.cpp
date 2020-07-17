@@ -13,6 +13,7 @@ extern	CMagaDbg	g_dbg;
 
 using namespace boost;
 using std::string;
+extern	LPCTSTR	gg_szDelimiter;	// ":"
 
 BEGIN_MESSAGE_MAP(CIntEdit, CEdit)
 	//{{AFX_MSG_MAP(CIntEdit)
@@ -54,7 +55,7 @@ CIntEdit::operator int()
 	ASSERT(::IsWindow(m_hWnd));
 	CString	strNumber;
 	GetWindowText(strNumber);
-	return lexical_cast<int>((LPCTSTR)strNumber);
+	return atoi((LPCTSTR)strNumber.Trim());
 }
 
 ///////////////////////////////////
@@ -84,12 +85,12 @@ CFloatEdit::~CFloatEdit()
 {
 }
 
-CFloatEdit& CFloatEdit::operator =(double d)
+CFloatEdit& CFloatEdit::operator =(float d)
 {
 	ASSERT(::IsWindow(m_hWnd));
 	CString	strBuf;
 	if ( m_bIntFormat ) {
-		double	integer;
+		float	integer;
 		if ( fabs(modf(d, &integer)) == 0.0 )
 			strBuf = lexical_cast<string>((int)integer).c_str();
 		else
@@ -101,12 +102,12 @@ CFloatEdit& CFloatEdit::operator =(double d)
 	return (*this);
 }
 
-CFloatEdit::operator double()
+CFloatEdit::operator float()
 {
 	ASSERT(::IsWindow(m_hWnd));
 	CString	strNumber;
 	GetWindowText(strNumber);
-	return lexical_cast<double>((LPCTSTR)strNumber);
+	return (float)atof((LPCTSTR)strNumber.Trim());
 }
 
 ///////////////////////////////////
@@ -147,10 +148,46 @@ void CColComboBox::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct)
 void CColComboBox::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct) 
 {
 	// ºÝÄÛ°Ù‘S‘Ì‚Ì•`‰æ(±²ÃÑ‚É“o˜^‚³‚ê‚½32ËÞ¯Ä’l‚ð¶×°º°ÄÞ‚Æ”FŽ¯)
-	HBRUSH hBrush = ::CreateSolidBrush( (COLORREF)(lpDrawItemStruct->itemData) );
+	COLORREF	rgb = ConvertSTRtoRGB((LPCTSTR)(lpDrawItemStruct->itemData));
+	HBRUSH		hBrush = ::CreateSolidBrush(rgb);
 	::FillRect(lpDrawItemStruct->hDC, &(lpDrawItemStruct->rcItem), hBrush);
 	::DeleteObject(hBrush);
 	// ‘I‘ðó‘Ô‚Ì‚Ý‚ª•ÏX
 	if ( lpDrawItemStruct->itemState & (ODS_FOCUS|ODS_SELECTED) )
 		::DrawFocusRect(lpDrawItemStruct->hDC, &(lpDrawItemStruct->rcItem));
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+COLORREF ConvertSTRtoRGB(LPCTSTR lpszCol)
+{
+	LPTSTR	lpsztok, lpszcontext, lpszBuf = NULL;
+	BYTE	col[3] = {0, 0, 0};
+
+	try {
+		lpszBuf = new TCHAR[lstrlen(lpszCol)+1];
+		lpsztok = strtok_s(lstrcpy(lpszBuf, lpszCol), gg_szDelimiter, &lpszcontext);
+		// Get Color
+		for ( int i=0; i<SIZEOF(col) && lpsztok; i++ ) {
+			col[i] = atoi(lpsztok);
+			lpsztok = strtok_s(NULL, gg_szDelimiter, &lpszcontext);
+		}
+	}
+	catch (CMemoryException* e) {
+		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+		e->Delete();
+	}
+	if ( lpszBuf )
+		delete[]	lpszBuf;
+
+	return RGB(col[0], col[1], col[2]);
+}
+
+CString ConvertRGBtoSTR(COLORREF col)
+{
+	CString	strRGB = (
+		lexical_cast<string>((int)GetRValue(col)) + gg_szDelimiter +
+		lexical_cast<string>((int)GetGValue(col)) + gg_szDelimiter +
+		lexical_cast<string>((int)GetBValue(col)) ).c_str();
+	return strRGB;
 }

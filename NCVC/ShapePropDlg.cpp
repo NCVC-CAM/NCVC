@@ -27,7 +27,7 @@ END_MESSAGE_MAP()
 // CShapePropDlg ダイアログ
 
 CShapePropDlg::CShapePropDlg
-	(DXFTREETYPE& vSelect, BOOL bChain, int nShape, optional<double>& dOffsetInit, BOOL bAcute)
+	(DXFTREETYPE& vSelect, BOOL bChain, int nShape, optional<float>& dOffsetInit, BOOL bAcute)
 		: CDialog(CShapePropDlg::IDD, NULL)
 {
 	m_vSelect = vSelect;
@@ -79,7 +79,7 @@ BOOL CShapePropDlg::OnInitDialog()
 			m_ctAcuteRound.EnableWindow(FALSE);
 		}
 	}
-	if ( m_dOffsetInit && *m_dOffsetInit != HUGE_VAL )
+	if ( m_dOffsetInit && *m_dOffsetInit != HUGE_VALF )
 		m_ctOffset = *m_dOffsetInit;
 	UpdateData(FALSE);
 

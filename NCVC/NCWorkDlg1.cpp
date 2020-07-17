@@ -75,10 +75,10 @@ void CNCWorkDlg1::EnableButton(BOOL bEnable, BOOL bLathe)
 	}
 }
 
-void CNCWorkDlg1::SetValue(const CNCDoc* pDoc, const CRect3D& rc)
+void CNCWorkDlg1::SetValue(const CNCDoc* pDoc, const CRect3F& rc)
 {
 	if ( pDoc->IsDocFlag(NCDOC_LATHE) ) {
-		m_ctWork[0][NCA_X] = rc.high * 2.0;		// 直径表示
+		m_ctWork[0][NCA_X] = rc.high * 2.0f;	// 直径表示
 		m_ctWork[0][NCA_Y] = rc.left;
 		m_ctWork[0][NCA_Z] = rc.right;
 		m_ctWork[1][NCA_X] = 0;
@@ -150,9 +150,9 @@ void CNCWorkDlg1::OnShow()
 	// 必ず AfxGetNCVCMainWnd()->MDIGetActive() が CNCChild を指している
 	CNCDoc*	pDoc = GetParentSheet()->GetNCDocument();
 	if ( pDoc ) {
-		CRect3D	rc;
+		CRect3F	rc;
 		if ( pDoc->IsDocFlag(NCDOC_LATHE) ) {
-			rc.high   = m_ctWork[0][NCA_X] / 2.0;	// 径
+			rc.high   = m_ctWork[0][NCA_X] / 2.0f;	// 径
 			rc.left   = m_ctWork[0][NCA_Y];			// Zmin
 			rc.right  = m_ctWork[0][NCA_Z];			// Zmax
 		}
@@ -171,7 +171,7 @@ void CNCWorkDlg1::OnHide()
 {
 	CNCDoc*	pDoc = GetParentSheet()->GetNCDocument();
 	if ( pDoc )
-		pDoc->SetWorkRect(FALSE, CRect3D());
+		pDoc->SetWorkRect(FALSE, CRect3F());
 }
 
 void CNCWorkDlg1::OnComment()
@@ -183,13 +183,13 @@ void CNCWorkDlg1::OnComment()
 		if ( pDoc->IsDocFlag(NCDOC_LATHE) ) {
 			strComment.Format("(%s=%.3f,%.3f,%.3f)",
 				LATHEVIEW_S,
-				double(m_ctWork[0][NCA_X]), double(m_ctWork[0][NCA_Y]), double(m_ctWork[0][NCA_Z]));
+				float(m_ctWork[0][NCA_X]), float(m_ctWork[0][NCA_Y]), float(m_ctWork[0][NCA_Z]));
 		}
 		else {
 			strComment.Format("(%s=%.3f,%.3f,%.3f,%.3f,%.3f,%.3f)",
 				WORKRECT_S,
-				double(m_ctWork[0][NCA_X]), double(m_ctWork[0][NCA_Y]), double(m_ctWork[0][NCA_Z]),
-				double(m_ctWork[1][NCA_X]), double(m_ctWork[1][NCA_Y]), double(m_ctWork[1][NCA_Z]));
+				float(m_ctWork[0][NCA_X]), float(m_ctWork[0][NCA_Y]), float(m_ctWork[0][NCA_Z]),
+				float(m_ctWork[1][NCA_X]), float(m_ctWork[1][NCA_Y]), float(m_ctWork[1][NCA_Z]));
 		}
 		pDoc->SetCommentStr(strComment);
 		OnShow();	// 表示の更新

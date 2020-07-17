@@ -9,13 +9,13 @@
 class CNCView : public CNCViewBase
 {
 	// ﾃﾞｰﾀ矩形
-	CPointD		m_ptdMaxRect[2][4];		// 最大切削矩形[Zmin/Zmax][矩形]
+	CPointF		m_ptdMaxRect[2][4];		// 最大切削矩形[Zmin/Zmax][矩形]
 	CPoint		m_ptDrawMaxRect[2][4];	// 最大切削矩形の描画用座標
 	// ﾜｰｸ矩形
-	CPointD		m_ptdWorkRect[2][4];	// ﾜｰｸ矩形[Zmin/Zmax][矩形] ４角(from CNCDoc::m_rcWork)
+	CPointF		m_ptdWorkRect[2][4];	// ﾜｰｸ矩形[Zmin/Zmax][矩形] ４角(from CNCDoc::m_rcWork)
 	CPoint		m_ptDrawWorkRect[2][4];	// ﾜｰｸ矩形の描画用座標
 	// ﾜｰｸ円柱
-	CPointD		m_ptdWorkCylinder[2][ARCCOUNT];
+	CPointF		m_ptdWorkCylinder[2][ARCCOUNT];
 	CPoint		m_ptDrawWorkCylinder[2][ARCCOUNT];
 
 protected: // シリアライズ機能のみから作成します。

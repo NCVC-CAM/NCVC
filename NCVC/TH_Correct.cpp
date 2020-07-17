@@ -23,9 +23,9 @@ extern	const	DWORD		g_dwSetValFlags[];	// NCDoc.cpp
 static	int			IsCorrectCheck(const CNCdata*, const CNCdata*, int);
 static	BOOL		IsPlaneCheck(const CNCdata*, const CNCdata*, CNCarray&);
 static	int			GetInsideOutside(const CNCdata*, const CNCdata*, DWORD);
-static	CPointD		CalcPerpendicularPoint(const CPointD&, const CPoint3D&, double, int, ENPLANE);
-static	optional<CPointD>	SetCorrectCancel(const CNCdata*, CNCdata*);
-static	CNCdata*	CreateNCobj(const CNCdata*, const CPointD&, double = HUGE_VAL);
+static	CPointF		CalcPerpendicularPoint(const CPointF&, const CPoint3F&, float, int, ENPLANE);
+static	optional<CPointF>	SetCorrectCancel(const CNCdata*, CNCdata*);
+static	CNCdata*	CreateNCobj(const CNCdata*, const CPointF&, float = HUGE_VALF);
 static	void		SetErrorCode(CNCDoc*, CNCdata*, int);
 
 //////////////////////////////////////////////////////////////////////
@@ -36,7 +36,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CorrectCalc_Thread()\nStart", DBG_BLUE);
-	CPoint3D	ptDBG;
+	CPoint3F	ptDBG;
 #endif
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	CNCDoc*			pDoc = static_cast<CNCDoc*>(pParam->pDoc);
@@ -45,17 +45,17 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 	ASSERT(pParent);
 
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
-	int			i=0, j, nLoopCnt = pDoc->GetNCsize(),
-				nCorrect = 0,	// 0:ï‚ê≥∑¨›æŸ 1: ï‚ê≥Ãﬁ€Ø∏íºå„ 2:ï‚ê≥èàóùíÜ
+	INT_PTR		i=0, j, nLoopCnt = pDoc->GetNCsize();
+	int			nCorrect = 0,	// 0:ï‚ê≥∑¨›æŸ 1: ï‚ê≥Ãﬁ€Ø∏íºå„ 2:ï‚ê≥èàóùíÜ
 				nCorrectType = pMCopt->GetInt(MC_INT_CORRECTTYPE),
 				nSign1, nSign2,
 				k,			// 90ÅãâÒì]Ç≥ÇπÇÈï˚å¸(énì_ÇäÓèÄ)
 				nResult = IDOK;
 	BOOL		bFirst;
-	double		dToolD, dToolD_abs;
-	optional<double>	dToolResult;
-	CPointD		pt1, pt2, pt3, pt4;
-	optional<CPointD>	ptResult;
+	float		dToolD, dToolD_abs;
+	optional<float>	dToolResult;
+	CPointF		pt1, pt2, pt3, pt4;
+	optional<CPointF>	ptResult;
 	DWORD		dwValFlags;
 	CNCdata*	pData1;
 	CNCdata*	pData2;
@@ -70,7 +70,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 		VERIFY(strMsg.LoadString(IDS_CORRECT_NCD));
 		pParent->SetFaseMessage(strMsg);
 	}
-	pParent->m_ctReadProgress.SetRange32(0, nLoopCnt);
+	pParent->m_ctReadProgress.SetRange32(0, (int)nLoopCnt);
 #ifdef _DEBUG
 	dbg.printf("GetNCsize()=%d", nLoopCnt);
 #endif
@@ -80,9 +80,9 @@ try {
 	while ( i<nLoopCnt && IsThread() ) {
 
 		// ï‚ê≥èàóùÇ™ïKóvÇ»µÃﬁºﬁ™∏ƒÇåüçı(ëÊÇPÉãÅ[ÉvÇÕÇªÇ±Ç‹Ç≈ì«Ç›îÚÇŒÇµ)
-		for ( dToolD=HUGE_VAL, bFirst=TRUE; i<nLoopCnt && nCorrect==0 && IsThread(); i++ ) {
+		for ( dToolD=HUGE_VALF, bFirst=TRUE; i<nLoopCnt && nCorrect==0 && IsThread(); i++ ) {
 			if ( (i & 0x003f) == 0 )	// 64âÒÇ®Ç´(â∫à 6ÀﬁØƒœΩ∏)
-				pParent->m_ctReadProgress.SetPos(i);		// Ãﬂ€∏ﬁ⁄Ω ﬁ∞
+				pParent->m_ctReadProgress.SetPos((int)i);		// Ãﬂ€∏ﬁ⁄Ω ﬁ∞
 			pData1 = pDoc->GetNCdata(i);
 			dwValFlags = pData1->GetValFlags();
 			// çHãÔèÓïÒÇÃéÊìæ
@@ -99,7 +99,7 @@ try {
 				continue;
 			//
 			if ( dwValFlags & NCD_CORRECT ) {
-				if ( dToolD == HUGE_VAL ) {
+				if ( dToolD == HUGE_VALF ) {
 					if ( bFirst ) {
 						SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTSTART);
 						bFirst = FALSE;
@@ -142,7 +142,7 @@ try {
 		// ï‚ê≥Ÿ∞Ãﬂ
 		for ( ; i<nLoopCnt && nCorrect>0 && IsThread(); i++ ) {
 			if ( (i & 0x003f) == 0 )
-				pParent->m_ctReadProgress.SetPos(i);
+				pParent->m_ctReadProgress.SetPos((int)i);
 			pData2 = pDoc->GetNCdata(i);
 			if ( pData2->GetGtype() != G_TYPE )
 				continue;
@@ -525,7 +525,7 @@ catch (CMemoryException* e) {
 	nResult = IDCANCEL;
 }
 
-	pParent->m_ctReadProgress.SetPos(nLoopCnt);
+	pParent->m_ctReadProgress.SetPos((int)nLoopCnt);
 	pParent->PostMessage(WM_USERFINISH, IsThread() ? nResult : IDCANCEL);
 #ifdef _DEBUG
 	dbg.printf("PostMessage() Finish!");
@@ -536,10 +536,10 @@ catch (CMemoryException* e) {
 
 //////////////////////////////////////////////////////////////////////
 
-CPointD	CalcPerpendicularPoint
-	(const CPointD& pto, const CPoint3D& ptVal, double r, int k, ENPLANE enPlane)
+CPointF	CalcPerpendicularPoint
+	(const CPointF& pto, const CPoint3F& ptVal, float r, int k, ENPLANE enPlane)
 {
-	CPointD	pt;
+	CPointF	pt;
 	// îCà”ç¿ïWÇå¥ì_Ç…90ÅãâÒì]
 	switch ( enPlane ) {
 	case XY_PLANE:
@@ -552,9 +552,9 @@ CPointD	CalcPerpendicularPoint
 		pt = ptVal.GetYZ() - pto;
 		break;
 	}
-	double	q = atan2(pt.y, pt.x);
-	CPointD	pt1(r*cos(q), r*sin(q));
-	CPointD	pt2(-pt1.y*k, pt1.x*k);
+	float	q = atan2(pt.y, pt.x);
+	CPointF	pt1(r*cos(q), r*sin(q));
+	CPointF	pt2(-pt1.y*k, pt1.x*k);
 	pt2 += pto;
 
 	return pt2;
@@ -647,32 +647,32 @@ int GetInsideOutside(const CNCdata* pData1, const CNCdata* pData2, DWORD dwValFl
 
 	// µÃﬁºﬁ™∏ƒä‘ÇÃäpìxÇãÅÇﬂÇÈ(-180ÅãÅ`180Åã)
 	// ê∏ìxÇÊÇ∑Ç¨ÇƒÉ_ÉÅÇ»èÍçáÇ™ëΩÇ¢ÇÃÇ≈ÅAè≠êîëÊÇPà Ç≈éléÃå‹ì¸
-	double	dAngle = RoundUp(DEG(pData1->CalcBetweenAngle(pData2)/100.0)) * 100.0;
+	float	dAngle = RoundUp(DEG(pData1->CalcBetweenAngle(pData2)/100.0f)) * 100.0f;
 	
 	// ì‡ë§Ç©äOë§(âsäpÅEì›äp)Ç©ÅH(180ÅãÇ≈ÇÕì‡ë§èàóù)
-	if ( fabs(dAngle) >= 180.0 ) {
+	if ( fabs(dAngle) >= 180.0f ) {
 		nResult = 0;
 	}
 	else if ( dAngle > 0 ) {
 		if ( dwValFlags & NCD_CORRECT_R )
 			nResult = 0;
 		else
-			nResult = dAngle < 90.0 ? 1 : 2;
+			nResult = dAngle < 90.0f ? 1 : 2;
 	}
 	else {
 		if ( dwValFlags & NCD_CORRECT_L )
 			nResult = 0;
 		else
-			nResult = dAngle > -90.0 ? 1 : 2;
+			nResult = dAngle > -90.0f ? 1 : 2;
 	}
 
 	return nResult;		// 0:ì‡ë§, 1:äOë§âsäp, 2:äOë§ì›äp
 }
 
-optional<CPointD> SetCorrectCancel(const CNCdata* pData1, CNCdata* pData2)
+optional<CPointF> SetCorrectCancel(const CNCdata* pData1, CNCdata* pData2)
 {
 	DWORD	dwValFlags = pData2->GetValFlags();
-	CPointD	pt;
+	CPointF	pt;
 	BOOL	bChange = FALSE;
 
 	// G40∑¨›æŸÇ≈é≤éwíËÇ™Ç»Ç¢èIì_ç¿ïWÇï‚ê≥
@@ -726,11 +726,11 @@ optional<CPointD> SetCorrectCancel(const CNCdata* pData1, CNCdata* pData2)
 		return pt;
 	}
 
-	return optional<CPointD>();
+	return optional<CPointF>();
 }
 
 CNCdata* CreateNCobj
-	(const CNCdata* pData, const CPointD& pt, double dValue/*=HUGE_VAL*/)
+	(const CNCdata* pData, const CPointF& pt, float dValue/*=HUGE_VALF*/)
 {
 	NCARGV	ncArgv;
 	ZeroMemory(&ncArgv, sizeof(NCARGV));
@@ -742,12 +742,22 @@ CNCdata* CreateNCobj
 	ncArgv.bG98			= pData->GetG98();
 	ncArgv.dFeed		= pData->GetFeed();
 	ncArgv.dEndmill		= pData->GetEndmill();
-	ncArgv.nEndmillType	= pData->GetEndmillType();
+	ncArgv.nEndmillType	= pData->GetBallEndmill();
 	ncArgv.nc.nLine		= pData->GetBlockLineNo();
 	ncArgv.nc.nGtype	= G_TYPE;
 	ncArgv.nc.nGcode	= pData->GetGcode() > 0 ? 1 : 0;
 	ncArgv.nc.enPlane	= pData->GetPlane();
-	memcpy(&(ncArgv.g68), &(pData->GetReadData()->m_g68), sizeof(G68ROUND));
+//	memcpy(&(ncArgv.g68), &(pData->GetReadData()->m_g68), sizeof(G68ROUND));
+	if ( pData->GetReadData()->m_pG68 ) {
+		ncArgv.g68.bG68		= TRUE;
+		ncArgv.g68.enPlane	= pData->GetReadData()->m_pG68->enPlane;
+		ncArgv.g68.dRound	= pData->GetReadData()->m_pG68->dRound;
+		for ( int ii=0; ii<SIZEOF(ncArgv.g68.dOrg); ii++ )
+			ncArgv.g68.dOrg[ii] = pData->GetReadData()->m_pG68->dOrg[ii];
+	}
+	else {
+		ncArgv.g68.bG68 = FALSE;
+	}
 
 	// ç¿ïWílÇÃæØƒ
 	switch ( pData->GetPlane() ) {
@@ -755,7 +765,7 @@ CNCdata* CreateNCobj
 		ncArgv.nc.dValue[NCA_X] = pt.x;
 		ncArgv.nc.dValue[NCA_Y] = pt.y;
 		ncArgv.nc.dwValFlags = NCD_X|NCD_Y;
-		if ( dValue != HUGE_VAL ) {
+		if ( dValue != HUGE_VALF ) {
 			ncArgv.nc.dValue[NCA_Z] = dValue;
 			ncArgv.nc.dwValFlags |= NCD_Z;
 		}
@@ -764,7 +774,7 @@ CNCdata* CreateNCobj
 		ncArgv.nc.dValue[NCA_X] = pt.x;
 		ncArgv.nc.dValue[NCA_Z] = pt.y;
 		ncArgv.nc.dwValFlags = NCD_X|NCD_Z;
-		if ( dValue != HUGE_VAL ) {
+		if ( dValue != HUGE_VALF ) {
 			ncArgv.nc.dValue[NCA_Y] = dValue;
 			ncArgv.nc.dwValFlags |= NCD_Y;
 		}
@@ -773,7 +783,7 @@ CNCdata* CreateNCobj
 		ncArgv.nc.dValue[NCA_Y] = pt.x;
 		ncArgv.nc.dValue[NCA_Z] = pt.y;
 		ncArgv.nc.dwValFlags = NCD_Y|NCD_Z;
-		if ( dValue != HUGE_VAL ) {
+		if ( dValue != HUGE_VALF ) {
 			ncArgv.nc.dValue[NCA_X] = dValue;
 			ncArgv.nc.dwValFlags |= NCD_X;
 		}

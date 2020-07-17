@@ -5,6 +5,16 @@
 #pragma once
 
 /////////////////////////////////////////////////////////////////////////////
+inline void WIREDRAW::clear(void)
+{
+	vpt.clear();
+	vnr.clear();
+	vvef.clear();
+	vwl.clear();
+	vLen.clear();
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // ＮＣデータのベースクラス
 /////////////////////////////////////////////////////////////////////////////
 inline void CNCdata::Constracter(LPNCARGV lpArgv)
@@ -17,14 +27,29 @@ inline void CNCdata::Constracter(LPNCARGV lpArgv)
 	m_nc.dwValFlags	= lpArgv->nc.dwValFlags;
 	m_nc.dLength	= 0.0;
 	m_nSpindle		= lpArgv->nSpindle;
-	m_dFeed			= lpArgv->dFeed;
-	m_dEndmill		= lpArgv->dEndmill;
-	m_nEndmillType	= lpArgv->nEndmillType;
-	m_bG98			= lpArgv->bG98;
-	m_dMove[NCA_X] = m_dMove[NCA_Y] = m_dMove[NCA_Z] = 0.0;
+	m_dFeed			= (float)lpArgv->dFeed;
+	m_dEndmill		= (float)lpArgv->dEndmill;
+	m_dwFlags		= 0;
+	if ( lpArgv->nEndmillType )
+		m_dwFlags |= NCFLG_ENDMILL;	// 1:Ball
+	else
+		m_dwFlags &= ~NCFLG_ENDMILL;// 0:Square
+	if ( lpArgv->bG98 )
+		m_dwFlags |= NCFLG_G98;
+	else
+		m_dwFlags &= ~NCFLG_G98;
+	ZEROCLR(m_dMove);
 	m_pRead = new CNCread;
-	memcpy(&(m_pRead->m_g68),   &(lpArgv->g68),   sizeof(G68ROUND));
-	memcpy(&(m_pRead->m_taper), &(lpArgv->taper), sizeof(TAPER));
+//	memcpy(&(m_pRead->m_g68),   &(lpArgv->g68),   sizeof(G68ROUND));
+//	memcpy(&(m_pRead->m_taper), &(lpArgv->taper), sizeof(TAPER));
+	if ( lpArgv->g68.bG68 )
+		m_pRead->m_pG68 = new _G68ROUND(lpArgv->g68);
+	else
+		m_pRead->m_pG68 = NULL;
+	if ( lpArgv->taper.nTaper!=0 || lpArgv->taper.bTonly )
+		m_pRead->m_pTaper = new _TAPER(lpArgv->taper);
+	else
+		m_pRead->m_pTaper = NULL;
 	m_pWireObj = NULL;
 }
 
@@ -54,6 +79,11 @@ inline ENNCDTYPE CNCdata::GetType(void) const
 	return m_enType;
 }
 
+inline DWORD CNCdata::GetFlags(void) const
+{
+	return m_dwFlags;
+}
+
 inline UINT CNCdata::GetNCObjErrorCode(void) const
 {
 	return	m_nc.nErrorCode;
@@ -76,7 +106,12 @@ inline int CNCdata::GetGcode(void) const
 
 inline BOOL CNCdata::IsCutCode(void) const
 {
-	return 1<=m_nc.nGcode && m_nc.nGcode<=3;
+	return GetGtype()==G_TYPE && 1<=GetGcode() && GetGcode()<=3;
+}
+
+inline BOOL CNCdata::IsCircle(void) const
+{
+	return GetGtype()==G_TYPE && 2<=GetGcode() && GetGcode()<=3;
 }
 
 inline ENPLANE CNCdata::GetPlane(void) const
@@ -90,46 +125,47 @@ inline DWORD CNCdata::GetValFlags(void) const
 	return	m_nc.dwValFlags;
 }
 
-inline double CNCdata::GetValue(size_t a) const
+inline float CNCdata::GetValue(size_t a) const
 {
 	ASSERT(a>=0 && a<=SIZEOF(m_nc.dValue));
+//	return	(float)m_nc.dValue[a];
 	return	m_nc.dValue[a];
 }
 
-inline const CPoint3D CNCdata::GetStartPoint(void) const
+inline const CPoint3F CNCdata::GetStartPoint(void) const
 {
 	return m_ptValS;
 }
 
-inline const CPoint3D CNCdata::GetEndPoint(void) const
+inline const CPoint3F CNCdata::GetEndPoint(void) const
 {
 	return m_ptValE;
 }
 
-inline double CNCdata::GetEndValue(size_t a) const
+inline float CNCdata::GetEndValue(size_t a) const
 {
 	return m_ptValE[a];
 }
 
-inline const CPoint3D CNCdata::GetOriginalEndPoint() const
+inline const CPoint3F CNCdata::GetOriginalEndPoint() const
 {
 	ASSERT( m_pRead );
 	return m_pRead->m_ptValOrg;
 }
 
-inline double CNCdata::GetOriginalEndValue(size_t a) const
+inline float CNCdata::GetOriginalEndValue(size_t a) const
 {
 	ASSERT( m_pRead );
 	return m_pRead->m_ptValOrg[a];
 }
 
-inline const CPoint3D CNCdata::GetOffsetPoint(void) const
+inline const CPoint3F CNCdata::GetOffsetPoint(void) const
 {
 	ASSERT( m_pRead );
 	return m_pRead->m_ptOffset;
 }
 
-inline const CPoint3D CNCdata::GetEndCorrectPoint(void) const
+inline const CPoint3F CNCdata::GetEndCorrectPoint(void) const
 {
 	return m_obCdata.IsEmpty() ? GetEndPoint() : m_obCdata.GetTail()->GetEndPoint();
 }
@@ -139,14 +175,14 @@ inline CNCdata* CNCdata::GetEndCorrectObject(void)
 	return m_obCdata.IsEmpty() ? this : m_obCdata.GetTail();
 }
 
-inline const CPointD CNCdata::Get2DPoint(void) const
+inline const CPointF CNCdata::Get2DPoint(void) const
 {
 	return	m_pt2D;
 }
 
-inline double CNCdata::GetCutLength(void) const
+inline float CNCdata::GetCutLength(void) const
 {
-	return	m_nc.dLength;
+	return	(float)m_nc.dLength;
 }
 
 inline int CNCdata::GetSpindle(void) const
@@ -154,47 +190,47 @@ inline int CNCdata::GetSpindle(void) const
 	return m_nSpindle;
 }
 
-inline double CNCdata::GetFeed(void) const
+inline float CNCdata::GetFeed(void) const
 {
 	return m_dFeed;
 }
 
-inline double CNCdata::GetMove(size_t a) const
+inline float CNCdata::GetMove(size_t a) const
 {
 	ASSERT(a>=0 && a<=SIZEOF(m_dMove));
 	return m_dMove[a];
 }
 
-inline double  CNCdata::SetMove(size_t a, double m)
+inline float CNCdata::SetMove(size_t a, float m)
 {
 	ASSERT(a>=0 && a<=SIZEOF(m_dMove));
 	m_dMove[a] = m;
 	return m_dMove[a];
 }
 
-inline double CNCdata::GetEndmill(void) const
+inline float CNCdata::GetEndmill(void) const
 {
 	return m_dEndmill;
 }
 
-inline int CNCdata::GetEndmillType(void) const
+inline BOOL CNCdata::GetBallEndmill(void) const
 {
-	return m_nEndmillType;
+	return GetFlags() & NCFLG_ENDMILL;
 }
 
 inline BOOL CNCdata::GetG98(void) const
 {
-	return m_bG98;
+	return GetFlags() & NCFLG_G98;
 }
 
-inline CRect3D CNCdata::GetMaxRect(void) const
+inline CRect3F CNCdata::GetMaxRect(void) const
 {
-	CRect3D	rcResult;
+	CRect3F	rcResult;
 	rcResult.SetRectMinimum();
 	return rcResult;
 }
 
-inline CRect3D CNCdata::GetMaxCutRect(void) const
+inline CRect3F CNCdata::GetMaxCutRect(void) const
 {
 	return CNCdata::GetMaxRect();
 }
@@ -204,19 +240,19 @@ inline CNCarray* CNCdata::GetCorrectArray(void)
 	return &m_obCdata;
 }
 
-inline boost::tuple<BOOL, CPointD, double, double> CNCdata::CalcRoundPoint(const CNCdata*, double) const
+inline boost::tuple<BOOL, CPointF, float, float> CNCdata::CalcRoundPoint(const CNCdata*, float) const
 {
 	BOOL	bResult = FALSE;
-	double	rr1 = 0.0, rr2 = 0.0;
-	return boost::make_tuple(bResult, CPointD(), rr1, rr2);
+	float	rr1 = 0.0, rr2 = 0.0;
+	return boost::make_tuple(bResult, CPointF(), rr1, rr2);
 }
 
-inline boost::optional<CPointD> CNCdata::SetChamferingPoint(BOOL, double)
+inline boost::optional<CPointF> CNCdata::SetChamferingPoint(BOOL, float)
 {
-	return boost::optional<CPointD>();
+	return boost::optional<CPointF>();
 }
 
-inline double CNCdata::CalcBetweenAngle(const CNCdata*) const
+inline float CNCdata::CalcBetweenAngle(const CNCdata*) const
 {
 	return 0.0;
 }
@@ -226,28 +262,28 @@ inline int CNCdata::CalcOffsetSign(void) const
 	return 0;
 }
 
-inline boost::optional<CPointD> CNCdata::CalcPerpendicularPoint(ENPOINTORDER, double, int) const
+inline boost::optional<CPointF> CNCdata::CalcPerpendicularPoint(ENPOINTORDER, float, int) const
 {
-	return boost::optional<CPointD>();
+	return boost::optional<CPointF>();
 }
 
-inline boost::optional<CPointD> CNCdata::CalcOffsetIntersectionPoint(const CNCdata*, double, double, BOOL) const
+inline boost::optional<CPointF> CNCdata::CalcOffsetIntersectionPoint(const CNCdata*, float, float, BOOL) const
 {
-	return boost::optional<CPointD>();
+	return boost::optional<CPointF>();
 }
 
-inline boost::optional<CPointD> CNCdata::CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const
+inline boost::optional<CPointF> CNCdata::CalcOffsetIntersectionPoint2(const CNCdata*, float, BOOL) const
 {
-	return boost::optional<CPointD>();
+	return boost::optional<CPointF>();
 }
 
-inline void CNCdata::SetCorrectPoint(ENPOINTORDER, const CPointD&, double)
+inline void CNCdata::SetCorrectPoint(ENPOINTORDER, const CPointF&, float)
 {
 }
 
-inline double CNCdata::SetCalcLength(void)
+inline float CNCdata::SetCalcLength(void)
 {
-	m_dMove[NCA_X] = m_dMove[NCA_Y] = m_dMove[NCA_Z] = 0.0;
+	ZEROCLR(m_dMove);
 	m_nc.dLength = 0.0;
 	return 0.0;
 }
@@ -257,7 +293,7 @@ inline double CNCdata::SetCalcLength(void)
 /////////////////////////////////////////////////////////////////////////////
 inline EN_NCPEN CNCline::GetPenType(void) const
 {
-	if ( m_nc.nGcode == 1 )
+	if ( GetGcode() == 1 )
 		return ( GetValFlags()&NCD_Z && !(GetValFlags()&(NCD_X|NCD_Y)) ) ?
 				NCPEN_G1Z : NCPEN_G1;
 	else
@@ -266,16 +302,16 @@ inline EN_NCPEN CNCline::GetPenType(void) const
 
 inline int CNCline::GetLineType(void) const
 {
-	if ( m_nc.nGcode == 1 )
+	if ( GetGcode() == 1 )
 		return ( GetValFlags()&NCD_Z && !(GetValFlags()&(NCD_X|NCD_Y)) ) ?
 				NCCOLLINE_G1Z : NCCOLLINE_G1;
 	else
 		return NCCOLLINE_G0;
 }
 
-inline CRect3D CNCline::GetMaxRect(void) const
+inline CRect3F CNCline::GetMaxRect(void) const
 {
-	CRect3D	rcResult;
+	CRect3F	rcResult;
 	
 	rcResult.TopLeft()		= m_ptValS.GetXY();
 	rcResult.BottomRight()	= m_ptValE.GetXY();
@@ -286,9 +322,9 @@ inline CRect3D CNCline::GetMaxRect(void) const
 	return rcResult;
 }
 
-inline CRect3D CNCline::GetMaxCutRect(void) const
+inline CRect3F CNCline::GetMaxCutRect(void) const
 {
-	return ( m_nc.nGcode == 1 ) ?
+	return ( GetGcode() == 1 ) ?
 		CNCline::GetMaxRect() :
 		CNCdata::GetMaxRect();
 }
@@ -306,7 +342,7 @@ inline CPoint CNCline::GetDrawEndPoint(size_t n) const
 /////////////////////////////////////////////////////////////////////////////
 // ＮＣデータの固定サイクルクラス
 /////////////////////////////////////////////////////////////////////////////
-inline void PTCYCLE::DrawTuning(const double f)
+inline void PTCYCLE::DrawTuning(const float f)
 {
 	ptDrawI = ptI * f;
 	ptDrawR = ptR * f;
@@ -325,45 +361,45 @@ inline const PTCYCLE* CNCcycle::GetCycleInside(size_t n) const
 	return m_Cycle[n];
 }
 
-inline const CPoint3D CNCcycle::GetIPoint(void) const
+inline const CPoint3F CNCcycle::GetIPoint(void) const
 {
 	return m_ptValI;
 }
 
-inline const CPoint3D CNCcycle::GetRPoint(void) const
+inline const CPoint3F CNCcycle::GetRPoint(void) const
 {
 	return m_ptValR;
 }
 
-inline double CNCcycle::GetInitialValue(void) const
+inline float CNCcycle::GetInitialValue(void) const
 {
 	return m_dInitial;
 }
 
-inline double CNCcycle::GetCycleMove(void) const
+inline float CNCcycle::GetCycleMove(void) const
 {
 	return m_dCycleMove;
 }
 
-inline double CNCcycle::GetDwell(void) const
+inline float CNCcycle::GetDwell(void) const
 {
 	return m_dDwell;
 }
 
-inline CRect3D CNCcycle::GetMaxRect(void) const
+inline CRect3F CNCcycle::GetMaxRect(void) const
 {
-	CRect3D	rcResult(CNCline::GetMaxRect());
+	CRect3F	rcResult(CNCline::GetMaxRect());
 	rcResult |= CNCcycle::GetMaxCutRect();
 	return rcResult;
 }
 
-inline CRect3D CNCcycle::GetMaxCutRect(void) const
+inline CRect3F CNCcycle::GetMaxCutRect(void) const
 {
-	CRect3D	rcResult;
+	CRect3F	rcResult;
 	rcResult.SetRectMinimum();
 
 	if ( m_nDrawCnt > 0 ) {
-		CRect3D	rc(
+		CRect3F	rc(
 			m_Cycle3D[0].ptR.x,				// left
 			m_Cycle3D[0].ptR.y,				// top
 			m_Cycle3D[m_nDrawCnt-1].ptC.x,	// right
@@ -378,19 +414,19 @@ inline CRect3D CNCcycle::GetMaxCutRect(void) const
 	return rcResult;
 }
 
-inline boost::tuple<BOOL, CPointD, double, double> CNCcycle::CalcRoundPoint(const CNCdata*, double) const
+inline boost::tuple<BOOL, CPointF, float, float> CNCcycle::CalcRoundPoint(const CNCdata*, float) const
 {
 	BOOL	bResult = FALSE;
-	double	rr1 = 0.0, rr2 = 0.0;
-	return boost::make_tuple(bResult, CPointD(), rr1, rr2);
+	float	rr1 = 0.0, rr2 = 0.0;
+	return boost::make_tuple(bResult, CPointF(), rr1, rr2);
 }
 
-inline boost::optional<CPointD> CNCcycle::SetChamferingPoint(BOOL, double)
+inline boost::optional<CPointF> CNCcycle::SetChamferingPoint(BOOL, float)
 {
-	return boost::optional<CPointD>();
+	return boost::optional<CPointF>();
 }
 
-inline double CNCcycle::CalcBetweenAngle(const CNCdata*) const
+inline float CNCcycle::CalcBetweenAngle(const CNCdata*) const
 {
 	return 0.0;
 }
@@ -400,67 +436,67 @@ inline int CNCcycle::CalcOffsetSign(void) const
 	return 0;
 }
 
-inline boost::optional<CPointD> CNCcycle::CalcPerpendicularPoint(ENPOINTORDER, double, int) const
+inline boost::optional<CPointF> CNCcycle::CalcPerpendicularPoint(ENPOINTORDER, float, int) const
 {
-	return boost::optional<CPointD>();
+	return boost::optional<CPointF>();
 }
 
-inline boost::optional<CPointD> CNCcycle::CalcOffsetIntersectionPoint(const CNCdata*, double, double, BOOL) const
+inline boost::optional<CPointF> CNCcycle::CalcOffsetIntersectionPoint(const CNCdata*, float, float, BOOL) const
 {
-	return boost::optional<CPointD>();
+	return boost::optional<CPointF>();
 }
 
-inline boost::optional<CPointD> CNCcycle::CalcOffsetIntersectionPoint2(const CNCdata*, double, BOOL) const
+inline boost::optional<CPointF> CNCcycle::CalcOffsetIntersectionPoint2(const CNCdata*, float, BOOL) const
 {
-	return boost::optional<CPointD>();
+	return boost::optional<CPointF>();
 }
 
-inline void CNCcycle::SetCorrectPoint(ENPOINTORDER, const CPointD&, double)
+inline void CNCcycle::SetCorrectPoint(ENPOINTORDER, const CPointF&, float)
 {
 }
 
-inline double CNCcycle::SetCalcLength(void)
+inline float CNCcycle::SetCalcLength(void)
 {
 	// ｺﾝｽﾄﾗｸﾀで計算済み
-	return m_nc.dLength;
+	return (float)m_nc.dLength;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // ＮＣデータの円弧補間クラス
 /////////////////////////////////////////////////////////////////////////////
-inline int CNCcircle::GetG23(void) const
+inline BOOL CNCcircle::GetG03(void) const
 {
-	return m_nG23;
+	return GetFlags() & NCFLG_G02G03;
 }
 
-inline boost::tuple<double, double> CNCcircle::GetSqEq(void) const
+inline boost::tuple<float, float> CNCcircle::GetSqEq(void) const
 {
-	return ( m_nG23 == 0 ) ?
-		boost::make_tuple(m_eq, m_sq) :
-		boost::make_tuple(m_sq, m_eq);
+	return ( GetG03() ) ?
+		boost::make_tuple(m_sq, m_eq) :
+		boost::make_tuple(m_eq, m_sq);
 }
 
-inline const CPoint3D CNCcircle::GetOrg(void) const
+inline const CPoint3F CNCcircle::GetOrg(void) const
 {
 	return m_ptOrg;
 }
 
-inline double CNCcircle::GetR(void) const
+inline float CNCcircle::GetR(void) const
 {
 	return m_r;
 }
 
-inline double CNCcircle::GetStartAngle(void) const
+inline float CNCcircle::GetStartAngle(void) const
 {
 	return m_sq;
 }
 
-inline double CNCcircle::GetEndAngle(void) const
+inline float CNCcircle::GetEndAngle(void) const
 {
 	return m_eq;
 }
 
-inline CRect3D CNCcircle::GetMaxCutRect(void) const
+inline CRect3F CNCcircle::GetMaxCutRect(void) const
 {
 	return CNCcircle::GetMaxRect();
 }
@@ -523,12 +559,12 @@ inline CNCdata* CNCblock::GetBlockToNCdata(void) const
 	return m_pData;
 }
 
-inline int CNCblock::GetBlockToNCdataArrayNo(void) const
+inline size_t CNCblock::GetBlockToNCdataArrayNo(void) const
 {
 	return m_nArray;
 }
 
-inline void CNCblock::SetBlockToNCdata(CNCdata* pData, int nArray)
+inline void CNCblock::SetBlockToNCdata(CNCdata* pData, size_t nArray)
 {
 	m_pData	 = pData;
 	m_nArray = nArray;

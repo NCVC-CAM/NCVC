@@ -62,7 +62,7 @@ typedef	struct	tagDXFADDSHAPE {
 // 現在の表示状況
 typedef	struct	tagDXFVIEWINFO {
 	CPoint		ptOrg;		// 論理座標原点
-	double		dFactor;	// 拡大率
+	float		dFactor;	// 拡大率
 } DXFVIEWINFO, *LPDXFVIEWINFO;
 
 // ﾌｧｲﾙ変更通知の監視ｽﾚｯﾄﾞ
@@ -87,7 +87,7 @@ class CDocBase : public CDocument
 
 protected:
 	std::bitset<DOCFLG_NUM>	m_bDocFlg;	// 派生ｸﾗｽ用ﾄﾞｷｭﾒﾝﾄﾌﾗｸﾞ
-	CRect3D			m_rcMax;	// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
+	CRect3F			m_rcMax;	// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
 
 	// ｱﾄﾞｲﾝｼﾘｱﾙ関数の保持
 	PFNNCVCSERIALIZEFUNC	m_pfnSerialFunc;
@@ -116,7 +116,7 @@ protected:
 	BOOL	UpdateModifiedTitle(BOOL bModified, CString& strTitle);
 
 public:
-	CRect3D	GetMaxRect(void) const {
+	CRect3F	GetMaxRect(void) const {
 		return m_rcMax;
 	}
 	BOOL	IsDocFlag(size_t n) const {

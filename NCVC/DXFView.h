@@ -6,7 +6,7 @@
 #include "ViewBase.h"
 
 // ﾂﾘｰﾋﾞｭｰで選択されているﾀｲﾌﾟ
-typedef	boost::variant<DWORD, CLayerData*, CDXFshape*, CDXFworking*>	DXFTREETYPE;
+typedef	boost::variant<DWORD_PTR, CLayerData*, CDXFshape*, CDXFworking*>	DXFTREETYPE;
 enum {
 	DXFTREETYPE_MUSTER = 0,
 	DXFTREETYPE_LAYER,
@@ -45,12 +45,12 @@ struct TOOLINFO_EX : public TOOLINFO
 
 class CDXFView : public CViewBase
 {
-	CPointD		m_ptArraw[2][3],	// 一時的な始点終点の矢印座標
+	CPointF		m_ptArraw[2][3],	// 一時的な始点終点の矢印座標
 				m_ptStart[4];		// 一時的な開始位置(円で最大4点)
 	CDXFchain	m_ltOutline[2];		// 一時的な輪郭ｵﾌﾞｼﾞｪｸﾄ
 	CDXFdata*	m_pSelData;			// 　〃　ｵﾌﾞｼﾞｪｸﾄ(OnLButtonUp)
 	DXFTREETYPE	m_vSelect;			// 現在選択されているﾂﾘｰｵﾌﾞｼﾞｪｸﾄ
-	double		m_dOffset;			// ↑のｵﾌｾｯﾄ値
+	float		m_dOffset;			// ↑のｵﾌｾｯﾄ値
 	int			m_nSelect;			// m_ptArraw[0|1] or -1
 	CRect		m_rcDrawWork;		// ﾜｰｸ矩形(bind)
 	std::vector<SELECTBIND>						m_bindSel;	// 選択情報
@@ -76,14 +76,14 @@ class CDXFView : public CViewBase
 	BOOL	IsBindSelected(int);
 	void	ClearBindSelectData(void);
 
-	void	OnLButtonUp_Separate(CDC*, CDXFdata*, const CPointD&, const CRectD&);
-	void	OnLButtonUp_Vector  (CDC*, CDXFdata*, const CPointD&, const CRectD&);
-	void	OnLButtonUp_Start   (CDC*, CDXFdata*, const CPointD&, const CRectD&);
-	void	OnLButtonUp_Outline (CDC*, CDXFdata*, const CPointD&, const CRectD&);
-	void	OnMouseMove_Separate(CDC*, const CPointD&, const CRectD&);
-	void	OnMouseMove_Vector  (CDC*, const CPointD&, const CRectD&);
-	void	OnMouseMove_Start   (CDC*, const CPointD&, const CRectD&);
-	void	OnMouseMove_Outline (CDC*, const CPointD&, const CRectD&);
+	void	OnLButtonUp_Separate(CDC*, CDXFdata*, const CPointF&, const CRectF&);
+	void	OnLButtonUp_Vector  (CDC*, CDXFdata*, const CPointF&, const CRectF&);
+	void	OnLButtonUp_Start   (CDC*, CDXFdata*, const CPointF&, const CRectF&);
+	void	OnLButtonUp_Outline (CDC*, CDXFdata*, const CPointF&, const CRectF&);
+	void	OnMouseMove_Separate(CDC*, const CPointF&, const CRectF&);
+	void	OnMouseMove_Vector  (CDC*, const CPointF&, const CRectF&);
+	void	OnMouseMove_Start   (CDC*, const CPointF&, const CRectF&);
+	void	OnMouseMove_Outline (CDC*, const CPointF&, const CRectF&);
 
 protected:
 	CDXFView();           // 動的生成に使用されるプロテクト コンストラクタ

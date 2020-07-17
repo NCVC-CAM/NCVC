@@ -20,14 +20,14 @@ static	const	int		g_dfWirNOrder[] = {
 	1, 1, 0, 0, 2, 0
 };
 
-// doubleå^ñΩóﬂ
+// floatå^ñΩóﬂ
 static	LPCTSTR	g_szWirDOrder[] = {
 	"Depth", "Taper", "Feed",
 	"G92X", "G92Y",
 	"AWFcircleLo", "AWFcircleHi",
 	"Ellipse"
 };
-static	const	double	g_dfWirDOrder[] = {
+static	const	float	g_dfWirDOrder[] = {
 	10.0, 0.0, 0.0,
 	0.0, 0.0,
 	1.0, 1.0,

@@ -16,6 +16,7 @@ BEGIN_MESSAGE_MAP(CViewSetup5, CPropertyPage)
 	ON_BN_CLICKED(IDC_VIEWSETUP1_DEFCOLOR, &CViewSetup5::OnDefColor)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_WORK, &CViewSetup5::OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_CUT, &CViewSetup5::OnColorButton)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_MILL, &CViewSetup5::OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_SOLIDVIEW, &CViewSetup5::OnSolidClick)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_G00VIEW, &CViewSetup5::OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_DRAGRENDER, &CViewSetup5::OnChange)
@@ -36,7 +37,7 @@ CViewSetup5::CViewSetup5() : CPropertyPage(CViewSetup5::IDD)
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	m_bSolid		= pOpt->m_bSolidView;
-	m_bG00View		= pOpt->m_bG00View;
+	m_bWirePath		= pOpt->m_bWirePath;
 	m_bDrag			= pOpt->m_bDragRender;
 	m_bTexture		= pOpt->m_bTexture;
 	m_strTexture	= pOpt->m_strTexture;
@@ -63,7 +64,7 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTUREFILE, m_ctTextureFile);
 	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTUREFIND, m_ctTextureFind);
 	DDX_Check(pDX, IDC_VIEWSETUP5_SOLIDVIEW, m_bSolid);
-	DDX_Check(pDX, IDC_VIEWSETUP5_G00VIEW, m_bG00View);
+	DDX_Check(pDX, IDC_VIEWSETUP5_G00VIEW, m_bWirePath);
 	DDX_Check(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_bDrag);
 	DDX_Check(pDX, IDC_VIEWSETUP5_TEXTURE, m_bTexture);
 	DDX_Text(pDX, IDC_VIEWSETUP5_TEXTUREFILE, m_strTexture);
@@ -95,7 +96,7 @@ BOOL CViewSetup5::OnInitDialog()
 	__super::OnInitDialog();
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	m_dEndmill = pOpt->m_dDefaultEndmill * 2.0;
+	m_dEndmill = pOpt->m_dDefaultEndmill * 2.0f;
 	EnableSolidControl();
 	EnableTextureControl();
 
@@ -110,20 +111,20 @@ BOOL CViewSetup5::OnApply()
 	// XVî•ñ‚ð pOpt->m_dwUpdateFlg ‚É¾¯Ä
 	if ( pOpt->m_bSolidView != m_bSolid ||
 			pOpt->m_nMillType != m_nMillType ||
-			pOpt->m_dDefaultEndmill != (m_dEndmill/2.0) )
+			pOpt->m_dDefaultEndmill != (m_dEndmill/2.0f) )
 		pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
-	if ( pOpt->m_bG00View != m_bG00View )
+	if ( pOpt->m_bWirePath != m_bWirePath )
 		pOpt->m_dwUpdateFlg |= VIEWUPDATE_REDRAW;
 	if ( pOpt->m_bTexture != m_bTexture ||
 			pOpt->m_strTexture != m_strTexture )
 		pOpt->m_dwUpdateFlg |= VIEWUPDATE_TEXTURE;
 	pOpt->m_bSolidView	= m_bSolid;
-	pOpt->m_bG00View	= m_bG00View;
+	pOpt->m_bWirePath	= m_bWirePath;
 	pOpt->m_bDragRender	= m_bDrag;
 	pOpt->m_bTexture	= m_bTexture;
 	pOpt->m_strTexture	= m_strTexture;
 	pOpt->m_nMillType	= m_nMillType;
-	pOpt->m_dDefaultEndmill = m_dEndmill / 2.0;
+	pOpt->m_dDefaultEndmill = m_dEndmill / 2.0f;
 
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
 		if ( pOpt->m_colNCView[i+NCCOL_GL_WRK] != m_colView[i] )
@@ -155,7 +156,7 @@ HBRUSH CViewSetup5::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
 	if ( nCtlColor == CTLCOLOR_STATIC ) {
 		int	nID = pWnd->GetDlgCtrlID();
-		if ( nID>=IDC_VIEWSETUP5_ST_WORK && nID<=IDC_VIEWSETUP5_ST_CUT )
+		if ( nID>=IDC_VIEWSETUP5_ST_WORK && nID<=IDC_VIEWSETUP5_ST_MILL )
 			return m_brColor[nID-IDC_VIEWSETUP5_ST_WORK];
 	}
 	return __super::OnCtlColor(pDC, pWnd, nCtlColor);

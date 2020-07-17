@@ -155,7 +155,7 @@ BOOL CMKNCSetup4::OnKillActive()
 	if ( !__super::OnKillActive() )
 		return FALSE;
 
-	if ( (double)m_dDrillZ > (double)m_dDrillR ) {
+	if ( (float)m_dDrillZ > (float)m_dDrillR ) {
 		AfxMessageBox(IDS_ERR_ZCUT, MB_OK|MB_ICONEXCLAMATION);
 		m_dDrillZ.SetFocus();
 		m_dDrillZ.SetSel(0, -1);

@@ -82,7 +82,7 @@ static	CTypedPtrMap<CMapStringToPtr, CString, CDXFBlockData*>
 						g_strBlockMap;	// BLOCKSｾｸｼｮﾝﾃﾞｰﾀ一時領域
 										// ｷｰ検索高速化のためCMapｸﾗｽを使用
 static	const	CDXFOption*		g_pOpt;	// DXFｵﾌﾟｼｮﾝ
-static	double			g_dValue[DXFMAXVALUESIZE];
+static	float			g_dValue[DXFMAXVALUESIZE];
 static	DWORD			g_dwValueFlg;
 static	CString			g_strValue;
 
@@ -91,8 +91,8 @@ static	CDXFpolyline*	g_pPolyline;	// Polylineﾃﾞｰﾀの先行生成
 										// VERTEX溜まってからﾄﾞｷｭﾒﾝﾄﾃﾞｰﾀとして登録
 static	BOOL	g_bVertex,		// Polylineの各頂点処理中
 				g_bPuff;		// ふくらみ情報処理中
-static	double	g_dPuff;		// 前のVERTEXのふくらみ値
-static	CPointD	g_ptPuff;		// ふくらみ情報を計算するための前回位置
+static	float	g_dPuff;		// 前のVERTEXのふくらみ値
+static	CPointF	g_ptPuff;		// ふくらみ情報を計算するための前回位置
 static	enENTITIESTYPE	g_nType;// TYPE_XXX
 static	int		g_nBlock,		// (-1:未処理, 0:Block基点待ち, 1:Block処理中)
 				g_nLayer;		// ﾚｲﾔ情報
@@ -154,7 +154,7 @@ static inline int _SetValue(void)
 {
 	for ( int i=0; i<SIZEOF(g_dValue); i++ ) {
 		if ( g_nGroup == g_nValueGroupCode[i] ) {
-			g_dValue[i] = atof(g_strOrder);
+			g_dValue[i] = (float)atof((LPCTSTR)g_strOrder);
 			g_dwValueFlg |= g_dwValSet[i];
 			return i;
 		}
@@ -183,10 +183,10 @@ static inline enSECNAME _SectionNameCheck(void)
 	return f==end(g_szSectionName) ? SEC_NOSECNAME : (enSECNAME)(f-g_szSectionName);
 }
 
-static inline void _ArbitraryAxis(CPointD& pt)	// 任意の軸のｱﾙｺﾞﾘｽﾞﾑ
+static inline void _ArbitraryAxis(CPointF& pt)	// 任意の軸のｱﾙｺﾞﾘｽﾞﾑ
 {
-	double	ax[NCXYZ], ay[NCXYZ];
-	CPointD	ptResult;
+	float	ax[NCXYZ], ay[NCXYZ];
+	CPointF	ptResult;
 
 	if ( fabs(g_dValue[VALUE210])<(1.0/64.0) && fabs(g_dValue[VALUE220])<(1.0/64.0) ) {
 		ax[NCA_X] =  g_dValue[VALUE230];
@@ -216,7 +216,7 @@ static inline BOOL _SetDxfArgv(LPCDXFPARGV lpPoint)
 	dbg.printf("Point Layer=%s", lpPoint->pLayer ? lpPoint->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_POINT ) {
-		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 		lpPoint->c.x = pt.x;
@@ -241,7 +241,7 @@ static inline BOOL _SetDxfArgv(LPCDXFLARGV lpLine)
 	dbg.printf("Line Layer=%s", lpLine->pLayer ? lpLine->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_LINE ) {
-		CPointD	pts(g_dValue[VALUE10], g_dValue[VALUE20]),
+		CPointF	pts(g_dValue[VALUE10], g_dValue[VALUE20]),
 				pte(g_dValue[VALUE11], g_dValue[VALUE21]);
 		if ( g_dwValueFlg & VALFLG_PLANE ) {
 			_ArbitraryAxis(pts);
@@ -272,7 +272,7 @@ static inline BOOL _SetDxfArgv(LPCDXFCARGV lpCircle)
 	dbg.printf("Circle Layer=%s", lpCircle->pLayer ? lpCircle->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_CIRCLE ) {
-		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);
 		lpCircle->c.x = pt.x;
@@ -299,7 +299,7 @@ static inline BOOL _SetDxfArgv(LPCDXFAARGV lpArc)
 	dbg.printf("Arc Layer=%s", lpArc->pLayer ? lpArc->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_ARC ) {
-		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);
 		lpArc->c.x = pt.x;
@@ -328,7 +328,7 @@ static inline BOOL _SetDxfArgv(LPCDXFEARGV lpEllipse)
 	dbg.printf("Ellipse Layer=%s", lpEllipse->pLayer ? lpEllipse->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_ELLIPSE ) {
-		CPointD	ptc(g_dValue[VALUE10], g_dValue[VALUE20]),
+		CPointF	ptc(g_dValue[VALUE10], g_dValue[VALUE20]),
 				ptl(g_dValue[VALUE11], g_dValue[VALUE21]);
 		if ( g_dwValueFlg & VALFLG_PLANE ) {
 			_ArbitraryAxis(ptc);
@@ -365,7 +365,7 @@ static inline BOOL _SetDxfArgv(LPCDXFTARGV lpText)
 	dbg.printf("Text Layer=%s", lpText->pLayer ? lpText->pLayer->GetLayerName() : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_TEXT ) {
-		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 		lpText->strValue = g_strValue;
@@ -388,7 +388,7 @@ static inline BOOL _SetDxfArgv(LPCDXFTARGV lpText)
 static inline BOOL _SetBlockArgv(LPCDXFBLOCK lpBlock)
 {
 	if ( g_dwValueFlg & VALFLG_POINT ) {
-		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 		lpBlock->ptOrg.x = pt.x;
@@ -545,7 +545,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 	CLayerData*	pLayer;
 	CDXFdata*	pData;
 	CDXFdata*	pDataBlock;
-	CPointD		pt;
+	CPointF		pt;
 	DXFEARGV	dxfEllipse;
 	DXFBLOCK	argvBlock;
 
@@ -675,7 +675,7 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 	DXFEARGV	dxfEllipse;
 	DXFTARGV	dxfText;
 	CDXFBlockData*	pBlock;
-	CPointD		pt;
+	CPointF		pt;
 
 	switch ( g_nType ) {
 	case TYPE_POINT:
@@ -884,7 +884,7 @@ static inline int _BlocksKeywordCheck(void)
 	if ( g_nGroup != g_nGroupCode[GROUP0] )
 		return -2;
 	auto f = find_if(g_szBlocks, lambda::_1==g_strOrder);
-	return f==end(g_szBlocks) ? -1 : (f-g_szBlocks);
+	return f==end(g_szBlocks) ? -1 : (int)(f-g_szBlocks);
 }
 
 BOOL SetBlockData(void)
@@ -1029,7 +1029,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		break;
 	case -1:	// 認識できないｷｰﾜｰﾄﾞ(BLOCK, ENDBLK以外)
 		if ( g_nBlock==0 && g_pBkData ) {	// Block基点待ち
-			CPointD		pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+			CPointF		pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 			g_pBkData->SetBlockOrigin(pt);
 #ifdef _DEBUG
 			dbg.printf("BlockOrigin x=%f y=%f", pt.x, pt.y);
@@ -1098,7 +1098,7 @@ static inline int _PolylineKeywordCheck(void)
 //	if ( g_nGroup != g_nGroupCode[GROUP0] )
 //		return -2;
 	auto f = find_if(g_szPolyline, lambda::_1==g_strOrder);
-	return f==end(g_szPolyline) ? -1 : (f-g_szPolyline);
+	return f==end(g_szPolyline) ? -1 : (int)(f-g_szPolyline);
 }
 
 BOOL PolylineProcedure(CDXFDoc* pDoc)
@@ -1368,12 +1368,6 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 		g_strMissBlckMap.RemoveAll();
 		bResult = FALSE;
 	}
-//	catch ( const bad_lexical_cast& ) {
-//		AfxMessageBox(IDS_ERR_FILEREAD, MB_OK|MB_ICONSTOP);
-//		g_strMissEntiMap.RemoveAll();
-//		g_strMissBlckMap.RemoveAll();
-//		bResult = FALSE;
-//	}
 
 	if ( pProgress )
 		pProgress->SetPos(100);

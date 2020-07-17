@@ -23,8 +23,8 @@ private:
 				m_strComment;			// ºÒÝÄ‘¼
 
 	int			m_nToolBar;				// Â°ÙÊÞ°‚É“o˜^‚·‚é²ÍÞÝÄ
-	int			m_nMenuID[NCVCADIN_TYPESIZE];	// ÒÆ­°ID (from CNCVCApp)
-	int			m_nImage;	// ²Ò°¼ÞØ½Ä‡‚ (from CMainFrame)
+	WORD		m_nMenuID[NCVCADIN_TYPESIZE];	// ÒÆ­°ID (from CNCVCApp)
+	WORD		m_nImage;				// ²Ò°¼ÞØ½Ä‡‚ (from CMainFrame)
 
 public:
 	CNCVCaddinIF(HMODULE, LPNCVCINITIALIZE, LPCTSTR);
@@ -57,13 +57,13 @@ public:
 	CString		GetComment(void) const {
 		return m_strComment;
 	}
-	void		SetMenuID(size_t n, int nID) {
+	void		SetMenuID(size_t n, WORD nID) {
 		m_nMenuID[n] = nID;
 	}
-	int			GetImageNo(void) const {
+	WORD		GetImageNo(void) const {
 		return m_nImage;
 	}
-	void		SetImageNo(int nImage) {
+	void		SetImageNo(WORD nImage) {
 		m_nImage = nImage;
 	}
 	int			GetToolBarID(void) const;

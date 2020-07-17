@@ -22,7 +22,7 @@ NCEXPORT int WINAPI NCVC_GetNCBlockDataSize(NCVCHANDLE hDoc)
 #endif
 	if ( !IsNCDocument(hDoc) )
 		return -1;
-	return reinterpret_cast<CNCDoc *>(hDoc)->GetNCBlockSize();
+	return (int)(reinterpret_cast<CNCDoc *>(hDoc)->GetNCBlockSize());
 }
 
 NCEXPORT int WINAPI NCVC_GetNCBlockData(NCVCHANDLE hDoc, int nIndex, LPSTR pszBuf, int nMax)
@@ -56,7 +56,7 @@ NCEXPORT int WINAPI NCVC_GetNCDataSize(NCVCHANDLE hDoc)
 {
 	if ( !IsNCDocument(hDoc) )
 		return -1;
-	return reinterpret_cast<CNCDoc *>(hDoc)->GetNCsize();
+	return (int)(reinterpret_cast<CNCDoc *>(hDoc)->GetNCsize());
 }
 
 NCEXPORT BOOL WINAPI NCVC_GetNCData(NCVCHANDLE hDoc, int nIndex, LPNCDATA pData)

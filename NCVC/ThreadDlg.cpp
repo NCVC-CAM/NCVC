@@ -137,7 +137,7 @@ LRESULT CThreadDlg::OnUserFinish(WPARAM wParam, LPARAM)
 #endif
 		delete	m_pThread;
 	}
-	EndDialog(wParam);
+	EndDialog((int)wParam);
 	return 0;
 }
 

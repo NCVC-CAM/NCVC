@@ -27,7 +27,7 @@ public:
 	CButton m_ctAcuteRound;
 	CButton m_ctCircle;
 	//}}AFX_DATA
-	double	m_dOffset;	// ｵﾌｾｯﾄ値取得用
+	float	m_dOffset;	// ｵﾌｾｯﾄ値取得用
 	int		m_nLoopCnt;	// 繰り返し数取得用
 
 // オーバーライド

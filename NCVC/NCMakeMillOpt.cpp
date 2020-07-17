@@ -36,7 +36,7 @@ static	const	int		g_dfMilNOrder[] = {
 	0, 0
 };
 
-// doubleå^ñΩóﬂ
+// floatå^ñΩóﬂ
 static	LPCTSTR	g_szMilDOrder[] = {
 	"Feed", "ZFeed",
 	"ZG0Stop", "ZCut", "G92X", "G92Y", "G92Z",
@@ -45,7 +45,7 @@ static	LPCTSTR	g_szMilDOrder[] = {
 	"DrillFeed", "DrillR", "DrillZ", "DrillCircleR",
 	"Tolerance", "DrillMargin"
 };
-static	const	double	g_dfMilDOrder[] = {
+static	const	float	g_dfMilDOrder[] = {
 	300.0, 100.0,
 	1.0, -12.0, 0.0, 0.0, 10.0,
 	0.5,

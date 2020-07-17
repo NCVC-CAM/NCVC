@@ -80,7 +80,7 @@ void CSplashWnd::OnPaint()
 	dcImage.SelectObject(pOldBitmap);
 }
 
-void CSplashWnd::OnTimer(UINT nIDEvent) 
+void CSplashWnd::OnTimer(UINT_PTR nIDEvent) 
 {
 	AfxGetMainWnd()->UpdateWindow();
 	KillTimer(IDC_SPLASH_TIMER);

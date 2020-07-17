@@ -63,10 +63,10 @@ BOOL CMKLASetup1::OnInitDialog()
 	m_nSpindle	= pOpt->LTH_I_SPINDLE;
 	m_dFeed		= pOpt->LTH_D_FEED;
 	m_dXFeed	= pOpt->LTH_D_XFEED;
-	m_dCut		= pOpt->LTH_D_CUT * 2.0;	// ’¼Œa’l‚Ö•ÏŠ·
+	m_dCut		= pOpt->LTH_D_CUT * 2.0f;	// ’¼Œa’l‚Ö•ÏŠ·
 	m_dPullZ	= pOpt->LTH_D_PULL_Z;
-	m_dPullX	= pOpt->LTH_D_PULL_X * 2.0;
-	m_dMargin	= pOpt->LTH_D_MARGIN * 2.0;
+	m_dPullX	= pOpt->LTH_D_PULL_X * 2.0f;
+	m_dMargin	= pOpt->LTH_D_MARGIN * 2.0f;
 	m_nMargin	= pOpt->LTH_I_MARGIN;
 	::Path_Name_From_FullPath(pOpt->m_strOption[MKLA_STR_HEADER], m_strHeaderPath, m_strHeader);
 	::Path_Name_From_FullPath(pOpt->m_strOption[MKLA_STR_FOOTER], m_strFooterPath, m_strFooter);
@@ -138,10 +138,10 @@ BOOL CMKLASetup1::OnApply()
 	pOpt->LTH_I_SPINDLE	= m_nSpindle;
 	pOpt->LTH_D_FEED	= m_dFeed;
 	pOpt->LTH_D_XFEED	= m_dXFeed;
-	pOpt->LTH_D_CUT		= m_dCut / 2.0;	// ”¼Œa’l‚Ö•ÏŠ·
+	pOpt->LTH_D_CUT		= m_dCut / 2.0f;	// ”¼Œa’l‚Ö•ÏŠ·
 	pOpt->LTH_D_PULL_Z	= m_dPullZ;
-	pOpt->LTH_D_PULL_X	= m_dPullX / 2.0;
-	pOpt->LTH_D_MARGIN	= m_dMargin / 2.0;
+	pOpt->LTH_D_PULL_X	= m_dPullX / 2.0f;
+	pOpt->LTH_D_MARGIN	= m_dMargin / 2.0f;
 	pOpt->LTH_I_MARGIN	= m_nMargin;
 	pOpt->m_strOption[MKLA_STR_HEADER] = m_strHeaderPath+m_strHeader;
 	pOpt->m_strOption[MKLA_STR_FOOTER] = m_strFooterPath+m_strFooter;

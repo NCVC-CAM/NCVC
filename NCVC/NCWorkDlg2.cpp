@@ -67,11 +67,11 @@ void CNCWorkDlg2::EnableButton(BOOL bEnable)
 	}
 }
 
-void CNCWorkDlg2::SetValue(const CRect3D& rc)
+void CNCWorkDlg2::SetValue(const CRect3F& rc)
 {
 	m_ctWork[0] = rc.Width();
 	m_ctWork[1] = rc.Depth();
-	CPointD	ptc = rc.CenterPoint();
+	CPointF	ptc = rc.CenterPoint();
 	m_ctOffset[NCA_X] = ptc.x;
 	m_ctOffset[NCA_Y] = ptc.y;
 	m_ctOffset[NCA_Z] = rc.low;
@@ -115,7 +115,7 @@ void CNCWorkDlg2::OnShow()
 
 	CNCDoc*	pDoc = GetParentSheet()->GetNCDocument();
 	if ( pDoc ) {
-		CPoint3D	pt(m_ctOffset[NCA_X], m_ctOffset[NCA_Y], m_ctOffset[NCA_Z]);
+		CPoint3F	pt(m_ctOffset[NCA_X], m_ctOffset[NCA_Y], m_ctOffset[NCA_Z]);
 		pDoc->SetWorkCylinder(TRUE, m_ctWork[0], m_ctWork[1], pt);
 	}
 }
@@ -124,7 +124,7 @@ void CNCWorkDlg2::OnHide()
 {
 	CNCDoc*	pDoc = GetParentSheet()->GetNCDocument();
 	if ( pDoc )
-		pDoc->SetWorkCylinder(FALSE, 0, 0, CPoint3D());
+		pDoc->SetWorkCylinder(FALSE, 0, 0, CPoint3F());
 }
 
 void CNCWorkDlg2::OnComment()
@@ -135,8 +135,8 @@ void CNCWorkDlg2::OnComment()
 		CString	strComment;
 		strComment.Format("(%s=%.3f,%.3f,%.3f,%.3f,%.3f)",
 			WORKCYLINDER_S,
-			double(m_ctWork[0]), double(m_ctWork[1]),
-			double(m_ctOffset[NCA_X]), double(m_ctOffset[NCA_Y]), double(m_ctOffset[NCA_Z]));
+			float(m_ctWork[0]), float(m_ctWork[1]),
+			float(m_ctOffset[NCA_X]), float(m_ctOffset[NCA_Y]), float(m_ctOffset[NCA_Z]));
 		pDoc->SetCommentStr(strComment);
 		OnShow();	// 表示の更新
 	}
@@ -157,7 +157,7 @@ LRESULT CNCWorkDlg2::OnUserSwitchDocument(WPARAM, LPARAM)
 	CNCDoc*	pDoc = GetParentSheet()->GetNCDocument();
 	if ( pDoc ) {
 		// 旋盤,ﾜｲﾔ放電加工機ﾓｰﾄﾞは不可
-		EnableButton( !(pDoc->IsDocFlag(NCDOC_WIRE)|pDoc->IsDocFlag(NCDOC_LATHE)) );
+		EnableButton( pDoc->IsDocMill() );
 		SetValue(pDoc->GetWorkRect());
 	}
 	else

@@ -20,9 +20,9 @@ using namespace boost;
 
 extern	const	DWORD		g_dwSetValFlags[];	// NCDoc.cpp
 
-static	void		InitialVariable(const CNCdata*, LPNCARGV, double);
-static	CNCdata*	CreateUVobj(const CNCdata*, LPNCARGV, const CPoint3D&);
-static	BOOL		SetArgvCornerRobject(LPNCARGV, CNCblock*, CNCdata*, CNCdata*, double k);
+static	void		InitialVariable(const CNCdata*, LPNCARGV, float);
+static	CNCdata*	CreateUVobj(const CNCdata*, LPNCARGV, const CPoint3F&);
+static	BOOL		SetArgvCornerRobject(LPNCARGV, CNCblock*, CNCdata*, CNCdata*, float);
 
 //////////////////////////////////////////////////////////////////////
 
@@ -37,19 +37,20 @@ UINT UVWire_Thread(LPVOID pVoid)
 	ASSERT(pDoc);
 	ASSERT(pParent);
 
-	int			i, nLoopCnt = pDoc->GetNCsize(), nGcode,
+	INT_PTR		i, nLoopCnt = pDoc->GetNCsize();
+	int			nGcode,
 				nTaper = 0,	// 0:ﾃｰﾊﾟｷｬﾝｾﾙ 1: ﾃｰﾊﾟ指示直後 2:ﾃｰﾊﾟ処理中
 				nSign1, nSign2,
 				nResult = IDOK;
 	BOOL		bResult;
-	double		dT,			// ﾜｰｸ厚み
+	float		dT,			// ﾜｰｸ厚み
 				dTaper,		// T値
 				dT1, dT2,	// ﾃｰﾊﾟ角度指示によるｵﾌｾｯﾄ量
 				z,			// UV軸のZ値
 				k;			// UV軸のｺｰﾅR径
-	CPointD		pt;
-	CPoint3D	ptOffset;
-	optional<CPointD>	ptResult;
+	CPointF		pt;
+	CPoint3F	ptOffset;
+	optional<CPointF>	ptResult;
 	DWORD		dwValFlags;
 	CNCblock*	pBlock;
 	CNCdata*	pData1;
@@ -66,11 +67,11 @@ UINT UVWire_Thread(LPVOID pVoid)
 		VERIFY(strMsg.LoadString(IDS_UVTAPER_NCD));
 		pParent->SetFaseMessage(strMsg);
 		// ﾜｰｸ厚さ
-		CRect3D	rc(pDoc->GetWorkRectOrg());
+		CRect3F	rc(pDoc->GetWorkRectOrg());
 		z  = rc.low + rc.high;
 		dT = fabs(rc.high);		// CNCDoc::DataOperation()
 	}
-	pParent->m_ctReadProgress.SetRange32(0, nLoopCnt);
+	pParent->m_ctReadProgress.SetRange32(0, (int)nLoopCnt);
 #ifdef _DEBUG
 	dbg.printf("GetNCsize()=%d Work=%f", nLoopCnt, z);
 #endif
@@ -93,19 +94,19 @@ try {
 		// 対象ｵﾌﾞｼﾞｪｸﾄ検索ﾙｰﾌﾟ
 		for ( ; i<nLoopCnt && nTaper==0 && IsThread(); i++ ) {
 			if ( (i & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
-				pParent->m_ctReadProgress.SetPos(i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
+				pParent->m_ctReadProgress.SetPos((int)i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
 			pData1 = pDoc->GetNCdata(i);
 			if ( pData1->GetGtype() != G_TYPE )
 				continue;
 			nGcode = pData1->GetGcode();
 			pRead1 = pData1->GetReadData();
 			// ﾃｰﾊﾟﾓｰﾄﾞﾁｪｯｸ
-			if ( pRead1->m_taper.nTaper != 0 ) {
+			if ( pRead1->m_pTaper ) {
 				// ﾃｰﾊﾟ角度は TH_NCRead.cpp でﾁｪｯｸ済み
 				if ( pData1->GetType() == NCDLINEDATA ) {
-					dTaper = pRead1->m_taper.dTaper;	// T値保存
+					dTaper = pRead1->m_pTaper->dTaper;	// T値保存
 					dT1 = dT2 = dT * tan(fabs(dTaper));
-					nSign1 = nSign2 = pRead1->m_taper.nTaper;
+					nSign1 = nSign2 = pRead1->m_pTaper->nTaper;
 					if ( dTaper < 0 )
 						nSign1 = nSign2 = -nSign1;
 					nTaper++;	// 0 -> 1 ﾃｰﾊﾟﾓｰﾄﾞ処理へ(break)
@@ -171,17 +172,17 @@ try {
 		// ﾃｰﾊﾟ処理ﾙｰﾌﾟ
 		for ( ; i<nLoopCnt && nTaper>0 && IsThread(); i++ ) {
 			if ( (i & 0x003f) == 0 )
-				pParent->m_ctReadProgress.SetPos(i);
+				pParent->m_ctReadProgress.SetPos((int)i);
 			pData2 = pDoc->GetNCdata(i);
 			if ( pData2->GetGtype() != G_TYPE )
 				continue;
 			pRead2 = pData2->GetReadData();
 			//
-			if ( dTaper != pRead2->m_taper.dTaper ) {
-				dTaper = pRead2->m_taper.dTaper;
+			if ( pRead2->m_pTaper && dTaper!=pRead2->m_pTaper->dTaper ) {
+				dTaper = pRead2->m_pTaper->dTaper;
 				dT2 = dT * tan(fabs(dTaper));
-				if ( dTaper != 0.0 ) {	// T0 の時は符号保持
-					nSign2 = pRead2->m_taper.nTaper;
+				if ( dTaper != 0.0f ) {	// T0 の時は符号保持
+					nSign2 = pRead2->m_pTaper->nTaper;
 					if ( dTaper < 0 )
 						nSign2 = -nSign2;
 				}
@@ -212,7 +213,7 @@ try {
 				}
 				nTaper++;	// 1 -> 2
 			}
-			else if ( pRead2->m_taper.nTaper==0 || pRead2->m_taper.bTonly ) {
+			else if ( !pRead2->m_pTaper || (pRead2->m_pTaper && pRead2->m_pTaper->bTonly) ) {
 				// 次のﾃﾞｰﾀ(pData2)で終了かTｺｰﾄﾞ単体
 				if ( pData2->GetType() == NCDLINEDATA ) {
 					ptResult = pData1->CalcPerpendicularPoint(ENDPOINT, dT1, nSign1);
@@ -236,7 +237,7 @@ try {
 					pBlock = pDoc->GetNCblock(pData2->GetBlockLineNo());
 					pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_ENDCIRCLE);
 				}
-				nTaper = pRead2->m_taper.bTonly ? 1 : -1;	// 開始直後かbreak
+				nTaper = pRead2->m_pTaper && pRead2->m_pTaper->bTonly ? 1 : -1;	// 開始直後かbreak
 			}
 			else {
 				dwValFlags = pData1->GetValFlags();
@@ -311,14 +312,14 @@ try {
 	//		G61～G63 円錐ｺｰﾅR
 	// ------------------------------
 	i = 0;
-	pParent->m_ctReadProgress.SetPos(i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
+	pParent->m_ctReadProgress.SetPos((int)i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
 
 	while ( i<nLoopCnt && IsThread() ) {
 
 		// 対象ｵﾌﾞｼﾞｪｸﾄの検索
 		for ( nTaper=0; i<nLoopCnt && nTaper==0 && IsThread(); i++ ) {
 			if ( (i & 0x003f) == 0 )
-				pParent->m_ctReadProgress.SetPos(i);
+				pParent->m_ctReadProgress.SetPos((int)i);
 			pData1 = pDoc->GetNCdata(i);
 			dwValFlags = pData1->GetValFlags();
 			if ( pData1->IsCutCode() && dwValFlags&NCD_R )
@@ -331,8 +332,8 @@ try {
 		pData2 = pDoc->GetNCdata(i);
 		pRead1 = pData1->GetReadData();
 		pRead2 = pData2->GetReadData();
-		dT1 = dT * tan(fabs(pRead1->m_taper.dTaper));
-		dT2 = dT * tan(fabs(pRead2->m_taper.dTaper));
+		dT1 = pRead1->m_pTaper ? dT*tan(fabs(pRead1->m_pTaper->dTaper)) : 0.0f;
+		dT2 = pRead2->m_pTaper ? dT*tan(fabs(pRead2->m_pTaper->dTaper)) : 0.0f;
 #ifdef _DEBUG
 		dbg.printf("--- CornerR");
 		dbg.printf("pData1 Line=%d", pData1->GetBlockLineNo()+1);
@@ -341,13 +342,32 @@ try {
 		ncArgv.nSpindle		= pData1->GetSpindle();
 		ncArgv.dFeed		= pData1->GetFeed();
 		ncArgv.dEndmill		= pData1->GetEndmill();
-		ncArgv.nEndmillType	= pData1->GetEndmillType();
+		ncArgv.nEndmillType	= pData1->GetBallEndmill();
 		ncArgv.bG98			= pData1->GetG98();
 		ncArgv.nc.nLine		= pData1->GetBlockLineNo();
 		ncArgv.nc.nGtype	= G_TYPE;
 		ncArgv.nc.enPlane	= pData1->GetPlane();
-		memcpy(&(ncArgv.g68),   &(pData1->GetReadData()->m_g68),   sizeof(G68ROUND));
-		memcpy(&(ncArgv.taper), &(pData1->GetReadData()->m_taper), sizeof(TAPER));
+//		memcpy(&(ncArgv.g68),   &(pData1->GetReadData()->m_g68),   sizeof(G68ROUND));
+//		memcpy(&(ncArgv.taper), &(pData1->GetReadData()->m_taper), sizeof(TAPER));
+		if ( pData1->GetReadData()->m_pG68 ) {
+			ncArgv.g68.bG68		= TRUE;
+			ncArgv.g68.enPlane	= pData1->GetReadData()->m_pG68->enPlane;
+			ncArgv.g68.dRound	= pData1->GetReadData()->m_pG68->dRound;
+			for ( int ii=0; ii<SIZEOF(ncArgv.g68.dOrg); ii++ )
+				ncArgv.g68.dOrg[ii] = pData1->GetReadData()->m_pG68->dOrg[ii];
+		}
+		else {
+			ncArgv.g68.bG68 = FALSE;
+		}
+		if ( pData1->GetReadData()->m_pTaper ) {
+			ncArgv.taper.nTaper	= pData1->GetReadData()->m_pTaper->nTaper;
+			ncArgv.taper.dTaper	= pData1->GetReadData()->m_pTaper->dTaper;
+			ncArgv.taper.nDiff	= pData1->GetReadData()->m_pTaper->nDiff;
+			ncArgv.taper.bTonly	= pData1->GetReadData()->m_pTaper->bTonly;
+		}
+		else {
+			ncArgv.taper.nTaper = 0;
+		}
 		ncArgv.nc.dwValFlags &= NCD_CLEARVALUE;
 		ncArgv.nc.dwValFlags |= NCD_Z;
 		ncArgv.nc.dValue[NCA_Z] = pData1->GetValue(NCA_Z);
@@ -355,7 +375,7 @@ try {
 		// --- XY軸のｺｰﾅR 処理
 		bResult = SetArgvCornerRobject( &ncArgv,
 					pDoc->GetNCblock(pData1->GetBlockLineNo()),
-					pData1, pData2, dwValFlags&NCD_R ? pData1->GetValue(NCA_R) : 0.0 );
+					pData1, pData2, dwValFlags&NCD_R ? pData1->GetValue(NCA_R) : 0.0f );
 		if ( bResult ) {
 			// XY軸のｺｰﾅRｵﾌﾞｼﾞｪｸﾄを挿入
 			pDataR = pDoc->DataOperation(pData1, &ncArgv, i, NCINS);
@@ -369,26 +389,28 @@ try {
 		nLoopCnt++;
 
 		// --- UV軸のｺｰﾅR 処理(pDataRに対してGetValue(NCA_R)は使えない)
-		if ( pRead1->m_taper.nDiff == 0 ) {
-			// G60
-			// ﾃｰﾊﾟﾍﾞｸﾄﾙのKと区別するためにRと組み合わせたときだけ上下独立ｺｰﾅR
-			k = dwValFlags&NCD_R ? pData1->GetValue(dwValFlags&NCD_K ? NCA_K : NCA_R) : 0.0;
-		}
-		else {
-			k = pDataR->GetType() == NCDARCDATA ?
-					static_cast<const CNCcircle *>(pDataR)->GetR() : 0.0;
-			switch ( pRead1->m_taper.nDiff ) {
-			case 1:		// G61
-				k += dT1<dT2 ? dT1 : dT2;
-				break;
-			case 2:		// G62
-				k += ( dT1 + dT2 ) / 2.0;
-				break;
-			case 3:		// G63
-				k += dT1>dT2 ? dT1 : dT2;
-				break;
-			default:
-				k = 0.0;
+		if ( pRead1->m_pTaper ) {
+			if ( pRead1->m_pTaper->nDiff == 0 ) {
+				// G60
+				// ﾃｰﾊﾟﾍﾞｸﾄﾙのKと区別するためにRと組み合わせたときだけ上下独立ｺｰﾅR
+				k = dwValFlags&NCD_R ? pData1->GetValue(dwValFlags&NCD_K ? NCA_K : NCA_R) : 0.0f;
+			}
+			else {
+				k = pDataR->GetType() == NCDARCDATA ?
+						static_cast<const CNCcircle *>(pDataR)->GetR() : 0.0f;
+				switch ( pRead1->m_pTaper->nDiff ) {
+				case 1:		// G61
+					k += dT1<dT2 ? dT1 : dT2;
+					break;
+				case 2:		// G62
+					k += ( dT1 + dT2 ) / 2.0f;
+					break;
+				case 3:		// G63
+					k += dT1>dT2 ? dT1 : dT2;
+					break;
+				default:
+					k = 0.0f;
+				}
 			}
 		}
 
@@ -423,7 +445,7 @@ catch (CMemoryException* e) {
 	if ( pDataFirst )
 		delete	pDataFirst;
 
-	pParent->m_ctReadProgress.SetPos(nLoopCnt);
+	pParent->m_ctReadProgress.SetPos((int)nLoopCnt);
 	pParent->PostMessage(WM_USERFINISH, IsThread() ? nResult : IDCANCEL);
 #ifdef _DEBUG
 	dbg.printf("PostMessage() Finish!");
@@ -436,7 +458,7 @@ catch (CMemoryException* e) {
 // 補助関数
 
 BOOL SetArgvCornerRobject
-	(LPNCARGV pArgv, CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2, double k)
+	(LPNCARGV pArgv, CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2, float k)
 {
 	if ( !pData1 || !pData2 )
 		return FALSE;
@@ -444,10 +466,10 @@ BOOL SetArgvCornerRobject
 	// TH_NCRead.cpp MakeChamferingObject()
 	CNCdata*	pDataResult = NULL;
 	BOOL		bResult;
-	double		r1, r2, pa, pb;
-	CPointD		pts, pte, pto;
-	CPoint3D	ptOffset(pData1->GetOffsetPoint());
-	optional<CPointD>	ptResult;
+	float		r1, r2, pa, pb;
+	CPointF		pts, pte, pto;
+	CPoint3F	ptOffset(pData1->GetOffsetPoint());
+	optional<CPointF>	ptResult;
 
 	// 計算開始
 	// ｺｰﾅｰRの場合は，面取りに相当するC値の計算
@@ -493,9 +515,9 @@ BOOL SetArgvCornerRobject
 	else {
 		// 求めたｺｰﾅｰRの中心(pto)から回転方向を計算
 		pts -= pto;		pte -= pto;
-		if ( (pa=atan2(pts.y, pts.x)) < 0.0 )
+		if ( (pa=atan2(pts.y, pts.x)) < 0.0f )
 			pa += PI2;
-		if ( (pb=atan2(pte.y, pte.x)) < 0.0 )
+		if ( (pb=atan2(pte.y, pte.x)) < 0.0f )
 			pb += PI2;
 		if ( fabs(pa-pb) > PI ) {
 			if ( pa > pb )
@@ -513,7 +535,7 @@ BOOL SetArgvCornerRobject
 	return TRUE;
 }
 
-CNCdata* CreateUVobj(const CNCdata* pData, LPNCARGV pArgv, const CPoint3D& ptOffset)
+CNCdata* CreateUVobj(const CNCdata* pData, LPNCARGV pArgv, const CPoint3F& ptOffset)
 {
 	CNCdata*	pDataResult = NULL;
 
@@ -534,7 +556,7 @@ CNCdata* CreateUVobj(const CNCdata* pData, LPNCARGV pArgv, const CPoint3D& ptOff
 	return pDataResult;
 }
 
-void InitialVariable(const CNCdata* pData, LPNCARGV pArgv, double z)
+void InitialVariable(const CNCdata* pData, LPNCARGV pArgv, float z)
 {
 	ZeroMemory(pArgv, sizeof(NCARGV));
 
@@ -543,7 +565,7 @@ void InitialVariable(const CNCdata* pData, LPNCARGV pArgv, double z)
 	pArgv->nc.nGcode	= pData->GetGcode();
 	pArgv->nc.enPlane	= pData->GetPlane();
 
-	CPoint3D	pts(pData->GetStartPoint());
+	CPoint3F	pts(pData->GetStartPoint());
 	pArgv->nc.dValue[NCA_X] = pts.x;
 	pArgv->nc.dValue[NCA_Y] = pts.y;
 	pArgv->nc.dValue[NCA_Z] = z;

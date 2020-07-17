@@ -9,7 +9,7 @@ class	CLayerData;
 class	CDXFshape;
 
 // 矢印の角度と長さ
-#define	ARRAWANGLE		RAD(15.0)
+#define	ARRAWANGLE		RAD(15.0f)
 #define	ARRAWLENGTH		100
 
 // DXF状態ﾌﾗｸﾞ
@@ -31,44 +31,44 @@ class	CDXFshape;
 // 各 pLayer は，DataOperation()で strLayer から CLayerDataｵﾌﾞｼﾞｪｸﾄを登録する
 typedef	struct	tagDXF_POINT {
 	CLayerData*	pLayer;
-	CPointD		c;			// 穴あけ位置
+	CPointF		c;			// 穴あけ位置
 } DXFPARGV, *LPDXFPARGV;
 #define	LPCDXFPARGV		const LPDXFPARGV
 
 typedef	struct	tagDXF_LINE {
 	CLayerData*	pLayer;
-	CPointD		s, e;		// 開始・終了点
+	CPointF		s, e;		// 開始・終了点
 } DXFLARGV, *LPDXFLARGV;
 #define	LPCDXFLARGV		const LPDXFLARGV
 
 typedef	struct	tagDXF_CIRCLE {
 	CLayerData*	pLayer;
-	CPointD		c;			// 中心
-	double		r;			// 半径
+	CPointF		c;			// 中心
+	float		r;			// 半径
 } DXFCARGV, *LPDXFCARGV;
 #define	LPCDXFCARGV		const LPDXFCARGV
 
 typedef	struct	tagDXF_ARC {
 	CLayerData*	pLayer;
-	CPointD		c;			// 中心
-	double		r;			// 半径
-	double		sq, eq;		// 始点・終点角度
+	CPointF		c;			// 中心
+	float		r;			// 半径
+	float		sq, eq;		// 始点・終点角度
 } DXFAARGV, *LPDXFAARGV;
 #define	LPCDXFAARGV		const LPDXFAARGV
 
 typedef	struct	tagDXF_ELLIPSE {
 	CLayerData*	pLayer;
-	CPointD		c;			// 中心
-	CPointD		l;			// 長軸(中心からの相対)
-	double		s;			// 短軸(倍率)
-	double		sq, eq;		// 始点・終点角度
+	CPointF		c;			// 中心
+	CPointF		l;			// 長軸(中心からの相対)
+	float		s;			// 短軸(倍率)
+	float		sq, eq;		// 始点・終点角度
 	BOOL		bRound;		// Default==TRUE(反時計回り)
 } DXFEARGV, *LPDXFEARGV;
 #define	LPCDXFEARGV		const LPDXFEARGV
 
 typedef	struct	tagDXF_TEXT {
 	CLayerData*	pLayer;
-	CPointD		c;			// 文字位置
+	CPointF		c;			// 文字位置
 	CString		strValue;	// 文字列
 } DXFTARGV, *LPDXFTARGV;
 #define	LPCDXFTARGV		const LPDXFTARGV
@@ -80,15 +80,15 @@ typedef	struct	tagDXF_TEXT {
 #define	DXFBLFLG_R		0x0008
 typedef	struct	tagDXF_BLOCK {
 	DWORD		dwBlockFlg;
-	CPointD		ptOrg;			// 挿入ｵﾌｾｯﾄ
-	double		dMagni[NCXYZ];	// 各軸の倍率
-	double		dRound;			// 回転角度(度)
+	CPointF		ptOrg;			// 挿入ｵﾌｾｯﾄ
+	float		dMagni[NCXYZ];	// 各軸の倍率
+	float		dRound;			// 回転角度(度)
 } DXFBLOCK, *LPDXFBLOCK;
 #define	LPCDXFBLOCK		const LPDXFBLOCK
 
 // CDXFpoint用動的関数呼び出し
 class	CDXFpoint;
-typedef double (*PFNORGDRILLTUNING)(const CDXFpoint*);
+typedef float (*PFNORGDRILLTUNING)(const CDXFpoint*);
 
 // CDXFcircleEx用ｽﾍﾟｼｬﾙﾀｲﾌﾟ
 enum	ENDXFTYPE2
@@ -116,10 +116,10 @@ class CDXFdata : public CObject
 
 protected:
 	int			m_nPoint;		// m_ptTun, m_ptMake 確保数
-	CPointD*	m_pt;			// 各ｵﾌﾞｼﾞｪｸﾄ固有座標
-	CPointD*	m_ptTun;		// 原点調整後の座標
-	CPointD*	m_ptMake;		// 小数第３位までの比較用(NC生成ﾃﾞｰﾀ)
-	CRect3D		m_rcMax;		// ｵﾌﾞｼﾞｪｸﾄ矩形
+	CPointF*	m_pt;			// 各ｵﾌﾞｼﾞｪｸﾄ固有座標
+	CPointF*	m_ptTun;		// 原点調整後の座標
+	CPointF*	m_ptMake;		// 小数第３位までの比較用(NC生成ﾃﾞｰﾀ)
+	CRect3F		m_rcMax;		// ｵﾌﾞｼﾞｪｸﾄ矩形
 	// CDXFpolyline だけは CDXFpolyline から更新する
 	CLayerData*	m_pParentLayer;	// ﾃﾞｰﾀの属するﾚｲﾔ情報
 	CDXFshape*	m_pParentMap;	// ﾃﾞｰﾀの属するﾏｯﾌﾟ情報
@@ -140,7 +140,7 @@ public:
 
 	static	BOOL		ms_fXRev;		// X軸反転かどうか
 	static	BOOL		ms_fYRev;		// Y軸反転かどうか
-	static	CPointD		ms_ptOrg;		// 切削原点
+	static	CPointF		ms_ptOrg;		// 切削原点
 	static	CDXFdata*	ms_pData;		// １つ前の生成ﾃﾞｰﾀ
 	static	DWORD		ms_nSerialSeq;	// ｼﾘｱﾗｲｽﾞｶｳﾝﾀ
 
@@ -161,45 +161,45 @@ public:
 	void		ClearSearchFlg(void);
 	//
 	CPen*		GetDrawPen(void) const;
-	const CRect3D	GetMaxRect(void) const;
+	const CRect3F	GetMaxRect(void) const;
 	//
 	int			GetPointNumber(void) const;
-	const CPointD	GetNativePoint(size_t) const;
-	virtual	void	SetNativePoint(size_t, const CPointD&);		// virtual -> CDXFarc
-	const CPointD	GetTunPoint(size_t) const;
-	const CPointD	GetMakePoint(size_t) const;
-	BOOL		IsMatchPoint(const CPointD&) const;
+	const CPointF	GetNativePoint(size_t) const;
+	virtual	void	SetNativePoint(size_t, const CPointF&);		// virtual -> CDXFarc
+	const CPointF	GetTunPoint(size_t) const;
+	const CPointF	GetMakePoint(size_t) const;
+	BOOL		IsMatchPoint(const CPointF&) const;
 	BOOL		IsMakeMatchObject(const CDXFdata*);
 	//	
 	virtual	void	SwapMakePt(int);	// m_ptTun, m_ptMake の始点終点入れ替え
 	virtual	void	SwapNativePt(void);	// 固有座標値の入れ替え
-	virtual	void	RoundObjPoint(const CPointD&, double);
+	virtual	void	RoundObjPoint(const CPointF&, float);
 	//
 	virtual	BOOL	IsMakeTarget(void) const = 0;
-	virtual	BOOL	IsMakeMatchPoint(const CPointD&) = 0;
+	virtual	BOOL	IsMakeMatchPoint(const CPointF&) = 0;
 	virtual BOOL	IsStartEqEnd(void) const = 0;	// 始点終点が同じｵﾌﾞｼﾞｪｸﾄならTRUE
-	virtual	BOOL	IsDirectionPoint(const CPointD&, const CPointD&);
-			double	GetEdgeGap(const CDXFdata*, BOOL = TRUE);
-	virtual	double	GetEdgeGap(const CPointD&,  BOOL = TRUE) = 0;
-	virtual	const CPointD	GetStartCutterPoint(void) const = 0;// 加工開始位置
-	virtual	const CPointD	GetStartMakePoint(void) const = 0;
-	virtual	const CPointD	GetEndCutterPoint(void) const = 0;	// 加工終了位置(加工終点)
-	virtual	const CPointD	GetEndMakePoint(void) const = 0;
-	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const = 0;	// from CDXFchain::IsPointInPolygon()
-	virtual	void	SetVectorPoint(CVPointD&, size_t) const = 0;
-	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const = 0;
-	virtual	double	GetLength(void) const = 0;
+	virtual	BOOL	IsDirectionPoint(const CPointF&, const CPointF&);
+			float	GetEdgeGap(const CDXFdata*, BOOL = TRUE);
+	virtual	float	GetEdgeGap(const CPointF&,  BOOL = TRUE) = 0;
+	virtual	const CPointF	GetStartCutterPoint(void) const = 0;// 加工開始位置
+	virtual	const CPointF	GetStartMakePoint(void) const = 0;
+	virtual	const CPointF	GetEndCutterPoint(void) const = 0;	// 加工終了位置(加工終点)
+	virtual	const CPointF	GetEndMakePoint(void) const = 0;
+	virtual	size_t	SetVectorPoint(CVPointF&, float = 0.0) const = 0;	// from CDXFchain::IsPointInPolygon()
+	virtual	void	SetVectorPoint(CVPointF&, size_t) const = 0;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointF&, CVPointF&, float) const = 0;
+	virtual	float	GetLength(void) const = 0;
 	//
-	virtual	void	DrawTuning(const double) = 0;
+	virtual	void	DrawTuning(float) = 0;
 	virtual	void	Draw(CDC*) const = 0;
-	virtual	double	OrgTuning(BOOL = TRUE) = 0;
+	virtual	float	OrgTuning(BOOL = TRUE) = 0;
 	//
-	virtual	double	GetSelectPointGap(const CPointD&) = 0;
-	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) = 0;
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const = 0;
-	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const = 0;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const = 0;
-	virtual	int		CheckIntersectionCircle(const CPointD&, double) const = 0;
+	virtual	float	GetSelectPointGap(const CPointF&) = 0;
+	virtual	BOOL	GetDirectionArraw(const CPointF&, CPointF[][3]) = 0;
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointF[], BOOL = TRUE) const = 0;
+	virtual	int		GetIntersectionPoint(const CPointF&, const CPointF&, CPointF[], BOOL = TRUE) const = 0;
+	virtual	boost::optional<CPointF>	CalcOffsetIntersectionPoint(const CDXFdata*, float, BOOL) const = 0;
+	virtual	int		CheckIntersectionCircle(const CPointF&, float) const = 0;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_DYNAMIC(CDXFdata)
@@ -232,33 +232,33 @@ public:
 	const	CPoint	GetDrawPoint(void) const;
 
 	virtual	BOOL	IsMakeTarget(void) const;
-	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointF&);
 	virtual BOOL	IsStartEqEnd(void) const;
-	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
-	virtual	const CPointD	GetStartCutterPoint(void) const;
-	virtual	const CPointD	GetStartMakePoint(void) const;
-	virtual	const CPointD	GetEndCutterPoint(void) const;
-	virtual	const CPointD	GetEndMakePoint(void) const;
-	virtual	double	GetLength(void) const;
-	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
+	virtual	float	GetEdgeGap(const CPointF&, BOOL = TRUE);
+	virtual	const CPointF	GetStartCutterPoint(void) const;
+	virtual	const CPointF	GetStartMakePoint(void) const;
+	virtual	const CPointF	GetEndCutterPoint(void) const;
+	virtual	const CPointF	GetEndMakePoint(void) const;
+	virtual	float	GetLength(void) const;
+	virtual	size_t	SetVectorPoint(CVPointF&, float = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointF&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointF&, CVPointF&, float) const;
 
-	virtual	void	DrawTuning(const double);
+	virtual	void	DrawTuning(float);
 	virtual	void	Draw(CDC*) const;
-	virtual	double	OrgTuning(BOOL = TRUE);
+	virtual	float	OrgTuning(BOOL = TRUE);
 
 	// 基準軸による加工
 	static	PFNORGDRILLTUNING	ms_pfnOrgDrillTuning;
-	static	double	OrgTuning_Seq(const CDXFpoint*);
-	static	double	OrgTuning_XY(const CDXFpoint*);
+	static	float	OrgTuning_Seq(const CDXFpoint*);
+	static	float	OrgTuning_XY(const CDXFpoint*);
 
-	virtual	double	GetSelectPointGap(const CPointD&);
-	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
-	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	float	GetSelectPointGap(const CPointF&);
+	virtual	BOOL	GetDirectionArraw(const CPointF&, CPointF[][3]);
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointF[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointF&, const CPointF&, CPointF[], BOOL = TRUE) const;
+	virtual	boost::optional<CPointF>	CalcOffsetIntersectionPoint(const CDXFdata*, float, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointF&, float) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFpoint)
@@ -285,28 +285,28 @@ public:
 #endif
 
 	virtual	BOOL	IsMakeTarget(void) const;
-	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointF&);
 	virtual BOOL	IsStartEqEnd(void) const;
-	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
-	virtual	const CPointD	GetStartCutterPoint(void) const;
-	virtual	const CPointD	GetStartMakePoint(void) const;
-	virtual	const CPointD	GetEndCutterPoint(void) const;
-	virtual	const CPointD	GetEndMakePoint(void) const;
-	virtual	double	GetLength(void) const;
-	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
+	virtual	float	GetEdgeGap(const CPointF&, BOOL = TRUE);
+	virtual	const CPointF	GetStartCutterPoint(void) const;
+	virtual	const CPointF	GetStartMakePoint(void) const;
+	virtual	const CPointF	GetEndCutterPoint(void) const;
+	virtual	const CPointF	GetEndMakePoint(void) const;
+	virtual	float	GetLength(void) const;
+	virtual	size_t	SetVectorPoint(CVPointF&, float = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointF&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointF&, CVPointF&, float) const;
 
-	virtual	void	DrawTuning(const double);
+	virtual	void	DrawTuning(float);
 	virtual	void	Draw(CDC*) const;
-	virtual	double	OrgTuning(BOOL = TRUE);
+	virtual	float	OrgTuning(BOOL = TRUE);
 
-	virtual	double	GetSelectPointGap(const CPointD&);
-	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
-	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	float	GetSelectPointGap(const CPointF&);
+	virtual	BOOL	GetDirectionArraw(const CPointF&, CPointF[][3]);
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointF[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointF&, const CPointF&, CPointF[], BOOL = TRUE) const;
+	virtual	boost::optional<CPointF>	CalcOffsetIntersectionPoint(const CDXFdata*, float, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointF&, float) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFline)
@@ -330,8 +330,8 @@ class CDXFcircle : public CDXFline
 
 protected:
 	int		m_nArrayExt;	// m_ptTun, m_ptMake の配列を指示(0,1:±X軸 or 2,3:±Y軸)
-	double	m_r, m_rMake;	// 半径, 小数第３位までの半径 -> NC生成で使用
-	CPointD	m_ct, m_ctTun;	// 中心座標
+	float	m_r, m_rMake;	// 半径, 小数第３位までの半径 -> NC生成で使用
+	CPointF	m_ct, m_ctTun;	// 中心座標
 	BOOL	m_bRound;		// G2(FALSE)/G3(TRUE) DXFの基本は G3(反時計回り)
 
 	virtual	void	SetCirclePoint(void);	// m_pt への代入
@@ -341,16 +341,16 @@ protected:
 	// CDXFcircleEx からも参照
 	virtual	void	SetMaxRect(void);
 	// CDXFellipse からも参照
-	void	GetQuarterPoint(const CPointD&, CPointD[]) const;
+	void	GetQuarterPoint(const CPointF&, CPointF[]) const;
 
 	// 円，円弧，共通処理
-	void	SetEllipseArgv_Circle(LPCDXFBLOCK, LPCDXFEARGV, double, double, BOOL);
-	double	GetSelectPointGap_Circle(const CPointD&, double, double) const;
-	BOOL	GetDirectionArraw_Circle(const double[], const CPointD[], CPointD[][3]);
-	size_t	SetVectorPointSub(BOOL, double, double, double, const CPointD&, CVPointD&) const;
+	void	SetEllipseArgv_Circle(LPCDXFBLOCK, LPCDXFEARGV, float, float, BOOL);
+	float	GetSelectPointGap_Circle(const CPointF&, float, float) const;
+	BOOL	GetDirectionArraw_Circle(const float[], const CPointF[], CPointF[][3]);
+	size_t	SetVectorPointSub(BOOL, float, float, float, const CPointF&, CVPointF&) const;
 
 	CDXFcircle();
-	CDXFcircle(ENDXFTYPE, CLayerData*, const CPointD&, double, BOOL, int, DWORD);
+	CDXFcircle(ENDXFTYPE, CLayerData*, const CPointF&, float, BOOL, int, DWORD);
 public:
 	CDXFcircle(LPCDXFCARGV, DWORD = 0);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
@@ -363,45 +363,45 @@ public:
 	void	SetEllipseArgv(LPCDXFBLOCK, LPCDXFEARGV);
 
 	BOOL	IsRoundFixed(void) const;
-	double	GetR(void) const;
-	double	GetMakeR(void) const;
+	float	GetR(void) const;
+	float	GetMakeR(void) const;
 	BOOL	GetRound(void) const;
 	int		GetG(void) const;
 	int		GetBaseAxis(void) const;
-	double	GetIJK(int nType) const;
-	const CPointD	GetCenter(void) const;
-	const CPointD	GetMakeCenter(void) const;
+	float	GetIJK(int nType) const;
+	const CPointF	GetCenter(void) const;
+	const CPointF	GetMakeCenter(void) const;
 
 	virtual	BOOL	IsMakeTarget(void) const;
-	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointF&);
 	virtual BOOL	IsStartEqEnd(void) const;
-	virtual	BOOL	IsDirectionPoint(const CPointD&, const CPointD&);
-			BOOL	IsUnderRadius(double) const;
-	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
-	virtual	const CPointD	GetStartCutterPoint(void) const;
-	virtual	const CPointD	GetStartMakePoint(void) const;
-	virtual	const CPointD	GetEndCutterPoint(void) const;
-	virtual	const CPointD	GetEndMakePoint(void) const;
-	virtual	double	GetLength(void) const;
-	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
+	virtual	BOOL	IsDirectionPoint(const CPointF&, const CPointF&);
+			BOOL	IsUnderRadius(float) const;
+	virtual	float	GetEdgeGap(const CPointF&, BOOL = TRUE);
+	virtual	const CPointF	GetStartCutterPoint(void) const;
+	virtual	const CPointF	GetStartMakePoint(void) const;
+	virtual	const CPointF	GetEndCutterPoint(void) const;
+	virtual	const CPointF	GetEndMakePoint(void) const;
+	virtual	float	GetLength(void) const;
+	virtual	size_t	SetVectorPoint(CVPointF&, float = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointF&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointF&, CVPointF&, float) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
-	virtual	void	RoundObjPoint(const CPointD&, double);
-	virtual	BOOL	IsRangeAngle(const CPointD&) const;
+	virtual	void	RoundObjPoint(const CPointF&, float);
+	virtual	BOOL	IsRangeAngle(const CPointF&) const;
 
-	virtual	void	DrawTuning(const double);
+	virtual	void	DrawTuning(float);
 	virtual	void	Draw(CDC*) const;
-	virtual	double	OrgTuning(BOOL = TRUE);
+	virtual	float	OrgTuning(BOOL = TRUE);
 
-	virtual	double	GetSelectPointGap(const CPointD&);
-	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
-	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	float	GetSelectPointGap(const CPointF&);
+	virtual	BOOL	GetDirectionArraw(const CPointF&, CPointF[][3]);
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointF[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointF&, const CPointF&, CPointF[], BOOL = TRUE) const;
+	virtual	boost::optional<CPointF>	CalcOffsetIntersectionPoint(const CDXFdata*, float, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointF&, float) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFcircle)
@@ -415,7 +415,7 @@ class CDXFcircleEx : public CDXFcircle
 	ENDXFTYPE2	m_enType2;
 
 protected:
-	CPointD		m_ctMake;			// 小数第３位までの中心座標 -> NC生成で使用
+	CPointF		m_ctMake;			// 小数第３位までの中心座標 -> NC生成で使用
 
 	virtual	void	SetCirclePoint(void);
 	virtual	void	XRev(void);
@@ -424,18 +424,18 @@ protected:
 protected:
 	CDXFcircleEx();
 public:
-	CDXFcircleEx(ENDXFTYPE2, CLayerData*, const CPointD&, double);
+	CDXFcircleEx(ENDXFTYPE2, CLayerData*, const CPointF&, float);
 
 	virtual	BOOL	IsMakeTarget(void) const;
-	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
-	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
-	virtual	const CPointD	GetStartCutterPoint(void) const;
-	virtual	const CPointD	GetStartMakePoint(void) const;
-	virtual	const CPointD	GetEndCutterPoint(void) const;
-	virtual	const CPointD	GetEndMakePoint(void) const;
+	virtual	BOOL	IsMakeMatchPoint(const CPointF&);
+	virtual	float	GetEdgeGap(const CPointF&, BOOL = TRUE);
+	virtual	const CPointF	GetStartCutterPoint(void) const;
+	virtual	const CPointF	GetStartMakePoint(void) const;
+	virtual	const CPointF	GetEndCutterPoint(void) const;
+	virtual	const CPointF	GetEndMakePoint(void) const;
 
 	virtual	void	Draw(CDC*) const;
-	virtual	double	OrgTuning(BOOL = TRUE);
+	virtual	float	OrgTuning(BOOL = TRUE);
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFcircleEx)
@@ -453,7 +453,7 @@ class CDXFarc : public CDXFcircle
 
 protected:
 	BOOL	m_bRoundOrig;	// 生成中に向きが変わる可能性があるのでﾊﾞｯｸｱｯﾌﾟ
-	double	m_sq, m_eq,		// 開始・終了角度(ﾗｼﾞｱﾝ単位)
+	float	m_sq, m_eq,		// 開始・終了角度(ﾗｼﾞｱﾝ単位)
 			m_sqDraw, m_eqDraw,	m_rDraw;	// 描画用(Swapしない)
 
 	void	AngleTuning(void);
@@ -466,10 +466,10 @@ protected:
 
 protected:
 	CDXFarc();
-	CDXFarc(ENDXFTYPE, CLayerData*, const CPointD&, double, double, double, BOOL, int, DWORD);
+	CDXFarc(ENDXFTYPE, CLayerData*, const CPointF&, float, float, float, BOOL, int, DWORD);
 public:
 	CDXFarc(LPCDXFAARGV, DWORD = 0);
-	CDXFarc(LPCDXFAARGV, BOOL, const CPointD&, const CPointD&, DWORD = 0);
+	CDXFarc(LPCDXFAARGV, BOOL, const CPointF&, const CPointF&, DWORD = 0);
 	// BLOCKﾃﾞｰﾀからのｺﾋﾟｰ用
 	CDXFarc(CLayerData*, const CDXFarc*, LPCDXFBLOCK, DWORD = 0);
 #ifdef _DEBUG
@@ -480,39 +480,39 @@ public:
 	void	SetEllipseArgv(LPCDXFBLOCK, LPCDXFEARGV);
 
 	BOOL	GetRoundOrig(void) const;
-	double	GetStartAngle(void) const;
-	double	GetEndAngle(void) const;
+	float	GetStartAngle(void) const;
+	float	GetEndAngle(void) const;
 
-	virtual	void	SetNativePoint(size_t, const CPointD&);		// 角度の更新を含む
+	virtual	void	SetNativePoint(size_t, const CPointF&);		// 角度の更新を含む
 
 	virtual	BOOL	IsMakeTarget(void) const;
-	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointF&);
 	virtual BOOL	IsStartEqEnd(void) const;
-	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
-	virtual	const CPointD	GetStartCutterPoint(void) const;
-	virtual	const CPointD	GetStartMakePoint(void) const;
-	virtual	const CPointD	GetEndCutterPoint(void) const;
-	virtual	const CPointD	GetEndMakePoint(void) const;
-	virtual	double	GetLength(void) const;
-	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
+	virtual	float	GetEdgeGap(const CPointF&, BOOL = TRUE);
+	virtual	const CPointF	GetStartCutterPoint(void) const;
+	virtual	const CPointF	GetStartMakePoint(void) const;
+	virtual	const CPointF	GetEndCutterPoint(void) const;
+	virtual	const CPointF	GetEndMakePoint(void) const;
+	virtual	float	GetLength(void) const;
+	virtual	size_t	SetVectorPoint(CVPointF&, float = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointF&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointF&, CVPointF&, float) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
-	virtual	void	RoundObjPoint(const CPointD&, double);
-	virtual	BOOL	IsRangeAngle(const CPointD&) const;
+	virtual	void	RoundObjPoint(const CPointF&, float);
+	virtual	BOOL	IsRangeAngle(const CPointF&) const;
 
-	virtual	void	DrawTuning(const double);
+	virtual	void	DrawTuning(float);
 	virtual	void	Draw(CDC*) const;
-	virtual	double	OrgTuning(BOOL = TRUE);
+	virtual	float	OrgTuning(BOOL = TRUE);
 
-	virtual	double	GetSelectPointGap(const CPointD&);
-	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
-	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	float	GetSelectPointGap(const CPointF&);
+	virtual	BOOL	GetDirectionArraw(const CPointF&, CPointF[][3]);
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointF[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointF&, const CPointF&, CPointF[], BOOL = TRUE) const;
+	virtual	boost::optional<CPointF>	CalcOffsetIntersectionPoint(const CDXFdata*, float, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointF&, float) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFarc)
@@ -524,10 +524,10 @@ public:
 //		長軸長さを半径と見なし CDXFarc と同一にする
 class CDXFellipse : public CDXFarc
 {
-	CPointD	m_ptLong;	// 長軸(中心からの相対)
-	double	m_dShort,	// 短軸(倍率)
-			m_dLongLength, m_dDrawLongLength;
-	double	m_lq, m_lqMake,		// 長軸角度(==楕円の傾き)
+	CPointF	m_ptLong;	// 長軸(中心からの相対)
+	float	m_dShort,	// 短軸(倍率)
+			m_dLongLength, m_dDrawLongLength,
+			m_lq, m_lqMake,		// 長軸角度(==楕円の傾き)
 			m_lqMakeCos, m_lqMakeSin,	// 傾きの cos(), sin() 
 			m_lqDrawCos, m_lqDrawSin;	// 描画や生成で使用頻度が高いので計算結果を保存
 	BOOL	m_bArc;		// TRUE:楕円弧，FALSE:楕円
@@ -535,7 +535,7 @@ class CDXFellipse : public CDXFarc
 	void	Construct(void);
 	void	EllipseCalc(void);
 	void	SetEllipseTunPoint(void);
-	void	XYRev(const CPointD&, const CPointD&);
+	void	XYRev(const CPointF&, const CPointF&);
 
 protected:
 	virtual	void	XRev(void);
@@ -551,45 +551,45 @@ public:
 	virtual	void	DbgDump(void);
 #endif
 
-	const CPointD	GetLongPoint(void) const;
-	double	GetShortMagni(void) const;
-	double	GetLongLength(void) const;
-	double	GetShortLength(void) const;
-	double	GetLean(void) const;
-	double	GetMakeLean(void) const;
-	double	GetMakeLeanCos(void) const;
-	double	GetMakeLeanSin(void) const;
+	const CPointF	GetLongPoint(void) const;
+	float	GetShortMagni(void) const;
+	float	GetLongLength(void) const;
+	float	GetShortLength(void) const;
+	float	GetLean(void) const;
+	float	GetMakeLean(void) const;
+	float	GetMakeLeanCos(void) const;
+	float	GetMakeLeanSin(void) const;
 	BOOL	IsArc(void) const;
 			void	SetRoundFixed(BOOL);
 
 	virtual	BOOL	IsMakeTarget(void) const;
-	virtual	BOOL	IsMakeMatchPoint(const CPointD&);
+	virtual	BOOL	IsMakeMatchPoint(const CPointF&);
 	virtual BOOL	IsStartEqEnd(void) const;
-	virtual	BOOL	IsDirectionPoint(const CPointD&, const CPointD&);
+	virtual	BOOL	IsDirectionPoint(const CPointF&, const CPointF&);
 			BOOL	IsLongEqShort(void) const;
-	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
-	virtual	const CPointD	GetStartCutterPoint(void) const;
-	virtual	const CPointD	GetStartMakePoint(void) const;
-	virtual	const CPointD	GetEndCutterPoint(void) const;
-	virtual	const CPointD	GetEndMakePoint(void) const;
-	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
+	virtual	float	GetEdgeGap(const CPointF&, BOOL = TRUE);
+	virtual	const CPointF	GetStartCutterPoint(void) const;
+	virtual	const CPointF	GetStartMakePoint(void) const;
+	virtual	const CPointF	GetEndCutterPoint(void) const;
+	virtual	const CPointF	GetEndMakePoint(void) const;
+	virtual	size_t	SetVectorPoint(CVPointF&, float = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointF&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointF&, CVPointF&, float) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
-	virtual	void	RoundObjPoint(const CPointD&, double);
+	virtual	void	RoundObjPoint(const CPointF&, float);
 
-	virtual	void	DrawTuning(const double);
+	virtual	void	DrawTuning(float);
 	virtual	void	Draw(CDC*) const;
-	virtual	double	OrgTuning(BOOL = TRUE);
+	virtual	float	OrgTuning(BOOL = TRUE);
 
-	virtual	double	GetSelectPointGap(const CPointD&);
-	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
-	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	float	GetSelectPointGap(const CPointF&);
+	virtual	BOOL	GetDirectionArraw(const CPointF&, CPointF[][3]);
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointF[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointF&, const CPointF&, CPointF[], BOOL = TRUE) const;
+	virtual	boost::optional<CPointF>	CalcOffsetIntersectionPoint(const CDXFdata*, float, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointF&, float) const;
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFellipse)
@@ -607,7 +607,7 @@ class CDXFpolyline : public CDXFline
 	POSITION	m_posSel;		// GetSelectPointGap() で一番近かったｵﾌﾞｼﾞｪｸﾄﾎﾟｼﾞｼｮﾝ
 	CDXFline*	m_pArrawLine;	// 方向指示判定用
 
-	void		CheckPolylineIntersection_SubLoop(const CPointD&, const CPointD&, POSITION);
+	void		CheckPolylineIntersection_SubLoop(const CPointF&, const CPointF&, POSITION);
 	void		CheckPolylineIntersection_SubLoop(const CDXFarc*, POSITION);
 	void		CheckPolylineIntersection_SubLoop(const CDXFellipse*, POSITION);
 
@@ -631,37 +631,37 @@ public:
 	int		GetObjectCount(int) const;
 	POSITION	GetFirstVertex(void) const;
 	CDXFdata*	GetNextVertex(POSITION&) const;
-	const	CPointD		GetFirstPoint(void) const;
+	const	CPointF		GetFirstPoint(void) const;
 	CDXFdata*	GetFirstObject(void) const;
 	CDXFdata*	GetTailObject(void) const;
 	BOOL	IsIntersection(void) const;
 
 	BOOL	SetVertex(LPCDXFPARGV);
-	BOOL	SetVertex(LPCDXFPARGV, double, const CPointD&);
+	BOOL	SetVertex(LPCDXFPARGV, float, const CPointF&);
 	void	EndSeq(void);
 	void	CheckPolylineIntersection(void);
 
-	virtual	size_t	SetVectorPoint(CVPointD&, double = 0.0) const;
-	virtual	void	SetVectorPoint(CVPointD&, size_t) const;
-	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointD&, CVPointD&, double) const;
+	virtual	size_t	SetVectorPoint(CVPointF&, float = 0.0) const;
+	virtual	void	SetVectorPoint(CVPointF&, size_t) const;
+	virtual	void	SetWireHeteroData(const CDXFdata*, CVPointF&, CVPointF&, float) const;
 
 	virtual	void	SwapMakePt(int);
 	virtual	void	SwapNativePt(void);
-	virtual	void	RoundObjPoint(const CPointD&, double);
+	virtual	void	RoundObjPoint(const CPointF&, float);
 
 	virtual	BOOL	IsMakeTarget(void) const;
 	virtual BOOL	IsStartEqEnd(void) const;
-	virtual	BOOL	IsDirectionPoint(const CPointD&, const CPointD&);
-	virtual	void	DrawTuning(const double);
+	virtual	BOOL	IsDirectionPoint(const CPointF&, const CPointF&);
+	virtual	void	DrawTuning(float);
 	virtual	void	Draw(CDC*) const;
-	virtual	double	OrgTuning(BOOL = TRUE);
+	virtual	float	OrgTuning(BOOL = TRUE);
 
-	virtual	double	GetSelectPointGap(const CPointD&);
-	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]);
-	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
-	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
-	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
-	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
+	virtual	float	GetSelectPointGap(const CPointF&);
+	virtual	BOOL	GetDirectionArraw(const CPointF&, CPointF[][3]);
+	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointF[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointF&, const CPointF&, CPointF[], BOOL = TRUE) const;
+	virtual	boost::optional<CPointF>	CalcOffsetIntersectionPoint(const CDXFdata*, float, BOOL) const;
+	virtual	int		CheckIntersectionCircle(const CPointF&, float) const;
 
 	// Polylineの特殊処理(from ReadDXF.cpp)
 	void	SetParentLayer(CLayerData*);
@@ -688,9 +688,9 @@ public:
 
 	CString		GetStrValue(void) const;
 
-	virtual	double	GetEdgeGap(const CPointD&, BOOL = TRUE);
+	virtual	float	GetEdgeGap(const CPointF&, BOOL = TRUE);
 	virtual	void	Draw(CDC*) const;
-	virtual	double	OrgTuning(BOOL = TRUE);
+	virtual	float	OrgTuning(BOOL = TRUE);
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFtext)

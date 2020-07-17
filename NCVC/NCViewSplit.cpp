@@ -61,7 +61,7 @@ void CNCViewSplit::DrawData(CNCdata* pData, BOOL bSelect, PFNNCDRAWPROC pfnDrawP
 	}
 }
 
-void CNCViewSplit::AllPane_PostMessage(int nID, UINT msg, WPARAM wParam, LPARAM lParam)
+void CNCViewSplit::AllPane_PostMessage(UINT_PTR nID, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	int		i, j;
 
@@ -82,7 +82,7 @@ void CNCViewSplit::AllPane_PostMessage(int nID, UINT msg, WPARAM wParam, LPARAM 
 	}
 }
 
-void CNCViewSplit::CalcPane(int nID, BOOL bInitial/*=FALSE*/)
+void CNCViewSplit::CalcPane(UINT_PTR nID, BOOL bInitial/*=FALSE*/)
 {
 	CString	strRegKey, strEntry;
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));

@@ -57,8 +57,7 @@ friend	class	CTraceThread;
 					m_wndSplitter22;
 
 	HDC			m_hDC[NCDRAWVIEW_NUM];	// XYZ, XY, XZ, YZ 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙ
-	UINT		m_nTraceSpeed,		// ﾄﾚｰｽ実行の速度
-				m_nTrace;			// ﾄﾚｰｽ実行状態
+	UINT		m_nTraceSpeed;		// ﾄﾚｰｽ実行の速度
 	CTraceThread*	m_pTraceThread;	// ﾄﾚｰｽ実行ｽﾚｯﾄﾞﾊﾝﾄﾞﾙ
 	BOOL		m_bTraceContinue,	// ﾄﾚｰｽ実行継続ﾌﾗｸﾞ
 				m_bTracePause;		// ﾄﾚｰｽ一時停止

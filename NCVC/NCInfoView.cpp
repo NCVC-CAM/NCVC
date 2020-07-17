@@ -199,7 +199,7 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 	else if ( GetDocument()->IsDocFlag(NCDOC_CUTCALC) )
 		VERIFY(strFormat.LoadString(IDCV_CUTCALC));
 	else {
-		double	dMove = 0.0, dTime = GetDocument()->GetCutTime();
+		float	dMove = 0.0, dTime = GetDocument()->GetCutTime();
 		for ( i=0; i<2; i++ ) {
 			strFormat.Format(IDCV_VALFORMAT, GetDocument()->GetMoveData(i));
 			rc.SetRect(X, i*nHeight, W, (i+1)*nHeight);
@@ -268,7 +268,7 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 			pDC->TextOut(11*nWidth+W*2, (i+1)*nHeight, strBuf);
 		}
 		if ( !GetDocument()->IsDocFlag(NCDOC_ERROR) ) {
-			double	dResult[2], dHosei[] = {1.0, 2.0};	// XŽ²’¼Œa•\Ž¦•â³
+			float	dResult[2], dHosei[] = {1.0, 2.0};	// XŽ²’¼Œa•\Ž¦•â³
 			int		XZ[] = {NCA_X, NCA_Z};
 			for ( i=0; i<SIZEOF(XZ); i++ ) {
 				GetDocument()->GetWorkRectPP(XZ[i], dResult);
@@ -295,7 +295,7 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 			pDC->TextOut(11*nWidth+W*2, (i+1)*nHeight, strBuf);
 		}
 		if ( !GetDocument()->IsDocFlag(NCDOC_ERROR) ) {
-			double	dResult[2];
+			float	dResult[2];
 			for ( i=0; i<NCXYZ; i++ ) {
 				GetDocument()->GetWorkRectPP(i, dResult);
 				// ---
@@ -330,7 +330,7 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 	int		i;
 	int		ZX[] = {NCA_Z, NCA_X},
 			XZ[] = {NCA_X, NCA_Z};
-	double	dMove = 0.0, dTime = pDoc->GetCutTime(),
+	float	dMove = 0.0, dTime = pDoc->GetCutTime(),
 			dResult[2];
 
 	VERIFY(strBuf.LoadString(IDCV_MILI));
@@ -431,7 +431,7 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 		strarrayInfo.Add(szBracket[0] + strItem + szBracket[1]);
 		VERIFY(strBuf.LoadString(IDCV_KARA));
 		if ( pDoc->IsDocFlag(NCDOC_LATHE) ) {
-			double	dHosei[] = {1.0, 2.0};	// XŽ²’¼Œa•\Ž¦•â³
+			float	dHosei[] = {1.0, 2.0};	// XŽ²’¼Œa•\Ž¦•â³
 			for ( i=0; i<SIZEOF(XZ); i++ ) {
 				pDoc->GetWorkRectPP(XZ[i], dResult);
 				strItem = g_szNdelimiter[ZX[i]] + strDelimiter;

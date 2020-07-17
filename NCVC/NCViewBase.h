@@ -11,8 +11,8 @@ class CNCViewBase : public CViewBase
 {
 	ENNCDRAWVIEW	m_enView;	// 派生ﾋﾞｭｰの識別
 
-	virtual	CRectD	ConvertRect(const CRect3D& rc) {
-		CRectD	rcResult(rc);
+	virtual	CRectF	ConvertRect(const CRect3F& rc) {
+		CRectF	rcResult(rc);
 		return rcResult;					// CNCViewXY用
 	}
 	virtual	boost::tuple<size_t, size_t>	GetPlaneAxis(void) {
@@ -34,7 +34,7 @@ protected:
 	}
 	CString			m_strGuide;			// 平面案内文字
 	PFNNCDRAWPROC	m_pfnDrawProc;		// 描画関数ﾎﾟｲﾝﾀ
-	CRectD			m_rcDataMax;		// 補填後のGetDocument()->GetMaxRect()
+	CRectF			m_rcDataMax;		// 補填後のGetDocument()->GetMaxRect()
 	CPoint			m_ptGuide[NCXYZ][2];// XYZ軸のｶﾞｲﾄﾞ座標(始点・終点)
 	// XY, XZ, YZ 平面用 (XYZはCNCViewが独自に持つ)
 	CRect	m_rcDrawMax,		// ﾃﾞｰﾀ矩形
@@ -70,8 +70,8 @@ protected:
 	void	DrawNCdata(CDC*);
 	void	DrawSupportRect(CDC*);
 	//
-	virtual void OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint);
-	virtual void OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView);
+	virtual void OnUpdate(CView*, LPARAM, CObject*);
+	virtual void OnActivateView(BOOL, CView*, CView*);
 	// 共通ﾒｯｾｰｼﾞ群
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
@@ -79,7 +79,7 @@ protected:
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-	afx_msg int OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message);
+	afx_msg int OnMouseActivate(CWnd*, UINT, UINT);
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateMoveKey (CCmdUI* pCmdUI);
 	afx_msg void OnUpdateRoundKey(CCmdUI* pCmdUI);

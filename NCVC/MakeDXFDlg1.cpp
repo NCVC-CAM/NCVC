@@ -23,10 +23,10 @@ BEGIN_MESSAGE_MAP(CMakeDXFDlg1, CPropertyPage)
 END_MESSAGE_MAP()
 
 // ¶×°ºİÎŞÎŞ¯¸½‚Ö‚Ìî•ñ(DXF¶×°º°ÄŞ‚Ì‡”Ô)
-static	const	COLORREF	g_dwColor[] = {
-	RGB(255,0,0), RGB(255,255,0), RGB(0,255,0),		// Ô, ‰©, —Î
-	RGB(0,255,255), RGB(0,0,255), RGB(255,0,255),	// …(Cyan), Â, ‡(Magenta)
-	RGB(255,255,255)								// ”’
+static	LPCTSTR	g_szColor[] = {
+	"255:0:0", "255:255:0", "0:255:0",		// Ô, ‰©, —Î
+	"0:255:255", "0:0:255", "255:0:255",	// …(Cyan), Â, ‡(Magenta)
+	"255:255:255"							// ”’
 };
 
 #define	GetParentSheet()	static_cast<CMakeDXFDlg *>(GetParentSheet())
@@ -79,7 +79,7 @@ BOOL CMakeDXFDlg1::OnInitDialog()
 {
 	__super::OnInitDialog();
 
-	int		i, j;
+	size_t			i, j;
 	CMakeDXFDlg*	pParent = GetParentSheet();
 	// ºİ½Ä×¸À‚Å‚Í‚Å‚«‚È‚¢ºİÄÛ°Ù‚Ì‰Šú‰»
 	CDXFMakeOption*	pDXFMake = pParent->GetDXFMakeOption();
@@ -108,8 +108,8 @@ BOOL CMakeDXFDlg1::OnInitDialog()
 			m_cbLineType[i].AddString(g_penStyle[j].lpszPenName);
 		m_cbLineType[i].SetCurSel(pDXFMake->m_nLType[i]);
 		// F
-		for ( j=0; j<SIZEOF(g_dwColor); j++ ) 
-			m_ctColor[i].AddString( (LPCTSTR)g_dwColor[j] );
+		for ( j=0; j<SIZEOF(g_szColor); j++ )
+			m_ctColor[i].AddString( g_szColor[j] );
 		m_ctColor[i].SetCurSel(pDXFMake->m_nLColor[i]);
 		m_ctColor[i].SetItemHeight(-1, m_cbLineType[i].GetItemHeight(-1));
 	}

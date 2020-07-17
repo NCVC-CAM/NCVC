@@ -8,6 +8,7 @@
 #include "NCChild.h"
 #include "NCDoc.h"
 #include "NCViewTab.h"
+#include "NCViewGL.h"
 #include "DXFChild.h"
 #include "DXFDoc.h"
 #include "DXFView.h"
@@ -44,7 +45,7 @@ extern	int		g_nProcesser = 1;		// ﾌﾟﾛｾｯｻ数(->検索ｽﾚｯﾄﾞ数)
 extern	LPTSTR	g_pszDelimiter = NULL;	// g_szGdelimiter[] + g_szNdelimiter[]
 extern	LPTSTR	g_pszExecDir = NULL;	// 実行ﾃﾞｨﾚｸﾄﾘ
 extern	DWORD	g_dwCamVer = NCVCSERIALVERSION;	// CAMﾌｧｲﾙ Ver.No.
-extern	double	_TABLECOS[ARCCOUNT] = {	// 事前に計算された三角関数の結果
+extern	float	_TABLECOS[ARCCOUNT] = {	// 事前に計算された三角関数の結果
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -109,14 +110,17 @@ CNCVCApp::CNCVCApp()
 	g_nProcesser = min(si.dwNumberOfProcessors, MAXIMUM_WAIT_OBJECTS);
 
 	// 3D→2D変換の初期化
-	CPoint3D::ChangeAngle(RX, RY, RZ);
+	CPoint3F::ChangeAngle(RX, RY, RZ);
 
 	// 三角関数ﾃｰﾌﾞﾙの初期化
-	double	q = 0;
+	float	q = 0;
 	for ( int i=0; i<ARCCOUNT; i++, q+=ARCSTEP ) {
-		_TABLECOS[i] = cos(q);
-		_TABLESIN[i] = sin(q);
+		_TABLECOS[i]  = cos(q);
+		_TABLESIN[i]  = sin(q);
 	}
+
+	// ｴﾝﾄﾞﾐﾙ法線ﾍﾞｸﾄﾙの初期化
+	InitialMillNormal();	// to NCViewGL.cpp
 
 	// DXFｲﾝﾃﾞｯｸｽｶﾗｰの初期化
 	InitialColorIndex();	// to DXFMakeClass.cpp
@@ -179,6 +183,9 @@ BOOL CNCVCApp::InitInstance()
 #ifdef _DEBUG
 	g_dbg.printf("Processer Count=%d", g_nProcesser);
 	g_dbg.printf("RegistryKey=%s", m_pszRegistryKey);
+	g_dbg.printf(" NCDATA struct size=%d", sizeof(NCDATA));
+	g_dbg.printf("_NCDATA struct size=%d", sizeof(_NCDATA));
+	g_dbg.printf("CNCdata struct size=%d", sizeof(CNCdata));
 #endif
 	LoadStdProfileSettings(MAXMRULSTCNT);	// 標準の INI ファイルのオプションをロードします (MRU を含む)
 	InitialRecentViewList();	// MRUﾘｽﾄからCRecentViewInfo構築
@@ -609,8 +616,8 @@ void CNCVCApp::AddToRecentViewList(LPCTSTR lpszPathName)
 
 void CNCVCApp::SetDefaultViewInfo(const GLdouble objectXform[4][4])
 {
-	CRect3D	rcRect;		// dummy
-	CPointD	ptCenter;
+	CRect3F	rcRect;		// dummy
+	CPointF	ptCenter;
 
 	if ( !m_pDefViewInfo )
 		m_pDefViewInfo = new CRecentViewInfo(NULL);
@@ -625,7 +632,7 @@ void CNCVCApp::SaveExecData(void)
 	VERIFY(strEntry.LoadString(IDS_REG_EXEC));
 
 	// 外部ｱﾌﾟﾘｹｰｼｮﾝ登録
-	WriteProfileInt(strRegKey, strEntry, m_liExec.GetCount());
+	WriteProfileInt(strRegKey, strEntry, (int)m_liExec.GetCount());
 	int		i = 0;
 	PLIST_FOREACH(CExecOption* pExec, &m_liExec)
 		strFormat.Format(IDS_COMMON_FORMAT, strEntry, i++);
@@ -862,19 +869,19 @@ BOOL CNCVCApp::NCVCAddinMenu(void)
 		switch ( i ) {
 		case NCVCADIN_ARY_APPFILE:	// ﾒｲﾝﾌﾚｰﾑの「ﾌｧｲﾙ」ﾒﾆｭｰ
 			pMenu->InsertMenu(ADDINMENU_INS_MAIN,   MF_BYPOSITION|MF_SEPARATOR);
-			pMenu->InsertMenu(ADDINMENU_INS_MAIN+1, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->InsertMenu(ADDINMENU_INS_MAIN+1, MF_BYPOSITION|MF_POPUP, (UINT_PTR)menuPop[i].Detach(), lpszAddin);
 			break;
 		case NCVCADIN_ARY_NCDFILE:	// NCD の「ﾌｧｲﾙ」ﾒﾆｭｰ
 			pMenu->InsertMenu(ADDINMENU_INS_NCD,   MF_BYPOSITION|MF_SEPARATOR);
-			pMenu->InsertMenu(ADDINMENU_INS_NCD+1, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->InsertMenu(ADDINMENU_INS_NCD+1, MF_BYPOSITION|MF_POPUP, (UINT_PTR)menuPop[i].Detach(), lpszAddin);
 			break;
 		case NCVCADIN_ARY_DXFFILE:	// DXF の「ﾌｧｲﾙ」ﾒﾆｭｰ
 			pMenu->InsertMenu(ADDINMENU_INS_DXF,   MF_BYPOSITION|MF_SEPARATOR);
-			pMenu->InsertMenu(ADDINMENU_INS_DXF+1, MF_BYPOSITION|MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->InsertMenu(ADDINMENU_INS_DXF+1, MF_BYPOSITION|MF_POPUP, (UINT_PTR)menuPop[i].Detach(), lpszAddin);
 			break;
 		default:	// それ以外は追加
 			pMenu->AppendMenu(MF_SEPARATOR);
-			pMenu->AppendMenu(MF_POPUP, (UINT)menuPop[i].Detach(), lpszAddin);
+			pMenu->AppendMenu(MF_POPUP, (UINT_PTR)menuPop[i].Detach(), lpszAddin);
 		}
 	}
 
@@ -1121,7 +1128,7 @@ BOOL CNCVCApp::DoPromptFileNameEx(CStringArray& aryFile, int nInitFilter/*=-1*/)
 #ifdef _DEBUG_FILEOPEN
 	g_dbg.printf("CNCVCApp::DoPromptFileNameEx() Start");
 #endif
-	int			i, nResult, nExt;
+	int			i, nExt;
 	CString		strAllFilter,
 				strFilter[SIZEOF(m_pDocTemplate)], strExt[SIZEOF(m_pDocTemplate)],
 				strTmp;
@@ -1166,7 +1173,7 @@ BOOL CNCVCApp::DoPromptFileNameEx(CStringArray& aryFile, int nInitFilter/*=-1*/)
 	if ( nInitFilter >= 0 )
 		dlg.m_ofn.nFilterIndex= nInitFilter + 2;	// TYPE_NCD->2 or TYPE_DXF->3
 	// ﾀﾞｲｱﾛｸﾞ表示
-	nResult = dlg.DoModal();
+	INT_PTR nResult = dlg.DoModal();
 	if ( nResult == IDOK ) {
 		aryFile.RemoveAll();
 		for (POSITION pos = dlg.GetStartPosition(); pos; )
@@ -1561,8 +1568,8 @@ void CNCVCApp::OnOptionExec()
 
 	// 設定前に現在の情報を保存
 	CStringArray	strArray;
-	LPWORD	pMenuID = NULL;
-	int		i=0, nBtnCnt = m_liExec.GetCount();
+	LPWORD		pMenuID = NULL;
+	INT_PTR		i=0, nBtnCnt = m_liExec.GetCount();
 	try {
 		pMenuID = new WORD[nBtnCnt];
 		PLIST_FOREACH(CExecOption* pExec, &m_liExec)
@@ -1709,13 +1716,14 @@ BOOL IsFileExist(LPCTSTR lpszFile, BOOL bExist/*=TRUE*/, BOOL bMsg/*=TRUE*/)
 }
 
 // CFileDialogの呼び出し
-int NCVC_FileDlgCommon
+INT_PTR NCVC_FileDlgCommon
 	(int nIDtitle, const CString& strFilter, BOOL bAll,
 	 CString& strFileName, LPCTSTR lpszInitialDir, BOOL bRead, DWORD dwFlags)
 {
 	extern	LPCTSTR	gg_szReturn;	// "\n"
 
-	int		nIndex, nResult;
+	int		nIndex;
+	INT_PTR	nResult;
 	CString	strAllFilter, strTitle, strTmp;
 
 	// ﾌｨﾙﾀ設定とﾃﾞﾌｫﾙﾄ拡張子の取得
@@ -1757,7 +1765,7 @@ CRecentViewInfo::CRecentViewInfo(LPCTSTR lpszPathName)
 }
 
 void CRecentViewInfo::SetViewInfo
-	(const GLdouble objectXform[4][4], const CRect3D& rcView, const CPointD& ptCenter)
+	(const GLdouble objectXform[4][4], const CRect3F& rcView, const CPointF& ptCenter)
 {
 	m_bGLActivate = TRUE;
 	for ( int i=0; i<SIZEOF(m.objectXform); i++ ) {
@@ -1768,7 +1776,7 @@ void CRecentViewInfo::SetViewInfo
 	m.ptCenter = ptCenter;
 }
 
-BOOL CRecentViewInfo::GetViewInfo(GLdouble objectXform[4][4], CRect3D& rcView, CPointD& ptCenter) const
+BOOL CRecentViewInfo::GetViewInfo(GLdouble objectXform[4][4], CRect3F& rcView, CPointF& ptCenter) const
 {
 	if ( m_bGLActivate ) {
 		for ( int i=0; i<SIZEOF(m.objectXform); i++ ) {

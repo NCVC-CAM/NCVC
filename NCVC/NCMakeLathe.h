@@ -12,17 +12,17 @@ enum	TWOMOVEMODE {
 class CNCMakeLathe : public CNCMakeBase
 {
 	// 座標値設定
-	static	CString	GetValString(int, double, BOOL);
+	static	CString	GetValString(int, float, BOOL);
 
 public:
 	// 切削ﾃﾞｰﾀ
 	CNCMakeLathe(const CDXFdata*);
 	// 指定位置に直線移動
-	CNCMakeLathe(const CPointD&);
+	CNCMakeLathe(const CPointF&);
 	// 指定位置に２軸移動
-	CNCMakeLathe(TWOMOVEMODE, const CPointD&);
+	CNCMakeLathe(TWOMOVEMODE, const CPointF&);
 	// X|Z軸の変化
-	CNCMakeLathe(int, int, double);
+	CNCMakeLathe(int, int, float);
 	// 任意の文字列ｺｰﾄﾞ
 	CNCMakeLathe(const CString&);
 

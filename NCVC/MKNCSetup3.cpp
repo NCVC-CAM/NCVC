@@ -136,8 +136,8 @@ BOOL CMKNCSetup3::OnInitDialog()
 
 	// ºÝ½Ä×¸À‚Å‚Í‰Šú‰»‚Å‚«‚È‚¢•Ï”
 	if ( ::IsWindow(pParent->m_dlg1.m_hWnd) ) {
-		m_dZCut		= (double)(pParent->m_dlg1.m_dZCut);
-		m_dZG0Stop	= (double)(pParent->m_dlg1.m_dZG0Stop);
+		m_dZCut		= (float)(pParent->m_dlg1.m_dZCut);
+		m_dZG0Stop	= (float)(pParent->m_dlg1.m_dZG0Stop);
 	}
 	else {
 		m_dZCut		= pOpt->MIL_D_ZCUT;
@@ -179,8 +179,8 @@ BOOL CMKNCSetup3::OnSetActive()
 	CMKNCSetup*	pParent = GetParentSheet();
 	// Šî–{Íß°¼Þ‚©‚çuØ‚èž‚ÝvÃÞ°À‚ðŽæ“¾
 	if ( ::IsWindow(pParent->m_dlg1.m_hWnd) ) {
-		m_dZCut		= (double)(pParent->m_dlg1.m_dZCut);
-		m_dZG0Stop	= (double)(pParent->m_dlg1.m_dZG0Stop);
+		m_dZCut		= (float)(pParent->m_dlg1.m_dZCut);
+		m_dZG0Stop	= (float)(pParent->m_dlg1.m_dZG0Stop);
 	}
 	else {
 		CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
@@ -195,20 +195,20 @@ BOOL CMKNCSetup3::OnApply()
 	// Íß°¼ÞŠÔ‚ÌˆË‘¶ŠÖŒW
 	// OnKillActive() ‚Å‚ÍÍß°¼Þ‚ðØ‚è‘Ö‚¦‚ç‚ê‚È‚¢‚Ì‚Å‚¤‚Á‚Æ‚¨‚µ‚¢
 	if ( m_nMakeEnd == 2 ) {	// Fix
-		if ( (double)m_dMakeValue > (double)m_dZG0Stop ) {
+		if ( (float)m_dMakeValue > (float)m_dZG0Stop ) {
 			AfxMessageBox(IDS_ERR_DEEPFIXR, MB_OK|MB_ICONEXCLAMATION);
 			m_dMakeValue.SetFocus();
 			m_dMakeValue.SetSel(0, -1);
 			return FALSE;
 		}
-		if ( (double)m_dMakeValue <= (double)m_dZCut ) {
+		if ( (float)m_dMakeValue <= (float)m_dZCut ) {
 			AfxMessageBox(IDS_ERR_DEEPFIXZ, MB_OK|MB_ICONEXCLAMATION);
 			m_dMakeValue.SetFocus();
 			m_dMakeValue.SetSel(0, -1);
 			return FALSE;
 		}
 	}
-	if ( m_bDeep && (double)m_dZCut<(double)m_dDeep ) {
+	if ( m_bDeep && (float)m_dZCut<(float)m_dDeep ) {
 		AfxMessageBox(IDS_ERR_DEEPFINAL, MB_OK|MB_ICONEXCLAMATION);
 		m_dDeep.SetFocus();
 		m_dDeep.SetSel(0, -1);

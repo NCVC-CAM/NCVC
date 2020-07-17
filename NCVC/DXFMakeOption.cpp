@@ -13,6 +13,8 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+using namespace boost;
+
 // intå^ñΩóﬂ
 static	LPCTSTR	g_szNOrder[] = {
 	"LTypeO", "LTypeC", "LTypeM", "LTypeH",
@@ -25,11 +27,11 @@ static	const	int		g_dfNOrder[] = {
 	0, 0			// XYïΩñ , å≈íËª≤∏Ÿâ~èoóÕ
 };
 
-// doubleå^ñΩóﬂ
+// floatå^ñΩóﬂ
 static	LPCTSTR	g_szDOrder[] = {
 	"OrgLength", "CycleR"
 };
-static	const	double	g_dfDOrder[] = {
+static	const	float	g_dfDOrder[] = {
 	10.0, 10.0
 };
 
@@ -80,10 +82,10 @@ void CDXFMakeOption::Initialize_Registry(void)
 	// intå^ñΩóﬂì«Ç›çûÇ›
 	for ( i=0; i<SIZEOF(g_szNOrder); i++ )
 		m_unNums[i] = AfxGetApp()->GetProfileInt(strRegKey, g_szNOrder[i], g_dfNOrder[i]);
-	// doubleå^ñΩóﬂì«Ç›çûÇ›
+	// floatå^ñΩóﬂì«Ç›çûÇ›
 	for ( i=0; i<SIZEOF(g_szDOrder); i++ ) {
 		strResult = AfxGetApp()->GetProfileString(strRegKey, g_szDOrder[i]);
-		m_udNums[i] = strResult.IsEmpty() ? g_dfDOrder[i] : atof(strResult);
+		m_udNums[i] = strResult.IsEmpty() ? g_dfDOrder[i] : (float)atof((LPCTSTR)strResult.Trim());
 	}
 	// BOOLå^ñΩóﬂì«Ç›çûÇ›
 	for ( i=0; i<SIZEOF(g_szBOrder); i++ )
@@ -136,7 +138,7 @@ BOOL CDXFMakeOption::SaveDXFMakeOption(void)
 		if ( !AfxGetApp()->WriteProfileInt(strRegKey, g_szNOrder[i], m_unNums[i]) )
 			return FALSE;
 	}
-	// doubleå^ñΩóﬂÇÃï€ë∂
+	// floatå^ñΩóﬂÇÃï€ë∂
 	for ( i=0; i<SIZEOF(g_szDOrder); i++ ) {
 		strResult.Format(IDS_MAKENCD_FORMAT, m_udNums[i]);
 		if ( !AfxGetApp()->WriteProfileString(strRegKey, g_szDOrder[i], strResult) )

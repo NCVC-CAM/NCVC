@@ -111,7 +111,7 @@ static inline CString _MakeEndSec(void)
 	return _GROUPCODE(0)+g_szSection[SEC_ENDSEC]+gg_szReturn;
 }
 
-static inline CString _MakeValue(int nCode, double dVal)
+static inline CString _MakeValue(int nCode, float dVal)
 {
 	CString	strResult, strFormat;
 	strFormat.Format(IDS_MAKENCD_FORMAT, dVal);
@@ -119,7 +119,7 @@ static inline CString _MakeValue(int nCode, double dVal)
 	return strResult;
 }
 
-static inline CString _MakeValue(DWORD dwFlags, double dVal[])
+static inline CString _MakeValue(DWORD dwFlags, float dVal[])
 {
 	extern	const	DWORD	g_dwValSet[];
 	extern	int		g_nValueGroupCode[];
@@ -153,12 +153,12 @@ static inline CString _MakeFigure(int nType, const CString& strLayer)
 			_MakeLayer(strLayer);
 }
 
-static inline CString _MakeVertex(LPCTSTR pszLayer, const CPointD* pt)
+static inline CString _MakeVertex(LPCTSTR pszLayer, const CPointF* pt)
 {
 	extern	LPCTSTR	g_szPolyline[];
 		// "VERTEX", "SEQEND"
 	if ( pt ) {
-		double	dVal[DXFMAXVALUESIZE];
+		float	dVal[DXFMAXVALUESIZE];
 		dVal[VALUE10] = pt->x;
 		dVal[VALUE20] = pt->y;
 		return _GROUPCODE(0)+g_szPolyline[0]+gg_szReturn+
@@ -180,14 +180,14 @@ static inline int _SetDXFtype(ENPLANE enPlane, const CNCdata* pData)
 	return nType;
 }
 
-static inline double _AngleTuning_D(double q)
+static inline float _AngleTuning_D(float q)
 {
 	while ( q < 0 )		q += 360.0;
 	while ( 360.0 < q )	q -= 360.0;
 	return q;
 }
 
-static inline double _AngleTuning_R(double q)
+static inline float _AngleTuning_R(float q)
 {
 	while ( q < 0 )		q += PI2;	// RAD(360.0)
 	while ( PI2 < q )	q -= PI2;;
@@ -198,8 +198,8 @@ static inline double _AngleTuning_R(double q)
 
 static CString MakeValueLine_XY(const CNCdata* pData)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPoint3D	pts(pData->GetStartPoint()), pte(pData->GetEndPoint());
+	float	dVal[DXFMAXVALUESIZE];
+	CPoint3F	pts(pData->GetStartPoint()), pte(pData->GetEndPoint());
 	dVal[VALUE10] = pts.x;	dVal[VALUE20] = pts.y;
 	dVal[VALUE11] = pte.x;	dVal[VALUE21] = pte.y;
 	return _MakeValue(VALFLG_LINE, dVal);
@@ -207,8 +207,8 @@ static CString MakeValueLine_XY(const CNCdata* pData)
 
 static CString MakeValueLine_XZ(const CNCdata* pData)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPoint3D	pts(pData->GetStartPoint()), pte(pData->GetEndPoint());
+	float	dVal[DXFMAXVALUESIZE];
+	CPoint3F	pts(pData->GetStartPoint()), pte(pData->GetEndPoint());
 	dVal[VALUE10] = pts.x;	dVal[VALUE20] = pts.z;
 	dVal[VALUE11] = pte.x;	dVal[VALUE21] = pte.z;
 	return _MakeValue(VALFLG_LINE, dVal);
@@ -216,8 +216,8 @@ static CString MakeValueLine_XZ(const CNCdata* pData)
 
 static CString	MakeValueLine_YZ(const CNCdata* pData)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPoint3D	pts(pData->GetStartPoint()), pte(pData->GetEndPoint());
+	float	dVal[DXFMAXVALUESIZE];
+	CPoint3F	pts(pData->GetStartPoint()), pte(pData->GetEndPoint());
 	dVal[VALUE10] = pts.y;	dVal[VALUE20] = pts.z;
 	dVal[VALUE11] = pte.y;	dVal[VALUE21] = pte.z;
 	return _MakeValue(VALFLG_LINE, dVal);
@@ -225,8 +225,8 @@ static CString	MakeValueLine_YZ(const CNCdata* pData)
 
 static CString MakeValueCircle_XY(const CNCcircle* pData)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPoint3D	pto( pData->GetOrg() );
+	float	dVal[DXFMAXVALUESIZE];
+	CPoint3F	pto( pData->GetOrg() );
 	dVal[VALUE10] = pto.x;	dVal[VALUE20] = pto.y;
 	dVal[VALUE40] = fabs( pData->GetR() );
 	return _MakeValue(VALFLG_CIRCLE, dVal);
@@ -234,8 +234,8 @@ static CString MakeValueCircle_XY(const CNCcircle* pData)
 
 static CString MakeValueCircle_XZ(const CNCcircle* pData)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPoint3D	pto( pData->GetOrg() );
+	float	dVal[DXFMAXVALUESIZE];
+	CPoint3F	pto( pData->GetOrg() );
 	dVal[VALUE10] = pto.x;	dVal[VALUE20] = pto.z;
 	dVal[VALUE40] = fabs( pData->GetR() );
 	return _MakeValue(VALFLG_CIRCLE, dVal);
@@ -243,8 +243,8 @@ static CString MakeValueCircle_XZ(const CNCcircle* pData)
 
 static CString MakeValueCircle_YZ(const CNCcircle* pData)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPoint3D	pto( pData->GetOrg() );
+	float	dVal[DXFMAXVALUESIZE];
+	CPoint3F	pto( pData->GetOrg() );
 	dVal[VALUE10] = pto.y;	dVal[VALUE20] = pto.z;
 	dVal[VALUE40] = fabs( pData->GetR() );
 	return _MakeValue(VALFLG_CIRCLE, dVal);
@@ -252,8 +252,8 @@ static CString MakeValueCircle_YZ(const CNCcircle* pData)
 
 static CString MakeValueCircleToLine_XY(const CNCdata* pData)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CRect3D	rc( pData->GetMaxRect() );
+	float	dVal[DXFMAXVALUESIZE];
+	CRect3F	rc( pData->GetMaxRect() );
 	dVal[VALUE10] = rc.left;	dVal[VALUE20] = rc.top;
 	dVal[VALUE11] = rc.right;	dVal[VALUE21] = rc.bottom;
 	return _MakeValue(VALFLG_LINE, dVal);
@@ -261,8 +261,8 @@ static CString MakeValueCircleToLine_XY(const CNCdata* pData)
 
 static CString	MakeValueCircleToLine_XZ(const CNCdata* pData)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CRect3D	rc( pData->GetMaxRect() );
+	float	dVal[DXFMAXVALUESIZE];
+	CRect3F	rc( pData->GetMaxRect() );
 	dVal[VALUE10] = rc.left;	dVal[VALUE20] = rc.low;
 	dVal[VALUE11] = rc.right;	dVal[VALUE21] = rc.high;
 	return _MakeValue(VALFLG_LINE, dVal);
@@ -270,8 +270,8 @@ static CString	MakeValueCircleToLine_XZ(const CNCdata* pData)
 
 static CString	MakeValueCircleToLine_YZ(const CNCdata* pData)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CRect3D	rc( pData->GetMaxRect() );
+	float	dVal[DXFMAXVALUESIZE];
+	CRect3F	rc( pData->GetMaxRect() );
 	dVal[VALUE10] = rc.top;		dVal[VALUE20] = rc.low;
 	dVal[VALUE11] = rc.bottom;	dVal[VALUE21] = rc.high;
 	return _MakeValue(VALFLG_LINE, dVal);
@@ -279,37 +279,37 @@ static CString	MakeValueCircleToLine_YZ(const CNCdata* pData)
 
 ///
 
-static CString	MakeValueDXF(const CDXFpoint* pData, const CPointD& pto)
+static CString	MakeValueDXF(const CDXFpoint* pData, const CPointF& pto)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPointD	pt(pData->GetNativePoint(0) + pto);
+	float	dVal[DXFMAXVALUESIZE];
+	CPointF	pt(pData->GetNativePoint(0) + pto);
 	dVal[VALUE10] = pt.x;	dVal[VALUE20] = pt.y;
 	return _MakeValue(VALFLG_POINT, dVal);
 }
 
-static CString	MakeValueDXF(const CDXFline* pData, const CPointD& pto)
+static CString	MakeValueDXF(const CDXFline* pData, const CPointF& pto)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPointD	pts(pData->GetNativePoint(0) + pto),
+	float	dVal[DXFMAXVALUESIZE];
+	CPointF	pts(pData->GetNativePoint(0) + pto),
 			pte(pData->GetNativePoint(1) + pto);
 	dVal[VALUE10] = pts.x;	dVal[VALUE20] = pts.y;
 	dVal[VALUE11] = pte.x;	dVal[VALUE21] = pte.y;
 	return _MakeValue(VALFLG_LINE, dVal);
 }
 
-static CString	MakeValueDXF(const CDXFcircle* pData, const CPointD& pto)
+static CString	MakeValueDXF(const CDXFcircle* pData, const CPointF& pto)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPointD	ptc(pData->GetCenter() + pto);
+	float	dVal[DXFMAXVALUESIZE];
+	CPointF	ptc(pData->GetCenter() + pto);
 	dVal[VALUE10] = ptc.x;	dVal[VALUE20] = ptc.y;
 	dVal[VALUE40] = pData->GetR();
 	return _MakeValue(VALFLG_CIRCLE, dVal);
 }
 
-static CString	MakeValueDXF(const CDXFarc* pData, const CPointD& pto)
+static CString	MakeValueDXF(const CDXFarc* pData, const CPointF& pto)
 {
-	double	dVal[DXFMAXVALUESIZE], sq, eq;
-	CPointD	ptc(pData->GetCenter() + pto);
+	float	dVal[DXFMAXVALUESIZE], sq, eq;
+	CPointF	ptc(pData->GetCenter() + pto);
 	dVal[VALUE10] = ptc.x;	dVal[VALUE20] = ptc.y;
 	dVal[VALUE40] = pData->GetR();
 	if ( pData->GetRoundOrig() ) {
@@ -325,10 +325,10 @@ static CString	MakeValueDXF(const CDXFarc* pData, const CPointD& pto)
 	return _MakeValue(VALFLG_ARC, dVal);
 }
 
-static CString	MakeValueDXF(const CDXFellipse* pData, const CPointD& pto)
+static CString	MakeValueDXF(const CDXFellipse* pData, const CPointF& pto)
 {
-	double	dVal[DXFMAXVALUESIZE], sq, eq;
-	CPointD	ptc(pData->GetCenter() + pto),
+	float	dVal[DXFMAXVALUESIZE], sq, eq;
+	CPointF	ptc(pData->GetCenter() + pto),
 			ptl(pData->GetLongPoint());
 	dVal[VALUE10] = ptc.x;	dVal[VALUE20] = ptc.y;
 	dVal[VALUE11] = ptl.x;	dVal[VALUE21] = ptl.y;
@@ -348,12 +348,12 @@ static CString	MakeValueDXF(const CDXFellipse* pData, const CPointD& pto)
 	return _MakeValue(VALFLG_ELLIPSE, dVal);
 }
 
-static CString	MakeValueDXF(const CDXFpolyline* pPoly, const CPointD& pto)
+static CString	MakeValueDXF(const CDXFpolyline* pPoly, const CPointF& pto)
 {
 	CString		strLayer(pPoly->GetParentLayer()->GetLayerName()),
 				strResult;
-	double		dVal, sq, eq;
-	CPointD		pt;
+	float		dVal, sq, eq;
+	CPointF		pt;
 	CDXFdata*	pData;
 	CDXFarc*	pArc;
 
@@ -374,7 +374,7 @@ static CString	MakeValueDXF(const CDXFpolyline* pPoly, const CPointD& pto)
 			pt = pArc->GetNativePoint(1) + pto;
 			sq = _AngleTuning_R(pArc->GetStartAngle());
 			eq = _AngleTuning_R(pArc->GetEndAngle());
-			dVal = tan( (eq-sq)/4.0 );
+			dVal = tan( (eq-sq)/4.0f );
 			strResult += _MakeVertex(strLayer, &pt) + _MakeValue(42, dVal);
 			// 終点分を飛ばす
 			ASSERT( pos );
@@ -390,10 +390,10 @@ static CString	MakeValueDXF(const CDXFpolyline* pPoly, const CPointD& pto)
 	return strResult;
 }
 
-static CString	MakeValueDXF(const CDXFtext* pData, const CPointD& pto)
+static CString	MakeValueDXF(const CDXFtext* pData, const CPointF& pto)
 {
-	double	dVal[DXFMAXVALUESIZE];
-	CPointD	pt(pData->GetNativePoint(0) + pto);
+	float	dVal[DXFMAXVALUESIZE];
+	CPointF	pt(pData->GetNativePoint(0) + pto);
 	dVal[VALUE10] = pt.x;	dVal[VALUE20] = pt.y;
 	return _MakeValue(VALFLG_POINT, dVal) +
 			_GROUPCODE(1) + pData->GetStrValue() + gg_szReturn;
@@ -441,7 +441,7 @@ CDXFMake::CDXFMake(const CNCdata* pData, BOOL bCorrect/*=FALSE*/)
 	}
 }
 
-CDXFMake::CDXFMake(const CDXFdata* pData, const CPointD& pt)
+CDXFMake::CDXFMake(const CDXFdata* pData, const CPointF& pt)
 {
 	CString	strResult(
 		_MakeFigure(pData->GetType(), pData->GetParentLayer()->GetLayerName())
@@ -485,9 +485,9 @@ CDXFMake::CDXFMake(const CDXFdata* pData, const CPointD& pt)
 	m_strDXFarray.Add( strResult );
 }
 
-CDXFMake::CDXFMake(const CPoint3D& pt)
+CDXFMake::CDXFMake(const CPoint3F& pt)
 {
-	double	dVal[DXFMAXVALUESIZE];
+	float	dVal[DXFMAXVALUESIZE];
 
 	// 原点(円)情報出力
 	if ( GetFlg(MKDX_FLG_ORGCIRCLE) ) {
@@ -511,7 +511,7 @@ CDXFMake::CDXFMake(const CPoint3D& pt)
 
 	// 原点(ｸﾛｽ)情報出力
 	if ( GetFlg(MKDX_FLG_ORGCROSS) ) {
-		double	d1 = GetDbl(MKDX_DBL_ORGLENGTH), d2 = 0.0;
+		float	d1 = GetDbl(MKDX_DBL_ORGLENGTH), d2 = 0.0;
 		for ( int i=0; i<2; i++ ) {
 			// ｵﾌﾞｼﾞｪｸﾄ情報
 			m_strDXFarray.Add( MakeDXF_Figure(TYPE_LINE, MKDX_STR_ORIGIN) );
@@ -537,10 +537,10 @@ CDXFMake::CDXFMake(const CPoint3D& pt)
 	}
 }
 
-CDXFMake::CDXFMake(const CRectD& rc)
+CDXFMake::CDXFMake(const CRectF& rc)
 {
 	CString	strResult( _MakeFigure(TYPE_POLYLINE, pszWork)+_MakeValue(70, 1) );
-	CPointD	pt(rc.TopLeft());
+	CPointF	pt(rc.TopLeft());
 
 	strResult += _MakeVertex(pszWork, &pt);
 	pt.x = rc.right;
@@ -564,8 +564,8 @@ void CDXFMake::MakeSection_Header(const CDocBase* pDoc)
 	// ｾｸｼｮﾝ定義
 	m_strDXFarray.Add(_MakeSection(SEC_HEADER));
 	// HEADERｾｸｼｮﾝ値
-	double	dMin[DXFMAXVALUESIZE], dMax[DXFMAXVALUESIZE];
-	CRect3D	rc( pDoc->GetMaxRect() );
+	float	dMin[DXFMAXVALUESIZE], dMax[DXFMAXVALUESIZE];
+	CRect3F	rc( pDoc->GetMaxRect() );
 	switch ( GetNum(MKDX_NUM_PLANE) ) {
 	case 1:		// XZ
 		dMin[VALUE10] = rc.left;	dMin[VALUE20] = rc.low;
@@ -603,13 +603,13 @@ void CDXFMake::MakeSection_Tables(const CDocBase* pDoc)
 		//	"TABLE", "ENDTAB",
 		//		"LTYPE", "LAYER", "VPORT"
 	int		i, j;
-	CRect3D	rc( pDoc->GetMaxRect() );
-	CPointD	pt;
+	CRect3F	rc( pDoc->GetMaxRect() );
+	CPointF	pt;
 
 	// ｾｸｼｮﾝ定義
 	m_strDXFarray.Add(_MakeSection(SEC_TABLES));
 	// TABLESｾｸｼｮﾝ値
-	double	dVal[DXFMAXVALUESIZE], d1, d2;
+	float	dVal[DXFMAXVALUESIZE], d1, d2;
 	CString	strGroup0(_GROUPCODE(0)),
 			strGroup2(_GROUPCODE(2)),
 			strGroup3(_GROUPCODE(3)),
@@ -628,45 +628,45 @@ void CDXFMake::MakeSection_Tables(const CDocBase* pDoc)
 		strTABLE+strGroup2+strVPORT+_MakeValue(70, 1)+
 		strGroup0+strVPORT+strGroup2+"*ACTIVE\n"+_MakeValue(70, 0)
 	);
-	dVal[VALUE10] = 0.0;	dVal[VALUE20] = 0.0;
-	dVal[VALUE11] = 1.0;	dVal[VALUE21] = 1.0;
+	dVal[VALUE10] = 0.0f;	dVal[VALUE20] = 0.0f;
+	dVal[VALUE11] = 1.0f;	dVal[VALUE21] = 1.0f;
 	m_strDXFarray.Add( _MakeValue(VALFLG_LINE, dVal) );
 	switch ( GetNum(MKDX_NUM_PLANE) ) {
 	case 1:		// XZ
-		dVal[VALUE10] = (rc.right + rc.left) / 2.0;		// VALUE10は仮代入要素
-		dVal[VALUE20] = (rc.high  + rc.low)  / 2.0;
+		dVal[VALUE10] = (rc.right + rc.left) / 2.0f;		// VALUE10は仮代入要素
+		dVal[VALUE20] = (rc.high  + rc.low)  / 2.0f;
 		d1 = rc.right - rc.left;
 		d2 = rc.high  - rc.low;
-		dVal[VALUE40] = max( d1, d2 ) * 1.1;
+		dVal[VALUE40] = max( d1, d2 ) * 1.1f;
 		break;
 	case 2:		// YZ
-		dVal[VALUE10] = (rc.bottom + rc.top) / 2.0;
-		dVal[VALUE20] = (rc.high   + rc.low) / 2.0;
+		dVal[VALUE10] = (rc.bottom + rc.top) / 2.0f;
+		dVal[VALUE20] = (rc.high   + rc.low) / 2.0f;
 		d1 = rc.bottom - rc.top;
 		d2 = rc.high   - rc.low;
-		dVal[VALUE40] = max( d1, d2 ) * 1.1;
+		dVal[VALUE40] = max( d1, d2 ) * 1.1f;
 		break;
 	default:	// XY
 		pt = rc.CenterPoint();
 		dVal[VALUE10] = pt.x;		dVal[VALUE20] = pt.y;
 		d1 = rc.Width();
 		d2 = rc.Height();
-		dVal[VALUE40] = max( d1, d2 ) * 1.1;
+		dVal[VALUE40] = max( d1, d2 ) * 1.1f;
 		break;
 	}
-	dVal[VALUE41] = 1.5376;		// 1280x1024縦横比
-	dVal[VALUE42] = 50.0;
+	dVal[VALUE41] = 1.5376f;		// 1280x1024縦横比
+	dVal[VALUE42] = 50.0f;
 	m_strDXFarray.Add(
 		_MakeValue(12, dVal[VALUE10]) +
 		_MakeValue(22, dVal[VALUE20]) +
-		_MakeValue(13,  0.0) + _MakeValue(23,  0.0) +
-		_MakeValue(14, 10.0) + _MakeValue(24, 10.0) +
-		_MakeValue(15, 10.0) + _MakeValue(25, 10.0) +
-		_MakeValue(16,  0.0) + _MakeValue(26,  0.0) + _MakeValue(36,  1.0) +
-		_MakeValue(17,  0.0) + _MakeValue(27,  0.0) + _MakeValue(37,  1.0) +
+		_MakeValue(13,  0.0f) + _MakeValue(23,  0.0f) +
+		_MakeValue(14, 10.0f) + _MakeValue(24, 10.0f) +
+		_MakeValue(15, 10.0f) + _MakeValue(25, 10.0f) +
+		_MakeValue(16,  0.0f) + _MakeValue(26,  0.0f) + _MakeValue(36,  1.0f) +
+		_MakeValue(17,  0.0f) + _MakeValue(27,  0.0f) + _MakeValue(37,  1.0f) +
 		_MakeValue(VALFLG40|VALFLG41|VALFLG42, dVal) +
-		_MakeValue(43,  0.0) + _MakeValue(44,  0.0) +
-		_MakeValue(50,  0.0) + _MakeValue(51,  0.0) +
+		_MakeValue(43,  0.0f) + _MakeValue(44,  0.0f) +
+		_MakeValue(50,  0.0f) + _MakeValue(51,  0.0f) +
 		_MakeValue(71, 0) + _MakeValue(72, 1000) +
 		_MakeValue(73, 1) + _MakeValue(74, 3) +
 		_MakeValue(75, 0) + _MakeValue(76, 0) +
@@ -850,23 +850,23 @@ CString CDXFMake::MakeValueCycle
 {
 	const	PTCYCLE*	pCycleInside = pData->GetCycleInside(enPlane+1);
 	int		nStart = nIndex - 1;
-	double	dVal[DXFMAXVALUESIZE];
-	CPointD	pts, pti, ptr;
+	float	dVal[DXFMAXVALUESIZE];
+	CPointF	pts, pti, ptr;
 	CString	strResult;
 	if ( GetFlg(MKDX_FLG_OUT_M) )
 		strResult = MakeDXF_Figure(TYPE_LINE, MKDX_STR_MOVE);
 
 	// 呼び出し関数の動的決定
-	CPointD	(CPoint3D::*pfnGetAxis)(void) const;
+	CPointF	(CPoint3F::*pfnGetAxis)(void) const;
 	switch ( enPlane ) {
 	case XY_PLANE:
-		pfnGetAxis = &(CPoint3D::GetXY);
+		pfnGetAxis = &(CPoint3F::GetXY);
 		break;
 	case XZ_PLANE:
-		pfnGetAxis = &(CPoint3D::GetXZ);
+		pfnGetAxis = &(CPoint3F::GetXZ);
 		break;
 	case YZ_PLANE:
-		pfnGetAxis = &(CPoint3D::GetYZ);
+		pfnGetAxis = &(CPoint3F::GetYZ);
 		break;
 	}
 	
@@ -1004,7 +1004,7 @@ void CDXFMake::MakeDXF_NCtoArc(const CNCcircle* pData, BOOL bCorrect)
 		(*ms_pfnMakeValueCircleToLine)(pData) : (*ms_pfnMakeValueCircle)(pData) );
 	// 円弧のみ角度の追加
 	if ( nType == TYPE_ARC ) {
-		double	dVal[DXFMAXVALUESIZE];
+		float	dVal[DXFMAXVALUESIZE];
 		// CNCcircle::AngleTuning() にて常に反時計回り
 		dVal[VALUE50] = DEG(pData->GetStartAngle());
 		dVal[VALUE51] = DEG(pData->GetEndAngle());
@@ -1060,13 +1060,13 @@ CString CDXFMake::MakeValueCycle_YZ_Point(const CNCcycle* pData, int nIndex)
 	return MakeValueCycle(pData, nIndex, TYPE_POINT, YZ_PLANE);
 }
 
-void CDXFMake::MakeDXF_PolylineDismantle(const CDXFpolyline* pPoly, const CPointD& pto)
+void CDXFMake::MakeDXF_PolylineDismantle(const CDXFpolyline* pPoly, const CPointF& pto)
 {
 	// 楕円が含まれるPOLYLINE(ﾌﾞﾛｯｸによる拡大)は
 	// DXFで再現できないため、個別図形に解体して出力
 	CString		strResult, strLayer(pPoly->GetParentLayer()->GetLayerName());
-	double		dVal[DXFMAXVALUESIZE];
-	CPointD		pt;
+	float		dVal[DXFMAXVALUESIZE];
+	CPointF		pt;
 	CDXFdata*	pData;
 
 	POSITION pos = pPoly->GetFirstVertex();

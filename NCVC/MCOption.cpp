@@ -39,14 +39,14 @@ static	const	int		g_dfNOrder[] = {
 	0, 0, 0
 };
 
-// doubleå^ñΩóﬂ
+// floatå^ñΩóﬂ
 static	LPCTSTR	g_szDOrder[] = {
 	"Initial%c",
 	"DefaultFeed",
 	"BlockTime",
 	"DefWireDepth"
 };
-static	const	double	g_dfDOrder[] = {
+static	const	float	g_dfDOrder[] = {
 	0.0, 0.0, 10.0,
 	30.0,
 	0.0,
@@ -140,10 +140,10 @@ CMCOption::CMCOption()
 		VERIFY(strEntry.LoadString(IDS_REG_NCV_DEFFEED));
 		if ( nResult == 1 ) {
 			strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
-			m_dFeed = strResult.IsEmpty() ? g_dfDOrder[0] : atof(strResult);
+			m_dFeed = strResult.IsEmpty() ? g_dfDOrder[0] : (float)atof((LPCTSTR)strResult.Trim());
 		}
 		else
-			m_dFeed = AfxGetApp()->GetProfileInt(strRegKey, strEntry, (int)g_dfDOrder[0]);
+			m_dFeed = (float)AfxGetApp()->GetProfileInt(strRegKey, strEntry, (int)g_dfDOrder[0]);
 		// Ãß≤ŸÇ÷ÇÃà⁄çsämîF
 		Convert();
 	}
@@ -260,23 +260,23 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 		m_unNums[j] = ::GetPrivateProfileInt(strRegKey, g_szNOrder[k], g_dfNOrder[j], lpszFile);
 	}
 
-	// doubleå^ñΩóﬂ
+	// floatå^ñΩóﬂ
 	for ( i=j=k=0; i<NCXYZ; i++, j++ ) {
 		strEntry.Format(g_szDOrder[k], g_szNdelimiter[i]);
 		m_udNums[j] =	//	m_dInitialXYZ[i]
 			::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile) > 0 ?
-				atof(szResult) : g_dfDOrder[j];
+				(float)atof(::Trim(szResult).c_str()) : g_dfDOrder[j];
 	}
 	for ( k++; k<SIZEOF(g_szDOrder); j++, k++ ) {
 		m_udNums[j] = ::GetPrivateProfileString(strRegKey, g_szDOrder[k], "", szResult, _MAX_PATH, lpszFile) > 0 ?
-			atof(szResult) : g_dfDOrder[j];
+			(float)atof(::Trim(szResult).c_str()) : g_dfDOrder[j];
 	}
 	// ----------
 		// Å`Ver1.72Ç‹Ç≈ÇÃ ﬁ∏ﬁ¡™Ø∏
 		::GetPrivateProfileString(strRegKey, g_szDOrder[0], "", szResult, _MAX_PATH, lpszFile);
 		if ( lstrlen(szResult) > 0 ) {
 			// "BlockTime" Ç™ "Initial%c" Ç…èëÇ´çûÇÒÇ≈Ç¢ÇΩ ﬁ∏ﬁ
-			m_dBlock = atof(szResult);
+			m_dBlock = (float)atof(::Trim(szResult).c_str());
 			// ê≥ÇµÇ¢∑∞Ç≈èoóÕ
 			// Å@Å®íPÇ»ÇÈêÿÇËë÷Ç¶Ç≈ÇÕ SaveMCoption() Ç™åƒÇŒÇÍÇ»Ç¢ÇÃÇ≈
 			// Å@Å@Ç±Ç±Ç≈èàóùÇ∑ÇÈ
@@ -340,6 +340,7 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 			tok.assign(str);
 			tool.ClearOption();	j = 0;
 			BOOST_FOREACH(strTok, tok) {
+				strTok = ::Trim(strTok);	// stdafx.h
 				switch ( j++ ) {
 				case MCTOOL_T:		// Çsî‘çÜ
 					tool.m_nTool = atoi(strTok.c_str());
@@ -348,10 +349,10 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 					tool.m_strName = strTok.c_str();
 					break;
 				case MCTOOL_D:		// åaï‚ê≥
-					tool.m_dToolD = atof(strTok.c_str());
+					tool.m_dToolD = (float)atof(strTok.c_str());
 					break;
 				case MCTOOL_H:		// í∑ï‚ê≥
-					tool.m_dToolH = atof(strTok.c_str());
+					tool.m_dToolH = (float)atof(strTok.c_str());
 					break;
 				}
 			}
@@ -405,7 +406,7 @@ BOOL CMCOption::SaveMCoption(LPCTSTR lpszFile)
 			return FALSE;
 	}
 
-	// doubleå^ñΩóﬂ
+	// floatå^ñΩóﬂ
 	for ( i=j=k=0; i<NCXYZ; i++, j++ ) {
 		strEntry.Format(g_szDOrder[k], g_szNdelimiter[i]);
 		strResult.Format(IDS_MAKENCD_FORMAT, m_udNums[j]);	// m_dInitialXYZ[i]
@@ -497,7 +498,7 @@ void CMCOption::ConvertWorkOffset(size_t n, LPCTSTR lpszResult)
 		lpszBuf = new TCHAR[lstrlen(lpszResult)+1];
 		lpsztok = strtok_s(lstrcpy(lpszBuf, lpszResult), gg_szComma, &lpszcontext);
 		for ( i=0; i<NCXYZ && lpsztok; i++ ) {
-			m_dWorkOffset[n][i] = atof(lpsztok);
+			m_dWorkOffset[n][i] = (float)atof(::Trim(lpsztok).c_str());
 			lpsztok = strtok_s(NULL, gg_szComma, &lpszcontext);
 		}
 	}
@@ -543,25 +544,25 @@ BOOL CMCOption::AddMCListHistory(LPCTSTR lpszSearch)
 	return TRUE;
 }
 
-optional<double> CMCOption::GetToolD(int nTool) const
+optional<float> CMCOption::GetToolD(int nTool) const
 {
 	PLIST_FOREACH(CMCTOOLINFO* pTool, &m_ltTool)
 		if ( pTool->m_nTool == nTool )
 			return pTool->m_dToolD;
 	END_FOREACH
-	return optional<double>();
+	return optional<float>();
 }
 
-optional<double> CMCOption::GetToolH(int nTool) const
+optional<float> CMCOption::GetToolH(int nTool) const
 {
 	PLIST_FOREACH(CMCTOOLINFO* pTool, &m_ltTool)
 		if ( pTool->m_nTool == nTool )
 			return pTool->m_dToolH;
 	END_FOREACH
-	return optional<double>();
+	return optional<float>();
 }
 
-BOOL CMCOption::AddTool(int nTool, double d, BOOL bAbs)
+BOOL CMCOption::AddTool(int nTool, float d, BOOL bAbs)
 {
 	CMCTOOLINFO*	pTool;
 	BOOL			bMatch = FALSE, bResult = TRUE;

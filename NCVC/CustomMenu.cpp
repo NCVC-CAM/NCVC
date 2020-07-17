@@ -189,9 +189,9 @@ CPoint CCustomMenu::GetIconPoint(const CRect& rc)
 	return ptIcon;
 }
 
-int CCustomMenu::SetMenuString(CMenu* pMenu, UINT nItem)
+INT_PTR CCustomMenu::SetMenuString(CMenu* pMenu, UINT nItem)
 {
-	int		nRet;
+	INT_PTR	nRet;
 
 	// “∆≠∞ï∂éöóÒéÊìæ
 	CString strMenu;
@@ -425,7 +425,7 @@ void CCustomMenu::OnInitMenuPopup(CMenu* pMenu)
 	// äYìñ“∆≠∞ÇŸ∞Ãﬂ
 	for ( i=0; i<pMenu->GetMenuItemCount(); i++ ) {
 		// “∆≠∞ï∂éöóÒÕﬁ∏¿Ç…ìoò^
-		nIndex = SetMenuString(pMenu, i);
+		nIndex = (int)SetMenuString(pMenu, i);
 		if ( nIndex >= 0 ) {
 			// µ∞≈∞ï`âÊê›íË
 			::ZeroMemory(&mii, sizeof(MENUITEMINFO));
@@ -524,7 +524,7 @@ CCustomMenuEx::~CCustomMenuEx()
 /////////////////////////////////////////////////////////////////////////////
 // CCustomMenuEx “› ﬁä÷êî
 
-void CCustomMenuEx::SetMapImageID(WORD wKey, int nImage, int nIndex)
+void CCustomMenuEx::SetMapImageID(WORD wKey, WORD nImage, WORD nIndex)
 {
 	LPCUSTMENUINFO pLookup;
 	LPCUSTMENUINFO pInfo = new CUSTMENUINFO;
@@ -535,10 +535,10 @@ void CCustomMenuEx::SetMapImageID(WORD wKey, int nImage, int nIndex)
 	m_mpImage.SetAt(wKey, pInfo);
 }
 
-void CCustomMenuEx::RemoveCustomImageMap(int nCnt, LPWORD wKey)
+void CCustomMenuEx::RemoveCustomImageMap(size_t nCnt, LPWORD wKey)
 {
 	LPCUSTMENUINFO	pInfo;
-	for ( int i=0; i<nCnt; i++ ) {
+	for ( size_t i=0; i<nCnt; i++ ) {
 		if ( m_mpImage.Lookup(wKey[i], pInfo) ) {
 			delete	pInfo;
 			m_mpImage.RemoveKey(wKey[i]);
@@ -569,9 +569,9 @@ BOOL CCustomMenuEx::DrawItemIcon(CDC* pDC, LPDRAWITEMSTRUCT lpDIS)
 	CRect	rc(lpDIS->rcItem);
 	CPoint	pt(GetIconPoint(rc));
 	if ( lpDIS->itemState & ODS_GRAYED )
-		m_pilDisable[pInfo->nImage]->Draw(pDC, pInfo->nIndex, pt, ILD_NORMAL);	// íWêFèÛë‘
+		m_pilDisable[pInfo->nImage]->Draw(pDC, (int)pInfo->nIndex, pt, ILD_NORMAL);	// íWêFèÛë‘
 	else
-		m_pilEnable[pInfo->nImage]->Draw(pDC, pInfo->nIndex, pt, ILD_NORMAL);	// í èÌèÛë‘
+		m_pilEnable[pInfo->nImage]->Draw(pDC, (int)pInfo->nIndex, pt, ILD_NORMAL);	// í èÌèÛë‘
 
 	return TRUE;
 }

@@ -35,7 +35,6 @@ static	CNCMakeWireOpt*		g_pMakeOpt;
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
 #define	GetStr(a)	g_pMakeOpt->GetStr(a)
-#define	SetProgressPos(a)	g_pParent->m_ctReadProgress.SetPos(a)
 
 // NC生成に必要なﾃﾞｰﾀ群
 static	CSortArray<CObArray, CDXFcircle*>
@@ -51,20 +50,20 @@ static	void	InitialVariable(void);		// 変数初期化
 static	void	SetStaticOption(void);		// 静的変数の初期化
 static	BOOL	MakeWire_MainFunc(void);	// NC生成のﾒｲﾝﾙｰﾌﾟ
 static	BOOL	MakeLoopWire(CDXFshape*);
-static	int		MakeLoopWireSearch(CDXFshape*, int);
+static	INT_PTR	MakeLoopWireSearch(CDXFshape*, int);
 static	BOOL	MakeLoopWireAdd(CDXFshape*, CDXFshape*, BOOL);
 static	BOOL	MakeLoopWireAdd_Hetero(CDXFshape*, CDXFshape*);
 static	BOOL	MakeLoopWireAdd_ChainList(CDXFshape*, CDXFchain*);
 static	BOOL	MakeLoopWireAdd_EulerMap(CDXFshape*);
 static	BOOL	MakeLoopWireAdd_EulerMap_Make(CDXFshape*, CDXFmap*, BOOL&);
-static	BOOL	MakeLoopWireAdd_EulerMap_Search(const CPointD&, CDXFmap*, CDXFmap*);
-static	BOOL	MakeLoopWireAdd_with_one_stroke(const CDXFmap*, BOOL, BOOL, const CPointD&, const CDXFarray*, CDXFlist&);
+static	BOOL	MakeLoopWireAdd_EulerMap_Search(const CPointF&, CDXFmap*, CDXFmap*);
+static	BOOL	MakeLoopWireAdd_with_one_stroke(const CDXFmap*, BOOL, BOOL, const CPointF&, const CDXFarray*, CDXFlist&);
 static	CDXFcircle*	SetAWFandPAUSEdata(void);	// AWFと一時停止ﾎﾟｲﾝﾄの登録処理
 static	BOOL	CreateShapeThread(void);	// 形状認識処理
 static	BOOL	OutputWireCode(void);		// NCｺｰﾄﾞの出力
 
 // 引数で指定したｵﾌﾞｼﾞｪｸﾄに一番近いｵﾌﾞｼﾞｪｸﾄを返す
-static	CDXFshape*	GetNearPointWire(const CPointD&);
+static	CDXFshape*	GetNearPointWire(const CPointF&);
 static	CDXFcircle*	GetInsideAWF(const CDXFshape*);
 static	CDXFcircle*	GetOutsideAWF(void);
 
@@ -139,7 +138,7 @@ static inline	void	AddMakeGdata(CDXFdata* pDataXY, CDXFdata* pDataUV)
 	pDataUV->SetMakeFlg();
 }
 // 切削ﾃﾞｰﾀ（上下異形状微細線分）
-static inline	void	AddMakeGdata(const CVPointD& vptXY, const CVPointD& vptUV)
+static inline	void	AddMakeGdata(const CVPointF& vptXY, const CVPointF& vptUV)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(vptXY, vptUV, GetDbl(MKWI_DBL_FEED));
 	ASSERT( pNCD );
@@ -148,7 +147,11 @@ static inline	void	AddMakeGdata(const CVPointD& vptXY, const CVPointD& vptUV)
 
 // ﾌｪｰｽﾞ更新
 static	int		g_nFase;			// ﾌｪｰｽﾞ№
-static	void	SendFaseMessage(int = -1, int = -1, LPCTSTR = NULL);
+static	void	SendFaseMessage(INT_PTR = -1, int = -1, LPCTSTR = NULL);
+static	inline	void	SetProgressPos(INT_PTR n)
+{
+	g_pParent->m_ctReadProgress.SetPos((int)n);
+}
 
 // ｻﾌﾞｽﾚｯﾄﾞ関数
 static	CCriticalSection	g_csMakeAfter;	// MakeWire_AfterThread()ｽﾚｯﾄﾞﾛｯｸｵﾌﾞｼﾞｪｸﾄ
@@ -202,7 +205,7 @@ UINT MakeWire_Thread(LPVOID pVoid)
 				AfxGetNCVCApp()->GetDXFOption()->GetInitList(NCMAKEWIRE)->GetHead());
 		// NC生成のﾙｰﾌﾟ前に必要な初期化
 		{
-			optional<CPointD>	ptResult = g_pDoc->GetCutterOrigin();
+			optional<CPointF>	ptResult = g_pDoc->GetCutterOrigin();
 			CDXFdata::ms_ptOrg = ptResult ? *ptResult : 0.0;
 		}
 		g_pDoc->GetCircleObject()->OrgTuning(FALSE);	// 結果的に原点がｾﾞﾛになる
@@ -293,7 +296,7 @@ BOOL OutputWireCode(void)
 		CStdioFile	fp(strNCFile, nOpenFlg);
 		if ( g_wBindOperator & TH_APPEND )
 			fp.SeekToEnd();
-		for ( int i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
+		for ( INT_PTR i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 			g_obMakeData[i]->WriteGcode(fp);
 			SetProgressPos(i+1);
 		}
@@ -321,7 +324,7 @@ BOOL MakeWire_MainFunc(void)
 			return FALSE;
 	}
 
-	int		i, j, nLoop;
+	INT_PTR		i, j, nLoop;
 	CDXFcircle*	pCircle;
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
@@ -343,7 +346,7 @@ BOOL MakeWire_MainFunc(void)
 	pCircle = SetAWFandPAUSEdata();
 
 	// AWFに近い座標ﾏｯﾌﾟを検索
-	CPointD	pt( pCircle ? pCircle->GetCenter() :
+	CPointF	pt( pCircle ? pCircle->GetCenter() :
 			(CDXFdata::ms_pData->GetEndCutterPoint() + CDXFdata::ms_ptOrg) );
 	pShape = GetNearPointWire(pt);
 
@@ -370,7 +373,7 @@ BOOL MakeLoopWire(CDXFshape* pShape)
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeLoopWire()", DBG_RED);
 #endif
-	int			nCnt, nPos = 0;
+	INT_PTR		nCnt, nPos = 0;
 
 	while ( pShape && IsThread() ) {
 #ifdef _DEBUG
@@ -385,7 +388,7 @@ BOOL MakeLoopWire(CDXFshape* pShape)
 			return FALSE;
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
 		nPos += nCnt+1;
-		g_pParent->m_ctReadProgress.SetPos(nPos);
+		SetProgressPos(nPos);
 		// 次の形状集合を検索
 		pShape = GetNearPointWire(CDXFdata::ms_pData->GetEndCutterPoint() + CDXFdata::ms_ptOrg);
 	}
@@ -393,18 +396,18 @@ BOOL MakeLoopWire(CDXFshape* pShape)
 	return IsThread();
 }
 
-int MakeLoopWireSearch(CDXFshape* pShapeBase, int nRef)
+INT_PTR MakeLoopWireSearch(CDXFshape* pShapeBase, int nRef)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeLoopWireSearch()", DBG_RED);
 #endif
 
+	INT_PTR		i, j, nCnt = 0;
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	CShapeArray	obShape;	// 内側の形状集合一覧
-	CRectD	rcBase(pShapeBase->GetMaxRect() ), rc;
-	rcBase.InflateRect(rcBase.Width()*0.05, rcBase.Height()*0.05);	// 計算誤差緩和のため10%拡大
-	int		i, j, nCnt = 0;
+	CRectF		rcBase(pShapeBase->GetMaxRect() ), rc;
+	rcBase.InflateRect(rcBase.Width()*0.05f, rcBase.Height()*0.05f);	// 計算誤差緩和のため10%拡大
 	obShape.SetSize(0, 64);
 
 	// pShapeBaseより内側の矩形を持つ形状集合を検索
@@ -458,12 +461,12 @@ int MakeLoopWireSearch(CDXFshape* pShapeBase, int nRef)
 	}
 
 	// 内側に複数のｵﾌﾞｼﾞｪｸﾄ
-	const	CPointD		ptOrg(CDXFdata::ms_ptOrg);
-			CPointD		pt(CDXFdata::ms_pData->GetEndCutterPoint() + ptOrg);
-	double	dGap, dGapMin;
+	const	CPointF		ptOrg(CDXFdata::ms_ptOrg);
+			CPointF		pt(CDXFdata::ms_pData->GetEndCutterPoint() + ptOrg);
+	float	dGap, dGapMin;
 
 	while ( pShapeResult && IsThread() ) {
-		dGapMin = DBL_MAX;
+		dGapMin = FLT_MAX;
 		pShapeResult = NULL;
 		// ptに一番近いﾈｲﾃｨﾌﾞの形状集合を検索
 		for ( i=0; i<j && IsThread(); i++ ) {
@@ -554,7 +557,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 	CDXFchain*	pChainUV = pShapeUV->GetShapeChain();
 	CDXFdata*	pDataXY;
 	CDXFdata*	pDataUV;
-	CVPointD	vptXY, vptUV;
+	CVPointF	vptXY, vptUV;
 	size_t		nCntXY = pChainXY->GetObjectCount(),
 				nCntUV = pChainUV->GetObjectCount();
 	int			nXYUV;		// 1:XY処理で終了, 2:UV処理で終了, 0:両方同時
@@ -571,7 +574,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 	if ( !g_mpPause.IsEmpty() ) {
 		// XY,UV連携 一時停止ﾓｰﾄﾞ（ｵﾌﾞｼﾞｪｸﾄ数が正しく連携できることが条件）
 		CDXFarray*	pobArray;
-		CPointD		ptsXY, ptsUV;
+		CPointF		ptsXY, ptsUV;
 		size_t		i, nCnt;
 		BOOL		bSeqXY = TRUE, bSeqUV = TRUE;
 		do {
@@ -682,7 +685,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 	else if ( nCntXY==1 && pChainXY->GetHead()->GetMakeType()==DXFCIRCLEDATA ) {
 		CDXFcircle*	pCircle = static_cast<CDXFcircle*>(pChainXY->GetHead());
 		// 分割数の予想値
-		size_t	n = (size_t)ceil(2.0*PI*pCircle->GetR() / GetDbl(MKWI_DBL_ELLIPSE));
+		size_t	n = (size_t)ceil(PI2*pCircle->GetR() / GetDbl(MKWI_DBL_ELLIPSE));
 		// 分割予想数をｵﾌﾞｼﾞｪｸﾄ長さで均等割
 		pChainUV->SetVectorPoint(posUV, vptUV, n);
 		// 均等割で得られた分割数で円を分割
@@ -696,7 +699,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 	}
 	else if ( nCntUV==1 && pChainUV->GetHead()->GetMakeType()==DXFCIRCLEDATA ) {
 		CDXFcircle*	pCircle = static_cast<CDXFcircle*>(pChainUV->GetHead());
-		size_t	n = (size_t)ceil(2.0*PI*pCircle->GetR() / GetDbl(MKWI_DBL_ELLIPSE));
+		size_t	n = (size_t)ceil(PI2*pCircle->GetR() / GetDbl(MKWI_DBL_ELLIPSE));
 		pChainXY->SetVectorPoint(posXY, vptXY, n);
 		n = vptXY.size();
 		pChainUV->SetVectorPoint(posUV, vptUV, n);
@@ -765,12 +768,12 @@ BOOL MakeLoopWireAdd_EulerMap(CDXFshape* pShape)
 	CDXFdata*	pDataResult;
 	CDXFarray*	pArray;
 	CDXFmap		mpLeak;
-	double		dGap, dGapMin;
-	CPointD		pt, ptKey;
+	float		dGap, dGapMin;
+	CPointF		pt, ptKey;
 	while ( IsThread() ) {
 		// 現在位置に近いｵﾌﾞｼﾞｪｸﾄ検索
 		pDataResult = NULL;
-		dGapMin = DBL_MAX;
+		dGapMin = FLT_MAX;
 		pt = CDXFdata::ms_pData->GetEndCutterPoint();
 		PMAP_FOREACH(ptKey, pArray, pEuler)
 			for ( i=0; i<pArray->GetSize() && IsThread(); i++ ) {
@@ -812,17 +815,17 @@ BOOL MakeLoopWireAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bEu
 	// MakeLoopEulerAdd() 参考
 	BOOL		bReverse = FALSE;
 	POSITION	pos;
-	CPointD		pt;
+	CPointF		pt;
 	CDXFdata*		pData;
 	CDXFdata*		pDataFix;
 	CDXFarray*		pArray;
 	CDXFworking*	pWork;
 	CDXFchain		ltEuler;
-	const CPointD	ptOrg(CDXFdata::ms_ptOrg);
+	const CPointF	ptOrg(CDXFdata::ms_ptOrg);
 
 	// 開始位置指示
 	tie(pWork, pDataFix) = pShape->GetStartObject();
-	const	CPointD		ptNow( pDataFix ?
+	const	CPointF		ptNow( pDataFix ?
 		static_cast<CDXFworkingStart*>(pWork)->GetStartPoint() :	// 現在位置を更新
 		CDXFdata::ms_pData->GetEndCutterPoint()+ptOrg );
 
@@ -849,7 +852,7 @@ BOOL MakeLoopWireAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bEu
 		// 方向指示がltEulerに含まれる場合だけﾁｪｯｸ
 		PLIST_FOREACH(pData, &ltEuler)
 			if ( pDataFix == pData ) {
-				CPointD	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() - ptOrg ),
+				CPointF	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() - ptOrg ),
 						pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
 				bReverse = pData->IsDirectionPoint(pts, pte);
 				break;
@@ -884,15 +887,15 @@ BOOL MakeLoopWireAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bEu
 }
 
 BOOL MakeLoopWireAdd_EulerMap_Search
-	(const CPointD& ptKey, CDXFmap* pOrgMap, CDXFmap* pResultMap)
+	(const CPointF& ptKey, CDXFmap* pOrgMap, CDXFmap* pResultMap)
 {
 	int			i, j;
-	CPointD		pt;
+	CPointF		pt;
 	CDXFarray*	pobArray;
 	CDXFdata*	pData;
 
 	// 座標をｷｰに全体のﾏｯﾌﾟ検索
-	if ( pOrgMap->Lookup(const_cast<CPointD&>(ptKey), pobArray) ) {
+	if ( pOrgMap->Lookup(const_cast<CPointF&>(ptKey), pobArray) ) {
 		for ( i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
 			pData = pobArray->GetAt(i);
 			if ( !pData->IsMakeFlg() && !pData->IsSearchFlg() ) {
@@ -915,13 +918,13 @@ BOOL MakeLoopWireAdd_EulerMap_Search
 
 BOOL MakeLoopWireAdd_with_one_stroke
 	(const CDXFmap* pEuler, BOOL bEuler, BOOL bMakeShape, 
-		const CPointD& pt, const CDXFarray* pArray, CDXFlist& ltEuler)
+		const CPointF& pt, const CDXFarray* pArray, CDXFlist& ltEuler)
 {
-	int			i;
-	const int	nLoop = pArray->GetSize();
+	INT_PTR		i;
+	const INT_PTR	nLoop = pArray->GetSize();
 	CDXFdata*	pData;
 	CDXFarray*	pNextArray;
-	CPointD		ptNext;
+	CPointF		ptNext;
 	POSITION	pos, posTail = ltEuler.GetTailPosition();	// この時点での仮登録ﾘｽﾄの最後
 
 	// まずこの座標配列の円(に準拠する)ﾃﾞｰﾀを仮登録
@@ -1003,7 +1006,7 @@ public:
 	CString	ReplaceCustomCode(const string& str) {
 		extern	const	DWORD	g_dwSetValFlags[];
 		int		nTestCode;
-		double	dValue[VALUESIZE];
+		float	dValue[VALUESIZE];
 		CString	strResult;
 
 		// 基底ｸﾗｽ呼び出し
@@ -1104,15 +1107,15 @@ BOOL CreateShapeThread(void)
 
 CDXFcircle* SetAWFandPAUSEdata(void)
 {
-	int		i, j, k, nLoop1 = g_pDoc->GetLayerCnt(), nLoop2;
+	INT_PTR		i, j, k, nLoop1 = g_pDoc->GetLayerCnt(), nLoop2;
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	CDXFdata*	pData;
 	CDXFcircle*	pDataResult = NULL;
 	CDXFcircle*	pCircle;
-	CPointD		ptOrg(0, 0),				// 加工原点
+	CPointF		ptOrg(0, 0),				// 加工原点
 				pt;
-	double		dGap, dGapMin = DBL_MAX;	// 指定点との距離
+	float		dGap, dGapMin = FLT_MAX;	// 指定点との距離
 	CSortArray<CObArray, CDXFcircle*>	obAWFdata;		// AWFﾃﾞｰﾀ仮置き場
 
 	// AWFと一時停止ﾎﾟｲﾝﾄの検索
@@ -1182,13 +1185,13 @@ CDXFcircle* SetAWFandPAUSEdata(void)
 	return pDataResult;
 }
 
-CDXFshape* GetNearPointWire(const CPointD& pt)
+CDXFshape* GetNearPointWire(const CPointF& pt)
 {
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	CDXFshape*	pShapeResult = NULL;
-	int			i, j, nLoop1 = g_pDoc->GetLayerCnt(), nLoop2;
-	double		dGap, dGapMin = DBL_MAX;
+	INT_PTR		i, j, nLoop1 = g_pDoc->GetLayerCnt(), nLoop2;
+	float		dGap, dGapMin = FLT_MAX;
 
 	for ( i=0; i<nLoop1 && IsThread(); i++ ) {
 		pLayer = g_pDoc->GetLayerData(i);
@@ -1212,7 +1215,7 @@ CDXFshape* GetNearPointWire(const CPointD& pt)
 
 CDXFcircle*	GetInsideAWF(const CDXFshape* pShape)
 {
-	CRectD	rc(pShape->GetMaxRect());
+	CRectF	rc(pShape->GetMaxRect());
 	CDXFcircle*	pCircle;
 
 	for ( int i=0; i<g_obAWFinside.GetSize() && IsThread(); i++ ) {
@@ -1227,8 +1230,8 @@ CDXFcircle*	GetInsideAWF(const CDXFshape* pShape)
 CDXFcircle*	GetOutsideAWF(void)
 {
 	int		i;
-	CPointD	pt(CDXFdata::ms_pData->GetEndCutterPoint());
-	double	dGap, dGapMin = DBL_MAX;
+	CPointF	pt(CDXFdata::ms_pData->GetEndCutterPoint());
+	float	dGap, dGapMin = FLT_MAX;
 	CDXFcircle*	pCircle;
 	CDXFcircle*	pDataResult = NULL;
 
@@ -1264,14 +1267,14 @@ CDXFcircle*	GetOutsideAWF(void)
 
 // ﾌｪｰｽﾞ出力
 void SendFaseMessage
-	(int nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
+	(INT_PTR nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeWire_Thread()", DBG_GREEN);
 	dbg.printf("Phase%d Start", g_nFase);
 #endif
 	if ( nRange > 0 )
-		g_pParent->m_ctReadProgress.SetRange32(0, nRange);
+		g_pParent->m_ctReadProgress.SetRange32(0, (int)nRange);
 
 	CString	strMsg;
 	if ( nMsgID > 0 )

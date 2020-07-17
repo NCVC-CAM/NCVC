@@ -48,7 +48,7 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx* pParent, int nIndex)
 	//}}AFX_DATA_INIT
 
 	// Ú²Ôî•ñ‚ÆØíðŒÌ§²Ù‚Ì¾¯Ä(ãˆÊÀÞ²±Û¸Þ‚Ì•\Ž¦‡)
-	int		i, nLoop;
+	INT_PTR		i, nLoop;
 	CLayerData*	pLayer;
 	try {
 		if ( ::IsWindow(pParent->m_dlg2.m_hWnd) ) {
@@ -56,7 +56,7 @@ CMakeNCDlgEx11::CMakeNCDlgEx11(CMakeNCDlgEx* pParent, int nIndex)
 			const CListCtrl& ctLayer = pParent->m_dlg2.m_ctLayerList;
 			nLoop = ctLayer.GetItemCount();
 			for ( i=0; i<nLoop; i++ ) {
-				pLayer = new CLayerData(reinterpret_cast<const CLayerData *>(ctLayer.GetItemData(i)), ctLayer.GetCheck(i));
+				pLayer = new CLayerData(reinterpret_cast<const CLayerData *>(ctLayer.GetItemData((int)i)), ctLayer.GetCheck((int)i));
 				m_obLayer.Add(pLayer);
 			}
 		}
