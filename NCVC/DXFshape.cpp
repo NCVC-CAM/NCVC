@@ -868,7 +868,7 @@ BOOL CDXFmap::CopyToChain(CDXFchain* pChain)
 	// 始点の端点検索
 	for ( pos=GetStartPosition(); pos; ) {
 		GetNextAssoc(pos, pt, pArray);
-		if ( pArray->GetSize()==1 && pArray->GetAt(0)->GetNativePoint(0)==pt ) {
+		if ( pArray->GetSize() == 1 ) {
 			pData = pArray->GetAt(0);
 			break;
 		}
@@ -876,6 +876,10 @@ BOOL CDXFmap::CopyToChain(CDXFchain* pChain)
 	if ( !pData )
 		return FALSE;
 
+	pts = pData->GetNativePoint(0);
+	pte = pData->GetNativePoint(1);
+	if ( GAPCALC(pts-pt) > GAPCALC(pte-pt) )
+		pData->SwapNativePt();
 	pt = pData->GetNativePoint(1);	// 終点==次の座標ｷｰ
 
 	AllMapObject_ClearMakeFlg();
@@ -2712,10 +2716,13 @@ CDXFdata*	CreateDxfLatheObject(const CDXFdata* pData, double yd)
 			dxfArc.pLayer = pArc->GetParentLayer();
 			dxfArc.c  = pArc->GetCenter();
 			dxfArc.r  = pArc->GetR();
-			dxfArc.sq = pArc->GetStartAngle() * DEG;
-			dxfArc.eq = pArc->GetEndAngle() * DEG;
+			dxfArc.sq = pArc->GetStartAngle();	// RADでOK
+			dxfArc.eq = pArc->GetEndAngle();
 			dxfArc.c.y += yd;
-			pDataResult = new CDXFarc(&dxfArc);
+			CPointD	pts(pArc->GetNativePoint(0)), pte(pArc->GetNativePoint(1));
+			pts.y += yd;
+			pte.y += yd;
+			pDataResult = new CDXFarc(&dxfArc, pArc->GetRoundOrig(), pts, pte);
 		}
 		break;
 	case DXFELLIPSEDATA:

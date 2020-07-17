@@ -30,7 +30,7 @@ CMKNCSetup4::CMKNCSetup4() : CPropertyPage(CMKNCSetup4::IDD),
 	m_nProcess			= 0;
 	m_bDrillMatch		= FALSE;
 	m_nDwellFormat		= -1;
-	m_nZProcess			= -1;
+	m_nDrillReturn		= -1;
 	m_bCircle			= FALSE;
 	m_bCircleBreak		= FALSE;
 	m_nSort				= -1;
@@ -59,7 +59,7 @@ void CMKNCSetup4::DoDataExchange(CDataExchange* pDX)
 	DDX_CBIndex(pDX, IDC_MKNC4_PROCESS, m_nProcess);
 	DDX_Check(pDX, IDC_MKNC4_MATCH, m_bDrillMatch);
 	DDX_CBIndex(pDX, IDC_MKNC4_DWELLFORMAT, m_nDwellFormat);
-	DDX_CBIndex(pDX, IDC_MKNC4_ZPROCESS, m_nZProcess);
+	DDX_CBIndex(pDX, IDC_MKNC4_ZPROCESS, m_nDrillReturn);
 	DDX_Check(pDX, IDC_MKNC4_CIRCLE, m_bCircle);
 	DDX_Check(pDX, IDC_MKNC4_CIRCLEBREAK, m_bCircleBreak);
 	DDX_CBIndex(pDX, IDC_MKNC4_CIRCLEGROUP, m_nSort);
@@ -104,7 +104,7 @@ BOOL CMKNCSetup4::OnInitDialog()
 	m_bDrillMatch	= pOpt->m_bDrillMatch;
 	m_nDwellFormat	= pOpt->m_nDwellFormat;
 	m_nProcess		= pOpt->m_nDrillProcess;
-	m_nZProcess		= pOpt->m_nDrillZProcess;
+	m_nDrillReturn	= pOpt->m_nDrillReturn;
 	//
 	m_dCircleR		= pOpt->m_dDrillCircle;
 	m_bCircle		= pOpt->m_bDrillCircle;
@@ -141,7 +141,7 @@ BOOL CMKNCSetup4::OnApply()
 	pOpt->m_nDwell			= m_nDwell;
 	pOpt->m_nDwellFormat	= m_nDwellFormat;
 	pOpt->m_nDrillProcess	= m_nProcess;
-	pOpt->m_nDrillZProcess	= m_nZProcess;
+	pOpt->m_nDrillReturn	= m_nDrillReturn;
 	pOpt->m_dDrillR			= m_dDrillR;
 	pOpt->m_dDrillZ			= m_dDrillZ;
 	//

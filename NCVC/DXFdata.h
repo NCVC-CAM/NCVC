@@ -185,6 +185,7 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&) = 0;
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const = 0;
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const = 0;
+	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const = 0;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const = 0;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const = 0;
 
@@ -239,6 +240,7 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
 
@@ -280,6 +282,7 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
 
@@ -365,6 +368,7 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
 
@@ -469,6 +473,7 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
 
@@ -537,6 +542,7 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
 
@@ -598,6 +604,7 @@ public:
 	virtual	double	GetSelectPointGap(const CPointD&);
 	virtual	BOOL	GetDirectionArraw(const CPointD&, CPointD[][3]) const;
 	virtual	int		GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL = TRUE) const;
+	virtual	int		GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL = TRUE) const;
 	virtual	boost::optional<CPointD>	CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const;
 	virtual	int		CheckIntersectionCircle(const CPointD&, double) const;
 

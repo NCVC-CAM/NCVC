@@ -31,13 +31,13 @@ CMKNCSetup3::CMKNCSetup3() : CPropertyPage(CMKNCSetup3::IDD),
 {
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CMKNCSetup3)
-	m_nMakeEnd	= -1;
-	m_nAProcess	= -1;
-	m_nCProcess	= -1;
-	m_nZProcess	= -1;
-	m_bDeep		= FALSE;
-	m_bHelical	= FALSE;
-	m_bFinish	= FALSE;
+	m_nMakeEnd		= -1;
+	m_nDeepAll		= -1;
+	m_nDeepRound	= -1;
+	m_nDeepReturn	= -1;
+	m_bDeep			= FALSE;
+	m_bHelical		= FALSE;
+	m_bFinish		= FALSE;
 	//}}AFX_DATA_INIT
 }
 
@@ -64,9 +64,9 @@ void CMKNCSetup3::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKNC3_ZSTEP, m_dZStep);
 	DDX_Control(pDX, IDC_MKNC3_DEEPFINAL, m_dDeep);
 	DDX_CBIndex(pDX, IDC_MKNC3_MAKEEND, m_nMakeEnd);
-	DDX_CBIndex(pDX, IDC_MKNC3_APROCESS, m_nAProcess);
-	DDX_CBIndex(pDX, IDC_MKNC3_CPROCESS, m_nCProcess);
-	DDX_CBIndex(pDX, IDC_MKNC3_ZPROCESS, m_nZProcess);
+	DDX_CBIndex(pDX, IDC_MKNC3_APROCESS, m_nDeepAll);
+	DDX_CBIndex(pDX, IDC_MKNC3_CPROCESS, m_nDeepRound);
+	DDX_CBIndex(pDX, IDC_MKNC3_ZPROCESS, m_nDeepReturn);
 	DDX_Check(pDX, IDC_MKNC3_DEEP, m_bDeep);
 	DDX_Check(pDX, IDC_MKNC3_HELICAL, m_bHelical);
 	DDX_Check(pDX, IDC_MKNC3_FINISH, m_bFinish);
@@ -99,7 +99,7 @@ void CMKNCSetup3::EnableControl_Deep(void)
 
 void CMKNCSetup3::EnableControl_Helical(void)
 {
-	m_ctHelical.EnableWindow(m_bDeep && m_nAProcess==1);
+	m_ctHelical.EnableWindow(m_bDeep && m_nDeepAll==1);
 }
 
 void CMKNCSetup3::EnableControl_Finish(void)
@@ -126,9 +126,9 @@ BOOL CMKNCSetup3::OnInitDialog()
 	m_bDeep			= pOpt->m_bDeep;
 	m_dDeep			= pOpt->m_dDeep;
 	m_dZStep		= pOpt->m_dZStep;
-	m_nZProcess		= pOpt->m_nDeepZProcess;
-	m_nAProcess		= pOpt->m_nDeepAProcess;
-	m_nCProcess		= pOpt->m_nDeepCProcess;
+	m_nDeepReturn	= pOpt->m_nDeepReturn;
+	m_nDeepAll		= pOpt->m_nDeepAll;
+	m_nDeepRound	= pOpt->m_nDeepRound;
 	m_bHelical		= pOpt->m_bHelical;
 	m_bFinish		= pOpt->m_bDeepFinish;
 	m_nSpindle		= pOpt->m_nDeepSpindle;
@@ -224,9 +224,9 @@ BOOL CMKNCSetup3::OnApply()
 	pOpt->m_bDeep			= m_bDeep;
 	pOpt->m_dDeep			= m_dDeep;
 	pOpt->m_dZStep			= m_dZStep;
-	pOpt->m_nDeepZProcess	= m_nZProcess;
-	pOpt->m_nDeepAProcess	= m_nAProcess;
-	pOpt->m_nDeepCProcess	= m_nCProcess;
+	pOpt->m_nDeepReturn		= m_nDeepReturn;
+	pOpt->m_nDeepAll		= m_nDeepAll;
+	pOpt->m_nDeepRound		= m_nDeepRound;
 	pOpt->m_bHelical		= m_bHelical;
 	pOpt->m_bDeepFinish		= m_bFinish;
 	pOpt->m_nDeepSpindle	= m_nSpindle;
@@ -248,7 +248,7 @@ BOOL CMKNCSetup3::OnKillActive()
 			return FALSE;
 		}
 	}
-	if ( m_nMakeEnd!=0 || (m_bDeep && m_nZProcess!=0) ) {
+	if ( m_nMakeEnd!=0 || (m_bDeep && m_nDeepReturn!=0) ) {
 		if ( m_dMakeFeed <= 0 ) {
 			AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
 			m_dMakeFeed.SetFocus();

@@ -31,7 +31,7 @@ public:
 	CIntEdit	m_nSpindle;
 	int		m_nProcess;
 	int		m_nDwellFormat;
-	int		m_nZProcess;
+	int		m_nDrillReturn;
 	int		m_nSort;
 	int		m_nCircleProcess;
 	BOOL	m_bDrillMatch;

@@ -303,6 +303,11 @@ int CDXFpoint::GetIntersectionPoint(const CDXFdata*, CPointD[], BOOL) const
 	return 0;
 }
 
+int CDXFpoint::GetIntersectionPoint(const CPointD&, const CPointD&, CPointD[], BOOL) const
+{
+	return 0;
+}
+
 optional<CPointD>
 CDXFpoint::CalcOffsetIntersectionPoint(const CDXFdata*, double, BOOL) const
 {
@@ -458,42 +463,14 @@ BOOL CDXFline::GetDirectionArraw(const CPointD&, CPointD pt[][3]) const
 int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdge/*=TRUE*/) const
 {
 	int		nResult = 0;
-	CPointD	pt1(pData->GetNativePoint(0)), pt2(pData->GetNativePoint(1)),
-			pto(m_pt[1]-m_pt[0]), ptc;
-	double	q = atan2(pto.y, pto.x);
-	pto.RoundPoint(-q);
+	CPointD	pt1(pData->GetNativePoint(0)), pt2(pData->GetNativePoint(1));
 	const CDXFcircle*	pCircle;
 	const CDXFellipse*	pEllipse;
-	optional<CPointD>	ptResult;
 
 	// bEdge==TRUE : í[ì_Ç™ìØÇ∂èÍçáÇÕåì_Ç»ÇµÇ∆Ç∑ÇÈ
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
-		if ( bEdge && (IsMatchPoint(pt1) || IsMatchPoint(pt2)) )
-			break;
-		// ê¸è„¡™Ø∏
-		ptc = pt1 - m_pt[0];
-		ptc.RoundPoint(-q);
-		if ( 0<=ptc.x+NCMIN && ptc.x-NCMIN<=pto.x && fabs(ptc.y)<=NCMIN ) {
-			// âÇÕê¸è„Ç…Ç†ÇË
-			pt[0] = pt1;
-			nResult = 1;
-			break;
-		}
-		ptc = pt2 - m_pt[0];
-		ptc.RoundPoint(-q);
-		if ( 0<=ptc.x+NCMIN && ptc.x-NCMIN<=pto.x && fabs(ptc.y)<=NCMIN ) {
-			pt[0] = pt2;
-			nResult = 1;
-			break;
-		}
-		// åì_åvéZ
-		ptResult = ::CalcIntersectionPoint_LL(m_pt[0], m_pt[1], pt1, pt2);
-		if ( ptResult ) {
-			pt[0] = *ptResult;
-			nResult = 1;
-		}
-		break;
+		return GetIntersectionPoint(pt1, pt2, pt, bEdge);
 	case DXFARCDATA:
 		if ( bEdge && (IsMatchPoint(pt1) || IsMatchPoint(pt2)) )
 			break;
@@ -547,6 +524,41 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEd
 	case DXFPOLYDATA:
 		nResult = pData->GetIntersectionPoint(this, pt, bEdge);
 		break;
+	}
+
+	return nResult;
+}
+
+int CDXFline::GetIntersectionPoint(const CPointD& pts, const CPointD& pte, CPointD pt[], BOOL bEdge/*=TRUE*/) const
+{
+	if ( bEdge && (IsMatchPoint(pts) || IsMatchPoint(pte)) )
+		return 0;
+
+	int		nResult = 0;
+	CPointD	pto(m_pt[1]-m_pt[0]), ptc;
+	double	q = atan2(pto.y, pto.x);
+	pto.RoundPoint(-q);
+	optional<CPointD>	ptResult;
+
+	// ê¸è„¡™Ø∏
+	ptc = pts - m_pt[0];
+	ptc.RoundPoint(-q);
+	if ( 0<=ptc.x+NCMIN && ptc.x-NCMIN<=pto.x && fabs(ptc.y)<=NCMIN ) {
+		// âÇÕê¸è„Ç…Ç†ÇË
+		pt[0] = pts;
+		return 1;
+	}
+	ptc = pte - m_pt[0];
+	ptc.RoundPoint(-q);
+	if ( 0<=ptc.x+NCMIN && ptc.x-NCMIN<=pto.x && fabs(ptc.y)<=NCMIN ) {
+		pt[0] = pte;
+		return 1;
+	}
+	// åì_åvéZ
+	ptResult = ::CalcIntersectionPoint_LL(m_pt[0], m_pt[1], pts, pte);
+	if ( ptResult ) {
+		pt[0] = *ptResult;
+		nResult = 1;
 	}
 
 	return nResult;
@@ -666,7 +678,7 @@ CDXFcircle::CDXFcircle(CLayerData* pLayer, const CDXFcircle* pData, LPCDXFBLOCK 
 	m_ct	= pData->GetCenter();
 	m_r		= pData->GetR();
 	// â~ÇÃägëÂó¶ÇÕXï˚å¸ÇæÇØ ->
-	// Å@äeé≤Ç≈ägëÂèkè¨Ç∑ÇÈÇ∆ë»â~Ç…Ç»ÇÈÇ™ÅCÃﬁ€Ø∏Ç©ÇÁÇÃê∂ê¨èàóù(DXFDoc2.cpp)Ç≈í≤êÆ
+	// Å@äeé≤Ç≈ägëÂèkè¨Ç∑ÇÈÇ∆ë»â~Ç…Ç»ÇÈÇ™ÅCÃﬁ€Ø∏Ç©ÇÁÇÃê∂ê¨èàóù(ReadDXF.cpp)Ç≈í≤êÆ
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_X ) {
 		m_ct *= lpBlock->dMagni[NCA_X];
 		m_r  *= lpBlock->dMagni[NCA_X];
@@ -850,9 +862,7 @@ int CDXFcircle::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL) 
 
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
-		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(
-				pData->GetNativePoint(0), pData->GetNativePoint(1), m_ct, m_r);
-		break;
+		return GetIntersectionPoint(pData->GetNativePoint(0), pData->GetNativePoint(1), pt);
 	case DXFCIRCLEDATA:
 	case DXFARCDATA:
 		pCircle = static_cast<const CDXFcircle*>(pData);
@@ -881,6 +891,20 @@ int CDXFcircle::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL) 
 		break;
 	}
 
+	if ( nResult > 1 )
+		pt[1] = pt2;
+	if ( nResult > 0 )
+		pt[0] = pt1;
+
+	return nResult;
+}
+
+int CDXFcircle::GetIntersectionPoint(const CPointD& pts, const CPointD& pte, CPointD pt[], BOOL) const
+{
+	int		nResult;
+	CPointD	pt1, pt2;
+
+	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(pts, pte, m_ct, m_r);
 	if ( nResult > 1 )
 		pt[1] = pt2;
 	if ( nResult > 0 )
@@ -1037,7 +1061,7 @@ CDXFarc::CDXFarc(CLayerData* pLayer, const CDXFarc* pData, LPCDXFBLOCK lpBlock) 
 	m_pt[0]	= pData->GetNativePoint(0);
 	m_pt[1]	= pData->GetNativePoint(1);
 	// â~å ÇÃägëÂó¶ÇÕXï˚å¸ÇæÇØ ->
-	// Å@äeé≤Ç≈ägëÂèkè¨Ç∑ÇÈÇ∆ë»â~å Ç…Ç»ÇÈÇ™ÅCÃﬁ€Ø∏Ç©ÇÁÇÃê∂ê¨èàóù(DXFDoc2.cpp)Ç≈í≤êÆ
+	// Å@äeé≤Ç≈ägëÂèkè¨Ç∑ÇÈÇ∆ë»â~å Ç…Ç»ÇÈÇ™ÅCÃﬁ€Ø∏Ç©ÇÁÇÃê∂ê¨èàóù(ReadDXF.cpp)Ç≈í≤êÆ
 	if ( lpBlock->dwBlockFlg & DXFBLFLG_X ) {
 		m_ct	*= lpBlock->dMagni[NCA_X];
 		m_pt[0]	*= lpBlock->dMagni[NCA_X];
@@ -1380,10 +1404,7 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdg
 	// bEdge==TRUE : í[ì_Ç™ìØÇ∂èÍçáÇÕåì_Ç»ÇµÇ∆Ç∑ÇÈ
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
-		if ( bEdge && (IsMatchPoint(pt1) || IsMatchPoint(pt2)) )
-			break;
-		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(pt1, pt2, m_ct, m_r);
-		break;
+		return GetIntersectionPoint(pt1, pt2, pt, bEdge);
 	case DXFARCDATA:
 		if ( bEdge && (IsMatchPoint(pt1) || IsMatchPoint(pt2)) )
 			break;
@@ -1417,6 +1438,24 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL bEdg
 				swap(pt1, pt2);
 		}
 	}
+
+	if ( nResult > 1 )
+		pt[1] = pt2;
+	if ( nResult > 0 )
+		pt[0] = pt1;
+
+	return nResult;
+}
+
+int CDXFarc::GetIntersectionPoint(const CPointD& pts, const CPointD& pte, CPointD pt[], BOOL bEdge/*=TRUE*/) const
+{
+	if ( bEdge && (IsMatchPoint(pts) || IsMatchPoint(pte)) )
+		return 0;
+
+	int		nResult;
+	CPointD	pt1, pt2;
+
+	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LC(pts, pte, m_ct, m_r);
 
 	if ( nResult > 1 )
 		pt[1] = pt2;
@@ -2031,11 +2070,7 @@ int CDXFellipse::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL 
 	// bEdge==TRUE : í[ì_Ç™ìØÇ∂èÍçáÇÕåì_Ç»ÇµÇ∆Ç∑ÇÈ
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
-		if ( bEdge && m_bArc && (IsMatchPoint(pt1) || IsMatchPoint(pt2)) )
-			break;
-		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LE(pt1, pt2,
-				m_ct, m_dLongLength, m_dLongLength*m_dShort, m_lq);
-		break;
+		return GetIntersectionPoint(pt1, pt2, pt, bEdge);
 	case DXFARCDATA:
 		if ( bEdge && m_bArc && (IsMatchPoint(pt1) || IsMatchPoint(pt2)) )
 			break;
@@ -2068,6 +2103,25 @@ int CDXFellipse::GetIntersectionPoint(const CDXFdata* pData, CPointD pt[], BOOL 
 			}
 		}
 	}
+
+	if ( nResult > 1 )
+		pt[1] = pt2;
+	if ( nResult > 0 )
+		pt[0] = pt1;
+
+	return nResult;
+}
+
+int CDXFellipse::GetIntersectionPoint(const CPointD& pts, const CPointD& pte, CPointD pt[], BOOL bEdge/*=TRUE*/) const
+{
+	if ( bEdge && m_bArc && (IsMatchPoint(pts) || IsMatchPoint(pte)) )
+		return 0;
+
+	int		nResult;
+	CPointD	pt1, pt2;
+
+	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_LE(pt1, pt2,
+			m_ct, m_dLongLength, m_dLongLength*m_dShort, m_lq);
 
 	if ( nResult > 1 )
 		pt[1] = pt2;
@@ -2890,6 +2944,20 @@ int CDXFpolyline::GetIntersectionPoint(const CDXFdata* pData1, CPointD pt[], BOO
 			pts.reset();
 		}
 	}
+
+	return nResult;
+}
+
+int CDXFpolyline::GetIntersectionPoint(const CPointD& pts, const CPointD& pte, CPointD pt[], BOOL bEdge/*=TRUE*/) const
+{
+	DXFLARGV	dxfLine;
+	// âºÇÃCDXFlineÇê∂ê¨
+	dxfLine.pLayer	= NULL;
+	dxfLine.s		= pts;
+	dxfLine.e		= pte;
+	CDXFdata* pData = new CDXFline(&dxfLine);
+	int nResult = GetIntersectionPoint(pData, pt, bEdge);
+	delete	pData;
 
 	return nResult;
 }

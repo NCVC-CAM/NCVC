@@ -53,8 +53,8 @@ typedef	CTypedPtrArrayEx<CPtrArray, CDXFsort*>	CDrillAxis;
 static	CDXFsort	g_obDrill;		// ŒŠ‰ÁHÃŞ°À
 static	CDXFsort	g_obCircle;		// ‰~ÃŞ°À‚ğŒŠ‰ÁH‚·‚é‚Æ‚«‚Ì‰¼“o˜^
 static	CDXFsort	g_obStartData;	// ‰ÁHŠJnˆÊ’uw¦ÃŞ°À
-static	CDXFlist	g_ltDeepGlist;	// [’¤Øí—p‚Ì‰¼“o˜^
-static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeGdata;	// ‰ÁHÃŞ°À
+static	CDXFlist	g_ltDeepData;	// [’¤Øí—p‚Ì‰¼“o˜^
+static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeData;	// ‰ÁHÃŞ°À
 
 static	BOOL		g_bData;		// Še¶¬ˆ—‚Å¶¬‚³‚ê‚½‚©
 static	double		g_dZCut;		// Z²‚ÌØíÀ•W == RoundUp(GetDbl(MKNC_DBL_ZCUT))
@@ -149,7 +149,7 @@ inline	void	AddMoveGdataZ(int nCode, double dZ, double dFeed)
 {
 	CNCMakeMill*	mkNCD = new CNCMakeMill(nCode, dZ, dFeed);
 	ASSERT( mkNCD );
-	g_obMakeGdata.Add(mkNCD);
+	g_obMakeData.Add(mkNCD);
 }
 // Z²‚Ìã¸
 inline	void	AddMoveGdataZup(void)
@@ -189,7 +189,7 @@ inline	void	AddMoveGdata(int nCode, const CDXFdata* pData)
 {
 	CNCMakeMill* mkNCD = new CNCMakeMill(nCode, pData->GetStartMakePoint());
 	ASSERT( mkNCD );
-	g_obMakeGdata.Add(mkNCD);
+	g_obMakeData.Add(mkNCD);
 }
 inline	void	AddMoveGdataG0(const CDXFdata* pData)
 {
@@ -214,7 +214,7 @@ inline	void	AddMakeGdata(CDXFdata* pData, double dFeed)
 	// ØíÃŞ°À¶¬
 	CNCMakeMill*	mkNCD = new CNCMakeMill(pData, dFeed);
 	ASSERT( mkNCD );
-	g_obMakeGdata.Add(mkNCD);
+	g_obMakeData.Add(mkNCD);
 	pData->SetMakeFlg();
 }
 inline	void	AddMakeGdataCut(CDXFdata* pData)
@@ -239,7 +239,7 @@ inline	void	AddMakeGdataHelical(CDXFdata* pData)
 	AddCutterTextIntegrated( pData->GetStartCutterPoint() );
 	CNCMakeMill*	mkNCD = new CNCMakeMill(pData, GetDbl(MKNC_DBL_FEED), &g_dZCut);
 	ASSERT( mkNCD );
-	g_obMakeGdata.Add(mkNCD);
+	g_obMakeData.Add(mkNCD);
 	pData->SetMakeFlg();
 }
 // ”CˆÓÃŞ°À‚Ì¶¬
@@ -247,7 +247,7 @@ inline	void	AddMakeGdataStr(const CString& strData)
 {
 	CNCMakeMill*	mkNCD = new CNCMakeMill(strData);
 	ASSERT( mkNCD );
-	g_obMakeGdata.Add(mkNCD);
+	g_obMakeData.Add(mkNCD);
 }
 // ˆÚ“®w¦Ú²Ô‚ÌÃŞ°À¶¬
 inline	void	AddMakeMove(CDXFdata* pData, BOOL bL0 = FALSE)
@@ -257,7 +257,7 @@ inline	void	AddMakeMove(CDXFdata* pData, BOOL bL0 = FALSE)
 	// ˆÚ“®w¦
 	CNCMakeMill*	mkNCD = new CNCMakeMill(pData, bL0);
 	ASSERT( mkNCD );
-	g_obMakeGdata.Add(mkNCD);
+	g_obMakeData.Add(mkNCD);
 	pData->SetMakeFlg();
 }
 // ŒÅ’è»²¸Ù·¬İ¾Ùº°ÄŞ
@@ -353,7 +353,7 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 		g_obDrill.SetSize(0, i);
 		g_obCircle.SetSize(0, i);
 		i *= 2;
-		g_obMakeGdata.SetSize(0, i);
+		g_obMakeData.SetSize(0, i);
 		i = GetPrimeNumber(i);
 		i = max(17, i);
 		g_mpDXFdata.InitHashTable(i);
@@ -563,7 +563,7 @@ BOOL MultiLayer(int nID)
 		g_mpDXFtext.RemoveAll();
 		g_obDrill.RemoveAll();
 		g_obCircle.RemoveAll();
-		g_ltDeepGlist.RemoveAll();
+		g_ltDeepData.RemoveAll();
 		SetGlobalMapToLayer(pLayer);
 		// ˆê—Ìˆæ‚Åg—p‚µ‚½Ï¯Ìß‚ğíœ
 		g_mpDXFdata.RemoveAll();
@@ -593,9 +593,9 @@ BOOL MultiLayer(int nID)
 				// ¸ŞÛ°ÊŞÙ•Ï”‰Šú‰»
 				InitialVariable();
 				// NC¶¬Ïî•ñ‚Ìíœ
-				for ( j=0; j<g_obMakeGdata.GetSize() && IsThread(); j++ )
-					delete	g_obMakeGdata[j];
-				g_obMakeGdata.RemoveAll();
+				for ( j=0; j<g_obMakeData.GetSize() && IsThread(); j++ )
+					delete	g_obMakeData[j];
+				g_obMakeData.RemoveAll();
 			}
 			else {
 #ifdef _DEBUG
@@ -688,7 +688,7 @@ void SetStaticOption(void)
 	CDXFmap::ms_dTolerance = GetFlg(MKNC_FLG_DEEP) ?
 		NCMIN : GetDbl(MKNC_DBL_TOLERANCE);
 	// [’¤‚Ìˆ—
-	g_pfnDeepProc = GetNum(MKNC_NUM_DEEPAPROCESS) == 0 ?
+	g_pfnDeepProc = GetNum(MKNC_NUM_DEEPALL) == 0 ?
 		&MakeLoopDeepAdd_All : &MakeLoopDeepAdd_Euler;
 
 	// CDXFdata‚ÌÃ“I•Ï”‰Šú‰»
@@ -917,16 +917,16 @@ BOOL OutputNCcode(LPCTSTR lpszFileName)
 	CString	strPath, strFile,
 			strNCFile(lpszFileName ? lpszFileName : g_pDoc->GetNCFileName());
 	Path_Name_From_FullPath(strNCFile, strPath, strFile);
-	SendFaseMessage(g_obMakeGdata.GetSize(), IDS_ANA_DATAFINAL, strFile);
+	SendFaseMessage(g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
 	try {
 		CStdioFile	fp(strNCFile,
 				CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive | CFile::typeText);
 #ifdef _DEBUG
-		for ( int i=0; i<g_obMakeGdata.GetSize(); i++ ) {
+		for ( int i=0; i<g_obMakeData.GetSize(); i++ ) {
 #else
-		for ( int i=0; i<g_obMakeGdata.GetSize() && IsThread(); i++ ) {
+		for ( int i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 #endif
-			g_obMakeGdata[i]->WriteGcode(fp);
+			g_obMakeData[i]->WriteGcode(fp);
 			SendProgressPos(i);
 		}
 	}
@@ -937,7 +937,7 @@ BOOL OutputNCcode(LPCTSTR lpszFileName)
 		return FALSE;
 	}
 
-	g_pParent->m_ctReadProgress.SetPos(g_obMakeGdata.GetSize());
+	g_pParent->m_ctReadProgress.SetPos(g_obMakeData.GetSize());
 	return IsThread();
 }
 
@@ -1454,12 +1454,12 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 		bCust = TRUE;
 		bMove = bMakeHit = FALSE;
 		while ( (pDataMove=GetMatchPointMove(CDXFdata::ms_pData)) && IsThread() ) {
-			if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPAPROCESS)==0 ) {
+			if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPALL)==0 ) {
 				// ÅŒã‚ÉZ²ˆÚ“®‚ÌÏ°¶°‚ª‚ ‚ê‚Îíœ
-				if ( !g_ltDeepGlist.IsEmpty() && g_ltDeepGlist.GetTail() == NULL )
-					g_ltDeepGlist.RemoveTail();
+				if ( !g_ltDeepData.IsEmpty() && g_ltDeepData.GetTail() == NULL )
+					g_ltDeepData.RemoveTail();
 				// ˆÚ“®ÃŞ°À“o˜^
-				g_ltDeepGlist.AddTail(pDataMove);
+				g_ltDeepData.AddTail(pDataMove);
 				pDataMove->SetMakeFlg();
 			}
 			else {
@@ -1518,7 +1518,7 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 	g_pParent->m_ctReadProgress.SetPos(nPos);
 
 	// ‘S‘Ì[’¤‚ÌŒãˆ—
-	if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPAPROCESS)==0 && IsThread() ) {
+	if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPALL)==0 && IsThread() ) {
 		if ( !MakeLoopDeepAdd() )
 			return FALSE;
 	}
@@ -1598,10 +1598,10 @@ int MakeLoopEulerAdd(const CDXFmap* pEuler)
 			pData = ltEuler.GetNext(pos);
 			pData->SetMakeFlg();
 		}
-		g_ltDeepGlist.AddTail(&ltEuler);
+		g_ltDeepData.AddTail(&ltEuler);
 		// [’¤‚ª‘S‘Ì‚©”Û‚©
-		if ( GetNum(MKNC_NUM_DEEPAPROCESS) == 0 ) {
-			g_ltDeepGlist.AddTail((CDXFdata *)NULL);	// Z²ˆÚ“®‚ÌÏ°¶°
+		if ( GetNum(MKNC_NUM_DEEPALL) == 0 ) {
+			g_ltDeepData.AddTail((CDXFdata *)NULL);	// Z²ˆÚ“®‚ÌÏ°¶°
 			// ÅŒã‚É¶¬‚µ‚½ÃŞ°À‚ğ‘Ò”ğ
 			CDXFdata::ms_pData = pData;
 		}
@@ -1742,7 +1742,7 @@ BOOL MakeLoopShape(CDXFshape* pShape)
 	}
 
 	// ‘S‘Ì[’¤‚ÌŒãˆ—
-	if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPAPROCESS)==0 && IsThread() ) {
+	if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPALL)==0 && IsThread() ) {
 		if ( !MakeLoopDeepAdd() )
 			return FALSE;
 	}
@@ -1922,8 +1922,8 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 				BOOL	bRound = pCircle->GetRound();
 				// ‰ñ“]İ’è
 				pCircle->SetRoundFixed(pts, pte);
-				if ( pData->GetMakeType() == DXFELLIPSEDATA ) 
-					static_cast<CDXFellipse*>(pData)->SetRoundFixed(bRound);
+				if ( pData->GetMakeType() == DXFELLIPSEDATA )					// ‘È‰~‚Ìê‡‚Í
+					static_cast<CDXFellipse*>(pData)->SetRoundFixed(bRound);	// ’Ç‰Á‚Å“Æ©ˆ—
 			}
 			pData->GetEdgeGap(ptNow);	// —ÖŠsµÌŞ¼Şª¸Ä‚Ì‹ßÚÀ•WŒvZ
 		}
@@ -2046,19 +2046,19 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 		// ŠJnÎß¼Ş¼®İ‚©‚çÙ°Ìß
 		while ( pos1 && IsThread() ) {
 			pData = (pChain->*pfnGetData)(pos1);
-			g_ltDeepGlist.AddTail(pData);
+			g_ltDeepData.AddTail(pData);
 		}
 		// [æ“ª|I’[]‚©‚çŠJnµÌŞ¼Şª¸Ä‚Ü‚Å
 		for ( pos1=(pChain->*pfnGetPosition)(); pos1!=pos2 && IsThread(); ) {
 			pData = (pChain->*pfnGetData)(pos1);
-			g_ltDeepGlist.AddTail(pData);
+			g_ltDeepData.AddTail(pData);
 		}
 		// [’¤‚ª‘S‘Ì‚©”Û‚©
-		if ( GetNum(MKNC_NUM_DEEPAPROCESS) == 0 ) {
+		if ( GetNum(MKNC_NUM_DEEPALL) == 0 ) {
 			// ÅŒã‚É¶¬‚µ‚½ÃŞ°À‚ğ‘Ò”ğ
 			CDXFdata::ms_pData = pData;
 			// Z²ˆÚ“®‚ÌÏ°¶°
-			g_ltDeepGlist.AddTail((CDXFdata *)NULL);
+			g_ltDeepData.AddTail((CDXFdata *)NULL);
 		}
 		else
 			return MakeLoopDeepAdd();
@@ -2235,13 +2235,13 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bE
 			if ( pData )
 				pData->SetMakeFlg();
 		}
-		g_ltDeepGlist.AddTail(&ltEuler);
+		g_ltDeepData.AddTail(&ltEuler);
 		// [’¤‚ª‘S‘Ì‚©”Û‚©
-		if ( GetNum(MKNC_NUM_DEEPAPROCESS) == 0 ) {
+		if ( GetNum(MKNC_NUM_DEEPALL) == 0 ) {
 			// ÅŒã‚É¶¬‚µ‚½ÃŞ°À‚ğ‘Ò”ğ
-			CDXFdata::ms_pData = g_ltDeepGlist.GetTail();
+			CDXFdata::ms_pData = g_ltDeepData.GetTail();
 			// Z²ˆÚ“®‚ÌÏ°¶°
-			g_ltDeepGlist.AddTail((CDXFdata *)NULL);
+			g_ltDeepData.AddTail((CDXFdata *)NULL);
 		}
 		else
 			return MakeLoopDeepAdd();
@@ -2315,18 +2315,18 @@ BOOL MakeLoopDeepAdd(void)
 	CDXFdata*	pData;
 	POSITION	pos;
 
-	if ( g_ltDeepGlist.IsEmpty() )
+	if ( g_ltDeepData.IsEmpty() )
 		return TRUE;
 
 	// ÅŒã‚ÌZ²ˆÚ“®Ï°¶‚Ííœ
-	if ( g_ltDeepGlist.GetTail() == NULL )
-		g_ltDeepGlist.RemoveTail();
+	if ( g_ltDeepData.GetTail() == NULL )
+		g_ltDeepData.RemoveTail();
 
 #ifdef _DEBUG
 	int	n;
-	g_dbg.printf("LayerName=%s", g_ltDeepGlist.GetHead()->GetParentLayer()->GetStrLayer());
-	for ( POSITION p=g_ltDeepGlist.GetHeadPosition(); p; ) {
-		pData = g_ltDeepGlist.GetNext(p);
+	g_dbg.printf("LayerName=%s", g_ltDeepData.GetHead()->GetParentLayer()->GetStrLayer());
+	for ( POSITION p=g_ltDeepData.GetHeadPosition(); p; ) {
+		pData = g_ltDeepData.GetNext(p);
 		if ( pData )
 			n = pData->GetParentLayer()->IsCutType() ? 1 : 2;
 		else
@@ -2340,21 +2340,21 @@ BOOL MakeLoopDeepAdd(void)
 	if ( !strSpindle.IsEmpty() )
 		AddMakeGdataStr(strSpindle);
 	// ØíÃŞ°À‚Ü‚Å‚ÌˆÚ“®
-	AddMoveGdataG0( g_ltDeepGlist.GetHead() );
+	AddMoveGdataG0( g_ltDeepData.GetHead() );
 
 	// [’¤‚ªu‘S‘Ìv‚Ìê‡CÄ°ÀÙŒ”*[’¤½Ã¯Ìß‚ÅÌßÛ¸ŞÚ½ºİÄÛ°Ù‚ÌÄİ’è
-	if ( GetNum(MKNC_NUM_DEEPAPROCESS) == 0 ) {
+	if ( GetNum(MKNC_NUM_DEEPALL) == 0 ) {
 		// Ä°ÀÙŒ”([’¤½Ã¯Ìß¶³İÄ‚ÍØ‚èã‚°)
 		nCnt = (int)ceil(fabs((g_dDeep - g_dZCut) / GetDbl(MKNC_DBL_ZSTEP)))
-			* g_ltDeepGlist.GetCount();
+			* g_ltDeepData.GetCount();
 		SendFaseMessage( nCnt );
 	}
 
 	nCnt  = 0;
-	pData = g_ltDeepGlist.GetHead();
+	pData = g_ltDeepData.GetHead();
 	// [’¤ÅIˆÊ’u‚Ü‚Å‰¼“o˜^ÃŞ°À‚ÌNC¶¬
-	if ( GetNum(MKNC_NUM_DEEPAPROCESS)==1 && GetFlg(MKNC_FLG_HELICAL) &&
-			g_ltDeepGlist.GetCount()==1 && pData->GetMakeType()==DXFCIRCLEDATA ) {
+	if ( GetNum(MKNC_NUM_DEEPALL)==1 && GetFlg(MKNC_FLG_HELICAL) &&
+			g_ltDeepData.GetCount()==1 && pData->GetMakeType()==DXFCIRCLEDATA ) {
 		if ( g_dZCut - g_dDeep > NCMIN ) {
 			// ‰~ÃŞ°À‚ÌÍØ¶ÙØí
 			g_dZCut += GetDbl(MKNC_DBL_ZSTEP);
@@ -2374,13 +2374,23 @@ BOOL MakeLoopDeepAdd(void)
 			pData = (*g_pfnDeepProc)(bAction, FALSE);
 			CDXFdata::ms_pData = pData;
 			// ±¸¼®İ‚ÌØ‚è‘Ö‚¦(‰•œØí‚Ì‚İ)
-			if ( GetNum(MKNC_NUM_DEEPCPROCESS) == 0 ) {
+			if ( GetNum(MKNC_NUM_DEEPROUND) == 0 ) {
 				bAction = !bAction;
 				// ŠeµÌŞ¼Şª¸Ä‚Ìn“_I“_‚ğ“ü‚ê‘Ö‚¦
-				for ( pos=g_ltDeepGlist.GetHeadPosition(); pos && IsThread(); ) {
-					pData = g_ltDeepGlist.GetNext(pos);
-					if ( pData )
-						pData->SwapMakePt(0);
+				for ( pos=g_ltDeepData.GetHeadPosition(); pos && IsThread(); ) {
+					pData = g_ltDeepData.GetNext(pos);
+					if ( pData && pData->GetMakeType()!=DXFCIRCLEDATA ) {
+						// ‰~ÃŞ°ÀˆÈŠO‚ÌÀ•W“ü‚ê‘Ö‚¦
+						if ( pData->GetMakeType() == DXFELLIPSEDATA ) {
+							CDXFellipse* pEllipse = static_cast<CDXFellipse*>(pData);
+							if ( pEllipse->IsArc() )
+								pEllipse->SwapMakePt(0);
+							else
+								pEllipse->SetRoundFixed(!pEllipse->GetRound());
+						}
+						else
+							pData->SwapMakePt(0);
+					}
 				}
 			}
 			// Z²‚Ì‰º~
@@ -2390,8 +2400,8 @@ BOOL MakeLoopDeepAdd(void)
 				MakeLoopDeepZDown();
 			}
 			// ÌßÛ¸ŞÚ½ÊŞ°‚ÌXV
-			if ( GetNum(MKNC_NUM_DEEPAPROCESS) == 0 )
-				g_pParent->m_ctReadProgress.SetPos(++nCnt * g_ltDeepGlist.GetCount());
+			if ( GetNum(MKNC_NUM_DEEPALL) == 0 )
+				g_pParent->m_ctReadProgress.SetPos(++nCnt * g_ltDeepData.GetCount());
 		}
 	}
 	if ( !IsThread() )
@@ -2411,7 +2421,7 @@ BOOL MakeLoopDeepAdd(void)
 			// dã‚°—p‰ñ“]”‚É•ÏX
 			AddMakeGdataStr( CNCMakeMill::MakeSpindle(DXFLINEDATA, TRUE) );
 			// µÌŞ¼Şª¸ÄØíˆÊ’u‚ÖˆÚ“®
-			pData = bAction ? g_ltDeepGlist.GetHead() : g_ltDeepGlist.GetTail();
+			pData = bAction ? g_ltDeepData.GetHead() : g_ltDeepData.GetTail();
 			AddMoveGdataG0(pData);
 		}
 		else {
@@ -2432,7 +2442,7 @@ BOOL MakeLoopDeepAdd(void)
 	MakeLoopDeepZUp();
 
 	// Œãn––
-	g_ltDeepGlist.RemoveAll();
+	g_ltDeepData.RemoveAll();
 	g_dZCut = dZCut;
 
 	return IsThread();
@@ -2453,8 +2463,8 @@ CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeep)
 
 	// ÃŞ°À¶¬Ù°Ìß(³“]‹t“])
 	CDXFdata*	pData;
-	for ( POSITION pos=(g_ltDeepGlist.*pfnGetPosition)(); pos && IsThread(); ) {
-		pData = (g_ltDeepGlist.*pfnGetData)(pos);
+	for ( POSITION pos=(g_ltDeepData.*pfnGetPosition)(); pos && IsThread(); ) {
+		pData = (g_ltDeepData.*pfnGetData)(pos);
 		AddMakeGdataDeep(pData, bDeep);
 	}
 
@@ -2478,9 +2488,9 @@ CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeep)
 	CDXFdata*	pDataResult = NULL;
 
 	// ÃŞ°À¶¬Ù°Ìß(³“]‹t“])
-	for ( POSITION pos=(g_ltDeepGlist.*pfnGetPosition)(); pos && IsThread(); ) {
+	for ( POSITION pos=(g_ltDeepData.*pfnGetPosition)(); pos && IsThread(); ) {
 		// µÌŞ¼Şª¸Äæ‚èo‚µ
-		pData = (g_ltDeepGlist.*pfnGetData)(pos);
+		pData = (g_ltDeepData.*pfnGetData)(pos);
 		if ( pData ) {
 			if ( pData->GetParentLayer()->IsCutType() ) {
 				// ØíÃŞ°À
@@ -2518,11 +2528,11 @@ CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeep)
 
 void MakeLoopDeepZDown(void)
 {
-	const CDXFdata* pDataHead = g_ltDeepGlist.GetHead();
-	const CDXFdata* pDataTail = g_ltDeepGlist.GetTail();
+	const CDXFdata* pDataHead = g_ltDeepData.GetHead();
+	const CDXFdata* pDataTail = g_ltDeepData.GetTail();
 
 	// ‰•œØí‚©ˆê˜A‚ÌµÌŞ¼Şª¸Ä‚ª•ÂÙ°Ìß‚È‚ç
-	if ( GetNum(MKNC_NUM_DEEPCPROCESS)==0 ||
+	if ( GetNum(MKNC_NUM_DEEPROUND)==0 ||
 				pDataHead->GetStartMakePoint()==pDataTail->GetEndMakePoint() ) {
 		// Ÿ‚Ì[’¤À•W‚ÖCZ²‚Ì~‰º‚Ì‚İ
 		AddMoveGdataZ(1, g_dZCut, GetDbl(MKNC_DBL_ZFEED));
@@ -2538,7 +2548,7 @@ void MakeLoopDeepZDown(void)
 
 void MakeLoopDeepZUp(void)
 {
-	if ( GetNum(MKNC_NUM_DEEPZPROCESS) == 0 ) {
+	if ( GetNum(MKNC_NUM_DEEPRETURN) == 0 ) {
 		// ‘‘—‚è‚ÅZ²•œ‹A
 		AddMoveGdataZup();
 	}
@@ -3257,7 +3267,7 @@ void AddMakeStart(void)
 		// ˆÚ“®w¦
 		mkNCD = new CNCMakeMill(pData, FALSE);
 		ASSERT( mkNCD );
-		g_obMakeGdata.Add(mkNCD);
+		g_obMakeData.Add(mkNCD);
 	}
 	if ( pData ) {
 		// ÅŒã‚Ì¶¬ÃŞ°À
@@ -3470,9 +3480,9 @@ UINT MakeNCD_AfterThread(LPVOID)
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeNCD_AfterThread()\nStart", TRUE, DBG_RED);
 #endif
-	for ( int i=0; i<g_obMakeGdata.GetSize(); i++ )
-		delete	g_obMakeGdata[i];
-	g_obMakeGdata.RemoveAll();
+	for ( int i=0; i<g_obMakeData.GetSize(); i++ )
+		delete	g_obMakeData[i];
+	g_obMakeData.RemoveAll();
 	g_mpDXFdata.RemoveAll();
 	g_mpDXFstarttext.RemoveAll();
 	g_mpDXFmove.RemoveAll();
@@ -3480,7 +3490,7 @@ UINT MakeNCD_AfterThread(LPVOID)
 	g_mpDXFtext.RemoveAll();
 	g_mpDXFcomment.RemoveAll();
 	g_obStartData.RemoveAll();
-	g_ltDeepGlist.RemoveAll();
+	g_ltDeepData.RemoveAll();
 	g_obDrill.RemoveAll();
 	g_obCircle.RemoveAll();
 

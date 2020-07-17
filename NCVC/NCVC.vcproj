@@ -250,10 +250,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\DXFDoc2.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\DxfEditOrgDlg.cpp"
 				>
 			</File>
@@ -543,6 +539,10 @@
 			</File>
 			<File
 				RelativePath=".\NCWorkDlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ReadDXF.cpp"
 				>
 			</File>
 			<File

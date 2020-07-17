@@ -131,9 +131,9 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_FLG,	MKNC_FLG_DEEP,			"深彫を行う"},
 	{NC_DBL,	MKNC_DBL_DEEP,			"最終切り込み"},
 	{NC_DBL,	MKNC_DBL_ZSTEP,			"Z軸切り込みｽﾃｯﾌﾟ"},
-	{NC_NUM,	MKNC_NUM_DEEPAPROCESS,	"深彫切削手順(0:全体,1:一筆)"},
-	{NC_NUM,	MKNC_NUM_DEEPCPROCESS,	"深彫切削方向(0:往復,1:一方)"},
-	{NC_NUM,	MKNC_NUM_DEEPZPROCESS,	"R点へのZ軸復帰(0:早送り,1:切削送り)"},
+	{NC_NUM,	MKNC_NUM_DEEPALL,		"深彫切削手順(0:全体,1:一筆)"},
+	{NC_NUM,	MKNC_NUM_DEEPROUND,		"深彫切削方向(0:往復,1:一方)"},
+	{NC_NUM,	MKNC_NUM_DEEPRETURN,	"R点へのZ軸復帰(0:早送り,1:切削送り)"},
 	{NC_FLG,	MKNC_FLG_HELICAL,		"円ﾃﾞｰﾀをﾍﾘｶﾙ切削"},
 	{NC_FLG,	MKNC_FLG_DEEPFINISH,	"最終Z値仕上げ適用"},
 	{NC_NUM,	MKNC_NUM_DEEPSPINDLE,	"仕上げ回転数"},
@@ -147,7 +147,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKNC_NUM_DWELL,			"ﾄﾞｳｪﾙ時間"},
 	{NC_NUM,	MKNC_NUM_DWELLFORMAT,	"ﾄﾞｳｪﾙ時間表記(0:小数点,1:整数)"},
 	{NC_NUM,	MKNC_NUM_DRILLPROCESS,	"穴加工手順(0:先,1:後,2:のみ)"},
-	{NC_NUM,	MKNC_NUM_DRILLZPROCESS,	"Z軸復帰(0:G81|G82,1:G85|G89)"},
+	{NC_NUM,	MKNC_NUM_DRILLRETURN,	"Z軸復帰(0:G81|G82,1:G85|G89)"},
 	{NC_FLG,	MKNC_FLG_DRILLCIRCLE,	"円ﾃﾞｰﾀも穴加工"},
 	{NC_DBL,	MKNC_DBL_DRILLCIRCLE,	"対象半径"},
 	{NC_NUM,	MKNC_NUM_DRILLSORT,		"ｸﾞﾙｰﾋﾟﾝｸﾞ(0:昇順,1:降順)"},
@@ -334,9 +334,9 @@ void CNCMakeMillOpt::DbgDump(void) const
 	dbg.printf("  Deep         =%d", m_bDeep);
 	dbg.printf("  DeepFinal    =%f", m_dDeep);
 	dbg.printf("  ZStep        =%f", m_dZStep);
-	dbg.printf("  DeepZProcess =%d", m_nDeepZProcess);
-	dbg.printf("  DeepAProcess =%d", m_nDeepAProcess);
-	dbg.printf("  DeepCProcess =%d", m_nDeepCProcess);
+	dbg.printf("  DeepZProcess =%d", m_nDeepReturn);
+	dbg.printf("  DeepAProcess =%d", m_nDeepAll);
+	dbg.printf("  DeepCProcess =%d", m_nDeepRound);
 	dbg.printf("  Helical      =%d", m_bHelical);
 	dbg.printf("  DeepFinish   =%d", m_bDeepFinish);
 	dbg.printf("  DeepSpindle  =%d", m_nDeepSpindle);
@@ -350,7 +350,7 @@ void CNCMakeMillOpt::DbgDump(void) const
 	dbg.printf("  Dwell        =%d", m_nDwell);
 	dbg.printf("  DwellFormat  =%d", m_nDwellFormat);
 	dbg.printf("  DrillProcess =%d", m_nDrillProcess);
-	dbg.printf("  DrillZProcess=%d", m_nDrillZProcess);
+	dbg.printf("  DrillZProcess=%d", m_nDrillReturn);
 	dbg.printf("----------");
 	dbg.printf("  DrillCircle  =%d", m_bDrillCircle);
 	dbg.printf("  DrillCircleR =%f", m_dDrillCircle);

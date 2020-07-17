@@ -17,7 +17,7 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-// from DXFDoc2.cpp
+// from ReadDXF.cpp
 // ¸ÞÙ°Ìßº°ÄÞ
 extern	LPCTSTR	g_szGroupCode[];
 	//	"0", "1", "2", "3", "6", "8", "9", "62", "70", "72", "73"

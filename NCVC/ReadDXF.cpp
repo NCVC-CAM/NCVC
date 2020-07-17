@@ -1,4 +1,4 @@
-// DXFDoc2.cpp : インプリメンテーション ファイル
+// ReadDXF.cpp : インプリメンテーション ファイル
 //
 
 #include "stdafx.h"
@@ -29,14 +29,16 @@ extern	CMagaDbg	g_dbg;
 extern	LPCTSTR	g_szGroupCode[] = {
 	"0", "1", "2", "3", "6", "8", "9", "70"
 };
-extern	LPCTSTR	g_szValueGroupCode[] = {
+extern	LPCTSTR	g_szValueGroupCode[] = {	// DXFMAXVALUESIZE
 	"10", "20", "11", "21",
-	"40", "41", "42", "50", "51"
+	"40", "41", "42", "50", "51",
+	"210", "220", "230"
 };
 extern	const	DWORD	g_dwValSet[] = {
 	VALFLG10, VALFLG20, VALFLG11, VALFLG21,
 	VALFLG40, VALFLG41, VALFLG42,
-	VALFLG50, VALFLG51
+	VALFLG50, VALFLG51,
+	VALFLG210, VALFLG220, VALFLG230
 };
 
 // ｾｸｼｮﾝ名
@@ -185,130 +187,242 @@ inline int _SectionNameCheck(void)
 	return SEC_NOSECTION;	// -1
 }
 
-inline void _SetDxfArgv(LPCDXFPARGV lpPoint)
+inline void _ArbitraryAxis(CPointD& pt)	// 任意の軸のｱﾙｺﾞﾘｽﾞﾑ
+{
+	double	ax[NCXYZ], ay[NCXYZ];
+	CPointD	ptResult;
+
+	if ( fabs(g_dValue[VALUE210])<(1.0/64.0) && fabs(g_dValue[VALUE220])<(1.0/64.0) ) {
+		ax[NCA_X] =  g_dValue[VALUE230];
+		ax[NCA_Y] =  0.0;
+		ax[NCA_Z] = -g_dValue[VALUE210];
+	}
+	else {
+		ax[NCA_X] = -g_dValue[VALUE220];
+		ax[NCA_Y] =  g_dValue[VALUE210];
+		ax[NCA_Z] =  0.0;
+	}
+	ay[NCA_X] = g_dValue[VALUE220]*ax[NCA_Z] - g_dValue[VALUE230]*ax[NCA_Y];
+	ay[NCA_Y] = g_dValue[VALUE230]*ax[NCA_X] - g_dValue[VALUE210]*ax[NCA_Z];
+	ay[NCA_Z] = g_dValue[VALUE210]*ax[NCA_Y] - g_dValue[VALUE220]*ax[NCA_X];
+
+	// 基準軸からﾏﾄﾘｸｽ計算(Z値は無視)
+	ptResult.x = pt.x*ax[NCA_X] + pt.y*ax[NCA_Y];
+	ptResult.y = pt.x*ay[NCA_X] + pt.y*ay[NCA_Y];
+
+	pt = ptResult;
+}
+
+inline BOOL _SetDxfArgv(LPCDXFPARGV lpPoint)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-#endif
-	lpPoint->c.x = g_dValue[VALUE10];
-	lpPoint->c.y = g_dValue[VALUE20];
-#ifdef _DEBUG
 	dbg.printf("Point Layer=%s", lpPoint->pLayer ? lpPoint->pLayer->GetStrLayer() : "?");
-	dbg.printf("      cx=%f cy=%f", lpPoint->c.x, lpPoint->c.y);
 #endif
+	if ( g_dwValueFlg & VALFLG_POINT ) {
+		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		if ( g_dwValueFlg & VALFLG_PLANE )
+			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
+		lpPoint->c.x = pt.x;
+		lpPoint->c.y = pt.y;
+#ifdef _DEBUG
+		dbg.printf("      cx=%f cy=%f", lpPoint->c.x, lpPoint->c.y);
+#endif
+		return TRUE;
+	}
+	else {
+#ifdef _DEBUG
+		dbg.printf("      error cx|cy");
+#endif
+		return FALSE;
+	}
 }
 
-inline void _SetDxfArgv(LPCDXFLARGV lpLine)
+inline BOOL _SetDxfArgv(LPCDXFLARGV lpLine)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-#endif
-	lpLine->s.x = g_dValue[VALUE10];
-	lpLine->s.y = g_dValue[VALUE20];
-	lpLine->e.x = g_dValue[VALUE11];
-	lpLine->e.y = g_dValue[VALUE21];
-#ifdef _DEBUG
 	dbg.printf("Line Layer=%s", lpLine->pLayer ? lpLine->pLayer->GetStrLayer() : "?");
-	dbg.printf("     sx=%f sy=%f ex=%f ey=%f", 
-		lpLine->s.x, lpLine->s.y, lpLine->e.x, lpLine->e.y);
 #endif
+	if ( g_dwValueFlg & VALFLG_LINE ) {
+		CPointD	pts(g_dValue[VALUE10], g_dValue[VALUE20]),
+				pte(g_dValue[VALUE11], g_dValue[VALUE21]);
+		if ( g_dwValueFlg & VALFLG_PLANE ) {
+			_ArbitraryAxis(pts);
+			_ArbitraryAxis(pte);
+		}
+		lpLine->s.x = pts.x;
+		lpLine->s.y = pts.y;
+		lpLine->e.x = pte.x;
+		lpLine->e.y = pte.y;
+#ifdef _DEBUG
+		dbg.printf("     sx=%f sy=%f ex=%f ey=%f", 
+			lpLine->s.x, lpLine->s.y, lpLine->e.x, lpLine->e.y);
+#endif
+		return TRUE;
+	}
+	else {
+#ifdef _DEBUG
+		dbg.printf("     error sx|sy|ex|ey"); 
+#endif
+		return FALSE;
+	}
 }
 
-inline void _SetDxfArgv(LPCDXFCARGV lpCircle)
+inline BOOL _SetDxfArgv(LPCDXFCARGV lpCircle)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-#endif
-	lpCircle->c.x = g_dValue[VALUE10];
-	lpCircle->c.y = g_dValue[VALUE20];
-	lpCircle->r   = g_dValue[VALUE40];
-#ifdef _DEBUG
 	dbg.printf("Circle Layer=%s", lpCircle->pLayer ? lpCircle->pLayer->GetStrLayer() : "?");
-	dbg.printf("       cx=%f cy=%f r=%f", 
-		lpCircle->c.x, lpCircle->c.y, lpCircle->r);
 #endif
+	if ( g_dwValueFlg & VALFLG_CIRCLE ) {
+		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		if ( g_dwValueFlg & VALFLG_PLANE )
+			_ArbitraryAxis(pt);
+		lpCircle->c.x = pt.x;
+		lpCircle->c.y = pt.y;
+		lpCircle->r   = g_dValue[VALUE40];
+#ifdef _DEBUG
+		dbg.printf("       cx=%f cy=%f r=%f",
+			lpCircle->c.x, lpCircle->c.y, lpCircle->r);
+#endif
+		return TRUE;
+	}
+	else {
+#ifdef _DEBUG
+		dbg.printf("       error cx|cy|r");
+#endif
+		return FALSE;
+	}
 }
 
-inline void _SetDxfArgv(LPCDXFAARGV lpArc)
+inline BOOL _SetDxfArgv(LPCDXFAARGV lpArc)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-#endif
-	lpArc->c.x = g_dValue[VALUE10];
-	lpArc->c.y = g_dValue[VALUE20];
-	lpArc->r   = g_dValue[VALUE40];
-	lpArc->sq  = g_dValue[VALUE50];
-	lpArc->eq  = g_dValue[VALUE51];
-#ifdef _DEBUG
 	dbg.printf("Arc Layer=%s", lpArc->pLayer ? lpArc->pLayer->GetStrLayer() : "?");
-	dbg.printf("    cx=%f cy=%f r=%f sp=%f ep=%f", 
-		lpArc->c.x, lpArc->c.y, lpArc->r, lpArc->sq*DEG, lpArc->eq*DEG);
 #endif
+	if ( g_dwValueFlg & VALFLG_ARC ) {
+		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		if ( g_dwValueFlg & VALFLG_PLANE )
+			_ArbitraryAxis(pt);
+		lpArc->c.x = pt.x;
+		lpArc->c.y = pt.y;
+		lpArc->r   = g_dValue[VALUE40];
+		lpArc->sq  = g_dValue[VALUE50];
+		lpArc->eq  = g_dValue[VALUE51];
+#ifdef _DEBUG
+		dbg.printf("    cx=%f cy=%f r=%f sp=%f ep=%f", 
+			lpArc->c.x, lpArc->c.y, lpArc->r, lpArc->sq*DEG, lpArc->eq*DEG);
+#endif
+		return TRUE;
+	}
+	else {
+#ifdef _DEBUG
+		dbg.printf("    error cx|cy|r|sp|ep");
+#endif
+		return FALSE;
+	}
 }
 
-inline void _SetDxfArgv(LPCDXFEARGV lpEllipse)
+inline BOOL _SetDxfArgv(LPCDXFEARGV lpEllipse)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-#endif
-	lpEllipse->c.x		= g_dValue[VALUE10];
-	lpEllipse->c.y		= g_dValue[VALUE20];
-	lpEllipse->l.x		= g_dValue[VALUE11];
-	lpEllipse->l.y		= g_dValue[VALUE21];
-	lpEllipse->s		= g_dValue[VALUE40];
-	lpEllipse->sq		= g_dValue[VALUE41];
-	lpEllipse->eq		= g_dValue[VALUE42];
-	lpEllipse->bRound	= TRUE;		// Default
-#ifdef _DEBUG
 	dbg.printf("Ellipse Layer=%s", lpEllipse->pLayer ? lpEllipse->pLayer->GetStrLayer() : "?");
-	dbg.printf("        cx=%f cy=%f lx=%f ly=%f s=%f", 
-		lpEllipse->c.x, lpEllipse->c.y, lpEllipse->l.x, lpEllipse->l.y, lpEllipse->s);
-	dbg.printf("        sp=%f ep=%f",
-		lpEllipse->sq*DEG, lpEllipse->eq*DEG);
 #endif
+	if ( g_dwValueFlg & VALFLG_ELLIPSE ) {
+		CPointD	ptc(g_dValue[VALUE10], g_dValue[VALUE20]),
+				ptl(g_dValue[VALUE11], g_dValue[VALUE21]);
+		if ( g_dwValueFlg & VALFLG_PLANE ) {
+			_ArbitraryAxis(ptc);
+			_ArbitraryAxis(ptl);
+		}
+		lpEllipse->c.x		= ptc.x;
+		lpEllipse->c.y		= ptc.y;
+		lpEllipse->l.x		= ptl.x;
+		lpEllipse->l.y		= ptl.y;
+		lpEllipse->s		= g_dValue[VALUE40];
+		lpEllipse->sq		= g_dValue[VALUE41];
+		lpEllipse->eq		= g_dValue[VALUE42];
+		lpEllipse->bRound	= TRUE;		// Default
+#ifdef _DEBUG
+		dbg.printf("        cx=%f cy=%f lx=%f ly=%f s=%f", 
+			lpEllipse->c.x, lpEllipse->c.y, lpEllipse->l.x, lpEllipse->l.y, lpEllipse->s);
+		dbg.printf("        sp=%f ep=%f",
+			lpEllipse->sq*DEG, lpEllipse->eq*DEG);
+#endif
+		return TRUE;
+	}
+	else {
+#ifdef _DEBUG
+		dbg.printf("        error cx|cy|lx|ly|s|sp|ep"); 
+#endif
+		return FALSE;
+	}
 }
 
-inline void _SetDxfArgv(LPCDXFTARGV lpText)
+inline BOOL _SetDxfArgv(LPCDXFTARGV lpText)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-#endif
-	lpText->strValue = g_strValue;
-	lpText->c.x = g_dValue[VALUE10];
-	lpText->c.y = g_dValue[VALUE20];
-#ifdef _DEBUG
 	dbg.printf("Text Layer=%s", lpText->pLayer ? lpText->pLayer->GetStrLayer() : "?");
-	dbg.printf("      cx=%f cy=%f", lpText->c.x, lpText->c.y);
-	dbg.printf("      Value=%s", lpText->strValue);
 #endif
+	if ( g_dwValueFlg & VALFLG_TEXT ) {
+		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		if ( g_dwValueFlg & VALFLG_PLANE )
+			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
+		lpText->strValue = g_strValue;
+		lpText->c.x = pt.x;
+		lpText->c.y = pt.y;
+#ifdef _DEBUG
+		dbg.printf("      cx=%f cy=%f", lpText->c.x, lpText->c.y);
+		dbg.printf("      Value=%s", lpText->strValue);
+#endif
+		return TRUE;
+	}
+	else {
+#ifdef _DEBUG
+		dbg.printf("      error cx|cy");
+#endif
+		return FALSE;
+	}
 }
 
-inline void _SetBlockArgv(LPCDXFBLOCK lpBlock)
+inline BOOL _SetBlockArgv(LPCDXFBLOCK lpBlock)
 {
-	lpBlock->ptOrg.x = g_dValue[VALUE10];
-	lpBlock->ptOrg.y = g_dValue[VALUE20];
-	lpBlock->dwBlockFlg = 0;
-	if ( g_dwValueFlg & VALFLG41 ) {
-		lpBlock->dMagni[NCA_X] = g_dValue[VALUE41];
-		lpBlock->dwBlockFlg |= DXFBLFLG_X;
+	if ( g_dwValueFlg & VALFLG_POINT ) {
+		CPointD	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
+		if ( g_dwValueFlg & VALFLG_PLANE )
+			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
+		lpBlock->ptOrg.x = pt.x;
+		lpBlock->ptOrg.y = pt.y;
+		lpBlock->dwBlockFlg = 0;
+		if ( g_dwValueFlg & VALFLG41 ) {
+			lpBlock->dMagni[NCA_X] = g_dValue[VALUE41];
+			lpBlock->dwBlockFlg |= DXFBLFLG_X;
+		}
+		else {
+			lpBlock->dMagni[NCA_X] = 1.0;
+		}
+		if ( g_dwValueFlg & VALFLG42 ) {
+			lpBlock->dMagni[NCA_Y] = g_dValue[VALUE42];
+			lpBlock->dwBlockFlg |= DXFBLFLG_Y;
+		}
+		else {
+			lpBlock->dMagni[NCA_Y] = 1.0;
+		}
+		if ( g_dwValueFlg & VALFLG50 ) {
+			lpBlock->dRound = g_dValue[VALUE50];
+			lpBlock->dwBlockFlg |= DXFBLFLG_R;
+		}
+		else {
+			lpBlock->dRound = 0.0;
+		}
+		return TRUE;
 	}
-	else {
-		lpBlock->dMagni[NCA_X] = 1.0;
-	}
-	if ( g_dwValueFlg & VALFLG42 ) {
-		lpBlock->dMagni[NCA_Y] = g_dValue[VALUE42];
-		lpBlock->dwBlockFlg |= DXFBLFLG_Y;
-	}
-	else {
-		lpBlock->dMagni[NCA_Y] = 1.0;
-	}
-	if ( g_dwValueFlg & VALFLG50 ) {
-		lpBlock->dRound = g_dValue[VALUE50];
-		lpBlock->dwBlockFlg |= DXFBLFLG_R;
-	}
-	else {
-		lpBlock->dRound = 0.0;
-	}
+	else
+		return FALSE;
 }
 
 inline void _CreatePolyline(void)
@@ -434,13 +548,20 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 #ifdef _DEBUG
 	CMagaDbg	dbg("SetEntitiesFromBlock()", DBG_MAGENTA);
 #endif
-	CLayerData*		pLayer;
-	CDXFdata*		pData;
-	CDXFdata*		pDataBlock;
+	CLayerData*	pLayer;
+	CDXFdata*	pData;
+	CDXFdata*	pDataBlock;
 	CPointD		pt;
 	DXFEARGV	dxfEllipse;
 	DXFBLOCK	argvBlock;
-	_SetBlockArgv(&argvBlock);
+
+	if ( !_SetBlockArgv(&argvBlock) ) {
+#ifdef _DEBUG
+		dbg.printf("InsertOrg error x|y");
+#endif
+		return;
+	}
+
 #ifdef _DEBUG
 	dbg.printf("InsertOrg x=%f y=%f", argvBlock.ptOrg.x, argvBlock.ptOrg.y);
 	if ( argvBlock.dwBlockFlg & DXFBLFLG_X )
@@ -478,7 +599,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 		case DXFCIRCLEDATA:
 			switch ( g_nLayer ) {
 			case DXFORGLAYER:
-				pt.SetPoint(g_dValue[VALUE10], g_dValue[VALUE20]);
+				pt = static_cast<CDXFcircle*>(pDataBlock)->GetCenter();
 #ifdef _DEBUG
 				dbg.printf("Org x=%f y=%f", pt.x, pt.y);
 #endif
@@ -497,7 +618,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 				break;
 			case DXFSTRLAYER:
 				pLayer = pDoc->AddLayerMap(g_strLayer, DXFSTRLAYER);
-				pt.SetPoint(g_dValue[VALUE10], g_dValue[VALUE20]);
+				pt = static_cast<CDXFcircle*>(pDataBlock)->GetCenter();
 #ifdef _DEBUG
 				dbg.printf("StartOrg x=%f y=%f", pt.x, pt.y);
 #endif
@@ -566,45 +687,64 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 	case TYPE_POINT:
 		if ( g_nLayer == DXFCAMLAYER ) {
 			dxfPoint.pLayer = pDoc->AddLayerMap(g_strLayer);
-			_SetDxfArgv(&dxfPoint);
-			pData = new CDXFpoint(&dxfPoint);
+			if ( _SetDxfArgv(&dxfPoint) )
+				pData = new CDXFpoint(&dxfPoint);
 		}
 		break;
 
 	case TYPE_LINE:
 		if ( g_nLayer == DXFORGLAYER ) {
 			// 旋盤用原点ﾗｲﾝ
-			_SetDxfArgv(&dxfLine);
-			pDoc->CreateLatheLine(dxfLine.s, dxfLine.e);
+			dxfLine.pLayer = NULL;
+			if ( _SetDxfArgv(&dxfLine) )
+				pDoc->CreateLatheLine(dxfLine.s, dxfLine.e);
 		}
 		else if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
 			dxfLine.pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
-			_SetDxfArgv(&dxfLine);
-			pData = new CDXFline(&dxfLine);
+			if ( _SetDxfArgv(&dxfLine) )
+				pData = new CDXFline(&dxfLine);
 		}
 		break;
 
 	case TYPE_CIRCLE:
 		switch ( g_nLayer ) {
 		case DXFORGLAYER:
-			pt.SetPoint(g_dValue[VALUE10], g_dValue[VALUE20]);
+			if ( g_dwValueFlg & VALFLG_CIRCLE ) {
+				pt.SetPoint(g_dValue[VALUE10], g_dValue[VALUE20]);
+				if ( g_dwValueFlg & VALFLG_PLANE )
+					_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 #ifdef _DEBUG
-			dbg.printf("Org x=%f y=%f", pt.x, pt.y);
+				dbg.printf("Org x=%f y=%f", pt.x, pt.y);
 #endif
-			pDoc->CreateCutterOrigin(pt, g_dValue[VALUE40]);
+				pDoc->CreateCutterOrigin(pt, g_dValue[VALUE40]);
+			}
+			else {
+#ifdef _DEBUG
+				dbg.printf("Org error x|y|r");
+#endif
+			}
 			break;
 		case DXFCAMLAYER:
 			dxfCircle.pLayer = pDoc->AddLayerMap(g_strLayer);
-			_SetDxfArgv(&dxfCircle);
-			pData = new CDXFcircle(&dxfCircle);
+			if ( _SetDxfArgv(&dxfCircle) )
+				pData = new CDXFcircle(&dxfCircle);
 			break;
 		case DXFSTRLAYER:
-			pt.SetPoint(g_dValue[VALUE10], g_dValue[VALUE20]);
+			if ( g_dwValueFlg & VALFLG_CIRCLE ) {
+				pt.SetPoint(g_dValue[VALUE10], g_dValue[VALUE20]);
+				if ( g_dwValueFlg & VALFLG_PLANE )
+					_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 #ifdef _DEBUG
-			dbg.printf("StartOrg x=%f y=%f", pt.x, pt.y);
+				dbg.printf("StartOrg x=%f y=%f", pt.x, pt.y);
 #endif
-			pData = new CDXFcircleEx(DXFSTADATA, pDoc->AddLayerMap(g_strLayer, DXFSTRLAYER),
-				pt, g_dValue[VALUE40]);
+				pData = new CDXFcircleEx(DXFSTADATA, pDoc->AddLayerMap(g_strLayer, DXFSTRLAYER),
+					pt, g_dValue[VALUE40]);
+			}
+			else {
+#ifdef _DEBUG
+				dbg.printf("StartOrg error x|y|r");
+#endif
+			}
 			break;
 		}
 		break;
@@ -612,16 +752,16 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 	case TYPE_ARC:
 		if ( g_nLayer == DXFCAMLAYER ) {
 			dxfArc.pLayer = pDoc->AddLayerMap(g_strLayer);
-			_SetDxfArgv(&dxfArc);
-			pData = new CDXFarc(&dxfArc);
+			if ( _SetDxfArgv(&dxfArc) )
+				pData = new CDXFarc(&dxfArc);
 		}
 		break;
 
 	case TYPE_ELLIPSE:
 		if ( g_nLayer == DXFCAMLAYER ) {
 			dxfEllipse.pLayer = pDoc->AddLayerMap(g_strLayer);
-			_SetDxfArgv(&dxfEllipse);
-			pData = new CDXFellipse(&dxfEllipse);
+			if ( _SetDxfArgv(&dxfEllipse) )
+				pData = new CDXFellipse(&dxfEllipse);
 		}
 		break;
 
@@ -633,8 +773,8 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 	case TYPE_TEXT:
 		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFCOMLAYER ) {
 			dxfText.pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
-			_SetDxfArgv(&dxfText);
-			pData = new CDXFtext(&dxfText);
+			if ( _SetDxfArgv(&dxfText) )
+				pData = new CDXFtext(&dxfText);
 		}
 		break;
 
@@ -773,32 +913,32 @@ BOOL SetBlockData(void)
 	switch ( g_nType ) {
 	case TYPE_POINT:
 		dxfPoint.pLayer = NULL;
-		_SetDxfArgv(&dxfPoint);
-		g_pBkData->AddData(&dxfPoint);
+		if ( _SetDxfArgv(&dxfPoint) )
+			g_pBkData->AddData(&dxfPoint);
 		break;
 
 	case TYPE_LINE:
 		dxfLine.pLayer = NULL;
-		_SetDxfArgv(&dxfLine);
-		g_pBkData->AddData(&dxfLine);
+		if ( _SetDxfArgv(&dxfLine) )
+			g_pBkData->AddData(&dxfLine);
 		break;
 
 	case TYPE_CIRCLE:
 		dxfCircle.pLayer = NULL;
-		_SetDxfArgv(&dxfCircle);
-		g_pBkData->AddData(&dxfCircle);
+		if ( _SetDxfArgv(&dxfCircle) )
+			g_pBkData->AddData(&dxfCircle);
 		break;
 
 	case TYPE_ARC:
 		dxfArc.pLayer = NULL;
-		_SetDxfArgv(&dxfArc);
-		g_pBkData->AddData(&dxfArc);
+		if ( _SetDxfArgv(&dxfArc) )
+			g_pBkData->AddData(&dxfArc);
 		break;
 
 	case TYPE_ELLIPSE:
 		dxfEllipse.pLayer = NULL;
-		_SetDxfArgv(&dxfEllipse);
-		g_pBkData->AddData(&dxfEllipse);
+		if ( _SetDxfArgv(&dxfEllipse) )
+			g_pBkData->AddData(&dxfEllipse);
 		break;
 
 	case TYPE_POLYLINE:
@@ -808,15 +948,15 @@ BOOL SetBlockData(void)
 
 	case TYPE_TEXT:
 		dxfText.pLayer = NULL;
-		_SetDxfArgv(&dxfText);
-		g_pBkData->AddData(&dxfText);
+		if ( _SetDxfArgv(&dxfText) )
+			g_pBkData->AddData(&dxfText);
 		break;
 
 	case TYPE_INSERT:	// Blockのﾈｽﾄ
 		if ( g_strBlockMap.Lookup(g_strBlock, pBlock) ) {
 			DXFBLOCK	argvBlock;
-			_SetBlockArgv(&argvBlock);
-			g_pBkData->CopyBlock(pBlock, &argvBlock);
+			if ( _SetBlockArgv(&argvBlock) )
+				g_pBkData->CopyBlock(pBlock, &argvBlock);
 		}
 		else
 			g_strMissBlckMap.SetAt(g_strBlock, NULL);
@@ -980,13 +1120,17 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 	if ( g_bVertex ) {
 		DXFPARGV	dxfPoint;
 		dxfPoint.pLayer = g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
-		_SetDxfArgv(&dxfPoint);
-		if ( g_nBlock >= 0 )	// Block処理中
-			dxfPoint.c -= g_pBkData->GetBlockOrigin();	// 原点補正
-		if ( !(g_bPuff ?
-				g_pPolyline->SetVertex(&dxfPoint, g_dPuff, g_ptPuff) :	// CDXFarcとして登録
-				g_pPolyline->SetVertex(&dxfPoint)) ) {					// CDXFpointとして登録
-			AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
+		if ( _SetDxfArgv(&dxfPoint) ) {
+			if ( g_nBlock >= 0 )	// Block処理中
+				dxfPoint.c -= g_pBkData->GetBlockOrigin();	// 原点補正
+			if ( !(g_bPuff ?
+					g_pPolyline->SetVertex(&dxfPoint, g_dPuff, g_ptPuff) :	// CDXFarcとして登録
+					g_pPolyline->SetVertex(&dxfPoint)) ) {					// CDXFpointとして登録
+				AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
+				return FALSE;
+			}
+		}
+		else {
 			return FALSE;
 		}
 		g_ptPuff = dxfPoint.c;
@@ -1074,13 +1218,17 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc, BOOL bEnd)
 
 	DXFPARGV	dxfPoint;
 	dxfPoint.pLayer = !pDoc || g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
-	_SetDxfArgv(&dxfPoint);
-	if ( g_nBlock >= 0 )	// Block処理中
-		dxfPoint.c -= g_pBkData->GetBlockOrigin();	// 原点補正
-	if ( !(g_bPuff ?
-			g_pPolyline->SetVertex(&dxfPoint, g_dPuff, g_ptPuff) :	// CDXFarcとして登録
-			g_pPolyline->SetVertex(&dxfPoint)) ) {					// CDXFpointとして登録
-		AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
+	if ( _SetDxfArgv(&dxfPoint) ) {
+		if ( g_nBlock >= 0 )	// Block処理中
+			dxfPoint.c -= g_pBkData->GetBlockOrigin();	// 原点補正
+		if ( !(g_bPuff ?
+				g_pPolyline->SetVertex(&dxfPoint, g_dPuff, g_ptPuff) :	// CDXFarcとして登録
+				g_pPolyline->SetVertex(&dxfPoint)) ) {					// CDXFpointとして登録
+			AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
+			return FALSE;
+		}
+	}
+	else {
 		return FALSE;
 	}
 

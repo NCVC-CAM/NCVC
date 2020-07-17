@@ -54,9 +54,6 @@
     <ClCompile Include="DXFDoc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="DXFDoc2.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="DxfEditOrgDlg.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -274,6 +271,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NCWorkDlg.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="ReadDXF.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="ShapePropDlg.cpp">

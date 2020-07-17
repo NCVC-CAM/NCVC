@@ -136,7 +136,6 @@
     <ClCompile Include="DXFChild.cpp" />
     <ClCompile Include="DXFdata.cpp" />
     <ClCompile Include="DXFDoc.cpp" />
-    <ClCompile Include="DXFDoc2.cpp" />
     <ClCompile Include="DxfEditOrgDlg.cpp" />
     <ClCompile Include="DXFMakeClass.cpp" />
     <ClCompile Include="DXFMakeOption.cpp" />
@@ -210,6 +209,7 @@
     <ClCompile Include="NCViewXZ.cpp" />
     <ClCompile Include="NCViewYZ.cpp" />
     <ClCompile Include="NCWorkDlg.cpp" />
+    <ClCompile Include="ReadDXF.cpp" />
     <ClCompile Include="ShapePropDlg.cpp" />
     <ClCompile Include="SplashWnd.cpp" />
     <ClCompile Include="stdafx.cpp">

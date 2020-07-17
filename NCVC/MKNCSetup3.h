@@ -36,9 +36,9 @@ public:
 	CFloatEdit	m_dZStep;
 	CFloatEdit	m_dDeep;
 	int		m_nMakeEnd;
-	int		m_nAProcess;
-	int		m_nCProcess;
-	int		m_nZProcess;
+	int		m_nDeepAll;
+	int		m_nDeepRound;
+	int		m_nDeepReturn;
 	BOOL	m_bDeep;
 	BOOL	m_bHelical;
 	BOOL	m_bFinish;

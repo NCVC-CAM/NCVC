@@ -18,13 +18,13 @@
 #define	MKNC_NUM_IJ					8
 #define	MKNC_NUM_MAKEEND			9
 #define	MKNC_NUM_DEEPSPINDLE		10
-#define	MKNC_NUM_DEEPZPROCESS		11
-#define	MKNC_NUM_DEEPAPROCESS		12
-#define	MKNC_NUM_DEEPCPROCESS		13
+#define	MKNC_NUM_DEEPRETURN			11
+#define	MKNC_NUM_DEEPALL			12
+#define	MKNC_NUM_DEEPROUND			13
 #define	MKNC_NUM_DRILLSPINDLE		14
 #define	MKNC_NUM_DWELL				15
 #define	MKNC_NUM_DWELLFORMAT		16
-#define	MKNC_NUM_DRILLZPROCESS		17
+#define	MKNC_NUM_DRILLRETURN		17
 #define	MKNC_NUM_DRILLPROCESS		18
 #define	MKNC_NUM_DRILLSORT			19
 #define	MKNC_NUM_DRILLCIRCLEPROCESS	20
@@ -105,14 +105,14 @@ friend class CMKNCSetup8;
 			// -----
 					m_nMakeEnd,			// 加工済み深さの指示
 					m_nDeepSpindle,		// 深彫仕上げ回転数
-					m_nDeepZProcess,	// 深彫仕上げからのZ軸復帰
-					m_nDeepAProcess,	// 深彫の切削手順
-					m_nDeepCProcess,	// 深彫の切削方向
+					m_nDeepReturn,		// 深彫仕上げからのZ軸復帰
+					m_nDeepAll,			// 深彫の切削手順
+					m_nDeepRound,		// 深彫の切削方向
 			// -----
 					m_nDrillSpindle,	// 穴あけ回転数
 					m_nDwell,			// ﾄﾞｳｪﾙ時間
 					m_nDwellFormat,		// ﾄﾞｳｪﾙ時間の表記
-					m_nDrillZProcess,	// 穴あけのZ軸復帰
+					m_nDrillReturn,		// 穴あけのZ軸復帰
 					m_nDrillProcess,	// 穴あけの仕方
 					m_nDrillSort,		// 穴あけのｸﾞﾙｰﾋﾟﾝｸﾞ順序
 					m_nDrillCircleProcess,	// 円ﾃﾞｰﾀを含むときの穴あけ順序

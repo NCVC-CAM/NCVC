@@ -217,5 +217,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 };
 
-// DXF√ﬁ∞¿ÇÃì«Ç›çûÇ› from DXFDoc2.cpp
+// DXF√ﬁ∞¿ÇÃì«Ç›çûÇ› to ReadDXF.cpp
 BOOL	ReadDXF(CDXFDoc*, LPCTSTR);

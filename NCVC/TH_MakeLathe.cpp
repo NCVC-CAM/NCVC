@@ -1,4 +1,4 @@
-// TH_MakeNCD.cpp
+// TH_MakeLathe.cpp
 // DXF->旋盤用NC生成
 //////////////////////////////////////////////////////////////////////
 #include "stdafx.h"
@@ -56,6 +56,7 @@ static	void	InitialShapeData(void);		// 形状認識の初期化
 static	BOOL	CreateOutsidePitch(void);	// 外径ｵﾌｾｯﾄを中心まで生成
 static	BOOL	CreateRoughPass(void);		// 荒加工ﾃﾞｰﾀの生成
 static	BOOL	MakeLatheCode(void);		// NCｺｰﾄﾞの生成
+static	BOOL	CheckXZMove(const CPointD&, const CPointD&);
 static	void	MoveLatheCode(const CDXFdata*, double, double);
 static	BOOL	OutputNCcode(void);			// NCｺｰﾄﾞの出力
 
@@ -386,14 +387,14 @@ BOOL CreateOutsidePitch(void)
 			g_obShape[i]->GetShapeChain() : pOutline->GetHead();
 		for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
 			pData = pChain->GetNext(pos);
+			rc = pData->GetMaxRect();
 #ifdef _DEBUG
 			ptsd = pData->GetNativePoint(0);
 			pted = pData->GetNativePoint(1);
-			rc = pData->GetMaxRect();
 			dbg.printf("%d (%.3f, %.3f)-(%.3f, %.3f)", pData->GetType(),
 				ptsd.x, ptsd.y, pted.x, pted.y);
-#else
-			rc = pData->GetMaxRect();
+			dbg.printf("rc=(%.3f, %.3f)-(%.3f, %.3f)",
+				rc.left, rc.top, rc.right, rc.bottom);
 #endif
 			if ( dLimit > rc.top )
 				dLimit = rc.top;
@@ -406,7 +407,7 @@ BOOL CreateOutsidePitch(void)
 		}
 	}
 #ifdef _DEBUG
-	dbg.printf("Limit=%f", dLimit);
+	dbg.printf("Limit(tuning)=%f", dLimit - CDXFdata::ms_ptOrg.y);
 #endif
 
 	// 外径ｵﾌｾｯﾄを中心まで生成
@@ -602,7 +603,7 @@ BOOL MakeLatheCode(void)
 	int			i, j, nLoop = g_obLathePass.GetSize();
 	POSITION	pos;
 	double		dCutX;
-	CPointD		pt;
+	CPointD		pt, pts, pte;
 	CDXFchain*	pChain;
 	CDXFdata*	pData;
 	COutlineData*	pOutline;
@@ -641,11 +642,16 @@ BOOL MakeLatheCode(void)
 	for ( i=1; i<nLoop && IsThread(); i++ ) {
 		SetProgressPos(i+1);
 		pData = g_obLathePass[i];
-		pt = pData->GetStartMakePoint();
+		pt = pte = pData->GetStartMakePoint();
 		dCutX = pt.y;
+		pts.x = CNCMakeLathe::ms_xyz[NCA_Z];
+		pts.y = CNCMakeLathe::ms_xyz[NCA_X];
+		pts += CDXFdata::ms_ptOrg;		// 現在位置
+		pte += CDXFdata::ms_ptOrg;		// 次の移動位置
+		pte.y += GetDbl(MKLA_DBL_PULL_X);
 		// pDataの始点が現在位置のどちらにあるかで引き代を変える
-		if ( CNCMakeLathe::ms_xyz[NCA_Z] < pt.x ) {
-			// 次の始点が右側 → 現在位置から
+		if ( CNCMakeLathe::ms_xyz[NCA_Z]<pt.x && !CheckXZMove(pts, pte) ) {
+			// 次の始点が右側、かつ、輪郭ｵﾌｾｯﾄに衝突しない → 現在位置から
 			pt.y = CNCMakeLathe::ms_xyz[NCA_X];
 		}
 		else {
@@ -742,6 +748,35 @@ BOOL MakeLatheCode(void)
 	return IsThread();
 }
 
+BOOL CheckXZMove(const CPointD& pts, const CPointD& pte)
+{
+	int			i, j, nLoop;
+	POSITION	pos;
+	BOOL		bResult = FALSE;
+	CPointD		pt[4];
+	COutlineData*	pOutline;
+	CDXFchain*		pChain;
+	CDXFdata*		pData;
+
+	// 輪郭ｵﾌｾｯﾄとの交点をﾁｪｯｸ
+	for ( i=0; i<g_obShape.GetSize() && !bResult && IsThread(); i++ ) {
+		pOutline = g_obShape[i]->GetLatheList();
+		nLoop = pOutline->IsEmpty() ? 1 : pOutline->GetSize();
+		for ( j=0; j<nLoop && !bResult && IsThread(); j++ ) {
+			pChain = pOutline->IsEmpty() ? g_obShape[i]->GetShapeChain() : pOutline->GetAt(j);
+			for ( pos=pChain->GetHeadPosition(); pos && IsThread(); ) {
+				pData = pChain->GetNext(pos);
+				if ( pData->GetIntersectionPoint(pts, pte, pt, FALSE) > 0 ) {
+					bResult = TRUE;
+					break;
+				}
+			}
+		}
+	}
+
+	return bResult;
+}
+
 void MoveLatheCode(const CDXFdata* pData, double dMaxZ, double dMaxX)
 {
 	CNCMakeLathe*	mkNCD;
@@ -749,7 +784,7 @@ void MoveLatheCode(const CDXFdata* pData, double dMaxZ, double dMaxX)
 				pt(pts);
 
 	// X軸(Y)方向の離脱とZ軸(X)方向の移動
-	if ( CNCMakeLathe::ms_xyz[NCA_Z] < pt.x ) {
+	if ( CNCMakeLathe::ms_xyz[NCA_Z] <= pt.x ) {
 		pt.x = dMaxZ + GetDbl(MKLA_DBL_PULL_Z);	// 端面＋引き代
 		pt.y = CNCMakeLathe::ms_xyz[NCA_X];
 	}
