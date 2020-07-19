@@ -299,7 +299,7 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFoption(LPDXFOPTION pOpt)
 
 	POSITION	pos;
 	int			i;
-	const	CDXFOption*	pSrc = AfxGetNCVCApp()->GetDXFOption();
+	const	CDXFOption*	pSrc = theApp.GetDXFOption();
 
 	for ( i=0; i<DXFLAYERSIZE; i++ )
 		pOpt->pszLayer[i] = LPCTSTR(pSrc->GetReadLayer(i));
@@ -320,25 +320,25 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFoption(LPDXFOPTION pOpt)
 
 NCEXPORT BOOL WINAPI NCVC_IsOriginLayer(LPCTSTR pszLayer)
 {
-	return AfxGetNCVCApp()->GetDXFOption()->IsOriginLayer(pszLayer);
+	return theApp.GetDXFOption()->IsOriginLayer(pszLayer);
 }
 
 NCEXPORT BOOL WINAPI NCVC_IsCutterLayer(LPCTSTR pszLayer)
 {
-	return AfxGetNCVCApp()->GetDXFOption()->IsCutterLayer(pszLayer);
+	return theApp.GetDXFOption()->IsCutterLayer(pszLayer);
 }
 
 NCEXPORT BOOL WINAPI NCVC_IsStartLayer(LPCTSTR pszLayer)
 {
-	return AfxGetNCVCApp()->GetDXFOption()->IsStartLayer(pszLayer);
+	return theApp.GetDXFOption()->IsStartLayer(pszLayer);
 }
 
 NCEXPORT BOOL WINAPI NCVC_IsMoveLayer(LPCTSTR pszLayer)
 {
-	return AfxGetNCVCApp()->GetDXFOption()->IsMoveLayer(pszLayer);
+	return theApp.GetDXFOption()->IsMoveLayer(pszLayer);
 }
 
 NCEXPORT BOOL WINAPI NCVC_IsCommentLayer(LPCTSTR pszLayer)
 {
-	return AfxGetNCVCApp()->GetDXFOption()->IsCommentLayer(pszLayer);
+	return theApp.GetDXFOption()->IsCommentLayer(pszLayer);
 }

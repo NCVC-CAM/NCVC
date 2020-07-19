@@ -72,13 +72,43 @@ static	function<BOOL ()>	IsThread;
 // 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間値
 struct	CYCLE_INTERPOLATE
 {
-	BOOL	bCycle;		// 固定ｻｲｸﾙ処理中
-	optional<float>	dValZ, dValR, dValP;
+	BOOL	bCycle,		// 固定ｻｲｸﾙ処理中
+			bAbs;		// Abs(G90)|Inc(G91)
+	double	dValI;
+	optional<double>	dValR, dValZ, dValP;
 	void	clear(void) {
 		bCycle = FALSE;
-		dValZ.reset();
 		dValR.reset();
+		dValZ.reset();
 		dValP.reset();
+	}
+	void	ChangeAbs(void) {
+		if ( bCycle && !bAbs ) {
+			bAbs = TRUE;
+			if ( dValZ ) {
+				if ( dValR ) {
+					dValR = dValR.get() + dValI;
+					dValZ = dValZ.get() + dValR.get();
+				}
+				else {
+					dValZ = dValZ.get() + dValI;
+				}
+			}
+		}
+	}
+	void	ChangeInc(void) {
+		if ( bCycle && bAbs ) {
+			bAbs = FALSE;
+			if ( dValZ ) {
+				if ( dValR ) {
+					dValZ = dValZ.get() - dValR.get();
+					dValR = dValR.get() - dValI;
+				}
+				else {
+					dValZ = dValZ.get() - dValI;
+				}
+			}
+		}
 	}
 };
 static	CYCLE_INTERPOLATE	g_Cycle;
@@ -168,6 +198,23 @@ static inline	void	_SetStrComma(const string& strComma)
 		g_lpstrComma = new TCHAR[strComma.length()+1];
 		lstrcpy(g_lpstrComma, strComma.c_str());
 	}
+}
+// 基準平面に対する直交軸
+static inline	int		_GetPlaneZ(void)
+{
+	int	z;
+	switch ( g_ncArgv.nc.enPlane ) {
+	case XZ_PLANE:
+		z = NCA_Y;
+		break;
+	case YZ_PLANE:
+		z = NCA_X;
+		break;
+	default:	// XY_PLANE:
+		z = NCA_Z;
+		break;
+	}
+	return z;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1096,7 +1143,9 @@ ENGCODEOBJ	IsGcodeObject_Milling(int nCode)
 		break;
 	case 81: case 82: case 83: case 84: case 85:
 	case 86: case 87: case 88: case 89:
-		g_Cycle.bCycle = TRUE;
+		g_Cycle.bCycle	= TRUE;
+		g_Cycle.bAbs	= g_ncArgv.bAbs;
+		g_Cycle.dValI	= g_ncArgv.nc.dValue[_GetPlaneZ()];
 		enResult = MAKEOBJ;
 		break;
 	case 4: case 10: case 28: case 52: case 68: case 92:
@@ -1138,7 +1187,9 @@ ENGCODEOBJ	IsGcodeObject_Lathe(int nCode)
 		break;
 	case 81: case 82: case 83: case 84: case 85:
 	case 86: case 87: case 88: case 89:
-		g_Cycle.bCycle = TRUE;
+		g_Cycle.bCycle	= TRUE;
+		g_Cycle.bAbs	= g_ncArgv.bAbs;
+		g_Cycle.dValI	= g_ncArgv.nc.dValue[_GetPlaneZ()];
 		enResult = MAKEOBJ;
 		break;
 	case 4: case 10: case 28:
@@ -1192,9 +1243,11 @@ int CheckGcodeOther_Milling(int nCode)
 	// ｱﾌﾞｿﾘｭｰﾄ, ｲﾝｸﾘﾒﾝﾄ
 	case 90:
 		g_ncArgv.bAbs = TRUE;
+		g_Cycle.ChangeAbs();	// 固定サイクル用の補間情報を更新
 		break;
 	case 91:
 		g_ncArgv.bAbs = FALSE;
+		g_Cycle.ChangeInc();
 		break;
 	// 固定ｻｲｸﾙ復帰
 	case 98:
@@ -1269,9 +1322,11 @@ int CheckGcodeOther_Lathe(int nCode)
 	// ｱﾌﾞｿﾘｭｰﾄ, ｲﾝｸﾘﾒﾝﾄ
 	case 90:
 		g_ncArgv.bAbs = TRUE;
+		g_Cycle.ChangeAbs();	// 固定サイクル用の補間情報を更新
 		break;
 	case 91:
 		g_ncArgv.bAbs = FALSE;
+		g_Cycle.ChangeInc();
 		break;
 	// 毎分送り
 	case 98:
@@ -1895,37 +1950,22 @@ void CycleInterpolate(void)
 		return;
 	}
 
-	int	z;
-	// 基準平面に対する直交軸
-	switch ( g_ncArgv.nc.enPlane ) {
-	case XY_PLANE:
-		z = NCA_Z;
-		break;
-	case XZ_PLANE:
-		z = NCA_Y;
-		break;
-	case YZ_PLANE:
-		z = NCA_X;
-		break;
-	}
-
-	// 固定ｻｲｸﾙの座標補間
+	// 固定ｻｲｸﾙの補間
+	int	z = _GetPlaneZ();
 	if ( g_ncArgv.nc.dwValFlags & g_dwSetValFlags[z] )
-		g_Cycle.dValZ = (float)g_ncArgv.nc.dValue[z];
+		g_Cycle.dValZ = g_ncArgv.nc.dValue[z];
 	else if ( g_Cycle.dValZ ) {
 		g_ncArgv.nc.dValue[z] = g_Cycle.dValZ.get();
 		g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[z];
 	}
-
 	if ( g_ncArgv.nc.dwValFlags & NCD_R )
-		g_Cycle.dValR = (float)g_ncArgv.nc.dValue[NCA_R];
+		g_Cycle.dValR = g_ncArgv.nc.dValue[NCA_R];
 	else if ( g_Cycle.dValR ) {
 		g_ncArgv.nc.dValue[NCA_R] = g_Cycle.dValR.get();
 		g_ncArgv.nc.dwValFlags |= NCD_R;
 	}
-
 	if ( g_ncArgv.nc.dwValFlags & NCD_P )
-		g_Cycle.dValP = (float)g_ncArgv.nc.dValue[NCA_P];
+		g_Cycle.dValP = g_ncArgv.nc.dValue[NCA_P];
 	else if ( g_Cycle.dValP ) {
 		g_ncArgv.nc.dValue[NCA_P] = g_Cycle.dValP.get();
 		g_ncArgv.nc.dwValFlags |= NCD_P;

@@ -35,11 +35,14 @@ tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) c
 {
 	static	LPCTSTR	szReplaceErr = "???";
 
-	INT_PTR	nTestCode = m_strOrderIndex.GetIndex(str.substr(1, str.length()-2).c_str());
+	INT_PTR	nTestCode;
 	CString	strResult, strPath, strFile;
 	TCHAR	szUserName[_MAX_PATH];
 	DWORD	dwResult;
 	CTime	time;
+
+	nTestCode = (str.length()>2 && str.front()=='{' && str.back()=='}') ?
+		m_strOrderIndex.GetIndex(str.substr(1, str.length()-2).c_str()) : -1;
 
 	// replace
 	switch ( nTestCode ) {

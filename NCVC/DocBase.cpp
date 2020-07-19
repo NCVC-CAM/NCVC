@@ -42,7 +42,7 @@ BOOL CDocBase::OnOpenDocumentSP(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
 		LPFNCNGTHREADPARAM pParam = new FNCNGTHREADPARAM;
 		pParam->lpstrFileName = lpstrFileName;
 		pParam->hWndFrame	= pWnd->GetSafeHwnd();
-		pParam->hFinish		= HANDLE(m_evFinish);
+		pParam->hFinish		= m_evFinish.m_hObject;
 		m_pFileChangeThread = AfxBeginThread(FileChangeNotificationThread, pParam,
 									THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 		if ( m_pFileChangeThread ) {

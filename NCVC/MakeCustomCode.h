@@ -26,10 +26,10 @@ public:
 };
 
 // '{' ‚Æ '}' ‚Ì token
-//	boost::tokenizer<tag_separator>	tokens(str);
+//	boost::tokenizer<custom_separator>	tokens(str);
 //	“I‚ÉŽg—p
 
-struct tag_separator {
+struct custom_separator {
 	void reset() {}		// Unused
 	
 	template<typename Iterator, typename Token>
@@ -54,4 +54,4 @@ struct tag_separator {
 		}
 	}
 };
-//typedef boost::tokenizer<tag_separator>::iterator tokIte;
+//typedef boost::tokenizer<custom_separator>::iterator tokIte;

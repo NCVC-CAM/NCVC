@@ -4,6 +4,9 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
+#include "NCDoc.h"
+#include "NCChild.h"
+#include "NCViewTab.h"
 #include "NCVCaddin.h"
 #include "NCVCaddinIF.h"
 #include "NCdata.h"
@@ -110,8 +113,8 @@ NCEXPORT void WINAPI NCVC_DelNCStrData(NCVCHANDLE hDoc, int nIndex, int nCnt)
 static void NCArgvInitialize(LPNCARGV lpArgv)
 {
 	int		i;
-	const CMCOption* pMCopt  = AfxGetNCVCApp()->GetMCOption();
-	const CViewOption* pVopt = AfxGetNCVCApp()->GetViewOption();
+	const CMCOption* pMCopt  = theApp.GetMCOption();
+	const CViewOption* pVopt = theApp.GetViewOption();
 
 	lpArgv->nc.nGtype = G_TYPE;
 	lpArgv->nc.nGcode = pMCopt->GetModalSetting(MODALGROUP0);
@@ -178,4 +181,62 @@ NCEXPORT void WINAPI NCVC_DelNCData(NCVCHANDLE hDoc, int nIndex, int nCnt)
 {
 	if ( IsNCDocument(hDoc) )
 		reinterpret_cast<CNCDoc *>(hDoc)->RemoveAt(nIndex, nCnt);
+}
+
+NCEXPORT void WINAPI NCVC_TraceStart(NCVCHANDLE hDoc)
+{
+/*	
+	// ↓このアプローチでは AfxGetNCVCMainWnd() で NULL が返るのでダメ
+	CMDIChildWnd*	pChild = AfxGetNCVCMainWnd()->MDIGetActive();
+	if ( pChild->IsKindOf(RUNTIME_CLASS(CNCChild)) )
+		static_cast<CNCChild*>(pChild)->GetMainView()->SendMessage(WM_COMMAND, ID_NCVIEW_TRACE_RUN);
+*/
+	if ( IsNCDocument(hDoc) ) {
+		CNCDoc* pDoc = reinterpret_cast<CNCDoc *>(hDoc);
+		for ( POSITION pos=pDoc->GetFirstViewPosition(); pos; ) {
+			CView* pView = pDoc->GetNextView(pos);
+			if ( pView && pView->IsKindOf(RUNTIME_CLASS(CNCViewTab)) ) {
+				pView->SendMessage(WM_COMMAND, ID_NCVIEW_TRACE_RUN);
+				break;
+			}
+		}
+	}
+}
+
+NCEXPORT void WINAPI NCVC_TracePause(NCVCHANDLE hDoc)
+{
+	if ( IsNCDocument(hDoc) ) {
+		CNCDoc* pDoc = reinterpret_cast<CNCDoc *>(hDoc);
+		for ( POSITION pos=pDoc->GetFirstViewPosition(); pos; ) {
+			CView* pView = pDoc->GetNextView(pos);
+			if ( pView && pView->IsKindOf(RUNTIME_CLASS(CNCViewTab)) ) {
+				pView->SendMessage(WM_COMMAND, ID_NCVIEW_TRACE_PAUSE);
+				break;
+			}
+		}
+	}
+}
+
+NCEXPORT void WINAPI NCVC_TraceStop(NCVCHANDLE hDoc)
+{
+	if ( IsNCDocument(hDoc) ) {
+		CNCDoc* pDoc = reinterpret_cast<CNCDoc *>(hDoc);
+		for ( POSITION pos=pDoc->GetFirstViewPosition(); pos; ) {
+			CView* pView = pDoc->GetNextView(pos);
+			if ( pView && pView->IsKindOf(RUNTIME_CLASS(CNCViewTab)) ) {
+				pView->SendMessage(WM_COMMAND, ID_NCVIEW_TRACE_STOP);
+				break;
+			}
+		}
+	}
+}
+
+NCEXPORT int WINAPI NCVC_TraceNextDraw(NCVCHANDLE hDoc)
+{
+	int	nResult = -1;
+	if ( IsNCDocument(hDoc) ) {
+		// intでキャストしないと64bitでwarning
+		nResult = (int)(reinterpret_cast<CNCDoc *>(hDoc)->GetTraceDraw());
+	}
+	return nResult;
 }

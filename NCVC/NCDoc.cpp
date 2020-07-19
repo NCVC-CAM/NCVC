@@ -20,8 +20,8 @@
 #include "DXFMakeClass.h"
 #include "MakeDXFDlg.h"
 #ifdef USE_KODATUNO
-#include "../Kodatuno/IGES_Parser.h"
-#include "../Kodatuno/STL_Parser.h"
+#include "Kodatuno/IGES_Parser.h"
+#include "Kodatuno/STL_Parser.h"
 #endif
 
 #ifdef _DEBUG

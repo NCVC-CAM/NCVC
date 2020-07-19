@@ -129,10 +129,10 @@ NCEXPORT NCVCHANDLE WINAPI NCVC_GetDocument(LPCTSTR lpszPathName)
 		return pChild ? pChild->GetActiveDocument() : NULL;
 	}
 	// “o˜^ŠOŠg’£Žq‚Ìê‡‚à‚ ‚é‚Ì‚ÅC‚Q‚Â‚ÌÄÞ·­ÒÝÄÃÝÌßÚ°Ä‚ðŒŸõ
-	CDocument*	pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, lpszPathName);
+	CDocument*	pDoc = theApp.GetAlreadyDocument(TYPE_NCD, lpszPathName);
 	if ( pDoc )
 		return pDoc;
-	return AfxGetNCVCApp()->GetAlreadyDocument(TYPE_DXF, lpszPathName);
+	return theApp.GetAlreadyDocument(TYPE_DXF, lpszPathName);
 }
 
 NCEXPORT int WINAPI NCVC_GetDocumentFileName(NCVCHANDLE hDoc, LPTSTR lpszPathName, int nSize)
@@ -181,7 +181,7 @@ NCEXPORT void WINAPI NCVC_MainfrmProgressPos(int nPos)
 NCEXPORT int WINAPI NCVC_GetSelectMachineFileName(LPTSTR lpszPathName, int nSize)
 {
 	int		nLength;
-	CString	strFile( AfxGetNCVCApp()->GetMCOption()->GetMCHeadFileName() );
+	CString	strFile( theApp.GetMCOption()->GetMCHeadFileName() );
 
 	if ( strFile.IsEmpty() )
 		nLength = 0;
@@ -200,37 +200,35 @@ NCEXPORT int WINAPI NCVC_GetSelectMachineFileName(LPTSTR lpszPathName, int nSize
 
 NCEXPORT BOOL WINAPI NCVC_SetMachineFile(LPCTSTR lpszPathName)
 {
-	return AfxGetNCVCApp()->ChangeMachine(lpszPathName);
+	return theApp.ChangeMachine(lpszPathName);
 }
 
 NCEXPORT NCVCHANDLE WINAPI NCVC_CreateNCDocument
 	(LPCTSTR lpszPathName, LPCTSTR lpszSerialFunc)
 {
-	CNCVCApp*	pApp = AfxGetNCVCApp();
-	pApp->SetSerializeFunc(lpszSerialFunc);
-	CDocument* pDoc = pApp->GetDocTemplate(TYPE_NCD)->OpenDocumentFile(lpszPathName);
+	theApp.SetSerializeFunc(lpszSerialFunc);
+	CDocument* pDoc = theApp.GetDocTemplate(TYPE_NCD)->OpenDocumentFile(lpszPathName);
 	return pDoc;
 }
 
 NCEXPORT NCVCHANDLE WINAPI NCVC_CreateDXFDocument
 	(LPCTSTR lpszPathName, LPCTSTR lpszSerialFunc)
 {
-	CNCVCApp*	pApp = AfxGetNCVCApp();
-	pApp->SetSerializeFunc(lpszSerialFunc);
-	CDocument* pDoc = pApp->GetDocTemplate(TYPE_DXF)->OpenDocumentFile(lpszPathName);
+	theApp.SetSerializeFunc(lpszSerialFunc);
+	CDocument* pDoc = theApp.GetDocTemplate(TYPE_DXF)->OpenDocumentFile(lpszPathName);
 	return pDoc;
 }
 
 NCEXPORT BOOL WINAPI NCVC_AddNCDExtensionFunc
 	(LPCTSTR lpszExt, LPCTSTR lpszModuleName, LPCTSTR lpszSerialFunc)
 {
-	return AfxGetNCVCApp()->AddExtensionFunc(TYPE_NCD, lpszExt, lpszModuleName, lpszSerialFunc);
+	return theApp.AddExtensionFunc(TYPE_NCD, lpszExt, lpszModuleName, lpszSerialFunc);
 }
 
 NCEXPORT BOOL WINAPI NCVC_AddDXFExtensionFunc
 	(LPCTSTR lpszExt, LPCTSTR lpszModuleName, LPCTSTR lpszSerialFunc)
 {
-	return AfxGetNCVCApp()->AddExtensionFunc(TYPE_DXF, lpszExt, lpszModuleName, lpszSerialFunc);
+	return theApp.AddExtensionFunc(TYPE_DXF, lpszExt, lpszModuleName, lpszSerialFunc);
 }
 
 NCEXPORT void WINAPI NCVC_CloseDocument(NCVCHANDLE hDoc)

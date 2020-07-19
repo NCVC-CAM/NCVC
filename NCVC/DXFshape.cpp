@@ -1251,10 +1251,13 @@ POSITION CDXFchain::SetLoopFunc(const CDXFdata* pData, BOOL bReverse, BOOL bNext
 			pos1 = pos2;
 		}
 	}
-	else
+	else {
 		pos1 = pos2 = (this->*m_pfnGetFirstPos)();
+	}
 
-#ifdef _DEBUGOLD
+	ASSERT( pos1 );
+
+#ifdef _DEBUG
 	optional<CPointF>	ptDbg;
 	CPointF		ptDbg1, ptDbg2;
 	CDXFdata*	pDataDbg;
@@ -1282,7 +1285,6 @@ POSITION CDXFchain::SetLoopFunc(const CDXFdata* pData, BOOL bReverse, BOOL bNext
 		ptDbg = ptDbg2;
 	}
 #endif
-	ASSERT( pos1 );
 
 	return pos1;
 }
@@ -1705,7 +1707,6 @@ tuple<CDXFworking*, CDXFdata*> CDXFshape::GetStartObject(void) const
 
 POSITION CDXFshape::GetFirstChainPosition(void)
 {
-	BOOL			bReverse = FALSE, bNext = FALSE;
 	float			dGap1, dGap2;
 	const CPointF	ptOrg( CDXFdata::ms_ptOrg );
 	CPointF			ptNow;
@@ -1713,6 +1714,8 @@ POSITION CDXFshape::GetFirstChainPosition(void)
 	CDXFdata*		pData;
 	CDXFdata*		pDataFix;
 	CDXFchain*		pChain = GetShapeChain();
+
+	m_dwFlags &= ~(DXFMAPFLG_REVERSE|DXFMAPFLG_NEXTPOS);
 
 	// 開始位置指示
 	tie(pWork, pData) = GetStartObject();
@@ -1748,22 +1751,22 @@ POSITION CDXFshape::GetFirstChainPosition(void)
 				// 開始ｵﾌﾞｼﾞｪｸﾄの終点の方が近い場合は、
 				// 次のｵﾌﾞｼﾞｪｸﾄから開始
 				if ( dGap1 > dGap2 )
-					bNext = TRUE;
+					m_dwFlags |= DXFMAPFLG_NEXTPOS;
 			}
 			else {
-				bReverse = TRUE;
+				m_dwFlags |= DXFMAPFLG_REVERSE;
 				// 開始ｵﾌﾞｼﾞｪｸﾄの終点は bReverse なので始点で判断
 				if ( dGap1 < dGap2 )
-					bNext = TRUE;
+					m_dwFlags |= DXFMAPFLG_NEXTPOS;
 			}
 		}
 		else {
 			if ( dGap1 > dGap2 )
-				bReverse = TRUE;
+				m_dwFlags |= DXFMAPFLG_REVERSE;
 		}
 	}
 
-	return pChain->SetLoopFunc(pDataFix, bReverse, bNext);
+	return pChain->SetLoopFunc(pDataFix, m_dwFlags&DXFMAPFLG_REVERSE, m_dwFlags&DXFMAPFLG_NEXTPOS);
 }
 
 BOOL CDXFshape::LinkObject(void)

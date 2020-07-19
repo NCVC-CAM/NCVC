@@ -14,7 +14,7 @@
 #include "NCListView.h"
 #include "ViewOption.h"
 #ifdef USE_KODATUNO
-#include "../Kodatuno/Describe_BODY.h"
+#include "Kodatuno/Describe_BODY.h"
 #endif
 
 #ifdef _DEBUG

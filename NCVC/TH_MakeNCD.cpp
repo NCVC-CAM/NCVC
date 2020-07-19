@@ -1736,8 +1736,8 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 	(const CDXFmap* pEuler, BOOL bEuler, BOOL bMakeShape, 
 		const CPointF& pt, const CDXFarray* pArray, CDXFlist& ltEuler)
 {
-	INT_PTR		i;
 	const INT_PTR	nLoop = pArray->GetSize();
+	INT_PTR		i;
 	CDXFdata*	pData;
 	CDXFarray*	pNextArray;
 	CPointF		ptNext;
@@ -1971,6 +1971,7 @@ BOOL MakeLoopShapeAdd(CDXFshape* pShape, CDXFdata* pData)
 BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* pData)
 {
 	POSITION	pos1, pos2;
+	BOOL		bReverse = FALSE, bNext = FALSE, bDirection = FALSE;
 
 	if ( pData ) {
 		// pShape が輪郭ｵﾌﾞｼﾞｪｸﾄを持たない場合
@@ -1978,10 +1979,25 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 		pos1 = pos2 = pShape->GetFirstChainPosition();
 	}
 	else {
+		CPointF	ptNow;
 		// pShape が輪郭ｵﾌﾞｼﾞｪｸﾄを持つ場合
-		BOOL	bReverse = FALSE;
+		CDXFworking*	pWork;
+		tie(pWork, pData) = pShape->GetDirectionObject();
+		if ( pData ) {
+			pShape->GetFirstChainPosition();	// pShape の方向指示等を処理
+			bReverse = pShape->GetShapeFlag() & DXFMAPFLG_REVERSE;
+			bNext    = pShape->GetShapeFlag() & DXFMAPFLG_NEXTPOS;
+			bDirection = TRUE;
+		}
+		tie(pWork, pData) = pShape->GetStartObject();
+		if ( pData ) {
+			ptNow = static_cast<CDXFworkingStart*>(pWork)->GetStartPoint() - CDXFdata::ms_ptOrg;
+		}
+		else {
+			ptNow = CDXFdata::ms_pData->GetEndCutterPoint();
+		}
+		pData = NULL;
 		float	dGap1, dGap2;
-		CPointF	ptNow(CDXFdata::ms_pData->GetEndCutterPoint());
 		if ( pChain->IsLoop() ) {
 			if ( pChain->GetCount() == 1 ) {
 				pData = pChain->GetHead();
@@ -1992,8 +2008,12 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 				pChain->GetSelectObjectFromShape(ptNow+CDXFdata::ms_ptOrg, NULL, &pData);
 				dGap1 = GAPCALC(pData->GetStartCutterPoint() - ptNow);
 				dGap2 = GAPCALC(pData->GetEndCutterPoint()   - ptNow);
-				if ( dGap1 > dGap2 )
-					bReverse = TRUE;
+				if ( dGap1 > dGap2 ) {
+					if ( bDirection )
+						bNext = bReverse ? FALSE : TRUE;
+					else
+						bReverse = TRUE;
+				}
 			}
 		}
 		else {
@@ -2009,7 +2029,7 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 		}
 		// -- 加工指示に伴う開始位置や方向等の設定
 		ASSERT(pData);
-		pos1 = pos2 = pChain->SetLoopFunc(pData, bReverse, FALSE);
+		pos1 = pos2 = pChain->SetLoopFunc(pData, bReverse, bNext);
 	}
 	ASSERT(pos1);
 
@@ -2033,6 +2053,11 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 			return MakeLoopDeepAdd();
 	}
 	else {
+		if ( bNext ) {
+			// pDataの更新
+			POSITION	pos = pos1;
+			pData = pChain->GetSeqData(pos);
+		}
 		// 切削ﾃﾞｰﾀまでの移動
 		if ( GetNum(MKNC_NUM_TOLERANCE) == 0 )
 			AddMoveGdataG0(pData);
@@ -3188,7 +3213,7 @@ void AddCustomMillCode(const CString& strFileName, const CDXFdata* pData)
 	CString	strBuf, strResult;
 	CMakeCustomCode_Mill	custom(pData);
 	string	str, strTok;
-	tokenizer<tag_separator>	tokens(str);
+	tokenizer<custom_separator>	tokens(str);
 
 	try {
 		CStdioFile	fp(strFileName,

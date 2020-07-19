@@ -48,11 +48,11 @@
 #define	USE_KODATUNO
 #ifdef USE_KODATUNO
 #ifdef _DEBUG
-#pragma comment(lib, "..\\debug\\kodatuno.lib")
+#pragma comment(lib, "Kodatuno_R3.4d.lib")
 #elif defined(_WIN64)
-#pragma comment(lib, "..\\release64\\kodatuno.lib")
+#pragma comment(lib, "Kodatuno_R3.4_x64.lib")
 #else
-#pragma comment(lib, "..\\release\\kodatuno.lib")
+#pragma comment(lib, "Kodatuno_R3.4.lib")
 #endif
 #endif
 

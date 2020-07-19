@@ -11,15 +11,18 @@ enum ENMOUSESTATE
 	MS_DRAG
 };
 
+// Ï³½ÄŞ×¯¸Ş‚ÌÅ’áˆÚ“®—Ê
+#define	MAGNIFY_RANGE	10		// Ëß¸¾Ù
+
 /////////////////////////////////////////////////////////////////////////////
 // CViewBase
 
 class CViewBase : public CView
 {
-	int			m_nBoth;		// —¼ÎŞÀİˆ—¶³İÀ
-								// ÅŒã‚É—£‚µ‚½ÎŞÀİ‚ÅReleaseCapture()‚·‚é‚½‚ß
+	int		m_nBoth;		// —¼ÎŞÀİˆ—¶³İÀ
+							// ÅŒã‚É—£‚µ‚½ÎŞÀİ‚ÅReleaseCapture()‚·‚é‚½‚ß
 	int		OnMouseButtonUp(ENMOUSESTATE, CPoint&);	// ÎŞÀİ‚ğ—£‚µ‚½‚Æ‚«‚Ì‹¤’Êˆ—
-	CSize	OnViewLens(CClientDC&);			// Šg‘åk¬‹¤’Êˆ—
+	CSize	OnViewLens(CClientDC&);		// Šg‘åk¬‹¤’Êˆ—
 
 protected:
 	CViewBase();
@@ -83,6 +86,3 @@ public:
 
 	DECLARE_MESSAGE_MAP()
 };
-
-// Ï³½ÄŞ×¯¸Ş‚ÌÅ’áˆÚ“®—Ê
-#define	MAGNIFY_RANGE	10		// Ëß¸¾Ù

@@ -1294,7 +1294,7 @@ void AddCustomLatheCode(const CString& strFileName)
 	CString	strBuf, strResult;
 	CMakeCustomCode_Lathe	custom;
 	string	str, strTok;
-	tokenizer<tag_separator>	tokens(str);
+	tokenizer<custom_separator>	tokens(str);
 
 	try {
 		CStdioFile	fp(strFileName,

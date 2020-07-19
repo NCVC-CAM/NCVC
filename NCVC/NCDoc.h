@@ -9,7 +9,7 @@
 #include "DXFMakeOption.h"
 #include "MCOption.h"
 #ifdef USE_KODATUNO
-#include "../Kodatuno/BODY.h"
+#include "Kodatuno/BODY.h"
 #endif
 
 enum NCCOMMENT		// g_szNCcomment[]
