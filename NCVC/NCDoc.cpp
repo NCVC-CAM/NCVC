@@ -22,6 +22,7 @@
 #ifdef USE_KODATUNO
 #include "Kodatuno/IGES_Parser.h"
 #include "Kodatuno/STL_Parser.h"
+#undef PI	// Use NCVC (MyTemplate.h)
 #endif
 
 #ifdef _DEBUG

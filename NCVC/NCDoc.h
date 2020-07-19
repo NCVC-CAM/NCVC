@@ -10,6 +10,7 @@
 #include "MCOption.h"
 #ifdef USE_KODATUNO
 #include "Kodatuno/BODY.h"
+#undef PI	// Use NCVC (MyTemplate.h)
 #endif
 
 enum NCCOMMENT		// g_szNCcomment[]

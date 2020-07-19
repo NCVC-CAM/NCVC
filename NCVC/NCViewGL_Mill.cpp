@@ -15,6 +15,7 @@
 #include "ViewOption.h"
 #ifdef USE_KODATUNO
 #include "Kodatuno/Describe_BODY.h"
+#undef PI	// Use NCVC (MyTemplate.h)
 #endif
 
 #ifdef _DEBUG
