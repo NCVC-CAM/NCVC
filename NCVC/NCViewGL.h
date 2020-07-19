@@ -4,6 +4,15 @@
 
 #pragma once
 
+//#define	USE_FBO
+//#define	USE_SHADER
+
+#ifdef USE_FBO
+#include "FrameBuffer.h"
+#endif
+#ifdef USE_SHADER
+#include "GLSL.h"
+#endif
 #include "NCdata.h"
 
 // TrackingMode
@@ -110,12 +119,18 @@ class CNCViewGL : public CView
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 
 	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
-#ifdef TRACE_WORKFILE
+#ifndef NO_TRACE_WORKFILE			// from NCViewTab.h
 	GLfloat*	m_pfDepthBottom;// WorkFile 2Pass
+#endif
+	GLubyte*	m_pbStencil;	// ｽﾃﾝｼﾙ
+#ifdef USE_FBO
+	CFrameBuffer*	m_pFBO;		// FrameBufferObject
+#endif
+#ifdef USE_SHADER
+	CGLSL			m_glsl;		// Shader Manager
 #endif
 	GLfloat*	m_pfXYZ;		// -- 変換されたﾜｰﾙﾄﾞ座標(temp area)
 	GLfloat*	m_pfNOR;		// -- 法線ﾍﾞｸﾄﾙ
-	GLubyte*	m_pbStencil;	// ｽﾃﾝｼﾙ
 	GLsizeiptr	m_nVBOsize;		// 頂点配列ｻｲｽﾞ
 	GLuint		m_nVertexID[2],	// 頂点配列と法線ﾍﾞｸﾄﾙ用
 				m_nTextureID,	// ﾃｸｽﾁｬ座標用

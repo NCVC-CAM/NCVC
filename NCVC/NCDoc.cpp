@@ -40,7 +40,8 @@ extern	LPCTSTR	g_szNCcomment[] = {
 	"Endmill", "Drill", "Tap", "Reamer",
 	"WorkRect", "WorkCylinder", "WorkFile",
 	"LatheView", "WireView",
-	"ToolPos"
+	"ToolPos",
+	"Inside", "EndInside", "EndDrill"
 };
 
 // Žw’è‚³‚ê‚½’l‚ÌÌ×¸Þ

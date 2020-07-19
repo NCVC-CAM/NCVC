@@ -29,19 +29,9 @@ inline void CNCdata::Constracter(LPNCARGV lpArgv)
 	m_nSpindle		= lpArgv->nSpindle;
 	m_dFeed			= (float)lpArgv->dFeed;
 	m_dEndmill		= (float)lpArgv->dEndmill;
-	switch ( lpArgv->nEndmillType ) {
-	case 1:
-		m_dwFlags = NCMIL_BALL;
-		break;
-	case 2:
-		m_dwFlags = NCMIL_CHAMFER;
-		break;
-	default:
-		m_dwFlags = 0;
-		break;
-	}
+	m_dwFlags		= NCFLG_ENDMILL & lpArgv->nEndmillType;
 	if ( lpArgv->bG98 )
-		m_dwFlags |= NCFLG_G98;
+		m_dwFlags |=  NCFLG_G98;
 	else
 		m_dwFlags &= ~NCFLG_G98;
 	ZEROCLR(m_dMove);

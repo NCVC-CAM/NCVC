@@ -732,7 +732,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.71",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 3.71a",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2018 MNCT K.Magara",IDC_STATIC,86,182,143,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1950,8 +1950,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,7,1,0
- PRODUCTVERSION 3,7,1,0
+ FILEVERSION 3,7,1,1
+ PRODUCTVERSION 3,7,1,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1969,14 +1969,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.7.1.0"
+            VALUE "FileVersion", "3.7.1.1"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2018 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.7.1.0"
+            VALUE "ProductVersion", "3.7.1.1"
             VALUE "SpecialBuild", "Boost C++ 1.68, GLEW 2.00, Kodatuno R3.2kai"
         END
     END
@@ -3148,6 +3148,7 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_ERR_LATHE_SHAPE     "有効な図形ﾃﾞｰﾀが無いか連続線になっていないようです。\n旋盤ﾃﾞｰﾀを生成できません。"
     IDS_ERR_MAKEDXFLAYER    "少なくとも１つ以上のレイヤを指定してください"
     IDS_ERR_MAKEMULTILAYER  "切削対象ﾚｲﾔを１つ以上指定してください"
     IDS_ERR_FAILMULTILAYER  "個別出力設定の以下のﾚｲﾔ\n%s\nには生成ﾃﾞｰﾀが存在しませんでした。切削条件ﾌｧｲﾙ等を確認してください"
@@ -3375,6 +3376,7 @@ BEGIN
     IDS_ERR_UNDERZERO       "指定の項目にﾏｲﾅｽ(またはｾﾞﾛ)値を設定できません"
     IDS_ERR_SETTING         "ﾃﾞｰﾀを設定してください"
     IDS_ERR_REGEX           "入力した正規表現はライブラリ側で拒否されました。変更してください。"
+    IDS_ERR_GLSL            "OpenGLシェーダの準備でエラーが発生しました。Line=%d\nMsg=%s"
 END
 
 STRINGTABLE

@@ -46,13 +46,15 @@ typedef	_G68ROUND*	_LPG68ROUND;
 typedef	_TAPER*		_LPTAPER;
 
 // NCﾃﾞｰﾀ状態ﾌﾗｸﾞ
-#define	NCMIL_SQUARE	0x0000
-#define	NCMIL_BALL		0x0001
-#define	NCMIL_CHAMFER	0x0002
-#define	NCFLG_ENDMILL	0x0003	// 00:Square, 01:Ball, 10:Chamfering
-#define	NCFLG_G98		0x0004	// G98,G99（旋盤ﾓｰﾄﾞで使用）
-#define	NCFLG_G02G03	0x0008	// 0:G02, 1:G03
-#define	NCMIL_MAXTYPE	NCMIL_CHAMFER
+#define	NCMIL_SQUARE		0x00000000
+#define	NCMIL_BALL			0x00000001
+#define	NCMIL_CHAMFER		0x00000002
+#define	NCMIL_LATHEDRILL	0x00000003
+#define	NCFLG_ENDMILL		0x00000003	// 00:Square, 01:Ball, 10:Chamfering, 11:LatheDrill
+#define	NCMIL_MAXTYPE		NCMIL_CHAMFER
+#define	NCFLG_G02G03		0x00000004	// 0:G02, 1:G03
+#define	NCFLG_G98			0x00000008	// G98,G99（旋盤ﾓｰﾄﾞで使用）
+#define	NCFLG_LATHEINSIDE	0x00010000	// 中ぐり（旋盤ﾓｰﾄﾞで使用 径補正と同じ上位ﾋﾞｯﾄ使用）
 
 // 始点終点指示
 enum	ENPOINTORDER

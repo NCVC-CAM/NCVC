@@ -13,7 +13,7 @@ class CNCViewTab;
 class CNCListView;
 
 // IGES/STLのときトレースするかどうか
-//#define	TRACE_WORKFILE		1
+#define	NO_TRACE_WORKFILE
 
 /////////////////////////////////////////////////////////////////////////////
 // CTraceThread スレッド

@@ -10,7 +10,7 @@
 #include "resource.h"       // メイン シンボル
 
 #ifdef _DEBUG
-#define	_DEBUG_FILEOPEN		// ﾌｧｲﾙを開くときの追跡
+//#define	_DEBUG_FILEOPEN		// ﾌｧｲﾙを開くときの追跡
 //#define _DEBUG_CMDMSG		// ｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞ
 #endif
 

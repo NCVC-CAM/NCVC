@@ -73,6 +73,9 @@ static	inline	void	SetProgressPos(INT_PTR n)
 	g_pParent->m_ctReadProgress.SetPos((int)n);
 }
 
+// •À‚×‘Ö‚¦•â•ŠÖ”
+static	int		ShapeSortFunc(CDXFshape*, CDXFshape*);	// Œ`ó”FŽ¯ÃÞ°À‚Ì•À‚×‘Ö‚¦
+
 // »ÌÞ½Ú¯ÄÞŠÖ”
 static	CCriticalSection	g_csMakeAfter;	// MakeLathe_AfterThread()½Ú¯ÄÞÛ¯¸µÌÞ¼Þª¸Ä
 static	UINT	MakeLathe_AfterThread(LPVOID);	// ŒãŽn––½Ú¯ÄÞ
@@ -315,7 +318,13 @@ BOOL CreateShapeThread(void)
 		}
 	}
 
-	return !g_obShape.IsEmpty();
+	// }Œ`W‡‚ð‚P‚Â‚ÉŒÀ’è
+	if ( g_obShape.GetSize() != 1 ) {
+		AfxMessageBox(IDS_ERR_LATHE_SHAPE, MB_OK|MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 void InitialShapeData(void)
@@ -342,6 +351,8 @@ void InitialShapeData(void)
 		// ‡˜‚ð³‚µ‚­‚µ‚Ä‚©‚çŒ´“_’²®
 		pChain->OrgTuning();
 	}
+	// }Œ`W‡‚Ì•À‚×‘Ö‚¦
+//	g_obShape.Sort( ShapeSortFunc );	// }Œ`W‡‚ð‚P‚Â‚ÉŒÀ’è‚µ‚½‚Ì‚Å•s—v
 }
 
 BOOL CreateOutsidePitch(void)
@@ -883,6 +894,21 @@ void AddCustomLatheCode(const CString& strFileName)
 		e->Delete();
 		// ‚±‚Ì´×°‚Í³íØÀ°Ý(Œx‚Ì‚Ý)
 	}
+}
+
+int ShapeSortFunc(CDXFshape* pFirst, CDXFshape* pSecond)
+{
+	int		nResult;
+	CPointF	pt1( pFirst->GetShapeChain()->GetHead()->GetNativePoint(0) ),
+			pt2( pSecond->GetShapeChain()->GetHead()->GetNativePoint(0) );
+	float	x = pt1.x - pt2.x;
+	if ( x == 0.0f )
+		nResult = 0;
+	else if ( x > 0.0f )
+		nResult = -1;
+	else
+		nResult = 1;
+	return nResult;
 }
 
 //////////////////////////////////////////////////////////////////////

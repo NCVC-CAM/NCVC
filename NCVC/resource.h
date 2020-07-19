@@ -762,6 +762,7 @@
 #define IDS_ERR_UNDERZERO               21012
 #define IDS_ERR_SETTING                 21013
 #define IDS_ERR_REGEX                   21014
+#define IDS_ERR_GLSL                    21015
 #define IDS_ERR_CAMDATA                 21050
 #define IDS_ERR_CAMVER                  21051
 #define IDS_ERR_CAMOLD                  21052
@@ -776,6 +777,7 @@
 #define IDS_ERR_FILEREAD                21101
 #define IDS_ERR_SUBPRO                  21102
 #define IDS_ERR_ADDITEM                 21105
+#define IDS_ERR_LATHE_SHAPE             21187
 #define IDS_ERR_MAKEDXFLAYER            21188
 #define IDS_ERR_MAKEMULTILAYER          21189
 #define IDS_ERR_FAILMULTILAYER          21190

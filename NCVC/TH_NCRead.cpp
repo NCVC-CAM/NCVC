@@ -261,10 +261,10 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 {
 	qi::rule<Iterator, Skipper>		ruleTop, rrMM,
 		ruleOrder, ruleValue1, ruleValue2,
-		rs1, rs2, rs3, rs4, rs5, rs6, rs7,
-		rv1, rv2, rv3, rv4, rv5, rv6, rv7,
-		r11, r12, r13,
-		r41, r42;
+		rs01, rs02, rs03, rs04, rs05, rs06, rs07, //rs08, rs09,
+		rv01, rv02, rv03, rv04, rv05, rv06, rv07, //rv08, rv09,
+		r011, r012, r013,
+		r041, r042;
 
 	CCommentParser() : CCommentParser::base_type(ruleTop) {
 		using sw::no_case;
@@ -276,43 +276,49 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 		ruleTop = omit[*(char_-'(')] >> lit('(') >>
 						+( omit[*(char_-ruleOrder)] >> ruleValue1|ruleValue2 ) >>
 					omit[*(char_-')')] >> lit(')');
-		ruleOrder = rs1|rs2|rs3|rs4|rs5|rs6|rs7;
-		ruleValue1 = rs1>>rv1|rs2>>rv2|rs3>>rv3|rs4>>rv4;	// １つにすると
-		ruleValue2 = rs5>>rv5|rs6>>rv6|rs7>>rv7;			// 名前が長すぎるｴﾗｰ
+		ruleOrder = rs01|rs02|rs03|rs04|rs05|rs06|rs07;//|rs08|rs09;
+		ruleValue1 = rs01>>rv01|rs02>>rv02|rs03>>rv03|rs04>>rv04;	// １つにすると
+		ruleValue2 = rs05>>rv05|rs06>>rv06|rs07>>rv07;//|rv08|rv09;	// 名前が長すぎるｴﾗｰ
 		//
 		// Endmill
-		rs1 = no_case[sw::string(ENDMILL_S)|DRILL_S|TAP_S|REAMER_S] >> lit('=');
-		rv1 = r11|r12|r13;
-		r11 = float_[_SetEndmill()] >> rrMM >>
+		rs01 = no_case[sw::string(ENDMILL_S)|DRILL_S|TAP_S|REAMER_S] >> lit('=');
+		rv01 = r011|r012|r013;
+		r011 = float_[_SetEndmill()] >> rrMM >>
 						-(lit(',') >> qi::digit[_SetEndmillType()]);
-		r12 = (char_('R')|'r') >> float_[_SetBallMill()] >>		// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
+		r012 = (char_('R')|'r') >> float_[_SetBallMill()] >>		// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
 						rrMM;
-		r13 = (char_('C')|'c') >> float_[_SetChamferMill()] >>	// 面取りﾐﾙ表記
+		r013 = (char_('C')|'c') >> float_[_SetChamferMill()] >>	// 面取りﾐﾙ表記
 						rrMM;
 		// WorkRect
-		rs2 = no_case[WORKRECT_S] >> lit('=');
-		rv2 = float_[_SetWorkRect()] % ',';
+		rs02 = no_case[WORKRECT_S] >> lit('=');
+		rv02 = float_[_SetWorkRect()] % ',';
 		// WorkCylinder
-		rs3 = no_case[WORKCYLINDER_S] >> lit('=');
-		rv3 = float_[_SetWorkCylinder()] % ',';
+		rs03 = no_case[WORKCYLINDER_S] >> lit('=');
+		rv03 = float_[_SetWorkCylinder()] % ',';
 		// WorkFile
-		rs4 = no_case[WORKFILE_S] >> lit('=');
-		rv4 = r41|r42;
-		r41 = lit('\"') >> qi::lexeme[ qi::as_string[+(char_ - '\"')][_SetWorkFile()] ] >> lit('\"') >>
+		rs04 = no_case[WORKFILE_S] >> lit('=');
+		rv04 = r041|r042;
+		r041 = lit('\"') >> qi::lexeme[ qi::as_string[+(char_ - '\"')][_SetWorkFile()] ] >> lit('\"') >>
 				-lit(',') >> -float_[_WorkPosX()] >>
 					-(lit(',') >> -float_[_WorkPosY()] >>
 						-(lit(',') >> -float_[_WorkPosZ()]) );
-		r42 = qi::lexeme[ qi::as_string[+(char_ - ')')][_SetWorkFile()] ];
+		r042 = qi::lexeme[ qi::as_string[+(char_ - ')')][_SetWorkFile()] ];
 		// ViewMode
-		rs5 = no_case[LATHEVIEW_S] >> lit('=');
-		rv5 = float_[_SetLatheView()] % ',';
-		rs6 = no_case[WIREVIEW_S]  >> lit('=');
-		rv6 = float_[_SetWireView()];
+		rs05 = no_case[LATHEVIEW_S] >> lit('=');
+		rv05 = float_[_SetLatheView()] % ',';
+		rs06 = no_case[WIREVIEW_S]  >> lit('=');
+		rv06 = float_[_SetWireView()];
 		// ToolPos
-		rs7 = no_case[TOOLPOS_S] >> lit('=');
-		rv7 = -float_[_ToolPosX()] >>
+		rs07 = no_case[TOOLPOS_S] >> lit('=');
+		rv07 = -float_[_ToolPosX()] >>
 				-(lit(',') >> -float_[_ToolPosY()] >>
 					-(lit(',') >> -float_[_ToolPosZ()]) );
+		// Inside
+//		rs08 = no_case[sw::string(INSIDE_S)];
+//		rv08 = no_case[sw::string(INSIDE_S)][_SetLatheInside()];
+		// EndInside/EndDrill
+//		rs09 = no_case[sw::string(ENDINSIDE_S)|sw::string(ENDDRILL_S)];
+//		rv09 = no_case[sw::string(ENDINSIDE_S)|sw::string(ENDDRILL_S)][_EndLatheInside()];
 		// "mm"
 		rrMM = -no_case["mm"];	// LoadString(IDCV_MILI)使えない
 	}
@@ -321,6 +327,11 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 	struct	_SetEndmill {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.dEndmill = d / 2.0;
+			if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
+				g_pDoc->SetDocFlag(NCDOC_LATHE_INSIDE);
+				g_ncArgv.nEndmillType = NCMIL_LATHEDRILL;
+				g_ncArgv.nc.dwValFlags |= NCFLG_LATHEINSIDE;
+			}
 #ifdef _DEBUG_GSPIRIT
 			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("_SetEndmill()", DBG_MAGENTA);
@@ -478,6 +489,20 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 				dbg.printf("z=%f", d);
 			}
 #endif
+		}
+	};
+	// 旋盤中ぐり
+	struct _SetLatheInside {
+		void operator()(const string& s, qi::unused_type, qi::unused_type) const {
+			if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
+				g_pDoc->SetDocFlag(NCDOC_LATHE_INSIDE);
+				g_ncArgv.nc.dwValFlags |= NCFLG_LATHEINSIDE;
+			}
+		}
+	};
+	struct _EndLatheInside {
+		void operator()(const string& s, qi::unused_type, qi::unused_type) const {
+			g_ncArgv.nc.dwValFlags &= ~NCFLG_LATHEINSIDE;
 		}
 	};
 };

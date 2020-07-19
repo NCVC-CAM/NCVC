@@ -30,7 +30,7 @@ enum DXFDOCFLG {
 	DXFDOC_SHAPE,		// 形状処理を行ったか
 	DXFDOC_LATHE,		// 旋盤用の原点(ﾜｰｸ径と端面)を読み込んだか
 	DXFDOC_WIRE,		// ﾜｲﾔ加工機用の生成が可能かどうか
-		DXFDOC_FLGNUM		// ﾌﾗｸﾞの数[7]
+		DXFDOC_FLGNUM		// ﾌﾗｸﾞの数[8]
 };
 
 // CNCDoc ﾌﾗｸﾞ
@@ -47,8 +47,9 @@ enum NCDOCFLG {
 	NCDOC_WRKRECT,		// ﾜｰｸ矩形の描画
 	NCDOC_THUMBNAIL,	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
 	NCDOC_LATHE,		// NC旋盤ﾓｰﾄﾞ
+		NCDOC_LATHE_INSIDE,	// 中ぐり加工アリ
 	NCDOC_WIRE,			// ﾜｲﾔ加工ﾓｰﾄﾞ
-		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[13]
+		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[14]
 };
 #define	DOCFLG_NUM	NCDOC_FLGNUM	// 大きい方
 

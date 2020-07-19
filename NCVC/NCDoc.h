@@ -15,7 +15,8 @@ enum NCCOMMENT		// g_szNCcomment[]
 	ENDMILL = 0, DRILL, TAP, REAMER, 
 	WORKRECT, WORKCYLINDER, WORKFILE,
 	LATHEVIEW, WIREVIEW,
-	TOOLPOS
+	TOOLPOS,
+	LATHEINSIDE, ENDINSIDE, ENDDRILL
 };
 #define	ENDMILL_S		g_szNCcomment[ENDMILL]
 #define	DRILL_S			g_szNCcomment[DRILL]
@@ -27,6 +28,9 @@ enum NCCOMMENT		// g_szNCcomment[]
 #define	LATHEVIEW_S		g_szNCcomment[LATHEVIEW]
 #define	WIREVIEW_S		g_szNCcomment[WIREVIEW]
 #define	TOOLPOS_S		g_szNCcomment[TOOLPOS]
+#define	INSIDE_S		g_szNCcomment[LATHEINSIDE]
+#define	ENDINSIDE_S		g_szNCcomment[ENDINSIDE]
+#define	ENDDRILL_S		g_szNCcomment[ENDDRILL]
 
 // CNCDoc::DataOperation() ÇÃëÄçÏï˚ñ@
 enum ENNCOPERATION

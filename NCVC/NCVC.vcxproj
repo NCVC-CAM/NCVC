@@ -422,6 +422,8 @@
     <ClCompile Include="ExecOption.cpp" />
     <ClCompile Include="ExecSetupDlg.cpp" />
     <ClCompile Include="ExtensionDlg.cpp" />
+    <ClCompile Include="FrameBuffer.cpp" />
+    <ClCompile Include="GLSL.cpp" />
     <ClCompile Include="Layer.cpp" />
     <ClCompile Include="LayerDlg.cpp" />
     <ClCompile Include="MainFrm.cpp" />
@@ -554,6 +556,8 @@
     <ClInclude Include="ExecOption.h" />
     <ClInclude Include="ExecSetupDlg.h" />
     <ClInclude Include="ExtensionDlg.h" />
+    <ClInclude Include="FrameBuffer.h" />
+    <ClInclude Include="GLSL.h" />
     <ClInclude Include="Layer.h" />
     <ClInclude Include="LayerDlg.h" />
     <ClInclude Include="MainFrm.h" />
