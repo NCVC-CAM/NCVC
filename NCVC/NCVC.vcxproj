@@ -102,8 +102,8 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\boost;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2015\lib;C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath);C:\Users\magara\Documents\Visual Studio 2015\boost;C:\Users\magara\Documents\Visual Studio 2015\include</IncludePath>
+    <LibraryPath>$(LibraryPath);C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib;C:\Users\magara\Documents\Visual Studio 2015\lib</LibraryPath>
     <CodeAnalysisRuleSet>C:\Program Files (x86)\Microsoft Visual Studio 14.0\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
@@ -401,6 +401,9 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="3dModelChild.cpp" />
+    <ClCompile Include="3dModelDoc.cpp" />
+    <ClCompile Include="3dModelView.cpp" />
     <ClCompile Include="MyTemplate.cpp" />
     <ClCompile Include="AboutDlg.cpp" />
     <ClCompile Include="AddinDlg.cpp" />
@@ -542,6 +545,9 @@
     <ClCompile Include="ViewSetup6.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="3dModelChild.h" />
+    <ClInclude Include="3dModelDoc.h" />
+    <ClInclude Include="3dModelView.h" />
     <ClInclude Include="MyTemplate.h" />
     <ClInclude Include="AboutDlg.h" />
     <ClInclude Include="AddinDlg.h" />
