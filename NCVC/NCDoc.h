@@ -10,7 +10,8 @@
 #include "MCOption.h"
 #include "../Kodatuno/BODY.h"
 
-enum NCCOMMENT {		// g_szNCcomment[]
+enum NCCOMMENT		// g_szNCcomment[]
+{
 	ENDMILL = 0, DRILL, TAP, REAMER, 
 	WORKRECT, WORKCYLINDER, WORKFILE,
 	LATHEVIEW, WIREVIEW,
@@ -28,7 +29,8 @@ enum NCCOMMENT {		// g_szNCcomment[]
 #define	TOOLPOS_S		g_szNCcomment[TOOLPOS]
 
 // CNCDoc::DataOperation() ÇÃëÄçÏï˚ñ@
-enum ENNCOPERATION {
+enum ENNCOPERATION
+{
 	NCADD, NCINS, NCMOD
 };
 

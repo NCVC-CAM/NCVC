@@ -219,8 +219,7 @@ static inline BOOL _SetDxfArgv(LPDXFPARGV lpPoint)
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);		// OCS -> WCS À•W•ÏŠ·
-		lpPoint->c.x = pt.x;
-		lpPoint->c.y = pt.y;
+		lpPoint->c = pt;
 #ifdef _DEBUG_ARGV
 		dbg.printf("      cx=%f cy=%f", lpPoint->c.x, lpPoint->c.y);
 #endif
@@ -247,10 +246,8 @@ static inline BOOL _SetDxfArgv(LPDXFLARGV lpLine)
 			_ArbitraryAxis(pts);
 			_ArbitraryAxis(pte);
 		}
-		lpLine->s.x = pts.x;
-		lpLine->s.y = pts.y;
-		lpLine->e.x = pte.x;
-		lpLine->e.y = pte.y;
+		lpLine->s = pts;
+		lpLine->e = pte;
 #ifdef _DEBUG_ARGV
 		dbg.printf("     sx=%f sy=%f ex=%f ey=%f", 
 			lpLine->s.x, lpLine->s.y, lpLine->e.x, lpLine->e.y);
@@ -275,9 +272,8 @@ static inline BOOL _SetDxfArgv(LPDXFCARGV lpCircle)
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);
-		lpCircle->c.x = pt.x;
-		lpCircle->c.y = pt.y;
-		lpCircle->r   = g_dValue[VALUE40];
+		lpCircle->c = pt;
+		lpCircle->r = g_dValue[VALUE40];
 #ifdef _DEBUG_ARGV
 		dbg.printf("       cx=%f cy=%f r=%f",
 			lpCircle->c.x, lpCircle->c.y, lpCircle->r);
@@ -302,9 +298,8 @@ static inline BOOL _SetDxfArgv(LPDXFAARGV lpArc)
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);
-		lpArc->c.x = pt.x;
-		lpArc->c.y = pt.y;
-		lpArc->r   = g_dValue[VALUE40];
+		lpArc->c = pt;
+		lpArc->r = g_dValue[VALUE40];
 		lpArc->sq  = g_dValue[VALUE50];
 		lpArc->eq  = g_dValue[VALUE51];
 #ifdef _DEBUG_ARGV
@@ -334,14 +329,12 @@ static inline BOOL _SetDxfArgv(LPDXFEARGV lpEllipse)
 			_ArbitraryAxis(ptc);
 			_ArbitraryAxis(ptl);
 		}
-		lpEllipse->c.x		= ptc.x;
-		lpEllipse->c.y		= ptc.y;
-		lpEllipse->l.x		= ptl.x;
-		lpEllipse->l.y		= ptl.y;
-		lpEllipse->s		= g_dValue[VALUE40];
-		lpEllipse->sq		= g_dValue[VALUE41];
-		lpEllipse->eq		= g_dValue[VALUE42];
-		lpEllipse->bRound	= TRUE;		// Default
+		lpEllipse->c = ptc;
+		lpEllipse->l = ptl;
+		lpEllipse->s = g_dValue[VALUE40];
+		lpEllipse->sq = g_dValue[VALUE41];
+		lpEllipse->eq = g_dValue[VALUE42];
+		lpEllipse->bRound = TRUE;		// Default
 #ifdef _DEBUG_ARGV
 		dbg.printf("        cx=%f cy=%f lx=%f ly=%f s=%f", 
 			lpEllipse->c.x, lpEllipse->c.y, lpEllipse->l.x, lpEllipse->l.y, lpEllipse->s);
@@ -369,8 +362,7 @@ static inline BOOL _SetDxfArgv(LPDXFTARGV lpText)
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);		// OCS -> WCS À•W•ÏŠ·
 		lpText->strValue = g_strValue;
-		lpText->c.x = pt.x;
-		lpText->c.y = pt.y;
+		lpText->c = pt;
 #ifdef _DEBUG_ARGV
 		dbg.printf("      cx=%f cy=%f", lpText->c.x, lpText->c.y);
 		dbg.printf("      Value=%s", lpText->strValue);
@@ -391,8 +383,7 @@ static inline BOOL _SetBlockArgv(LPDXFBLOCK lpBlock)
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 		if ( g_dwValueFlg & VALFLG_PLANE )
 			_ArbitraryAxis(pt);		// OCS -> WCS À•W•ÏŠ·
-		lpBlock->ptOrg.x = pt.x;
-		lpBlock->ptOrg.y = pt.y;
+		lpBlock->ptOrg = pt;
 		lpBlock->dwBlockFlg = 0;
 		if ( g_dwValueFlg & VALFLG41 ) {
 			lpBlock->dMagni[NCA_X] = g_dValue[VALUE41];

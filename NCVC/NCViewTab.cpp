@@ -352,7 +352,14 @@ void CNCViewTab::OnTraceSpeed(UINT nID)
 
 void CNCViewTab::OnUpdateTraceRun(CCmdUI* pCmdUI) 
 {
+#ifdef TRACE_WORKFILE
 	pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_RUN );
+#else
+	if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) )
+		pCmdUI->Enable(FALSE);	// ‚ ‚Æ‚à‚¤ˆê•à‚È‚ñ‚¾‚¯‚Ç...
+	else
+		pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_RUN );
+#endif
 }
 
 void CNCViewTab::OnTraceRun() 
@@ -373,7 +380,14 @@ void CNCViewTab::OnTraceRun()
 
 void CNCViewTab::OnUpdateTracePause(CCmdUI* pCmdUI) 
 {
+#ifdef TRACE_WORKFILE
 	pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_PAUSE );
+#else
+	if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) )
+		pCmdUI->Enable(FALSE);
+	else
+		pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_PAUSE );
+#endif
 }
 
 void CNCViewTab::OnTracePause() 

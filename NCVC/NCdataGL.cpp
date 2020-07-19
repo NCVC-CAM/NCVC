@@ -421,19 +421,19 @@ BOOL CNCline::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 			bd.rs = 0;
 			bd.re = 64;
 			vBD.push_back(bd);
-		}
-		// 終点の円錐座標と描画
-		SetChamfermillOrg(m_ptValE, bd.vpt);
-		if ( bStartDraw && GetValFlags()&(NCD_X|NCD_Y) ) {
+			// 終点の分
 			bd.vel.assign(GLFanElement[1], GLFanElement[1]+SIZEOF(GLFanElement[1]));
 			bd.rs = 65;
 			bd.re = 129;
 		}
 		else {
+			// 終点の分
 			bd.vel.assign(GLFanElement[0], GLFanElement[0]+SIZEOF(GLFanElement[0]));
 			bd.rs = 0;
 			bd.re = 64;
 		}
+		// 終点の円錐座標と描画
+		SetChamfermillOrg(m_ptValE, bd.vpt);
 		vBD.push_back(bd);
 		// 軌跡の描画
 		if ( GetValFlags() & (NCD_X|NCD_Y) ) {

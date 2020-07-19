@@ -12,13 +12,81 @@ enum ENTRACKINGMODE
 	TM_NONE, TM_SPIN, TM_PAN
 };
 
+// Range Parameter
+struct RANGEPARAM
+{
+	INT_PTR		s, e;
+	RANGEPARAM(INT_PTR ss, INT_PTR ee) {
+		s = ss;
+		e = ee;
+	}
+};
+
+// CreateBoxel_fromIGES() argument
+typedef	boost::variant<CNCdata*, RANGEPARAM>	CREATEBOXEL_IGESPARAM;
+
 // GetClipDepthMill() argument
 enum ENCLIPDEPTH
 {
 	DP_NoStencil, DP_BottomStencil, DP_TopStencil
 };
 
-//
+// GetClipDepthMill_hoge() argument
+struct CLIPDEPTHMILL
+{
+	GLdouble	wx, wy, wz;
+	size_t		tp, bm;
+};
+typedef void (CNCViewGL::*PFN_GETCLIPDEPTHMILL)(const CLIPDEPTHMILL&);
+
+// 底面描画座標生成ｽﾚｯﾄﾞ用
+struct CREATEBOTTOMVERTEXPARAM
+{
+#ifdef _DEBUG
+	int		dbgThread;		// ｽﾚｯﾄﾞID
+#endif
+	CEvent		evStart,
+				evEnd;
+	BOOL		bThread,
+				bResult;
+	CNCDoc*		pDoc;
+	size_t		s, e;
+	CVBtmDraw	vBD;		// from NCdata.h
+	// CEvent を手動ｲﾍﾞﾝﾄにするためのｺﾝｽﾄﾗｸﾀ
+	CREATEBOTTOMVERTEXPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE),
+		bThread(TRUE), bResult(TRUE)
+	{}
+};
+typedef	CREATEBOTTOMVERTEXPARAM*	LPCREATEBOTTOMVERTEXPARAM ;
+
+// 頂点配列生成ｽﾚｯﾄﾞ用
+struct CREATEELEMENTPARAM
+{
+#ifdef _DEBUG
+	int		dbgThread;
+#endif
+	CEvent		evStart,
+				evEnd;
+	const GLfloat*	pfXYZ;
+	GLfloat*		pfNOR;
+	const GLubyte*	pbStl;
+	BOOL	bThread,
+			bResult;
+	int		cx, cy,
+			cs, ce;
+	GLfloat	h, l;
+	// 頂点配列ｲﾝﾃﾞｯｸｽ(可変長2次元配列)
+	std::vector<CVelement>	vvElementCut,	// from NCdata.h
+							vvElementWrk;
+	// CEvent を手動ｲﾍﾞﾝﾄにするためのｺﾝｽﾄﾗｸﾀ
+	CREATEELEMENTPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE),
+		bThread(TRUE), bResult(TRUE)
+	{}
+};
+typedef	CREATEELEMENTPARAM*		LPCREATEELEMENTPARAM;
+
+/////////////////////////////////////////////////////////////////////////////
+
 class CNCViewGL : public CView
 {
 	CString		m_strGuide;
@@ -42,9 +110,12 @@ class CNCViewGL : public CView
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 
 	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
+#ifdef TRACE_WORKFILE
+	GLfloat*	m_pfDepthBottom;// WorkFile 2Pass
+#endif
 	GLfloat*	m_pfXYZ;		// -- 変換されたﾜｰﾙﾄﾞ座標(temp area)
 	GLfloat*	m_pfNOR;		// -- 法線ﾍﾞｸﾄﾙ
-	GLbyte*		m_pbStencil;	// ｽﾃﾝｼﾙ
+	GLubyte*	m_pbStencil;	// ｽﾃﾝｼﾙ
 	GLsizeiptr	m_nVBOsize;		// 頂点配列ｻｲｽﾞ
 	GLuint		m_nVertexID[2],	// 頂点配列と法線ﾍﾞｸﾄﾙ用
 				m_nTextureID,	// ﾃｸｽﾁｬ座標用
@@ -55,6 +126,12 @@ class CNCViewGL : public CView
 				m_vElementCut;	// 切削面用
 	WIREDRAW	m_WireDraw;		// ﾜｲﾔ加工機用
 
+	struct {	// CreateElementThread() from CreateVBOMill()
+		DWORD	m_nCeProc;
+		HANDLE*	m_pCeHandle;
+		LPCREATEELEMENTPARAM	m_pCeParam;
+	};
+
 	ENTRACKINGMODE	m_enTrackingMode;
 	GLdouble		m_objXform[4][4],
 					m_objXformBk[4][4];	// ﾎﾞｸｾﾙ処理時のﾊﾞｯｸｱｯﾌﾟ
@@ -64,17 +141,17 @@ class CNCViewGL : public CView
 	void	UpdateViewOption(void);
 	void	CreateDisplayList(void);
 	BOOL	CreateBoxel(BOOL = FALSE);
-	BOOL	CreateBoxel_fromIGES(void);
+	BOOL	CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* = NULL);
 	BOOL	CreateLathe(BOOL = FALSE);
 	BOOL	CreateWire(void);
 	BOOL	CreateBottomFaceThread(BOOL, int);
-	BOOL	GetClipDepthMill(BOOL, ENCLIPDEPTH = DP_NoStencil);
-	void	GetClipDepthMill_All(GLdouble, GLdouble, GLdouble, size_t, size_t);
-	void	GetClipDepthMill_Zonly(GLdouble, GLdouble, GLdouble, size_t, size_t);
-	void	GetClipDepthMill_BottomStencil(GLdouble, GLdouble, GLdouble, size_t, size_t);
-	void	GetClipDepthMill_TopStencil(GLdouble, GLdouble, GLdouble, size_t, size_t);
-	BOOL	GetClipDepthCylinder(BOOL);
-	BOOL	GetClipDepthLathe(BOOL);
+	BOOL	GetClipDepthMill(ENCLIPDEPTH = DP_NoStencil);
+	void	GetClipDepthMill_All(const CLIPDEPTHMILL&);
+	void	GetClipDepthMill_Zonly(const CLIPDEPTHMILL&);
+	void	GetClipDepthMill_BottomStencil(const CLIPDEPTHMILL&);
+	void	GetClipDepthMill_TopStencil(const CLIPDEPTHMILL&);
+	BOOL	GetClipDepthCylinder(void);
+	BOOL	GetClipDepthLathe(void);
 	BOOL	CreateVBOMill(void);
 	BOOL	CreateVBOLathe(void);
 	BOOL	ReadTexture(LPCTSTR);
@@ -86,6 +163,7 @@ class CNCViewGL : public CView
 	void	ClearTexture(void);
 	void	InitialBoxel(void);
 	void	FinalBoxel(void);
+	void	EndOfCreateElementThread(void);
 
 	void	RenderBack(void);
 	void	RenderAxis(void);
@@ -99,6 +177,10 @@ class CNCViewGL : public CView
 	void	DoScale(int);
 	void	DoRotation(float);
 	void	SetupViewingTransform(void);
+#ifdef _DEBUG
+	void	DumpDepth(void);
+	void	DumpStencil(void);
+#endif
 
 protected:
 	CNCViewGL();
@@ -154,8 +236,6 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 };
-
-typedef void (CNCViewGL::*PFN_GETCLIPDEPTHMILL)(GLdouble, GLdouble, GLdouble, size_t, size_t);
 
 /////////////////////////////////////////////////////////////////////////////
 
