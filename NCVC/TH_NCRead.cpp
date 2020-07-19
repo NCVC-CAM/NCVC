@@ -273,7 +273,7 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 		ruleOrder, ruleValue1, ruleValue2,
 		rs01, rs02, rs03, rs04, rs05, rs06, rs07, rs08, rs09, rs10, rs11, rs12,
 		rv01, rv02, rv03, rv04, rv05, rv06, rv07, rv08, rv09, rv10, rv11, rv12,
-		r011, r012, r013,
+		r011, r012, r013, r031, r032, r041, r042,
 		r051, r052,	r061, r062;
 
 	CCommentParser() : CCommentParser::base_type(ruleTop) {
@@ -282,6 +282,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 		using qi::float_;
 		using qi::omit;
 		using qi::lit;
+		using qi::lexeme;
+		using qi::as_string;
 
 		ruleTop = omit[*(char_-'(')] >> lit('(') >>
 						+( omit[*(char_-ruleOrder)] >> ruleValue1|ruleValue2 ) >>
@@ -304,23 +306,27 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 		rv02 = float_[_SetDrill()] >> rrMM;
 		// WorkRect
 		rs03 = no_case[WORKRECT_S] >> lit('=');
-		rv03 = float_[_SetWorkRect()] % ',';
+		rv03 = r031|r032;
+		r031 = qi::raw[float_ >> (char_('X')|'x') >> float_ >> (char_('T')|'t') >> float_][_SetWorkRectStr()];
+		r032 = float_[_SetWorkRect()] % ',';
 		// WorkCylinder
 		rs04 = no_case[WORKCYLINDER_S] >> lit('=');
-		rv04 = float_[_SetWorkCylinder()] % ',';
+		rv04 = r041|r042;
+		r041 = qi::raw[float_ >> (char_('H')|'h') >> float_][_SetWorkCylinderStr()];
+		r042 = float_[_SetWorkCylinder()] % ',';
 		// WorkFile
 		rs05 = no_case[WORKFILE_S] >> lit('=');
 		rv05 = r051|r052;
-		r051 = lit('\"') >> qi::lexeme[ qi::as_string[+(char_ - '\"')][_SetWorkFile()] ] >> lit('\"') >>
+		r051 = lit('\"') >> lexeme[ as_string[+(char_ - '\"')][_SetWorkFile()] ] >> lit('\"') >>
 				-lit(',') >> -float_[_WorkPosX()] >>
 					-(lit(',') >> -float_[_WorkPosY()] >>
 						-(lit(',') >> -float_[_WorkPosZ()]) );
-		r052 = qi::lexeme[ qi::as_string[+(char_ - ')')][_SetWorkFile()] ];
+		r052 = lexeme[ as_string[+(char_ - ')')][_SetWorkFile()] ];
 		// MCFile
 		rs06 = no_case[MCFILE_S] >> lit('=');
 		rv06 = r061|r062;
-		r061 = lit('\"') >> qi::lexeme[ qi::as_string[+(char_ - '\"')][_SetMCFile()] ] >> lit('\"');
-		r062 = qi::lexeme[ qi::as_string[+(char_ - ')')][_SetMCFile()] ];
+		r061 = lit('\"') >> lexeme[ as_string[+(char_ - '\"')][_SetMCFile()] ] >> lit('\"');
+		r062 = lexeme[ as_string[+(char_ - ')')][_SetMCFile()] ];
 		// ViewMode
 		rs07 = no_case[LATHEVIEW_S] >> lit('=');
 		rv07 = float_[_SetLatheView()] % ',';
@@ -411,11 +417,42 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 				g_dWorkRect[g_nWorkRect++] = d;
 		}
 	};
+	struct _SetWorkRectStr {
+		void operator()(const boost::iterator_range<Iterator>& raw, qi::unused_type, qi::unused_type) const {
+			int		n = 0;
+			float	dVal[3];
+			string	str(raw.begin(), raw.end());
+			char_separator<TCHAR>	sep("xXtT");
+			tokenizer< char_separator<TCHAR> > tok(str, sep);
+			typedef tokenizer< char_separator<TCHAR> >::iterator ITE;
+			for ( ITE it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
+				dVal[n++] = (float)atof( (*it).c_str() );
+			}
+			dVal[0] /= 2.0f;	dVal[1] /= 2.0f;
+			CRect3F	rc(-dVal[0], -dVal[1], dVal[0], dVal[1], 0, -dVal[2]);
+			g_pDoc->SetWorkRectComment(rc);
+		}
+	};
 	// Ü°¸‰~’Œ
 	struct _SetWorkCylinder {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
 			if ( g_nWorkCylinder < SIZEOF(g_dWorkCylinder) )
 				g_dWorkCylinder[g_nWorkCylinder++] = d;
+		}
+	};
+	struct _SetWorkCylinderStr {
+		void operator()(const boost::iterator_range<Iterator>& raw, qi::unused_type, qi::unused_type) const {
+			int		n = 0;
+			float	dVal[2];
+			string	str(raw.begin(), raw.end());
+			char_separator<TCHAR>	sep("hH");
+			tokenizer< char_separator<TCHAR> > tok(str, sep);
+			typedef tokenizer< char_separator<TCHAR> >::iterator ITE;
+			for ( ITE it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
+				dVal[n++] = (float)atof( (*it).c_str() );
+			}
+			CPoint3F	pt(0, 0, -dVal[1]);
+			g_pDoc->SetWorkCylinderComment(dVal[0], dVal[1], pt);
 		}
 	};
 	// Ü°¸Ì§²Ù

@@ -280,7 +280,7 @@ BOOL CheckMakeDlgFileExt(DOCTYPE enType, CString& strFile)
 	}
 	TCHAR	szFileName[_MAX_FNAME],
 			szExt[_MAX_EXT];
-	_splitpath_s(strFile, NULL, 0, NULL, 0,
+	_tsplitpath_s(strFile, NULL, 0, NULL, 0,
 		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
 	if ( lstrlen(szFileName) <= 0 ) {
 		AfxMessageBox(IDS_ERR_FILEPATH, MB_OK|MB_ICONEXCLAMATION);

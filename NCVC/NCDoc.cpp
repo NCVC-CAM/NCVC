@@ -190,7 +190,7 @@ BOOL CNCDoc::ReadWorkFile(LPCTSTR strFile)
 	else {
 		strPath = strFile;
 	}
-	_splitpath_s(strPath, NULL, 0, NULL, 0,
+	_tsplitpath_s(strPath, NULL, 0, NULL, 0,
 		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
 	if ( lstrlen(szFileName)<=0 || lstrlen(szExt)<=0 )
 		return FALSE;
@@ -256,7 +256,7 @@ BOOL CNCDoc::ReadMCFile(LPCTSTR strFile)
 	else {
 		strPath = strFile;
 	}
-	_splitpath_s(strPath, NULL, 0, NULL, 0,
+	_tsplitpath_s(strPath, NULL, 0, NULL, 0,
 		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
 	if ( lstrlen(szFileName)<=0 )
 		return FALSE;

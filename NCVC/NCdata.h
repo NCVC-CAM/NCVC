@@ -89,7 +89,7 @@ struct BOTTOMDRAW
 class CVBtmDraw : public std::vector<BOTTOMDRAW>
 {
 public:
-	void	Draw(void);		// to NCViewGL.cpp
+	void	Draw(void);
 };
 
 // ù”Õ—p’è”

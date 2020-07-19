@@ -3,7 +3,6 @@
 // stdafx.obj にはプリコンパイルされた型情報が含まれます。
 
 #include "stdafx.h"
-#include <time.h>
 
 // NCVCﾚｼﾞｽﾄﾘｷｰ
 extern	LPCTSTR	gg_szRegKey = "Software\\MNCT-S\\NCVC\\";
@@ -27,6 +26,32 @@ extern	const	int		gg_nIconY = 15;
 
 /////////////////////////////////////////////////////////////////////////////
 // NCVC 共通関数
+
+// 自作_tsplitpath_s(VS2015の不具合)
+void MySplitPath(LPCTSTR lpszFullPath,
+	LPTSTR pszDrive, size_t nDrive, LPTSTR pszPath, size_t nPath,
+	LPTSTR pszName,  size_t nName,  LPTSTR pszExt,  size_t nExt)
+{
+	setlocale(LC_ALL, "japanese");
+	size_t	nResult;
+	WCHAR	wszFullPath[_MAX_PATH],
+			wszDrive[_MAX_DRIVE],
+			wszPath[_MAX_DIR],
+			wszName[_MAX_FNAME],
+			wszExt[_MAX_EXT];
+	mbstowcs_s(&nResult, wszFullPath, lpszFullPath, lstrlen(lpszFullPath)+1);
+	_wsplitpath_s(wszFullPath,
+		wszDrive, SIZEOF(wszDrive), wszPath, SIZEOF(wszPath),
+		wszName, SIZEOF(wszName), wszExt, SIZEOF(wszExt));
+	if ( pszDrive )
+		wcstombs_s(&nResult, pszDrive, _MAX_DRIVE, wszDrive, _MAX_DRIVE);
+	if ( pszPath )
+		wcstombs_s(&nResult, pszPath,  _MAX_DIR,   wszPath,  _MAX_DIR);
+	if ( pszName )
+		wcstombs_s(&nResult, pszName,  _MAX_FNAME, wszName,  _MAX_FNAME);
+	if ( pszExt )
+		wcstombs_s(&nResult, pszExt,   _MAX_EXT,   wszExt,   _MAX_EXT);
+}
 
 // 乱数
 int GetRandom(int min, int max)
@@ -54,7 +79,7 @@ void Path_Name_From_FullPath
 			szDir[_MAX_DIR],
 			szFileName[_MAX_FNAME],
 			szExt[_MAX_EXT];
-	_splitpath_s(lpszFullPath,
+	_tsplitpath_s(lpszFullPath,
 		szDrive, SIZEOF(szDrive), szDir, SIZEOF(szDir),
 		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
 	strPath  = szDrive;

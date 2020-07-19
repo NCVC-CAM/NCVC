@@ -6,22 +6,18 @@
 
 #define	NO_WARN_MBCS_MFC_DEPRECATION		// VS2015～
 #define	_BIND_TO_CURRENT_VCLIBS_VERSION
-
-#ifndef _SECURE_ATL
 #define _SECURE_ATL
-#endif
+
 /*
 #ifndef VC_EXTRALEAN
 #define VC_EXTRALEAN		// Windows ヘッダーから使用されていない部分を除外します。
 #endif
-*/
-#include "targetver.h"
-/*
 // 一部の CString コンストラクタは明示的です。
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS
 // 一般的で無視しても安全な MFC の警告メッセージの一部の非表示を解除します。
 #define _AFX_ALL_WARNINGS
 */
+#include "targetver.h"
 #include <afxwin.h>         // MFC のコアおよび標準コンポーネント
 #include <afxext.h>         // MFC の拡張部分
 #include <afxdisp.h>        // MFC オートメーション クラス
@@ -47,11 +43,6 @@
 #include <gl/glew.h>		// OpenGL Extention
 #include <gl/wglew.h>
 #include <gl/gl.h>			// OpenGL
-#ifdef _DEBUGOLD
-#include <gl/glu.h>
-#include <gl/glaux.h>		// VC++2008 で不要？
-#include <gl/glut.h>		// Use glut32.dll
-#endif
 
 // STL
 #define	_SCL_SECURE_NO_WARNINGS			// 対Boost1.44用
@@ -65,9 +56,6 @@
 // BOOST Libraries
 #pragma	warning( disable : 4819 )		// codepage
 #pragma	warning( disable : 4348 )		// boost 1.60～ ???
-//#include "boost/geometry.hpp"			// 計算幾何
-//#include "boost/geometry/geometries/register/point.hpp"
-//#include "boost/geometry/geometries/register/box.hpp"
 #include "boost/regex.hpp"
 #include "boost/tokenizer.hpp"
 #include "boost/tuple/tuple.hpp"
@@ -80,6 +68,15 @@
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/minmax.hpp"
 #include "boost/algorithm/string.hpp"
+
+// VS2015 不具合
+void MySplitPath(LPCTSTR lpszFullPath,
+	LPTSTR pszDrive, size_t nDrive, LPTSTR pszPath, size_t nPath,
+	LPTSTR pszName,  size_t nName,  LPTSTR pszExt,  size_t nExt);
+#ifdef _tsplitpath_s
+#undef _tsplitpath_s
+#define _tsplitpath_s MySplitPath
+#endif
 
 #define	NCVCSERIALVERSION_1503	1503	// v1.00RC～
 #define	NCVCSERIALVERSION_1505	1505	// v1.10～

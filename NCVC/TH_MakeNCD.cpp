@@ -1273,6 +1273,7 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, CLayerData* pLayer, CString& strLayer)
 				AddMakeGdataStr(strBuf);
 			}
 		}
+		pLayer = NULL;	// º›∏ﬁŸÇÕNULLÇ…ÇµÇ»Ç¢Ç∆ÉoÉOÇÈ
 	}
 
 	// âÒì]êî

@@ -72,19 +72,6 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 			::glVertex3fv(pts.xyz);
 			::glVertex3fv(pte.xyz);
 		::glEnd();
-/*
-		// YŽ²-LATHELINEWIDTH‚ð’†S‚Éü•LATHELINEWIDTH*2.0f‚ðGL_TRIANGLE_STRIP‚Å•`‰æ
-		CPoint3F	pts1(m_rcDraw.left,   0.0f,                -rc.low),
-					pts2(m_rcDraw.left,  -LATHELINEWIDTH*2.0f, -rc.low),
-					pte1(m_rcDraw.right,  0.0f,                -rc.low),
-					pte2(m_rcDraw.right, -LATHELINEWIDTH*2.0f, -rc.low);
-		::glBegin(GL_TRIANGLE_STRIP);
-			::glVertex3fv(pts1.xyz);
-			::glVertex3fv(pte1.xyz);
-			::glVertex3fv(pts2.xyz);
-			::glVertex3fv(pte2.xyz);
-		::glEnd();
-*/
 	}
 
 	// ù”Õ—pZXÜ²Ô°‚Ì•`‰æ
@@ -93,7 +80,7 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 		GetDocument()->GetNCdata(i)->DrawGLLatheDepth();
 
 	::glPopAttrib();
-	::glFinish();
+//	::glFinish();
 
 	// ÃÞÌß½’l‚ÌŽæ“¾
 	BOOL	bResult = GetClipDepthLathe();
@@ -116,7 +103,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 	GLint		viewPort[4];
 	GLdouble	mvMatrix[16], pjMatrix[16],
 				wx1, wy1, wz1, wx2, wy2, wz2;
-	CLIPDEPTHMILL	cdm;
+	ARGVCLIPDEPTH	cdm;
 	GLfloat		fz, fx, fxb;
 	float		q;
 	optional<GLfloat>	fzb;

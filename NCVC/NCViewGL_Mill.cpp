@@ -31,9 +31,14 @@ const size_t	MAXNCBLK = 400;
 #else
 const size_t	MAXNCBLK = 200;
 #endif
+
 //	円柱表示の円分割数
 static	const int		CYCLECOUNT = ARCCOUNT*8;	// 512分割
 static	const float		CYCLESTEP  = PI2/CYCLECOUNT;
+
+// CreateBottomFaceThread() Event Name
+static	LPCTSTR	g_szCBFT_S = "CBFT_S%d";
+static	LPCTSTR	g_szCBFT_E = "CBFT_E%d";
 
 static	UINT	AddBottomVertexThread(LPVOID);
 static	UINT	CreateElementThread(LPVOID);
@@ -41,10 +46,6 @@ static	void	CreateElementCut(LPCREATEELEMENTPARAM);
 static	void	CreateElementTop(LPCREATEELEMENTPARAM);
 static	void	CreateElementBtm(LPCREATEELEMENTPARAM);
 static	BOOL	CreateElementSide(LPCREATEELEMENTPARAM, BOOL);
-
-// CreateBottomFaceThread() Event Name
-static	LPCTSTR	g_szCBFT_S = "CBFT_S%d";
-static	LPCTSTR	g_szCBFT_E = "CBFT_E%d";
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -267,7 +268,7 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 	BOOL	bResult = TRUE;
 	size_t	i, n, e, p, nLoop, proc;
 	UINT	pp = 0;		// progress position
-	DWORD	dwResult, id, nHandle;
+	DWORD	dwResult, id;
 
 	if ( bRange ) {
 		e = GetDocument()->GetTraceStart();
@@ -290,32 +291,34 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 	printf("loop=%d proc=%d OneThreadSize=%d\n", nLoop, proc, n);
 #endif
 
-	// vector<>ではCEvent内の参照ｶｳﾝﾄが上がってしまう??
+	// CEventを使うとvector<>内で参照ｶｳﾝﾄが上がってしまう??
 	CString		strEvent;
-	nHandle = (DWORD)proc;
-	LPCREATEBOTTOMVERTEXPARAM*	vParam = new LPCREATEBOTTOMVERTEXPARAM[nHandle];
-	HANDLE*		pHandleS = new HANDLE[nHandle];
-	HANDLE*		pHandleE = new HANDLE[nHandle];
+	LPCREATEBOTTOMVERTEXPARAM			pParam;
+	vector<LPCREATEBOTTOMVERTEXPARAM>	vParam;
+	vector<HANDLE>		vHandleS, vHandleE;
 	// CPUの数だけｽﾚｯﾄﾞ生成と実行
 	for ( i=0; i<proc; i++ ) {
 		strEvent.Format(g_szCBFT_S, i);
-		pHandleS[i] = ::CreateEvent(NULL, TRUE, TRUE,  strEvent);
+		vHandleS.push_back( ::CreateEvent(NULL, FALSE, TRUE,  strEvent) );	// 開始ｲﾍﾞﾝﾄは初期ｼｸﾞﾅﾙ状態
 		strEvent.Format(g_szCBFT_E, i);
-		pHandleE[i] = ::CreateEvent(NULL, TRUE, FALSE, strEvent);
-		vParam[i] = new CREATEBOTTOMVERTEXPARAM(i);		// deleteはAddBottomVertexThread()内で
-		vParam[i]->pDoc = GetDocument();
-		vParam[i]->s = e;
-		vParam[i]->e = e = min(e+n, nLoop);
-		AfxBeginThread(AddBottomVertexThread, vParam[i]);
+		vHandleE.push_back( ::CreateEvent(NULL, FALSE, FALSE, strEvent) );	// 終了ｲﾍﾞﾝﾄは初期非ｼｸﾞﾅﾙ状態
+		pParam = new CREATEBOTTOMVERTEXPARAM(i, GetDocument());		// deleteはAddBottomVertexThread()内で
+		pParam->s = e;
+		pParam->e = e = min(e+n, nLoop);
+		vParam.push_back(pParam);
+		AfxBeginThread(AddBottomVertexThread, pParam);
 	}
 	// 切削底面描画
 	::glEnableClientState(GL_VERTEX_ARRAY);
-	while ( nHandle ) {
+	while ( !vParam.empty() ) {
 		// ｽﾚｯﾄﾞ1つ終わるごとに描画処理
-		dwResult = ::WaitForMultipleObjects(nHandle, pHandleE, FALSE, INFINITE);
+		dwResult = ::WaitForMultipleObjects((DWORD)vHandleE.size(), &vHandleE[0], FALSE, INFINITE);
 		id = dwResult - WAIT_OBJECT_0;
-		if ( id < 0 || id >= nHandle || !vParam[id]->bResult ) {
+		if ( id<0 || id>=vParam.size() || !vParam[id]->bResult ) {
 			bResult = FALSE;
+#ifdef _DEBUG
+			printf("WaitForMultipleObjects() error id=%d\n", id);
+#endif
 			break;
 		}
 #ifdef _DEBUG
@@ -323,28 +326,22 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 #endif
 		// ため込んだ座標値の描画
 		vParam[id]->vBD.Draw();
+//		::glFinish();
 		//
 		if ( e < nLoop ) {
-			for ( auto& v : vParam[id]->vBD ) {
-				v.vpt.clear();
-				v.vel.clear();
-			}
 			vParam[id]->vBD.clear();
 			vParam[id]->s = e;
 			vParam[id]->e = e = min(e+n, nLoop);
-			::SetEvent(pHandleS[id]);
+			::SetEvent(vHandleS[id]);
 		}
 		else {
 			vParam[id]->bThread = FALSE;	// end of thread
-			::SetEvent(pHandleS[id]);
-			::CloseHandle(pHandleS[id]);
-			::CloseHandle(pHandleE[id]);
-			for ( i=id; i<nHandle-1; i++ ) {	// 詰め作業...
-				vParam[i] = vParam[i+1];
-				pHandleS[i] = pHandleS[i+1];
-				pHandleE[i] = pHandleE[i+1];
-			}
-			nHandle--;
+			::SetEvent(vHandleS[id]);
+			::CloseHandle(vHandleS[id]);
+			::CloseHandle(vHandleE[id]);
+			vParam.erase(vParam.begin()+id);
+			vHandleS.erase(vHandleS.begin()+id);
+			vHandleE.erase(vHandleE.begin()+id);
 		}
 		p = e*nProgress / nLoop;	// MAX 70% or 35%
 		if ( p >= pp ) {
@@ -356,17 +353,14 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 	::glDisableClientState(GL_VERTEX_ARRAY);
 
 	GetGLError();		// error flash
-	::glFinish();
+//	::glFinish();
 
-	for ( i=0; i<nHandle; i++ ) {
+	for ( i=0; i<vParam.size(); i++ ) {
 		vParam[i]->bThread = FALSE;
-		::SetEvent(pHandleS[i]);
-		::CloseHandle(pHandleS[i]);
-		::CloseHandle(pHandleE[i]);
+		::SetEvent(vHandleS[i]);
+		::CloseHandle(vHandleS[i]);
+		::CloseHandle(vHandleE[i]);
 	}
-	delete[]	pHandleS;
-	delete[]	pHandleE;
-	delete[]	vParam;
 
 #ifdef _DEBUG
 	printf("AddBottomVertexThread() WaitForMultipleObjects() ");
@@ -393,7 +387,7 @@ BOOL CNCViewGL::GetClipDepthMill(ENCLIPDEPTH enStencil)
 	GLint		viewPort[4];
 	GLdouble	mvMatrix[16], pjMatrix[16],
 				wx, wy, wz;
-	CLIPDEPTHMILL	cdm;
+	ARGVCLIPDEPTH	cdm;
 
 	::glGetIntegerv(GL_VIEWPORT, viewPort);
 	::glGetDoublev (GL_MODELVIEW_MATRIX,  mvMatrix);
@@ -551,7 +545,7 @@ BOOL CNCViewGL::GetClipDepthMill(ENCLIPDEPTH enStencil)
 	return TRUE;
 }
 
-void CNCViewGL::GetClipDepthMill_All(const CLIPDEPTHMILL& a)
+void CNCViewGL::GetClipDepthMill_All(const ARGVCLIPDEPTH& a)
 {
 	// ﾜｰﾙﾄﾞ座標
 	m_pfXYZ[a.tp+NCA_X] = m_pfXYZ[a.bm+NCA_X] = (GLfloat)a.wx;
@@ -567,13 +561,13 @@ void CNCViewGL::GetClipDepthMill_All(const CLIPDEPTHMILL& a)
 	m_pfNOR[a.bm+NCA_Z] = -1.0f;
 }
 
-void CNCViewGL::GetClipDepthMill_Zonly(const CLIPDEPTHMILL& a)
+void CNCViewGL::GetClipDepthMill_Zonly(const ARGVCLIPDEPTH& a)
 {
 	// 上面Z値のみ
 	m_pfXYZ[a.tp+NCA_Z] = min((GLfloat)a.wz, m_rcDraw.high);
 }
 
-void CNCViewGL::GetClipDepthMill_BottomStencil(const CLIPDEPTHMILL& a)
+void CNCViewGL::GetClipDepthMill_BottomStencil(const ARGVCLIPDEPTH& a)
 {
 	// ステンシル値が"1"のとこだけボクセル取得
 	// そうでないところは FLT_MAX(無効値) をセットして貫通を示す
@@ -592,7 +586,7 @@ void CNCViewGL::GetClipDepthMill_BottomStencil(const CLIPDEPTHMILL& a)
 	m_pfNOR[a.bm+NCA_Z] = -1.0f;
 }
 
-void CNCViewGL::GetClipDepthMill_TopStencil(const CLIPDEPTHMILL& a)
+void CNCViewGL::GetClipDepthMill_TopStencil(const ARGVCLIPDEPTH& a)
 {
 	// ステンシル値が"0"より大きいとこだけボクセル取得
 	// そうでないところは FLT_MAX(無効値) をセットして貫通を示す
@@ -1093,32 +1087,35 @@ UINT AddBottomVertexThread(LPVOID pVoid)
 	DWORD		t1, t2;
 	size_t		s;
 #endif
+	size_t		i, nLoopMax = (size_t)(pParam->pDoc->GetNCsize());
 	BOOL		bStartDraw;	// 始点の描画が必要かどうか
 	CString		strEvent;
 
 	strEvent.Format(g_szCBFT_S, pParam->nID);
-	HANDLE		hStart = ::OpenEvent(EVENT_ALL_ACCESS, FALSE, strEvent);
+	HANDLE		hStart = OpenEvent(EVENT_ALL_ACCESS, FALSE, strEvent);
 	strEvent.Format(g_szCBFT_E, pParam->nID);
-	HANDLE		hEnd   = ::OpenEvent(EVENT_ALL_ACCESS, FALSE, strEvent);
+	HANDLE		hEnd   = OpenEvent(EVENT_ALL_ACCESS, FALSE, strEvent);
 
 	try {
 		while ( TRUE ) {
 			// ｽﾚｯﾄﾞ実行許可待ち
 			WaitForSingleObject(hStart, INFINITE);
-			ResetEvent(hStart);
 			if ( !pParam->bThread )
 				break;
-			ResetEvent(hEnd);
+			for ( auto& v : pParam->vBD ) {
+				v.vpt.clear();
+				v.vel.clear();
+			}
 			bStartDraw = TRUE;
 #ifdef _DEBUG
 			printf("AddBottomVertexThread() ThreadID=%d s=%d e=%d Start!\n",
 				pParam->nID, pParam->s, pParam->e);
-			t1 = ::timeGetTime();
+			t1 = timeGetTime();
 #endif
-			for ( size_t i=pParam->s; i<pParam->e && i<(size_t)(pParam->pDoc->GetNCsize()); i++ )
+			for ( i=pParam->s; i<pParam->e && i<nLoopMax; i++ )
 				bStartDraw = pParam->pDoc->GetNCdata(i)->AddGLBottomFaceVertex(pParam->vBD, bStartDraw);
 #ifdef _DEBUG
-			t2 = ::timeGetTime();
+			t2 = timeGetTime();
 			s = 0;
 			for ( const auto& v : pParam->vBD )
 				s += v.vpt.size();
@@ -1167,12 +1164,12 @@ UINT CreateElementThread(LPVOID pVoid)
 			printf("CreateElementThread() ThreadID=%d s=%d e=%d Start!\n",
 				pParam->dbgID, pParam->cs, pParam->ce-1);
 			tt = 0;
-			t1 = ::timeGetTime();
+			t1 = timeGetTime();
 #endif
 			// 切削面の頂点ｲﾝﾃﾞｯｸｽ処理
 			CreateElementCut(pParam);
 #ifdef _DEBUG
-			t2 = ::timeGetTime();
+			t2 = timeGetTime();
 			tt += t2 - t1;
 			printf("--- ThreadID=%d CreateElementCut() End %d[ms]\n",
 				pParam->dbgID, t2 - t1);
@@ -1181,7 +1178,7 @@ UINT CreateElementThread(LPVOID pVoid)
 			// ﾜｰｸ上面の頂点ｲﾝﾃﾞｯｸｽ処理
 			CreateElementTop(pParam);
 #ifdef _DEBUG
-			t2 = ::timeGetTime();
+			t2 = timeGetTime();
 			tt += t2 - t1;
 			printf("--- ThreadID=%d CreateElementTop() End %d[ms]\n",
 				pParam->dbgID, t2 - t1);
@@ -1190,7 +1187,7 @@ UINT CreateElementThread(LPVOID pVoid)
 			// ﾜｰｸ底面の頂点ｲﾝﾃﾞｯｸｽ処理
 			CreateElementBtm(pParam);
 #ifdef _DEBUG
-			t2 = ::timeGetTime();
+			t2 = timeGetTime();
 			tt += t2 - t1;
 			printf("--- ThreadID=%d CreateElementBtm() End %d[ms] Total %d[ms]\n",
 				pParam->dbgID, t2 - t1, tt);

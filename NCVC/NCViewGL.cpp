@@ -1652,7 +1652,7 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 				}
 			}
 			GetGLError();	// error flash
-			::glFinish();
+//			::glFinish();
 		}
 	}
 
@@ -2033,20 +2033,6 @@ CNCDoc* CNCViewGL::GetDocument() // 非デバッグ バージョンはインラインです。
 #endif //_DEBUG
 
 //////////////////////////////////////////////////////////////////////
-
-void CVBtmDraw::Draw(void)		// from NCdata.h
-{
-	for ( iterator it=begin(); it!=end(); ++it ) {
-		if ( !(*it).vpt.empty() )
-			::glVertexPointer(NCXYZ, GL_FLOAT, 0, &((*it).vpt[0]));
-		if ( (*it).re == 0 )
-			::glDrawArrays((*it).mode, 0, (GLsizei)((*it).vpt.size()/NCXYZ));
-		else
-//			::glDrawElements((*it).mode,
-			::glDrawRangeElements((*it).mode, (*it).rs, (*it).re,
-				(GLsizei)((*it).vel.size()), GL_UNSIGNED_INT, &((*it).vel[0]));
-	}
-}
 
 void InitialMillNormal(void)
 {

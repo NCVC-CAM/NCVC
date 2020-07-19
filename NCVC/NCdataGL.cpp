@@ -202,6 +202,20 @@ extern	const GLuint	GLShpereTopElement[] = {
 
 //////////////////////////////////////////////////////////////////////
 
+void CVBtmDraw::Draw(void)
+{
+	for ( iterator it=begin(); it!=end(); ++it ) {
+		if ( !(*it).vpt.empty() )
+			::glVertexPointer(NCXYZ, GL_FLOAT, 0, &((*it).vpt[0]));
+		if ( (*it).re == 0 )
+			::glDrawArrays((*it).mode, 0, (GLsizei)((*it).vpt.size()/NCXYZ));
+		else
+//			::glDrawElements((*it).mode,
+			::glDrawRangeElements((*it).mode, (*it).rs, (*it).re,
+				(GLsizei)((*it).vel.size()), GL_UNSIGNED_INT, &((*it).vel[0]));
+	}
+}
+
 static inline void _SetEndmillCircle
 	(float r, const CPoint3F& ptOrg, CVfloat& v)
 {
@@ -408,56 +422,6 @@ void CNCline::DrawGLLatheDepth(void) const
 		::glVertex3fv(pts.xyz);
 		::glVertex3fv(pte.xyz);
 	::glEnd();
-/*
-	CPoint3F	pts1(m_ptValS), pts2(m_ptValS),
-				pte1(m_ptValE), pte2(m_ptValE);
-
-	// ê¸ïùLATHELINEWIDTH*2ÇGL_TRIANGLE_STRIPÇ≈ï`âÊ
-	if ( GetValFlags() & NCFLG_LATHE_INSIDE ) {
-		pts1.y =  0.0f;
-		pts2.y = -LATHELINEWIDTH*2.0f;
-		if ( GetValFlags() & NCFLG_LATHE_HOLE ) {
-			CVPoint3F	vpt;
-			CPoint3F	pte(m_ptValE), pto1, pto2;
-			pts1.z = pts2.z = pto2.z = -m_dEndmill;
-			pto1.x = pto2.x = pte.x + m_dEndmill*_DRILL_HEIGHT;
-			pto1.y = pte.y = -LATHELINEWIDTH;
-			pto1.z = 0.0f;
-			_SetEndmillCircleYZ_Half(m_dEndmill, pto1, vpt);
-			pto1.y = pts1.y;
-			pto2.y = pts2.y;
-			pto1.z = -m_dEndmill;
-			::glBegin(GL_TRIANGLE_STRIP);
-				::glVertex3fv(pts1.xyz);
-				::glVertex3fv(pto1.xyz);
-				::glVertex3fv(pts2.xyz);
-				::glVertex3fv(pto2.xyz);
-			::glEnd();
-			::glBegin(GL_TRIANGLE_FAN);
-				::glVertex3fv(pte.xyz);
-				for ( const auto& v : vpt )
-					::glVertex3fv(v.xyz);
-			::glEnd();
-			return;
-		}
-		else {
-			pte1.y =  0.0f;
-			pte2.y = -LATHELINEWIDTH*2.0f;
-			pts1.z = -pts1.z;	pts2.z = -pts2.z;
-			pte1.z = -pte1.z;	pte2.z = -pte2.z;
-		}
-	}
-	else {
-		pts1.y = pte1.y = 0.0f;
-		pts2.y = pte2.y = LATHELINEWIDTH*2;
-	}
-	::glBegin(GL_TRIANGLE_STRIP);
-		::glVertex3fv(pts1.xyz);
-		::glVertex3fv(pte1.xyz);
-		::glVertex3fv(pts2.xyz);
-		::glVertex3fv(pte2.xyz);
-	::glEnd();
-*/
 }
 
 BOOL CNCline::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
@@ -760,32 +724,6 @@ void CNCcycle::DrawGLLatheDepth(void) const
 		for ( const auto& v : vpt )
 			::glVertex3fv(v.xyz);
 	::glEnd();
-/*
-	CPoint3F	pts1(m_ptValS), pts2(m_ptValS),
-				pto1, pto2,
-				pte(m_Cycle3D[0].ptC);
-	pts1.y = 0.0f;
-	pts2.y = -LATHELINEWIDTH*2.0f;
-	pts1.z = pts2.z = pto2.z = -m_dEndmill;
-	pto1.x = pto2.x = pte.x + m_dEndmill*_DRILL_HEIGHT;
-	pto1.y = pte.y = -LATHELINEWIDTH;
-	pto1.z = 0.0f;
-	_SetEndmillCircleYZ_Half(m_dEndmill, pto1, vpt);
-	pto1.y = pts1.y;
-	pto2.y = pts2.y;
-	pto1.z = -m_dEndmill;
-	::glBegin(GL_TRIANGLE_STRIP);
-		::glVertex3fv(pts1.xyz);
-		::glVertex3fv(pto1.xyz);
-		::glVertex3fv(pts2.xyz);
-		::glVertex3fv(pto2.xyz);
-	::glEnd();
-	::glBegin(GL_TRIANGLE_FAN);
-		::glVertex3fv(pte.xyz);
-		for ( const auto& v : vpt )
-			::glVertex3fv(v.xyz);
-	::glEnd();
-*/
 }
 
 BOOL CNCcycle::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL) const

@@ -5,7 +5,6 @@
 #pragma once
 
 #include "FrameBuffer.h"
-#include "NCdata.h"
 //#include "GLSL.h"
 
 // TrackingMode
@@ -25,6 +24,7 @@ struct RANGEPARAM
 };
 
 // CreateBoxel_fromIGES() argument
+class	CNCdata;
 typedef	boost::variant<CNCdata*, RANGEPARAM>	CREATEBOXEL_IGESPARAM;
 
 // GetClipDepthMill() argument
@@ -33,13 +33,13 @@ enum ENCLIPDEPTH
 	DP_NoStencil, DP_BottomStencil, DP_TopStencil
 };
 
-// GetClipDepthMill_hoge() argument
-struct CLIPDEPTHMILL
+// GetClipDepthXXX() argument
+struct ARGVCLIPDEPTH
 {
 	GLdouble	wx, wy, wz;
 	size_t		tp, bm;
 };
-typedef void (CNCViewGL::*PFNGETCLIPDEPTHMILL)(const CLIPDEPTHMILL&);
+typedef void (CNCViewGL::*PFNGETCLIPDEPTHMILL)(const ARGVCLIPDEPTH&);
 
 // íÍñ ï`âÊç¿ïWê∂ê¨Ω⁄Øƒﬁóp
 struct CREATEBOTTOMVERTEXPARAM
@@ -52,7 +52,7 @@ struct CREATEBOTTOMVERTEXPARAM
 	CNCDoc*		pDoc;
 	size_t		s, e;
 	CVBtmDraw	vBD;		// from NCdata.h
-	CREATEBOTTOMVERTEXPARAM(size_t id) : nID(id), bThread(TRUE), bResult(TRUE) {}
+	CREATEBOTTOMVERTEXPARAM(size_t nID, CNCDoc* pDoc) : nID(nID), pDoc(pDoc), bThread(TRUE), bResult(TRUE) {}
 };
 typedef	CREATEBOTTOMVERTEXPARAM*	LPCREATEBOTTOMVERTEXPARAM;
 
@@ -155,10 +155,10 @@ class CNCViewGL : public CView
 	BOOL	CreateWire(void);
 	BOOL	CreateBottomFaceThread(BOOL, int);
 	BOOL	GetClipDepthMill(ENCLIPDEPTH = DP_NoStencil);
-	void	GetClipDepthMill_All(const CLIPDEPTHMILL&);
-	void	GetClipDepthMill_Zonly(const CLIPDEPTHMILL&);
-	void	GetClipDepthMill_BottomStencil(const CLIPDEPTHMILL&);
-	void	GetClipDepthMill_TopStencil(const CLIPDEPTHMILL&);
+	void	GetClipDepthMill_All(const ARGVCLIPDEPTH&);
+	void	GetClipDepthMill_Zonly(const ARGVCLIPDEPTH&);
+	void	GetClipDepthMill_BottomStencil(const ARGVCLIPDEPTH&);
+	void	GetClipDepthMill_TopStencil(const ARGVCLIPDEPTH&);
 	BOOL	GetClipDepthCylinder(void);
 	BOOL	GetClipDepthLathe(void);
 	BOOL	CreateVBOMill(void);

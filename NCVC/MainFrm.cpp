@@ -472,12 +472,12 @@ CString	CMainFrame::CommandReplace(const CExecOption* pExec, const CDocument* pD
 	if ( pExec->IsShort() ) {
 		lpszShortName = new TCHAR[lstrlen(pDoc->GetPathName())+1];
 		::GetShortPathName(pDoc->GetPathName(), lpszShortName, lstrlen(pDoc->GetPathName()));
-		_splitpath_s(lpszShortName,
+		_tsplitpath_s(lpszShortName,
 			szDrive, SIZEOF(szDrive), szDir, SIZEOF(szDir),
 			szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
 	}
 	else
-		_splitpath_s(pDoc->GetPathName(),
+		_tsplitpath_s(pDoc->GetPathName(),
 			szDrive, SIZEOF(szDrive), szDir, SIZEOF(szDir),
 			szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
 

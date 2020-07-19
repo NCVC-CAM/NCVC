@@ -122,7 +122,7 @@ CNCVCApp::CNCVCApp()
 		_TABLESIN[i]  = sin(q);
 	}
 	// ドリルの先端角を計算するときの高さ
-	_DRILL_HEIGHT = tan(RAD(31.0f));
+	_DRILL_HEIGHT = tan(RAD(31.0f));	// (180-118)/2
 
 	// ｴﾝﾄﾞﾐﾙ法線ﾍﾞｸﾄﾙの初期化
 	InitialMillNormal();	// to NCViewGL.cpp
@@ -159,7 +159,7 @@ CNCVCApp::~CNCVCApp()
 
 CNCVCApp theApp;
 #ifdef _DEBUG
-DbgConsole	theDebug;
+DbgConsole	theDebug;	// ﾃﾞﾊﾞｯｸﾞ用ｺﾝｿｰﾙ
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
