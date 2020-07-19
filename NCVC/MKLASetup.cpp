@@ -33,6 +33,7 @@ CMKLASetup::CMKLASetup(LPCTSTR pszCaption, LPCTSTR lpszInitFile)
 	AddPage(&m_dlg4);	// ‰ºŒŠ
 	AddPage(&m_dlg5);	// “àŒa
 	AddPage(&m_dlg6);	// ŠOŒa
+	AddPage(&m_dlg7);	// “ËØ
 
 	// ØíÊß×Ò°ÀµÌŞ¼Şª¸Ä‚Ì¶¬
 	try {

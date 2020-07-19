@@ -8,20 +8,23 @@
 #include "NCdata.h"
 #include "DXFMakeOption.h"
 #include "MCOption.h"
+#ifdef USE_KODATUNO
 #include "../Kodatuno/BODY.h"
+#endif
 
 enum NCCOMMENT		// g_szNCcomment[]
 {
-	ENDMILL = 0, DRILL, TAP, REAMER, 
+	ENDMILL = 0, DRILL, TAP, REAMER, GROOVE,
 	WORKRECT, WORKCYLINDER, WORKFILE, MCFILE,
 	LATHEVIEW, WIREVIEW,
-	TOOLPOS, LATHEHOLE,
-	LATHEINSIDE, ENDINSIDE, ENDDRILL
+	TOOLPOS, LATHEHOLE,	LATHEINSIDE,
+	ENDINSIDE, ENDDRILL, ENDGROOVE
 };
 #define	ENDMILL_S		g_szNCcomment[ENDMILL]
 #define	DRILL_S			g_szNCcomment[DRILL]
 #define	TAP_S			g_szNCcomment[TAP]
 #define	REAMER_S		g_szNCcomment[REAMER]
+#define	GROOVE_S		g_szNCcomment[GROOVE]
 #define	WORKRECT_S		g_szNCcomment[WORKRECT]
 #define	WORKCYLINDER_S	g_szNCcomment[WORKCYLINDER]
 #define	WORKFILE_S		g_szNCcomment[WORKFILE]
@@ -33,6 +36,7 @@ enum NCCOMMENT		// g_szNCcomment[]
 #define	INSIDE_S		g_szNCcomment[LATHEINSIDE]
 #define	ENDINSIDE_S		g_szNCcomment[ENDINSIDE]
 #define	ENDDRILL_S		g_szNCcomment[ENDDRILL]
+#define	ENDGROOVE_S		g_szNCcomment[ENDGROOVE]
 
 // CNCDoc::DataOperation() の操作方法
 enum ENNCOPERATION
@@ -57,8 +61,6 @@ class CNCDoc : public CDocBase
 				m_dCutTime;		// 切削時間
 	CRect3F		m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
 				m_rcWorkCo;		// ｺﾒﾝﾄ指示
-	BODY*		m_kBody;		// Kodatuno Body
-	BODYList*	m_kbList;		// Kodatuno Body List
 	//
 	void	SetMaxRect(const CNCdata* pData) {
 		// 最大ｵﾌﾞｼﾞｪｸﾄ矩形ﾃﾞｰﾀｾｯﾄ
@@ -81,10 +83,14 @@ class CNCDoc : public CDocBase
 	BOOL	SerializeAfterCheck(void);
 	BOOL	ValidBlockCheck(void);
 	BOOL	ValidDataCheck(void);
-	void	CalcWorkFileRect(void);
-
 	void	ClearBlockData(void);
 	void	DeleteMacroFile(void);
+
+#ifdef USE_KODATUNO
+	BODY*		m_kBody;		// Kodatuno Body
+	BODYList*	m_kbList;		// Kodatuno Body List
+	void	CalcWorkFileRect(void);
+#endif
 
 protected: // シリアライズ機能のみから作成します。
 	CNCDoc();
@@ -160,9 +166,6 @@ public:
 	CRect3F	GetWorkRectOrg(void) const {
 		return m_rcWorkCo;
 	}
-	BODYList*	GetKodatunoBodyList(void) const {
-		return m_kbList;
-	}
 
 // オペレーション
 public:
@@ -217,7 +220,6 @@ public:
 	}
 	void	SetLatheViewMode(void);
 	BOOL	ReadWorkFile(LPCTSTR);
-	void	SetWorkFileOffset(const Coord&);
 	BOOL	ReadMCFile(LPCTSTR);
 
 	// from NCWorkDlg.cpp
@@ -250,6 +252,13 @@ public:
 
 	// from ThumbnailDlg.cpp
 	void	ReadThumbnail(LPCTSTR);
+
+#ifdef USE_KODATUNO
+	BODYList*	GetKodatunoBodyList(void) const {
+		return m_kbList;
+	}
+	void	SetWorkFileOffset(const Coord&);
+#endif
 
 //オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

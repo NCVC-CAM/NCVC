@@ -8,6 +8,7 @@
 #include "MKLASetup2.h"
 #include "MKLASetup3.h"
 #include "MKLASetup4.h"
+#include "MKLASetup5.h"
 #include "MKNCSetup2.h"
 #include "MKNCSetup6.h"
 #include "NCMakeLatheOpt.h"
@@ -32,6 +33,7 @@ public:
 	CMKLASetup2	m_dlg4;		// ‰ºŒŠ
 	CMKLASetup3	m_dlg5;		// “àŒa
 	CMKLASetup1	m_dlg6;		// ŠOŒa
+	CMKLASetup5	m_dlg7;		// “ËØ
 
 	CNCMakeLatheOpt*	GetNCMakeOption(void) {
 		return m_pNCMake;

@@ -5,12 +5,13 @@
 #pragma once
 
 #include "boost/operators.hpp"		// ‰‰Zq‚Ìè”²‚«’è‹`
+#include "boost/math/constants/constants.hpp"	// PI‚Ì’è‹`
 
 //////////////////////////////////////////////////////////////////////
 
 // ˆê”Ê’è‹`
 const float NCMIN = 0.001f;			// NC‚ÌŒ…—‚¿Œë·
-const float PI  = 3.1415926535897932384626433832795f;
+const float PI  = boost::math::constants::pi<float>();	// 3.141592...
 const float PI2 = 2.0f*PI;
 
 // ‰~‚ğ64(360“x/64à5.6“x)•ªŠ„‚Å•`‰æ
@@ -28,7 +29,7 @@ inline float RAD(float dVal)
 }
 inline double RAD(double dVal)
 {
-	return dVal * PI / 180.0;
+	return dVal * boost::math::constants::pi<double>() / 180.0;
 }
 // Degree•ÏŠ·
 //template<typename T> inline	T	DEG(T dVal)
@@ -39,7 +40,7 @@ inline	float	DEG(float dVal)
 }
 inline	double	DEG(double dVal)
 {
-	return dVal * 180.0 / PI;
+	return dVal * 180.0 / boost::math::constants::pi<double>();
 }
 // ÃŞÌ«ÙÄ‚Ì‰ñ“]Šp“x
 const float RX = RAD(-60.0f);

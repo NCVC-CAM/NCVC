@@ -13,8 +13,10 @@
 #include "NCViewGL.h"
 #include "NCListView.h"
 #include "ViewOption.h"
-#include "../Kodatuno/Describe_BODY.h"
 #include "boost/array.hpp"
+#ifdef USE_KODATUNO
+#include "../Kodatuno/Describe_BODY.h"
+#endif
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -108,9 +110,9 @@ CNCViewGL::CNCViewGL()
 	m_glCode = 0;
 
 #ifdef NO_TRACE_WORKFILE
-	m_pfDepth = m_pfXYZ = m_pfNOR = m_pLatheX = m_pLatheZ = NULL;
+	m_pfDepth = m_pfXYZ = m_pfNOR = m_pLatheX = m_pLatheZo = m_pLatheZi = NULL;
 #else
-	m_pfDepth = m_pfDepthBottom = m_pfXYZ = m_pfNOR = m_pLatheX = m_pLatheZ = NULL;
+	m_pfDepth = m_pfDepthBottom = m_pfXYZ = m_pfNOR = m_pLatheX = m_pLatheZo = m_pLatheZi = NULL;
 #endif
 	m_pbStencil = NULL;
 	m_pFBO = NULL;
@@ -130,26 +132,37 @@ CNCViewGL::CNCViewGL()
 CNCViewGL::~CNCViewGL()
 {
 	EndOfCreateElementThread();
+	DeleteDepthMemory();
+
+	if ( m_pFBO )
+		delete	m_pFBO;
+
+	ClearVBO();
+}
+
+void CNCViewGL::DeleteDepthMemory(void)
+{
 	if ( m_pfDepth )
 		delete[]	m_pfDepth;
-#ifndef NO_TRACE_WORKFILE
-	if ( m_pfDepthBottom )
-		delete[]	m_pfDepthBottom;
-#endif
 	if ( m_pfXYZ )
 		delete[]	m_pfXYZ;
 	if ( m_pfNOR )
 		delete[]	m_pfNOR;
 	if ( m_pLatheX )
 		delete[]	m_pLatheX;
-	if ( m_pLatheZ )
-		delete[]	m_pLatheZ;
+	if ( m_pLatheZo )
+		delete[]	m_pLatheZo;
+	if ( m_pLatheZi )
+		delete[]	m_pLatheZi;
 	if ( m_pbStencil )
 		delete[]	m_pbStencil;
-	if ( m_pFBO )
-		delete	m_pFBO;
-
-	ClearVBO();
+	m_pfDepth = m_pfXYZ = m_pfNOR = m_pLatheX = m_pLatheZo = m_pLatheZi = NULL;
+	m_pbStencil = NULL;
+#ifndef NO_TRACE_WORKFILE
+	if ( m_pfDepthBottom )
+		delete[]	m_pfDepthBottom;
+	m_pfDepthBottom = NULL;
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -922,7 +935,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		return;
 	}
 
-#if defined _DEBUG_DRAWTEST_
+#if defined(_DEBUG_DRAWTEST_)
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
 		GetDocument()->GetNCdata(i)->DrawGLBottomFace();
 //		GetDocument()->GetNCdata(1)->DrawGLBottomFace();
@@ -951,7 +964,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glDisable(GL_TEXTURE_2D);
 		::glDisable(GL_LIGHTING);
 	}
-#elif defined _DEBUG_DRAWBODY_
+#elif defined(_DEBUG_DRAWBODY_) && defined(USE_KODATUNO)
 	BODYList* kbl = GetDocument()->GetKodatunoBodyList();
 	if ( kbl ) {
 		Describe_BODY	bd;
@@ -959,7 +972,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 			bd.DrawBody( (BODY *)kbl->getData(i) );
 		}
 	}
-#elif defined _DEBUG_SHADERTEST_
+#elif defined(_DEBUG_SHADERTEST_)
 //	::glDisable(GL_DEPTH_TEST);
 //	::glPushMatrix();
 //	::glLoadIdentity();
@@ -1510,17 +1523,23 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 #endif
 	CNCdata*	pData;
 	INT_PTR		i, s, e;
+#ifdef USE_KODATUNO
 	CREATEBOXEL_IGESPARAM	pParam;
+#endif
 
 	if ( lParam ) {
 		s = (INT_PTR)wParam;
 		e = (INT_PTR)lParam;
 		pData = NULL;
+#ifdef USE_KODATUNO
 		pParam = RANGEPARAM(s, e);
+#endif
 	}
 	else {
 		pData = reinterpret_cast<CNCdata*>(wParam);
+#ifdef USE_KODATUNO
 		pParam = pData;
+#endif
 	}
 
 	if ( !pData && !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
@@ -1574,6 +1593,7 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 	GetGLError();	// error flash
 
 	if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) ) {
+#ifdef USE_KODATUNO
 		if ( !pData ) {
 			// èââÒÇÃÇ›Ç±Ç±Ç≈BODYï`âÊÅïΩ√›ºŸèâä˙âª
 			Describe_BODY	bd;
@@ -1607,11 +1627,12 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 			if ( !bResult )
 				ClearVBO();
 		}
+#endif
 	}
 	else {
 		if ( !m_pFBO ) {
-			ASSERT( m_pfDepth );
 #ifdef _DEBUG
+			ASSERT( m_pfDepth );
 			DWORD	t1 = ::timeGetTime();
 #endif
 			// ï€ë∂ÇµÇƒÇ†ÇÈ√ﬁÃﬂΩèÓïÒÇèëÇ´çûÇ›
@@ -2010,7 +2031,7 @@ void CNCViewGL::DumpLatheZ(void) const
 	CStdioFile	dbg_fs("C:\\Users\\magara\\Documents\\tmp\\latheZ.csv", CFile::typeText|CFile::modeCreate|CFile::modeWrite);
 	CString		ss;
 	for ( int i=0; i<m_icx; i++ ) {
-		ss.Format("%f, %f\n", m_pLatheZ[i], m_pLatheZ[i+m_icx]);
+		ss.Format("o:%f, i:%f\n", m_pLatheZo[i], m_pLatheZi[i]);
 		dbg_fs.WriteString(ss);
 	}
 }

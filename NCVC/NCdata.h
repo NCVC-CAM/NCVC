@@ -52,7 +52,10 @@ enum
 	NCMIL_BALL,
 	NCMIL_CHAMFER,		// 面取りミル(先端角90°)
 	NCMIL_DRILL,		// ドリル(先端角118°)
-		NCMIL_MAXTYPE		// [4]
+	NCMIL_GROOVE,		// 突っ切りバイト(旋盤用)
+	NCMIL_GROOVE_R,		// 　工具基準点右
+	NCMIL_GROOVE_C,		// 　工具基準点中央
+		NCMIL_MAXTYPE		// [7]
 };
 
 // NCﾃﾞｰﾀ状態ﾌﾗｸﾞ
@@ -89,12 +92,12 @@ struct BOTTOMDRAW
 class CVBtmDraw : public std::vector<BOTTOMDRAW>
 {
 public:
-	void	Draw(void);
+	void	Draw(void);		// NCdataGL.cpp
 };
 
 // 旋盤用定数
 const float		LATHELINEWIDTH = 3.0f;	// ﾃﾞﾌﾟｽ値を拾うための線幅
-const double	LATHEHEIGHT = 6.0;		// glOrtho()のbottomとtop
+const float		LATHEHEIGHT = 6.0f;		// glOrtho()のbottomとtop
 
 // ﾜｲﾔ放電加工機描画用
 struct WIRELINE
@@ -110,7 +113,7 @@ struct WIREDRAW
 	std::vector<CVelement>	vvef;	// 面生成用の頂点ｲﾝﾃﾞｯｸｽ
 	std::vector<WIRELINE>	vwl;	// 線描画用の情報
 	std::vector<float>		vlen;	// ﾃｸｽﾁｬで使用
-	void	clear(void);
+	void	clear(void);	// NCdata.inl
 };
 
 /////////////////////////////////////////////////////////////////////////////

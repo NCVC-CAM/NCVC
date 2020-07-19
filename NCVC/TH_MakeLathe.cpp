@@ -30,6 +30,7 @@ static	CDXFDoc*			g_pDoc;
 static	CNCMakeLatheOpt*	g_pMakeOpt;
 
 // よく使う変数や呼び出しの簡略置換
+#define	MAXLAYER	3	// 内径・外径・突切
 #define	IsThread()	g_pParent->IsThreadContinue()
 #define	GetFlg(a)	g_pMakeOpt->GetFlag(a)
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
@@ -38,6 +39,7 @@ static	CNCMakeLatheOpt*	g_pMakeOpt;
 
 // NC生成に必要なﾃﾞｰﾀ群
 static	CDXFshape*	g_pShape[2];	// 0:Inside, 1:Outside
+static	CLayerData*	g_pGrooveLayer;
 static	CDXFarray	g_obLineTemp[2];
 static	CDXFarray	g_obMakeLine[2];
 static	CTypedPtrArrayEx<CPtrArray, CNCMakeLathe*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
@@ -53,6 +55,7 @@ static	BOOL	CreateOutsidePitch(void);		// 外径ｵﾌｾｯﾄを生成
 static	BOOL	CreateRoughPass(int);			// 荒加工ﾃﾞｰﾀの生成(内外共通)
 static	BOOL	MakeInsideCode(const CPointF&);	// NCｺｰﾄﾞの生成
 static	BOOL	MakeOutsideCode(const CPointF&);
+static	BOOL	MakeGrooveCode(const CPointF&);
 static	BOOL	CheckXZMove(int, const CPointF&, const CPointF&);
 static	CPointF	MoveInsideCode(const CDXFchain*, const CPointF&, const CPointF&);
 static	void	MoveOutsideCode(const CDXFdata*, const CPointF&, const CPointF&);
@@ -79,6 +82,7 @@ static	inline	void	SetProgressPos(INT_PTR n)
 
 // 並べ替え補助関数
 static	int		ShapeSortFunc(CDXFshape*, CDXFshape*);	// 形状認識ﾃﾞｰﾀの並べ替え
+static	int		GrooveSortFunc(CDXFdata*, CDXFdata*);	// 突っ切り加工のﾃﾞｰﾀ並べ替え
 
 // ｻﾌﾞｽﾚｯﾄﾞ関数
 static	CCriticalSection	g_csMakeAfter;	// MakeLathe_AfterThread()ｽﾚｯﾄﾞﾛｯｸｵﾌﾞｼﾞｪｸﾄ
@@ -177,7 +181,8 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 
 void InitialVariable(void)
 {
-	g_pShape[0] = g_pShape[1] = NULL;
+	ZEROCLR(g_pShape);
+	g_pGrooveLayer = NULL;
 	// 端面の終点が原点
 	CDXFdata::ms_ptOrg = g_pDoc->GetLatheLine(1)->GetNativePoint(1);
 	// ORIGINﾃﾞｰﾀが工具初期位置
@@ -299,6 +304,10 @@ BOOL MakeLathe_MainFunc(void)
 		if ( !MakeOutsideCode(ptMax) )
 			return FALSE;
 	}
+	if ( g_pGrooveLayer ) {
+		if ( !MakeGrooveCode(ptMax) )
+			return FALSE;
+	}
 
 	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
 	AddCustomLatheCode(GetStr(MKLA_STR_FOOTER));
@@ -317,7 +326,7 @@ BOOL CreateShapeThread(void)
 	CPointF		ptsd, pted;
 #endif
 	const INT_PTR	nLayerLoop = g_pDoc->GetLayerCnt();
-	if ( nLayerLoop > 2 ) {
+	if ( nLayerLoop > MAXLAYER ) {
 		AfxMessageBox(IDS_ERR_LATHE_LAYER, MB_OK|MB_ICONEXCLAMATION);
 		return FALSE;
 	}
@@ -329,7 +338,7 @@ BOOL CreateShapeThread(void)
 	param.lParam  = NULL;
 
 	// 形状認識処理のｽﾚｯﾄﾞ生成
-	CWinThread*	pThread = AfxBeginThread(ShapeSearch_Thread, &param,
+	CWinThread*	pThread = AfxBeginThread(ShapeSearch_Thread, &param,	// TH_ShapeSearch.cpp
 			THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED);
 	if ( !pThread )
 		return FALSE;
@@ -344,6 +353,7 @@ BOOL CreateShapeThread(void)
 	CDXFshape*	pShape;
 	CDXFmap*	pMap;
 	CString		strInside(INSIDE_S),	// g_szNCcomment[LATHEINSIDE]
+				strGroove("GROOVE"),
 				strLayer;
 	strInside.MakeUpper();
 
@@ -355,8 +365,14 @@ BOOL CreateShapeThread(void)
 #ifdef _DEBUG
 		printf(" Layer=%s\n", LPCTSTR(strLayer));
 #endif
+		strLayer.MakeUpper();
+		if ( strLayer.Find(strGroove) >= 0 ) {
+			// 突っ切り溝加工データ
+			g_pGrooveLayer = pLayer;
+			continue;	// 形状処理しない
+		}
 		nLoop = pLayer->GetShapeSize();
-		// 図形集合を１つに限定
+		// [内|外]径データは図形集合を１つに限定
 		if ( nLoop > 1 ) {
 			CString	strMsg;
 			strMsg.Format(IDS_ERR_LATHE_SHAPE, pLayer->GetLayerName());
@@ -364,7 +380,6 @@ BOOL CreateShapeThread(void)
 			return FALSE;
 		}
 		// 内側か外側かの判定
-		strLayer.MakeUpper();
 		n = strLayer.Find(strInside) >= 0 ? 0 : 1; 
 		//
 		for ( j=0; j<nLoop && IsThread(); j++ ) {
@@ -744,7 +759,7 @@ BOOL MakeInsideCode(const CPointF& ptMax)
 		if ( pt.x < CNCMakeLathe::ms_xyz[NCA_Z] ) {
 			// 工具初期位置が端面の右側
 			// →指定位置まで直線移動
-			pNCD = new CNCMakeLathe(pt);
+			pNCD = new CNCMakeLathe(0, pt, 0.0f);
 		}
 		else {
 			// 工具初期位置が端面の左側
@@ -771,7 +786,7 @@ BOOL MakeInsideCode(const CPointF& ptMax)
 		pte += CDXFdata::ms_ptOrg;		// 次の移動位置
 		pte.y += ptPull.y;
 		// pDataの始点が現在位置のどちらにあるかで引き代を変える
-		if ( CNCMakeLathe::ms_xyz[NCA_Z]<pt.x && !CheckXZMove(1, pts, pte) ) {
+		if ( CNCMakeLathe::ms_xyz[NCA_Z]<pt.x && !CheckXZMove(0, pts, pte) ) {
 			// 次の始点が右側、かつ、輪郭ｵﾌｾｯﾄに衝突しない → 現在位置から
 			pt.y = CNCMakeLathe::ms_xyz[NCA_X];
 		}
@@ -828,7 +843,7 @@ BOOL MakeInsideCode(const CPointF& ptMax)
 		pNCD = new CNCMakeLathe(XZMOVE, ptMov, GetDbl(MKLA_DBL_I_FEEDX));
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
-		pNCD = new CNCMakeLathe(g_pDoc->GetCircleObject()->GetStartMakePoint());
+		pNCD = new CNCMakeLathe(0, g_pDoc->GetCircleObject()->GetStartMakePoint(), 0.0f);
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
 	}
@@ -986,6 +1001,110 @@ BOOL MakeOutsideCode(const CPointF& ptMax)
 	return IsThread();
 }
 
+BOOL MakeGrooveCode(const CPointF& ptMax)
+{
+	INT_PTR		i;
+	CDXFsort	arDXFdata;
+	CDXFdata*	pData;
+	CNCMakeLathe*	pNCD;
+	CPointF		pt, pts, pte;
+	float		dPullX = ptMax.y + GetDbl(MKLA_DBL_G_PULLX),
+				dWidth = GetDbl(MKLA_DBL_GROOVEWIDTH);
+
+	// データ準備
+	for ( i=0; i<g_pGrooveLayer->GetDxfSize(); i++ ) {
+		pData = g_pGrooveLayer->GetDxfData(i);
+		if ( pData->GetType() == DXFLINEDATA ) {
+			pData->OrgTuning(FALSE);
+			arDXFdata.Add(pData);
+		}
+	}
+	if ( arDXFdata.IsEmpty() )
+		return IsThread();
+	arDXFdata.Sort(GrooveSortFunc);	// Z軸(X値)の大きい順に並べ替え
+
+	// 初期設定
+	CString	strCode( CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_G_SPINDLE)) );
+	if ( !strCode.IsEmpty() )
+		AddMakeLatheStr(strCode);
+
+	// ｶｽﾀﾑｺｰﾄﾞ
+	if ( !GetStr(MKLA_STR_G_CUSTOM).IsEmpty() )
+		AddMakeLatheStr(GetStr(MKLA_STR_G_CUSTOM));
+	// NCVCの突っ切り切削指示
+	CString	strTool;
+	strTool.Format(IDS_MAKENCD_FORMAT, GetDbl(MKLA_DBL_GROOVEWIDTH));
+	switch ( GetNum(MKLA_NUM_GROOVETOOL) ) {
+	case 1:		// 工具基準点中央
+		strTool = 'C'+strTool;
+		break;
+	case 2:		// 右
+		strTool = 'R'+strTool;
+		break;
+	}
+	AddMakeLatheStr( '('+CString(GROOVE_S)+'='+strTool+')' );
+
+	// 突っ切りデータ生成
+	for ( i=0; i<arDXFdata.GetSize(); i++ ) {
+		pData = arDXFdata[i];
+		pts = pData->GetStartMakePoint();
+		pte = pData->GetEndMakePoint();
+		if ( pts.x < pte.x )
+			swap(pts, pte);
+		// X軸の長さによって生成方法を変える
+		if ( dWidth < pts.x-pte.x ) {
+			// Z軸スライド
+			switch ( GetNum(MKLA_NUM_GROOVETOOL) ) {
+			case 1:
+				pts.x -= dWidth / 2.0f;
+				pte.x += dWidth / 2.0f;
+				break;
+			case 2:
+				pte.x += dWidth;
+				break;
+			default:
+				pts.x -= dWidth;
+			}
+			pNCD = new CNCMakeLathe;
+			ASSERT(pNCD);
+			pNCD->CreateGroove(pts, pte, dPullX);
+			g_obMakeData.Add(pNCD);
+		}
+		else {
+			// X軸のみ(溝)
+			switch ( GetNum(MKLA_NUM_GROOVETOOL) ) {
+			case 1:
+				pt.x = (pts.x - pte.x) / 2.0f + pte.x;
+				pt.y = (pts.y - pte.y) / 2.0f + pte.y;
+				break;
+			case 2:
+				pt = pts;
+				break;
+			default:
+				pt = pte;
+			}
+			pNCD = new CNCMakeLathe;
+			ASSERT(pNCD);
+			pNCD->CreateGroove(pt, dPullX);
+			g_obMakeData.Add(pNCD);
+		}
+	}
+
+	// 工具初期位置へ復帰
+	pt = g_pDoc->GetCircleObject()->GetStartMakePoint();
+	pNCD = new CNCMakeLathe(0, NCA_X, pt.y, 0.0f);
+	ASSERT(pNCD);
+	g_obMakeData.Add(pNCD);
+	pNCD = new CNCMakeLathe(0, NCA_Z, pt.x, 0.0f);
+	ASSERT(pNCD);
+	g_obMakeData.Add(pNCD);
+
+	// 突っ切り切削終了ｺﾒﾝﾄ
+	AddMakeLatheStr( '('+CString(ENDGROOVE_S)+')' );
+
+	return IsThread();
+}
+
 BOOL CheckXZMove(int io, const CPointF& pts, const CPointF& pte)
 {
 	INT_PTR		i, nLoop;
@@ -1138,9 +1257,13 @@ public:
 				// 内径回転数
 				strResult = CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_I_SPINDLE));
 			}
-			else {
+			else if ( g_pShape[1] ) {	// 最初のﾍｯﾀﾞｰﾙｰﾌﾟなので else if でOK
 				// 外径回転数
 				strResult = CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_O_SPINDLE));
+			}
+			else if ( g_pGrooveLayer ) {
+				// 突切回転数
+				strResult = CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_G_SPINDLE));
 			}
 			break;
 		case 3:		// LatheDiameter
@@ -1199,10 +1322,26 @@ int ShapeSortFunc(CDXFshape* pFirst, CDXFshape* pSecond)
 	int		nResult;
 	CPointF	pt1( pFirst->GetShapeChain()->GetHead()->GetNativePoint(0) ),
 			pt2( pSecond->GetShapeChain()->GetHead()->GetNativePoint(0) );
-	float	x = pt1.x - pt2.x;
+	float	x = RoundUp(pt1.x - pt2.x);
 	if ( x == 0.0f )
 		nResult = 0;
 	else if ( x > 0.0f )
+		nResult = -1;
+	else
+		nResult = 1;
+	return nResult;
+}
+
+int GrooveSortFunc(CDXFdata* pFirst, CDXFdata* pSecond)
+{
+	int		nResult;
+	CPointF	pt1s( pFirst->GetStartMakePoint() ),  pt1e( pFirst->GetEndMakePoint() ),
+			pt2s( pSecond->GetStartMakePoint() ), pt2e( pSecond->GetEndMakePoint() );
+	float	sx = pt1s.x > pt1e.x ? pt1s.x : pt1e.x,
+			ex = pt2s.x > pt2e.x ? pt2s.x : pt2e.x;
+	if ( sx == ex )
+		nResult = 0;
+	else if ( sx > ex )
 		nResult = -1;
 	else
 		nResult = 1;

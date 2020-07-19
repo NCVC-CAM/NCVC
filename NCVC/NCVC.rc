@@ -738,9 +738,9 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.83b",IDC_STATIC,86,166,130,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 1997-2019 MNCT K.Magara",IDC_STATIC,86,182,143,8
-    LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
+    LTEXT           "NCVC Version 3.84a",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 1997-2019 MNCT K.Magara",IDC_STATIC,86,182,135,8
+    LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,135,8,SS_NOTIFY
 END
 
 IDD_ADDININFO DIALOGEX 0, 0, 281, 243
@@ -2090,6 +2090,33 @@ BEGIN
     PUSHBUTTON      "AllOFF",IDC_MCST5_ALLOFF,58,100,30,14
 END
 
+IDD_MKLA_SETUP5 DIALOGEX 0, 0, 243, 203
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "突切"
+FONT 9, "MS UI Gothic", 400, 0, 0x80
+BEGIN
+    LTEXT           "ｶｽﾀﾑｺｰﾄﾞ(&U)",IDC_STATIC,7,40,46,8
+    EDITTEXT        IDC_MKLA2_CUSTOMCODE,60,38,176,12,ES_AUTOHSCROLL
+    LTEXT           "主軸回転数(&S)",IDC_STATIC,7,60,50,8
+    EDITTEXT        IDC_MKNC1_SPINDLE,60,58,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "rpm",IDC_STATIC,103,60,16,8
+    LTEXT           "Z軸送り(&F)",IDC_STATIC,7,80,50,8
+    EDITTEXT        IDC_MKNC1_FEED,60,78,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "X軸送り(&G)",IDC_STATIC,7,100,40,8
+    EDITTEXT        IDC_MKLA1_XFEED,60,98,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "引き代(&X)",IDC_STATIC,127,80,36,8
+    EDITTEXT        IDC_MKLA1_PULL_X,168,78,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,211,80,16,8
+    LTEXT           "ﾄﾞｳｪﾙ(&W)",IDC_STATIC,128,100,30,8
+    EDITTEXT        IDC_MKNC4_DWELL,168,98,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "msec",IDC_STATIC,211,100,25,8
+    LTEXT           "刃幅(&W)",IDC_STATIC,7,140,40,8
+    EDITTEXT        IDC_MKLA5_WIDTH,60,138,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,103,140,16,8
+    LTEXT           "工具基準点(&B)",IDC_STATIC,7,160,50,8
+    COMBOBOX        IDC_MKLA5_TOOL,60,157,48,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2097,8 +2124,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,8,3,2
- PRODUCTVERSION 3,8,3,2
+ FILEVERSION 3,8,4,1
+ PRODUCTVERSION 3,8,4,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -2116,13 +2143,13 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.8.3.2"
+            VALUE "FileVersion", "3.8.4.1"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2019 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.8.3.2"
+            VALUE "ProductVersion", "3.8.4.1"
             VALUE "SpecialBuild", "Boost C++ 1.70, GLEW 2.10, Kodatuno R3.2kai"
         END
     END
@@ -2564,6 +2591,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 143
     END
+
+    IDD_MKLA_SETUP5, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 236
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 196
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -2962,6 +2997,17 @@ BEGIN
     0
 END
 
+IDD_MKLA_SETUP5 DLGINIT
+BEGIN
+    IDC_MKLA5_TOOL, 0x403, 3, 0
+0xb68d, "\000" 
+    IDC_MKLA5_TOOL, 0x403, 5, 0
+0x8692, 0x9b89, "\000" 
+    IDC_MKLA5_TOOL, 0x403, 3, 0
+0x4589, "\000" 
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -3148,6 +3194,11 @@ BEGIN
     0
 END
 
+IDD_MKLA_SETUP5 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -3302,7 +3353,7 @@ BEGIN
     IDS_ERR_WRITESETTING    "%s\n設定ﾌｧｲﾙの書き出しに失敗しました"
     IDS_ERR_CLIPBOARD       "ｸﾘｯﾌﾟﾎﾞｰﾄﾞの操作に失敗しました"
     IDS_ERR_MAXADD          "登録数の上限に達しました。これ以上は登録できません"
-    IDS_ERR_OPENGLVER       "OpenGLのﾊﾞｰｼﾞｮﾝが古く表示ができません。少なくとも2.0以上のｻﾎﾟｰﾄが必要です。\nこのマシンのOpenGLﾊﾞｰｼﾞｮﾝは %s です。"
+    IDS_ERR_OPENGLVER       "OpenGLのﾊﾞｰｼﾞｮﾝが古く表示ができません。少なくとも1.5以上のｻﾎﾟｰﾄが必要です。\nこのマシンのOpenGLﾊﾞｰｼﾞｮﾝは %s です。"
     IDS_ERR_OUTOFVRAM       "OpenGL操作でエラーが発生しました\n\nCode=%s, DebugLine=%d"
 END
 
@@ -3370,7 +3421,7 @@ END
 STRINGTABLE
 BEGIN
     IDS_ERR_LATHE_INSIDE    "下穴ﾄﾞﾘﾙまたは既存下穴ｻｲｽﾞの指定なく内径ﾃﾞｰﾀを生成することはできません。内径ﾃﾞｰﾀを無視します。"
-    IDS_ERR_LATHE_LAYER     "旋盤ﾃﾞｰﾀの生成は、内側と外側のﾚｲﾔ2枚までです。"
+    IDS_ERR_LATHE_LAYER     "旋盤ﾃﾞｰﾀの生成は、内側・外側・突切のﾚｲﾔ3枚までです。"
     IDS_ERR_LATHE_SHAPE     "Layer=%s\n図形が連続線になっていないようです。\n旋盤ﾃﾞｰﾀを生成できません。"
     IDS_ERR_MAKEDXFLAYER    "少なくとも１つ以上のレイヤを指定してください"
     IDS_ERR_MAKEMULTILAYER  "切削対象ﾚｲﾔを１つ以上指定してください"

@@ -19,8 +19,10 @@
 #include "DXFMakeOption.h"
 #include "DXFMakeClass.h"
 #include "MakeDXFDlg.h"
+#ifdef USE_KODATUNO
 #include "../Kodatuno/IGES_Parser.h"
 #include "../Kodatuno/STL_Parser.h"
+#endif
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -36,11 +38,11 @@ extern	LPCTSTR	g_szGdelimiter = "GSMOF";
 extern	LPCTSTR	g_szNdelimiter = "XYZUVWIJKRPLDH";
 extern	LPTSTR	g_pszDelimiter;	// g_szGdelimiter[] + g_szNdelimiter[] (NCVC.cppで生成)
 extern	LPCTSTR	g_szNCcomment[] = {
-	"Endmill", "Drill", "Tap", "Reamer",
+	"Endmill", "Drill", "Tap", "Reamer", "GroovingTool",
 	"WorkRect", "WorkCylinder", "WorkFile", "MCFile",
 	"LatheView", "WireView",
 	"ToolPos", "LatheHole",
-	"Inside", "EndInside", "EndDrill"
+	"Inside", "EndInside", "EndDrill", "EndGrooving"
 };
 
 // 指定された値のﾌﾗｸﾞ
@@ -103,11 +105,13 @@ CNCDoc::CNCDoc()
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
 	m_rcWork.SetRectMinimum();
-	m_kBody  = NULL;
-	m_kbList = NULL;
 	// 増分割り当てサイズ
 	m_obBlock.SetSize(0, 4096);
 	m_obGdata.SetSize(0, 4096);
+#ifdef USE_KODATUNO
+	m_kBody  = NULL;
+	m_kbList = NULL;
+#endif
 }
 
 CNCDoc::~CNCDoc()
@@ -116,6 +120,7 @@ CNCDoc::~CNCDoc()
 	for ( int i=0; i<m_obGdata.GetSize(); i++ )
 		delete	m_obGdata[i];
 	m_obGdata.RemoveAll();
+#ifdef USE_KODATUNO
 	// IGES Body
 	if ( m_kBody ) {
 		//m_kBody->DeleteBody(m_kbList);
@@ -126,6 +131,7 @@ CNCDoc::~CNCDoc()
 		m_kbList->clear();
 		delete	m_kbList;
 	}
+#endif
 	// ﾌﾞﾛｯｸﾃﾞｰﾀの消去
 	ClearBlockData();
 	// 一時展開のﾏｸﾛﾌｧｲﾙを消去
@@ -174,6 +180,7 @@ void CNCDoc::SetLatheViewMode(void)
 
 BOOL CNCDoc::ReadWorkFile(LPCTSTR strFile)
 {
+#ifdef USE_KODATUNO
 	CString	strPath, strName, strExt;
 	TCHAR	szFileName[_MAX_FNAME],
 			szExt[_MAX_EXT];
@@ -226,17 +233,20 @@ BOOL CNCDoc::ReadWorkFile(LPCTSTR strFile)
 	if ( !m_kbList )
 		m_kbList = new BODYList;
 	m_kBody->RegistBody(m_kbList, strFile);
+#endif
 
 	m_bDocFlg.set(NCDOC_WORKFILE);
 
 	return TRUE;
 }
 
+#ifdef USE_KODATUNO
 void CNCDoc::SetWorkFileOffset(const Coord& sft)
 {
 	if ( m_kBody )
 		m_kBody->ShiftBody(sft);
 }
+#endif
 
 BOOL CNCDoc::ReadMCFile(LPCTSTR strFile)
 {
@@ -1277,11 +1287,15 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 		}
 	}
 	else {
+#ifdef USE_KODATUNO
 		if ( m_bDocFlg[NCDOC_WORKFILE] && m_kbList ) {
 			CalcWorkFileRect();		// IGES/STEPの占有矩形を計算
 			m_rcWork = m_rcWorkCo;
 		}
 		else if ( m_bDocFlg[NCDOC_COMMENTWORK] )
+#else
+		if ( m_bDocFlg[NCDOC_COMMENTWORK] )
+#endif
 			m_rcWork = m_rcWorkCo;
 		else
 			m_rcWorkCo = m_rcWork;	// 指示がなければﾃﾞｰﾀを保存
@@ -1339,6 +1353,7 @@ BOOL CNCDoc::ValidDataCheck(void)
 	return FALSE;
 }
 
+#ifdef USE_KODATUNO
 void CNCDoc::CalcWorkFileRect(void)
 {
 	BODY*		pBody;
@@ -1375,6 +1390,7 @@ void CNCDoc::CalcWorkFileRect(void)
 	printf("(%f,%f)\n", m_rcWorkCo.low, m_rcWorkCo.high);
 #endif
 }
+#endif
 
 BOOL CNCDoc::SerializeInsertBlock
 	(LPCTSTR lpszFileName, INT_PTR nInsert, DWORD dwFlags/*=0*/)

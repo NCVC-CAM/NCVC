@@ -17,15 +17,14 @@ enum ENTRACKINGMODE
 struct RANGEPARAM
 {
 	INT_PTR		s, e;
-	RANGEPARAM(INT_PTR ss, INT_PTR ee) {
-		s = ss;
-		e = ee;
-	}
+	RANGEPARAM(INT_PTR ss, INT_PTR ee) : s(ss), e(ee) {}
 };
 
+#ifdef USE_KODATUNO
 // CreateBoxel_fromIGES() argument
 class	CNCdata;
 typedef	boost::variant<CNCdata*, RANGEPARAM>	CREATEBOXEL_IGESPARAM;
+#endif
 
 // GetClipDepthMill() argument
 enum ENCLIPDEPTH
@@ -62,8 +61,8 @@ struct CREATEELEMENTPARAM
 #ifdef _DEBUG
 	int		dbgID;
 #endif
-	CEvent		evStart;
-	CEvent		evEnd;
+	CEvent		evStart;	// 自動
+	CEvent		evEnd;		// 手動
 	const GLfloat*	pfXYZ;
 	GLfloat*		pfNOR;
 	const GLubyte*	pbStl;
@@ -76,7 +75,7 @@ struct CREATEELEMENTPARAM
 	std::vector<CVelement>	vvElementCut,	// from NCdata.h
 							vvElementWrk;
 	// CEvent を手動ｲﾍﾞﾝﾄにするためのｺﾝｽﾄﾗｸﾀ
-	CREATEELEMENTPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE), bThread(TRUE), bResult(TRUE) {}
+	CREATEELEMENTPARAM() : evEnd(FALSE, TRUE), bThread(TRUE), bResult(TRUE) {}
 };
 typedef	CREATEELEMENTPARAM*		LPCREATEELEMENTPARAM;
 
@@ -90,8 +89,7 @@ class CNCViewGL : public CView
 				m_bWirePath,	// ﾋﾞｭｰごとに動的に切り替えるﾌﾗｸﾞ
 				m_bSlitView;
 	int			m_cx,  m_cy,	// ｳｨﾝﾄﾞｳｻｲｽﾞ(ｽｸﾘｰﾝ)
-				m_icx, m_icy,
-				m_nLe;			// 旋盤ﾃﾞｰﾀｴﾝﾄﾞ(m_nLe<=m_icx)
+				m_icx, m_icy;
 	GLint		m_wx, m_wy;		// glReadPixels, glWindowPos
 	float		m_dRate,		// 基準拡大率
 				m_dRoundAngle,	// 中ﾎﾞﾀﾝの回転角度
@@ -119,7 +117,8 @@ class CNCViewGL : public CView
 	GLfloat*	m_pfXYZ;		// -- 変換されたﾜｰﾙﾄﾞ座標(temp area)
 	GLfloat*	m_pfNOR;		// -- 法線ﾍﾞｸﾄﾙ
 	GLfloat*	m_pLatheX;		// -- 旋盤のX値
-	GLfloat*	m_pLatheZ;		// -- 旋盤のZ値
+	GLfloat*	m_pLatheZo;		// -- 旋盤のZ値外径
+	GLfloat*	m_pLatheZi;		// -- 旋盤のZ値内径
 	GLsizeiptr	m_nVBOsize;		// 頂点配列ｻｲｽﾞ
 	GLuint		m_nVertexID[2],	// 頂点配列と法線ﾍﾞｸﾄﾙ用
 				m_nTextureID,	// ﾃｸｽﾁｬ座標用
@@ -150,7 +149,9 @@ class CNCViewGL : public CView
 	void	UpdateViewOption(void);
 	void	CreateDisplayList(void);
 	BOOL	CreateBoxel(BOOL = FALSE);
+#ifdef USE_KODATUNO
 	BOOL	CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* = NULL);
+#endif
 	BOOL	CreateLathe(BOOL = FALSE);
 	BOOL	CreateWire(void);
 	BOOL	CreateBottomFaceThread(BOOL, int);
@@ -173,6 +174,7 @@ class CNCViewGL : public CView
 	void	CreateFBO(void);
 	void	InitialBoxel(void);
 	void	FinalBoxel(void);
+	void	DeleteDepthMemory(void);
 	void	EndOfCreateElementThread(void);
 
 	void	RenderBack(void);

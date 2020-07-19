@@ -44,6 +44,18 @@
 #include <gl/wglew.h>
 #include <gl/gl.h>			// OpenGL
 
+// Kodatuno
+#define	USE_KODATUNO
+#ifdef USE_KODATUNO
+#ifdef _DEBUG
+#pragma comment(lib, "..\\debug\\kodatuno.lib")
+#elif defined(_WIN64)
+#pragma comment(lib, "..\\release64\\kodatuno.lib")
+#else
+#pragma comment(lib, "..\\release\\kodatuno.lib")
+#endif
+#endif
+
 // STL
 #define	_SCL_SECURE_NO_WARNINGS			// ‘ÎBoost1.44—p
 #include <string>

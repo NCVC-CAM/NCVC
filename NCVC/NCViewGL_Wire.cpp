@@ -179,7 +179,9 @@ BOOL CNCViewGL::CreateWire(void)
 	printf("VBO(index) transport Start\n");
 #endif
 	// 頂点ｲﾝﾃﾞｯｸｽをGPUﾒﾓﾘに転送
-	try {
+#ifndef _WIN64
+	try {	// 32bit版だけﾁｪｯｸ
+#endif
 		size_t	jj = 0;
 		GLuint	nElement;
 		GLsizei	nSize = (GLsizei)(m_WireDraw.vvef.size());
@@ -230,12 +232,14 @@ BOOL CNCViewGL::CreateWire(void)
 		}
 
 		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+#ifndef _WIN64
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
 		return FALSE;
 	}
+#endif
 
 	return TRUE;
 }
@@ -258,8 +262,11 @@ void CNCViewGL::CreateTextureWire(void)
 #else
 	nVertex = m_WireDraw.vpt.size(); // 安全ﾏｰｼﾞﾝを見て余分に確保
 #endif
-	try {
+#ifndef _WIN64
+	try {	// 32bit版だけﾁｪｯｸ
+#endif
 		pfTEX = new GLfloat[nVertex];
+#ifndef _WIN64
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -267,6 +274,7 @@ void CNCViewGL::CreateTextureWire(void)
 		ClearTexture();
 		return;
 	}
+#endif
 
 	// ﾃｸｽﾁｬ座標の割り当て
 	for ( i=j=0; i<nLoop; i++, j++ ) {

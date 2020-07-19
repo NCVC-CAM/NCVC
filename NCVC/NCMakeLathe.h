@@ -20,8 +20,8 @@ public:
 	CNCMakeLathe(void);
 	// 切削ﾃﾞｰﾀ
 	CNCMakeLathe(const CDXFdata*, float);
-	// 指定位置に直線移動
-	CNCMakeLathe(const CPointF&);
+	// 指定位置に直線[移動|切削]
+	CNCMakeLathe(int, const CPointF&, float);
 	// 指定位置に２軸移動
 	CNCMakeLathe(TWOMOVEMODE, const CPointF&, float);
 	// X|Z軸の変化
@@ -33,6 +33,9 @@ public:
 	void	CreateEndFace(const CPointF&);
 	// 下穴加工生成
 	void	CreatePilotHole(void);
+	// 溝加工生成
+	void	CreateGroove(const CPointF&, float);
+	void	CreateGroove(const CPointF&, const CPointF&, float);
 
 	// 生成ｵﾌﾟｼｮﾝによる静的変数の初期化(TH_MakeLathe.cpp)
 	static	void	SetStaticOption(const CNCMakeLatheOpt*);

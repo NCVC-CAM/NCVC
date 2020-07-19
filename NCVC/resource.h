@@ -556,6 +556,9 @@
 #define IDC_MKNC3_HELICAL               4215
 #define IDD_MKLA_SETUP4                 4250
 #define IDC_MKLA4_ENDFACE               4251
+#define IDD_MKLA_SETUP5                 4270
+#define IDC_MKLA5_WIDTH                 4271
+#define IDC_MKLA5_TOOL                  4272
 #define IDD_MKNC_SETUP4                 4300
 #define IDC_MKNC4_SPINDLE               4301
 #define IDC_MKNC4_FEED                  4302
@@ -670,6 +673,7 @@
 #define IDC_ADDIN_INFO                  9703
 #define IDD_ABOUTBOX                    9800
 #define IDC_ABOUT_URL                   9801
+#define IDC_ABOUT_VER                   9802
 #define ID_HELP_ADDIN                   9900
 #define ID_HELP_USING2                  9902
 #define ID_HELP_USING3                  9903
@@ -749,8 +753,6 @@
 #define IDS_REG_VIEW_LINETYPE           10953
 #define IDS_REG_VIEW_NC_INFOCOL         10962
 #define IDS_REG_VIEW_NC_DEFAULTENDMILL  10964
-#define IDS_REG_VIEW_NC_MILLTYPE        10971
-#define IDS_REG_VIEW_NC_TEXTUREFILE     10973
 #define IDS_REG_CONVERT                 10999
 #define IDS_REG_WINFLAGS                11900
 #define IDS_REG_ICONIC                  11901
@@ -785,7 +787,6 @@
 #define IDS_ERR_DLL                     21096
 #define IDS_ERR_PROCESS                 21097
 #define IDS_ERR_THREAD                  21098
-#define IDS_ERR_NCDATA                  21099
 #define IDS_ERR_FILEREAD                21101
 #define IDS_ERR_SUBPRO                  21102
 #define IDS_ERR_ADDITEM                 21105
@@ -879,9 +880,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        204
+#define _APS_NEXT_RESOURCE_VALUE        205
 #define _APS_NEXT_COMMAND_VALUE         32823
-#define _APS_NEXT_CONTROL_VALUE         1067
+#define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

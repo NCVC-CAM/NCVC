@@ -14,14 +14,16 @@
 static	LPCTSTR	g_szLthNOrder[] = {
 	"ProgNo", "LineAddType",
 	"G90", "Dot", "FDot", "CircleCode", "CircleIJ",
-	"EndFaceSpindle", "InsideSpindle", "OutsideSpindle",
-	"InsideMarginNum", "MarginNum"
+	"EndFaceSpindle", "InsideSpindle", "OutsideSpindle", "GrooveSpindle",
+	"InsideMarginNum", "MarginNum",
+	"GrooveTool"
 };
 static	const	int		g_dfLthNOrder[] = {
 	1, 1,
 	0, 0, 0, 0, 0,
-	200, 200, 200,
-	1, 1
+	200, 200, 200, 50,
+	1, 1,
+	0
 };
 
 // floatŒ^–½—ß
@@ -31,14 +33,16 @@ static	LPCTSTR	g_szLthDOrder[] = {
 	"EndFaceFeed", "EndFaceCut", "EndFaceStep", "EndFacePullZ", "EndFacePullX",
 	"DrillZ", "DrillR", "DrillQ", "DrillD", "Dwell", "PilotHole",
 	"InsideFeed", "InsideFeedX", "InsideCut",
-		"InsidePullZ", "InsidePullX", "InsideMargin"
+		"InsidePullZ", "InsidePullX", "InsideMargin",
+	"GrooveFeed", "GrooveFeedX", "GroovePullX", "GrooveDwell", "GrooveWidth"
 };
 static	const	float	g_dfLthDOrder[] = {
-	300.0, 150.0, 1.0, 2.0, 2.0, 1.0,
-	0.5,
-	150.0, -5.0, -1.0, 2.0, 2.0,
-	-50.0, 10.0, 15.0, 10.0, 0.0, 0.0,
-	300.0, 150, 0.5, 2.0, 2.0, 1.0
+	300.0f, 150.0f, 1.0f, 2.0f, 2.0f, 1.0f,
+	0.5f,
+	150.0f, -5.0f, -1.0f, 2.0f, 2.0f,
+	-50.0f, 10.0f, 15.0f, 10.0f, 0.0f, 0.0f,
+	300.0f, 150.0f, 0.5f, 2.0f, 2.0f, 1.0f,
+	0.1f, 0.1f, 2.0f, 1000.0f, 3.0f
 };
 
 // BOOLŒ^–½—ß
@@ -60,7 +64,7 @@ static	LPCTSTR	g_szLthSOrder[] = {
 	"LineForm", "EOB",
 	"Header", "Footer",
 	"UseDrill", "DrillSpindle", "DrillFeed", "DrillCustom",
-	"EndFaceCustom", "InsideCustom", "OutsideCustom"
+	"EndFaceCustom", "InsideCustom", "OutsideCustom", "GrooveCustom"
 };
 static	LPCTSTR	g_dfLthSOrder[] = {
 	"N%04d", "",
@@ -68,7 +72,8 @@ static	LPCTSTR	g_dfLthSOrder[] = {
 	"", "", "", "(Enter drill-tool change code etc)",
 	"\\n(TANMEN START)\\n(Enter TANMEN-tool change code etc)",
 	"\\n(NAIKEI START)\\n(Enter NAIKEI-tool change code etc)",
-	"\\n(GAIKEI START)\\n(Enter GAIKEI-tool change code etc)"
+	"\\n(GAIKEI START)\\n(Enter GAIKEI-tool change code etc)",
+	"\\n(Grooving START)\\n(Enter Groove-tool change code etc)"
 };
 
 // µÌß¼®İ“‡
@@ -130,7 +135,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_DBL,	MKLA_DBL_DRILLQ,		"R“_"},
 	{NC_DBL,	MKLA_DBL_DRILLQ,		"Q’l"},
 	{NC_DBL,	MKLA_DBL_DRILLD,		"–ß‚è—Ê"},
-	{NC_DBL,	MKLA_DBL_DWELL,			"ÄŞ³ªÙŠÔ[msec]"},
+	{NC_DBL,	MKLA_DBL_D_DWELL,		"‰ºŒŠÄŞ³ªÙŠÔ[msec]"},
 	{NC_PAGE,	6},		// Page6(“àŒa)
 	{NC_STR,	MKLA_STR_I_CUSTOM,		"“àŒa¶½ÀÑº°ÄŞ"},
 	{NC_NUM,	MKLA_NUM_I_SPINDLE,		"“àŒaå²‰ñ“]”"},
@@ -151,6 +156,15 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_DBL,	MKLA_DBL_O_PULLX,		"ŠOŒaˆø‚«‘ã(X”¼Œa’l)"},
 	{NC_DBL,	MKLA_DBL_O_MARGIN,		"ŠOŒadã‚°‘ã(”¼Œa’l)"},
 	{NC_NUM,	MKLA_NUM_O_MARGIN,		"ŠOŒadã‚°‰ñ”"},
+	{NC_PAGE,	8},		// Page8(“Ë‚ÁØ‚è)
+	{NC_STR,	MKLA_STR_G_CUSTOM,		"“Ë‚ÁØ‚è¶½ÀÑº°ÄŞ"},
+	{NC_NUM,	MKLA_NUM_G_SPINDLE,		"“Ë‚ÁØ‚èå²‰ñ“]”"},
+	{NC_DBL,	MKLA_DBL_G_FEED,		"“Ë‚ÁØ‚èØí‘—‚è(Z)"},
+	{NC_DBL,	MKLA_DBL_G_FEEDX,		"“Ë‚ÁØ‚èØí‘—‚è(X)"},
+	{NC_DBL,	MKLA_DBL_G_PULLX,		"“Ë‚ÁØ‚èˆø‚«‘ã(X”¼Œa’l)"},
+	{NC_DBL,	MKLA_DBL_G_DWELL,		"“Ë‚ÁØ‚èÄŞ³ªÙŠÔ[msec]"},
+	{NC_DBL,	MKLA_DBL_GROOVEWIDTH,	"“Ë‚ÁØ‚èn•"},
+	{NC_NUM,	MKLA_NUM_GROOVETOOL,	"“Ë‚ÁØ‚èH‹ïŠî€“_(0:¶,1:’†‰›,2:‰E)"},
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -288,5 +302,9 @@ void CNCMakeLatheOpt::DbgDump(void) const
 	printf("  InPullZ      =%f\n", LTH_D_I_PULLZ);
 	printf("  InPullX      =%f\n", LTH_D_I_PULLX);
 	printf("  InMargin     =%f\n", LTH_D_I_MARGIN);
+	printf("----------\n");
+	printf("  GrooveSpindle=%d\n", LTH_I_G_SPINDLE);
+	printf("  GrooveWidth  =%f\n", LTH_D_GROOVEWIDTH);
+	printf("  GrooveTool   =%d\n", LTH_I_GROOVETOOL);
 }
 #endif

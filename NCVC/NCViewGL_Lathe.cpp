@@ -64,13 +64,12 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 
 	// 中空ﾃﾞﾌﾟｽ
 	if ( GetDocument()->IsDocFlag(NCDOC_LATHE_HOLE) ) {
-		CRect3F	rc(GetDocument()->GetWorkRectOrg());
-
-		CPoint3F	pts(m_rcDraw.left,  -LATHELINEWIDTH, -rc.low),
-					pte(m_rcDraw.right, -LATHELINEWIDTH, -rc.low);
-		::glBegin(GL_LINES);
-			::glVertex3fv(pts.xyz);
-			::glVertex3fv(pte.xyz);
+		CRect3F		rc(GetDocument()->GetWorkRectOrg());
+		::glBegin(GL_TRIANGLE_STRIP);
+			::glVertex3f(m_rcDraw.left,  -LATHEHEIGHT, -rc.low);
+			::glVertex3f(m_rcDraw.left,          0.0f, -rc.low);
+			::glVertex3f(m_rcDraw.right, -LATHEHEIGHT, -rc.low);
+			::glVertex3f(m_rcDraw.right,         0.0f, -rc.low);
 		::glEnd();
 	}
 
@@ -99,12 +98,13 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 
 BOOL CNCViewGL::GetClipDepthLathe(void)
 {
+	BOOL		bBreak = FALSE;
 	int			i, j, jj, icx, icy, offset;
 	GLint		viewPort[4];
 	GLdouble	mvMatrix[16], pjMatrix[16],
 				wx1, wy1, wz1, wx2, wy2, wz2;
 	ARGVCLIPDEPTH	cdm;
-	GLfloat		fz, fx, fxb;
+	GLfloat		fz, fzo, fzi, fx, fxb;
 	float		q;
 	optional<GLfloat>	fzb;
 
@@ -136,12 +136,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 
 	if ( m_icx!=icx ) {
 		if ( m_pfDepth ) {
-			delete[]	m_pfDepth;
-			delete[]	m_pfXYZ;
-			delete[]	m_pfNOR;
-			delete[]	m_pLatheX;
-			delete[]	m_pLatheZ;
-			m_pfDepth = m_pfXYZ = m_pfNOR = m_pLatheX = m_pLatheZ = NULL;
+			DeleteDepthMemory();
 		}
 		m_icx = icx;
 		m_icy = icy;
@@ -151,35 +146,28 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 	if ( !m_pfDepth ) {
 		size_t	nSize;
 		try {
-			m_pfDepth = new GLfloat[m_icx*m_icy];
+			m_pfDepth	= new GLfloat[m_icx*m_icy];
+			// 断面表示でも1周分の座標生成
 			nSize  = (ARCCOUNT+1) * m_icx * 2;	// 円周×長さ×[内|外]径
 			nSize += (ARCCOUNT+1) * 2 * 2;		// 円周×[内|外]径×左右端面
-			nSize += m_icx * 4;					// 断面用座標
+			if ( m_bSlitView )
+				nSize += m_icx * 4;				// 断面用座標
 			nSize *= NCXYZ;
-			m_pfXYZ   = new GLfloat[nSize];
-			m_pfNOR   = new GLfloat[nSize];
-			m_pLatheX = new GLfloat[m_icx];
-			m_pLatheZ = new GLfloat[m_icx*2];
+			m_pfXYZ		= new GLfloat[nSize];
+			m_pfNOR		= new GLfloat[nSize];
+			m_pLatheX	= new GLfloat[m_icx];
+			m_pLatheZo	= new GLfloat[m_icx];
+			m_pLatheZi	= new GLfloat[m_icx];
 		}
 		catch (CMemoryException* e) {
 			AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 			e->Delete();
-			if ( m_pfDepth )
-				delete[]	m_pfDepth;
-			if ( m_pfXYZ )
-				delete[]	m_pfXYZ;
-			if ( m_pfNOR )
-				delete[]	m_pfNOR;
-			if ( m_pLatheX )
-				delete[]	m_pLatheX;
-			if ( m_pLatheZ )
-				delete[]	m_pLatheZ;
-			m_pfDepth = m_pfXYZ = m_pfNOR = m_pLatheX = m_pLatheZ = NULL;
+			DeleteDepthMemory();
 			return FALSE;
 		}
 	}
 
-	// ｸﾗｲｱﾝﾄ領域のﾃﾞﾌﾟｽ値を取得（ﾋﾟｸｾﾙ単位）
+	// ｸﾗｲｱﾝﾄ領域のﾃﾞﾌﾟｽとｽﾃﾝｼﾙ値を取得（ﾋﾟｸｾﾙ単位）
 #ifdef _DEBUG
 	DWORD	t1 = ::timeGetTime();
 #endif
@@ -193,22 +181,21 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 #endif
 
 	offset = m_icx * (m_icy-1);		// m_pfDepthの外径開始ｵﾌｾｯﾄ
-	// 外径のZX値を取得
-	for ( i=j=0; i<m_icx; i++, j++ ) {
+	// ワールド座標の取得
+	for ( i=0; i<m_icx; i++ ) {
+		// 外径のZX値を取得
 		::gluUnProject(i+wx1, wy1, m_pfDepth[i+offset],
 				mvMatrix, pjMatrix, viewPort,
 				&cdm.wx, &cdm.wy, &cdm.wz);
-		m_pLatheX[j] = (GLfloat)cdm.wx;
-		m_pLatheZ[j] = m_pfDepth[i+offset] == 0.0f ?	// ﾃﾞﾌﾟｽ値が初期値なら
+		m_pLatheX[i] = (GLfloat)cdm.wx;
+		m_pLatheZo[i] = m_pfDepth[i+offset] == 0.0f ?	// ﾃﾞﾌﾟｽ値が初期値なら
 				m_rcDraw.high :								// ﾜｰｸ半径値
 				fabs( min((float)cdm.wz, m_rcDraw.high) );	// 変換座標かﾜｰｸ半径の小さい方
-	}
-	// 内径のZ値を取得
-	for ( i=0; i<m_icx; i++, j++ ) {
+		// 内径のZ値を取得
 		::gluUnProject(i+wx1, wy2, m_pfDepth[i],
 				mvMatrix, pjMatrix, viewPort,
 				&cdm.wx, &cdm.wy, &cdm.wz);
-		m_pLatheZ[j] = m_pfDepth[i] == 0.0f ?			// ﾃﾞﾌﾟｽ値が初期値なら
+		m_pLatheZi[i] = m_pfDepth[i] == 0.0f ?			// ﾃﾞﾌﾟｽ値が初期値なら
 				0.0f :										// 原点
 				fabs( min((float)cdm.wz, m_rcDraw.high) );	// 変換座標かﾜｰｸ半径の小さい方
 	}
@@ -219,50 +206,76 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 
 	// 外径切削面の座標登録
 	for ( i=jj=0; i<m_icx; i++ ) {
-		if ( m_pLatheZ[i]<=m_pLatheZ[i+m_icx] || m_pLatheZ[i]<NCMIN )
-			break;	// 内径Zが大きいか原点ならそこで座標登録中断
-		fz = m_pLatheZ[i];		// 外径Z値
-		// ﾃｰﾊﾟｰ状の法線ﾍﾞｸﾄﾙを計算
-		fx = (fzb && fz != *fzb) ?
-				cos( atan2(fz - *fzb, m_pLatheX[i]-fxb) + RAD(90.0f) ) : 0.0f;
-		// fz を半径に円筒形の座標を生成（1周分座標登録しないとﾃｸｽﾁｬがうまく貼れない）
-		for ( j=0, q=RAD(-90.0f); j<=ARCCOUNT; j++, q+=ARCSTEP, jj+=NCXYZ ) {	// 断面表示ｻﾎﾟｰﾄのため-90°start
-			// ﾃﾞﾌｫﾙﾄの法線ﾍﾞｸﾄﾙ
-			m_pfNOR[jj+NCA_X] = fx;
-			m_pfNOR[jj+NCA_Y] = cos(q);
-			m_pfNOR[jj+NCA_Z] = sin(q);
-			// ﾜｰﾙﾄﾞ座標
-			m_pfXYZ[jj+NCA_X] = m_pLatheX[i];
-			m_pfXYZ[jj+NCA_Y] = fz * m_pfNOR[jj+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = fz * m_pfNOR[jj+NCA_Z];
+		fzo = m_pLatheZo[i];
+		fzi = m_pLatheZi[i];
+		if ( fzo < fzi ) {
+			fz = bBreak ? FLT_MAX : fzi;
+			bBreak = TRUE;
 		}
-		// 前回値を保存
-		fzb = fz;
-		fxb = m_pLatheX[i];
+		else {
+			fz = bBreak ? fzi : fzo;
+			bBreak = FALSE;
+		}
+		if ( fz < FLT_MAX ) {
+			// ﾃｰﾊﾟｰ状の法線ﾍﾞｸﾄﾙを計算
+			fx = (fzb && fz != *fzb) ?
+					cos( atan2(fz - *fzb, m_pLatheX[i]-fxb) + RAD(90.0f) ) : 0.0f;
+			// fz を半径に円筒形の座標を生成（1周分座標登録しないとﾃｸｽﾁｬがうまく貼れない）
+			for ( j=0, q=RAD(-90.0f); j<=ARCCOUNT; j++, q+=ARCSTEP, jj+=NCXYZ ) {	// 断面表示ｻﾎﾟｰﾄのため-90°start
+				// ﾃﾞﾌｫﾙﾄの法線ﾍﾞｸﾄﾙ
+				m_pfNOR[jj+NCA_X] = fx;
+				m_pfNOR[jj+NCA_Y] = cos(q);
+				m_pfNOR[jj+NCA_Z] = sin(q);
+				// ﾜｰﾙﾄﾞ座標
+				m_pfXYZ[jj+NCA_X] = m_pLatheX[i];
+				m_pfXYZ[jj+NCA_Y] = fz * m_pfNOR[jj+NCA_Y];
+				m_pfXYZ[jj+NCA_Z] = fz * m_pfNOR[jj+NCA_Z];
+			}
+			// 前回値を保存
+			fzb = fz;
+			fxb = m_pLatheX[i];
+		}
+		else {
+			// 無効値を登録（ｲﾝﾃﾞｯｸｽで無視）
+			for ( j=0; j<=ARCCOUNT; j++, jj+=NCXYZ ) {
+				m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Y] = m_pfNOR[jj+NCA_Z] = 0.0f;
+				m_pfXYZ[jj+NCA_X] = m_pfXYZ[jj+NCA_Y] = m_pfXYZ[jj+NCA_Z] = FLT_MAX;
+			}
+			fzb.reset();
+		}
 	}
-	// 座標登録範囲の設定
-	m_nLe = i;
+
 	// 内径切削面の座標登録
 	fzb.reset();
-	for ( i=0; i<m_nLe; i++ ) {		// 外径Z値＜内径Z値まで
-		fz = m_pLatheZ[i+m_icx];		// 内径Z値
-		fx = (fzb && fz != *fzb) ?
-				cos( atan2(fz - *fzb, m_pLatheX[i]-fxb) + RAD(90.0f) ) : 0.0f;
-		for ( j=0, q=RAD(-90.0f); j<=ARCCOUNT; j++, q+=ARCSTEP, jj+=NCXYZ ) {
-			m_pfNOR[jj+NCA_X] = fx;
-			m_pfNOR[jj+NCA_Y] = cos(q);
-			m_pfNOR[jj+NCA_Z] = sin(q);
-			m_pfXYZ[jj+NCA_X] = m_pLatheX[i];
-			m_pfXYZ[jj+NCA_Y] = fz * m_pfNOR[jj+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = fz * m_pfNOR[jj+NCA_Z];
+	for ( i=0; i<m_icx; i++ ) {
+		fzo = m_pLatheZo[i];
+		fzi = m_pLatheZi[i];
+		fz = fzo < fzi ? FLT_MAX : fzi;
+		if ( fz < FLT_MAX ) {
+			fx = (fzb && fz != *fzb) ?
+					cos( atan2(fz - *fzb, m_pLatheX[i]-fxb) + RAD(90.0f) ) : 0.0f;
+			for ( j=0, q=RAD(-90.0f); j<=ARCCOUNT; j++, q+=ARCSTEP, jj+=NCXYZ ) {
+				m_pfNOR[jj+NCA_X] = fx;
+				m_pfNOR[jj+NCA_Y] = cos(q);
+				m_pfNOR[jj+NCA_Z] = sin(q);
+				m_pfXYZ[jj+NCA_X] = m_pLatheX[i];
+				m_pfXYZ[jj+NCA_Y] = fz * m_pfNOR[jj+NCA_Y];
+				m_pfXYZ[jj+NCA_Z] = fz * m_pfNOR[jj+NCA_Z];
+			}
+			fzb = fz;
+			fxb = m_pLatheX[i];
 		}
-		// 前回値を保存
-		fzb = fz;
-		fxb = m_pLatheX[i];
+		else {
+			for ( j=0; j<=ARCCOUNT; j++, jj+=NCXYZ ) {
+				m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Y] = m_pfNOR[jj+NCA_Z] = 0.0f;
+				m_pfXYZ[jj+NCA_X] = m_pfXYZ[jj+NCA_Y] = m_pfXYZ[jj+NCA_Z] = FLT_MAX;
+			}
+			fzb.reset();
+		}
 	}
 
 	// 端面座標と法線（座標は計算済み。内径と外径をつなぎ法線ﾍﾞｸﾄﾙを設定）
-	offset = (ARCCOUNT+1) * m_nLe * NCXYZ;	// 内径座標へのｵﾌｾｯﾄ
+	offset = (ARCCOUNT+1) * m_icx * NCXYZ;	// 内径座標へのｵﾌｾｯﾄ
 	for ( i=j=0; i<=ARCCOUNT; i++, j+=NCXYZ, jj+=NCXYZ ) {
 		// 外径左端点
 		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
@@ -278,7 +291,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 		m_pfNOR[jj+NCA_X] = -1.0f;
 		m_pfNOR[jj+NCA_Y] = m_pfNOR[jj+NCA_Z] = 0.0f;
 	}
-	for ( i=0, j=(ARCCOUNT+1)*(m_nLe-1)*NCXYZ; i<=ARCCOUNT; i++, j+=NCXYZ, jj+=NCXYZ ) {
+	for ( i=0, j=(ARCCOUNT+1)*(m_icx-1)*NCXYZ; i<=ARCCOUNT; i++, j+=NCXYZ, jj+=NCXYZ ) {
 		// 外径右端点
 		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
 		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
@@ -294,41 +307,43 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 		m_pfNOR[jj+NCA_Y] = m_pfNOR[jj+NCA_Z] = 0.0f;
 	}
 
-	// 断面座標の登録（座標は計算済み。内径と外径をつなぎ法線ﾍﾞｸﾄﾙを設定）
-	for ( i=j=0; i<m_nLe; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
-		// 外径下側
-		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
-		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
-		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
-		m_pfNOR[jj+NCA_Y] = -1.0f;
-		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-		// 内径下側
-		jj += NCXYZ;
-		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
-		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
-		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
-		m_pfNOR[jj+NCA_Y] = -1.0f;
-		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-	}
-	for ( i=0, j=ARCCOUNT/2*NCXYZ; i<m_nLe; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
-		// 外径上側
-		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
-		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
-		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
-		m_pfNOR[jj+NCA_Y] = -1.0f;
-		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-		// 内径上側
-		jj += NCXYZ;
-		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
-		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
-		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
-		m_pfNOR[jj+NCA_Y] = -1.0f;
-		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+	if ( m_bSlitView ) {
+		// 断面座標の登録（座標は計算済み。内径と外径をつなぎ法線ﾍﾞｸﾄﾙを設定）
+		for ( i=j=0; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
+			// 外径下側
+			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
+			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
+			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
+			m_pfNOR[jj+NCA_Y] = -1.0f;
+			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+			// 内径下側
+			jj += NCXYZ;
+			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
+			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
+			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
+			m_pfNOR[jj+NCA_Y] = -1.0f;
+			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+		}
+		for ( i=0, j=ARCCOUNT/2*NCXYZ; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
+			// 外径上側
+			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
+			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
+			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
+			m_pfNOR[jj+NCA_Y] = -1.0f;
+			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+			// 内径上側
+			jj += NCXYZ;
+			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
+			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
+			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
+			m_pfNOR[jj+NCA_Y] = -1.0f;
+			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+		}
 	}
 
 #ifdef _DEBUG
 	DWORD	t3 = ::timeGetTime();
-	printf( "AddMatrix=%d[ms]\n", t3 - t2 );
+	printf( "AddMatrix=%d[ms] jj=%d\n", t3 - t2, jj );
 #endif
 
 #ifdef _DEBUG_FILEOUT_
@@ -343,7 +358,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 	int	i, ii, j,
 		offset = m_icx * (m_icy-1),	// m_pfDepthの外径開始ｵﾌｾｯﾄ
 		nSlit  = m_bSlitView ? (ARCCOUNT/2) : ARCCOUNT;	// 断面表示なら円の半分だけ
-	GLsizeiptr	nVBOsize = ( (ARCCOUNT+1)*m_nLe*2 + (ARCCOUNT+1)*2*2 + m_nLe*4 )
+	GLsizeiptr	nVBOsize = ( (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*2*2 + m_icx*4 )
 									* NCXYZ * sizeof(GLfloat);
 	GLuint		n0, n1;
 	GLenum		errCode;
@@ -351,7 +366,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 	vector<CVelement>	vvElementWrk,	// 頂点配列ｲﾝﾃﾞｯｸｽ(可変長２次元配列)
 						vvElementCut,
 						vvElementEdg,
-						vvElementSec;
+						vvElementSlt;
 	CVelement	vElement;
 
 	// 頂点ｲﾝﾃﾞｯｸｽの消去
@@ -366,61 +381,89 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 	m_vElementSlt.clear();
 
 	// 準備
-	vvElementWrk.reserve( (m_nLe+1)*2 );
-	vvElementCut.reserve( (m_nLe+1)*2 );
-	vvElementSec.reserve( (m_nLe+1)*2 );
+	vvElementWrk.reserve( (m_icx+1)*2 );
+	vvElementCut.reserve( (m_icx+1)*2 );
+	vvElementSlt.reserve( (m_icx+1)*2 );
 
 	// 外径ｲﾝﾃﾞｯｸｽ(iとi+1の座標を円筒形につなげる)
-	for ( i=0, ii=0; i<m_nLe-1; i++, ii++ ) {
-		vElement.clear();
-		for ( j=0; j<=nSlit; j++ ) {
-			n0 =  ii    * (ARCCOUNT+1) + j;
-			n1 = (ii+1) * (ARCCOUNT+1) + j;
-			vElement.push_back(n0);
-			vElement.push_back(n1);
+	for ( i=ii=0; i<m_icx-1; i++, ii++ ) {
+		n0 =  ii    * (ARCCOUNT+1) * NCXYZ;
+		n1 = (ii+1) * (ARCCOUNT+1) * NCXYZ;
+		if ( m_pfXYZ[n0]<FLT_MAX && m_pfXYZ[n1]<FLT_MAX ) {
+			vElement.clear();
+			for ( j=0; j<=nSlit; j++ ) {
+				n0 =  ii    * (ARCCOUNT+1) + j;
+				n1 = (ii+1) * (ARCCOUNT+1) + j;
+				vElement.push_back(n0);
+				vElement.push_back(n1);
+			}
+			if ( m_pfDepth[i+offset+1] == 0.0f )	// ﾃﾞﾌﾟｽが初期値->切削面かﾜｰｸ面か
+				vvElementWrk.push_back(vElement);
+			else
+				vvElementCut.push_back(vElement);
 		}
-		if ( m_pfDepth[i+offset+1] == 0.0f )	// 切削面かﾜｰｸ面か
-			vvElementWrk.push_back(vElement);
-		else
-			vvElementCut.push_back(vElement);
 	}
 
 	// 内径ｲﾝﾃﾞｯｸｽ
 	ii++;
-	for ( i=0; i<m_nLe-1; i++, ii++ ) {
-		vElement.clear();
-		for ( j=0; j<=nSlit; j++ ) {
-			n0 =  ii    * (ARCCOUNT+1) + j;
-			n1 = (ii+1) * (ARCCOUNT+1) + j;
-			vElement.push_back(n0);
-			vElement.push_back(n1);
+	for ( i=0; i<m_icx-1; i++, ii++ ) {
+		n0 =  ii    * (ARCCOUNT+1) * NCXYZ;
+		n1 = (ii+1) * (ARCCOUNT+1) * NCXYZ;
+		if ( m_pfXYZ[n0]<FLT_MAX && m_pfXYZ[n1]<FLT_MAX ) {
+			vElement.clear();
+			for ( j=0; j<=nSlit; j++ ) {
+				n0 =  ii    * (ARCCOUNT+1) + j;
+				n1 = (ii+1) * (ARCCOUNT+1) + j;
+				vElement.push_back(n0);
+				vElement.push_back(n1);
+			}
+			vvElementCut.push_back(vElement);
 		}
-		vvElementCut.push_back(vElement);
 	}
 
 	// 端面ｲﾝﾃﾞｯｸｽ
-	ii = (ARCCOUNT+1)*m_nLe*2;
+	ii = (ARCCOUNT+1)*m_icx*2;
 	for ( i=0; i<2; i++ ) {	// 左右端面
-		vElement.clear();
-		for ( j=0; j<=nSlit; j++ ) {
-			vElement.push_back(ii++);	// 外径
-			vElement.push_back(ii++);	// 内径
+		n0 =  ii    * NCXYZ;
+		n1 = (ii+1) * NCXYZ;
+		if ( m_pfXYZ[n0]<FLT_MAX && m_pfXYZ[n1]<FLT_MAX ) {
+			vElement.clear();
+			for ( j=0; j<=nSlit; j++ ) {
+				vElement.push_back(ii++);	// 外径
+				vElement.push_back(ii++);	// 内径
+			}
+			vvElementEdg.push_back(vElement);
 		}
-		vvElementEdg.push_back(vElement);
+		else {
+			for ( j=0; j<=nSlit; j++ )
+				ii+=2;
+		}
 		if ( m_bSlitView )
 			ii += ARCCOUNT;
 	}
 
 	// 断面ｲﾝﾃﾞｯｸｽ
 	if ( m_bSlitView ) {
-		ii = (ARCCOUNT+1)*m_nLe*2 + (ARCCOUNT+1)*4;
+		ii = (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*4;
 		for ( i=0; i<2; i++ ) {	// 上下断面
 			vElement.clear();
-			for ( j=0; j<m_nLe; j++ ) {
-				vElement.push_back(ii++);
-				vElement.push_back(ii++);
+			for ( j=0; j<m_icx; j++ ) {
+				n0 =  ii    * NCXYZ;
+				n1 = (ii+1) * NCXYZ;
+				if ( m_pfXYZ[n0]<FLT_MAX && m_pfXYZ[n1]<FLT_MAX ) {
+					vElement.push_back(ii++);
+					vElement.push_back(ii++);
+				}
+				else {
+					ii+=2;
+					if ( !vElement.empty() ) {
+						vvElementSlt.push_back(vElement);
+						vElement.clear();
+					}
+				}
 			}
-			vvElementSec.push_back(vElement);
+			if ( !vElement.empty() )
+				vvElementSlt.push_back(vElement);
 		}
 	}
 
@@ -455,16 +498,18 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
 	// 頂点ｲﾝﾃﾞｯｸｽをGPUﾒﾓﾘに転送
-	try {
+#ifndef _WIN64
+	try {	// 32bit版だけﾁｪｯｸ
+#endif
 		size_t	jj = 0,
 				nElement,
 				nWrkSize = vvElementWrk.size(),
 				nCutSize = vvElementCut.size(),
-				nEdgSize = 2,	// 左右端面
-				nSecSize = 2;	// 上下断面
+				nEdgSize = vvElementEdg.size(),
+				nSltSize = vvElementSlt.size();
 
-		m_pSolidElement = new GLuint[nWrkSize+nCutSize+nEdgSize+nSecSize];
-		::glGenBuffersARB((GLsizei)(nWrkSize+nCutSize+nEdgSize+nSecSize), m_pSolidElement);
+		m_pSolidElement = new GLuint[nWrkSize+nCutSize+nEdgSize+nSltSize];
+		::glGenBuffersARB((GLsizei)(nWrkSize+nCutSize+nEdgSize+nSltSize), m_pSolidElement);
 		errLine = __LINE__;
 		if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
@@ -550,7 +595,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 		}
 
 		// 断面
-		for ( const auto&v : vvElementSec ) {
+		for ( const auto&v : vvElementSlt ) {
 			nElement = v.size();
 			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
@@ -583,12 +628,14 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 		printf(" Cut  IndexCount=%d Triangle=%d\n",
 			nCutSize, dbgTriangleCut/3);
 #endif
+#ifndef _WIN64
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
 		return FALSE;
 	}
+#endif
 
 	return TRUE;
 }
@@ -604,8 +651,11 @@ void CNCViewGL::CreateTextureLathe(void)
 	GLfloat		ft;
 	GLfloat*	pfTEX;
 
-	try {
+#ifndef _WIN64
+	try {	// 32bit版だけﾁｪｯｸ
+#endif
 		pfTEX = new GLfloat[nVertex];
+#ifndef _WIN64
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -613,6 +663,7 @@ void CNCViewGL::CreateTextureLathe(void)
 		ClearTexture();
 		return;
 	}
+#endif
 
 	// ﾃｸｽﾁｬ座標の割り当て
 	for ( i=0, n=0; i<m_icx; i++ ) {

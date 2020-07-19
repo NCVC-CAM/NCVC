@@ -761,7 +761,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 	INT_PTR	i, nCnt;
 	PFNNCVCSERIALIZEFUNC	pSerialFunc = AfxGetNCVCApp()->GetSerializeFunc();
 
-	// MFCｽﾀﾃｨｯｸﾘﾝｸだと ReadJW でｴﾗｰになるよ
+	// !!! MFCｽﾀﾃｨｯｸﾘﾝｸだと ReadJW でｴﾗｰになるよ !!!
 	if ( pSerialFunc ) {
 		// ｱﾄﾞｲﾝｼﾘｱﾙ関数を保存．ﾌｧｲﾙ変更通知などに使用
 		m_pfnSerialFunc = pSerialFunc;	// DocBase.h

@@ -26,6 +26,7 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 	__super::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CAboutDlg)
 	DDX_Control(pDX, IDC_ABOUT_URL, m_ctURL);
+	DDX_Control(pDX, IDC_ABOUT_VER, m_ctVersion);
 	//}}AFX_DATA_MAP
 }
 
@@ -35,6 +36,13 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 BOOL CAboutDlg::OnInitDialog() 
 {
 	__super::OnInitDialog();
+
+#ifdef _WIN64
+	CString	strVer;
+	m_ctVersion.GetWindowText(strVer);
+	strVer += _T(" 64bit version");
+	m_ctVersion.SetWindowText(strVer);
+#endif
 
 	CString	strURL;
 	m_ctURL.GetWindowText(strURL);

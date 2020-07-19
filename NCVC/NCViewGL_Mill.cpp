@@ -13,7 +13,9 @@
 #include "NCViewGL.h"
 #include "NCListView.h"
 #include "ViewOption.h"
+#ifdef USE_KODATUNO
 #include "../Kodatuno/Describe_BODY.h"
+#endif
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -75,6 +77,7 @@ BOOL CNCViewGL::CreateBoxel(BOOL bRange)
 #endif
 
 	if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) ) {
+#ifdef USE_KODATUNO
 		// 図形ファイルと重ねるとき
 		if ( bRange ) {
 			CREATEBOXEL_IGESPARAM pParam = RANGEPARAM(GetDocument()->GetTraceStart(), GetDocument()->GetTraceDraw());
@@ -82,6 +85,7 @@ BOOL CNCViewGL::CreateBoxel(BOOL bRange)
 		}
 		else
 			bResult = CreateBoxel_fromIGES();
+#endif
 	}
 	else {
 		// 切削底面の描画（デプス値の更新）
@@ -124,6 +128,7 @@ BOOL CNCViewGL::CreateBoxel(BOOL bRange)
 	return bResult;
 }
 
+#ifdef USE_KODATUNO
 BOOL CNCViewGL::CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* pParam)
 {
 #ifdef _DEBUG
@@ -259,6 +264,7 @@ BOOL CNCViewGL::CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* pParam)
 
 	return TRUE;
 }
+#endif
 
 BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 {
@@ -297,6 +303,7 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 	vector<LPCREATEBOTTOMVERTEXPARAM>	vParam;
 	vector<HANDLE>		vHandleS, vHandleE;
 	// CPUの数だけｽﾚｯﾄﾞ生成と実行
+	// --- 全体描画だけなのでｽﾚｯﾄﾞは処理終了次第消滅 ---
 	for ( i=0; i<proc; i++ ) {
 		strEvent.Format(g_szCBFT_S, i);
 		vHandleS.push_back( ::CreateEvent(NULL, FALSE, TRUE,  strEvent) );	// 開始ｲﾍﾞﾝﾄは初期ｼｸﾞﾅﾙ状態
@@ -416,63 +423,36 @@ BOOL CNCViewGL::GetClipDepthMill(ENCLIPDEPTH enStencil)
 	// 領域確保
 	if ( m_icx!=icx || m_icy!=icy ) {
 		if ( m_pfDepth ) {
-			delete[]	m_pfDepth;
-			delete[]	m_pfXYZ;
-			delete[]	m_pfNOR;
-#ifdef NO_TRACE_WORKFILE
-			m_pfDepth = m_pfXYZ = m_pfNOR = NULL;
-#else
-			delete[]	m_pfDepthBottom;
-			m_pfDepth = m_pfDepthBottom = m_pfXYZ = m_pfNOR = NULL;
-#endif
-		}
-		if ( m_pbStencil ) {
-			delete[]	m_pbStencil;
-			m_pbStencil = NULL;
+			DeleteDepthMemory();
 		}
 		m_icx = icx;
 		m_icy = icy;
 	}
 	nSize = m_icx * m_icy;
-	try {
-		if ( !m_pfDepth ) {
+	if ( !m_pfDepth ) {
+		try {
 			m_pfDepth		= new GLfloat[nSize];
 #ifndef NO_TRACE_WORKFILE
 			m_pfDepthBottom	= new GLfloat[nSize];
 #endif
+			if ( enStencil != DP_NoStencil ) {
+				m_pbStencil = new GLubyte[nSize];
+			}
 			nSize  *= NCXYZ;				// XYZ座標格納
 			m_pfXYZ = new GLfloat[nSize*2];	// 上面と底面
 			m_pfNOR = new GLfloat[nSize*2];
 			bRecalc = TRUE;
 		}
-		else {
-			nSize  *= NCXYZ;
-			bRecalc = FALSE;
-		}
-		if ( enStencil!=DP_NoStencil && !m_pbStencil ) {
-			m_pbStencil = new GLubyte[m_icx*m_icy];
+		catch (CMemoryException* e) {
+			AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
+			e->Delete();
+			DeleteDepthMemory();
+			return FALSE;
 		}
 	}
-	catch (CMemoryException* e) {
-		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
-		e->Delete();
-		if ( m_pfDepth )
-			delete[]	m_pfDepth;
-		if ( m_pfXYZ )
-			delete[]	m_pfXYZ;
-		if ( m_pfNOR )
-			delete[]	m_pfNOR;
-		if ( m_pbStencil )
-			delete[]	m_pbStencil;
-#ifdef NO_TRACE_WORKFILE
-		m_pfDepth = m_pfXYZ = m_pfNOR = NULL;
-#else
-		if ( m_pfDepthBottom )
-			delete[]	m_pfDepthBottom;
-		m_pfDepth = m_pfDepthBottom = m_pfXYZ = m_pfNOR = NULL;
-#endif
-		m_pbStencil = NULL;
-		return FALSE;
+	else {
+		nSize  *= NCXYZ;
+		bRecalc = FALSE;
 	}
 #ifdef _DEBUG
 	DWORD	t2 = ::timeGetTime();
@@ -660,10 +640,7 @@ BOOL CNCViewGL::GetClipDepthCylinder(void)
 	// 領域確保
 	if ( m_icx!=icx || m_icy!=icy ) {
 		if ( m_pfDepth ) {
-			delete[]	m_pfDepth;
-			delete[]	m_pfXYZ;
-			delete[]	m_pfNOR;
-			m_pfDepth = m_pfXYZ = m_pfNOR = NULL;
+			DeleteDepthMemory();
 		}
 		m_icx = icx;
 		m_icy = icy;
@@ -678,13 +655,7 @@ BOOL CNCViewGL::GetClipDepthCylinder(void)
 		catch (CMemoryException* e) {
 			AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 			e->Delete();
-			if ( m_pfDepth )
-				delete[]	m_pfDepth;
-			if ( m_pfXYZ )
-				delete[]	m_pfXYZ;
-			if ( m_pfNOR )
-				delete[]	m_pfNOR;
-			m_pfDepth = m_pfXYZ = m_pfNOR = NULL;
+			DeleteDepthMemory();
 			return FALSE;
 		}
 		bRecalc = TRUE;
@@ -807,7 +778,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 		cy = m_icy;
 	}
 	nVBOsize = cx * cy * NCXYZ * 2 * sizeof(GLfloat);
-	proc = max(1, min(MAXIMUM_WAIT_OBJECTS, min(cy, (int)g_nProcesser*2)));
+	proc = max(1, min(MAXIMUM_WAIT_OBJECTS, min(cy, (int)g_nProcesser*2)));		// cy==0 ??
 	if ( m_nCeProc != proc ) {
 		EndOfCreateElementThread();
 		m_nCeProc = proc;
@@ -889,7 +860,9 @@ BOOL CNCViewGL::CreateVBOMill(void)
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
 	// 頂点ｲﾝﾃﾞｯｸｽをGPUﾒﾓﾘに転送
-	try {
+#ifndef _WIN64
+	try {	// 32bit版だけﾁｪｯｸ
+#endif
 		size_t	jj = 0,
 				nCutSize = 0, nWrkSize = 0,
 				nElement;
@@ -976,6 +949,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 		printf(" Cut  IndexCount=%d Triangle=%d\n",
 			nCutSize, dbgTriangleCut/3);
 #endif
+#ifndef _WIN64
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -983,7 +957,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 		ClearVBO();
 		bResult = FALSE;
 	}
-
+#endif
 //	if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP )
 //		AfxGetNCVCMainWnd()->GetProgressCtrl()->SetPos(100);	
 
@@ -1039,8 +1013,11 @@ void CNCViewGL::CreateTextureMill(void)
 	}
 	nVertex = icx * icy * 2 * 2;	// (X,Y) 上面と底面
 
-	try {
+#ifndef _WIN64
+	try {	// 32bit版だけﾁｪｯｸ
+#endif
 		pfTEX = new GLfloat[nVertex];
+#ifndef _WIN64
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -1048,6 +1025,7 @@ void CNCViewGL::CreateTextureMill(void)
 		ClearTexture();
 		return;
 	}
+#endif
 
 	// 上面用ﾃｸｽﾁｬ座標
 	for ( j=0, n=0; j<icy; j++ ) {
@@ -1154,7 +1132,6 @@ UINT CreateElementThread(LPVOID pVoid)
 			// ｽﾚｯﾄﾞ実行許可待ち
 			pParam->evStart.Lock();
 			pParam->evEnd.ResetEvent();
-			pParam->evStart.ResetEvent();
 			if ( !pParam->bThread )
 				break;
 			//

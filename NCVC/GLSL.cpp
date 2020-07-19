@@ -30,6 +30,7 @@ GLint CGLSL::GetUniformLocation(LPCTSTR lpszName)
 
 BOOL CGLSL::CompileShaderFromFile(LPCTSTR lpszFile, GLSLShaderType type)
 {
+	extern	LPCTSTR	gg_szReturn;	// "\n"
 	CString	strTmp, strBuf;
 
 	try {
@@ -37,7 +38,7 @@ BOOL CGLSL::CompileShaderFromFile(LPCTSTR lpszFile, GLSLShaderType type)
 			CFile::modeRead | CFile::shareDenyWrite | CFile::typeText);
 		// “Ç‚Ýž‚ÝÙ°Ìß
 		while ( fp.ReadString(strTmp) )
-			strBuf += strTmp + '\n';
+			strBuf += strTmp + gg_szReturn;
 	}
 	catch (CFileException* e) {
 		e->Delete();

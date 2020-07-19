@@ -17,9 +17,11 @@ enum {
 	MKLA_NUM_E_SPINDLE,			// 端面主軸回転数
 	MKLA_NUM_I_SPINDLE,			// 内径主軸回転数
 	MKLA_NUM_O_SPINDLE,			// 外径主軸回転数
+	MKLA_NUM_G_SPINDLE,			// 突切主軸回転数
 	MKLA_NUM_I_MARGIN,			// 内径仕上げ回数
 	MKLA_NUM_O_MARGIN,			// 外径仕上げ回数
-		MKLA_NUM_NUMS		// [12]
+	MKLA_NUM_GROOVETOOL,		// 突切工具基準点
+		MKLA_NUM_NUMS		// [14]
 };
 enum {
 	MKLA_DBL_O_FEED = 0,		// 外径切削送り(Z)
@@ -38,7 +40,7 @@ enum {
 	MKLA_DBL_DRILLR,			// R点
 	MKLA_DBL_DRILLQ,			// Q値
 	MKLA_DBL_DRILLD,			// 戻り値
-	MKLA_DBL_DWELL,				// ﾄﾞｳｪﾙ時間(Makeの関係でfloat)
+	MKLA_DBL_D_DWELL,			// 下穴ﾄﾞｳｪﾙ時間(Makeの関係でfloat)
 	MKLA_DBL_HOLE,				// 既存下穴ｻｲｽﾞ
 	MKLA_DBL_I_FEED,			// 内径切削送り(Z)
 	MKLA_DBL_I_FEEDX,			// 内径切削送り(X)
@@ -46,7 +48,12 @@ enum {
 	MKLA_DBL_I_PULLZ,			// 内径引き代Z
 	MKLA_DBL_I_PULLX,			// 内径引き代X(半径値)
 	MKLA_DBL_I_MARGIN,			// 内径仕上げ代(半径値)
-		MKLA_DBL_NUMS		// [24]
+	MKLA_DBL_G_FEED,			// 突切切削送り(Z)
+	MKLA_DBL_G_FEEDX,			// 突切切削送り(X)
+	MKLA_DBL_G_PULLX,			// 突切引き代X(半径値)
+	MKLA_DBL_G_DWELL,			// 突切ﾄﾞｳｪﾙ時間
+	MKLA_DBL_GROOVEWIDTH,		// 突切刃幅
+		MKLA_DBL_NUMS		// [29]
 };
 enum {
 	MKLA_FLG_PROG = 0,			// O番号付与
@@ -74,7 +81,8 @@ enum {
 	MKLA_STR_E_CUSTOM,			// 端面ｶｽﾀﾑｺｰﾄﾞ
 	MKLA_STR_I_CUSTOM,			// 内径ｶｽﾀﾑｺｰﾄﾞ
 	MKLA_STR_O_CUSTOM,			// 外径ｶｽﾀﾑｺｰﾄﾞ
-		MKLA_STR_NUMS		// [11]
+	MKLA_STR_G_CUSTOM,			// 突切ｶｽﾀﾑｺｰﾄﾞ
+		MKLA_STR_NUMS		// [12]
 };
 //
 #define	LTH_I_PROG				m_pIntOpt[MKLA_NUM_PROG]
@@ -87,8 +95,10 @@ enum {
 #define	LTH_I_E_SPINDLE			m_pIntOpt[MKLA_NUM_E_SPINDLE]
 #define	LTH_I_I_SPINDLE			m_pIntOpt[MKLA_NUM_I_SPINDLE]
 #define	LTH_I_O_SPINDLE			m_pIntOpt[MKLA_NUM_O_SPINDLE]
+#define	LTH_I_G_SPINDLE			m_pIntOpt[MKLA_NUM_G_SPINDLE]
 #define	LTH_I_I_MARGIN			m_pIntOpt[MKLA_NUM_I_MARGIN]
 #define	LTH_I_O_MARGIN			m_pIntOpt[MKLA_NUM_O_MARGIN]
+#define	LTH_I_GROOVETOOL		m_pIntOpt[MKLA_NUM_GROOVETOOL]
 //
 #define	LTH_D_O_FEED			m_pDblOpt[MKLA_DBL_O_FEED]
 #define	LTH_D_O_FEEDX			m_pDblOpt[MKLA_DBL_O_FEEDX]
@@ -106,7 +116,7 @@ enum {
 #define	LTH_D_DRILLR			m_pDblOpt[MKLA_DBL_DRILLR]
 #define	LTH_D_DRILLQ			m_pDblOpt[MKLA_DBL_DRILLQ]
 #define	LTH_D_DRILLD			m_pDblOpt[MKLA_DBL_DRILLD]
-#define	LTH_D_DWELL				m_pDblOpt[MKLA_DBL_DWELL]
+#define	LTH_D_DWELL				m_pDblOpt[MKLA_DBL_D_DWELL]
 #define	LTH_D_HOLE				m_pDblOpt[MKLA_DBL_HOLE]
 #define	LTH_D_I_FEED			m_pDblOpt[MKLA_DBL_I_FEED]
 #define	LTH_D_I_FEEDX			m_pDblOpt[MKLA_DBL_I_FEEDX]
@@ -114,6 +124,11 @@ enum {
 #define	LTH_D_I_PULLZ			m_pDblOpt[MKLA_DBL_I_PULLZ]
 #define	LTH_D_I_PULLX			m_pDblOpt[MKLA_DBL_I_PULLX]
 #define	LTH_D_I_MARGIN			m_pDblOpt[MKLA_DBL_I_MARGIN]
+#define	LTH_D_G_FEED			m_pDblOpt[MKLA_DBL_G_FEED]
+#define	LTH_D_G_FEEDX			m_pDblOpt[MKLA_DBL_G_FEEDX]
+#define	LTH_D_G_PULLX			m_pDblOpt[MKLA_DBL_G_PULLX]
+#define	LTH_D_G_DWELL			m_pDblOpt[MKLA_DBL_G_DWELL]
+#define	LTH_D_GROOVEWIDTH		m_pDblOpt[MKLA_DBL_GROOVEWIDTH]
 //
 #define	LTH_F_PROG				m_pFlgOpt[MKLA_FLG_PROG]
 #define	LTH_F_PROGAUTO			m_pFlgOpt[MKLA_FLG_PROGAUTO]
@@ -138,6 +153,7 @@ enum {
 #define	LTH_S_E_CUSTOM			m_strOption[MKLA_STR_E_CUSTOM]
 #define	LTH_S_I_CUSTOM			m_strOption[MKLA_STR_I_CUSTOM]
 #define	LTH_S_O_CUSTOM			m_strOption[MKLA_STR_O_CUSTOM]
+#define	LTH_S_G_CUSTOM			m_strOption[MKLA_STR_G_CUSTOM]
 //
 struct LATHEDRILLINFO
 {
@@ -154,6 +170,7 @@ class CNCMakeLatheOpt : public CNCMakeOption
 	friend class CMKLASetup2;
 	friend class CMKLASetup3;
 	friend class CMKLASetup4;
+	friend class CMKLASetup5;
 	friend class CMKNCSetup2;
 	friend class CMKNCSetup6;
 

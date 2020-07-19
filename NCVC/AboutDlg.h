@@ -5,6 +5,7 @@
 #pragma once
 
 #include <afxlinkctrl.h>
+#include "afxwin.h"
 
 class CAboutDlg : public CDialog
 {
@@ -16,6 +17,7 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CAboutDlg)
 	enum { IDD = IDD_ABOUTBOX };
+	CStatic			m_ctVersion;
 	CMFCLinkCtrl	m_ctURL;
 	//}}AFX_DATA
 

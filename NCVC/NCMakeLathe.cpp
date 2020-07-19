@@ -63,13 +63,16 @@ CNCMakeLathe::CNCMakeLathe(const CDXFdata* pData, float dFeed)
 	}
 }
 
-// 指定位置に直線移動
-CNCMakeLathe::CNCMakeLathe(const CPointF& pt)
+// 指定位置に直線[移動|切削]
+CNCMakeLathe::CNCMakeLathe(int nCode, const CPointF& pt, float dFeed)
 {
-	CString	strGcode( (*ms_pfnGetGString)(0) +
+	CString	strGcode( (*ms_pfnGetGString)(nCode) +
 		GetValString(NCA_Z, pt.x) + GetValString(NCA_X, pt.y) );
-	if ( !strGcode.IsEmpty() )
+	if ( !strGcode.IsEmpty() ) {
+		if ( nCode > 0 )
+			strGcode += GetFeedString(dFeed);
 		m_strGcode = (*ms_pfnGetLineNo)() + strGcode + ms_strEOB;
+	}
 }
 
 // 指定位置に２軸移動
@@ -104,11 +107,10 @@ CNCMakeLathe::CNCMakeLathe(int nCode, int xz, float dVal, float dFeed)
 	CString	strValue(GetValString(xz, dVal));
 	if ( !strValue.IsEmpty() ) {
 		strGcode = (*ms_pfnGetGString)(nCode) + strValue;
-		if ( nCode > 0 )	// G00以外
+		if ( nCode > 0 )
 			strGcode += GetFeedString(dFeed);
-	}
-	if ( !strGcode.IsEmpty() )
 		m_strGcode = (*ms_pfnGetLineNo)() + strGcode + ms_strEOB;
+	}
 }
 
 // 任意の文字列ｺｰﾄﾞ
@@ -214,8 +216,8 @@ void CNCMakeLathe::CreatePilotHole(void)
 //				GetValString(NCA_R, GetDbl(MKLA_DBL_DRILLR), TRUE);	// 上で移動しているので不要やけど...
 			if ( GetDbl(MKLA_DBL_DRILLQ) > 0 )
 				strGcode += "Q" + (*ms_pfnGetValDetail)(GetDbl(MKLA_DBL_DRILLQ));
-			if ( GetDbl(MKLA_DBL_DWELL) > 0 )
-				strGcode += GetValString(NCA_P, GetDbl(MKLA_DBL_DWELL));
+			if ( GetDbl(MKLA_DBL_D_DWELL) > 0 )
+				strGcode += GetValString(NCA_P, GetDbl(MKLA_DBL_D_DWELL));
 			strGcode += GetFeedString(info.f);
 			AddGcode(strGcode);
 			// Z値を元に戻す
@@ -229,8 +231,8 @@ void CNCMakeLathe::CreatePilotHole(void)
 				if ( z <= GetDbl(MKLA_DBL_DRILLZ) ) {
 					strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_Z, GetDbl(MKLA_DBL_DRILLZ)) + GetFeedString(info.f);
 					AddGcode(strGcode);
-					if ( GetDbl(MKLA_DBL_DWELL) > 0 ) {
-						strGcode = (*ms_pfnGetGString)(4) + GetValString(NCA_P, GetDbl(MKLA_DBL_DWELL));
+					if ( GetDbl(MKLA_DBL_D_DWELL) > 0 ) {
+						strGcode = (*ms_pfnGetGString)(4) + GetValString(NCA_P, GetDbl(MKLA_DBL_D_DWELL));
 						AddGcode(strGcode);
 					}
 					strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, GetDbl(MKLA_DBL_DRILLR));
@@ -252,6 +254,48 @@ void CNCMakeLathe::CreatePilotHole(void)
 	// ﾄﾞﾘﾙ工程終了ｺﾒﾝﾄ
 	strGcode = ENDDRILL_S;	// g_szNCcomment[ENDDRILL]
 	AddGcode( '(' + strGcode + ')' );
+}
+
+void CNCMakeLathe::CreateGroove(const CPointF& pt, float dPullX)
+{
+	CString	strGcode;
+
+	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, pt.x);
+	AddGcode(strGcode);
+	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_X, dPullX);
+	AddGcode(strGcode);
+	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, pt.y) + GetFeedString(GetDbl(MKLA_DBL_G_FEEDX));
+	AddGcode(strGcode);
+	if ( GetDbl(MKLA_DBL_G_DWELL) > 0 ) {
+		strGcode = (*ms_pfnGetGString)(4) + GetValString(NCA_P, GetDbl(MKLA_DBL_G_DWELL));
+		AddGcode(strGcode);
+	}
+	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, dPullX) + GetFeedString(GetDbl(MKLA_DBL_G_FEEDX));
+	AddGcode(strGcode);
+}
+
+void CNCMakeLathe::CreateGroove(const CPointF& pts, const CPointF& pte, float dPullX)
+{
+	CString	strGcode;
+
+	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, pts.x);
+	AddGcode(strGcode);
+	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_X, dPullX);
+	AddGcode(strGcode);
+	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, pts.y) + GetFeedString(GetDbl(MKLA_DBL_G_FEEDX));
+	AddGcode(strGcode);
+	if ( GetDbl(MKLA_DBL_G_DWELL) > 0 ) {
+		strGcode = (*ms_pfnGetGString)(4) + GetValString(NCA_P, GetDbl(MKLA_DBL_G_DWELL));
+		AddGcode(strGcode);
+	}
+	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_Z, pte.x) + GetValString(NCA_X, pte.y) + GetFeedString(GetDbl(MKLA_DBL_G_FEED));
+	AddGcode(strGcode);
+	if ( GetDbl(MKLA_DBL_G_DWELL) > 0 ) {
+		strGcode = (*ms_pfnGetGString)(4) + GetValString(NCA_P, GetDbl(MKLA_DBL_G_DWELL));
+		AddGcode(strGcode);
+	}
+	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, dPullX) + GetFeedString(GetDbl(MKLA_DBL_G_FEEDX));
+	AddGcode(strGcode);
 }
 
 CString	CNCMakeLathe::MakeSpindle(int s)
