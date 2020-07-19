@@ -19,7 +19,7 @@ static	LPCTSTR	g_szMilNOrder[] = {
 		"ZReturn", "CircleIJ",
 	"MakeEnd", "FinishSpindle",
 		"DeepZProcess", "DeepAProcess", "DeepCProcess",
-	"DrillSpindle", "Dwell", "DwellFormat", "DrillZProcess",
+	"DrillSpindle", "DwellFormat", "DrillZProcess",
 		"DrillProcess", "DrillSort", "DrillCircleProcess",
 	"MoveZ",
 	"ToleranceProcess", "DrillOptimaize"
@@ -30,7 +30,7 @@ static	const	int		g_dfMilNOrder[] = {
 		1, 1,
 	0, 8000,
 		0, 0, 0,
-	3000, 10, 0, 0,
+	3000, 1, 0,
 		0, 0, 0,
 	0,
 	0, 0
@@ -42,7 +42,7 @@ static	LPCTSTR	g_szMilDOrder[] = {
 	"ZG0Stop", "ZCut", "G92X", "G92Y", "G92Z",
 	"Ellipse",
 	"MakeEndValue", "MakeEndFeed", "DeepFinal", "ZStep", "FinishFeed",
-	"DrillFeed", "DrillR", "DrillZ", "DrillQ", "DrillCircleR",
+	"DrillFeed", "DrillR", "DrillZ", "DrillQ", "Dwell", "DrillCircleR",
 	"Tolerance", "DrillMargin"
 };
 static	const	float	g_dfMilDOrder[] = {
@@ -50,7 +50,7 @@ static	const	float	g_dfMilDOrder[] = {
 	1.0f, -12.0f, 0.0f, 0.0f, 10.0f,
 	0.5f,
 	0.0f, 1000.0f, -20.0f, -2.0f, 100.0f,
-	60.0f, -9.0f, -12.0f, 1.0f, 10.0f,
+	60.0f, -9.0f, -12.0f, 1.0f, 1.0f, 10.0f,
 	NCMIN, 1.0f
 };
 
@@ -154,7 +154,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_DBL,	MKNC_DBL_DRILLR,		"åäâ¡çHRì_"},
 	{NC_DBL,	MKNC_DBL_DRILLZ,		"åäâ¡çHêÿÇËçûÇ›"},
 	{NC_FLG,	MKNC_FLG_DRILLMATCH,	"åäâ¡çHìØàÍç¿ïWñ≥éã"},
-	{NC_NUM,	MKNC_NUM_DWELL,			"ƒﬁ≥™Ÿéûä‘"},
+	{NC_DBL,	MKNC_DBL_DWELL,			"ƒﬁ≥™Ÿéûä‘"},
 	{NC_NUM,	MKNC_NUM_DWELLFORMAT,	"ƒﬁ≥™Ÿéûä‘ï\ãL(0:è¨êîì_,1:êÆêî)"},
 	{NC_NUM,	MKNC_NUM_DRILLPROCESS,	"åäâ¡çHéËèá(0:êÊ,1:å„,2:ÇÃÇ›)"},
 	{NC_NUM,	MKNC_NUM_DRILLRETURN,	"â¡çH¿≤Ãﬂ(0:G81|G82,1:G85|G89, 2:G83)"},
@@ -375,12 +375,12 @@ void CNCMakeMillOpt::DbgDump(void) const
 	dbg.printf("  DrillFeed    =%f", MIL_D_DRILLFEED);
 	dbg.printf("  DrillR       =%f", MIL_D_DRILLR);
 	dbg.printf("  DrillZ       =%f", MIL_D_DRILLZ);
-	dbg.printf("  DrillMatch   =%d", MIL_F_DRILLMATCH);
-	dbg.printf("  Dwell        =%d", MIL_I_DWELL);
+	dbg.printf("  DrillQ       =%f", MIL_D_DRILLQ);
+	dbg.printf("  Dwell        =%f", MIL_D_DWELL);
 	dbg.printf("  DwellFormat  =%d", MIL_I_DWELLFORMAT);
+	dbg.printf("  DrillMatch   =%d", MIL_F_DRILLMATCH);
 	dbg.printf("  DrillProcess =%d", MIL_I_DRILLPROCESS);
 	dbg.printf("  DrillZProcess=%d", MIL_I_DRILLRETURN);
-	dbg.printf("  DrillQ       =%f", MIL_D_DRILLQ);
 	dbg.printf("----------");
 	dbg.printf("  DrillCircle  =%d", MIL_F_DRILLCIRCLE);
 	dbg.printf("  DrillCircleR =%f", MIL_D_DRILLCIRCLE);

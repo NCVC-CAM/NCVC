@@ -29,7 +29,7 @@ public:
 	CFloatEdit	m_dDrillR;
 	CFloatEdit	m_dCircleR;
 	CFloatEdit	m_dDrillQ;
-	CIntEdit	m_nDwell;
+	CFloatEdit	m_dDwell;
 	CIntEdit	m_nSpindle;
 	int		m_nProcess;
 	int		m_nDwellFormat;

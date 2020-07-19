@@ -23,7 +23,6 @@ enum {
 	MKNC_NUM_DEEPALL,			// 深彫の切削手順
 	MKNC_NUM_DEEPROUND,			// 深彫の切削方向
 	MKNC_NUM_DRILLSPINDLE,		// 穴あけ回転数
-	MKNC_NUM_DWELL,				// ﾄﾞｳｪﾙ時間
 	MKNC_NUM_DWELLFORMAT,		// ﾄﾞｳｪﾙ時間の表記
 	MKNC_NUM_DRILLRETURN,		// 穴あけの加工ｺｰﾄﾞ
 	MKNC_NUM_DRILLPROCESS,		// 穴あけの仕方
@@ -32,7 +31,7 @@ enum {
 	MKNC_NUM_MOVEZ,				// 移動ﾚｲﾔのZ軸
 	MKNC_NUM_TOLERANCE,			// 許容差を超えたときの動作
 	MKNC_NUM_OPTIMAIZEDRILL,	// 穴加工の基準軸
-		MKNC_NUM_NUMS		// [24]
+		MKNC_NUM_NUMS		// [23]
 };
 enum {
 	MKNC_DBL_FEED = 0,			// 切削送り速度
@@ -52,10 +51,11 @@ enum {
 	MKNC_DBL_DRILLR,			// 穴加工R点
 	MKNC_DBL_DRILLZ,			// 穴加工切り込み
 	MKNC_DBL_DRILLQ,			// 深穴Q値
+	MKNC_DBL_DWELL,				// ﾄﾞｳｪﾙ時間
 	MKNC_DBL_DRILLCIRCLE,		// 穴加工に見立てる円ﾃﾞｰﾀの半径
 	MKNC_DBL_TOLERANCE,			// 同一座標と見なす許容差
 	MKNC_DBL_DRILLMARGIN,		// 基準軸に対する許容差
-		MKNC_DBL_NUMS		// [20]
+		MKNC_DBL_NUMS		// [21]
 };
 enum {
 	MKNC_FLG_PROG = 0,			// O番号付与
@@ -105,7 +105,6 @@ enum {
 #define	MIL_I_DEEPALL				m_pIntOpt[MKNC_NUM_DEEPALL]
 #define	MIL_I_DEEPROUND				m_pIntOpt[MKNC_NUM_DEEPROUND]
 #define	MIL_I_DRILLSPINDLE			m_pIntOpt[MKNC_NUM_DRILLSPINDLE]
-#define	MIL_I_DWELL					m_pIntOpt[MKNC_NUM_DWELL]
 #define	MIL_I_DWELLFORMAT			m_pIntOpt[MKNC_NUM_DWELLFORMAT]
 #define	MIL_I_DRILLRETURN			m_pIntOpt[MKNC_NUM_DRILLRETURN]
 #define	MIL_I_DRILLPROCESS			m_pIntOpt[MKNC_NUM_DRILLPROCESS]
@@ -132,6 +131,7 @@ enum {
 #define	MIL_D_DRILLR				m_pDblOpt[MKNC_DBL_DRILLR]
 #define	MIL_D_DRILLZ				m_pDblOpt[MKNC_DBL_DRILLZ]
 #define	MIL_D_DRILLQ				m_pDblOpt[MKNC_DBL_DRILLQ]
+#define	MIL_D_DWELL					m_pDblOpt[MKNC_DBL_DWELL]
 #define	MIL_D_DRILLCIRCLE			m_pDblOpt[MKNC_DBL_DRILLCIRCLE]
 #define	MIL_D_TOLERANCE				m_pDblOpt[MKNC_DBL_TOLERANCE]
 #define	MIL_D_DRILLMARGIN			m_pDblOpt[MKNC_DBL_DRILLMARGIN]

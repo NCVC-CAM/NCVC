@@ -367,7 +367,7 @@ void CNCMakeMill::SetStaticOption(const CNCMakeMillOpt* pNCMake)
 		ms_nCycleCode = 83;
 	}
 	else {
-		if ( GetNum(MKNC_NUM_DWELL) > 0 )
+		if ( GetDbl(MKNC_DBL_DWELL) > 0 )
 			ms_nCycleCode = GetNum(MKNC_NUM_DRILLRETURN) == 0 ? 82 : 89;
 		else
 			ms_nCycleCode = GetNum(MKNC_NUM_DRILLRETURN) == 0 ? 81 : 85;

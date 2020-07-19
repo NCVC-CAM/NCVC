@@ -55,7 +55,7 @@ void CMKNCSetup4::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKNC4_DWELLWORNING, m_ctDwellWorning);
 	DDX_Control(pDX, IDC_MKNC4_ZCUT, m_dDrillZ);
 	DDX_Control(pDX, IDC_MKNC4_R, m_dDrillR);
-	DDX_Control(pDX, IDC_MKNC4_DWELL, m_nDwell);
+	DDX_Control(pDX, IDC_MKNC4_DWELL, m_dDwell);
 	DDX_Control(pDX, IDC_MKNC4_SPINDLE, m_nSpindle);
 	DDX_Check(pDX, IDC_MKNC4_MATCH, m_bDrillMatch);
 	DDX_Check(pDX, IDC_MKNC4_CIRCLE, m_bCircle);
@@ -107,13 +107,13 @@ BOOL CMKNCSetup4::OnInitDialog()
 	m_nSpindle		= pOpt->MIL_I_DRILLSPINDLE;
 	m_dFeed			= pOpt->MIL_D_DRILLFEED;
 	m_bDrillMatch	= pOpt->MIL_F_DRILLMATCH;
-	m_nDwell		= pOpt->MIL_I_DWELL;
-	m_nDwellFormat	= pOpt->MIL_I_DWELLFORMAT;
 	m_nProcess		= pOpt->MIL_I_DRILLPROCESS;
 	m_nDrillReturn	= pOpt->MIL_I_DRILLRETURN;
 	m_dDrillR		= pOpt->MIL_D_DRILLR;
 	m_dDrillZ		= pOpt->MIL_D_DRILLZ;
 	m_dDrillQ		= pOpt->MIL_D_DRILLQ;
+	m_dDwell		= pOpt->MIL_D_DWELL;
+	m_nDwellFormat	= pOpt->MIL_I_DWELLFORMAT;
 	m_bCircle		= pOpt->MIL_F_DRILLCIRCLE;
 	m_dCircleR		= pOpt->MIL_D_DRILLCIRCLE;
 	m_nSort			= pOpt->MIL_I_DRILLSORT;
@@ -153,13 +153,13 @@ BOOL CMKNCSetup4::OnApply()
 	pOpt->MIL_I_DRILLSPINDLE	= m_nSpindle;
 	pOpt->MIL_D_DRILLFEED		= m_dFeed;
 	pOpt->MIL_F_DRILLMATCH		= m_bDrillMatch;
-	pOpt->MIL_I_DWELL			= m_nDwell;
-	pOpt->MIL_I_DWELLFORMAT		= m_nDwellFormat;
 	pOpt->MIL_I_DRILLPROCESS	= m_nProcess;
 	pOpt->MIL_I_DRILLRETURN		= m_nDrillReturn;
 	pOpt->MIL_D_DRILLR			= m_dDrillR;
 	pOpt->MIL_D_DRILLZ			= m_dDrillZ;
 	pOpt->MIL_D_DRILLQ			= m_dDrillQ;		
+	pOpt->MIL_D_DWELL			= m_dDwell;
+	pOpt->MIL_I_DWELLFORMAT		= m_nDwellFormat;
 	pOpt->MIL_F_DRILLCIRCLE		= m_bCircle;
 	pOpt->MIL_D_DRILLCIRCLE		= m_dCircleR;
 	pOpt->MIL_I_DRILLSORT		= m_nSort;
@@ -174,22 +174,28 @@ BOOL CMKNCSetup4::OnKillActive()
 	if ( !__super::OnKillActive() )
 		return FALSE;
 
+	if ( m_dFeed <= 0.0f ) {
+		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
+		m_dFeed.SetFocus();
+		m_dFeed.SetSel(0, -1);
+		return FALSE;
+	}
 	if ( (float)m_dDrillZ > (float)m_dDrillR ) {
 		AfxMessageBox(IDS_ERR_ZCUT, MB_OK|MB_ICONEXCLAMATION);
 		m_dDrillZ.SetFocus();
 		m_dDrillZ.SetSel(0, -1);
 		return FALSE;
 	}
-	if ( m_dDrillQ < 0 ) {	// zero ok
+	if ( m_dDrillQ < 0.0f ) {	// zero ok
 		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
 		m_dDrillQ.SetFocus();
 		m_dDrillQ.SetSel(0, -1);
 		return FALSE;
 	}
-	if ( m_dFeed <= 0 ) {
+	if ( m_dDwell < 0.0f ) {	// zero ok
 		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
-		m_dFeed.SetFocus();
-		m_dFeed.SetSel(0, -1);
+		m_dDwell.SetFocus();
+		m_dDwell.SetSel(0, -1);
 		return FALSE;
 	}
 	if ( m_bCircle && m_dCircleR<=0.0f ) {
