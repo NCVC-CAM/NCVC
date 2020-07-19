@@ -330,7 +330,8 @@ CNCdata* CNCDoc::DataOperation
 			}
 			pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 			break;
-		case 81:	// ŒÅ’è»²¸Ù
+		case 73:	// ŒÅ’è»²¸Ù
+		case 81:
 		case 82:
 		case 83:
 		case 84:

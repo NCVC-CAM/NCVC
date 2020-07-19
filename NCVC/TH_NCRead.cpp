@@ -1141,8 +1141,8 @@ ENGCODEOBJ	IsGcodeObject_Milling(int nCode)
 		g_Cycle.bCycle = FALSE;
 		enResult = MAKEOBJ;
 		break;
-	case 81: case 82: case 83: case 84: case 85:
-	case 86: case 87: case 88: case 89:
+	case 73: case 81: case 82: case 83: case 84:
+	case 85: case 86: case 87: case 88: case 89:
 		g_Cycle.bCycle	= TRUE;
 		g_Cycle.bAbs	= g_ncArgv.bAbs;
 		g_Cycle.dValI	= g_ncArgv.nc.dValue[_GetPlaneZ()];
@@ -1185,8 +1185,8 @@ ENGCODEOBJ	IsGcodeObject_Lathe(int nCode)
 		g_Cycle.bCycle = FALSE;
 		enResult = MAKEOBJ;
 		break;
-	case 81: case 82: case 83: case 84: case 85:
-	case 86: case 87: case 88: case 89:
+	case 73: case 81: case 82: case 83: case 84:
+	case 85: case 86: case 87: case 88: case 89:
 		g_Cycle.bCycle	= TRUE;
 		g_Cycle.bAbs	= g_ncArgv.bAbs;
 		g_Cycle.dValI	= g_ncArgv.nc.dValue[_GetPlaneZ()];
@@ -1945,10 +1945,10 @@ BOOL SearchProgNo(LPCTSTR lpszFile, const regex& r)
 void CycleInterpolate(void)
 {
 	// ”O‚Ì‚½‚ß‚ÉÁª¯¸
-	if ( g_ncArgv.nc.nGcode<81 || g_ncArgv.nc.nGcode>89 ) {
-		g_Cycle.clear();
-		return;
-	}
+//	if ( g_ncArgv.nc.nGcode<81 || g_ncArgv.nc.nGcode>89 ) {
+//		g_Cycle.clear();
+//		return;
+//	}
 
 	// ŒÅ’è»²¸Ù‚Ì•âŠÔ
 	int	z = _GetPlaneZ();
