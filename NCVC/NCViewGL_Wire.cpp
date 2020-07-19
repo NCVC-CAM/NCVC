@@ -14,10 +14,8 @@
 #include "NCListView.h"
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #include <mmsystem.h>			// timeGetTime()
 #endif
 
@@ -29,7 +27,7 @@ extern	const PENSTYLE	g_penStyle[];	// ViewOption.cpp
 BOOL CNCViewGL::CreateWire(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CreateWire()\nStart");
+	printf("CNCViewGL::CreateWire() Start\n");
 #endif
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	INT_PTR		i, nLoop = GetDocument()->GetTraceDraw();
@@ -126,23 +124,23 @@ BOOL CNCViewGL::CreateWire(void)
 	}
 
 #ifdef _DEBUG
-	dbg.printf("VertexCount=%d NormalCount=%d", m_WireDraw.vpt.size()/NCXYZ, m_WireDraw.vnr.size()/NCXYZ);
-	dbg.printf("Area Count=%d", m_WireDraw.vvef.size());
-	dbg.printf("WireLineCount=%d", m_WireDraw.vwl.size());
+	printf(" VertexCount=%d NormalCount=%d\n", m_WireDraw.vpt.size()/NCXYZ, m_WireDraw.vnr.size()/NCXYZ);
+	printf(" Area Count=%d\n", m_WireDraw.vvef.size());
+	printf(" WireLineCount=%d\n", m_WireDraw.vwl.size());
 	int	dbgMaxIndex = 0;
 	for ( const auto& v : m_WireDraw.vvef ) {
 		int dbgMax = *std::max_element(v.begin(), v.end());
 		if ( dbgMaxIndex < dbgMax )
 			dbgMaxIndex = dbgMax;
 	}
-	dbg.printf("Max Face Index=%d", dbgMaxIndex);
+	printf(" Max Face Index=%d\n", dbgMaxIndex);
 	dbgMaxIndex = 0;
 	for ( const auto&v : m_WireDraw.vwl ) {
 		int dbgMax = *std::max_element(v.vel.begin(), v.vel.end());
 		if ( dbgMaxIndex < dbgMax )
 			dbgMaxIndex = dbgMax;
 	}
-	dbg.printf("Max Line Index=%d", dbgMaxIndex);
+	printf(" Max Line Index=%d\n", dbgMaxIndex);
 #endif
 	if ( m_nVertexID[0] > 0 )
 		::glDeleteBuffersARB(SIZEOF(m_nVertexID), m_nVertexID);
@@ -154,9 +152,8 @@ BOOL CNCViewGL::CreateWire(void)
 
 	// í∏ì_îzóÒÇGPU“”ÿÇ…ì]ëó
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[0]);
-	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-			m_WireDraw.vpt.size()*sizeof(GLfloat), &(m_WireDraw.vpt[0]),
-			GL_STATIC_DRAW_ARB);
+	::glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_WireDraw.vpt.size()*sizeof(GLfloat),
+		&(m_WireDraw.vpt[0]), GL_STATIC_DRAW_ARB);
 	errLine = __LINE__;
 	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -167,9 +164,8 @@ BOOL CNCViewGL::CreateWire(void)
 
 	// ñ@ê¸Õﬁ∏ƒŸÇGPU“”ÿÇ…ì]ëó
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[1]);
-	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-			m_WireDraw.vnr.size()*sizeof(GLfloat), &(m_WireDraw.vnr[0]),
-			GL_STATIC_DRAW_ARB);
+	::glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_WireDraw.vnr.size()*sizeof(GLfloat),
+		&(m_WireDraw.vnr[0]), GL_STATIC_DRAW_ARB);
 	errLine = __LINE__;
 	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -180,7 +176,7 @@ BOOL CNCViewGL::CreateWire(void)
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
 #ifdef _DEBUG
-	dbg.printf("VBO(index) transport Start");
+	printf("VBO(index) transport Start\n");
 #endif
 	// í∏ì_≤›√ﬁØ∏ΩÇGPU“”ÿÇ…ì]ëó
 	try {
@@ -195,8 +191,7 @@ BOOL CNCViewGL::CreateWire(void)
 			nElement = (GLuint)(v.size());
 			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-					nElement*sizeof(GLuint), &(v[0]),
+				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
 					GL_STATIC_DRAW_ARB);
 				errLine = __LINE__;
 				errCode = GetGLError();
@@ -219,8 +214,7 @@ BOOL CNCViewGL::CreateWire(void)
 		for ( const auto& v : m_WireDraw.vwl ) {
 			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pLocusElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-					v.vel.size()*sizeof(GLuint), &(v.vel[0]),
+				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, v.vel.size()*sizeof(GLuint), &(v.vel[0]),
 					GL_STATIC_DRAW_ARB);
 				errLine = __LINE__;
 				errCode = GetGLError();

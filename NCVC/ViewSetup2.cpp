@@ -6,10 +6,8 @@
 #include "ViewOption.h"
 #include "ViewSetup.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 extern	const	float	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)

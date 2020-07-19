@@ -11,11 +11,9 @@
 #include "DXFkeyword.h"
 #include "boost/lambda/lambda.hpp"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
-//#define	_DEBUG_ARGV
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
+//#define	_DEBUG_ARGV
 #endif
 
 using namespace boost;
@@ -125,8 +123,8 @@ static inline ULONGLONG _DubleRead(CStdioFile& fp)
 	if ( bResult ) {
 		dwResult = strBuf.GetLength() + 2;	// CR+LFï™
 		g_nGroup = atoi(strBuf);	// atoi()Ç≈ÇÕæﬁ€Ç©é∏îsÇ©ÇÌÇ©ÇÁÇÒ
-//		g_nGroup = lexical_cast<int>((LPCTSTR)strBuf);		// åµäiêô
-//		g_nGroup = lexical_cast<int>((LPCTSTR)strBuf.Trim());
+//		g_nGroup = lexical_cast<int>(LPCTSTR(strBuf));		// åµäiêô
+//		g_nGroup = lexical_cast<int>(LPCTSTR(strBuf.Trim()));
 		// ñΩóﬂÇ…ë±Ç≠ílÇì«Ç›çûÇ›
 		bResult = fp.ReadString(strBuf);
 		if ( bResult ) {
@@ -154,7 +152,7 @@ static inline int _SetValue(void)
 {
 	for ( int i=0; i<SIZEOF(g_dValue); i++ ) {
 		if ( g_nGroup == g_nValueGroupCode[i] ) {
-			g_dValue[i] = (float)atof((LPCTSTR)g_strOrder);
+			g_dValue[i] = (float)atof(LPCTSTR(g_strOrder));
 			g_dwValueFlg |= g_dwValSet[i];
 			return i;
 		}
@@ -212,8 +210,7 @@ static inline void _ArbitraryAxis(CPointF& pt)	// îCà”ÇÃé≤ÇÃ±Ÿ∫ﬁÿΩﬁ—
 static inline BOOL _SetDxfArgv(LPDXFPARGV lpPoint)
 {
 #ifdef _DEBUG_ARGV
-	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Point Layer=%s", lpPoint->pLayer ? lpPoint->pLayer->GetLayerName() : "?");
+	printf("SetDxfArgv() Point Layer=%s\n", lpPoint->pLayer ? LPCTSTR(lpPoint->pLayer->GetLayerName()) : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_POINT ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
@@ -221,13 +218,13 @@ static inline BOOL _SetDxfArgv(LPDXFPARGV lpPoint)
 			_ArbitraryAxis(pt);		// OCS -> WCS ç¿ïWïœä∑
 		lpPoint->c = pt;
 #ifdef _DEBUG_ARGV
-		dbg.printf("      cx=%f cy=%f", lpPoint->c.x, lpPoint->c.y);
+		printf("      cx=%f cy=%f\n", lpPoint->c.x, lpPoint->c.y);
 #endif
 		return TRUE;
 	}
 	else {
 #ifdef _DEBUG_ARGV
-		dbg.printf("      error cx|cy");
+		printf("      error cx|cy\n");
 #endif
 		return FALSE;
 	}
@@ -236,8 +233,7 @@ static inline BOOL _SetDxfArgv(LPDXFPARGV lpPoint)
 static inline BOOL _SetDxfArgv(LPDXFLARGV lpLine)
 {
 #ifdef _DEBUG_ARGV
-	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Line Layer=%s", lpLine->pLayer ? lpLine->pLayer->GetLayerName() : "?");
+	printf("SetDxfArgv() Line Layer=%s\n", lpLine->pLayer ? LPCTSTR(lpLine->pLayer->GetLayerName()) : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_LINE ) {
 		CPointF	pts(g_dValue[VALUE10], g_dValue[VALUE20]),
@@ -249,14 +245,14 @@ static inline BOOL _SetDxfArgv(LPDXFLARGV lpLine)
 		lpLine->s = pts;
 		lpLine->e = pte;
 #ifdef _DEBUG_ARGV
-		dbg.printf("     sx=%f sy=%f ex=%f ey=%f", 
+		printf("     sx=%f sy=%f ex=%f ey=%f\n", 
 			lpLine->s.x, lpLine->s.y, lpLine->e.x, lpLine->e.y);
 #endif
 		return TRUE;
 	}
 	else {
 #ifdef _DEBUG_ARGV
-		dbg.printf("     error sx|sy|ex|ey"); 
+		printf("     error sx|sy|ex|ey\n"); 
 #endif
 		return FALSE;
 	}
@@ -265,8 +261,7 @@ static inline BOOL _SetDxfArgv(LPDXFLARGV lpLine)
 static inline BOOL _SetDxfArgv(LPDXFCARGV lpCircle)
 {
 #ifdef _DEBUG_ARGV
-	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Circle Layer=%s", lpCircle->pLayer ? lpCircle->pLayer->GetLayerName() : "?");
+	printf("SetDxfArgv() Circle Layer=%s\n", lpCircle->pLayer ? LPCTSTR(lpCircle->pLayer->GetLayerName()) : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_CIRCLE ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
@@ -275,14 +270,14 @@ static inline BOOL _SetDxfArgv(LPDXFCARGV lpCircle)
 		lpCircle->c = pt;
 		lpCircle->r = g_dValue[VALUE40];
 #ifdef _DEBUG_ARGV
-		dbg.printf("       cx=%f cy=%f r=%f",
+		printf("       cx=%f cy=%f r=%f\n",
 			lpCircle->c.x, lpCircle->c.y, lpCircle->r);
 #endif
 		return TRUE;
 	}
 	else {
 #ifdef _DEBUG_ARGV
-		dbg.printf("       error cx|cy|r");
+		printf("       error cx|cy|r\n");
 #endif
 		return FALSE;
 	}
@@ -291,8 +286,7 @@ static inline BOOL _SetDxfArgv(LPDXFCARGV lpCircle)
 static inline BOOL _SetDxfArgv(LPDXFAARGV lpArc)
 {
 #ifdef _DEBUG_ARGV
-	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Arc Layer=%s", lpArc->pLayer ? lpArc->pLayer->GetLayerName() : "?");
+	printf("SetDxfArgv() Arc Layer=%s\n", lpArc->pLayer ? LPCTSTR(lpArc->pLayer->GetLayerName()) : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_ARC ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
@@ -303,14 +297,14 @@ static inline BOOL _SetDxfArgv(LPDXFAARGV lpArc)
 		lpArc->sq  = g_dValue[VALUE50];
 		lpArc->eq  = g_dValue[VALUE51];
 #ifdef _DEBUG_ARGV
-		dbg.printf("    cx=%f cy=%f r=%f sp=%f ep=%f", 
+		printf("    cx=%f cy=%f r=%f sp=%f ep=%f\n", 
 			lpArc->c.x, lpArc->c.y, lpArc->r, DEG(lpArc->sq), DEG(lpArc->eq));
 #endif
 		return TRUE;
 	}
 	else {
 #ifdef _DEBUG_ARGV
-		dbg.printf("    error cx|cy|r|sp|ep");
+		printf("    error cx|cy|r|sp|ep\n");
 #endif
 		return FALSE;
 	}
@@ -319,8 +313,7 @@ static inline BOOL _SetDxfArgv(LPDXFAARGV lpArc)
 static inline BOOL _SetDxfArgv(LPDXFEARGV lpEllipse)
 {
 #ifdef _DEBUG_ARGV
-	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Ellipse Layer=%s", lpEllipse->pLayer ? lpEllipse->pLayer->GetLayerName() : "?");
+	printf("SetDxfArgv() Ellipse Layer=%s\n", lpEllipse->pLayer ? LPCTSTR(lpEllipse->pLayer->GetLayerName()) : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_ELLIPSE ) {
 		CPointF	ptc(g_dValue[VALUE10], g_dValue[VALUE20]),
@@ -336,16 +329,16 @@ static inline BOOL _SetDxfArgv(LPDXFEARGV lpEllipse)
 		lpEllipse->eq = g_dValue[VALUE42];
 		lpEllipse->bRound = TRUE;		// Default
 #ifdef _DEBUG_ARGV
-		dbg.printf("        cx=%f cy=%f lx=%f ly=%f s=%f", 
+		printf("        cx=%f cy=%f lx=%f ly=%f s=%f\n", 
 			lpEllipse->c.x, lpEllipse->c.y, lpEllipse->l.x, lpEllipse->l.y, lpEllipse->s);
-		dbg.printf("        sp=%f ep=%f",
+		printf("        sp=%f ep=%f\n",
 			DEG(lpEllipse->sq), DEG(lpEllipse->eq));
 #endif
 		return TRUE;
 	}
 	else {
 #ifdef _DEBUG_ARGV
-		dbg.printf("        error cx|cy|lx|ly|s|sp|ep"); 
+		printf("        error cx|cy|lx|ly|s|sp|ep\n"); 
 #endif
 		return FALSE;
 	}
@@ -354,8 +347,7 @@ static inline BOOL _SetDxfArgv(LPDXFEARGV lpEllipse)
 static inline BOOL _SetDxfArgv(LPDXFTARGV lpText)
 {
 #ifdef _DEBUG_ARGV
-	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
-	dbg.printf("Text Layer=%s", lpText->pLayer ? lpText->pLayer->GetLayerName() : "?");
+	printf("SetDxfArgv() Text Layer=%s\n", lpText->pLayer ? LPCTSTR(lpText->pLayer->GetLayerName()) : "?");
 #endif
 	if ( g_dwValueFlg & VALFLG_TEXT ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
@@ -364,14 +356,14 @@ static inline BOOL _SetDxfArgv(LPDXFTARGV lpText)
 		lpText->strValue = g_strValue;
 		lpText->c = pt;
 #ifdef _DEBUG_ARGV
-		dbg.printf("      cx=%f cy=%f", lpText->c.x, lpText->c.y);
-		dbg.printf("      Value=%s", lpText->strValue);
+		printf("      cx=%f cy=%f\n", lpText->c.x, lpText->c.y);
+		printf("      Value=%s\n", LPCTSTR(lpText->strValue));
 #endif
 		return TRUE;
 	}
 	else {
 #ifdef _DEBUG_ARGV
-		dbg.printf("      error cx|cy");
+		printf("      error cx|cy\n");
 #endif
 		return FALSE;
 	}
@@ -419,7 +411,7 @@ static inline void _CreatePolyline(void)
 		g_pPolyline = new CDXFpolyline();
 		ASSERT( g_pPolyline );
 #ifdef _DEBUG
-		g_dbg.printf("CreatePolyline()");
+		printf("CreatePolyline()\n");
 #endif
 	}
 }
@@ -427,7 +419,7 @@ static inline void _CreatePolyline(void)
 static inline void _DeletePolyline(void)
 {
 #ifdef _DEBUG
-	g_dbg.printf("DeletePolyline()");
+	printf("DeletePolyline()\n");
 #endif
 	delete	g_pPolyline;
 	g_pPolyline = NULL;
@@ -474,7 +466,7 @@ BOOL HeaderProcedure(void)
 {
 /*
 #ifdef _DEBUG
-	CMagaDbg	dbg("HeaderProcedure()", DBG_GREEN);
+	printf("HeaderProcedure()\n");
 #endif
 	int nResult = _HeaderVariableCheck();
 	
@@ -531,7 +523,7 @@ static inline int _EntitiesLayerCheck(void)
 void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetEntitiesFromBlock()", DBG_MAGENTA);
+	printf("SetEntitiesFromBlock()\n");
 #endif
 	CLayerData*	pLayer;
 	CDXFdata*	pData;
@@ -542,20 +534,20 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 
 	if ( !_SetBlockArgv(&argvBlock) ) {
 #ifdef _DEBUG
-		dbg.printf("InsertOrg error x|y");
+		printf("InsertOrg error x|y\n");
 #endif
 		return;
 	}
 
 #ifdef _DEBUG
-	dbg.printf("InsertOrg x=%f y=%f", argvBlock.ptOrg.x, argvBlock.ptOrg.y);
+	printf("InsertOrg x=%f y=%f\n", argvBlock.ptOrg.x, argvBlock.ptOrg.y);
 	if ( argvBlock.dwBlockFlg & DXFBLFLG_X )
-		dbg.printf(" Xmagni=%f", argvBlock.dMagni[NCA_X]);
+		printf(" Xmagni=%f\n", argvBlock.dMagni[NCA_X]);
 	if ( argvBlock.dwBlockFlg & DXFBLFLG_Y )
-		dbg.printf(" Ymagni=%f", argvBlock.dMagni[NCA_Y]);
+		printf(" Ymagni=%f\n", argvBlock.dMagni[NCA_Y]);
 	if ( argvBlock.dwBlockFlg & DXFBLFLG_R )
-		dbg.printf(" Round =%f", argvBlock.dRound);
-	dbg.printf("InsertCnt  =%d", pBlock->GetSize());
+		printf(" Round =%f\n", argvBlock.dRound);
+	printf("InsertCnt  =%d\n", pBlock->GetSize());
 #endif
 
 	// ó·äOΩ€∞ÇÕè„à Ç≈∑¨Ø¡
@@ -586,7 +578,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 			case DXFORGLAYER:
 				pt = static_cast<CDXFcircle*>(pDataBlock)->GetCenter();
 #ifdef _DEBUG
-				dbg.printf("Org x=%f y=%f", pt.x, pt.y);
+				printf("Org x=%f y=%f\n", pt.x, pt.y);
 #endif
 				pDoc->CreateCutterOrigin(pt, g_dValue[VALUE40]);
 				break;
@@ -605,7 +597,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 				pLayer = pDoc->AddLayerMap(g_strLayer, DXFSTRLAYER);
 				pt = static_cast<CDXFcircle*>(pDataBlock)->GetCenter();
 #ifdef _DEBUG
-				dbg.printf("StartOrg x=%f y=%f", pt.x, pt.y);
+				printf("StartOrg x=%f y=%f\n", pt.x, pt.y);
 #endif
 				pData = new CDXFcircleEx(DXFSTADATA, pLayer, pt, g_dValue[VALUE40]);
 				break;
@@ -655,8 +647,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 void SetEntitiesInfo(CDXFDoc* pDoc)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetEntitiesInfo()", DBG_MAGENTA);
-	dbg.printf("g_nType=%d", g_nType);
+	printf("SetEntitiesInfo() g_nType=%d\n", g_nType);
 #endif
 	CDXFdata*	pData = NULL;
 	DXFPARGV	dxfPoint;
@@ -699,13 +690,13 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 				if ( g_dwValueFlg & VALFLG_PLANE )
 					_ArbitraryAxis(pt);		// OCS -> WCS ç¿ïWïœä∑
 #ifdef _DEBUG
-				dbg.printf("Org x=%f y=%f", pt.x, pt.y);
+				printf("Org x=%f y=%f\n", pt.x, pt.y);
 #endif
 				pDoc->CreateCutterOrigin(pt, g_dValue[VALUE40]);
 			}
 			else {
 #ifdef _DEBUG
-				dbg.printf("Org error x|y|r");
+				printf("Org error x|y|r\n");
 #endif
 			}
 			break;
@@ -720,14 +711,14 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 				if ( g_dwValueFlg & VALFLG_PLANE )
 					_ArbitraryAxis(pt);		// OCS -> WCS ç¿ïWïœä∑
 #ifdef _DEBUG
-				dbg.printf("StartOrg x=%f y=%f", pt.x, pt.y);
+				printf("StartOrg x=%f y=%f\n", pt.x, pt.y);
 #endif
 				pData = new CDXFcircleEx(DXFSTADATA, pDoc->AddLayerMap(g_strLayer, DXFSTRLAYER),
 					pt, g_dValue[VALUE40]);
 			}
 			else {
 #ifdef _DEBUG
-				dbg.printf("StartOrg error x|y|r");
+				printf("StartOrg error x|y|r\n");
 #endif
 			}
 			break;
@@ -790,9 +781,6 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 
 BOOL EntitiesProcedure(CDXFDoc* pDoc)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("EntitiesProcedure()", DBG_GREEN);
-#endif
 	enENTITIESTYPE	enResultType = _EntitiesKeywordCheck();
 	int		nResultLayer;
 	BOOL	bResult = TRUE;
@@ -881,8 +869,7 @@ static inline int _BlocksKeywordCheck(void)
 BOOL SetBlockData(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetBlockData()", DBG_MAGENTA);
-	dbg.printf("g_nType=%d", g_nType);
+	printf("SetBlockData() g_nType=%d\n", g_nType);
 #endif
 	DXFPARGV	dxfPoint;
 	DXFLARGV	dxfLine;
@@ -975,7 +962,7 @@ static inline void _SetBlockMap(void)
 BOOL BlocksProcedure(CDXFDoc* pDoc)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("BlocksProcedure()", DBG_GREEN);
+	printf("BlocksProcedure()\n");
 #endif
 	int		nResultBlock = _BlocksKeywordCheck();
 
@@ -995,13 +982,13 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 				if ( g_nType == TYPE_INSERT ) {
 					g_strBlock = g_strOrder;	// »ΩƒÃﬁ€Ø∏
 #ifdef _DEBUG
-					dbg.printf("Nst BlockName=%s", g_strOrder);
+					printf("Nst BlockName=%s\n", LPCTSTR(g_strOrder));
 #endif
 				}
 				else {
 					g_pBkData = new CDXFBlockData(g_strOrder);
 #ifdef _DEBUG
-					dbg.printf("New BlockName=%s", g_strOrder);
+					printf("New BlockName=%s\n", LPCTSTR(g_strOrder));
 #endif
 				}
 			}
@@ -1023,7 +1010,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 			CPointF		pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 			g_pBkData->SetBlockOrigin(pt);
 #ifdef _DEBUG
-			dbg.printf("BlockOrigin x=%f y=%f", pt.x, pt.y);
+			printf("BlockOrigin x=%f y=%f\n", pt.x, pt.y);
 #endif
 			g_nBlock = 1;
 		}
@@ -1095,7 +1082,7 @@ static inline int _PolylineKeywordCheck(void)
 BOOL PolylineProcedure(CDXFDoc* pDoc)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("PolylineProcedure()", DBG_CYAN);
+	printf("PolylineProcedure()\n");
 #endif
 
 	if ( g_bVertex ) {
@@ -1128,7 +1115,7 @@ BOOL PolylineProcedure(CDXFDoc* pDoc)
 
 	case 1:		// SEQEND
 #ifdef _DEBUG
-		dbg.printf("SEQEND");
+		printf("SEQEND\n");
 #endif
 		if ( !PolylineEndProcedure(pDoc) )
 			return FALSE;
@@ -1188,7 +1175,7 @@ BOOL PolylineEndProcedure(CDXFDoc* pDoc)
 BOOL LWPolylineProcedure(CDXFDoc* pDoc, BOOL bEnd)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("LWPolylineProcedure()", DBG_CYAN);
+	printf("LWPolylineProcedure()\n");
 #endif
 
 	if ( !bEnd ) {
@@ -1229,7 +1216,7 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc, BOOL bEnd)
 BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("Serialize_Read()\nStart", DBG_GREEN);
+	printf("Serialize_Read(ReadDXF) Start\n");
 #endif
 	extern	LPCTSTR	gg_szCat;	// ", "
 
@@ -1268,7 +1255,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	g_csRemoveBlockMap.Lock();
 	g_csRemoveBlockMap.Unlock();
 #ifdef _DEBUG
-	dbg.printf("g_csRemoveBlockMap Unlock OK");
+	printf("g_csRemoveBlockMap Unlock OK\n");
 #endif
 
 	// ïœêîèâä˙âª
@@ -1297,7 +1284,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 				if ( !bSection ) {
 					bSection = TRUE;
 #ifdef _DEBUG
-					dbg.printf("SECTION keyword");
+					printf("SECTION keyword\n");
 #endif
 				}
 				continue;
@@ -1305,7 +1292,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 			case SEC_ENDSEC:		// æ∏ºÆ›èIóπèàóù
 				bSection = FALSE;
 #ifdef _DEBUG
-				dbg.printf("ENDSEC keyword");
+				printf("ENDSEC keyword\n");
 #endif
 				// ìríÜ√ﬁ∞¿ÇÃå„èàóù
 				if ( g_nType>TYPE_NOTSUPPORT && g_nLayer>=0 )
@@ -1338,7 +1325,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 					nSectionName = _SectionNameCheck();
 #ifdef _DEBUG
 					if ( nSectionName >= 0 )
-						dbg.printf("SectionName=%s", g_strOrder);
+						printf("SectionName=%s\n", LPCTSTR(g_strOrder));
 #endif
 				}
 			}
@@ -1364,7 +1351,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 		pProgress->SetPos(100);
 
 #ifdef _DEBUG
-	dbg.printf("dwFileSize=%d dwPosition=%d", dwFileSize, dwPosition);
+	printf("dwFileSize=%lld dwPosition=%lld\n", dwFileSize, dwPosition);
 #endif
 
 	// BLOCKSÿΩƒÇÃ∂ﬁ∞Õﬁ∞ºﬁ∫⁄∏ºÆ›
@@ -1410,8 +1397,7 @@ UINT RemoveBlockMapThread(LPVOID)
 {
 	g_csRemoveBlockMap.Lock();		// Ω⁄ØƒﬁèIóπÇ‹Ç≈€Ø∏
 #ifdef _DEBUG
-	CMagaDbg	dbg("RemoveBlockMapThread()", TRUE, DBG_RED);
-	dbg.printf("Start Cnt=%d", g_strBlockMap.GetCount());
+	printf("RemoveBlockMapThread() Start Cnt=%d\n", g_strBlockMap.GetCount());
 #endif
 	CDXFBlockData*	pBlock;
 	CString			strBlock;

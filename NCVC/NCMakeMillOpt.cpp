@@ -6,10 +6,8 @@
 #include "resource.h"
 #include "NCMakeMillOpt.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 // intå^ñΩóﬂ
@@ -320,84 +318,82 @@ BOOL CNCMakeMillOpt::Convert()
 #ifdef _DEBUG
 void CNCMakeMillOpt::DbgDump(void) const
 {
-	CMagaDbg	dbg("CNCMakeMillOpt", DBG_RED);
-
-	dbg.printf("InitFile=%s", GetInitFile());
-	dbg.printf("----------");
-	dbg.printf("  Spindle      =%d", MIL_I_SPINDLE);
-	dbg.printf("  Feed         =%f", MIL_D_FEED);
-	dbg.printf("  ZFeed        =%f", MIL_D_ZFEED);
-	dbg.printf("  ZG0Stop      =%f", MIL_D_ZG0STOP);
-	dbg.printf("  ZCut         =%f", MIL_D_ZCUT);
-	dbg.printf("  G92[X]       =%f", MIL_D_G92X);
-	dbg.printf("  G92[Y]       =%f", MIL_D_G92Y);
-	dbg.printf("  G92[Z]       =%f", MIL_D_G92Z);
-	dbg.printf("  Header       =%s", MIL_S_HEADER);
-	dbg.printf("  Footer       =%s", MIL_S_FOOTER);
-	dbg.printf("----------");
-	dbg.printf("  Xrev         =%d", MIL_F_XREV);
-	dbg.printf("  Yrev         =%d", MIL_F_YREV);
-	dbg.printf("  bLineAdd     =%d", MIL_F_LINEADD);
-	dbg.printf("  LineForm     =%s", MIL_S_LINEFORM);
-	dbg.printf("  nLineAdd     =%d", MIL_I_LINEADD);
-	dbg.printf("  EOB          =%s", MIL_S_EOB);
-	dbg.printf("  G90          =%d", MIL_I_G90);
-	dbg.printf("  ZReturn      =%d", MIL_I_ZRETURN);
-	dbg.printf("  Gclip        =%d", MIL_F_GCLIP);
-	dbg.printf("  DisSpindle   =%d", MIL_F_DISABLESPINDLE);
-	dbg.printf("----------");
-	dbg.printf("  Dot          =%d", MIL_I_DOT);
-	dbg.printf("  FDot         =%d", MIL_I_FDOT);
-	dbg.printf("  ZeroCut      =%d", MIL_F_ZEROCUT);
-	dbg.printf("  CircleCode   =%d", MIL_I_CIRCLECODE);
-	dbg.printf("  IJ           =%d", MIL_I_IJ);
-	dbg.printf("  CircleHalf   =%d", MIL_F_CIRCLEHALF);
-	dbg.printf("  ZeroCutIJ    =%d", MIL_F_ZEROCUT_IJ);
-	dbg.printf("----------");
-	dbg.printf("  Ellipse      =%f", MIL_D_ELLIPSE);
-	dbg.printf("  EllipseFlg   =%d", MIL_F_ELLIPSE);
-	dbg.printf("----------");
-	dbg.printf("  MakeEnd      =%d", MIL_I_MAKEEND);
-	dbg.printf("  MakeValue    =%f", MIL_D_MAKEEND);
-	dbg.printf("  MakeFeed     =%f", MIL_D_MAKEENDFEED);
-	dbg.printf("  Deep         =%d", MIL_F_DEEP);
-	dbg.printf("  DeepFinal    =%f", MIL_D_DEEP);
-	dbg.printf("  ZStep        =%f", MIL_D_ZSTEP);
-	dbg.printf("  DeepZProcess =%d", MIL_I_DEEPRETURN);
-	dbg.printf("  DeepAProcess =%d", MIL_I_DEEPALL);
-	dbg.printf("  DeepCProcess =%d", MIL_I_DEEPROUND);
-	dbg.printf("  Helical      =%d", MIL_F_HELICAL);
-	dbg.printf("  DeepFinish   =%d", MIL_F_DEEPFINISH);
-	dbg.printf("  DeepSpindle  =%d", MIL_I_DEEPSPINDLE);
-	dbg.printf("  DeepFeed     =%f", MIL_D_DEEPFEED);
-	dbg.printf("----------");
-	dbg.printf("  DrillSpindle =%d", MIL_I_DRILLSPINDLE);
-	dbg.printf("  DrillFeed    =%f", MIL_D_DRILLFEED);
-	dbg.printf("  DrillR       =%f", MIL_D_DRILLR);
-	dbg.printf("  DrillZ       =%f", MIL_D_DRILLZ);
-	dbg.printf("  DrillQ       =%f", MIL_D_DRILLQ);
-	dbg.printf("  Dwell        =%f", MIL_D_DWELL);
-	dbg.printf("  DwellFormat  =%d", MIL_I_DWELLFORMAT);
-	dbg.printf("  DrillMatch   =%d", MIL_F_DRILLMATCH);
-	dbg.printf("  DrillProcess =%d", MIL_I_DRILLPROCESS);
-	dbg.printf("  DrillZProcess=%d", MIL_I_DRILLRETURN);
-	dbg.printf("----------");
-	dbg.printf("  DrillCircle  =%d", MIL_F_DRILLCIRCLE);
-	dbg.printf("  DrillCircleR =%f", MIL_D_DRILLCIRCLE);
-	dbg.printf("  DrillSort    =%d", MIL_I_DRILLSORT);
-	dbg.printf("  DrillCProcess=%d", MIL_I_DRILLCIRCLEPROCESS);
-	dbg.printf("  DrillBreak   =%d", MIL_F_DRILLBREAK);
-	dbg.printf("----------");
-	dbg.printf("  LayerComment =%d", MIL_F_LAYERCOMMENT);
-	dbg.printf("  MoveZ        =%d", MIL_I_MOVEZ);
-	dbg.printf("  CustMoveB    =%s", MIL_S_CUSTMOVE_B);
-	dbg.printf("  CustMoveA    =%s", MIL_S_CUSTMOVE_A);
-	dbg.printf("  L0Cycle      =%d", MIL_F_L0CYCLE);
-	dbg.printf("----------");
-	dbg.printf("  Tolerance    =%f", MIL_D_TOLERANCE);
-	dbg.printf("  TolerancePro =%d", MIL_I_TOLERANCE);
-	dbg.printf("  DrillOptimaiz=%d", MIL_I_OPTIMAIZEDRILL);
-	dbg.printf("  DrillMargin  =%f", MIL_D_DRILLMARGIN);
-	dbg.printf("  PerlScript   =%s", MIL_S_PERLSCRIPT);
+	printf("CNCMakeMillOpt InitFile=%s\n", LPCTSTR(GetInitFile()));
+	printf("----------\n");
+	printf("  Spindle      =%d\n", MIL_I_SPINDLE);
+	printf("  Feed         =%f\n", MIL_D_FEED);
+	printf("  ZFeed        =%f\n", MIL_D_ZFEED);
+	printf("  ZG0Stop      =%f\n", MIL_D_ZG0STOP);
+	printf("  ZCut         =%f\n", MIL_D_ZCUT);
+	printf("  G92[X]       =%f\n", MIL_D_G92X);
+	printf("  G92[Y]       =%f\n", MIL_D_G92Y);
+	printf("  G92[Z]       =%f\n", MIL_D_G92Z);
+	printf("  Header       =%s\n", LPCTSTR(MIL_S_HEADER));
+	printf("  Footer       =%s\n", LPCTSTR(MIL_S_FOOTER));
+	printf("----------\n");
+	printf("  Xrev         =%d\n", MIL_F_XREV);
+	printf("  Yrev         =%d\n", MIL_F_YREV);
+	printf("  bLineAdd     =%d\n", MIL_F_LINEADD);
+	printf("  LineForm     =%s\n", LPCTSTR(MIL_S_LINEFORM));
+	printf("  nLineAdd     =%d\n", MIL_I_LINEADD);
+	printf("  EOB          =%s\n", LPCTSTR(MIL_S_EOB));
+	printf("  G90          =%d\n", MIL_I_G90);
+	printf("  ZReturn      =%d\n", MIL_I_ZRETURN);
+	printf("  Gclip        =%d\n", MIL_F_GCLIP);
+	printf("  DisSpindle   =%d\n", MIL_F_DISABLESPINDLE);
+	printf("----------\n");
+	printf("  Dot          =%d\n", MIL_I_DOT);
+	printf("  FDot         =%d\n", MIL_I_FDOT);
+	printf("  ZeroCut      =%d\n", MIL_F_ZEROCUT);
+	printf("  CircleCode   =%d\n", MIL_I_CIRCLECODE);
+	printf("  IJ           =%d\n", MIL_I_IJ);
+	printf("  CircleHalf   =%d\n", MIL_F_CIRCLEHALF);
+	printf("  ZeroCutIJ    =%d\n", MIL_F_ZEROCUT_IJ);
+	printf("----------\n");
+	printf("  Ellipse      =%f\n", MIL_D_ELLIPSE);
+	printf("  EllipseFlg   =%d\n", MIL_F_ELLIPSE);
+	printf("----------\n");
+	printf("  MakeEnd      =%d\n", MIL_I_MAKEEND);
+	printf("  MakeValue    =%f\n", MIL_D_MAKEEND);
+	printf("  MakeFeed     =%f\n", MIL_D_MAKEENDFEED);
+	printf("  Deep         =%d\n", MIL_F_DEEP);
+	printf("  DeepFinal    =%f\n", MIL_D_DEEP);
+	printf("  ZStep        =%f\n", MIL_D_ZSTEP);
+	printf("  DeepZProcess =%d\n", MIL_I_DEEPRETURN);
+	printf("  DeepAProcess =%d\n", MIL_I_DEEPALL);
+	printf("  DeepCProcess =%d\n", MIL_I_DEEPROUND);
+	printf("  Helical      =%d\n", MIL_F_HELICAL);
+	printf("  DeepFinish   =%d\n", MIL_F_DEEPFINISH);
+	printf("  DeepSpindle  =%d\n", MIL_I_DEEPSPINDLE);
+	printf("  DeepFeed     =%f\n", MIL_D_DEEPFEED);
+	printf("----------\n");
+	printf("  DrillSpindle =%d\n", MIL_I_DRILLSPINDLE);
+	printf("  DrillFeed    =%f\n", MIL_D_DRILLFEED);
+	printf("  DrillR       =%f\n", MIL_D_DRILLR);
+	printf("  DrillZ       =%f\n", MIL_D_DRILLZ);
+	printf("  DrillQ       =%f\n", MIL_D_DRILLQ);
+	printf("  Dwell        =%f\n", MIL_D_DWELL);
+	printf("  DwellFormat  =%d\n", MIL_I_DWELLFORMAT);
+	printf("  DrillMatch   =%d\n", MIL_F_DRILLMATCH);
+	printf("  DrillProcess =%d\n", MIL_I_DRILLPROCESS);
+	printf("  DrillZProcess=%d\n", MIL_I_DRILLRETURN);
+	printf("----------\n");
+	printf("  DrillCircle  =%d\n", MIL_F_DRILLCIRCLE);
+	printf("  DrillCircleR =%f\n", MIL_D_DRILLCIRCLE);
+	printf("  DrillSort    =%d\n", MIL_I_DRILLSORT);
+	printf("  DrillCProcess=%d\n", MIL_I_DRILLCIRCLEPROCESS);
+	printf("  DrillBreak   =%d\n", MIL_F_DRILLBREAK);
+	printf("----------\n");
+	printf("  LayerComment =%d\n", MIL_F_LAYERCOMMENT);
+	printf("  MoveZ        =%d\n", MIL_I_MOVEZ);
+	printf("  CustMoveB    =%s\n", LPCTSTR(MIL_S_CUSTMOVE_B));
+	printf("  CustMoveA    =%s\n", LPCTSTR(MIL_S_CUSTMOVE_A));
+	printf("  L0Cycle      =%d\n", MIL_F_L0CYCLE);
+	printf("----------\n");
+	printf("  Tolerance    =%f\n", MIL_D_TOLERANCE);
+	printf("  TolerancePro =%d\n", MIL_I_TOLERANCE);
+	printf("  DrillOptimaiz=%d\n", MIL_I_OPTIMAIZEDRILL);
+	printf("  DrillMargin  =%f\n", MIL_D_DRILLMARGIN);
+	printf("  PerlScript   =%s\n", LPCTSTR(MIL_S_PERLSCRIPT));
 }
 #endif

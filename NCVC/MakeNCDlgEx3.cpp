@@ -10,12 +10,10 @@
 #include "MakeNCDlgEx.h"
 #include "MakeNCDlgEx11.h"
 #include "MakeNCDlgEx21.h"
-
-#include "MagaDbgMac.h"
 #include "MakeNCDlgEx3.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 UINT	CMakeNCDlgEx3::m_nParentID = 0;

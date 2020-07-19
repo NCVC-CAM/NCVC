@@ -5,10 +5,8 @@
 #include "NCVC.h"
 #include "MKWISetup.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 extern	int		g_nLastPage_NCMakeWire;

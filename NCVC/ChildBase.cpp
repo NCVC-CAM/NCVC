@@ -7,10 +7,8 @@
 #include "MainFrm.h"
 #include "ChildBase.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CChildBase, CMDIChildWnd)
@@ -25,7 +23,7 @@ END_MESSAGE_MAP()
 void CChildBase::ActivateFrame(int nCmdShow)
 {
 #ifdef _DEBUG
-	g_dbg.printf("CDXFChild::ActivateFrame() Call");
+	printf("CDXFChild::ActivateFrame() Call\n");
 #endif
 	// ‚P”Ô–Ú‚ÌMDIqÌÚ°Ñ³¨İÄŞ³‚©CŒ»İ±¸Ã¨ÌŞ‚ÈqÌÚ°Ñ‚ªÅ‘å‰»‚Ì‚Æ‚«
 	BOOL	fMax = FALSE;

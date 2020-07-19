@@ -7,13 +7,11 @@
 #include "CustomMenu.h"
 #include "CustomToolBar.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
-#endif
 #undef	_DEBUGOLD
 //#define	_DEBUGOLD
+#endif
 
 // ±²ºİ»²½Ş
 extern	const	int		gg_nIconX;
@@ -34,8 +32,8 @@ int		CCustomMenu::m_nIconFrameY = 0;
 
 CCustomMenu::CCustomMenu()
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CCustomMenu::CCustomMenu()\nStart", DBG_MAGENTA);
+#ifdef _DEBUGOLD
+	printf("CCustomMenu::CCustomMenu() Start\n");
 #endif
 
 	// ”ñ¸×²±İÄ—Ìˆæ‚ÉŠÖ‚·‚éÒÄØ¯¸’l (ÒÆ­°ÊŞ°‚Ì‚‚³“™) æ“¾
@@ -79,25 +77,24 @@ void CCustomMenu::Dump(CDumpContext& dc) const
 {
 	CMenu::Dump(dc);
 }
-
+#endif
+#ifdef _DEBUGOLD
 void CCustomMenu::MAP_IMAGE_PRINT() const
 {
-	CMagaDbg	dbg(DBG_MAGENTA);
-	dbg.printf("<MAP_IMAGE_PRINT> ------------------- start ------------------- size=%d", m_arrayImage.GetSize());
+	printf("<MAP_IMAGE_PRINT> ------------------- start ------------------- size=%d\n", m_arrayImage.GetSize());
 	for ( int i=0; i<m_arrayImage.GetSize(); i++ ) {
-		dbg.printf("<MAP_IMAGE_PRINT> i=%d itemID=%d", i, m_arrayImage[i]);
+		printf("<MAP_IMAGE_PRINT> i=%d itemID=%d\n", i, m_arrayImage[i]);
 	}
-	dbg.printf("<MAP_IMAGE_PRINT> -------------------  end  -------------------");
+	printf("<MAP_IMAGE_PRINT> -------------------  end  -------------------\n");
 }
 
 void CCustomMenu::VEC_MNEMONIC_PRINT() const
 {
-	CMagaDbg	dbg(DBG_MAGENTA);
-	dbg.printf("<VEC_MNEMONIC_PRINT> ------------------- start ------------------- size=%d", m_arrayString.GetSize());
+	printf("<VEC_MNEMONIC_PRINT> ------------------- start ------------------- size=%d\n", m_arrayString.GetSize());
 	for ( int i=0; i<m_arrayString.GetSize(); i++ ) {
-		dbg.printf("<VEC_MNEMONIC_PRINT> i=%d, arrayString=%s", i, m_arrayString[i]);
+		printf("<VEC_MNEMONIC_PRINT> i=%d, arrayString=%s\n", i, LPCTSTR(m_arrayString[i]));
 	}
-	dbg.printf("<VEC_MNEMONIC_PRINT> -------------------  end  -------------------");
+	printf("<VEC_MNEMONIC_PRINT> -------------------  end  -------------------\n");
 }
 #endif
 
@@ -222,7 +219,7 @@ void CCustomMenu::RemoveMenuString(const CStringArray& strArray)
 BOOL CCustomMenu::DrawItemIcon(CDC* pDC, LPDRAWITEMSTRUCT lpDIS)
 {
 #ifdef _DEBUGOLD
-	CMagaDbg	dbg("CCustomMenu::DrawItemIcon()\nStart", DBG_MAGENTA);
+	printf("CCustomMenu::DrawItemIcon() Start\n");
 #endif
 	HICON hIcon = NULL;					// ±²ºİÊİÄŞÙ
 	BOOL bRet = FALSE;					// ±²ºİ•`‰æÌ×¸Ş
@@ -316,16 +313,13 @@ void CCustomMenu::DrawItemIconFrame(CDC* pDC, LPDRAWITEMSTRUCT lpDIS)
 
 void CCustomMenu::DrawItemString(CDC* pDC, LPDRAWITEMSTRUCT lpDIS, BOOL bIcon)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("DrawItemString()");
-#endif
 	UINT itemID = lpDIS->itemID;		// ÒÆ­°€–Ú ID
 	UINT itemState = lpDIS->itemState;	// •`‰æ“®ì
 	CRect rcItem(lpDIS->rcItem);		// •`‰æ‹éŒ`
 	int nIndex = (int)lpDIS->itemData;	// •¶š—ñæ“¾—p
 	COLORREF clrText, clrBack;			// •¶š—ñ‘OŒiFA”wŒiF
 #ifdef _DEBUGOLD
-	dbg.printf("itemID=%d nIndex=%d", itemID, nIndex);
+	printf("DrawItemString() itemID=%d nIndex=%d", itemID, nIndex);
 #endif
 
 	// •`‰æó‘Ô¾¯Ä
@@ -553,7 +547,7 @@ BOOL CCustomMenuEx::DrawItemIcon(CDC* pDC, LPDRAWITEMSTRUCT lpDIS)
 		return CCustomMenu::DrawItemIcon(pDC, lpDIS);
 
 #ifdef _DEBUGOLD
-	CMagaDbg	dbg("CCustomMenuEx::DrawItemIcon()\nStart", DBG_MAGENTA);
+	printf("CCustomMenuEx::DrawItemIcon() Start\n");
 #endif
 	ASSERT( pInfo );
 

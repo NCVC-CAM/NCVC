@@ -5,12 +5,10 @@
 #include "NCVC.h"
 #include "NCDoc.h"
 #include "NCWorkDlg.h"
-
-#include "MagaDbgMac.h"
 #include "NCWorkDlg2.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CNCWorkDlg2, CPropertyPage)
@@ -152,7 +150,7 @@ void CNCWorkDlg2::OnRecover()
 LRESULT CNCWorkDlg2::OnUserSwitchDocument(WPARAM, LPARAM)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCWorkDlg2::OnUserSwitchDocument()\nCalling");
+	printf("CNCWorkDlg2::OnUserSwitchDocument() Calling\n");
 #endif
 	CNCDoc*	pDoc = GetParentSheet()->GetNCDocument();
 	if ( pDoc ) {

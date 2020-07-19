@@ -5,10 +5,8 @@
 #include "NCVC.h"
 #include "MainStatusBar.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -52,8 +50,7 @@ int CMainStatusBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CMainStatusBar::ChangeProgressSize(int nIndex, int nWidth) 
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMainStatusBar::ChangeProgressSize()");
-	dbg.printf("nWidth=%d", nWidth);
+	printf("CMainStatusBar::ChangeProgressSize() nWidth=%d\n", nWidth);
 #endif
 	if ( nWidth <= 0 )
 		return;
@@ -62,7 +59,7 @@ void CMainStatusBar::ChangeProgressSize(int nIndex, int nWidth)
 	GetItemRect(nIndex, &rc);
 	m_ctProgress.MoveWindow(&rc);
 #ifdef _DEBUG
-	dbg.printf("top=%d left=%d bottom=%d right=%d",
+	printf("top=%d left=%d bottom=%d right=%d\n",
 		rc.top, rc.left, rc.bottom, rc.right);
 #endif
 }

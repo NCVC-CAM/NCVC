@@ -11,10 +11,8 @@
 #include "NCListView.h"
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -50,7 +48,7 @@ END_MESSAGE_MAP()
 BOOL CNCViewBase::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
 #ifdef _DEBUG_CMDMSG
-	g_dbg.printf("CNCViewBase::OnCmdMsg()");
+	printf("CNCViewBase::OnCmdMsg()\n");
 #endif
 	// Ç±Ç±Ç©ÇÁ CDocument::OnCmdMsg() ÇåƒÇŒÇ»Ç¢ÇÊÇ§Ç…Ç∑ÇÈ
 //	return CView::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
@@ -466,7 +464,7 @@ void CNCViewBase::OnLensKey(UINT nID)
 LRESULT CNCViewBase::OnUserViewFitMsg(WPARAM, LPARAM lParam)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCViewBase::OnUserViewFitMsg()\nStart");
+	printf("CNCViewBase::OnUserViewFitMsg() Start\n");
 #endif
 	// ägëÂó¶ÇÃåvéZÇ∆ê}å`Ã®Øƒ
 	CViewBase::OnViewFit(m_rcDataMax);

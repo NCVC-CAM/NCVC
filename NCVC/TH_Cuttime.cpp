@@ -9,10 +9,8 @@
 #include "NCInfoView.h"
 #include "ThreadDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 #define	IsThread()	pDoc->IsDocFlag(NCDOC_CUTCALC)
@@ -27,7 +25,7 @@ static	float	GetCutTime_Lathe(const CNCdata*);
 UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CuttimeCalc_Thread()\nStart", DBG_BLUE);
+	printf("CuttimeCalc_Thread() Start\n");
 #endif
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	CNCDoc*			pDoc = static_cast<CNCDoc*>(pParam->pDoc);
@@ -43,7 +41,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	CNCdata*	pData;
 
 #ifdef _DEBUG
-	dbg.printf("GetNCsize()=%d", nLoopCnt);
+	printf("GetNCsize()=%d\n", nLoopCnt);
 #endif
 
 	// 移動・切削長の合計計算
@@ -71,7 +69,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	// 切削時間の計算
 	if ( pMCopt->IsZeroG0Speed() ) {
 #ifdef _DEBUG
-		dbg.printf("pMCopt->IsZeroG0Speed() Can't calc return");
+		printf("pMCopt->IsZeroG0Speed() Can't calc return\n");
 #endif
 		pDoc->m_dCutTime = -1.0f;	// 初期値「-1」で表示消去
 		pView->PostMessage(WM_USERPROGRESSPOS);
@@ -136,7 +134,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 
 	pView->PostMessage(WM_USERPROGRESSPOS);
 #ifdef _DEBUG
-	dbg.printf("PostMessage() Finish!");
+	printf("PostMessage() Finish!\n");
 #endif
 
 	return 0;	// AfxEndThread(0);

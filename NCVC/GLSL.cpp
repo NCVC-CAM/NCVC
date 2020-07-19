@@ -5,10 +5,8 @@
 #include "stdafx.h"
 #include "GLSL.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

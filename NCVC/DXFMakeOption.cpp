@@ -7,10 +7,8 @@
 #include "DXFMakeOption.h"
 #include "DXFOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -85,7 +83,7 @@ void CDXFMakeOption::Initialize_Registry(void)
 	// floatå^ñΩóﬂì«Ç›çûÇ›
 	for ( i=0; i<SIZEOF(g_szDOrder); i++ ) {
 		strResult = AfxGetApp()->GetProfileString(strRegKey, g_szDOrder[i]);
-		m_udNums[i] = strResult.IsEmpty() ? g_dfDOrder[i] : (float)atof((LPCTSTR)strResult.Trim());
+		m_udNums[i] = strResult.IsEmpty() ? g_dfDOrder[i] : (float)atof(LPCTSTR(strResult.Trim()));
 	}
 	// BOOLå^ñΩóﬂì«Ç›çûÇ›
 	for ( i=0; i<SIZEOF(g_szBOrder); i++ )

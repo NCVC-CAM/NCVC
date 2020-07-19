@@ -9,10 +9,8 @@
 #include "DXFView.h"
 #include "DXFShapeView.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 static const UINT g_nIndicators[] =
@@ -178,7 +176,9 @@ void CDXFChild::OnSize(UINT nType, int cx, int cy)
 void CDXFChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd) 
 {
 	__super::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
-	DBGBOOL(g_dbg, "CDXFChild::bActivate", bActivate);
+#ifdef _DEBUG
+	printf("CDXFChild::bActivate=%d\n", bActivate);
+#endif
 	// Ó°ÄÞÚ½ÀÞ²±Û¸Þ‚Ö‚ÌÄÞ·­ÒÝÄØ‘Ö’Ê’m
 	if ( bActivate )
 		AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();

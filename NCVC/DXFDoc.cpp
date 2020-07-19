@@ -17,10 +17,8 @@
 #include "MakeNCDlgEx.h"
 #include "ThreadDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -529,9 +527,6 @@ BOOL CDXFDoc::GetEditOrgPoint(LPCTSTR lpctStr, CPointF& pt)
 
 tuple<CDXFshape*, CDXFdata*, float> CDXFDoc::GetSelectObject(const CPointF& pt, const CRectF& rcView)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("GetSelectViewPointGap()", DBG_CYAN);
-#endif
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	CDXFshape*	pShapeResult = NULL;
@@ -577,8 +572,8 @@ void CDXFDoc::SortBindInfo(void)
 	for ( int i=0; i<m_bindInfo.GetCount(); i++ ) {
 		CDXFDoc* pDoc = m_bindInfo[i]->pDoc;
 		CRectF	rc( pDoc->GetMaxRect() );
-		g_dbg.printf("No.%d=%s", i+1, pDoc->GetPathName() );
-		g_dbg.printf("  area=%f", rc.Width() * rc.Height() );
+		printf("No.%d=%s\n", i+1, LPCTSTR(pDoc->GetPathName()) );
+		printf(" area=%f\n", rc.Width() * rc.Height() );
 	}
 #endif
 }
@@ -689,28 +684,27 @@ void CDXFDoc::MakeDXF(const CString& strFile)
 #ifdef _DEBUG
 void CDXFDoc::DbgSerializeInfo(void)
 {
-	CMagaDbg	dbg("CDXFDoc::DbgSerializeInfo()");
-
-	dbg.printf("m_rcMax left =%f right =%f", m_rcMax.left, m_rcMax.right);
-	dbg.printf("        top  =%f bottom=%f", m_rcMax.top, m_rcMax.bottom);
-	dbg.printf("        Width=%f Height=%f", m_rcMax.Width(), m_rcMax.Height());
-	dbg.printf("        CenterPoint() x=%f y=%f", m_rcMax.CenterPoint().x, m_rcMax.CenterPoint().y);
+	printf("CDXFDoc::DbgSerializeInfo()\n");
+	printf("m_rcMax left =%f right =%f\n", m_rcMax.left, m_rcMax.right);
+	printf("        top  =%f bottom=%f\n", m_rcMax.top, m_rcMax.bottom);
+	printf("        Width=%f Height=%f\n", m_rcMax.Width(), m_rcMax.Height());
+	printf("        CenterPoint() x=%f y=%f\n", m_rcMax.CenterPoint().x, m_rcMax.CenterPoint().y);
 	if ( m_pCircle ) {
-		dbg.printf("m_ptOrg x=%f y=%f R=%f",
+		printf("m_ptOrg x=%f y=%f R=%f\n",
 			m_pCircle->GetCenter().x, m_pCircle->GetCenter().y,
 			m_pCircle->GetR() );
 	}
 	else {
-		dbg.printf("m_ptOrg ???");
+		printf("m_ptOrg ???\n");
 	}
 	CLayerData*	pLayer;
 	for ( int i=0; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
-		dbg.printf("LayerName=%s DataCnt=%d TextCnt=%d",
-			pLayer->GetLayerName(), pLayer->GetDxfSize(), pLayer->GetDxfTextSize());
+		printf("LayerName=%s DataCnt=%d TextCnt=%d\n",
+			LPCTSTR(pLayer->GetLayerName()), pLayer->GetDxfSize(), pLayer->GetDxfTextSize());
 	}
 }
-#endif //_DEBUG
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFDoc クラスのオーバライド関数
@@ -923,12 +917,12 @@ BOOL CDXFDoc::OnSaveDocument(LPCTSTR lpszPathName)
 void CDXFDoc::OnCloseDocument() 
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CDXFDoc::OnCloseDocument()\nStart", DBG_BLUE);
+	printf("CDXFDoc::OnCloseDocument() Start\n");
 #endif
 	// ﾛｯｸｱﾄﾞｲﾝのﾁｪｯｸ
 	if ( !IsLockThread() ) {	// CDocBase
 #ifdef _DEBUG
-		dbg.printf("AddinLock FALSE");
+		printf("AddinLock FALSE\n");
 #endif
 		return;
 	}
@@ -938,7 +932,7 @@ void CDXFDoc::OnCloseDocument()
 	m_csRestoreCircleType.Lock();
 	m_csRestoreCircleType.Unlock();
 #ifdef _DEBUG
-	dbg.printf("m_csRestoreCircleType Unlock OK");
+	printf("m_csRestoreCircleType Unlock OK\n");
 #endif
 
 	__super::OnCloseDocument();
@@ -1708,7 +1702,7 @@ void CDXFDoc::OnFileSaveAs()
 UINT CDXFDoc::RestoreCircleTypeThread(LPVOID pParam)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("RestoreCircleFlagThread()\nStart", TRUE, DBG_RED);
+	printf("RestoreCircleFlagThread() Start\n");
 #endif
 	int			i, j;
 	ENDXFTYPE	enType;

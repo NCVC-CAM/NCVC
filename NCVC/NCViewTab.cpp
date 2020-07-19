@@ -18,10 +18,8 @@
 #include "NCListView.h"
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 IMPLEMENT_DYNCREATE(CNCViewTab, CTabViewBase)
@@ -58,7 +56,7 @@ END_MESSAGE_MAP()
 CNCViewTab::CNCViewTab() : m_evTrace(FALSE, TRUE)
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewTab::CNCViewTab() Start");
+	printf("CNCViewTab::CNCViewTab() Start\n");
 #endif
 /*
 	ここでﾄﾚｰｽｽﾋﾟｰﾄﾞをﾚｼﾞｽﾄﾘから取得すると，NCViewTab起動の度にｱｸｾｽされることになる
@@ -133,7 +131,7 @@ void CNCViewTab::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 BOOL CNCViewTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
 #ifdef _DEBUG_CMDMSG
-	g_dbg.printf("CNCViewTab::OnCmdMsg()");
+	printf("CNCViewTab::OnCmdMsg()\n");
 #endif
 	// ﾀﾌﾞ移動だけ特別
 	if ( nID == ID_TAB_NEXT || nID == ID_TAB_PREV ) {
@@ -153,7 +151,7 @@ BOOL CNCViewTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 	// 結果的に CNCDoc へのｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞはここからだけになる
 	if ( CTabViewBase::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) ) {
 #ifdef _DEBUG_CMDMSG
-		g_dbg.printf("CTabViewBase::OnCmdMsg() return");
+		printf("CTabViewBase::OnCmdMsg() return\n");
 #endif
 		return TRUE;
 	}
@@ -213,7 +211,7 @@ CNCDoc* CNCViewTab::GetDocument() // 非デバッグ バージョンはインラインです。
 int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewTab::OnCreate() Start");
+	printf("CNCViewTab::OnCreate() Start\n");
 #endif
 	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
@@ -282,7 +280,7 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
 			nIndex = AddPage("OpenGL",
 				RUNTIME_CLASS(CNCViewGL), GetDocument(), GetParentFrame());
-			ASSERT(nIndex >= 0);
+//			ASSERT(nIndex >= 0);	// OpenGLﾊﾞｰｼﾞｮﾝﾁｪｯｸに引っかかる可能性アリ
 		}
 		// 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙを取得
 		CClientDC*	pDC;
@@ -304,7 +302,7 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CNCViewTab::OnDestroy() 
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCViewTab::OnDestroy()", DBG_BLUE);
+	printf("CNCViewTab::OnDestroy()\n");
 #endif
 
 	if ( m_pTraceThread ) {
@@ -316,11 +314,11 @@ void CNCViewTab::OnDestroy()
 			AfxGetApp()->PumpMessage();
 #ifdef _DEBUG
 		if ( ::WaitForSingleObject(m_pTraceThread->m_hThread, INFINITE) == WAIT_FAILED ) {
-			dbg.printf("WaitForSingleObject() Fail!");
+			printf("WaitForSingleObject() Fail!\n");
 			::NC_FormatMessage();
 		}
 		else
-			dbg.printf("WaitForSingleObject() OK");
+			printf("WaitForSingleObject() OK\n");
 #else
 		::WaitForSingleObject(m_pTraceThread->m_hThread, INFINITE);
 #endif
@@ -352,14 +350,19 @@ void CNCViewTab::OnTraceSpeed(UINT nID)
 
 void CNCViewTab::OnUpdateTraceRun(CCmdUI* pCmdUI) 
 {
+	if ( GetDocument()->IsDocFlag(NCDOC_ERROR) ) {
+		pCmdUI->Enable(FALSE);
+	}
+	else {
 #ifdef NO_TRACE_WORKFILE
-	if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) )
-		pCmdUI->Enable(FALSE);	// あともう一歩なんだけど...
-	else
-		pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_RUN );
+		if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) )
+			pCmdUI->Enable(FALSE);	// あともう一歩なんだけど...
+		else
+			pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_RUN );
 #else
-	pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_RUN );
+		pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_RUN );
 #endif
+	}
 }
 
 void CNCViewTab::OnTraceRun() 
@@ -380,14 +383,19 @@ void CNCViewTab::OnTraceRun()
 
 void CNCViewTab::OnUpdateTracePause(CCmdUI* pCmdUI) 
 {
-#ifdef NO_TRACE_WORKFILE
-	if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) )
+	if ( GetDocument()->IsDocFlag(NCDOC_ERROR) ) {
 		pCmdUI->Enable(FALSE);
-	else
-		pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_PAUSE );
+	}
+	else {
+#ifdef NO_TRACE_WORKFILE
+		if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) )
+			pCmdUI->Enable(FALSE);
+		else
+			pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_PAUSE );
 #else
-	pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_PAUSE );
+		pCmdUI->SetCheck( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_PAUSE );
 #endif
+	}
 }
 
 void CNCViewTab::OnTracePause() 
@@ -507,7 +515,7 @@ void CNCViewTab::OnUpdateRoundKey(CCmdUI* pCmdUI)
 BOOL CTraceThread::InitInstance()
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CTraceThread::InitInstance()\nStart", DBG_BLUE);
+	printf("CTraceThread::InitInstance() Start\n");
 #endif
 	CNCDoc*			pDoc  = m_pParent->GetDocument();
 	CNCdata*		pData;
@@ -544,7 +552,7 @@ BOOL CTraceThread::InitInstance()
 	while ( TRUE ) {
 		m_pParent->m_evTrace.Lock();
 #ifdef _DEBUG
-		dbg.printf("m_evTrace Lock() return");
+		printf("m_evTrace Lock() return\n");
 #endif
 		if ( !m_pParent->m_bTraceContinue )
 			break;
@@ -632,14 +640,14 @@ BOOL CTraceThread::InitInstance()
 			m_pParent->m_pDataTraceSel = pData;
 		} while ( m_pParent->m_bTraceContinue && !m_pParent->m_bTracePause );
 #ifdef _DEBUG
-		dbg.printf("Stop the trace loop");
+		printf("Stop the trace loop\n");
 #endif
 		if ( !m_pParent->m_bTraceContinue )
 			m_pParent->m_pDataTraceSel = FALSE;	// 次の再開に備える
 	}
 
 #ifdef _DEBUG
-	dbg.printf("Finish");
+	printf("CTraceThread::InitInstance() end\n");
 #endif
 
 	// InitInstance() から異常終了で返し，ｽﾚｯﾄﾞの終了

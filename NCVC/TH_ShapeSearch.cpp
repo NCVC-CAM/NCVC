@@ -10,10 +10,8 @@
 #include "DXFDoc.h"
 #include "ThreadDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 static	CThreadDlg*	g_pParent;
@@ -33,15 +31,13 @@ static	inline	void	SetProgressPos(INT_PTR n)
 
 struct	CHECKMAPTHREADPARAM
 {
-	CEvent		evStart,	// ﾙｰﾌﾟ開始ｲﾍﾞﾝﾄ
-				evEnd;		// 終了待ち確認
+	CEvent		evStart;	// ﾙｰﾌﾟ開始ｲﾍﾞﾝﾄ
+	CEvent		evEnd;		// 終了待ち確認
 	BOOL		bThread;	// ｽﾚｯﾄﾞの継続ﾌﾗｸﾞ
 	CLayerData*	pLayer;		// 対象ﾚｲﾔ
 	CDXFmap*	pMap;		// 検査対象ﾏｯﾌﾟ
 	// CEvent を手動ｲﾍﾞﾝﾄにするためのｺﾝｽﾄﾗｸﾀ
-	CHECKMAPTHREADPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE),
-		bThread(TRUE), pMap(NULL)
-	{}
+	CHECKMAPTHREADPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE), bThread(TRUE), pMap(NULL) {}
 };
 typedef	CHECKMAPTHREADPARAM*	LPCHECKMAPTHREADPARAM;
 static	UINT	CheckMapWorking_Thread(LPVOID);
@@ -191,7 +187,7 @@ void SetChainMap(const CDXFmap* pMasterMap, CLayerData* pLayer, LPCHECKMAPTHREAD
 	pParam->evEnd.ResetEvent();
 
 #ifdef _DEBUG
-	g_dbg.printf("m_obShapeArray.GetSize()=%d", pLayer->GetShapeSize());
+	printf("m_obShapeArray.GetSize()=%d\n", pLayer->GetShapeSize());
 #endif
 }
 
@@ -268,7 +264,7 @@ UINT CheckMapWorking_Thread(LPVOID pVoid)
 		// 形状情報登録
 		pParam->pLayer->AddShape(pShape);
 #ifdef _DEBUG
-		g_dbg.printf("Layer=%s %s Add ok", pParam->pLayer->GetLayerName(), strShape);
+		printf("Layer=%s %s Add ok\n", LPCTSTR(pParam->pLayer->GetLayerName()), LPCTSTR(strShape));
 #endif
 		// 検査終了
 		pParam->evEnd.SetEvent();

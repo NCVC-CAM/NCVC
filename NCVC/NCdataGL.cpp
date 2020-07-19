@@ -7,10 +7,8 @@
 #include "NCdata.h"
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using std::vector;
@@ -909,7 +907,6 @@ void CNCcircle::DrawGLWirePassCircle(const CPoint3F& pts, const CPoint3F& pte) c
 void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 {
 #ifdef _DEBUGOLD
-	CMagaDbg	dbg;
 	int			dbgCnt = 0;
 #endif
 	float	r = fabs(m_r),
@@ -945,7 +942,7 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 		pt.z = lpArgv->pte.z;		// ÍØ¶ÙI—¹À•W
 		::glVertex3fv(pt.xyz);
 #ifdef _DEBUGOLD
-		dbg.printf("DrawCnt=%d", dbgCnt+1);
+		printf("CNCcircle::DrawGLWirePassCircle() DrawCnt=%d\n", dbgCnt+1);
 #endif
 		break;
 

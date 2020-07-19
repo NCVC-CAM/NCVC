@@ -7,10 +7,8 @@
 #include "NCVCdefine.h"
 #include "DXFOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -74,11 +72,11 @@ CDXFOption::CDXFOption()
 	for ( i=0; i<SIZEOF(m_dBindWork); i++ ) {
 		VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDSIZE));
 		strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry+g_szNdelimiter[i]);
-		m_dBindWork[i] = strResult.IsEmpty() ? g_dDxfDef[i] : (float)atof((LPCTSTR)strResult.Trim());
+		m_dBindWork[i] = strResult.IsEmpty() ? g_dDxfDef[i] : (float)atof(LPCTSTR(strResult.Trim()));
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDMARGIN));
 	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
-	m_dBindMargin = strResult.IsEmpty() ? g_dDxfDef[i] : (float)atof((LPCTSTR)strResult.Trim());
+	m_dBindMargin = strResult.IsEmpty() ? g_dDxfDef[i] : (float)atof(LPCTSTR(strResult.Trim()));
 
 	// ãåéÆµÃﬂºÆ›ÇÃçÌèú
 	CRegKey	reg;

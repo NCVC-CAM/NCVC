@@ -7,10 +7,8 @@
 #include "MCSetup.h"
 #include <afxshellmanager.h>
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CMCSetup4, CPropertyPage)

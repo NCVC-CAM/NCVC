@@ -8,10 +8,8 @@
 #include "OBSdlg.h"
 #include "MCOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(COBSdlg, CDialog)
@@ -139,7 +137,7 @@ void COBSdlg::OnAllOFF()
 LRESULT COBSdlg::OnUserSwitchDocument(WPARAM, LPARAM)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("COBSdlg::OnUserSwitchDocument()\nCalling");
+	printf("COBSdlg::OnUserSwitchDocument() Calling\n");
 #endif
 	CMDIChildWnd* pFrame = AfxGetNCVCMainWnd()->MDIGetActive();
 
@@ -152,7 +150,7 @@ LRESULT COBSdlg::OnUserSwitchDocument(WPARAM, LPARAM)
 LRESULT COBSdlg::OnUserSwitchMachine(WPARAM, LPARAM)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("COBSdlg::OnUserSwitchMachine()\nCalling");
+	printf("COBSdlg::OnUserSwitchMachine() Calling\n");
 #endif
 	GetOBSdata();
 	UpdateData(FALSE);

@@ -6,10 +6,8 @@
 #include "NCDoc.h"
 #include "MakeDXFDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CMakeDXFDlg2, CPropertyPage)

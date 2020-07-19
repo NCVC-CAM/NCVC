@@ -11,10 +11,8 @@
 #include "NCMakeWireOpt.h"
 #include "NCMakeBase.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using std::string;

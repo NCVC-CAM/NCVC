@@ -12,12 +12,10 @@
 #include "ThumbnailDlg.h"
 #include <afxshellmanager.h>
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CThumbnailDlg, CDialog)
@@ -318,13 +316,13 @@ void CThumbnailDlg::WaitEnumDocThread(BOOL bStop/*=TRUE*/)
 		m_bEnumDoc = FALSE;
 	if ( m_pEnumDocThread ) {
 #ifdef _DEBUG
-		CMagaDbg	dbg("CThumbnailDlg::WaitEnumDocThread()", DBG_BLUE);
+		printf("CThumbnailDlg::WaitEnumDocThread()\n");
 		if ( ::WaitForSingleObject(m_pEnumDocThread->m_hThread, INFINITE) == WAIT_FAILED ) {
-			dbg.printf("WaitForSingleObject() Fail!");
+			printf("WaitForSingleObject() Fail!\n");
 			::NC_FormatMessage();
 		}
 		else
-			dbg.printf("WaitForSingleObject() OK");
+			printf("WaitForSingleObject() OK\n");
 #else
 		::WaitForSingleObject(m_pEnumDocThread->m_hThread, INFINITE);
 #endif

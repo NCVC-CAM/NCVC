@@ -7,10 +7,8 @@
 #include "NCChild.h"
 #include "NCFindDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CNCFindDlg, CDialog)
@@ -109,7 +107,7 @@ void CNCFindDlg::PostNcDestroy()
 LRESULT CNCFindDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCFindDlg::OnUserSwitchDocument()\nCalling");
+	printf("CNCFindDlg::OnUserSwitchDocument() Calling\n");
 #endif
 	CMDIChildWnd* pFrame = AfxGetNCVCMainWnd()->MDIGetActive();
 

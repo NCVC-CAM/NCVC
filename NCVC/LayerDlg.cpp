@@ -8,10 +8,8 @@
 #include "Layer.h"
 #include "LayerDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 static	LPCTSTR	g_szTreeTitle[] = {
@@ -57,8 +55,9 @@ void CLayerDlg::SetLayerTree(const CDXFDoc* pDoc)
 		pLayer1 = pDoc->GetLayerData(i);
 		nType = pLayer1->GetLayerType();
 #ifdef _DEBUG
-		g_dbg.printf("Layer=\"%s\",%d, %d",
-			pLayer1->GetLayerName(), nType, pLayer1->m_bLayerFlg[LAYER_VIEW]);
+		printf("Layer=\"%s\",%d, %d\n",
+			LPCTSTR(pLayer1->GetLayerName()), nType,
+			pLayer1->m_bLayerFlg[LAYER_VIEW] ? 1 : 0);
 #endif
 		if ( DXFCAMLAYER<=nType && nType<=DXFCOMLAYER ) {
 			nType -= DXFCAMLAYER;
@@ -208,7 +207,7 @@ void CLayerDlg::PostNcDestroy()
 LRESULT CLayerDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CLayerDlg::OnUserSwitchDocument()\nCalling");
+	printf("CLayerDlg::OnUserSwitchDocument() Calling\n");
 #endif
 	int			i;
 	BOOL		bActive = FALSE;

@@ -8,10 +8,8 @@
 #include "ViewOption.h"
 
 //#define	_DEBUGDRAW_NCD		// 描画処理もﾛｸﾞ
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #ifdef _DEBUG_DUMP
 #include "boost/format.hpp"
 using std::string;
@@ -92,9 +90,6 @@ CNCdata::CNCdata(LPNCARGV lpArgv)
 // 切削(描画)ｺｰﾄﾞ以外のｺﾝｽﾄﾗｸﾀ
 CNCdata::CNCdata(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCdata", DBG_MAGENTA);
-#endif
 	int		i;
 
 	Constracter(lpArgv);
@@ -414,7 +409,6 @@ void CNCdata::DrawWireLine(ENNCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
 #ifdef _DEBUG_DUMP
 void CNCdata::DbgDump(void)
 {
-	CMagaDbg	dbg("CNCdata", DBG_MAGENTA);
 	extern	LPCTSTR	g_szGdelimiter;	// "GSMOF" from NCDoc.cpp
 	extern	LPCTSTR	g_szNdelimiter; // "XYZUVWIJKRPLDH";
 
@@ -427,7 +421,7 @@ void CNCdata::DbgDump(void)
 		if ( GetValFlags() & g_dwSetValFlags[i] )
 			strBuf += str(format("%c%.3f") % g_szNdelimiter[i] % GetValue(i));
 	}
-	dbg.printf("%s", strBuf.c_str());
+	printf("CNCdata %s", strBuf.c_str());
 }
 #endif
 
@@ -438,9 +432,6 @@ void CNCdata::DbgDump(void)
 CNCline::CNCline(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset) :
 	CNCdata(NCDLINEDATA, pData, lpArgv, ptOffset)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCline", DBG_MAGENTA);
-#endif
 	// 描画始点を前回の計算値から取得
 	m_ptValS = pData->GetEndPoint();
 	m_pt2Ds  = pData->Get2DPoint();
@@ -533,8 +524,7 @@ void CNCline::DrawTuningYZ(float f)
 void CNCline::Draw(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCline::Draw()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Line Draw()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( m_obCdata.IsEmpty() ||
 			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
@@ -545,8 +535,7 @@ void CNCline::Draw(CDC* pDC, BOOL bSelect) const
 void CNCline::DrawXY(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCline::DrawXY()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Line DrawXY()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( m_obCdata.IsEmpty() ||
 			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
@@ -557,8 +546,7 @@ void CNCline::DrawXY(CDC* pDC, BOOL bSelect) const
 void CNCline::DrawXZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCline::DrawXZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Line DrawXZ()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( m_obCdata.IsEmpty() ||
 			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
@@ -569,8 +557,7 @@ void CNCline::DrawXZ(CDC* pDC, BOOL bSelect) const
 void CNCline::DrawYZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCline::DrawYZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Line DrawYZ()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( m_obCdata.IsEmpty() ||
 			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
@@ -872,10 +859,7 @@ CNCcycle::CNCcycle
 	(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, BOOL bL0Cycle, enMAKETYPE enType) :
 		CNCline(NCDCYCLEDATA, pData, lpArgv, ptOffset)
 {
-//	!!! Z, R, P 値は，TH_NCRead.cpp でも補間していることに注意 !!!
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCcycle", DBG_MAGENTA);
-#endif
+	//	!!! Z, R, P 値は，TH_NCRead.cpp でも補間していることに注意 !!!
 	CPoint3F	pt;
 	float	dx, dy, dox, doy,	// 基準平面の移動距離
 			dR, dI,				// R点座標, ｲﾆｼｬﾙ座標
@@ -1041,12 +1025,13 @@ CNCcycle::CNCcycle
 	}
 
 #ifdef _DEBUG_DUMP
-	dbg.printf("StartPoint x=%.3f y=%.3f z=%.3f",
+	printf("CNCcycle\n");
+	printf("StartPoint x=%.3f y=%.3f z=%.3f\n",
 		m_ptValS.x, m_ptValS.y, m_ptValS.z);
-	dbg.printf("           R-Point=%.3f C-Point=%.3f", dR, GetValue(z)+ptOffset[z]);
-	dbg.printf("FinalPoint x=%.3f y=%.3f z=%.3f",
+	printf("           R-Point=%.3f C-Point=%.3f\n", dR, GetValue(z)+ptOffset[z]);
+	printf("FinalPoint x=%.3f y=%.3f z=%.3f\n",
 		m_ptValE.x, m_ptValE.y, m_ptValE.z);
-	dbg.printf("m_nDrawCnt=%d", m_nDrawCnt);
+	printf("m_nDrawCnt=%d\n", m_nDrawCnt);
 #endif
 
 	if ( m_nDrawCnt <= 0 )
@@ -1062,7 +1047,7 @@ CNCcycle::CNCcycle
 	for ( i=0; i<m_nDrawCnt; i++ ) {
 		pt[x] += dx;	pt[y] += dy;
 #ifdef _DEBUG_DUMP
-		dbg.printf("           No.%d [x]=%.3f [y]=%.3f", i+1, pt[x], pt[y]);
+		printf("           No.%d [x]=%.3f [y]=%.3f\n", i+1, pt[x], pt[y]);
 #endif
 		// 各平面ごとに座標設定
 		pt[zz] = dI;
@@ -1179,8 +1164,7 @@ void CNCcycle::DrawTuningYZ(float f)
 void CNCcycle::Draw(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCcycle::Draw()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Cycle Draw()=%d\n", GetBlockLineNo()+1);
 #endif
 	DrawCycle(NCDRAWVIEW_XYZ, pDC, bSelect);
 }
@@ -1188,8 +1172,7 @@ void CNCcycle::Draw(CDC* pDC, BOOL bSelect) const
 void CNCcycle::DrawXY(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCcycle::DrawXY()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Cycle DrawXY()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( GetPlane() == XY_PLANE ) {
 		CNCline::DrawXY(pDC, bSelect);
@@ -1202,8 +1185,7 @@ void CNCcycle::DrawXY(CDC* pDC, BOOL bSelect) const
 void CNCcycle::DrawXZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCcycle::DrawXZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Cycle DrawXZ()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( GetPlane() == XZ_PLANE ) {
 		if ( GetValFlags() & NCFLG_LATHE_HOLE )
@@ -1220,8 +1202,7 @@ void CNCcycle::DrawXZ(CDC* pDC, BOOL bSelect) const
 void CNCcycle::DrawYZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCcycle::DrawYZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Cycle DrawYZ()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( GetPlane() == YZ_PLANE ) {
 		CNCline::DrawYZ(pDC, bSelect);
@@ -1294,9 +1275,6 @@ CNCcircle::CNCcircle
 (const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, enMAKETYPE enType) :
 	CNCline(NCDARCDATA, pData, lpArgv, ptOffset)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCcircle", DBG_MAGENTA);
-#endif
 	BOOL		fError = TRUE;	// Error
 
 	if ( GetGcode() == 2 )
@@ -1374,18 +1352,17 @@ CNCcircle::CNCcircle
 	// 描画終点を計算し保存
 	m_pt2D = m_ptValE.PointConvert();
 
+	if ( fError ) {
+		m_nc.nErrorCode = IDS_ERR_NCBLK_CIRCLECENTER;
+	}
+
 #ifdef _DEBUG_DUMP
-//	dbg.printf("gcode=%d", GetGcode());
-	dbg.printf("sx=%.3f sy=%.3f sz=%.3f / ex=%.3f ey=%.3f ez=%.3f / r=%.3f",
+	printf("CNCcircle gcode=%d\n", GetGcode());
+	printf("sx=%.3f sy=%.3f sz=%.3f / ex=%.3f ey=%.3f ez=%.3f / r=%.3f\n",
 		m_ptValS.x, m_ptValS.y, m_ptValS.z,
 		m_ptValE.x, m_ptValE.y, m_ptValE.z, m_r);
-	dbg.printf("px=%.3f py=%.3f pz=%.3f / sq=%f eq=%f",
+	printf("px=%.3f py=%.3f pz=%.3f / sq=%f eq=%f\n",
 		m_ptOrg.x, m_ptOrg.y, m_ptOrg.z, DEG(m_sq), DEG(m_eq));
-#endif
-
-	if ( fError )
-		m_nc.nErrorCode = IDS_ERR_NCBLK_CIRCLECENTER;
-#ifdef _DEBUG_DUMP
 	DbgDump();
 	Dbg_sep();
 #endif
@@ -1426,9 +1403,6 @@ void CNCcircle::Constracter(void)
 
 BOOL CNCcircle::CalcCenter(const CPointF& pts, const CPointF& pte)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CalcCenter()", DBG_RED);
-#endif
 	// R 指定で始点終点が同じ場合はエラー
 	if ( pts == pte )
 		return FALSE;
@@ -1597,8 +1571,7 @@ void CNCcircle::DrawTuningYZ(float f)
 void CNCcircle::Draw(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCcircle::Draw()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Circle Draw()=%d\n", GetBlockLineNo()+1);
 #endif
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -1625,8 +1598,7 @@ void CNCcircle::Draw(CDC* pDC, BOOL bSelect) const
 void CNCcircle::DrawXY(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCcircle::DrawXY()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Circle DrawXY()=%d\n", GetBlockLineNo()+1);
 #endif
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -1650,8 +1622,7 @@ void CNCcircle::DrawXY(CDC* pDC, BOOL bSelect) const
 void CNCcircle::DrawXZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCcircle::DrawXZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Circle DrawXZ()=%d\n", GetBlockLineNo()+1);
 #endif
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -1675,8 +1646,7 @@ void CNCcircle::DrawXZ(CDC* pDC, BOOL bSelect) const
 void CNCcircle::DrawYZ(CDC* pDC, BOOL bSelect) const
 {
 #ifdef _DEBUGDRAW_NCD
-	CMagaDbg	dbg("CNCcircle::DrawYZ()", DBG_RED);
-	dbg.printf("Line=%d", GetBlockLineNo()+1);
+	printf("Circle DrawYZ()=%d\n", GetBlockLineNo()+1);
 #endif
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -2128,10 +2098,6 @@ inline void _SetMaxRect_(const CPointF& pt, CRectF& rc)
 
 CRect3F CNCcircle::GetMaxRect(void) const
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("GetMaxRect()", DBG_RED);
-#endif
-
 	// 外接する四角形
 	CRect3F	rcResult;
 	CRectF	rcMax;
@@ -2200,9 +2166,10 @@ CRect3F CNCcircle::GetMaxRect(void) const
 	rcResult.NormalizeRect();
 
 #ifdef _DEBUGOLD
-	dbg.printf("rcResult(left, top   )=(%f, %f)", rcResult.left, rcResult.top);
-	dbg.printf("rcResult(right,bottom)=(%f, %f)", rcResult.right, rcResult.bottom);
-	dbg.printf("rcResult(high, low   )=(%f, %f)", rcResult.high, rcResult.low);
+	printf("CNCcircle::GetMaxRect()\n");
+	printf(" rcResult(left, top   )=(%f, %f)\n", rcResult.left, rcResult.top);
+	printf(" rcResult(right,bottom)=(%f, %f)\n", rcResult.right, rcResult.bottom);
+	printf(" rcResult(high, low   )=(%f, %f)\n", rcResult.high, rcResult.low);
 #endif
 
 	return rcResult;
@@ -2591,9 +2558,6 @@ optional<CPointF> CNCcircle::CalcOffsetIntersectionPoint2
 
 void CNCcircle::SetCorrectPoint(ENPOINTORDER enPoint, const CPointF& ptSrc, float rr)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("SetCorrectPoint()", DBG_MAGENTA);
-#endif
 	CPoint3F&	ptVal = enPoint==STARTPOINT ? m_ptValS : m_ptValE;	// 参照型
 	CPointF		pt;
 

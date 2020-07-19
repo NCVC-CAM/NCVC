@@ -14,15 +14,13 @@
 #include "MakeCustomCode.h"
 #include "ThreadDlg.h"
 
-using std::string;
-using namespace boost;
-
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 //#define	_DBG_NCMAKE_TIME	//	生成時間の表示
 #endif
+
+using std::string;
+using namespace boost;
 
 extern	LPCTSTR	g_szNCcomment[];
 
@@ -93,7 +91,7 @@ static	UINT	MakeLathe_AfterThread(LPVOID);	// 後始末ｽﾚｯﾄﾞ
 UINT MakeLathe_Thread(LPVOID pVoid)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeLathe_Thread()\nStart", DBG_GREEN);
+	printf("MakeLathe_Thread() Start\n");
 #endif
 #ifdef _DBG_NCMAKE_TIME
 	// 現在時刻を取得
@@ -137,7 +135,7 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 		if ( bResult && IsThread() )
 			nResult = IDOK;
 #ifdef _DEBUG
-		dbg.printf("MakeLathe_Thread All Over!!!");
+		printf("MakeLathe_Thread All Over!!!\n");
 #endif
 	}
 	catch (CMemoryException* e) {
@@ -313,7 +311,7 @@ BOOL MakeLathe_MainFunc(void)
 BOOL CreateShapeThread(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CreateShapeThread() for TH_MakeLathe\nStart");
+	printf("CreateShapeThread() for TH_MakeLathe Start\n");
 	CDXFchain*	pChainDbg;
 	CDXFdata*	pDataDbg;
 	CPointF		ptsd, pted;
@@ -355,7 +353,7 @@ BOOL CreateShapeThread(void)
 			continue;
 		strLayer = pLayer->GetLayerName();
 #ifdef _DEBUG
-		dbg.printf(" Layer=%s", strLayer);
+		printf(" Layer=%s\n", LPCTSTR(strLayer));
 #endif
 		nLoop = pLayer->GetShapeSize();
 		// 図形集合を１つに限定
@@ -378,11 +376,11 @@ BOOL CreateShapeThread(void)
 			if ( pShape->ChangeCreate_MapToChain() ) {
 #ifdef _DEBUG
 				pChainDbg = pShape->GetShapeChain();
-				dbg.printf("  ShapeNo.%d ChainCnt=%d", i, pChainDbg->GetCount());
+				printf("  ShapeNo.%d ChainCnt=%d\n", i, pChainDbg->GetCount());
 				PLIST_FOREACH(pDataDbg, pChainDbg)
 					ptsd = pDataDbg->GetNativePoint(0);
 					pted = pDataDbg->GetNativePoint(1);
-					dbg.printf("%d (%.3f, %.3f)-(%.3f, %.3f)", pDataDbg->GetType(),
+					printf("%d (%.3f, %.3f)-(%.3f, %.3f)\n", pDataDbg->GetType(),
 						ptsd.x, ptsd.y, pted.x, pted.y);
 				END_FOREACH
 #endif
@@ -399,7 +397,7 @@ BOOL CreateShapeThread(void)
 void InitialShapeData(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("InitialShapeData()\nStart");
+	printf("InitialShapeData() Start\n");
 #endif
 	CPointF		pts, pte;
 	CDXFchain*	pChain;
@@ -414,7 +412,7 @@ void InitialShapeData(void)
 		// Z値(X)が大きい方を先頭ﾒﾝﾊﾞに
 		if ( pts.x < pte.x ) {
 #ifdef _DEBUG
-			dbg.printf("(pts.x < pte.x) Object Reverse");
+			printf("(pts.x < pte.x) Object Reverse\n");
 #endif
 			pChain->Reverse();
 			pChain->ReverseNativePt();
@@ -427,7 +425,7 @@ void InitialShapeData(void)
 BOOL CreateInsidePitch(float& dHole)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CreateInsidePitch()\nStart");
+	printf("CreateInsidePitch() Start\n");
 //	CPointF		ptsd, pted;
 	int			nCntDbg = 0;
 #endif
@@ -461,7 +459,7 @@ BOOL CreateInsidePitch(float& dHole)
 	CRectF rc = pChain->GetMaxRect();
 	dLimit = max(rc.top, rc.bottom);
 #ifdef _DEBUG
-	dbg.printf("Limit(tuning)=%f", dLimit - CDXFdata::ms_ptOrg.y);
+	printf("Limit(tuning)=%f\n", dLimit - CDXFdata::ms_ptOrg.y);
 #endif
 
 	// 所属ﾒﾝﾊﾞの原点調整
@@ -492,7 +490,7 @@ BOOL CreateInsidePitch(float& dHole)
 #endif
 	}
 #ifdef _DEBUG
-	dbg.printf("OffsetCnt=%d", nCntDbg);
+	printf("OffsetCnt=%d\n", nCntDbg);
 #endif
 
 	return IsThread();
@@ -501,7 +499,7 @@ BOOL CreateInsidePitch(float& dHole)
 BOOL CreateOutsidePitch(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CreateOutsidePitch()\nStart");
+	printf("CreateOutsidePitch() Start\n");
 	int			nCntDbg = 0;
 #endif
 	int			i,
@@ -523,7 +521,7 @@ BOOL CreateOutsidePitch(void)
 	CRectF rc = pChain->GetMaxRect();
 	dLimit = min(rc.top, rc.bottom);
 #ifdef _DEBUG
-	dbg.printf("Limit(tuning)=%f", dLimit - CDXFdata::ms_ptOrg.y);
+	printf("Limit(tuning)=%f\n", dLimit - CDXFdata::ms_ptOrg.y);
 #endif
 
 	// 所属ﾒﾝﾊﾞの原点調整
@@ -556,7 +554,7 @@ BOOL CreateOutsidePitch(void)
 #endif
 	}
 #ifdef _DEBUG
-	dbg.printf("OffsetCnt=%d", nCntDbg);
+	printf("OffsetCnt=%d\n", nCntDbg);
 #endif
 
 	return IsThread();
@@ -1075,8 +1073,7 @@ void SendFaseMessage
 	(INT_PTR nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeLathe_Thread()", DBG_GREEN);
-	dbg.printf("Phase%d Start", g_nFase);
+	printf("MakeLathe_Thread() Phase%d Start\n", g_nFase);
 #endif
 	if ( nRange > 0 )
 		g_pParent->m_ctReadProgress.SetRange32(0, (int)nRange);
@@ -1221,7 +1218,7 @@ UINT MakeLathe_AfterThread(LPVOID)
 
 	int			i, j;
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeLathe_AfterThread()\nStart", TRUE, DBG_RED);
+	printf("MakeLathe_AfterThread() Start\n");
 #endif
 
 	for ( j=0; j<SIZEOF(g_obLineTemp); j++ ) {

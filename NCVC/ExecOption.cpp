@@ -7,10 +7,8 @@
 #include "MainFrm.h"
 #include "ExecOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace std;

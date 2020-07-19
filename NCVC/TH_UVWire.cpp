@@ -8,10 +8,8 @@
 #include "ThreadDlg.h"
 #include "NCVCdefine.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -29,7 +27,7 @@ static	BOOL		SetArgvCornerRobject(LPNCARGV, CNCblock*, CNCdata*, CNCdata*, float
 UINT UVWire_Thread(LPVOID pVoid)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("UVWire_Thread()\nStart", DBG_BLUE);
+	printf("UVWire_Thread() Start\n");
 #endif
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	CNCDoc*			pDoc = static_cast<CNCDoc*>(pParam->pDoc);
@@ -73,7 +71,7 @@ UINT UVWire_Thread(LPVOID pVoid)
 	}
 	pParent->m_ctReadProgress.SetRange32(0, (int)nLoopCnt);
 #ifdef _DEBUG
-	dbg.printf("GetNCsize()=%d Work=%f", nLoopCnt, z);
+	printf("GetNCsize()=%d Work=%f\n", nLoopCnt, z);
 #endif
 
 	// ïœêîèâä˙âªÇÃÇΩÇﬂÇ…ÅAç≈èâÇÃ G_TYPE µÃﬁºﬁ™∏ƒÇåüçı
@@ -163,9 +161,9 @@ try {
 		} // End of search loop
 #ifdef _DEBUG
 		if ( i < nLoopCnt )
-			dbg.printf("TaperMode StartBlock=(%d):%s Taper=%f Sign=%d",
+			printf("TaperMode StartBlock=(%d):%s Taper=%f Sign=%d\n",
 				pData1->GetBlockLineNo()+1, 
-				pDoc->GetNCblock(pData1->GetBlockLineNo())->GetStrGcode(),
+				LPCTSTR(pDoc->GetNCblock(pData1->GetBlockLineNo())->GetStrGcode()),
 				DEG(dTaper), nSign1);
 #endif
 
@@ -335,9 +333,9 @@ try {
 		dT1 = pRead1->m_pTaper ? dT*tan(fabs(pRead1->m_pTaper->dTaper)) : 0.0f;
 		dT2 = pRead2->m_pTaper ? dT*tan(fabs(pRead2->m_pTaper->dTaper)) : 0.0f;
 #ifdef _DEBUG
-		dbg.printf("--- CornerR");
-		dbg.printf("pData1 Line=%d", pData1->GetBlockLineNo()+1);
-		dbg.printf("pData2 Line=%d", pData2->GetBlockLineNo()+1);
+		printf("--- CornerR\n");
+		printf("pData1 Line=%d\n", pData1->GetBlockLineNo()+1);
+		printf("pData2 Line=%d\n", pData2->GetBlockLineNo()+1);
 #endif
 		ncArgv.nSpindle		= pData1->GetSpindle();
 		ncArgv.dFeed		= pData1->GetFeed();
@@ -383,7 +381,7 @@ try {
 		if ( !pDataR )
 			continue;	// XYé≤Ç…∫∞≈RµÃﬁºﬁ™∏ƒÇ™Ç»Ç¢Ç∆UVé≤ÇÃèàóùÇÕÇµÇ»Ç¢
 #ifdef _DEBUG
-		dbg.printf("XY corner OK");
+		printf("XY corner OK\n");
 #endif
 		i++;			// µÃﬁºﬁ™∏ƒÇë}ì¸ÇµÇΩÇÃÇ≈ÅA∂≥›ƒí≤êÆ
 		nLoopCnt++;
@@ -429,7 +427,7 @@ try {
 				delete	pData1;
 			pDataR->SetWireObj(pData2);
 #ifdef _DEBUG
-			dbg.printf("UV corner OK");
+			printf("UV corner OK\n");
 #endif
 		}
 
@@ -448,7 +446,7 @@ catch (CMemoryException* e) {
 	pParent->m_ctReadProgress.SetPos((int)nLoopCnt);
 	pParent->PostMessage(WM_USERFINISH, IsThread() ? nResult : IDCANCEL);
 #ifdef _DEBUG
-	dbg.printf("PostMessage() Finish!");
+	printf("PostMessage() Finish!\n");
 #endif
 
 	return 0;	// AfxEndThread(0);

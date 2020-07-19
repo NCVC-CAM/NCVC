@@ -6,7 +6,6 @@
 
 #include "FrameBuffer.h"
 #include "NCdata.h"
-//#define	USE_SHADER
 //#include "GLSL.h"
 
 // TrackingMode
@@ -45,20 +44,15 @@ typedef void (CNCViewGL::*PFNGETCLIPDEPTHMILL)(const CLIPDEPTHMILL&);
 // 底面描画座標生成ｽﾚｯﾄﾞ用
 struct CREATEBOTTOMVERTEXPARAM
 {
-#ifdef _DEBUG
-	int		dbgThread;		// ｽﾚｯﾄﾞID
-#endif
-	CEvent		evStart,
-				evEnd;
+	// CEventを使うとWin7で異常終了。参照ｶｳﾝﾄが原因か？
+	// 仕方ないので原始的な方法を採用
+	size_t		nID;		// ｽﾚｯﾄﾞID
 	BOOL		bThread,
 				bResult;
 	CNCDoc*		pDoc;
 	size_t		s, e;
 	CVBtmDraw	vBD;		// from NCdata.h
-	// CEvent を手動ｲﾍﾞﾝﾄにするためのｺﾝｽﾄﾗｸﾀ
-	CREATEBOTTOMVERTEXPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE),
-		bThread(TRUE), bResult(TRUE)
-	{}
+	CREATEBOTTOMVERTEXPARAM(size_t id) : nID(id), bThread(TRUE), bResult(TRUE) {}
 };
 typedef	CREATEBOTTOMVERTEXPARAM*	LPCREATEBOTTOMVERTEXPARAM;
 
@@ -66,10 +60,10 @@ typedef	CREATEBOTTOMVERTEXPARAM*	LPCREATEBOTTOMVERTEXPARAM;
 struct CREATEELEMENTPARAM
 {
 #ifdef _DEBUG
-	int		dbgThread;
+	int		dbgID;
 #endif
-	CEvent		evStart,
-				evEnd;
+	CEvent		evStart;
+	CEvent		evEnd;
 	const GLfloat*	pfXYZ;
 	GLfloat*		pfNOR;
 	const GLubyte*	pbStl;
@@ -82,9 +76,7 @@ struct CREATEELEMENTPARAM
 	std::vector<CVelement>	vvElementCut,	// from NCdata.h
 							vvElementWrk;
 	// CEvent を手動ｲﾍﾞﾝﾄにするためのｺﾝｽﾄﾗｸﾀ
-	CREATEELEMENTPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE),
-		bThread(TRUE), bResult(TRUE)
-	{}
+	CREATEELEMENTPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE), bThread(TRUE), bResult(TRUE) {}
 };
 typedef	CREATEELEMENTPARAM*		LPCREATEELEMENTPARAM;
 

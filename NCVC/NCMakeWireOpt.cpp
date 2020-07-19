@@ -6,10 +6,8 @@
 #include "resource.h"
 #include "NCMakeWireOpt.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 // intå^ñΩóﬂ
@@ -159,39 +157,37 @@ CString CNCMakeWireOpt::GetLineNoForm(void) const
 #ifdef _DEBUG
 void CNCMakeWireOpt::DbgDump(void) const
 {
-	CMagaDbg	dbg("CNCMakeWireOpt", DBG_RED);
-
-	dbg.printf("InitFile=%s", GetInitFile());
-	dbg.printf("----------");
-	dbg.printf("  Depth        =%f", WIR_D_DEPTH);
-	dbg.printf("  Taper        =%f", WIR_D_TAPER);
-	dbg.printf("  TaperMode    =%s", WIR_S_TAPERMODE);
-	dbg.printf("  Feed         =%f", WIR_D_FEED);
-	dbg.printf("  Header       =%s", WIR_S_HEADER);
-	dbg.printf("  Footer       =%s", WIR_S_FOOTER);
-	dbg.printf("----------");
-	dbg.printf("  AWFconnect   =%s", WIR_S_AWFCNT);
-	dbg.printf("  AWFcut       =%s", WIR_S_AWFCUT);
-	dbg.printf("  AWFcircleLo  =%f", WIR_D_AWFCIRCLE_LO);
-	dbg.printf("  AWFcircleHi  =%f", WIR_D_AWFCIRCLE_HI);
-	dbg.printf("  AWFstart     =%d", WIR_F_AWFSTART);
-	dbg.printf("  AWFend       =%d", WIR_F_AWFEND);
-	dbg.printf("----------");
-	dbg.printf("  bProgNo?     =%d", WIR_F_PROG);
-	dbg.printf("  nProgNo      =%d", WIR_I_PROG);
-	dbg.printf("  bProgNoAuto  =%d", WIR_F_PROGAUTO);
-	dbg.printf("  bLineAdd     =%d", WIR_F_LINEADD);
-	dbg.printf("  LineForm     =%s", WIR_S_LINEFORM);
-	dbg.printf("  nLineAdd     =%d", WIR_I_LINEADD);
-	dbg.printf("  EOB          =%s", WIR_S_EOB);
-	dbg.printf("  G90          =%d", WIR_I_G90);
-	dbg.printf("  Gclip        =%d", WIR_F_GCLIP);
-	dbg.printf("----------");
-	dbg.printf("  Dot          =%d", WIR_I_DOT);
-	dbg.printf("  FDot         =%d", WIR_I_FDOT);
-	dbg.printf("  ZeroCut      =%d", WIR_F_ZEROCUT);
-	dbg.printf("  CircleCode   =%d", WIR_I_CIRCLECODE);
-	dbg.printf("  Ellipse      =%f", WIR_D_ELLIPSE);
-	dbg.printf("  EllipseFlg   =%d", WIR_F_ELLIPSE);
+	printf("CNCMakeWireOpt InitFile=%s\n", LPCTSTR(GetInitFile()));
+	printf("----------\n");
+	printf("  Depth        =%f\n", WIR_D_DEPTH);
+	printf("  Taper        =%f\n", WIR_D_TAPER);
+	printf("  TaperMode    =%s\n", LPCTSTR(WIR_S_TAPERMODE));
+	printf("  Feed         =%f\n", WIR_D_FEED);
+	printf("  Header       =%s\n", LPCTSTR(WIR_S_HEADER));
+	printf("  Footer       =%s\n", LPCTSTR(WIR_S_FOOTER));
+	printf("----------\n");
+	printf("  AWFconnect   =%s\n", LPCTSTR(WIR_S_AWFCNT));
+	printf("  AWFcut       =%s\n", LPCTSTR(WIR_S_AWFCUT));
+	printf("  AWFcircleLo  =%f\n", WIR_D_AWFCIRCLE_LO);
+	printf("  AWFcircleHi  =%f\n", WIR_D_AWFCIRCLE_HI);
+	printf("  AWFstart     =%d\n", WIR_F_AWFSTART);
+	printf("  AWFend       =%d\n", WIR_F_AWFEND);
+	printf("----------\n");
+	printf("  bProgNo?     =%d\n", WIR_F_PROG);
+	printf("  nProgNo      =%d\n", WIR_I_PROG);
+	printf("  bProgNoAuto  =%d\n", WIR_F_PROGAUTO);
+	printf("  bLineAdd     =%d\n", WIR_F_LINEADD);
+	printf("  LineForm     =%s\n", LPCTSTR(WIR_S_LINEFORM));
+	printf("  nLineAdd     =%d\n", WIR_I_LINEADD);
+	printf("  EOB          =%s\n", LPCTSTR(WIR_S_EOB));
+	printf("  G90          =%d\n", WIR_I_G90);
+	printf("  Gclip        =%d\n", WIR_F_GCLIP);
+	printf("----------\n");
+	printf("  Dot          =%d\n", WIR_I_DOT);
+	printf("  FDot         =%d\n", WIR_I_FDOT);
+	printf("  ZeroCut      =%d\n", WIR_F_ZEROCUT);
+	printf("  CircleCode   =%d\n", WIR_I_CIRCLECODE);
+	printf("  Ellipse      =%f\n", WIR_D_ELLIPSE);
+	printf("  EllipseFlg   =%d\n", WIR_F_ELLIPSE);
 }
 #endif

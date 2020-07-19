@@ -16,10 +16,8 @@
 #include "boost/spirit/repository/include/qi_confix.hpp"
 #pragma	warning( pop )
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 //#define	_DEBUG_GSPIRIT
 #endif
 
@@ -179,14 +177,13 @@ static inline	void	_SetStrComma(const string& strComma)
 UINT NCDtoXYZ_Thread(LPVOID pVoid)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("NCDtoXYZ_Thread()\nStart", DBG_RED);
-	CMagaDbg	dbg1(DBG_BLUE);
+	printf("NCDtoXYZ_Thread() Start\n");
 #ifdef _DEBUG_FILEOPEN		// NCVC.h
 	extern	CTime	dbgtimeFileOpen;	// NCVC.cpp
 	CTime	t2 = CTime::GetCurrentTime();
 	CTimeSpan ts = t2 - dbgtimeFileOpen;
 	CString	strTime( ts.Format("%H:%M:%S") );
-	g_dbg.printf("NCDtoXYZ_Thread() %s", strTime);
+	printf("NCDtoXYZ_Thread() %s\n", LPCTSTR(strTime));
 	dbgtimeFileOpen = t2;
 #endif
 #endif
@@ -213,7 +210,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 	}
 #ifdef _DEBUG
 	if ( !IsThumbnail() )
-		dbg.printf("LoopCount=%d", nLoopCnt);
+		printf("LoopCount=%d\n", nLoopCnt);
 #endif
 
 	try {
@@ -353,10 +350,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_ncArgv.dEndmill = d / 2.0;
 			g_ncArgv.nEndmillType = NCMIL_SQUARE;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("_SetEndmill()", DBG_MAGENTA);
-				dbg.printf("Endmill=%f", g_ncArgv.dEndmill);
-			}
+			if ( !IsThumbnail() )
+				printf("_SetEndmill() Endmill=%f\n", g_ncArgv.dEndmill);
 #endif
 		}
 	};
@@ -366,10 +361,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_ncArgv.dEndmill = d;
 			g_ncArgv.nEndmillType = NCMIL_BALL;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("SetBallEndmill()", DBG_MAGENTA);
-				dbg.printf("BallEndmill=R%f", g_ncArgv.dEndmill);
-			}
+			if ( !IsThumbnail() )
+				printf("SetBallEndmill() BallEndmill=R%f\n", g_ncArgv.dEndmill);
 #endif
 		}
 	};
@@ -379,10 +372,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_ncArgv.dEndmill = d;
 			g_ncArgv.nEndmillType = NCMIL_CHAMFER;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("SetChamfermill()", DBG_MAGENTA);
-				dbg.printf("Chamfermill=C%f", g_ncArgv.dEndmill);
-			}
+			if ( !IsThumbnail() )
+				printf("SetChamfermill() Chamfermill=C%f\n", g_ncArgv.dEndmill);
 #endif
 		}
 	};
@@ -396,10 +387,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 				g_ncArgv.nc.dwValFlags |= NCFLG_LATHE_HOLE;
 			}
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("SetDrill()", DBG_MAGENTA);
-				dbg.printf("Drill=%f", g_ncArgv.dEndmill);
-			}
+			if ( !IsThumbnail() )
+				printf("SetDrill() Drill=%f\n", g_ncArgv.dEndmill);
 #endif
 		}
 	};
@@ -410,10 +399,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			if ( g_ncArgv.nEndmillType<0 || NCMIL_MAXTYPE<g_ncArgv.nEndmillType )
 				g_ncArgv.nEndmillType = 0;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("SetEndmillType()", DBG_MAGENTA);
-				dbg.printf("EndmillType=%d", g_ncArgv.nEndmillType);
-			}
+			if ( !IsThumbnail() )
+				printf("SetEndmillType() EndmillType=%d\n", g_ncArgv.nEndmillType);
 #endif
 		}
 	};
@@ -471,10 +458,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_dToolPos[NCA_X] = d;
 			g_dwBlockFlags |= NCBLK_TOOLX;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("ToolPosX()", DBG_MAGENTA);
-				dbg.printf("x=%f", d);
-			}
+			if ( !IsThumbnail() )
+				printf("ToolPosX()=%f\n", d);
 #endif
 		}
 	};
@@ -483,10 +468,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_dToolPos[NCA_Y] = d;
 			g_dwBlockFlags |= NCBLK_TOOLY;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("ToolPosY()", DBG_MAGENTA);
-				dbg.printf("y=%f", d);
-			}
+			if ( !IsThumbnail() )
+				printf("ToolPosY()=%f\n", d);
 #endif
 		}
 	};
@@ -495,10 +478,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_dToolPos[NCA_Z] = d;
 			g_dwBlockFlags |= NCBLK_TOOLZ;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("ToolPosZ()", DBG_MAGENTA);
-				dbg.printf("z=%f", d);
-			}
+			if ( !IsThumbnail() )
+				printf("ToolPosZ()=%f\n", d);
 #endif
 		}
 	};
@@ -519,10 +500,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_dWorkPos[NCA_X] = d;
 			g_dwBlockFlags |= NCBLK_WORKX;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("WorkPosX()", DBG_MAGENTA);
-				dbg.printf("x=%f", d);
-			}
+			if ( !IsThumbnail() )
+				printf("WorkPosX()=%f\n", d);
 #endif
 		}
 	};
@@ -531,10 +510,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_dWorkPos[NCA_Y] = d;
 			g_dwBlockFlags |= NCBLK_WORKY;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("WorkPosY()", DBG_MAGENTA);
-				dbg.printf("y=%f", d);
-			}
+			if ( !IsThumbnail() )
+				printf("WorkPosY()=%f\n", d);
 #endif
 		}
 	};
@@ -543,10 +520,8 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_dWorkPos[NCA_Z] = d;
 			g_dwBlockFlags |= NCBLK_WORKZ;
 #ifdef _DEBUG_GSPIRIT
-			if ( !IsThumbnail() ) {
-				CMagaDbg	dbg("WorkPosZ()", DBG_MAGENTA);
-				dbg.printf("z=%f", d);
-			}
+			if ( !IsThumbnail() )
+				printf("WorkPosZ()=%f\n", d);
 #endif
 		}
 	};
@@ -609,10 +584,8 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 	strBlock = pBlock->GetStrGcode();
 
 #ifdef _DEBUG_GSPIRIT
-	CMagaDbg	dbg("NC_Gseparate()", DBG_BLUE);
-	CMagaDbg	dbg1(DBG_GREEN);
 	if ( !IsThumbnail() )
-		dbg.printf("No.%004d Line=%s", nLine+1, strBlock.c_str());
+		printf("NC_Gseparate() No.%004d Line=%s\n", nLine+1, strBlock.c_str());
 #endif
 
 	// ª—»≤Ÿï\é¶ÇÃÇ∆Ç´ÇÕèàóùÇµÇ»Ç¢Ÿ∞¡›
@@ -681,7 +654,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			break;
 #ifdef _DEBUG_GSPIRIT
 		if ( !IsThumbnail() ) {
-			dbg1.printf("G Cut=%s", strWord.c_str());
+			printf("G Cut=%s\n", strWord.c_str());
 		}
 #endif
 		switch ( strWord[0] ) {
@@ -802,7 +775,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				strComma = boost::algorithm::trim_copy(strWord.substr(1));	// ∂›œà»ç~ÇéÊìæ
 #ifdef _DEBUG_GSPIRIT
 				if ( !IsThumbnail() )
-					dbg1.printf("strComma=%s", strComma.c_str());
+					printf("strComma=%s\n", strComma.c_str());
 #endif
 			}
 			break;
@@ -1366,7 +1339,7 @@ INT_PTR NC_NoSearch(const string&, CNCblock*)
 void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeChamferingObject()", DBG_BLUE);
+	printf("MakeChamferingObject()\n");
 #endif
 	// √ﬁ∞¿¡™Ø∏
 	if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
@@ -1441,9 +1414,9 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 
 #ifdef _DEBUG_GSPIRIT
 	if ( !IsThumbnail() ) {
-		dbg.printf("%c=%f, %f", cCham, r1, r2);
-		dbg.printf("pts=(%f, %f)", pts.x, pts.y);
-		dbg.printf("pte=(%f, %f)", pte.x, pte.y);
+		printf("%c=%f, %f\n", cCham, r1, r2);
+		printf("pts=(%f, %f)\n", pts.x, pts.y);
+		printf("pte=(%f, %f)\n", pte.x, pte.y);
 	}
 #endif
 
@@ -1537,7 +1510,7 @@ float FeedAnalyze_Int(const string& str)
 void SetEndmillDiameter(const string& str)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetEndmillDiameter()", DBG_MAGENTA);
+	printf("SetEndmillDiameter()\n");
 #endif
 
 	int		nTool = atoi(str.c_str());
@@ -1547,13 +1520,13 @@ void SetEndmillDiameter(const string& str)
 		g_ncArgv.dEndmill = *dResult;	// µÃæØƒÇÕîºåaÇ»ÇÃÇ≈ÅAÇªÇÃÇ‹Ç‹égóp
 #ifdef _DEBUG
 		if ( !IsThumbnail() )
-			dbg.printf("Endmill=%f from T-No.%d", g_ncArgv.dEndmill, stoi(str));
+			printf("Endmill=%f from T-No.%d\n", g_ncArgv.dEndmill, stoi(str));
 #endif
 	}
 #ifdef _DEBUG
 	else {
 		if ( !IsThumbnail() )
-			dbg.printf("Endmill T-No.%d nothing", stoi(str));
+			printf("Endmill T-No.%d nothing\n", stoi(str));
 	}
 #endif
 	g_ncArgv.nEndmillType = pMCopt->GetMillType(nTool);
@@ -1562,7 +1535,7 @@ void SetEndmillDiameter(const string& str)
 int SetTaperAngle(const string& str)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetTaperAngle()", DBG_MAGENTA);
+	printf("SetTaperAngle()\n");
 #endif
 	int		nResult = 0;
 	float	dTaper  = (float)atof(str.c_str());
@@ -1585,7 +1558,7 @@ int SetTaperAngle(const string& str)
 				dbgTaper = 51;
 			else if ( g_ncArgv.taper.nTaper == -1 )
 				dbgTaper = 52;
-			dbg.printf("Mode=%d angle=%f", dbgTaper, dTaper);
+			printf("Mode=%d angle=%f\n", dbgTaper, dTaper);
 		}
 #endif
 	}
@@ -1617,7 +1590,7 @@ CNCdata* SetToolPosition_fromComment(CNCblock* pBlock, CNCdata* pDataBefore)
 void SetWorkRect_fromComment(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetWorkRect_fromComment()", DBG_MAGENTA);
+	printf("SetWorkRect_fromComment()\n");
 #endif
 	CRect3F		rc;
 	CPoint3F	pt;
@@ -1652,8 +1625,8 @@ void SetWorkRect_fromComment(void)
 
 #ifdef _DEBUG
 	if ( !IsThumbnail() ) {
-		dbg.printf("(%f,%f)-(%f,%f)", rc.left, rc.top, rc.right, rc.bottom);
-		dbg.printf("(%f,%f)", rc.low, rc.high);
+		printf("(%f,%f)-(%f,%f)\n", rc.left, rc.top, rc.right, rc.bottom);
+		printf("(%f,%f)\n", rc.low, rc.high);
 	}
 #endif
 }
@@ -1661,7 +1634,7 @@ void SetWorkRect_fromComment(void)
 void SetWorkCylinder_fromComment(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetWorkCylinder_fromComment()", DBG_MAGENTA);
+	printf("SetWorkCylinder_fromComment()\n");
 #endif
 	float		d, h;
 	CPoint3F	pt;
@@ -1691,8 +1664,8 @@ void SetWorkCylinder_fromComment(void)
 
 #ifdef _DEBUG
 	if ( !IsThumbnail() ) {
-		dbg.printf("d=%f h=%f", d, h);
-		dbg.printf("offset=%f,%f,%f", pt.x, pt.y, pt.z);
+		printf("d=%f h=%f\n", d, h);
+		printf("offset=%f,%f,%f\n", pt.x, pt.y, pt.z);
 	}
 #endif
 }
@@ -1700,7 +1673,7 @@ void SetWorkCylinder_fromComment(void)
 void SetLatheView_fromComment(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetLatheView_fromComment()", DBG_MAGENTA);
+	printf("SetLatheView_fromComment()\n");
 #endif
 	// ê˘î’”∞ƒﬁÇÃÃ◊∏ﬁON
 	g_pDoc->SetLatheViewMode();
@@ -1717,7 +1690,7 @@ void SetLatheView_fromComment(void)
 			g_pDoc->SetWorkLatheR( g_dLatheView[0] / 2.0f );	// îºåaÇ≈ï€ä«
 #ifdef _DEBUG
 			if ( !IsThumbnail() )
-				dbg.printf("r=%f", g_dLatheView[0]/2.0f);
+				printf("r=%f\n", g_dLatheView[0]/2.0f);
 #endif
 			break;
 		case 2:		// z1, z2
@@ -1725,7 +1698,7 @@ void SetLatheView_fromComment(void)
 			g_pDoc->SetWorkLatheZ( g_dLatheView[1], g_dLatheView[2] );
 #ifdef _DEBUG
 			if ( !IsThumbnail() )
-				dbg.printf("(%f)-(%f)", g_dLatheView[1], g_dLatheView[2]);
+				printf("(%f)-(%f)\n", g_dLatheView[1], g_dLatheView[2]);
 #endif
 			break;
 		}
@@ -1741,7 +1714,7 @@ void SetLatheView_fromComment(void)
 void SetWireView_fromComment(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SetWireView_fromComment()", DBG_MAGENTA);
+	printf("SetWireView_fromComment()\n");
 #endif
 	// ‹≤‘â¡çH”∞ƒﬁÇÃÃ◊∏ﬁON
 	g_pDoc->SetDocFlag(NCDOC_WIRE);
@@ -1755,7 +1728,7 @@ void SetWireView_fromComment(void)
 	g_pDoc->SetWorkRectComment(rc, FALSE);	// ï`âÊóÃàÊÇçXêVÇµÇ»Ç¢(CNCDoc::SerializeAfterCheck)
 #ifdef _DEBUG
 	if ( !IsThumbnail() )
-		dbg.printf("t=%f", rc.high);
+		printf("t=%f\n", rc.high);
 #endif
 
 	// ã@äBèÓïÒÇÃÀﬁ≠∞”∞ƒﬁèâä˙íl∏ÿ±

@@ -14,10 +14,8 @@
 #include "NCListView.h"
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #include <mmsystem.h>			// timeGetTime()
 //#define	_DEBUG_FILEOUT_		// Depth File out
 #endif
@@ -32,7 +30,7 @@ using namespace boost;
 BOOL CNCViewGL::CreateLathe(BOOL bRange)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CreateLathe()\nStart");
+	printf("CNCViewGL::CreateLathe() Start\n");
 #endif
 
 	// FBO
@@ -47,8 +45,8 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 	::glMatrixMode(GL_MODELVIEW);
 
 #ifdef _DEBUG
-	dbg.printf("(%f,%f)-(%f,%f)", m_rcDraw.left, m_rcView.low, m_rcDraw.right, m_rcView.high);
-	dbg.printf("(%f,%f)", m_rcView.low, m_rcView.high);
+	printf("(%f,%f)-(%f,%f)\n", m_rcDraw.left, m_rcView.low, m_rcDraw.right, m_rcView.high);
+	printf("(%f,%f)\n", m_rcView.low, m_rcView.high);
 #endif
 
 	size_t	i, s, e;
@@ -62,7 +60,7 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 	}
 
 	::glPushAttrib( GL_LINE_BIT );
-	::glLineWidth( LATHELINEWIDTH );	// 端面切削等のYZパスでデプス値を更新できない
+	::glLineWidth( LATHELINEWIDTH*2.0f );	// 端面切削等のYZパスでデプス値を更新できない
 
 	// 中空ﾃﾞﾌﾟｽ
 	if ( GetDocument()->IsDocFlag(NCDOC_LATHE_HOLE) ) {
@@ -114,9 +112,6 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 
 BOOL CNCViewGL::GetClipDepthLathe(void)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("GetClipDepthLathe()");
-#endif
 	int			i, j, jj, icx, icy, offset;
 	GLint		viewPort[4];
 	GLdouble	mvMatrix[16], pjMatrix[16],
@@ -144,11 +139,12 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 	m_wy = (GLint)wy1;
 
 #ifdef _DEBUG
-	dbg.printf("left  -> wx1 = %f -> %f", m_rcDraw.left, wx1);
-	dbg.printf("right -> wx2 = %f -> %f", m_rcDraw.right, wx2);
-	dbg.printf("wy1 = %f -> %f",  LATHELINEWIDTH, wy1);
-	dbg.printf("wy2 = %f -> %f", -LATHELINEWIDTH, wy2);
-	dbg.printf("icx=%d icy=%d", icx, icy);
+	printf("GetClipDepthLathe()\n");
+	printf(" left  -> wx1 = %f -> %f\n", m_rcDraw.left, wx1);
+	printf(" right -> wx2 = %f -> %f\n", m_rcDraw.right, wx2);
+	printf(" wy1 = %f -> %f\n",  LATHELINEWIDTH, wy1);
+	printf(" wy2 = %f -> %f\n", -LATHELINEWIDTH, wy2);
+	printf(" icx=%d icy=%d\n", icx, icy);
 #endif
 
 	if ( m_icx!=icx ) {
@@ -206,7 +202,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 #ifdef _DEBUG
 	DWORD	t2 = ::timeGetTime();
 	GetGLError();
-	dbg.printf( "glReadPixels()=%d[ms]", t2 - t1);
+	printf( "glReadPixels()=%d[ms]\n", t2 - t1);
 #endif
 
 	offset = m_icx * (m_icy-1);		// m_pfDepthの外径開始ｵﾌｾｯﾄ
@@ -230,7 +226,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 				fabs( min((float)cdm.wz, m_rcDraw.high) );	// 変換座標かﾜｰｸ半径の小さい方
 	}
 
-#ifdef _DEBUG
+#ifdef _DEBUG_FILEOUT_
 	DumpLatheZ();
 #endif
 
@@ -345,7 +341,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 
 #ifdef _DEBUG
 	DWORD	t3 = ::timeGetTime();
-	dbg.printf( "AddMatrix=%d[ms]", t3 - t2 );
+	printf( "AddMatrix=%d[ms]\n", t3 - t2 );
 #endif
 
 #ifdef _DEBUG_FILEOUT_
@@ -357,9 +353,6 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 
 BOOL CNCViewGL::CreateVBOLathe(void)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CreateVBOLathe()", DBG_BLUE);
-#endif
 	int	i, ii, j,
 		offset = m_icx * (m_icy-1),	// m_pfDepthの外径開始ｵﾌｾｯﾄ
 		nSlit  = m_bSlitView ? (ARCCOUNT/2) : ARCCOUNT;	// 断面表示なら円の半分だけ
@@ -458,12 +451,10 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 			::glDeleteBuffersARB(SIZEOF(m_nVertexID), m_nVertexID);
 		::glGenBuffersARB(SIZEOF(m_nVertexID), m_nVertexID);
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[0]);
-		::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-				nVBOsize, m_pfXYZ,
+		::glBufferDataARB(GL_ARRAY_BUFFER_ARB, nVBOsize, m_pfXYZ,
 				GL_STATIC_DRAW_ARB);
 		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[1]);
-		::glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-				nVBOsize, m_pfNOR,
+		::glBufferDataARB(GL_ARRAY_BUFFER_ARB, nVBOsize, m_pfNOR,
 				GL_STATIC_DRAW_ARB);
 		m_nVBOsize = nVBOsize;
 	}
@@ -506,8 +497,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 			nElement = v.size();
 			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-					nElement*sizeof(GLuint), &(v[0]),
+				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
 					GL_STATIC_DRAW_ARB);
 				errLine = __LINE__;
 				errCode = GetGLError();
@@ -530,8 +520,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 			nElement = v.size();
 			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-					nElement*sizeof(GLuint), &(v[0]),
+				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
 					GL_STATIC_DRAW_ARB);
 				errLine = __LINE__;
 				errCode = GetGLError();
@@ -554,8 +543,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 			nElement = v.size();
 			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-					nElement*sizeof(GLuint), &(v[0]),
+				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
 					GL_STATIC_DRAW_ARB);
 				errLine = __LINE__;
 				errCode = GetGLError();
@@ -579,8 +567,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 			nElement = v.size();
 			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-					nElement*sizeof(GLuint), &(v[0]),
+				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
 					GL_STATIC_DRAW_ARB);
 				errLine = __LINE__;
 				errCode = GetGLError();
@@ -601,11 +588,12 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 
 		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 #ifdef _DEBUG
-		dbg.printf("VertexCount(/3)=%d size=%d",
+		printf("CreateVBOLathe()\n");
+		printf(" VertexCount(/3)=%d size=%d\n",
 			m_icx*ARCCOUNT, m_icx*ARCCOUNT*NCXYZ*sizeof(GLfloat));
-		dbg.printf("Work IndexCount=%d Triangle=%d",
+		printf(" Work IndexCount=%d Triangle=%d\n",
 			nWrkSize, dbgTriangleWrk/3);
-		dbg.printf("Cut  IndexCount=%d Triangle=%d",
+		printf(" Cut  IndexCount=%d Triangle=%d\n",
 			nCutSize, dbgTriangleCut/3);
 #endif
 	}

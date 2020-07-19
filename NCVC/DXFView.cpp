@@ -14,10 +14,8 @@
 #include "ViewOption.h"
 //#include "boost/lambda/lambda.hpp"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using std::vector;
@@ -215,7 +213,7 @@ CDXFDoc* CDXFView::GetDocument() // 非デバッグ バージョンはインラインです。
 BOOL CDXFView::OnUpdateShape(DXFTREETYPE vSelect[])
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CDXFView::OnUpdateShape\nStart");
+	printf("CDXFView::OnUpdateShape Start\n");
 #endif
 	CClientDC	dc(this);
 	// 仮加工指示を描画中なら
@@ -340,10 +338,10 @@ BOOL CDXFView::CreateOutlineTempObject(CDXFshape* pShape)
 		m_dOffset += pOutline->GetOutlineOffset();
 
 #ifdef _DEBUG
-	g_dbg.printf("CreateOutlineTempObject()");
-	g_dbg.printf("ShapeName=%s Orig", pShape->GetShapeName());
+	printf("CreateOutlineTempObject()\n");
+	printf("ShapeName=%s Orig\n", LPCTSTR(pShape->GetShapeName()));
 	CRect	rc( pShape->GetMaxRect() );
-	g_dbg.printStruct(&rc);
+	printf("(%d, %d)-(%d, %d)\n", rc.left, rc.top, rc.right, rc.bottom);
 #endif
 
 	DeleteOutlineTempObject();
@@ -358,14 +356,14 @@ BOOL CDXFView::CreateOutlineTempObject(CDXFshape* pShape)
 				END_FOREACH
 				m_ltOutline[i].RemoveAll();
 #ifdef _DEBUG
-				g_dbg.printf("Loop%d Error", i);
+				printf("Loop%d Error\n", i);
 #endif
 			}
 #ifdef _DEBUG
 			else {
-				g_dbg.printf("Loop%d", i);
+				printf("Loop%d\n", i);
 				rc = m_ltOutline[i].GetMaxRect();
-				g_dbg.printStruct(&rc);
+				printf("(%d, %d)-(%d, %d)\n", rc.left, rc.top, rc.right, rc.bottom);
 			}
 #endif
 		}
@@ -932,8 +930,8 @@ LRESULT CDXFView::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 			CPointF	ptL(ptD.x/m_dFactor, ptD.y/m_dFactor);
 			GetDocument()->CreateCutterOrigin(ptL);
 #ifdef _DEBUG
-			g_dbg.printf("%s", GetDocument()->GetPathName());
-			g_dbg.printf("-- New Origin = %f, %f", ptL.x, ptL.y);
+			printf("%s\n", LPCTSTR(GetDocument()->GetPathName()));
+			printf("-- New Origin = %f, %f\n", ptL.x, ptL.y);
 #endif
 		}
 		if ( lParam ) {
@@ -955,7 +953,7 @@ LRESULT CDXFView::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("OnBindInitMsg");
+	printf("CDXFView::OnBindInitMsg() Start\n");
 #endif
 	INT_PTR	i, nLoop = GetDocument()->GetBindInfoCnt();
 	size_t	j;
@@ -980,9 +978,9 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 	dc.LPtoDP(&ptDev);
 	ClientToScreen(&ptDev);
 #ifdef _DEBUG
-	dbg.printf("rcWork = (%f, %f) - (%f, %f)",
+	printf("rcWork = (%f, %f) - (%f, %f)\n",
 		rcWork.left, rcWork.top, rcWork.right, rcWork.bottom);
-	dbg.printf("ptDev  = (%f, %f)", ptDev.x, ptDev.y);
+	printf("ptDev  = (%d, %d)\n", ptDev.x, ptDev.y);
 #endif
 
 	// --- 長方形詰め込み問題---
@@ -1003,7 +1001,7 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 	dNextBaseY = pt2.y = pt1.y - rc.Height() + dMargin;
 	Y.push_back( pt2 );
 #ifdef _DEBUG
-	dbg.printf("first Y = (%f, %f)", pt2.x, pt2.y);
+	printf("first Y = (%f, %f)\n", pt2.x, pt2.y);
 #endif
 
 	// 2つめ以降
@@ -1013,7 +1011,7 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 		w = rc.Width()  + dMargin;
 		h = rc.Height() + dMargin;
 #ifdef _DEBUG
-		dbg.printf("w=%f h=%f", w, h);
+		printf("w=%f h=%f\n", w, h);
 #endif
 		// 幅検索
 		if ( pt1.x+w < W ) {
@@ -1023,7 +1021,7 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 				pt2 = pt1;	pt2.y -= h;
 				Y.push_back( pt2 );
 #ifdef _DEBUG
-				dbg.printf("(%f, %f)", pt2.x, pt2.y);
+				printf("(%f, %f)\n", pt2.x, pt2.y);
 #endif
 			}
 			pt1.x += w;
@@ -1055,7 +1053,7 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 						YY[j].insert(it, pt2);
 						Y.push_back( pt2 );
 #ifdef _DEBUG
-						dbg.printf("sukima (%f, %f)", pt2.x, pt2.y);
+						printf("sukima (%f, %f)\n", pt2.x, pt2.y);
 #endif
 						pt1.x += w;
 					}
@@ -1074,7 +1072,7 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 			pt2 = pt1;	pt2.y -= h;
 			Y.push_back( pt2 );
 #ifdef _DEBUG
-			dbg.printf("new (%f, %f)", pt2.x, pt2.y);
+			printf("new (%f, %f)\n", pt2.x, pt2.y);
 #endif
 			if ( W < rc.Width() )
 				bXover = TRUE;
@@ -1168,7 +1166,7 @@ LRESULT CDXFView::OnBindRoundMsg(WPARAM wParam, LPARAM lParam)
 LRESULT CDXFView::OnBindCancel(WPARAM, LPARAM)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("OnBindCancel()\nStart");
+	printf("CDXFView::OnBindCancel() Start\n");
 #endif
 	m_enBind = BD_CANCEL;
 	// 配置を元に戻す
@@ -1189,8 +1187,8 @@ void CDXFView::OnLButtonDown(UINT nFlags, CPoint point)
 		strDbg = "P";
 	else if ( IsBindMode() )
 		strDbg = "C";
-	strDbg = "CDXFView::OnLButtonDown("+strDbg+")\nStart";
-	CMagaDbg	dbg((LPSTR)(LPCTSTR)strDbg);
+	strDbg = "CDXFView::OnLButtonDown("+strDbg+") Start\n";
+	printf(LPCTSTR(strDbg));
 #endif
 	if ( IsBindMode() ) {
 		CDXFView*	pView  = static_cast<CDXFView*>(GetParent());
@@ -1232,8 +1230,8 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 		strDbg = "P";
 	else if ( IsBindMode() )
 		strDbg = "C";
-	strDbg = "CDXFView::OnLButtonUp("+strDbg+")\nStart";
-	CMagaDbg	dbg((LPSTR)(LPCTSTR)strDbg);
+	strDbg = "CDXFView::OnLButtonUp("+strDbg+") Start\n";
+	printf(LPCTSTR(strDbg));
 #endif
 	if ( !m_bindSel.empty() && m_enBind==BD_MOVE ) {
 		optional<CPointF> ptOrg = GetDocument()->GetCutterOrigin();
@@ -1364,8 +1362,8 @@ void CDXFView::OnRButtonDown(UINT nFlags, CPoint point)
 		strDbg = "P";
 	else if ( IsBindMode() )
 		strDbg = "C";
-	strDbg = "CDXFView::OnRButtonDown("+strDbg+")\nStart";
-	CMagaDbg	dbg((LPSTR)(LPCTSTR)strDbg);
+	strDbg = "CDXFView::OnRButtonDown("+strDbg+") Start\n";
+	printf(LPCTSTR(strDbg));
 #endif
 	if ( IsBindMode() ) {
 		if ( nFlags == MK_RBUTTON ) {
@@ -1396,8 +1394,8 @@ void CDXFView::OnRButtonUp(UINT nFlags, CPoint point)
 		strDbg = "P";
 	else if ( IsBindMode() )
 		strDbg = "C";
-	strDbg = "CDXFView::OnRButtonUp("+strDbg+")\nStart";
-	CMagaDbg	dbg((LPSTR)(LPCTSTR)strDbg);
+	strDbg = "CDXFView::OnRButtonUp("+strDbg+") Start\n";
+	printf(LPCTSTR(strDbg));
 #endif
 	if ( IsBindMode() ) {
 		CDXFView*	pView  = static_cast<CDXFView*>(GetParent());
@@ -1437,8 +1435,8 @@ void CDXFView::OnLButtonDblClk(UINT nFlags, CPoint point)
 		strDbg = "P";
 	else if ( IsBindMode() )
 		strDbg = "C";
-	strDbg = "CDXFView::OnLButtonDblClk("+strDbg+")\nStart";
-	CMagaDbg	dbg((LPSTR)(LPCTSTR)strDbg);
+	strDbg = "CDXFView::OnLButtonDblClk("+strDbg+") Start\n";
+	printf(LPCTSTR(strDbg));
 #endif
 	if ( IsBindMode() ) {
 		// 子ﾋﾞｭｰ回転
@@ -1493,8 +1491,8 @@ void CDXFView::OnRButtonDblClk(UINT nFlags, CPoint point)
 		strDbg = "P";
 	else if ( IsBindMode() )
 		strDbg = "C";
-	strDbg = "CDXFView::OnRButtonDblClk("+strDbg+")\nStart";
-	CMagaDbg	dbg((LPSTR)(LPCTSTR)strDbg);
+	strDbg = "CDXFView::OnRButtonDblClk("+strDbg+") Start\n";
+	printf(LPCTSTR(strDbg));
 #endif
 /*
 	// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示では右ﾀﾞﾌﾞﾙｸﾘｯｸ効かない
@@ -2000,8 +1998,8 @@ BOOL CDXFView::OnToolTipNotify(UINT id, NMHDR *pNMH, LRESULT *pResult)
 		strDbg = "P";
 	else if ( IsBindMode() )
 		strDbg = "C";
-	strDbg = "CDXFView::OnToolTipNotify("+strDbg+")\nStart";
-	CMagaDbg	dbg((LPSTR)(LPCTSTR)strDbg);
+	strDbg = "CDXFView::OnToolTipNotify("+strDbg+") Start\n";
+	printf(LPCTSTR(strDbg));
 #endif
 	// 親ｳｨﾝﾄﾞｳでﾒｯｾｰｼﾞが処理される
 	TOOLTIPTEXT *pText = (TOOLTIPTEXT *)pNMH;

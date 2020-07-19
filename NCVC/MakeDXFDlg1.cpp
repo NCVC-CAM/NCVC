@@ -9,10 +9,8 @@
 #include "MakeNCDlg.h"		// ê∂ê¨¿ﬁ≤±€∏ﬁã§í ä÷êîíËã`
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CMakeDXFDlg1, CPropertyPage)

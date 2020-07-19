@@ -8,10 +8,8 @@
 #include "NCViewYZ.h"
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -30,7 +28,7 @@ END_MESSAGE_MAP()
 CNCViewYZ::CNCViewYZ() : CNCViewBase(NCDRAWVIEW_YZ)
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewYZ::CNCViewYZ() Start");
+	printf("CNCViewYZ::CNCViewYZ() Start\n");
 #endif
 }
 

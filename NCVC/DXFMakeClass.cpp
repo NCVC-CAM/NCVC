@@ -15,10 +15,8 @@
 #include "DXFMakeClass.h"
 #include "boost/array.hpp"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 //#define	_DEBUGDUMP
 #endif
 
@@ -77,8 +75,7 @@ struct INDEXCOLOR
 	}
 #ifdef _DEBUGDUMP
 	void	dump() const {
-//		g_dbg.printf("id=%d : rgb=%d,%d,%d", n, r, g, b);
-		TRACE("id=%d : rgb=%d,%d,%d", n, r, g, b);
+		TRACE("id=%d : rgb=%d,%d,%d\n", n, r, g, b);
 	}
 #endif
 };
@@ -1519,6 +1516,6 @@ int SearchIndexColor(COLORREF col)
 void CDXFMake::dump(void)
 {
 	for ( int i=0; i<m_strDXFarray.GetSize(); i++ )
-		g_dbg.print( (LPTSTR)(LPCTSTR)m_strDXFarray[i] );
+		TRACE( m_strDXFarray[i]+'\n' );
 }
 #endif

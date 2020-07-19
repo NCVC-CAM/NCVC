@@ -11,10 +11,8 @@
 #include "MakeNCDlgEx11.h"
 #include "MakeNCDlgEx21.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 #define	GetNCMakeParent()	static_cast<CMakeNCDlgEx *>(GetParentSheet())

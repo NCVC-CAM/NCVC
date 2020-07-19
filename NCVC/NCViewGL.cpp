@@ -16,7 +16,6 @@
 #include "../Kodatuno/Describe_BODY.h"
 #include "boost/array.hpp"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 //#define	_DEBUG_POLYGONLINE_
@@ -26,7 +25,6 @@
 //#define	_DEBUG_SHADERTEST_
 #define		_DEBUG_BASICSHADERTEST_
 #endif
-extern	CMagaDbg	g_dbg;
 #include <mmsystem.h>			// timeGetTime()
 #endif
 
@@ -34,6 +32,7 @@ using std::vector;
 using namespace boost;
 extern	const PENSTYLE	g_penStyle[];	// ViewOption.cpp
 
+#define	IsDocError()	GetDocument()->IsDocFlag(NCDOC_ERROR)
 #define	IsWireMode()	GetDocument()->IsDocFlag(NCDOC_WIRE)
 #define	IsLatheMode()	GetDocument()->IsDocFlag(NCDOC_LATHE)
 
@@ -97,7 +96,7 @@ END_MESSAGE_MAP()
 CNCViewGL::CNCViewGL()
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewGL::CNCViewGL() Start");
+	printf("CNCViewGL::CNCViewGL() Start\n");
 #endif
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	m_bActive = m_bSizeChg = FALSE;
@@ -167,7 +166,7 @@ void CNCViewGL::OnInitialUpdate()
 	extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCViewGL::OnInitialUpdate()\nStart", DBG_CYAN);
+	printf("CNCViewGL::OnInitialUpdate() Start\n");
 #endif
 	__super::OnInitialUpdate();
 
@@ -376,7 +375,7 @@ void CNCViewGL::UpdateViewOption(void)
 BOOL CNCViewGL::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
 #ifdef _DEBUG_CMDMSG
-	g_dbg.printf("CNCViewGL::OnCmdMsg()");
+	printf("CNCViewGL::OnCmdMsg()\n");
 #endif
 	// Ç±Ç±Ç©ÇÁ CDocument::OnCmdMsg() ÇåƒÇŒÇ»Ç¢ÇÊÇ§Ç…Ç∑ÇÈ
 //	return __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
@@ -503,7 +502,7 @@ void  CNCViewGL::CreateTexture(GLsizeiptr n, const GLfloat* pfTEX)
 		::glDeleteBuffersARB(1, &m_nTextureID);
 	::glGenBuffersARB(1, &m_nTextureID);
 	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nTextureID);
-	::glBufferDataARB(GL_ARRAY_BUFFER_ARB,	n*sizeof(GLfloat), pfTEX,
+	::glBufferDataARB(GL_ARRAY_BUFFER_ARB, n*sizeof(GLfloat), pfTEX,
 			GL_STATIC_DRAW_ARB);
 	errLine = __LINE__;
 	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
@@ -604,22 +603,6 @@ void CNCViewGL::FinalBoxel(void)
 	memcpy(m_objXform, m_objXformBk, sizeof(m_objXform));
 	m_ptCenter = m_ptCenterBk;
 	SetupViewingTransform();
-}
-
-void CNCViewGL::EndOfCreateElementThread(void)
-{
-	if ( m_pCeHandle ) {
-		delete[]	m_pCeHandle;
-		m_pCeHandle = NULL;
-	}
-	if ( m_nCeProc>0 && m_pCeParam ) {
-		for ( DWORD i=0; i<m_nCeProc; i++ ) {
-			m_pCeParam[i].bThread = FALSE;		// end of thread
-			m_pCeParam[i].evStart.SetEvent();
-		}
-		delete[]	m_pCeParam;
-		m_pCeParam = NULL;
-	}
 }
 
 void CNCViewGL::RenderBack(void)
@@ -759,10 +742,12 @@ void CNCViewGL::RenderMill(const CNCdata* pData)
 	::glVertexPointer(NCXYZ, GL_FLOAT, 0, &(bd.vpt[0]));
 	::glNormalPointer(GL_FLOAT, 0, &(GLMillUpNor[0]));
 	bd.vel.assign(GLFanElement[0], GLFanElement[0]+ARCCOUNT+2);
+//	::glDrawElements(GL_TRIANGLE_FAN,
 	::glDrawRangeElements(GL_TRIANGLE_FAN, 0, 64,
 			(GLsizei)(bd.vel.size()), GL_UNSIGNED_INT, &(bd.vel[0]));
 	::glNormalPointer(GL_FLOAT, 0, &(GLMillSdNor[0]));
 	bd.vel.assign(GLFanStripElement, GLFanStripElement+(ARCCOUNT+1)*2);
+//	::glDrawElements(GL_TRIANGLE_STRIP,
 	::glDrawRangeElements(GL_TRIANGLE_STRIP, 1, 129,
 			(GLsizei)(bd.vel.size()), GL_UNSIGNED_INT, &(bd.vel[0]));
 	// â∫ïî
@@ -774,6 +759,7 @@ void CNCViewGL::RenderMill(const CNCdata* pData)
 	else {
 		::glNormalPointer(GL_FLOAT, 0, &(GLMillDwNor[0]));
 		bd.vel.assign(GLFanElement[1], GLFanElement[1]+ARCCOUNT+2);
+//		::glDrawElements(GL_TRIANGLE_FAN,
 		::glDrawRangeElements(GL_TRIANGLE_FAN, 65, 129,
 				(GLsizei)(bd.vel.size()), GL_UNSIGNED_INT, &(bd.vel[0]));
 	}
@@ -875,9 +861,9 @@ void CNCViewGL::DoScale(int nRate)
 		Invalidate(FALSE);
 		::wglMakeCurrent( NULL, NULL );
 #ifdef _DEBUG
-		g_dbg.printf("DoScale() ---");
-		g_dbg.printf("  (%f,%f)-(%f,%f)", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
-		g_dbg.printf("  (%f,%f)", m_rcView.low, m_rcView.high);
+		printf("DoScale() ---\n");
+		printf("  (%f,%f)-(%f,%f)\n", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
+		printf("  (%f,%f)\n", m_rcView.low, m_rcView.high);
 #endif
 	}
 
@@ -889,7 +875,7 @@ void CNCViewGL::DoScale(int nRate)
 void CNCViewGL::DoRotation(float dAngle)
 {
 #ifdef _DEBUG
-//	g_dbg.printf("DoRotation() Angle=%f (%f, %f, %f)", dAngle,
+//	printf("DoRotation() Angle=%f (%f, %f, %f)\n", dAngle,
 //		m_ptRoundBase.x, m_ptRoundBase.y, m_ptRoundBase.z);
 #endif
 	// âÒì]œƒÿØ∏ΩÇåªç›ÇÃµÃﬁºﬁ™∏ƒÃ´∞—œƒÿØ∏ΩÇ…ä|ÇØçáÇÌÇπÇÈ
@@ -914,7 +900,7 @@ void CNCViewGL::SetupViewingTransform(void)
 void CNCViewGL::OnDraw(CDC* pDC)
 {
 #ifdef _DEBUG
-//	CMagaDbg	dbg("OnDraw()\nStart");
+//	printf("CNCViewGL::OnDraw() Start\n");
 #endif
 	ASSERT_VALID(GetDocument());
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
@@ -929,6 +915,12 @@ void CNCViewGL::OnDraw(CDC* pDC)
 
 	// é≤ÇÃï`âÊ
 	RenderAxis();
+
+	if ( IsDocError() ) {
+		::SwapBuffers( pDC->GetSafeHdc() );
+		::wglMakeCurrent(NULL, NULL);
+		return;
+	}
 
 #if defined _DEBUG_DRAWTEST_
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
@@ -1157,7 +1149,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewGL::OnCreate() Start");
+	printf("CNCViewGL::OnCreate() Start\n");
 #endif
 	if ( __super::OnCreate(lpCreateStruct) < 0 )
 		return -1;
@@ -1167,7 +1159,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	::SetClassLongPtr(m_hWnd, GCLP_HCURSOR,
 		(LONG_PTR)AfxGetApp()->LoadStandardCursor(IDC_ARROW));
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewGL::SetClassLongPtr() End");
+	printf("CNCViewGL::SetClassLongPtr() End\n");
 #endif
 
 	// OpenGLèâä˙âªèàóù
@@ -1180,7 +1172,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 	}
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewGL::SetupPixelFormat() End");
+	printf("CNCViewGL::SetupPixelFormat() End\n");
 #endif
 
 	// ⁄›¿ﬁÿ›∏ﬁ∫›√∑ΩƒÇÃçÏê¨
@@ -1189,7 +1181,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 	}
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewGL::wglCreateContext() End");
+	printf("CNCViewGL::wglCreateContext() End\n");
 #endif
 
 	// ⁄›¿ﬁÿ›∏ﬁ∫›√∑ΩƒÇ∂⁄›ƒÇÃ√ﬁ ﬁ≤Ω∫›√∑ΩƒÇ…ê›íË
@@ -1198,7 +1190,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 	}
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewGL::wglMakeCurrent() End");
+	printf("CNCViewGL::wglMakeCurrent() End\n");
 	DWORD	t1 = ::timeGetTime();
 #endif
 
@@ -1210,13 +1202,14 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 #ifdef _DEBUG_FILEOPEN
 	DWORD	t2 = ::timeGetTime();
-	g_dbg.printf("CNCViewGL::glewInit() End %d[ms]", t2 - t1);
+	printf("CNCViewGL::glewInit() End %d[ms]\n", t2 - t1);
 #endif
 
 	// OpenGLägí£ªŒﬂ∞ƒÇÃ¡™Ø∏
 	CString		strVer( ::glGetString(GL_VERSION) );
-	int			nVer = atoi(strVer);
-	if ( nVer < 2 || !GLEW_ARB_vertex_buffer_object ) {
+	int			nVer = atoi(strVer);	// â∫ÇÃ_DEBUGÇ≈égóp
+//	if ( nVer < 2 || !GLEW_ARB_vertex_buffer_object ) {
+	if ( !GLEW_ARB_vertex_buffer_object ) {
 		CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 		CString	strErrMsg;
 		strErrMsg.Format(IDS_ERR_OPENGLVER, strVer);
@@ -1263,27 +1256,30 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	::glClearColor( 0, 0, 0, 0 );
 
 #ifdef _DEBUG
-	g_dbg.printf("GetDeviceCaps([HORZSIZE|VERTSIZE])=%d, %d",
+	printf("GetDeviceCaps([HORZSIZE|VERTSIZE])=%d, %d\n",
 		dc.GetDeviceCaps(HORZSIZE), dc.GetDeviceCaps(VERTSIZE) );
-	g_dbg.printf("GetDeviceCaps([LOGPIXELSX|LOGPIXELSY])=%d, %d",
+	printf("GetDeviceCaps([LOGPIXELSX|LOGPIXELSY])=%d, %d\n",
 		dc.GetDeviceCaps(LOGPIXELSX), dc.GetDeviceCaps(LOGPIXELSY) );
 	GLint	nGLResult;
-	g_dbg.printf("Using OpenGL version:%s", ::glGetString(GL_VERSION));
-	g_dbg.printf("Using GLEW   version:%s", ::glewGetString(GLEW_VERSION));
+	printf("Using OpenGL version:%s\n", ::glGetString(GL_VERSION));
+	printf("Using GLEW   version:%s\n", ::glewGetString(GLEW_VERSION));
 	::glGetIntegerv(GL_STENCIL_BITS, &nGLResult);
-	g_dbg.printf(" Stencil bits=%d", nGLResult);
+	printf(" Stencil bits=%d\n", nGLResult);
 	::glGetIntegerv(GL_DEPTH_BITS, &nGLResult);
-	g_dbg.printf(" Depth   bits=%d", nGLResult);
+	printf(" Depth   bits=%d\n", nGLResult);
 	::glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &nGLResult);
-	g_dbg.printf(" MaxElementVertices=%d", nGLResult);
+	printf(" MaxElementVertices=%d\n", nGLResult);
 	::glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &nGLResult);
-	g_dbg.printf(" MaxElementIndices =%d", nGLResult);
-	::glGetIntegerv(GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS, &nGLResult);
-	g_dbg.printf(" GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS =%d", nGLResult);
-	::glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES, &nGLResult);
-	g_dbg.printf(" GL_MAX_GEOMETRY_OUTPUT_VERTICES =%d", nGLResult);
-	::glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE_EXT, &nGLResult);
-	g_dbg.printf(" GL_MAX_RENDERBUFFER_SIZE_EXT =%d", nGLResult);
+	printf(" MaxElementIndices =%d\n", nGLResult);
+	if ( nVer >= 4 ) {
+		::glGetIntegerv(GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS, &nGLResult);
+		printf(" GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS =%d\n", nGLResult);
+		::glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES, &nGLResult);
+		printf(" GL_MAX_GEOMETRY_OUTPUT_VERTICES =%d\n", nGLResult);
+		::glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE_EXT, &nGLResult);
+		printf(" GL_MAX_RENDERBUFFER_SIZE_EXT =%d\n", nGLResult);
+	}
+	GetGLError();	// error flash
 #endif
 
 	::wglMakeCurrent( NULL, NULL );
@@ -1297,7 +1293,7 @@ void CNCViewGL::OnDestroy()
 		KillTimer(IDC_OPENGL_DRAGROUND);
 
 	// âÒì]çsóÒìôÇï€ë∂
-	if ( m_bActive ) {
+	if ( m_bActive && !IsDocError() ) {
 		CRecentViewInfo* pInfo = GetDocument()->GetRecentViewInfo();
 		if ( pInfo ) 
 			pInfo->SetViewInfo(m_objXform, m_rcView, m_ptCenter);
@@ -1320,8 +1316,6 @@ void CNCViewGL::OnDestroy()
 
 	::wglMakeCurrent(NULL, NULL);
 	::wglDeleteContext( m_hRC );
-
-	EndOfCreateElementThread();
 	
 	__super::OnDestroy();
 }
@@ -1346,7 +1340,9 @@ void CNCViewGL::OnSize(UINT nType, int cx, int cy)
 
 void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView) 
 {
-	DBGBOOL(g_dbg, "CNCViewGL::OnActivateView()", bActivate);
+#ifdef _DEBUG
+	printf("CNCViewGL::OnActivateView()=%d\n", bActivate);
+#endif
 
 	if ( bActivate ) {
 		DoScale(0);		// MDIéqÃ⁄∞—ÇÃΩ√∞¿Ω ﬁ∞Ç…èÓïÒï\é¶(ÇæÇØ)
@@ -1365,25 +1361,26 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCViewGL::OnUserActivatePage()\nStart");
-	dbg.printf("lParam=%d m_bActive=%d", lParam, m_bActive);
+	printf("CNCViewGL::OnUserActivatePage() lParam=%d m_bActive=%d\n", lParam, m_bActive);
 #endif
 	if ( !m_bActive ) {
 		// m_rcViewèâä˙âª
 		OnUserViewFitMsg(1, 0);		// glOrtho() Çé¿çsÇµÇ»Ç¢
-		// ï`âÊèâä˙ê›íË
 		CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-		pOpt->m_dwUpdateFlg = VIEWUPDATE_ALL;
-		UpdateViewOption();
-		// âÒì]çsóÒìôÇÃì«Ç›çûÇ›Ç∆çXêV
-		ClearObjectForm();
-		CRecentViewInfo*	pInfo = GetDocument()->GetRecentViewInfo();
-		if ( pInfo && !pInfo->GetViewInfo(m_objXform, m_rcView, m_ptCenter) ) {
-			pInfo = AfxGetNCVCApp()->GetDefaultViewInfo();
-			if ( pInfo ) {
-				CRect3F	rcView;		// dummy
-				CPointF	ptCenter;
-				pInfo->GetViewInfo(m_objXform, rcView, ptCenter);
+		if ( !IsDocError() ) {
+			// ï`âÊèâä˙ê›íË
+			pOpt->m_dwUpdateFlg = VIEWUPDATE_ALL;
+			UpdateViewOption();
+			// âÒì]çsóÒìôÇÃì«Ç›çûÇ›Ç∆çXêV
+			ClearObjectForm();
+			CRecentViewInfo*	pInfo = GetDocument()->GetRecentViewInfo();
+			if ( pInfo && !pInfo->GetViewInfo(m_objXform, m_rcView, m_ptCenter) ) {
+				pInfo = AfxGetNCVCApp()->GetDefaultViewInfo();
+				if ( pInfo ) {
+					CRect3F	rcView;		// dummy
+					CPointF	ptCenter;
+					pInfo->GetViewInfo(m_objXform, rcView, ptCenter);
+				}
 			}
 		}
 		//
@@ -1397,8 +1394,8 @@ LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 		SetupViewingTransform();
 		::wglMakeCurrent( NULL, NULL );
 #ifdef _DEBUG
-		dbg.printf("(%f,%f)-(%f,%f)", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
-		dbg.printf("(%f,%f)", m_rcView.low, m_rcView.high);
+		printf("(%f,%f)-(%f,%f)\n", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
+		printf("(%f,%f)\n", m_rcView.low, m_rcView.high);
 #endif
 		//
 		pOpt->m_dwUpdateFlg = 0;
@@ -1414,8 +1411,7 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 {
 	extern	const	float	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCViewGL::OnUserViewFitMsg()\nStart");
-	dbg.printf("wParam=%d lParam=%d", wParam, lParam);
+	printf("CNCViewGL::OnUserViewFitMsg() wParam=%d lParam=%d\n", wParam, lParam);
 #endif
 	float		dW, dH, dZ, dLength, d;
 
@@ -1498,9 +1494,9 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 		::glMatrixMode( GL_MODELVIEW );
 		::wglMakeCurrent(NULL, NULL);
 #ifdef _DEBUG
-		dbg.printf("(%f,%f)-(%f,%f)", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
-		dbg.printf("(%f,%f)", m_rcView.low, m_rcView.high);
-		dbg.printf("Rate=%f", m_dRate);
+		printf("(%f,%f)-(%f,%f)\n", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
+		printf("(%f,%f)\n", m_rcView.low, m_rcView.high);
+		printf("Rate=%f\n", m_dRate);
 #endif
 	}
 
@@ -1510,7 +1506,7 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCViewGL::OnSelectTrace()\nStart");
+	printf("CNCViewGL::OnSelectTrace() Start\n");
 #endif
 	CNCdata*	pData;
 	INT_PTR		i, s, e;
@@ -1624,7 +1620,7 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 #ifdef _DEBUG
 			DWORD	t2 = ::timeGetTime();
 			GetGLError();
-			dbg.printf("glDrawPixels(GL_DEPTH_COMPONENT)=%d[ms]", t2 - t1);
+			printf("glDrawPixels(GL_DEPTH_COMPONENT)=%d[ms]\n", t2 - t1);
 #endif
 		}
 		if ( pData || lParam ) {
@@ -1863,7 +1859,7 @@ void CNCViewGL::OnMButtonUp(UINT nFlags, CPoint point)
 	EndTracking();
 	// ¿≤œ≤Õﬁ›ƒÇ≈òAë±âÒì]
 #ifdef _DEBUG
-	g_dbg.printf("OnMButtonUp() Angle=%f (%f, %f, %f)", m_dRoundStep,
+	printf("OnMButtonUp() Angle=%f (%f, %f, %f)\n", m_dRoundStep,
 		m_ptRoundBase.x, m_ptRoundBase.y, m_ptRoundBase.z);
 #endif
 	if ( m_dRoundStep != 0.0f ) {
@@ -1922,7 +1918,7 @@ void CNCViewGL::OnTimer(UINT_PTR nIDEvent)
 {
 	if ( m_dRoundStep != 0.0f ) {
 #ifdef _DEBUG
-		g_dbg.printf("CNCViewGL::OnTimer()");
+		printf("CNCViewGL::OnTimer()\n");
 #endif
 //		m_dRoundAngle += m_dRoundStep / 10.0;
 		m_dRoundAngle += copysign(0.05f, m_dRoundStep);
@@ -2046,6 +2042,7 @@ void CVBtmDraw::Draw(void)		// from NCdata.h
 		if ( (*it).re == 0 )
 			::glDrawArrays((*it).mode, 0, (GLsizei)((*it).vpt.size()/NCXYZ));
 		else
+//			::glDrawElements((*it).mode,
 			::glDrawRangeElements((*it).mode, (*it).rs, (*it).re,
 				(GLsizei)((*it).vel.size()), GL_UNSIGNED_INT, &((*it).vel[0]));
 	}

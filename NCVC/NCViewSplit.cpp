@@ -13,10 +13,8 @@
 #include "NCViewXZ.h"
 #include "NCViewYZ.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CNCViewSplit, CSplitterWnd)
@@ -39,7 +37,7 @@ END_MESSAGE_MAP()
 CNCViewSplit::CNCViewSplit()
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCViewSplit::CNCViewSplit() Start");
+	printf("CNCViewSplit::CNCViewSplit() Start\n");
 #endif
 }
 

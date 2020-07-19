@@ -5,10 +5,8 @@
 #include "stdafx.h"
 #include "TabView.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 IMPLEMENT_DYNCREATE(CTabViewBase, CCtrlView)

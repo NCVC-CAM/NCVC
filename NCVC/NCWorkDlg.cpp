@@ -8,10 +8,8 @@
 #include "NCDoc.h"
 #include "NCWorkDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CNCWorkDlg, CPropertySheet)
@@ -88,7 +86,7 @@ void CNCWorkDlg::OnDestroy()
 LRESULT CNCWorkDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCWorkDlg::OnUserSwitchDocument()\nCalling");
+	printf("CNCWorkDlg::OnUserSwitchDocument() Calling\n");
 #endif
 	CNCDoc*	pDoc = GetNCDocument();
 

@@ -231,6 +231,10 @@ LPVOID	GetVersionResource(LPCTSTR lpszFileName, LPDWORD* dwTrans);
 BOOL	GetVersionValue(CString& strBuffer, LPVOID pVersionInfo, DWORD dwTrans, LPCTSTR strKeyWord);
 
 #ifdef _DEBUG
+// MagaDebugからAllocConsole()使用にチェンジ
+#include <stdio.h>
+#include <iostream>
+#include "DbgConsole.h"
 // GetLastMessage() のﾒｯｾｰｼﾞ整形
 void	NC_FormatMessage(void);
 #endif
@@ -239,7 +243,7 @@ void	NC_FormatMessage(void);
 #include "3Dto2D.h"
 #include "CustomClass.h"
 #include "CustomControl.h"
-
+/*
 // XpStyle Manifest
 //#ifdef _UNICODE
 #if defined _M_IX86
@@ -252,4 +256,4 @@ void	NC_FormatMessage(void);
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 //#endif
-
+*/

@@ -21,13 +21,12 @@
 #include "MakeDXFDlg.h"
 #include "../Kodatuno/IGES_Parser.h"
 #include "../Kodatuno/STL_Parser.h"
-#include "MagaDbgMac.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
-#endif
 //#define	_DEBUGOLD
 #undef	_DEBUGOLD
+#endif
 
 using namespace boost;
 
@@ -57,6 +56,9 @@ extern	const	DWORD	g_dwSetValFlags[] = {
 static	const INT_PTR	THUMBNAIL_MAXREADBLOCK = 5000;
 #define	IsThumbnail()	m_bDocFlg[NCDOC_THUMBNAIL]
 
+// 空のNCプログラムのときのダミー矩形
+static	const CRect3F	g_rcDefRect(-50.0f, -50.0f, 50.0f, 50.0f, 50.0f, -50.0f);
+
 /////////////////////////////////////////////////////////////////////////////
 // CNCDoc
 
@@ -79,7 +81,7 @@ END_MESSAGE_MAP()
 CNCDoc::CNCDoc()
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCDoc::CNCDoc() Start");
+	printf("CNCDoc::CNCDoc() Start\n");
 #endif
 	int		i;
 
@@ -137,7 +139,7 @@ BOOL CNCDoc::RouteCmdToAllViews
 	(CView* pActiveView, UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
 #ifdef _DEBUG_CMDMSG
-	g_dbg.printf("CNCDoc::RouteCmdToAllViews()");
+	printf("CNCDoc::RouteCmdToAllViews()\n");
 #endif
 	CView*	pView;
 
@@ -561,7 +563,7 @@ void CNCDoc::SetCommentStr(const CString& strComment)
 		regex	r2("^%");
 		for ( i=0; i<GetNCBlockSize(); i++ ) {
 			// "%"の次行
-			if ( regex_search((LPCTSTR)(m_obBlock[i]->GetStrBlock()), r2) ) {
+			if ( regex_search(LPCTSTR(m_obBlock[i]->GetStrBlock()), r2) ) {
 				i++;
 				break;
 			}
@@ -584,7 +586,7 @@ void CNCDoc::DeleteMacroFile(void)
 #ifdef _DEBUG
 		BOOL bResult = ::DeleteFile(m_obMacroFile[i]);
 		if ( !bResult ) {
-			g_dbg.printf("Delete File=%s", m_obMacroFile[i]);
+			printf("Delete File=%s\n", LPCTSTR(m_obMacroFile[i]));
 			::NC_FormatMessage();
 		}
 #else
@@ -655,13 +657,12 @@ void CNCDoc::WaitCalcThread(BOOL bWaitOnly/*=FALSE*/)
 
 	if ( m_pCutcalcThread ) {
 #ifdef _DEBUG
-		CMagaDbg	dbg("CNCDoc::WaitCalcThread()", DBG_BLUE);
 		if ( ::WaitForSingleObject(m_pCutcalcThread->m_hThread, INFINITE) == WAIT_FAILED ) {
-			dbg.printf("WaitForSingleObject() Fail!");
+			printf("CNCDoc::WaitForSingleObject() Fail!\n");
 			::NC_FormatMessage();
 		}
 		else
-			dbg.printf("WaitForSingleObject() OK");
+			printf("CNCDoc::WaitForSingleObject() OK\n");
 #else
 		::WaitForSingleObject(m_pCutcalcThread->m_hThread, INFINITE);
 #endif
@@ -679,7 +680,7 @@ INT_PTR CNCDoc::SearchBlockRegex(regex& r,
 
 	if ( bReverse ) {
 		for (i=nStart; i>=0; i--) {
-			str = (LPCTSTR)(m_obBlock[i]->GetStrBlock());
+			str = LPCTSTR(m_obBlock[i]->GetStrBlock());
 			if ( bCommentThrough )
 				str = regex_replace(str, c, "");	// ｺﾒﾝﾄを除く
 			if ( !str.empty() && regex_search(str, r) )
@@ -688,7 +689,7 @@ INT_PTR CNCDoc::SearchBlockRegex(regex& r,
 	}
 	else {
 		for (i=nStart; i<GetNCBlockSize(); i++) {
-			str = (LPCTSTR)(m_obBlock[i]->GetStrBlock());
+			str = LPCTSTR(m_obBlock[i]->GetStrBlock());
 			if ( bCommentThrough )
 				str = regex_replace(str, c, "");
 			if ( !str.empty() && regex_search(str, r) )
@@ -795,7 +796,7 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 void CNCDoc::InsertBlock(int nInsert, const CString& strFileName)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCDoc::OnFileInsert()\nStart");
+	printf("CNCDoc::OnFileInsert() Start\n");
 #endif
 	int		i;
 
@@ -971,19 +972,16 @@ void CNCDoc::AddMacroFile(const CString& strMacroFile)
 
 void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCDoc::ReadThumbnail()", DBG_RED);
-#endif
 	// ﾌｧｲﾙを開く
 	OnOpenDocument(lpszPathName);
 	SetPathName(lpszPathName, FALSE);
 #ifdef _DEBUG
-	dbg.printf("File =%s", lpszPathName);
-	dbg.printf("Block=%d", GetNCBlockSize());
+	printf("CNCDoc::ReadThumbnail() File =%s\n", lpszPathName);
+	printf("Block=%d\n", GetNCBlockSize());
 #endif
 	if ( !ValidBlockCheck() ) {
 #ifdef _DEBUG
-		dbg.printf("ValidBlockCheck() Error");
+		printf("ValidBlockCheck() Error\n");
 #endif
 		return;
 	}
@@ -1024,7 +1022,7 @@ BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName)
 	CTime	t2 = CTime::GetCurrentTime();
 	CTimeSpan ts = t2 - dbgtimeFileOpen;
 	CString	strTime( ts.Format("%H:%M:%S") );
-	g_dbg.printf("CNCDoc::OnOpenDocument() Start %s", strTime);
+	printf("CNCDoc::OnOpenDocument() Start %s\n", LPCTSTR(strTime));
 	dbgtimeFileOpen = t2;
 #endif
 	BOOL	bResult;
@@ -1097,12 +1095,12 @@ void CNCDoc::OnCloseDocument()
 	各ﾋﾞｭｰの OnDestroy() よりも先に呼ばれる
 */
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCDoc::OnCloseDocument()\nStart", DBG_GREEN);
+	printf("CNCDoc::OnCloseDocument() Start\n");
 #endif
 	// ﾛｯｸｱﾄﾞｲﾝのﾁｪｯｸ
 	if ( !IsLockThread() ) {	// CDocBase
 #ifdef _DEBUG
-		dbg.printf("AddinLock FALSE");
+		printf("AddinLock FALSE\n");
 #endif
 		return;
 	}
@@ -1128,8 +1126,7 @@ void CNCDoc::SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU)
 		m_pRecentViewInfo = AfxGetNCVCApp()->GetRecentViewInfo();
 		ASSERT( m_pRecentViewInfo );
 #ifdef _DEBUG
-		CMagaDbg	dbg("CNCDoc::SetPathName()");
-		dbg.printf("%s OK", lpszPathName);
+		printf("CNCDoc::SetPathName() %s OK\n", lpszPathName);
 #endif
 	}
 }
@@ -1148,7 +1145,7 @@ void CNCDoc::OnChangedViewList()
 void CNCDoc::Serialize(CArchive& ar)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCDoc::Serialize()\nStart");
+	printf("CNCDoc::Serialize() Start\n");
 #endif
 
 	if ( ar.IsStoring() ) {
@@ -1179,9 +1176,6 @@ void CNCDoc::Serialize(CArchive& ar)
 void CNCDoc::SerializeBlock
 	(CArchive& ar, CNCblockArray& obBlock, DWORD dwFlags)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg;
-#endif
 	CString		strBlock;
 	CNCblock*	pBlock = NULL;
 	int			p = 0;
@@ -1214,8 +1208,8 @@ void CNCDoc::SerializeBlock
 			pBlock = new CNCblock(strBlock, dwFlags);
 			obBlock.Add(pBlock);
 #ifdef _DEBUGOLD
-			dbg.printf("LineCnt=%d Line=%s Gcode=%s", nCnt,
-				pBlock->GetStrLine(), pBlock->GetStrGcode() );
+			printf("LineCnt=%d Line=%s Gcode=%s\n", nCnt,
+				LPCTSTR(pBlock->GetStrLine()), LPCTSTR(pBlock->GetStrGcode()) );
 #endif
 			// ｻﾑﾈｲﾙﾓｰﾄﾞで規程件数を超えたら、読み込みを中断
 			if ( IsThumbnail() && GetNCBlockSize()>=THUMBNAIL_MAXREADBLOCK )
@@ -1237,18 +1231,13 @@ void CNCDoc::SerializeBlock
 BOOL CNCDoc::SerializeAfterCheck(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCDoc::SerializeAfterCheck()");
+	printf("CNCDoc::SerializeAfterCheck()\n");
 #endif
 	// ﾃﾞｰﾀﾁｪｯｸ
 #ifdef _DEBUGOLD
 	for ( i=0; i<GetNCBlockSize(); i++ )
-		dbg.printf("%4d:%s", i, m_obBlock[i]->GetStrBlock());
+		printf("%4d:%s\n", i, LPCTSTR(m_obBlock[i]->GetStrBlock()));
 #endif
-	if ( !ValidBlockCheck() ) {
-		AfxMessageBox(IDS_ERR_NCDATA, MB_OK|MB_ICONEXCLAMATION);
-		return FALSE;
-	}
-
 	// 変換状況案内ﾀﾞｲｱﾛｸﾞ(変換ｽﾚｯﾄﾞ生成)
 	CThreadDlg	dlg(IDS_READ_NCD, this);
 	if ( dlg.DoModal() != IDOK )
@@ -1300,7 +1289,8 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 
 	// 最終ﾁｪｯｸ
 	if ( !ValidDataCheck() ) {
-		AfxMessageBox(IDS_ERR_NCDATA, MB_OK|MB_ICONEXCLAMATION);
+		// デフォルト矩形をセット
+		m_rcMax = m_rcWork = m_rcWorkCo = g_rcDefRect;
 		m_bDocFlg.set(NCDOC_ERROR);
 		// error through
 	}
@@ -1310,13 +1300,13 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	}
 
 #ifdef _DEBUG
-	dbg.printf("m_rcMax  left =%f top   =%f", m_rcMax.left, m_rcMax.top);
-	dbg.printf("m_rcMax  right=%f bottom=%f", m_rcMax.right, m_rcMax.bottom);
-	dbg.printf("m_rcMax  low  =%f high  =%f", m_rcMax.low, m_rcMax.high);
-	dbg.printf("--- cut");
-	dbg.printf("m_rcWork left =%f top   =%f", m_rcWork.left, m_rcWork.top);
-	dbg.printf("m_rcWork right=%f bottom=%f", m_rcWork.right, m_rcWork.bottom);
-	dbg.printf("m_rcWork low  =%f high  =%f", m_rcWork.low, m_rcWork.high);
+	printf("m_rcMax  left =%f top   =%f\n", m_rcMax.left, m_rcMax.top);
+	printf("m_rcMax  right=%f bottom=%f\n", m_rcMax.right, m_rcMax.bottom);
+	printf("m_rcMax  low  =%f high  =%f\n", m_rcMax.low, m_rcMax.high);
+	printf("--- cut\n");
+	printf("m_rcWork left =%f top   =%f\n", m_rcWork.left, m_rcWork.top);
+	printf("m_rcWork right=%f bottom=%f\n", m_rcWork.right, m_rcWork.bottom);
+	printf("m_rcWork low  =%f high  =%f\n", m_rcWork.low, m_rcWork.high);
 #endif
 
 	// 切削時間計算ｽﾚｯﾄﾞ開始
@@ -1351,9 +1341,6 @@ BOOL CNCDoc::ValidDataCheck(void)
 
 void CNCDoc::CalcWorkFileRect(void)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CNCDoc::CalcWorkFileRect()");
-#endif
 	BODY*		pBody;
 	CPoint3F	pt;
 //	Coord		cd;		// Kodatuno座標クラス
@@ -1373,9 +1360,9 @@ void CNCDoc::CalcWorkFileRect(void)
 //			}
 //		}
 #ifdef _DEBUG
-		dbg.printf("body->MaxCoord=%f", pBody->MaxCoord);
-		dbg.printf(" minCoord=(%f,%f,%f)", pBody->minmaxCoord[0].x, pBody->minmaxCoord[0].y, pBody->minmaxCoord[0].z);
-		dbg.printf(" maxCoord=(%f,%f,%f)", pBody->minmaxCoord[1].x, pBody->minmaxCoord[1].y, pBody->minmaxCoord[1].z);
+		printf("CNCDoc::CalcWorkFileRect() body->MaxCoord=%f\n", pBody->MaxCoord);
+		printf(" minCoord=(%f,%f,%f)\n", pBody->minmaxCoord[0].x, pBody->minmaxCoord[0].y, pBody->minmaxCoord[0].z);
+		printf(" maxCoord=(%f,%f,%f)\n", pBody->minmaxCoord[1].x, pBody->minmaxCoord[1].y, pBody->minmaxCoord[1].z);
 #endif
 		// ライブラリ側を少し改造
 		pt.SetPoint((float)pBody->minmaxCoord[0].x, (float)pBody->minmaxCoord[0].y, (float)pBody->minmaxCoord[0].z);
@@ -1384,8 +1371,8 @@ void CNCDoc::CalcWorkFileRect(void)
 		m_rcWorkCo |= pt;
 	}
 #ifdef _DEBUG
-	dbg.printf("(%f,%f)-(%f,%f)", m_rcWorkCo.left, m_rcWorkCo.top, m_rcWorkCo.right, m_rcWorkCo.bottom);
-	dbg.printf("(%f,%f)", m_rcWorkCo.low, m_rcWorkCo.high);
+	printf("(%f,%f)-(%f,%f)\n", m_rcWorkCo.left, m_rcWorkCo.top, m_rcWorkCo.right, m_rcWorkCo.bottom);
+	printf("(%f,%f)\n", m_rcWorkCo.low, m_rcWorkCo.high);
 #endif
 }
 

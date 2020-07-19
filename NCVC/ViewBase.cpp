@@ -7,10 +7,8 @@
 #include "ViewBase.h"
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 IMPLEMENT_DYNAMIC(CViewBase, CView)
@@ -48,7 +46,7 @@ BOOL CViewBase::PreCreateWindow(CREATESTRUCT& cs)
 void CViewBase::OnViewFit(const CRectF& rcMax, BOOL bInflate/*=TRUE*/)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CViewBase::OnViewFit()");
+	printf("CViewBase::OnViewFit()\n");
 #endif
 	CRectF	rcObj(rcMax);
 
@@ -68,8 +66,8 @@ void CViewBase::OnViewFit(const CRectF& rcMax, BOOL bInflate/*=TRUE*/)
 			dFactorH = cx / rcObj.Width(),
 			dFactorV = cy / rcObj.Height();
 #ifdef _DEBUG
-	dbg.printf("W=%f H=%f", cx, cy);
-	dbg.printf("dFactorH=%f dFactorV=%f", dFactorH, dFactorV);
+	printf("W=%f H=%f\n", cx, cy);
+	printf("dFactorH=%f dFactorV=%f\n", dFactorH, dFactorV);
 #endif
 	// ﾋﾞｭｰ原点の設定(ｵﾌﾞｼﾞｪｸﾄ矩形(上下反対)の左上隅をﾃﾞﾊﾞｲｽ座標の原点(左上隅)へ)と
 	// 画面中央への補正
@@ -89,7 +87,7 @@ void CViewBase::OnViewFit(const CRectF& rcMax, BOOL bInflate/*=TRUE*/)
 		pt.y = DrawConvert(rcObj.bottom);
 	}
 #ifdef _DEBUG
-	dbg.printf("ptorg.x=%d ptorg.y=%d", pt.x, pt.y);
+	printf("ptorg.x=%d ptorg.y=%d\n", pt.x, pt.y);
 #endif
 	dc.SetWindowOrg(pt);
 }
@@ -97,7 +95,7 @@ void CViewBase::OnViewFit(const CRectF& rcMax, BOOL bInflate/*=TRUE*/)
 void CViewBase::OnViewLensP(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CViewBase::OnViewLensP()");
+	printf("CViewBase::OnViewLensP()\n");
 #endif
 	CClientDC	dc(this);
 
@@ -109,7 +107,7 @@ void CViewBase::OnViewLensP(void)
 	float	dFactorV = (float)sz.cy / m_rcMagnify.Height();
 	float	dFactor  = m_dFactor;
 #ifdef _DEBUG
-	dbg.printf("dFactorH=%f dFactorV=%f", dFactorH, dFactorV);
+	printf("dFactorH=%f dFactorV=%f\n", dFactorH, dFactorV);
 #endif
 	// ﾋﾞｭｰ原点の設定(ｵﾌﾞｼﾞｪｸﾄ矩形(上下反対)の左上隅をﾃﾞﾊﾞｲｽ座標の原点(左上隅)へ)と
 	// 画面中央への補正
@@ -121,7 +119,7 @@ void CViewBase::OnViewLensP(void)
 		pt.y = (int)(m_rcMagnify.bottom / dFactor * m_dFactor +
 						(sz.cy-m_rcMagnify.Height()/dFactor*m_dFactor)/2);
 #ifdef _DEBUG
-		dbg.printf("OffsetY=%f", (sz.cy-m_rcMagnify.Height()/dFactor*m_dFactor)/2);
+		printf("OffsetY=%f\n", (sz.cy-m_rcMagnify.Height()/dFactor*m_dFactor)/2);
 #endif
 	}
 	else {
@@ -131,12 +129,12 @@ void CViewBase::OnViewLensP(void)
 						(sz.cx-m_rcMagnify.Width()/dFactor*m_dFactor)/2);
 		pt.y = (int)(m_rcMagnify.bottom / dFactor * m_dFactor);
 #ifdef _DEBUG
-		dbg.printf("OffsetX=%f", (sz.cx-m_rcMagnify.Width()/dFactor*m_dFactor)/2);
+		printf("OffsetX=%f\n", (sz.cx-m_rcMagnify.Width()/dFactor*m_dFactor)/2);
 #endif
 	}
 #ifdef _DEBUG
-	dbg.printf("NewFactor=%f", m_dFactor/LOMETRICFACTOR);
-	dbg.printf("ptorg.x=%d ptorg.y=%d", pt.x, pt.y);
+	printf("NewFactor=%f\n", m_dFactor/LOMETRICFACTOR);
+	printf("ptorg.x=%d ptorg.y=%d\n", pt.x, pt.y);
 #endif
 	dc.SetWindowOrg(pt);
 }
@@ -144,7 +142,7 @@ void CViewBase::OnViewLensP(void)
 void CViewBase::OnViewLensN(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CViewBase::OnViewLensN()");
+	printf("CViewBase::OnViewLensN()\n");
 #endif
 	CClientDC	dc(this);
 
@@ -156,7 +154,7 @@ void CViewBase::OnViewLensN(void)
 	float	dFactorV = (float)m_rcMagnify.Height() / sz.cy;
 	float	dFactor  = m_dFactor;
 #ifdef _DEBUG
-	dbg.printf("dFactorH=%f dFactorV=%f", dFactorH, dFactorV);
+	printf("dFactorH=%f dFactorV=%f\n", dFactorH, dFactorV);
 #endif
 	// ﾋﾞｭｰ原点の設定(ｵﾌﾞｼﾞｪｸﾄ矩形(上下反対)の左上隅をﾃﾞﾊﾞｲｽ座標の原点(左上隅)へ)と
 	// 画面中央への補正(縮小の場合はX,Y共に補正する必要あり)
@@ -170,10 +168,10 @@ void CViewBase::OnViewLensN(void)
 	pt.y = (int)(m_rcMagnify.bottom/dFactor*m_dFactor +
 					(sz.cy-m_rcMagnify.Height()/dFactor*m_dFactor)/2);
 #ifdef _DEBUG
-	dbg.printf("OffsetX=%f", (sz.cx-m_rcMagnify.Width()/dFactor*m_dFactor)/2);
-	dbg.printf("OffsetY=%f", (sz.cy-m_rcMagnify.Height()/dFactor*m_dFactor)/2);
-	dbg.printf("NewFactor=%f", m_dFactor/LOMETRICFACTOR);
-	dbg.printf("ptorg.x=%d ptorg.y=%d", pt.x, pt.y);
+	printf("OffsetX=%f\n", (sz.cx-m_rcMagnify.Width()/dFactor*m_dFactor)/2);
+	printf("OffsetY=%f\n", (sz.cy-m_rcMagnify.Height()/dFactor*m_dFactor)/2);
+	printf("NewFactor=%f\n", m_dFactor/LOMETRICFACTOR);
+	printf("ptorg.x=%d ptorg.y=%d\n", pt.x, pt.y);
 #endif
 	dc.SetWindowOrg(pt);
 }
@@ -181,7 +179,7 @@ void CViewBase::OnViewLensN(void)
 CSize CViewBase::OnViewLens(CClientDC& dc)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CViewBase::OnViewLens()");
+	printf("CViewBase::OnViewLens()\n");
 #endif
 	// 現在のｸﾗｲｱﾝﾄ領域の大きさ
 	CRect		rc;
@@ -202,10 +200,10 @@ CSize CViewBase::OnViewLens(CClientDC& dc)
 	m_rcMagnify.NormalizeRect();
 
 #ifdef _DEBUG
-	dbg.printf("sz.cx=%d sz.cy=%d", sz.cx, sz.cy);
-	dbg.printf("m_rcMagnify.left=%d m_rcMagnify.bottom=%d",
+	printf("sz.cx=%d sz.cy=%d\n", sz.cx, sz.cy);
+	printf("m_rcMagnify.left=%d m_rcMagnify.bottom=%d\n",
 		m_rcMagnify.left, m_rcMagnify.bottom);
-	dbg.printf("m_rcMagnify.Width()=%d m_rcMagnify.Height()=%d",
+	printf("m_rcMagnify.Width()=%d m_rcMagnify.Height()=%d\n",
 		m_rcMagnify.Width(), m_rcMagnify.Height());
 #endif
 	return sz;

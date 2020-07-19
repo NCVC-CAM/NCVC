@@ -6,10 +6,8 @@
 #include "MainFrm.h"
 #include "DocBase.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -51,6 +49,8 @@ BOOL CDocBase::OnOpenDocumentSP(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
 			m_pFileChangeThread->m_bAutoDelete = FALSE;
 			m_pFileChangeThread->ResumeThread();
 		}
+		else
+			::NCVC_CriticalErrorMsg(__FILE__, __LINE__);	// ExitProcess()
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -69,11 +69,11 @@ void CDocBase::OnCloseDocumentSP(void)
 	m_evFinish.SetEvent();
 #ifdef _DEBUG
 	if ( ::WaitForSingleObject(m_pFileChangeThread->m_hThread, INFINITE) == WAIT_FAILED ) {
-		g_dbg.printf("OnCloseDocumentSP()　WaitForSingleObject() Fail!");
+		printf("OnCloseDocumentSP()　WaitForSingleObject() Fail!\n");
 		::NC_FormatMessage();
 	}
 	else
-		g_dbg.printf("OnCloseDocumentSP() WaitForSingleObject() OK");
+		printf("OnCloseDocumentSP() WaitForSingleObject() OK\n");
 #else
 	::WaitForSingleObject(m_pFileChangeThread->m_hThread, INFINITE);
 #endif
@@ -118,7 +118,7 @@ BOOL CDocBase::IsLockThread(void)
 			break;
 #ifdef _DEBUG
 		case WAIT_FAILED:
-			g_dbg.printf("CDocBase::IsLockThread() WaitForSingleObject() Fail!");
+			printf("CDocBase::IsLockThread() WaitForSingleObject() Fail!\n");
 			::NC_FormatMessage();
 			break;
 #endif
@@ -134,9 +134,6 @@ BOOL CDocBase::IsLockThread(void)
 
 UINT FileChangeNotificationThread(LPVOID pParam)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("FileChangeNotifyThread()", DBG_RED);
-#endif
 	HANDLE	hEvent[2];		// 0:ﾄﾞｷｭﾒﾝﾄｸﾗｽの終了通知ｲﾍﾞﾝﾄﾊﾝﾄﾞﾙ
 							// 1:ﾌｧｲﾙ変更通知ﾊﾝﾄﾞﾙ
 
@@ -155,7 +152,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 	ULONGLONG		llSize;
 	if ( !CFile::GetStatus(strFileName, fStatus) ) {
 #ifdef _DEBUG
-		dbg.printf("GetStatus() Error (TimeStamp) \"%s\"", strFile);
+		printf("FCN-Thread GetStatus() Error (TimeStamp) \"%s\"\n", LPCTSTR(strFile));
 #endif
 		return 0;
 	}
@@ -166,14 +163,14 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 		FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME);
 	if ( hEvent[1] == INVALID_HANDLE_VALUE ) {
 #ifdef _DEBUG
-		dbg.printf("FindFirstChangeNotification() Error \"%s\"", strPath);
+		printf("FindFirstChangeNotification() Error \"%s\"\n", LPCTSTR(strPath));
 		NC_FormatMessage();
 #endif
 		return 0;
 	}
 
 #ifdef _DEBUG
-	dbg.printf("Start! \"%s\"", strFile);
+	printf("FCN-Thread Start! \"%s\"\n", LPCTSTR(strFile));
 #endif
 	BOOL	bResult = TRUE;
 	DWORD	dwResult;
@@ -189,7 +186,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 			if ( CFile::GetStatus(strFileName, fStatus) ) {
 				if ( fLastTime!=fStatus.m_mtime || llSize!=fStatus.m_size ) {
 #ifdef _DEBUG
-					dbg.printf("Change! \"%s\"", strFile);
+					printf("FCN-Thread Change! \"%s\"\n", LPCTSTR(strFile));
 #endif
 					fLastTime = fStatus.m_mtime;
 					llSize    = fStatus.m_size;
@@ -198,13 +195,13 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 			}
 #ifdef _DEBUG
 			else
-				dbg.printf("GetStatus() Error \"%s\"", strFile);
+				printf("FCN-Thread GetStatus() Error \"%s\"\n", LPCTSTR(strFile));
 #endif
 			if ( FindNextChangeNotification(hEvent[1]) )
 				break;
 
 #ifdef _DEBUG
-			dbg.printf("FindNextChangeNotification() Error \"%s\"", strPath);
+			printf("FindNextChangeNotification() Error \"%s\"\n", LPCTSTR(strPath));
 #endif
 			// through;
 
@@ -220,7 +217,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 					break;		// 再ﾁｬﾚﾝｼﾞ成功！
 #ifdef _DEBUG
 				else {
-					dbg.printf("FindFirstChangeNotification() Retry Error \"%s\"", strPath);
+					printf("FindFirstChangeNotification() Retry Error \"%s\"\n", LPCTSTR(strPath));
 					NC_FormatMessage();
 				}
 #endif
@@ -232,7 +229,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 	if ( hEvent[1] != INVALID_HANDLE_VALUE )
 		FindCloseChangeNotification(hEvent[1]);
 #ifdef _DEBUG
-	dbg.printf("End Thread \"%s\"", strFile);
+	printf("FCN-Thread End Thread \"%s\"\n", LPCTSTR(strFile));
 #endif
 
 	return 0;

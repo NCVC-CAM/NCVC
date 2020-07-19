@@ -6,24 +6,21 @@
 #include "DXFdata.h"
 #include "DXFBlock.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 void CDXFBlockData::CopyBlock(const CDXFBlockData* pBlock, LPCDXFBLOCK pBlockArgv)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CopyBlock()", DBG_MAGENTA);
-	dbg.printf("CopyOrg x=%f y=%f", pBlockArgv->ptOrg.x, pBlockArgv->ptOrg.y);
+	printf("CopyOrg x=%f y=%f\n", pBlockArgv->ptOrg.x, pBlockArgv->ptOrg.y);
 	if ( pBlockArgv->dwBlockFlg & DXFBLFLG_X )
-		dbg.printf(" Xmagni=%f", pBlockArgv->dMagni[NCA_X]);
+		printf(" Xmagni=%f\n", pBlockArgv->dMagni[NCA_X]);
 	if ( pBlockArgv->dwBlockFlg & DXFBLFLG_Y )
-		dbg.printf(" Ymagni=%f", pBlockArgv->dMagni[NCA_Y]);
+		printf(" Ymagni=%f\n", pBlockArgv->dMagni[NCA_Y]);
 	if ( pBlockArgv->dwBlockFlg & DXFBLFLG_R )
-		dbg.printf(" Round =%f", pBlockArgv->dRound);
-	dbg.printf("CopyCnt  =%d", pBlock->GetSize());
+		printf(" Round =%f\n", pBlockArgv->dRound);
+	printf("CopyCnt  =%d\n", pBlock->GetSize());
 #endif
 	CDXFdata*	pData;
 	DXFEARGV	dxfEllipse;

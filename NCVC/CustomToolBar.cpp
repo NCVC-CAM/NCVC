@@ -6,10 +6,8 @@
 #include "resource.h"
 #include "CustomToolBar.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CCustomToolBar, CToolBar)
@@ -117,10 +115,11 @@ BOOL CCustomToolBar::LoadToolBarEx
 				else
 					lpInfo->tb.iBitmap = NULL;
 				// ÎÞÀÝ•¶Žš—ñî•ñ’Ç‰Á
-				VERIFY(strText.LoadString(ctb.idCommand));
-				nIndex = strText.Find(gg_szReturn);	// Â°ÙÁ¯Ìß•”•ª‚¾‚¯‚ðÝ’è
-				if ( nIndex >= 0 )
-					lpInfo->strInfo = strText.Mid(nIndex+1);
+				if ( strText.LoadString(ctb.idCommand) ) {
+					nIndex = strText.Find(gg_szReturn);	// Â°ÙÁ¯Ìß•”•ª‚¾‚¯‚ðÝ’è
+					if ( nIndex >= 0 )
+						lpInfo->strInfo = strText.Mid(nIndex+1);
+				}
 			}
 			else
 				lpInfo->tb.iBitmap = NULL;
@@ -150,9 +149,6 @@ BOOL CCustomToolBar::SetCustomButtons(LPCTSTR lpszResourceName,
 		CImageList* pilEnable, CImageList* pilDisable, CUSTTBINFO tbInfo[],
 		BOOL bRestore)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CCustomToolBar::SetCustomButtons()", DBG_BLUE);
-#endif
 	ASSERT( pilEnable->GetImageCount() == pilDisable->GetImageCount() );
 
 	int		i, nCnt;
@@ -201,7 +197,7 @@ BOOL CCustomToolBar::SetCustomButtons(LPCTSTR lpszResourceName,
 	}
 
 #ifdef _DEBUG
-	dbg.printf("NewButtonCount()=%d", nCnt);
+	printf("CCustomToolBar::SetCustomButtons() NewButtonCount()=%d\n", nCnt);
 	BOOL bResult = GetToolBarCtrl().AddButtons(nCnt, lptb);
 #else
 	GetToolBarCtrl().AddButtons(nCnt, lptb);

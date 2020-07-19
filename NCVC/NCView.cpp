@@ -8,10 +8,8 @@
 #include "NCView.h"
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 #define	IsThumbnail()	GetDocument()->IsDocFlag(NCDOC_THUMBNAIL)
@@ -32,7 +30,7 @@ END_MESSAGE_MAP()
 CNCView::CNCView() : CNCViewBase(NCDRAWVIEW_XYZ)
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCView::CNCView() Start");
+	printf("CNCView::CNCView() Start\n");
 #endif
 }
 

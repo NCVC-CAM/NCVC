@@ -17,10 +17,9 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
-#endif
 //#define	_DEBUGOLD
 #undef	_DEBUGOLD
+#endif
 
 // ºÓÝºÝÄÛ°ÙBITMAP_SIZE
 static	const	int		COMMONCTRL_LISTBITMAPSIZE = 12;
@@ -196,7 +195,7 @@ BOOL CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 		return __super::OnCommand(wParam, lParam);
 
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMainFrame::OnCommand()", DBG_MAGENTA);
+	printf("CMainFrame::OnCommand() Start\n");
 #endif
 
 	WORD	wID = LOWORD(wParam);
@@ -204,7 +203,7 @@ BOOL CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 	// “o˜^‚³‚ê‚½ŠO•”±ÌßØ¹°¼®Ý‚ÌŒÄ‚Ño‚µ
 	if ( wID>=EXECSTARTID && wID<AfxGetNCVCApp()->GetMaxExecID() ) {
 #ifdef _DEBUG
-		dbg.printf("Exec CommandID=%d", wID);
+		printf("Exec CommandID=%d\n", wID);
 #endif
 		const CExecOption* pExec = AfxGetNCVCApp()->GetLookupExecID(wID);
 		if ( pExec ) {
@@ -213,8 +212,8 @@ BOOL CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 			// ˆø”‚Ì’uŠ·
 			strCommand = pDoc ? CommandReplace(pExec, pDoc) : pExec->GetCommand();
 #ifdef _DEBUG
-			dbg.printf("ProgName=%s", pExec->GetFileName());
-			dbg.printf("Command =%s", strCommand);
+			printf("ProgName=%s\n", LPCTSTR(pExec->GetFileName()));
+			printf("Command =%s\n", LPCTSTR(strCommand));
 #endif
 			CreateOutsideProcess(pExec->GetFileName(), strCommand);
 			return TRUE;
@@ -224,7 +223,7 @@ BOOL CMainFrame::OnCommand(WPARAM wParam, LPARAM lParam)
 	// “o˜^‚³‚ê‚½±ÄÞ²ÝŠÖ”‚ÌŒÄ‚Ño‚µ
 	if ( wID>=ADDINSTARTID && wID<AfxGetNCVCApp()->GetMaxAddinID() ) {
 #ifdef _DEBUG
-		dbg.printf("Addin CommandID=%d", wID);
+		printf("Addin CommandID=%d\n", wID);
 #endif
 		AfxGetNCVCApp()->CallAddinFunc(wID);
 		return TRUE;
@@ -412,7 +411,7 @@ HICON CMainFrame::GetIconHandle(BOOL bLarge, LPCTSTR lpszFile)
 void CMainFrame::CreateDisableToolBar(EN_TOOLBARIMAGE enImage)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMainFrame::CreateDisableToolBar()\nStart");
+	printf("CMainFrame::CreateDisableToolBar() Start\n");
 #endif
 	int		i, nBtnCnt;
 
@@ -462,9 +461,6 @@ CString	CMainFrame::MakeCommand(int a)
 // ‚PsºÏÝÄÞ×²Ý‚¾‚¯‚È‚Ì‚ÅCCString::Replace() ‚ÌŽè”²‚«º°ÄÞ(^^;)
 CString	CMainFrame::CommandReplace(const CExecOption* pExec, const CDocument* pDoc)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CMainFrame::CommandReplace()", DBG_MAGENTA);
-#endif
 	CString	strResult(pExec->GetCommand()), strKey, strTmp;
 	TCHAR	szDrive[_MAX_DRIVE],
 			szDir[_MAX_DIR],
@@ -529,8 +525,9 @@ CString	CMainFrame::CommandReplace(const CExecOption* pExec, const CDocument* pD
 		delete[] lpszShortName;
 
 #ifdef _DEBUG
-	dbg.printf("ActiveDoc=%s", pDoc->GetPathName());
-	dbg.printf("ReplaceCnt=%d", nReplace);
+	printf("CMainFrame::CommandReplace()\n");
+	printf("ActiveDoc=%s\n", LPCTSTR(pDoc->GetPathName()));
+	printf("ReplaceCnt=%d\n", nReplace);
 #endif
 
 	return strResult;
@@ -551,7 +548,7 @@ BOOL CMainFrame::CreateOutsideProcess
 	STARTUPINFO			si;
 	::ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
-	if ( ::CreateProcess(NULL, const_cast<LPTSTR>((LPCTSTR)(strProcess+" "+lpszArgv)), NULL, NULL, FALSE, 
+	if ( ::CreateProcess(NULL, const_cast<LPTSTR>(LPCTSTR(strProcess+" "+lpszArgv)), NULL, NULL, FALSE, 
 			NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi) ) {
 		if ( bWait )
 			::WaitForSingleObject(pi.hProcess, INFINITE);
@@ -586,7 +583,7 @@ BOOL CMainFrame::CreateOutsideProcess
 void CMainFrame::SetExecButtons(BOOL bRestore)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMainFrame::SetExecButtons()\nStart");
+	printf("CMainFrame::SetExecButtons() Start\n");
 #endif
 	static	LPCTSTR	szMenu = "ŠO•”±ÌßØ(&X)";
 	UINT		nMenuNCD, nMenuDXF;
@@ -685,7 +682,7 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 void CMainFrame::SetAddinButtons(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMainFrame::SetAddinButtons()\nStart");
+	printf("CMainFrame::SetAddinButtons() Start\n");
 #endif
 	extern	const	DWORD	g_dwAddinType[];	// NCVCaddinIF.cpp
 	int		i, nIndex;
@@ -775,7 +772,7 @@ void CMainFrame::Dump(CDumpContext& dc) const
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMainFrame::OnCreate\nStart");
+	printf("CMainFrame::OnCreate() Start\n");
 #endif
 	if ( __super::OnCreate(lpCreateStruct) < 0 )
 		return -1;
@@ -922,7 +919,7 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 void CMainFrame::OnClose() 
 {
 #ifdef _DEBUG
-	g_dbg.printf("CMainFrame::OnClose()");
+	printf("CMainFrame::OnClose()\n");
 #endif
 	KillTimer(IDC_STATUSBAR_EVENT);
 
@@ -940,7 +937,7 @@ void CMainFrame::OnClose()
 void CMainFrame::OnDestroy() 
 {
 #ifdef _DEBUG
-	g_dbg.printf("CMainFrame::OnDestroy()");
+	printf("CMainFrame::OnDestroy()\n");
 #endif
 	int		i;
 
@@ -1084,7 +1081,7 @@ BOOL CMainFrame::OnToolTipText(UINT nID, NMHDR* pNMHDR, LRESULT* pResult)
 	LPTOOLTIPTEXT pTTT = reinterpret_cast<LPTOOLTIPTEXT>(pNMHDR);
 	WORD	nForm = (WORD)(pNMHDR->idFrom);
 #ifdef _DEBUG
-	g_dbg.printf("OnToolTipText() Call ID=%d Flag=%d", nForm, pTTT->uFlags);
+	printf("OnToolTipText() Call ID=%d Flag=%d\n", nForm, pTTT->uFlags);
 #endif
 	if ( nForm>=EXECSTARTID && nForm<AfxGetNCVCApp()->GetMaxExecID() ) {
 		const CExecOption* pOption = AfxGetNCVCApp()->GetLookupExecID(nForm);
@@ -1241,7 +1238,7 @@ END_MESSAGE_MAP()
 int CMachineToolBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMachineToolBar::OnCreate\nStart");
+	printf("CMachineToolBar::OnCreate() Start\n");
 #endif
 
 	if ( CCustomToolBar::OnCreate(lpCreateStruct) < 0 ) {
@@ -1280,7 +1277,7 @@ int CMachineToolBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CMachineToolBar::OnSelchangeMC()
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMachineToolBar::OnSelchangeMC()\nStart");
+	printf("CMachineToolBar::OnSelchangeMC() Start\n");
 #endif
 	int	nIndex = m_ctMachine.GetCurSel();
 	if ( nIndex >= 0 ) {
@@ -1301,7 +1298,7 @@ void CMachineToolBar::OnSelchangeMC()
 void CMachineToolBar::ChangeMachine(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMachineToolBar::ChangeMachine()\nStart");
+	printf("CMachineToolBar::ChangeMachine() Start\n");
 #endif
 	// ºÝÎÞÎÞ¯¸½‚É‹@ŠBî•ñ‚Ì—š—ð‚ð’Ç‰Á
 	AfxGetNCVCApp()->GetMCOption()->AddMCHistory_ComboBox(m_ctMachine);

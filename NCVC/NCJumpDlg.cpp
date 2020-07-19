@@ -9,10 +9,8 @@
 #include "NCDoc.h"
 #include "NCJumpDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CNCJumpDlg, CDialog)
@@ -113,7 +111,7 @@ void CNCJumpDlg::PostNcDestroy()
 LRESULT CNCJumpDlg::OnUserSwitchDocument(WPARAM, LPARAM)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCJumpDlg::OnUserSwitchDocument()\nCalling");
+	printf("CNCJumpDlg::OnUserSwitchDocument() Calling\n");
 #endif
 	CMDIChildWnd* pFrame = AfxGetNCVCMainWnd()->MDIGetActive();
 

@@ -5,12 +5,10 @@
 #include "NCVC.h"
 #include "ThreadDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CThreadDlg, CDialog)
@@ -113,7 +111,7 @@ BOOL CThreadDlg::OnInitDialog()
 void CThreadDlg::OnCancel() 
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CThreadDlg::OnCancel()\nStart", DBG_RED);
+	printf("CThreadDlg::OnCancel() Start\n");
 #endif
 	m_bThread = FALSE;		// ·¬Ý¾ÙÌ×¸Þ‚Ì‚Ý
 							// ‚±‚±‚ÅWaitForSingleObject()‚ðŒÄ‚Ño‚·‚Æ
@@ -125,13 +123,13 @@ LRESULT CThreadDlg::OnUserFinish(WPARAM wParam, LPARAM)
 {
 	if ( m_pThread ) {
 #ifdef _DEBUG
-		CMagaDbg	dbg("CThreadDlg::OnUserFinish()", DBG_BLUE);
+		printf("CThreadDlg::OnUserFinish()\n");
 		if ( ::WaitForSingleObject(m_pThread->m_hThread, INFINITE) == WAIT_FAILED ) {
-			dbg.printf("WaitForSingleObject() Fail!");
+			printf("WaitForSingleObject() Fail!\n");
 			::NC_FormatMessage();
 		}
 		else
-			dbg.printf("WaitForSingleObject() OK");
+			printf("WaitForSingleObject() OK\n");
 #else
 		::WaitForSingleObject(m_pThread->m_hThread, INFINITE);
 #endif

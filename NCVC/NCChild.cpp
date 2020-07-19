@@ -11,10 +11,8 @@
 #include "NCListView.h"
 #include "NCInfoTab.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -56,7 +54,7 @@ END_MESSAGE_MAP()
 CNCChild::CNCChild()
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCChild::CNCChild() Start");
+	printf("CNCChild::CNCChild() Start\n");
 #endif
 	m_nPos = m_nMaxSize = 0;
 	m_vStatus = (CNCdata *)NULL;	// dummy
@@ -82,7 +80,7 @@ BOOL CNCChild::OnCreateClient(LPCREATESTRUCT /*lpcs*/, CCreateContext* pContext)
 BOOL CNCChild::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
 {
 #ifdef _DEBUG_CMDMSG
-	g_dbg.printf("CNCChild::OnCmdMsg()");
+	printf("CNCChild::OnCmdMsg()\n");
 #endif
 //	return __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 /*
@@ -164,7 +162,9 @@ void CNCChild::OnSize(UINT nType, int cx, int cy)
 void CNCChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd) 
 {
 	__super::OnMDIActivate(bActivate, pActivateWnd, pDeactivateWnd);
-	DBGBOOL(g_dbg, "CNCChild::bActivate", bActivate);
+#ifdef _DEBUG
+	printf("CNCChild::bActivate=%d\n", bActivate);
+#endif
 	// Ó°ÄÞÚ½ÀÞ²±Û¸Þ‚Ö‚ÌÄÞ·­ÒÝÄØ‘Ö’Ê’m
 	if ( bActivate )
 		AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();

@@ -6,10 +6,8 @@
 #include "MainFrm.h"
 #include "AddinDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CAddinDlg, CDialog)
@@ -100,7 +98,7 @@ BOOL CAddinDlg::OnInitDialog()
 	for ( i=0; i<nCnt; i++ ) {
 		pAddin = AfxGetNCVCApp()->GetAddinArray()->GetAt(i);
 		lvi.iItem	= i;
-		lvi.pszText = const_cast<LPTSTR>((LPCTSTR)pAddin->GetDLLName());
+		lvi.pszText = const_cast<LPTSTR>(LPCTSTR(pAddin->GetDLLName()));
 		lvi.iImage	= i;
 		lvi.lParam = (LPARAM)pAddin;
 		if ( m_ctList.InsertItem(&lvi) < 0 ) {
@@ -124,13 +122,10 @@ BOOL CAddinDlg::OnInitDialog()
 
 void CAddinDlg::OnItemChangedAddinList(NMHDR* pNMHDR, LRESULT* pResult) 
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("OnItemChangedExeList()");
-#endif
 	LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
 	if ( pNMListView->uNewState & LVIS_SELECTED ) {
 #ifdef _DEBUG
-		dbg.printf("LVIS_SELECTED id=%d", pNMListView->iItem);
+		printf("OnItemChangedExeList() LVIS_SELECTED id=%d\n", pNMListView->iItem);
 #endif
 		SetDetailData( (CNCVCaddinIF *)(pNMListView->lParam) );
 	}

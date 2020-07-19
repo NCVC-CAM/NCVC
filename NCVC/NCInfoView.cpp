@@ -12,10 +12,8 @@
 #include "ViewOption.h"
 #include "boost/format.hpp"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;

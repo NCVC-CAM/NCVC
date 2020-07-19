@@ -6,10 +6,8 @@
 #include "ViewOption.h"
 #include "ViewSetup.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CViewSetup1, CPropertyPage)

@@ -5,12 +5,10 @@
 #include "resource.h"
 #include "NCMakeMillOpt.h"
 #include "MKNCSetup.h"
-
-#include "MagaDbgMac.h"
 #include "MKNCSetup3.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CMKNCSetup3, CPropertyPage)

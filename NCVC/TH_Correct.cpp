@@ -8,10 +8,8 @@
 #include "NCDoc.h"
 #include "ThreadDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -35,7 +33,7 @@ static	void		SetErrorCode(CNCDoc*, CNCdata*, int);
 UINT CorrectCalc_Thread(LPVOID pVoid)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CorrectCalc_Thread()\nStart", DBG_BLUE);
+	printf("CorrectCalc_Thread() Start\n");
 	CPoint3F	ptDBG;
 #endif
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
@@ -72,7 +70,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 	}
 	pParent->m_ctReadProgress.SetRange32(0, (int)nLoopCnt);
 #ifdef _DEBUG
-	dbg.printf("GetNCsize()=%d", nLoopCnt);
+	printf("GetNCsize()=%d\n", nLoopCnt);
 #endif
 
 try {
@@ -115,7 +113,7 @@ try {
 				dToolD_abs = fabs(dToolD);
 				nCorrect = 1;	// •â³Ù°Ìß‚Ö(break)
 #ifdef _DEBUG
-				dbg.printf("Gcode=%d X=%.3f Y=%.3f Z=%.3f", pData1->GetGcode(),
+				printf("Gcode=%d X=%.3f Y=%.3f Z=%.3f\n", pData1->GetGcode(),
 					pData1->GetEndValue(NCA_X),
 					pData1->GetEndValue(NCA_Y),
 					pData1->GetEndValue(NCA_Z) );
@@ -168,7 +166,7 @@ try {
 			if ( !IsPlaneCheck(pData1, pData2, obNdata) )
 				continue;	// pData1‚Í‚»‚Ì‚Ü‚Ü
 #ifdef _DEBUG
-			dbg.printf("Gcode=%d X=%.3f Y=%.3f Z=%.3f", pData2->GetGcode(),
+			printf("Gcode=%d X=%.3f Y=%.3f Z=%.3f\n", pData2->GetGcode(),
 				pData2->GetEndValue(NCA_X),
 				pData2->GetEndValue(NCA_Y),
 				pData2->GetEndValue(NCA_Z) );
@@ -473,7 +471,7 @@ try {
 			}
 #ifdef _DEBUG
 			ptDBG = pData2c->GetStartPoint();
-			dbg.printf("--> CorrectPoint X=%.3f Y=%.3f Z=%.3f",
+			printf("--> CorrectPoint X=%.3f Y=%.3f Z=%.3f\n",
 				ptDBG.x, ptDBG.y, ptDBG.z);
 #endif
 			// ŽŸ‚ÌÙ°Ìß‚Ö
@@ -528,7 +526,7 @@ catch (CMemoryException* e) {
 	pParent->m_ctReadProgress.SetPos((int)nLoopCnt);
 	pParent->PostMessage(WM_USERFINISH, IsThread() ? nResult : IDCANCEL);
 #ifdef _DEBUG
-	dbg.printf("PostMessage() Finish!");
+	printf("PostMessage() Finish!\n");
 #endif
 
 	return 0;	// AfxEndThread(0);

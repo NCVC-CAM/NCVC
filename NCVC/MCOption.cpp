@@ -6,10 +6,8 @@
 #include "NCVC.h"
 #include "MCOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -142,7 +140,7 @@ CMCOption::CMCOption()
 		VERIFY(strEntry.LoadString(IDS_REG_NCV_DEFFEED));
 		if ( nResult == 1 ) {
 			strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
-			m_dFeed = strResult.IsEmpty() ? g_dfDOrder[0] : (float)atof((LPCTSTR)strResult.Trim());
+			m_dFeed = strResult.IsEmpty() ? g_dfDOrder[0] : (float)atof(LPCTSTR(strResult.Trim()));
 		}
 		else
 			m_dFeed = (float)AfxGetApp()->GetProfileInt(strRegKey, strEntry, (int)g_dfDOrder[0]);

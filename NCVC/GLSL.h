@@ -4,6 +4,8 @@
 
 #pragma once
 
+#define	USE_SHADER
+
 enum GLSLShaderType
 {
 	VERTEX, FRAGMENT, GEOMETRY,

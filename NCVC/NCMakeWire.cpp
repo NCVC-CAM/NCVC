@@ -8,10 +8,8 @@
 #include "NCMakeWireOpt.h"
 #include "NCMakeWire.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 // ‚æ‚­g‚¤•Ï”‚âŒÄ‚Ño‚µ‚ÌŠÈ—ª’uŠ·

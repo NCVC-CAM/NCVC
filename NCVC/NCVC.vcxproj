@@ -64,7 +64,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v140_xp</PlatformToolset>
-    <UseOfMfc>Dynamic</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -152,7 +152,7 @@
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -168,7 +168,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>MagaDbg.lib;..\debug\Kodatuno.lib;opengl32.lib;freeglut.lib;glew32s.lib;glu32.lib;gdiplus.lib;version.lib;winmm.lib;legacy_stdio_definitions.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\debug\Kodatuno.lib;opengl32.lib;freeglut.lib;glew32s.lib;glu32.lib;gdiplus.lib;version.lib;winmm.lib;legacy_stdio_definitions.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
@@ -261,6 +261,7 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
       <LargeAddressAware>true</LargeAddressAware>
+      <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>NCVC.manifest</AdditionalManifestFiles>
@@ -347,6 +348,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <LargeAddressAware>true</LargeAddressAware>
+      <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>NCVC.manifest</AdditionalManifestFiles>
@@ -392,6 +394,7 @@
       </DataExecutionPrevention>
       <LargeAddressAware>
       </LargeAddressAware>
+      <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>NCVC.manifest</AdditionalManifestFiles>
@@ -547,6 +550,7 @@
     <ClInclude Include="CustomControl.h" />
     <ClInclude Include="CustomMenu.h" />
     <ClInclude Include="CustomToolBar.h" />
+    <ClInclude Include="DbgConsole.h" />
     <ClInclude Include="DocBase.h" />
     <ClInclude Include="DxfAutoWorkingDlg.h" />
     <ClInclude Include="DXFBlock.h" />

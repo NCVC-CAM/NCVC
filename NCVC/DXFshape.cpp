@@ -10,12 +10,10 @@
 #include "Layer.h"
 #include "DXFDoc.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
-//#define	_DEBUGDRAW_DXF
 #define	_DEBUGOLD
+//#define	_DEBUGDRAW_DXF
 #endif
 
 IMPLEMENT_DYNAMIC(CDXFworking, CObject)
@@ -120,8 +118,7 @@ void CDXFworkingDirection::DrawTuning(float f)
 void CDXFworkingDirection::Draw(CDC* pDC) const
 {
 #ifdef _DEBUGDRAW_DXF
-	CMagaDbg	dbg("CDXFworkingDirection::Draw()", DBG_RED);
-	dbg.printf("pt.x=%d pt.y=%d", m_ptDraw[1].x, m_ptDraw[1].y);
+	printf("CDXFworkingDirection::Draw() pt.x=%d pt.y=%d\n", m_ptDraw[1].x, m_ptDraw[1].y);
 #endif
 	pDC->Polyline(m_ptDraw, SIZEOF(m_ptDraw));
 }
@@ -244,14 +241,13 @@ void CDXFworkingOutline::SeparateAdd_Construct(const CDXFchain* pOutline)
 	m_rcMax = pOutline->GetMaxRect();
 
 #ifdef _DEBUG
-	CMagaDbg	dbg("SeparateAdd_Construct()");
-	dbg.printf("OutlineSize=%d", m_obOutline.GetSize());
+	printf("SeparateAdd_Construct() OutlineSize=%d\n", m_obOutline.GetSize());
 	for ( int i=0; i<m_obOutline.GetSize(); i++ ) {
 		pChain = m_obOutline[i];
 		int	j = 0;
 		PLIST_FOREACH(auto ref, pChain)
 			if ( !ref )
-				dbg.printf("??? NULL element %d", j);
+				printf("??? NULL element %d\n", j);
 			j++;
 		END_FOREACH
 	}
@@ -261,7 +257,7 @@ void CDXFworkingOutline::SeparateAdd_Construct(const CDXFchain* pOutline)
 void CDXFworkingOutline::SeparateModify(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SeparateModify()");
+	printf("CDXFworkingOutline::SeparateModify() Start\n");
 	CPointF		ptDbgS, ptDbgE;
 #endif
 	INT_PTR		i, j, nLoop,
@@ -361,11 +357,11 @@ void CDXFworkingOutline::SeparateModify(void)
 		}
 #ifdef _DEBUG
 		pte.reset();
-		dbg.printf("%s nLoop=%d", m_pShape->GetShapeName(), i);
+		printf("%s nLoop=%d\n", LPCTSTR(m_pShape->GetShapeName()), i);
 		PLIST_FOREACH(pData, pOutline)
 			ptDbgS = pData->GetNativePoint(0);
 			ptDbgE = pData->GetNativePoint(1);
-			dbg.printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s",
+			printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s\n",
 				ptDbgS.x, ptDbgS.y, ptDbgE.x, ptDbgE.y,
 				pte && sqrt(GAPCALC(*pte-ptDbgS))>=NCMIN ? "X" : " ");
 			pte = ptDbgE;
@@ -377,11 +373,11 @@ void CDXFworkingOutline::SeparateModify(void)
 	if ( nMainLoop < m_obOutline.GetSize() ) {
 		for ( i=nMainLoop; i<m_obOutline.GetSize(); i++ ) {
 			pte.reset();
-			dbg.printf("--- Separate Add %d ---", i);
+			printf("--- Separate Add %d ---\n", i);
 			PLIST_FOREACH(pData, m_obOutline[i])
 				ptDbgS = pData->GetNativePoint(0);
 				ptDbgE = pData->GetNativePoint(1);
-				dbg.printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s",
+				printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s\n",
 					ptDbgS.x, ptDbgS.y, ptDbgE.x, ptDbgE.y,
 					pte && sqrt(GAPCALC(*pte-ptDbgS))>=NCMIN ? "X" : " ");
 				pte = ptDbgE;
@@ -395,7 +391,7 @@ void CDXFworkingOutline::SeparateModify(void)
 		pOutline = m_obOutline[nMainLoop];
 		if ( pOutline->IsEmpty() ) {
 #ifdef _DEBUG
-			dbg.printf("--- Separete Delete %d ---", nMainLoop);
+			printf("--- Separete Delete %d ---\n", nMainLoop);
 #endif
 			delete	pOutline;
 			m_obOutline.RemoveAt(nMainLoop);
@@ -787,7 +783,7 @@ DWORD CDXFmap::GetMapTypeFlag(void) const
 				for ( j=i+1; j<nLoop; j++ ) {
 					if ( pData->GetIntersectionPoint(obWorkArray[j], ptChk) > 0 ) {
 #ifdef _DEBUG
-						g_dbg.printf("Intersection !!! i=%d j=%d", i, j);
+						printf("Intersection !!! i=%d j=%d\n", i, j);
 						pData->DbgDump();
 						obWorkArray[j]->DbgDump();
 #endif
@@ -1264,14 +1260,14 @@ POSITION CDXFchain::SetLoopFunc(const CDXFdata* pData, BOOL bReverse, BOOL bNext
 	CDXFdata*	pDataDbg;
 	POSITION	posDbg;
 	// CDXFchainﾘｽﾄ構造が順序良く並んでいるか
-	g_dbg.printf("--- pChain Fin");
+	printf("--- pChain Fin\n");
 	ptDbg.reset();
 
 	for ( posDbg=pos1; posDbg; ) {
 		pDataDbg = (this->*m_pfnGetData)(posDbg);
 		ptDbg1 = pDataDbg->GetTunPoint(0);
 		ptDbg2 = pDataDbg->GetTunPoint(1);
-		g_dbg.printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s",
+		printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s\n",
 			ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y,
 			ptDbg && sqrt(GAPCALC(*ptDbg-ptDbg1))>=NCMIN ? "X" : " ");
 		ptDbg = ptDbg2;
@@ -1280,7 +1276,7 @@ POSITION CDXFchain::SetLoopFunc(const CDXFdata* pData, BOOL bReverse, BOOL bNext
 		pDataDbg = (this->*m_pfnGetData)(posDbg);
 		ptDbg1 = pDataDbg->GetTunPoint(0);
 		ptDbg2 = pDataDbg->GetTunPoint(1);
-		g_dbg.printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s",
+		printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s\n",
 			ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y,
 			ptDbg && sqrt(GAPCALC(*ptDbg-ptDbg1))>=NCMIN ? "X" : " ");
 		ptDbg = ptDbg2;
@@ -1990,7 +1986,7 @@ BOOL CDXFshape::LinkShape(CDXFshape* pShape)
 BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dOffset/*=0.0f*/)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CreateOutlineTempObject()", DBG_MAGENTA);
+	printf("CreateOutlineTempObject() Start\n");
 	CPointF		ptDbg1, ptDbg2, ptDbg3;
 #endif
 	if ( dOffset <= 0.0f )
@@ -2087,7 +2083,7 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dO
 		ptDbg1 = pData1->GetNativePoint(0);
 		ptDbg2 = pData1->GetNativePoint(1);
 		ptDbg3 = pData2->GetNativePoint(1);
-		dbg.printf("p1=(%.3f, %.3f) p2=(%.3f, %.3f) p3=(%.3f, %.3f)",
+		printf("p1=(%.3f, %.3f) p2=(%.3f, %.3f) p3=(%.3f, %.3f)\n",
 			ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y, ptDbg3.x, ptDbg3.y);
 #endif
 		// ｵﾌｾｯﾄ座標計算
@@ -2098,7 +2094,7 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dO
 		}
 		pt = *ptResult;
 #ifdef _DEBUG
-		dbg.printf("Offset=(%.3f, %.3f)", pt.x, pt.y);
+		printf("Offset=(%.3f, %.3f)\n", pt.x, pt.y);
 #endif
 		// 輪郭ｵﾌﾞｼﾞｪｸﾄ生成(初回は無視)
 		if ( pts ) {
@@ -2126,14 +2122,14 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dO
 		ptDbg1 = pData1->GetNativePoint(0);
 		ptDbg2 = pData1->GetNativePoint(1);
 		ptDbg3 = pData2->GetNativePoint(1);
-		dbg.printf("p1=(%.3f, %.3f) p2=(%.3f, %.3f) p3=(%.3f, %.3f)",
+		printf("p1=(%.3f, %.3f) p2=(%.3f, %.3f) p3=(%.3f, %.3f)\n",
 			ptDbg1.x, ptDbg1.y, ptDbg2.x, ptDbg2.y, ptDbg3.x, ptDbg3.y);
 #endif
 		ptResult = pData1->CalcOffsetIntersectionPoint(pData2, dOffset, bLeft);
 		if ( ptResult ) {
 			pt = *ptResult;
 #ifdef _DEBUG
-			dbg.printf("Offset=(%.3f, %.3f)", pt.x, pt.y);
+			printf("Offset=(%.3f, %.3f)\n", pt.x, pt.y);
 #endif
 			pData = ::CreateDxfOffsetObject(pData1, *pts, pt, k, dOffset);
 			if ( pData ) {
@@ -2170,23 +2166,23 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dO
 	}
 
 #ifdef _DEBUG
-	dbg.printf("Result member = %d", pResult->GetCount());
+	printf("Result member = %d\n", pResult->GetCount());
 #endif
 	// 本集合の検査
 	CheckSeparateChain(pResult, dOffset);
 #ifdef _DEBUG
-	dbg.printf("CheckSeparateChain() -> Result member = %d", pResult->GetCount());
-	dbg.printf("obSepArray.GetSize()=%d", nLoop);
+	printf("CheckSeparateChain() -> Result member = %d\n", pResult->GetCount());
+	printf("obSepArray.GetSize()=%d\n", nLoop);
 #endif
 
 	// 分離集合の検査
 	for ( k=0; k<nLoop; k++ ) {
 #ifdef _DEBUG
-		dbg.printf("Separate member = %d", obSepArray[k]->GetCount()); 
+		printf("Separate member = %d\n", obSepArray[k]->GetCount()); 
 #endif
 		CheckSeparateChain(obSepArray[k], dOffset);
 #ifdef _DEBUG
-		dbg.printf("CheckSeparateChain() -> Separate member = %d", obSepArray[k]->GetCount()); 
+		printf("CheckSeparateChain() -> Separate member = %d\n", obSepArray[k]->GetCount()); 
 #endif
 		// 分離集合を末尾に結合
 		if ( !obSepArray[k]->IsEmpty() ) {
@@ -2477,7 +2473,7 @@ BOOL CDXFshape::SeparateOutlineIntersection
 	(CDXFchain* pOffset, CTypedPtrArrayEx<CPtrArray, CDXFlist*>& obSepList, BOOL bFinish/*=FALSE*/)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SeparateOutlineIntersection()", DBG_MAGENTA);
+	printf("SeparateOutlineIntersection() Start\n");
 	CPointF		ptDbg1, ptDbg2, ptDbg3;
 #endif
 	POSITION	pos1 = pOffset->GetTailPosition(), pos2, pos;
@@ -2511,8 +2507,8 @@ BOOL CDXFshape::SeparateOutlineIntersection
 		}
 		// --- 交点あり！！
 #ifdef _DEBUG
-		dbg.printf("pData1 type=%d pData2 type=%d", pData1->GetType(), pData2->GetType());
-		dbg.printf("pt=(%.3f, %.3f)", pt[0].x, pt[0].y);
+		printf("pData1 type=%d pData2 type=%d\n", pData1->GetType(), pData2->GetType());
+		printf("pt=(%.3f, %.3f)\n", pt[0].x, pt[0].y);
 #endif
 		pSepList = new CDXFlist;
 		// 1) 交点から pData2 の終点までｵﾌﾞｼﾞｪｸﾄ生成

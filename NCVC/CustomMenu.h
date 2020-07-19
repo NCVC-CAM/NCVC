@@ -9,7 +9,7 @@
 
 class CCustomMenu : public CMenu  
 {
-#ifdef _DEBUG
+#ifdef _DEBUGOLD
 	void	MAP_IMAGE_PRINT() const;
 	void	VEC_MNEMONIC_PRINT() const;
 #endif

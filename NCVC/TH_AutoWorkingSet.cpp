@@ -11,10 +11,8 @@
 #include "DXFView.h"	// DXFTREETYPE
 #include "ThreadDlg.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using std::vector;
@@ -34,14 +32,12 @@ static	inline	void	SetProgressPos(INT_PTR n)
 //	SeparateOutline_Thread
 struct	SEPARATEOUTLINETHREADPARAM
 {
-	CEvent		evStart,			// ﾙｰﾌﾟ開始ｲﾍﾞﾝﾄ
-				evEnd;				// 終了待ち確認
+	CEvent		evStart;			// ﾙｰﾌﾟ開始ｲﾍﾞﾝﾄ
+	CEvent		evEnd;				// 終了待ち確認
 	BOOL		bThread;			// ｽﾚｯﾄﾞの継続ﾌﾗｸﾞ
 	CDXFworkingOutline*	pOutline;	// 対象輪郭ｵﾌﾞｼﾞｪｸﾄ集合
 	// SEPARATEOUTLINETHREADPARAM::CEvent を手動ｲﾍﾞﾝﾄにするためのｺﾝｽﾄﾗｸﾀ
-	SEPARATEOUTLINETHREADPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE),
-		bThread(TRUE), pOutline(NULL)
-	{}
+	SEPARATEOUTLINETHREADPARAM() : evStart(FALSE, TRUE), evEnd(FALSE, TRUE), bThread(TRUE), pOutline(NULL) {}
 };
 typedef	SEPARATEOUTLINETHREADPARAM*		LPSEPARATEOUTLINETHREADPARAM;
 static	UINT	SeparateOutline_Thread(LPVOID);
@@ -295,9 +291,9 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 						pChain2 = pOutline2->GetOutlineObject(jj);
 						if ( rcCross.CrossRect(rc, pChain2->GetMaxRect()) ) {
 #ifdef _DEBUG
-							g_dbg.printf("ShapeName1=%s No.%d Obj=%d", pShape1->GetShapeName(),
+							printf("ShapeName1=%s No.%d Obj=%d\n", LPCTSTR(pShape1->GetShapeName()),
 								ii, pChain1->GetSize());
-							g_dbg.printf("ShapeName2=%s No.%d Obj=%d", pShape2->GetShapeName(),
+							printf("ShapeName2=%s No.%d Obj=%d\n", LPCTSTR(pShape2->GetShapeName()),
 								jj, pChain2->GetSize());
 #endif
 							// 内外判定のためのﾌﾗｸﾞ設定
@@ -348,8 +344,8 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 		pOutline1  = pShape1->GetOutlineLastObj();
 		if ( !pOutline1 )
 			continue;
-		g_dbg.printf("Name=%s Sep=%d Merge=%d",
-			pShape1->GetShapeName(),
+		printf("Name=%s Sep=%d Merge=%d\n",
+			LPCTSTR(pShape1->GetShapeName()),
 			pOutline1->GetOutlineSize(), pOutline1->GetMergeHandleSize());
 		// 併合輪郭のﾃﾞｰﾀﾁｪｯｸ
 		for ( j=0; j<pOutline1->GetOutlineSize(); j++ ) {
@@ -369,11 +365,11 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 				dbgPte = dbgData->GetNativePoint(1);
 			}
 			if ( !dbgConnect ) {
-				g_dbg.printf("---> No.%d Connect Error!", j);
+				printf("---> No.%d Connect Error!\n", j);
 				PLIST_FOREACH(dbgData, pChain1)
 					dbgPts = dbgData->GetNativePoint(0);
 					dbgPte = dbgData->GetNativePoint(1);
-					g_dbg.printf("(%.3f, %.3f)-(%.3f, %.3f)",
+					printf("(%.3f, %.3f)-(%.3f, %.3f)\n",
 						dbgPts.x, dbgPts.y, dbgPte.x, dbgPte.y);
 				END_FOREACH
 			}
@@ -381,7 +377,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 				dbgPts = pChain1->GetHead()->GetNativePoint(0);
 				dbgPte = pChain1->GetTail()->GetNativePoint(1);
 				if ( sqrt(GAPCALC(dbgPts-dbgPte)) < NCMIN )
-					g_dbg.printf("---> No.%d Loop Outline ? size=%d", j, pChain1->GetSize());
+					printf("---> No.%d Loop Outline ? size=%d\n", j, pChain1->GetSize());
 			}
 		}
 		// 併合状況
@@ -391,7 +387,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 					dbgMsg += gg_szCat;
 				dbgMsg += pOutline1->GetMergeHandle(j);
 			}
-			g_dbg.printf("---> %s", dbgMsg);
+			printf("---> %s\n", LPCTSTR(dbgMsg));
 			dbgMsg.Empty();
 		}
 	}
@@ -446,9 +442,9 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 					}
 					else if ( rcCross.CrossRect(rc2, rc1) ) {	// 矩形の交差も含む
 #ifdef _DEBUG
-						g_dbg.printf("ShapeName1=%s No.%d Obj=%d", pShape1->GetShapeName(),
+						printf("ShapeName1=%s No.%d Obj=%d\n", LPCTSTR(pShape1->GetShapeName()),
 							ii, pChain1->GetSize());
-						g_dbg.printf("ShapeName2=%s No.%d Obj=%d", pShape2->GetShapeName(),
+						printf("ShapeName2=%s No.%d Obj=%d\n", LPCTSTR(pShape2->GetShapeName()),
 							jj, pChain2->GetSize());
 #endif
 						pChain1->ClearSideFlg();
@@ -488,11 +484,11 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 		if ( !pShape1->IsOutlineList() )
 			continue;
 		dbgOutlineList = pShape1->GetOutlineList();
-		g_dbg.printf("Name=%s Outline=%d",
-			pShape1->GetShapeName(), dbgOutlineList->GetCount());
+		printf("Name=%s Outline=%d\n",
+			LPCTSTR(pShape1->GetShapeName()), dbgOutlineList->GetCount());
 		ii=0;
 		PLIST_FOREACH(pOutline1, dbgOutlineList)
-			g_dbg.printf("No.%d Sep=%d", ii++, pOutline1->GetOutlineSize());
+			printf("No.%d Sep=%d\n", ii++, pOutline1->GetOutlineSize());
 		END_FOREACH
 	}
 #endif
@@ -623,9 +619,6 @@ void CreateAutoWorking(const CLayerData* pLayer, float dOffset)
 	CDXFdata*	pData;
 	CDXFshape*	pShape;
 	CDXFworkingOutline*	pWork;
-#ifdef _DEBUG
-	RECT		rcDbg;
-#endif
 
 	SetProgressRange(nLoop);
 
@@ -639,9 +632,9 @@ void CreateAutoWorking(const CLayerData* pLayer, float dOffset)
 			if ( !pShape->IsSideFlg() )
 				continue;
 #ifdef _DEBUG
-			g_dbg.printf("ShapeName=%s", pShape->GetShapeName());
-			rcDbg = pShape->GetMaxRect();
-			g_dbg.printStruct(&rcDbg, "Orig");
+			printf("ShapeName=%s\n", LPCTSTR(pShape->GetShapeName()));
+			CRectF	rcDbg(pShape->GetMaxRect());
+			printf("(%f, %f)-(%f, %f)\n", rcDbg.left, rcDbg.top, rcDbg.right, rcDbg.bottom);
 #endif
 			// 輪郭一時ｵﾌﾞｼﾞｪｸﾄの生成
 			dwError = 0;
@@ -656,8 +649,7 @@ void CreateAutoWorking(const CLayerData* pLayer, float dOffset)
 					dwError |= ( 1 << j );
 				}
 #ifdef _DEBUG
-				rcDbg = rcMax;
-				g_dbg.printStruct(&rcDbg, "OutLine");
+				printf("Outline (%f, %f)-(%f, %f)\n", rcMax.left, rcMax.top, rcMax.right, rcMax.bottom);
 #endif
 				dArea[j] = rcMax.Width() * rcMax.Height();
 			}
@@ -687,7 +679,7 @@ void CreateAutoWorking(const CLayerData* pLayer, float dOffset)
 					pWork = new CDXFworkingOutline(pShape, &ltOutline[j], dOffset, DXFWORKFLG_AUTO);
 					pShape->AddOutlineData(pWork, (int)j);
 #ifdef _DEBUG
-					g_dbg.printf("Select OutLine = %d", j);
+					printf("Select OutLine = %d\n", j);
 #endif
 				}
 				// Select分はCDXFworkingOutlineのﾃﾞｽﾄﾗｸﾀにてdelete
@@ -770,9 +762,6 @@ BOOL CreateScanLine(CDXFshape* pShape, LPAUTOWORKINGDATA pAuto)
 BOOL CheckOffsetIntersection
 	(CDXFchain* pChain1, CDXFchain* pChain2, BOOL bScan)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CheckOffsetIntersection()");
-#endif
 	POSITION	pos1, pos2, pos;
 	int			i, j, n;
 	CPointF		pt[4], pts;
@@ -1003,6 +992,7 @@ BOOL CheckOffsetIntersection
 	}
 
 #ifdef _DEBUG
+	printf("CheckOffsetIntersection()\n");
 	optional<CPointF>	ptDbgE;
 	for ( i=0; i<SIZEOF(vInfo); i++ ) {
 		ptDbgE.reset();
@@ -1011,22 +1001,22 @@ BOOL CheckOffsetIntersection
 				pt[0] = pData1->GetNativePoint(0);
 				pt[1] = pData1->GetNativePoint(1);
 				if ( pData1->GetDxfFlg() & DXFFLG_OFFSET_EXCLUDE ) {
-					dbg.printf("pt=(%.3f, %.3f) - (%.3f, %.3f) DEL",
+					printf("pt=(%.3f, %.3f) - (%.3f, %.3f) DEL\n",
 						pt[0].x, pt[0].y, pt[1].x, pt[1].y);
 				}
 				else {
-					dbg.printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s",
+					printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s\n",
 						pt[0].x, pt[0].y, pt[1].x, pt[1].y,
 						ptDbgE && sqrt(GAPCALC(*ptDbgE-pt[0]))>=NCMIN ? "X" : " ");
 					ptDbgE = pt[1];
 				}
 			}
 			else {
-				dbg.printf("null");
+				printf("null\n");
 				ptDbgE.reset();
 			}
 		END_FOREACH
-		dbg.printf("---");
+		printf("---\n");
 		if ( bScan )
 			break;
 		swap(pChain1, pChain2);

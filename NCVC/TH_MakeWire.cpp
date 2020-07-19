@@ -14,15 +14,13 @@
 #include "MakeCustomCode.h"
 #include "ThreadDlg.h"
 
-using std::string;
-using namespace boost;
-
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 //#define	_DBG_NCMAKE_TIME	//	生成時間の表示
 #endif
+
+using std::string;
+using namespace boost;
 
 // ｸﾞﾛｰﾊﾞﾙ変数定義
 static	CThreadDlg*			g_pParent;
@@ -164,7 +162,7 @@ static	UINT	MakeWire_AfterThread(LPVOID);	// 後始末ｽﾚｯﾄﾞ
 UINT MakeWire_Thread(LPVOID pVoid)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeWire_Thread()\nStart", DBG_GREEN);
+	printf("MakeWire_Thread() Start\n");
 #endif
 #ifdef _DBG_NCMAKE_TIME
 	// 現在時刻を取得
@@ -226,7 +224,7 @@ UINT MakeWire_Thread(LPVOID pVoid)
 		if ( bResult && IsThread() )
 			nResult = IDOK;
 #ifdef _DEBUG
-		dbg.printf("MakeWire_Thread All Over!!!");
+		printf("MakeWire_Thread All Over!!!\n");
 #endif
 	}
 	catch (CMemoryException* e) {
@@ -371,13 +369,13 @@ BOOL MakeWire_MainFunc(void)
 BOOL MakeLoopWire(CDXFshape* pShape)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeLoopWire()", DBG_RED);
+	printf("MakeLoopWire()\n");
 #endif
 	INT_PTR		nCnt, nPos = 0;
 
 	while ( pShape && IsThread() ) {
 #ifdef _DEBUG
-		dbg.printf("ParentMapName=%s", pShape->GetShapeName());
+		printf("ParentMapName=%s\n", LPCTSTR(pShape->GetShapeName()));
 #endif
 		// 形状集合の内側から生成
 		pShape->SetShapeFlag(DXFMAPFLG_SEARCH);	// 親(外側)形状集合は検索対象外
@@ -399,7 +397,7 @@ BOOL MakeLoopWire(CDXFshape* pShape)
 INT_PTR MakeLoopWireSearch(CDXFshape* pShapeBase, int nRef)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeLoopWireSearch()", DBG_RED);
+	printf("MakeLoopWireSearch()\n");
 #endif
 
 	INT_PTR		i, j, nCnt = 0;
@@ -494,10 +492,9 @@ INT_PTR MakeLoopWireSearch(CDXFshape* pShapeBase, int nRef)
 BOOL MakeLoopWireAdd(CDXFshape* pShapeXY, CDXFshape* pShapeUV, BOOL bParent)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeLoopWireAdd()", DBG_RED);
-	dbg.printf("MapName=%s", pShapeXY->GetShapeName());
+	printf("MakeLoopWireAdd() MapName=%s\n", LPCTSTR(pShapeXY->GetShapeName()));
 	if ( pShapeUV )
-		dbg.printf("+MapName(UV)=%s", pShapeUV->GetShapeName());
+		printf(" +MapName(UV)=%s\n", LPCTSTR(pShapeUV->GetShapeName()));
 #endif
 	if ( pShapeXY->IsMakeFlg() )	// 併合輪郭等で、既に生成済みの場合がある
 		return TRUE;
@@ -1270,8 +1267,7 @@ void SendFaseMessage
 	(INT_PTR nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeWire_Thread()", DBG_GREEN);
-	dbg.printf("Phase%d Start", g_nFase);
+	printf("MakeWire_Thread() Phase%d Start\n", g_nFase);
 #endif
 	if ( nRange > 0 )
 		g_pParent->m_ctReadProgress.SetRange32(0, (int)nRange);
@@ -1291,7 +1287,7 @@ UINT MakeWire_AfterThread(LPVOID)
 	g_csMakeAfter.Lock();
 
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeWire_AfterThread()\nStart", TRUE, DBG_RED);
+	printf("MakeWire_AfterThread() Start\n");
 #endif
 	for ( int i=0; i<g_obMakeData.GetSize(); i++ )
 		delete	g_obMakeData[i];

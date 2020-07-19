@@ -15,15 +15,13 @@
 #include "ThreadDlg.h"
 //#include "boost/bind.hpp"
 
-using std::string;
-using namespace boost;
-
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 //#define	_DBG_NCMAKE_TIME	//	生成時間の表示
 #endif
+
+using std::string;
+using namespace boost;
 
 // --- CDXFdata の GetType() と GetMakeType() の使い分けに注意！！
 
@@ -305,7 +303,7 @@ static	UINT	MakeNCD_AfterThread(LPVOID);	// 後始末ｽﾚｯﾄﾞ
 UINT MakeNCD_Thread(LPVOID pVoid)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeNCD_Thread()\nStart", DBG_GREEN);
+	printf("MakeNCD_Thread() Start\n");
 #endif
 #ifdef _DBG_NCMAKE_TIME
 	// 現在時刻を取得
@@ -352,7 +350,7 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 		g_csMakeAfter.Lock();		// ｽﾚｯﾄﾞ側でﾛｯｸ解除するまで待つ
 		g_csMakeAfter.Unlock();
 #ifdef _DEBUG
-		dbg.printf("g_csMakeAfter Unlock OK");
+		printf("g_csMakeAfter Unlock OK\n");
 #endif
 
 		// NC生成のﾙｰﾌﾟ前に必要な初期化
@@ -401,7 +399,7 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 		if ( bResult && IsThread() )
 			nResult = IDOK;
 #ifdef _DEBUG
-		dbg.printf("MakeNCD_Thread All Over!!!");
+		printf("MakeNCD_Thread All Over!!!\n");
 #endif
 	}
 	catch (CMemoryException* e) {
@@ -457,7 +455,7 @@ void InitialCycleBaseVariable(void)
 BOOL SingleLayer(int nID)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("SingleLayer()\nStart", DBG_CYAN);
+	printf("SingleLayer() Start\n");
 #endif
 	// NC生成ｵﾌﾟｼｮﾝ読み込み
 	g_pMakeOpt->ReadMakeOption(AfxGetNCVCApp()->GetDXFOption()->GetInitList(NCMAKEMILL)->GetHead());
@@ -482,7 +480,7 @@ BOOL SingleLayer(int nID)
 	if ( nID == ID_FILE_DXF2NCD ) {
 		if ( !MakeNCD_MainFunc(NULL) ) {
 #ifdef _DEBUG
-			dbg.printf("Error:MakeNCD_MainFunc()");
+			printf("Error:MakeNCD_MainFunc()\n");
 			// どこまで処理できているかがわかる
 			if ( AfxMessageBox("Output?", MB_YESNO|MB_ICONQUESTION) == IDYES )
 				MakeNCD_FinalFunc();
@@ -493,7 +491,7 @@ BOOL SingleLayer(int nID)
 	else {
 		if ( !MakeNCD_ShapeFunc() ) {
 #ifdef _DEBUG
-			dbg.printf("Error:MakeNCD_ShapeFunc()");
+			printf("Error:MakeNCD_ShapeFunc()\n");
 			if ( AfxMessageBox("Output?", MB_YESNO|MB_ICONQUESTION) == IDYES )
 				MakeNCD_FinalFunc();
 #endif
@@ -509,7 +507,7 @@ BOOL SingleLayer(int nID)
 	// 終了ｺｰﾄﾞ，ﾌｧｲﾙの出力など
 	if ( !MakeNCD_FinalFunc() ) {
 #ifdef _DEBUG
-		dbg.printf("Error:MakeNCD_FinalFunc()");
+		printf("Error:MakeNCD_FinalFunc()\n");
 #endif
 		return FALSE;
 	}
@@ -520,8 +518,7 @@ BOOL SingleLayer(int nID)
 BOOL MultiLayer(int nID)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MultiLayer()\nStart", DBG_CYAN);
-	CMagaDbg	dbgE("MultiLayer() Error", DBG_RED);
+	printf("MultiLayer() Start\n");
 #endif
 	extern	LPCTSTR	gg_szCat;	// ", "
 	INT_PTR	i, j, nLayerCnt = g_pDoc->GetLayerCnt();
@@ -589,12 +586,12 @@ BOOL MultiLayer(int nID)
 
 		// 生成開始
 #ifdef _DEBUG
-		dbg.printf("No.%d ID=%d Name=%s Cut=%f", i+1,
-			pLayer->GetLayerListNo(), pLayer->GetLayerName(), g_dZCut);
+		printf("No.%d ID=%d Name=%s Cut=%f\n", i+1,
+			pLayer->GetLayerListNo(), LPCTSTR(pLayer->GetLayerName()), g_dZCut);
 #endif
 		if ( !MakeNCD_MainFunc(pLayer) ) {
 #ifdef _DEBUG
-			dbgE.printf("MakeNCD_MainFunc() Error");
+			printf("MakeNCD_MainFunc() Error\n");
 #endif
 			return FALSE;
 		}
@@ -618,7 +615,7 @@ BOOL MultiLayer(int nID)
 			}
 			else {
 #ifdef _DEBUG
-				dbgE.printf("MakeNCD_FinalFunc_Multi() Error");
+				printf("MakeNCD_FinalFunc_Multi() Error\n");
 #endif
 				return FALSE;
 			}
@@ -626,7 +623,7 @@ BOOL MultiLayer(int nID)
 		}
 		else {
 #ifdef _DEBUG
-			dbg.printf("Layer=%s CDXFdata::ms_pData NULL", pLayer->GetLayerName());
+			printf("Layer=%s CDXFdata::ms_pData NULL\n", LPCTSTR(pLayer->GetLayerName()));
 #endif
 			// 該当ﾚｲﾔのﾃﾞｰﾀなし
 			pLayer->SetLayerPartFlag(TRUE);
@@ -639,7 +636,7 @@ BOOL MultiLayer(int nID)
 			// MakeNCD_FinalFunc(終了ｺｰﾄﾞ，ﾌｧｲﾙの出力)の実行
 			if ( !MakeNCD_FinalFunc() ) {
 #ifdef _DEBUG
-				dbgE.printf("MakeNCD_FinalFunc()");
+				printf("MakeNCD_FinalFunc()\n");
 #endif
 				return FALSE;
 			}
@@ -998,7 +995,7 @@ BOOL OutputMillCode(LPCTSTR lpszFileName)
 BOOL MakeNCD_MainFunc(CLayerData* pLayer)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeNCD_MainFunc()\nStart", DBG_MAGENTA);
+	printf("MakeNCD_MainFunc() Start\n");
 #endif
 	CString	strLayer;
 	if ( pLayer )
@@ -1325,7 +1322,7 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, CLayerData* pLayer, CString& strLayer)
 tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("OrgTuningCutter()", DBG_GREEN);
+	printf("OrgTuningCutter()\n");
 	int			nDbg = -1;
 	CLayerData*	pLayerDbg = NULL;
 #endif
@@ -1394,12 +1391,11 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 
 #ifdef _DEBUG
 	if ( pLayerDbg ) {
-		dbg.printf("FirstPoint Layer=%s Cnt=%d Gap=%f",
-			pLayerDbg->GetLayerName(), nDbg, dGapMin);
+		printf("FirstPoint Layer=%s Cnt=%d Gap=%f\n",
+			LPCTSTR(pLayerDbg->GetLayerName()), nDbg, dGapMin);
 	}
 	else {
-		dbg.printf("FirstPoint Cnt=%d Gap=%f",
-			nDbg, dGapMin);
+		printf("FirstPoint Cnt=%d Gap=%f\n", nDbg, dGapMin);
 	}
 #endif
 	SetProgressPos(nDataLoop);
@@ -1410,7 +1406,7 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 tuple<CDXFdata*, BOOL> OrgTuningDrillPoint(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("OrgTuningDrillPoint()", DBG_GREEN);
+	printf("OrgTuningDrillPoint()\n");
 #endif
 	INT_PTR		i;
 	const INT_PTR	nLoop = g_obDrill.GetSize();
@@ -1456,7 +1452,7 @@ tuple<CDXFdata*, BOOL> OrgTuningDrillPoint(void)
 		SetProgressPos64(i);
 	}
 #ifdef _DEBUG
-	dbg.printf("FirstPoint %d Gap=%f", nDbg, dGapMin);
+	printf("FirstPoint %d Gap=%f\n", nDbg, dGapMin);
 #endif
 
 	SetProgressPos(nLoop);
@@ -1470,7 +1466,7 @@ tuple<CDXFdata*, BOOL> OrgTuningDrillPoint(void)
 CDXFdata* OrgTuningDrillCircle(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("OrgTuningDrillCircle()", DBG_GREEN);
+	printf("OrgTuningDrillCircle()\n");
 #endif
 	if ( g_obCircle.IsEmpty() )
 		return NULL;
@@ -1663,7 +1659,7 @@ BOOL MakeLoopEulerSearch(const CPointF& ptKey, CDXFmap& mpEuler)
 INT_PTR MakeLoopEulerAdd(const CDXFmap* pEuler)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeLoopEulerAdd()", DBG_MAGENTA);
+	printf("MakeLoopEulerAdd()\n");
 #endif
 	BOOL		bEuler = FALSE;		// 一筆書き要件を満たしているか
 	CPointF		pt, ptNow(CDXFdata::ms_pData->GetEndCutterPoint());
@@ -1682,7 +1678,7 @@ INT_PTR MakeLoopEulerAdd(const CDXFmap* pEuler)
 	if ( !IsThread() )
 		return -1;
 #ifdef _DEBUG
-	dbg.printf("FirstPoint x=%f y=%f EulerFlg=%d Cnt=%d", pt.x, pt.y, bEuler, pEuler->GetCount());
+	printf("FirstPoint x=%f y=%f EulerFlg=%d Cnt=%d\n", pt.x, pt.y, bEuler, pEuler->GetCount());
 #endif
 
 	// --- 一筆書きの生成(再帰呼び出しによる木構造解析)
@@ -1810,7 +1806,7 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 BOOL MakeLoopShape(CDXFshape* pShape)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeLoopShape()", DBG_RED);
+	printf("MakeLoopShape()\n");
 #endif
 	CDXFdata*	pData;
 	const	CPointF		ptOrg(CDXFdata::ms_ptOrg);
@@ -1819,7 +1815,7 @@ BOOL MakeLoopShape(CDXFshape* pShape)
 
 	while ( pShape && IsThread() ) {
 #ifdef _DEBUG
-		dbg.printf("ParentMapName=%s", pShape->GetShapeName());
+		printf("ParentMapName=%s\n", LPCTSTR(pShape->GetShapeName()));
 #endif
 		// 形状集合の内側から生成
 		pShape->SetShapeFlag(DXFMAPFLG_SEARCH);	// 親(外側)形状集合は検索対象外
@@ -1855,7 +1851,7 @@ BOOL MakeLoopShape(CDXFshape* pShape)
 INT_PTR MakeLoopShapeSearch(const CDXFshape* pShapeBase)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeLoopShapeSearch()", DBG_RED);
+	printf("MakeLoopShapeSearch()\n");
 #endif
 
 	INT_PTR	i, j, nCnt = 0;
@@ -1926,8 +1922,7 @@ INT_PTR MakeLoopShapeSearch(const CDXFshape* pShapeBase)
 BOOL MakeLoopShapeAdd(CDXFshape* pShape, CDXFdata* pData)
 {
 #ifdef _DEBUGOLD
-	CMagaDbg	dbg("MakeLoopShapeAdd()", DBG_RED);
-	dbg.printf("MapName=%s", pShape->GetShapeName());
+	printf("MakeLoopShapeAdd() MapName=%s\n", LPCTSTR(pShape->GetShapeName()));
 #endif
 	if ( pShape->IsMakeFlg() )	// 併合輪郭等で、既に生成済みの場合がある
 		return TRUE;
@@ -2266,13 +2261,13 @@ BOOL MakeLoopDeepAdd(void)
 
 #ifdef _DEBUGOLD
 	int	n;
-	g_dbg.printf("LayerName=%s", g_ltDeepData.GetHead()->GetParentLayer()->GetLayerName());
+	printf("LayerName=%s\n", LPCTSTR(g_ltDeepData.GetHead()->GetParentLayer()->GetLayerName()));
 	PLIST_FOREACH(pData, &g_ltDeepData)
 		if ( pData )
 			n = pData->GetParentLayer()->IsCutType() ? 1 : 2;
 		else
 			n = 0;
-		g_dbg.printf("ListType=%d", n);
+		printf("ListType=%d\n", n);
 	END_FOREACH
 #endif
 
@@ -3345,8 +3340,7 @@ void SendFaseMessage
 	(INT_PTR nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeNCD_Thread()", DBG_GREEN);
-	dbg.printf("Phase%d Start", g_nFase);
+	printf("MakeNCD_Thread() Phase%d Start\n", g_nFase);
 #endif
 	if ( nRange > 0 )
 		g_pParent->m_ctReadProgress.SetRange32(0, (int)nRange);
@@ -3440,7 +3434,7 @@ UINT MakeNCD_AfterThread(LPVOID)
 	g_csMakeAfter.Lock();
 
 #ifdef _DEBUG
-	CMagaDbg	dbg("MakeNCD_AfterThread()\nStart", TRUE, DBG_RED);
+	printf("MakeNCD_AfterThread() Start\n");
 #endif
 	for ( int i=0; i<g_obMakeData.GetSize(); i++ )
 		delete	g_obMakeData[i];

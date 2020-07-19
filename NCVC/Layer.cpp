@@ -10,10 +10,8 @@
 #include "Layer.h"
 #include "DXFDoc.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using std::string;
@@ -226,11 +224,11 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 		}
 	}
 #ifdef _DEBUG
-	g_dbg.printf("Layer=%s", m_strLayer);
-	g_dbg.printf("--- Check=%d InitFile=%s", m_bLayerFlg[LAYER_CUT_TARGET] ? 1 : 0, m_strInitFile);
-	g_dbg.printf("--- Z=%f Drill=%d", m_dZCut, m_bLayerFlg[LAYER_DRILL_Z] ? 1 : 0);
-	g_dbg.printf("--- PartOut=%d NCFile=%s", m_bLayerFlg[LAYER_PART_OUT] ? 1 : 0, m_strNCFile);
-	g_dbg.printf("--- Seq=%d, Comment=%s Code=%s", m_nListNo, m_strLayerComment, m_strLayerCode);
+	printf("Layer=%s\n", LPCTSTR(m_strLayer));
+	printf("--- Check=%d InitFile=%s\n", m_bLayerFlg[LAYER_CUT_TARGET] ? 1 : 0, LPCTSTR(m_strInitFile));
+	printf("--- Z=%f Drill=%d\n", m_dZCut, m_bLayerFlg[LAYER_DRILL_Z] ? 1 : 0);
+	printf("--- PartOut=%d NCFile=%s\n", m_bLayerFlg[LAYER_PART_OUT] ? 1 : 0, LPCTSTR(m_strNCFile));
+	printf("--- Seq=%d, Comment=%s Code=%s\n", m_nListNo, LPCTSTR(m_strLayerComment), LPCTSTR(m_strLayerCode));
 #endif
 }
 

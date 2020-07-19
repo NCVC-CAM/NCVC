@@ -9,16 +9,14 @@
 #include "NCdata.h"
 #include "NCDoc.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 NCEXPORT int WINAPI NCVC_GetNCBlockDataSize(NCVCHANDLE hDoc)
 {
 #ifdef _DEBUG
-	g_dbg.printf("NCVC_GetNCBlockDataSize()");
+	printf("NCVC_GetNCBlockDataSize()\n");
 #endif
 	if ( !IsNCDocument(hDoc) )
 		return -1;
@@ -28,7 +26,7 @@ NCEXPORT int WINAPI NCVC_GetNCBlockDataSize(NCVCHANDLE hDoc)
 NCEXPORT int WINAPI NCVC_GetNCBlockData(NCVCHANDLE hDoc, int nIndex, LPSTR pszBuf, int nMax)
 {
 #ifdef _DEBUG
-	g_dbg.printf("NCVC_GetNCBlockData()");
+	printf("NCVC_GetNCBlockData()\n");
 #endif
 	int		nResult = -1;
 	if ( !IsNCDocument(hDoc) )

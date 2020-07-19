@@ -9,10 +9,8 @@
 #include "DXFDoc.h"
 #include "Layer.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 //#define	_DEBUGDRAW_DXF			// 描画座標情報
 //#define	_DEBUGDRAW_DXF_EDGE_	// 端点描画
 #endif
@@ -118,9 +116,8 @@ CDXFdata::~CDXFdata()
 #ifdef _DEBUG
 void CDXFdata::DbgDump(void)
 {
-	CMagaDbg	dbg(DBG_MAGENTA);
 	for ( int i=0; i<m_nPoint; i++ ) {
-		dbg.printf("No.%d x=%.3f y=%.3f", i+1, m_pt[i].x, m_pt[i].y);
+		printf("No.%d x=%.3f y=%.3f\n", i+1, m_pt[i].x, m_pt[i].y);
 	}
 }
 #endif
@@ -149,36 +146,30 @@ CPen* CDXFdata::GetDrawPen(void) const
 
 void CDXFdata::SwapMakePt(int n)	// m_ptTun の入れ替え
 {
-#ifdef _DEBUGOLD
-	CMagaDbg	dbg("SwapMakePt()", DBG_CYAN);
-#endif
 	if ( m_nPoint > n+1 ) {	// 念のためﾁｪｯｸ
 #ifdef _DEBUGOLD
-		dbg.printf("calling ok");
+		printf("SwapMakePt() calling ok\n");
 #endif
 		swap(m_ptTun[n],  m_ptTun[n+1]);
 		swap(m_ptMake[n], m_ptMake[n+1]);
 	}
 #ifdef _DEBUGOLD
 	else
-		dbg.printf("Missing call! m_nPoint=%d n=%d", m_nPoint, n);
+		printf("SwapMakePt() Missing call! m_nPoint=%d n=%d\n", m_nPoint, n);
 #endif
 }
 
 void CDXFdata::SwapNativePt(void)	// 固有座標値の入れ替え
 {
-#ifdef _DEBUGOLD
-	CMagaDbg	dbg("SwapNativePoint()", DBG_CYAN);
-#endif
 	if ( m_nPoint > 1 ) {
 #ifdef _DEBUGOLD
-		dbg.printf("calling ok");
+		printf("SwapNativePoint() calling ok\n");
 #endif
 		swap(m_pt[0], m_pt[1]);
 	}
 #ifdef _DEBUGOLD
 	else
-		dbg.printf("Missing call! m_nPoint=%d", m_nPoint);
+		printf("SwapNativePoint() Missing call! m_nPoint=%d\n", m_nPoint);
 #endif
 }
 
@@ -260,8 +251,7 @@ CDXFpoint::CDXFpoint(CLayerData* pLayer, const CDXFpoint* pData, LPCDXFBLOCK lpB
 #ifdef _DEBUG
 void CDXFpoint::DbgDump(void)
 {
-	CMagaDbg	dbg(DBG_MAGENTA);
-	dbg.printf("POINT");
+	printf("[POINT]\n");
 	CDXFdata::DbgDump();
 }
 #endif
@@ -290,8 +280,7 @@ void CDXFpoint::SetMaxRect(void)
 	m_rcMax.BottomRight() = m_pt[0];
 	m_rcMax.NormalizeRect();
 #ifdef _DEBUG_MAXRECT
-	CMagaDbg	dbg("CDXFpoint::SetMaxRect()", DBG_RED);
-	dbg.printf("l=%.3f t=%.3f", m_rcMax.left, m_rcMax.top);
+	printf("CDXFpoint::SetMaxRect() l=%.3f t=%.3f\n", m_rcMax.left, m_rcMax.top);
 #endif
 }
 
@@ -308,8 +297,7 @@ void CDXFpoint::DrawTuning(float f)
 void CDXFpoint::Draw(CDC* pDC) const
 {
 #ifdef _DEBUGDRAW_DXF
-	CMagaDbg	dbg("CDXFpoint::Draw()", DBG_RED);
-	dbg.printStruct((LPRECT)&m_rcDraw, "m_rcDraw");
+	printf("CDXFpoint::Draw() (%d, %d)-(%d, %d)\n", m_rcDraw.left, m_rcDraw.top, m_rcDraw.right, m_rcDraw.bottom);
 #endif
 	CPoint	pt(m_rcDraw.CenterPoint());
 	pDC->MoveTo(m_rcDraw.right-1, pt.y);
@@ -326,8 +314,7 @@ float CDXFpoint::OrgTuning(BOOL bCalc/*=TRUE*/)
 	m_ptTun[0] = m_pt[0] - ms_ptOrg;
 	OrgTuningBase();
 #ifdef _DEBUG
-	CMagaDbg	dbg;
-	dbg.printf("OrgTuning Point cx=%f cy=%f", m_ptTun[0].x, m_ptTun[0].y);
+	printf("OrgTuning Point cx=%f cy=%f\n", m_ptTun[0].x, m_ptTun[0].y);
 #endif
 	return bCalc ? (*ms_pfnOrgDrillTuning)(this) : 0.0f;	// 基準軸にあわせた近接座標 : dummy
 }
@@ -435,8 +422,7 @@ CDXFline::CDXFline(CLayerData* pLayer, const CDXFline* pData, LPCDXFBLOCK lpBloc
 #ifdef _DEBUG
 void CDXFline::DbgDump(void)
 {
-	CMagaDbg	dbg(DBG_MAGENTA);
-	dbg.printf("LINE");
+	printf("[LINE]\n");
 	CDXFdata::DbgDump();
 }
 #endif
@@ -466,8 +452,7 @@ void CDXFline::SetMaxRect(void)
 	m_rcMax.BottomRight() = m_pt[1];
 	m_rcMax.NormalizeRect();
 #ifdef _DEBUG_MAXRECT
-	CMagaDbg	dbg("CDXFline::SetMaxRect()", DBG_RED);
-	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+	printf("CDXFline::SetMaxRect() l=%.3f t=%.3f r=%.3f b=%.3f\n",
 		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
@@ -481,8 +466,7 @@ void CDXFline::DrawTuning(float f)
 void CDXFline::Draw(CDC* pDC) const
 {
 #ifdef _DEBUGDRAW_DXF
-	CMagaDbg	dbg("CDXFline::Draw()", DBG_RED);
-	dbg.printf("pts.x=%d pts.y=%d pte.x=%d pte.y=%d",
+	printf("CDXFline::Draw() pts.x=%d pts.y=%d pte.x=%d pte.y=%d\n",
 		m_ptDrawS.x, m_ptDrawS.y, m_ptDrawE.x, m_ptDrawE.y);
 #endif
 	pDC->MoveTo(m_ptDrawS);
@@ -500,8 +484,7 @@ float CDXFline::OrgTuning(BOOL bCalc/*=TRUE*/)
 	m_ptTun[1] = m_pt[1] - ms_ptOrg;
 	OrgTuningBase();
 #ifdef _DEBUG
-	CMagaDbg	dbg;
-	dbg.printf("OrgTuning Line sx=%f sy=%f ex=%f ey=%f",
+	printf("OrgTuning Line sx=%f sy=%f ex=%f ey=%f\n",
 					m_ptTun[0].x, m_ptTun[0].y, m_ptTun[1].x, m_ptTun[1].y);
 #endif
 	return bCalc ? GetEdgeGap(ms_pData->GetEndCutterPoint()) : 0.0f;
@@ -829,10 +812,9 @@ CDXFcircle::CDXFcircle(CLayerData* pLayer, const CDXFcircle* pData, LPCDXFBLOCK 
 #ifdef _DEBUG
 void CDXFcircle::DbgDump(void)
 {
-	CMagaDbg	dbg(DBG_MAGENTA);
-	dbg.printf("CIRCLE");
+	printf("[CIRCLE]\n");
 	CDXFdata::DbgDump();
-	dbg.printf("r=%.3f cx=%.3f cy=%.3f %s", m_r, m_ct.x, m_ct.y,
+	printf("r=%.3f cx=%.3f cy=%.3f %s\n", m_r, m_ct.x, m_ct.y,
 		m_bRound ? "CCW" : "CW");
 }
 #endif
@@ -925,8 +907,7 @@ void CDXFcircle::SetMaxRect(void)
 	m_rcMax.BottomRight() = m_ct + m_r;
 	m_rcMax.NormalizeRect();
 #ifdef _DEBUG_MAXRECT
-	CMagaDbg	dbg("CDXFcircle::SetMaxRect()", DBG_RED);
-	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+	dbg.printf("CDXFcircle::SetMaxRect() l=%.3f t=%.3f r=%.3f b=%.3f\n",
 		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
@@ -945,8 +926,7 @@ void CDXFcircle::DrawTuning(const float f)
 void CDXFcircle::Draw(CDC* pDC) const
 {
 #ifdef _DEBUGDRAW_DXF
-	CMagaDbg	dbg("CDXFcircle::Draw()", DBG_RED);
-	dbg.printStruct((LPRECT)&m_rcDraw, "m_rcDraw");
+	printf("CDXFcircle::Draw() (%d, %d)-(%d, %d)\n", m_rcDraw.left, m_rcDraw.top, m_rcDraw.right, m_rcDraw.bottom);
 #endif
 	pDC->Ellipse(m_rcDraw);
 }
@@ -975,10 +955,9 @@ float CDXFcircle::OrgTuning(BOOL bCalc/*=TRUE*/)
 	m_bRoundFixed = FALSE;	// 方向指示の解除
 	OrgTuningBase();
 #ifdef _DEBUG
-	CMagaDbg	dbg;
-	dbg.printf("OrgTuning Circle s1=(%f, %f) s2=(%f, %f)", 
+	printf("OrgTuning Circle s1=(%f, %f) s2=(%f, %f)\n", 
 					m_ptTun[0].x, m_ptTun[0].y, m_ptTun[1].x, m_ptTun[1].y);
-	dbg.printf("                 s3=(%f, %f) s4=(%f, %f)", 
+	printf("                 s3=(%f, %f) s4=(%f, %f)\n", 
 					m_ptTun[2].x, m_ptTun[2].y, m_ptTun[3].x, m_ptTun[3].y);
 #endif
 	if ( GetMakeType() == DXFPOINTDATA )
@@ -1242,8 +1221,7 @@ void CDXFcircleEx::YRev(void)
 void CDXFcircleEx::Draw(CDC* pDC) const
 {
 #ifdef _DEBUGDRAW_DXF
-	CMagaDbg	dbg("CDXFcircleEx::Draw()", DBG_RED);
-	dbg.printStruct((LPRECT)&m_rcDraw, "m_rcDraw");
+	printf("CDXFcircleEx::Draw() (%d, %d)-(%d, %d)\n", m_rcDraw.left, m_rcDraw.top, m_rcDraw.right, m_rcDraw.bottom);
 #endif
 	if ( m_enType2 == DXFSTADATA ) {
 		// 加工開始位置を表す円
@@ -1299,9 +1277,8 @@ CDXFarc::CDXFarc(LPCDXFAARGV lpArc, DWORD dwFlags) :
 	m_pt[0] += m_ct;
 	m_pt[1] += m_ct;
 #ifdef _DEBUG
-	CMagaDbg	dbg("CDXFarc::CDXFarc()", DBG_RED);
-	dbg.printf("sx=%f sy=%f", m_pt[0].x, m_pt[0].y);
-	dbg.printf("ex=%f ey=%f", m_pt[1].x, m_pt[1].y);
+	printf("CDXFarc::CDXFarc() sx=%f sy=%f\n", m_pt[0].x, m_pt[0].y);
+	printf("                   ex=%f ey=%f\n", m_pt[1].x, m_pt[1].y);
 #endif
 	SetMaxRect();
 	SetRsign();
@@ -1361,10 +1338,9 @@ CDXFarc::CDXFarc(CLayerData* pLayer, const CDXFarc* pData, LPCDXFBLOCK lpBlock, 
 #ifdef _DEBUG
 void CDXFarc::DbgDump(void)
 {
-	CMagaDbg	dbg(DBG_MAGENTA);
-	dbg.printf("ARC");
+	printf("[ARC]\n");
 	CDXFdata::DbgDump();
-	dbg.printf("r=%.3f cx=%.3f cy=%.3f %s", m_r, m_ct.x, m_ct.y,
+	printf("r=%.3f cx=%.3f cy=%.3f %s\n", m_r, m_ct.x, m_ct.y,
 		m_bRound ? "CCW" : "CW");
 }
 #endif
@@ -1402,9 +1378,6 @@ void CDXFarc::Serialize(CArchive& ar)
 
 void CDXFarc::SetMaxRect(void)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CDXFarc::SetMaxRect()", DBG_RED);
-#endif
 	CPointF	pts, pte, ptInit[4];
 	float	sq, eq;
 
@@ -1465,7 +1438,7 @@ void CDXFarc::SetMaxRect(void)
 	m_rcMax.OffsetRect(m_ct);
 	m_rcMax.NormalizeRect();
 #ifdef _DEBUG
-	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+	printf("CDXFarc::SetMaxRect() l=%.3f t=%.3f r=%.3f b=%.3f\n",
 		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
@@ -1657,15 +1630,12 @@ void CDXFarc::DrawTuning(float f)
 void CDXFarc::Draw(CDC* pDC) const
 {
 	// CDC::Arc() を使うとどうしても表示がズレる．微細線分による近似
-#ifdef _DEBUGDRAW_DXF
-	CMagaDbg	dbg("CDXFarc::Draw()", DBG_RED);
-#endif
 	float	sq = m_sqDraw, st;
 
 	CPointF	pt(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
 	pDC->MoveTo(pt);
 #ifdef _DEBUGDRAW_DXF
-	dbg.printf("pts.x=%d pts.y=%d", (int)pt.x, (int)pt.y);
+	printf("CDXFarc::Draw() pts.x=%d pts.y=%d\n", (int)pt.x, (int)pt.y);
 #endif
 	if ( m_bRoundOrig ) {
 		st = (m_eqDraw - sq) / ARCCOUNT;
@@ -1684,7 +1654,7 @@ void CDXFarc::Draw(CDC* pDC) const
 	pt.SetPoint(m_rDraw * cos(m_eqDraw) + m_ptDraw.x, m_rDraw * sin(m_eqDraw) + m_ptDraw.y);
 	pDC->LineTo(pt);
 #ifdef _DEBUGDRAW_DXF
-	dbg.printf("pte.x=%d pte.y=%d", (int)pt.x, (int)pt.y);
+	printf("                pte.x=%d pte.y=%d\n", (int)pt.x, (int)pt.y);
 #endif
 #ifdef _DEBUGDRAW_DXF_EDGE_
 	pt.SetPoint(m_rDraw * cos(m_eqDraw), m_rDraw * sin(m_eqDraw));
@@ -1703,9 +1673,8 @@ float CDXFarc::OrgTuning(BOOL bCalc/*=TRUE*/)
 	// 以下 CDXFline と同じ
 #ifdef _DEBUG
 	float	dResult = CDXFline::OrgTuning(bCalc);
-	CMagaDbg	dbg;
-	dbg.printf("   Round=%s cx=%f cy=%f", m_bRound ? "CCW" : "CW", m_ctTun.x, m_ctTun.y);
-	dbg.printf("   sq=%f eq=%f", DEG(m_sq), DEG(m_eq));
+	printf("   Round=%s cx=%f cy=%f\n", m_bRound ? "CCW" : "CW", m_ctTun.x, m_ctTun.y);
+	printf("   sq=%f eq=%f\n", DEG(m_sq), DEG(m_eq));
 	return dResult;
 #else
 	return CDXFline::OrgTuning(bCalc);
@@ -1964,10 +1933,9 @@ CDXFellipse::CDXFellipse(CLayerData* pLayer, const CDXFellipse* pData, LPCDXFBLO
 #ifdef _DEBUG
 void CDXFellipse::DbgDump(void)
 {
-	CMagaDbg	dbg(DBG_MAGENTA);
-	dbg.printf("ELLIPSE");
+	printf("[ELLIPSE]\n");
 	CDXFdata::DbgDump();
-	dbg.printf("r=%.3f cx=%.3f cy=%.3f %s", m_r, m_ct.x, m_ct.y,
+	printf("r=%.3f cx=%.3f cy=%.3f %s\n", m_r, m_ct.x, m_ct.y,
 		m_bRound ? "CCW" : "CW");
 }
 #endif
@@ -2060,9 +2028,6 @@ void CDXFellipse::EllipseCalc(void)
 
 void CDXFellipse::SetMaxRect(void)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CDXFellipse::SetMaxRect()", DBG_RED);
-#endif
 	CPointF	pt, pts, pte, ptc[4];
 	float	sq, eq, dShort = m_dLongLength * m_dShort;
 
@@ -2146,7 +2111,7 @@ void CDXFellipse::SetMaxRect(void)
 	m_rcMax.NormalizeRect();
 	m_rcMax.OffsetRect(m_ct);
 #ifdef _DEBUG
-	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+	printf("CDXFellipse::SetMaxRect() l=%.3f t=%.3f r=%.3f b=%.3f\n",
 		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
@@ -2324,9 +2289,6 @@ void CDXFellipse::DrawTuning(float f)
 
 void CDXFellipse::Draw(CDC* pDC) const
 {
-#ifdef _DEBUGDRAW_DXF
-	CMagaDbg	dbg("CDXFellipse::Draw()", DBG_RED);
-#endif
 	float	sq = m_sqDraw, st,
 			dShort = m_dDrawLongLength * m_dShort;
 
@@ -2335,7 +2297,7 @@ void CDXFellipse::Draw(CDC* pDC) const
 				   pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y);
 	pDC->MoveTo(ptDraw);
 #ifdef _DEBUGDRAW_DXF
-	dbg.printf("pts.x=%d pts.y=%d", (int)pt.x, (int)pt.y);
+	printf("CDXFellipse::Draw() pts.x=%d pts.y=%d\n", (int)pt.x, (int)pt.y);
 #endif
 	if ( m_bRoundOrig ) {
 		st = (m_eqDraw - sq) / ARCCOUNT;
@@ -2360,7 +2322,7 @@ void CDXFellipse::Draw(CDC* pDC) const
 					pt.x * m_lqDrawSin + pt.y * m_lqDrawCos + m_ptDraw.y);
 	pDC->LineTo(ptDraw);
 #ifdef _DEBUGDRAW_DXF
-	dbg.printf("pte.x=%d pte.y=%d", (int)pt.x, (int)pt.y);
+	printf("                    pte.x=%d pte.y=%d\n", (int)pt.x, (int)pt.y);
 #endif
 }
 
@@ -2385,10 +2347,9 @@ float CDXFellipse::OrgTuning(BOOL bCalc/*=TRUE*/)
 		dResult = bCalc ? GetEdgeGap(ms_pData->GetEndCutterPoint()) : 0.0f;
 	}
 #ifdef _DEBUG
-	CMagaDbg	dbg;
-	dbg.printf("   lx=%f ly=%f LongLen=%f Short=%f",
+	printf("   lx=%f ly=%f LongLen=%f Short=%f\n",
 			m_ptLong.x, m_ptLong.y, m_dLongLength, m_dShort);
-	dbg.printf("   lq=%f", DEG(m_lq));
+	printf("   lq=%f\n", DEG(m_lq));
 #endif
 
 	return dResult;
@@ -2808,10 +2769,6 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv)
 
 BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CDXFpolyline::SetVertex()", DBG_RED);
-#endif
-
 	float	q = fabs(4 * atan(dBow));
 	float	d = _hypotf(lpArgv->c.x - pts.x, lpArgv->c.y - pts.y);
 	// ２点が等しい場合はｵﾌﾞｼﾞｪｸﾄを生成しない
@@ -2845,10 +2802,10 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 			eq2 += PI2;
 	}
 #ifdef _DEBUG
-	dbg.printf("pts x=%f y=%f pte x=%f y=%f", pts.x, pts.y, lpArgv->c.x, lpArgv->c.y);
-	dbg.printf("q=%f d=%f r=%f", DEG(q), d/2, r);
-	dbg.printf("ptc1 x=%f y=%f sq1=%f eq1=%f", pt1.x, pt1.y, DEG(sq1), DEG(eq1));
-	dbg.printf("ptc2 x=%f y=%f sq2=%f eq2=%f", pt2.x, pt2.y, DEG(sq2), DEG(eq2));
+	printf("CDXFpolyline::SetVertex() pts x=%f y=%f pte x=%f y=%f\n", pts.x, pts.y, lpArgv->c.x, lpArgv->c.y);
+	printf("q=%f d=%f r=%f\n", DEG(q), d/2, r);
+	printf("ptc1 x=%f y=%f sq1=%f eq1=%f\n", pt1.x, pt1.y, DEG(sq1), DEG(eq1));
+	printf("ptc2 x=%f y=%f sq2=%f eq2=%f\n", pt2.x, pt2.y, DEG(sq2), DEG(eq2));
 #endif
 
 	if ( dBow > 0 ) {	// 反時計回り指定
@@ -2862,7 +2819,7 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 			dxfArc.sq	= sq1;
 			dxfArc.eq	= eq1;
 #ifdef _DEBUG
-			dbg.printf("CCW pt1");
+			printf("CCW pt1\n");
 #endif
 		}
 		else {
@@ -2870,7 +2827,7 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 			dxfArc.sq	= sq2;
 			dxfArc.eq	= eq2;
 #ifdef _DEBUG
-			dbg.printf("CCW pt2");
+			printf("CCW pt2\n");
 #endif
 		}
 	}
@@ -2885,7 +2842,7 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 			dxfArc.sq	= sq1;
 			dxfArc.eq	= eq1;
 #ifdef _DEBUG
-			dbg.printf("CW pt1");
+			printf("CW pt1\n");
 #endif
 		}
 		else {
@@ -2893,7 +2850,7 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 			dxfArc.sq	= sq2;
 			dxfArc.eq	= eq2;
 #ifdef _DEBUG
-			dbg.printf("CW pt2");
+			printf("CW pt2\n");
 #endif
 		}
 	}
@@ -2914,9 +2871,6 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 
 void CDXFpolyline::EndSeq(void)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("CDXFpolyline::EndSeq()", DBG_RED);
-#endif
 	ASSERT( !m_ltVertex.IsEmpty() );
 	ASSERT( m_ltVertex.GetHead()->GetType() == DXFPOINTDATA );
 	// 最初と最後の点は必ずCDXFpoint
@@ -2945,9 +2899,9 @@ void CDXFpolyline::EndSeq(void)
 	END_FOREACH
 	m_nObjCnt[0]--;		// 始点が含まれるため「-1」で線の数
 #ifdef _DEBUG
-	dbg.printf("LineCnt=%d ArcCnt=%d Ellipse=%d",
+	printf("CDXFpolyline::EndSeq() LineCnt=%d ArcCnt=%d Ellipse=%d\n",
 			m_nObjCnt[0], m_nObjCnt[1], m_nObjCnt[2]);
-	dbg.printf("l=%.3f t=%.3f r=%.3f b=%.3f",
+	printf("l=%.3f t=%.3f r=%.3f b=%.3f\n",
 		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }
@@ -3043,9 +2997,6 @@ void CDXFpolyline::CheckPolylineIntersection(void)
 void CDXFpolyline::CheckPolylineIntersection_SubLoop
 	(const CPointF& pts1, const CPointF& pte1, POSITION pos1)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("PolyIn");
-#endif
 	int				nResult;
 	CDXFdata*		pData;
 	CDXFarc*		pArc;
@@ -3063,7 +3014,7 @@ void CDXFpolyline::CheckPolylineIntersection_SubLoop
 				ptResult = ::CalcIntersectionPoint_LL(pts1, pte1, *pts2, pte2);
 				if ( ptResult ) {
 #ifdef _DEBUG
-					dbg.printf("(%f, %f)-(%f, %f) .. (%f, %f)-(%f, %f)",
+					printf("PolyIn (%f, %f)-(%f, %f) .. (%f, %f)-(%f, %f)\n",
 						pts1.x, pts1.y, pte1.x, pte1.y, (*pts2).x, (*pts2).y, pte2.x, pte2.y);
 #endif
 					SetPolyFlag(DXFPOLY_INTERSEC);
@@ -3117,9 +3068,6 @@ void CDXFpolyline::CheckPolylineIntersection_SubLoop
 
 void CDXFpolyline::CheckPolylineIntersection_SubLoop(const CDXFarc* pData1, POSITION pos1)
 {
-#ifdef _DEBUG
-	CMagaDbg	dbg("PolyIn");
-#endif
 	int				nResult;
 	CDXFdata*		pData2;
 	CDXFarc*		pArc;
@@ -3163,7 +3111,7 @@ void CDXFpolyline::CheckPolylineIntersection_SubLoop(const CDXFarc* pData1, POSI
 			if ( nResult>0 && pte1!=pArc->GetNativePoint(0) && pts1!=pArc->GetNativePoint(1) &&
 							pData1->IsRangeAngle(pr1) && pArc->IsRangeAngle(pr1) ) {
 #ifdef _DEBUG
-				dbg.printf("c(%f, %f) q(%f, %f) r%f .. c(%f, %f) q(%f, %f) r%f",
+				printf("PolyIn c(%f, %f) q(%f, %f) r%f .. c(%f, %f) q(%f, %f) r%f\n",
 					ptc.x, ptc.y, DEG(pData1->GetStartAngle()), DEG(pData1->GetEndAngle()), r,
 					pArc->GetCenter().x, pArc->GetCenter().y, DEG(pArc->GetStartAngle()), DEG(pArc->GetEndAngle()), pArc->GetR());
 #endif
@@ -3243,7 +3191,6 @@ void CDXFpolyline::DrawTuning(float f)
 void CDXFpolyline::Draw(CDC* pDC) const
 {
 #ifdef _DEBUGDRAW_DXF
-	CMagaDbg	dbg("CDXFpolyline::Draw()", DBG_RED);
 	int		nDbgCnt;
 	CPoint	ptDbg;
 #endif
@@ -3263,7 +3210,7 @@ void CDXFpolyline::Draw(CDC* pDC) const
 		if ( pData->GetType() == DXFPOINTDATA ) {
 #ifdef _DEBUGDRAW_DXF
 			ptDbg = static_cast<CDXFpoint*>(pData)->GetDrawPoint();
-			dbg.printf("No.%03d: x=%d y=%d", nDbgCnt, ptDbg.x, ptDbg.y);
+			printf("CDXFpolyline::Draw() No.%03d: x=%d y=%d\n", nDbgCnt, ptDbg.x, ptDbg.y);
 #endif
 			pDC->LineTo( static_cast<CDXFpoint*>(pData)->GetDrawPoint() );
 		}
@@ -3512,8 +3459,7 @@ void CDXFtext::Serialize(CArchive& ar)
 void CDXFtext::Draw(CDC* pDC) const
 {
 #ifdef _DEBUGDRAW_DXF
-	CMagaDbg	dbg("CDXFtext::Draw()", DBG_RED);
-	dbg.printStruct((LPRECT)&m_ptDraw, "m_ptDraw");
+	printf("CDXFtext::Draw() (%d, %d)\n", m_ptDraw.x, m_ptDraw.y);
 #endif
 	pDC->TextOut(m_ptDraw.x, m_ptDraw.y, m_strValue);
 	pDC->Ellipse(&m_rcDraw);

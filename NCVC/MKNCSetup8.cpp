@@ -6,10 +6,8 @@
 #include "NCMakeMillOpt.h"
 #include "MKNCSetup.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CMKNCSetup8, CPropertyPage)

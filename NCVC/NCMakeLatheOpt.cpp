@@ -6,10 +6,8 @@
 #include "resource.h"
 #include "NCMakeLatheOpt.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 // intå^ñΩóﬂ
@@ -244,53 +242,51 @@ BOOL CNCMakeLatheOpt::GetDrillInfo(VLATHEDRILLINFO& v) const
 #ifdef _DEBUG
 void CNCMakeLatheOpt::DbgDump(void) const
 {
-	CMagaDbg	dbg("CNCMakeLatheOpt", DBG_RED);
-
-	dbg.printf("InitFile=%s", GetInitFile());
-	dbg.printf("----------");
-	dbg.printf("  Spindle      =%d", LTH_I_O_SPINDLE);
-	dbg.printf("  Feed         =%f", LTH_D_O_FEED);
-	dbg.printf("  XFeed        =%f", LTH_D_O_FEEDX);
-	dbg.printf("  Cut          =%f", LTH_D_O_CUT);
-	dbg.printf("  PullZ        =%f", LTH_D_O_PULLZ);
-	dbg.printf("  PullX        =%f", LTH_D_O_PULLX);
-	dbg.printf("  Margin       =%f", LTH_D_O_MARGIN);
-	dbg.printf("  Header       =%s", LTH_S_HEADER);
-	dbg.printf("  Footer       =%s", LTH_S_FOOTER);
-	dbg.printf("----------");
-	dbg.printf("  bLineAdd     =%d", LTH_F_LINEADD);
-	dbg.printf("  LineForm     =%s", LTH_S_LINEFORM);
-	dbg.printf("  nLineAdd     =%d", LTH_I_LINEADD);
-	dbg.printf("  EOB          =%s", LTH_S_EOB);
-	dbg.printf("  G90          =%d", LTH_I_G90);
-	dbg.printf("  Gclip        =%d", LTH_F_GCLIP);
-	dbg.printf("  DisSpindle   =%d", LTH_F_DISABLESPINDLE);
-	dbg.printf("----------");
-	dbg.printf("  Dot          =%d", LTH_I_DOT);
-	dbg.printf("  FDot         =%d", LTH_I_FDOT);
-	dbg.printf("  ZeroCut      =%d", LTH_F_ZEROCUT);
-	dbg.printf("  CircleCode   =%d", LTH_I_CIRCLECODE);
-	dbg.printf("  IJ           =%d", LTH_I_IJ);
-	dbg.printf("  CircleHalf   =%d", LTH_F_CIRCLEHALF);
-	dbg.printf("  ZeroCutIJ    =%d", LTH_F_ZEROCUT_IJ);
-	dbg.printf("  Ellipse      =%f", LTH_D_ELLIPSE);
-	dbg.printf("  EllipseFlg   =%d", LTH_F_ELLIPSE);
-	dbg.printf("----------");
-	dbg.printf("  Drill        =%s", LTH_S_DRILL);
-	dbg.printf("  DrillSpindle =%s", LTH_S_DRILLSPINDLE);
-	dbg.printf("  DrillFeed    =%s", LTH_S_DRILLFEED);
-	dbg.printf("  DrillZ       =%f", LTH_D_DRILLZ);
-	dbg.printf("  DrillQ       =%f", LTH_D_DRILLQ);
-	dbg.printf("  Dwell        =%f", LTH_D_DWELL);
-	dbg.printf("  Hole         =%f", LTH_D_HOLE);
-	dbg.printf("  Cycle        =%d", LTH_F_CYCLE);
-	dbg.printf("----------");
-	dbg.printf("  InSpindle    =%d", LTH_I_I_SPINDLE);
-	dbg.printf("  InFeed       =%f", LTH_D_I_FEED);
-	dbg.printf("  InFeedX      =%f", LTH_D_I_FEEDX);
-	dbg.printf("  InCut        =%f", LTH_D_I_CUT);
-	dbg.printf("  InPullZ      =%f", LTH_D_I_PULLZ);
-	dbg.printf("  InPullX      =%f", LTH_D_I_PULLX);
-	dbg.printf("  InMargin     =%f", LTH_D_I_MARGIN);
+	printf("CNCMakeLatheOpt InitFile=%s\n", LPCTSTR(GetInitFile()));
+	printf("----------\n");
+	printf("  Spindle      =%d\n", LTH_I_O_SPINDLE);
+	printf("  Feed         =%f\n", LTH_D_O_FEED);
+	printf("  XFeed        =%f\n", LTH_D_O_FEEDX);
+	printf("  Cut          =%f\n", LTH_D_O_CUT);
+	printf("  PullZ        =%f\n", LTH_D_O_PULLZ);
+	printf("  PullX        =%f\n", LTH_D_O_PULLX);
+	printf("  Margin       =%f\n", LTH_D_O_MARGIN);
+	printf("  Header       =%s\n", LPCTSTR(LTH_S_HEADER));
+	printf("  Footer       =%s\n", LPCTSTR(LTH_S_FOOTER));
+	printf("----------\n");
+	printf("  bLineAdd     =%d\n", LTH_F_LINEADD);
+	printf("  LineForm     =%s\n", LPCTSTR(LTH_S_LINEFORM));
+	printf("  nLineAdd     =%d\n", LTH_I_LINEADD);
+	printf("  EOB          =%s\n", LPCTSTR(LTH_S_EOB));
+	printf("  G90          =%d\n", LTH_I_G90);
+	printf("  Gclip        =%d\n", LTH_F_GCLIP);
+	printf("  DisSpindle   =%d\n", LTH_F_DISABLESPINDLE);
+	printf("----------\n");
+	printf("  Dot          =%d\n", LTH_I_DOT);
+	printf("  FDot         =%d\n", LTH_I_FDOT);
+	printf("  ZeroCut      =%d\n", LTH_F_ZEROCUT);
+	printf("  CircleCode   =%d\n", LTH_I_CIRCLECODE);
+	printf("  IJ           =%d\n", LTH_I_IJ);
+	printf("  CircleHalf   =%d\n", LTH_F_CIRCLEHALF);
+	printf("  ZeroCutIJ    =%d\n", LTH_F_ZEROCUT_IJ);
+	printf("  Ellipse      =%f\n", LTH_D_ELLIPSE);
+	printf("  EllipseFlg   =%d\n", LTH_F_ELLIPSE);
+	printf("----------\n");
+	printf("  Drill        =%s\n", LPCTSTR(LTH_S_DRILL));
+	printf("  DrillSpindle =%s\n", LPCTSTR(LTH_S_DRILLSPINDLE));
+	printf("  DrillFeed    =%s\n", LPCTSTR(LTH_S_DRILLFEED));
+	printf("  DrillZ       =%f\n", LTH_D_DRILLZ);
+	printf("  DrillQ       =%f\n", LTH_D_DRILLQ);
+	printf("  Dwell        =%f\n", LTH_D_DWELL);
+	printf("  Hole         =%f\n", LTH_D_HOLE);
+	printf("  Cycle        =%d\n", LTH_F_CYCLE);
+	printf("----------\n");
+	printf("  InSpindle    =%d\n", LTH_I_I_SPINDLE);
+	printf("  InFeed       =%f\n", LTH_D_I_FEED);
+	printf("  InFeedX      =%f\n", LTH_D_I_FEEDX);
+	printf("  InCut        =%f\n", LTH_D_I_CUT);
+	printf("  InPullZ      =%f\n", LTH_D_I_PULLZ);
+	printf("  InPullX      =%f\n", LTH_D_I_PULLX);
+	printf("  InMargin     =%f\n", LTH_D_I_MARGIN);
 }
 #endif

@@ -9,10 +9,8 @@
 #include "NCInfoTab.h"
 #include "NCInfoView.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 IMPLEMENT_DYNCREATE(CNCInfoTab, CTabViewBase)
@@ -161,7 +159,7 @@ void CNCInfoTab::OnDestroy()
 void CNCInfoTab::OnSetFocus(CWnd*) 
 {
 #ifdef _DEBUG
-	g_dbg.print("CNCInfoTab::OnSetFocus()");
+	print("CNCInfoTab::OnSetFocus()\n");
 #endif
 	int	nIndex = GetActivePage();
 	if ( nIndex >= 0 ) {
@@ -171,7 +169,7 @@ void CNCInfoTab::OnSetFocus(CWnd*)
 	}
 #ifdef _DEBUG
 	else {
-		g_dbg.print("not select active page");
+		print("not select active page\n");
 	}
 #endif
 }

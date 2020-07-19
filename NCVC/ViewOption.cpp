@@ -6,10 +6,8 @@
 #include "resource.h"
 #include "ViewOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -214,7 +212,7 @@ CViewOption::CViewOption()
 	for ( i=0; i<NCXYZ; i++ ) {
 		strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry+g_szNdelimiter[i]);
 		if ( !strResult.IsEmpty() )
-			m_dGuide[i] = (float)atof((LPCTSTR)strResult.Trim());
+			m_dGuide[i] = (float)atof(LPCTSTR(strResult.Trim()));
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_TRACESPEED));
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ ) {
@@ -225,7 +223,7 @@ CViewOption::CViewOption()
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_DEFAULTENDMILL));
 	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
 	if ( !strResult.IsEmpty() )
-		m_dDefaultEndmill = (float)fabs(atof((LPCTSTR)strResult.Trim())) / 2.0f;	// ÒÓØã‚Í”¼Œa
+		m_dDefaultEndmill = (float)fabs(atof(LPCTSTR(strResult.Trim()))) / 2.0f;	// ÒÓØã‚Í”¼Œa
 	m_nMillType = AfxGetApp()->GetProfileInt(strRegKey, g_szViewOptInt[VIEWINT_MILLTYPE], m_nMillType);
 	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, g_szViewOptInt[VIEWINT_FOURVIEW01], i);

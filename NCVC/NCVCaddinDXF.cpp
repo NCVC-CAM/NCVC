@@ -11,10 +11,8 @@
 #include "DXFDoc.h"
 #include "DXFOption.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -304,7 +302,7 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFoption(LPDXFOPTION pOpt)
 	const	CDXFOption*	pSrc = AfxGetNCVCApp()->GetDXFOption();
 
 	for ( i=0; i<DXFLAYERSIZE; i++ )
-		pOpt->pszLayer[i] = (LPCTSTR)(pSrc->GetReadLayer(i));
+		pOpt->pszLayer[i] = LPCTSTR(pSrc->GetReadLayer(i));
 	pOpt->nRegex	= 1;	// Ver0.15.00`³‹K•\Œ»‚Ì‚Ý
 	pOpt->nMatch	= 1;
 	pOpt->nAccept	= 0;
@@ -313,9 +311,9 @@ NCEXPORT BOOL WINAPI NCVC_GetDXFoption(LPDXFOPTION pOpt)
 	const	CStringList*	pList1 = pSrc->GetInitList(NCMAKEMILL);
 	const	CStringList*	pList2 = pSrc->GetInitList(NCMAKELAYER);
 	for( i=0, pos=pList1->GetHeadPosition(); pos && i<DXFMAXINITFILE; i++ )
-		pOpt->pszInitList[i] = (LPCTSTR)(pList1->GetNext(pos));
+		pOpt->pszInitList[i] = LPCTSTR(pList1->GetNext(pos));
 	for( i=0, pos=pList2->GetHeadPosition(); pos && i<DXFMAXINITFILE; i++ )
-		pOpt->pszLayerToInitList[i]	= (LPCTSTR)(pList2->GetNext(pos));
+		pOpt->pszLayerToInitList[i]	= LPCTSTR(pList2->GetNext(pos));
 
 	return TRUE;
 }

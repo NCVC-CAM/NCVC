@@ -5,10 +5,8 @@
 #include "stdafx.h"
 #include "FrameBuffer.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 //#define	_DEPTH_TEXTURE_
@@ -132,22 +130,22 @@ GLenum DbgGetGLError(char* szFile, UINT nLine)
 	if ( glError != GL_NO_ERROR ) {
 		switch(glError) {
 		case GL_INVALID_ENUM:
-			g_dbg.printf("GL_INVALID_ENUM File=%s, line=%d", szFile, nLine);
+			printf("GL_INVALID_ENUM File=%s, line=%d\n", szFile, nLine);
 			break;
 		case GL_INVALID_VALUE:
-			g_dbg.printf("GL_INVALID_VALUE File=%s, line=%d", szFile, nLine);
+			printf("GL_INVALID_VALUE File=%s, line=%d\n", szFile, nLine);
 			break;
 		case GL_INVALID_OPERATION:
-			g_dbg.printf("GL_INVALID_OPERATION File=%s, line=%d", szFile, nLine);
+			printf("GL_INVALID_OPERATION File=%s, line=%d\n", szFile, nLine);
 			break;
 		case GL_INVALID_FRAMEBUFFER_OPERATION:
-			g_dbg.printf("GL_INVALID_FRAMEBUFFER_OPERATION File=%s, line=%d", szFile, nLine);
+			printf("GL_INVALID_FRAMEBUFFER_OPERATION File=%s, line=%d\n", szFile, nLine);
 			break;
 		case GL_OUT_OF_MEMORY:
-			g_dbg.printf("GL_OUT_OF_MEMORY File=%s, line=%d", szFile, nLine);
+			printf("GL_OUT_OF_MEMORY File=%s, line=%d\n", szFile, nLine);
 			break;
 		default:
-			g_dbg.printf("GL_??? File=%s, line=%d", szFile, nLine);
+			printf("GL_??? File=%s, line=%d\n", szFile, nLine);
 			break;
 		}
 	}

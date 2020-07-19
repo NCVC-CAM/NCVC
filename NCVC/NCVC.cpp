@@ -32,7 +32,6 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #ifdef _DEBUG_FILEOPEN
 CTime	dbgtimeFileOpen;
 #endif
@@ -159,6 +158,9 @@ CNCVCApp::~CNCVCApp()
 // 唯一の CNCVCApp オブジェクトです。
 
 CNCVCApp theApp;
+#ifdef _DEBUG
+DbgConsole	theDebug;
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCVCApp オーバーライド
@@ -187,11 +189,11 @@ BOOL CNCVCApp::InitInstance()
 	// 設定が格納されているレジストリ キーを変更します。
 	SetRegistryKey(IDS_REGISTRY_KEY);
 #ifdef _DEBUG
-	g_dbg.printf("Processer Count=%d", g_nProcesser);
-	g_dbg.printf("RegistryKey=%s", m_pszRegistryKey);
-	g_dbg.printf(" NCDATA struct size=%d", sizeof(NCDATA));
-	g_dbg.printf("_NCDATA struct size=%d", sizeof(_NCDATA));
-	g_dbg.printf("CNCdata struct size=%d", sizeof(CNCdata));
+	printf("Processer Count=%d\n", g_nProcesser);
+	printf("RegistryKey=%s\n", m_pszRegistryKey);
+	printf(" NCDATA struct size=%d\n", sizeof(NCDATA));
+	printf("_NCDATA struct size=%d\n", sizeof(_NCDATA));
+	printf("CNCdata struct size=%d\n", sizeof(CNCdata));
 #endif
 	LoadStdProfileSettings(MAXMRULSTCNT);	// 標準の INI ファイルのオプションをロードします (MRU を含む)
 	InitialRecentViewList();	// MRUﾘｽﾄからCRecentViewInfo構築
@@ -351,7 +353,7 @@ void CNCVCApp::AddToRecentFileList(LPCTSTR lpszPathName)
 #ifdef _DEBUG_FILEOPEN
 CDocument* CNCVCApp::OpenDocumentFile(LPCTSTR lpszFileName)
 {
-	g_dbg.printf("CNCVCApp::OpenDocumentFile() Start");
+	printf("CNCVCApp::OpenDocumentFile() Start\n");
 	
 	CTime	t1 = CTime::GetCurrentTime();
 	CDocument* pDoc = __super::OpenDocumentFile(lpszFileName);
@@ -359,7 +361,7 @@ CDocument* CNCVCApp::OpenDocumentFile(LPCTSTR lpszFileName)
 
 	CTimeSpan ts = t2 - t1;
 	CString	strTime( ts.Format("%H:%M:%S") );
-	g_dbg.printf("CWinAppEx::OpenDocumentFile() End = %s", strTime);
+	printf("CWinAppEx::OpenDocumentFile() End = %s\n", LPCTSTR(strTime));
 	dbgtimeFileOpen = t2;
 
 	return pDoc;
@@ -372,7 +374,7 @@ CDocument* CNCVCApp::OpenDocumentFile(LPCTSTR lpszFileName)
 BOOL CNCVCApp::NCVCRegInit(void)
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("NCVCRegInit()\nStart");
+	printf("NCVCRegInit() Start\n");
 #endif
 	CString		strRegKey, strEntry;
 
@@ -671,29 +673,28 @@ BOOL CNCVCApp::NCVCAddinInit(int nShellCommand)
 {
 	extern	LPCTSTR	gg_szCat;	// ", "
 #ifdef _DEBUG_OLD
-	CMagaDbg	dbg("NCVCAddinInit()\nStart");
-	dbg.print("nShellCommand=", FALSE);
+	printf("NCVCAddinInit() nShellCommand=");
 	switch ( nShellCommand ) {
 	case CCommandLineInfo::FileNew:
-		dbg.print("FileNew");
+		printf("FileNew\n");
 		break;
 	case CCommandLineInfo::FileOpen:
-		dbg.print("FileOpen");
+		printf("FileOpen\n");
 		break;
 	case CCommandLineInfo::FilePrint:
-		dbg.print("FilePrint");
+		printf("FilePrint\n");
 		break;
 	case CCommandLineInfo::FilePrintTo:
-		dbg.print("FilePrintTo");
+		printf("FilePrintTo\n");
 		break;
 	case CCommandLineInfo::FileDDE:
-		dbg.print("FileDDE");
+		printf("FileDDE\n");
 		break;
 	case CCommandLineInfo::FileNothing:
-		dbg.print("FileNothing");
+		printf("FileNothing\n");
 		break;
 	default:
-		dbg.print("???");
+		printf("???\n");
 		break;
 	}
 #endif
@@ -740,17 +741,20 @@ BOOL CNCVCApp::NCVCAddinInit(int nShellCommand)
 			if ( fd.dwFileAttributes & dwFlags )
 				continue;
 #ifdef _DEBUG
-			g_dbg.printf("DLL File = %s", fd.cFileName);
+			printf("DLL File = %s\n", fd.cFileName);
 #endif
 			hLib = (HMODULE)::LoadLibrary(fd.cFileName);
-			DBGASSERT(hLib, "LoadLibrary() NULL!");	
-			if ( !hLib )
+			if ( !hLib ) {
+#ifdef _DEBUG
+				printf("LoadLibrary() NULL!\n");
+#endif
 				continue;
+			}
 			// 初期化関数のｱﾄﾞﾚｽ取得
 			pfnInitialize = (PFNNCVCINITIALIZE)::GetProcAddress(hLib, "NCVC_Initialize");
 			if ( !pfnInitialize ) {
 #ifdef _DEBUG
-				g_dbg.printf("GetProcAddress() NULL");
+				printf("GetProcAddress() NULL\n");
 				::NC_FormatMessage();	// GetLastError()
 #endif
 				::FreeLibrary(hLib);
@@ -760,7 +764,7 @@ BOOL CNCVCApp::NCVCAddinInit(int nShellCommand)
 			::ZeroMemory(&ncibuf, sizeof(NCVCINITIALIZE_BUF));
 			if ( !(*pfnInitialize)( (LPNCVCINITIALIZE)(&ncibuf) ) ) {
 #ifdef _DEBUG
-				g_dbg.printf("NC-Addin Initialize Faild");
+				printf("NC-Addin Initialize Faild\n");
 #endif
 				::FreeLibrary(hLib);
 				continue;
@@ -792,7 +796,7 @@ BOOL CNCVCApp::NCVCAddinInit(int nShellCommand)
 				continue;
 			}
 #ifdef _DEBUG
-			g_dbg.printf("DLL Type = 0x%04x", nci.dwType);
+			printf("DLL Type = 0x%04x\n", nci.dwType);
 #endif
 			// ｱﾄﾞｲﾝ登録
 			pAddin = new CNCVCaddinIF(hLib, &nci, strDLLPath+fd.cFileName);
@@ -824,7 +828,7 @@ BOOL CNCVCApp::NCVCAddinMenu(void)
 	static	LPCTSTR	lpszAddin = "ｱﾄﾞｲﾝ(&A)";
 	extern	const	DWORD	g_dwAddinType[];	// NCVCaddinIF.cpp
 #ifdef _DEBUG
-	CMagaDbg	dbg("NCVCAddinMenu()\nStart");
+	printf("NCVCAddinMenu() Start\n");
 #endif
 	int				i, j;
 	CNCVCaddinIF*	pAddin;
@@ -979,7 +983,7 @@ CDocument* CNCVCApp::GetAlreadyDocument(DOCTYPE enType, LPCTSTR strPathName)
 	for ( POSITION pos=m_pDocTemplate[enType]->GetFirstDocPosition(); pos; ) {
 		pDoc = m_pDocTemplate[enType]->GetNextDoc(pos);
 #ifdef _DEBUG
-		g_dbg.printf("GetAlreadyDocument() DocPathName=%s", pDoc->GetPathName());
+		printf("GetAlreadyDocument() DocPathName=%s\n", LPCTSTR(pDoc->GetPathName()));
 #endif
 		if ( !strPathName || pDoc->GetPathName().CompareNoCase(strPathName)==0 )
 			return pDoc;
@@ -1132,7 +1136,7 @@ const CExecOption* CNCVCApp::GetLookupExecID(WORD wID)
 BOOL CNCVCApp::DoPromptFileNameEx(CStringArray& aryFile, int nInitFilter/*=-1*/)
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCVCApp::DoPromptFileNameEx() Start");
+	printf("CNCVCApp::DoPromptFileNameEx() Start\n");
 #endif
 	int			i, nExt;
 	CString		strAllFilter,
@@ -1196,7 +1200,7 @@ BOOL CNCVCApp::DoPromptFileNameEx(CStringArray& aryFile, int nInitFilter/*=-1*/)
 void CNCVCApp::OnFileOpen() 
 {
 #ifdef _DEBUG_FILEOPEN
-	g_dbg.printf("CNCVCApp::OnFileOpen() Start");
+	printf("CNCVCApp::OnFileOpen() Start\n");
 #endif
 	// MRU最新ﾘｽﾄのﾊﾟｽを有効にする
 	CString			newFile(GetRecentFileName());
@@ -1893,7 +1897,7 @@ CDocTemplate::Confidence
 #ifdef _DEBUG_FILEOPEN
 CDocument* CNCVCDocTemplate::OpenDocumentFile(LPCTSTR lpszPathName, BOOL bMakeVisible/*=TRUE*/)
 {
-	g_dbg.printf("CNCVCDocTemplate::OpenDocumentFile() Start");
+	printf("CNCVCDocTemplate::OpenDocumentFile() Start\n");
 
 	CTime	t1 = dbgtimeFileOpen = CTime::GetCurrentTime();
 	CDocument* pDoc = __super::OpenDocumentFile(lpszPathName, bMakeVisible);
@@ -1901,7 +1905,7 @@ CDocument* CNCVCDocTemplate::OpenDocumentFile(LPCTSTR lpszPathName, BOOL bMakeVi
 
 	CTimeSpan ts = t2 - t1;
 	CString	strTime( ts.Format("%H:%M:%S") );
-	g_dbg.printf("CMultiDocTemplate::OpenDocumentFile() = %s", strTime);
+	printf("CMultiDocTemplate::OpenDocumentFile() = %s\n", LPCTSTR(strTime));
 
 	return pDoc;
 }

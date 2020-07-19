@@ -8,14 +8,12 @@
 #include "NCMakeMillOpt.h"
 #include "NCMakeLatheOpt.h"
 
-using std::string;
-using namespace boost;
-
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
+
+using std::string;
+using namespace boost;
 
 /////////////////////////////////////////////////////////////////////////////
 //	boost::proterty_tree 使えそうやけど、値の横にコメント入れられないので却下
@@ -79,7 +77,7 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 	CStringKeyIndex	stSOrder(m_MakeOpt[3].nOrderCnt, m_MakeOpt[3].pszOrder);
 
 #ifdef _DEBUGOLD
-	CMagaDbg	dbg("CNCMakeOption::ReadMakeOption()\nStart", DBG_GREEN);
+	printf("CNCMakeOption::ReadMakeOption() Start\n");
 #endif
 
 	// まずﾃﾞﾌｫﾙﾄで初期化
@@ -119,7 +117,7 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 			str = strBuf;
 			tok.assign(str);
 #ifdef _DEBUGOLD
-			dbg.printf("strBuf   = %s", strBuf);
+			printf("strBuf   = %s\n", LPCTSTR(strBuf));
 #endif
 			// 命令と値に分割
 			it = tok.begin();
@@ -128,8 +126,8 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 			if ( strOrder.empty() )
 				continue;
 #ifdef _DEBUGOLD
-			dbg.printf("strOrder  =%s", strOrder.c_str());
-			dbg.printf("strResult =%s", strResult.c_str());
+			printf("strOrder  =%s\n", strOrder.c_str());
+			printf("strResult =%s\n", strResult.c_str());
 #endif
 			// 命令検査(int型)
 			n = stNOrder.GetIndex(strOrder.c_str());
@@ -185,7 +183,7 @@ BOOL CNCMakeOption::SaveMakeOption(LPCTSTR lpszInitFile)
 	CString	strBuf, strResult;
 
 #ifdef _DEBUG
-	CMagaDbg	dbg("CNCMakeOption::SaveMakeOption()\nStart", DBG_GREEN);
+	printf("CNCMakeOption::SaveMakeOption() Start\n");
 #endif
 
 	// 新規保存の場合

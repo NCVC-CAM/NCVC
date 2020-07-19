@@ -5,11 +5,6 @@
 #include "stdafx.h"
 #include <time.h>
 
-#include "MagaDbgMac.h"
-#ifdef _DEBUG
-CMagaDbg	g_dbg;
-#endif
-
 // NCVCÚ¼Þ½ÄØ·°
 extern	LPCTSTR	gg_szRegKey = "Software\\MNCT-S\\NCVC\\";
 
@@ -170,7 +165,7 @@ void NC_FormatMessage(void)
 	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
 		NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(LPTSTR)&lpMsgBuf, 0, NULL);
-	g_dbg.printf("ErrorMsg = %s", lpMsgBuf);
+	printf("ErrorMsg = %s\n", (char*)lpMsgBuf);
 	LocalFree( lpMsgBuf );
 }
 #endif

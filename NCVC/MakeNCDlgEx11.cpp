@@ -10,12 +10,10 @@
 #include "MakeNCDlgEx.h"
 #include "MakeNCDlgEx11.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-extern	CMagaDbg	g_dbg;
 #endif
 
 #define	GetNCMakeParent()	static_cast<CMakeNCDlgEx *>(GetParent())

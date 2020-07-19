@@ -5,10 +5,8 @@
 #include "resource.h"
 #include "CustomControl.h"
 
-#include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
-extern	CMagaDbg	g_dbg;
 #endif
 
 using namespace boost;
@@ -55,7 +53,7 @@ CIntEdit::operator int()
 	ASSERT(::IsWindow(m_hWnd));
 	CString	strNumber;
 	GetWindowText(strNumber);
-	return atoi((LPCTSTR)strNumber.Trim());
+	return atoi(LPCTSTR(strNumber.Trim()));
 }
 
 ///////////////////////////////////
@@ -107,7 +105,7 @@ CFloatEdit::operator float()
 	ASSERT(::IsWindow(m_hWnd));
 	CString	strNumber;
 	GetWindowText(strNumber);
-	return (float)atof((LPCTSTR)strNumber.Trim());
+	return (float)atof(LPCTSTR(strNumber.Trim()));
 }
 
 ///////////////////////////////////
