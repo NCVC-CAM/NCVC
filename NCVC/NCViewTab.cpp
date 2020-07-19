@@ -376,7 +376,7 @@ void CNCViewTab::OnTraceRun()
 		GetDocument()->UpdateAllViews(this, UAV_STARTSTOPTRACE);
 		// through
 	case ID_NCVIEW_TRACE_PAUSE:
-		m_evTrace.PulseEvent();	// ﾌﾗｸﾞ状態そのままでﾜﾝｽﾃｯﾌﾟ実行
+		m_evTrace.SetEvent();	// ﾌﾗｸﾞ状態そのままでﾜﾝｽﾃｯﾌﾟ実行
 		break;
 	}
 }
@@ -414,7 +414,7 @@ void CNCViewTab::OnTracePause()
 	case ID_NCVIEW_TRACE_PAUSE:
 		m_bTracePause = FALSE;
 		GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_RUN);
-		m_evTrace.PulseEvent();
+		m_evTrace.SetEvent();
 		break;
 	}
 }
@@ -478,7 +478,7 @@ void CNCViewTab::OnTraceCursor(UINT nID)
 
 	if ( nID == ID_NCVIEW_TRACE_CURSOR2 ) {
 		if ( m_bTraceContinue )
-			m_evTrace.PulseEvent();		// ﾄﾚｰｽ開始
+			m_evTrace.SetEvent();			// ﾄﾚｰｽ開始
 		GetDocument()->ResetTraceStart();	// 次の再描画に備える
 	}
 }
@@ -554,6 +554,7 @@ BOOL CTraceThread::InitInstance()
 #ifdef _DEBUG
 		printf("m_evTrace Lock() return\n");
 #endif
+		m_pParent->m_evTrace.ResetEvent();
 		if ( !m_pParent->m_bTraceContinue )
 			break;
 
