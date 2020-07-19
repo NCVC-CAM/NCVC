@@ -32,6 +32,8 @@ protected:
 	virtual BOOL OnInitDialog();
 
 	afx_msg void OnSelchangeViewMode();
+	afx_msg void OnAllON();
+	afx_msg void OnAllOFF();
 
 	DECLARE_MESSAGE_MAP()
 };

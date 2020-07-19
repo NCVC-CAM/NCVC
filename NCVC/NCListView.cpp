@@ -23,7 +23,7 @@ using namespace boost;
 
 // ²Ò°¼Þ•\Ž¦²ÝÃÞ¯¸½
 enum {
-	LISTIMG_NORMAL=0, LISTIMG_BREAK, LISTIMG_ERROR, LISTIMG_FOLDER,
+	LISTIMG_NORMAL=0, LISTIMG_BREAK, LISTIMG_ERROR, LISTIMG_FOLDER
 };
 
 /////////////////////////////////////////////////////////////////////////////

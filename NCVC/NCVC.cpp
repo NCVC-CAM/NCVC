@@ -28,6 +28,7 @@
 #include "NCVCaddinIF.h"
 #include "AddinDlg.h"
 #include "SplashWnd.h"
+#include "OBSdlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -93,8 +94,10 @@ BEGIN_MESSAGE_MAP(CNCVCApp, CWinAppEx)
 	ON_COMMAND(ID_OPTION_VIEW_INPORT, &CNCVCApp::OnViewSetupInport)
 	ON_COMMAND(ID_OPTION_VIEW_EXPORT, &CNCVCApp::OnViewSetupExport)
 	ON_COMMAND(ID_WINDOW_ALLCLOSE, &CNCVCApp::OnWindowAllClose)
+	ON_COMMAND(ID_NCVIEW_OBS, &CNCVCApp::OnViewOBS)
 	ON_UPDATE_COMMAND_UI(ID_OPTION_EDITNC, &CNCVCApp::OnUpdateOptionEdit)
 	ON_UPDATE_COMMAND_UI(ID_OPTION_EDITMC, &CNCVCApp::OnUpdateOptionEdit)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_OBS, &CNCVCApp::OnUpdateViewOBS)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1460,6 +1463,23 @@ void CNCVCApp::OnOptionEditMC()
 	CString	strFileName(m_pOptMC->GetMCHeadFileName());
 	if ( ::NCVC_FileDlgCommon(IDS_OPTION_MC, IDS_MC_FILTER, FALSE, strFileName) == IDOK )
 		AfxGetNCVCMainWnd()->CreateOutsideProcess(m_liExec.GetHead()->GetFileName(), "\""+strFileName+"\"");
+}
+
+void CNCVCApp::OnUpdateViewOBS(CCmdUI* pCmdUI)
+{
+	pCmdUI->SetCheck( AfxGetNCVCMainWnd()->GetModelessDlg(MLD_NCOBS) != NULL );
+}
+
+void CNCVCApp::OnViewOBS()
+{
+	if ( AfxGetNCVCMainWnd()->GetModelessDlg(MLD_NCOBS) ) {
+		// CNCJumpDlg::OnCancel() ‚ÌŠÔÚŒÄ‚Ño‚µ
+		AfxGetNCVCMainWnd()->GetModelessDlg(MLD_NCOBS)->PostMessage(WM_CLOSE);
+		return;
+	}
+	COBSdlg*	pDlg = new COBSdlg;
+	pDlg->Create(IDD_OBS);
+	AfxGetNCVCMainWnd()->SetModelessDlg(MLD_NCOBS, pDlg);
 }
 
 void CNCVCApp::OnOptionDXF() 

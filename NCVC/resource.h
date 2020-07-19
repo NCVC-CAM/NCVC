@@ -360,6 +360,9 @@
 #define IDC_NCVIEW_FIND_STR             2561
 #define IDC_NCVIEW_FIND_UP              2562
 #define IDC_NCVIEW_FIND_DOWN            2563
+#define IDD_OBS                         2570
+#define IDC_OBS_WRITE                   2571
+#define IDC_OBS_MCFILE                  2572
 #define IDD_DXFVIEW_LAYER               2600
 #define IDC_DXFVIEW_LAYER               2601
 #define IDD_DXFEDIT_ORG                 2700
@@ -379,6 +382,7 @@
 #define ID_NCVIEW_WORKRECT              3002
 #define ID_NCVIEW_ALLFIT                3003
 #define ID_NCVIEW_JUMP                  3005
+#define ID_NCVIEW_OBS                   3006
 #define ID_NCVIEW_TRACE_RUN             3011
 #define ID_NCVIEW_TRACE_PAUSE           3012
 #define ID_NCVIEW_TRACE_STOP            3013
@@ -460,6 +464,9 @@
 #define IDC_MCST5_WIREDEPTH             3703
 #define IDC_MCST5_LABEL1                3704
 #define IDC_MCST5_LABEL2                3705
+#define IDC_MCST5_ALLON                 3706
+#define IDC_MCST5_ALLON2                3707
+#define IDC_MCST5_ALLOFF                3707
 #define IDC_MCST5_OBS0                  3710
 #define IDC_MCST5_OBS1                  3711
 #define IDC_MCST5_OBS2                  3712
@@ -680,6 +687,7 @@
 #define IDS_REGKEY_WINDOW_WORKDLG       10052
 #define IDS_REGKEY_WINDOW_LAYERDLG      10053
 #define IDS_REGKEY_WINDOW_THUMBNAILDLG  10054
+#define IDS_REGKEY_WINDOW_OBSDLG        10055
 #define IDS_REGKEY_WINDOW_TOOLBAR       10059
 #define IDS_REG_COMPORT                 10100
 #define IDS_REG_COMFORM                 10101
@@ -887,9 +895,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        200
-#define _APS_NEXT_COMMAND_VALUE         32822
-#define _APS_NEXT_CONTROL_VALUE         1064
+#define _APS_NEXT_RESOURCE_VALUE        204
+#define _APS_NEXT_COMMAND_VALUE         32823
+#define _APS_NEXT_CONTROL_VALUE         1067
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

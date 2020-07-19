@@ -41,7 +41,7 @@ enum {		// BOOL型
 	MC_FLG_OBS8,
 	MC_FLG_OBS9,
 	MC_FLG_L0CYCLE,		// 固定ｻｲｸﾙのL0指定
-		MC_FLG_NUMS
+		MC_FLG_NUMS		// [11]
 };
 enum {		// ﾏｸﾛ関連(CString型)
 	MCMACROCODE = 0,	// 呼び出しｺｰﾄﾞ
@@ -116,6 +116,7 @@ friend	class	CMCSetup2;
 friend	class	CMCSetup3;
 friend	class	CMCSetup4;
 friend	class	CMCSetup5;
+friend	class	COBSdlg;
 
 	CStringList	m_strMCList;	// 機械情報ﾌｧｲﾙ履歴
 

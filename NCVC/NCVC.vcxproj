@@ -498,6 +498,7 @@
     <ClCompile Include="NCWorkDlg.cpp" />
     <ClCompile Include="NCWorkDlg1.cpp" />
     <ClCompile Include="NCWorkDlg2.cpp" />
+    <ClCompile Include="OBSdlg.cpp" />
     <ClCompile Include="ReadDXF.cpp" />
     <ClCompile Include="ShapePropDlg.cpp" />
     <ClCompile Include="SplashWnd.cpp" />
@@ -633,6 +634,7 @@
     <ClInclude Include="NCWorkDlg.h" />
     <ClInclude Include="NCWorkDlg1.h" />
     <ClInclude Include="NCWorkDlg2.h" />
+    <ClInclude Include="OBSdlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ShapePropDlg.h" />
     <ClInclude Include="SplashWnd.h" />

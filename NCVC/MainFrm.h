@@ -34,8 +34,9 @@ protected:
 // NCView NC╨╟дч┬з⌠╝, NCView э╟╦▀И▄`юч╡╠ш╦ч, DXFView з╡т∙\▌╕░ь┌Х▒ж┌╕юч╡╠ш╦ч
 // NCView ▄÷█У
 enum	EN_MLD	{
-	MLD_NCJUMP=0, MLD_NCWORK, MLD_DXFLAYER, MLD_NCFIND,
-		MLD_NUMS	// [4]
+	MLD_NCJUMP=0, MLD_NCWORK, MLD_NCFIND, MLD_NCOBS,
+	MLD_DXFLAYER,
+		MLD_NUMS	// [5]
 };
 
 // б╟ыйч╟

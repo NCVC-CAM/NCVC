@@ -1280,12 +1280,17 @@ int CMachineToolBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CMachineToolBar::OnSelchangeMC()
 {
 #ifdef _DEBUG
-	CMagaDbg	dbg("CMachineToolBar::OnSelchangeMC\nStart");
+	CMagaDbg	dbg("CMachineToolBar::OnSelchangeMC()\nStart");
 #endif
 	int	nIndex = m_ctMachine.GetCurSel();
 	if ( nIndex >= 0 ) {
 		// ‹@ŠBî•ñÌ§²Ù‚Ì“Ç‚Ýž‚Ý
-		if ( !AfxGetNCVCApp()->ChangeMachine( nIndex ) )
+		if ( AfxGetNCVCApp()->ChangeMachine(nIndex) ) {
+			// µÌß¼®ÅÙÌÞÛ¯¸½·¯ÌßXV
+			if ( AfxGetNCVCMainWnd()->GetModelessDlg(MLD_NCOBS) )
+				AfxGetNCVCMainWnd()->GetModelessDlg(MLD_NCOBS)->PostMessage(WM_USERFILECHANGENOTIFY);
+		}
+		else
 			m_ctMachine.SetCurSel( m_ctMachine.GetCount() > 1 ? 0 : -1 );
 	}
 
@@ -1295,6 +1300,9 @@ void CMachineToolBar::OnSelchangeMC()
 
 void CMachineToolBar::ChangeMachine(void)
 {
+#ifdef _DEBUG
+	CMagaDbg	dbg("CMachineToolBar::ChangeMachine()\nStart");
+#endif
 	// ºÝÎÞÎÞ¯¸½‚É‹@ŠBî•ñ‚Ì—š—ð‚ð’Ç‰Á
 	AfxGetNCVCApp()->GetMCOption()->AddMCHistory_ComboBox(m_ctMachine);
 }

@@ -14,6 +14,8 @@ extern	CMagaDbg	g_dbg;
 
 BEGIN_MESSAGE_MAP(CMCSetup5, CPropertyPage)
 	ON_CBN_SELCHANGE(IDC_MCST5_VIEWMODE, &CMCSetup5::OnSelchangeViewMode)
+	ON_BN_CLICKED(IDC_MCST5_ALLON, &CMCSetup5::OnAllON)
+	ON_BN_CLICKED(IDC_MCST5_ALLOFF, &CMCSetup5::OnAllOFF)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -40,16 +42,8 @@ void CMCSetup5::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MCST5_L0CYCLE, m_ctL0Cycle);
 	DDX_Text(pDX, IDC_MCST5_AUTOBREAK, m_strAutoBreak);
 	DDX_Check(pDX, IDC_MCST5_L0CYCLE, m_bL0Cycle);
-	DDX_Check(pDX, IDC_MCST5_OBS0, m_bOBS[0]);
-	DDX_Check(pDX, IDC_MCST5_OBS1, m_bOBS[1]);
-	DDX_Check(pDX, IDC_MCST5_OBS2, m_bOBS[2]);
-	DDX_Check(pDX, IDC_MCST5_OBS3, m_bOBS[3]);
-	DDX_Check(pDX, IDC_MCST5_OBS4, m_bOBS[4]);
-	DDX_Check(pDX, IDC_MCST5_OBS5, m_bOBS[5]);
-	DDX_Check(pDX, IDC_MCST5_OBS6, m_bOBS[6]);
-	DDX_Check(pDX, IDC_MCST5_OBS7, m_bOBS[7]);
-	DDX_Check(pDX, IDC_MCST5_OBS8, m_bOBS[8]);
-	DDX_Check(pDX, IDC_MCST5_OBS9, m_bOBS[9]);
+	for ( int i=0; i<SIZEOF(m_bOBS); i++ )
+		DDX_Check(pDX, IDC_MCST5_OBS0+i, m_bOBS[i]);
 }
 
 void CMCSetup5::EnableControl_ViewMode(void)
@@ -120,4 +114,18 @@ void CMCSetup5::OnSelchangeViewMode()
 {
 	UpdateData();
 	EnableControl_ViewMode();
+}
+
+void CMCSetup5::OnAllON()
+{
+	for ( int i=0; i<SIZEOF(m_bOBS); i++ )
+		m_bOBS[i] = TRUE;
+	UpdateData(FALSE);
+}
+
+void CMCSetup5::OnAllOFF()
+{
+	for ( int i=0; i<SIZEOF(m_bOBS); i++ )
+		m_bOBS[i] = FALSE;
+	UpdateData(FALSE);
 }

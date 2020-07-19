@@ -10,9 +10,9 @@ public:
 // ダイアログ データ
 	enum { IDD = IDD_NCVIEW_FIND };
 	CEdit m_ctStrFind;
-	CButton m_ctFind;
-	CButton m_ctFindUp;
-	CButton m_ctFindDown;
+	CButton m_ctFind,
+			m_ctFindUp,
+			m_ctFindDown;
 	int m_nUpDown;
 	CString m_strFind, m_strFindOK;
 
