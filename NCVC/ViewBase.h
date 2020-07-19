@@ -23,6 +23,8 @@ class CViewBase : public CView
 
 protected:
 	CViewBase();
+	DECLARE_DYNAMIC(CViewBase)
+
 	CPoint		m_ptMouse,		// ﾏｳｽが押されたﾃﾞﾊﾞｲｽ座標
 				m_ptMovOrg;		// Rﾏｳｽが押された論理座標(移動基点)
 	CRect		m_rcMagnify;	// 拡大矩形(純粋な論理座標)

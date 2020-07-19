@@ -13,6 +13,8 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
+IMPLEMENT_DYNAMIC(CViewBase, CView)
+
 BEGIN_MESSAGE_MAP(CViewBase, CView)
 	ON_WM_CREATE()
 	ON_WM_LBUTTONDOWN()

@@ -92,11 +92,9 @@ static	LPCTSTR	g_szOldOrder[] = {
 
 CMCOption::CMCOption()
 {
-//	ASSERT( MC_INT_NUMS == SIZEOF(g_szNOrder) );	// SIZEOF(g_szNOrder)+MODALGROUP+NCXYZ-2
 	ASSERT( MC_INT_NUMS == SIZEOF(g_dfNOrder) );
-//	ASSERT( MC_DBL_NUMS == SIZEOF(g_szDOrder) );	// SIZEOF(g_szDOrder)+NCXYZ-1
 	ASSERT( MC_DBL_NUMS == SIZEOF(g_dfDOrder) );
-	ASSERT( MC_FLG_NUMS == SIZEOF(g_szBOrder) );
+	ASSERT( MC_FLG_NUMS == SIZEOF(g_dfBOrder) );
 	ASSERT( MC_FLG_NUMS == SIZEOF(g_dfBOrder) );
 
 	CString	strRegKey, strEntry, strResult, strFmt;

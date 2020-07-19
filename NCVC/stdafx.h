@@ -4,11 +4,11 @@
 
 #pragma once
 
-#define	NO_WARN_MBCS_MFC_DEPRECATION 1		// VS2015Å`
-#define	_BIND_TO_CURRENT_VCLIBS_VERSION	1
+#define	NO_WARN_MBCS_MFC_DEPRECATION		// VS2015Å`
+#define	_BIND_TO_CURRENT_VCLIBS_VERSION
 
 #ifndef _SECURE_ATL
-#define _SECURE_ATL 1
+#define _SECURE_ATL
 #endif
 /*
 #ifndef VC_EXTRALEAN
@@ -206,7 +206,7 @@ inline void DisableXpStyle(HWND hWnd)
 	if ( (hLib=::LoadLibrary(_T("UxTheme.dll"))) != NULL ) {
 		if ( (pProc=(pFuncSetWindowTheme)::GetProcAddress(hLib, _T("SetWindowTheme"))) != NULL ) {
 			// SetWindowTheme() ÇãÛÇÃï∂éöóÒÇ≈åƒÇ—èoÇ∑Ç∆Àﬁºﬁ≠±ŸΩ¿≤Ÿâèú
-			(pProc)(hWnd, (L" "), (L" "));
+			(pProc)(hWnd, L"", L"");
 		}
 		::FreeLibrary(hLib);
 	}

@@ -738,7 +738,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.81",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 3.81a",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2019 MNCT K.Magara",IDC_STATIC,86,182,143,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1721,13 +1721,14 @@ BEGIN
     PUSHBUTTON      "切削面",IDC_VIEWSETUP5_BT_CUT,109,19,46,16
     CONTROL         "ソリッド描画(&S)",IDC_VIEWSETUP5_SOLIDVIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,40,134,10
     LTEXT           "（次回NCｺｰﾄﾞを開くところから有効です）",IDC_STATIC,13,55,142,8
-    CONTROL         "開始時ﾜｲﾔｰﾊﾟｽも表示(&W)",IDC_VIEWSETUP5_G00VIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,75,110,10
-    CONTROL         "旋盤ﾓｰﾄﾞで最初に断面図(&L)",IDC_VIEWSETUP5_LATHESLIT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,95,110,10
-    CONTROL         "ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ(&R)",IDC_VIEWSETUP5_DRAGRENDER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,115,110,10
-    CONTROL         "ﾃｸｽﾁｬ画像(&T)",IDC_VIEWSETUP5_TEXTURE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,135,58,10
-    PUSHBUTTON      "参照...",IDC_VIEWSETUP5_TEXTUREFIND,90,133,35,14
-    EDITTEXT        IDC_VIEWSETUP5_TEXTUREFILE,23,155,130,12,ES_AUTOHSCROLL
-    GROUPBOX        "OpenGL表示属性",IDC_STATIC,7,7,157,170,WS_GROUP
+    CONTROL         "&FrameBufferObjectを使用",IDC_VIEWSETUP5_FBO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,70,110,10
+    CONTROL         "開始時ﾜｲﾔｰﾊﾟｽも表示(&W)",IDC_VIEWSETUP5_G00VIEW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,88,110,10
+    CONTROL         "旋盤ﾓｰﾄﾞで最初に断面図(&L)",IDC_VIEWSETUP5_LATHESLIT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,106,110,10
+    CONTROL         "ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ(&R)",IDC_VIEWSETUP5_DRAGRENDER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,124,110,10
+    CONTROL         "ﾃｸｽﾁｬ画像(&T)",IDC_VIEWSETUP5_TEXTURE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,142,58,10
+    PUSHBUTTON      "参照...",IDC_VIEWSETUP5_TEXTUREFIND,90,140,35,14
+    EDITTEXT        IDC_VIEWSETUP5_TEXTUREFILE,23,160,130,12,ES_AUTOHSCROLL
+    GROUPBOX        "OpenGL表示属性",IDC_STATIC,7,7,157,175,WS_GROUP
     LTEXT           "ﾃﾞﾌｫﾙﾄ工具径(&D)",IDC_STATIC,177,22,52,8
     EDITTEXT        IDC_VIEWSETUP5_DEFAULTENDMILL,235,20,40,12,ES_RIGHT | ES_AUTOHSCROLL
     LTEXT           "mm",IDC_STATIC,279,22,25,8
@@ -1738,11 +1739,11 @@ BEGIN
     LTEXT           "（ﾄﾚｰｽ時の色）",IDC_STATIC,250,61,61,8
     GROUPBOX        "工具属性",IDC_STATIC,170,7,157,80,WS_GROUP
     CONTROL         "非ｱｸﾃｨﾌﾞでもﾄﾚｰｽ継続実行(&N)",IDC_VIEWSETUP5_NOACTIVETRACEGL,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,177,115,120,10
-    CONTROL         "ﾄﾚｰｽ実行中に工具を表示(&T)",IDC_VIEWSETUP5_TOOLTRACE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,177,135,120,10
-    GROUPBOX        "ﾄﾚｰｽ",IDC_STATIC,170,97,157,80,WS_GROUP
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,177,120,120,10
+    CONTROL         "ﾄﾚｰｽ実行中に工具を表示(&T)",IDC_VIEWSETUP5_TOOLTRACE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,177,140,120,10
+    LTEXT           "（ﾌﾗｲｽﾓｰﾄﾞのみ）",IDC_STATIC,188,155,79,8
+    GROUPBOX        "ﾄﾚｰｽ",IDC_STATIC,170,102,157,80,WS_GROUP
     PUSHBUTTON      "色と線種属性を初期設定に戻す",IDC_VIEWSETUP1_DEFCOLOR,107,189,120,16
-    LTEXT           "（ﾌﾗｲｽﾓｰﾄﾞのみ）",IDC_STATIC,188,150,79,8
 END
 
 IDD_THUMBNAIL DIALOGEX 0, 0, 455, 379
@@ -2096,8 +2097,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,8,1,0
- PRODUCTVERSION 3,8,1,0
+ FILEVERSION 3,8,1,1
+ PRODUCTVERSION 3,8,1,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -2115,14 +2116,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.8.1.0"
+            VALUE "FileVersion", "3.8.1.1"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2019 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.8.1.0"
+            VALUE "ProductVersion", "3.8.1.1"
             VALUE "SpecialBuild", "Boost C++ 1.70, GLEW 2.00, Kodatuno R3.2kai"
         END
     END
@@ -3302,7 +3303,7 @@ BEGIN
     IDS_ERR_WRITESETTING    "%s\n設定ﾌｧｲﾙの書き出しに失敗しました"
     IDS_ERR_CLIPBOARD       "ｸﾘｯﾌﾟﾎﾞｰﾄﾞの操作に失敗しました"
     IDS_ERR_MAXADD          "登録数の上限に達しました。これ以上は登録できません"
-    IDS_ERR_OPENGLVER       "OpenGLのﾊﾞｰｼﾞｮﾝが古く表示ができません。少なくとも1.5以上のｻﾎﾟｰﾄが必要です。\nこのマシンのOpenGLﾊﾞｰｼﾞｮﾝは %s です。"
+    IDS_ERR_OPENGLVER       "OpenGLのﾊﾞｰｼﾞｮﾝが古く表示ができません。少なくとも2.0以上のｻﾎﾟｰﾄが必要です。\nこのマシンのOpenGLﾊﾞｰｼﾞｮﾝは %s です。"
     IDS_ERR_OUTOFVRAM       "OpenGL操作でエラーが発生しました\n\nCode=%s, DebugLine=%d"
 END
 
@@ -3648,28 +3649,12 @@ BEGIN
     IDS_REG_VIEW_WHEELTYPE  "MouseWheelType"
     IDS_REG_VIEW_COLOR      "DrawColor"
     IDS_REG_VIEW_LINETYPE   "DrawLineType"
-    IDS_REG_VIEW_NC_SCALE   "GuideScale"
-    IDS_REG_VIEW_NC_DRAWREVISE "DrawRevise"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_REG_VIEW_NC_DRAWCENTERCIRCLE "DrawCenterCircle"
-    IDS_REG_VIEW_NC_GUIDE   "GuideLength"
     IDS_REG_VIEW_NC_INFOCOL "DrawInfoColor"
-    IDS_REG_VIEW_NC_TRACEMARK "TraceMarker"
     IDS_REG_VIEW_NC_DEFAULTENDMILL "DefaultEndmill"
-    IDS_REG_VIEW_NC_SOLIDVIEW "SolidView"
-    IDS_REG_VIEW_NC_G00VIEW "G00View"
-    IDS_REG_VIEW_NC_DRAGRENDER "DragRender"
-    IDS_REG_VIEW_NC_MILL_T  "MillT"
-    IDS_REG_VIEW_NC_MILL_C  "MillC"
-    IDS_REG_VIEW_NC_MILLTYPE "MillType"
-    IDS_REG_VIEW_NC_TEXTURE "Texture"
-    IDS_REG_VIEW_NC_TEXTUREFILE "TextureFile"
-    IDS_REG_VIEW_NC_NOACTIVETRACEGL "NoActiveTraceGL"
-    IDS_REG_VIEW_NC_TOOLTRACE "ToolTrace"
-    IDS_REG_VIEW_NC_LATHESLIT "LatheSlit"
 END
 
 STRINGTABLE
@@ -3834,12 +3819,6 @@ END
 STRINGTABLE
 BEGIN
     IDS_NEW_SAVE            "新規保存"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_REG_VIEW_NC_FOURVIEW01 "FourView01"
-    IDS_REG_VIEW_NC_FOURVIEW02 "FourView02"
 END
 
 STRINGTABLE

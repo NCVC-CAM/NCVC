@@ -23,6 +23,8 @@ using namespace boost;
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewBase ƒNƒ‰ƒX
 
+IMPLEMENT_DYNAMIC(CNCViewBase, CViewBase)
+
 BEGIN_MESSAGE_MAP(CNCViewBase, CViewBase)
 	ON_WM_CONTEXTMENU()
 	ON_WM_KEYDOWN()

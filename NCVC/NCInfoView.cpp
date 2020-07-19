@@ -33,6 +33,8 @@ static	void	CopyNCInfoForClipboard(CView*, CNCDoc*);	// ¸Ø¯ÌßÎÞ°ÄÞ‚Ö‚ÌºËß°
 /////////////////////////////////////////////////////////////////////////////
 // CNCInfoBase
 
+IMPLEMENT_DYNAMIC(CNCInfoBase, CView)
+
 BEGIN_MESSAGE_MAP(CNCInfoBase, CView)
 	ON_WM_CONTEXTMENU()
 	ON_WM_KEYDOWN()

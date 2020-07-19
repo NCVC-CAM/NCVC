@@ -178,6 +178,7 @@ class CNCViewGL : public CView
 	void	CreateTexture(GLsizeiptr, const GLfloat*);
 	void	ClearVBO(void);
 	void	ClearTexture(void);
+	void	CreateFBO(void);
 	void	InitialBoxel(void);
 	void	FinalBoxel(void);
 	void	EndOfCreateElementThread(void);

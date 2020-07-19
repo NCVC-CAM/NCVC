@@ -407,14 +407,16 @@ BOOL CNCVCApp::NCVCRegInit(void)
 
 	try {
 		// OpenGL Default View Info
-		CRecentViewInfo::VINFO*	bi;
-		UINT					n;
+		CRecentViewInfo::VINFO*	bi = NULL;
+		UINT					n = sizeof(CRecentViewInfo::VINFO);
 		VERIFY(strEntry.LoadString(IDS_REG_NCV_DEFGLINFO));
 		if ( GetProfileBinary(strRegKey, strEntry, (LPBYTE*)&bi, &n) ) {
-			ASSERT( n==sizeof(CRecentViewInfo::VINFO) );
-			m_pDefViewInfo = new CRecentViewInfo(NULL);
-			m_pDefViewInfo->SetViewInfo(bi->objectXform, bi->rcView, bi->ptCenter);
-			delete	bi;		// GetProfileBinary() Specification
+			ASSERT( n == sizeof(CRecentViewInfo::VINFO) );
+			if ( n == sizeof(CRecentViewInfo::VINFO) ) {
+				m_pDefViewInfo = new CRecentViewInfo(NULL);
+				m_pDefViewInfo->SetViewInfo(bi->objectXform, bi->rcView, bi->ptCenter);
+			}
+			delete[]	bi;		// GetProfileBinary() Specification
 		}
 
 		// µÃﬂºÆ›ÇÃç\íz
@@ -545,27 +547,25 @@ void CNCVCApp::InitialRecentViewList(void)
 {
 	CString		strRegKey, strEntry;
 	CRecentViewInfo*		pInfo;
-	CRecentViewInfo::VINFO*	bi;
-#ifdef _DEBUG
+	CRecentViewInfo::VINFO*	bi = NULL;
 	UINT					n = sizeof(CRecentViewInfo::VINFO);
-#else
-	UINT					n;
-#endif
+
+	if ( !m_pRecentFileList )
+		return;
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_RECENTVIEWINFO));
-
 	for ( int i=0; i<m_pRecentFileList->GetSize(); i++ ) {
 		// Recent View List ÇÃ⁄ºﬁΩƒÿì«Ç›çûÇ›
 		strEntry.Format(m_pRecentFileList->m_strEntryFormat, i+1);	// File%d
 		if ( GetProfileBinary(strRegKey, strEntry, (LPBYTE*)&bi, &n) ) {
-//			ASSERT( n == sizeof(CRecentViewInfo::VINFO) );
+			ASSERT( n == sizeof(CRecentViewInfo::VINFO) );
 			if ( n == sizeof(CRecentViewInfo::VINFO) ) {
 				pInfo = new CRecentViewInfo(m_pRecentFileList->operator[](i));
 				pInfo->SetViewInfo(bi->objectXform, bi->rcView, bi->ptCenter);
 			}
 			else
 				pInfo = NULL;
-			delete	bi;		// GetProfileBinary() Specification
+			delete[]	bi;		// GetProfileBinary() Specification
 		}
 		else
 			pInfo = NULL;

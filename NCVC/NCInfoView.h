@@ -11,6 +11,8 @@
 class CNCInfoBase : public CViewBase
 {
 protected:
+	DECLARE_DYNAMIC(CNCInfoBase)
+
 	virtual BOOL PreCreateWindow(CREATESTRUCT&);
 	virtual void OnUpdate(CView*, LPARAM, CObject*);
 	//

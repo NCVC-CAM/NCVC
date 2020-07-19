@@ -18,6 +18,7 @@ BEGIN_MESSAGE_MAP(CViewSetup5, CPropertyPage)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_CUT, &CViewSetup5::OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_MILL, &CViewSetup5::OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_SOLIDVIEW, &CViewSetup5::OnSolidClick)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_FBO, &CViewSetup5::OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_G00VIEW, &CViewSetup5::OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_LATHESLIT, &CViewSetup5::OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_DRAGRENDER, &CViewSetup5::OnChange)
@@ -38,6 +39,7 @@ CViewSetup5::CViewSetup5() : CPropertyPage(CViewSetup5::IDD)
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	m_bSolid			= pOpt->m_bSolidView;
+	m_bUseFBO			= pOpt->m_bUseFBO;
 	m_bWirePath			= pOpt->m_bWirePath;
 	m_bDrag				= pOpt->m_bDragRender;
 	m_bTexture			= pOpt->m_bTexture;
@@ -62,6 +64,7 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 {
 	__super::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_VIEWSETUP5_DEFAULTENDMILL, m_dEndmill);
+	DDX_Control(pDX, IDC_VIEWSETUP5_FBO, m_ctUseFBO);
 	DDX_Control(pDX, IDC_VIEWSETUP5_G00VIEW, m_ctWirePath);
 	DDX_Control(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_ctDrag);
 	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTURE, m_ctTexture);
@@ -69,6 +72,7 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTUREFILE, m_ctTextureFile);
 	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTUREFIND, m_ctTextureFind);
 	DDX_Check(pDX, IDC_VIEWSETUP5_SOLIDVIEW, m_bSolid);
+	DDX_Check(pDX, IDC_VIEWSETUP5_FBO, m_bUseFBO);
 	DDX_Check(pDX, IDC_VIEWSETUP5_G00VIEW, m_bWirePath);
 	DDX_Check(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_bDrag);
 	DDX_Check(pDX, IDC_VIEWSETUP5_TEXTURE, m_bTexture);
@@ -83,6 +87,7 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 
 void CViewSetup5::EnableSolidControl(void)
 {
+	m_ctUseFBO.EnableWindow(m_bSolid);
 	m_ctWirePath.EnableWindow(m_bSolid);
 	m_ctDrag.EnableWindow(m_bSolid);
 	m_ctLatheSlit.EnableWindow(m_bSolid);
@@ -119,6 +124,7 @@ BOOL CViewSetup5::OnApply()
 
 	// 更新情報を pOpt->m_dwUpdateFlg にｾｯﾄ
 	if ( pOpt->m_bSolidView != m_bSolid ||
+			pOpt->m_bUseFBO != m_bUseFBO ||
 			pOpt->m_nMillType != m_nMillType ||
 			pOpt->m_dDefaultEndmill != (m_dEndmill/2.0f) )
 		pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
@@ -128,6 +134,7 @@ BOOL CViewSetup5::OnApply()
 			pOpt->m_strTexture != m_strTexture )
 		pOpt->m_dwUpdateFlg |= VIEWUPDATE_TEXTURE;
 	pOpt->m_bSolidView		= m_bSolid;
+	pOpt->m_bUseFBO			= m_bUseFBO;
 	pOpt->m_bWirePath		= m_bWirePath;
 	pOpt->m_bDragRender		= m_bDrag;
 	pOpt->m_bTexture		= m_bTexture;
@@ -207,13 +214,15 @@ void CViewSetup5::OnTextureClick()
 void CViewSetup5::OnTextureFind()
 {
 	extern	LPTSTR	g_pszExecDir;
+	extern	LPCTSTR	g_szViewOptFlag[];	// from ViewOption.cpp
 
 	UpdateData();
 	CString		strPath, strFile;
 	::Path_Name_From_FullPath(m_strTexture, strPath, strFile);
 	if ( strFile.IsEmpty() ) {
-		VERIFY(strPath.LoadString(IDS_REG_VIEW_NC_TEXTURE));
-		strPath = g_pszExecDir + strPath;
+		// ﾌｧｲﾙ指定がなければ、ｲﾝｽﾄｰﾙﾌｫﾙﾀﾞを参照
+		strPath  = g_pszExecDir;
+		strPath += g_szViewOptFlag[NCVIEWFLG_TEXTURE];
 	}
 	else
 		strFile = m_strTexture;

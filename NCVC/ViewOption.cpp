@@ -110,6 +110,7 @@ static	const	BOOL	g_bDefaultSetting[] = {
 	FALSE,		// m_bScale
 	TRUE,		// m_bGuide
 	TRUE,		// m_bSolidView
+	TRUE,		// m_bUseFBO
 	FALSE,		// m_bWirePath
 	FALSE,		// m_bDragRender
 	FALSE,		// m_bTexture
@@ -117,23 +118,20 @@ static	const	BOOL	g_bDefaultSetting[] = {
 	FALSE,		// m_bNoActiveTraceGL
 	TRUE		// m_bToolTrace
 };
-static	const	UINT	g_nFlagID[] = {
-	IDS_REG_VIEW_NC_TRACEMARK,
-	IDS_REG_VIEW_NC_DRAWREVISE,
-	IDS_REG_VIEW_NC_DRAWCENTERCIRCLE,
-	IDS_REG_VIEW_NC_SCALE,
-	IDS_REG_VIEW_NC_GUIDE,
-	IDS_REG_VIEW_NC_SOLIDVIEW,
-	IDS_REG_VIEW_NC_G00VIEW,
-	IDS_REG_VIEW_NC_DRAGRENDER,
-	IDS_REG_VIEW_NC_TEXTURE,
-	IDS_REG_VIEW_NC_LATHESLIT,
-	IDS_REG_VIEW_NC_NOACTIVETRACEGL,
-	IDS_REG_VIEW_NC_TOOLTRACE,
+extern	LPCTSTR	g_szViewOptFlag[] = {	// to ViewSetup5.cpp
+	"TraceMarker", "DrawRevise", "DrawCenterCircle",
+	"GuideScale", "GuideLength",
+	"SolidView", "UseFBO", "G00View", "DragRender",
+	"Texture", "LatheSlit", "NoActiveTraceGL", "ToolTrace"
 };
-static	const	UINT	g_nDelFlagID[] = {
-	IDS_REG_VIEW_NC_MILL_T,
-	IDS_REG_VIEW_NC_MILL_C
+static	LPCTSTR	g_szViewOptInt[] = {
+	"MillType", "FourView01", "FourView02"
+};
+static	LPCTSTR	g_szViewOptStr[] = {
+	"TextureFile"
+};
+static	LPCTSTR	g_szDelFlag[] = {
+	"MillT", "MillC"
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -147,7 +145,7 @@ CViewOption::CViewOption()
 	//
 	m_dwUpdateFlg = 0;
 	AllDefaultSetting();
-	// NCVC.exe Ç∆ìØÇ∂Ã´Ÿ¿ﬁÇ…ÅuNCVCcolor.iniÅvÇ™Ç†ÇÍÇŒ≤›Œﬂ∞ƒ
+	// NCVC.exe Ç∆ìØÇ∂Ã´Ÿ¿ﬁÇ… "NCVCcolor.ini" Ç™Ç†ÇÍÇŒ≤›Œﬂ∞ƒ
 	strResult  = g_pszExecDir;
 	strResult += "NCVCcolor.ini";
 	CFileStatus		fStatus;
@@ -184,15 +182,14 @@ CViewOption::CViewOption()
 	VERIFY(strEntry.LoadString(IDS_REG_LOGFONT));
 	UINT	nBytes = sizeof(LOGFONT);
 	LPBYTE	lpFont = NULL;
-	if ( AfxGetApp()->GetProfileBinary(strRegKey, strEntry, &lpFont, &nBytes) )
+	if ( AfxGetApp()->GetProfileBinary(strRegKey, strEntry, &lpFont, &nBytes) ) {
 		memcpy(&m_lfFont[TYPE_NCD], lpFont, sizeof(LOGFONT));
-	if ( lpFont )
-		delete	lpFont;
+		delete[]	lpFont;
+	}
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
 	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
-		VERIFY(strEntry.LoadString(g_nFlagID[i]));
-		m_bNCFlag[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntry, m_bNCFlag[i]);
+		m_bNCFlag[i] = AfxGetApp()->GetProfileInt(strRegKey, g_szViewOptFlag[i], m_bNCFlag[i]);
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
@@ -229,22 +226,18 @@ CViewOption::CViewOption()
 	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
 	if ( !strResult.IsEmpty() )
 		m_dDefaultEndmill = (float)fabs(atof((LPCTSTR)strResult.Trim())) / 2.0f;	// “”ÿè„ÇÕîºåa
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
-	m_nMillType = AfxGetApp()->GetProfileInt(strRegKey, strEntry, m_nMillType);
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
-	m_strTexture = AfxGetApp()->GetProfileString(strRegKey, strEntry);
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW01));
+	m_nMillType = AfxGetApp()->GetProfileInt(strRegKey, g_szViewOptInt[VIEWINT_MILLTYPE], m_nMillType);
 	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
-		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strEntryFormat.Format(IDS_COMMON_FORMAT, g_szViewOptInt[VIEWINT_FOURVIEW01], i);
 		m_nForceView01[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntryFormat,
 								m_nForceView01[i]);
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW02));
 	for ( i=0; i<SIZEOF(m_nForceView02); i++ ) {
-		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strEntryFormat.Format(IDS_COMMON_FORMAT, g_szViewOptInt[VIEWINT_FOURVIEW02], i);
 		m_nForceView02[i] = AfxGetApp()->GetProfileInt(strRegKey, strEntryFormat,
 								m_nForceView02[i]);
 	}
+	m_strTexture = AfxGetApp()->GetProfileString(strRegKey, g_szViewOptStr[0]);
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -263,10 +256,10 @@ CViewOption::CViewOption()
 	VERIFY(strEntry.LoadString(IDS_REG_LOGFONT));
 	nBytes = sizeof(LOGFONT);
 	lpFont = NULL;
-	if ( AfxGetApp()->GetProfileBinary(strRegKey, strEntry, &lpFont, &nBytes) )
+	if ( AfxGetApp()->GetProfileBinary(strRegKey, strEntry, &lpFont, &nBytes) ) {
 		memcpy(&m_lfFont[TYPE_DXF], lpFont, sizeof(LOGFONT));
-	if ( lpFont )
-		delete	lpFont;
+		delete[]	lpFont;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -284,6 +277,7 @@ void CViewOption::AllDefaultSetting(void)
 	ASSERT( SIZEOF(m_nTraceSpeed) == SIZEOF(g_nTraceSpeed) );
 	ASSERT( SIZEOF(m_lfFont) == SIZEOF(g_nFontSize) );
 	ASSERT( SIZEOF(m_bNCFlag) == SIZEOF(g_bDefaultSetting) );
+	ASSERT( SIZEOF(g_szViewOptFlag) == SIZEOF(g_bDefaultSetting) );
 	ASSERT( SIZEOF(m_nForceView01) == SIZEOF(g_nForceView01) );
 	ASSERT( SIZEOF(m_nForceView02) == SIZEOF(g_nForceView02) );
 	//
@@ -375,13 +369,11 @@ BOOL CViewOption::SaveViewOption(void)
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
 	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
-		VERIFY(strEntry.LoadString(g_nFlagID[i]));
-		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_bNCFlag[i]) )
+		if ( !AfxGetApp()->WriteProfileInt(strRegKey, g_szViewOptFlag[i], m_bNCFlag[i]) )
 			return FALSE;
 	}
-	for ( i=0; i<SIZEOF(g_nDelFlagID); i++ ) {
-		VERIFY(strEntry.LoadString(g_nDelFlagID[i]));
-		AfxGetApp()->WriteProfileInt(strRegKey, strEntry, NULL);	// ïsóv∑∞ÇÃçÌèú
+	for ( i=0; i<SIZEOF(g_szDelFlag); i++ ) {
+		AfxGetApp()->WriteProfileInt(strRegKey, g_szDelFlag[i], NULL);	// ïsóv∑∞ÇÃçÌèú
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
@@ -418,24 +410,20 @@ BOOL CViewOption::SaveViewOption(void)
 	strResult.Format(IDS_MAKENCD_FORMAT, m_dDefaultEndmill * 2.0);	// ï€ë∂ÇÕíºåa
 	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, strResult) )
 		return FALSE;
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
-	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nMillType) )
+	if ( !AfxGetApp()->WriteProfileInt(strRegKey, g_szViewOptInt[VIEWINT_MILLTYPE], m_nMillType) )
 		return FALSE;
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
-	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, m_strTexture) )
-		return FALSE;
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW01));
 	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
-		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strEntryFormat.Format(IDS_COMMON_FORMAT, g_szViewOptInt[VIEWINT_FOURVIEW01], i);
 		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntryFormat, m_nForceView01[i]) )
 			return FALSE;
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW02));
 	for ( i=0; i<SIZEOF(m_nForceView02); i++ ) {
-		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strEntryFormat.Format(IDS_COMMON_FORMAT, g_szViewOptInt[VIEWINT_FOURVIEW02], i);
 		if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntryFormat, m_nForceView02[i]) )
 			return FALSE;
 	}
+	if ( !AfxGetApp()->WriteProfileString(strRegKey, g_szViewOptStr[0], m_strTexture) )
+		return FALSE;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -501,9 +489,8 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
 	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
-		VERIFY(strEntry.LoadString(g_nFlagID[i]));
 		strResult = lexical_cast<string>(m_bNCFlag[i] ? 1 : 0).c_str();
-		if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
+		if ( !::WritePrivateProfileString(strRegKey, g_szViewOptFlag[i], strResult, lpszFileName) )
 			return FALSE;
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -544,27 +531,23 @@ BOOL CViewOption::Export(LPCTSTR lpszFileName)
 	strResult.Format(IDS_MAKENCD_FORMAT, m_dDefaultEndmill * 2.0);	// ï€ë∂ÇÕíºåa
 	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
 		return FALSE;
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
 	strResult = lexical_cast<string>(m_nMillType).c_str();
-	if ( !::WritePrivateProfileString(strRegKey, strEntry, strResult, lpszFileName) )
+	if ( !::WritePrivateProfileString(strRegKey, g_szViewOptInt[VIEWINT_MILLTYPE], strResult, lpszFileName) )
 		return FALSE;
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
-	if ( !::WritePrivateProfileString(strRegKey, strEntry, m_strTexture, lpszFileName) )
-		return FALSE;
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW01));
 	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
-		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strEntryFormat.Format(IDS_COMMON_FORMAT, g_szViewOptInt[VIEWINT_FOURVIEW01], i);
 		strResult = lexical_cast<string>(m_nForceView01[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW02));
 	for ( i=0; i<SIZEOF(m_nForceView02); i++ ) {
-		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strEntryFormat.Format(IDS_COMMON_FORMAT, g_szViewOptInt[VIEWINT_FOURVIEW02], i);
 		strResult = lexical_cast<string>(m_nForceView02[i]).c_str();
 		if ( !::WritePrivateProfileString(strRegKey, strEntryFormat, strResult, lpszFileName) )
 			return FALSE;
 	}
+	if ( !::WritePrivateProfileString(strRegKey, g_szViewOptStr[0], m_strTexture, lpszFileName) )
+		return FALSE;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -623,8 +606,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
 	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
-		VERIFY(strEntry.LoadString(g_nFlagID[i]));
-		m_bNCFlag[i] = (BOOL)::GetPrivateProfileInt(strRegKey, strEntry,
+		m_bNCFlag[i] = (BOOL)::GetPrivateProfileInt(strRegKey, g_szViewOptFlag[i],
 								(UINT)m_bNCFlag[i], lpszFileName);
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
@@ -666,25 +648,21 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 			szResult, _MAX_PATH, lpszFileName);
 	if ( lstrlen(szResult) > 0 )
 		m_dDefaultEndmill = (float)fabs(atof(boost::algorithm::trim_copy(string(szResult)).c_str())) / 2.0f;	// “”ÿè„ÇÕîºåa
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
-	m_nMillType = ::GetPrivateProfileInt(strRegKey, strEntry, m_nMillType, lpszFileName);
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));
-	::GetPrivateProfileString(strRegKey, strEntry, "",
-			szResult, _MAX_PATH, lpszFileName);
-	if ( lstrlen(szResult) > 0 )
-		m_strTexture = szResult;
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW01));
+	m_nMillType = ::GetPrivateProfileInt(strRegKey, g_szViewOptInt[VIEWINT_MILLTYPE], m_nMillType, lpszFileName);
 	for ( i=0; i<SIZEOF(m_nForceView01); i++ ) {
-		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strEntryFormat.Format(IDS_COMMON_FORMAT, g_szViewOptInt[VIEWINT_FOURVIEW01], i);
 		m_nForceView01[i] = ::GetPrivateProfileInt(strRegKey, strEntryFormat,
 								m_nForceView01[i], lpszFileName);
 	}
-	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_FOURVIEW02));
 	for ( i=0; i<SIZEOF(m_nForceView02); i++ ) {
-		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
+		strEntryFormat.Format(IDS_COMMON_FORMAT, g_szViewOptInt[VIEWINT_FOURVIEW02], i);
 		m_nForceView02[i] = ::GetPrivateProfileInt(strRegKey, strEntryFormat,
 								m_nForceView02[i], lpszFileName);
 	}
+	::GetPrivateProfileString(strRegKey, g_szViewOptStr[0], "",
+			szResult, _MAX_PATH, lpszFileName);
+	if ( lstrlen(szResult) > 0 )
+		m_strTexture = szResult;
 	//
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));

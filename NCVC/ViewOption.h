@@ -35,13 +35,19 @@ enum {
 	NCVIEWFLG_GUIDESCALE,
 	NCVIEWFLG_GUIDELENGTH,
 	NCVIEWFLG_SOLIDVIEW,
+	NCVIEWFLG_USEFBO,
 	NCVIEWFLG_WIREPATH,
 	NCVIEWFLG_DRAGRENDER,
 	NCVIEWFLG_TEXTURE,
 	NCVIEWFLG_LATHESLIT,
 	NCVIEWFLG_NOACTIVETRACEGL,
 	NCVIEWFLG_TOOLTRACE,
-		NCVIEWFLG_NUMS		// [12]
+		NCVIEWFLG_NUMS		// [13]
+};
+enum {
+	VIEWINT_MILLTYPE = 0,
+	VIEWINT_FOURVIEW01,
+	VIEWINT_FOURVIEW02
 };
 enum {
 	COMCOL_RECT = 0,
@@ -115,6 +121,7 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 					m_bScale,			// TRUE:ｶﾞｲﾄﾞに目盛
 					m_bGuide,			// TRUE:拡大率に同期
 					m_bSolidView,		// OpenGLｿﾘｯﾄﾞ表示
+					m_bUseFBO,			// FBOを使用
 					m_bWirePath,		// ﾜｲﾔﾊﾟｽ表示
 					m_bDragRender,		// ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ
 					m_bTexture,			// ﾃｸｽﾁｬの貼り付け
@@ -124,19 +131,24 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 		};
 		BOOL		m_bNCFlag[NCVIEWFLG_NUMS];
 	};
+	union {
+		struct {
+			int		m_nLineType[2],
+					m_nNCLineType[NCCOLLINE_NUMS],
+					m_nDXFLineType[DXFCOLLINE_NUMS],
+					m_nWheelType,			// 0->手前:拡大,奥:縮小 1->逆
+					m_nTraceSpeed[3],		// 0:高速, 1:中速, 2:低速
+					m_nMillType,			// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ, 2:面取り
+					m_nForceView01[4],		// 4面-1:左上,右上,左下,右下
+					m_nForceView02[4];		// 4面-2:左上,左中,左下,右
+		};
+		int		m_nViewOpt[30];		// 修正中途半端...
+	};
 	COLORREF	m_colView[COMCOL_NUMS],	// ﾋﾞｭｰの各色
 				m_colNCView[NCCOL_NUMS],
 				m_colNCInfoView[NCINFOCOL_NUMS],
 				m_colDXFView[DXFCOL_NUMS],
 				m_colCustom[16];		// 色の設定ﾀﾞｲｱﾛｸﾞ(CColorDialog)
-	int			m_nLineType[2],			// 線種
-				m_nNCLineType[NCCOLLINE_NUMS],
-				m_nDXFLineType[DXFCOLLINE_NUMS],
-				m_nWheelType,			// 0->手前:拡大,奥:縮小 1->逆
-				m_nTraceSpeed[3],		// 0:高速, 1:中速, 2:低速
-				m_nMillType,			// 0:ｽｸｳｪｱ, 1:ﾎﾞｰﾙ, 2:面取り
-				m_nForceView01[4],		// 4面-1:左上,右上,左下,右下
-				m_nForceView02[4];		// 4面-2:左上,左中,左下,右
 	float		m_dGuide[NCXYZ],		// ｶﾞｲﾄﾞ軸の長さ
 				m_dDefaultEndmill;		// ﾃﾞﾌｫﾙﾄｴﾝﾄﾞﾐﾙ径(半径)
 	LOGFONT		m_lfFont[2];			// NC/DXFで使用するﾌｫﾝﾄ情報

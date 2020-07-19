@@ -32,6 +32,8 @@ protected:
 		m_enView = enType;
 		m_pfnDrawProc = NULL;
 	}
+	DECLARE_DYNAMIC(CNCViewBase)
+
 	CString			m_strGuide;			// •½–ÊˆÄ“à•¶Žš
 	PFNNCDRAWPROC	m_pfnDrawProc;		// •`‰æŠÖ”Îß²ÝÀ
 	CRectF			m_rcDataMax;		// •â“UŒã‚ÌGetDocument()->GetMaxRect()

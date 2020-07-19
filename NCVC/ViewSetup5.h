@@ -23,6 +23,7 @@ public:
 	enum { IDD = IDD_VIEW_SETUP5 };
 	CStatic	m_ctColor[3];
 	BOOL	m_bSolid,
+			m_bUseFBO,
 			m_bWirePath,
 			m_bDrag,
 			m_bTexture,
@@ -30,7 +31,8 @@ public:
 			m_bNoActiveTraceGL,
 			m_bToolTrace;
 	int		m_nMillType;
-	CButton m_ctWirePath,
+	CButton m_ctUseFBO,
+			m_ctWirePath,
 			m_ctDrag,
 			m_ctTexture,
 			m_ctLatheSlit,
