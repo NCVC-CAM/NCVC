@@ -732,7 +732,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.71a",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 3.72b",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2018 MNCT K.Magara",IDC_STATIC,86,182,143,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1950,8 +1950,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,7,1,1
- PRODUCTVERSION 3,7,1,1
+ FILEVERSION 3,7,2,2
+ PRODUCTVERSION 3,7,2,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1969,14 +1969,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.7.1.1"
+            VALUE "FileVersion", "3.7.2.2"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2018 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.7.1.1"
+            VALUE "ProductVersion", "3.7.2.2"
             VALUE "SpecialBuild", "Boost C++ 1.68, GLEW 2.00, Kodatuno R3.2kai"
         END
     END
@@ -3392,8 +3392,8 @@ BEGIN
     ID_INDICATOR_DATE_F     "%m/%d"
     ID_INDICATOR_DATE_F2    "%Y/%m/%d"
     ID_INDICATOR_TIME_F     "%H:%M"
-    ID_INDICATOR_FACTOR_F   "ägëÂó¶(%s) : %#6.3f"
-    ID_INDICATOR_FACTOR     "ägëÂó¶(XYZ) : 999999.999"
+    ID_INDICATOR_FACTOR_F   "ägëÂó¶(%s) : %#6.3f %s"
+    ID_INDICATOR_FACTOR     "ägëÂó¶(XYZ) : 999999.999 FBO"
     ID_NCDST_LINENO_F       "LineNo. : %#6d / %#6d"
     ID_NCDST_LINENO         "LineNo. : 999999 / 999999"
     ID_NCDST_COORDINATE_MF  "ç¿ïWÅ@x:%#6.3f y:%#6.3f z:%#6.3f"
@@ -3560,7 +3560,7 @@ BEGIN
     IDS_ERR_NCBLK_M98       "ªÃﬁÃﬂ€Ç‹ÇΩÇÕœ∏€Ç™å©Ç¬Ç©ÇÁÇ»Ç¢"
     IDS_ERR_NCBLK_M98L      "ªÃﬁÃﬂ€åƒÇ—èoÇµÇÕ4äKëwÇ‹Ç≈"
     IDS_ERR_NCBLK_CHAMFERING "∫∞≈,ñ éÊÇËéwé¶¥◊∞"
-    IDS_ERR_NCBLK_WORKFILE  "WorkFileì«Ç›çûÇ›¥◊∞"
+    IDS_ERR_NCBLK_FILE      "Fileì«Ç›çûÇ›¥◊∞"
 END
 
 STRINGTABLE

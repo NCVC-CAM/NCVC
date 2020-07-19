@@ -371,7 +371,7 @@ BOOL CThumbnailDlg::OnInitDialog()
 	// åªç›ìoò^Ç≥ÇÍÇƒÇ¢ÇÈägí£éqÇéÊìæ
 	LPVOID		pFunc;		// dummy
 	CString		strExt;
-	m_aExt.Add( gg_szWild + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD).Right(3) );	// "." èúÇ≠ÅuncdÅv
+	m_aExt.Add( gg_szWild + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD).Right(3) );	// '.' èúÇ≠ÅuncdÅv
 	for ( i=0; i<2/*EXT_ADN,EXT_DLG*/; i++ ) {	// ìoò^ägí£éqÇ≈ÇÃÃ´Ÿ¿ﬁåüçı
 		PMAP_FOREACH(strExt, pFunc, AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((eEXTTYPE)i))
 			m_aExt.Add( gg_szWild + strExt );

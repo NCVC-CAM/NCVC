@@ -13,10 +13,10 @@
 enum NCCOMMENT		// g_szNCcomment[]
 {
 	ENDMILL = 0, DRILL, TAP, REAMER, 
-	WORKRECT, WORKCYLINDER, WORKFILE,
+	WORKRECT, WORKCYLINDER, WORKFILE, MCFILE,
 	LATHEVIEW, WIREVIEW,
 	TOOLPOS,
-	LATHEINSIDE, ENDINSIDE, ENDDRILL
+//	LATHEINSIDE, ENDINSIDE, ENDDRILL
 };
 #define	ENDMILL_S		g_szNCcomment[ENDMILL]
 #define	DRILL_S			g_szNCcomment[DRILL]
@@ -25,12 +25,13 @@ enum NCCOMMENT		// g_szNCcomment[]
 #define	WORKRECT_S		g_szNCcomment[WORKRECT]
 #define	WORKCYLINDER_S	g_szNCcomment[WORKCYLINDER]
 #define	WORKFILE_S		g_szNCcomment[WORKFILE]
+#define	MCFILE_S		g_szNCcomment[MCFILE]
 #define	LATHEVIEW_S		g_szNCcomment[LATHEVIEW]
 #define	WIREVIEW_S		g_szNCcomment[WIREVIEW]
 #define	TOOLPOS_S		g_szNCcomment[TOOLPOS]
-#define	INSIDE_S		g_szNCcomment[LATHEINSIDE]
-#define	ENDINSIDE_S		g_szNCcomment[ENDINSIDE]
-#define	ENDDRILL_S		g_szNCcomment[ENDDRILL]
+//#define	INSIDE_S		g_szNCcomment[LATHEINSIDE]
+//#define	ENDINSIDE_S		g_szNCcomment[ENDINSIDE]
+//#define	ENDDRILL_S		g_szNCcomment[ENDDRILL]
 
 // CNCDoc::DataOperation() ÇÃëÄçÏï˚ñ@
 enum ENNCOPERATION
@@ -213,6 +214,7 @@ public:
 	void	SetLatheViewMode(void);
 	BOOL	ReadWorkFile(LPCTSTR);
 	void	SetWorkFileOffset(const Coord&);
+	BOOL	ReadMCFile(LPCTSTR);
 
 	// from NCWorkDlg.cpp
 	void	SetWorkRect(BOOL, const CRect3F&);

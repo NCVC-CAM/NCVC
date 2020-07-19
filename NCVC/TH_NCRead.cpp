@@ -38,7 +38,7 @@ static	int				g_nWorkRect,
 						g_nWorkCylinder,
 						g_nLatheView,
 						g_nWireView,
-						g_nSubprog;		// ｻﾌﾞﾌﾟﾛｸﾞﾗﾑ呼び出しの階層
+						g_nSubprog;			// ｻﾌﾞﾌﾟﾛｸﾞﾗﾑ呼び出しの階層
 static	float			g_dWorkRect[NCXYZ*2],
 						g_dWorkCylinder[2+NCXYZ],
 						g_dLatheView[3],
@@ -126,7 +126,7 @@ static	INT_PTR	NC_NoSearch(const string&, CNCblock*);
 static	regex	g_reAutoBreak;
 static	INT_PTR	NC_SearchAutoBreak(const string&, CNCblock*);
 static	function<INT_PTR (const string&, CNCblock*)>	g_pfnSearchMacro,
-													g_pfnSearchAutoBreak;
+														g_pfnSearchAutoBreak;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -261,10 +261,10 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 {
 	qi::rule<Iterator, Skipper>		ruleTop, rrMM,
 		ruleOrder, ruleValue1, ruleValue2,
-		rs01, rs02, rs03, rs04, rs05, rs06, rs07, //rs08, rs09,
-		rv01, rv02, rv03, rv04, rv05, rv06, rv07, //rv08, rv09,
+		rs01, rs02, rs03, rs04, rs05, rs06, rs07, rs08, //rs09, rs10,
+		rv01, rv02, rv03, rv04, rv05, rv06, rv07, rv08, //rv09, rv10,
 		r011, r012, r013,
-		r041, r042;
+		r041, r042,	r051, r052;
 
 	CCommentParser() : CCommentParser::base_type(ruleTop) {
 		using sw::no_case;
@@ -276,16 +276,16 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 		ruleTop = omit[*(char_-'(')] >> lit('(') >>
 						+( omit[*(char_-ruleOrder)] >> ruleValue1|ruleValue2 ) >>
 					omit[*(char_-')')] >> lit(')');
-		ruleOrder = rs01|rs02|rs03|rs04|rs05|rs06|rs07;//|rs08|rs09;
-		ruleValue1 = rs01>>rv01|rs02>>rv02|rs03>>rv03|rs04>>rv04;	// １つにすると
-		ruleValue2 = rs05>>rv05|rs06>>rv06|rs07>>rv07;//|rv08|rv09;	// 名前が長すぎるｴﾗｰ
+		ruleOrder  = rs01|rs02|rs03|rs04|rs05|rs06|rs07|rs08;//|rs09|rs10;
+		ruleValue1 = rs01>>rv01|rs02>>rv02|rs03>>rv03|rs04>>rv04;				// １つにすると
+		ruleValue2 = rs05>>rv05|rs06>>rv06|rs07>>rv07|rs08>>rv08;//|rv09|rv10;	// 名前が長すぎるｴﾗｰ
 		//
 		// Endmill
 		rs01 = no_case[sw::string(ENDMILL_S)|DRILL_S|TAP_S|REAMER_S] >> lit('=');
 		rv01 = r011|r012|r013;
 		r011 = float_[_SetEndmill()] >> rrMM >>
 						-(lit(',') >> qi::digit[_SetEndmillType()]);
-		r012 = (char_('R')|'r') >> float_[_SetBallMill()] >>		// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
+		r012 = (char_('R')|'r') >> float_[_SetBallMill()] >>	// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ表記
 						rrMM;
 		r013 = (char_('C')|'c') >> float_[_SetChamferMill()] >>	// 面取りﾐﾙ表記
 						rrMM;
@@ -303,22 +303,27 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 					-(lit(',') >> -float_[_WorkPosY()] >>
 						-(lit(',') >> -float_[_WorkPosZ()]) );
 		r042 = qi::lexeme[ qi::as_string[+(char_ - ')')][_SetWorkFile()] ];
+		// MCFile
+		rs05 = no_case[MCFILE_S] >> lit('=');
+		rv05 = r051|r052;
+		r051 = lit('\"') >> qi::lexeme[ qi::as_string[+(char_ - '\"')][_SetMCFile()] ] >> lit('\"');
+		r052 = qi::lexeme[ qi::as_string[+(char_ - ')')][_SetMCFile()] ];
 		// ViewMode
-		rs05 = no_case[LATHEVIEW_S] >> lit('=');
-		rv05 = float_[_SetLatheView()] % ',';
-		rs06 = no_case[WIREVIEW_S]  >> lit('=');
-		rv06 = float_[_SetWireView()];
+		rs06 = no_case[LATHEVIEW_S] >> lit('=');
+		rv06 = float_[_SetLatheView()] % ',';
+		rs07 = no_case[WIREVIEW_S]  >> lit('=');
+		rv07 = float_[_SetWireView()];
 		// ToolPos
-		rs07 = no_case[TOOLPOS_S] >> lit('=');
-		rv07 = -float_[_ToolPosX()] >>
+		rs08 = no_case[TOOLPOS_S] >> lit('=');
+		rv08 = -float_[_ToolPosX()] >>
 				-(lit(',') >> -float_[_ToolPosY()] >>
 					-(lit(',') >> -float_[_ToolPosZ()]) );
 		// Inside
-//		rs08 = no_case[sw::string(INSIDE_S)];
-//		rv08 = no_case[sw::string(INSIDE_S)][_SetLatheInside()];
+//		rs09 = no_case[sw::string(INSIDE_S)];
+//		rv09 = no_case[sw::string(INSIDE_S)][_SetLatheInside()];
 		// EndInside/EndDrill
-//		rs09 = no_case[sw::string(ENDINSIDE_S)|sw::string(ENDDRILL_S)];
-//		rv09 = no_case[sw::string(ENDINSIDE_S)|sw::string(ENDDRILL_S)][_EndLatheInside()];
+//		rs10 = no_case[sw::string(ENDINSIDE_S)|sw::string(ENDDRILL_S)];
+//		rv10 = no_case[sw::string(ENDINSIDE_S)|sw::string(ENDDRILL_S)][_EndLatheInside()];
 		// "mm"
 		rrMM = -no_case["mm"];	// LoadString(IDCV_MILI)使えない
 	}
@@ -327,11 +332,11 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 	struct	_SetEndmill {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
 			g_ncArgv.dEndmill = d / 2.0;
-			if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
-				g_pDoc->SetDocFlag(NCDOC_LATHE_INSIDE);
-				g_ncArgv.nEndmillType = NCMIL_LATHEDRILL;
-				g_ncArgv.nc.dwValFlags |= NCFLG_LATHEINSIDE;
-			}
+//			if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
+//				g_pDoc->SetDocFlag(NCDOC_LATHE_INSIDE);
+//				g_ncArgv.nEndmillType = NCMIL_LATHEDRILL;
+//				g_ncArgv.nc.dwValFlags |= NCFLG_LATHEINSIDE;
+//			}
 #ifdef _DEBUG_GSPIRIT
 			if ( !IsThumbnail() ) {
 				CMagaDbg	dbg("_SetEndmill()", DBG_MAGENTA);
@@ -400,6 +405,17 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			if ( !IsThumbnail() ) {
 				if ( !g_pDoc->ReadWorkFile(s.c_str()) )
 					g_dwWorkPosFlags |= ~(NCD_X|NCD_Y|NCD_Z);	//上位ﾋﾞｯﾄを利用してｴﾗｰ指示
+			}
+		}
+	};
+	// 機械情報ﾌｧｲﾙ
+	struct _SetMCFile {
+		void operator()(const string& s, qi::unused_type, qi::unused_type) const {
+			if ( !IsThumbnail() ) {
+				if ( g_pDoc->ReadMCFile(s.c_str()) )
+					g_pDoc->SetDocFlag(NCDOC_MC_CHANGE);
+				else
+					g_dwWorkPosFlags |= ~(NCD_X|NCD_Y|NCD_Z);
 			}
 		}
 	};
@@ -491,6 +507,7 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 #endif
 		}
 	};
+/*
 	// 旋盤中ぐり
 	struct _SetLatheInside {
 		void operator()(const string& s, qi::unused_type, qi::unused_type) const {
@@ -505,6 +522,7 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			g_ncArgv.nc.dwValFlags &= ~NCFLG_LATHEINSIDE;
 		}
 	};
+*/
 };
 
 typedef qi::rule<string::iterator>	SkipperType;
@@ -533,6 +551,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				nResult;
 	INT_PTR		i, nIndex;
 	BOOL		bNCobj = FALSE, bNCval = FALSE, bNCsub = FALSE,
+				bInvalidM = FALSE,
 				bTcode = FALSE, bOptionalBlockSkip = FALSE;
 	ENGCODEOBJ	enGcode;
 	CNCdata*	pData;
@@ -576,7 +595,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			pDataResult = SetToolPosition_fromComment(pBlock, pDataResult);	// create dummy object
 		if ( g_dwWorkPosFlags ) {
 			if ( g_dwWorkPosFlags & 0x08 )
-				pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_WORKFILE);
+				pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_FILE);
 			else {
 				float	xyz[NCXYZ] = {0,0,0};
 				if ( g_dwWorkPosFlags & NCD_X )
@@ -674,8 +693,8 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				// 復帰用ｵﾌﾞｼﾞｪｸﾄ生成
 				pDataResult = AddM98code(pBlock, pDataResult, -1);
 				return 99;
-//			default:		// ↓bNCvalのAddGcode()が呼ばれなくなる
-//				return 0;	// ×(認識できないMｺｰﾄﾞﾌﾞﾛｯｸは以降のｺｰﾄﾞを処理しない)
+			default:
+				bInvalidM = TRUE;	// 無効なMｺｰﾄﾞ
 			}
 			break;
 		case 'G':
@@ -708,6 +727,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			else
 				nNotModalCode = nCode;
 			bNCobj = TRUE;
+			bInvalidM = FALSE;
 			break;
 		case 'F':
 			g_ncArgv.dFeed = g_pfnFeedAnalyze(strWord.substr(1));
@@ -750,6 +770,8 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 		case 'I':	case 'J':	case 'K':	case 'R':
 		case 'P':	case 'L':
 		case 'D':	case 'H':
+			if ( bInvalidM )
+				break;	// 無効なMｺｰﾄﾞに続くｱﾄﾞﾚｽ値は無視
 			nCode = (int)(strchr(g_szNdelimiter, strWord[0]) - g_szNdelimiter);
 			// 値取得
 			if ( g_Cycle.bCycle ) {		// 81～89
@@ -758,9 +780,14 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				case NCA_K:		// Kはﾈｲﾃｨﾌﾞで(これ何やろ？)
 					g_ncArgv.nc.dValue[NCA_K] = atoi(strWord.substr(1).c_str());
 					break;
-//				case NCA_P:		// P(ﾄﾞｳｪﾙ時間)は送り速度と同じ判定
-//					g_ncArgv.nc.dValue[NCA_P] = g_pfnFeedAnalyze(strWord.substr(1));
-				default:		// P(ﾄﾞｳｪﾙ時間)も_GetNCValue()でOK
+				case NCA_P:
+					if ( bNCsub ) {
+						// 固定ｻｲｸﾙﾓｰﾄﾞ中のM98ｻﾌﾞﾌﾟﾛ呼び出し対応
+						g_ncArgv.nc.dValue[NCA_P] = atoi(strWord.substr(1).c_str());
+						break;
+					}
+					// through
+				default:	// P(ﾄﾞｳｪﾙ時間)も_GetNCValue()でOK
 					g_ncArgv.nc.dValue[nCode] = _GetNCValue(strWord.substr(1));
 				}
 			}
@@ -1651,6 +1678,12 @@ void SetLatheRect_fromComment(void)
 			break;
 		}
 	}
+
+	// 機械情報のﾋﾞｭｰﾓｰﾄﾞ初期値ｸﾘｱ
+	if ( AfxGetNCVCApp()->GetMCOption()->GetInt(MC_INT_FORCEVIEWMODE) == MC_VIEWMODE_WIRE ) {
+		g_pDoc->SetDocFlag(NCDOC_WIRE, FALSE);
+		// InitialVariableでの座標初期値は...
+	}
 }
 
 void SetWireRect_fromComment(void)
@@ -1672,6 +1705,11 @@ void SetWireRect_fromComment(void)
 	if ( !IsThumbnail() )
 		dbg.printf("t=%f", rc.high);
 #endif
+
+	// 機械情報のﾋﾞｭｰﾓｰﾄﾞ初期値ｸﾘｱ
+	if ( AfxGetNCVCApp()->GetMCOption()->GetInt(MC_INT_FORCEVIEWMODE) == MC_VIEWMODE_LATHE ) {
+		g_pDoc->SetDocFlag(NCDOC_LATHE, FALSE);
+	}
 }
 
 CString SearchFolder(const regex& r)
@@ -1685,7 +1723,7 @@ CString SearchFolder(const regex& r)
 			continue;
 		// ﾌｫﾙﾀﾞを標準拡張子で検索
 		strResult = SearchFolder_Sub(i,
-			gg_szWild + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD).Right(3),	// "." 除く「ncd」
+			gg_szWild + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD).Right(3),	// '.' 除く「ncd」
 			r);
 		if ( !strResult.IsEmpty() )
 			return strResult;

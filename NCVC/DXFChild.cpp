@@ -111,7 +111,7 @@ void CDXFChild::SetDataInfo(const CDXFDoc* pDoc)
 void CDXFChild::SetFactorInfo(float dFactor)
 {
 	CString		str;
-	str.Format(ID_INDICATOR_FACTOR_F, "", dFactor);
+	str.Format(ID_INDICATOR_FACTOR_F, "---", dFactor, "     ");
 	m_wndStatusBar.SetPaneText(
 		m_wndStatusBar.CommandToIndex(ID_INDICATOR_FACTOR), str);
 }

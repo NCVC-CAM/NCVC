@@ -38,10 +38,10 @@ extern	LPCTSTR	g_szNdelimiter = "XYZUVWIJKRPLDH";
 extern	LPTSTR	g_pszDelimiter;	// g_szGdelimiter[] + g_szNdelimiter[] (NCVC.cppで生成)
 extern	LPCTSTR	g_szNCcomment[] = {
 	"Endmill", "Drill", "Tap", "Reamer",
-	"WorkRect", "WorkCylinder", "WorkFile",
+	"WorkRect", "WorkCylinder", "WorkFile", "MCFile",
 	"LatheView", "WireView",
 	"ToolPos",
-	"Inside", "EndInside", "EndDrill"
+//	"Inside", "EndInside", "EndDrill"
 };
 
 // 指定された値のﾌﾗｸﾞ
@@ -181,8 +181,9 @@ BOOL CNCDoc::ReadWorkFile(LPCTSTR strFile)
 		CString	strCurrent;
 		TCHAR	pBuf[MAX_PATH];
 		::Path_Name_From_FullPath(m_strCurrentFile, strCurrent, strName);	// GetPathName()不可
-		::Path_Name_From_FullPath(strFile, strPath, strName);
-		strPath = ::GetFullPathName(strCurrent+strName, MAX_PATH, pBuf, NULL) ? pBuf : strFile;
+		strCurrent += strFile;
+		if ( ::PathCanonicalize(pBuf, strCurrent) )
+			strPath = pBuf;
 	}
 	else {
 		strPath = strFile;
@@ -233,6 +234,40 @@ void CNCDoc::SetWorkFileOffset(const Coord& sft)
 {
 	if ( m_kBody )
 		m_kBody->ShiftBody(sft);
+}
+
+BOOL CNCDoc::ReadMCFile(LPCTSTR strFile)
+{
+	CString	strPath, strName, strExt;
+	TCHAR	szFileName[_MAX_FNAME],
+			szExt[_MAX_EXT];
+
+	// ﾌｧｲﾙ名の検査
+	if ( ::PathIsRelative(strFile) ) {
+		CString	strCurrent;
+		TCHAR	pBuf[MAX_PATH];
+		::Path_Name_From_FullPath(m_strCurrentFile, strCurrent, strName);	// GetPathName()不可
+		strCurrent += strFile;
+		if ( ::PathCanonicalize(pBuf, strCurrent) )
+			strPath = pBuf;
+	}
+	else {
+		strPath = strFile;
+	}
+	_splitpath_s(strPath, NULL, 0, NULL, 0,
+		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
+	if ( lstrlen(szFileName)<=0 )
+		return FALSE;
+	if ( lstrlen(szExt)<=0 ) {
+		// 拡張子の補間
+		VERIFY(strExt.LoadString(IDS_MC_FILTER));
+		strPath += '.' + strExt.Left(3);	// .mnc
+	}
+
+	// 機械情報の読み込み
+	// -- TH_NCRead.cpp からの呼び出しでﾂｰﾙﾊﾞｰの更新は別スレッドなのでダメ
+	// -- AfxGetNCVCMainWnd()->ChangeMachine() はできない
+	return  AfxGetNCVCApp()->GetMCOption()->ReadMCoption(strPath);
 }
 
 CNCdata* CNCDoc::DataOperation
@@ -1218,6 +1253,12 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	CThreadDlg	dlg(IDS_READ_NCD, this);
 	if ( dlg.DoModal() != IDOK )
 		return FALSE;
+
+	// 機械情報の変更
+	if ( m_bDocFlg[NCDOC_MC_CHANGE] ) {
+		AfxGetNCVCMainWnd()->ChangeMachine();
+		m_bDocFlg.reset(NCDOC_MC_CHANGE);	// one shot
+	}
 
 	// ﾜｲﾔﾓｰﾄﾞにおけるUV軸ｵﾌﾞｼﾞｪｸﾄの生成
 	if ( m_bDocFlg[NCDOC_WIRE] ) {

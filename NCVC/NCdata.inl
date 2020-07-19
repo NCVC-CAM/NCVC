@@ -11,7 +11,7 @@ inline void WIREDRAW::clear(void)
 	vnr.clear();
 	vvef.clear();
 	vwl.clear();
-	vLen.clear();
+	vlen.clear();
 }
 
 /////////////////////////////////////////////////////////////////////////////

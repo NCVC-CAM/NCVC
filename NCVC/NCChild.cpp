@@ -113,10 +113,10 @@ void CNCChild::SetFindList(int nUpDown, const CString& strFind)
 	GetListView()->SetFindList(nUpDown, strFind);
 }
 
-void CNCChild::SetFactorInfo(float dFactor, const CString& strGuide)
+void CNCChild::SetFactorInfo(float dFactor, const CString& strGuide, BOOL bFBO)
 {
 	CString		strFmt;
-	strFmt.Format(ID_INDICATOR_FACTOR_F, strGuide, dFactor);
+	strFmt.Format(ID_INDICATOR_FACTOR_F, strGuide, dFactor, bFBO ? "(FBO)":"     ");
 	m_wndStatusBar.SetPaneText(
 		m_wndStatusBar.CommandToIndex(ID_INDICATOR_FACTOR), strFmt);
 }

@@ -49,12 +49,12 @@ typedef	_TAPER*		_LPTAPER;
 #define	NCMIL_SQUARE		0x00000000
 #define	NCMIL_BALL			0x00000001
 #define	NCMIL_CHAMFER		0x00000002
-#define	NCMIL_LATHEDRILL	0x00000003
+//#define	NCMIL_LATHEDRILL	0x00000003
 #define	NCFLG_ENDMILL		0x00000003	// 00:Square, 01:Ball, 10:Chamfering, 11:LatheDrill
 #define	NCMIL_MAXTYPE		NCMIL_CHAMFER
 #define	NCFLG_G02G03		0x00000004	// 0:G02, 1:G03
 #define	NCFLG_G98			0x00000008	// G98,G99（旋盤ﾓｰﾄﾞで使用）
-#define	NCFLG_LATHEINSIDE	0x00010000	// 中ぐり（旋盤ﾓｰﾄﾞで使用 径補正と同じ上位ﾋﾞｯﾄ使用）
+//#define	NCFLG_LATHEINSIDE	0x00010000	// 中ぐり（旋盤ﾓｰﾄﾞで使用 径補正と同じ上位ﾋﾞｯﾄ使用）
 
 // 始点終点指示
 enum	ENPOINTORDER
@@ -99,7 +99,7 @@ struct WIREDRAW
 				vnr;	// 法線ﾍﾞｸﾄﾙ
 	std::vector<CVelement>	vvef;	// 面生成用の頂点ｲﾝﾃﾞｯｸｽ
 	std::vector<WIRELINE>	vwl;	// 線描画用の情報
-	std::vector<float>		vLen;	// 移動を伴わない切削集合長さ（ﾃｸｽﾁｬで使用）
+	std::vector<float>		vlen;	// ﾃｸｽﾁｬで使用
 	void	clear(void);
 };
 

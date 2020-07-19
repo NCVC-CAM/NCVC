@@ -814,6 +814,7 @@
 #define IDS_ERR_NCBLK_M98L              25005
 #define IDS_ERR_NCBLK_CHAMFERING        25006
 #define IDS_ERR_NCBLK_WORKFILE          25007
+#define IDS_ERR_NCBLK_FILE              25007
 #define IDS_ERR_NCBLK_NOTLATHE          25010
 #define IDS_ERR_NCBLK_CORRECT           25011
 #define IDS_ERR_NCBLK_CORRECTSTART      25012

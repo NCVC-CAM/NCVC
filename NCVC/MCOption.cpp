@@ -242,10 +242,12 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 	int		i, j, k;
 	CString	strRegKey, strEntry;
 	TCHAR	szResult[_MAX_PATH];
-/* 
-	“Æ©‚Ì“ü—Í‚Í–Ê“|‚È‚Ì‚Å
-	Win32API ‚Ì GetPrivateProfile[Int|String]() ŠÖ”‚ğg‚¤
-*/
+
+	if ( !::IsFileExist(lpszFile, TRUE, FALSE) )
+		return FALSE;
+
+	// “Æ©‚Ì“ü—Í‚Í–Ê“|‚È‚Ì‚Å
+	// Win32API ‚Ì GetPrivateProfile[Int|String]() ŠÖ”‚ğg‚¤
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 
 	// ‹Œ·°Ü°ÄŞ‚Ìæ“Ç‚İ

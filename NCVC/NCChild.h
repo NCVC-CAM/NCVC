@@ -68,7 +68,7 @@ public:
 public:
 	void	SetJumpList(int);					// from NCJumpDlg.cpp
 	void	SetFindList(int, const CString&);	// from NCFindDlg.cpp
-	void	SetFactorInfo(float, const CString&);
+	void	SetFactorInfo(float, const CString&, BOOL = FALSE);
 
 //オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

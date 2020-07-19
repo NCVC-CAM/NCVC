@@ -4,12 +4,9 @@
 
 #pragma once
 
-//#define	USE_FBO
 //#define	USE_SHADER
 
-#ifdef USE_FBO
 #include "FrameBuffer.h"
-#endif
 #ifdef USE_SHADER
 #include "GLSL.h"
 #endif
@@ -123,9 +120,7 @@ class CNCViewGL : public CView
 	GLfloat*	m_pfDepthBottom;// WorkFile 2Pass
 #endif
 	GLubyte*	m_pbStencil;	// ｽﾃﾝｼﾙ
-#ifdef USE_FBO
 	CFrameBuffer*	m_pFBO;		// FrameBufferObject
-#endif
 #ifdef USE_SHADER
 	CGLSL			m_glsl;		// Shader Manager
 #endif
@@ -138,7 +133,11 @@ class CNCViewGL : public CView
 	GLuint*		m_pSolidElement;// 頂点ｲﾝﾃﾞｯｸｽ用
 	GLuint*		m_pLocusElement;// 軌跡ｲﾝﾃﾞｯｸｽ用
 	CVelement	m_vElementWrk,	// ﾜｰｸ矩形用glDrawElements頂点個数
-				m_vElementCut;	// 切削面用
+				m_vElementCut,	// 切削面用
+				m_vElementEdg;	// 旋盤端面用
+	GLsizei		GetElementSize(void) const {
+		return (GLsizei)(m_vElementWrk.size()+m_vElementCut.size()+m_vElementEdg.size());
+	}
 	WIREDRAW	m_WireDraw;		// ﾜｲﾔ加工機用
 
 	struct {	// CreateElementThread() from CreateVBOMill()

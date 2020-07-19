@@ -252,13 +252,14 @@ BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 		CPoint3F	pts(m_pWireObj->GetStartPoint());
 		vpt.insert(vpt.end(), begin(pts.xyz), end(pts.xyz));
 		// 法線ﾍﾞｸﾄﾙ
-		optional<CPointF> ptResult = CalcPerpendicularPoint(STARTPOINT, 1.0, 1);
+		optional<CPointF> ptResult = CalcPerpendicularPoint(STARTPOINT, 1.0f, 1);
 		if ( ptResult ) {
 			CPoint3F	pt(*ptResult);
+			auto		b = begin(pt.xyz), e = end(pt.xyz);
 			pt.z = m_ptValS.z;
-			vnr.insert(vnr.end(), begin(pt.xyz), end(pt.xyz));
+			vnr.insert(vnr.end(), b, e);
 			pt.z = pts.z;
-			vnr.insert(vnr.end(), begin(pt.xyz), end(pt.xyz));
+			vnr.insert(vnr.end(), b, e);
 		}
 		else {
 			// 保険
@@ -271,7 +272,7 @@ BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 
 int CNCdata::AddGLWireTexture(size_t, float&, float, GLfloat*) const
 {
-	return 0;
+	return -1;
 }
 
 void CNCdata::SetEndmillOrgCircle(const CPoint3F& ptOrg, CVfloat& v) const
@@ -546,34 +547,32 @@ BOOL CNCline::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 		wl.vel.push_back(n+1);
 		wl.vel.push_back(n);
 		wl.vel.push_back(n+2);
-	}
-	else {
-		wl.vel.push_back(n+1);
-		wl.vel.push_back(n+2);
-	}
-
-	if ( GetGcode() != 0 ) {
-		// 面の頂点ｲﾝﾃﾞｯｸｽ
-		if ( m_pWireObj ) {
-			// TRIANGLE_STRIP
+		// 法線
+		optional<CPointF> ptResult = CalcPerpendicularPoint(ENDPOINT, 1.0f, 1);
+		if ( ptResult ) {
+			CPoint3F	pt(*ptResult);
+			auto		b = begin(pt.xyz), e = end(pt.xyz);
+			pt.z = m_ptValE.z;
+			vnr.insert(vnr.end(), b, e);
+			pt.z = pte.z;
+			vnr.insert(vnr.end(), b, e);
+		}
+		else {
+			// 保険
+			vnr.insert(vnr.end(), NCXYZ*2, 1.0f);
+		}
+		// 面の頂点ｲﾝﾃﾞｯｸｽ(TRIANGLE_STRIP)
+		if ( GetGcode() != 0 ) {
 			vef.push_back(n);
 			vef.push_back(n+1);
 			vef.push_back(n+2);
 			vef.push_back(n+3);
-			// 法線
-			optional<CPointF> ptResult = CalcPerpendicularPoint(ENDPOINT, 1.0, 1);
-			if ( ptResult ) {
-				CPoint3F	pt(*ptResult);
-				pt.z = m_ptValE.z;
-				vnr.insert(vnr.end(), begin(pt.xyz), end(pt.xyz));
-				pt.z = pte.z;
-				vnr.insert(vnr.end(), begin(pt.xyz), end(pt.xyz));
-			}
-			else {
-				// 保険
-				vnr.insert(vnr.end(), NCXYZ*2, 1.0f);
-			}
 		}
+	}
+	else {
+		// 軌跡ｲﾝﾃﾞｯｸｽのみ（面無し）
+		wl.vel.push_back(n+1);
+		wl.vel.push_back(n+2);
 	}
 
 	return FALSE;
@@ -588,9 +587,9 @@ int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GL
 	GLfloat	f = dAccuLength / dAllLength;
 
 	pfTEX[n++] = f;
-	pfTEX[n++] = 0.0f;
-	pfTEX[n++] = f;
 	pfTEX[n++] = 1.0f;
+	pfTEX[n++] = f;
+	pfTEX[n++] = 0.0f;
 
 	return 4;
 }
@@ -688,7 +687,7 @@ BOOL CNCcycle::AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) 
 
 int CNCcycle::AddGLWireTexture(size_t, float&, float, GLfloat*) const
 {
-	return 0;
+	return -1;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1423,8 +1422,8 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 		vnr.insert(vnr.end(), bt2, et2);
 	}
 
-	// 軌跡の頂点ｲﾝﾃﾞｯｸｽ
 	if ( m_pWireObj ) {
+		// 軌跡の頂点ｲﾝﾃﾞｯｸｽ
 		for ( i=0; i<=nCnt; i++ ) {	// XY軌跡
 			wl.vel.push_back(n+i*2);
 		}
@@ -1464,16 +1463,16 @@ int CNCcircle::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, 
 	for ( ; sqxy<eqxy || squv<equv; sqxy+=ARCSTEP, squv+=ARCSTEP, nCnt+=4 ) {
 		f = dAccuLength / dAllLength;
 		pfTEX[n++] = f;
-		pfTEX[n++] = 0.0f;
-		pfTEX[n++] = f;
 		pfTEX[n++] = 1.0f;
+		pfTEX[n++] = f;
+		pfTEX[n++] = 0.0f;
 		dAccuLength += rxy*ARCSTEP;	// 2πr * ARCSTEP/2π
 	}
 	f = dAccuLength / dAllLength;
 	pfTEX[n++] = f;
-	pfTEX[n++] = 0.0f;
+	pfTEX[n++] = 1.0f;
 	pfTEX[n++] = f;
-	pfTEX[n  ] = 1.0f;
+	pfTEX[n  ] = 0.0f;
 
 	return nCnt+4;
 }
