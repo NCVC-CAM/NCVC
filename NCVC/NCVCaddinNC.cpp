@@ -31,15 +31,14 @@ NCEXPORT int WINAPI NCVC_GetNCBlockData(NCVCHANDLE hDoc, int nIndex, LPSTR pszBu
 #ifdef _DEBUG
 	printf("NCVC_GetNCBlockData()\n");
 #endif
-	int		nResult = -1;
 	if ( !IsNCDocument(hDoc) )
-		return nResult;
+		return -1;
 	CNCDoc* pDoc = reinterpret_cast<CNCDoc *>(hDoc);
-	if ( nIndex < 0 || nIndex > pDoc->GetNCBlockSize() || !pszBuf )
-		return nResult;
+	if ( nIndex < 0 || nIndex >= pDoc->GetNCBlockSize() || !pszBuf )
+		return -1;
 
-	CString		strBuf(pDoc->GetNCblock(nIndex)->GetStrBlock());
-	nResult = strBuf.GetLength();
+	CString	strBuf(pDoc->GetNCblock(nIndex)->GetStrBlock());
+	int		nResult = strBuf.GetLength();
 	if ( nResult >= nMax )
 		return -1;
 	lstrcpy(pszBuf, strBuf);
@@ -65,7 +64,7 @@ NCEXPORT BOOL WINAPI NCVC_GetNCData(NCVCHANDLE hDoc, int nIndex, LPNCDATA pData)
 	if ( !IsNCDocument(hDoc) || !pData || pData->dwSize != sizeof(NCDATA) )
 		return FALSE;
 	CNCDoc* pDoc = reinterpret_cast<CNCDoc *>(hDoc);
-	if ( nIndex < 0 || nIndex > pDoc->GetNCsize() )
+	if ( nIndex < 0 || nIndex >= pDoc->GetNCsize() )
 		return FALSE;
 
 	CNCdata* pNC = pDoc->GetNCdata(nIndex);
