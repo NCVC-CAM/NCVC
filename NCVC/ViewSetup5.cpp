@@ -19,6 +19,7 @@ BEGIN_MESSAGE_MAP(CViewSetup5, CPropertyPage)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_BT_MILL, &CViewSetup5::OnColorButton)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_SOLIDVIEW, &CViewSetup5::OnSolidClick)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_G00VIEW, &CViewSetup5::OnChange)
+	ON_BN_CLICKED(IDC_VIEWSETUP5_LATHESLIT, &CViewSetup5::OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_DRAGRENDER, &CViewSetup5::OnChange)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_TEXTURE, &CViewSetup5::OnTextureClick)
 	ON_BN_CLICKED(IDC_VIEWSETUP5_TEXTUREFIND, &CViewSetup5::OnTextureFind)
@@ -40,7 +41,9 @@ CViewSetup5::CViewSetup5() : CPropertyPage(CViewSetup5::IDD)
 	m_bWirePath			= pOpt->m_bWirePath;
 	m_bDrag				= pOpt->m_bDragRender;
 	m_bTexture			= pOpt->m_bTexture;
+	m_bLatheSlit		= pOpt->m_bLatheSlit;
 	m_bNoActiveTraceGL	= pOpt->m_bNoActiveTraceGL;
+	m_bToolTrace		= pOpt->m_bToolTrace;
 	m_strTexture		= pOpt->m_strTexture;
 	m_nMillType			= pOpt->m_nMillType;
 	for ( int i=0; i<SIZEOF(m_colView); i++ ) {
@@ -59,16 +62,19 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 {
 	__super::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_VIEWSETUP5_DEFAULTENDMILL, m_dEndmill);
-	DDX_Control(pDX, IDC_VIEWSETUP5_G00VIEW, m_ctG00View);
+	DDX_Control(pDX, IDC_VIEWSETUP5_G00VIEW, m_ctWirePath);
 	DDX_Control(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_ctDrag);
 	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTURE, m_ctTexture);
+	DDX_Control(pDX, IDC_VIEWSETUP5_LATHESLIT, m_ctLatheSlit);
 	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTUREFILE, m_ctTextureFile);
 	DDX_Control(pDX, IDC_VIEWSETUP5_TEXTUREFIND, m_ctTextureFind);
 	DDX_Check(pDX, IDC_VIEWSETUP5_SOLIDVIEW, m_bSolid);
 	DDX_Check(pDX, IDC_VIEWSETUP5_G00VIEW, m_bWirePath);
 	DDX_Check(pDX, IDC_VIEWSETUP5_DRAGRENDER, m_bDrag);
 	DDX_Check(pDX, IDC_VIEWSETUP5_TEXTURE, m_bTexture);
+	DDX_Check(pDX, IDC_VIEWSETUP5_LATHESLIT, m_bLatheSlit);
 	DDX_Check(pDX, IDC_VIEWSETUP5_NOACTIVETRACEGL, m_bNoActiveTraceGL);
+	DDX_Check(pDX, IDC_VIEWSETUP5_TOOLTRACE, m_bToolTrace);
 	DDX_Text(pDX, IDC_VIEWSETUP5_TEXTUREFILE, m_strTexture);
 	DDX_CBIndex(pDX, IDC_VIEWSETUP5_MILL_TYPE, m_nMillType);
 	for ( int i=0; i<SIZEOF(m_ctColor); i++ )
@@ -77,8 +83,9 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 
 void CViewSetup5::EnableSolidControl(void)
 {
-	m_ctG00View.EnableWindow(m_bSolid);
+	m_ctWirePath.EnableWindow(m_bSolid);
 	m_ctDrag.EnableWindow(m_bSolid);
+	m_ctLatheSlit.EnableWindow(m_bSolid);
 	m_ctTexture.EnableWindow(m_bSolid);
 	m_ctTextureFile.EnableWindow(m_bSolid);
 	m_ctTextureFind.EnableWindow(m_bSolid);
@@ -124,7 +131,9 @@ BOOL CViewSetup5::OnApply()
 	pOpt->m_bWirePath		= m_bWirePath;
 	pOpt->m_bDragRender		= m_bDrag;
 	pOpt->m_bTexture		= m_bTexture;
+	pOpt->m_bLatheSlit		= m_bLatheSlit;
 	pOpt->m_bNoActiveTraceGL= m_bNoActiveTraceGL;
+	pOpt->m_bToolTrace		= m_bToolTrace;
 	pOpt->m_strTexture		= m_strTexture;
 	pOpt->m_nMillType		= m_nMillType;
 	pOpt->m_dDefaultEndmill = m_dEndmill / 2.0f;

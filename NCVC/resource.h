@@ -53,7 +53,8 @@
 #define IDS_MAKENCD_CIRCLEEND           602
 #define IDS_MAKENCD_BREAKLAYER          603
 #define IDS_MAKENCD_BINDFILE            604
-#define IDS_MAKENCD_PROG                605
+#define IDS_MAKENCD_LATHEDRILL          605
+#define IDS_MAKENCD_PROG                606
 #define IDS_MAKE_NCD                    700
 #define IDS_MAKE_DXF                    701
 #define IDS_SETUP_MC                    702
@@ -318,6 +319,8 @@
 #define IDC_VIEWSETUP5_TEXTUREFILE      2414
 #define IDC_VIEWSETUP5_TEXTUREFIND      2415
 #define IDC_VIEWSETUP5_NOACTIVETRACEGL  2416
+#define IDC_VIEWSETUP5_LATHESLIT        2417
+#define IDC_VIEWSETUP5_TOOLTRACE        2418
 #define IDC_VIEWSETUP5_ST_WORK          2420
 #define IDC_VIEWSETUP5_ST_CUT           2421
 #define IDC_VIEWSETUP5_ST_MILL          2422
@@ -486,6 +489,7 @@
 #define IDC_MKNC1_FOOTERPATH            4016
 #define IDC_MKNC1_XREV                  4020
 #define IDC_MKNC1_YREV                  4021
+#define IDD_MKLA_SETUP0                 4040
 #define IDD_MKLA_SETUP1                 4050
 #define IDC_MKLA1_CUT                   4051
 #define IDC_MKLA1_PULL_Z                4052
@@ -510,6 +514,17 @@
 #define IDC_MKNC2_SPINDLE               4111
 #define IDC_MKNC2_ZRETURN               4112
 #define IDC_MKNC2_ZRETURN_S             4113
+#define IDD_MKLA_SETUP2                 4150
+#define IDC_MKLA2_DRILL                 4151
+#define IDC_MKLA2_SPINDLE               4152
+#define IDC_MKLA2_FEED                  4153
+#define IDC_MKLA2_CYCLE                 4154
+#define IDC_MKLA2_D                     4155
+#define IDC_MKLA2_CUSTOMCODE            4156
+#define IDC_MKLA2_DTEXT                 4157
+#define IDC_MKLA2_HOLE                  4158
+#define IDD_MKLA_SETUP3                 4170
+#define IDC_MKLA3_COPY                  4171
 #define IDD_MKWI_SETUP2                 4180
 #define IDC_MKWI2_AWFCNT                4181
 #define IDC_MKWI2_AWFCUT                4182
@@ -532,6 +547,8 @@
 #define IDC_MKNC3_MAKEEND_VALUE         4212
 #define IDC_MKNC3_MAKEEND_FEED          4214
 #define IDC_MKNC3_HELICAL               4215
+#define IDD_MKLA_SETUP4                 4250
+#define IDC_MKLA4_ENDFACE               4251
 #define IDD_MKNC_SETUP4                 4300
 #define IDC_MKNC4_SPINDLE               4301
 #define IDC_MKNC4_FEED                  4302
@@ -738,6 +755,8 @@
 #define IDS_REG_VIEW_NC_TEXTURE         10971
 #define IDS_REG_VIEW_NC_TEXTUREFILE     10972
 #define IDS_REG_VIEW_NC_NOACTIVETRACEGL 10973
+#define IDS_REG_VIEW_NC_TOOLTRACE       10974
+#define IDS_REG_VIEW_NC_LATHESLIT       10975
 #define IDS_REG_VIEW_NC_FOURVIEW01      10980
 #define IDS_REG_VIEW_NC_FOURVIEW02      10981
 #define IDS_REG_CONVERT                 10999
@@ -760,9 +779,10 @@
 #define IDS_ERR_CONTROL                 21010
 #define IDS_ERR_FILEPATH                21011
 #define IDS_ERR_UNDERZERO               21012
-#define IDS_ERR_SETTING                 21013
-#define IDS_ERR_REGEX                   21014
-#define IDS_ERR_GLSL                    21015
+#define IDS_ERR_POSITIVE                21013
+#define IDS_ERR_SETTING                 21014
+#define IDS_ERR_REGEX                   21015
+#define IDS_ERR_GLSL                    21016
 #define IDS_ERR_CAMDATA                 21050
 #define IDS_ERR_CAMVER                  21051
 #define IDS_ERR_CAMOLD                  21052
@@ -777,6 +797,8 @@
 #define IDS_ERR_FILEREAD                21101
 #define IDS_ERR_SUBPRO                  21102
 #define IDS_ERR_ADDITEM                 21105
+#define IDS_ERR_LATHE_INSIDE            21185
+#define IDS_ERR_LATHE_LAYER             21186
 #define IDS_ERR_LATHE_SHAPE             21187
 #define IDS_ERR_MAKEDXFLAYER            21188
 #define IDS_ERR_MAKEMULTILAYER          21189
@@ -813,8 +835,8 @@
 #define IDS_ERR_NCBLK_M98               25004
 #define IDS_ERR_NCBLK_M98L              25005
 #define IDS_ERR_NCBLK_CHAMFERING        25006
-#define IDS_ERR_NCBLK_WORKFILE          25007
 #define IDS_ERR_NCBLK_FILE              25007
+#define IDS_ERR_NCBLK_LATHEHOLE         25009
 #define IDS_ERR_NCBLK_NOTLATHE          25010
 #define IDS_ERR_NCBLK_CORRECT           25011
 #define IDS_ERR_NCBLK_CORRECTSTART      25012
@@ -843,8 +865,6 @@
 #define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
-#define ID__32816                       32816
-#define ID_32821                        32821
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -867,9 +887,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        191
+#define _APS_NEXT_RESOURCE_VALUE        200
 #define _APS_NEXT_COMMAND_VALUE         32822
-#define _APS_NEXT_CONTROL_VALUE         1058
+#define _APS_NEXT_CONTROL_VALUE         1064
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

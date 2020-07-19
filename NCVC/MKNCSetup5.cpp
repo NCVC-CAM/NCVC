@@ -65,7 +65,7 @@ BOOL CMKNCSetup5::OnInitDialog()
 	m_nTolerance		= pOpt->MIL_I_TOLERANCE;
 	m_nOptimaizeDrill	= pOpt->MIL_I_OPTIMAIZEDRILL;
 	m_dDrillMargin		= pOpt->MIL_D_DRILLMARGIN;
-	::Path_Name_From_FullPath(pOpt->m_strOption[MKNC_STR_PERLSCRIPT], m_strScriptPath, m_strScript);
+	::Path_Name_From_FullPath(pOpt->MIL_S_PERLSCRIPT, m_strScriptPath, m_strScript);
 	// Êß½•\Ž¦‚ÌÅ“K‰»(shlwapi.h)
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC5_SCRIPTPATH, m_strScriptPath);
 	//
@@ -106,7 +106,7 @@ BOOL CMKNCSetup5::OnApply()
 	pOpt->MIL_I_TOLERANCE		= m_nTolerance;
 	pOpt->MIL_I_OPTIMAIZEDRILL	= m_nOptimaizeDrill;
 	pOpt->MIL_D_DRILLMARGIN		= fabs((float)m_dDrillMargin);
-	pOpt->m_strOption[MKNC_STR_PERLSCRIPT] = m_strScriptPath+m_strScript;
+	pOpt->MIL_S_PERLSCRIPT		= m_strScriptPath+m_strScript;
 
 	return TRUE;
 }

@@ -26,11 +26,14 @@ public:
 			m_bWirePath,
 			m_bDrag,
 			m_bTexture,
-			m_bNoActiveTraceGL;
+			m_bLatheSlit,
+			m_bNoActiveTraceGL,
+			m_bToolTrace;
 	int		m_nMillType;
-	CButton m_ctG00View,
+	CButton m_ctWirePath,
 			m_ctDrag,
 			m_ctTexture,
+			m_ctLatheSlit,
 			m_ctTextureFind;
 	CEdit	m_ctTextureFile;
 	CFloatEdit	m_dEndmill;

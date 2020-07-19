@@ -12,13 +12,16 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 //#define	_DEPTH_TEXTURE_
-// test  GL_TEXTURE_2D -> GL_TEXTURE_RECTANGLE
+
+GLuint	CFrameBuffer::ms_uBind = 0;
 
 /////////////////////////////////////////////////////////////////////////////
 
 CFrameBuffer::CFrameBuffer()
 {
-	m_bBind = FALSE;
+	if ( ms_uBind > 0 ) {
+		Bind(FALSE);
+	}
 	m_fb = m_rb = m_tb = 0;
 }
 
@@ -35,15 +38,15 @@ CFrameBuffer::~CFrameBuffer()
 
 BOOL CFrameBuffer::Create(GLsizei w, GLsizei h, BOOL bBindKeep)
 {
-	GLenum	glError;
-
 	m_w = w;	m_h = h;
 
+	GetGLError();		// error flash
 #ifdef _DEPTH_TEXTURE_
 	// Texture
 	::glGenTextures(1, &m_tb);
 	::glBindTexture(GL_TEXTURE_2D, m_tb);
 	::glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+//	::glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_NONE);	// 廃止？？
 	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -56,21 +59,14 @@ BOOL CFrameBuffer::Create(GLsizei w, GLsizei h, BOOL bBindKeep)
 	::glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8, w, h);
 	::glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
 #endif
-	glError = ::glGetError();
-	if ( glError != GL_NO_ERROR ) {
-#ifdef _DEBUG
-		g_dbg.printf( "CFrameBuffer::Create() RBO error=%d", glError);
-#endif
+	if ( GetGLError() != GL_NO_ERROR )
 		return FALSE;
-	}
 
 	// FBO作成
 	::glGenFramebuffersEXT(1, &m_fb);
 	::glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
-#ifdef _DEBUG
-	glError = ::glGetError();
-	g_dbg.printf( "CFrameBuffer::Create() FBO error=%d", glError);
-#endif
+	if ( GetGLError() != GL_NO_ERROR )
+		return FALSE;
 
 	// FBOにアタッチ
 #ifdef _DEPTH_TEXTURE_
@@ -78,15 +74,10 @@ BOOL CFrameBuffer::Create(GLsizei w, GLsizei h, BOOL bBindKeep)
 #else
 	::glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, m_rb);
 #endif
-	glError = ::glGetError();
-	if ( glError != GL_NO_ERROR ) {
-#ifdef _DEBUG
-		g_dbg.printf( "CFrameBuffer::Create() attach error=%d", glError);
-#endif
+	if ( GetGLError() != GL_NO_ERROR )
 		return FALSE;
-	}
 
-	m_bBind = TRUE;
+	ms_uBind = m_fb;
 	Bind(bBindKeep);
 
 	return TRUE;
@@ -104,24 +95,63 @@ void CFrameBuffer::Delete(void)
 	m_fb = m_rb = m_tb = 0;
 }
 
-void CFrameBuffer::Bind(BOOL bind)
+BOOL CFrameBuffer::Bind(BOOL bind)
 {
-	::glGetError();		// error flash
+	BOOL	bResult = TRUE;
+
+	GetGLError();		// error flash
 	if ( bind ) {
 		if ( m_fb ) {
-			if ( !m_bBind ) {
-				m_bBind = TRUE;
+			if ( ms_uBind != m_fb ) {
+				ms_uBind = m_fb;
 				::glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
 			}
 			::glViewport(0, 0, m_w, m_h);
 		}
+		else
+			bResult = FALSE;
 	}
-	else if ( m_fb && m_bBind ) {
-		m_bBind = FALSE;
+	else if ( ms_uBind > 0 ) {
+		ms_uBind = 0;
 		::glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
 #ifdef _DEBUG
-	GLenum	glError = ::glGetError();
-	g_dbg.printf( "CFrameBuffer::Bind(%d) error=%d", bind, glError);
+	GetGLError();
 #endif
+
+	return bResult;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+#ifdef _DEBUG
+GLenum DbgGetGLError(char* szFile, UINT nLine)
+{
+	GLenum glError = ::glGetError();
+
+	if ( glError != GL_NO_ERROR ) {
+		switch(glError) {
+		case GL_INVALID_ENUM:
+			g_dbg.printf("GL_INVALID_ENUM File=%s, line=%d", szFile, nLine);
+			break;
+		case GL_INVALID_VALUE:
+			g_dbg.printf("GL_INVALID_VALUE File=%s, line=%d", szFile, nLine);
+			break;
+		case GL_INVALID_OPERATION:
+			g_dbg.printf("GL_INVALID_OPERATION File=%s, line=%d", szFile, nLine);
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			g_dbg.printf("GL_INVALID_FRAMEBUFFER_OPERATION File=%s, line=%d", szFile, nLine);
+			break;
+		case GL_OUT_OF_MEMORY:
+			g_dbg.printf("GL_OUT_OF_MEMORY File=%s, line=%d", szFile, nLine);
+			break;
+		default:
+			g_dbg.printf("GL_??? File=%s, line=%d", szFile, nLine);
+			break;
+		}
+	}
+
+	return glError;
+}
+#endif

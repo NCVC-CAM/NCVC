@@ -332,10 +332,9 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 	m_ltTool.RemoveAll();
 
 	// –½—ß‚ð•ªŠ„
-	typedef tokenizer< char_separator<TCHAR> > tokenizer;
-	static	char_separator<TCHAR> sep(gg_szComma, "", keep_empty_tokens);
 	string	str, strTok;
-	tokenizer	tok(str, sep);
+	char_separator<TCHAR> sep(gg_szComma, "", keep_empty_tokens);
+	tokenizer< char_separator<TCHAR> > tok(str, sep);
 
 	try {
 		for ( i=0; TRUE; i++ ) {	// Tool´ÝÄØ‚ª“Ç‚ß‚È‚­‚È‚é‚Ü‚Å

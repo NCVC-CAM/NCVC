@@ -447,7 +447,11 @@
     <ClCompile Include="MCSetup4.cpp" />
     <ClCompile Include="MCSetup5.cpp" />
     <ClCompile Include="MKLASetup.cpp" />
+    <ClCompile Include="MKLASetup0.cpp" />
     <ClCompile Include="MKLASetup1.cpp" />
+    <ClCompile Include="MKLASetup2.cpp" />
+    <ClCompile Include="MKLASetup3.cpp" />
+    <ClCompile Include="MKLASetup4.cpp" />
     <ClCompile Include="MKNCSetup.cpp" />
     <ClCompile Include="MKNCSetup1.cpp" />
     <ClCompile Include="MKNCSetup2.cpp" />
@@ -483,6 +487,9 @@
     <ClCompile Include="NCView.cpp" />
     <ClCompile Include="NCViewBase.cpp" />
     <ClCompile Include="NCViewGL.cpp" />
+    <ClCompile Include="NCViewGL_Lathe.cpp" />
+    <ClCompile Include="NCViewGL_Mill.cpp" />
+    <ClCompile Include="NCViewGL_Wire.cpp" />
     <ClCompile Include="NCViewSplit.cpp" />
     <ClCompile Include="NCViewTab.cpp" />
     <ClCompile Include="NCViewXY.cpp" />
@@ -581,7 +588,11 @@
     <ClInclude Include="MCSetup4.h" />
     <ClInclude Include="MCSetup5.h" />
     <ClInclude Include="MKLASetup.h" />
+    <ClInclude Include="MKLASetup0.h" />
     <ClInclude Include="MKLASetup1.h" />
+    <ClInclude Include="MKLASetup2.h" />
+    <ClInclude Include="MKLASetup3.h" />
+    <ClInclude Include="MKLASetup4.h" />
     <ClInclude Include="MKNCSetup.h" />
     <ClInclude Include="MKNCSetup1.h" />
     <ClInclude Include="MKNCSetup2.h" />

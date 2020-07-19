@@ -2451,8 +2451,10 @@ void CDXFshape::CreateScanLine_Lathe(int n, float d)
 		pChain = new CDXFchain;
 		PLIST_FOREACH(CDXFdata* pDataOrig, pChainOrig)
 			pData = CreateDxfLatheObject(pDataOrig, n*d);
-			if ( pData )
+			if ( pData ) {
 				pChain->AddTail(pData);
+				pChain->SetMaxRect(pData);
+			}
 		END_FOREACH
 		n--;
 		m_obLathe.Add(pChain);
@@ -2777,22 +2779,22 @@ CDXFdata* CreateDxfOffsetObject
 		int k/*=0*/, float dOffset/*=0*/)
 {
 	CDXFdata*	pDataResult = NULL;
-	DXFLARGV	dxfLine;
-	DXFCARGV	dxfCircle;
-	DXFAARGV	dxfArc;
-	DXFEARGV	dxfEllipse;
 
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
-		if ( k!=0 && pts.IsMatchPoint(&pte) )
-			break;
-		dxfLine.pLayer = pData->GetParentLayer();
-		dxfLine.s = pts;
-		dxfLine.e = pte;
-		pDataResult = new CDXFline(&dxfLine);
+		{
+			if ( k!=0 && pts.IsMatchPoint(&pte) )
+				break;
+			DXFLARGV	dxfLine;
+			dxfLine.pLayer = pData->GetParentLayer();
+			dxfLine.s = pts;
+			dxfLine.e = pte;
+			pDataResult = new CDXFline(&dxfLine);
+		}
 		break;
 	case DXFCIRCLEDATA:
 		{
+			DXFCARGV	dxfCircle;
 			const CDXFcircle* pCircle = static_cast<const CDXFcircle*>(pData);
 			dxfCircle.pLayer = pCircle->GetParentLayer();
 			dxfCircle.c = pCircle->GetCenter();
@@ -2802,6 +2804,7 @@ CDXFdata* CreateDxfOffsetObject
 		break;
 	case DXFARCDATA:
 		{
+			DXFAARGV	dxfArc;
 			const CDXFarc* pArc = static_cast<const CDXFarc*>(pData);
 			BOOL	bRound = pArc->GetRoundOrig(), bCreate = TRUE;
 			if ( !bRound && k!=0 )	// 左方向を基準
@@ -2844,6 +2847,7 @@ CDXFdata* CreateDxfOffsetObject
 		break;
 	case DXFELLIPSEDATA:
 		{
+			DXFEARGV	dxfEllipse;
 			const CDXFellipse* pEllipse = static_cast<const CDXFellipse*>(pData);
 			if ( !pEllipse->GetRoundOrig() && k!=0 )	// 左方向を基準
 				k = -k;
@@ -2908,22 +2912,23 @@ CDXFdata* CreateDxfOffsetObject
 CDXFdata*	CreateDxfLatheObject(const CDXFdata* pData, float yd)
 {
 	CDXFdata*	pDataResult = NULL;
-	DXFLARGV	dxfLine;
-	DXFAARGV	dxfArc;
-	DXFEARGV	dxfEllipse;
 
 	// 始点終点や中心点のY値だけをﾌﾟﾗｽしてｵﾌﾞｼﾞｪｸﾄ生成
 	switch ( pData->GetType() ) {
 	case DXFLINEDATA:
-		dxfLine.pLayer = pData->GetParentLayer();
-		dxfLine.s = pData->GetNativePoint(0);
-		dxfLine.e = pData->GetNativePoint(1);
-		dxfLine.s.y += yd;
-		dxfLine.e.y += yd;
-		pDataResult = new CDXFline(&dxfLine);
+		{
+			DXFLARGV	dxfLine;
+			dxfLine.pLayer = pData->GetParentLayer();
+			dxfLine.s = pData->GetNativePoint(0);
+			dxfLine.e = pData->GetNativePoint(1);
+			dxfLine.s.y += yd;
+			dxfLine.e.y += yd;
+			pDataResult = new CDXFline(&dxfLine);
+		}
 		break;
 	case DXFARCDATA:
 		{
+			DXFAARGV	dxfArc;
 			const CDXFarc* pArc = static_cast<const CDXFarc*>(pData);
 			dxfArc.pLayer = pArc->GetParentLayer();
 			dxfArc.c  = pArc->GetCenter();
@@ -2939,6 +2944,7 @@ CDXFdata*	CreateDxfLatheObject(const CDXFdata* pData, float yd)
 		break;
 	case DXFELLIPSEDATA:
 		{
+			DXFEARGV	dxfEllipse;
 			const CDXFellipse* pEllipse = static_cast<const CDXFellipse*>(pData);
 			dxfEllipse.pLayer = pEllipse->GetParentLayer();
 			dxfEllipse.c	= pEllipse->GetCenter();

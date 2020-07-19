@@ -113,5 +113,9 @@ void CMKNCSetup::OnApplyNow()
 			VERIFY(strName.LoadString(IDS_MAKE_NCD));
 			SetTitle(::AddDialogTitle2File(strName, m_pNCMake->GetInitFile()));
 		}
+		else {
+			strName.Format(IDS_ERR_WRITESETTING, strFileName);
+			AfxMessageBox(strName, MB_OK|MB_ICONEXCLAMATION);
+		}
 	}
 }

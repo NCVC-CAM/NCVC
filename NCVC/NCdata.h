@@ -45,16 +45,23 @@ struct	_TAPER
 typedef	_G68ROUND*	_LPG68ROUND;
 typedef	_TAPER*		_LPTAPER;
 
+// 刃物ﾀｲﾌﾟ
+enum
+{
+	NCMIL_SQUARE = 0,
+	NCMIL_BALL,
+	NCMIL_CHAMFER,		// 面取りミル(先端角90°)
+	NCMIL_DRILL,		// ドリル(先端角118°)
+		NCMIL_MAXTYPE		// [4]
+};
+
 // NCﾃﾞｰﾀ状態ﾌﾗｸﾞ
-#define	NCMIL_SQUARE		0x00000000
-#define	NCMIL_BALL			0x00000001
-#define	NCMIL_CHAMFER		0x00000002
-//#define	NCMIL_LATHEDRILL	0x00000003
-#define	NCFLG_ENDMILL		0x00000003	// 00:Square, 01:Ball, 10:Chamfering, 11:LatheDrill
-#define	NCMIL_MAXTYPE		NCMIL_CHAMFER
-#define	NCFLG_G02G03		0x00000004	// 0:G02, 1:G03
-#define	NCFLG_G98			0x00000008	// G98,G99（旋盤ﾓｰﾄﾞで使用）
-//#define	NCFLG_LATHEINSIDE	0x00010000	// 中ぐり（旋盤ﾓｰﾄﾞで使用 径補正と同じ上位ﾋﾞｯﾄ使用）
+#define	NCFLG_ENDMILL		0x00000007	// 刃物ﾀｲﾌﾟﾋﾞｯﾄ
+#define	NCFLG_G02G03		0x00000010	// 0:G02, 1:G03
+#define	NCFLG_G98			0x00000020	// G98,G99（旋盤ﾓｰﾄﾞで使用）
+#define	NCFLG_LATHE_INPASS	0x00010000	// 中ぐり（旋盤ﾓｰﾄﾞで使用 径補正と同じ上位ﾋﾞｯﾄ使用）
+#define	NCFLG_LATHE_HOLE	0x00020000	// 穴あけ（旋盤ﾓｰﾄﾞで使用 径補正と同じ上位ﾋﾞｯﾄ使用）
+#define	NCFLG_LATHE_INSIDE	(NCFLG_LATHE_INPASS|NCFLG_LATHE_HOLE)	// 内側
 
 // 始点終点指示
 enum	ENPOINTORDER
@@ -79,12 +86,15 @@ struct BOTTOMDRAW
 	CVelement	vel;
 	GLuint		rs, re;
 };
-//typedef	std::vector<BOTTOMDRAW>	CVBtmDraw;
 class CVBtmDraw : public std::vector<BOTTOMDRAW>
 {
 public:
 	void	Draw(void);		// to NCViewGL.cpp
 };
+
+// 旋盤用定数
+const float		LATHELINEWIDTH = 3.0f;	// ﾃﾞﾌﾟｽ値を拾うための線幅
+const double	LATHEHEIGHT = 6.0;		// glOrtho()のbottomとtop
 
 // ﾜｲﾔ放電加工機描画用
 struct WIRELINE
@@ -131,7 +141,7 @@ protected:
 	int			m_nSpindle;		// 主軸回転数（主に旋盤ﾓｰﾄﾞで使用）
 	float		m_dFeed,		// このｵﾌﾞｼﾞｪｸﾄの切削送り速度
 				m_dMove[NCXYZ],	// 各軸ごとの移動距離(早送りの時間計算用)
-				m_dEndmill;		// ｴﾝﾄﾞﾐﾙ径
+				m_dEndmill;		// ｴﾝﾄﾞﾐﾙ半径
 	CNCarray	m_obCdata;		// 補正用ｵﾌﾞｼﾞｪｸﾄ
 	CNCdata*	m_pWireObj;		// ﾜｲﾔ加工用UV軸ｵﾌﾞｼﾞｪｸﾄ
 	//	固定ｻｲｸﾙでは，指定された座標が最終座標ではないので
@@ -200,6 +210,7 @@ public:
 	// NCViewGL.cpp からも呼び出し
 	void	SetEndmillOrgCircle(const CPoint3F&, CVfloat&) const;
 	void	SetChamfermillOrg(const CPoint3F&, CVfloat&) const;
+	void	SetDrillOrg(const CPoint3F&, CVfloat&) const;
 	void	AddEndmillSphere(const CPoint3F&, BOTTOMDRAW&, CVBtmDraw&) const;
 
 	virtual	void	DrawTuning(float);
@@ -214,8 +225,8 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
-	virtual	void	DrawGLMillWire(void) const;
-	virtual	void	DrawGLLatheFace(void) const;
+	virtual	void	DrawGLWirePass(void) const;
+	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
 	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
@@ -253,6 +264,7 @@ public:
 };
 
 typedef void (CNCdata::*PFNNCDRAWPROC)(CDC*, BOOL) const;
+typedef	void (CNCdata::*PFNSETENDMILLFUNC)(const CPoint3F&, CVfloat&) const;
 
 /////////////////////////////////////////////////////////////////////////////
 // G0,G1 直線補間ｸﾗｽ
@@ -285,8 +297,8 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
-	virtual	void	DrawGLMillWire(void) const;
-	virtual	void	DrawGLLatheFace(void) const;
+	virtual	void	DrawGLWirePass(void) const;
+	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
 	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
@@ -341,7 +353,7 @@ class CNCcycle : public CNCline
 	void	DrawCycle(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 public:
-	CNCcycle(const CNCdata*, LPNCARGV, const CPoint3F&, BOOL);
+	CNCcycle(const CNCdata*, LPNCARGV, const CPoint3F&, BOOL, enMAKETYPE);
 	virtual ~CNCcycle();
 
 	int		GetDrawCnt(void) const;
@@ -364,8 +376,8 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
-	virtual	void	DrawGLMillWire(void) const;
-	virtual	void	DrawGLLatheFace(void) const;
+	virtual	void	DrawGLWirePass(void) const;
+	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
 	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
@@ -388,6 +400,15 @@ public:
 class	CNCcircle;
 typedef void (CNCcircle::*PFNCIRCLEDRAW)(ENNCDRAWVIEW, CDC*) const;
 
+struct DRAWGLWIRECIRCLE	// DrawGLWirePassCircle()引数
+{
+	BOOL		bG03,	// TRUE:G03, FALSE:G02
+				bLatheDepth;	// 旋盤内径描画の特殊性
+	float		sq, eq;
+	CPoint3F	pts, pte;
+};
+typedef	DRAWGLWIRECIRCLE*		LPDRAWGLWIRECIRCLE;
+
 class CNCcircle : public CNCline  
 {
 	void		Constracter(void);
@@ -406,21 +427,27 @@ class CNCcircle : public CNCline
 	void	SetEndmillXYPath(CVfloat&) const;
 	void	SetEndmillSquare(BOTTOMDRAW&, CVBtmDraw&) const;
 	void	SetEndmillBall(BOTTOMDRAW&, CVBtmDraw&) const;
-	void	SetEndmillChamfer(BOTTOMDRAW&, CVBtmDraw&) const;
+	void	SetEndmillChamferAndDrill(BOTTOMDRAW&, CVBtmDraw&) const;
 	void	SetEndmillSpherePathCircle(float, const CPoint3F&, CVfloat&) const;
 	void	SetEndmillPathXZ_Sphere(float, const CPoint3F&, CVfloat&) const;
 	void	SetEndmillPathYZ_Sphere(float, const CPoint3F&, CVfloat&) const;
 	void	AddEndmillPipe(GLuint, BOTTOMDRAW&, CVBtmDraw&) const;
-	void	AddEndmillChamfer(BOTTOMDRAW&, CVBtmDraw&) const;
+	void	AddEndmillChamferAndDrill(BOTTOMDRAW&, CVBtmDraw&) const;
+	void	DrawG17(ENNCDRAWVIEW, CDC*) const;
+	void	DrawG18(ENNCDRAWVIEW, CDC*) const;
+	void	DrawG19(ENNCDRAWVIEW, CDC*) const;
+	void	DrawGLWirePassCircle(const CPoint3F&, const CPoint3F&) const;
+	void	DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE) const;
 
 	// IJK指定なしの時，円の方程式から中心の算出
 	BOOL	CalcCenter(const CPointF&, const CPointF&);
 	void	SetCenter(const CPointF&);
 	// 平面座標からの角度計算と調整
+	boost::tuple<float, float>	CalcAngle(BOOL, const CPointF&, const CPointF&) const;
 	void	AngleTuning(const CPointF&, const CPointF&);
 
 public:
-	CNCcircle(const CNCdata*, LPNCARGV, const CPoint3F&, enMAKETYPE enType = NCMAKEMILL);
+	CNCcircle(const CNCdata*, LPNCARGV, const CPoint3F&, enMAKETYPE);
 	CNCcircle(const CNCdata*);
 
 	BOOL	GetG03(void) const;
@@ -429,11 +456,6 @@ public:
 	float	GetStartAngle(void) const;
 	float	GetEndAngle(void) const;
 	boost::tuple<float, float>	GetSqEq(void) const;
-
-	void	Draw_G17(ENNCDRAWVIEW, CDC*) const;
-	void	Draw_G18(ENNCDRAWVIEW, CDC*) const;
-	void	Draw_G19(ENNCDRAWVIEW, CDC*) const;
-	void	DrawGLWire(void) const;
 
 	virtual	void	DrawTuning(float);
 	virtual	void	DrawTuningXY(float);
@@ -447,8 +469,8 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
-	virtual	void	DrawGLMillWire(void) const;
-	virtual	void	DrawGLLatheFace(void) const;
+	virtual	void	DrawGLWirePass(void) const;
+	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
 	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;

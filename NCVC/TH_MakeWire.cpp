@@ -263,7 +263,7 @@ void InitialVariable(void)
 {
 	if ( !(g_wBindOperator & TH_APPEND) )
 		CDXFdata::ms_pData = g_pDoc->GetCircleObject();
-	CNCMakeWire::InitialVariable();
+	CNCMakeWire::InitialVariable();		// CNCMakeBase::InitialVariable()
 }
 
 void SetStaticOption(void)

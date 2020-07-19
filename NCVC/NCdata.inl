@@ -343,8 +343,8 @@ inline void PTCYCLE::DrawTuning(const float f)
 	ptDrawI = ptI * f;
 	ptDrawR = ptR * f;
 	ptDrawC = ptC * f;
-	rcDraw.TopLeft() = ptI * f - LOMETRICFACTOR;
-	rcDraw.BottomRight() = ptI * f + LOMETRICFACTOR;
+	rcDraw.TopLeft() = ptC * f - LOMETRICFACTOR;
+	rcDraw.BottomRight() = ptC * f + LOMETRICFACTOR;
 }
 
 inline int CNCcycle::GetDrawCnt(void) const

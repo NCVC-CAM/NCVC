@@ -73,6 +73,14 @@ enum {
 #define	WIR_F_AWFSTART		m_pFlgOpt[MKWI_FLG_AWFSTART]
 #define	WIR_F_AWFEND		m_pFlgOpt[MKWI_FLG_AWFEND]
 //
+#define	WIR_S_LINEFORM		m_strOption[MKWI_STR_LINEFORM]
+#define	WIR_S_EOB			m_strOption[MKWI_STR_EOB]
+#define	WIR_S_HEADER		m_strOption[MKWI_STR_HEADER]
+#define	WIR_S_FOOTER		m_strOption[MKWI_STR_FOOTER]
+#define	WIR_S_TAPERMODE		m_strOption[MKWI_STR_TAPERMODE]
+#define	WIR_S_AWFCNT		m_strOption[MKWI_STR_AWFCNT]
+#define	WIR_S_AWFCUT		m_strOption[MKWI_STR_AWFCUT]
+//
 class CNCMakeWireOpt : public CNCMakeOption
 {
 	friend class CMKWISetup1;
@@ -94,6 +102,7 @@ public:
 	BOOL	IsAWFcircle(float r) {
 		return WIR_D_AWFCIRCLE_LO<=r && r<=WIR_D_AWFCIRCLE_HI;
 	}
+	virtual	CString	GetLineNoForm(void) const;
 
 #ifdef _DEBUG
 	virtual	void	DbgDump(void) const;	// µÌß¼®Ý•Ï”‚ÌÀÞÝÌß

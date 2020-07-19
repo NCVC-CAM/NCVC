@@ -2,6 +2,7 @@
 //
 
 #pragma once
+#include "afxwin.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CMCSetup4 ダイアログ
@@ -22,6 +23,7 @@ public:
 	CString		m_strAutoBreak;
 	CStatic		m_ctDepthLabel1,
 				m_ctDepthLabel2;
+	CButton		m_ctL0Cycle;
 
 public:
 	virtual BOOL OnApply();

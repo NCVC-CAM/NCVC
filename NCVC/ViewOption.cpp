@@ -113,7 +113,9 @@ static	const	BOOL	g_bDefaultSetting[] = {
 	FALSE,		// m_bWirePath
 	FALSE,		// m_bDragRender
 	FALSE,		// m_bTexture
-	FALSE		// m_bNoActiveTraceGL
+	FALSE,		// m_bLatheSlit
+	FALSE,		// m_bNoActiveTraceGL
+	TRUE		// m_bToolTrace
 };
 static	const	UINT	g_nFlagID[] = {
 	IDS_REG_VIEW_NC_TRACEMARK,
@@ -125,7 +127,9 @@ static	const	UINT	g_nFlagID[] = {
 	IDS_REG_VIEW_NC_G00VIEW,
 	IDS_REG_VIEW_NC_DRAGRENDER,
 	IDS_REG_VIEW_NC_TEXTURE,
-	IDS_REG_VIEW_NC_NOACTIVETRACEGL
+	IDS_REG_VIEW_NC_LATHESLIT,
+	IDS_REG_VIEW_NC_NOACTIVETRACEGL,
+	IDS_REG_VIEW_NC_TOOLTRACE,
 };
 static	const	UINT	g_nDelFlagID[] = {
 	IDS_REG_VIEW_NC_MILL_T,

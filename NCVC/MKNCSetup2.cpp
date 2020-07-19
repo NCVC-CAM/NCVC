@@ -99,8 +99,8 @@ BOOL CMKNCSetup2::OnInitDialog()
 		m_nZReturn			= pOpt->MIL_I_ZRETURN;
 		m_bGclip			= pOpt->MIL_F_GCLIP;
 		m_bDisableSpindle	= pOpt->MIL_F_DISABLESPINDLE;
-		m_strLineForm		= pOpt->m_strOption[MKNC_STR_LINEFORM];
-		m_strEOB			= pOpt->m_strOption[MKNC_STR_EOB];
+		m_strLineForm		= pOpt->MIL_S_LINEFORM;
+		m_strEOB			= pOpt->MIL_S_EOB;
 	}
 	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMKLASetup)) ) {
 		// ù”ÕÓ°ÄÞ
@@ -115,8 +115,8 @@ BOOL CMKNCSetup2::OnInitDialog()
 		m_nG90				= pOpt->LTH_I_G90;
 		m_bGclip			= pOpt->LTH_F_GCLIP;
 		m_bDisableSpindle	= pOpt->LTH_F_DISABLESPINDLE;
-		m_strLineForm		= pOpt->m_strOption[MKLA_STR_LINEFORM];
-		m_strEOB			= pOpt->m_strOption[MKLA_STR_EOB];
+		m_strLineForm		= pOpt->LTH_S_LINEFORM;
+		m_strEOB			= pOpt->LTH_S_EOB;
 	}
 	else {
 		// Ü²Ô•ú“d‰ÁH‹@Ó°ÄÞ
@@ -131,8 +131,8 @@ BOOL CMKNCSetup2::OnInitDialog()
 		m_nLineAdd			= pOpt->WIR_I_LINEADD;
 		m_nG90				= pOpt->WIR_I_G90;
 		m_bGclip			= pOpt->WIR_F_GCLIP;
-		m_strLineForm		= pOpt->m_strOption[MKLA_STR_LINEFORM];
-		m_strEOB			= pOpt->m_strOption[MKLA_STR_EOB];
+		m_strLineForm		= pOpt->WIR_S_LINEFORM;
+		m_strEOB			= pOpt->WIR_S_EOB;
 	}
 	EnableControl_ProgNo();
 	EnableControl_LineAdd();
@@ -169,8 +169,8 @@ BOOL CMKNCSetup2::OnApply()
 		pOpt->MIL_I_ZRETURN			= m_nZReturn;
 		pOpt->MIL_F_GCLIP			= m_bGclip;
 		pOpt->MIL_F_DISABLESPINDLE	= m_bDisableSpindle;
-		pOpt->m_strOption[MKNC_STR_LINEFORM] = m_strLineForm;
-		pOpt->m_strOption[MKNC_STR_EOB] = m_strEOB;
+		pOpt->MIL_S_LINEFORM		= m_strLineForm;
+		pOpt->MIL_S_EOB				= m_strEOB;
 	}
 	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMKLASetup)) ) {
 		CNCMakeLatheOpt* pOpt = static_cast<CMKLASetup *>(pParent)->GetNCMakeOption();
@@ -182,8 +182,8 @@ BOOL CMKNCSetup2::OnApply()
 		pOpt->LTH_I_G90				= m_nG90;
 		pOpt->LTH_F_GCLIP			= m_bGclip;
 		pOpt->LTH_F_DISABLESPINDLE	= m_bDisableSpindle;
-		pOpt->m_strOption[MKLA_STR_LINEFORM] = m_strLineForm;
-		pOpt->m_strOption[MKLA_STR_EOB] = m_strEOB;
+		pOpt->LTH_S_LINEFORM		= m_strLineForm;
+		pOpt->LTH_S_EOB				= m_strEOB;
 	}
 	else {
 		CNCMakeWireOpt* pOpt = static_cast<CMKWISetup *>(pParent)->GetNCMakeOption();
@@ -194,8 +194,8 @@ BOOL CMKNCSetup2::OnApply()
 		pOpt->WIR_I_LINEADD			= m_nLineAdd;
 		pOpt->WIR_I_G90				= m_nG90;
 		pOpt->WIR_F_GCLIP			= m_bGclip;
-		pOpt->m_strOption[MKLA_STR_LINEFORM] = m_strLineForm;
-		pOpt->m_strOption[MKLA_STR_EOB] = m_strEOB;
+		pOpt->WIR_S_LINEFORM		= m_strLineForm;
+		pOpt->WIR_S_EOB				= m_strEOB;
 	}
 
 	return TRUE;

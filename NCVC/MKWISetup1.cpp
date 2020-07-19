@@ -63,9 +63,9 @@ BOOL CMKWISetup1::OnInitDialog()
 	m_dFeed			= pOpt->WIR_D_FEED;
 	m_dG92X			= pOpt->WIR_D_G92X;
 	m_dG92Y			= pOpt->WIR_D_G92Y;
-	m_strTaperMode	= pOpt->m_strOption[MKWI_STR_TAPERMODE];
-	::Path_Name_From_FullPath(pOpt->m_strOption[MKWI_STR_HEADER], m_strHeaderPath, m_strHeader);
-	::Path_Name_From_FullPath(pOpt->m_strOption[MKWI_STR_FOOTER], m_strFooterPath, m_strFooter);
+	m_strTaperMode	= pOpt->WIR_S_TAPERMODE;
+	::Path_Name_From_FullPath(pOpt->WIR_S_HEADER, m_strHeaderPath, m_strHeader);
+	::Path_Name_From_FullPath(pOpt->WIR_S_FOOTER, m_strFooterPath, m_strFooter);
 	// Êß½•\Ž¦‚ÌÅ“K‰»(shlwapi.h)
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_HEADERPATH, m_strHeaderPath);
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_FOOTERPATH, m_strFooterPath);
@@ -131,14 +131,14 @@ void CMKWISetup1::OnFooterEdit()
 BOOL CMKWISetup1::OnApply() 
 {
 	CNCMakeWireOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->WIR_D_DEPTH	= m_dDepth;
-	pOpt->WIR_D_TAPER	= m_dTaper;
-	pOpt->WIR_D_FEED	= m_dFeed;
-	pOpt->WIR_D_G92X	= m_dG92X;
-	pOpt->WIR_D_G92Y	= m_dG92Y;
-	pOpt->m_strOption[MKWI_STR_TAPERMODE]	= m_strTaperMode;
-	pOpt->m_strOption[MKWI_STR_HEADER]		= m_strHeaderPath+m_strHeader;
-	pOpt->m_strOption[MKWI_STR_FOOTER]		= m_strFooterPath+m_strFooter;
+	pOpt->WIR_D_DEPTH		= m_dDepth;
+	pOpt->WIR_D_TAPER		= m_dTaper;
+	pOpt->WIR_D_FEED		= m_dFeed;
+	pOpt->WIR_D_G92X		= m_dG92X;
+	pOpt->WIR_D_G92Y		= m_dG92Y;
+	pOpt->WIR_S_TAPERMODE	= m_strTaperMode;
+	pOpt->WIR_S_HEADER		= m_strHeaderPath+m_strHeader;
+	pOpt->WIR_S_FOOTER		= m_strFooterPath+m_strFooter;
 
 	return TRUE;
 }

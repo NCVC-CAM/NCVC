@@ -70,8 +70,8 @@ CNCMakeOption::~CNCMakeOption()
 BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 {
 	// –½—ß‚ğ"="‚Æ";"(ºÒİÄ)‚Å•ªŠ„
-	typedef tokenizer< escaped_list_separator<TCHAR> > tokenizer;
-	static	escaped_list_separator<TCHAR> sep("", "=;", "\"");	// ´½¹°Ìß–³‹
+	typedef tokenizer< escaped_list_separator<TCHAR> > TOKEN;
+	escaped_list_separator<TCHAR> sep("", "=;", "\"");	// ´½¹°Ìß–³‹
 	// ØíğŒ‚Ì–½—ßŒŸ¸(‘å•¶š¬•¶š‚Í–³‹‚·‚é‚ª–½—ß‚ÍŠ®‘Sˆê’v)
 	CStringKeyIndex	stNOrder(m_MakeOpt[0].nOrderCnt, m_MakeOpt[0].pszOrder);
 	CStringKeyIndex	stDOrder(m_MakeOpt[1].nOrderCnt, m_MakeOpt[1].pszOrder);
@@ -94,9 +94,9 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 */
 	m_strInitFile = lpszInitFile;
 
-	tokenizer::iterator it;
 	string		str, strOrder, strResult;
-	tokenizer	tok(str, sep);
+	TOKEN		tok(str, sep);
+	TOKEN::iterator it;
 
 	CString	strTmp, strBuf;
 	TCHAR	szCurrent[_MAX_PATH], szFile[_MAX_PATH];

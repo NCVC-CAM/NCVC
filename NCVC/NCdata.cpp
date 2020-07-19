@@ -860,7 +860,6 @@ void CNCline::SetCorrectPoint(ENPOINTORDER enPoint, const CPointF& ptSrc, float)
 
 	if ( enPoint == ENDPOINT ) {
 		ASSERT( m_pRead );
-//		SetPlaneValue(ptSrc, m_pRead->m_ptValOrg);
 		SetPlaneValue(ptSrc, m_pRead->m_ptValOrg + m_pRead->m_ptOffset);
 	}
 }
@@ -870,12 +869,10 @@ void CNCline::SetCorrectPoint(ENPOINTORDER enPoint, const CPointF& ptSrc, float)
 //////////////////////////////////////////////////////////////////////
 
 CNCcycle::CNCcycle
-	(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, BOOL bL0Cycle) :
+	(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, BOOL bL0Cycle, enMAKETYPE enType) :
 		CNCline(NCDCYCLEDATA, pData, lpArgv, ptOffset)
 {
-/*
-	Z, R, P 値は，TH_NCRead.cpp でも補間していることに注意
-*/
+//	!!! Z, R, P 値は，TH_NCRead.cpp でも補間していることに注意 !!!
 #ifdef _DEBUG
 	CMagaDbg	dbg("CNCcycle", DBG_MAGENTA);
 #endif
@@ -899,9 +896,17 @@ CNCcycle::CNCcycle
 		z = NCA_Z;
 		break;
 	case XZ_PLANE:
-		x = NCA_X;
-		y = NCA_Z;
-		z = NCA_Y;
+		if ( enType == NCMAKELATHE ) {
+			// TH_NCRead.cpp で軸変換しているので、それに対応した補正
+			x = NCA_Z;
+			y = NCA_Z;
+			z = NCA_X;
+		}
+		else {
+			x = NCA_X;
+			y = NCA_Z;
+			z = NCA_Y;
+		}
 		break;
 	case YZ_PLANE:
 		x = NCA_Y;
@@ -915,15 +920,21 @@ CNCcycle::CNCcycle
 	// 以降ｵﾌｾｯﾄ無しで計算！
 	m_ptValS = pData->GetEndPoint() - pData->GetOffsetPoint();
 	// 縦繰り返し数取得
-	if ( GetValFlags() & NCD_K )
-		nV = max(0, (int)lpArgv->nc.dValue[NCA_K]);
-	else if ( GetValFlags() & NCD_L )
-		nV = max(0, (int)lpArgv->nc.dValue[NCA_L]);
-	else
+	if ( enType == NCMAKELATHE ) {
 		nV = 1;
+	}
+	else {
+		if ( GetValFlags() & NCD_K )
+			nV = max(0, (int)lpArgv->nc.dValue[NCA_K]);
+		else if ( GetValFlags() & NCD_L )
+			nV = max(0, (int)lpArgv->nc.dValue[NCA_L]);
+		else
+			nV = 1;
+	}
 	// 復帰座標(前回のｵﾌﾞｼﾞｪｸﾄが固定ｻｲｸﾙかどうか)
-	m_dInitial = pData->GetType()!=NCDCYCLEDATA ? m_ptValS[z] :
-				(static_cast<const CNCcycle*>(pData)->GetInitialValue() - pData->GetOffsetPoint()[z]);
+	m_dInitial = pData->GetType()==NCDCYCLEDATA ?
+				static_cast<const CNCcycle*>(pData)->GetInitialValue() - pData->GetOffsetPoint()[z] :
+				m_ptValS[z];
 	// ｲﾝｸﾘﾒﾝﾀﾙ補正(R座標はﾍﾞｰｽｸﾗｽで座標補正の対象外)
 	if ( lpArgv->bAbs ) {
 		dR = GetValFlags() & NCD_R ? (float)lpArgv->nc.dValue[NCA_R] : m_ptValS[z];
@@ -936,7 +947,10 @@ CNCcycle::CNCcycle
 			m_nc.dValue[z] = dR + (float)lpArgv->nc.dValue[z];
 		m_nDrawCnt = nH = nV;	// ｲﾝｸﾘﾒﾝﾀﾙなら横へも繰り返し
 	}
-	dI = lpArgv->bG98 ? m_dInitial : dR;
+	if ( enType == NCMAKELATHE )
+		dI = m_dInitial;	// 旋盤ﾓｰﾄﾞでG98/G99は別の意味
+	else
+		dI = lpArgv->bG98 ? m_dInitial : dR;
 
 	// 繰り返し数ｾﾞﾛなら
 	if ( m_nDrawCnt <= 0 ) {
@@ -962,7 +976,7 @@ CNCcycle::CNCcycle
 	m_ptValE = m_pRead->m_ptValOrg;
 	pt = pData->GetOriginalEndPoint();
 	// 座標回転
-	if ( lpArgv->g68.bG68 )
+	if ( lpArgv->g68.bG68 && enType!=NCMAKELATHE )
 		CalcG68Round(&(lpArgv->g68), m_ptValE);
 	// 各軸ごとの移動長計算
 	dx = m_ptValE[x] - m_ptValS[x];		dox = m_pRead->m_ptValOrg[x] - pt[x];
@@ -987,10 +1001,19 @@ CNCcycle::CNCcycle
 		m_pRead->m_ptValOrg.SetPoint(pt.x+dox*nH, pt.y+doy*nH, dI);
 		break;
 	case XZ_PLANE:
-		m_ptValI.SetPoint(m_ptValE.x, m_ptValS.y, m_ptValE.z);
-		m_ptValR.SetPoint(m_ptValE.x, dR, m_ptValE.z);
-		m_ptValE.SetPoint(m_ptValS.x+dx*nH, dI, m_ptValS.z+dy*nH);
-		m_pRead->m_ptValOrg.SetPoint(pt.x+dox*nH, dI, pt.z+doy*nH);
+		if ( enType == NCMAKELATHE ) {
+			// 旋盤ﾓｰﾄﾞでの縦横繰り返しは未ｻﾎﾟｰﾄ
+			m_ptValI.SetPoint(dI, m_ptValS.y, m_ptValE.z);
+			m_ptValR.SetPoint(dR, m_ptValS.y, m_ptValE.z);
+			m_ptValE.SetPoint(dI, m_ptValS.y, m_ptValE.z);
+			m_pRead->m_ptValOrg.SetPoint(dI, m_ptValS.y, pt.z);
+		}
+		else {
+			m_ptValI.SetPoint(m_ptValE.x, m_ptValS.y, m_ptValE.z);
+			m_ptValR.SetPoint(m_ptValE.x, dR, m_ptValE.z);
+			m_ptValE.SetPoint(m_ptValS.x+dx*nH, dI, m_ptValS.z+dy*nH);
+			m_pRead->m_ptValOrg.SetPoint(pt.x+dox*nH, dI, pt.z+doy*nH);
+		}
 		break;
 	case YZ_PLANE:
 		m_ptValI.SetPoint(m_ptValS.x, m_ptValE.y, m_ptValE.z);
@@ -1009,7 +1032,7 @@ CNCcycle::CNCcycle
 	m_pt2D = m_ptValE.PointConvert();
 
 	// 切り込み値が指定されていなければｴﾗｰ(補間はTH_NCRead.cppにて)
-	if ( !bL0Cycle && !(GetValFlags() & g_dwSetValFlags[z]) ) {
+	if ( !bL0Cycle && !(GetValFlags() & (g_dwSetValFlags[z]|NCFLG_LATHE_HOLE)) ) {
 		m_nc.nErrorCode = IDS_ERR_NCBLK_NOTCYCLEZ;
 		m_nDrawCnt = 0;
 		m_dMove[z] = 0.0f;
@@ -1035,30 +1058,31 @@ CNCcycle::CNCcycle
 	m_Cycle3D = new PTCYCLE3D[m_nDrawCnt];
 
 	pt = m_ptValS;
+	int zz = enType==NCMAKELATHE ? NCA_X : z;
 	for ( i=0; i<m_nDrawCnt; i++ ) {
 		pt[x] += dx;	pt[y] += dy;
 #ifdef _DEBUG_DUMP
 		dbg.printf("           No.%d [x]=%.3f [y]=%.3f", i+1, pt[x], pt[y]);
 #endif
 		// 各平面ごとに座標設定
-		pt[z] = dI;
+		pt[zz] = dI;
 		m_Cycle3D[i].ptI  = pt;
-		m_Cycle[0][i].ptI = pt.PointConvert();
-		m_Cycle[1][i].ptI = pt.GetXY();
-		m_Cycle[2][i].ptI = pt.GetXZ();
-		m_Cycle[3][i].ptI = pt.GetYZ();
-		pt[z] = dR;
+		m_Cycle[NCDRAWVIEW_XYZ][i].ptI = pt.PointConvert();
+		m_Cycle[NCDRAWVIEW_XY ][i].ptI = pt.GetXY();
+		m_Cycle[NCDRAWVIEW_XZ ][i].ptI = pt.GetXZ();
+		m_Cycle[NCDRAWVIEW_YZ ][i].ptI = pt.GetYZ();
+		pt[zz] = dR;
 		m_Cycle3D[i].ptR  = pt;
-		m_Cycle[0][i].ptR = pt.PointConvert();
-		m_Cycle[1][i].ptR = pt.GetXY();
-		m_Cycle[2][i].ptR = pt.GetXZ();
-		m_Cycle[3][i].ptR = pt.GetYZ();
-		pt[z] = GetValue(z) + ptOffset[z];
+		m_Cycle[NCDRAWVIEW_XYZ][i].ptR = pt.PointConvert();
+		m_Cycle[NCDRAWVIEW_XY ][i].ptR = pt.GetXY();
+		m_Cycle[NCDRAWVIEW_XZ ][i].ptR = pt.GetXZ();
+		m_Cycle[NCDRAWVIEW_YZ ][i].ptR = pt.GetYZ();
+		pt[zz] = GetValue(zz) + ptOffset[zz];
 		m_Cycle3D[i].ptC  = pt;
-		m_Cycle[0][i].ptC = pt.PointConvert();
-		m_Cycle[1][i].ptC = pt.GetXY();
-		m_Cycle[2][i].ptC = pt.GetXZ();
-		m_Cycle[3][i].ptC = pt.GetYZ();
+		m_Cycle[NCDRAWVIEW_XYZ][i].ptC = pt.PointConvert();
+		m_Cycle[NCDRAWVIEW_XY ][i].ptC = pt.GetXY();
+		m_Cycle[NCDRAWVIEW_XZ ][i].ptC = pt.GetXZ();
+		m_Cycle[NCDRAWVIEW_YZ ][i].ptC = pt.GetYZ();
 	}
 	
 	// 上昇分の移動・切削長計算
@@ -1068,7 +1092,7 @@ CNCcycle::CNCcycle
 	case 87:
 	case 88:
 	case 89:
-		if ( lpArgv->bG98 ) {
+		if ( lpArgv->bG98 && enType!=NCMAKELATHE ) {
 			dResult = dRLength * nV;
 			m_nc.dLength += dZLength * nV;
 			m_dMove[z] += dResult;
@@ -1111,44 +1135,44 @@ CNCcycle::~CNCcycle()
 void CNCcycle::DrawTuning(float f)
 {
 	CNCline::DrawTuning(f);
-	m_ptDrawI[0] = m_ptValI.PointConvert() * f;
-	m_ptDrawR[0] = m_ptValR.PointConvert() * f;
+	m_ptDrawI[NCDRAWVIEW_XYZ] = m_ptValI.PointConvert() * f;
+	m_ptDrawR[NCDRAWVIEW_XYZ] = m_ptValR.PointConvert() * f;
 	if ( m_nDrawCnt > 0 ) {
 		for ( int i=0; i<m_nDrawCnt; i++ )
-			m_Cycle[0][i].DrawTuning(f);
+			m_Cycle[NCDRAWVIEW_XYZ][i].DrawTuning(f);
 	}
 }
 
 void CNCcycle::DrawTuningXY(float f)
 {
 	CNCline::DrawTuningXY(f);
-	m_ptDrawI[1] = m_ptValI.GetXY() * f;
-	m_ptDrawR[1] = m_ptValR.GetXY() * f;
+	m_ptDrawI[NCDRAWVIEW_XY] = m_ptValI.GetXY() * f;
+	m_ptDrawR[NCDRAWVIEW_XY] = m_ptValR.GetXY() * f;
 	if ( m_nDrawCnt > 0 ) {
 		for ( int i=0; i<m_nDrawCnt; i++ )
-			m_Cycle[1][i].DrawTuning(f);
+			m_Cycle[NCDRAWVIEW_XY][i].DrawTuning(f);
 	}
 }
 
 void CNCcycle::DrawTuningXZ(float f)
 {
 	CNCline::DrawTuningXZ(f);
-	m_ptDrawI[2] = m_ptValI.GetXZ() * f;
-	m_ptDrawR[2] = m_ptValR.GetXZ() * f;
+	m_ptDrawI[NCDRAWVIEW_XZ] = m_ptValI.GetXZ() * f;
+	m_ptDrawR[NCDRAWVIEW_XZ] = m_ptValR.GetXZ() * f;
 	if ( m_nDrawCnt > 0 ) {
 		for ( int i=0; i<m_nDrawCnt; i++ )
-			m_Cycle[2][i].DrawTuning(f);
+			m_Cycle[NCDRAWVIEW_XZ][i].DrawTuning(f);
 	}
 }
 
 void CNCcycle::DrawTuningYZ(float f)
 {
 	CNCline::DrawTuningYZ(f);
-	m_ptDrawI[3] = m_ptValI.GetYZ() * f;
-	m_ptDrawR[3] = m_ptValR.GetYZ() * f;
+	m_ptDrawI[NCDRAWVIEW_YZ] = m_ptValI.GetYZ() * f;
+	m_ptDrawR[NCDRAWVIEW_YZ] = m_ptValR.GetYZ() * f;
 	if ( m_nDrawCnt > 0 ) {
 		for ( int i=0; i<m_nDrawCnt; i++ )
-			m_Cycle[3][i].DrawTuning(f);
+			m_Cycle[NCDRAWVIEW_YZ][i].DrawTuning(f);
 	}
 }
 
@@ -1182,8 +1206,12 @@ void CNCcycle::DrawXZ(CDC* pDC, BOOL bSelect) const
 	dbg.printf("Line=%d", GetBlockLineNo()+1);
 #endif
 	if ( GetPlane() == XZ_PLANE ) {
-		CNCline::DrawXZ(pDC, bSelect);
-		DrawCyclePlane(NCDRAWVIEW_XZ, pDC, bSelect);
+		if ( GetValFlags() & NCFLG_LATHE_HOLE )
+			DrawCycle(NCDRAWVIEW_XZ, pDC, bSelect);
+		else {
+			CNCline::DrawXZ(pDC, bSelect);
+			DrawCyclePlane(NCDRAWVIEW_XZ, pDC, bSelect);
+		}
 	}
 	else
 		DrawCycle(NCDRAWVIEW_XZ, pDC, bSelect);
@@ -1263,7 +1291,7 @@ void CNCcycle::DrawCycle(ENNCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
 //////////////////////////////////////////////////////////////////////
 
 CNCcircle::CNCcircle
-(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, enMAKETYPE enType/*=NCMAKEMILL*/) :
+(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, enMAKETYPE enType) :
 	CNCline(NCDARCDATA, pData, lpArgv, ptOffset)
 {
 #ifdef _DEBUG
@@ -1296,7 +1324,7 @@ CNCcircle::CNCcircle
 	// 半径と中心座標の計算(R優先 ただし、ﾜｲﾔﾓｰﾄﾞは無視)
 	if ( GetValFlags()&NCD_R && enType!=NCMAKEWIRE ) {
 		m_r = (float)lpArgv->nc.dValue[NCA_R];
-		fError = CalcCenter(pts, pte);
+		fError = !CalcCenter(pts, pte);
 	}
 	else if ( GetValFlags() & (NCD_I|NCD_J|NCD_K) ) {
 		float	i = GetValFlags() & NCD_I ? (float)lpArgv->nc.dValue[NCA_I] : 0.0f,
@@ -1379,17 +1407,17 @@ void CNCcircle::Constracter(void)
 	// 描画関数の決定とﾍﾘｶﾙ移動量の計算
 	switch ( GetPlane() ) {
 	case XY_PLANE:
-		m_pfnCircleDraw = &CNCcircle::Draw_G17;
+		m_pfnCircleDraw = &CNCcircle::DrawG17;
 		m_dHelicalStep = GetValFlags() & NCD_Z ?
 			(m_ptValE.z - m_ptValS.z) / ((m_eq - m_sq)/ARCSTEP) : 0.0f;
 		break;
 	case XZ_PLANE:
-		m_pfnCircleDraw = &CNCcircle::Draw_G18;
+		m_pfnCircleDraw = &CNCcircle::DrawG18;
 		m_dHelicalStep = GetValFlags() & NCD_Y ?
 			(m_ptValE.y - m_ptValS.y) / ((m_eq - m_sq)/ARCSTEP) : 0.0f;
 		break;
 	case YZ_PLANE:
-		m_pfnCircleDraw = &CNCcircle::Draw_G19;
+		m_pfnCircleDraw = &CNCcircle::DrawG19;
 		m_dHelicalStep = GetValFlags() & NCD_X ?
 			(m_ptValE.x - m_ptValS.x) / ((m_eq - m_sq)/ARCSTEP) : 0.0f;
 		break;
@@ -1403,14 +1431,14 @@ BOOL CNCcircle::CalcCenter(const CPointF& pts, const CPointF& pte)
 #endif
 	// R 指定で始点終点が同じ場合はエラー
 	if ( pts == pte )
-		return TRUE;	// エラーは真で返す
+		return FALSE;
 
 	// ２つの円の交点を求める
 	CPointF	pt1, pt2;
 	int		nResult;
 	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(pts, pte, m_r, m_r);
 	if ( nResult < 1 )
-		return TRUE;
+		return FALSE;
 
 	// どちらの解を採用するか
 	AngleTuning(pts-pt1, pte-pt1);	// まず一方の中心座標から角度を求める
@@ -1425,7 +1453,7 @@ BOOL CNCcircle::CalcCenter(const CPointF& pts, const CPointF& pte)
 		AngleTuning(pts-pt2, pte-pt2);
 		SetCenter(pt2);
 	}
-	return FALSE;		// 成功は偽で返す
+	return TRUE;
 }
 
 void CNCcircle::SetCenter(const CPointF& pt)
@@ -1449,25 +1477,34 @@ void CNCcircle::SetCenter(const CPointF& pt)
 	}
 }
 
-void CNCcircle::AngleTuning(const CPointF& pts, const CPointF& pte)
+tuple<float, float>	CNCcircle::CalcAngle(BOOL bG03, const CPointF& pts, const CPointF& pte) const
 {
-	if ( (m_sq=pts.arctan()) < 0.0f )
-		m_sq += PI2;
-	if ( (m_eq=pte.arctan()) < 0.0f )
-		m_eq += PI2;
+	float	sq, eq, q;
+
+	if ( (sq=pts.arctan()) < 0.0f )
+		sq += PI2;
+	if ( (eq=pte.arctan()) < 0.0f )
+		eq += PI2;
 
 	// 常に s<e (反時計回り) とする
-	if ( !GetG03() )	// G02 なら開始角度と終了角度を入れ替え
-		swap(m_sq, m_eq);
-	float	sq = ::RoundUp(DEG(m_sq));
-	while ( sq >= ::RoundUp(DEG(m_eq)) )
-		m_eq += PI2;
+	if ( !bG03 )	// G02 なら開始角度と終了角度を入れ替え
+		swap(sq, eq);
+	q = ::RoundUp(DEG(sq));
+	while ( q >= ::RoundUp(DEG(eq)) )
+		eq += PI2;
 
 	// 角度調整
-	if ( sq>=360.0f && ::RoundUp(DEG(m_eq))>=360.0f ) {
-		m_sq -= PI2;
-		m_eq -= PI2;
+	if ( q>=360.0f && ::RoundUp(DEG(eq))>=360.0f ) {
+		sq -= PI2;
+		eq -= PI2;
 	}
+
+	return make_tuple(sq, eq);
+}
+
+void CNCcircle::AngleTuning(const CPointF& pts, const CPointF& pte)
+{
+	tie(m_sq, m_eq) = CalcAngle(GetG03(), pts, pte);
 }
 
 float CNCcircle::SetCalcLength(void)
@@ -1690,7 +1727,7 @@ void CNCcircle::DrawWireLine(ENNCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
 			m_obCdata.IsEmpty() ? NCPEN_G1 : NCPEN_CORRECT);
 	pOldPen = pDC->SelectObject(pOldPen);
 	// XY
-	Draw_G17(enDraw, pDC);
+	DrawG17(enDraw, pDC);
 	// UV
 	if ( m_pWireObj ) {
 		// m_pWireObjがCNCcircleとは限らない
@@ -1706,7 +1743,7 @@ void CNCcircle::DrawWireLine(ENNCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
 
 // CDC::Arc() を使うとどうしても表示がズレる．
 // 同一平面であっても微細線分による近似を行う
-void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
+void CNCcircle::DrawG17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 {
 	float		sq, eq,
 				dHelical = m_dHelicalStep, r = fabs(m_r);
@@ -1831,7 +1868,7 @@ void CNCcircle::Draw_G17(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XY_PLANE
 	}
 }
 
-void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
+void CNCcircle::DrawG18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 {
 	float		sq, eq,
 				dHelical = m_dHelicalStep, r = fabs(m_r);
@@ -1954,7 +1991,7 @@ void CNCcircle::Draw_G18(ENNCDRAWVIEW enDraw, CDC* pDC) const	// XZ_PLANE
 	}
 }
 
-void CNCcircle::Draw_G19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
+void CNCcircle::DrawG19(ENNCDRAWVIEW enDraw, CDC* pDC) const	// YZ_PLANE
 {
 	float		sq, eq,
 				dHelical = m_dHelicalStep, r = fabs(m_r);

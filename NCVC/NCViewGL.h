@@ -4,13 +4,10 @@
 
 #pragma once
 
-//#define	USE_SHADER
-
 #include "FrameBuffer.h"
-#ifdef USE_SHADER
-#include "GLSL.h"
-#endif
 #include "NCdata.h"
+//#define	USE_SHADER
+//#include "GLSL.h"
 
 // TrackingMode
 enum ENTRACKINGMODE
@@ -43,7 +40,7 @@ struct CLIPDEPTHMILL
 	GLdouble	wx, wy, wz;
 	size_t		tp, bm;
 };
-typedef void (CNCViewGL::*PFN_GETCLIPDEPTHMILL)(const CLIPDEPTHMILL&);
+typedef void (CNCViewGL::*PFNGETCLIPDEPTHMILL)(const CLIPDEPTHMILL&);
 
 // 底面描画座標生成ｽﾚｯﾄﾞ用
 struct CREATEBOTTOMVERTEXPARAM
@@ -63,7 +60,7 @@ struct CREATEBOTTOMVERTEXPARAM
 		bThread(TRUE), bResult(TRUE)
 	{}
 };
-typedef	CREATEBOTTOMVERTEXPARAM*	LPCREATEBOTTOMVERTEXPARAM ;
+typedef	CREATEBOTTOMVERTEXPARAM*	LPCREATEBOTTOMVERTEXPARAM;
 
 // 頂点配列生成ｽﾚｯﾄﾞ用
 struct CREATEELEMENTPARAM
@@ -97,9 +94,12 @@ class CNCViewGL : public CView
 {
 	CString		m_strGuide;
 	BOOL		m_bActive,
-				m_bSizeChg;
+				m_bSizeChg,
+				m_bWirePath,	// ﾋﾞｭｰごとに動的に切り替えるﾌﾗｸﾞ
+				m_bSlitView;
 	int			m_cx,  m_cy,	// ｳｨﾝﾄﾞｳｻｲｽﾞ(ｽｸﾘｰﾝ)
-				m_icx, m_icy;
+				m_icx, m_icy,
+				m_nLe;			// 旋盤ﾃﾞｰﾀｴﾝﾄﾞ(m_nLe<=m_icx)
 	GLint		m_wx, m_wy;		// glReadPixels, glWindowPos
 	float		m_dRate,		// 基準拡大率
 				m_dRoundAngle,	// 中ﾎﾞﾀﾝの回転角度
@@ -126,6 +126,8 @@ class CNCViewGL : public CView
 #endif
 	GLfloat*	m_pfXYZ;		// -- 変換されたﾜｰﾙﾄﾞ座標(temp area)
 	GLfloat*	m_pfNOR;		// -- 法線ﾍﾞｸﾄﾙ
+	GLfloat*	m_pLatheX;		// -- 旋盤のX値
+	GLfloat*	m_pLatheZ;		// -- 旋盤のZ値
 	GLsizeiptr	m_nVBOsize;		// 頂点配列ｻｲｽﾞ
 	GLuint		m_nVertexID[2],	// 頂点配列と法線ﾍﾞｸﾄﾙ用
 				m_nTextureID,	// ﾃｸｽﾁｬ座標用
@@ -134,9 +136,10 @@ class CNCViewGL : public CView
 	GLuint*		m_pLocusElement;// 軌跡ｲﾝﾃﾞｯｸｽ用
 	CVelement	m_vElementWrk,	// ﾜｰｸ矩形用glDrawElements頂点個数
 				m_vElementCut,	// 切削面用
-				m_vElementEdg;	// 旋盤端面用
+				m_vElementEdg,	// 旋盤端面用
+				m_vElementSlt;	// 旋盤断面用
 	GLsizei		GetElementSize(void) const {
-		return (GLsizei)(m_vElementWrk.size()+m_vElementCut.size()+m_vElementEdg.size());
+		return (GLsizei)(m_vElementWrk.size()+m_vElementCut.size()+m_vElementEdg.size()+m_vElementSlt.size());
 	}
 	WIREDRAW	m_WireDraw;		// ﾜｲﾔ加工機用
 
@@ -150,7 +153,7 @@ class CNCViewGL : public CView
 	GLdouble		m_objXform[4][4],
 					m_objXformBk[4][4];	// ﾎﾞｸｾﾙ処理時のﾊﾞｯｸｱｯﾌﾟ
 
-	void	ClearObjectForm(void);
+	void	ClearObjectForm(BOOL = FALSE);
 	BOOL	SetupPixelFormat(CDC*);
 	void	UpdateViewOption(void);
 	void	CreateDisplayList(void);
@@ -192,8 +195,9 @@ class CNCViewGL : public CView
 	void	DoRotation(float);
 	void	SetupViewingTransform(void);
 #ifdef _DEBUG
-	void	DumpDepth(void);
-	void	DumpStencil(void);
+	void	DumpDepth(void) const;
+	void	DumpStencil(void) const;
+	void	DumpLatheZ(void) const;
 #endif
 
 protected:
@@ -253,6 +257,7 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 
+void	OutputGLErrorMessage(GLenum, UINT);
 void	InitialMillNormal(void);	// from CNCVCApp::CNCVCApp()
 
 #ifndef _DEBUG

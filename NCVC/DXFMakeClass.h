@@ -14,6 +14,7 @@ class CDXFDoc;
 typedef	CString	(*PFNMAKEVALUE)(const CNCdata*);
 typedef	CString	(*PFNMAKEVALUECIRCLE)(const CNCcircle*);
 typedef	CString	(CDXFMake::*PFNMAKEVALUECYCLE)(const CNCcycle*, int);
+
 // TABLESæ∏ºÆ›Ç≈égÇ§⁄≤‘èÓïÒ
 struct TABLELAYERINFO {
 	CString	strLayer;
@@ -25,7 +26,9 @@ struct TABLELAYERINFO {
 		nColor   = col;
 	}
 };
+typedef	std::vector<TABLELAYERINFO>		VTABLELAYERINFO;
 
+//
 class CDXFMake
 {
 	CStringArray	m_strDXFarray;	// äeNCµÃﬁºﬁ™∏ƒÇÃDXF∫∞ƒﬁ
@@ -33,8 +36,8 @@ class CDXFMake
 	// æ∏ºÆ›ê∂ê¨
 	void	MakeSection_Header(const CDocBase*);
 	void	MakeSection_Tables(const CDocBase*);
-	void	MakeSection_TableLayer_NCD(std::vector<TABLELAYERINFO>&);
-	void	MakeSection_TableLayer_DXF(std::vector<TABLELAYERINFO>&, const CDXFDoc*);
+	void	MakeSection_TableLayer_NCD(VTABLELAYERINFO&);
+	void	MakeSection_TableLayer_DXF(VTABLELAYERINFO&, const CDXFDoc*);
 	void	MakeSection_Blocks(void);
 	void	MakeSection_Entities(void);
 	void	MakeSection_EOF(void);
@@ -77,6 +80,9 @@ public:
 		for ( int i=0; i<m_strDXFarray.GetSize(); i++ )
 			fp.WriteString( m_strDXFarray[i] );
 	}
+#ifdef _DEBUG
+	void	dump(void);
+#endif
 };
 
 typedef	CTypedPtrArrayEx<CPtrArray, CDXFMake*>	CDxfMakeArray;

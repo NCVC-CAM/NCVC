@@ -47,10 +47,11 @@ enum NCDOCFLG {
 	NCDOC_WRKRECT,		// ﾜｰｸ矩形の描画
 	NCDOC_THUMBNAIL,	// ｻﾑﾈｲﾙ表示ﾓｰﾄﾞ
 	NCDOC_LATHE,		// NC旋盤ﾓｰﾄﾞ
-//		NCDOC_LATHE_INSIDE,	// 中ぐり加工アリ
+		NCDOC_LATHE_INSIDE,	// 中ぐり加工アリ
+		NCDOC_LATHE_HOLE,	// ｺﾒﾝﾄ中空
 	NCDOC_WIRE,			// ﾜｲﾔ加工ﾓｰﾄﾞ
 	NCDOC_MC_CHANGE,	// ｺﾒﾝﾄで機械情報の変更
-		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[14]
+		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[16]
 };
 #define	DOCFLG_NUM	NCDOC_FLGNUM	// 大きい方
 

@@ -40,8 +40,8 @@ extern	LPCTSTR	g_szNCcomment[] = {
 	"Endmill", "Drill", "Tap", "Reamer",
 	"WorkRect", "WorkCylinder", "WorkFile", "MCFile",
 	"LatheView", "WireView",
-	"ToolPos",
-//	"Inside", "EndInside", "EndDrill"
+	"ToolPos", "LatheHole",
+	"Inside", "EndInside", "EndDrill"
 };
 
 // éwíËÇ≥ÇÍÇΩílÇÃÃ◊∏ﬁ
@@ -85,7 +85,7 @@ CNCDoc::CNCDoc()
 
 	m_bDocFlg.set(NCDOC_ERROR);	// èâä˙èÛë‘ÇÕ¥◊∞Ã◊∏ﬁÇæÇØóßÇƒÇÈ
 	ZEROCLR(m_dMove);
-	m_dCutTime = -1.0;
+	m_dCutTime = -1.0f;
 	m_nTrace = ID_NCVIEW_TRACE_STOP;
 	m_nTraceStart = m_nTraceDraw = 0;
 	m_pCutcalcThread  = NULL;
@@ -326,7 +326,7 @@ CNCdata* CNCDoc::DataOperation
 		case 87:
 		case 88:
 		case 89:
-			pDataResult = new CNCcycle(pData, lpArgv, GetOffsetOrig(), pOpt->GetFlag(MC_FLG_L0CYCLE));
+			pDataResult = new CNCcycle(pData, lpArgv, GetOffsetOrig(), pOpt->GetFlag(MC_FLG_L0CYCLE), enMakeType);
 			SetMaxRect(pDataResult);
 			break;
 		case 10:	// √ﬁ∞¿ê›íË

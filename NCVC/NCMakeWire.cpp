@@ -43,10 +43,10 @@ CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, float
 	case DXFLINEDATA:
 		ptxy = pDataXY->GetEndMakePoint();
 		ptuv = pDataUV->GetEndMakePoint() - ptxy;	// ïŒç∑
-		strGcode = GetValString(NCA_X, ptxy.x, FALSE) +
-				   GetValString(NCA_Y, ptxy.y, FALSE) +
-				   GetValString(NCA_U, ::RoundUp(ptuv.x), FALSE) +
-				   GetValString(NCA_V, ::RoundUp(ptuv.y), FALSE);
+		strGcode = GetValString(NCA_X, ptxy.x) +
+				   GetValString(NCA_Y, ptxy.y) +
+				   GetValString(NCA_U, ::RoundUp(ptuv.x)) +
+				   GetValString(NCA_V, ::RoundUp(ptuv.y));
 		if ( !strGcode.IsEmpty() )
 			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
 						strGcode + GetFeedString(dFeed) + ms_strEOB;
@@ -55,12 +55,12 @@ CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, float
 	case DXFARCDATA:
 		ptxy = pDataXY->GetEndMakePoint();
 		ptuv = pDataUV->GetEndMakePoint() - ptxy;
-		strGcode = GetValString(NCA_X, ptxy.x, FALSE) +
-				   GetValString(NCA_Y, ptxy.y, FALSE) +
-				   GetValString(NCA_U, ::RoundUp(ptuv.x), FALSE) +
-				   GetValString(NCA_V, ::RoundUp(ptuv.y), FALSE) +
-				   GetValString(NCA_I, static_cast<const CDXFarc*>(pDataXY)->GetIJK(NCA_I), FALSE) +
-				   GetValString(NCA_J, static_cast<const CDXFarc*>(pDataXY)->GetIJK(NCA_J), FALSE);
+		strGcode = GetValString(NCA_X, ptxy.x) +
+				   GetValString(NCA_Y, ptxy.y) +
+				   GetValString(NCA_U, ::RoundUp(ptuv.x)) +
+				   GetValString(NCA_V, ::RoundUp(ptuv.y)) +
+				   GetValString(NCA_I, static_cast<const CDXFarc*>(pDataXY)->GetIJK(NCA_I)) +
+				   GetValString(NCA_J, static_cast<const CDXFarc*>(pDataXY)->GetIJK(NCA_J));
 		// through
 	case DXFCIRCLEDATA:
 		// CNCMakeBase::MakeCircle_IJ() éQçl
@@ -71,8 +71,8 @@ CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, float
 		ASSERT( pCircleXY->GetG() == pCircleUV->GetG() );	// âÒì]ï˚å¸Ç™ìØÇ∂
 		if ( pDataXY->GetMakeType() == DXFCIRCLEDATA ) {
 			strGcode = pCircleXY->GetBaseAxis() > 1 ?	// Xé≤Ç©Yé≤Ç©
-						   GetValString(NCA_J, pCircleXY->GetIJK(NCA_J), FALSE) :
-						   GetValString(NCA_I, pCircleXY->GetIJK(NCA_I), FALSE);
+						   GetValString(NCA_J, pCircleXY->GetIJK(NCA_J)) :
+						   GetValString(NCA_I, pCircleXY->GetIJK(NCA_I));
 			nCode = pCircleXY->IsRoundFixed() ?
 						pCircleXY->GetG() : ms_nCircleCode;
 		}
@@ -101,23 +101,22 @@ CNCMakeWire::CNCMakeWire(const CVPointF& vptXY, const CVPointF& vptUV, float dFe
 
 	// ç≈èâÇæÇØëóÇËë¨ìxÇí«â¡
 	pt = vptUV[0] - vptXY[0];
-	strGcode = GetValString(NCA_X, vptXY[0].x, FALSE) +
-			   GetValString(NCA_Y, vptXY[0].y, FALSE) +
-			   GetValString(NCA_U, ::RoundUp(pt.x), FALSE) +
-			   GetValString(NCA_V, ::RoundUp(pt.y), FALSE);
+	strGcode = GetValString(NCA_X, vptXY[0].x) +
+			   GetValString(NCA_Y, vptXY[0].y) +
+			   GetValString(NCA_U, ::RoundUp(pt.x)) +
+			   GetValString(NCA_V, ::RoundUp(pt.y));
 	if ( !strGcode.IsEmpty() )
 		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
 					strGcode + GetFeedString(dFeed) + ms_strEOB;
 
 	for ( size_t i=1; i<vptXY.size(); i++ ) {
 		pt = vptUV[i] - vptXY[i];
-		strGcode = GetValString(NCA_X, vptXY[i].x, FALSE) +
-				   GetValString(NCA_Y, vptXY[i].y, FALSE) +
-				   GetValString(NCA_U, ::RoundUp(pt.x), FALSE) +
-				   GetValString(NCA_V, ::RoundUp(pt.y), FALSE);
+		strGcode = GetValString(NCA_X, vptXY[i].x) +
+				   GetValString(NCA_Y, vptXY[i].y) +
+				   GetValString(NCA_U, ::RoundUp(pt.x)) +
+				   GetValString(NCA_V, ::RoundUp(pt.y));
 		if ( !strGcode.IsEmpty() )
-			m_strGarray.Add( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
-						strGcode + ms_strEOB );
+			AddGcode( (*ms_pfnGetGString)(1) + strGcode );
 	}
 }
 
@@ -133,8 +132,8 @@ CNCMakeWire::CNCMakeWire(int nCode, const CPointF& pt, float dFeed, float dTaper
 			strTaper = GetGString(dTaper>0 ? 51:52) + "T" + (*ms_pfnGetValDetail)(fabs(dTaper));
 	}
 	// à⁄ìÆ∫∞ƒﬁ
-	CString	strGcode(GetValString(NCA_X, pt.x, FALSE) +
-					 GetValString(NCA_Y, pt.y, FALSE));
+	CString	strGcode(GetValString(NCA_X, pt.x) +
+					 GetValString(NCA_Y, pt.y));
 	if ( !strGcode.IsEmpty() ) {
 		if ( nCode != 0 )	// G00à»äO
 			strGcode += GetFeedString(dFeed);
@@ -152,10 +151,10 @@ CNCMakeWire::CNCMakeWire(int nCode, const CPointF& pt, float dFeed, float dTaper
 CNCMakeWire::CNCMakeWire(const CPointF& ptxy, const CPointF& ptuv, float dFeed)
 {
 	CPointF	pt(ptuv - ptxy);
-	CString	strGcode(GetValString(NCA_X, ptxy.x, FALSE) +
-					 GetValString(NCA_Y, ptxy.y, FALSE) +
-					 GetValString(NCA_U, ::RoundUp(pt.x), FALSE) +
-					 GetValString(NCA_V, ::RoundUp(pt.y), FALSE));
+	CString	strGcode(GetValString(NCA_X, ptxy.x) +
+					 GetValString(NCA_Y, ptxy.y) +
+					 GetValString(NCA_U, ::RoundUp(pt.x)) +
+					 GetValString(NCA_V, ::RoundUp(pt.y)));
 	if ( !strGcode.IsEmpty() )
 		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
 					strGcode + GetFeedString(dFeed) + ms_strEOB;
@@ -210,7 +209,7 @@ void CNCMakeWire::SetStaticOption(const CNCMakeWireOpt* pNCMake)
 		nLineMulti[0] : nLineMulti[GetNum(MKWI_NUM_LINEADD)];
 	// --- EOB
 	ms_strEOB = GetStr(MKWI_STR_EOB).IsEmpty() ? 
-		gg_szReturn : GetStr(MKWI_STR_EOB) + gg_szReturn;
+		gg_szReturn : (GetStr(MKWI_STR_EOB) + gg_szReturn);
 	// --- â~√ﬁ∞¿ÇÃêÿçÌéwé¶
 	ms_nCircleCode = GetNum(MKWI_NUM_CIRCLECODE) == 0 ? 2 : 3;
 	// --- â~,â~å √ﬁ∞¿ÇÃê∂ê¨

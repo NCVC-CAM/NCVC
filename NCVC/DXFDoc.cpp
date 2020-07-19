@@ -345,8 +345,8 @@ BOOL CDXFDoc::SaveLayerMap(LPCTSTR lpszFile, const CLayerArray* pLayer/*=NULL*/)
 		CStdioFile	fp(lpszFile,
 				CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive | CFile::typeText);
 		// ∫“›ƒèoóÕ
-		BOOST_FOREACH(auto v, g_szLayerToInitComment) {
-			fp.WriteString(v);
+		BOOST_FOREACH(const auto& e, g_szLayerToInitComment) {
+			fp.WriteString(e);
 		}
 		fp.WriteString(g_szLayerToInitComment[0]);
 		// √ﬁ∞¿èoóÕ

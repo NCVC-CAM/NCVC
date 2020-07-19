@@ -79,8 +79,8 @@ BOOL CMKNCSetup1::OnInitDialog()
 	m_bYrev		= pOpt->MIL_F_YREV;
 	for ( int i=0; i<NCXYZ; i++ )
 		m_dG92[i] = pOpt->m_pDblOpt[MKNC_DBL_G92X+i];
-	::Path_Name_From_FullPath(pOpt->m_strOption[MKNC_STR_HEADER], m_strHeaderPath, m_strHeader);
-	::Path_Name_From_FullPath(pOpt->m_strOption[MKNC_STR_FOOTER], m_strFooterPath, m_strFooter);
+	::Path_Name_From_FullPath(pOpt->MIL_S_HEADER, m_strHeaderPath, m_strHeader);
+	::Path_Name_From_FullPath(pOpt->MIL_S_FOOTER, m_strFooterPath, m_strFooter);
 	// Êß½•\Ž¦‚ÌÅ“K‰»(shlwapi.h)
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_HEADERPATH, m_strHeaderPath);
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_FOOTERPATH, m_strFooterPath);
@@ -195,8 +195,8 @@ BOOL CMKNCSetup1::OnApply()
 	pOpt->MIL_D_ZG0STOP	= m_dZG0Stop;
 	pOpt->MIL_F_XREV	= m_bXrev;
 	pOpt->MIL_F_YREV	= m_bYrev;
-	pOpt->m_strOption[MKNC_STR_HEADER] = m_strHeaderPath+m_strHeader;
-	pOpt->m_strOption[MKNC_STR_FOOTER] = m_strFooterPath+m_strFooter;
+	pOpt->MIL_S_HEADER	= m_strHeaderPath+m_strHeader;
+	pOpt->MIL_S_FOOTER	= m_strFooterPath+m_strFooter;
 	for ( int i=0; i<NCXYZ; i++ )
 		pOpt->m_pDblOpt[MKNC_DBL_G92X+i] = m_dG92[i];
 

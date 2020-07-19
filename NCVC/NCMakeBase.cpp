@@ -34,12 +34,12 @@ int		CNCMakeBase::NCAJ = NCA_J;
 #undef	NCA_Y	// NCA_I, NCA_J は、GetIJK() にのみ有効
 int		CNCMakeBase::ms_nGcode = -1;
 int		CNCMakeBase::ms_nSpindle = -1;
-float	CNCMakeBase::ms_dFeed = -1.0;
+float	CNCMakeBase::ms_dFeed = -1.0f;
 int		CNCMakeBase::ms_nCnt = 1;
 int		CNCMakeBase::ms_nMagni = 1;
 int		CNCMakeBase::ms_nCircleCode = 2;
 BOOL	CNCMakeBase::ms_bIJValue = FALSE;
-float	CNCMakeBase::ms_dEllipse = 0.5;
+float	CNCMakeBase::ms_dEllipse = 0.5f;
 CString	CNCMakeBase::ms_strEOB;
 PFNGETARGINT		CNCMakeBase::ms_pfnGetSpindle = &CNCMakeBase::GetSpindleString;
 PFNGETARGDOUBLE		CNCMakeBase::ms_pfnGetFeed = &CNCMakeBase::GetFeedString_Integer;
@@ -62,17 +62,7 @@ CNCMakeBase::CNCMakeBase()
 // 任意の文字列ｺｰﾄﾞ
 CNCMakeBase::CNCMakeBase(const CString& strGcode)
 {
-	extern	LPCTSTR	gg_szReturn;	// "\n"
-
-	if ( strGcode.IsEmpty() )
-		m_strGcode = gg_szReturn;
-	else if ( strGcode[0] == '%' )
-		m_strGcode = strGcode + gg_szReturn;
-	else {
-		CString	str(strGcode);
-		str.Replace("\\n", gg_szReturn);	// 改行ｺｰﾄﾞの置換
-		m_strGcode = (*ms_pfnGetLineNo)() + str + ms_strEOB;
-	}
+	m_strGcode = GetChangeEnter(strGcode);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -82,7 +72,7 @@ void CNCMakeBase::InitialVariable(void)
 {
 	ms_nGcode = -1;
 	ms_nSpindle = -1;
-	ms_dFeed = -1.0;
+	ms_dFeed = -1.0f;
 	ms_nCnt = 1;
 }
 
@@ -124,7 +114,7 @@ void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, float dFeed)
 				bFeed = FALSE;
 			}
 			if ( !strGcode.IsEmpty() )
-				m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
+				AddGcode(strGcode);
 		}
 	}
 	else {
@@ -135,14 +125,14 @@ void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, float dFeed)
 				bFeed = FALSE;
 			}
 			if ( !strGcode.IsEmpty() )
-				m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
+				AddGcode(strGcode);
 		}
 	}
 	strGcode = MakeEllipse_Tolerance(pEllipse, eq);
 	if ( bFeed && !strGcode.IsEmpty() )
 		strGcode += GetFeedString(dFeed);
 	if ( !strGcode.IsEmpty() )
-		m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
+		AddGcode(strGcode);
 }
 
 CString	CNCMakeBase::MakeEllipse_Tolerance(const CDXFellipse* pEllipse, float q)
@@ -183,13 +173,13 @@ void CNCMakeBase::MakePolylineCut(const CDXFpolyline* pPoly, float dFeed)
 				bFeed = FALSE;
 			}
 			if ( !strGcode.IsEmpty() )
-				m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode + ms_strEOB);
+				AddGcode(strGcode);
 			break;
 
 		case DXFARCDATA:
 			strGcode = (*ms_pfnMakeArc)(static_cast<CDXFarc*>(pData), dFeed);
 			if ( !strGcode.IsEmpty() ) {
-				m_strGarray.Add((*ms_pfnGetLineNo)() + strGcode);
+				AddGcode(strGcode);
 				bFeed = FALSE;
 			}
 			// 終点分を飛ばす
@@ -241,6 +231,24 @@ CString CNCMakeBase::MakeCustomString(int nCode, int nValFlag[], float dValue[])
 
 //////////////////////////////////////////////////////////////////////
 
+// 改行文字置換
+CString	CNCMakeBase::GetChangeEnter(const CString& strGcode)
+{
+	extern	LPCTSTR	gg_szReturn;	// "\n"
+	CString	strResult;
+
+	if ( strGcode.IsEmpty() )
+		strResult = gg_szReturn;
+	else if ( strGcode[0] == '%' )
+		strResult = strGcode + gg_szReturn;
+	else {
+		CString	str(strGcode);
+		str.Replace("\\n", gg_szReturn);	// 改行ｺｰﾄﾞの置換
+		strResult = (*ms_pfnGetLineNo)() + str + ms_strEOB;
+	}
+	return strResult;
+}
+
 // 回転指示
 CString	CNCMakeBase::GetSpindleString(int nSpindle)
 {
@@ -279,11 +287,8 @@ CString	CNCMakeBase::GetFeedString_Integer(float dFeed)
 // 行番号付加
 CString	CNCMakeBase::GetLineNoString(void)
 {
-	ASSERT( MKNC_STR_LINEFORM == MKLA_STR_LINEFORM );	// 苦肉の策
-	ASSERT( MKNC_STR_LINEFORM == MKWI_STR_LINEFORM );
-
 	CString	strResult;
-	strResult.Format(ms_pMakeOpt->GetStr(MKNC_STR_LINEFORM), ms_nCnt++ * ms_nMagni);
+	strResult.Format(ms_pMakeOpt->GetLineNoForm(), ms_nCnt++ * ms_nMagni);
 	return strResult;
 }
 
@@ -406,7 +411,7 @@ CString	CNCMakeBase::MakeCircle_IJHALF(const CDXFcircle* pCircle, float dFeed)
 		ij.x = pCircle->GetIJK(NCA_I);
 	CString	strGcode;
 	CString	strBuf1( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(b), ij, 0.0f) );
-	ij *= -1.0;		// ij = -ij;
+	ij *= -1.0f;	// ij = -ij;
 	CString	strBuf2( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(a), ij, 0.0f) );
 	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() )
 		strGcode = (*ms_pfnGetLineNo)() + strBuf1 + GetFeedString(dFeed) + ms_strEOB +
@@ -457,7 +462,7 @@ CString	CNCMakeBase::MakeCircle_IJHALF_Helical(const CDXFcircle* pCircle, float 
 		ij.x = pCircle->GetIJK(NCA_I);
 	CString	strGcode;
 	CString	strBuf1( (*ms_pfnGetValString)(NCAI, ij.x, ms_bIJValue) + (*ms_pfnGetValString)(NCAJ, ij.y, ms_bIJValue) );
-	ij *= -1.0;		// ij = -ij;
+	ij *= -1.0f;	// ij = -ij;
 	CString	strBuf2( (*ms_pfnGetValString)(NCAI, ij.x, ms_bIJValue) + (*ms_pfnGetValString)(NCAJ, ij.y, ms_bIJValue) );
 	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() ) {
 		// 計算順序の関係で１行にできない

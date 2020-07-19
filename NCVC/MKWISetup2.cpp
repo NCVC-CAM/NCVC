@@ -52,8 +52,8 @@ BOOL CMKWISetup2::OnInitDialog()
 	m_dAWFcircleHi	= pOpt->WIR_D_AWFCIRCLE_HI;
 	m_bAWFstart		= pOpt->WIR_F_AWFSTART;
 	m_bAWFend		= pOpt->WIR_F_AWFEND;
-	m_strAwfCnt		= pOpt->m_strOption[MKWI_STR_AWFCNT];
-	m_strAwfCut		= pOpt->m_strOption[MKWI_STR_AWFCUT];
+	m_strAwfCnt		= pOpt->WIR_S_AWFCNT;
+	m_strAwfCut		= pOpt->WIR_S_AWFCUT;
 
 	UpdateData(FALSE);
 
@@ -67,8 +67,8 @@ BOOL CMKWISetup2::OnApply()
 	pOpt->WIR_D_AWFCIRCLE_HI= m_dAWFcircleHi;
 	pOpt->WIR_F_AWFSTART	= m_bAWFstart;
 	pOpt->WIR_F_AWFEND		= m_bAWFend;
-	pOpt->m_strOption[MKWI_STR_AWFCNT] = m_strAwfCnt;
-	pOpt->m_strOption[MKWI_STR_AWFCUT] = m_strAwfCut;
+	pOpt->WIR_S_AWFCNT		= m_strAwfCnt;
+	pOpt->WIR_S_AWFCUT		= m_strAwfCut;
 
 	return TRUE;
 }

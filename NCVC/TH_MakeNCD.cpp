@@ -72,7 +72,7 @@ static	BOOL	SetStartData(void);			// ‰ÁHŠJnˆÊ’uw¦Ú²Ô‚Ì‰¼“o˜^, ˆÚ“®w¦Ú²Ô‚Ì
 static	void	SetGlobalMap(void);
 static	void	SetGlobalMapToLayer(const CLayerData*);
 static	void	SetGlobalMapToOther(void);
-static	BOOL	MakeNCD_MainFunc(const CLayerData*);		// NC¶¬‚ÌÒ²İÙ°Ìß
+static	BOOL	MakeNCD_MainFunc(CLayerData*);		// NC¶¬‚ÌÒ²İÙ°Ìß
 static	BOOL	MakeNCD_ShapeFunc(void);
 static	BOOL	MakeNCD_FinalFunc(LPCTSTR = NULL);	// I—¹º°ÄŞCÌ§²Ùo—Í‚È‚Ç
 static	BOOL	OutputMillCode(LPCTSTR);	// NCº°ÄŞ‚Ìo—Í
@@ -80,8 +80,8 @@ static	BOOL	CreateShapeThread(void);	// Œ`ó”F¯ˆ—
 
 // ŠeÀ²Ìß•Ê‚Ìˆ—ŒÄ‚Ño‚µ
 enum	ENMAKETYPE {MAKECUTTER, MAKECORRECT, MAKEDRILLPOINT, MAKEDRILLCIRCLE};
-static	BOOL	CallMakeDrill(const CLayerData*, CString&);
-static	BOOL	CallMakeLoop(ENMAKETYPE, const CLayerData*, CString&);
+static	BOOL	CallMakeDrill(CLayerData*, CString&);
+static	BOOL	CallMakeLoop(ENMAKETYPE, CLayerData*, CString&);
 
 // Œ´“_’²®(TRUE:IsMatch)
 static	tuple<CDXFdata*, BOOL>	OrgTuningCutter(const CLayerData*);
@@ -156,14 +156,14 @@ static inline	void	AddMoveGdataZup(void)
 	// I“_À•W‚Å‚ÌºÒİÄ¶¬
 	AddCutterTextIntegrated( CDXFdata::ms_pData->GetEndCutterPoint() );
 	// Z²‚Ìã¸
-	AddMoveGdataZ(0, g_dZReturn, -1.0);
+	AddMoveGdataZ(0, g_dZReturn, -1.0f);
 }
 // Z²‚Ì‰º~
 static inline	void	AddMoveGdataZdown(void)
 {
 	// Z²‚ÌŒ»İˆÊ’u‚ªR“_‚æ‚è‘å‚«‚¢(‚‚¢)‚È‚çR“_‚Ü‚Å‘‘—‚è
 	if ( CNCMakeMill::ms_xyz[NCA_Z] > g_dZG0Stop )
-		AddMoveGdataZ(0, g_dZG0Stop, -1.0);
+		AddMoveGdataZ(0, g_dZG0Stop, -1.0f);
 	// ‰ÁHÏ‚İ[‚³‚Ö‚ÌZ²ØíˆÚ“®
 	float	dZValue;
 	switch ( GetNum(MKNC_NUM_MAKEEND) ) {
@@ -441,7 +441,7 @@ void InitialVariable(void)
 	g_nCorrect = -1;
 	if ( !(g_wBindOperator & TH_APPEND) )
 		CDXFdata::ms_pData = g_pDoc->GetCircleObject();
-	CNCMakeMill::InitialVariable();
+	CNCMakeMill::InitialVariable();		// CNCMakeBase::InitialVariable()
 }
 
 void InitialCycleBaseVariable(void)
@@ -995,7 +995,7 @@ BOOL OutputMillCode(LPCTSTR lpszFileName)
 // NC¶¬Ò²İ½Ú¯ÄŞ
 //////////////////////////////////////////////////////////////////////
 
-BOOL MakeNCD_MainFunc(const CLayerData* pLayer)
+BOOL MakeNCD_MainFunc(CLayerData* pLayer)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeNCD_MainFunc()\nStart", DBG_MAGENTA);
@@ -1162,7 +1162,7 @@ BOOL CreateShapeThread(void)
 // NC¶¬Ò²İ½Ú¯ÄŞ•â•ŠÖ”ŒQ
 //////////////////////////////////////////////////////////////////////
 
-BOOL CallMakeDrill(const CLayerData* pLayer, CString& strLayer)
+BOOL CallMakeDrill(CLayerData* pLayer, CString& strLayer)
 {
 	// ŒŠ‰ÁHˆ—À²Ìß
 	if ( GetFlg(MKNC_FLG_DRILLCIRCLE) ) {
@@ -1197,7 +1197,7 @@ BOOL CallMakeDrill(const CLayerData* pLayer, CString& strLayer)
 	return TRUE;
 }
 
-BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer)
+BOOL CallMakeLoop(ENMAKETYPE enMake, CLayerData* pLayer, CString& strLayer)
 {
 	CDXFdata*	pData;
 	BOOL		bMatch;
@@ -1241,27 +1241,43 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, const CLayerData* pLayer, CString& strLayer
 		if ( CDXFdata::ms_pData->GetMakeType() != DXFPOINTDATA &&
 				CDXFdata::ms_pData->GetEndMakePoint() != pData->GetStartMakePoint() ) {
 			// Z²‚Ìã¸
-			AddMoveGdataZ(0, g_dZReturn, -1.0);
+			AddMoveGdataZ(0, g_dZReturn, -1.0f);
 		}
 	}
+
 	// Ú²Ô‚²‚Æ‚ÌºÒİÄ‚Æo—Íº°ÄŞ
-	if ( !strLayer.IsEmpty() ) {
-		// ºÒİÄˆ—
-		if ( GetFlg(MKNC_FLG_LAYERCOMMENT) ) {
-			strBuf = pLayer->GetLayerComment();
-			if ( strBuf.IsEmpty() )
-				strBuf.Format(IDS_MAKENCD_BREAKLAYER, strLayer);
-			else
-				strBuf = "(" + strBuf + ")";
-			AddMakeGdataStr(strBuf);
+	if ( pLayer ) {
+		// Multi Mode
+		if ( !strLayer.IsEmpty() ) {
+			// ºÒİÄˆ—
+			if ( GetFlg(MKNC_FLG_LAYERCOMMENT) ) {
+				strBuf = pLayer->GetLayerComment();
+				if ( strBuf.IsEmpty() )
+					strBuf.Format(IDS_MAKENCD_BREAKLAYER, strLayer);
+				else
+					strBuf = '(' + strBuf + ')';
+				AddMakeGdataStr(strBuf);
+			}
+			// o—Íº°ÄŞ
+			strBuf = pLayer->GetLayerOutputCode();
+			if ( !strBuf.IsEmpty() )
+				AddMakeGdataStr(strBuf);
+			// “¯‚¶ºÒİÄ‚ğ“ü‚ê‚È‚¢‚æ‚¤‚ÉÚ²Ô–¼‚ğ¸Ø±
+			strLayer.Empty();
 		}
-		// o—Íº°ÄŞ
-		strBuf = pLayer->GetLayerOutputCode();
-		if ( !strBuf.IsEmpty() )
-			AddMakeGdataStr(strBuf);
-		// “¯‚¶ºÒİÄ‚ğ“ü‚ê‚È‚¢‚æ‚¤‚ÉÚ²Ô–¼‚ğ¸Ø±
-		strLayer.Empty();
 	}
+	else if ( GetFlg(MKNC_FLG_LAYERCOMMENT) ) {
+		// Single Mode
+		for ( INT_PTR i=0; i<g_pDoc->GetLayerCnt(); i++ ) {
+			pLayer = g_pDoc->GetLayerData(i);
+			if ( pLayer->IsMakeTarget() ) {
+				strBuf = pLayer->GetLayerName();
+				strBuf.Format(IDS_MAKENCD_BREAKLAYER, strBuf);
+				AddMakeGdataStr(strBuf);
+			}
+		}
+	}
+
 	// ‰ñ“]”
 	strBuf = CNCMakeMill::MakeSpindle(pData->GetMakeType());
 	if ( !strBuf.IsEmpty() )
@@ -3265,7 +3281,7 @@ void AddCommentText(const CPointF& pt)
 		for ( int i=0; i<pobArray->GetSize() && IsThread(); i++ ) {
 			pData = pobArray->GetAt(i);
 			if ( !pData->IsMakeFlg() ) {
-				AddMakeGdataStr( "(" + static_cast<CDXFtext*>(pData)->GetStrValue() + ")" );
+				AddMakeGdataStr( '(' + static_cast<CDXFtext*>(pData)->GetStrValue() + ')' );
 				pData->SetMakeFlg();
 				break;
 			}

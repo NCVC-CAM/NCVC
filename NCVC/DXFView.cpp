@@ -467,8 +467,8 @@ void CDXFView::BindMsgPost(CDC* pDC, LPCADBINDINFO pInfo, CPoint* ptDev)
 
 BOOL CDXFView::IsBindSelected(int nSel)
 {
-	for ( auto v : m_bindSel ) {
-		if ( v.nSel == nSel )
+	for ( const auto& e : m_bindSel ) {
+		if ( e.nSel == nSel )
 			return TRUE;
 	}
 	return FALSE;
@@ -482,8 +482,8 @@ BOOL CDXFView::IsBindSelected(int nSel)
 void CDXFView::ClearBindSelectData(void)
 {
 	LPCADBINDINFO	pInfo;
-	for ( auto v : m_bindSel ) {
-		pInfo = GetDocument()->GetBindInfoData(v.nSel);
+	for ( const auto& e : m_bindSel ) {
+		pInfo = GetDocument()->GetBindInfoData(e.nSel);
 		pInfo->pDoc->AllSetDxfFlg(DXFFLG_SELECT, FALSE);
 		pInfo->pView->Invalidate();
 	}
@@ -748,9 +748,10 @@ void CDXFView::OnEditBindDel()
 {
 	if ( !m_bindSel.empty() ) {
 		// 降順に並べ替えてから削除（しないとASSERTｴﾗｰ）
-		sort(m_bindSel.begin(), m_bindSel.end());
-		for ( auto v : m_bindSel )
-			GetDocument()->RemoveBindData(v.nSel);
+//		std::sort(m_bindSel.begin(), m_bindSel.end());
+		boost::sort(m_bindSel);		// boost/range/algorithm.hpp
+		for ( const auto& e : m_bindSel )
+			GetDocument()->RemoveBindData(e.nSel);
 		Invalidate();
 		GetDocument()->SetModifiedFlag();
 		// 後片付け
@@ -763,8 +764,8 @@ void CDXFView::OnEditBindTarget()
 {
 	if ( !m_bindSel.empty() ) {
 		LPCADBINDINFO pInfo;
-		for ( auto v : m_bindSel ) {
-			pInfo = GetDocument()->GetBindInfoData(v.nSel);
+		for ( const auto& e : m_bindSel ) {
+			pInfo = GetDocument()->GetBindInfoData(e.nSel);
 			pInfo->bTarget = !pInfo->bTarget;
 		}
 		Invalidate();
@@ -1130,11 +1131,11 @@ LRESULT CDXFView::OnBindLButtonDown(WPARAM wParam, LPARAM lParam)
 		m_ptMouse.y = reinterpret_cast<CPoint*>(lParam)->y;
 		ScreenToClient(&m_ptMouse);
 		// ｸﾘｯｸﾎﾟｲﾝﾄと子ｳｨﾝﾄﾞｳの差分を計算
-		for ( auto& v : m_bindSel ) {	// 内容更新のための"&"
-			pInfo = GetDocument()->GetBindInfoData(v.nSel);
-			pInfo->pView->GetWindowRect(&v.rc);
-			ScreenToClient(&v.rc);
-			v.ptDiff = m_ptMouse - v.rc.TopLeft();
+		for ( auto& e : m_bindSel ) {	// 内容更新のための"&"
+			pInfo = GetDocument()->GetBindInfoData(e.nSel);
+			pInfo->pView->GetWindowRect(&e.rc);
+			ScreenToClient(&e.rc);
+			e.ptDiff = m_ptMouse - e.rc.TopLeft();
 		}
 	}
 
@@ -1172,8 +1173,8 @@ LRESULT CDXFView::OnBindCancel(WPARAM, LPARAM)
 	m_enBind = BD_CANCEL;
 	// 配置を元に戻す
 	CClientDC	dc(this);
-	for ( auto v : m_bindSel )
-		BindMsgPost(&dc, GetDocument()->GetBindInfoData(v.nSel), NULL);
+	for ( const auto& e : m_bindSel )
+		BindMsgPost(&dc, GetDocument()->GetBindInfoData(e.nSel), NULL);
 	Invalidate();
 	UpdateWindow();	// 即再描画
 
@@ -1240,21 +1241,21 @@ void CDXFView::OnLButtonUp(UINT nFlags, CPoint point)
 		CPoint		pt, ptDev;
 		CPointF		ptD;
 		LPCADBINDINFO	pInfo, pUndo;
-		for ( auto v : m_bindSel ) {
+		for ( const auto& e : m_bindSel ) {
 			// 子ﾋﾞｭｰの移動処理
-			pInfo = GetDocument()->GetBindInfoData(v.nSel);
+			pInfo = GetDocument()->GetBindInfoData(e.nSel);
 			// UNDO情報の保存
 			pUndo = new CADBINDINFO(pInfo);
 			m_bindUndo.AddTail(pUndo);
 			//
-			pt = point - v.ptDiff;
+			pt = point - e.ptDiff;
 			if ( nFlags & MK_SHIFT ) {
-				int ppx = abs(pt.x - v.rc.left),
-					ppy = abs(pt.y - v.rc.top);
+				int ppx = abs(pt.x - e.rc.left),
+					ppy = abs(pt.y - e.rc.top);
 				if ( ppx < ppy )
-					pt.x = v.rc.left;
+					pt.x = e.rc.left;
 				else
-					pt.y = v.rc.top;
+					pt.y = e.rc.top;
 			}
 			dc.DPtoLP(&pt);
 			ptD = pt;
@@ -1797,19 +1798,19 @@ void CDXFView::OnMouseMove(UINT nFlags, CPoint point)
 			if ( m_enBind == BD_MOVE ) {
 				CPoint	pt;
 				LPCADBINDINFO pInfo;
-				for ( auto v : m_bindSel ) {
-					pt = point - v.ptDiff;
-					pInfo = GetDocument()->GetBindInfoData(v.nSel);
+				for ( const auto& e : m_bindSel ) {
+					pt = point - e.ptDiff;
+					pInfo = GetDocument()->GetBindInfoData(e.nSel);
 					if ( nFlags & MK_SHIFT ) {
-						int ppx = abs(pt.x - v.rc.left),
-							ppy = abs(pt.y - v.rc.top);
+						int ppx = abs(pt.x - e.rc.left),
+							ppy = abs(pt.y - e.rc.top);
 						if ( ppx < ppy )
-							pt.x = v.rc.left;
+							pt.x = e.rc.left;
 						else
-							pt.y = v.rc.top;
+							pt.y = e.rc.top;
 					}
 //					pInfo->pView->MoveWindow(pt.x, pt.y, m_rcMove.Width(), m_rcMove.Height());
-					pInfo->pView->SetWindowPos(NULL, pt.x, pt.y, v.rc.Width(), v.rc.Height(),
+					pInfo->pView->SetWindowPos(NULL, pt.x, pt.y, e.rc.Width(), e.rc.Height(),
 						SWP_NOZORDER|SWP_NOACTIVATE);
 				}
 				return;

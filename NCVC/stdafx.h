@@ -68,15 +68,15 @@
 //#include "boost/geometry.hpp"			// åvéZäÙâΩ
 //#include "boost/geometry/geometries/register/point.hpp"
 //#include "boost/geometry/geometries/register/box.hpp"
-#include "boost/regex.hpp"				// ê≥ãKï\åª
-#include "boost/tokenizer.hpp"			// ï∂éöóÒï™äÑ
-#include "boost/tuple/tuple.hpp"		// ägí£√ﬁ∞¿
+#include "boost/regex.hpp"
+#include "boost/tokenizer.hpp"
+#include "boost/tuple/tuple.hpp"
 #include "boost/optional.hpp"
 #include "boost/variant.hpp"
 #include "boost/function.hpp"
-#include "boost/utility.hpp"			// ’∞√®ÿ√®
+#include "boost/utility.hpp"
 #include "boost/foreach.hpp"
-#include "boost/range/algorithm/find_if.hpp"
+#include "boost/range/algorithm.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/minmax.hpp"
 #include "boost/algorithm/string.hpp"

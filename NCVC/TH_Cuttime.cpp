@@ -73,7 +73,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 #ifdef _DEBUG
 		dbg.printf("pMCopt->IsZeroG0Speed() Can't calc return");
 #endif
-		pDoc->m_dCutTime = -1.0;	// 初期値「-1」で表示消去
+		pDoc->m_dCutTime = -1.0f;	// 初期値「-1」で表示消去
 		pView->PostMessage(WM_USERPROGRESSPOS);
 		return 0;
 	}

@@ -165,7 +165,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_FLG,	MKNC_FLG_DRILLBREAK,	"大きさごとにｺﾒﾝﾄを埋め込む"},
 	{NC_NUM,	MKNC_NUM_DRILLCIRCLEPROCESS,	"実点と円ﾃﾞｰﾀとの手順(0:無視,1:先,2:後)"},
 	{NC_PAGE,	6},		// Page6(ﾚｲﾔ:Dialog8)
-	{NC_FLG,	MKNC_FLG_LAYERCOMMENT,	"ﾚｲﾔごとにｺﾒﾝﾄを埋め込む"},
+	{NC_FLG,	MKNC_FLG_LAYERCOMMENT,	"ﾚｲﾔ情報をｺﾒﾝﾄで挿入"},
 	{NC_NUM,	MKNC_NUM_MOVEZ,			"移動ﾚｲﾔのZ軸(0:そのまま,1:R点,2:ｲﾆｼｬﾙ点)"},
 	{NC_STR,	MKNC_STR_CUSTMOVE_B,	"ｶｽﾀﾑ移動ｺｰﾄﾞ(前)"},
 	{NC_STR,	MKNC_STR_CUSTMOVE_A,	"ｶｽﾀﾑ移動ｺｰﾄﾞ(後)"},
@@ -231,6 +231,11 @@ BOOL CNCMakeMillOpt::IsPathID(int n)
 	return ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER || n==MKNC_STR_PERLSCRIPT );
 }
 
+CString CNCMakeMillOpt::GetLineNoForm(void) const
+{
+	return MIL_S_LINEFORM;
+}
+
 // ﾚｼﾞｽﾄﾘからの移行
 BOOL CNCMakeMillOpt::Convert()
 {
@@ -283,7 +288,7 @@ BOOL CNCMakeMillOpt::Convert()
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_CIRCLEIJ));
 	MIL_I_IJ = AfxGetApp()->GetProfileInt(strRegKey, strEntry, 1);
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_LINEFORM));
-	m_strOption[MKNC_STR_LINEFORM] = AfxGetApp()->GetProfileString(strRegKey, strEntry);
+	MIL_S_LINEFORM = AfxGetApp()->GetProfileString(strRegKey, strEntry);
 
 	// 旧ﾚｼﾞｽﾄﾘの消去
 	CRegKey	reg;
@@ -327,15 +332,15 @@ void CNCMakeMillOpt::DbgDump(void) const
 	dbg.printf("  G92[X]       =%f", MIL_D_G92X);
 	dbg.printf("  G92[Y]       =%f", MIL_D_G92Y);
 	dbg.printf("  G92[Z]       =%f", MIL_D_G92Z);
-	dbg.printf("  Header       =%s", m_strOption[MKNC_STR_HEADER]);
-	dbg.printf("  Footer       =%s", m_strOption[MKNC_STR_FOOTER]);
+	dbg.printf("  Header       =%s", MIL_S_HEADER);
+	dbg.printf("  Footer       =%s", MIL_S_FOOTER);
 	dbg.printf("----------");
 	dbg.printf("  Xrev         =%d", MIL_F_XREV);
 	dbg.printf("  Yrev         =%d", MIL_F_YREV);
 	dbg.printf("  bLineAdd     =%d", MIL_F_LINEADD);
-	dbg.printf("  LineForm     =%s", m_strOption[MKNC_STR_LINEFORM]);
+	dbg.printf("  LineForm     =%s", MIL_S_LINEFORM);
 	dbg.printf("  nLineAdd     =%d", MIL_I_LINEADD);
-	dbg.printf("  EOB          =%s", m_strOption[MKNC_STR_EOB]);
+	dbg.printf("  EOB          =%s", MIL_S_EOB);
 	dbg.printf("  G90          =%d", MIL_I_G90);
 	dbg.printf("  ZReturn      =%d", MIL_I_ZRETURN);
 	dbg.printf("  Gclip        =%d", MIL_F_GCLIP);
@@ -385,14 +390,14 @@ void CNCMakeMillOpt::DbgDump(void) const
 	dbg.printf("----------");
 	dbg.printf("  LayerComment =%d", MIL_F_LAYERCOMMENT);
 	dbg.printf("  MoveZ        =%d", MIL_I_MOVEZ);
-	dbg.printf("  CustMoveB    =%s", m_strOption[MKNC_STR_CUSTMOVE_B]);
-	dbg.printf("  CustMoveA    =%s", m_strOption[MKNC_STR_CUSTMOVE_A]);
+	dbg.printf("  CustMoveB    =%s", MIL_S_CUSTMOVE_B);
+	dbg.printf("  CustMoveA    =%s", MIL_S_CUSTMOVE_A);
 	dbg.printf("  L0Cycle      =%d", MIL_F_L0CYCLE);
 	dbg.printf("----------");
 	dbg.printf("  Tolerance    =%f", MIL_D_TOLERANCE);
 	dbg.printf("  TolerancePro =%d", MIL_I_TOLERANCE);
 	dbg.printf("  DrillOptimaiz=%d", MIL_I_OPTIMAIZEDRILL);
 	dbg.printf("  DrillMargin  =%f", MIL_D_DRILLMARGIN);
-	dbg.printf("  PerlScript   =%s", m_strOption[MKNC_STR_PERLSCRIPT]);
+	dbg.printf("  PerlScript   =%s", MIL_S_PERLSCRIPT);
 }
 #endif

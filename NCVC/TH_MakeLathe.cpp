@@ -8,6 +8,7 @@
 #include "DXFshape.h"
 #include "Layer.h"
 #include "DXFDoc.h"
+#include "NCDoc.h"		// g_szNCcomment[]
 #include "NCMakeLatheOpt.h"
 #include "NCMakeLathe.h"
 #include "MakeCustomCode.h"
@@ -23,6 +24,8 @@ extern	CMagaDbg	g_dbg;
 //#define	_DBG_NCMAKE_TIME	//	生成時間の表示
 #endif
 
+extern	LPCTSTR	g_szNCcomment[];
+
 // ｸﾞﾛｰﾊﾞﾙ変数定義
 static	CThreadDlg*			g_pParent;
 static	CDXFDoc*			g_pDoc;
@@ -36,23 +39,26 @@ static	CNCMakeLatheOpt*	g_pMakeOpt;
 #define	GetStr(a)	g_pMakeOpt->GetStr(a)
 
 // NC生成に必要なﾃﾞｰﾀ群
-static	CShapeArray	g_obShape;
-static	CDXFarray	g_obOutsideTemp;
-static	CDXFarray	g_obLathePass;
+static	CDXFshape*	g_pShape[2];	// 0:Inside, 1:Outside
+static	CDXFarray	g_obLineTemp[2];
+static	CDXFarray	g_obMakeLine[2];
 static	CTypedPtrArrayEx<CPtrArray, CNCMakeLathe*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
 
 // ｻﾌﾞ関数
-static	void	InitialVariable(void);		// 変数初期化
-static	void	SetStaticOption(void);		// 静的変数の初期化
-static	BOOL	MakeLathe_MainFunc(void);	// NC生成のﾒｲﾝﾙｰﾌﾟ
-static	BOOL	CreateShapeThread(void);	// 形状認識処理
-static	void	InitialShapeData(void);		// 形状認識の初期化
-static	BOOL	CreateOutsidePitch(void);	// 外径ｵﾌｾｯﾄを中心まで生成
-static	BOOL	CreateRoughPass(void);		// 荒加工ﾃﾞｰﾀの生成
-static	BOOL	MakeLatheCode(void);		// NCｺｰﾄﾞの生成
-static	BOOL	CheckXZMove(const CPointF&, const CPointF&);
-static	void	MoveLatheCode(const CDXFdata*, float, float);
-static	BOOL	OutputLatheCode(void);		// NCｺｰﾄﾞの出力
+static	void	InitialVariable(void);			// 変数初期化
+static	void	SetStaticOption(void);			// 静的変数の初期化
+static	BOOL	MakeLathe_MainFunc(void);		// NC生成のﾒｲﾝﾙｰﾌﾟ
+static	BOOL	CreateShapeThread(void);		// 形状認識処理
+static	void	InitialShapeData(void);			// 形状認識の初期化
+static	BOOL	CreateInsidePitch(float&);		// 内径ｵﾌｾｯﾄを生成
+static	BOOL	CreateOutsidePitch(void);		// 外径ｵﾌｾｯﾄを生成
+static	BOOL	CreateRoughPass(int);			// 荒加工ﾃﾞｰﾀの生成(内外共通)
+static	BOOL	MakeInsideCode(const CPointF&);	// NCｺｰﾄﾞの生成
+static	BOOL	MakeOutsideCode(const CPointF&);
+static	BOOL	CheckXZMove(int, const CPointF&, const CPointF&);
+static	CPointF	MoveInsideCode(const CDXFchain*, const CPointF&, const CPointF&);
+static	void	MoveOutsideCode(const CDXFdata*, const CPointF&, const CPointF&);
+static	BOOL	OutputLatheCode(void);			// NCｺｰﾄﾞの出力
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomLatheCode(const CString&);
@@ -149,9 +155,10 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 
 	// ここの情報ではないので終了前に先に消去しておく
 	// MakeLathe_AfterThreadｽﾚｯﾄﾞ内での消去もNG
-	for ( int i=0; i<g_obShape.GetSize(); i++ )
-		g_obShape[i]->CrearScanLine_Lathe();
-	g_obShape.RemoveAll();
+	for ( int i=0; i<SIZEOF(g_pShape); i++ ) {
+		if ( g_pShape[i] )
+			g_pShape[i]->CrearScanLine_Lathe();
+	}
 
 	// 終了処理
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// このｽﾚｯﾄﾞからﾀﾞｲｱﾛｸﾞ終了
@@ -172,6 +179,7 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 
 void InitialVariable(void)
 {
+	g_pShape[0] = g_pShape[1] = NULL;
 	// 端面の終点が原点
 	CDXFdata::ms_ptOrg = g_pDoc->GetLatheLine(1)->GetNativePoint(1);
 	// ORIGINﾃﾞｰﾀが工具初期位置
@@ -181,7 +189,7 @@ void InitialVariable(void)
 	g_pDoc->GetLatheLine(0)->OrgTuning(FALSE);
 	g_pDoc->GetLatheLine(1)->OrgTuning(FALSE);
 	// 生成ｵﾌﾟｼｮﾝの初期化
-	CNCMakeLathe::InitialVariable();
+	CNCMakeLathe::InitialVariable();		// CNCMakeBase::InitialVariable()
 }
 
 void SetStaticOption(void)
@@ -236,19 +244,66 @@ BOOL MakeLathe_MainFunc(void)
 		return FALSE;
 	// 旋盤加工形状の原点調整他
 	InitialShapeData();
-	// 外径ﾃﾞｰﾀから切削準備ﾃﾞｰﾀを作成
-	if ( !CreateOutsidePitch() )
-		return FALSE;
 
-	// ﾌｪｰｽﾞ1 : 形状のｵﾌｾｯﾄと外径のｵﾌｾｯﾄの交点を計算し荒加工のﾃﾞｰﾀを生成
-	SendFaseMessage(g_obOutsideTemp.GetSize());
-	if ( !CreateRoughPass() )
-		return FALSE;
+	// 内径と外径の切削準備ﾃﾞｰﾀを作成
+	float	dHole = GetDbl(MKLA_DBL_HOLE);	// 既存下穴ｻｲｽﾞ
+	if ( g_pShape[0] ) {
+		if ( !CreateInsidePitch(dHole) )	// dHole更新
+			return FALSE;
+	}
+	if ( g_pShape[1] ) {
+		if ( !CreateOutsidePitch() )
+			return FALSE;
+	}
+
+	// ﾌｪｰｽﾞ1 : 形状のｵﾌｾｯﾄと内外径のｵﾌｾｯﾄの交点を計算し荒加工のﾃﾞｰﾀを生成
+	SendFaseMessage(g_obLineTemp[0].GetSize()+g_obLineTemp[1].GetSize());
+	for ( int i=0; i<SIZEOF(g_obLineTemp); i++ ) {
+		if ( !g_obLineTemp[i].IsEmpty() ) {
+			if ( !CreateRoughPass(i) )
+				return FALSE;
+		}
+	}
+
+	// 端面と外径の最大値を取得
+	CPointF		ptMax(g_pDoc->GetLatheLine(0)->GetStartMakePoint().x,	// Z軸
+					  g_pDoc->GetLatheLine(1)->GetStartMakePoint().y);	// X軸
+
+	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
+	AddCustomLatheCode(GetStr(MKLA_STR_HEADER));
+
+	// 端面処理
+	if ( GetFlg(MKLA_FLG_ENDFACE) ) {
+		CNCMakeLathe* pNCD = new CNCMakeLathe;
+		ASSERT(pNCD);
+		pNCD->CreateEndFace(ptMax);
+		g_obMakeData.Add(pNCD);
+	}
+
+	// 下穴処理
+	if ( !GetStr(MKLA_STR_DRILL).IsEmpty() ) {
+		CNCMakeLathe* pNCD = new CNCMakeLathe;
+		ASSERT(pNCD);
+		pNCD->CreatePilotHole();
+		g_obMakeData.Add(pNCD);
+	}
 
 	// ﾌｪｰｽﾞ2 : NCｺｰﾄﾞの生成
-	SendFaseMessage(g_obLathePass.GetSize()+GetNum(MKLA_NUM_MARGIN));
-	if ( !MakeLatheCode() )
-		return FALSE;
+	SendFaseMessage(
+		g_obMakeLine[0].GetSize()+GetNum(MKLA_NUM_I_MARGIN)+
+		g_obMakeLine[1].GetSize()+GetNum(MKLA_NUM_O_MARGIN)
+	);
+	if ( g_pShape[0] && dHole>0.0f ) {
+		if ( !MakeInsideCode(ptMax) )
+			return FALSE;
+	}
+	if ( g_pShape[1] ) {
+		if ( !MakeOutsideCode(ptMax) )
+			return FALSE;
+	}
+
+	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
+	AddCustomLatheCode(GetStr(MKLA_STR_FOOTER));
 
 	return IsThread();
 }
@@ -263,6 +318,12 @@ BOOL CreateShapeThread(void)
 	CDXFdata*	pDataDbg;
 	CPointF		ptsd, pted;
 #endif
+	const INT_PTR	nLayerLoop = g_pDoc->GetLayerCnt();
+	if ( nLayerLoop > 2 ) {
+		AfxMessageBox(IDS_ERR_LATHE_LAYER, MB_OK|MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+
 	NCVCTHREADPARAM	param;
 	param.pParent = NULL;
 	param.pDoc    = g_pDoc;
@@ -280,20 +341,34 @@ BOOL CreateShapeThread(void)
 	delete	pThread;
 
 	// 旋盤生成できる集合が検出されたか？
-	INT_PTR		i, j, nLoop;
-	const INT_PTR	nLayerLoop = g_pDoc->GetLayerCnt();
+	INT_PTR		i, j, n, nLoop;
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
 	CDXFmap*	pMap;
+	CString		strInside(INSIDE_S),	// g_szNCcomment[LATHEINSIDE]
+				strLayer;
+	strInside.MakeUpper();
 
 	for ( i=0; i<nLayerLoop && IsThread(); i++ ) {
 		pLayer = g_pDoc->GetLayerData(i);
-		if ( !pLayer->IsCutType() )
+		if ( !pLayer->IsMakeTarget() )
 			continue;
+		strLayer = pLayer->GetLayerName();
 #ifdef _DEBUG
-		dbg.printf(" Layer=%s", pLayer->GetLayerName());
+		dbg.printf(" Layer=%s", strLayer);
 #endif
 		nLoop = pLayer->GetShapeSize();
+		// 図形集合を１つに限定
+		if ( nLoop > 1 ) {
+			CString	strMsg;
+			strMsg.Format(IDS_ERR_LATHE_SHAPE, pLayer->GetLayerName());
+			AfxMessageBox(strMsg, MB_OK|MB_ICONEXCLAMATION);
+			return FALSE;
+		}
+		// 内側か外側かの判定
+		strLayer.MakeUpper();
+		n = strLayer.Find(strInside) >= 0 ? 0 : 1; 
+		//
 		for ( j=0; j<nLoop && IsThread(); j++ ) {
 			pShape = pLayer->GetShapeData(j);
 			pMap   = pShape->GetShapeMap();
@@ -313,15 +388,9 @@ BOOL CreateShapeThread(void)
 #endif
 				delete	pMap;
 				// 生成対象形状を保存
-				g_obShape.Add(pShape);
+				g_pShape[n] = pShape;
 			}
 		}
-	}
-
-	// 図形集合を１つに限定
-	if ( g_obShape.GetSize() != 1 ) {
-		AfxMessageBox(IDS_ERR_LATHE_SHAPE, MB_OK|MB_ICONEXCLAMATION);
-		return FALSE;
 	}
 
 	return TRUE;
@@ -335,8 +404,10 @@ void InitialShapeData(void)
 	CPointF		pts, pte;
 	CDXFchain*	pChain;
 
-	for ( int i=0; i<g_obShape.GetSize() && IsThread(); i++ ) {
-		pChain = g_obShape[i]->GetShapeChain();
+	for ( int i=0; i<SIZEOF(g_pShape) && IsThread(); i++ ) {
+		if ( !g_pShape[i] )
+			continue;
+		pChain = g_pShape[i]->GetShapeChain();
 		ASSERT(pChain);
 		pts = pChain->GetHead()->GetNativePoint(0);
 		pte = pChain->GetTail()->GetNativePoint(1);
@@ -351,75 +422,133 @@ void InitialShapeData(void)
 		// 順序を正しくしてから原点調整
 		pChain->OrgTuning();
 	}
-	// 図形集合の並べ替え
-//	g_obShape.Sort( ShapeSortFunc );	// 図形集合を１つに限定したので不要
+}
+
+BOOL CreateInsidePitch(float& dHole)
+{
+#ifdef _DEBUG
+	CMagaDbg	dbg("CreateInsidePitch()\nStart");
+//	CPointF		ptsd, pted;
+	int			nCntDbg = 0;
+#endif
+	int			i,
+				n = GetNum(MKLA_NUM_I_MARGIN);
+	float		d = GetDbl(MKLA_DBL_I_MARGIN),
+			cutD  = fabs(GetDbl(MKLA_DBL_I_CUT)),
+			dLimit;
+	COutlineData*	pOutline;
+	CDXFchain*	pChain;
+	CDXFdata*	pData;
+	VLATHEDRILLINFO	v;
+
+	if ( g_pMakeOpt->GetDrillInfo(v) ) {
+		if ( dHole < v.back().d )	// 最後のドリルサイズを採用
+			dHole = v.back().d;		// （並べ替えの必要ないと思うけど）
+	}
+	if ( dHole <= 0.0f ) {
+		AfxMessageBox(IDS_ERR_LATHE_INSIDE, MB_OK|MB_ICONEXCLAMATION);
+		return TRUE;
+	}
+	dHole /= 2.0f;
+
+	// --- 形状ｵﾌｾｯﾄ内側の上限値を求める
+	// 形状のｵﾌｾｯﾄを生成 + 一番外側のｵﾌｾｯﾄを取得
+	g_pShape[0]->CreateScanLine_Lathe(n, -d);
+	pOutline = g_pShape[0]->GetLatheList();
+	// n==0の対処
+	pChain = pOutline->IsEmpty() ?
+		g_pShape[0]->GetShapeChain() : pOutline->GetHead();
+	CRectF rc = pChain->GetMaxRect();
+	dLimit = max(rc.top, rc.bottom);
+#ifdef _DEBUG
+	dbg.printf("Limit(tuning)=%f", dLimit - CDXFdata::ms_ptOrg.y);
+#endif
+
+	// 所属ﾒﾝﾊﾞの原点調整
+	for ( i=0; i<pOutline->GetSize() && IsThread(); i++ ) {
+		pChain = pOutline->GetAt(i);
+		ASSERT(pChain);
+		pChain->OrgTuning();
+	}
+
+	// 内径ｵﾌｾｯﾄの生成準備
+	CPointF	pts, pte;
+	pts.x = rc.right + GetDbl(MKLA_DBL_I_PULLZ);	// 引き代分
+	pte.x = rc.left;
+	pts.y = pte.y = dHole + cutD + CDXFdata::ms_ptOrg.y;	// Y値は既存下穴ｻｲｽﾞかﾄﾞﾘﾙ径から(Naitive座標)
+	DXFLARGV	dxfLine;
+	dxfLine.pLayer = NULL;
+
+	// dLimitまでX方向(Y値)を切り込み
+	while ( pts.y<dLimit && IsThread() ) {
+		dxfLine.s = pts;
+		dxfLine.e = pte;
+		pData = new CDXFline(&dxfLine);
+		g_obLineTemp[0].Add(pData);		// OrgTuning()は不要
+		pts.y += cutD;
+		pte.y += cutD;
+#ifdef _DEBUG
+		nCntDbg++;
+#endif
+	}
+#ifdef _DEBUG
+	dbg.printf("OffsetCnt=%d", nCntDbg);
+#endif
+
+	return IsThread();
 }
 
 BOOL CreateOutsidePitch(void)
 {
 #ifdef _DEBUG
 	CMagaDbg	dbg("CreateOutsidePitch()\nStart");
-	CPointF		ptsd, pted;
 	int			nCntDbg = 0;
 #endif
-	int			i, j,
-				n = GetNum(MKLA_NUM_MARGIN);
-	float		d = GetDbl(MKLA_DBL_MARGIN);
+	int			i,
+				n = GetNum(MKLA_NUM_O_MARGIN);
+	float		d = GetDbl(MKLA_DBL_O_MARGIN),
+			cutD  = fabs(GetDbl(MKLA_DBL_O_CUT)),
+			dLimit;
 	COutlineData*	pOutline;
 	CDXFchain*	pChain;
 	CDXFdata*	pData;
-	CRectF		rc;
-	float		dLimit = FLT_MAX,
-				cutD  = fabs(GetDbl(MKLA_DBL_CUT));
 
-	// 形状ｵﾌｾｯﾄ一番外側の下限値を求める
-	for ( i=0; i<g_obShape.GetSize() && IsThread(); i++ ) {
-		// 形状のｵﾌｾｯﾄを生成 + 一番外側のｵﾌｾｯﾄを取得
-		g_obShape[i]->CreateScanLine_Lathe(n, d);
-		pOutline = g_obShape[i]->GetLatheList();
-		// n==0の対処
-		pChain = pOutline->IsEmpty() ?
-			g_obShape[i]->GetShapeChain() : pOutline->GetHead();
-		PLIST_FOREACH(pData, pChain)
-			rc = pData->GetMaxRect();
-#ifdef _DEBUG
-			ptsd = pData->GetNativePoint(0);
-			pted = pData->GetNativePoint(1);
-			dbg.printf("%d (%.3f, %.3f)-(%.3f, %.3f)", pData->GetType(),
-				ptsd.x, ptsd.y, pted.x, pted.y);
-			dbg.printf("rc=(%.3f, %.3f)-(%.3f, %.3f)",
-				rc.left, rc.top, rc.right, rc.bottom);
-#endif
-			if ( dLimit > rc.top )
-				dLimit = rc.top;
-		END_FOREACH
-		// 所属ﾒﾝﾊﾞの原点調整
-		for ( j=0; j<pOutline->GetSize() && IsThread(); j++ ) {
-			pChain = pOutline->GetAt(j);
-			ASSERT(pChain);
-			pChain->OrgTuning();
-		}
-	}
+	// --- 形状ｵﾌｾｯﾄ外側の下限値を求める
+	// 形状のｵﾌｾｯﾄを生成 + 一番外側のｵﾌｾｯﾄを取得
+	g_pShape[1]->CreateScanLine_Lathe(n, d);
+	pOutline = g_pShape[1]->GetLatheList();
+	// n==0の対処
+	pChain = pOutline->IsEmpty() ?
+		g_pShape[1]->GetShapeChain() : pOutline->GetHead();
+	CRectF rc = pChain->GetMaxRect();
+	dLimit = min(rc.top, rc.bottom);
 #ifdef _DEBUG
 	dbg.printf("Limit(tuning)=%f", dLimit - CDXFdata::ms_ptOrg.y);
 #endif
 
-	// 外径ｵﾌｾｯﾄを中心まで生成
-	CDXFline*	pLine = g_pDoc->GetLatheLine(0);	// 外径ｵﾌﾞｼﾞｪｸﾄ
-	CPointF	pts(pLine->GetNativePoint(0)),
-			pte(pLine->GetNativePoint(1));
-	pts.x += GetDbl(MKLA_DBL_PULL_Z);		// 引き代分
+	// 所属ﾒﾝﾊﾞの原点調整
+	for ( i=0; i<pOutline->GetSize() && IsThread(); i++ ) {
+		pChain = pOutline->GetAt(i);
+		ASSERT(pChain);
+		pChain->OrgTuning();
+	}
+
+	// 外径ｵﾌｾｯﾄの生成準備
+	pData = g_pDoc->GetLatheLine(0);	// 外径ｵﾌﾞｼﾞｪｸﾄ
+	CPointF	pts(pData->GetNativePoint(0)),
+			pte(pData->GetNativePoint(1));
+	pts.x += GetDbl(MKLA_DBL_O_PULLZ);	// 引き代分
 	pts.y -= cutD;
 	pte.y -= cutD;
 	DXFLARGV	dxfLine;
 	dxfLine.pLayer = NULL;
 
-	// 原点(zero)までX方向(Y値)を切り込み
+	// dLimitまでX方向(Y値)を切り込み
 	while ( pts.y>dLimit && pte.y>dLimit && IsThread() ) {
 		dxfLine.s = pts;
 		dxfLine.e = pte;
-		pLine = new CDXFline(&dxfLine);
-		g_obOutsideTemp.Add(pLine);		// OrgTuning()は不要
+		pData = new CDXFline(&dxfLine);
+		g_obLineTemp[1].Add(pData);		// OrgTuning()は不要
 		pts.y -= cutD;
 		pte.y -= cutD;
 #ifdef _DEBUG
@@ -433,9 +562,9 @@ BOOL CreateOutsidePitch(void)
 	return IsThread();
 }
 
-BOOL CreateRoughPass(void)
+BOOL CreateRoughPass(int io)
 {
-	INT_PTR		i, j,
+	INT_PTR		i, iPosBase = io==0 ? 0 : g_obLineTemp[1].GetSize(),
 				nResult;
 	BOOL		bCreate, bInter;
 	ENDXFTYPE	enType;
@@ -452,55 +581,34 @@ BOOL CreateRoughPass(void)
 	dxfLine.pLayer = NULL;
 
 	// 外径基準線の傾きを計算
-	if ( !g_obOutsideTemp.IsEmpty() ) {
-		pData = g_obOutsideTemp[0];
-		ptChk[0] = pData->GetNativePoint(1) - pData->GetNativePoint(0);
-		if ( (qq=ptChk[0].arctan()) < 0.0f )
-			qq += PI2;
-	}
+	pData = g_obLineTemp[io][0];
+	ptChk[0] = pData->GetNativePoint(1) - pData->GetNativePoint(0);
+	if ( (qq=ptChk[0].arctan()) < 0.0f )
+		qq += PI2;
 
 	// 外径準備ﾃﾞｰﾀをﾙｰﾌﾟさせ荒加工ﾃﾞｰﾀを作成
-	for ( i=0; i<g_obOutsideTemp.GetSize() && IsThread(); i++ ) {
-		SetProgressPos(i+1);
-		pData = g_obOutsideTemp[i];
+	for ( i=0; i<g_obLineTemp[io].GetSize() && IsThread(); i++ ) {
+		SetProgressPos(i+iPosBase+1);
+		pData = g_obLineTemp[io][i];
 		pts = pData->GetNativePoint(0);
 		pDataChain = NULL;
 		bInter = FALSE;		// 一度でも交点があればTRUE
-		for ( j=0; j<g_obShape.GetSize() && IsThread(); j++ ) {
-			// 一番外側の形状ｵﾌｾｯﾄと交点ﾁｪｯｸ
-			pOutline = g_obShape[j]->GetLatheList();
-			pChain = pOutline->IsEmpty() ?
-				g_obShape[j]->GetShapeChain() : pOutline->GetHead();
-			PLIST_FOREACH(pDataChain, pChain)
-				bCreate = FALSE;
-				enType = pDataChain->GetType();
-				nResult = pData->GetIntersectionPoint(pDataChain, ptChk, FALSE);
-				if ( nResult > 1 ) {
-					// 交点が２個以上
-					if ( ptChk[0].x < ptChk[1].x )
-						swap(ptChk[0], ptChk[1]);
-					if ( enType==DXFARCDATA || enType==DXFELLIPSEDATA ) {
-						pArc = static_cast<CDXFarc*>(pDataChain);
-						if ( pArc->GetRound() ) {
-							// 反時計回り
-							if ( pts ) {
-								dxfLine.s = *pts;
-								dxfLine.e = ptChk[0];
-								bCreate = TRUE;
-							}
-							pts = ptChk[1];
-						}
-						else {
-							// 時計回り
-							dxfLine.s = ptChk[0];
-							dxfLine.e = ptChk[1];
-							pts.reset();
-							bCreate = TRUE;
-						}
-					}
-					else {
-						// 円弧以外で交点２個以上はありえないが、
-						// ２個目で次の処理へ
+		// 一番外側の形状ｵﾌｾｯﾄと交点ﾁｪｯｸ
+		pOutline = g_pShape[io]->GetLatheList();
+		pChain = pOutline->IsEmpty() ?
+			g_pShape[io]->GetShapeChain() : pOutline->GetHead();
+		PLIST_FOREACH(pDataChain, pChain)
+			bCreate = FALSE;
+			enType = pDataChain->GetType();
+			nResult = pData->GetIntersectionPoint(pDataChain, ptChk, FALSE);
+			if ( nResult > 1 ) {
+				// 交点が２個以上
+				if ( ptChk[0].x < ptChk[1].x )
+					swap(ptChk[0], ptChk[1]);
+				if ( enType==DXFARCDATA || enType==DXFELLIPSEDATA ) {
+					pArc = static_cast<CDXFarc*>(pDataChain);
+					if ( pArc->GetRound() ) {
+						// 反時計回り
 						if ( pts ) {
 							dxfLine.s = *pts;
 							dxfLine.e = ptChk[0];
@@ -508,38 +616,56 @@ BOOL CreateRoughPass(void)
 						}
 						pts = ptChk[1];
 					}
-				}
-				else if ( nResult > 0 ) {
-					// 交点が１つ
-					if ( ptChk[0] == pDataChain->GetNativePoint(0) ) {
-						// ｵﾌﾞｼﾞｪｸﾄの始点と等しい場合は、
-						// 直前のｵﾌﾞｼﾞｪｸﾄで処理済み
+					else {
+						// 時計回り
+						dxfLine.s = ptChk[0];
+						dxfLine.e = ptChk[1];
 						pts.reset();
+						bCreate = TRUE;
+					}
+				}
+				else {
+					// 円弧以外で交点２個以上はありえないが、
+					// ２個目で次の処理へ
+					if ( pts ) {
+						dxfLine.s = *pts;
+						dxfLine.e = ptChk[0];
+						bCreate = TRUE;
+					}
+					pts = ptChk[1];
+				}
+			}
+			else if ( nResult > 0 ) {
+				// 交点が１つ
+				if ( ptChk[0] == pDataChain->GetNativePoint(0) ) {
+					// ｵﾌﾞｼﾞｪｸﾄの始点と等しい場合は、
+					// 直前のｵﾌﾞｼﾞｪｸﾄで処理済み
+					pts.reset();
+				}
+				else {
+					if ( pts ) {
+						if ( ptChk[0] != (*pts) ) {
+							// 前回の交点と違う時だけ生成
+							dxfLine.s = *pts;
+							dxfLine.e = ptChk[0];
+							pts.reset();
+							bCreate = TRUE;
+						}
 					}
 					else {
-						if ( pts ) {
-							if ( ptChk[0] != (*pts) ) {
-								// 前回の交点と違う時だけ生成
-								dxfLine.s = *pts;
-								dxfLine.e = ptChk[0];
-								pts.reset();
-								bCreate = TRUE;
-							}
-						}
-						else {
-							pts = ptChk[0];	// 次の処理へ
-						}
+						pts = ptChk[0];	// 次の処理へ
 					}
 				}
-				// 荒加工ﾃﾞｰﾀ生成
-				if ( bCreate ) {
-					pDataNew = new CDXFline(&dxfLine);
-					pDataNew->OrgTuning(FALSE);
-					g_obLathePass.Add(pDataNew);
-					bInter = TRUE;
-				}
-			END_FOREACH	// End of Chain Loop
-		}				// End of Shape Loop
+			}
+			// 荒加工ﾃﾞｰﾀ生成
+			if ( bCreate ) {
+				pDataNew = new CDXFline(&dxfLine);
+				pDataNew->OrgTuning(FALSE);
+				g_obMakeLine[io].Add(pDataNew);
+				bInter = TRUE;
+			}
+		END_FOREACH	// End of Chain Loop
+
 		// 交点端数処理
 		if ( pts ) {
 			if ( !bInter ) {
@@ -548,7 +674,7 @@ BOOL CreateRoughPass(void)
 				dxfLine.e = pData->GetNativePoint(1);
 				pDataNew = new CDXFline(&dxfLine);
 				pDataNew->OrgTuning(FALSE);
-				g_obLathePass.Add(pDataNew);
+				g_obMakeLine[io].Add(pDataNew);
 			}
 			else if ( pDataChain ) {
 				// 最後のｵﾌﾞｼﾞｪｸﾄの傾きをﾁｪｯｸ
@@ -581,35 +707,41 @@ BOOL CreateRoughPass(void)
 					dxfLine.e = pData->GetNativePoint(1);
 					pDataNew = new CDXFline(&dxfLine);
 					pDataNew->OrgTuning(FALSE);
-					g_obLathePass.Add(pDataNew);
+					g_obMakeLine[io].Add(pDataNew);
 				}
 			}
 		}
-	}	// End of g_obOutsideTemp
+	}	// End of g_obLineTemp
 
 	return IsThread();
 }
 
-BOOL MakeLatheCode(void)
+BOOL MakeInsideCode(const CPointF& ptMax)
 {
-	INT_PTR		i, j, nLoop = g_obLathePass.GetSize();
+	INT_PTR		i, nLoop = g_obMakeLine[0].GetSize();
 	float		dCutX;
-	CPointF		pt, pts, pte;
-	CDXFchain*	pChain;
+	CPointF		pt, pts, pte, ptPull, ptMov;
 	CDXFdata*	pData;
+	CDXFchain*	pChain;
 	COutlineData*	pOutline;
 	CNCMakeLathe*	pNCD;
 
-	// 端面と外径の最大値を取得
-	float		dMaxZ = g_pDoc->GetLatheLine(0)->GetStartMakePoint().x,
-				dMaxX = g_pDoc->GetLatheLine(1)->GetStartMakePoint().y;
+	// 初期設定
+	CString	strCode( CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_I_SPINDLE)) );
+	if ( !strCode.IsEmpty() )
+		AddMakeLatheStr(strCode);
+	ptPull.x = GetDbl(MKLA_DBL_I_PULLZ);
+	ptPull.y = GetDbl(MKLA_DBL_I_PULLX);
+
+	// ｶｽﾀﾑｺｰﾄﾞ
+	if ( !GetStr(MKLA_STR_I_CUSTOM).IsEmpty() )
+		AddMakeLatheStr(GetStr(MKLA_STR_I_CUSTOM));
+	// NCVCの内径切削指示
+	AddMakeLatheStr( '('+CString(INSIDE_S)+')' );
 
 	// 先頭ﾃﾞｰﾀの始点に移動
 	if ( nLoop > 0 ) {
-		// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
-		AddCustomLatheCode(GetStr(MKLA_STR_HEADER));
-		//
-		pData = g_obLathePass[0];
+		pData = g_obMakeLine[0][0];
 		pt = pData->GetStartMakePoint();
 		if ( pt.x < CNCMakeLathe::ms_xyz[NCA_Z] ) {
 			// 工具初期位置が端面の右側
@@ -619,12 +751,12 @@ BOOL MakeLatheCode(void)
 		else {
 			// 工具初期位置が端面の左側
 			// →Z軸移動後、X軸移動
-			pNCD = new CNCMakeLathe(ZXMOVE, pt);
+			pNCD = new CNCMakeLathe(ZXMOVE, pt, GetDbl(MKLA_DBL_I_FEED));
 		}
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
 		// 先頭ﾃﾞｰﾀの切削ﾊﾟｽ
-		pNCD = new CNCMakeLathe(pData);
+		pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_I_FEED));
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
 	}
@@ -632,106 +764,233 @@ BOOL MakeLatheCode(void)
 	// 荒加工ﾊﾟｽﾙｰﾌﾟ
 	for ( i=1; i<nLoop && IsThread(); i++ ) {
 		SetProgressPos(i+1);
-		pData = g_obLathePass[i];
+		pData = g_obMakeLine[0][i];
 		pt = pte = pData->GetStartMakePoint();
 		dCutX = pt.y;
 		pts.x = CNCMakeLathe::ms_xyz[NCA_Z];
 		pts.y = CNCMakeLathe::ms_xyz[NCA_X];
 		pts += CDXFdata::ms_ptOrg;		// 現在位置
 		pte += CDXFdata::ms_ptOrg;		// 次の移動位置
-		pte.y += GetDbl(MKLA_DBL_PULL_X);
+		pte.y += ptPull.y;
 		// pDataの始点が現在位置のどちらにあるかで引き代を変える
-		if ( CNCMakeLathe::ms_xyz[NCA_Z]<pt.x && !CheckXZMove(pts, pte) ) {
+		if ( CNCMakeLathe::ms_xyz[NCA_Z]<pt.x && !CheckXZMove(1, pts, pte) ) {
 			// 次の始点が右側、かつ、輪郭ｵﾌｾｯﾄに衝突しない → 現在位置から
 			pt.y = CNCMakeLathe::ms_xyz[NCA_X];
 		}
-		else {
-			// 次の始点が左側 → 外径から
-			pt.y = dMaxX; 
-		}
-		pt.y += GetDbl(MKLA_DBL_PULL_X);	// 引き代分引いて移動
-		pNCD = new CNCMakeLathe(XZMOVE, pt);
+		pt.y -= ptPull.y;				// 引き代分引いて移動
+		pNCD = new CNCMakeLathe(XZMOVE, pt, GetDbl(MKLA_DBL_I_FEEDX));
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
 		// 始点への切り込み
-		if ( dMaxZ < pt.x ) {
+		if ( ptMax.x < pt.x ) {
 			// 端面よりも右側 → 早送りでX軸方向に移動
-			pNCD = new CNCMakeLathe(0, NCA_X, dCutX);
+			pNCD = new CNCMakeLathe(0, NCA_X, dCutX, 0.0f);
 		}
 		else {
 			// 端面よりも左側 → 切削送りでX軸方向に切り込み
-			pNCD = new CNCMakeLathe(1, NCA_X, dCutX);
+			pNCD = new CNCMakeLathe(1, NCA_X, dCutX, GetDbl(MKLA_DBL_I_FEEDX));
 		}
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
 		// 切削ﾊﾟｽ
-		pNCD = new CNCMakeLathe(pData);
+		pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_I_FEED));
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
 	}
 
 	// 仕上げしろﾊﾟｽﾙｰﾌﾟ
-	for ( i=0; i<g_obShape.GetSize() && IsThread(); i++ ) {
-		pOutline = g_obShape[i]->GetLatheList();
-		for ( j=0; j<pOutline->GetSize() && IsThread(); j++ ) {
-			pChain = pOutline->GetAt(j);
-			// 移動ﾊﾟｽ
-			if ( !pChain->IsEmpty() )
-				MoveLatheCode(pChain->GetHead(), dMaxZ, dMaxX);
-			// 切削ﾊﾟｽ
-			PLIST_FOREACH(pData, pChain)
-				pNCD = new CNCMakeLathe(pData);
-				ASSERT(pNCD);
-				g_obMakeData.Add(pNCD);
-			END_FOREACH
-		}
-	}
-
-	// 仕上げﾊﾟｽﾙｰﾌﾟ
-	for ( i=0; i<g_obShape.GetSize() && IsThread(); i++ ) {
-		pChain = g_obShape[i]->GetShapeChain();
-		ASSERT(pChain);
+	pOutline = g_pShape[0]->GetLatheList();
+	for ( i=0; i<pOutline->GetSize() && IsThread(); i++ ) {
+		pChain = pOutline->GetAt(i);
 		// 移動ﾊﾟｽ
 		if ( !pChain->IsEmpty() )
-			MoveLatheCode(pChain->GetHead(), dMaxZ, dMaxX);
+			MoveInsideCode(pChain, ptMax, ptPull);
 		// 切削ﾊﾟｽ
 		PLIST_FOREACH(pData, pChain)
-			pNCD = new CNCMakeLathe(pData);
+			pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_I_FEED));
 			ASSERT(pNCD);
 			g_obMakeData.Add(pNCD);
 		END_FOREACH
 	}
 
-	if ( !g_obMakeData.IsEmpty() ) {
-		// 工具初期位置へ復帰
-		dCutX = dMaxX + GetDbl(MKLA_DBL_PULL_X);
+	// 形状仕上げ
+	pChain = g_pShape[0]->GetShapeChain();
+	ASSERT(pChain);
+	if ( !pChain->IsEmpty() )
+		ptMov = MoveInsideCode(pChain, ptMax, ptPull);
+	PLIST_FOREACH(pData, pChain)
+		pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_I_FEED));
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+	END_FOREACH
+
+	// 工具初期位置へ復帰
+	if ( !pChain->IsEmpty() ) {
+		// X軸(Y)方向の離脱とZ軸(X)方向の移動
+		pNCD = new CNCMakeLathe(XZMOVE, ptMov, GetDbl(MKLA_DBL_I_FEEDX));
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+		pNCD = new CNCMakeLathe(g_pDoc->GetCircleObject()->GetStartMakePoint());
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+	}
+
+	// 内径切削終了ｺﾒﾝﾄ
+	AddMakeLatheStr( '('+CString(ENDINSIDE_S)+')' );
+
+	return IsThread();
+}
+
+BOOL MakeOutsideCode(const CPointF& ptMax)
+{
+	INT_PTR		i, nLoop = g_obMakeLine[1].GetSize(),
+				iPosBase = g_obMakeLine[0].GetSize();
+	float		dCutX;
+	CPointF		pt, pts, pte, ptPull;
+	CDXFdata*	pData;
+	CDXFchain*	pChain;
+	COutlineData*	pOutline;
+	CNCMakeLathe*	pNCD;
+
+	// 初期設定
+	CString	strCode( CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_O_SPINDLE)) );
+	if ( !strCode.IsEmpty() )
+		AddMakeLatheStr(strCode);
+	ptPull.x = GetDbl(MKLA_DBL_O_PULLZ);
+	ptPull.y = GetDbl(MKLA_DBL_O_PULLX);
+
+	// ｶｽﾀﾑｺｰﾄﾞ
+	if ( !GetStr(MKLA_STR_O_CUSTOM).IsEmpty() )
+		AddMakeLatheStr(GetStr(MKLA_STR_O_CUSTOM));
+
+	// 先頭ﾃﾞｰﾀの始点に移動
+	if ( nLoop > 0 ) {
+		if ( CNCMakeLathe::ms_xyz[NCA_X] < ptMax.y ) {
+			// 端面の下側
+			if ( CNCMakeLathe::ms_xyz[NCA_Z] < ptMax.x ) {
+				// 端面の左側(下穴か内径後を想定)
+				pNCD = new CNCMakeLathe(0, NCA_Z, ptMax.x+GetDbl(MKLA_DBL_O_PULLZ), 0.0f);	// Z軸退避
+				ASSERT(pNCD);
+				g_obMakeData.Add(pNCD);
+			}
+			pNCD = new CNCMakeLathe(0, NCA_X, ptMax.y+GetDbl(MKLA_DBL_O_PULLX), 0.0f);		// X軸退避
+			ASSERT(pNCD);
+			g_obMakeData.Add(pNCD);
+		}
+		pData = g_obMakeLine[1][0];
+		pts = pData->GetStartMakePoint();
+		pNCD = new CNCMakeLathe(0, NCA_Z, pts.x, 0.0f);
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+		if ( CNCMakeLathe::ms_xyz[NCA_X] > ptMax.y ) {
+			pNCD = new CNCMakeLathe(0, NCA_X, ptMax.y+GetDbl(MKLA_DBL_O_PULLX), 0.0f);
+			ASSERT(pNCD);
+			g_obMakeData.Add(pNCD);
+		}
+		pNCD = new CNCMakeLathe(1, NCA_X, pts.y, GetDbl(MKLA_DBL_O_FEEDX));
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+		// 先頭ﾃﾞｰﾀの切削ﾊﾟｽ
+		pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_O_FEED));
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+	}
+
+	// 荒加工ﾊﾟｽﾙｰﾌﾟ
+	for ( i=1; i<nLoop && IsThread(); i++ ) {
+		SetProgressPos(i+iPosBase+1);
+		pData = g_obMakeLine[1][i];
+		pt = pte = pData->GetStartMakePoint();
+		dCutX = pt.y;
+		pts.x = CNCMakeLathe::ms_xyz[NCA_Z];
+		pts.y = CNCMakeLathe::ms_xyz[NCA_X];
+		pts += CDXFdata::ms_ptOrg;		// 現在位置
+		pte += CDXFdata::ms_ptOrg;		// 次の移動位置
+		pte.y += ptPull.y;
+		// pDataの始点が現在位置のどちらにあるかで引き代を変える
+		if ( CNCMakeLathe::ms_xyz[NCA_Z]<pt.x && !CheckXZMove(1, pts, pte) ) {
+			// 次の始点が右側、かつ、輪郭ｵﾌｾｯﾄに衝突しない → 現在位置から
+			pt.y = CNCMakeLathe::ms_xyz[NCA_X];
+		}
+		else {
+			// 次の始点が左側 → 外径から
+			pt.y = ptMax.y; 
+		}
+		pt.y += ptPull.y;				// 引き代分引いて移動
+		pNCD = new CNCMakeLathe(XZMOVE, pt, GetDbl(MKLA_DBL_O_FEEDX));
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+		// 始点への切り込み
+		if ( ptMax.x < pt.x ) {
+			// 端面よりも右側 → 早送りでX軸方向に移動
+			pNCD = new CNCMakeLathe(0, NCA_X, dCutX, 0.0f);
+		}
+		else {
+			// 端面よりも左側 → 切削送りでX軸方向に切り込み
+			pNCD = new CNCMakeLathe(1, NCA_X, dCutX, GetDbl(MKLA_DBL_O_FEEDX));
+		}
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+		// 切削ﾊﾟｽ
+		pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_O_FEED));
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+	}
+
+	// 仕上げしろﾊﾟｽﾙｰﾌﾟ
+	pOutline = g_pShape[1]->GetLatheList();
+	for ( i=0; i<pOutline->GetSize() && IsThread(); i++ ) {
+		pChain = pOutline->GetAt(i);
+		// 移動ﾊﾟｽ
+		if ( !pChain->IsEmpty() )
+			MoveOutsideCode(pChain->GetHead(), ptMax, ptPull);
+		// 切削ﾊﾟｽ
+		PLIST_FOREACH(pData, pChain)
+			pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_O_FEED));
+			ASSERT(pNCD);
+			g_obMakeData.Add(pNCD);
+		END_FOREACH
+	}
+
+	// 形状仕上げ
+	pChain = g_pShape[1]->GetShapeChain();
+	ASSERT(pChain);
+	if ( !pChain->IsEmpty() )
+		MoveOutsideCode(pChain->GetHead(), ptMax, ptPull);
+	PLIST_FOREACH(pData, pChain)
+		pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_O_FEED));
+		ASSERT(pNCD);
+		g_obMakeData.Add(pNCD);
+	END_FOREACH
+
+	// 工具初期位置へ復帰
+	if ( !pChain->IsEmpty() ) {
+		dCutX = ptMax.y + ptPull.y;
 		pt = g_pDoc->GetCircleObject()->GetStartMakePoint();
-		pNCD = new CNCMakeLathe(1, NCA_X, dCutX);
+		pNCD = new CNCMakeLathe(1, NCA_X, dCutX, GetDbl(MKLA_DBL_O_FEEDX));
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
 		if ( dCutX < pt.y ) {
-			pNCD = new CNCMakeLathe(0, NCA_X, pt.y);
+			pNCD = new CNCMakeLathe(0, NCA_X, pt.y, 0.0f);
 			ASSERT(pNCD);
 			g_obMakeData.Add(pNCD);
 		}
-		pNCD = new CNCMakeLathe(0, NCA_Z, pt.x);
+		pNCD = new CNCMakeLathe(0, NCA_Z, pt.x, 0.0f);
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
 		if ( pt.y < dCutX ) {
-			pNCD = new CNCMakeLathe(0, NCA_X, pt.y);
+			pNCD = new CNCMakeLathe(0, NCA_X, pt.y, 0.0f);
 			ASSERT(pNCD);
 			g_obMakeData.Add(pNCD);
 		}
-		// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
-		AddCustomLatheCode(GetStr(MKLA_STR_FOOTER));
 	}
 
 	return IsThread();
 }
 
-BOOL CheckXZMove(const CPointF& pts, const CPointF& pte)
+BOOL CheckXZMove(int io, const CPointF& pts, const CPointF& pte)
 {
-	INT_PTR		i, j, nLoop;
+	INT_PTR		i, nLoop;
 	BOOL		bResult = FALSE;
 	CPointF		pt[4];
 	COutlineData*	pOutline;
@@ -739,11 +998,11 @@ BOOL CheckXZMove(const CPointF& pts, const CPointF& pte)
 	CDXFdata*		pData;
 
 	// 輪郭ｵﾌｾｯﾄとの交点をﾁｪｯｸ
-	for ( i=0; i<g_obShape.GetSize() && !bResult && IsThread(); i++ ) {
-		pOutline = g_obShape[i]->GetLatheList();
+	if ( g_pShape[io] ) {
+		pOutline = g_pShape[io]->GetLatheList();
 		nLoop = pOutline->IsEmpty() ? 1 : pOutline->GetSize();
-		for ( j=0; j<nLoop && !bResult && IsThread(); j++ ) {
-			pChain = pOutline->IsEmpty() ? g_obShape[i]->GetShapeChain() : pOutline->GetAt(j);
+		for ( i=0; i<nLoop && !bResult && IsThread(); i++ ) {
+			pChain = pOutline->IsEmpty() ? g_pShape[io]->GetShapeChain() : pOutline->GetAt(i);
 			PLIST_FOREACH(pData, pChain)
 				if ( pData->GetIntersectionPoint(pts, pte, pt, FALSE) > 0 ) {
 					bResult = TRUE;
@@ -756,30 +1015,54 @@ BOOL CheckXZMove(const CPointF& pts, const CPointF& pte)
 	return bResult;
 }
 
-void MoveLatheCode(const CDXFdata* pData, float dMaxZ, float dMaxX)
+CPointF MoveInsideCode(const CDXFchain* pChain, const CPointF& ptMax, const CPointF& ptPull)
+{
+	CNCMakeLathe*	pNCD;
+
+	// 形状の一番下側＋引き代の座標計算
+	CRect3F	rc( pChain->GetMaxRect() );
+	CPointF	pt1(rc.TopLeft()), pt2(rc.BottomRight()), pt;
+	pt1 -= CDXFdata::ms_ptOrg;
+	pt2 -= CDXFdata::ms_ptOrg;
+	pt.x = ptMax.x + ptPull.x;
+	pt.y = min(pt1.y, pt2.y) - ptPull.y;
+
+	// X軸(Y)方向の離脱とZ軸(X)方向の移動
+	pNCD = new CNCMakeLathe(XZMOVE, pt, GetDbl(MKLA_DBL_I_FEEDX));
+	ASSERT(pNCD);
+	g_obMakeData.Add(pNCD);
+
+	// 先頭データのX軸に移動
+	CDXFdata*	pData = pChain->GetHead();
+	CPointF	pts(pData->GetStartMakePoint());
+	pNCD = new CNCMakeLathe(1, NCA_X, pts.y, 0.0f);
+	ASSERT(pNCD);
+	g_obMakeData.Add(pNCD);
+
+	return pt;
+}
+
+void MoveOutsideCode(const CDXFdata* pData, const CPointF& ptMax, const CPointF& ptPull)
 {
 	CNCMakeLathe*	pNCD;
 	CPointF		pts(pData->GetStartMakePoint()),
 				pt(pts);
 
 	// X軸(Y)方向の離脱とZ軸(X)方向の移動
-	if ( CNCMakeLathe::ms_xyz[NCA_Z] <= pt.x ) {
-		pt.x = dMaxZ + GetDbl(MKLA_DBL_PULL_Z);	// 端面＋引き代
-		pt.y = CNCMakeLathe::ms_xyz[NCA_X];
-	}
-	else
-		pt.y = dMaxX;	// Z軸はｵﾌﾞｼﾞｪｸﾄの開始位置, X軸は外径
-	pt.y += GetDbl(MKLA_DBL_PULL_X);	// 引き代
-	pNCD = new CNCMakeLathe(XZMOVE, pt);
+	if ( CNCMakeLathe::ms_xyz[NCA_Z] <= pt.x )
+		pt.x = ptMax.x + ptPull.x;		// 端面＋引き代
+	pt.y = ptMax.y + ptPull.y;	// Z軸はｵﾌﾞｼﾞｪｸﾄの開始位置, X軸は外径
+	pNCD = new CNCMakeLathe(XZMOVE, pt, GetDbl(MKLA_DBL_O_FEEDX));
 	ASSERT(pNCD);
 	g_obMakeData.Add(pNCD);
+
 	// X軸始点に移動
-	pNCD = new CNCMakeLathe(dMaxZ < pt.x ? 0 : 1, NCA_X, pts.y);
+	pNCD = new CNCMakeLathe(ptMax.x < pt.x ? 0 : 1, NCA_X, pts.y, GetDbl(MKLA_DBL_O_FEEDX));
 	ASSERT(pNCD);
 	g_obMakeData.Add(pNCD);
-	if ( dMaxZ < pt.x ) {
+	if ( ptMax.x < pt.x ) {
 		// ｵﾌﾞｼﾞｪｸﾄの始点に移動
-		pNCD = new CNCMakeLathe(1, NCA_Z, pts.x);
+		pNCD = new CNCMakeLathe(1, NCA_Z, pts.x, GetDbl(MKLA_DBL_O_FEED));
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
 	}
@@ -843,7 +1126,25 @@ public:
 			strResult = CNCMakeBase::MakeCustomString(GetNum(MKLA_NUM_G90)+90);
 			break;
 		case 2:		// SPINDLE
-			strResult = CNCMakeLathe::MakeSpindle();
+			// -- 初期工程の回転数で生成
+			if ( GetFlg(MKLA_FLG_ENDFACE) ) {
+				// 端面回転数
+				strResult = CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_E_SPINDLE));
+			}
+			else if ( !GetStr(MKLA_STR_DRILL).IsEmpty() ) {
+				// 下穴回転数
+				VLATHEDRILLINFO	v;
+				if ( g_pMakeOpt->GetDrillInfo(v) )
+					strResult = CNCMakeLathe::MakeSpindle(v[0].s);
+			}
+			else if ( g_pShape[0] ) {
+				// 内径回転数
+				strResult = CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_I_SPINDLE));
+			}
+			else {
+				// 外径回転数
+				strResult = CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_O_SPINDLE));
+			}
 			break;
 		case 3:		// LatheDiameter
 			strResult.Format(IDS_MAKENCD_FORMAT, g_pDoc->GetLatheLine(1)->GetStartMakePoint().y * 2.0);
@@ -918,23 +1219,26 @@ UINT MakeLathe_AfterThread(LPVOID)
 {
 	g_csMakeAfter.Lock();
 
-	int			i;
+	int			i, j;
 #ifdef _DEBUG
 	CMagaDbg	dbg("MakeLathe_AfterThread()\nStart", TRUE, DBG_RED);
 #endif
 
-	for ( i=0; i<g_obOutsideTemp.GetSize(); i++ )
-		delete	g_obOutsideTemp[i];
-	for ( i=0; i<g_obLathePass.GetSize(); i++ )
-		delete	g_obLathePass[i];
+	for ( j=0; j<SIZEOF(g_obLineTemp); j++ ) {
+		for ( i=0; i<g_obLineTemp[j].GetSize(); i++ )
+			delete	g_obLineTemp[j][i];
+		g_obLineTemp[j].RemoveAll();
+	}
+	for ( j=0; j<SIZEOF(g_obMakeLine); j++ ) {
+		for ( i=0; i<g_obMakeLine[j].GetSize(); i++ )
+			delete	g_obMakeLine[j][i];
+		g_obMakeLine[j].RemoveAll();
+	}
 	for ( i=0; i<g_obMakeData.GetSize(); i++ )
 		delete	g_obMakeData[i];
+	g_obMakeData.RemoveAll();
 	for ( i=0; i<g_pDoc->GetLayerCnt(); i++ )
 		g_pDoc->GetLayerData(i)->RemoveAllShape();
-
-	g_obOutsideTemp.RemoveAll();
-	g_obLathePass.RemoveAll();
-	g_obMakeData.RemoveAll();
 
 	g_csMakeAfter.Unlock();
 

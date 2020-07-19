@@ -76,7 +76,7 @@ struct INDEXCOLOR
 		return FALSE;
 	}
 #ifdef _DEBUGDUMP
-	void	dump() {
+	void	dump() const {
 //		g_dbg.printf("id=%d : rgb=%d,%d,%d", n, r, g, b);
 		TRACE("id=%d : rgb=%d,%d,%d", n, r, g, b);
 	}
@@ -494,16 +494,13 @@ CDXFMake::CDXFMake(const CPoint3F& pt, float r)
 	// 原点(円)情報出力
 	if ( r!=0.0f || GetFlg(MKDX_FLG_ORGCIRCLE) ) {
 		// ｵﾌﾞｼﾞｪｸﾄ情報
-		m_strDXFarray.Add(
-			_MakeFigure(TYPE_CIRCLE, AfxGetNCVCApp()->GetDXFOption()->GetReadLayer(DXFORGLAYER))
-		);
+		m_strDXFarray.Add( MakeDXF_Figure(TYPE_CIRCLE, MKDX_STR_ORIGIN) );
 		// 座標値
 		if ( r != 0.0f ) {
 			dVal[VALUE10] = pt.x;	dVal[VALUE20] = pt.z;
 			dVal[VALUE40] = r;
 		}
 		else {
-			m_strDXFarray.Add( MakeDXF_Figure(TYPE_CIRCLE, MKDX_STR_ORIGIN) );
 			switch ( GetNum(MKDX_NUM_PLANE) ) {
 			case 1:		// XZ
 				dVal[VALUE10] = pt.x;	dVal[VALUE20] = pt.z;
@@ -518,6 +515,9 @@ CDXFMake::CDXFMake(const CPoint3F& pt, float r)
 			dVal[VALUE40] = GetDbl(MKDX_DBL_ORGLENGTH);
 		}
 		m_strDXFarray.Add( _MakeValue(VALFLG_CIRCLE, dVal) );
+#ifdef _DEBUGDUMP
+		dump();
+#endif
 	}
 
 	// 原点(ｸﾛｽ)情報出力
@@ -703,7 +703,7 @@ void CDXFMake::MakeSection_Tables(const CDocBase* pDoc)
 	m_strDXFarray.Add(strENDTAB);
 
 	// TABLESｾｸｼｮﾝ値(ﾚｲﾔ情報)
-	vector<TABLELAYERINFO>	v;
+	VTABLELAYERINFO		v;
 	v.push_back( TABLELAYERINFO(pszZero, g_penStyle[0].lpszDXFname, 7) );	// "0"ﾚｲﾔ強制出力
 	if ( pDoc->IsKindOf(RUNTIME_CLASS(CDXFDoc)) ) {
 		const CDXFDoc* pDXF = static_cast<const CDXFDoc*>(pDoc);
@@ -726,11 +726,11 @@ void CDXFMake::MakeSection_Tables(const CDocBase* pDoc)
 		MakeSection_TableLayer_NCD(v);
 	// ﾚｲﾔ情報登録
 	m_strDXFarray.Add(strTABLE+strGroup2+strLAYER+_MakeValue(70, (int)v.size()));
-	BOOST_FOREACH( auto l, v ) {
+	BOOST_FOREACH( const auto& e, v ) {
 		m_strDXFarray.Add(strGroup0+strLAYER+
-			strGroup2+l.strLayer+gg_szReturn+
-			_MakeValue(70, 0)+_MakeValue(62, l.nColor)+
-			_GROUPCODE(6)+l.strType+gg_szReturn);
+			strGroup2+e.strLayer+gg_szReturn+
+			_MakeValue(70, 0)+_MakeValue(62, e.nColor)+
+			_GROUPCODE(6)+e.strType+gg_szReturn);
 	}
 	m_strDXFarray.Add(strENDTAB);
 
@@ -738,9 +738,9 @@ void CDXFMake::MakeSection_Tables(const CDocBase* pDoc)
 	m_strDXFarray.Add(_MakeEndSec());
 }
 
-void CDXFMake::MakeSection_TableLayer_NCD(vector<TABLELAYERINFO>& v)
+void CDXFMake::MakeSection_TableLayer_NCD(VTABLELAYERINFO& v)
 {
-	vector<TABLELAYERINFO>::iterator	it;
+	VTABLELAYERINFO::iterator	it;
 	CString		strLayer, strType;
 	int			i, nColor;
 
@@ -767,9 +767,9 @@ void CDXFMake::MakeSection_TableLayer_NCD(vector<TABLELAYERINFO>& v)
 	}
 }
 
-void CDXFMake::MakeSection_TableLayer_DXF(vector<TABLELAYERINFO>& v, const CDXFDoc* pDoc)
+void CDXFMake::MakeSection_TableLayer_DXF(VTABLELAYERINFO& v, const CDXFDoc* pDoc)
 {
-	vector<TABLELAYERINFO>::iterator	it;
+	VTABLELAYERINFO::iterator	it;
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	CLayerData*	pLayer;
 	CString		strLayer, strType;
@@ -1406,10 +1406,11 @@ void InitialColorIndex(void)
 	_INDEXCOLOR[254].set(254, 214,214,214);
 	_INDEXCOLOR[255].set(255, 255,255,255);
 	// COLORREFで並べ替え
-	std::sort(_INDEXCOLOR.begin(), _INDEXCOLOR.end());
+//	std::sort(_INDEXCOLOR.begin(), _INDEXCOLOR.end());
+	boost::sort(_INDEXCOLOR);	// boost/range/algorithm.hpp
 #ifdef _DEBUGDUMP
-	BOOST_FOREACH(auto v, _INDEXCOLOR) {
-		v.dump();
+	BOOST_FOREACH(const auto& e, _INDEXCOLOR) {
+		e.dump();
 	}
 #endif
 }
@@ -1513,3 +1514,11 @@ int SearchIndexColor(COLORREF col)
 	}
 	return 7;	// white
 }
+
+#ifdef _DEBUGDUMP
+void CDXFMake::dump(void)
+{
+	for ( int i=0; i<m_strDXFarray.GetSize(); i++ )
+		g_dbg.print( (LPTSTR)(LPCTSTR)m_strDXFarray[i] );
+}
+#endif

@@ -151,6 +151,11 @@ BOOL CNCMakeWireOpt::IsPathID(int n)
 	return ( n==MKWI_STR_HEADER || n==MKWI_STR_FOOTER );
 }
 
+CString CNCMakeWireOpt::GetLineNoForm(void) const
+{
+	return WIR_S_LINEFORM;
+}
+
 #ifdef _DEBUG
 void CNCMakeWireOpt::DbgDump(void) const
 {
@@ -160,13 +165,13 @@ void CNCMakeWireOpt::DbgDump(void) const
 	dbg.printf("----------");
 	dbg.printf("  Depth        =%f", WIR_D_DEPTH);
 	dbg.printf("  Taper        =%f", WIR_D_TAPER);
-	dbg.printf("  TaperMode    =%s", m_strOption[MKWI_STR_TAPERMODE]);
+	dbg.printf("  TaperMode    =%s", WIR_S_TAPERMODE);
 	dbg.printf("  Feed         =%f", WIR_D_FEED);
-	dbg.printf("  Header       =%s", m_strOption[MKWI_STR_HEADER]);
-	dbg.printf("  Footer       =%s", m_strOption[MKWI_STR_FOOTER]);
+	dbg.printf("  Header       =%s", WIR_S_HEADER);
+	dbg.printf("  Footer       =%s", WIR_S_FOOTER);
 	dbg.printf("----------");
-	dbg.printf("  AWFconnect   =%s", m_strOption[MKWI_STR_AWFCNT]);
-	dbg.printf("  AWFcut       =%s", m_strOption[MKWI_STR_AWFCUT]);
+	dbg.printf("  AWFconnect   =%s", WIR_S_AWFCNT);
+	dbg.printf("  AWFcut       =%s", WIR_S_AWFCUT);
 	dbg.printf("  AWFcircleLo  =%f", WIR_D_AWFCIRCLE_LO);
 	dbg.printf("  AWFcircleHi  =%f", WIR_D_AWFCIRCLE_HI);
 	dbg.printf("  AWFstart     =%d", WIR_F_AWFSTART);
@@ -176,9 +181,9 @@ void CNCMakeWireOpt::DbgDump(void) const
 	dbg.printf("  nProgNo      =%d", WIR_I_PROG);
 	dbg.printf("  bProgNoAuto  =%d", WIR_F_PROGAUTO);
 	dbg.printf("  bLineAdd     =%d", WIR_F_LINEADD);
-	dbg.printf("  LineForm     =%s", m_strOption[MKWI_STR_LINEFORM]);
+	dbg.printf("  LineForm     =%s", WIR_S_LINEFORM);
 	dbg.printf("  nLineAdd     =%d", WIR_I_LINEADD);
-	dbg.printf("  EOB          =%s", m_strOption[MKWI_STR_EOB]);
+	dbg.printf("  EOB          =%s", WIR_S_EOB);
 	dbg.printf("  G90          =%d", WIR_I_G90);
 	dbg.printf("  Gclip        =%d", WIR_F_GCLIP);
 	dbg.printf("----------");

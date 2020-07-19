@@ -28,9 +28,13 @@ CMKLASetup::CMKLASetup(LPCTSTR pszCaption, LPCTSTR lpszInitFile)
 {
 	m_psh.dwFlags &= ~PSH_HASHELP;
 
-	AddPage(&m_dlg1);	// 基本
-	AddPage(&m_dlg2);	// 生成
-	AddPage(&m_dlg3);	// 表記
+	AddPage(&m_dlg0);	// 基本
+	AddPage(&m_dlg1);	// 生成
+	AddPage(&m_dlg2);	// 表記
+	AddPage(&m_dlg3);	// 端面
+	AddPage(&m_dlg4);	// 下穴
+	AddPage(&m_dlg5);	// 内径
+	AddPage(&m_dlg6);	// 外径
 
 	// 切削ﾊﾟﾗﾒｰﾀｵﾌﾞｼﾞｪｸﾄの生成
 	try {
@@ -106,6 +110,10 @@ void CMKLASetup::OnApplyNow()
 			// ｷｬﾌﾟｼｮﾝ変更
 			VERIFY(strName.LoadString(IDS_MAKE_NCD));
 			SetTitle(::AddDialogTitle2File(strName, m_pNCMake->GetInitFile()));
+		}
+		else {
+			strName.Format(IDS_ERR_WRITESETTING, strFileName);
+			AfxMessageBox(strName, MB_OK|MB_ICONEXCLAMATION);
 		}
 	}
 }

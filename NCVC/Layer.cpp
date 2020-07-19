@@ -177,14 +177,12 @@ void CLayerData::SetInitFile(LPCTSTR lpszInitFile)
 void CLayerData::SetLayerInfo(const CString& strBuf)
 {
 	extern	LPCTSTR		gg_szComma;		// ","
-	// ñΩóﬂÇï™äÑ
-	typedef tokenizer< char_separator<TCHAR> > tokenizer;
-	static	char_separator<TCHAR> sep(gg_szComma, "", keep_empty_tokens);
 
 	int		i = 0;
 	TCHAR	szFile[_MAX_PATH];
 	string	str(strBuf), strTok;
-	tokenizer	tok(str, sep);
+	char_separator<TCHAR> sep(gg_szComma, "", keep_empty_tokens);
+	tokenizer< char_separator<TCHAR> > tok(str, sep);
 
 	// ñΩóﬂâêÕŸ∞Ãﬂ
 	BOOST_FOREACH(strTok, tok) {

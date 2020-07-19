@@ -156,6 +156,14 @@ enum {
 #define	MIL_F_LAYERCOMMENT			m_pFlgOpt[MKNC_FLG_LAYERCOMMENT]
 #define	MIL_F_L0CYCLE				m_pFlgOpt[MKNC_FLG_L0CYCLE]
 //
+#define	MIL_S_LINEFORM				m_strOption[MKNC_STR_LINEFORM]
+#define	MIL_S_EOB					m_strOption[MKNC_STR_EOB]
+#define	MIL_S_HEADER				m_strOption[MKNC_STR_HEADER]
+#define	MIL_S_FOOTER				m_strOption[MKNC_STR_FOOTER]
+#define	MIL_S_CUSTMOVE_B			m_strOption[MKNC_STR_CUSTMOVE_B]
+#define	MIL_S_CUSTMOVE_A			m_strOption[MKNC_STR_CUSTMOVE_A]
+#define	MIL_S_PERLSCRIPT			m_strOption[MKNC_STR_PERLSCRIPT]
+//
 class CNCMakeMillOpt : public CNCMakeOption
 {
 	friend class CMKNCSetup1;
@@ -178,6 +186,8 @@ protected:
 
 public:
 	CNCMakeMillOpt(LPCTSTR);
+
+	virtual	CString	GetLineNoForm(void) const;
 
 #ifdef _DEBUG
 	virtual	void	DbgDump(void) const;	// µÃﬂºÆ›ïœêîÇÃ¿ﬁ›Ãﬂ

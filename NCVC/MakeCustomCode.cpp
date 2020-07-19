@@ -19,7 +19,8 @@ extern	CMagaDbg	g_dbg;
 using namespace boost;
 
 static	LPCTSTR	g_szCustomCode[] = {
-	"MakeUser", "MakeDate", "MakeTime", "MakeNCD", "MakeDXF", "MakeCondition"
+	"MakeUser", "MakeDate", "MakeTime",
+	"MakeNCD", "MakeDXF", "MakeCondition"
 };
 
 CMakeCustomCode::CMakeCustomCode

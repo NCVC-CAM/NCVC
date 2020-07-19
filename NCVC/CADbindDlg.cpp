@@ -65,9 +65,9 @@ void CCADbindDlg::PathOptimizeAdd(const CString& strPath)
 
 	// èdï°¡™Ø∏
 	int		i = 0;
-	for ( auto& v : m_arBind ) {
-		if ( strPath.CompareNoCase(v.strFile) == 0 ) {
-			m_ctBindList.SetItemText(i, 0, lexical_cast<string>(++v.num).c_str());
+	for ( auto& e : m_arBind ) {
+		if ( strPath.CompareNoCase(e.strFile) == 0 ) {
+			m_ctBindList.SetItemText(i, 0, lexical_cast<string>(++e.num).c_str());
 			return;
 		}
 		i++;
@@ -110,8 +110,8 @@ BOOL CCADbindDlg::OnInitDialog()
 
 	// ÕØ¿ﬁ∞íËã`
 	int		i = 0;
-	BOOST_FOREACH(auto v, g_BindFileHeader) {
-		m_ctBindList.InsertColumn(i++, v.lpszName, v.nFormat);
+	BOOST_FOREACH(const auto& e, g_BindFileHeader) {
+		m_ctBindList.InsertColumn(i++, e.lpszName, e.nFormat);
 	}
 	// óÒïù
 	CRect		rc;

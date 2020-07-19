@@ -180,7 +180,7 @@ BOOL CMKNCSetup4::OnKillActive()
 		m_dDrillZ.SetSel(0, -1);
 		return FALSE;
 	}
-	if ( m_dDrillQ <= 0 ) {
+	if ( m_dDrillQ < 0 ) {	// zero ok
 		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
 		m_dDrillQ.SetFocus();
 		m_dDrillQ.SetSel(0, -1);

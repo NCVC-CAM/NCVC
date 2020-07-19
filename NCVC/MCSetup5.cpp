@@ -37,6 +37,7 @@ void CMCSetup5::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MCST5_WIREDEPTH, m_dDefWireDepth);
 	DDX_Control(pDX, IDC_MCST5_LABEL1, m_ctDepthLabel1);
 	DDX_Control(pDX, IDC_MCST5_LABEL2, m_ctDepthLabel2);
+	DDX_Control(pDX, IDC_MCST5_L0CYCLE, m_ctL0Cycle);
 	DDX_Text(pDX, IDC_MCST5_AUTOBREAK, m_strAutoBreak);
 	DDX_Check(pDX, IDC_MCST5_L0CYCLE, m_bL0Cycle);
 	DDX_Check(pDX, IDC_MCST5_OBS0, m_bOBS[0]);
@@ -53,6 +54,7 @@ void CMCSetup5::DoDataExchange(CDataExchange* pDX)
 
 void CMCSetup5::EnableControl_ViewMode(void)
 {
+	m_ctL0Cycle.EnableWindow( m_nForceViewMode == MC_VIEWMODE_MILL );
 	if ( m_nForceViewMode == MC_VIEWMODE_WIRE ) {
 		m_ctDepthLabel1.EnableWindow(TRUE);
 		m_ctDepthLabel2.EnableWindow(TRUE);

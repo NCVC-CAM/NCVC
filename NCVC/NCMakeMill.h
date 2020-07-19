@@ -4,6 +4,7 @@
 #pragma once
 
 #include "NCMakeBase.h"
+#include "NCMakeMillOpt.h"
 
 typedef CString (*PFNGETCYCLESTRING)(void);
 
@@ -23,7 +24,7 @@ class CNCMakeMill : public CNCMakeBase
 protected:
 	CNCMakeMill();		// îhê∂∏◊Ωóp
 	// ç¿ïWílê›íË
-	static	CString	GetValString(int, float, BOOL);
+	static	CString	GetValString(int, float, BOOL = FALSE);
 	//
 	void	MakePolylineMov(const CDXFpolyline*, BOOL);
 

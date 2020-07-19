@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "NCMakeMillOpt.h"
 #include "NCMakeMill.h"
+#include "NCMakeWireOpt.h"
 
 class CNCMakeWire : public CNCMakeMill
 {

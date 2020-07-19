@@ -11,7 +11,7 @@ enum FBOTYPE
 
 class CFrameBuffer
 {
-	BOOL	m_bBind;
+	static	GLuint	ms_uBind;	// Œ»Ýbind‚³‚ê‚Ä‚¢‚éFB
 	GLuint	m_fb, m_rb, m_tb;
 	GLsizei	m_w, m_h;
 
@@ -22,9 +22,9 @@ public:
 
 	BOOL	Create(GLsizei, GLsizei, BOOL = FALSE);
 	void	Delete(void);
-	void	Bind(BOOL);
+	BOOL	Bind(BOOL);
 	BOOL	IsBind(void) const {
-		return m_bBind;
+		return ms_uBind > 0;
 	}
 
 	GLuint	GetBufferID(FBOTYPE e) {
@@ -36,3 +36,15 @@ public:
 		return 0;
 	}
 };
+
+/////////////////////////////////////////////////////////////////////////////
+
+#ifdef _DEBUG
+GLenum	DbgGetGLError(char*, UINT);
+#define	GetGLError()	DbgGetGLError(__FILE__, __LINE__)
+#else
+inline GLenum GetGLError(void)
+{
+	return ::glGetError();
+}
+#endif

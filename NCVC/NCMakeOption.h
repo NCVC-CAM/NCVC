@@ -81,6 +81,7 @@ public:
 		ASSERT( n>=0 && n<m_strOption.GetCount() );
 		return m_strOption[n];
 	}
+	virtual	CString	GetLineNoForm(void)const = 0;	// s”Ô†‘Ž®
 
 #ifdef _DEBUG
 	virtual	void DbgDump(void) const = 0;	// µÌß¼®Ý•Ï”‚ÌÀÞÝÌß(”h¶—p)

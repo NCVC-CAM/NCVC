@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
-#include "ExecOption.h"
 #include "NCMakeLatheOpt.h"
 #include "MKLASetup.h"
 
@@ -15,10 +14,7 @@ extern	CMagaDbg	g_dbg;
 #endif
 
 BEGIN_MESSAGE_MAP(CMKLASetup1, CPropertyPage)
-	ON_BN_CLICKED(IDC_MKNC1_HEADER_LOOPUP, &CMKLASetup1::OnHeaderLoopup)
-	ON_BN_CLICKED(IDC_MKNC1_FOOTER_LOOPUP, &CMKLASetup1::OnFooterLoopup)
-	ON_BN_CLICKED(IDC_MKNC1_HEADER_EDIT, &CMKLASetup1::OnHeaderEdit)
-	ON_BN_CLICKED(IDC_MKNC1_FOOTER_EDIT, &CMKLASetup1::OnFooterEdit)
+	ON_BN_CLICKED(IDC_MKLA3_COPY, &CMKLASetup1::OnCopyFromIn)
 END_MESSAGE_MAP()
 
 #define	GetParentSheet()	static_cast<CMKLASetup *>(GetParentSheet())
@@ -33,11 +29,8 @@ CMKLASetup1::CMKLASetup1() : CPropertyPage(CMKLASetup1::IDD)
 
 void CMKLASetup1::DoDataExchange(CDataExchange* pDX)
 {
-	CPropertyPage::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_MKNC1_FOOTER_EDIT, m_ctButton2);
-	DDX_Control(pDX, IDC_MKNC1_HEADER_EDIT, m_ctButton1);
-	DDX_Control(pDX, IDC_MKNC1_HEADER, m_ctHeader);
-	DDX_Control(pDX, IDC_MKNC1_FOOTER, m_ctFooter);
+	__super::DoDataExchange(pDX);
+	DDX_Text(pDX, IDC_MKLA2_CUSTOMCODE, m_strCustom);
 	DDX_Control(pDX, IDC_MKNC1_SPINDLE, m_nSpindle);
 	DDX_Control(pDX, IDC_MKNC1_FEED, m_dFeed);
 	DDX_Control(pDX, IDC_MKLA1_XFEED, m_dXFeed);
@@ -46,8 +39,6 @@ void CMKLASetup1::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKLA1_PULL_X, m_dPullX);
 	DDX_Control(pDX, IDC_MKLA1_MARGIN, m_dMargin);
 	DDX_Control(pDX, IDC_MKLA1_MARGINNUM, m_nMargin);
-	DDX_Text(pDX, IDC_MKNC1_FOOTER, m_strFooter);
-	DDX_Text(pDX, IDC_MKNC1_HEADER, m_strHeader);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -55,103 +46,45 @@ void CMKLASetup1::DoDataExchange(CDataExchange* pDX)
 
 BOOL CMKLASetup1::OnInitDialog() 
 {
-	CPropertyPage::OnInitDialog();
+	__super::OnInitDialog();
 
 	// ¶½ÀÑºÝÄÛ°Ù‚ÍºÝ½Ä×¸À‚Å‰Šú‰»‚Å‚«‚È‚¢
 	// + GetParentSheet() Îß²ÝÀ‚ðŽæ“¾‚Å‚«‚È‚¢
 	CNCMakeLatheOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	m_nSpindle	= pOpt->LTH_I_SPINDLE;
-	m_dFeed		= pOpt->LTH_D_FEED;
-	m_dXFeed	= pOpt->LTH_D_XFEED;
-	m_dCut		= pOpt->LTH_D_CUT * 2.0f;	// ’¼Œa’l‚Ö•ÏŠ·
-	m_dPullZ	= pOpt->LTH_D_PULL_Z;
-	m_dPullX	= pOpt->LTH_D_PULL_X * 2.0f;
-	m_dMargin	= pOpt->LTH_D_MARGIN * 2.0f;
-	m_nMargin	= pOpt->LTH_I_MARGIN;
-	::Path_Name_From_FullPath(pOpt->m_strOption[MKLA_STR_HEADER], m_strHeaderPath, m_strHeader);
-	::Path_Name_From_FullPath(pOpt->m_strOption[MKLA_STR_FOOTER], m_strFooterPath, m_strFooter);
-	// Êß½•\Ž¦‚ÌÅ“K‰»(shlwapi.h)
-	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_HEADERPATH, m_strHeaderPath);
-	::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_FOOTERPATH, m_strFooterPath);
-	// •ÒWÎÞÀÝ‚Ì—LŒø–³Œø
-	if ( AfxGetNCVCApp()->GetExecList()->GetCount() < 1 ) {
-		m_ctButton1.EnableWindow(FALSE);
-		m_ctButton2.EnableWindow(FALSE);
-	}
+	m_strCustom	= pOpt->LTH_S_O_CUSTOM;
+	m_nSpindle	= pOpt->LTH_I_O_SPINDLE;
+	m_dFeed		= pOpt->LTH_D_O_FEED;
+	m_dXFeed	= pOpt->LTH_D_O_FEEDX;
+	m_dCut		= pOpt->LTH_D_O_CUT * 2.0f;	// ’¼Œa’l‚É•ÏŠ·
+	m_dPullZ	= pOpt->LTH_D_O_PULLZ;
+	m_dPullX	= pOpt->LTH_D_O_PULLX  * 2.0f;
+	m_dMargin	= pOpt->LTH_D_O_MARGIN * 2.0f;
+	m_nMargin	= pOpt->LTH_I_O_MARGIN;
 
 	UpdateData(FALSE);
 
 	return TRUE;
 }
 
-void CMKLASetup1::OnHeaderLoopup() 
-{
-	UpdateData();
-	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, m_strHeader, m_strHeaderPath) == IDOK ) {
-		// ÃÞ°À‚Ì”½‰f
-		::Path_Name_From_FullPath(m_strHeader, m_strHeaderPath, m_strHeader);
-		::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_HEADERPATH, m_strHeaderPath);
-		UpdateData(FALSE);
-		// •¶Žš‘I‘ðó‘Ô
-		m_ctHeader.SetFocus();
-		m_ctHeader.SetSel(0, -1);
-	}
-}
-
-void CMKLASetup1::OnFooterLoopup() 
-{
-	UpdateData();
-	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_TXT_FILTER, TRUE, m_strFooter, m_strFooterPath) == IDOK ) {
-		// ÃÞ°À‚Ì”½‰f
-		::Path_Name_From_FullPath(m_strFooter, m_strFooterPath, m_strFooter);
-		::PathSetDlgItemPath(m_hWnd, IDC_MKNC1_FOOTERPATH, m_strFooterPath);
-		UpdateData(FALSE);
-		// •¶Žš‘I‘ðó‘Ô
-		m_ctFooter.SetFocus();
-		m_ctFooter.SetSel(0, -1);
-	}
-}
-
-void CMKLASetup1::OnHeaderEdit() 
-{
-	ASSERT( AfxGetNCVCApp()->GetExecList()->GetCount() > 0 );
-	UpdateData();
-	AfxGetNCVCMainWnd()->CreateOutsideProcess(
-		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(),
-		"\""+m_strHeaderPath+m_strHeader+"\"");
-	m_ctHeader.SetFocus();
-}
-
-void CMKLASetup1::OnFooterEdit() 
-{
-	ASSERT( AfxGetNCVCApp()->GetExecList()->GetCount() > 0 );
-	UpdateData();
-	AfxGetNCVCMainWnd()->CreateOutsideProcess(
-		AfxGetNCVCApp()->GetExecList()->GetHead()->GetFileName(),
-		"\""+m_strFooterPath+m_strFooter+"\"");
-	m_ctFooter.SetFocus();
-}
-
 BOOL CMKLASetup1::OnApply() 
 {
 	CNCMakeLatheOpt* pOpt = GetParentSheet()->GetNCMakeOption();
-	pOpt->LTH_I_SPINDLE	= m_nSpindle;
-	pOpt->LTH_D_FEED	= m_dFeed;
-	pOpt->LTH_D_XFEED	= m_dXFeed;
-	pOpt->LTH_D_CUT		= m_dCut / 2.0f;	// ”¼Œa’l‚Ö•ÏŠ·
-	pOpt->LTH_D_PULL_Z	= m_dPullZ;
-	pOpt->LTH_D_PULL_X	= m_dPullX / 2.0f;
-	pOpt->LTH_D_MARGIN	= m_dMargin / 2.0f;
-	pOpt->LTH_I_MARGIN	= m_nMargin;
-	pOpt->m_strOption[MKLA_STR_HEADER] = m_strHeaderPath+m_strHeader;
-	pOpt->m_strOption[MKLA_STR_FOOTER] = m_strFooterPath+m_strFooter;
+	pOpt->LTH_S_O_CUSTOM	= m_strCustom;
+	pOpt->LTH_I_O_SPINDLE	= m_nSpindle;
+	pOpt->LTH_D_O_FEED		= m_dFeed;
+	pOpt->LTH_D_O_FEEDX		= m_dXFeed;
+	pOpt->LTH_D_O_CUT		= m_dCut / 2.0f;	// ”¼Œa’l‚É•ÏŠ·
+	pOpt->LTH_D_O_PULLZ		= m_dPullZ;
+	pOpt->LTH_D_O_PULLX		= m_dPullX / 2.0f;
+	pOpt->LTH_D_O_MARGIN	= m_dMargin / 2.0f;
+	pOpt->LTH_I_O_MARGIN	= m_nMargin;
 
 	return TRUE;
 }
 
 BOOL CMKLASetup1::OnKillActive() 
 {
-	if ( !CPropertyPage::OnKillActive() )
+	if ( !__super::OnKillActive() )
 		return FALSE;
 
 	if ( m_dFeed <= 0 ) {
@@ -196,24 +129,36 @@ BOOL CMKLASetup1::OnKillActive()
 		m_nMargin.SetSel(0, -1);
 		return FALSE;
 	}
-	if ( m_strHeader.IsEmpty() ) {
-		AfxMessageBox(IDS_ERR_CUSTOMFILE, MB_OK|MB_ICONEXCLAMATION);
-		m_ctHeader.SetFocus();
-		return FALSE;
-	}
-	if ( m_strFooter.IsEmpty() ) {
-		AfxMessageBox(IDS_ERR_CUSTOMFILE, MB_OK|MB_ICONEXCLAMATION);
-		m_ctFooter.SetFocus();
-		return FALSE;
-	}
-	if ( !::IsFileExist(m_strHeaderPath+m_strHeader) ) {
-		m_ctHeader.SetFocus();
-		return FALSE;
-	}
-	if ( !::IsFileExist(m_strFooterPath+m_strFooter) ) {
-		m_ctFooter.SetFocus();
-		return FALSE;
-	}
 
 	return TRUE;
+}
+
+void CMKLASetup1::OnCopyFromIn()
+{
+	CMKLASetup*	pParent = GetParentSheet();
+	if ( ::IsWindow(pParent->GetInsideDialog()->m_hWnd) ) {
+		m_strCustom	= pParent->GetInsideDialog()->m_strCustom;
+		m_nSpindle	= (int)(pParent->GetInsideDialog()->m_nSpindle);
+		m_dFeed		= (float)(pParent->GetInsideDialog()->m_dFeed);
+		m_dXFeed	= (float)(pParent->GetInsideDialog()->m_dXFeed);
+		m_dCut		= (float)(pParent->GetInsideDialog()->m_dCut);
+		m_dPullZ	= (float)(pParent->GetInsideDialog()->m_dPullZ);
+		m_dPullX	= (float)(pParent->GetInsideDialog()->m_dPullX);
+		m_dMargin	= (float)(pParent->GetInsideDialog()->m_dMargin);
+		m_nMargin	= (int)(pParent->GetInsideDialog()->m_nMargin);
+	}
+	else {
+		CNCMakeLatheOpt* pOpt = GetParentSheet()->GetNCMakeOption();
+		m_strCustom = pOpt->LTH_S_I_CUSTOM;
+		m_nSpindle	= pOpt->LTH_I_I_SPINDLE;
+		m_dFeed		= pOpt->LTH_D_I_FEED;
+		m_dXFeed	= pOpt->LTH_D_I_FEEDX;
+		m_dCut		= pOpt->LTH_D_I_CUT;
+		m_dPullZ	= pOpt->LTH_D_I_PULLZ;
+		m_dPullX	= pOpt->LTH_D_I_PULLX;
+		m_dMargin	= pOpt->LTH_D_I_MARGIN;
+		m_nMargin	= pOpt->LTH_I_I_MARGIN;
+	}
+
+	UpdateData(FALSE);
 }

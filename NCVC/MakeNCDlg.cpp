@@ -195,6 +195,8 @@ void CMakeNCDlg::OnMKNCInitEdit()
 			CString	strPath, strFile;
 			::Path_Name_From_FullPath(strResult, strPath, strFile);
 			::PathSetDlgItemPath(m_hWnd, IDC_MKNC_INITPATH, strPath);
+			m_strInitPath = strPath;
+			m_strInitFileName = strFile;
 			UpdateData(FALSE);
 			m_ctInitFileName.SetEditSel(0, -1);
 			m_ctInitFileName.SetFocus();

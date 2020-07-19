@@ -13,7 +13,7 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-using std::string;
+using namespace std;
 using namespace boost;
 
 extern	LPCTSTR	gg_szReturn;	// "\n"
@@ -30,10 +30,9 @@ CExecOption::CExecOption(const CString& strExec)
 	m_bNCType = m_bDXFType = m_bShort = FALSE;
 	m_nImage = m_nMenuID = -1;
 
-	typedef tokenizer< char_separator<TCHAR> > tokenizer;
-	static	char_separator<TCHAR> sep(gg_szReturn, "", keep_empty_tokens);
-	std::string	str(strExec), strTok;
-	tokenizer	tok(str, sep);
+	string	str(strExec), strTok;
+	char_separator<TCHAR> sep(gg_szReturn, "", keep_empty_tokens);
+	tokenizer< char_separator<TCHAR> > tok(str, sep);
 	int		i = 0;
 
 	// ∫›Ωƒ◊∏¿ì‡ÇÃó·äOÇÕè„à Ç≈èàóù

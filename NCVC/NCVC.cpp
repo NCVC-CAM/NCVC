@@ -57,6 +57,7 @@ extern	float	_TABLECOS[ARCCOUNT] = {	// 事前に計算された三角関数の結果
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
+extern	float	_DRILL_HEIGHT = 0.0f;	// ドリル先端角118°の高さ
 
 /*
 	ﾌﾟﾛﾊﾟﾃｨｼｰﾄのﾗｽﾄﾍﾟｰｼﾞ::小さい情報のため，(ﾚｼﾞｽﾄﾘへの)保存はしない
@@ -118,6 +119,8 @@ CNCVCApp::CNCVCApp()
 		_TABLECOS[i]  = cos(q);
 		_TABLESIN[i]  = sin(q);
 	}
+	// ドリルの先端角を計算するときの高さ
+	_DRILL_HEIGHT = tan(RAD(31.0f));
 
 	// ｴﾝﾄﾞﾐﾙ法線ﾍﾞｸﾄﾙの初期化
 	InitialMillNormal();	// to NCViewGL.cpp
@@ -1800,8 +1803,6 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 {
 	// ﾚｼﾞｽﾄﾘから拡張子情報を取得
 	extern	LPCTSTR		gg_szComma;		// ","
-	typedef boost::tokenizer< boost::char_separator<TCHAR> > tokenizer;
-	static	boost::char_separator<TCHAR> sep(gg_szComma);
 
 	CString		strRegKey, strEntry, strResult;
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
@@ -1810,7 +1811,8 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 	strEntry += strResult;
 
 	std::string	str(AfxGetApp()->GetProfileString(strRegKey, strEntry)), strTok;
-	tokenizer	tok(str, sep);
+	boost::char_separator<TCHAR> sep(gg_szComma);
+	boost::tokenizer< boost::char_separator<TCHAR> > tok(str, sep);
 	try {
 		BOOST_FOREACH(strTok, tok) {
 			strResult = boost::algorithm::trim_copy(strTok).c_str();

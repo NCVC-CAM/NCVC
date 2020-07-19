@@ -524,16 +524,16 @@ BOOL CTraceThread::InitInstance()
 					pfnDrawSplit02[NCDRAWVIEW_NUM];
 
 	if ( pDoc->IsDocFlag(NCDOC_WIRE) ) {
-		pfnDrawXYZ[0] = &(CNCdata::DrawWire);
-		pfnDrawXYZ[1] = &(CNCdata::DrawWireXY);
-		pfnDrawXYZ[2] = &(CNCdata::DrawWireXZ);
-		pfnDrawXYZ[3] = &(CNCdata::DrawWireYZ);
+		pfnDrawXYZ[NCDRAWVIEW_XYZ] = &(CNCdata::DrawWire);
+		pfnDrawXYZ[NCDRAWVIEW_XY ] = &(CNCdata::DrawWireXY);
+		pfnDrawXYZ[NCDRAWVIEW_XZ ] = &(CNCdata::DrawWireXZ);
+		pfnDrawXYZ[NCDRAWVIEW_YZ ] = &(CNCdata::DrawWireYZ);
 	}
 	else {
-		pfnDrawXYZ[0] = &(CNCdata::Draw);
-		pfnDrawXYZ[1] = &(CNCdata::DrawXY);
-		pfnDrawXYZ[2] = &(CNCdata::DrawXZ);
-		pfnDrawXYZ[3] = &(CNCdata::DrawYZ);
+		pfnDrawXYZ[NCDRAWVIEW_XYZ] = &(CNCdata::Draw);
+		pfnDrawXYZ[NCDRAWVIEW_XY ] = &(CNCdata::DrawXY);
+		pfnDrawXYZ[NCDRAWVIEW_XZ ] = &(CNCdata::DrawXZ);
+		pfnDrawXYZ[NCDRAWVIEW_YZ ] = &(CNCdata::DrawYZ);
 	}
 	for ( i=0; i<SIZEOF(pfnDrawXYZ); i++ ) {
 		pfnDrawSplit01[i] = pfnDrawXYZ[ pOpt->GetForceView01(i) ];

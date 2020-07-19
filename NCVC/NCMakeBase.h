@@ -23,6 +23,9 @@ protected:
 
 	CString			m_strGcode;		// ¶¬‚³‚ê‚½Gº°ÄŞ(1ÌŞÛ¯¸)
 	CStringArray	m_strGarray;	// POLYLINE, Ellipse“™•¡”‚ÌGº°ÄŞ¶¬
+	void	AddGcode(const CString& strGcode) {
+		m_strGarray.Add( (*ms_pfnGetLineNo)() + strGcode + ms_strEOB );
+	}
 
 	// ¶¬’†‚Í•Ï‰»‚Ì‚È‚¢µÌß¼®İ‚É‘Î‚·‚é“®ì
 	static	int		NCAX, NCAY,		// Ì×²½‚Æù”Õ‚Ì²•ÏŠ·
@@ -48,6 +51,8 @@ protected:
 	static	PFNMAKEHELICAL		ms_pfnMakeHelical;		// ‰~ÃŞ°À‚ÌÍØ¶ÙØí
 	static	PFNMAKEARC			ms_pfnMakeArc;			// ‰~ŒÊÃŞ°À‚Ì¶¬
 
+	// ‰üs•¶š’uŠ·
+	static	CString	GetChangeEnter(const CString&);
 	// ‰ñ“]w¦
 	static	CString	GetSpindleString(int);
 	static	CString	GetSpindleString_Clip(int);

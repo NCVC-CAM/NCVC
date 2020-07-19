@@ -826,8 +826,10 @@ BOOL CheckOffsetIntersection
 			}
 			// ‚P‚Â‚ÌµÌÞ¼Þª¸Ä‚É•¡”‚ÌŒð“_‚ª‚ ‚éê‡‚Í
 			// Žn“_‚©‚ç‚Ì‹——£‚Å•À‚×‘Ö‚¦
-			if ( vTemp.size() > 1 )
-				sort(vTemp.begin(), vTemp.end());
+			if ( vTemp.size() > 1 ) {
+//				std::sort(vTemp.begin(), vTemp.end());
+				boost::sort(vTemp);	// boost/range/algorithm.hpp
+			}
 			vInfo[i].insert(vInfo[i].end(), vTemp.begin(), vTemp.end());
 			vTemp.clear();
 		}
