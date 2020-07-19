@@ -249,7 +249,7 @@ void	NC_FormatMessage(void);
 #endif
 
 // NCVC original
-#include "3Dto2D.h"
+#include "MyTemplate.h"
 #include "CustomClass.h"
 #include "CustomControl.h"
 /*

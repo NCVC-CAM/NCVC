@@ -1,9 +1,9 @@
-// 3Dto2D.cpp
-// ‚RŸŒ³•ÏŠ·‚Ì¸ŞÛ°ÊŞÙŠÖ”
+// MyTemplate.cpp
+//
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-#include "3Dto2D.h"
+#include "MyTemplate.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
