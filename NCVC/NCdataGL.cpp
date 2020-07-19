@@ -232,10 +232,10 @@ void CNCdata::DrawGLLatheFace(void) const
 {
 }
 
-BOOL CNCdata::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
+BOOL CNCdata::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 {
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		bStartDraw = m_obCdata[i]->CreateGLBottomFace(vBD, bStartDraw);
+		bStartDraw = m_obCdata[i]->AddGLBottomFaceVertex(vBD, bStartDraw);
 	return bStartDraw;
 }
 
@@ -358,12 +358,12 @@ void CNCline::DrawGLLatheFace(void) const
 	::glEnd();
 }
 
-BOOL CNCline::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
+BOOL CNCline::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 {
 	if ( GetGcode() != 1 )
 		return TRUE;	// 次の描画は始点必要
 	if ( !m_obCdata.IsEmpty() )
-		return CNCdata::CreateGLBottomFace(vBD, bStartDraw);
+		return CNCdata::AddGLBottomFaceVertex(vBD, bStartDraw);
 	if ( !(GetValFlags() & (NCD_X|NCD_Y|NCD_Z)) )
 		return bStartDraw;
 
@@ -638,7 +638,7 @@ void CNCcycle::DrawGLLatheFace(void) const
 {
 }
 
-BOOL CNCcycle::CreateGLBottomFace(CVBtmDraw& vBD, BOOL) const
+BOOL CNCcycle::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL) const
 {
 	if ( GetPlane() != XY_PLANE )
 		return TRUE;
@@ -809,7 +809,7 @@ void CNCcircle::DrawGLWire(void) const
 		break;
 	}
 }
-//	--- CNCcircle::CreateGLBottomFace() サブ
+//	--- CNCcircle::AddGLBottomFaceVertex() サブ
 static inline void _SetEndmillPathXY
 	(const CPointF& pt, float q, float h, float r1, float r2,
 		CVfloat& v)
@@ -859,10 +859,10 @@ static inline void _SetEndmillPathYZ_Pipe
 	_SetEndmillCircle(d, pt, v);
 }
 //	---
-BOOL CNCcircle::CreateGLBottomFace(CVBtmDraw& vBD, BOOL bStartDraw) const
+BOOL CNCcircle::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 {
 	if ( !m_obCdata.IsEmpty() )
-		return CNCdata::CreateGLBottomFace(vBD, bStartDraw);
+		return CNCdata::AddGLBottomFaceVertex(vBD, bStartDraw);
 
 	BOTTOMDRAW	bd;
 	bd.vpt.reserve( ARCCOUNT*ARCCOUNT*NCXYZ );

@@ -58,9 +58,13 @@ static	const	float	g_dfDOrder[] = {
 
 // BOOL型命令
 static	LPCTSTR	g_szBOrder[] = {
+	"OBS0", "OBS1", "OBS2", "OBS3", "OBS4",
+	"OBS5", "OBS6", "OBS7", "OBS8", "OBS9",
 	"L0Cycle"
 };
 static	const	BOOL	g_dfBOrder[] = {
+	FALSE, FALSE, FALSE, FALSE, FALSE,
+	FALSE, FALSE, FALSE, FALSE, FALSE,
 	FALSE
 };
 
@@ -265,18 +269,18 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 		strEntry.Format(g_szDOrder[k], g_szNdelimiter[i]);
 		m_udNums[j] =	//	m_dInitialXYZ[i]
 			::GetPrivateProfileString(strRegKey, strEntry, "", szResult, _MAX_PATH, lpszFile) > 0 ?
-				(float)atof(::Trim(szResult).c_str()) : g_dfDOrder[j];
+				(float)atof(boost::algorithm::trim_copy(string(szResult)).c_str()) : g_dfDOrder[j];
 	}
 	for ( k++; k<SIZEOF(g_szDOrder); j++, k++ ) {
 		m_udNums[j] = ::GetPrivateProfileString(strRegKey, g_szDOrder[k], "", szResult, _MAX_PATH, lpszFile) > 0 ?
-			(float)atof(::Trim(szResult).c_str()) : g_dfDOrder[j];
+			(float)atof(boost::algorithm::trim_copy(string(szResult)).c_str()) : g_dfDOrder[j];
 	}
 	// ----------
 		// ～Ver1.72までのﾊﾞｸﾞﾁｪｯｸ
 		::GetPrivateProfileString(strRegKey, g_szDOrder[0], "", szResult, _MAX_PATH, lpszFile);
 		if ( lstrlen(szResult) > 0 ) {
 			// "BlockTime" が "Initial%c" に書き込んでいたﾊﾞｸﾞ
-			m_dBlock = (float)atof(::Trim(szResult).c_str());
+			m_dBlock = (float)atof(boost::algorithm::trim_copy(string(szResult)).c_str());
 			// 正しいｷｰで出力
 			// 　→単なる切り替えでは SaveMCoption() が呼ばれないので
 			// 　　ここで処理する
@@ -340,7 +344,7 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 			tok.assign(str);
 			tool.ClearOption();	j = 0;
 			BOOST_FOREACH(strTok, tok) {
-				strTok = ::Trim(strTok);	// stdafx.h
+				boost::algorithm::trim(strTok);
 				switch ( j++ ) {
 				case MCTOOL_T:		// Ｔ番号
 					tool.m_nTool = atoi(strTok.c_str());
@@ -502,7 +506,7 @@ void CMCOption::ConvertWorkOffset(size_t n, LPCTSTR lpszResult)
 		lpszBuf = new TCHAR[lstrlen(lpszResult)+1];
 		lpsztok = strtok_s(lstrcpy(lpszBuf, lpszResult), gg_szComma, &lpszcontext);
 		for ( i=0; i<NCXYZ && lpsztok; i++ ) {
-			m_dWorkOffset[n][i] = (float)atof(::Trim(lpsztok).c_str());
+			m_dWorkOffset[n][i] = (float)atof(boost::algorithm::trim_copy(string(lpsztok)).c_str());
 			lpsztok = strtok_s(NULL, gg_szComma, &lpszcontext);
 		}
 	}

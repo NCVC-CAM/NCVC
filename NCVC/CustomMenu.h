@@ -74,10 +74,12 @@ public:
 // CCustomMenuEx クラスのインターフェイス
 
 //	ｶｽﾀﾑﾒﾆｭｰのｲﾒｰｼﾞ情報
-typedef	struct	tagCUSTMENUINFO {
+struct	CUSTMENUINFO
+{
 	WORD	nImage;		// ｲﾒｰｼﾞﾘｽﾄ配列
 	WORD	nIndex;		// ｲﾒｰｼﾞﾘｽﾄ内のｲﾒｰｼﾞ№
-} CUSTMENUINFO, *LPCUSTMENUINFO;
+};
+typedef	CUSTMENUINFO*	LPCUSTMENUINFO;
 
 class CCustomMenuEx : public CCustomMenu
 {

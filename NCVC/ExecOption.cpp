@@ -38,7 +38,7 @@ CExecOption::CExecOption(const CString& strExec)
 
 	// ╨щ╫дв╦ю⌠Ю┌л≈А┼O┌м▐Ц┬й┌е▐┬≈²
 	BOOST_FOREACH(strTok, tok) {
-		strTok = ::Trim(strTok);	// stdafx.h
+		boost::algorithm::trim(strTok);
 		switch ( i++ ) {
 		case 0:
 			m_strFileName = strTok.c_str();

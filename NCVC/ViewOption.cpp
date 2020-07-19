@@ -649,7 +649,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 		::GetPrivateProfileString(strRegKey, strEntry+g_szNdelimiter[i], "",
 				szResult, _MAX_PATH, lpszFileName);
 		if ( lstrlen(szResult) > 0 )
-			m_dGuide[i] = (float)atof(::Trim(szResult).c_str());
+			m_dGuide[i] = (float)atof(boost::algorithm::trim_copy(string(szResult)).c_str());
 	}
 	VERIFY(strEntry.LoadString(IDS_REG_NCV_TRACESPEED));
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ ) {
@@ -661,7 +661,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 	::GetPrivateProfileString(strRegKey, strEntry, "",
 			szResult, _MAX_PATH, lpszFileName);
 	if ( lstrlen(szResult) > 0 )
-		m_dDefaultEndmill = (float)fabs(atof(::Trim(szResult).c_str())) / 2.0f;	// “”ÿè„ÇÕîºåa
+		m_dDefaultEndmill = (float)fabs(atof(boost::algorithm::trim_copy(string(szResult)).c_str())) / 2.0f;	// “”ÿè„ÇÕîºåa
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_MILLTYPE));
 	m_nMillType = ::GetPrivateProfileInt(strRegKey, strEntry, m_nMillType, lpszFileName);
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_NC_TEXTUREFILE));

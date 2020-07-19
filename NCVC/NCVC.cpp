@@ -1813,7 +1813,7 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 	tokenizer	tok(str, sep);
 	try {
 		BOOST_FOREACH(strTok, tok) {
-			strResult = ::Trim(strTok).c_str();
+			strResult = boost::algorithm::trim_copy(strTok).c_str();
 			strResult.MakeUpper();		// ‘å•¶Žš“o˜^
 			m_mpExt[EXT_DLG].SetAt(strResult, NULL);
 		}

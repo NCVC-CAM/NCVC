@@ -6,7 +6,8 @@
 
 #include "NCVCdefine.h"
 
-typedef	struct	tagPENSTYLE {
+struct	PENSTYLE
+{
 	LPCTSTR	lpszPenName;	// ¿ﬁ≤±€∏ﬁ(∫›ŒﬁŒﬁØ∏Ω)ìoò^ópñºèÃ
 	int		nPenType;		// CPen∏◊ΩÇ÷ÇÃÕﬂ›Ω¿≤Ÿ
 	// --- à»â∫DXFóp
@@ -17,7 +18,7 @@ typedef	struct	tagPENSTYLE {
 	float	dDXFdash[6];	// ¿ﬁØº≠í∑Ç≥(∫∞ƒﬁ49)
 	// --- à»â∫OpenGLóp
 	GLushort	nGLpattern;	// for glLineStipple
-} PENSTYLE;
+};
 #define	MAXPENSTYLE		5
 
 #define	VIEWUPDATE_REDRAW			0x0001

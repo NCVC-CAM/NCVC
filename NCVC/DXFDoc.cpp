@@ -511,7 +511,7 @@ BOOL CDXFDoc::GetEditOrgPoint(LPCTSTR lpctStr, CPointF& pt)
 		lpszNum = new TCHAR[lstrlen(lpctStr)+1];
 		lpsztok = strtok_s(lstrcpy(lpszNum, lpctStr), gg_szCat, &lpszcontext);
 		for ( int i=0; i<2 && lpsztok; i++ ) {
-			pt[i] = (float)atof(::Trim(lpsztok).c_str());
+			pt[i] = (float)atof(boost::algorithm::trim_copy(std::string(lpsztok)).c_str());
 			lpsztok = strtok_s(NULL, gg_szCat, &lpszcontext);
 		}
 	}

@@ -188,7 +188,7 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 
 	// –½—ß‰ğÍÙ°Ìß
 	BOOST_FOREACH(strTok, tok) {
-		strTok = ::Trim(strTok);	// stdafx.h
+		boost::algorithm::trim(strTok);
 		switch ( i++ ) {
 		case 0:		// Øí‘ÎÛÌ×¸Ş
 			m_bLayerFlg.set(LAYER_CUT_TARGET, atoi(strTok.c_str()) ? 1 : 0);

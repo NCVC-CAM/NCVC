@@ -16,11 +16,13 @@ class CNCListView;
 // CTraceThread ƒXƒŒƒbƒh
 
 // ½Ú¯ÄŞ‚Ö‚Ìˆø”
-typedef struct tagTRACETHREADPARAM {
+struct TRACETHREADPARAM
+{
 	CMainFrame*		pMainFrame;
 	CNCViewTab*		pParent;
 	CNCListView*	pListView;
-} TRACETHREADPARAM, *LPTRACETHREADPARAM;
+};
+typedef	TRACETHREADPARAM*	LPTRACETHREADPARAM;
 
 class CTraceThread : public CWinThread
 {

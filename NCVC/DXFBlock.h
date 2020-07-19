@@ -42,32 +42,32 @@ public:
 		m_ptOrg = pt;
 	}
 	// BlockÃÞ°À“o˜^(—áŠO½Û°‚ÍãˆÊ‚Å·¬¯Á)
-	void	AddData(LPCDXFPARGV lpArgv) {
+	void	AddData(LPDXFPARGV lpArgv) {
 		lpArgv->c -= m_ptOrg;
 		CDXFpoint*	pPoint = new CDXFpoint(lpArgv);
 		ASSERT(pPoint);
 		m_obDXFArray.Add(pPoint);
 	}
-	void	AddData(LPCDXFLARGV lpArgv) {
+	void	AddData(LPDXFLARGV lpArgv) {
 		lpArgv->s -= m_ptOrg;
 		lpArgv->e -= m_ptOrg;
 		CDXFline*	pLine = new CDXFline(lpArgv);
 		ASSERT(pLine);
 		m_obDXFArray.Add(pLine);
 	}
-	void	AddData(LPCDXFCARGV lpArgv) {
+	void	AddData(LPDXFCARGV lpArgv) {
 		lpArgv->c -= m_ptOrg;
 		CDXFcircle*	pCircle = new CDXFcircle(lpArgv);
 		ASSERT(pCircle);
 		m_obDXFArray.Add(pCircle);
 	}
-	void	AddData(LPCDXFAARGV lpArgv) {
+	void	AddData(LPDXFAARGV lpArgv) {
 		lpArgv->c -= m_ptOrg;
 		CDXFarc*	pArc = new CDXFarc(lpArgv);
 		ASSERT(pArc);
 		m_obDXFArray.Add(pArc);
 	}
-	void	AddData(LPCDXFEARGV lpArgv) {
+	void	AddData(LPDXFEARGV lpArgv) {
 		lpArgv->c -= m_ptOrg;
 		CDXFellipse*	pEllipse = new CDXFellipse(lpArgv);
 		ASSERT(pEllipse);
@@ -78,7 +78,7 @@ public:
 		ASSERT(pPolyline);
 		m_obDXFArray.Add(pPolyline);
 	}
-	void	AddData(LPCDXFTARGV lpArgv) {
+	void	AddData(LPDXFTARGV lpArgv) {
 		lpArgv->c -= m_ptOrg;
 		CDXFtext*	pText = new CDXFtext(lpArgv);
 		ASSERT(pText);

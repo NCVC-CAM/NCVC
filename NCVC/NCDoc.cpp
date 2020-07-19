@@ -19,7 +19,7 @@
 #include "DXFMakeOption.h"
 #include "DXFMakeClass.h"
 #include "MakeDXFDlg.h"
-//#include "../Kodatuno/IGES_Parser.h"
+#include "../Kodatuno/IGES_Parser.h"
 #include "MagaDbgMac.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -99,8 +99,8 @@ CNCDoc::CNCDoc()
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
 	m_rcWork.SetRectMinimum();
-//	m_kBody  = NULL;
-//	m_kbList = NULL;
+	m_kBody  = NULL;
+	m_kbList = NULL;
 	// 増分割り当てサイズ
 	m_obBlock.SetSize(0, 4096);
 	m_obGdata.SetSize(0, 4096);
@@ -113,15 +113,15 @@ CNCDoc::~CNCDoc()
 		delete	m_obGdata[i];
 	m_obGdata.RemoveAll();
 	// IGES Body
-//	if ( m_kBody ) {
+	if ( m_kBody ) {
 		//m_kBody->DeleteBody(m_kbList);
-//		m_kBody->DelBodyElem();
-//		delete	m_kBody;
-//	}
-//	if ( m_kbList ) {
-//		m_kbList->clear();
-//		delete	m_kbList;
-//	}
+		m_kBody->DelBodyElem();
+		delete	m_kBody;
+	}
+	if ( m_kbList ) {
+		m_kbList->clear();
+		delete	m_kbList;
+	}
 	// ﾌﾞﾛｯｸﾃﾞｰﾀの消去
 	ClearBlockData();
 	// 一時展開のﾏｸﾛﾌｧｲﾙを消去
@@ -167,7 +167,7 @@ void CNCDoc::SetLatheViewMode(void)
 		swap(m_ptNcLocalOrg.x, m_ptNcLocalOrg.z);
 	}
 }
-/*
+
 BOOL CNCDoc::ReadWorkFile(LPCTSTR strFile)
 {
 	CString		strPath, strName;
@@ -213,7 +213,7 @@ void CNCDoc::SetWorkFileOffset(const Coord& sft)
 	if ( m_kBody )
 		m_kBody->ShiftBody(sft);
 }
-*/
+
 CNCdata* CNCDoc::DataOperation
 	(const CNCdata* pData, LPNCARGV lpArgv, INT_PTR nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
 {
@@ -1226,10 +1226,14 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 		}
 	}
 	else {
-		if ( m_bDocFlg[NCDOC_COMMENTWORK] )
+		if ( m_bDocFlg[NCDOC_WORKFILE] && m_kbList ) {
+			CalcWorkFileRect();		// IGES/STEPの占有矩形を計算
+			m_rcWork = m_rcWorkCo;
+		}
+		else if ( m_bDocFlg[NCDOC_COMMENTWORK] )
 			m_rcWork = m_rcWorkCo;
 		else
-			m_rcWorkCo = m_rcWork;		// 指示がなければﾃﾞｰﾀを保存
+			m_rcWorkCo = m_rcWork;	// 指示がなければﾃﾞｰﾀを保存
 	}
 
 	// 最終ﾁｪｯｸ
@@ -1281,6 +1285,33 @@ BOOL CNCDoc::ValidDataCheck(void)
 			return TRUE;
 	}
 	return FALSE;
+}
+
+void CNCDoc::CalcWorkFileRect(void)
+{
+	BODY*		pBody;
+	CPoint3F	pt;
+	Coord		cd;		// Kodatuno座標クラス
+	int		i, j, k, nLoop = m_kbList->getNum();
+
+	m_rcWorkCo.SetRectMinimum();
+
+	// NURBS曲線のみを対象にｺﾝﾄﾛｰﾙﾎﾟｲﾝﾄから占有矩形を推測
+	for ( i=0; i<nLoop; i++ ) {
+		pBody = (BODY *)m_kbList->getData(i);
+		for ( j=0; j<pBody->TypeNum[_NURBSC]; j++ ) {
+			for ( k=0; k<pBody->NurbsC[j].K; k++ ) {
+				cd = pBody->NurbsC[j].cp[k];
+				pt.SetPoint((float)cd.x, (float)cd.y, (float)cd.z);
+				m_rcWorkCo |= pt;
+			}
+		}
+	}
+#ifdef _DEBUG
+	g_dbg.printf("CNCDoc::CalcWorkFileRect()");
+	g_dbg.printf("(%f,%f)-(%f,%f)", m_rcWorkCo.left, m_rcWorkCo.top, m_rcWorkCo.right, m_rcWorkCo.bottom);
+	g_dbg.printf("(%f,%f)", m_rcWorkCo.low, m_rcWorkCo.high);
+#endif
 }
 
 BOOL CNCDoc::SerializeInsertBlock

@@ -732,7 +732,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.66a",IDC_STATIC,86,166,130,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 3.70",IDC_STATIC,86,166,130,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2018 MNCT K.Magara",IDC_STATIC,86,182,143,8
     LTEXT           "http://s-gikan2.maizuru-ct.ac.jp/xcl/",IDC_ABOUT_URL,86,198,130,8,SS_NOTIFY
 END
@@ -1679,6 +1679,17 @@ BEGIN
     CONTROL         "å≈íËª≤∏ŸÇÃL0éwíËÇÕà⁄ìÆ(&M)",IDC_MCST5_L0CYCLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,53,102,10
     LTEXT           "é©ìÆÃﬁ⁄≤∏ê›íË∫∞ƒﬁ(&B)",IDC_STATIC,7,76,80,8
     EDITTEXT        IDC_MCST5_AUTOBREAK,90,74,146,12,ES_AUTOHSCROLL
+    CONTROL         "&0",IDC_MCST5_OBS0,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,120,20,10
+    CONTROL         "&1",IDC_MCST5_OBS1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,134,20,10
+    CONTROL         "&2",IDC_MCST5_OBS2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,148,20,10
+    CONTROL         "&3",IDC_MCST5_OBS3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,162,20,10
+    CONTROL         "&4",IDC_MCST5_OBS4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,176,20,10
+    CONTROL         "&5",IDC_MCST5_OBS5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,50,120,20,10
+    CONTROL         "&6",IDC_MCST5_OBS6,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,50,134,20,10
+    CONTROL         "&7",IDC_MCST5_OBS7,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,50,148,20,10
+    CONTROL         "&8",IDC_MCST5_OBS8,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,50,162,20,10
+    CONTROL         "&9",IDC_MCST5_OBS9,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,50,176,20,10
+    GROUPBOX        "µÃﬂºÆ≈ŸÃﬁ€Ø∏Ω∑ØÃﬂ",IDC_STATIC,7,105,86,92
 END
 
 IDD_MAKENCD_EX3 DIALOGEX 0, 0, 299, 234
@@ -1939,8 +1950,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,6,6,1
- PRODUCTVERSION 3,6,6,1
+ FILEVERSION 3,7,0,0
+ PRODUCTVERSION 3,7,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -1958,15 +1969,15 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.6.6.1"
+            VALUE "FileVersion", "3.7.0.0"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2018 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "PrivateBuild", "Debug tool for MagaDebug32"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.6.6.1"
-            VALUE "SpecialBuild", "Boost C++ 1.67, GLEW 2.00"
+            VALUE "ProductVersion", "3.7.0.0"
+            VALUE "SpecialBuild", "Boost C++ 1.67, GLEW 2.00, Kodatuno R3.2kai"
         END
     END
     BLOCK "VarFileInfo"

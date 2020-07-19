@@ -10,16 +10,19 @@ enum	ENORDERTYPE {
 	NC_NUM = 0, NC_DBL, NC_FLG, NC_STR,
 		NC_MAXOD	// 4
 };
-typedef	struct	tagSAVEORDER {
+struct	SAVEORDER
+{
 	ENORDERTYPE		enType;
 	int				nID;
 	LPCTSTR			lpszComment;
-} SAVEORDER, *LPSAVEORDER;
+};
+typedef	SAVEORDER*	LPSAVEORDER;
 // µÃﬂºÆ›ìùçáä«óù
-typedef	struct	tagNCMAKEOPTION {
+struct	NCMAKEOPTION
+{
 	int				nOrderCnt;
 	LPCTSTR*		pszOrder;
-} NCMAKEOPTION, *LPNCMAKEOPTION;
+};
 
 //////////////////////////////////////////////////////////////////////
 

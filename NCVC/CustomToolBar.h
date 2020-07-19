@@ -5,7 +5,8 @@
 #pragma once
 
 // ﾂｰﾙﾊﾞｰﾘｿｰｽの構造
-struct CToolBarItem {
+struct CToolBarItem
+{
 	WORD wVersion;		// ﾊﾞｰｼﾞｮﾝ (=1)
 	WORD wWidth;		// 幅
 	WORD wHeight;		// 高さ
@@ -16,18 +17,22 @@ struct CToolBarItem {
 };
 
 //	ﾃﾞﾌｫﾙﾄﾂｰﾙﾊﾞｰ定義情報
-typedef	struct	tagCUSTTBBUTTON {
+struct CUSTTBBUTTON
+{
     int		idCommand;	// ﾎﾞﾀﾝが押されたときに送られるｺﾏﾝﾄﾞID(UINT?)
     BYTE	fsState;	// ﾎﾞﾀﾝの状態
     BYTE	fsStyle;	// ﾎﾞﾀﾝｽﾀｲﾙ
 	BOOL	bDisplay;	// 表示ﾌﾗｸﾞ
-} CUSTTBBUTTON, *LPCUSTTBBUTTON;
+};
+typedef	CUSTTBBUTTON*	LPCUSTTBBUTTON;
 
 //	ｶｽﾀﾑﾎﾞﾀﾝ情報
-typedef	struct	tagCUSTTBINFO {
+struct	CUSTTBINFO
+{
 	TBBUTTON	tb;
 	CString		strInfo;
-} CUSTTBINFO, *LPCUSTTBINFO;
+};
+typedef	CUSTTBINFO*		LPCUSTTBINFO;
 
 //////////////////////////////////////////////////////////////////////
 // CCustomToolBar クラスのインターフェイス

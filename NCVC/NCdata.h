@@ -15,32 +15,32 @@
 // 内部情報を double -> float へ変更したことに伴い
 // NCVCdefine.h で定義された構造体を再定義
 struct	_NCDATA {
-	UINT		nErrorCode;			/* NCﾃﾞｰﾀのｴﾗｰｺｰﾄﾞ */
-	int			nLine;				/* 行番号 */
-	int			nGtype;				/* GSMOF */
-	int			nGcode;				/* ｺｰﾄﾞに続く値 */
-	ENPLANE		enPlane;			/* 平面 */
-	DWORD		dwValFlags;			/* dValue で指定されている値 */
-	float		dValue[VALUESIZE];	/* X,Y,Z,U,V,W,I,J,K,R,P,L,D,H */
-	float		dLength;			/* 移動・切削長 */
+	UINT		nErrorCode;			// NCﾃﾞｰﾀのｴﾗｰｺｰﾄﾞ
+	int			nLine;				// 行番号
+	int			nGtype;				// GSMOF
+	int			nGcode;				// ｺｰﾄﾞに続く値
+	ENPLANE		enPlane;			// 平面
+	DWORD		dwValFlags;			// dValue で指定されている値
+	float		dValue[VALUESIZE];	// X,Y,Z,U,V,W,I,J,K,R,P,L,D,H
+	float		dLength;			// 移動・切削長
 };
 struct	_G68ROUND {
-	ENPLANE		enPlane;		/* 処理中の平面 */
-	float		dRound;			/* 回転角度(rad) */
-	float		dOrg[NCXYZ];	/* 回転中心座標 */
+	ENPLANE		enPlane;		// 処理中の平面
+	float		dRound;			// 回転角度(rad)
+	float		dOrg[NCXYZ];	// 回転中心座標
 	_G68ROUND(const _G68ROUND*);
 	_G68ROUND(const G68ROUND&);
 };
 struct	_TAPER {
-	int		nTaper;		/* 1:G51, -1:G52 */
-	float	dTaper;		/* ﾃｰﾊﾟ角度(rad) */
-	int		nDiff;		/* 上下独立ｺｰﾅｰ 0:G60, 1:G61, 2:G62, 3:G63 */
-	BOOL	bTonly;		/* Tｺｰﾄﾞ単独指示 */
+	int		nTaper;		// 1:G51, -1:G52
+	float	dTaper;		// ﾃｰﾊﾟ角度(rad)
+	int		nDiff;		// 上下独立ｺｰﾅｰ 0:G60, 1:G61, 2:G62, 3:G63
+	BOOL	bTonly;		// Tｺｰﾄﾞ単独指示
 	_TAPER(const _TAPER*);
 	_TAPER(const TAPER&);
 };
-#define	_LPG68ROUND		_G68ROUND*
-#define	_LPTAPER		_TAPER*
+typedef	_G68ROUND*	_LPG68ROUND;
+typedef	_TAPER*		_LPTAPER;
 
 // NCﾃﾞｰﾀ状態ﾌﾗｸﾞ
 #define	NCFLG_ENDMILL	0x0003	// 00:Square, 01:Ball, 10:Chamfering
@@ -67,12 +67,13 @@ typedef	std::vector<GLfloat>	CVfloat;
 //typedef	std::vector<GLdouble>	CVdouble;
 
 // ｴﾝﾄﾞﾐﾙ底面描画用
-typedef	struct tagBOTTOMDRAW {
+struct BOTTOMDRAW
+{
 	GLenum		mode;
 	CVfloat		vpt;
 	CVelement	vel;
 	GLuint		rs, re;
-} BOTTOMDRAW, *LPBOTTOMDRAW;
+};
 typedef	std::vector<BOTTOMDRAW>	CVBtmDraw;
 
 // ﾜｲﾔ放電加工機描画用
@@ -203,7 +204,7 @@ public:
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
 	virtual	void	DrawGLMillWire(void) const;
 	virtual	void	DrawGLLatheFace(void) const;
-	virtual	BOOL	CreateGLBottomFace(CVBtmDraw&, BOOL) const;
+	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
 	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
 	//
@@ -240,7 +241,6 @@ public:
 };
 
 typedef void (CNCdata::*PFNNCDRAWPROC)(CDC*, BOOL) const;
-//typedef void (CNCdata::*PFNGLDRAWPROC)(void) const;
 
 /////////////////////////////////////////////////////////////////////////////
 // G0,G1 直線補間ｸﾗｽ
@@ -275,7 +275,7 @@ public:
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
 	virtual	void	DrawGLMillWire(void) const;
 	virtual	void	DrawGLLatheFace(void) const;
-	virtual	BOOL	CreateGLBottomFace(CVBtmDraw&, BOOL) const;
+	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
 	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
 	//
@@ -354,7 +354,7 @@ public:
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
 	virtual	void	DrawGLMillWire(void) const;
 	virtual	void	DrawGLLatheFace(void) const;
-	virtual	BOOL	CreateGLBottomFace(CVBtmDraw&, BOOL) const;
+	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
 	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
 
@@ -437,7 +437,7 @@ public:
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
 	virtual	void	DrawGLMillWire(void) const;
 	virtual	void	DrawGLLatheFace(void) const;
-	virtual	BOOL	CreateGLBottomFace(CVBtmDraw&, BOOL) const;
+	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
 	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
 	//

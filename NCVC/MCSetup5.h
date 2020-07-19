@@ -17,7 +17,8 @@ public:
 	enum { IDD = IDD_MC_SETUP5 };
 	int			m_nForceViewMode;
 	CFloatEdit	m_dDefWireDepth;
-	BOOL		m_bL0Cycle;
+	BOOL		m_bOBS[10],
+				m_bL0Cycle;
 	CString		m_strAutoBreak;
 	CStatic		m_ctDepthLabel1,
 				m_ctDepthLabel2;

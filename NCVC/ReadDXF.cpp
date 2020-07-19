@@ -209,7 +209,7 @@ static inline void _ArbitraryAxis(CPointF& pt)	// ”CˆÓ‚ÌŽ²‚Ì±ÙºÞØ½ÞÑ
 	pt = ptResult;
 }
 
-static inline BOOL _SetDxfArgv(LPCDXFPARGV lpPoint)
+static inline BOOL _SetDxfArgv(LPDXFPARGV lpPoint)
 {
 #ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -234,7 +234,7 @@ static inline BOOL _SetDxfArgv(LPCDXFPARGV lpPoint)
 	}
 }
 
-static inline BOOL _SetDxfArgv(LPCDXFLARGV lpLine)
+static inline BOOL _SetDxfArgv(LPDXFLARGV lpLine)
 {
 #ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -265,7 +265,7 @@ static inline BOOL _SetDxfArgv(LPCDXFLARGV lpLine)
 	}
 }
 
-static inline BOOL _SetDxfArgv(LPCDXFCARGV lpCircle)
+static inline BOOL _SetDxfArgv(LPDXFCARGV lpCircle)
 {
 #ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -292,7 +292,7 @@ static inline BOOL _SetDxfArgv(LPCDXFCARGV lpCircle)
 	}
 }
 
-static inline BOOL _SetDxfArgv(LPCDXFAARGV lpArc)
+static inline BOOL _SetDxfArgv(LPDXFAARGV lpArc)
 {
 #ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -321,7 +321,7 @@ static inline BOOL _SetDxfArgv(LPCDXFAARGV lpArc)
 	}
 }
 
-static inline BOOL _SetDxfArgv(LPCDXFEARGV lpEllipse)
+static inline BOOL _SetDxfArgv(LPDXFEARGV lpEllipse)
 {
 #ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -358,7 +358,7 @@ static inline BOOL _SetDxfArgv(LPCDXFEARGV lpEllipse)
 	}
 }
 
-static inline BOOL _SetDxfArgv(LPCDXFTARGV lpText)
+static inline BOOL _SetDxfArgv(LPDXFTARGV lpText)
 {
 #ifdef _DEBUG_ARGV
 	CMagaDbg	dbg("SetDxfArgv()", DBG_MAGENTA);
@@ -385,7 +385,7 @@ static inline BOOL _SetDxfArgv(LPCDXFTARGV lpText)
 	}
 }
 
-static inline BOOL _SetBlockArgv(LPCDXFBLOCK lpBlock)
+static inline BOOL _SetBlockArgv(LPDXFBLOCK lpBlock)
 {
 	if ( g_dwValueFlg & VALFLG_POINT ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);

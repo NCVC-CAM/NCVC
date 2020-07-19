@@ -30,7 +30,17 @@ enum {		// floatå^
 #define	WORKOFFSET		6	// G54Å`G59
 const	size_t	MC_DBL_NUMS = MC_DBL_AAA+WORKOFFSET*NCXYZ;	// 24
 enum {		// BOOLå^
-	MC_FLG_L0CYCLE = 0,
+	MC_FLG_OBS0 = 0,	// µÃﬂºÆ≈ŸÃﬁ€Ø∏Ω∑ØÃﬂ
+	MC_FLG_OBS1,
+	MC_FLG_OBS2,
+	MC_FLG_OBS3,
+	MC_FLG_OBS4,
+	MC_FLG_OBS5,
+	MC_FLG_OBS6,
+	MC_FLG_OBS7,
+	MC_FLG_OBS8,
+	MC_FLG_OBS9,
+	MC_FLG_L0CYCLE,		// å≈íËª≤∏ŸÇÃL0éwíË
 		MC_FLG_NUMS
 };
 enum {		// œ∏€ä÷òA(CStringå^)
@@ -134,7 +144,8 @@ friend	class	CMCSetup5;
 	// BOOLå^µÃﬂºÆ›
 	union {
 		struct {
-			BOOL	m_bL0Cycle;		// å≈íËª≤∏ŸíÜÇÃL0ìÆçÏ
+			BOOL	m_bOBS[10],		// µÃﬂºÆ≈ŸÃﬁ€Ø∏Ω∑ØÃﬂ
+					m_bL0Cycle;		// å≈íËª≤∏ŸíÜÇÃL0ìÆçÏ
 		};
 		BOOL		m_ubFlgs[MC_FLG_NUMS];
 	};

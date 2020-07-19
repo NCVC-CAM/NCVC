@@ -485,6 +485,13 @@ public:
 		if ( bottom < rc.bottom )	bottom = rc.bottom;
 		return *this;
 	}
+	CRectT<T>&	operator |= (const CPointT<T>& pt) {
+		if ( left   > pt.x )		left = pt.x;
+		if ( top    > pt.y )		top = pt.y;
+		if ( right  < pt.x )		right = pt.x;
+		if ( bottom < pt.y )		bottom = pt.y;
+		return *this;
+	}
 	T&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(rect));
 		return rect[a];
@@ -599,6 +606,12 @@ public:
 		CRectT<T>::operator |= (rc);
 		if ( low  > rc.low )	low = rc.low;
 		if ( high < rc.high )	high = rc.high;
+		return *this;
+	}
+	CRect3T<T>& operator |= (const CPoint3T<T>& pt) {
+		CRectT<T>::operator |= (pt);
+		if ( low  > pt.z )		low = pt.z;
+		if ( high < pt.z )		high = pt.z;
 		return *this;
 	}
 	// ‘ã“üŠÖ”

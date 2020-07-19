@@ -292,7 +292,7 @@ inline void CDXFcircle::GetQuarterPoint(const CPointF& ptClick, CPointF pt[]) co
 }
 
 inline void CDXFcircle::SetEllipseArgv_Circle
-	(LPCDXFBLOCK lpBlock, LPCDXFEARGV lpArgv, float sq, float eq, BOOL bRound)
+	(LPCDXFBLOCK lpBlock, LPDXFEARGV lpArgv, float sq, float eq, BOOL bRound)
 {
 	lpArgv->pLayer = GetParentLayer();
 	// íÜêSç¿ïW
@@ -381,7 +381,7 @@ inline const CPointF CDXFcircle::GetMakeCenter(void) const
 	return m_ctTun;
 }
 
-inline void CDXFcircle::SetEllipseArgv(LPCDXFBLOCK lpBlock, LPCDXFEARGV lpArgv)
+inline void CDXFcircle::SetEllipseArgv(LPCDXFBLOCK lpBlock, LPDXFEARGV lpArgv)
 {
 	SetEllipseArgv_Circle(lpBlock, lpArgv, 0.0f, PI2, TRUE);
 }
@@ -540,7 +540,7 @@ inline float CDXFarc::GetEndAngle(void) const
 	return m_eq;
 }
 
-inline void CDXFarc::SetEllipseArgv(LPCDXFBLOCK lpBlock, LPCDXFEARGV lpArgv)
+inline void CDXFarc::SetEllipseArgv(LPCDXFBLOCK lpBlock, LPDXFEARGV lpArgv)
 {
 	SetEllipseArgv_Circle(lpBlock, lpArgv, m_sqDraw, m_eqDraw, m_bRoundOrig);
 }

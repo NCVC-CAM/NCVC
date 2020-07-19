@@ -8,7 +8,7 @@
 #include "NCdata.h"
 #include "DXFMakeOption.h"
 #include "MCOption.h"
-//#include "../Kodatuno/BODY.h"
+#include "../Kodatuno/BODY.h"
 
 enum NCCOMMENT {		// g_szNCcomment[]
 	ENDMILL = 0, DRILL, TAP, REAMER, 
@@ -49,8 +49,8 @@ class CNCDoc : public CDocBase
 				m_dCutTime;		// 切削時間
 	CRect3F		m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
 				m_rcWorkCo;		// ｺﾒﾝﾄ指示
-//	BODY*		m_kBody;		// Kodatuno Body
-//	BODYList*	m_kbList;		// Kodatuno Body List
+	BODY*		m_kBody;		// Kodatuno Body
+	BODYList*	m_kbList;		// Kodatuno Body List
 	//
 	void	SetMaxRect(const CNCdata* pData) {
 		// 最大ｵﾌﾞｼﾞｪｸﾄ矩形ﾃﾞｰﾀｾｯﾄ
@@ -73,6 +73,7 @@ class CNCDoc : public CDocBase
 	BOOL	SerializeAfterCheck(void);
 	BOOL	ValidBlockCheck(void);
 	BOOL	ValidDataCheck(void);
+	void	CalcWorkFileRect(void);
 
 	void	ClearBlockData(void);
 	void	DeleteMacroFile(void);
@@ -151,9 +152,9 @@ public:
 	CRect3F	GetWorkRectOrg(void) const {
 		return m_rcWorkCo;
 	}
-//	BODYList*	GetKodatunoBodyList(void) const {
-//		return m_kbList;
-//	}
+	BODYList*	GetKodatunoBodyList(void) const {
+		return m_kbList;
+	}
 
 // オペレーション
 public:
@@ -204,8 +205,8 @@ public:
 		m_bDocFlg.set(NCDOC_COMMENTWORK_Z);
 	}
 	void	SetLatheViewMode(void);
-//	BOOL	ReadWorkFile(LPCTSTR);
-//	void	SetWorkFileOffset(const Coord&);
+	BOOL	ReadWorkFile(LPCTSTR);
+	void	SetWorkFileOffset(const Coord&);
 
 	// from NCWorkDlg.cpp
 	void	SetWorkRect(BOOL, const CRect3F&);

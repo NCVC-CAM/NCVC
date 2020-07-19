@@ -15,12 +15,14 @@ UINT AutoWorkingSet_Thread(LPVOID);
 
 class CThreadDlg;
 // ½Ú¯ÄŞ‚Ö‚Ìˆø”
-typedef struct tagNCVCTHREADPARAM {
+struct NCVCTHREADPARAM
+{
 	CThreadDlg*	pParent;
 	CDocument*	pDoc;
 	WPARAM		wParam;		// Še½Ú¯ÄŞ“Æ©î•ñ
 	LPARAM		lParam;
-} NCVCTHREADPARAM, *LPNCVCTHREADPARAM;
+};
+typedef	NCVCTHREADPARAM*	LPNCVCTHREADPARAM;
 
 // Ì§²Ùo—Íw¦
 #define		TH_HEADER		0x0001

@@ -9,9 +9,13 @@
 // TrackingMode
 enum ENTRACKINGMODE
 {
-	TM_NONE = 0,
-	TM_SPIN,
-	TM_PAN
+	TM_NONE, TM_SPIN, TM_PAN
+};
+
+// GetClipDepthMill() argument
+enum ENCLIPDEPTH
+{
+	DP_NoStencil, DP_BottomStencil, DP_TopStencil
 };
 
 //
@@ -40,6 +44,7 @@ class CNCViewGL : public CView
 	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
 	GLfloat*	m_pfXYZ;		// -- 変換されたﾜｰﾙﾄﾞ座標(temp area)
 	GLfloat*	m_pfNOR;		// -- 法線ﾍﾞｸﾄﾙ
+	GLbyte*		m_pbStencil;	// ｽﾃﾝｼﾙ
 	GLsizeiptr	m_nVBOsize;		// 頂点配列ｻｲｽﾞ
 	GLuint		m_nVertexID[2],	// 頂点配列と法線ﾍﾞｸﾄﾙ用
 				m_nTextureID,	// ﾃｸｽﾁｬ座標用
@@ -59,9 +64,15 @@ class CNCViewGL : public CView
 	void	UpdateViewOption(void);
 	void	CreateDisplayList(void);
 	BOOL	CreateBoxel(BOOL = FALSE);
+	BOOL	CreateBoxel_fromIGES(void);
 	BOOL	CreateLathe(BOOL = FALSE);
 	BOOL	CreateWire(void);
-	BOOL	GetClipDepthMill(BOOL);
+	BOOL	CreateBottomFaceThread(BOOL, int);
+	BOOL	GetClipDepthMill(BOOL, ENCLIPDEPTH = DP_NoStencil);
+	void	GetClipDepthMill_All(GLdouble, GLdouble, GLdouble, size_t, size_t);
+	void	GetClipDepthMill_Zonly(GLdouble, GLdouble, GLdouble, size_t, size_t);
+	void	GetClipDepthMill_BottomStencil(GLdouble, GLdouble, GLdouble, size_t, size_t);
+	void	GetClipDepthMill_TopStencil(GLdouble, GLdouble, GLdouble, size_t, size_t);
 	BOOL	GetClipDepthCylinder(BOOL);
 	BOOL	GetClipDepthLathe(BOOL);
 	BOOL	CreateVBOMill(void);
@@ -143,6 +154,8 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 };
+
+typedef void (CNCViewGL::*PFN_GETCLIPDEPTHMILL)(GLdouble, GLdouble, GLdouble, size_t, size_t);
 
 /////////////////////////////////////////////////////////////////////////////
 

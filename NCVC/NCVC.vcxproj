@@ -166,7 +166,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>MagaDbg.lib;opengl32.lib;freeglut.lib;glew32s.lib;glu32.lib;gdiplus.lib;version.lib;winmm.lib;legacy_stdio_definitions.lib</AdditionalDependencies>
+      <AdditionalDependencies>MagaDbg.lib;..\debug\Kodatuno.lib;opengl32.lib;freeglut.lib;glew32s.lib;glu32.lib;gdiplus.lib;version.lib;winmm.lib;legacy_stdio_definitions.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
@@ -247,7 +247,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>version.lib;opengl32.lib;freeglut.lib;glew32s.lib;glu32.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\release\Kodatuno.lib;version.lib;opengl32.lib;freeglut.lib;glew32s.lib;glu32.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
@@ -377,7 +377,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>version.lib;OpenGL32.Lib;freeglut.lib;glew32s.lib;glu32.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\release64\kodatuno.lib;version.lib;OpenGL32.Lib;freeglut.lib;glew32s.lib;glu32.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>

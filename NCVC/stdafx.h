@@ -79,6 +79,7 @@
 #include "boost/range/algorithm/find_if.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/minmax.hpp"
+#include "boost/algorithm/string.hpp"
 
 #define	NCVCSERIALVERSION_1503	1503	// v1.00RC`
 #define	NCVCSERIALVERSION_1505	1505	// v1.10`
@@ -153,7 +154,7 @@ inline	BOOL	NC_IsNullLine(const CString& str)	// EOF “™‚Ìs
 {
 	return ( str.IsEmpty() || str[0]=='#' || str[0]=='\x1a' );
 }
-
+/*	-- boost::algorithm::trim()
 //‘OŒã‚Ì‹ó”’•¶š‚ğíœ
 inline std::string Trim(const std::string &str)
 {
@@ -168,7 +169,7 @@ inline std::string Trim(LPCTSTR str)
 {
 	return Trim(std::string(str));
 }
-
+*/
 // —”
 int		GetRandom(int min, int max);
 

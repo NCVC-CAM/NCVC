@@ -8,6 +8,7 @@
 #include "NCMakeMillOpt.h"
 #include "NCMakeLatheOpt.h"
 
+using std::string;
 using namespace boost;
 
 #include "MagaDbgMac.h"
@@ -94,7 +95,7 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 	m_strInitFile = lpszInitFile;
 
 	tokenizer::iterator it;
-	std::string	str, strOrder, strResult;
+	string		str, strOrder, strResult;
 	tokenizer	tok(str, sep);
 
 	CString	strTmp, strBuf;
@@ -122,8 +123,8 @@ BOOL CNCMakeOption::ReadMakeOption(LPCTSTR lpszInitFile)
 #endif
 			// –½—ß‚Æ’l‚É•ªŠ„
 			it = tok.begin();
-			strOrder  = ::Trim(*it);	++it;
-			strResult = ::Trim(*it);
+			strOrder  = boost::algorithm::trim_copy(*it);	++it;
+			strResult = boost::algorithm::trim_copy(*it);
 			if ( strOrder.empty() )
 				continue;
 #ifdef _DEBUGOLD

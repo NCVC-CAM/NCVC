@@ -24,8 +24,10 @@ CMCSetup5::CMCSetup5() : CPropertyPage(CMCSetup5::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 	m_nForceViewMode	= pMCopt->m_nForceViewMode;
-	m_bL0Cycle			= pMCopt->m_bL0Cycle;
 	m_strAutoBreak		= pMCopt->m_strAutoBreak;
+	m_bL0Cycle			= pMCopt->m_bL0Cycle;
+	for ( int i=0; i<SIZEOF(m_bOBS); i++ )
+		m_bOBS[i] = pMCopt->m_bOBS[i];
 }
 
 void CMCSetup5::DoDataExchange(CDataExchange* pDX)
@@ -33,10 +35,20 @@ void CMCSetup5::DoDataExchange(CDataExchange* pDX)
 	__super::DoDataExchange(pDX);
 	DDX_CBIndex(pDX, IDC_MCST5_VIEWMODE, m_nForceViewMode);
 	DDX_Control(pDX, IDC_MCST5_WIREDEPTH, m_dDefWireDepth);
-	DDX_Check(pDX, IDC_MCST5_L0CYCLE, m_bL0Cycle);
-	DDX_Text(pDX, IDC_MCST5_AUTOBREAK, m_strAutoBreak);
 	DDX_Control(pDX, IDC_MCST5_LABEL1, m_ctDepthLabel1);
 	DDX_Control(pDX, IDC_MCST5_LABEL2, m_ctDepthLabel2);
+	DDX_Text(pDX, IDC_MCST5_AUTOBREAK, m_strAutoBreak);
+	DDX_Check(pDX, IDC_MCST5_L0CYCLE, m_bL0Cycle);
+	DDX_Check(pDX, IDC_MCST5_OBS0, m_bOBS[0]);
+	DDX_Check(pDX, IDC_MCST5_OBS1, m_bOBS[1]);
+	DDX_Check(pDX, IDC_MCST5_OBS2, m_bOBS[2]);
+	DDX_Check(pDX, IDC_MCST5_OBS3, m_bOBS[3]);
+	DDX_Check(pDX, IDC_MCST5_OBS4, m_bOBS[4]);
+	DDX_Check(pDX, IDC_MCST5_OBS5, m_bOBS[5]);
+	DDX_Check(pDX, IDC_MCST5_OBS6, m_bOBS[6]);
+	DDX_Check(pDX, IDC_MCST5_OBS7, m_bOBS[7]);
+	DDX_Check(pDX, IDC_MCST5_OBS8, m_bOBS[8]);
+	DDX_Check(pDX, IDC_MCST5_OBS9, m_bOBS[9]);
 }
 
 void CMCSetup5::EnableControl_ViewMode(void)
@@ -84,13 +96,19 @@ BOOL CMCSetup5::OnApply()
 		pMCopt->m_dDefWireDepth = m_dDefWireDepth;
 		pParent->m_bReload = TRUE;
 	}
+	if ( pMCopt->m_strAutoBreak != m_strAutoBreak ) {
+		pMCopt->m_strAutoBreak = m_strAutoBreak;
+		pParent->m_bReload = TRUE;
+	}
 	if ( pMCopt->m_bL0Cycle != m_bL0Cycle ) {
 		pMCopt->m_bL0Cycle = m_bL0Cycle;
 		pParent->m_bReload = TRUE;
 	}
-	if ( pMCopt->m_strAutoBreak != m_strAutoBreak ) {
-		pMCopt->m_strAutoBreak = m_strAutoBreak;
-		pParent->m_bReload = TRUE;
+	for ( int i=0; i<SIZEOF(m_bOBS); i++ ) {
+		if ( pMCopt->m_bOBS[i] != m_bOBS[i] ) {
+			pMCopt->m_bOBS[i] = m_bOBS[i];
+			pParent->m_bReload = TRUE;
+		}
 	}
 
 	return TRUE;

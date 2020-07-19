@@ -43,7 +43,8 @@ enum {
 };
 
 // Œ‹‡‚Ì‚½‚ß‚Ìî•ñ
-struct CADBINDINFO {
+struct CADBINDINFO
+{
 	BOOL		bTarget;
 	CDXFDoc*	pDoc;
 	CDXFView*	pView;

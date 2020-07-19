@@ -96,12 +96,13 @@ static	const	UINT	MAINMENUCOUNT = 4;
 static	const	UINT	DOCMENUCOUNT = 6;
 
 // б╟ыйч╟ID▒╪
-typedef	struct	tagNCVCTOOLINFO {
+struct	NCVCTOOLINFO
+{
 	int		nID;		// ToolBar ID
 	int		nBitmap;	// Bitmap ID
 	LPCTSTR	pszTitle;	// ю╡ды
 	LPCUSTTBBUTTON	lpCustTb;	// цчл╚ыдб╟ыйч╟▐С▒т
-} NCVCTOOLINFO;
+};
 static	NCVCTOOLINFO	g_tbInfo[] = {
 	{AFX_IDW_TOOLBAR,	IDR_MAINFRAME,		"Main",		tbMainButtons},
 	{IDR_TRACEBAR,		IDR_TRACEBAR,		"Trace",	tbTraceButtons},

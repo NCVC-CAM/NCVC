@@ -457,6 +457,16 @@
 #define IDC_MCST5_WIREDEPTH             3703
 #define IDC_MCST5_LABEL1                3704
 #define IDC_MCST5_LABEL2                3705
+#define IDC_MCST5_OBS0                  3710
+#define IDC_MCST5_OBS1                  3711
+#define IDC_MCST5_OBS2                  3712
+#define IDC_MCST5_OBS3                  3713
+#define IDC_MCST5_OBS4                  3714
+#define IDC_MCST5_OBS5                  3715
+#define IDC_MCST5_OBS6                  3716
+#define IDC_MCST5_OBS7                  3717
+#define IDC_MCST5_OBS8                  3718
+#define IDC_MCST5_OBS9                  3719
 #define IDD_MKNC_SETUP1                 4000
 #define IDC_MKNC1_SPINDLE               4001
 #define IDC_MKNC1_FEED                  4002
@@ -856,7 +866,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        191
 #define _APS_NEXT_COMMAND_VALUE         32822
-#define _APS_NEXT_CONTROL_VALUE         1057
+#define _APS_NEXT_CONTROL_VALUE         1058
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -12,10 +12,11 @@
 extern	CMagaDbg	g_dbg;
 #endif
 
-typedef	struct tagTOOLHEADER {
+struct TOOLHEADER
+{
 	LPCTSTR		lpszName;
 	int			nFormat;
-} TOOLHEADER;
+};
 static	TOOLHEADER	g_ToolHeader[] = {
 	{"Çs", LVCFMT_CENTER},
 	{"ñºÅ@èÃ", LVCFMT_LEFT},

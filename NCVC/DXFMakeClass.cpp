@@ -34,10 +34,10 @@ extern	LPCTSTR	gg_szReturn;	// "\n"
 extern	const	PENSTYLE	g_penStyle[];
 
 // よく使う変数や呼び出しの簡略置換
-#define	GetFlg		ms_pMakeOpt->GetFlag
-#define	GetNum		ms_pMakeOpt->GetNum
-#define	GetDbl		ms_pMakeOpt->GetDbl
-#define	GetStr		ms_pMakeOpt->GetStr
+#define	GetFlg(a)		ms_pMakeOpt->GetFlag(a)
+#define	GetNum(a)		ms_pMakeOpt->GetNum(a)
+#define	GetDbl(a)		ms_pMakeOpt->GetDbl(a)
+#define	GetStr(a)		ms_pMakeOpt->GetStr(a)
 
 //////////////////////////////
 // 静的変数の初期化

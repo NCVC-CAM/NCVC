@@ -55,23 +55,28 @@ enum NCDOCFLG {
 // UAV_DXFADDSHAPE 引数
 class	CLayerData;
 class	CDXFshape;
-typedef	struct	tagDXFADDSHAPE {
+struct DXFADDSHAPE
+{
 	CLayerData*	pLayer;
 	CDXFshape*	pShape;
-} DXFADDSHAPE, *LPDXFADDSHAPE;
+};
+typedef	DXFADDSHAPE*	LPDXFADDSHAPE;
 
 // 現在の表示状況
-typedef	struct	tagDXFVIEWINFO {
+struct DXFVIEWINFO
+{
 	CPoint		ptOrg;		// 論理座標原点
 	float		dFactor;	// 拡大率
-} DXFVIEWINFO, *LPDXFVIEWINFO;
+};
 
 // ﾌｧｲﾙ変更通知の監視ｽﾚｯﾄﾞ
-typedef	struct	tagFNCNGTHREADPARAM {
+struct FNCNGTHREADPARAM
+{
 	LPCTSTR		lpstrFileName;	// ﾌﾙﾊﾟｽﾌｧｲﾙ名
 	HWND		hWndFrame;		// 変更通知の送信先
 	HANDLE		hFinish;		// 終了通知ｲﾍﾞﾝﾄﾊﾝﾄﾞﾙ
-} FNCNGTHREADPARAM, *LPFNCNGTHREADPARAM;
+};
+typedef	FNCNGTHREADPARAM*	LPFNCNGTHREADPARAM;
 
 //	ﾌｧｲﾙ変更通知の監視ｽﾚｯﾄﾞ
 UINT	FileChangeNotificationThread(LPVOID pParam);

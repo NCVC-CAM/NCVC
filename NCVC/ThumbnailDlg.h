@@ -7,11 +7,13 @@
 #include <afxshelltreeCtrl.h>
 
 class CNCDoc;
-typedef	struct tagTHUMBNAILINFO {
+struct THUMBNAILINFO
+{
 	CFileStatus	fStatus;
 	CNCDoc*		pDoc;
 	CView*		pView;	// CNCView, CNCViewXY, CNCViewXZ, CNCViewYZ
-} THUMBNAILINFO, *LPTHUMBNAILINFO;
+};
+typedef	THUMBNAILINFO*	LPTHUMBNAILINFO;
 
 class CThumbnailStatic : public CStatic
 {

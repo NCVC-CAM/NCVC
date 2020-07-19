@@ -29,62 +29,69 @@ class	CDXFshape;
 
 // ｵﾌﾞｼﾞｪｸﾄ生成時の引数
 // 各 pLayer は，DataOperation()で strLayer から CLayerDataｵﾌﾞｼﾞｪｸﾄを登録する
-typedef	struct	tagDXF_POINT {
+struct	DXFBASE
+{
 	CLayerData*	pLayer;
-	CPointF		c;			// 穴あけ位置
-} DXFPARGV, *LPDXFPARGV;
-#define	LPCDXFPARGV		const LPDXFPARGV
+};
+struct	DXFPARGV : public DXFBASE
+{
+	CPointF		c;			// 穴あけ位置or中心
+};
+typedef	DXFPARGV*		LPDXFPARGV;
+typedef	const DXFPARGV*	LPCDXFPARGV;	
 
-typedef	struct	tagDXF_LINE {
-	CLayerData*	pLayer;
+struct	DXFLARGV : public DXFBASE
+{
 	CPointF		s, e;		// 開始・終了点
-} DXFLARGV, *LPDXFLARGV;
-#define	LPCDXFLARGV		const LPDXFLARGV
+};
+typedef	DXFLARGV*		LPDXFLARGV;
+typedef	const DXFLARGV*	LPCDXFLARGV;
 
-typedef	struct	tagDXF_CIRCLE {
-	CLayerData*	pLayer;
-	CPointF		c;			// 中心
+struct	DXFCARGV : public DXFPARGV
+{
 	float		r;			// 半径
-} DXFCARGV, *LPDXFCARGV;
-#define	LPCDXFCARGV		const LPDXFCARGV
+};
+typedef	DXFCARGV*		LPDXFCARGV;
+typedef	const DXFCARGV*	LPCDXFCARGV;
 
-typedef	struct	tagDXF_ARC {
-	CLayerData*	pLayer;
-	CPointF		c;			// 中心
-	float		r;			// 半径
+struct	DXFAARGV : public DXFCARGV
+{
 	float		sq, eq;		// 始点・終点角度
-} DXFAARGV, *LPDXFAARGV;
-#define	LPCDXFAARGV		const LPDXFAARGV
+};
+typedef	DXFAARGV*		LPDXFAARGV;
+typedef	const DXFAARGV*	LPCDXFAARGV;
 
-typedef	struct	tagDXF_ELLIPSE {
-	CLayerData*	pLayer;
-	CPointF		c;			// 中心
+struct	DXFEARGV : public DXFPARGV
+{
 	CPointF		l;			// 長軸(中心からの相対)
 	float		s;			// 短軸(倍率)
 	float		sq, eq;		// 始点・終点角度
 	BOOL		bRound;		// Default==TRUE(反時計回り)
-} DXFEARGV, *LPDXFEARGV;
-#define	LPCDXFEARGV		const LPDXFEARGV
+};
+typedef	DXFEARGV*		LPDXFEARGV;
+typedef	const DXFEARGV*	LPCDXFEARGV;
 
-typedef	struct	tagDXF_TEXT {
-	CLayerData*	pLayer;
-	CPointF		c;			// 文字位置
+struct	DXFTARGV : public DXFPARGV
+{
 	CString		strValue;	// 文字列
-} DXFTARGV, *LPDXFTARGV;
-#define	LPCDXFTARGV		const LPDXFTARGV
+};
+typedef	DXFTARGV*		LPDXFTARGV;
+typedef	const DXFTARGV*	LPCDXFTARGV;
 
 // ﾌﾞﾛｯｸの付加情報
 #define	DXFBLFLG_X		0x0001
 #define	DXFBLFLG_Y		0x0002
 #define	DXFBLFLG_Z		0x0004
 #define	DXFBLFLG_R		0x0008
-typedef	struct	tagDXF_BLOCK {
+struct	DXFBLOCK
+{
 	DWORD		dwBlockFlg;
 	CPointF		ptOrg;			// 挿入ｵﾌｾｯﾄ
 	float		dMagni[NCXYZ];	// 各軸の倍率
 	float		dRound;			// 回転角度(度)
-} DXFBLOCK, *LPDXFBLOCK;
-#define	LPCDXFBLOCK		const LPDXFBLOCK
+};
+typedef	DXFBLOCK*		LPDXFBLOCK;
+typedef	const DXFBLOCK*	LPCDXFBLOCK;
 
 // CDXFpoint用動的関数呼び出し
 class	CDXFpoint;
@@ -344,7 +351,7 @@ protected:
 	void	GetQuarterPoint(const CPointF&, CPointF[]) const;
 
 	// 円，円弧，共通処理
-	void	SetEllipseArgv_Circle(LPCDXFBLOCK, LPCDXFEARGV, float, float, BOOL);
+	void	SetEllipseArgv_Circle(LPCDXFBLOCK, LPDXFEARGV, float, float, BOOL);
 	float	GetSelectPointGap_Circle(const CPointF&, float, float) const;
 	BOOL	GetDirectionArraw_Circle(const float[], const CPointF[], CPointF[][3]);
 	size_t	SetVectorPointSub(BOOL, float, float, float, const CPointF&, CVPointF&) const;
@@ -360,7 +367,7 @@ public:
 #endif
 
 	// ﾌﾞﾛｯｸｺﾋﾟｰ時の尺度で円が楕円になる
-	void	SetEllipseArgv(LPCDXFBLOCK, LPCDXFEARGV);
+	void	SetEllipseArgv(LPCDXFBLOCK, LPDXFEARGV);
 
 	BOOL	IsRoundFixed(void) const;
 	float	GetR(void) const;
@@ -477,7 +484,7 @@ public:
 #endif
 
 	// ﾌﾞﾛｯｸｺﾋﾟｰ時の尺度で円弧が楕円弧になる
-	void	SetEllipseArgv(LPCDXFBLOCK, LPCDXFEARGV);
+	void	SetEllipseArgv(LPCDXFBLOCK, LPDXFEARGV);
 
 	BOOL	GetRoundOrig(void) const;
 	float	GetStartAngle(void) const;
