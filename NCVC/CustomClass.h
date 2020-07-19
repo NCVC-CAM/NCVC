@@ -20,45 +20,30 @@
 		(MAP)->GetNextAssoc(pos, KEY, VAL);
 #define	END_FOREACH		}
 /*
-template<typename BASE, typename VAR>
-class CPLIST_FOREACH
+//	なかなかスマートには書けないねぇ...無理だな
+template<typename VAR, typename LIST>
+class CPLIST_FOREACH<VAR, LIST>
 {
-	BASE&		list;
+	LIST*		list;	// pointer
 	POSITION	pos;
 public:
-	CPLIST_FOREACH(BASE List) : list(List) {
-		pos = list.GetHeadPosition();
-		if ( pos )
-			var = list.GetNext(pos);
-	}
-	BOOL	IsLoop(void) {
-		if ( pos )
-			var = list.GetNext(pos);
-		return pos;
-	}
-	VAR*	var;
-};
-template<typename BASE, typename VAR>
-class CPLIST_FOREACH<BASE*, VAR>
-{
-	BASE*		list;
-	POSITION	pos;
-public:
-	CPLIST_FOREACH(BASE List) : list(List) {
+	CPLIST_FOREACH(LIST List) : list(List) {
 		pos = list->GetHeadPosition();
-		if ( pos )
-			var = list->GetNext(pos);
 	}
-	BOOL	IsLoop(void) {
-		if ( pos )
-			var = list->GetNext(pos);
-		return pos;
+	BOOL	IsPos(void) { return pos; }
+	VAR		GetNext(void) {
+		var = list->GetNext(pos);
 	}
-	VAR*	var;
+	VAR		var;
 };
 #define	PLIST_FOREACH(VAR, LIST) \
-	for ( CPLIST_FOREACH<LIST, VAR> PF(LIST); PF.IsLoop(); )
-//	for ( CPLIST_FOREACH<typeid(LIST).name(), typeid(VAR).name()> hoge(LIST, VAR); hoge.IsEnd(); )
+	for ( CPLIST_FOREACH<VAR, typeid(LIST).name()> PF(LIST); PF.IsPos(); )
+
+	// example
+//	PLIST_FOREACH(CDXFdata*, pList) {
+//		PF.GetNext();
+//		PF.var->hogehoge();
+//	}
 */
 
 //////////////////////////////////////////////////////////////////////
