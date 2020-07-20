@@ -2,6 +2,7 @@
 //
 
 #include "stdafx.h"
+#include "resource.h"
 #include "ViewBaseGL.h"
 
 #ifdef _DEBUG
@@ -23,12 +24,24 @@ CViewBaseGL::CViewBaseGL()
 {
 	m_hRC = NULL;
 	m_cx = m_cy = 0;
+	m_enTrackingMode = TM_NONE;
+	m_dRate = m_dRoundAngle = m_dRoundStep = 0.0f;
+	IdentityMatrix();	// 単位行列に初期化
 }
 
 BOOL CViewBaseGL::PreCreateWindow(CREATESTRUCT& cs)
 {
 	cs.style |= WS_CLIPSIBLINGS|WS_CLIPCHILDREN;
 	return __super::PreCreateWindow(cs);
+}
+
+void CViewBaseGL::IdentityMatrix(void)
+{
+	m_ptCenter = 0.0f;
+	m_objXform[0][0] = 1.0; m_objXform[0][1] = 0.0; m_objXform[0][2] = 0.0; m_objXform[0][3] = 0.0;
+	m_objXform[1][0] = 0.0; m_objXform[1][1] = 1.0; m_objXform[1][2] = 0.0; m_objXform[1][3] = 0.0;
+	m_objXform[2][0] = 0.0; m_objXform[2][1] = 0.0; m_objXform[2][2] = 1.0; m_objXform[2][3] = 0.0;
+	m_objXform[3][0] = 0.0; m_objXform[3][1] = 0.0; m_objXform[3][2] = 0.0; m_objXform[3][3] = 1.0;
 }
 
 BOOL CViewBaseGL::SetupPixelFormat(CDC* pDC)
@@ -67,17 +80,172 @@ BOOL CViewBaseGL::SetupPixelFormat(CDC* pDC)
     return TRUE;
 }
 
-#ifdef _DEBUG
-void CViewBaseGL::AssertValid() const
+void CViewBaseGL::SetupViewingTransform(void)
 {
-	__super::AssertValid();
+	::glLoadIdentity();
+	::glTranslated( m_ptCenter.x, m_ptCenter.y, 0.0 );
+	::glMultMatrixd( (GLdouble *)m_objXform );	// 表示回転（＝モデル回転）
 }
 
-void CViewBaseGL::Dump(CDumpContext& dc) const
+void CViewBaseGL::BeginTracking(const CPoint& pt, ENTRACKINGMODE enTrackingMode)
 {
-	__super::Dump(dc);
+	::ShowCursor(FALSE);
+	SetCapture();
+	m_enTrackingMode = enTrackingMode;
+	switch( m_enTrackingMode ) {
+	case TM_SPIN:
+		m_ptLastRound = PtoR(pt);
+		break;
+	case TM_PAN:
+		m_ptLastMove = pt;
+		break;
+//	default:	// TM_NONE
+//		break;
+	}
 }
+
+void CViewBaseGL::EndTracking(void)
+{
+	ReleaseCapture();
+	::ShowCursor(TRUE);
+	m_enTrackingMode = TM_NONE;
+	Invalidate(FALSE);
+}
+
+CPoint3F CViewBaseGL::PtoR(const CPoint& pt)
+{
+	CPoint3F	ptResult;
+	// ﾓﾃﾞﾙ空間の回転
+	ptResult.x = ( 2.0f * pt.x - m_cx ) / m_cx * 0.5f;
+	ptResult.y = ( m_cy - 2.0f * pt.y ) / m_cy * 0.5f;
+	float	 d = _hypotf( ptResult.x, ptResult.y );
+	ptResult.z = cos( (PI/2.0f) * min(d, 1.0f) );
+
+	ptResult *= 1.0f / ptResult.hypot();
+
+	return ptResult;
+}
+
+void CViewBaseGL::DoTracking( const CPoint& pt )
+{
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
+	switch( m_enTrackingMode ) {
+	case TM_SPIN:
+	{
+		CPoint3F	ptRound( PtoR(pt) );
+		CPoint3F	ptw( ptRound - m_ptLastRound );
+		m_dRoundStep = 180.0f * ptw.hypot();
+		m_ptRoundBase.SetPoint(
+			m_ptLastRound.y*ptRound.z - m_ptLastRound.z*ptRound.y,
+			m_ptLastRound.z*ptRound.x - m_ptLastRound.x*ptRound.z,
+			m_ptLastRound.x*ptRound.y - m_ptLastRound.y*ptRound.x );
+		DoRotation(m_dRoundStep);
+		Invalidate(FALSE);
+		m_ptLastRound = ptRound;
+	}
+		break;
+	case TM_PAN:
+		m_ptCenter.x += ( pt.x - m_ptLastMove.x ) / m_dRate;
+		m_ptCenter.y -= ( pt.y - m_ptLastMove.y ) / m_dRate;
+		m_ptLastMove = pt;
+		// ﾓﾃﾞﾘﾝｸﾞ&ﾋﾞｭｰｲﾝｸﾞ変換行列
+		SetupViewingTransform();
+		Invalidate(FALSE);
+		break;
+//	deault:		// TM_NONE
+//		break;
+	}
+
+	::wglMakeCurrent( NULL, NULL );
+}
+
+void CViewBaseGL::DoScale(int nRate)
+{
+	if ( nRate != 0 ) {
+		m_rcView.InflateRect(
+			copysign(m_rcView.Width(),  (float)nRate) * 0.05f,
+			copysign(m_rcView.Height(), (float)nRate) * 0.05f );
+		float	dW = m_rcView.Width(), dH = m_rcView.Height();
+		if ( dW > dH )
+			m_dRate = m_cx / dW;
+		else
+			m_dRate = m_cy / dH;
+
+		CClientDC	dc(this);
+		::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+		::glMatrixMode( GL_PROJECTION );
+		::glLoadIdentity();
+		::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
+			m_rcView.low, m_rcView.high);
+		::glMatrixMode( GL_MODELVIEW );
+		Invalidate(FALSE);
+		::wglMakeCurrent( NULL, NULL );
+#ifdef _DEBUG
+		printf("DoScale() ---\n");
+		printf("  (%f,%f)-(%f,%f)\n", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
+		printf("  (%f,%f)\n", m_rcView.low, m_rcView.high);
 #endif
+	}
+}
+
+void CViewBaseGL::DoRotation(float dAngle)
+{
+#ifdef _DEBUG
+//	printf("DoRotation() Angle=%f (%f, %f, %f)\n", dAngle,
+//		m_ptRoundBase.x, m_ptRoundBase.y, m_ptRoundBase.z);
+#endif
+	// 回転ﾏﾄﾘｯｸｽを現在のｵﾌﾞｼﾞｪｸﾄﾌｫｰﾑﾏﾄﾘｯｸｽに掛け合わせる
+	::glLoadIdentity();
+	::glRotated( dAngle, m_ptRoundBase.x, m_ptRoundBase.y, m_ptRoundBase.z );
+	::glMultMatrixd( (GLdouble *)m_objXform );
+	::glGetDoublev( GL_MODELVIEW_MATRIX, (GLdouble *)m_objXform );
+
+	SetupViewingTransform();
+}
+
+void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
+{
+	::glDisable(GL_DEPTH_TEST);	// ﾃﾞﾌﾟｽﾃｽﾄ無効で描画
+
+	GLubyte		col1v[3], col2v[3];
+	GLfloat		dVertex[3];
+	col1v[0] = GetRValue(col1);
+	col1v[1] = GetGValue(col1);
+	col1v[2] = GetBValue(col1);
+	col2v[0] = GetRValue(col2);
+	col2v[1] = GetGValue(col2);
+	col2v[2] = GetBValue(col2);
+
+	::glPushMatrix();
+	::glLoadIdentity();
+	::glBegin(GL_QUADS);
+	// 左下
+	dVertex[0] = m_rcView.left;
+	dVertex[1] = m_rcView.bottom;
+//	dVertex[2] = m_rcView.low;
+	dVertex[2] = m_rcView.high - NCMIN*2.0f;	// 一番奥(x2はｵﾏｹ)
+	::glColor3ubv(col1v);
+	::glVertex3fv(dVertex);
+	// 左上
+	dVertex[1] = m_rcView.top;
+	::glColor3ubv(col2v);
+	::glVertex3fv(dVertex);
+	// 右上
+	dVertex[0] = m_rcView.right;
+	::glColor3ubv(col2v);
+	::glVertex3fv(dVertex);
+	// 右下
+	dVertex[1] = m_rcView.bottom;
+	::glColor3ubv(col1v);
+	::glVertex3fv(dVertex);
+	//
+	::glEnd();
+	::glPopMatrix();
+
+	::glEnable(GL_DEPTH_TEST);	// ﾃﾞﾌﾟｽﾃｽﾄを元に戻す
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CViewBaseGL メッセージ ハンドラ
@@ -192,3 +360,26 @@ BOOL CViewBaseGL::_OnSize(UINT nType, int cx, int cy)
 
 	return TRUE;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+void OutputGLErrorMessage(GLenum errCode, UINT nline)
+{
+	CString		strMsg;
+	strMsg.Format(IDS_ERR_OUTOFVRAM, ::gluErrorString(errCode), nline);
+	AfxMessageBox(strMsg, MB_OK|MB_ICONEXCLAMATION);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+#ifdef _DEBUG
+void CViewBaseGL::AssertValid() const
+{
+	__super::AssertValid();
+}
+
+void CViewBaseGL::Dump(CDumpContext& dc) const
+{
+	__super::Dump(dc);
+}
+#endif

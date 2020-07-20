@@ -105,7 +105,6 @@ CNCViewGL::CNCViewGL()
 	m_bWirePath = pOpt->GetNCViewFlg(NCVIEWFLG_WIREPATH);	// √ﬁÃ´ŸƒílÇéÊìæ
 	m_bSlitView = pOpt->GetNCViewFlg(NCVIEWFLG_LATHESLIT);
 	m_icx = m_icy = 0;
-	m_dRate = m_dRoundAngle = m_dRoundStep = 0.0f;
 	m_glCode = 0;
 
 #ifdef NO_TRACE_WORKFILE
@@ -122,9 +121,6 @@ CNCViewGL::CNCViewGL()
 	m_nCeProc = 0;
 	m_pCeHandle = NULL;
 	m_pCeParam = NULL;
-
-	m_enTrackingMode = TM_NONE;
-	ClearObjectForm(TRUE);	// íPà çsóÒÇ…èâä˙âª(à¯êîÇ»Ç¢Ç∆IsLatheMode()Ç≈àŸèÌèIóπ)
 }
 
 CNCViewGL::~CNCViewGL()
@@ -390,10 +386,10 @@ BOOL CNCViewGL::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewGL ÉNÉâÉXÇÃÉÅÉìÉoä÷êî
 
-void CNCViewGL::ClearObjectForm(BOOL bInitialBoxel)
+void CNCViewGL::InitialObjectForm(void)
 {
-	m_ptCenter = 0.0f;
-	if ( !bInitialBoxel && IsLatheMode() ) {
+	if ( IsLatheMode() ) {
+		m_ptCenter = 0.0f;
 		// Xé≤Ç≈90ÅãâÒì]Ç≥ÇπÇΩèâä˙íl
 		m_objXform[0][0] = 1.0; m_objXform[0][1] = 0.0; m_objXform[0][2] = 0.0; m_objXform[0][3] = 0.0;
 		m_objXform[1][0] = 0.0; m_objXform[1][1] = 0.0; m_objXform[1][2] =-1.0; m_objXform[1][3] = 0.0;
@@ -401,10 +397,8 @@ void CNCViewGL::ClearObjectForm(BOOL bInitialBoxel)
 		m_objXform[3][0] = 0.0; m_objXform[3][1] = 0.0; m_objXform[3][2] = 0.0; m_objXform[3][3] = 1.0;
 	}
 	else {
-		m_objXform[0][0] = 1.0; m_objXform[0][1] = 0.0; m_objXform[0][2] = 0.0; m_objXform[0][3] = 0.0;
-		m_objXform[1][0] = 0.0; m_objXform[1][1] = 1.0; m_objXform[1][2] = 0.0; m_objXform[1][3] = 0.0;
-		m_objXform[2][0] = 0.0; m_objXform[2][1] = 0.0; m_objXform[2][2] = 1.0; m_objXform[2][3] = 0.0;
-		m_objXform[3][0] = 0.0; m_objXform[3][1] = 0.0; m_objXform[3][2] = 0.0; m_objXform[3][3] = 1.0;
+		// íPà çsóÒÇ…èâä˙âª
+		IdentityMatrix();	// ViewBaseGL.cpp
 	}
 }
 
@@ -546,7 +540,7 @@ void CNCViewGL::InitialBoxel(void)
 	// âÒì]çsóÒÇÃ ﬁØ∏±ØÃﬂÇ∆èâä˙âª
 	memcpy(m_objXformBk, m_objXform, sizeof(m_objXform));
 	m_ptCenterBk = m_ptCenter;
-	ClearObjectForm(TRUE);			// íPà çsóÒÇ…èâä˙âª
+	IdentityMatrix();				// íPà çsóÒÇ…èâä˙âª
 	SetupViewingTransform();
 	// âÊñ Ç¢Ç¡ÇœÇ¢Ç…ï`âÊ
 	::glMatrixMode(GL_PROJECTION);
@@ -572,52 +566,6 @@ void CNCViewGL::FinalBoxel(void)
 	memcpy(m_objXform, m_objXformBk, sizeof(m_objXform));
 	m_ptCenter = m_ptCenterBk;
 	SetupViewingTransform();
-}
-
-void CNCViewGL::RenderBack(void)
-{
-	::glDisable(GL_DEPTH_TEST);	// √ﬁÃﬂΩ√Ωƒñ≥å¯Ç≈ï`âÊ
-
-	// îwåiŒﬂÿ∫ﬁ›ÇÃï`âÊ
-	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col1 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND1),
-				col2 = pOpt->GetNcDrawColor(NCCOL_BACKGROUND2);
-	GLubyte		col1v[3], col2v[3];
-	GLfloat		dVertex[3];
-	col1v[0] = GetRValue(col1);
-	col1v[1] = GetGValue(col1);
-	col1v[2] = GetBValue(col1);
-	col2v[0] = GetRValue(col2);
-	col2v[1] = GetGValue(col2);
-	col2v[2] = GetBValue(col2);
-
-	::glPushMatrix();
-	::glLoadIdentity();
-	::glBegin(GL_QUADS);
-	// ç∂â∫
-	dVertex[0] = m_rcView.left;
-	dVertex[1] = m_rcView.bottom;
-//	dVertex[2] = m_rcView.low;
-	dVertex[2] = m_rcView.high - NCMIN*2.0f;	// àÍî‘âú(x2ÇÕµœπ)
-	::glColor3ubv(col1v);
-	::glVertex3fv(dVertex);
-	// ç∂è„
-	dVertex[1] = m_rcView.top;
-	::glColor3ubv(col2v);
-	::glVertex3fv(dVertex);
-	// âEè„
-	dVertex[0] = m_rcView.right;
-	::glColor3ubv(col2v);
-	::glVertex3fv(dVertex);
-	// âEâ∫
-	dVertex[1] = m_rcView.bottom;
-	::glColor3ubv(col1v);
-	::glVertex3fv(dVertex);
-	//
-	::glEnd();
-	::glPopMatrix();
-
-	::glEnable(GL_DEPTH_TEST);	// å≥Ç…ñﬂÇ∑
 }
 
 void CNCViewGL::RenderAxis(void)
@@ -734,133 +682,12 @@ void CNCViewGL::RenderMill(const CNCdata* pData)
 	}
 }
 
-CPoint3F CNCViewGL::PtoR(const CPoint& pt)
-{
-	CPoint3F	ptResult;
-	// ”√ﬁŸãÛä‘ÇÃâÒì]
-	ptResult.x = ( 2.0f * pt.x - m_cx ) / m_cx * 0.5f;
-	ptResult.y = ( m_cy - 2.0f * pt.y ) / m_cy * 0.5f;
-	float	 d = _hypotf( ptResult.x, ptResult.y );
-	ptResult.z = cos( (PI/2.0f) * min(d, 1.0f) );
-
-	ptResult *= 1.0f / ptResult.hypot();
-
-	return ptResult;
-}
-
-void CNCViewGL::BeginTracking(const CPoint& pt, ENTRACKINGMODE enTrackingMode)
-{
-	::ShowCursor(FALSE);
-	SetCapture();
-	m_enTrackingMode = enTrackingMode;
-	switch( m_enTrackingMode ) {
-	case TM_SPIN:
-		m_ptLastRound = PtoR(pt);
-		break;
-	case TM_PAN:
-		m_ptLastMove = pt;
-		break;
-//	default:	// TM_NONE
-//		break;
-	}
-}
-
-void CNCViewGL::EndTracking(void)
-{
-	ReleaseCapture();
-	::ShowCursor(TRUE);
-	m_enTrackingMode = TM_NONE;
-	Invalidate(FALSE);
-}
-
-void CNCViewGL::DoTracking( const CPoint& pt )
-{
-	CClientDC	dc(this);
-	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-
-	switch( m_enTrackingMode ) {
-	case TM_SPIN:
-	{
-		CPoint3F	ptRound( PtoR(pt) );
-		CPoint3F	ptw( ptRound - m_ptLastRound );
-		m_dRoundStep = 180.0f * ptw.hypot();
-		m_ptRoundBase.SetPoint(
-			m_ptLastRound.y*ptRound.z - m_ptLastRound.z*ptRound.y,
-			m_ptLastRound.z*ptRound.x - m_ptLastRound.x*ptRound.z,
-			m_ptLastRound.x*ptRound.y - m_ptLastRound.y*ptRound.x );
-		DoRotation(m_dRoundStep);
-		Invalidate(FALSE);
-		m_ptLastRound = ptRound;
-	}
-		break;
-	case TM_PAN:
-		m_ptCenter.x += ( pt.x - m_ptLastMove.x ) / m_dRate;
-		m_ptCenter.y -= ( pt.y - m_ptLastMove.y ) / m_dRate;
-		m_ptLastMove = pt;
-		// ”√ﬁÿ›∏ﬁ&Àﬁ≠∞≤›∏ﬁïœä∑çsóÒ
-		SetupViewingTransform();
-		Invalidate(FALSE);
-		break;
-//	deault:		// TM_NONE
-//		break;
-	}
-
-	::wglMakeCurrent( NULL, NULL );
-}
-
 void CNCViewGL::DoScale(int nRate)
 {
-	if ( nRate != 0 ) {
-		m_rcView.InflateRect(
-			copysign(m_rcView.Width(),  (float)nRate) * 0.05f,
-			copysign(m_rcView.Height(), (float)nRate) * 0.05f );
-		float	dW = m_rcView.Width(), dH = m_rcView.Height();
-		if ( dW > dH )
-			m_dRate = m_cx / dW;
-		else
-			m_dRate = m_cy / dH;
-
-		CClientDC	dc(this);
-		::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-		::glMatrixMode( GL_PROJECTION );
-		::glLoadIdentity();
-		::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
-			m_rcView.low, m_rcView.high);
-		::glMatrixMode( GL_MODELVIEW );
-		Invalidate(FALSE);
-		::wglMakeCurrent( NULL, NULL );
-#ifdef _DEBUG
-		printf("DoScale() ---\n");
-		printf("  (%f,%f)-(%f,%f)\n", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
-		printf("  (%f,%f)\n", m_rcView.low, m_rcView.high);
-#endif
-	}
-
+	CViewBaseGL::DoScale(nRate);
 	// MDIéqÃ⁄∞—ÇÃΩ√∞¿Ω ﬁ∞Ç…èÓïÒï\é¶
 	static_cast<CNCChild *>(GetParentFrame())->SetFactorInfo(m_dRate/LOGPIXEL, m_strGuide,
 		m_pFBO ? TRUE : FALSE);
-}
-
-void CNCViewGL::DoRotation(float dAngle)
-{
-#ifdef _DEBUG
-//	printf("DoRotation() Angle=%f (%f, %f, %f)\n", dAngle,
-//		m_ptRoundBase.x, m_ptRoundBase.y, m_ptRoundBase.z);
-#endif
-	// âÒì]œƒÿØ∏ΩÇåªç›ÇÃµÃﬁºﬁ™∏ƒÃ´∞—œƒÿØ∏ΩÇ…ä|ÇØçáÇÌÇπÇÈ
-	::glLoadIdentity();
-	::glRotated( dAngle, m_ptRoundBase.x, m_ptRoundBase.y, m_ptRoundBase.z );
-	::glMultMatrixd( (GLdouble *)m_objXform );
-	::glGetDoublev( GL_MODELVIEW_MATRIX, (GLdouble *)m_objXform );
-
-	SetupViewingTransform();
-}
-
-void CNCViewGL::SetupViewingTransform(void)
-{
-	::glLoadIdentity();
-	::glTranslated( m_ptCenter.x, m_ptCenter.y, 0.0 );
-	::glMultMatrixd( (GLdouble *)m_objXform );	// ï\é¶âÒì]ÅiÅÅÉÇÉfÉãâÒì]Åj
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -880,7 +707,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// îwåiÇÃï`âÊ
-	RenderBack();
+	RenderBackground(pOpt->GetNcDrawColor(NCCOL_BACKGROUND1), pOpt->GetNcDrawColor(NCCOL_BACKGROUND2));
 
 	// é≤ÇÃï`âÊ
 	RenderAxis();
@@ -1247,7 +1074,7 @@ LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 			pOpt->m_dwUpdateFlg = VIEWUPDATE_ALL;
 			UpdateViewOption();
 			// âÒì]çsóÒìôÇÃì«Ç›çûÇ›Ç∆çXêV
-			ClearObjectForm();
+			InitialObjectForm();
 			CRecentViewInfo*	pInfo = GetDocument()->GetRecentViewInfo();
 			if ( pInfo && !pInfo->GetViewInfo(m_objXform, m_rcView, m_ptCenter) ) {
 				pInfo = AfxGetNCVCApp()->GetDefaultViewInfo();
@@ -1642,7 +1469,7 @@ void CNCViewGL::OnLensKey(UINT nID)
 		{
 			CClientDC	dc(this);
 			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-			ClearObjectForm();
+			InitialObjectForm();
 			SetupViewingTransform();
 			::wglMakeCurrent( NULL, NULL );
 		}
@@ -1962,11 +1789,4 @@ void InitialMillNormal(void)
 	GLMillPhNor[n1++] = _TABLECOS[0];
 	GLMillPhNor[n1++] = _TABLESIN[0];
 	GLMillPhNor[n1++] = _TABLESIN[n2];
-}
-
-void OutputGLErrorMessage(GLenum errCode, UINT nline)
-{
-	CString		strMsg;
-	strMsg.Format(IDS_ERR_OUTOFVRAM, ::gluErrorString(errCode), nline);
-	AfxMessageBox(strMsg, MB_OK|MB_ICONEXCLAMATION);
 }

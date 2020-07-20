@@ -7,12 +7,6 @@
 #include "ViewBaseGL.h"
 //#include "GLSL.h"
 
-// TrackingMode
-enum ENTRACKINGMODE
-{
-	TM_NONE, TM_SPIN, TM_PAN
-};
-
 // Range Parameter
 struct RANGEPARAM
 {
@@ -90,16 +84,8 @@ class CNCViewGL : public CViewBaseGL
 				m_bSlitView;
 	int			m_icx, m_icy;	// glDrawPixels
 	GLint		m_wx, m_wy;		// glReadPixels, glWindowPos
-	float		m_dRate,		// 基準拡大率
-				m_dRoundAngle,	// 中ﾎﾞﾀﾝの回転角度
-				m_dRoundStep;	// 中ﾎﾞﾀﾝの１回あたりの回転角度
-	CRect3F		m_rcView,		// ﾓﾃﾞﾙ空間
-				m_rcDraw;		// ﾜｰｸ矩形(ｿﾘｯﾄﾞ表示用)
-	CPointF		m_ptCenter,		// 描画中心
-				m_ptCenterBk,
-				m_ptLastMove;	// 移動前座標
-	CPoint3F	m_ptLastRound,	// 回転前座標
-				m_ptRoundBase;	// 中ﾎﾞﾀﾝ連続回転の基準座標
+	CPointF		m_ptCenterBk;		// ﾎﾞｸｾﾙ処理前のﾊﾞｯｸｱｯﾌﾟ
+	GLdouble	m_objXformBk[4][4];
 	CPoint		m_ptDownClick;	// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示用他
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 
@@ -138,11 +124,7 @@ class CNCViewGL : public CViewBaseGL
 		LPCREATEELEMENTPARAM	m_pCeParam;
 	};
 
-	ENTRACKINGMODE	m_enTrackingMode;
-	GLdouble		m_objXform[4][4],
-					m_objXformBk[4][4];	// ﾎﾞｸｾﾙ処理時のﾊﾞｯｸｱｯﾌﾟ
-
-	void	ClearObjectForm(BOOL = FALSE);
+	void	InitialObjectForm(void);
 	void	UpdateViewOption(void);
 	void	CreateDisplayList(void);
 	BOOL	CreateBoxel(BOOL = FALSE);
@@ -174,18 +156,11 @@ class CNCViewGL : public CViewBaseGL
 	void	DeleteDepthMemory(void);
 	void	EndOfCreateElementThread(void);
 
-	void	RenderBack(void);
 	void	RenderAxis(void);
 	void	RenderCode(void);
 	void	RenderMill(const CNCdata*);
 
-	CPoint3F	PtoR(const CPoint& pt);
-	void	BeginTracking(const CPoint&, ENTRACKINGMODE);
-	void	EndTracking(void);
-	void	DoTracking(const CPoint&);
-	void	DoScale(int);
-	void	DoRotation(float);
-	void	SetupViewingTransform(void);
+	void	DoScale(int);	// ﾌﾚｰﾑの拡大率を更新
 #ifdef _DEBUG
 	void	DumpDepth(void) const;
 	void	DumpStencil(void) const;
@@ -241,7 +216,6 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 
-void	OutputGLErrorMessage(GLenum, UINT);
 void	InitialMillNormal(void);	// from CNCVCApp::CNCVCApp()
 
 #ifndef _DEBUG
