@@ -80,11 +80,36 @@ void C3dModelView::OnDraw(CDC* pDC)
 	// ”wŒi‚Ì•`‰æ
 	RenderBackground(pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1), pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2));
 
+	// --- ƒeƒXƒg•`‰æ
+	float		dLength = 50.0f;
+	COLORREF	col;
+	::glPushAttrib( GL_LINE_BIT );
+	::glLineWidth( 2.0f );
+	::glBegin( GL_LINES );
+	// XŽ²‚Ì¶Þ²ÄÞ
+	col = pOpt->GetNcDrawColor(NCCOL_GUIDEX);
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+	::glVertex3f(-dLength, 0.0f, 0.0f);
+	::glVertex3f( dLength, 0.0f, 0.0f);
+	// YŽ²‚Ì¶Þ²ÄÞ
+	col = pOpt->GetNcDrawColor(NCCOL_GUIDEY);
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+	::glVertex3f(0.0f, -dLength, 0.0f);
+	::glVertex3f(0.0f,  dLength, 0.0f);
+	// ZŽ²‚Ì¶Þ²ÄÞ
+	col = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+	::glVertex3f(0.0f, 0.0f, -dLength);
+	::glVertex3f(0.0f, 0.0f,  dLength);
+	::glEnd();
+	::glPopAttrib();
+	// ---
+
 	// ƒ‚ƒfƒ‹•`‰æ Kodatuno
-	Describe_BODY	bd;
-	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
-	for ( int i=0; i<kbl->getNum(); i++ )
-		bd.DrawBody( (BODY *)kbl->getData(i) );
+//	Describe_BODY	bd;
+//	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
+//	for ( int i=0; i<kbl->getNum(); i++ )
+//		bd.DrawBody( (BODY *)kbl->getData(i) );
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
