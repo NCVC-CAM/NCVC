@@ -12,6 +12,9 @@
 #include "DXFChild.h"
 #include "DXFDoc.h"
 #include "DXFView.h"
+#include "3dModelChild.h"
+#include "3dModelDoc.h"
+#include "3dModelView.h"
 #include "MCSetup.h"
 #include "ViewSetup.h"
 #include "DxfSetup.h"
@@ -223,8 +226,14 @@ BOOL CNCVCApp::InitInstance()
 		RUNTIME_CLASS(CDXFDoc),
 		RUNTIME_CLASS(CDXFChild),
 		RUNTIME_CLASS(CDXFView));
+	m_pDocTemplate[TYPE_3DM] = new CNCVCDocTemplate(	// 3DMƒﬁ∑≠“›ƒ
+		IDR_3DMTYPE,	// Ç±ÇÃéûì_Ç≈ï°êîÇÃägí£éqìoò^ÇÕïsâ¬
+		RUNTIME_CLASS(C3dModelDoc),
+		RUNTIME_CLASS(C3dModelChild),
+		RUNTIME_CLASS(C3dModelView));
 	AddDocTemplate(m_pDocTemplate[TYPE_NCD]);
 	AddDocTemplate(m_pDocTemplate[TYPE_DXF]);
+	AddDocTemplate(m_pDocTemplate[TYPE_3DM]);
 
 	// DDEÅAfile open Ç»Ç«ïWèÄÇÃÉVÉFÉã ÉRÉ}ÉìÉhÇÃÉRÉ}ÉìÉh ÉâÉCÉìÇâêÕÇµÇ‹Ç∑ÅB
 	CCommandLineInfo cmdInfo;
@@ -698,10 +707,13 @@ BOOL CNCVCApp::NCVCAddinInit(int nShellCommand)
 		break;
 	}
 #endif
-	// äOïî±ƒﬁ≤›ìoò^ëOÇ…ÅCReadDXF()Çìoò^
+	// äOïî±ƒﬁ≤›ìoò^ëOÇ…ñ{ëÃÇ≈èàóùÇ∑ÇÈägí£éqÇìoò^
 	CString	strFilter;
 	VERIFY(strFilter.LoadString(IDS_DXF_FILTER));
-	m_pDocTemplate[TYPE_DXF]->AddExtensionFunc(strFilter.Left(3), ReadDXF);	// "DXF"
+	m_pDocTemplate[TYPE_DXF]->AddExtensionFunc(strFilter.Left(3), ReadDXF);
+	m_pDocTemplate[TYPE_3DM]->AddExtensionFunc("igs", NULL);
+	m_pDocTemplate[TYPE_3DM]->AddExtensionFunc("iges", NULL);
+	m_pDocTemplate[TYPE_3DM]->AddExtensionFunc("stl", NULL);
 
 	struct NCVCINITIALIZE_BUF {
 		DWORD		dwSize;
@@ -1138,6 +1150,7 @@ BOOL CNCVCApp::DoPromptFileNameEx(CStringArray& aryFile, int nInitFilter/*=-1*/)
 #ifdef _DEBUG_FILEOPEN
 	printf("CNCVCApp::DoPromptFileNameEx() Start\n");
 #endif
+	extern	LPCTSTR	gg_szSemicolon;	// ";";
 	int			i, nExt;
 	CString		strAllFilter,
 				strFilter[SIZEOF(m_pDocTemplate)], strExt[SIZEOF(m_pDocTemplate)],
@@ -1147,7 +1160,7 @@ BOOL CNCVCApp::DoPromptFileNameEx(CStringArray& aryFile, int nInitFilter/*=-1*/)
 	for ( i=0; i<SIZEOF(m_pDocTemplate); i++ ) {
 		strFilter[i] = m_pDocTemplate[i]->GetFilterString();
 		if ( !strTmp.IsEmpty() )
-			strTmp += ';';
+			strTmp += gg_szSemicolon;
 		strTmp += strFilter[i];
 	}
 	strAllFilter.Format(IDS_NCVC_FILTER, strTmp, strTmp);
@@ -1917,7 +1930,7 @@ BOOL CNCVCDocTemplate::IsExtension(LPCTSTR lpszExt, LPVOID* pFuncResult/*=NULL*/
 
 	// ïWèÄägí£éqÇ∆ÇÃ¡™Ø∏
 	GetDocString(strFilter, CDocTemplate::filterExt);	// .ncd or .cam
-	if ( strExt.CompareNoCase(strFilter.Right(3)) == 0 ) {
+	if ( strExt.CompareNoCase(strFilter.Mid(1)) == 0 ) {
 		if ( pFuncResult )
 			*pFuncResult = NULL;	// √ﬁÃ´Ÿƒºÿ±Ÿä÷êî
 		return TRUE;
@@ -1966,21 +1979,24 @@ BOOL CNCVCDocTemplate::SaveExt(void)
 
 CString CNCVCDocTemplate::GetFilterString(void)
 {
-	extern	LPCTSTR	gg_szWild;	// "*.";
-	static	const	TCHAR	ss_cSplt = ';';
+	extern	LPCTSTR	gg_szWild;		// "*.";
+	extern	LPCTSTR	gg_szSemicolon;	// ";";
 	CString	strResult, strKey;
 	LPVOID	pDummy;
 
 	// äÓñ{ägí£éq
 	GetDocString(strResult, CDocTemplate::filterExt);
-	strResult.MakeLower();
-	strResult = gg_szWild + strResult.Right(3);
+	if ( !strResult.IsEmpty() ) {
+		strResult.MakeLower();
+		strResult = gg_szWild + strResult.Mid(1);
+	}
 
 	// ìoò^ägí£éq
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		PMAP_FOREACH(strKey, pDummy, &m_mpExt[i])
 			strKey.MakeLower();
-			strResult += ss_cSplt;
+			if ( !strResult.IsEmpty() )
+				strResult += gg_szSemicolon;
 			strResult += gg_szWild + strKey;
 		END_FOREACH
 	}

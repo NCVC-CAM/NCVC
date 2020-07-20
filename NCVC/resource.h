@@ -14,6 +14,7 @@
 #define IDR_NCTYPE                      129
 #define IDR_DXFTYPE                     130
 #define IDR_NCPOPUP1                    131
+#define IDR_3DMTYPE                     131
 #define IDR_DXFPOPUP1                   132
 #define IDR_NCPOPUP2                    133
 #define IDR_NCPOPUP3                    134
@@ -131,12 +132,13 @@
 #define IDS_VIEW_SETUP_INPORT           1314
 #define IDS_VIEW_SETUP_EXPORT           1315
 #define IDS_VIEW_TEXTURE                1316
+#define IDS_DXF_FILTER                  1384
 #define IDS_PERL_FILTER                 1385
 #define IDS_TEXTURE_FILTER              1386
 #define IDS_NCVC_FILTER                 1387
 #define IDS_NCD_FILTER                  1388
 #define IDS_CAM_FILTER                  1389
-#define IDS_DXF_FILTER                  1390
+#define IDS_3DM_FILTER                  1390
 #define IDS_NCI_FILTER                  1391
 #define IDS_NCIM_FILTER                 1392
 #define IDS_NCIL_FILTER                 1393

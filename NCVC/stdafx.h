@@ -101,7 +101,10 @@ void MySplitPath(LPCTSTR lpszFullPath,
 #define	NCVCSERIALVERSION_3620	3620	// v3.62` (double->float)
 #define	NCVCSERIALVERSION		NCVCSERIALVERSION_3620
 
-enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
+enum	DOCTYPE		{
+	TYPE_NCD=0, TYPE_DXF, TYPE_3DM,
+		DOCTYPE_NUM		// 3
+};
 
 // Common Define
 #define	SIZEOF(array)			( sizeof(array)/sizeof(array[0]) )

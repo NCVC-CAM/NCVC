@@ -108,7 +108,7 @@ class CNCVCApp : public CWinAppEx
 	CRecentViewInfo*	m_pDefViewInfo;	// ÃŞÌ«ÙÄ•`‰æî•ñ
 
 	// ÄŞ·­ÒİÄÃİÌßÚ°Ä
-	CNCVCDocTemplate*	m_pDocTemplate[2];	// NC,DXFÄŞ·­ÒİÄ
+	CNCVCDocTemplate*	m_pDocTemplate[DOCTYPE_NUM];
 
 	// ±ÄŞ²İî•ñ
 	CNCVCaddinIF*	m_pActiveAddin;	// Œ»İ±¸Ã¨ÌŞ‚È±ÄŞ²İ

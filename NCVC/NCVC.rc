@@ -3215,6 +3215,7 @@ BEGIN
     IDR_MAINFRAME           "NCVC"
     IDR_NCTYPE              "\n\n\nNC Ãß≤Ÿ (*.ncd)\n.ncd\nNC.Document\nNC Document"
     IDR_DXFTYPE             "\n\n\nCAM Ãß≤Ÿ (*.cam)\n.cam\nCAM.Document\nCAM Document"
+    IDR_3DMTYPE             "\n\n\n3DM Ãß≤Ÿ (*.igs; *.iges; *.stl)\n\n\n"
 END
 
 STRINGTABLE
@@ -3384,12 +3385,13 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_DXF_FILTER          "dxf\nDXF data (*.dxf)|*.dxf"
     IDS_PERL_FILTER         "pl\nPerlΩ∏ÿÃﬂƒÃß≤Ÿ (*.pl)|*.pl"
     IDS_TEXTURE_FILTER      "√∏Ω¡¨âÊëúÃß≤Ÿ (*.bmp; *.png; *.gif; *.jpeg; *.tiff)|*.bmp;*.png;*.gif;*.jpg;*.jpeg;*.tif;*.tiff"
     IDS_NCVC_FILTER         "NCVC files (%s)|%s"
     IDS_NCD_FILTER          "ncd\nNC data (%s)|%s"
     IDS_CAM_FILTER          "cam\nCAM data (%s)|%s"
-    IDS_DXF_FILTER          "dxf\nDXF data (*.dxf)|*.dxf"
+    IDS_3DM_FILTER          "3dm\n3dm data (%s)|%s"
     IDS_NCI_FILTER          "êÿçÌèåèÃß≤Ÿ (*.nci; *.ncj; *.ncw)|*.nci;*.ncj;*.ncw"
 END
 
