@@ -14,7 +14,6 @@
 #define IDR_NCTYPE                      129
 #define IDR_DXFTYPE                     130
 #define IDR_NCPOPUP1                    131
-#define IDR_3DMTYPE                     131
 #define IDR_DXFPOPUP1                   132
 #define IDR_NCPOPUP2                    133
 #define IDR_NCPOPUP3                    134
@@ -23,7 +22,9 @@
 #define IDI_CHECK                       140
 #define IDI_DEFICONLARGE                142
 #define IDI_DEFICONSMALL                143
+#define IDR_3DMTYPE                     150
 #define IDS_ADDIN_INFO                  200
+#define IDR_MENU1                       206
 #define IDS_TAB_INFO1                   496
 #define IDS_TAB_INFO2                   497
 #define IDS_TAB_INFO3                   498
@@ -882,7 +883,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        205
+#define _APS_NEXT_RESOURCE_VALUE        207
 #define _APS_NEXT_COMMAND_VALUE         32823
 #define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           101

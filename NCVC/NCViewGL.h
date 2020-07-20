@@ -177,11 +177,11 @@ public:
 	virtual void OnInitialUpdate();
 	virtual void OnDraw(CDC*);
 	virtual BOOL OnCmdMsg(UINT, int, void*, AFX_CMDHANDLERINFO*);
+
 protected:
 	virtual void OnUpdate(CView*, LPARAM, CObject*);
 	virtual void OnActivateView(BOOL, CView*, CView*);
 
-protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);

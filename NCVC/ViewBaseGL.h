@@ -16,12 +16,6 @@ enum ENTRACKINGMODE
 
 class CViewBaseGL : public CView
 {
-public:
-#ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
-#endif
-
 protected:
 	HGLRC		m_hRC;
 	int			m_cx,  m_cy;	// ³¨ÝÄÞ³»²½Þ(½¸Ø°Ý)
@@ -59,6 +53,12 @@ protected:
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 
 	DECLARE_MESSAGE_MAP()
+
+#ifdef _DEBUG
+public:
+	virtual void AssertValid() const;
+	virtual void Dump(CDumpContext& dc) const;
+#endif
 };
 
 void	OutputGLErrorMessage(GLenum, UINT);

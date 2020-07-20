@@ -15,14 +15,19 @@ class C3dModelDoc : public CDocBase
 	BODY*		m_pKoBody;		// Kodatuno Body
 	BODYList*	m_pKoList;		// Kodatuno Body List
 
-public:
+protected:
 	C3dModelDoc();
-	virtual ~C3dModelDoc();
 	DECLARE_DYNCREATE(C3dModelDoc)
+public:
+	virtual ~C3dModelDoc();
 
 	virtual void Serialize(CArchive& ar);   // ドキュメント I/O に対してオーバーライドされました。
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
 	virtual void OnCloseDocument();
+
+	BODYList*	GetKodatunoBodyList(void) const {
+		return m_pKoList;
+	}
 
 protected:
 

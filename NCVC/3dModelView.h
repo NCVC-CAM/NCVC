@@ -10,15 +10,17 @@
 
 class C3dModelView : public CViewBaseGL
 {
+protected:
+	C3dModelView();
+	DECLARE_DYNCREATE(C3dModelView)
+
 public:
+	virtual ~C3dModelView();
 	C3dModelDoc*	GetDocument();
+	virtual void OnInitialUpdate();
 	virtual void OnDraw(CDC* pDC);
 
 protected:
-	C3dModelView();
-	virtual ~C3dModelView();
-	DECLARE_DYNCREATE(C3dModelView)
-
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 

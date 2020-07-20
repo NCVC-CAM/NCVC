@@ -7,6 +7,9 @@
 #include "3dModelChild.h"
 #include "3dModelDoc.h"
 #include "3dModelView.h"
+#include "ViewOption.h"
+#include "Kodatuno/Describe_BODY.h"
+#undef PI	// Use NCVC (MyTemplate.h)
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -33,6 +36,27 @@ C3dModelView::~C3dModelView()
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView ƒNƒ‰ƒX‚ÌƒI[ƒoƒ‰ƒCƒhŠÖ”
 
+void C3dModelView::OnInitialUpdate() 
+{
+	m_rcView  = GetDocument()->GetMaxRect();
+	float	dW = m_rcView.Width(),
+			dH = m_rcView.Height(),
+			dZ = m_rcView.Depth();
+
+	// µÌÞ¼Þª¸Ä‹éŒ`‚ð10%(ã‰º¶‰E5%‚¸‚Â)‘å‚«‚­
+	m_rcView.InflateRect(dW*0.05f, dH*0.05f, dZ*0.05f);
+
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+	::glMatrixMode( GL_PROJECTION );
+	::glLoadIdentity();
+	::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
+		m_rcView.low, m_rcView.high);
+	GetGLError();
+	::glMatrixMode( GL_MODELVIEW );
+	::wglMakeCurrent(NULL, NULL);
+}
+
 #ifdef _DEBUG
 C3dModelDoc* C3dModelView::GetDocument() // ”ñƒfƒoƒbƒO ƒo[ƒWƒ‡ƒ“‚ÍƒCƒ“ƒ‰ƒCƒ“‚Å‚·B
 {
@@ -47,11 +71,21 @@ C3dModelDoc* C3dModelView::GetDocument() // ”ñƒfƒoƒbƒO ƒo[ƒWƒ‡ƒ“‚ÍƒCƒ“ƒ‰ƒCƒ“‚Å‚
 void C3dModelView::OnDraw(CDC* pDC)
 {
 	ASSERT_VALID(GetDocument());
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	// ¶ÚÝÄºÝÃ·½Ä‚ÌŠ„‚è“–‚Ä
 	::wglMakeCurrent( pDC->GetSafeHdc(), m_hRC );
 
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	// ”wŒi‚Ì•`‰æ
+	RenderBackground(pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1), pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2));
+
+	// ƒ‚ƒfƒ‹•`‰æ Kodatuno
+	Describe_BODY	bd;
+	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
+	for ( int i=0; i<kbl->getNum(); i++ )
+		bd.DrawBody( (BODY *)kbl->getData(i) );
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
