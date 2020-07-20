@@ -12,13 +12,15 @@
 #define new DEBUG_NEW
 #endif
 
+IMPLEMENT_DYNCREATE(C3dModelView, CViewBaseGL)
+
+BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
+	ON_WM_CREATE()
+	ON_WM_SIZE()
+END_MESSAGE_MAP()
+
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView
-
-IMPLEMENT_DYNCREATE(C3dModelView, CViewBase)
-
-BEGIN_MESSAGE_MAP(C3dModelView, CViewBase)
-END_MESSAGE_MAP()
 
 C3dModelView::C3dModelView()
 {
@@ -44,9 +46,29 @@ C3dModelDoc* C3dModelView::GetDocument() // ”ñƒfƒoƒbƒO ƒo[ƒWƒ‡ƒ“‚ÍƒCƒ“ƒ‰ƒCƒ“‚Å‚
 
 void C3dModelView::OnDraw(CDC* pDC)
 {
-	CDocument* pDoc = GetDocument();
-	// TODO: •`‰æƒR[ƒh‚ğ‚±‚±‚É’Ç‰Á‚µ‚Ä‚­‚¾‚³‚¢B
+	ASSERT_VALID(GetDocument());
+
+	// ¶ÚİÄºİÃ·½Ä‚ÌŠ„‚è“–‚Ä
+	::wglMakeCurrent( pDC->GetSafeHdc(), m_hRC );
+
+	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	::SwapBuffers( pDC->GetSafeHdc() );
+	::wglMakeCurrent(NULL, NULL);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView ƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[
+
+int C3dModelView::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+	if (__super::OnCreate(lpCreateStruct) == -1)
+		return -1;
+
+	return 0;
+}
+
+void C3dModelView::OnSize(UINT nType, int cx, int cy)
+{
+	 __super::_OnSize(nType, cx, cy);
+}

@@ -3,24 +3,25 @@
 
 #pragma once
 
-#include "ViewBase.h"
+#include "ViewBaseGL.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView ビュー
 
-class C3dModelView : public CViewBase
+class C3dModelView : public CViewBaseGL
 {
-
-protected:
-	C3dModelView();           // 動的生成で使用される protected コンストラクター
-	virtual ~C3dModelView();
-
 public:
 	C3dModelDoc*	GetDocument();
-	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドされます。
+	virtual void OnDraw(CDC* pDC);
 
 protected:
+	C3dModelView();
+	virtual ~C3dModelView();
 	DECLARE_DYNCREATE(C3dModelView)
+
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+
 	DECLARE_MESSAGE_MAP()
 };
 

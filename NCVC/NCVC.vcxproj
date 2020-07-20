@@ -535,6 +535,7 @@
     <ClCompile Include="ThumbnailDlg.cpp" />
     <ClCompile Include="ToolBarSetupDlg.cpp" />
     <ClCompile Include="ViewBase.cpp" />
+    <ClCompile Include="ViewBaseGL.cpp" />
     <ClCompile Include="ViewOption.cpp" />
     <ClCompile Include="ViewSetup.cpp" />
     <ClCompile Include="ViewSetup1.cpp" />
@@ -661,6 +662,7 @@
     <ClInclude Include="ThumbnailDlg.h" />
     <ClInclude Include="ToolBarSetupDlg.h" />
     <ClInclude Include="ViewBase.h" />
+    <ClInclude Include="ViewBaseGL.h" />
     <ClInclude Include="ViewOption.h" />
     <ClInclude Include="ViewSetup.h" />
     <ClInclude Include="ViewSetup1.h" />

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "FrameBuffer.h"
+#include "ViewBaseGL.h"
 //#include "GLSL.h"
 
 // TrackingMode
@@ -81,15 +81,14 @@ typedef	CREATEELEMENTPARAM*		LPCREATEELEMENTPARAM;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class CNCViewGL : public CView
+class CNCViewGL : public CViewBaseGL
 {
 	CString		m_strGuide;
 	BOOL		m_bActive,
 				m_bSizeChg,
 				m_bWirePath,	// ﾋﾞｭｰごとに動的に切り替えるﾌﾗｸﾞ
 				m_bSlitView;
-	int			m_cx,  m_cy,	// ｳｨﾝﾄﾞｳｻｲｽﾞ(ｽｸﾘｰﾝ)
-				m_icx, m_icy;
+	int			m_icx, m_icy;	// glDrawPixels
 	GLint		m_wx, m_wy;		// glReadPixels, glWindowPos
 	float		m_dRate,		// 基準拡大率
 				m_dRoundAngle,	// 中ﾎﾞﾀﾝの回転角度
@@ -102,7 +101,6 @@ class CNCViewGL : public CView
 	CPoint3F	m_ptLastRound,	// 回転前座標
 				m_ptRoundBase;	// 中ﾎﾞﾀﾝ連続回転の基準座標
 	CPoint		m_ptDownClick;	// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示用他
-	HGLRC		m_hRC;
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 
 	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
@@ -145,7 +143,6 @@ class CNCViewGL : public CView
 					m_objXformBk[4][4];	// ﾎﾞｸｾﾙ処理時のﾊﾞｯｸｱｯﾌﾟ
 
 	void	ClearObjectForm(BOOL = FALSE);
-	BOOL	SetupPixelFormat(CDC*);
 	void	UpdateViewOption(void);
 	void	CreateDisplayList(void);
 	BOOL	CreateBoxel(BOOL = FALSE);
@@ -206,21 +203,13 @@ public:
 	virtual void OnDraw(CDC*);
 	virtual BOOL OnCmdMsg(UINT, int, void*, AFX_CMDHANDLERINFO*);
 protected:
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnUpdate(CView*, LPARAM, CObject*);
 	virtual void OnActivateView(BOOL, CView*, CView*);
-
-public:
-#ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
-#endif
 
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);

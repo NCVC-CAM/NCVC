@@ -52,13 +52,12 @@ static	boost::array<GLfloat, ((ARCCOUNT+1)*2*(ARCCOUNT/4-2)+(ARCCOUNT+2))*NCXYZ>
 													GLMillPhNor;	// ﾎﾞｰﾙｴﾝﾄﾞﾐﾙ
 
 // CNCViewGL
-IMPLEMENT_DYNCREATE(CNCViewGL, CView)
+IMPLEMENT_DYNCREATE(CNCViewGL, CViewBaseGL)
 
-BEGIN_MESSAGE_MAP(CNCViewGL, CView)
+BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_WM_CREATE()
 	ON_WM_DESTROY()
 	ON_WM_SIZE()
-	ON_WM_ERASEBKGND()
 	ON_WM_CONTEXTMENU()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
@@ -105,9 +104,8 @@ CNCViewGL::CNCViewGL()
 	m_bActive = m_bSizeChg = FALSE;
 	m_bWirePath = pOpt->GetNCViewFlg(NCVIEWFLG_WIREPATH);	// ﾃﾞﾌｫﾙﾄ値を取得
 	m_bSlitView = pOpt->GetNCViewFlg(NCVIEWFLG_LATHESLIT);
-	m_cx = m_cy = m_icx = m_icy = 0;
+	m_icx = m_icy = 0;
 	m_dRate = m_dRoundAngle = m_dRoundStep = 0.0f;
-	m_hRC = NULL;
 	m_glCode = 0;
 
 #ifdef NO_TRACE_WORKFILE
@@ -118,8 +116,7 @@ CNCViewGL::CNCViewGL()
 	m_pbStencil = NULL;
 	m_pFBO = NULL;
 	m_nVBOsize = 0;
-	m_nVertexID[0] = m_nVertexID[1] =
-		m_nPictureID = m_nTextureID = 0;
+	m_nVertexID[0] = m_nVertexID[1] = m_nPictureID = m_nTextureID = 0;
 	m_pSolidElement = m_pLocusElement = NULL;
 
 	m_nCeProc = 0;
@@ -168,12 +165,6 @@ void CNCViewGL::DeleteDepthMemory(void)
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewGL クラスのオーバライド関数
-
-BOOL CNCViewGL::PreCreateWindow(CREATESTRUCT& cs)
-{
-	cs.style |= WS_CLIPSIBLINGS|WS_CLIPCHILDREN;
-	return __super::PreCreateWindow(cs);
-}
 
 void CNCViewGL::OnInitialUpdate() 
 {
@@ -398,42 +389,6 @@ BOOL CNCViewGL::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* 
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCViewGL クラスのメンバ関数
-
-BOOL CNCViewGL::SetupPixelFormat(CDC* pDC)
-{
-	static PIXELFORMATDESCRIPTOR pfd =
-	{
-		sizeof(PIXELFORMATDESCRIPTOR),
-		1,
-		PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-		PFD_TYPE_RGBA,
-		32,
-		0, 0, 0, 0, 0, 0,
-		0,
-		0,
-		0,
-		0, 0, 0, 0,
-		24,		// Depth   Buffer
-		8,		// Stencil Buffer
-		0,
-		PFD_MAIN_PLANE,
-		0,
-		0, 0, 0
-	};
-
-	int	iPixelFormat;
-	if( !(iPixelFormat = ::ChoosePixelFormat(pDC->GetSafeHdc(), &pfd)) ) {
-		TRACE0( "ChoosePixelFormat is failed" );
-		return FALSE;
-	}
-
-	if( !::SetPixelFormat(pDC->GetSafeHdc(), iPixelFormat, &pfd) ) {
-		TRACE0( "SetPixelFormat is failed" );
-		return FALSE;
-	}
-
-    return TRUE;
-}
 
 void CNCViewGL::ClearObjectForm(BOOL bInitialBoxel)
 {
@@ -1153,7 +1108,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 
 //	::glFinish();		// SwapBuffers() に含まれる
 	::SwapBuffers( pDC->GetSafeHdc() );
-
 	::wglMakeCurrent(NULL, NULL);
 }
 
@@ -1162,67 +1116,11 @@ void CNCViewGL::OnDraw(CDC* pDC)
 
 int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct) 
 {
-#ifdef _DEBUG_FILEOPEN
-	printf("CNCViewGL::OnCreate() Start\n");
-#endif
 	if ( __super::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 
-	// ｽﾌﾟﾘｯﾀからの境界ｶｰｿﾙが移るので，IDC_ARROW を明示的に指定
-	// 他の NCView.cpp のように PreCreateWindow() での AfxRegisterWndClass() ではｴﾗｰ??
-	::SetClassLongPtr(m_hWnd, GCLP_HCURSOR,
-		(LONG_PTR)AfxGetApp()->LoadStandardCursor(IDC_ARROW));
-#ifdef _DEBUG_FILEOPEN
-	printf("CNCViewGL::SetClassLongPtr() End\n");
-#endif
-
-	// OpenGL初期化処理
-	CClientDC	dc(this);
-	HDC	hDC = dc.GetSafeHdc();
-
-	// OpenGL pixel format の設定
-    if( !SetupPixelFormat(&dc) ) {
-		TRACE0("SetupPixelFormat failed\n");
-		return -1;
-	}
-#ifdef _DEBUG_FILEOPEN
-	printf("CNCViewGL::SetupPixelFormat() End\n");
-#endif
-
-	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄの作成
-	if( !(m_hRC = ::wglCreateContext(hDC)) ) {
-		TRACE0("wglCreateContext failed\n");
-		return -1;
-	}
-#ifdef _DEBUG_FILEOPEN
-	printf("CNCViewGL::wglCreateContext() End\n");
-#endif
-
-	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄをｶﾚﾝﾄのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄに設定
-	if( !::wglMakeCurrent(hDC, m_hRC) ) {
-		TRACE0("wglMakeCurrent failed\n");
-		return -1;
-	}
-#ifdef _DEBUG_FILEOPEN
-	printf("CNCViewGL::wglMakeCurrent() End\n");
-	DWORD	t1 = ::timeGetTime();
-#endif
-
-	// OpenGL Extention 使用準備
-	GLenum glewResult = ::glewInit();
-	if ( glewResult != GLEW_OK ) {
-		TRACE1("glewInit() failed code=%s\n", ::glewGetErrorString(glewResult));
-		return -1;
-	}
-#ifdef _DEBUG_FILEOPEN
-	DWORD	t2 = ::timeGetTime();
-	printf("CNCViewGL::glewInit() End %d[ms]\n", t2 - t1);
-#endif
-
 	// OpenGL拡張ｻﾎﾟｰﾄのﾁｪｯｸ
 	CString		strVer( ::glGetString(GL_VERSION) );
-	int			nVer = atoi(strVer);	// 下の_DEBUGで使用
-//	if ( nVer < 2 || !GLEW_ARB_vertex_buffer_object ) {
 	if ( !GLEW_ARB_vertex_buffer_object ) {
 		CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 		CString	strErrMsg;
@@ -1235,6 +1133,14 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 			AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
 		return -1;
 	}
+
+	// ｽﾌﾟﾘｯﾀからの境界ｶｰｿﾙが移るので，IDC_ARROW を明示的に指定
+	// 他の NCView.cpp のように PreCreateWindow() での AfxRegisterWndClass() ではｴﾗｰ??
+	::SetClassLongPtr(m_hWnd, GCLP_HCURSOR,
+		(LONG_PTR)AfxGetApp()->LoadStandardCursor(IDC_ARROW));
+#ifdef _DEBUG_FILEOPEN
+	printf("CNCViewGL::SetClassLongPtr() End\n");
+#endif
 
 #if defined(_DEBUG_SHADERTEST_)
 	if ( !m_glsl.CompileShaderFromFile("C:\\Users\\magara\\Documents\\Visual Studio 2015\\Projects\\NCVC\\NCVC\\showdepth.vert", VERTEX) ) {
@@ -1264,39 +1170,6 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		AfxMessageBox(strErrMsg, MB_OK|MB_ICONEXCLAMATION);
 	}
 #endif
-
-	::glEnable(GL_DEPTH_TEST);
-	::glEnable(GL_NORMALIZE);	// ここにこれがないとInitialBoxel()を通らないﾜｲﾔ加工機ﾓｰﾄﾞでﾗｲﾃｨﾝｸﾞ色が出ない
-	::glClearColor( 0, 0, 0, 0 );
-
-#ifdef _DEBUG
-	printf("GetDeviceCaps([HORZSIZE|VERTSIZE])=%d, %d\n",
-		dc.GetDeviceCaps(HORZSIZE), dc.GetDeviceCaps(VERTSIZE) );
-	printf("GetDeviceCaps([LOGPIXELSX|LOGPIXELSY])=%d, %d\n",
-		dc.GetDeviceCaps(LOGPIXELSX), dc.GetDeviceCaps(LOGPIXELSY) );
-	GLint	nGLResult;
-	printf("Using OpenGL version:%s\n", ::glGetString(GL_VERSION));
-	printf("Using GLEW   version:%s\n", ::glewGetString(GLEW_VERSION));
-	::glGetIntegerv(GL_STENCIL_BITS, &nGLResult);
-	printf(" Stencil bits=%d\n", nGLResult);
-	::glGetIntegerv(GL_DEPTH_BITS, &nGLResult);
-	printf(" Depth   bits=%d\n", nGLResult);
-	::glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &nGLResult);
-	printf(" MaxElementVertices=%d\n", nGLResult);
-	::glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &nGLResult);
-	printf(" MaxElementIndices =%d\n", nGLResult);
-	if ( nVer >= 4 ) {
-		::glGetIntegerv(GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS, &nGLResult);
-		printf(" GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS =%d\n", nGLResult);
-		::glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES, &nGLResult);
-		printf(" GL_MAX_GEOMETRY_OUTPUT_VERTICES =%d\n", nGLResult);
-		::glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE_EXT, &nGLResult);
-		printf(" GL_MAX_RENDERBUFFER_SIZE_EXT =%d\n", nGLResult);
-	}
-	GetGLError();	// error flash
-#endif
-
-	::wglMakeCurrent( NULL, NULL );
 
 	return 0;
 }
@@ -1336,20 +1209,8 @@ void CNCViewGL::OnDestroy()
 
 void CNCViewGL::OnSize(UINT nType, int cx, int cy)
 {
-	__super::OnSize(nType, cx, cy);
-	if( cx <= 0 || cy <= 0 )
-		return;
-
-	if ( m_cx!=cx || m_cy!=cy ) {
-		m_cx = cx;
-		m_cy = cy;
+	if ( __super::_OnSize(nType, cx, cy) )
 		m_bSizeChg = TRUE;
-		// ﾋﾞｭｰﾎﾟｰﾄ設定処理
-		CClientDC	dc(this);
-		::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-		::glViewport(0, 0, cx, cy);
-		::wglMakeCurrent(NULL, NULL);
-	}
 }
 
 void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView) 
@@ -1931,11 +1792,6 @@ void CNCViewGL::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	__super::OnKeyDown(nChar, nRepCnt, nFlags);
 }
 
-BOOL CNCViewGL::OnEraseBkgnd(CDC* pDC)
-{
-	return TRUE;
-}
-
 void CNCViewGL::OnTimer(UINT_PTR nIDEvent) 
 {
 	if ( m_dRoundStep != 0.0f ) {
@@ -2035,16 +1891,6 @@ void CNCViewGL::DumpLatheZ(void) const
 		ss.Format("o:%f, i:%f\n", m_pLatheZo[i], m_pLatheZi[i]);
 		dbg_fs.WriteString(ss);
 	}
-}
-
-void CNCViewGL::AssertValid() const
-{
-	__super::AssertValid();
-}
-
-void CNCViewGL::Dump(CDumpContext& dc) const
-{
-	__super::Dump(dc);
 }
 
 CNCDoc* CNCViewGL::GetDocument() // 非デバッグ バージョンはインラインです。
