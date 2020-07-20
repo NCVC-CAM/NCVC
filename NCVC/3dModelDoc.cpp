@@ -48,6 +48,41 @@ C3dModelDoc::~C3dModelDoc()
 void C3dModelDoc::Serialize(CArchive& ar)
 {
 	if (ar.IsStoring()) return;	// •Û‘¶‚Í¡‚Ì‚Æ‚±‚ëƒiƒV
+
+	const CFile* fp = ar.GetFile();
+	CString	strPath( fp->GetFilePath() ), strExt;
+	TCHAR	szFileName[_MAX_FNAME],
+			szExt[_MAX_EXT];
+
+	_tsplitpath_s(strPath, NULL, 0, NULL, 0,
+		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
+	if ( lstrlen(szFileName)<=0 || lstrlen(szExt)<=0 )
+		return;
+	strExt = szExt + 1;		// ƒhƒbƒg‚ðœ‚­
+
+	m_kBody = new BODY;
+
+	// Šg’£Žq‚Å”»•Ê
+	int	nResult = KOD_FALSE;
+	if ( strExt.CompareNoCase("igs")==0 || strExt.CompareNoCase("iges")==0 ) {
+		IGES_PARSER	iges;
+		if ( (nResult=iges.IGES_Parser_Main(m_kBody, strPath)) == KOD_TRUE )
+			iges.Optimize4OpenGL(m_kBody);
+	}
+	else if ( strExt.CompareNoCase("stl") == 0 ) {
+		STL_PARSER	stl;
+		nResult = stl.STL_Parser_Main(m_kBody, strPath);
+	}
+	if ( nResult != KOD_TRUE ) {
+		delete	m_kBody;
+		m_kBody = NULL;
+		return;
+	}
+
+	// Kodatuno BODY “o˜^
+	if ( !m_kbList )
+		m_kbList = new BODYList;
+	m_kBody->RegistBody(m_kbList, strPath);
 }
 
 /////////////////////////////////////////////////////////////////////////////
