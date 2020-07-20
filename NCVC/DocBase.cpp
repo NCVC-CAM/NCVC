@@ -162,7 +162,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 	ULONGLONG		llSize;
 	if ( !CFile::GetStatus(strFileName, fStatus) ) {
 #ifdef _DEBUG
-		printf("FCN-Thread GetStatus() Error (TimeStamp) \"%s\"\n", LPCTSTR(strFile));
+		printf("FileChangeNotificationThread() GetStatus() Error (TimeStamp) \"%s\"\n", LPCTSTR(strFile));
 #endif
 		return 0;
 	}
@@ -173,14 +173,14 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 		FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME);
 	if ( hEvent[1] == INVALID_HANDLE_VALUE ) {
 #ifdef _DEBUG
-		printf("FindFirstChangeNotification() Error \"%s\"\n", LPCTSTR(strPath));
+		printf("FileChangeNotificationThread() Event Error \"%s\"\n", LPCTSTR(strPath));
 		NC_FormatMessage();
 #endif
 		return 0;
 	}
 
 #ifdef _DEBUG
-	printf("FCN-Thread Start! \"%s\"\n", LPCTSTR(strFile));
+	printf("FileChangeNotificationThread() Start \"%s\"\n", LPCTSTR(strFile));
 #endif
 	BOOL	bResult = TRUE;
 	DWORD	dwResult;
@@ -196,7 +196,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 			if ( CFile::GetStatus(strFileName, fStatus) ) {
 				if ( fLastTime!=fStatus.m_mtime || llSize!=fStatus.m_size ) {
 #ifdef _DEBUG
-					printf("FCN-Thread Change! \"%s\"\n", LPCTSTR(strFile));
+					printf("FileChangeNotificationThread() Change \"%s\"\n", LPCTSTR(strFile));
 #endif
 					fLastTime = fStatus.m_mtime;
 					llSize    = fStatus.m_size;
@@ -205,7 +205,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 			}
 #ifdef _DEBUG
 			else
-				printf("FCN-Thread GetStatus() Error \"%s\"\n", LPCTSTR(strFile));
+				printf("FileChangeNotificationThread() GetStatus() Error \"%s\"\n", LPCTSTR(strFile));
 #endif
 			if ( FindNextChangeNotification(hEvent[1]) )
 				break;
@@ -227,7 +227,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 					break;		// çƒ¡¨⁄›ºﬁê¨å˜ÅI
 #ifdef _DEBUG
 				else {
-					printf("FindFirstChangeNotification() Retry Error \"%s\"\n", LPCTSTR(strPath));
+					printf("FileChangeNotificationThread() Retry Error \"%s\"\n", LPCTSTR(strPath));
 					NC_FormatMessage();
 				}
 #endif
@@ -239,7 +239,7 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 	if ( hEvent[1] != INVALID_HANDLE_VALUE )
 		FindCloseChangeNotification(hEvent[1]);
 #ifdef _DEBUG
-	printf("FCN-Thread End Thread \"%s\"\n", LPCTSTR(strFile));
+	printf("FileChangeNotificationThread() End thread \"%s\"\n", LPCTSTR(strFile));
 #endif
 
 	return 0;
@@ -266,7 +266,7 @@ BODY*	Read3dModel(LPCTSTR lpszFile, LPCTSTR lpszCurrent/*=NULL*/)
 		else {
 			::GetCurrentDirectory(MAX_PATH, pBuf);
 			strCurrent = pBuf;
-			strCurrent += '\\';
+			strCurrent += gg_szEn;
 			strCurrent += lpszFile;
 		}
 		if ( ::PathCanonicalize(pBuf, strCurrent) )
