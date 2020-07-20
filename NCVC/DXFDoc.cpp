@@ -869,9 +869,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 				m_bDocFlg.set(DXFDOC_WIRE);
 		}
 		// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
-		POSITION	pos = GetFirstViewPosition();
-		ASSERT( pos );
-		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());	// CDocBase
+		OnOpenDocumentBase(lpszPathName);	// CDocBase
 	}
 
 	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
@@ -894,7 +892,7 @@ BOOL CDXFDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	UpdateAllViews(NULL, UAV_FILESAVE);	// CDXFShapeView順序更新
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの終了
-	OnCloseDocumentSP();	// CDocBase
+	OnCloseDocumentBase();	// CDocBase
 
 	if ( GetPathName().CompareNoCase(lpszPathName) != 0 ) {
 		CDocument* pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_DXF, lpszPathName);
@@ -907,9 +905,7 @@ BOOL CDXFDoc::OnSaveDocument(LPCTSTR lpszPathName)
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	if ( bResult ) {
-		POSITION	pos = GetFirstViewPosition();
-		ASSERT( pos );
-		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());
+		OnOpenDocumentBase(lpszPathName);
 	}
 
 	return bResult;
@@ -928,7 +924,7 @@ void CDXFDoc::OnCloseDocument()
 		return;
 	}
 	// 処理中のｽﾚｯﾄﾞを中断させる
-	OnCloseDocumentSP();	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
+	OnCloseDocumentBase();	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
 	m_bDocFlg.reset(DXFDOC_THREAD);
 	m_csRestoreCircleType.Lock();
 	m_csRestoreCircleType.Unlock();

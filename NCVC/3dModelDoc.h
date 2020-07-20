@@ -4,22 +4,27 @@
 #pragma once
 
 #include "DocBase.h"
+#include "Kodatuno/BODY.h"
+#undef PI	// Use NCVC (MyTemplate.h)
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelDoc ドキュメント
 
 class C3dModelDoc : public CDocBase
 {
+	BODY*		m_kBody;		// Kodatuno Body
+	BODYList*	m_kbList;		// Kodatuno Body List
 
 public:
 	C3dModelDoc();
 	virtual ~C3dModelDoc();
+	DECLARE_DYNCREATE(C3dModelDoc)
 
 	virtual void Serialize(CArchive& ar);   // ドキュメント I/O に対してオーバーライドされました。
-	virtual BOOL OnNewDocument();
+	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
+	virtual void OnCloseDocument();
 
 protected:
 
-	DECLARE_DYNCREATE(C3dModelDoc)
 	DECLARE_MESSAGE_MAP()
 };

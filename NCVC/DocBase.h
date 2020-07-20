@@ -120,8 +120,8 @@ protected:
 #endif
 
 protected:
-	BOOL	OnOpenDocumentSP(LPCTSTR lpstrFileName, CFrameWnd* pWnd);
-	void	OnCloseDocumentSP(void);
+	BOOL	OnOpenDocumentBase(LPCTSTR lpstrFileName);
+	void	OnCloseDocumentBase(void);
 	BOOL	UpdateModifiedTitle(BOOL bModified, CString& strTitle);
 
 public:

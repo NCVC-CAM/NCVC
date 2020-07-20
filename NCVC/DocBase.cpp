@@ -32,8 +32,11 @@ void CDocBase::SetModifiedFlag(BOOL bModified)
 
 /////////////////////////////////////////////////////////////////////////////
 
-BOOL CDocBase::OnOpenDocumentSP(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
+BOOL CDocBase::OnOpenDocumentBase(LPCTSTR lpstrFileName)
 {
+	POSITION	pos = GetFirstViewPosition();
+	ASSERT( pos );
+	CFrameWnd*	pWnd = GetNextView(pos)->GetParentFrame();
 	ASSERT( pWnd );
 	m_pFileChangeThread = NULL;
 
@@ -61,7 +64,7 @@ BOOL CDocBase::OnOpenDocumentSP(LPCTSTR lpstrFileName, CFrameWnd* pWnd)
 	return TRUE;
 }
 
-void CDocBase::OnCloseDocumentSP(void)
+void CDocBase::OnCloseDocumentBase(void)
 {
 	if ( !m_pFileChangeThread )
 		return;
@@ -69,11 +72,11 @@ void CDocBase::OnCloseDocumentSP(void)
 	m_evFinish.SetEvent();
 #ifdef _DEBUG
 	if ( ::WaitForSingleObject(m_pFileChangeThread->m_hThread, INFINITE) == WAIT_FAILED ) {
-		printf("OnCloseDocumentSP()@WaitForSingleObject() Fail!\n");
+		printf("OnCloseDocumentBase()@WaitForSingleObject() Fail!\n");
 		::NC_FormatMessage();
 	}
 	else
-		printf("OnCloseDocumentSP() WaitForSingleObject() OK\n");
+		printf("OnCloseDocumentBase() WaitForSingleObject() OK\n");
 #else
 	::WaitForSingleObject(m_pFileChangeThread->m_hThread, INFINITE);
 #endif

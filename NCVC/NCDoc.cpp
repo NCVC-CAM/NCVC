@@ -1062,9 +1062,7 @@ BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		bResult = SerializeAfterCheck();
 		if ( bResult ) {
 			// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
-			POSITION	pos = GetFirstViewPosition();
-			ASSERT( pos );
-			OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());	// CDocBase
+			OnOpenDocumentBase(lpszPathName);	// CDocBase
 		}
 	}
 
@@ -1079,7 +1077,7 @@ BOOL CNCDoc::OnOpenDocument(LPCTSTR lpszPathName)
 BOOL CNCDoc::OnSaveDocument(LPCTSTR lpszPathName) 
 {
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの終了
-	OnCloseDocumentSP();	// CDocBase
+	OnCloseDocumentBase();	// CDocBase
 
 	if ( GetPathName().CompareNoCase(lpszPathName) != 0 ) {
 		CDocument* pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, lpszPathName);
@@ -1092,9 +1090,7 @@ BOOL CNCDoc::OnSaveDocument(LPCTSTR lpszPathName)
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	if ( bResult ) {
-		POSITION	pos = GetFirstViewPosition();
-		ASSERT( pos );
-		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());
+		OnOpenDocumentBase(lpszPathName);
 	}
 
 	return bResult;
@@ -1117,7 +1113,7 @@ void CNCDoc::OnCloseDocument()
 	}
 
 	// 処理中のｽﾚｯﾄﾞを中断させる
-	OnCloseDocumentSP();		// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
+	OnCloseDocumentBase();		// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
 	WaitCalcThread();			// 切削時間計算ｽﾚｯﾄﾞ
 
 	__super::OnCloseDocument();
