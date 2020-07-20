@@ -10,6 +10,13 @@
 #define new DEBUG_NEW
 #endif
 
+#ifdef USE_KODATUNO
+#include "Kodatuno/BODY.h"
+#include "Kodatuno/IGES_Parser.h"
+#include "Kodatuno/STL_Parser.h"
+#undef PI	// Use NCVC (MyTemplate.h)
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 void CDocBase::ReportSaveLoadException
@@ -237,3 +244,61 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 
 	return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+#ifdef USE_KODATUNO
+BODY*	Read3dModel(LPCTSTR lpszFile, LPCTSTR lpszCurrent/*=NULL*/)
+{
+	extern	LPCTSTR	gg_szEn;	// "\\";
+	CString	strPath, strName, strExt;
+	TCHAR	szFileName[_MAX_FNAME],
+			szExt[_MAX_EXT];
+
+	// ﾌｧｲﾙ名の検査
+	if ( ::PathIsRelative(lpszFile) ) {
+		CString	strCurrent;
+		TCHAR	pBuf[MAX_PATH];
+		if ( lpszCurrent ) {
+			::Path_Name_From_FullPath(lpszCurrent, strCurrent, strName);
+			strCurrent += lpszFile;
+		}
+		else {
+			::GetCurrentDirectory(MAX_PATH, pBuf);
+			strCurrent = pBuf;
+			strCurrent += '\\';
+			strCurrent += lpszFile;
+		}
+		if ( ::PathCanonicalize(pBuf, strCurrent) )
+			strPath = pBuf;
+	}
+	else {
+		strPath = lpszFile;
+	}
+	_tsplitpath_s(strPath, NULL, 0, NULL, 0,
+		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
+	if ( lstrlen(szFileName)<=0 || lstrlen(szExt)<=0 )
+		return NULL;
+	strExt = szExt + 1;		// ドットを除く
+
+	BODY*	pBody = new BODY;
+
+	// 拡張子で判別
+	int	nResult = KOD_FALSE;
+	if ( strExt.CompareNoCase("igs")==0 || strExt.CompareNoCase("iges")==0 ) {
+		IGES_PARSER	iges;
+		if ( (nResult=iges.IGES_Parser_Main(pBody, strPath)) == KOD_TRUE )
+			iges.Optimize4OpenGL(pBody);
+	}
+	else if ( strExt.CompareNoCase("stl") == 0 ) {
+		STL_PARSER	stl;
+		nResult = stl.STL_Parser_Main(pBody, strPath);
+	}
+	if ( nResult != KOD_TRUE ) {
+		delete	pBody;
+		return NULL;
+	}
+
+	return pBody;
+}
+#endif

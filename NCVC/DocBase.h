@@ -153,3 +153,8 @@ public:
 	// çXêVœ∞∏ïtó^
 	virtual void SetModifiedFlag(BOOL bModified = TRUE);
 };
+
+/////////////////////////////////////////////////////////////////////////////
+
+class BODY;
+BODY*	Read3dModel(LPCTSTR, LPCTSTR = NULL);

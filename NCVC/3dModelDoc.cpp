@@ -4,9 +4,6 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "3dModelDoc.h"
-#include "Kodatuno/IGES_Parser.h"
-#include "Kodatuno/STL_Parser.h"
-#undef PI	// Use NCVC (MyTemplate.h)
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -22,19 +19,20 @@ END_MESSAGE_MAP()
 
 C3dModelDoc::C3dModelDoc()
 {
-	m_kBody  = NULL;
-	m_kbList = NULL;
+	m_pKoBody  = NULL;
+	m_pKoList = NULL;
+	m_rcMax.SetRectMinimum();
 }
 
 C3dModelDoc::~C3dModelDoc()
 {
-	if ( m_kBody ) {
-		m_kBody->DelBodyElem();
-		delete	m_kBody;
+	if ( m_pKoBody ) {
+		m_pKoBody->DelBodyElem();
+		delete	m_pKoBody;
 	}
-	if ( m_kbList ) {
-		m_kbList->clear();
-		delete	m_kbList;
+	if ( m_pKoList ) {
+		m_pKoList->clear();
+		delete	m_pKoList;
 	}
 }
 
@@ -50,39 +48,16 @@ void C3dModelDoc::Serialize(CArchive& ar)
 	if (ar.IsStoring()) return;	// 保存は今のところナシ
 
 	const CFile* fp = ar.GetFile();
-	CString	strPath( fp->GetFilePath() ), strExt;
-	TCHAR	szFileName[_MAX_FNAME],
-			szExt[_MAX_EXT];
+	CString	strPath( fp->GetFilePath() );
 
-	_tsplitpath_s(strPath, NULL, 0, NULL, 0,
-		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
-	if ( lstrlen(szFileName)<=0 || lstrlen(szExt)<=0 )
-		return;
-	strExt = szExt + 1;		// ドットを除く
-
-	m_kBody = new BODY;
-
-	// 拡張子で判別
-	int	nResult = KOD_FALSE;
-	if ( strExt.CompareNoCase("igs")==0 || strExt.CompareNoCase("iges")==0 ) {
-		IGES_PARSER	iges;
-		if ( (nResult=iges.IGES_Parser_Main(m_kBody, strPath)) == KOD_TRUE )
-			iges.Optimize4OpenGL(m_kBody);
-	}
-	else if ( strExt.CompareNoCase("stl") == 0 ) {
-		STL_PARSER	stl;
-		nResult = stl.STL_Parser_Main(m_kBody, strPath);
-	}
-	if ( nResult != KOD_TRUE ) {
-		delete	m_kBody;
-		m_kBody = NULL;
+	// ３Ｄモデルの読み込み
+	m_pKoBody = Read3dModel(strPath);
+	if ( !m_pKoBody ) {
 		return;
 	}
-
 	// Kodatuno BODY 登録
-	if ( !m_kbList )
-		m_kbList = new BODYList;
-	m_kBody->RegistBody(m_kbList, strPath);
+	m_pKoList = new BODYList;
+	m_pKoBody->RegistBody(m_pKoList, strPath);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -95,6 +70,20 @@ BOOL C3dModelDoc::OnOpenDocument(LPCTSTR lpszPathName)
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	OnOpenDocumentBase(lpszPathName);	// CDocBase
+
+	// 占有矩形の取得
+	BODY*		pBody;
+	CPoint3D	pt;
+	int		i, nLoop = m_pKoList->getNum();
+
+	for ( i=0; i<nLoop; i++ ) {
+		pBody = (BODY *)m_pKoList->getData(i);
+		// ライブラリ側を少し改造
+		pt = pBody->minmaxCoord[0];
+		m_rcMax |= pt;
+		pt = pBody->minmaxCoord[1];
+		m_rcMax |= pt;
+	}
 
 	return TRUE;
 }

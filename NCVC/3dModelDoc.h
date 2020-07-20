@@ -12,8 +12,8 @@
 
 class C3dModelDoc : public CDocBase
 {
-	BODY*		m_kBody;		// Kodatuno Body
-	BODYList*	m_kbList;		// Kodatuno Body List
+	BODY*		m_pKoBody;		// Kodatuno Body
+	BODYList*	m_pKoList;		// Kodatuno Body List
 
 public:
 	C3dModelDoc();

@@ -19,11 +19,6 @@
 #include "DXFMakeOption.h"
 #include "DXFMakeClass.h"
 #include "MakeDXFDlg.h"
-#ifdef USE_KODATUNO
-#include "Kodatuno/IGES_Parser.h"
-#include "Kodatuno/STL_Parser.h"
-#undef PI	// Use NCVC (MyTemplate.h)
-#endif
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -110,8 +105,8 @@ CNCDoc::CNCDoc()
 	m_obBlock.SetSize(0, 4096);
 	m_obGdata.SetSize(0, 4096);
 #ifdef USE_KODATUNO
-	m_kBody  = NULL;
-	m_kbList = NULL;
+	m_pKoBody = NULL;
+	m_pKoList = NULL;
 #endif
 }
 
@@ -123,14 +118,14 @@ CNCDoc::~CNCDoc()
 	m_obGdata.RemoveAll();
 #ifdef USE_KODATUNO
 	// IGES Body
-	if ( m_kBody ) {
-		//m_kBody->DeleteBody(m_kbList);
-		m_kBody->DelBodyElem();
-		delete	m_kBody;
+	if ( m_pKoBody ) {
+		//m_pKoBody->DeleteBody(m_pKoList);
+		m_pKoBody->DelBodyElem();
+		delete	m_pKoBody;
 	}
-	if ( m_kbList ) {
-		m_kbList->clear();
-		delete	m_kbList;
+	if ( m_pKoList ) {
+		m_pKoList->clear();
+		delete	m_pKoList;
 	}
 #endif
 	// ﾌﾞﾛｯｸﾃﾞｰﾀの消去
@@ -179,75 +174,58 @@ void CNCDoc::SetLatheViewMode(void)
 	}
 }
 
+#ifdef USE_KODATUNO
 BOOL CNCDoc::ReadWorkFile(LPCTSTR strFile)
 {
-#ifdef USE_KODATUNO
-	CString	strPath, strName, strExt;
-	TCHAR	szFileName[_MAX_FNAME],
-			szExt[_MAX_EXT];
-
-	// ﾌｧｲﾙ名の検査
-	if ( ::PathIsRelative(strFile) ) {
-		CString	strCurrent;
-		TCHAR	pBuf[MAX_PATH];
-		::Path_Name_From_FullPath(m_strCurrentFile, strCurrent, strName);	// GetPathName()不可
-		strCurrent += strFile;
-		if ( ::PathCanonicalize(pBuf, strCurrent) )
-			strPath = pBuf;
-	}
-	else {
-		strPath = strFile;
-	}
-	_tsplitpath_s(strPath, NULL, 0, NULL, 0,
-		szFileName, SIZEOF(szFileName), szExt, SIZEOF(szExt));
-	if ( lstrlen(szFileName)<=0 || lstrlen(szExt)<=0 )
+	// ３Ｄモデルの読み込み
+	m_pKoBody = Read3dModel(strFile, m_strCurrentFile);
+	if ( !m_pKoBody )
 		return FALSE;
-	strExt = szExt + 1;		// ドットを除く
-
-	// WorkFile読み込み準備
-	if ( m_kBody ) {
-		if ( m_kbList )
-			m_kbList->clear();
-		m_kBody->DelBodyElem();
-		delete	m_kBody;
-	}
-	m_kBody = new BODY;
-
-	// 拡張子で判別
-	int	nResult = KOD_FALSE;
-	if ( strExt.CompareNoCase("igs")==0 || strExt.CompareNoCase("iges")==0 ) {
-		IGES_PARSER	iges;
-		if ( (nResult=iges.IGES_Parser_Main(m_kBody, strPath)) == KOD_TRUE )
-			iges.Optimize4OpenGL(m_kBody);
-	}
-	else if ( strExt.CompareNoCase("stl") == 0 ) {
-		STL_PARSER	stl;
-		nResult = stl.STL_Parser_Main(m_kBody, strPath);
-	}
-	if ( nResult != KOD_TRUE ) {
-		delete	m_kBody;
-		m_kBody = NULL;
-		return FALSE;
-	}
 
 	// Kodatuno BODY 登録
-	if ( !m_kbList )
-		m_kbList = new BODYList;
-	m_kBody->RegistBody(m_kbList, strFile);
-#endif
+	if ( !m_pKoList )
+		m_pKoList = new BODYList;
+	m_pKoBody->RegistBody(m_pKoList, strFile);
 
 	m_bDocFlg.set(NCDOC_WORKFILE);
 
 	return TRUE;
 }
 
-#ifdef USE_KODATUNO
 void CNCDoc::SetWorkFileOffset(const Coord& sft)
 {
-	if ( m_kBody )
-		m_kBody->ShiftBody(sft);
+	if ( m_pKoBody )
+		m_pKoBody->ShiftBody(sft);
 }
+
+void CNCDoc::CalcWorkFileRect(void)
+{
+	BODY*		pBody;
+	CPoint3D	pt;
+	int		i, nLoop = m_pKoList->getNum();
+
+	m_rcWorkCo.SetRectMinimum();
+
+	// NURBS曲線のみを対象にｺﾝﾄﾛｰﾙﾎﾟｲﾝﾄから占有矩形を推測
+	for ( i=0; i<nLoop; i++ ) {
+		pBody = (BODY *)m_pKoList->getData(i);
+#ifdef _DEBUG
+		printf("CNCDoc::CalcWorkFileRect() body->MaxCoord=%f\n", pBody->MaxCoord);
+		printf(" minCoord=(%f,%f,%f)\n", pBody->minmaxCoord[0].x, pBody->minmaxCoord[0].y, pBody->minmaxCoord[0].z);
+		printf(" maxCoord=(%f,%f,%f)\n", pBody->minmaxCoord[1].x, pBody->minmaxCoord[1].y, pBody->minmaxCoord[1].z);
 #endif
+		// ライブラリ側を少し改造
+		pt = pBody->minmaxCoord[0];
+		m_rcWorkCo |= pt;
+		pt = pBody->minmaxCoord[1];
+		m_rcWorkCo |= pt;
+	}
+#ifdef _DEBUG
+	printf("(%f,%f)-(%f,%f)\n", m_rcWorkCo.left, m_rcWorkCo.top, m_rcWorkCo.right, m_rcWorkCo.bottom);
+	printf("(%f,%f)\n", m_rcWorkCo.low, m_rcWorkCo.high);
+#endif
+}
+#endif	// USE_KODATUNO
 
 BOOL CNCDoc::ReadMCFile(LPCTSTR strFile)
 {
@@ -1285,7 +1263,7 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	}
 	else {
 #ifdef USE_KODATUNO
-		if ( m_bDocFlg[NCDOC_WORKFILE] && m_kbList ) {
+		if ( m_bDocFlg[NCDOC_WORKFILE] && m_pKoList ) {
 			CalcWorkFileRect();		// IGES/STEPの占有矩形を計算
 			m_rcWork = m_rcWorkCo;
 		}
@@ -1349,36 +1327,6 @@ BOOL CNCDoc::ValidDataCheck(void)
 	}
 	return FALSE;
 }
-
-#ifdef USE_KODATUNO
-void CNCDoc::CalcWorkFileRect(void)
-{
-	BODY*		pBody;
-	CPoint3D	pt;
-	int		i, nLoop = m_kbList->getNum();
-
-	m_rcWorkCo.SetRectMinimum();
-
-	// NURBS曲線のみを対象にｺﾝﾄﾛｰﾙﾎﾟｲﾝﾄから占有矩形を推測
-	for ( i=0; i<nLoop; i++ ) {
-		pBody = (BODY *)m_kbList->getData(i);
-#ifdef _DEBUG
-		printf("CNCDoc::CalcWorkFileRect() body->MaxCoord=%f\n", pBody->MaxCoord);
-		printf(" minCoord=(%f,%f,%f)\n", pBody->minmaxCoord[0].x, pBody->minmaxCoord[0].y, pBody->minmaxCoord[0].z);
-		printf(" maxCoord=(%f,%f,%f)\n", pBody->minmaxCoord[1].x, pBody->minmaxCoord[1].y, pBody->minmaxCoord[1].z);
-#endif
-		// ライブラリ側を少し改造
-		pt = pBody->minmaxCoord[0];
-		m_rcWorkCo |= pt;
-		pt = pBody->minmaxCoord[1];
-		m_rcWorkCo |= pt;
-	}
-#ifdef _DEBUG
-	printf("(%f,%f)-(%f,%f)\n", m_rcWorkCo.left, m_rcWorkCo.top, m_rcWorkCo.right, m_rcWorkCo.bottom);
-	printf("(%f,%f)\n", m_rcWorkCo.low, m_rcWorkCo.high);
-#endif
-}
-#endif
 
 BOOL CNCDoc::SerializeInsertBlock
 	(LPCTSTR lpszFileName, INT_PTR nInsert, DWORD dwFlags/*=0*/)

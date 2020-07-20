@@ -549,11 +549,13 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 	// ‹∞∏Ãß≤Ÿ
 	struct _SetWorkFile {
 		void operator()(const string& s, qi::unused_type, qi::unused_type) const {
+#ifdef USE_KODATUNO
 			if ( !IsThumbnail() ) {
 				if ( !g_pDoc->ReadWorkFile(s.c_str()) )
 					g_dwBlockFlags |= NCBLK_ERR_FILE;
 			}
 		}
+#endif
 	};
 	// ã@äBèÓïÒÃß≤Ÿ
 	struct _SetMCFile {
@@ -625,6 +627,7 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 	// ‹∞∏à íuïœçX
 	struct _WorkPosX {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
+#ifdef USE_KODATUNO
 			g_dWorkPos[NCA_X] = d;
 			g_dwBlockFlags |= NCBLK_WORKX;
 #ifdef _DEBUG_GSPIRIT
@@ -632,9 +635,11 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 				printf("WorkPosX()=%f\n", d);
 #endif
 		}
+#endif
 	};
 	struct _WorkPosY {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
+#ifdef USE_KODATUNO
 			g_dWorkPos[NCA_Y] = d;
 			g_dwBlockFlags |= NCBLK_WORKY;
 #ifdef _DEBUG_GSPIRIT
@@ -642,9 +647,11 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 				printf("WorkPosY()=%f\n", d);
 #endif
 		}
+#endif
 	};
 	struct _WorkPosZ {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
+#ifdef USE_KODATUNO
 			g_dWorkPos[NCA_Z] = d;
 			g_dwBlockFlags |= NCBLK_WORKZ;
 #ifdef _DEBUG_GSPIRIT
@@ -652,6 +659,7 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 				printf("WorkPosZ()=%f\n", d);
 #endif
 		}
+#endif
 	};
 	// ê˘î’íÜÇÆÇË
 	struct _SetLatheInside {

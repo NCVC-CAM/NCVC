@@ -88,8 +88,8 @@ class CNCDoc : public CDocBase
 	void	DeleteMacroFile(void);
 
 #ifdef USE_KODATUNO
-	BODY*		m_kBody;		// Kodatuno Body
-	BODYList*	m_kbList;		// Kodatuno Body List
+	BODY*		m_pKoBody;		// Kodatuno Body
+	BODYList*	m_pKoList;		// Kodatuno Body List
 	void	CalcWorkFileRect(void);
 #endif
 
@@ -220,7 +220,6 @@ public:
 		m_bDocFlg.set(NCDOC_LATHE_HOLE);
 	}
 	void	SetLatheViewMode(void);
-	BOOL	ReadWorkFile(LPCTSTR);
 	BOOL	ReadMCFile(LPCTSTR);
 
 	// from NCWorkDlg.cpp
@@ -255,8 +254,9 @@ public:
 	void	ReadThumbnail(LPCTSTR);
 
 #ifdef USE_KODATUNO
+	BOOL	ReadWorkFile(LPCTSTR);
 	BODYList*	GetKodatunoBodyList(void) const {
-		return m_kbList;
+		return m_pKoList;
 	}
 	void	SetWorkFileOffset(const Coord&);
 #endif
