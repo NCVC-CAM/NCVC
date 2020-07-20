@@ -1354,9 +1354,7 @@ BOOL CNCDoc::ValidDataCheck(void)
 void CNCDoc::CalcWorkFileRect(void)
 {
 	BODY*		pBody;
-	CPoint3F	pt;
-//	Coord		cd;		// Kodatuno座標クラス
-//	int		i, j, k, nLoop = m_kbList->getNum();
+	CPoint3D	pt;
 	int		i, nLoop = m_kbList->getNum();
 
 	m_rcWorkCo.SetRectMinimum();
@@ -1364,22 +1362,15 @@ void CNCDoc::CalcWorkFileRect(void)
 	// NURBS曲線のみを対象にｺﾝﾄﾛｰﾙﾎﾟｲﾝﾄから占有矩形を推測
 	for ( i=0; i<nLoop; i++ ) {
 		pBody = (BODY *)m_kbList->getData(i);
-//		for ( j=0; j<pBody->TypeNum[_NURBSC]; j++ ) {
-//			for ( k=0; k<pBody->NurbsC[j].K; k++ ) {
-//				cd = pBody->NurbsC[j].cp[k];
-//				pt.SetPoint((float)cd.x, (float)cd.y, (float)cd.z);
-//				m_rcWorkCo |= pt;
-//			}
-//		}
 #ifdef _DEBUG
 		printf("CNCDoc::CalcWorkFileRect() body->MaxCoord=%f\n", pBody->MaxCoord);
 		printf(" minCoord=(%f,%f,%f)\n", pBody->minmaxCoord[0].x, pBody->minmaxCoord[0].y, pBody->minmaxCoord[0].z);
 		printf(" maxCoord=(%f,%f,%f)\n", pBody->minmaxCoord[1].x, pBody->minmaxCoord[1].y, pBody->minmaxCoord[1].z);
 #endif
 		// ライブラリ側を少し改造
-		pt.SetPoint((float)pBody->minmaxCoord[0].x, (float)pBody->minmaxCoord[0].y, (float)pBody->minmaxCoord[0].z);
+		pt = pBody->minmaxCoord[0];
 		m_rcWorkCo |= pt;
-		pt.SetPoint((float)pBody->minmaxCoord[1].x, (float)pBody->minmaxCoord[1].y, (float)pBody->minmaxCoord[1].z);
+		pt = pBody->minmaxCoord[1];
 		m_rcWorkCo |= pt;
 	}
 #ifdef _DEBUG
