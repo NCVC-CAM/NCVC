@@ -59,17 +59,8 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_WM_DESTROY()
 	ON_WM_SIZE()
 	ON_WM_CONTEXTMENU()
-	ON_WM_LBUTTONDOWN()
-	ON_WM_LBUTTONUP()
 	ON_WM_LBUTTONDBLCLK()
-	ON_WM_RBUTTONDOWN()
-	ON_WM_RBUTTONUP()
-	ON_WM_MBUTTONDOWN()
-	ON_WM_MBUTTONUP()
-	ON_WM_MOUSEMOVE()
-	ON_WM_MOUSEWHEEL()
 	ON_WM_KEYDOWN()
-	ON_WM_TIMER()
 	// ﾍﾟｰｼﾞ切替ｲﾍﾞﾝﾄ
 	ON_MESSAGE (WM_USERACTIVATEPAGE, &CNCViewGL::OnUserActivatePage)
 	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
@@ -1036,7 +1027,9 @@ void CNCViewGL::OnDestroy()
 
 void CNCViewGL::OnSize(UINT nType, int cx, int cy)
 {
-	if ( __super::_OnSize(nType, cx, cy) )
+	__super::OnSize(nType, cx, cy);
+
+	if ( cx > 0 && cy > 0 )
 		m_bSizeChg = TRUE;
 }
 
@@ -1500,24 +1493,6 @@ void CNCViewGL::OnContextMenu(CWnd* pWnd, CPoint point)
 		point.x, point.y, AfxGetMainWnd());
 }
 
-void CNCViewGL::OnLButtonDown(UINT nFlags, CPoint point)
-{
-	if ( m_dRoundStep != 0.0f ) {
-		KillTimer(IDC_OPENGL_DRAGROUND);
-		m_dRoundStep = 0.0f;	// KillTimer()でもﾒｯｾｰｼﾞｷｭｰは消えない
-	}
-	BeginTracking( point, TM_SPIN );
-}
-
-void CNCViewGL::OnLButtonUp(UINT nFlags, CPoint point)
-{
-	EndTracking();
-	if ( m_dRoundStep != 0.0f ) {
-		KillTimer(IDC_OPENGL_DRAGROUND);	// KillTimer() 連発してもエエのかな...
-		m_dRoundStep = 0.0f;
-	}
-}
-
 void CNCViewGL::OnLButtonDblClk(UINT nFlags, CPoint point) 
 {
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
@@ -1536,75 +1511,6 @@ void CNCViewGL::OnLButtonDblClk(UINT nFlags, CPoint point)
 	}
 }
 
-void CNCViewGL::OnRButtonDown(UINT nFlags, CPoint point)
-{
-	if ( m_dRoundStep != 0.0f )
-		KillTimer(IDC_OPENGL_DRAGROUND);	// 連続回転一時停止
-
-	m_ptDownClick = point;
-	BeginTracking( point, TM_PAN );
-}
-
-void CNCViewGL::OnRButtonUp(UINT nFlags, CPoint point)
-{
-	EndTracking();
-	if ( m_dRoundStep != 0.0f )
-		SetTimer(IDC_OPENGL_DRAGROUND, 150, NULL);	// 連続回転再開
-
-	if ( m_ptDownClick == point )
-		__super::OnRButtonUp(nFlags, point);	// ｺﾝﾃｷｽﾄﾒﾆｭｰの表示
-}
-
-void CNCViewGL::OnMButtonDown(UINT nFlags, CPoint point)
-{
-	if ( m_dRoundStep != 0.0f ) {
-		KillTimer(IDC_OPENGL_DRAGROUND);
-		m_dRoundStep = 0.0f;
-	}
-	BeginTracking( point, TM_SPIN );
-}
-
-void CNCViewGL::OnMButtonUp(UINT nFlags, CPoint point)
-{
-	EndTracking();
-	// ﾀｲﾏｲﾍﾞﾝﾄで連続回転
-#ifdef _DEBUG
-	printf("OnMButtonUp() Angle=%f (%f, %f, %f)\n", m_dRoundStep,
-		m_ptRoundBase.x, m_ptRoundBase.y, m_ptRoundBase.z);
-#endif
-	if ( m_dRoundStep != 0.0f ) {
-		m_dRoundAngle = m_dRoundStep;
-		SetTimer(IDC_OPENGL_DRAGROUND, 150, NULL);
-	}
-}
-
-void CNCViewGL::OnMouseMove(UINT nFlags, CPoint point)
-{
-	if ( m_enTrackingMode != TM_NONE )
-		DoTracking( point );
-}
-
-BOOL CNCViewGL::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
-{
-	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	if ( !pOpt->IsMouseWheel() )
-		return FALSE;
-
-	// 高精度ﾏｳｽでは微細値の場合があるので、一応閾値の判定を入れる
-	if ( zDelta <= -WHEEL_DELTA ) {
-		if ( pOpt->GetWheelType() != 0 )
-			zDelta = -zDelta;
-		DoScale(zDelta);
-	}
-	else if ( zDelta >= WHEEL_DELTA ) {
-		if ( pOpt->GetWheelType() != 0 )
-			zDelta = -zDelta;
-		DoScale(zDelta);
-	}
-
-	return TRUE;
-}
-
 void CNCViewGL::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	if ( nChar == VK_TAB ) {
@@ -1617,27 +1523,6 @@ void CNCViewGL::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 
 	__super::OnKeyDown(nChar, nRepCnt, nFlags);
-}
-
-void CNCViewGL::OnTimer(UINT_PTR nIDEvent) 
-{
-	if ( m_dRoundStep != 0.0f ) {
-#ifdef _DEBUG
-		printf("CNCViewGL::OnTimer()\n");
-#endif
-//		m_dRoundAngle += m_dRoundStep / 10.0;
-		m_dRoundAngle += copysign(0.05f, m_dRoundStep);
-		if ( fabs(m_dRoundAngle) > 360.0f )
-			m_dRoundAngle -= copysign(360.0f, m_dRoundStep);
-
-		CClientDC	dc(this);
-		::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-		DoRotation(m_dRoundAngle);
-		Invalidate(FALSE);
-		::wglMakeCurrent( NULL, NULL );
-	}
-
-	__super::OnTimer(nIDEvent);
 }
 
 /////////////////////////////////////////////////////////////////////////////

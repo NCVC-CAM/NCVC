@@ -19,7 +19,6 @@ IMPLEMENT_DYNCREATE(C3dModelView, CViewBaseGL)
 
 BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_WM_CREATE()
-	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -100,9 +99,4 @@ int C3dModelView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	return 0;
-}
-
-void C3dModelView::OnSize(UINT nType, int cx, int cy)
-{
-	 __super::_OnSize(nType, cx, cy);
 }
