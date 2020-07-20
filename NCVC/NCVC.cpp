@@ -1902,7 +1902,8 @@ CDocTemplate::Confidence
 			}
 		}
 	}
-	AfxGetNCVCApp()->SetSerializeFunc((PFNNCVCSERIALIZEFUNC)pFunc);
+	if ( match == yesAttemptNative )
+		AfxGetNCVCApp()->SetSerializeFunc((PFNNCVCSERIALIZEFUNC)pFunc);
 
 	return match;
 }
