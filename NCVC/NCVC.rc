@@ -3439,6 +3439,7 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_ERR_PERLSCRIPT      "［生成後に実行するPerlスクリプト］でエラーが発生しました。\nPerlのインストールかスクリプトを確認してください。"
     IDS_ERR_DLL             "以下のアドインDLL\n%s\nが返した内部情報が現在のNCVCのバージョンと合いません\nアドインDLLをバージョンアップするか消去してください"
     IDS_ERR_PROCESS         "外部編集ﾌﾟﾛｾｽを起動できませんでした"
     IDS_ERR_THREAD          "現在ﾊﾞｯｸｸﾞﾗｳﾝﾄﾞで処理中です。終了できません"
