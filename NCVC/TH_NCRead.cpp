@@ -1137,18 +1137,20 @@ ENGCODEOBJ	IsGcodeObject_Milling(int nCode)
 	ENGCODEOBJ	enResult;
 
 	switch ( nCode ) {
-	case 0:	case 1:	case 2:	case 3:
+	case 0:		case 1:		case 2:		case 3:
 		g_Cycle.bCycle = FALSE;
 		enResult = MAKEOBJ;
 		break;
-	case 73: case 81: case 82: case 83: case 84:
-	case 85: case 86: case 87: case 88: case 89:
+	case 73:	case 74:	case 76:
+	case 81:	case 82:	case 83:	case 84:	case 85:
+	case 86:	case 87:	case 88:	case 89:
 		g_Cycle.bCycle	= TRUE;
 		g_Cycle.bAbs	= g_ncArgv.bAbs;
 		g_Cycle.dValI	= g_ncArgv.nc.dValue[_GetPlaneZ()];
 		enResult = MAKEOBJ;
 		break;
-	case 4: case 10: case 28: case 52: case 68: case 92:
+	case 4:		case 10:	case 28:	case 52:	case 68:
+	case 92:
 		enResult = MAKEOBJ_NOTMODAL;
 		break;
 	default:
@@ -1163,10 +1165,11 @@ ENGCODEOBJ	IsGcodeObject_Wire(int nCode)
 	ENGCODEOBJ	enResult;
 
 	switch ( nCode ) {
-	case 0:	case 1:	case 2:	case 3:
+	case 0:		case 1:		case 2:		case 3:
 		enResult = MAKEOBJ;
 		break;
-	case 4: case 10: case 11: case 28: case 92: case 93:
+	case 4:		case 10:	case 11:	case 28:	
+	case 92:	case 93:
 		enResult = MAKEOBJ_NOTMODAL;
 		break;
 	default:
@@ -1181,18 +1184,17 @@ ENGCODEOBJ	IsGcodeObject_Lathe(int nCode)
 	ENGCODEOBJ	enResult;
 
 	switch ( nCode ) {
-	case 0:	case 1:	case 2:	case 3:
+	case 0:		case 1:		case 2:		case 3:
 		g_Cycle.bCycle = FALSE;
 		enResult = MAKEOBJ;
 		break;
-	case 73: case 81: case 82: case 83: case 84:
-	case 85: case 86: case 87: case 88: case 89:
+	case 83:	case 84:	case 85:	// ’[–ÊŒŠ‚ ‚¯
 		g_Cycle.bCycle	= TRUE;
 		g_Cycle.bAbs	= g_ncArgv.bAbs;
 		g_Cycle.dValI	= g_ncArgv.nc.dValue[_GetPlaneZ()];
 		enResult = MAKEOBJ;
 		break;
-	case 4: case 10: case 28:
+	case 4:		case 10:	case 28:
 		enResult = MAKEOBJ_NOTMODAL;
 		break;
 	default:

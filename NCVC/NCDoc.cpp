@@ -330,16 +330,9 @@ CNCdata* CNCDoc::DataOperation
 			}
 			pDataResult = new CNCdata(pData, lpArgv, GetOffsetOrig());
 			break;
-		case 73:	// ŒÅ’è»²¸Ù
-		case 81:
-		case 82:
-		case 83:
-		case 84:
-		case 85:
-		case 86:
-		case 87:
-		case 88:
-		case 89:
+		case 73:	case 74:	case 76:	// ŒÅ’è»²¸Ù
+		case 81:	case 82:	case 83:	case 84:	case 85:
+		case 86:	case 87:	case 88:	case 89:
 			pDataResult = new CNCcycle(pData, lpArgv, GetOffsetOrig(), pOpt->GetFlag(MC_FLG_L0CYCLE), enMakeType);
 			SetMaxRect(pDataResult);
 			break;
