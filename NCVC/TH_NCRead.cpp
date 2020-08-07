@@ -832,11 +832,13 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				bNCsub = TRUE;
 				break;
 			case 99:
-				if ( g_nSubprog > 0 )
+				if ( g_nSubprog > 0 ) {
 					g_nSubprog--;
-				// 復帰用ｵﾌﾞｼﾞｪｸﾄ生成
-				AddM98code(pBlock, pDataResult, -1);
-				return 99;
+					// 復帰用ｵﾌﾞｼﾞｪｸﾄ生成
+					AddM98code(pBlock, pDataResult, -1);
+					return 99;
+				}
+				// through
 			default:
 				bInvalidM = TRUE;	// 無効なMｺｰﾄﾞ
 			}
