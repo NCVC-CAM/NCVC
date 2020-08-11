@@ -1108,7 +1108,7 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 #ifdef _DEBUG
 	printf("CNCViewGL::OnUserViewFitMsg() wParam=%d lParam=%d\n", wParam, lParam);
 #endif
-	float		dW, dH, dZ, dLength, d;
+	float	dW, dH, dZ, d = g_dDefaultGuideLength/2.0f;
 
 	if ( lParam ) {		// from CNCViewTab::OnInitialUpdate()
 		// m_dRate の更新(m_cx,m_cyが正しい値のときに計算)
@@ -1126,35 +1126,25 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 		dH = fabs(m_rcView.Height());
 		dZ = fabs(m_rcView.Depth());
 
-		// 占有矩形の補正(不正表示の防止)
-		const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-		if ( dW <= NCMIN ) {
-			dLength = pOpt->GetGuideLength(NCA_X);
-			if ( dLength == 0.0f )
-				dLength = g_dDefaultGuideLength;
-			m_rcView.left  = -dLength;
-			m_rcView.right =  dLength;
-		}
-		if ( dH <= NCMIN ) {
-			dLength = pOpt->GetGuideLength(NCA_Y);
-			if ( dLength == 0.0f )
-				dLength = g_dDefaultGuideLength;
-			m_rcView.top    = -dLength;
-			m_rcView.bottom =  dLength;
-		}
-		if ( dZ <= NCMIN ) {
-			dLength = pOpt->GetGuideLength(NCA_Z);
-			if ( dLength == 0.0f )
-				dLength = g_dDefaultGuideLength;
-			m_rcView.low  = -dLength;
-			m_rcView.high =  dLength;
-		}
 		// ｵﾌﾞｼﾞｪｸﾄ矩形を10%(上下左右5%ずつ)大きく
-		m_rcView.InflateRect(dW*0.05f, dH*0.05f);
-//		m_rcView.NormalizeRect();
-		dW = fabs(m_rcView.Width());
-		dH = fabs(m_rcView.Height());
-		dZ = fabs(m_rcView.Depth());
+		m_rcView.InflateRect(dW*0.05f, dH*0.05f, dZ*0.05f);
+
+		// 占有矩形の補正(不正表示の防止)
+		if ( dW < g_dDefaultGuideLength ) {
+			m_rcView.left	= -d;
+			m_rcView.right	=  d;
+			dW = g_dDefaultGuideLength;
+		}
+		if ( dH < g_dDefaultGuideLength ) {
+			m_rcView.top	= -d;
+			m_rcView.bottom	=  d;
+			dH = g_dDefaultGuideLength;
+		}
+		if ( dZ < g_dDefaultGuideLength ) {
+			m_rcView.low	= -d;
+			m_rcView.high	=  d;
+			dZ = g_dDefaultGuideLength;
+		}
 
 		// ﾃﾞｨｽﾌﾟﾚｲのｱｽﾍﾟｸﾄ比から視野直方体設定
 		CPointF	pt(m_rcView.CenterPoint());
@@ -1171,9 +1161,8 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 			m_dRate = m_cy / dH;
 		}
 		d = max(max(dW, dH), dZ) * 2.0f;
-		m_rcView.high =  d;		// 奥
 		m_rcView.low  = -d;		// 手前
-//		m_rcView.NormalizeRect();
+		m_rcView.high =  d;		// 奥
 	}
 
 	if ( !wParam ) {	// from OnUserActivatePage()
