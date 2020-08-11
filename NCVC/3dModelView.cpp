@@ -68,6 +68,16 @@ void C3dModelView::OnInitialUpdate()
 	m_rcView.low  = -d;
 	m_rcView.high =  d;
 
+	// ŒõŒ¹
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	COLORREF	col = pOpt->GetDxfDrawColor(DXFCOL_CUTTER);
+	GLfloat light_Model[] = {(GLfloat)GetRValue(col) / 255,
+							 (GLfloat)GetGValue(col) / 255,
+							 (GLfloat)GetBValue(col) / 255, 1.0f};
+	GLfloat light_Position0[] = {-1.0f, -1.0f, -1.0f,  0.0f},
+			light_Position1[] = { 1.0f,  1.0f,  1.0f,  0.0f};
+
+	// Ý’è
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 	::glMatrixMode( GL_PROJECTION );
@@ -76,6 +86,14 @@ void C3dModelView::OnInitialUpdate()
 		m_rcView.low, m_rcView.high);
 	GetGLError();
 	::glMatrixMode( GL_MODELVIEW );
+	//
+	::glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_Model);
+	::glLightfv(GL_LIGHT1, GL_DIFFUSE,  light_Model);
+	::glLightfv(GL_LIGHT0, GL_POSITION, light_Position0);
+	::glLightfv(GL_LIGHT1, GL_POSITION, light_Position1);
+	::glEnable (GL_LIGHT0);
+	::glEnable (GL_LIGHT1);
+
 	::wglMakeCurrent(NULL, NULL);
 }
 
@@ -103,10 +121,12 @@ void C3dModelView::OnDraw(CDC* pDC)
 	// ”wŒi‚Ì•`‰æ
 	RenderBackground(pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1), pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2));
 
+	::glPushAttrib(GL_ALL_ATTRIB_BITS);
+
 	// --- ƒeƒXƒg•`‰æ
 	float		dLength = 50.0f;
 	COLORREF	col;
-	::glPushAttrib( GL_LINE_BIT );
+//	::glPushAttrib( GL_LINE_BIT );
 	::glLineWidth( 2.0f );
 	::glBegin( GL_LINES );
 	// XŽ²‚Ì¶Þ²ÄÞ
@@ -125,7 +145,7 @@ void C3dModelView::OnDraw(CDC* pDC)
 	::glVertex3f(0.0f, 0.0f, -dLength);
 	::glVertex3f(0.0f, 0.0f,  dLength);
 	::glEnd();
-	::glPopAttrib();
+//	::glPopAttrib();
 	//
 //	::glBegin(GL_QUADS);
 //		::glColor3f(0.0f, 0.0f, 1.0f);
@@ -137,10 +157,14 @@ void C3dModelView::OnDraw(CDC* pDC)
 	// ---
 
 	// ƒ‚ƒfƒ‹•`‰æ Kodatuno
+	::glEnable(GL_LIGHTING);
 	Describe_BODY	bd;
 	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
 	for ( int i=0; i<kbl->getNum(); i++ )
 		bd.DrawBody( (BODY *)kbl->getData(i) );
+	::glDisable(GL_LIGHTING);
+
+	::glPopAttrib();
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
