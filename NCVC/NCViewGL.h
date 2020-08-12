@@ -194,7 +194,6 @@ protected:
 	// ÒÆ­°ºÏÝÄÞ
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
-	afx_msg	void OnRoundKey(UINT);
 	afx_msg	void OnLensKey(UINT);
 	afx_msg void OnDefViewInfo();
 	//

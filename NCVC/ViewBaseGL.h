@@ -39,6 +39,7 @@ protected:
 	virtual	void DoScale(int);
 	//
 	void	IdentityMatrix(void);
+	void	SetOrthoView(void);
 	BOOL	SetupPixelFormat(CDC*);
 	void	SetupViewingTransform(void);
 	void	BeginTracking(const CPoint&, ENTRACKINGMODE);
@@ -49,6 +50,7 @@ protected:
 	void	RenderBackground(COLORREF, COLORREF);
 	//
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
@@ -61,6 +63,7 @@ protected:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg	void OnMoveKey(UINT);
+	afx_msg	void OnRoundKey(UINT);
 
 	DECLARE_MESSAGE_MAP()
 

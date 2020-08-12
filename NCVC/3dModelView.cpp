@@ -37,36 +37,8 @@ C3dModelView::~C3dModelView()
 
 void C3dModelView::OnInitialUpdate() 
 {
-	extern	const	float	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
-
 	m_rcView  = GetDocument()->GetMaxRect();
-	float	dW = m_rcView.Width(),
-			dH = m_rcView.Height(),
-			dZ = m_rcView.Depth(),
-			d  = g_dDefaultGuideLength / 2.0f;
-
-	// ｵﾌﾞｼﾞｪｸﾄ矩形を10%(上下左右5%ずつ)大きく
-	m_rcView.InflateRect(dW*0.05f, dH*0.05f, dZ*0.05f);
-
-	// 占有矩形の補正(不正表示の防止)
-	if ( dW < g_dDefaultGuideLength ) {
-		m_rcView.left	= -d;
-		m_rcView.right	=  d;
-		dW = g_dDefaultGuideLength;
-	}
-	if ( dH < g_dDefaultGuideLength ) {
-		m_rcView.top	= -d;
-		m_rcView.bottom	=  d;
-		dH = g_dDefaultGuideLength;
-	}
-	if ( dZ < g_dDefaultGuideLength ) {
-		m_rcView.low	= -d;
-		m_rcView.high	=  d;
-		dZ = g_dDefaultGuideLength;
-	}
-	d = max(max(dW, dH), dZ) * 2.0f;
-	m_rcView.low  = -d;
-	m_rcView.high =  d;
+	SetOrthoView();		// ViewBaseGL.cpp
 
 	// 設定
 	CClientDC	dc(this);

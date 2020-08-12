@@ -69,7 +69,6 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCViewGL::OnUpdateEditCopy)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCViewGL::OnUpdateMoveRoundKey)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewGL::OnUpdateMoveRoundKey)
-	ON_COMMAND_RANGE(ID_VIEW_RUP, ID_VIEW_RRT,   &CNCViewGL::OnRoundKey)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &CNCViewGL::OnLensKey)
 	ON_COMMAND(ID_OPTION_DEFVIEWINFO, &CNCViewGL::OnDefViewInfo)
 	//
@@ -993,9 +992,6 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CNCViewGL::OnDestroy()
 {
-	if ( m_dRoundStep != 0.0f )
-		KillTimer(IDC_OPENGL_DRAGROUND);
-
 	// 回転行列等を保存
 	if ( m_bActive && !IsDocError() ) {
 		CRecentViewInfo* pInfo = GetDocument()->GetRecentViewInfo();
@@ -1103,16 +1099,13 @@ LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 
 LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 {
-	extern	const	float	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
 #ifdef _DEBUG
 	printf("CNCViewGL::OnUserViewFitMsg() wParam=%d lParam=%d\n", wParam, lParam);
 #endif
-	float	dW, dH, dZ, d = g_dDefaultGuideLength/2.0f;
-
 	if ( lParam ) {		// from CNCViewTab::OnInitialUpdate()
 		// m_dRate の更新(m_cx,m_cyが正しい値のときに計算)
-		dW = fabs(m_rcView.Width());
-		dH = fabs(m_rcView.Height());
+		float	dW = fabs(m_rcView.Width()),
+				dH = fabs(m_rcView.Height());
 		if ( dW > dH )
 			m_dRate = m_cx / dW;
 		else
@@ -1121,47 +1114,7 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 	}
 	else {
 		m_rcView  = GetDocument()->GetMaxRect();
-		dW = fabs(m_rcView.Width());
-		dH = fabs(m_rcView.Height());
-		dZ = fabs(m_rcView.Depth());
-
-		// ｵﾌﾞｼﾞｪｸﾄ矩形を10%(上下左右5%ずつ)大きく
-		m_rcView.InflateRect(dW*0.05f, dH*0.05f, dZ*0.05f);
-
-		// 占有矩形の補正(不正表示の防止)
-		if ( dW < g_dDefaultGuideLength ) {
-			m_rcView.left	= -d;
-			m_rcView.right	=  d;
-			dW = g_dDefaultGuideLength;
-		}
-		if ( dH < g_dDefaultGuideLength ) {
-			m_rcView.top	= -d;
-			m_rcView.bottom	=  d;
-			dH = g_dDefaultGuideLength;
-		}
-		if ( dZ < g_dDefaultGuideLength ) {
-			m_rcView.low	= -d;
-			m_rcView.high	=  d;
-			dZ = g_dDefaultGuideLength;
-		}
-
-		// ﾃﾞｨｽﾌﾟﾚｲのｱｽﾍﾟｸﾄ比から視野直方体設定
-		CPointF	pt(m_rcView.CenterPoint());
-		if ( dW > dH ) {
-			d = dW * m_cy / m_cx / 2.0f;
-			m_rcView.top    = pt.y - d;
-			m_rcView.bottom = pt.y + d;
-			m_dRate = m_cx / dW;
-		}
-		else {
-			d = dH * m_cx / m_cy / 2.0f;
-			m_rcView.left   = pt.x - d;
-			m_rcView.right  = pt.x + d;
-			m_dRate = m_cy / dH;
-		}
-		d = max(max(dW, dH), dZ) * 2.0f;
-		m_rcView.low  = -d;		// 手前
-		m_rcView.high =  d;		// 奥
+		SetOrthoView();	// ViewBaseGL.cpp
 	}
 
 	if ( !wParam ) {	// from OnUserActivatePage()
@@ -1384,31 +1337,6 @@ void CNCViewGL::OnUpdateEditCopy(CCmdUI* pCmdUI)
 void CNCViewGL::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 
 {
 	pCmdUI->Enable(TRUE);
-}
-
-void CNCViewGL::OnRoundKey(UINT nID)
-{
-	if ( m_dRoundStep == 0.0f )
-		SetTimer(IDC_OPENGL_DRAGROUND, 150, NULL);
-
-	switch (nID) {
-	case ID_VIEW_RUP:
-		m_ptRoundBase.SetPoint(1.0f, 0.0f, 0.0f);
-		m_dRoundAngle = m_dRoundStep = -1.0f;
-		break;
-	case ID_VIEW_RDW:
-		m_ptRoundBase.SetPoint(1.0f, 0.0f, 0.0f);
-		m_dRoundAngle = m_dRoundStep = 1.0f;
-		break;
-	case ID_VIEW_RLT:
-		m_ptRoundBase.SetPoint(0.0, 1.0, 0.0);
-		m_dRoundAngle = m_dRoundStep = -1.0f;
-		break;
-	case ID_VIEW_RRT:
-		m_ptRoundBase.SetPoint(0.0f, 1.0f, 0.0f);
-		m_dRoundAngle = m_dRoundStep = 1.0f;
-		break;
-	}
 }
 
 void CNCViewGL::OnLensKey(UINT nID)
