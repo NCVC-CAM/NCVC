@@ -26,6 +26,7 @@ BEGIN_MESSAGE_MAP(CViewBaseGL, CView)
 	ON_WM_MBUTTONUP()
 	ON_WM_MOUSEMOVE()
 	ON_WM_MOUSEWHEEL()
+	ON_COMMAND_RANGE(ID_VIEW_UP,  ID_VIEW_RT,    &CViewBaseGL::OnMoveKey)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -476,6 +477,33 @@ BOOL CViewBaseGL::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	}
 
 	return TRUE;
+}
+
+void CViewBaseGL::OnMoveKey(UINT nID)
+{
+	// ∏◊≤±›ƒç¿ïWÇÃ1/6Çà⁄ìÆîÕàÕÇ∆Ç∑ÇÈ
+	CSize	sz(m_cx/6, m_cy/6);
+	CPoint	pt(0, 0);
+
+	switch (nID) {
+	case ID_VIEW_UP:
+		pt.y += sz.cy;
+		break;
+	case ID_VIEW_DW:
+		pt.y -= sz.cy;
+		break;
+	case ID_VIEW_LT:
+		pt.x += sz.cx;
+		break;
+	case ID_VIEW_RT:
+		pt.x -= sz.cx;
+		break;
+	}
+
+	m_enTrackingMode = TM_PAN;
+	m_ptLastMove = 0;
+	DoTracking(pt);
+	m_enTrackingMode = TM_NONE;
 }
 
 /////////////////////////////////////////////////////////////////////////////

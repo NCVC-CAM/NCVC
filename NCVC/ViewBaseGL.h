@@ -60,6 +60,7 @@ protected:
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+	afx_msg	void OnMoveKey(UINT);
 
 	DECLARE_MESSAGE_MAP()
 

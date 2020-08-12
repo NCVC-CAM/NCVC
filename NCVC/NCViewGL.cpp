@@ -69,7 +69,6 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCViewGL::OnUpdateEditCopy)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCViewGL::OnUpdateMoveRoundKey)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewGL::OnUpdateMoveRoundKey)
-	ON_COMMAND_RANGE(ID_VIEW_UP,  ID_VIEW_RT,    &CNCViewGL::OnMoveKey)
 	ON_COMMAND_RANGE(ID_VIEW_RUP, ID_VIEW_RRT,   &CNCViewGL::OnRoundKey)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &CNCViewGL::OnLensKey)
 	ON_COMMAND(ID_OPTION_DEFVIEWINFO, &CNCViewGL::OnDefViewInfo)
@@ -1385,33 +1384,6 @@ void CNCViewGL::OnUpdateEditCopy(CCmdUI* pCmdUI)
 void CNCViewGL::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 
 {
 	pCmdUI->Enable(TRUE);
-}
-
-void CNCViewGL::OnMoveKey(UINT nID)
-{
-	// ¸×²±İÄÀ•W‚Ì1/6‚ğˆÚ“®”ÍˆÍ‚Æ‚·‚é
-	CSize	sz(m_cx/6, m_cy/6);
-	CPoint	pt(0, 0);
-
-	switch (nID) {
-	case ID_VIEW_UP:
-		pt.y += sz.cy;
-		break;
-	case ID_VIEW_DW:
-		pt.y -= sz.cy;
-		break;
-	case ID_VIEW_LT:
-		pt.x += sz.cx;
-		break;
-	case ID_VIEW_RT:
-		pt.x -= sz.cx;
-		break;
-	}
-
-	m_enTrackingMode = TM_PAN;
-	m_ptLastMove = 0;
-	DoTracking(pt);
-	m_enTrackingMode = TM_NONE;
 }
 
 void CNCViewGL::OnRoundKey(UINT nID)
