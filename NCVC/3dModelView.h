@@ -22,6 +22,7 @@ public:
 
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg	void OnLensKey(UINT);
 
 	DECLARE_MESSAGE_MAP()
 };

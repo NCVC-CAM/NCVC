@@ -19,6 +19,7 @@ IMPLEMENT_DYNCREATE(C3dModelView, CViewBaseGL)
 
 BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_WM_CREATE()
+	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -153,4 +154,32 @@ int C3dModelView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	return 0;
+}
+
+void C3dModelView::OnLensKey(UINT nID)
+{
+	switch ( nID ) {
+	case ID_VIEW_FIT:
+		if ( m_dRoundStep != 0.0f ) {
+			KillTimer(IDC_OPENGL_DRAGROUND);
+			m_dRoundStep = 0.0f;
+		}
+		OnInitialUpdate();
+		{
+			CClientDC	dc(this);
+			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+			IdentityMatrix();
+			SetupViewingTransform();
+			::wglMakeCurrent( NULL, NULL );
+		}
+		Invalidate(FALSE);
+		DoScale(0);	// MDIéqÃ⁄∞—ÇÃΩ√∞¿Ω ﬁ∞Ç…èÓïÒï\é¶(ÇæÇØ)
+		break;
+	case ID_VIEW_LENSP:
+		DoScale(-1);
+		break;
+	case ID_VIEW_LENSN:
+		DoScale(1);
+		break;
+	}
 }
