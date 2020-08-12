@@ -68,15 +68,6 @@ void C3dModelView::OnInitialUpdate()
 	m_rcView.low  = -d;
 	m_rcView.high =  d;
 
-	// ŒõŒ¹
-	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetDxfDrawColor(DXFCOL_CUTTER);
-	GLfloat light_Model[] = {(GLfloat)GetRValue(col) / 255,
-							 (GLfloat)GetGValue(col) / 255,
-							 (GLfloat)GetBValue(col) / 255, 1.0f};
-	GLfloat light_Position0[] = {-1.0f, -1.0f, -1.0f,  0.0f},
-			light_Position1[] = { 1.0f,  1.0f,  1.0f,  0.0f};
-
 	// Ý’è
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
@@ -86,13 +77,23 @@ void C3dModelView::OnInitialUpdate()
 		m_rcView.low, m_rcView.high);
 	GetGLError();
 	::glMatrixMode( GL_MODELVIEW );
-	//
+
+	// ŒõŒ¹
+	::glEnable(GL_AUTO_NORMAL);
+	::glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	COLORREF	col = pOpt->GetDxfDrawColor(DXFCOL_CUTTER);
+	GLfloat light_Model[] = {(GLfloat)GetRValue(col) / 255,
+							 (GLfloat)GetGValue(col) / 255,
+							 (GLfloat)GetBValue(col) / 255, 1.0f};
+//	GLfloat light_Position0[] = {-1.0f, -1.0f, -1.0f,  0.0f},
+//			light_Position1[] = { 1.0f,  1.0f,  1.0f,  0.0f};
 	::glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_Model);
-	::glLightfv(GL_LIGHT1, GL_DIFFUSE,  light_Model);
-	::glLightfv(GL_LIGHT0, GL_POSITION, light_Position0);
-	::glLightfv(GL_LIGHT1, GL_POSITION, light_Position1);
+//	::glLightfv(GL_LIGHT1, GL_DIFFUSE,  light_Model);
+//	::glLightfv(GL_LIGHT0, GL_POSITION, light_Position0);
+//	::glLightfv(GL_LIGHT1, GL_POSITION, light_Position1);
 	::glEnable (GL_LIGHT0);
-	::glEnable (GL_LIGHT1);
+//	::glEnable (GL_LIGHT1);
 
 	::wglMakeCurrent(NULL, NULL);
 }
@@ -160,8 +161,9 @@ void C3dModelView::OnDraw(CDC* pDC)
 	::glEnable(GL_LIGHTING);
 	Describe_BODY	bd;
 	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
-	for ( int i=0; i<kbl->getNum(); i++ )
+	for ( int i=0; i<kbl->getNum(); i++ ) {
 		bd.DrawBody( (BODY *)kbl->getData(i) );
+	}
 	::glDisable(GL_LIGHTING);
 
 	::glPopAttrib();
