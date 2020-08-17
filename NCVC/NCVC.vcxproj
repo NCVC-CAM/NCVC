@@ -102,8 +102,8 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\boost;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2015\lib;C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>C:\Program Files (x86)\Microsoft Visual Studio 14.0\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
@@ -118,8 +118,8 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\boost;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2015\lib;C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release64|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
@@ -135,8 +135,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release64|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\boost;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\magara\Documents\Visual Studio 2015\lib\x64;C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x64\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -161,6 +161,7 @@
       <EnablePREfast>false</EnablePREfast>
       <AssemblerOutput>
       </AssemblerOutput>
+      <AdditionalIncludeDirectories>C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\boost</AdditionalIncludeDirectories>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -180,6 +181,7 @@
       <LargeAddressAware>true</LargeAddressAware>
       <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <AdditionalLibraryDirectories>C:\Users\magara\Documents\Visual Studio 2015\lib;C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>NCVC.manifest</AdditionalManifestFiles>
@@ -244,6 +246,7 @@
       <DebugInformationFormat />
       <MultiProcessorCompilation>
       </MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\boost</AdditionalIncludeDirectories>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -262,6 +265,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <LargeAddressAware>true</LargeAddressAware>
       <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>C:\Users\magara\Documents\Visual Studio 2015\lib;C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x86\lib</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>NCVC.manifest</AdditionalManifestFiles>
@@ -376,6 +380,7 @@
       </MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>
       </EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>C:\Users\magara\Documents\Visual Studio 2015\include;C:\Users\magara\Documents\Visual Studio 2015\boost</AdditionalIncludeDirectories>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -395,6 +400,7 @@
       <LargeAddressAware>
       </LargeAddressAware>
       <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>C:\Users\magara\Documents\Visual Studio 2015\lib\x64;C:\Users\magara\Documents\Visual Studio 2015\boost\stage\x64\lib</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>NCVC.manifest</AdditionalManifestFiles>
