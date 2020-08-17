@@ -787,6 +787,8 @@
 #define IDS_ERR_DXF_DRAGLINK            21054
 #define IDS_ERR_DXF_CREATEOUTELINE      21055
 #define IDS_ERR_DRAGTREE                21056
+#define IDS_STRING21057                 21095
+#define IDS_ERR_PERLSCRIPT              21095
 #define IDS_ERR_DLL                     21096
 #define IDS_ERR_PROCESS                 21097
 #define IDS_ERR_THREAD                  21098

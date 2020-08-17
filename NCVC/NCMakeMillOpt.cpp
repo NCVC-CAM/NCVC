@@ -30,7 +30,7 @@ static	const	int		g_dfMilNOrder[] = {
 		0, 0, 0,
 	3000, 1, 0,
 		0, 0, 0,
-	0,
+	1,
 	0, 0
 };
 

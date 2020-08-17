@@ -108,11 +108,9 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 			else if ( dwValFlags & NCD_X )	// X’l‚Ísec’PˆÊ
 				pDoc->m_dCutTime += pData->GetValue(NCA_X) / 60.0f;
 			break;
-		case 81:	// ŒÅ’è»²¸Ù
-		case 82:
-		case 85:
-		case 86:
-		case 89:
+		case 73:	case 74:	case 76:	// ŒÅ’è»²¸Ù
+		case 81:	case 82:	case 83:	case 84:	case 85:
+		case 86:	case 87:	case 88:	case 89:
 			// ‘‘—‚è•ª
 			dTmp = 0.0f;
 			for ( j=0; j<NCXYZ; j++ ) {

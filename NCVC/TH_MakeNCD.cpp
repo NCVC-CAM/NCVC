@@ -982,7 +982,10 @@ BOOL OutputMillCode(LPCTSTR lpszFileName)
 	if ( g_wBindOperator & TH_FOOTER && !s_strNCtemp.IsEmpty() ) {
 		CString	strArgv("\""+GetStr(MKNC_STR_PERLSCRIPT)+"\" \""+s_strNCtemp+"\" \""+strNCFile+"\"");
 		// Perl½¸ØÌßÄ‹N“®
-		AfxGetNCVCMainWnd()->CreateOutsideProcess("perl.exe", strArgv, TRUE, TRUE);
+		if ( !AfxGetNCVCMainWnd()->CreateOutsideProcess("perl.exe", strArgv, FALSE, TRUE) ) {
+			AfxMessageBox(IDS_ERR_PERLSCRIPT, MB_OK|MB_ICONEXCLAMATION);
+			return FALSE;
+		}
 	}
 
 	return IsThread();
