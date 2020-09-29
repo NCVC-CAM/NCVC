@@ -21,8 +21,6 @@ const float	ARCSTEP  = PI/32.0f;	// 2ƒÎ[rad]€ARCCOUNT
 //////////////////////////////////////////////////////////////////////
 
 // Radian•ÏŠ·
-//template<typename T> inline	T RAD(T dVal)
-//template<> inline double RAD(double dVal)
 inline float RAD(float dVal)
 {
 	return dVal * PI / 180.0f;
@@ -32,8 +30,6 @@ inline double RAD(double dVal)
 	return dVal * boost::math::constants::pi<double>() / 180.0;
 }
 // Degree•ÏŠ·
-//template<typename T> inline	T	DEG(T dVal)
-//template<> inline	double	DEG(double dVal)
 inline	float	DEG(float dVal)
 {
 	return dVal * 180.0f / PI;
@@ -47,9 +43,8 @@ const float RX = RAD(-60.0f);
 const float RY = 0.0f;
 const float RZ = RAD(-35.0f);
 
+/*
 // 1/1000 lÌŒÜ“ü
-//template<typename T> inline	T RoundUp(T dVal)
-//template<> inline double RoundUp(double dVal)
 inline float RoundUp(float dVal)
 {
 	return copysign( floor(fabs(dVal) * 1000.0f + 0.5f) / 1000.0f, dVal );
@@ -59,8 +54,6 @@ inline double RoundUp(double dVal)
 	return copysign( floor(fabs(dVal) * 1000.0 + 0.5) / 1000.0, dVal );
 }
 // 1/1000 Ø‚èÌ‚Ä
-//template<typename T> inline	T RoundCt(T dVal)
-//template<> inline double RoundCt(double dVal)
 inline float RoundCt(float dVal)
 {
 	return copysign( floor(fabs(dVal) * 1000.0f) / 1000.0f, dVal );
@@ -69,7 +62,9 @@ inline double RoundCt(double dVal)
 {
 	return copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
 }
-
+*/
+extern	boost::function<float(float)>	RoundUp;
+extern	boost::function<float(float)>	RoundCt;
 template<typename T> class	CPoint3T;
 
 //////////////////////////////////////////////////////////////////////

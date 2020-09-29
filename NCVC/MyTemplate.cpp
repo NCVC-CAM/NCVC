@@ -12,7 +12,7 @@
 using namespace boost;
 
 //////////////////////////////////////////////////////////////////////
-// 静的変数の初期化
+//	静的変数の初期化
 
 //double	CPoint3D::ms_rx_cos = 0.0;
 //double	CPoint3D::ms_rx_sin = 0.0;
@@ -26,6 +26,30 @@ float	CPoint3F::ms_ry_cos = 0.0f;
 float	CPoint3F::ms_ry_sin = 0.0f;
 float	CPoint3F::ms_rz_cos = 0.0f;
 float	CPoint3F::ms_rz_sin = 0.0f;
+
+//////////////////////////////////////////////////////////////////////
+//	四捨五入と切り捨て
+
+float _RoundUp3(float dVal)
+{
+	return copysign( floor(fabs(dVal) * 1000.0f + 0.5f) / 1000.0f, dVal );
+}
+float _RoundUp4(float dVal)
+{
+	return copysign( floor(fabs(dVal) * 10000.0f + 0.5f) / 10000.0f, dVal );
+}
+
+float _RoundCt3(float dVal)
+{
+	return copysign( floor(fabs(dVal) * 1000.0f) / 1000.0f, dVal );
+}
+float _RoundCt4(float dVal)
+{
+	return copysign( floor(fabs(dVal) * 10000.0f) / 10000.0f, dVal );
+}
+
+boost::function<float(float)>	RoundUp = _RoundUp3;
+boost::function<float(float)>	RoundCt = _RoundCt3;
 
 //////////////////////////////////////////////////////////////////////
 //	２線の交点を求める
