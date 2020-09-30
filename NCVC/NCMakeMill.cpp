@@ -349,7 +349,7 @@ void CNCMakeMill::SetStaticOption(const CNCMakeMillOpt* pNCMake)
 	}
 	// --- 座標表記
 	ms_pfnGetValString = &GetValString;	// ﾍﾞｰｽｸﾗｽからの呼出用
-	ms_pfnGetValDetail = GetNum(MKNC_NUM_DOT) == 0 ?
+	ms_pfnGetValDetail = GetNum(MKNC_NUM_DOT) < 2 ?
 		(GetFlg(MKNC_FLG_ZEROCUT) ?
 			&GetValString_UZeroCut : &GetValString_Normal) : &GetValString_Multi1000;
 	// --- 行番号増加分

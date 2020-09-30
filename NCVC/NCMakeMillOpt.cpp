@@ -123,7 +123,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_FLG,	MKNC_FLG_GCLIP,			"ﾓｰﾀﾞﾙ"},
 	{NC_FLG,	MKNC_FLG_DISABLESPINDLE,"Sﾊﾟﾗﾒｰﾀを生成しない"},
 	{NC_PAGE,	3},		// Page3(表記:Dialog6)
-	{NC_NUM,	MKNC_NUM_DOT,			"座標表記(0:小数点,1:1/1000)"},
+	{NC_NUM,	MKNC_NUM_DOT,			"座標表記(0:小数3位,1:小数4位,2:1/1000)"},
 	{NC_NUM,	MKNC_NUM_FDOT,			"Fﾊﾟﾗﾒｰﾀ表記(0:小数点,1:1/1000,2:整数)"},
 	{NC_FLG,	MKNC_FLG_ZEROCUT,		"小数点以下のｾﾞﾛｶｯﾄ"},
 	{NC_NUM,	MKNC_NUM_CIRCLECODE,	"円ﾃﾞｰﾀの切削(0:G02,1:G03)"},

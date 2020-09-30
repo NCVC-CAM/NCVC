@@ -10,7 +10,7 @@ enum {
 	MKWI_NUM_PROG = 0,			// ﾌﾟﾛｸﾞﾗﾑ番号
 	MKWI_NUM_LINEADD,			// 行番号増加
 	MKWI_NUM_G90,				// 位置指定(G90 or G91)
-	MKWI_NUM_DOT,				// 数値表記(小数点 or 1/1000)
+	MKWI_NUM_DOT,				// 数値表記(小数3位 or 小数4位 or 1/1000)
 	MKWI_NUM_FDOT,				// Ｆﾊﾟﾗﾒｰﾀの数値表記
 	MKWI_NUM_CIRCLECODE,		// 円切削(G2 or G3)
 		MKWI_NUM_NUMS		// [6]
