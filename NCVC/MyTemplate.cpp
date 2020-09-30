@@ -30,26 +30,21 @@ float	CPoint3F::ms_rz_sin = 0.0f;
 //////////////////////////////////////////////////////////////////////
 //	四捨五入と切り捨て
 
-float _RoundUp3(float dVal)
-{
-	return copysign( floor(fabs(dVal) * 1000.0f + 0.5f) / 1000.0f, dVal );
-}
-float _RoundUp4(float dVal)
-{
-	return copysign( floor(fabs(dVal) * 10000.0f + 0.5f) / 10000.0f, dVal );
-}
+function<float(float)>	RoundUp;
+function<float(float)>	RoundCt;
+DECIMALPOINT		_dp;	// RoundUp, RoundUp よりもあとに書かないと
+							// コンストラクタの初期化が有効にならない
 
-float _RoundCt3(float dVal)
+void DECIMALPOINT::SetDecimal3(void)
 {
-	return copysign( floor(fabs(dVal) * 1000.0f) / 1000.0f, dVal );
+	RoundUp = bind(&DECIMALPOINT::RoundUp3, _dp, placeholders::_1);
+	RoundCt = bind(&DECIMALPOINT::RoundCt3, _dp, placeholders::_1);
 }
-float _RoundCt4(float dVal)
+void DECIMALPOINT::SetDecimal4(void)
 {
-	return copysign( floor(fabs(dVal) * 10000.0f) / 10000.0f, dVal );
+	RoundUp = bind(&DECIMALPOINT::RoundUp4, _dp, placeholders::_1);
+	RoundCt = bind(&DECIMALPOINT::RoundCt4, _dp, placeholders::_1);
 }
-
-boost::function<float(float)>	RoundUp = _RoundUp3;
-boost::function<float(float)>	RoundCt = _RoundCt3;
 
 //////////////////////////////////////////////////////////////////////
 //	２線の交点を求める

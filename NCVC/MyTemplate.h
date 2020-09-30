@@ -43,33 +43,35 @@ const float RX = RAD(-60.0f);
 const float RY = 0.0f;
 const float RZ = RAD(-35.0f);
 
-/*
-// 1/1000 四捨五入
-inline float RoundUp(float dVal)
+//	四捨五入と切り捨て
+struct DECIMALPOINT
 {
-	return copysign( floor(fabs(dVal) * 1000.0f + 0.5f) / 1000.0f, dVal );
-}
-inline double RoundUp(double dVal)
-{
-	return copysign( floor(fabs(dVal) * 1000.0 + 0.5) / 1000.0, dVal );
-}
-// 1/1000 切り捨て
-inline float RoundCt(float dVal)
-{
-	return copysign( floor(fabs(dVal) * 1000.0f) / 1000.0f, dVal );
-}
-inline double RoundCt(double dVal)
-{
-	return copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
-}
-*/
+	DECIMALPOINT() {
+		SetDecimal3();
+	}
+	float	RoundUp3(float dVal) {
+		return copysign( floor(fabs(dVal) * 1000.0f + 0.5f) / 1000.0f, dVal );
+	}
+	float	RoundUp4(float dVal) {
+		return copysign( floor(fabs(dVal) * 10000.0f + 0.5f) / 10000.0f, dVal );
+	}
+	float	RoundCt3(float dVal) {
+		return copysign( floor(fabs(dVal) * 1000.0f) / 1000.0f, dVal );
+	}
+	float	RoundCt4(float dVal) {
+		return copysign( floor(fabs(dVal) * 10000.0f) / 10000.0f, dVal );
+	}
+	void	SetDecimal3(void);
+	void	SetDecimal4(void);
+};
 extern	boost::function<float(float)>	RoundUp;
 extern	boost::function<float(float)>	RoundCt;
-template<typename T> class	CPoint3T;
+extern	DECIMALPOINT	_dp;
 
 //////////////////////////////////////////////////////////////////////
 // 実数型 CPoint の雛形
 
+template<typename T> class	CPoint3T;
 template<typename T>
 class CPointT :
 	// +=, -=, *=, /= で +, -, * / も自動定義

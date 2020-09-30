@@ -73,6 +73,7 @@
 #include "boost/tuple/tuple.hpp"
 #include "boost/optional.hpp"
 #include "boost/variant.hpp"
+#include "boost/bind/bind.hpp"
 #include "boost/function.hpp"
 #include "boost/utility.hpp"
 #include "boost/foreach.hpp"
