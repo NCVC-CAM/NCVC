@@ -32,18 +32,21 @@ float	CPoint3F::ms_rz_sin = 0.0f;
 
 function<float(float)>	RoundUp;
 function<float(float)>	RoundCt;
-DECIMALPOINT		_dp;	// RoundUp, RoundUp よりもあとに書かないと
-							// コンストラクタの初期化が有効にならない
+float			NCMIN;
+DECIMALPOINT	_dp;	// RoundUp, RoundUp よりもあとに書かないと
+						// コンストラクタの初期化が有効にならない
 
 void DECIMALPOINT::SetDecimal3(void)
 {
 	RoundUp = bind(&DECIMALPOINT::RoundUp3, _dp, placeholders::_1);
 	RoundCt = bind(&DECIMALPOINT::RoundCt3, _dp, placeholders::_1);
+	NCMIN = 0.001f;
 }
 void DECIMALPOINT::SetDecimal4(void)
 {
 	RoundUp = bind(&DECIMALPOINT::RoundUp4, _dp, placeholders::_1);
 	RoundCt = bind(&DECIMALPOINT::RoundCt4, _dp, placeholders::_1);
+	NCMIN = 0.0001f;
 }
 
 //////////////////////////////////////////////////////////////////////

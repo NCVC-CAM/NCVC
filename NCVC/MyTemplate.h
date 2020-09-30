@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////
 
 // 一般定義
-const float NCMIN = 0.001f;			// NCの桁落ち誤差
 const float PI  = boost::math::constants::pi<float>();	// 3.141592...
 const float PI2 = 2.0f*PI;
 
@@ -66,6 +65,7 @@ struct DECIMALPOINT
 };
 extern	boost::function<float(float)>	RoundUp;
 extern	boost::function<float(float)>	RoundCt;
+extern	float			NCMIN;	// NCの桁落ち誤差（DECIMALPOINTでセット）
 extern	DECIMALPOINT	_dp;
 
 //////////////////////////////////////////////////////////////////////
