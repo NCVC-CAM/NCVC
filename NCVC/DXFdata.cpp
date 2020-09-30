@@ -907,7 +907,7 @@ void CDXFcircle::SetMaxRect(void)
 	m_rcMax.BottomRight() = m_ct + m_r;
 	m_rcMax.NormalizeRect();
 #ifdef _DEBUG_MAXRECT
-	dbg.printf("CDXFcircle::SetMaxRect() l=%.3f t=%.3f r=%.3f b=%.3f\n",
+	printf("CDXFcircle::SetMaxRect() l=%.3f t=%.3f r=%.3f b=%.3f\n",
 		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom);
 #endif
 }

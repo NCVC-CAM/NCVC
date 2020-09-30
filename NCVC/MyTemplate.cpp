@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "resource.h"
 #include "MyTemplate.h"
 
 #ifdef _DEBUG
@@ -33,6 +34,9 @@ float	CPoint3F::ms_rz_sin = 0.0f;
 function<float(float)>	RoundUp;
 function<float(float)>	RoundCt;
 float			NCMIN;
+UINT			IDS_MAKENCD_FORMAT,
+				IDS_MAKENCD_CIRCLEBREAK,
+				IDS_MAKENCD_LATHEDRILL;
 DECIMALPOINT	_dp;	// RoundUp, RoundUp よりもあとに書かないと
 						// コンストラクタの初期化が有効にならない
 
@@ -41,12 +45,18 @@ void DECIMALPOINT::SetDecimal3(void)
 	RoundUp = bind(&DECIMALPOINT::RoundUp3, _dp, placeholders::_1);
 	RoundCt = bind(&DECIMALPOINT::RoundCt3, _dp, placeholders::_1);
 	NCMIN = 0.001f;
+	IDS_MAKENCD_FORMAT		= IDS_MAKENCD_FORMAT3;
+	IDS_MAKENCD_CIRCLEBREAK	= IDS_MAKENCD_CIRCLEBREAK3;
+	IDS_MAKENCD_LATHEDRILL	= IDS_MAKENCD_LATHEDRILL3;
 }
 void DECIMALPOINT::SetDecimal4(void)
 {
 	RoundUp = bind(&DECIMALPOINT::RoundUp4, _dp, placeholders::_1);
 	RoundCt = bind(&DECIMALPOINT::RoundCt4, _dp, placeholders::_1);
 	NCMIN = 0.0001f;
+	IDS_MAKENCD_FORMAT		= IDS_MAKENCD_FORMAT4;
+	IDS_MAKENCD_CIRCLEBREAK	= IDS_MAKENCD_CIRCLEBREAK4;
+	IDS_MAKENCD_LATHEDRILL	= IDS_MAKENCD_LATHEDRILL4;
 }
 
 //////////////////////////////////////////////////////////////////////

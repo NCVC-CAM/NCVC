@@ -66,6 +66,9 @@ struct DECIMALPOINT
 extern	boost::function<float(float)>	RoundUp;
 extern	boost::function<float(float)>	RoundCt;
 extern	float			NCMIN;	// NCの桁落ち誤差（DECIMALPOINTでセット）
+extern	UINT			IDS_MAKENCD_FORMAT,
+						IDS_MAKENCD_CIRCLEBREAK,
+						IDS_MAKENCD_LATHEDRILL;
 extern	DECIMALPOINT	_dp;
 
 //////////////////////////////////////////////////////////////////////
