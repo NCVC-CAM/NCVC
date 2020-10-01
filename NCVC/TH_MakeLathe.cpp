@@ -163,6 +163,7 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 	}
 
 	// I—¹ˆ—
+	_dp.SetDecimal3();
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// ‚±‚Ì½Ú¯ÄŞ‚©‚çÀŞ²±Û¸ŞI—¹
 	// ¶¬‚µ‚½NCº°ÄŞ‚ÌÁ‹½Ú¯ÄŞ(—Dæ“x‚ğ‰º‚°‚é)
 	AfxBeginThread(MakeLathe_AfterThread, NULL,
