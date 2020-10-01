@@ -48,20 +48,28 @@ struct DECIMALPOINT
 	DECIMALPOINT() {
 		SetDecimal3();
 	}
-	float	RoundUp3(float dVal) {
-		return copysign( floor(fabs(dVal) * 1000.0f + 0.5f) / 1000.0f, dVal );
-	}
-	float	RoundUp4(float dVal) {
-		return copysign( floor(fabs(dVal) * 10000.0f + 0.5f) / 10000.0f, dVal );
-	}
-	float	RoundCt3(float dVal) {
-		return copysign( floor(fabs(dVal) * 1000.0f) / 1000.0f, dVal );
-	}
-	float	RoundCt4(float dVal) {
-		return copysign( floor(fabs(dVal) * 10000.0f) / 10000.0f, dVal );
-	}
 	void	SetDecimal3(void);
 	void	SetDecimal4(void);
+	//
+	float	RoundUp(float dVal, float m) {
+		return copysign( floor(fabs(dVal) * m + 0.5f) / m, dVal );
+	}
+	float	RoundCt(float dVal, float m) {
+		return copysign( floor(fabs(dVal) * m) / m, dVal );
+	}
+	//
+	float	RoundUp3(float dVal) {
+		return RoundUp(dVal, 1000.0f);
+	}
+	float	RoundUp4(float dVal) {
+		return RoundUp(dVal, 10000.0f);
+	}
+	float	RoundCt3(float dVal) {
+		return RoundCt(dVal, 1000.0f);
+	}
+	float	RoundCt4(float dVal) {
+		return RoundCt(dVal, 10000.0f);
+	}
 };
 extern	boost::function<float(float)>	RoundUp;
 extern	boost::function<float(float)>	RoundCt;

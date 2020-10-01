@@ -42,8 +42,8 @@ DECIMALPOINT	_dp;	// RoundUp, RoundUp ÇÊÇËÇ‡Ç†Ç∆Ç…èëÇ©Ç»Ç¢Ç∆
 
 void DECIMALPOINT::SetDecimal3(void)
 {
-	RoundUp = bind(&DECIMALPOINT::RoundUp3, _dp, placeholders::_1);
-	RoundCt = bind(&DECIMALPOINT::RoundCt3, _dp, placeholders::_1);
+	::RoundUp = bind(&DECIMALPOINT::RoundUp3, _dp, placeholders::_1);
+	::RoundCt = bind(&DECIMALPOINT::RoundCt3, _dp, placeholders::_1);
 	NCMIN = 0.001f;
 	IDS_MAKENCD_FORMAT		= IDS_MAKENCD_FORMAT3;
 	IDS_MAKENCD_CIRCLEBREAK	= IDS_MAKENCD_CIRCLEBREAK3;
@@ -51,8 +51,8 @@ void DECIMALPOINT::SetDecimal3(void)
 }
 void DECIMALPOINT::SetDecimal4(void)
 {
-	RoundUp = bind(&DECIMALPOINT::RoundUp4, _dp, placeholders::_1);
-	RoundCt = bind(&DECIMALPOINT::RoundCt4, _dp, placeholders::_1);
+	::RoundUp = bind(&DECIMALPOINT::RoundUp4, _dp, placeholders::_1);
+	::RoundCt = bind(&DECIMALPOINT::RoundCt4, _dp, placeholders::_1);
 	NCMIN = 0.0001f;
 	IDS_MAKENCD_FORMAT		= IDS_MAKENCD_FORMAT4;
 	IDS_MAKENCD_CIRCLEBREAK	= IDS_MAKENCD_CIRCLEBREAK4;
