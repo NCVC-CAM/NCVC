@@ -40,11 +40,11 @@ inline void CNCdata::Constracter(LPNCARGV lpArgv)
 //	memcpy(&(m_pRead->m_g68),   &(lpArgv->g68),   sizeof(G68ROUND));
 //	memcpy(&(m_pRead->m_taper), &(lpArgv->taper), sizeof(TAPER));
 	if ( lpArgv->g68.bG68 )
-		m_pRead->m_pG68 = new _G68ROUND(lpArgv->g68);
+		m_pRead->m_pG68 = new G68ROUND_F(lpArgv->g68);
 	else
 		m_pRead->m_pG68 = NULL;
 	if ( lpArgv->taper.nTaper!=0 || lpArgv->taper.bTonly )
-		m_pRead->m_pTaper = new _TAPER(lpArgv->taper);
+		m_pRead->m_pTaper = new TAPER_F(lpArgv->taper);
 	else
 		m_pRead->m_pTaper = NULL;
 	m_pWireObj = NULL;
