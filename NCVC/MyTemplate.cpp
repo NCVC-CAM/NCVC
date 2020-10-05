@@ -15,18 +15,18 @@ using namespace boost;
 //////////////////////////////////////////////////////////////////////
 //	ê√ìIïœêîÇÃèâä˙âª
 
-//double	CPoint3D::ms_rx_cos = 0.0;
-//double	CPoint3D::ms_rx_sin = 0.0;
-//double	CPoint3D::ms_ry_cos = 0.0;
-//double	CPoint3D::ms_ry_sin = 0.0;
-//double	CPoint3D::ms_rz_cos = 0.0;
-//double	CPoint3D::ms_rz_sin = 0.0;
 float	CPoint3F::ms_rx_cos = 0.0f;
 float	CPoint3F::ms_rx_sin = 0.0f;
 float	CPoint3F::ms_ry_cos = 0.0f;
 float	CPoint3F::ms_ry_sin = 0.0f;
 float	CPoint3F::ms_rz_cos = 0.0f;
 float	CPoint3F::ms_rz_sin = 0.0f;
+double	CPoint3D::ms_rx_cos = 0.0;
+double	CPoint3D::ms_rx_sin = 0.0;
+double	CPoint3D::ms_ry_cos = 0.0;
+double	CPoint3D::ms_ry_sin = 0.0;
+double	CPoint3D::ms_rz_cos = 0.0;
+double	CPoint3D::ms_rz_sin = 0.0;
 
 //////////////////////////////////////////////////////////////////////
 //	éléÃå‹ì¸Ç∆êÿÇËéÃÇƒ
@@ -42,18 +42,20 @@ DECIMALPOINT	_dp;	// RoundUp, RoundUp ÇÊÇËÇ‡Ç†Ç∆Ç…èëÇ©Ç»Ç¢Ç∆
 
 void DECIMALPOINT::SetDecimal3(void)
 {
+	m_decimal = 1000.0f;
+	NCMIN = 0.001f;
 	::RoundUp = bind(&DECIMALPOINT::RoundUp3, _dp, placeholders::_1);
 	::RoundCt = bind(&DECIMALPOINT::RoundCt3, _dp, placeholders::_1);
-	NCMIN = 0.001f;
 	IDS_MAKENCD_FORMAT		= IDS_MAKENCD_FORMAT3;
 	IDS_MAKENCD_CIRCLEBREAK	= IDS_MAKENCD_CIRCLEBREAK3;
 	IDS_MAKENCD_LATHEDRILL	= IDS_MAKENCD_LATHEDRILL3;
 }
 void DECIMALPOINT::SetDecimal4(void)
 {
+	m_decimal = 10000.0f;
+	NCMIN = 0.0001f;
 	::RoundUp = bind(&DECIMALPOINT::RoundUp4, _dp, placeholders::_1);
 	::RoundCt = bind(&DECIMALPOINT::RoundCt4, _dp, placeholders::_1);
-	NCMIN = 0.0001f;
 	IDS_MAKENCD_FORMAT		= IDS_MAKENCD_FORMAT4;
 	IDS_MAKENCD_CIRCLEBREAK	= IDS_MAKENCD_CIRCLEBREAK4;
 	IDS_MAKENCD_LATHEDRILL	= IDS_MAKENCD_LATHEDRILL4;

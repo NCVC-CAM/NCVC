@@ -43,32 +43,34 @@ const float RY = 0.0f;
 const float RZ = RAD(-35.0f);
 
 //	éléÃå‹ì¸Ç∆êÿÇËéÃÇƒ
-struct DECIMALPOINT
+class DECIMALPOINT
 {
+	float	m_decimal;	// 1000.0 or 10000.0
+public:
 	DECIMALPOINT() {
 		SetDecimal3();
 	}
 	void	SetDecimal3(void);
 	void	SetDecimal4(void);
 	//
-	float	RoundUp(float dVal, float m) {
-		return copysign( floor(fabs(dVal) * m + 0.5f) / m, dVal );
+	float	RoundUp(float dVal) {
+		return copysign( floor(fabs(dVal) * m_decimal + 0.5f) / m_decimal, dVal );
 	}
-	float	RoundCt(float dVal, float m) {
-		return copysign( floor(fabs(dVal) * m) / m, dVal );
+	float	RoundCt(float dVal) {
+		return copysign( floor(fabs(dVal) * m_decimal) / m_decimal, dVal );
 	}
 	//
 	float	RoundUp3(float dVal) {
-		return RoundUp(dVal, 1000.0f);
+		return RoundUp(dVal);
 	}
 	float	RoundUp4(float dVal) {
-		return RoundUp(dVal, 10000.0f);
+		return RoundUp(dVal);
 	}
 	float	RoundCt3(float dVal) {
-		return RoundCt(dVal, 1000.0f);
+		return RoundCt(dVal);
 	}
 	float	RoundCt4(float dVal) {
-		return RoundCt(dVal, 10000.0f);
+		return RoundCt(dVal);
 	}
 };
 extern	boost::function<float(float)>	RoundUp;

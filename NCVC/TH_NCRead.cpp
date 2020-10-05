@@ -176,7 +176,7 @@ static inline	int		_GetGcode(const string& str)
 {
 	float	dResult = (float)atof(str.c_str());
 	if ( str.find('.') != string::npos )
-		dResult += 1000.0;		// 小数点があれば ｺｰﾄﾞ+1000
+		dResult += 1000.0f;		// 小数点があれば ｺｰﾄﾞ+1000
 	return (int)dResult;
 }
 // 数値変換(1/1000 ﾃﾞｰﾀを判断する)
@@ -184,7 +184,7 @@ static inline	float	_GetNCValue(const string& str)
 {
 	float	dResult = (float)atof(str.c_str());
 	if ( str.find('.') == string::npos )
-		dResult /= 1000.0;		// 小数点がなければ 1/1000
+		dResult /= 1000.0f;		// 小数点がなければ 1/1000
 	return dResult;
 }
 // g_lpstrComma にﾃﾞｰﾀを代入
