@@ -14,6 +14,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 //#define	_DEBUG_ARGV
+static	ULONGLONG	g_dbgReadLine;
 #endif
 
 using namespace boost;
@@ -121,6 +122,9 @@ static inline ULONGLONG _DubleRead(CStdioFile& fp)
 	BOOL		bResult = fp.ReadString(strBuf);
 
 	if ( bResult ) {
+#ifdef _DEBUG
+		g_dbgReadLine++;
+#endif
 		dwResult = strBuf.GetLength() + 2;	// CR+LFï™
 		g_nGroup = atoi(strBuf);	// atoi()Ç≈ÇÕæﬁ€Ç©é∏îsÇ©ÇÌÇ©ÇÁÇÒ
 //		g_nGroup = lexical_cast<int>(LPCTSTR(strBuf));		// åµäiêô
@@ -128,6 +132,9 @@ static inline ULONGLONG _DubleRead(CStdioFile& fp)
 		// ñΩóﬂÇ…ë±Ç≠ílÇì«Ç›çûÇ›
 		bResult = fp.ReadString(strBuf);
 		if ( bResult ) {
+#ifdef _DEBUG
+			g_dbgReadLine++;
+#endif
 			dwResult += strBuf.GetLength() + 2;
 			g_strOrder = strBuf.Trim();
 		}
@@ -1256,6 +1263,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	g_csRemoveBlockMap.Unlock();
 #ifdef _DEBUG
 	printf("g_csRemoveBlockMap Unlock OK\n");
+	g_dbgReadLine = 0;
 #endif
 
 	// ïœêîèâä˙âª
