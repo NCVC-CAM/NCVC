@@ -745,7 +745,9 @@ CNCdata* CreateNCobj
 	ncArgv.nc.nGtype	= G_TYPE;
 	ncArgv.nc.nGcode	= pData->GetGcode() > 0 ? 1 : 0;
 	ncArgv.nc.enPlane	= pData->GetPlane();
-//	memcpy(&(ncArgv.g68), &(pData->GetReadData()->m_g68), sizeof(G68ROUND));
+	// !!! G68回転後の座標で計算しているので !!!
+	// !!! ncArgv.g68 にセットしてはいけない !!!
+/*
 	if ( pData->GetReadData()->m_pG68 ) {
 		ncArgv.g68.bG68		= TRUE;
 		ncArgv.g68.enPlane	= pData->GetReadData()->m_pG68->enPlane;
@@ -756,7 +758,7 @@ CNCdata* CreateNCobj
 	else {
 		ncArgv.g68.bG68 = FALSE;
 	}
-
+*/
 	// 座標値のｾｯﾄ
 	switch ( pData->GetPlane() ) {
 	case XY_PLANE:
@@ -790,7 +792,7 @@ CNCdata* CreateNCobj
 
 	ncArgv.nc.dwValFlags |= (pData->GetValFlags() & NCD_CORRECT);
 //	pDataResult = new CNCline(pData, &ncArgv, pData->GetOffsetPoint());
-	pDataResult = new CNCline(pData, &ncArgv, CPoint3F());	// ２重に足される？
+	pDataResult = new CNCline(pData, &ncArgv, CPoint3F());	// オフセットが２重に足される
 	ASSERT( pDataResult );
 
 	return pDataResult;
