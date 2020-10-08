@@ -475,6 +475,9 @@ try {
 				ptDBG.x, ptDBG.y, ptDBG.z);
 #endif
 			// 次のﾙｰﾌﾟへ
+/*
+			// G68との組み合わせで不具合発生
+			// なくて正常（何のための処理か思い出せない）
 			switch ( nCorrect ) {
 			case 0:
 				// G40ｷｬﾝｾﾙで軸指定がない終点座標を補正
@@ -509,6 +512,8 @@ try {
 				nCorrect++;		// 1 -> 2
 				break;
 			}
+*/
+			if ( nCorrect == 1 ) nCorrect++;	// 1 -> 2
 			pData2->AddCorrectObject(pData2c);
 			pData1  = pData2;
 			nSign1  = nSign2;
