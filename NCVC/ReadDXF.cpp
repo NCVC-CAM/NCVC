@@ -941,7 +941,9 @@ BOOL SetBlockData(void)
 
 	case TYPE_LWPOLYLINE:
 		LWPolylineProcedure(NULL, TRUE);
-		PolylineEndProcedure(NULL);
+		// ↓ SetBlockData()を再起呼び出ししてしまい落ちる
+		//    なぜこのコードが入っているか不明
+//		PolylineEndProcedure(NULL);
 		g_pBkData->AddData(g_pPolyline);
 		g_pPolyline = NULL;
 		break;
