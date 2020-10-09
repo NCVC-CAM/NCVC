@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////
 
 // 一般定義
-const float NCMIN = 0.001f;			// NCの桁落ち誤差
 const float PI  = boost::math::constants::pi<float>();	// 3.141592...
 const float PI2 = 2.0f*PI;
 
@@ -21,8 +20,6 @@ const float	ARCSTEP  = PI/32.0f;	// 2π[rad]÷ARCCOUNT
 //////////////////////////////////////////////////////////////////////
 
 // Radian変換
-//template<typename T> inline	T RAD(T dVal)
-//template<> inline double RAD(double dVal)
 inline float RAD(float dVal)
 {
 	return dVal * PI / 180.0f;
@@ -32,8 +29,6 @@ inline double RAD(double dVal)
 	return dVal * boost::math::constants::pi<double>() / 180.0;
 }
 // Degree変換
-//template<typename T> inline	T	DEG(T dVal)
-//template<> inline	double	DEG(double dVal)
 inline	float	DEG(float dVal)
 {
 	return dVal * 180.0f / PI;
@@ -47,34 +42,49 @@ const float RX = RAD(-60.0f);
 const float RY = 0.0f;
 const float RZ = RAD(-35.0f);
 
-// 1/1000 四捨五入
-//template<typename T> inline	T RoundUp(T dVal)
-//template<> inline double RoundUp(double dVal)
-inline float RoundUp(float dVal)
+//	四捨五入と切り捨て
+class DECIMALPOINT
 {
-	return copysign( floor(fabs(dVal) * 1000.0f + 0.5f) / 1000.0f, dVal );
-}
-inline double RoundUp(double dVal)
-{
-	return copysign( floor(fabs(dVal) * 1000.0 + 0.5) / 1000.0, dVal );
-}
-// 1/1000 切り捨て
-//template<typename T> inline	T RoundCt(T dVal)
-//template<> inline double RoundCt(double dVal)
-inline float RoundCt(float dVal)
-{
-	return copysign( floor(fabs(dVal) * 1000.0f) / 1000.0f, dVal );
-}
-inline double RoundCt(double dVal)
-{
-	return copysign( floor(fabs(dVal) * 1000.0) / 1000.0, dVal );
-}
-
-template<typename T> class	CPoint3T;
+	float	m_decimal;	// 1000.0 or 10000.0
+public:
+	DECIMALPOINT() {
+		SetDecimal3();
+	}
+	void	SetDecimal3(void);
+	void	SetDecimal4(void);
+	//
+	float	RoundUp(float dVal) {
+		return copysign( floor(fabs(dVal) * m_decimal + 0.5f) / m_decimal, dVal );
+	}
+	float	RoundCt(float dVal) {
+		return copysign( floor(fabs(dVal) * m_decimal) / m_decimal, dVal );
+	}
+	//
+	float	RoundUp3(float dVal) {
+		return RoundUp(dVal);
+	}
+	float	RoundUp4(float dVal) {
+		return RoundUp(dVal);
+	}
+	float	RoundCt3(float dVal) {
+		return RoundCt(dVal);
+	}
+	float	RoundCt4(float dVal) {
+		return RoundCt(dVal);
+	}
+};
+extern	boost::function<float(float)>	RoundUp;
+extern	boost::function<float(float)>	RoundCt;
+extern	float			NCMIN;	// NCの桁落ち誤差（DECIMALPOINTでセット）
+extern	UINT			IDS_MAKENCD_FORMAT,
+						IDS_MAKENCD_CIRCLEBREAK,
+						IDS_MAKENCD_LATHEDRILL;
+extern	DECIMALPOINT	_dp;
 
 //////////////////////////////////////////////////////////////////////
 // 実数型 CPoint の雛形
 
+template<typename T> class	CPoint3T;
 template<typename T>
 class CPointT :
 	// +=, -=, *=, /= で +, -, * / も自動定義

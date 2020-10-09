@@ -28,14 +28,14 @@ static	optional<float>	_CalcRoundPoint_CircleInOut(const CPointF&, const CPointF
 
 //////////////////////////////////////////////////////////////////////
 
-_G68ROUND::_G68ROUND(const _G68ROUND* pG68) {
+G68ROUND_F::G68ROUND_F(const G68ROUND_F* pG68) {
 	enPlane	= pG68->enPlane;
 	dRound	= pG68->dRound;
 	for ( int i=0; i<SIZEOF(dOrg); i++ )
 		dOrg[i]	= pG68->dOrg[i];
 }
 
-_G68ROUND::_G68ROUND(const G68ROUND& G68)
+G68ROUND_F::G68ROUND_F(const G68ROUND& G68)
 {
 	enPlane	= G68.enPlane;
 	dRound	= (float)G68.dRound;
@@ -43,7 +43,7 @@ _G68ROUND::_G68ROUND(const G68ROUND& G68)
 		dOrg[i]	= (float)G68.dOrg[i];
 }
 
-_TAPER::_TAPER(const _TAPER* pTP)
+TAPER_F::TAPER_F(const TAPER_F* pTP)
 {
 	nTaper	= pTP->nTaper;
 	dTaper	= pTP->dTaper;
@@ -51,7 +51,7 @@ _TAPER::_TAPER(const _TAPER* pTP)
 	bTonly	= pTP->bTonly;
 }
 
-_TAPER::_TAPER(const TAPER& TP)
+TAPER_F::TAPER_F(const TAPER& TP)
 {
 	nTaper	= TP.nTaper;
 	dTaper	= (float)TP.dTaper;
@@ -197,11 +197,11 @@ CNCdata::CNCdata(const CNCdata* pData)
 //	memcpy(&(m_pRead->m_g68),   &(pData->GetReadData()->m_g68),   sizeof(G68ROUND));
 //	memcpy(&(m_pRead->m_taper), &(pData->GetReadData()->m_taper), sizeof(TAPER));
 	if ( pData->GetReadData()->m_pG68 )
-		m_pRead->m_pG68 = new _G68ROUND(pData->GetReadData()->m_pG68);
+		m_pRead->m_pG68 = new G68ROUND_F(pData->GetReadData()->m_pG68);
 	else
 		m_pRead->m_pG68 = NULL;
 	if ( pData->GetReadData()->m_pTaper )
-		m_pRead->m_pTaper = new _TAPER(pData->GetReadData()->m_pTaper);
+		m_pRead->m_pTaper = new TAPER_F(pData->GetReadData()->m_pTaper);
 	else
 		m_pRead->m_pTaper = NULL;
 	m_pWireObj = NULL;
@@ -281,7 +281,7 @@ CPointF	CNCdata::GetPlaneValueOrg(const CPoint3F& pt1, const CPoint3F& pt2) cons
 	return pt;
 }
 
-void CNCdata::CalcG68Round( LPG68ROUND lpG68, CPoint3F& ptResult) const
+void CNCdata::CalcG68Round(LPG68ROUND lpG68, CPoint3F& ptResult) const
 {
 	CPoint3F	ptOrg((float)lpG68->dOrg[NCA_X], (float)lpG68->dOrg[NCA_Y], (float)lpG68->dOrg[NCA_Z]);
 	CPointF		pt(GetPlaneValueOrg(ptResult, ptOrg));
@@ -290,7 +290,7 @@ void CNCdata::CalcG68Round( LPG68ROUND lpG68, CPoint3F& ptResult) const
 	ptResult += ptOrg;
 }
 
-void CNCdata::CalcG68Round(_LPG68ROUND lpG68, CPoint3F& ptResult) const
+void CNCdata::CalcG68Round(LPG68ROUND_F lpG68, CPoint3F& ptResult) const
 {
 	CPoint3F	ptOrg(lpG68->dOrg[NCA_X], lpG68->dOrg[NCA_Y], lpG68->dOrg[NCA_Z]);
 	CPointF		pt(GetPlaneValueOrg(ptResult, ptOrg));

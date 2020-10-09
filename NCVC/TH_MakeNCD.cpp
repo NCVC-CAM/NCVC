@@ -416,6 +416,7 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 #endif
 
 	// 終了処理
+	_dp.SetDecimal3();
 	CDXFmap::ms_dTolerance = NCMIN;		// 規定値に戻す
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// このｽﾚｯﾄﾞからﾀﾞｲｱﾛｸﾞ終了
 	// 生成したNCｺｰﾄﾞの消去ｽﾚｯﾄﾞ(優先度を下げる)

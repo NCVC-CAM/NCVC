@@ -14,6 +14,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 //#define	_DEBUG_ARGV
+static	ULONGLONG	g_dbgReadLine;
 #endif
 
 using namespace boost;
@@ -121,6 +122,9 @@ static inline ULONGLONG _DubleRead(CStdioFile& fp)
 	BOOL		bResult = fp.ReadString(strBuf);
 
 	if ( bResult ) {
+#ifdef _DEBUG
+		g_dbgReadLine++;
+#endif
 		dwResult = strBuf.GetLength() + 2;	// CR+LF分
 		g_nGroup = atoi(strBuf);	// atoi()ではｾﾞﾛか失敗かわからん
 //		g_nGroup = lexical_cast<int>(LPCTSTR(strBuf));		// 厳格杉
@@ -128,6 +132,9 @@ static inline ULONGLONG _DubleRead(CStdioFile& fp)
 		// 命令に続く値を読み込み
 		bResult = fp.ReadString(strBuf);
 		if ( bResult ) {
+#ifdef _DEBUG
+			g_dbgReadLine++;
+#endif
 			dwResult += strBuf.GetLength() + 2;
 			g_strOrder = strBuf.Trim();
 		}
@@ -934,7 +941,9 @@ BOOL SetBlockData(void)
 
 	case TYPE_LWPOLYLINE:
 		LWPolylineProcedure(NULL, TRUE);
-		PolylineEndProcedure(NULL);
+		// ↓ SetBlockData()を再起呼び出ししてしまい落ちる
+		//    なぜこのコードが入っているか不明
+//		PolylineEndProcedure(NULL);
 		g_pBkData->AddData(g_pPolyline);
 		g_pPolyline = NULL;
 		break;
@@ -1256,6 +1265,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	g_csRemoveBlockMap.Unlock();
 #ifdef _DEBUG
 	printf("g_csRemoveBlockMap Unlock OK\n");
+	g_dbgReadLine = 0;
 #endif
 
 	// 変数初期化

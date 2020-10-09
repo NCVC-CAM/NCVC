@@ -391,9 +391,17 @@ void CNCMakeLathe::SetStaticOption(const CNCMakeLatheOpt* pNCMake)
 		&GetGString_Clip : &GetGString;
 	// --- 座標表記
 	ms_pfnGetValString = &GetValString;	// ﾍﾞｰｽｸﾗｽからの呼出用
-	ms_pfnGetValDetail = GetNum(MKLA_NUM_DOT) == 0 ?
-		(GetFlg(MKLA_FLG_ZEROCUT) ?
-			&GetValString_UZeroCut : &GetValString_Normal) : &GetValString_Multi1000;
+	if ( GetNum(MKLA_NUM_DOT) < 2 ) {
+		ms_pfnGetValDetail = GetFlg(MKLA_FLG_ZEROCUT) ?
+				&GetValString_UZeroCut : &GetValString_Normal;
+		if ( GetNum(MKLA_NUM_DOT) == 0 )
+			_dp.SetDecimal3();		// 小数第3位
+		else
+			_dp.SetDecimal4();		// 小数第4位
+	}
+	else {
+		ms_pfnGetValDetail = &GetValString_Multi1000;
+	}
 	// --- 行番号増加分
 	ms_nMagni = GetNum(MKLA_NUM_LINEADD)<0 ||
 					 GetNum(MKLA_NUM_LINEADD)>=SIZEOF(nLineMulti) ?

@@ -14,7 +14,7 @@
 
 // 内部情報を double -> float へ変更したことに伴い
 // NCVCdefine.h で定義された構造体を再定義
-struct	_NCDATA
+struct	NCDATA_F
 {
 	UINT		nErrorCode;			// NCﾃﾞｰﾀのｴﾗｰｺｰﾄﾞ
 	int			nLine;				// 行番号
@@ -25,25 +25,25 @@ struct	_NCDATA
 	float		dValue[VALUESIZE];	// X,Y,Z,U,V,W,I,J,K,R,P,L,D,H
 	float		dLength;			// 移動・切削長
 };
-struct	_G68ROUND
+struct	G68ROUND_F
 {
 	ENPLANE		enPlane;		// 処理中の平面
 	float		dRound;			// 回転角度(rad)
 	float		dOrg[NCXYZ];	// 回転中心座標
-	_G68ROUND(const _G68ROUND*);
-	_G68ROUND(const G68ROUND&);
+	G68ROUND_F(const G68ROUND_F*);
+	G68ROUND_F(const G68ROUND&);
 };
-struct	_TAPER
+struct	TAPER_F
 {
 	int		nTaper;		// 1:G51, -1:G52
 	float	dTaper;		// ﾃｰﾊﾟ角度(rad)
 	int		nDiff;		// 上下独立ｺｰﾅｰ 0:G60, 1:G61, 2:G62, 3:G63
 	BOOL	bTonly;		// Tｺｰﾄﾞ単独指示
-	_TAPER(const _TAPER*);
-	_TAPER(const TAPER&);
+	TAPER_F(const TAPER_F*);
+	TAPER_F(const TAPER&);
 };
-typedef	_G68ROUND*	_LPG68ROUND;
-typedef	_TAPER*		_LPTAPER;
+typedef	G68ROUND_F*	LPG68ROUND_F;
+typedef	TAPER_F*	LPTAPER_F;
 
 // 刃物ﾀｲﾌﾟ
 enum
@@ -123,8 +123,8 @@ struct CNCread
 {
 	CPoint3F	m_ptValOrg,		// 回転・ｽｹｰﾙ等無視の純粋な加工終点
 				m_ptOffset;		// ﾜｰｸ座標系のｵﾌｾｯﾄ
-	_LPG68ROUND	m_pG68;			// G68座標回転情報
-	_LPTAPER	m_pTaper;		// ﾃｰﾊﾟ加工情報
+	LPG68ROUND_F	m_pG68;		// G68座標回転情報
+	LPTAPER_F		m_pTaper;	// ﾃｰﾊﾟ加工情報
 	virtual ~CNCread();
 };
 
@@ -140,7 +140,7 @@ class CNCdata
 
 protected:
 	DWORD		m_dwFlags;		// NCﾃﾞｰﾀ状態ﾌﾗｸﾞ
-	_NCDATA		m_nc;			// NC基礎ﾃﾞｰﾀ : NCVCdefine.h
+	NCDATA_F	m_nc;			// NC基礎ﾃﾞｰﾀ : NCVCdefine.h
 	int			m_nSpindle;		// 主軸回転数（主に旋盤ﾓｰﾄﾞで使用）
 	float		m_dFeed,		// このｵﾌﾞｼﾞｪｸﾄの切削送り速度
 				m_dMove[NCXYZ],	// 各軸ごとの移動距離(早送りの時間計算用)
@@ -155,8 +155,8 @@ protected:
 	CNCread*	m_pRead;		// 読み込み終了後に消去するﾃﾞｰﾀ群
 
 	// G68座標回転
-	void	CalcG68Round( LPG68ROUND, CPoint3F&) const;
-	void	CalcG68Round(_LPG68ROUND, CPoint3F&) const;
+	void	CalcG68Round(LPG68ROUND,   CPoint3F&) const;
+	void	CalcG68Round(LPG68ROUND_F, CPoint3F&) const;
 
 	// 派生ｸﾗｽ用ｺﾝｽﾄﾗｸﾀ
 	CNCdata(ENNCDTYPE, const CNCdata*, LPNCARGV, const CPoint3F&);

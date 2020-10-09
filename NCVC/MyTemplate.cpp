@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "resource.h"
 #include "MyTemplate.h"
 
 #ifdef _DEBUG
@@ -12,20 +13,53 @@
 using namespace boost;
 
 //////////////////////////////////////////////////////////////////////
-// 静的変数の初期化
+//	静的変数の初期化
 
-//double	CPoint3D::ms_rx_cos = 0.0;
-//double	CPoint3D::ms_rx_sin = 0.0;
-//double	CPoint3D::ms_ry_cos = 0.0;
-//double	CPoint3D::ms_ry_sin = 0.0;
-//double	CPoint3D::ms_rz_cos = 0.0;
-//double	CPoint3D::ms_rz_sin = 0.0;
 float	CPoint3F::ms_rx_cos = 0.0f;
 float	CPoint3F::ms_rx_sin = 0.0f;
 float	CPoint3F::ms_ry_cos = 0.0f;
 float	CPoint3F::ms_ry_sin = 0.0f;
 float	CPoint3F::ms_rz_cos = 0.0f;
 float	CPoint3F::ms_rz_sin = 0.0f;
+double	CPoint3D::ms_rx_cos = 0.0;
+double	CPoint3D::ms_rx_sin = 0.0;
+double	CPoint3D::ms_ry_cos = 0.0;
+double	CPoint3D::ms_ry_sin = 0.0;
+double	CPoint3D::ms_rz_cos = 0.0;
+double	CPoint3D::ms_rz_sin = 0.0;
+
+//////////////////////////////////////////////////////////////////////
+//	四捨五入と切り捨て
+
+function<float(float)>	RoundUp;
+function<float(float)>	RoundCt;
+float			NCMIN;
+UINT			IDS_MAKENCD_FORMAT,
+				IDS_MAKENCD_CIRCLEBREAK,
+				IDS_MAKENCD_LATHEDRILL;
+DECIMALPOINT	_dp;	// RoundUp, RoundUp よりもあとに書かないと
+						// コンストラクタの初期化が有効にならない
+
+void DECIMALPOINT::SetDecimal3(void)
+{
+	m_decimal = 1000.0f;
+	NCMIN = 0.001f;
+	::RoundUp = bind(&DECIMALPOINT::RoundUp3, _dp, placeholders::_1);
+	::RoundCt = bind(&DECIMALPOINT::RoundCt3, _dp, placeholders::_1);
+	IDS_MAKENCD_FORMAT		= IDS_MAKENCD_FORMAT3;
+	IDS_MAKENCD_CIRCLEBREAK	= IDS_MAKENCD_CIRCLEBREAK3;
+	IDS_MAKENCD_LATHEDRILL	= IDS_MAKENCD_LATHEDRILL3;
+}
+void DECIMALPOINT::SetDecimal4(void)
+{
+	m_decimal = 10000.0f;
+	NCMIN = 0.0001f;
+	::RoundUp = bind(&DECIMALPOINT::RoundUp4, _dp, placeholders::_1);
+	::RoundCt = bind(&DECIMALPOINT::RoundCt4, _dp, placeholders::_1);
+	IDS_MAKENCD_FORMAT		= IDS_MAKENCD_FORMAT4;
+	IDS_MAKENCD_CIRCLEBREAK	= IDS_MAKENCD_CIRCLEBREAK4;
+	IDS_MAKENCD_LATHEDRILL	= IDS_MAKENCD_LATHEDRILL4;
+}
 
 //////////////////////////////////////////////////////////////////////
 //	２線の交点を求める
