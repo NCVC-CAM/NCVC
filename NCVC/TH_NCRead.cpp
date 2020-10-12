@@ -179,14 +179,6 @@ static inline	int		_GetGcode(const string& str)
 		dResult += 1000.0f;		// 小数点があれば ｺｰﾄﾞ+1000
 	return (int)dResult;
 }
-// 数値変換(1/1000 ﾃﾞｰﾀを判断する)
-static inline	float	_GetNCValue(const string& str)
-{
-	float	dResult = (float)atof(str.c_str());
-	if ( str.find('.') == string::npos )
-		dResult /= 1000.0f;		// 小数点がなければ 1/1000
-	return dResult;
-}
 // 基準平面に対する直交軸
 static inline	int		_GetPlaneZ(void)
 {
@@ -204,7 +196,6 @@ static inline	int		_GetPlaneZ(void)
 	}
 	return z;
 }
-
 // 数値変換（小数点がなければ 1/1000）
 static	float	GetNCValue_NoCheck(const string& str)
 {
@@ -219,6 +210,7 @@ static	float	GetNCValue_CheckDecimal4(const string& str)
 		dResult /= 1000.0f;
 	else {
 		n = str.length() - pos - 1;
+		if ( n >= 4 ) g_pDoc->SetDocFlag(NCDOC_DECIMAL4);
 	}
 	return dResult;
 }
@@ -272,7 +264,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		// １つ前のｵﾌﾞｼﾞｪｸﾄ参照でNULL参照しないため
 		pDataFirst = pData = new CNCdata(&g_ncArgv);
 		// 1行(1ﾌﾞﾛｯｸ)解析しｵﾌﾞｼﾞｪｸﾄの登録
-		GetNCValue = &GetNCValue_CheckDecimal4;		// MAXCHECKCNTまで
+		GetNCValue = g_pParent ? &GetNCValue_CheckDecimal4 : &GetNCValue_NoCheck;	// MAXCHECKCNTまで
 		for ( i=0; i<nLoopCnt && i<MAXCHECKCNT && nResult==0 && IsThread(); i++ ) {
 			nResult = NC_GSeparater(i, pData);
 		}
@@ -910,7 +902,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				// ﾜｲﾔﾓｰﾄﾞでｻﾎﾟｰﾄすべきか...
 				string	strTmp = boost::algorithm::trim_copy(strWord.substr(1));
 				if ( strTmp[0] == 'R' ) {
-					g_ncArgv.nc.dValue[NCA_R] = _GetNCValue(strTmp.substr(1));
+					g_ncArgv.nc.dValue[NCA_R] = GetNCValue(strTmp.substr(1));
 					g_ncArgv.nc.dwValFlags |= NCD_R;
 				}
 			}
@@ -944,18 +936,18 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 						break;
 					}
 					// through
-				default:	// P(ﾄﾞｳｪﾙ時間)も_GetNCValue()でOK
-					g_ncArgv.nc.dValue[nCode] = _GetNCValue(strWord.substr(1));
+				default:	// P(ﾄﾞｳｪﾙ時間)もGetNCValue()でOK
+					g_ncArgv.nc.dValue[nCode] = GetNCValue(strWord.substr(1));
 				}
 			}
 			else if ( g_pDoc->IsDocFlag(NCDOC_WIRE) ) {
 				// ﾜｲﾔﾓｰﾄﾞにおける特別処理(L値)
 				g_ncArgv.nc.dValue[nCode] = nCode<GVALSIZE || nCode==NCA_L ?
-					_GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
+					GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
 			}
 			else {
 				g_ncArgv.nc.dValue[nCode] = nCode < GVALSIZE ?	// nCode < NCA_P
-					_GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
+					GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
 			}
 			g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[nCode];
 			bNCval = TRUE;
@@ -1512,7 +1504,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 		return;
 	}
 
-	float	r1, r2, cr = (float)_GetNCValue(g_strComma.substr(1));
+	float	r1, r2, cr = GetNCValue(g_strComma.substr(1));
 	CPointF	pts, pte, pto, ptOffset(g_pDoc->GetOffsetOrig());
 	optional<CPointF>	ptResult;
 	BOOL	bResult;
@@ -1646,7 +1638,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 
 float FeedAnalyze_Dot(const string& str)
 {
-	return fabs(_GetNCValue(str));
+	return fabs(GetNCValue(str));
 }
 
 float FeedAnalyze_Int(const string& str)
