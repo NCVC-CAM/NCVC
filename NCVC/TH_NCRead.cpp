@@ -56,7 +56,7 @@ static	float			g_dWorkRect[NCXYZ*2],
 						g_dToolPos[NCXYZ],
 						g_dWorkPos[NCXYZ];
 static	DWORD			g_dwBlockFlags;
-static	LPTSTR			g_lpstrComma;		// Ÿ‚ÌÌŞÛ¯¸‚Æ‚ÌŒvZ
+static	string			g_strComma;			// Ÿ‚ÌÌŞÛ¯¸‚Æ‚ÌŒvZ
 //
 static	BOOL	IsThreadContinue(void)
 {
@@ -187,18 +187,6 @@ static inline	float	_GetNCValue(const string& str)
 		dResult /= 1000.0f;		// ¬”“_‚ª‚È‚¯‚ê‚Î 1/1000
 	return dResult;
 }
-// g_lpstrComma ‚ÉÃŞ°À‚ğ‘ã“ü
-static inline	void	_SetStrComma(const string& strComma)
-{
-	if ( g_lpstrComma )
-		delete[]	g_lpstrComma;
-	if ( strComma.length() <= 0 )
-		g_lpstrComma = NULL;
-	else {
-		g_lpstrComma = new TCHAR[strComma.length()+1];
-		lstrcpy(g_lpstrComma, strComma.c_str());
-	}
-}
 // Šî€•½–Ê‚É‘Î‚·‚é’¼Œğ²
 static inline	int		_GetPlaneZ(void)
 {
@@ -277,8 +265,6 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		nResult = IDCANCEL;
 	}
 
-	if ( g_lpstrComma )
-		delete[]	g_lpstrComma;
 	// ‰‰ñ“o˜^—pÀŞĞ°ÃŞ°À‚ÌÁ‹
 	if ( pDataFirst )
 		delete	pDataFirst;
@@ -307,7 +293,7 @@ struct CGcodeParser : qi::grammar<Iterator, Skipper, string()>
 		rule = qi::raw[
 				(sw::upper >> float_) |		// Nomal Gcode
 				(char_('/') >> -int_) |		// Optional Block Skip
-				(qi::lit(',') >> (char_('R')|'C') >> float_)	// ConerR/C
+				(qi::lit(',') >> (char_('R')|'C') >> float_)	// CornerR/C
 		];
 	}
 };
@@ -805,10 +791,10 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				// µÌŞ¼Şª¸Ä¶¬
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 				// –Êæ‚èµÌŞ¼Şª¸Ä‚Ì“o˜^
-				if ( g_lpstrComma )
+				if ( !g_strComma.empty() )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
-				_SetStrComma(strComma);
+				g_strComma = strComma;
 				nNotModalCode = -1;
 				bNCobj = bNCval = FALSE;
 			}
@@ -856,10 +842,10 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			// ‘O‰ñ‚Ìº°ÄŞ‚Å“o˜^µÌŞ¼Şª¸Ä‚ª‚ ‚é‚È‚ç
 			if ( bNCobj ) {
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
-				if ( g_lpstrComma )
+				if ( !g_strComma.empty() )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
-				_SetStrComma(strComma);
+				g_strComma = strComma;
 				nNotModalCode = -1;
 			}
 			if ( bNCsub ) {
@@ -968,10 +954,10 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 	if ( bNCobj || bNCval ) {
 		// NCÃŞ°À“o˜^ˆ—
 		pData = AddGcode(pBlock, pDataResult, nNotModalCode);
-		if ( g_lpstrComma )
+		if ( !g_strComma.empty() )
 			MakeChamferingObject(pBlock, pDataResult, pData);
 		pDataResult = pData;
-		_SetStrComma(strComma);
+		g_strComma = strComma;
 		// ÌŞÛ¯¸î•ñ‚ÌXV
 		pBlock->SetBlockToNCdata(pDataResult, g_pDoc->GetNCsize());
 	}
@@ -1495,13 +1481,13 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_PLANE);
 		return;
 	}
-	TCHAR	cCham = g_lpstrComma[0];
+	TCHAR	cCham = g_strComma[0];
 	if ( cCham != 'R' && cCham != 'C' ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_CHAMFERING);
 		return;
 	}
 
-	float	r1, r2, cr = (float)fabs(atof(g_lpstrComma + 1));
+	float	r1, r2, cr = (float)_GetNCValue(g_strComma.substr(1));
 	CPointF	pts, pte, pto, ptOffset(g_pDoc->GetOffsetOrig());
 	optional<CPointF>	ptResult;
 	BOOL	bResult;
@@ -2107,7 +2093,7 @@ void InitialVariable(void)
 	G68RoundClear();
 
 	g_nSubprog = 0;
-	g_lpstrComma = NULL;
+	g_strComma.clear();
 	g_dLatheView[0] = 0;	// “àŒa‘å‚«‚³”»’è‚Ì‚½‚ß‰Šú‰»
 
 	if ( IsThumbnail() ) {
