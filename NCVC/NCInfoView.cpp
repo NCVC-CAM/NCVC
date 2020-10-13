@@ -24,6 +24,7 @@ extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 static	LPCTSTR	g_szSpace = " ";
 static	LPCTSTR	g_szNumFormat = "%12d";
 static	LPCTSTR	g_szMinFormat = "%2d ";
+static	UINT	IDCV_VALFORMAT = IDCV_VALFORMAT3;
 
 // Û°¶Ù‹¤’ÊŠÖ”
 static	void	CopyNCInfoForClipboard(CView*, CNCDoc*);	// ¸Ø¯ÌßÎÞ°ÄÞ‚Ö‚ÌºËß°
@@ -141,6 +142,11 @@ CNCInfoView1::CNCInfoView1()
 BEGIN_MESSAGE_MAP(CNCInfoView1, CNCInfoBase)
 	ON_MESSAGE (WM_USERPROGRESSPOS, &CNCInfoView1::OnUserCalcMsg)
 END_MESSAGE_MAP()
+
+void CNCInfoView1::OnInitialUpdate()
+{
+	IDCV_VALFORMAT = GetDocument()->IsDocFlag(NCDOC_DECIMAL4) ? IDCV_VALFORMAT4 : IDCV_VALFORMAT3;
+}
 
 LRESULT CNCInfoView1::OnUserCalcMsg(WPARAM, LPARAM)
 {

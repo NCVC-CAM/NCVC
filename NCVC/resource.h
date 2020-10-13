@@ -47,9 +47,10 @@
 #define IDCV_FEEDERROR                  515
 #define IDCV_LATHE                      516
 #define IDCV_WIRE                       517
-#define IDCV_VALFORMAT                  520
-#define IDS_MAKEDXF_CODE                521
-#define IDS_MAKEDXF_INTVALUE            522
+#define IDCV_VALFORMAT3                 520
+#define IDCV_VALFORMAT4                 521
+#define IDS_MAKEDXF_CODE                522
+#define IDS_MAKEDXF_INTVALUE            523
 #define IDS_MAKENCD_FORMAT3             600
 #define IDS_MAKENCD_FORMAT4             601
 #define IDS_MAKENCD_CIRCLEBREAK3        602

@@ -36,6 +36,7 @@ enum DXFDOCFLG {
 // CNCDoc ﾌﾗｸﾞ
 enum NCDOCFLG {
 	NCDOC_ERROR = 0,	// ﾄﾞｷｭﾒﾝﾄ読み込みｴﾗｰ
+	NCDOC_DECIMAL4,		// 小数点4桁を認識
 	NCDOC_CUTCALC,		// 切削時間計算ｽﾚｯﾄﾞ継続ﾌﾗｸﾞ
 	NCDOC_REVISEING,	// 補正計算行うかどうか
 	NCDOC_COMMENTWORK,	// ｺﾒﾝﾄでﾜｰｸ矩形が指示された
@@ -51,7 +52,7 @@ enum NCDOCFLG {
 		NCDOC_LATHE_HOLE,	// ｺﾒﾝﾄ中空
 	NCDOC_WIRE,			// ﾜｲﾔ加工ﾓｰﾄﾞ
 	NCDOC_MC_CHANGE,	// ｺﾒﾝﾄで機械情報の変更
-		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[16]
+		NCDOC_FLGNUM		// ﾌﾗｸﾞの数[17]
 };
 #define	DOCFLG_NUM	NCDOC_FLGNUM	// 大きい方
 

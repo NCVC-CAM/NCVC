@@ -56,7 +56,7 @@ static	float			g_dWorkRect[NCXYZ*2],
 						g_dToolPos[NCXYZ],
 						g_dWorkPos[NCXYZ];
 static	DWORD			g_dwBlockFlags;
-static	LPTSTR			g_lpstrComma;		// 次のﾌﾞﾛｯｸとの計算
+static	string			g_strComma;			// 次のﾌﾞﾛｯｸとの計算
 //
 static	BOOL	IsThreadContinue(void)
 {
@@ -132,17 +132,17 @@ static	int			CallSubProgram(CNCblock*, CNCdata*&);
 static	ENGCODEOBJ	IsGcodeObject_Milling(int);
 static	ENGCODEOBJ	IsGcodeObject_Wire(int);
 static	ENGCODEOBJ	IsGcodeObject_Lathe(int);
-static	function<ENGCODEOBJ (int)>	g_pfnIsGcode;
+static	function<ENGCODEOBJ (int)>	IsGcode;
 static	int			CheckGcodeOther_Milling(int);
 static	int			CheckGcodeOther_Wire(int);
 static	int			CheckGcodeOther_Lathe(int);
-static	function<int (int)>		g_pfnCheckGcodeOther;
+static	function<int (int)>		CheckGcodeOther;
 // 面取り・ｺｰﾅｰR処理
 static	void	MakeChamferingObject(CNCblock*, CNCdata*, CNCdata*);
 // Fﾊﾟﾗﾒｰﾀ, ﾄﾞｳｪﾙ時間の解釈
 static	float	FeedAnalyze_Dot(const string&);
 static	float	FeedAnalyze_Int(const string&);
-static	function<float (const string&)>	g_pfnFeedAnalyze;
+static	function<float (const string&)>	FeedAnalyze;
 // 工具径解析
 static	void	SetEndmillDiameter(const string&);
 // ﾃｰﾊﾟ角度
@@ -166,8 +166,8 @@ static	INT_PTR	NC_NoSearch(const string&, CNCblock*);
 // 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
 static	regex	g_reAutoBreak;
 static	INT_PTR	NC_SearchAutoBreak(const string&, CNCblock*);
-static	function<INT_PTR (const string&, CNCblock*)>	g_pfnSearchMacro,
-														g_pfnSearchAutoBreak;
+static	function<INT_PTR (const string&, CNCblock*)>	SearchMacro,
+														SearchAutoBreak;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -176,28 +176,8 @@ static inline	int		_GetGcode(const string& str)
 {
 	float	dResult = (float)atof(str.c_str());
 	if ( str.find('.') != string::npos )
-		dResult += 1000.0f;		// 小数点があれば ｺｰﾄﾞ+1000
+		dResult *= 1000.0f;		// 小数点があれば ｺｰﾄﾞ1000倍
 	return (int)dResult;
-}
-// 数値変換(1/1000 ﾃﾞｰﾀを判断する)
-static inline	float	_GetNCValue(const string& str)
-{
-	float	dResult = (float)atof(str.c_str());
-	if ( str.find('.') == string::npos )
-		dResult /= 1000.0f;		// 小数点がなければ 1/1000
-	return dResult;
-}
-// g_lpstrComma にﾃﾞｰﾀを代入
-static inline	void	_SetStrComma(const string& strComma)
-{
-	if ( g_lpstrComma )
-		delete[]	g_lpstrComma;
-	if ( strComma.length() <= 0 )
-		g_lpstrComma = NULL;
-	else {
-		g_lpstrComma = new TCHAR[strComma.length()+1];
-		lstrcpy(g_lpstrComma, strComma.c_str());
-	}
 }
 // 基準平面に対する直交軸
 static inline	int		_GetPlaneZ(void)
@@ -216,6 +196,26 @@ static inline	int		_GetPlaneZ(void)
 	}
 	return z;
 }
+// 数値変換（小数点がなければ 1/1000）
+static	float	GetNCValue_NoCheck(const string& str)
+{
+	float	dResult = (float)atof(str.c_str());
+	return str.find('.')==string::npos ? dResult/1000.0f : dResult;
+}
+static	float	GetNCValue_CheckDecimal4(const string& str)
+{
+	float	dResult = (float)atof(str.c_str());
+	string::size_type	n, pos = str.find('.');
+	if ( pos == string::npos )
+		dResult /= 1000.0f;
+	else {
+		n = str.length() - pos - 1;
+		if ( n >= 4 ) g_pDoc->SetDocFlag(NCDOC_DECIMAL4);
+	}
+	return dResult;
+}
+static	function<float (const string&)>	GetNCValue;
+static	const INT_PTR	MAXCHECKCNT = 50;
 
 //////////////////////////////////////////////////////////////////////
 //	NCｺｰﾄﾞのｵﾌﾞｼﾞｪｸﾄ生成ｽﾚｯﾄﾞ
@@ -235,8 +235,8 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 #endif
 #endif
 
-	INT_PTR		i, nLoopCnt,
-				nResult = IDOK;
+	INT_PTR		i, nLoopCnt;
+	int			nResult = 0;
 	CNCdata*	pDataFirst = NULL;
 	CNCdata*	pData;	// １つ前の生成ｵﾌﾞｼﾞｪｸﾄ
 
@@ -244,8 +244,8 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 	LPNCVCTHREADPARAM	pParam = reinterpret_cast<LPNCVCTHREADPARAM>(pVoid);
 	g_pParent = pParam->pParent;
 	g_pDoc  = static_cast<CNCDoc*>(pParam->pDoc);
-	IsThread = g_pParent ? &IsThreadContinue : &IsThreadThumbnail;
 	ASSERT(g_pDoc);
+	IsThread = g_pParent ? &IsThreadContinue : &IsThreadThumbnail;
 	InitialVariable();
 
 	nLoopCnt = g_pDoc->GetNCBlockSize();
@@ -264,12 +264,17 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		// １つ前のｵﾌﾞｼﾞｪｸﾄ参照でNULL参照しないため
 		pDataFirst = pData = new CNCdata(&g_ncArgv);
 		// 1行(1ﾌﾞﾛｯｸ)解析しｵﾌﾞｼﾞｪｸﾄの登録
-		for ( i=0; i<nLoopCnt && IsThread(); i++ ) {
-			if ( NC_GSeparater(i, pData) != 0 )
-				break;
+		GetNCValue = g_pParent ? &GetNCValue_CheckDecimal4 : &GetNCValue_NoCheck;	// MAXCHECKCNTまで
+		for ( i=0; i<nLoopCnt && i<MAXCHECKCNT && nResult==0 && IsThread(); i++ ) {
+			nResult = NC_GSeparater(i, pData);
+		}
+		GetNCValue = &GetNCValue_NoCheck;			// MAXCHECKCNT以降
+		for ( ; i<nLoopCnt && nResult==0 && IsThread(); i++ ) {
+			nResult = NC_GSeparater(i, pData);
 			if ( (i & 0x003f)==0 && g_pParent )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
 				g_pParent->m_ctReadProgress.SetPos((int)i);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
 		}
+		nResult = IDOK;
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -277,8 +282,6 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		nResult = IDCANCEL;
 	}
 
-	if ( g_lpstrComma )
-		delete[]	g_lpstrComma;
 	// 初回登録用ﾀﾞﾐｰﾃﾞｰﾀの消去
 	if ( pDataFirst )
 		delete	pDataFirst;
@@ -307,7 +310,7 @@ struct CGcodeParser : qi::grammar<Iterator, Skipper, string()>
 		rule = qi::raw[
 				(sw::upper >> float_) |		// Nomal Gcode
 				(char_('/') >> -int_) |		// Optional Block Skip
-				(qi::lit(',') >> (char_('R')|'C') >> float_)	// ConerR/C
+				(qi::lit(',') >> (char_('R')|'C') >> float_)	// CornerR/C
 		];
 	}
 };
@@ -727,7 +730,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 	// ｻﾑﾈｲﾙ表示のときは処理しないﾙｰﾁﾝ
 	if ( !IsThumbnail() ) {
 		// 自動ﾌﾞﾚｲｸｺｰﾄﾞ検索
-		g_pfnSearchAutoBreak(strBlock, pBlock);
+		SearchAutoBreak(strBlock, pBlock);
 	}
 
 	// ｺﾒﾝﾄ解析(解析ﾓｰﾄﾞ, ｴﾝﾄﾞﾐﾙ径, ﾜｰｸ矩形情報の取得)
@@ -763,11 +766,11 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 	}
 
 	// ﾏｸﾛ置換解析
-	if ( (nIndex=g_pfnSearchMacro(strBlock, pBlock)) >= 0 ) {
+	if ( (nIndex=SearchMacro(strBlock, pBlock)) >= 0 ) {
 		g_nSubprog++;
 		// M98ｵﾌﾞｼﾞｪｸﾄとO番号(nIndex)の登録
 		AddM98code(pBlock, pDataResult, nIndex);
-		// g_pfnSearchMacro でﾌﾞﾛｯｸが追加される可能性アリ
+		// SearchMacro でﾌﾞﾛｯｸが追加される可能性アリ
 		// ここでは nLoop 変数を使わず、ﾈｲﾃｨﾌﾞのﾌﾞﾛｯｸｻｲｽﾞにて判定
 		for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && IsThread(); i++ ) {
 			nResult = NC_GSeparater(i, pDataResult);	// 再帰
@@ -813,10 +816,10 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				// ｵﾌﾞｼﾞｪｸﾄ生成
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 				// 面取りｵﾌﾞｼﾞｪｸﾄの登録
-				if ( g_lpstrComma )
+				if ( !g_strComma.empty() )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
-				_SetStrComma(strComma);
+				g_strComma = strComma;
 				nNotModalCode = -1;
 				bNCobj = bNCval = FALSE;
 			}
@@ -854,9 +857,9 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 		case 'G':
 			// 先に現在のｺｰﾄﾞ種別をﾁｪｯｸ
 			nCode = _GetGcode(strWord.substr(1));
-			enGcode = g_pfnIsGcode(nCode);	// IsGcodeObject_～
+			enGcode = IsGcode(nCode);	// IsGcodeObject_～
 			if ( enGcode == NOOBJ ) {
-				nResult = g_pfnCheckGcodeOther(nCode);
+				nResult = CheckGcodeOther(nCode);
 				if ( nResult > 0 )
 					pBlock->SetNCBlkErrorCode(nResult);
 				break;
@@ -864,10 +867,10 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			// 前回のｺｰﾄﾞで登録ｵﾌﾞｼﾞｪｸﾄがあるなら
 			if ( bNCobj ) {
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
-				if ( g_lpstrComma )
+				if ( !g_strComma.empty() )
 					MakeChamferingObject(pBlock, pDataResult, pData);
 				pDataResult = pData;
-				_SetStrComma(strComma);
+				g_strComma = strComma;
 				nNotModalCode = -1;
 			}
 			if ( bNCsub ) {
@@ -884,7 +887,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			bInvalidM = FALSE;
 			break;
 		case 'F':
-			g_ncArgv.dFeed = g_pfnFeedAnalyze(strWord.substr(1));
+			g_ncArgv.dFeed = FeedAnalyze(strWord.substr(1));
 			break;
 		case 'S':
 			g_ncArgv.nSpindle = abs(atoi(strWord.substr(1).c_str()));
@@ -907,7 +910,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				// ﾜｲﾔﾓｰﾄﾞでｻﾎﾟｰﾄすべきか...
 				string	strTmp = boost::algorithm::trim_copy(strWord.substr(1));
 				if ( strTmp[0] == 'R' ) {
-					g_ncArgv.nc.dValue[NCA_R] = _GetNCValue(strTmp.substr(1));
+					g_ncArgv.nc.dValue[NCA_R] = GetNCValue(strTmp.substr(1));
 					g_ncArgv.nc.dwValFlags |= NCD_R;
 				}
 			}
@@ -941,18 +944,18 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 						break;
 					}
 					// through
-				default:	// P(ﾄﾞｳｪﾙ時間)も_GetNCValue()でOK
-					g_ncArgv.nc.dValue[nCode] = _GetNCValue(strWord.substr(1));
+				default:	// P(ﾄﾞｳｪﾙ時間)もGetNCValue()でOK
+					g_ncArgv.nc.dValue[nCode] = GetNCValue(strWord.substr(1));
 				}
 			}
 			else if ( g_pDoc->IsDocFlag(NCDOC_WIRE) ) {
 				// ﾜｲﾔﾓｰﾄﾞにおける特別処理(L値)
 				g_ncArgv.nc.dValue[nCode] = nCode<GVALSIZE || nCode==NCA_L ?
-					_GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
+					GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
 			}
 			else {
 				g_ncArgv.nc.dValue[nCode] = nCode < GVALSIZE ?	// nCode < NCA_P
-					_GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
+					GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
 			}
 			g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[nCode];
 			bNCval = TRUE;
@@ -976,10 +979,10 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 	if ( bNCobj || bNCval ) {
 		// NCﾃﾞｰﾀ登録処理
 		pData = AddGcode(pBlock, pDataResult, nNotModalCode);
-		if ( g_lpstrComma )
+		if ( !g_strComma.empty() )
 			MakeChamferingObject(pBlock, pDataResult, pData);
 		pDataResult = pData;
-		_SetStrComma(strComma);
+		g_strComma = strComma;
 		// ﾌﾞﾛｯｸ情報の更新
 		pBlock->SetBlockToNCdata(pDataResult, g_pDoc->GetNCsize());
 	}
@@ -1503,13 +1506,13 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_PLANE);
 		return;
 	}
-	TCHAR	cCham = g_lpstrComma[0];
+	TCHAR	cCham = g_strComma[0];
 	if ( cCham != 'R' && cCham != 'C' ) {
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_CHAMFERING);
 		return;
 	}
 
-	float	r1, r2, cr = (float)fabs(atof(g_lpstrComma + 1));
+	float	r1, r2, cr = GetNCValue(g_strComma.substr(1));
 	CPointF	pts, pte, pto, ptOffset(g_pDoc->GetOffsetOrig());
 	optional<CPointF>	ptResult;
 	BOOL	bResult;
@@ -1643,7 +1646,7 @@ void MakeChamferingObject(CNCblock* pBlock, CNCdata* pData1, CNCdata* pData2)
 
 float FeedAnalyze_Dot(const string& str)
 {
-	return fabs(_GetNCValue(str));
+	return fabs(GetNCValue(str));
 }
 
 float FeedAnalyze_Int(const string& str)
@@ -1822,8 +1825,8 @@ void SetLatheView_fromComment(void)
 	// 旋盤ﾓｰﾄﾞのﾌﾗｸﾞON
 	g_pDoc->SetLatheViewMode();
 	// 呼び出す関数の指定
-	g_pfnIsGcode = &IsGcodeObject_Lathe;
-	g_pfnCheckGcodeOther = &CheckGcodeOther_Lathe;
+	IsGcode = &IsGcodeObject_Lathe;
+	CheckGcodeOther = &CheckGcodeOther_Lathe;
 	// ﾃﾞﾌｫﾙﾄ平面：XZ_PLANE
 	g_ncArgv.nc.enPlane = XZ_PLANE;
 
@@ -1863,8 +1866,8 @@ void SetWireView_fromComment(void)
 	// ﾜｲﾔ加工ﾓｰﾄﾞのﾌﾗｸﾞON
 	g_pDoc->SetDocFlag(NCDOC_WIRE);
 	// 呼び出す関数の指定
-	g_pfnIsGcode = &IsGcodeObject_Wire;
-	g_pfnCheckGcodeOther = &CheckGcodeOther_Wire;
+	IsGcode = &IsGcodeObject_Wire;
+	CheckGcodeOther = &CheckGcodeOther_Wire;
 
 	// ﾜｰｸ厚さ指示
 	CRect3F		rc;
@@ -2066,7 +2069,7 @@ void InitialVariable(void)
 
 	ZeroMemory(&g_ncArgv, sizeof(NCARGV));
 
-	g_pfnFeedAnalyze = pMCopt->GetInt(MC_INT_FDOT)==0 ? &FeedAnalyze_Int : &FeedAnalyze_Dot;
+	FeedAnalyze = pMCopt->GetInt(MC_INT_FDOT)==0 ? &FeedAnalyze_Int : &FeedAnalyze_Dot;
 	g_ncArgv.nc.nGtype = G_TYPE;
 	g_ncArgv.nc.nGcode = pMCopt->GetModalSetting(MODALGROUP0);
 	switch ( pMCopt->GetModalSetting(MODALGROUP1) ) {
@@ -2096,8 +2099,8 @@ void InitialVariable(void)
 			g_ncArgv.nc.dValue[i] = pMCopt->GetInitialXYZ(i);
 		break;
 	default:
-		g_pfnIsGcode = &IsGcodeObject_Milling;
-		g_pfnCheckGcodeOther = &CheckGcodeOther_Milling;
+		IsGcode = &IsGcodeObject_Milling;
+		CheckGcodeOther = &CheckGcodeOther_Milling;
 		for ( i=0; i<NCXYZ; i++ )
 			g_ncArgv.nc.dValue[i] = pMCopt->GetInitialXYZ(i);
 	}
@@ -2115,25 +2118,25 @@ void InitialVariable(void)
 	G68RoundClear();
 
 	g_nSubprog = 0;
-	g_lpstrComma = NULL;
+	g_strComma.clear();
 	g_dLatheView[0] = 0;	// 内径大きさ判定のため初期化
 
 	if ( IsThumbnail() ) {
-		g_pfnSearchMacro = &NC_NoSearch;
-		g_pfnSearchAutoBreak = &NC_NoSearch;
+		SearchMacro = &NC_NoSearch;
+		SearchAutoBreak = &NC_NoSearch;
 	}
 	else {
 		if ( pMCopt->GetMacroStr(MCMACROCODE).IsEmpty() || pMCopt->GetMacroStr(MCMACROIF).IsEmpty() )
-			g_pfnSearchMacro = &NC_NoSearch;
+			SearchMacro = &NC_NoSearch;
 		else {
 			g_reMacroStr = pMCopt->GetMacroStr(MCMACROCODE);
-			g_pfnSearchMacro = &NC_SearchMacroProgram;
+			SearchMacro = &NC_SearchMacroProgram;
 		}
 		if ( pMCopt->GetAutoBreakStr().IsEmpty() )
-			g_pfnSearchAutoBreak = &NC_NoSearch;
+			SearchAutoBreak = &NC_NoSearch;
 		else {
 			g_reAutoBreak = pMCopt->GetAutoBreakStr();
-			g_pfnSearchAutoBreak = &NC_SearchAutoBreak;
+			SearchAutoBreak = &NC_SearchAutoBreak;
 		}
 	}
 
