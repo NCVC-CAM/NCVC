@@ -176,7 +176,7 @@ static inline	int		_GetGcode(const string& str)
 {
 	float	dResult = (float)atof(str.c_str());
 	if ( str.find('.') != string::npos )
-		dResult += 1000.0f;		// ¬”“_‚ª‚ ‚ê‚Î º°ÄŞ+1000
+		dResult *= 1000.0f;		// ¬”“_‚ª‚ ‚ê‚Î º°ÄŞ1000”{
 	return (int)dResult;
 }
 // Šî€•½–Ê‚É‘Î‚·‚é’¼Œğ²

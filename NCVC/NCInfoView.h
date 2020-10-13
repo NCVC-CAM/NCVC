@@ -43,8 +43,9 @@ protected:
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 
 	//{{AFX_VIRTUAL(CNCInfoView1)
-	protected:
+protected:
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
+	virtual void OnInitialUpdate();
 	//}}AFX_VIRTUAL
 
 // インプリメンテーション
@@ -67,7 +68,7 @@ protected:
 	// ClassWizard は仮想関数のオーバーライドを生成します。
 
 	//{{AFX_VIRTUAL(CNCInfoView2)
-	protected:
+protected:
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
 	//}}AFX_VIRTUAL
 
