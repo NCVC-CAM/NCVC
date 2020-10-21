@@ -46,12 +46,6 @@ const float RZ = RAD(-35.0f);
 class DECIMALPOINT
 {
 	float	m_decimal;	// 1000.0 or 10000.0
-public:
-	DECIMALPOINT() {
-		SetDecimal3();
-	}
-	void	SetDecimal3(void);
-	void	SetDecimal4(void);
 	//
 	float	RoundUp(float dVal) {
 		return copysign( floor(fabs(dVal) * m_decimal + 0.5f) / m_decimal, dVal );
@@ -59,6 +53,13 @@ public:
 	float	RoundCt(float dVal) {
 		return copysign( floor(fabs(dVal) * m_decimal) / m_decimal, dVal );
 	}
+
+public:
+	DECIMALPOINT() {
+		SetDecimal3();
+	}
+	void	SetDecimal3(void);
+	void	SetDecimal4(void);
 	//
 	float	RoundUp3(float dVal) {
 		return RoundUp(dVal);
