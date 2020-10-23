@@ -60,6 +60,7 @@ class CNCDoc : public CDocBase
 	CStringArray	m_obMacroFile;	// ﾏｸﾛ展開一時ﾌｧｲﾙ
 	float		m_dMove[2],		// 移動距離, 切削移動距離
 				m_dCutTime;		// 切削時間
+	UINT		m_nDecimalID;	// 小数点表記書式リソースＩＤ
 	CRect3F		m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
 				m_rcWorkCo;		// ｺﾒﾝﾄ指示
 	//
@@ -135,6 +136,9 @@ public:
 	}
 	float	GetCutTime(void) const {
 		return m_dCutTime;
+	}
+	UINT	GetDecimalID(void) const {
+		return m_nDecimalID;
 	}
 
 	void	GetWorkRectPP(int a, float []);	// from NCInfoView.cpp

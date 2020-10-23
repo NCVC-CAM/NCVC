@@ -91,6 +91,7 @@ CNCDoc::CNCDoc()
 	m_bDocFlg.set(NCDOC_ERROR);	// 初期状態はｴﾗｰﾌﾗｸﾞだけ立てる
 	ZEROCLR(m_dMove);
 	m_dCutTime = -1.0f;
+	m_nDecimalID = IDCV_VALFORMAT3;
 	m_nTrace = ID_NCVIEW_TRACE_STOP;
 	m_nTraceStart = m_nTraceDraw = 0;
 	m_pCutcalcThread  = NULL;
@@ -1268,6 +1269,14 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 			return FALSE;
 	}
 
+	// 切削時間計算ｽﾚｯﾄﾞ開始
+	CreateCutcalcThread();
+
+	// NC情報の小数点表記
+	if ( m_bDocFlg[NCDOC_DECIMAL4] ) {
+		m_nDecimalID = IDCV_VALFORMAT4;
+	}
+
 	// 占有矩形調整
 	m_rcMax.NormalizeRect();
 	m_rcWork.NormalizeRect();
@@ -1318,10 +1327,9 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	printf("m_rcWork low  =%f high  =%f\n", m_rcWork.low, m_rcWork.high);
 #endif
 
-	// 切削時間計算ｽﾚｯﾄﾞ開始
-	CreateCutcalcThread();
 	// NCﾃﾞｰﾀの最大値取得
 	m_nTraceDraw = GetNCsize();
+
 	// G10で仮登録された工具情報を削除
 	AfxGetNCVCApp()->GetMCOption()->ReductionTools(TRUE);
 	// 一時展開のﾏｸﾛﾌｧｲﾙを消去

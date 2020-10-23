@@ -45,7 +45,6 @@ protected:
 	//{{AFX_VIRTUAL(CNCInfoView1)
 protected:
 	virtual void OnDraw(CDC* pDC);      // このビューを描画するためにオーバーライドしました。
-	virtual void OnInitialUpdate();
 	//}}AFX_VIRTUAL
 
 // インプリメンテーション

@@ -24,7 +24,6 @@ extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
 static	LPCTSTR	g_szSpace = " ";
 static	LPCTSTR	g_szNumFormat = "%12d";
 static	LPCTSTR	g_szMinFormat = "%2d ";
-static	UINT	IDCV_VALFORMAT = IDCV_VALFORMAT3;
 
 // Û°¶Ù‹¤’ÊŠÖ”
 static	void	CopyNCInfoForClipboard(CView*, CNCDoc*);	// ¸Ø¯ÌßÎÞ°ÄÞ‚Ö‚ÌºËß°
@@ -143,11 +142,6 @@ BEGIN_MESSAGE_MAP(CNCInfoView1, CNCInfoBase)
 	ON_MESSAGE (WM_USERPROGRESSPOS, &CNCInfoView1::OnUserCalcMsg)
 END_MESSAGE_MAP()
 
-void CNCInfoView1::OnInitialUpdate()
-{
-	IDCV_VALFORMAT = GetDocument()->IsDocFlag(NCDOC_DECIMAL4) ? IDCV_VALFORMAT4 : IDCV_VALFORMAT3;
-}
-
 LRESULT CNCInfoView1::OnUserCalcMsg(WPARAM, LPARAM)
 {
 	Invalidate();
@@ -207,12 +201,12 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 	else {
 		float	dMove = 0.0f, dTime = GetDocument()->GetCutTime();
 		for ( i=0; i<2; i++ ) {
-			strFormat.Format(IDCV_VALFORMAT, GetDocument()->GetMoveData(i));
+			strFormat.Format(GetDocument()->GetDecimalID(), GetDocument()->GetMoveData(i));
 			rc.SetRect(X, i*nHeight, W, (i+1)*nHeight);
 			pDC->DrawText(strFormat, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
 			dMove += GetDocument()->GetMoveData(i);
 		}
-		strFormat.Format(IDCV_VALFORMAT, dMove);
+		strFormat.Format(GetDocument()->GetDecimalID(), dMove);
 		rc.SetRect(X, i*nHeight, W, (i+1)*nHeight);
 		pDC->DrawText(strFormat, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
 		//
@@ -279,11 +273,11 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 			for ( i=0; i<SIZEOF(XZ); i++ ) {
 				GetDocument()->GetWorkRectPP(XZ[i], dResult);
 				// ---
-				strBuf.Format(IDCV_VALFORMAT, dResult[0] * dHosei[i]);
+				strBuf.Format(GetDocument()->GetDecimalID(), dResult[0] * dHosei[i]);
 				rc.SetRect(4*nWidth, (i+1)*nHeight, 5*nWidth+W, (i+2)*nHeight);
 				pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
 				// ---
-				strBuf.Format(IDCV_VALFORMAT, dResult[1] * dHosei[i]);
+				strBuf.Format(GetDocument()->GetDecimalID(), dResult[1] * dHosei[i]);
 				rc.SetRect(9*nWidth+W, (i+1)*nHeight, 10*nWidth+W*2, (i+2)*nHeight);
 				pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
 			}
@@ -305,11 +299,11 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 			for ( i=0; i<NCXYZ; i++ ) {
 				GetDocument()->GetWorkRectPP(i, dResult);
 				// ---
-				strBuf.Format(IDCV_VALFORMAT, dResult[0]);
+				strBuf.Format(GetDocument()->GetDecimalID(), dResult[0]);
 				rc.SetRect(4*nWidth, (i+1)*nHeight, 5*nWidth+W, (i+2)*nHeight);
 				pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
 				// ---
-				strBuf.Format(IDCV_VALFORMAT, dResult[1]);
+				strBuf.Format(GetDocument()->GetDecimalID(), dResult[1]);
 				rc.SetRect(9*nWidth+W, (i+1)*nHeight, 10*nWidth+W*2, (i+2)*nHeight);
 				pDC->DrawText(strBuf, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
 			}
@@ -374,7 +368,7 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 		// ‰ÁHî•ñ
 		VERIFY(strItem.LoadString(IDS_TAB_INFO2));
 		strarrayInfo.Add(szBracket[0] + strItem + szBracket[1]);
-		VERIFY(strBuf.LoadString(IDCV_VALFORMAT));
+		VERIFY(strBuf.LoadString(pDoc->GetDecimalID()));
 		for ( i=0; i<2; i++ ) {
 			VERIFY(strItem.LoadString(i+IDCV_G0LENGTH));
 			strFormat.Format(strBuf, pDoc->GetMoveData(i));
@@ -441,9 +435,9 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 			for ( i=0; i<SIZEOF(XZ); i++ ) {
 				pDoc->GetWorkRectPP(XZ[i], dResult);
 				strItem = g_szNdelimiter[ZX[i]] + strDelimiter;
-				strFormat.Format(IDCV_VALFORMAT, dResult[0] * dHosei[i]);
+				strFormat.Format(pDoc->GetDecimalID(), dResult[0] * dHosei[i]);
 				strItem += strFormat + g_szSpace + strBuf + g_szSpace;
-				strFormat.Format(IDCV_VALFORMAT, dResult[1] * dHosei[i]);
+				strFormat.Format(pDoc->GetDecimalID(), dResult[1] * dHosei[i]);
 				strarrayInfo.Add(strItem + strFormat + strMM);
 			}
 		}
@@ -451,9 +445,9 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 			for ( i=0; i<NCXYZ; i++ ) {
 				pDoc->GetWorkRectPP(i, dResult);
 				strItem = g_szNdelimiter[i] + strDelimiter;
-				strFormat.Format(IDCV_VALFORMAT, dResult[0]);
+				strFormat.Format(pDoc->GetDecimalID(), dResult[0]);
 				strItem += strFormat + g_szSpace + strBuf + g_szSpace;
-				strFormat.Format(IDCV_VALFORMAT, dResult[1]);
+				strFormat.Format(pDoc->GetDecimalID(), dResult[1]);
 				strarrayInfo.Add(strItem + strFormat + strMM);
 			}
 		}
