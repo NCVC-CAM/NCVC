@@ -42,7 +42,6 @@ DECIMALPOINT	_dp;	// RoundUp, RoundUp ÇÊÇËÇ‡Ç†Ç∆Ç…èëÇ©Ç»Ç¢Ç∆
 
 void DECIMALPOINT::SetDecimal3(void)
 {
-	m_decimal = 1000.0f;
 	NCMIN = 0.001f;
 	::RoundUp = bind(&DECIMALPOINT::RoundUp3, _dp, placeholders::_1);
 	::RoundCt = bind(&DECIMALPOINT::RoundCt3, _dp, placeholders::_1);
@@ -52,7 +51,6 @@ void DECIMALPOINT::SetDecimal3(void)
 }
 void DECIMALPOINT::SetDecimal4(void)
 {
-	m_decimal = 10000.0f;
 	NCMIN = 0.0001f;
 	::RoundUp = bind(&DECIMALPOINT::RoundUp4, _dp, placeholders::_1);
 	::RoundCt = bind(&DECIMALPOINT::RoundCt4, _dp, placeholders::_1);
