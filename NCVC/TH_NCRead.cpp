@@ -265,7 +265,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		pDataFirst = pData = new CNCdata(&g_ncArgv);
 		// 1çs(1Ãﬁ€Ø∏)âêÕÇµµÃﬁºﬁ™∏ƒÇÃìoò^
 		GetNCValue = g_pParent ? &GetNCValue_CheckDecimal4 : &GetNCValue_NoCheck;	// MAXCHECKCNTÇ‹Ç≈
-		for ( i=0; i<nLoopCnt && i<MAXCHECKCNT && nResult==0 && IsThread(); i++ ) {
+		for ( i=0; i<nLoopCnt && i<MAXCHECKCNT && !g_pDoc->IsDocFlag(NCDOC_DECIMAL4) && nResult==0 && IsThread(); i++ ) {
 			nResult = NC_GSeparater(i, pData);
 		}
 		GetNCValue = &GetNCValue_NoCheck;			// MAXCHECKCNTà»ç~
