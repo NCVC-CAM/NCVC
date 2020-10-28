@@ -1107,11 +1107,11 @@ int CallSubProgram(CNCblock* pBlock, CNCdata*& pDataResult)
 	else if ( (nIndex=NC_SearchSubProgram(&nRepeat)) < 0 )
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_M98);
 	else {
-		g_nSubprog++;
 		// M98ｵﾌﾞｼﾞｪｸﾄとO番号(nIndex)の登録
 		AddM98code(pBlock, pDataResult, nIndex);
 		// nRepeat分繰り返し
 		while ( nRepeat-- > 0 && IsThread() ) {
+			g_nSubprog++;	// M99で--されるのでここで++
 			// NC_SearchSubProgram でﾌﾞﾛｯｸが追加される可能性アリ
 			// ここでは nLoop 変数を使わず、ﾈｲﾃｨﾌﾞのﾌﾞﾛｯｸｻｲｽﾞにて判定
 			for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && IsThread(); i++ ) {
@@ -1121,10 +1121,8 @@ int CallSubProgram(CNCblock* pBlock, CNCdata*& pDataResult)
 				else if ( nResult == 99 )
 					break;
 			}
-		}
-		// EOFで終了ならM99復帰扱い
-		if ( i >= g_pDoc->GetNCBlockSize() && nResult == 0 ) {
-			if ( g_nSubprog > 0 )
+			// EOFで終了ならM99復帰扱い
+			if ( i >= g_pDoc->GetNCBlockSize() && nResult == 0 )
 				g_nSubprog--;
 		}
 	}
