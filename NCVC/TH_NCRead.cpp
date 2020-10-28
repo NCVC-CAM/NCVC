@@ -265,7 +265,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 		pDataFirst = pData = new CNCdata(&g_ncArgv);
 		// 1行(1ﾌﾞﾛｯｸ)解析しｵﾌﾞｼﾞｪｸﾄの登録
 		GetNCValue = g_pParent ? &GetNCValue_CheckDecimal4 : &GetNCValue_NoCheck;	// MAXCHECKCNTまで
-		for ( i=0; i<nLoopCnt && i<MAXCHECKCNT && nResult==0 && IsThread(); i++ ) {
+		for ( i=0; i<nLoopCnt && i<MAXCHECKCNT && !g_pDoc->IsDocFlag(NCDOC_DECIMAL4) && nResult==0 && IsThread(); i++ ) {
 			nResult = NC_GSeparater(i, pData);
 		}
 		GetNCValue = &GetNCValue_NoCheck;			// MAXCHECKCNT以降
@@ -1115,11 +1115,11 @@ int CallSubProgram(CNCblock* pBlock, CNCdata*& pDataResult)
 	else if ( (nIndex=NC_SearchSubProgram(&nRepeat)) < 0 )
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_M98);
 	else {
-		g_nSubprog++;
 		// M98ｵﾌﾞｼﾞｪｸﾄとO番号(nIndex)の登録
 		AddM98code(pBlock, pDataResult, nIndex);
 		// nRepeat分繰り返し
 		while ( nRepeat-- > 0 && IsThread() ) {
+			g_nSubprog++;	// M99で--されるのでここで++
 			// NC_SearchSubProgram でﾌﾞﾛｯｸが追加される可能性アリ
 			// ここでは nLoop 変数を使わず、ﾈｲﾃｨﾌﾞのﾌﾞﾛｯｸｻｲｽﾞにて判定
 			for ( i=nIndex; i<g_pDoc->GetNCBlockSize() && IsThread(); i++ ) {
@@ -1129,10 +1129,8 @@ int CallSubProgram(CNCblock* pBlock, CNCdata*& pDataResult)
 				else if ( nResult == 99 )
 					break;
 			}
-		}
-		// EOFで終了ならM99復帰扱い
-		if ( i >= g_pDoc->GetNCBlockSize() && nResult == 0 ) {
-			if ( g_nSubprog > 0 )
+			// EOFで終了ならM99復帰扱い
+			if ( i >= g_pDoc->GetNCBlockSize() && nResult == 0 )
 				g_nSubprog--;
 		}
 	}
