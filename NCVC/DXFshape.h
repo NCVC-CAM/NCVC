@@ -59,7 +59,9 @@ class CDXFmap : public CMapPointToDXFarray
 public:
 	CDXFmap();
 	virtual	~CDXFmap();
-
+#ifdef _DEBUG
+	virtual	void	DbgDump(void) const;
+#endif
 	static	float	ms_dTolerance;	// “¯ˆêÀ•W‚ÆŒ©‚È‚·‹–—e·
 
 	void	SetPointMap(CDXFdata*);			// CMap‚ÉÀ•WÃŞ°À“o˜^

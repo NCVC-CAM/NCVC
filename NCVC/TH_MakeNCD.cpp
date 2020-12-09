@@ -1744,7 +1744,7 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 	INT_PTR		i;
 	CDXFdata*	pData;
 	CDXFarray*	pNextArray;
-	CPointF		ptNext;
+	CPointF		ptNext, ptKey;
 	POSITION	pos, posTail = ltEuler.GetTailPosition();	// この時点での仮登録ﾘｽﾄの最後
 
 	// まずこの座標配列の円(に準拠する)ﾃﾞｰﾀを仮登録
@@ -1766,12 +1766,19 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 			pData->SetSearchFlg();
 			ptNext = pData->GetEndCutterPoint();
 			if ( bMakeShape ) {
-				if ( !pEuler->Lookup(ptNext+CDXFdata::ms_ptOrg, pNextArray) )
-					NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+				ptKey =  ptNext + CDXFdata::ms_ptOrg;
+//				ptKey = (ptNext + CDXFdata::ms_ptOrg).RoundUp();
 			}
 			else {
-				if ( !pEuler->Lookup(ptNext, pNextArray) )
-					NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+				ptKey = ptNext;
+			}
+			if ( !pEuler->Lookup(ptKey, pNextArray) ) {
+#ifdef _DEBUG
+				printf("Name=%s\n", (LPCTSTR)pData->GetParentMap()->GetShapeName());
+				printf("LookupKey=(%f, %f)+(%f, %f)=(%f, %f)\n", ptNext.x, ptNext.y, CDXFdata::ms_ptOrg.x, CDXFdata::ms_ptOrg.y, ptKey.x, ptKey.y);
+				pEuler->DbgDump();
+#endif
+				NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 			}
 			// 次の座標配列を検索
 			if ( MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, bMakeShape, ptNext, pNextArray, ltEuler) )

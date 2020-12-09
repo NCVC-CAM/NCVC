@@ -564,6 +564,20 @@ CDXFmap::~CDXFmap()
 	RemoveAll();
 }
 
+#ifdef _DEBUG
+void CDXFmap::DbgDump(void) const
+{
+	CPointF		pt;
+	CDXFarray*	pArray;
+
+	printf("CDXFmap::DbgDump() Cnt=%d\n", GetCount());
+	PMAP_FOREACH(pt, pArray, this)
+		printf("Key=(%f, %f)\n", pt.x, pt.y);
+		printf("DataCnt=%d\n", pArray->GetCount());
+	END_FOREACH
+}
+#endif
+
 void CDXFmap::Serialize(CArchive& ar)
 {
 	UINT		i, nMapCnt, nDataCnt;
