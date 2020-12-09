@@ -1738,20 +1738,20 @@ INT_PTR MakeLoopEulerAdd(const CDXFmap* pEuler)
 
 BOOL MakeLoopEulerAdd_with_one_stroke
 	(const CDXFmap* pEuler, BOOL bEuler, BOOL bMakeShape, 
-		const CPointF& pt, const CDXFarray* pArray, CDXFlist& ltEuler)
+		const CPointF& ptEdge, const CDXFarray* pArray, CDXFlist& ltEuler)
 {
 	const INT_PTR	nLoop = pArray->GetSize();
 	INT_PTR		i;
 	CDXFdata*	pData;
 	CDXFarray*	pNextArray;
-	CPointF		ptNext, ptKey;
+	CPointF		pt, ptKey;
 	POSITION	pos, posTail = ltEuler.GetTailPosition();	// この時点での仮登録ﾘｽﾄの最後
 
 	// まずこの座標配列の円(に準拠する)ﾃﾞｰﾀを仮登録
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pData = pArray->GetAt(i);
 		if ( !pData->IsSearchFlg() && pData->IsStartEqEnd() ) {
-			pData->GetEdgeGap(pt);	// pt値に近い方をｵﾌﾞｼﾞｪｸﾄの始点に入れ替え
+			pData->GetEdgeGap(ptEdge);	// pt値に近い方をｵﾌﾞｼﾞｪｸﾄの始点に入れ替え
 			ltEuler.AddTail( pData );
 			pData->SetSearchFlg();
 		}
@@ -1761,27 +1761,33 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pData = pArray->GetAt(i);
 		if ( !pData->IsSearchFlg() ) {
-			pData->GetEdgeGap(pt);
+			pData->GetEdgeGap(ptEdge);
 			ltEuler.AddTail(pData);
 			pData->SetSearchFlg();
-			ptNext = pData->GetEndCutterPoint();
+			ptKey = pData->GetEndCutterPoint();
 			if ( bMakeShape ) {
-				ptKey =  ptNext + CDXFdata::ms_ptOrg;
-//				ptKey = (ptNext + CDXFdata::ms_ptOrg).RoundUp();
-			}
-			else {
-				ptKey = ptNext;
+				ptKey += CDXFdata::ms_ptOrg;
 			}
 			if ( !pEuler->Lookup(ptKey, pNextArray) ) {
 #ifdef _DEBUG
 				printf("Name=%s\n", (LPCTSTR)pData->GetParentMap()->GetShapeName());
-				printf("LookupKey=(%f, %f)+(%f, %f)=(%f, %f)\n", ptNext.x, ptNext.y, CDXFdata::ms_ptOrg.x, CDXFdata::ms_ptOrg.y, ptKey.x, ptKey.y);
+				printf("LookupKey not found=(%f, %f)\n", ptKey.x, ptKey.y);
 				pEuler->DbgDump();
 #endif
-				NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+				// Lookup() で引っかからない場合は，Keyを手動で全検索
+				BOOL	bMatch = FALSE;
+				PMAP_FOREACH(pt, pNextArray, pEuler)
+					if ( ptKey.IsMatchPoint(&pt) ) {
+						bMatch = TRUE;
+						ptKey = pt;
+						break;
+					}
+				END_FOREACH
+				if ( !bMatch )
+					NCVC_CriticalErrorMsg(__FILE__, __LINE__);	// 本当にない？
 			}
 			// 次の座標配列を検索
-			if ( MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, bMakeShape, ptNext, pNextArray, ltEuler) )
+			if ( MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, bMakeShape, ptKey, pNextArray, ltEuler) )
 				return TRUE;	// 再帰を抜ける
 			// この座標配列のｉ番目のノードではなかったので
 			// 今登録した仮登録ﾙｰﾄは解除
