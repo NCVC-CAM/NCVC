@@ -711,8 +711,15 @@ CDXFmap::IsEulerRequirement(const CPointF& ptKey) const
 			nOddCnt++;
 			if ( nObCnt == 1 ) {
 				// í[ì_(1)ÇÇ≥ÇÁÇ…óDêÊ
-				bOne = TRUE;
-				if ( dGap < dGapMin ) {
+				if ( bOne ) {
+					if ( dGap < dGapMin ) {
+						dGapMin = dGap;
+						pStartArray = pArray;
+						ptStart = pt;
+					}
+				}
+				else {
+					bOne = TRUE;
 					dGapMin = dGap;
 					pStartArray = pArray;
 					ptStart = pt;
