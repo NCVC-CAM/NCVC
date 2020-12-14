@@ -686,7 +686,8 @@ tuple<BOOL, CDXFarray*, CPointF>
 CDXFmap::IsEulerRequirement(const CPointF& ptKey) const
 {
 	int			i, nObCnt, nOddCnt = 0;
-	BOOL		bEuler = FALSE;	// 一筆書き要件を満たしているか
+	BOOL		bEuler = FALSE,	// 一筆書き要件を満たしているか
+				bOne = FALSE;	// 端点
 	float		dGap, dGapMin = FLT_MAX, dGapMin2 = FLT_MAX;
 	CPointF		pt, ptStart, ptStart2;
 	CDXFdata*	pData;
@@ -706,12 +707,24 @@ CDXFmap::IsEulerRequirement(const CPointF& ptKey) const
 		}
 		dGap = GAPCALC(ptKey - pt);
 		if ( nObCnt & 0x01 ) {
-			nOddCnt++;
 			// 奇数を優先的に検索
-			if ( dGap < dGapMin ) {
-				dGapMin = dGap;
-				pStartArray = pArray;
-				ptStart = pt;
+			nOddCnt++;
+			if ( nObCnt == 1 ) {
+				// 端点(1)をさらに優先
+				bOne = TRUE;
+				if ( dGap < dGapMin ) {
+					dGapMin = dGap;
+					pStartArray = pArray;
+					ptStart = pt;
+				}
+			}
+			else if ( !bOne ) {
+				// 端点がない時だけ近い座標検索
+				if ( dGap < dGapMin ) {
+					dGapMin = dGap;
+					pStartArray = pArray;
+					ptStart = pt;
+				}
 			}
 		}
 		else {
