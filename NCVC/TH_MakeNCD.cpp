@@ -1690,9 +1690,11 @@ INT_PTR MakeLoopEulerAdd(const CDXFmap* pEuler)
 	ASSERT( pStartArray );
 	ASSERT( !pStartArray->IsEmpty() );
 	if ( !MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pStartArray, ltEuler) ) {
-		// 一筆書きできるハズやけど失敗したら条件緩和してやり直し
-		bEuler = FALSE;
-		MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pStartArray, ltEuler);
+		if ( bEuler ) {
+			// 一筆書きできるハズやけど失敗したら条件緩和してやり直し
+			bEuler = FALSE;
+			MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pStartArray, ltEuler);
+		}
 	}
 
 	// --- 切削ﾃﾞｰﾀ生成
@@ -1745,14 +1747,14 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 	INT_PTR		i;
 	CDXFdata*	pData;
 	CDXFarray*	pNextArray;
-	CPointF		pt, ptKey, ptEdgeOrg(ptEdge-ptOrg);
+	CPointF		pt, ptKey;
 	POSITION	pos, posTail = ltEuler.GetTailPosition();	// この時点での仮登録ﾘｽﾄの最後
 
 	// まずこの座標配列の円(に準拠する)ﾃﾞｰﾀを仮登録
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pData = pArray->GetAt(i);
 		if ( !pData->IsSearchFlg() && pData->IsStartEqEnd() ) {
-			pData->GetEdgeGap(ptEdgeOrg);	// ptEdge値に近い方をｵﾌﾞｼﾞｪｸﾄの始点に入れ替え
+			pData->GetEdgeGap(ptEdge);	// ptEdge値に近い方をｵﾌﾞｼﾞｪｸﾄの始点に入れ替え
 			ltEuler.AddTail( pData );
 			pData->SetSearchFlg();
 		}
@@ -1762,11 +1764,10 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pData = pArray->GetAt(i);
 		if ( !pData->IsSearchFlg() ) {
-			pData->GetEdgeGap(ptEdgeOrg);
+			pData->GetEdgeGap(ptEdge);
 			ltEuler.AddTail(pData);
 			pData->SetSearchFlg();
-//			ptKey = pData->GetEndCutterPoint();
-			ptKey = pData->GetNativePoint(1);	// 終点座標（引数1固定で大丈夫か？）
+			ptKey = pData->GetEndCutterPoint() + ptOrg;
 			if ( !pEuler->Lookup(ptKey, pNextArray) ) {
 #ifdef _DEBUG
 				printf("Name=%s\n", (LPCTSTR)pData->GetParentMap()->GetShapeName());
@@ -1786,7 +1787,7 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 					NCVC_CriticalErrorMsg(__FILE__, __LINE__);	// 本当にない？
 			}
 			// 次の座標配列を検索
-			if ( MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, ptKey, pNextArray, ltEuler) )
+			if ( MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, ptKey-ptOrg, pNextArray, ltEuler) )
 				return TRUE;	// 再帰を抜ける
 			// この座標配列のｉ番目のノードではなかったので
 			// 今登録した仮登録ﾙｰﾄは解除
@@ -2182,10 +2183,13 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bE
 	ASSERT( !pArray->IsEmpty() );
 
 	// --- 一筆書きの生成(再帰呼び出しによる木構造解析)
+	pt -= ptOrg;	// TunPoint -> MakePoint
 	if ( !MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pArray, ltEuler) ) {
-		// 一筆書きできるハズやけど失敗したら条件緩和してやり直し
-		bEuler = FALSE;
-		MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pArray, ltEuler);
+		if ( bEuler ) {
+			// 一筆書きできるハズやけど失敗したら条件緩和してやり直し
+			bEuler = FALSE;
+			MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pArray, ltEuler);
+		}
 	}
 	ASSERT( !ltEuler.IsEmpty() );
 
