@@ -557,12 +557,27 @@ void CDXFworkingPocket::Serialize(CArchive& ar)
 //////////////////////////////////////////////////////////////////////
 CDXFmap::CDXFmap() : CMapPointToDXFarray(1024)
 {
+	m_bNativePointKey = TRUE;
 }
 
 CDXFmap::~CDXFmap()
 {
 	RemoveAll();
 }
+
+#ifdef _DEBUG
+void CDXFmap::DbgDump(void) const
+{
+	CPointF		pt;
+	CDXFarray*	pArray;
+
+	printf("CDXFmap::DbgDump() Cnt=%d\n", GetCount());
+	PMAP_FOREACH(pt, pArray, this)
+		printf("Key=(%f, %f)\n", pt.x, pt.y);
+		printf("DataCnt=%d\n", pArray->GetCount());
+	END_FOREACH
+}
+#endif
 
 void CDXFmap::Serialize(CArchive& ar)
 {
@@ -666,13 +681,15 @@ void CDXFmap::SetMakePointMap(CDXFdata* pData)
 			SetAt(pt, pArray);
 		}
 	}
+	m_bNativePointKey = FALSE;
 }
 
 tuple<BOOL, CDXFarray*, CPointF>
 CDXFmap::IsEulerRequirement(const CPointF& ptKey) const
 {
 	int			i, nObCnt, nOddCnt = 0;
-	BOOL		bEuler = FALSE;	// 一筆書き要件を満たしているか
+	BOOL		bEuler = FALSE,	// 一筆書き要件を満たしているか
+				bOne = FALSE;	// 端点
 	float		dGap, dGapMin = FLT_MAX, dGapMin2 = FLT_MAX;
 	CPointF		pt, ptStart, ptStart2;
 	CDXFdata*	pData;
@@ -692,12 +709,31 @@ CDXFmap::IsEulerRequirement(const CPointF& ptKey) const
 		}
 		dGap = GAPCALC(ptKey - pt);
 		if ( nObCnt & 0x01 ) {
-			nOddCnt++;
 			// 奇数を優先的に検索
-			if ( dGap < dGapMin ) {
-				dGapMin = dGap;
-				pStartArray = pArray;
-				ptStart = pt;
+			nOddCnt++;
+			if ( nObCnt == 1 ) {
+				// 端点(1)をさらに優先
+				if ( bOne ) {
+					if ( dGap < dGapMin ) {
+						dGapMin = dGap;
+						pStartArray = pArray;
+						ptStart = pt;
+					}
+				}
+				else {
+					bOne = TRUE;
+					dGapMin = dGap;
+					pStartArray = pArray;
+					ptStart = pt;
+				}
+			}
+			else if ( !bOne ) {
+				// 端点がない時だけ近い座標検索
+				if ( dGap < dGapMin ) {
+					dGapMin = dGap;
+					pStartArray = pArray;
+					ptStart = pt;
+				}
 			}
 		}
 		else {
