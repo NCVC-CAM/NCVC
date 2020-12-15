@@ -56,6 +56,7 @@ CDXFdata*	CreateDxfLatheObject
 typedef	CMap<CPointF, CPointF&, CDXFarray*, CDXFarray*&>	CMapPointToDXFarray;
 class CDXFmap : public CMapPointToDXFarray
 {
+	BOOL	m_bNativePointKey;
 public:
 	CDXFmap();
 	virtual	~CDXFmap();
@@ -68,6 +69,9 @@ public:
 	void	SetMakePointMap(CDXFdata*);		// Å@ÅVÅ@(Makeóp)
 	DWORD	GetMapTypeFlag(void) const;
 	boost::tuple<BOOL, CDXFarray*, CPointF>	IsEulerRequirement(const CPointF&) const;
+	BOOL	IsNativeKey(void) const {
+		return m_bNativePointKey;
+	}
 	BOOL	IsAllSearchFlg(void) const;
 	BOOL	IsAllMakeFlg(void) const;
 	void	AllMapObject_ClearSearchFlg(BOOL = TRUE) const;

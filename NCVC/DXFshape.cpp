@@ -557,6 +557,7 @@ void CDXFworkingPocket::Serialize(CArchive& ar)
 //////////////////////////////////////////////////////////////////////
 CDXFmap::CDXFmap() : CMapPointToDXFarray(1024)
 {
+	m_bNativePointKey = TRUE;
 }
 
 CDXFmap::~CDXFmap()
@@ -680,6 +681,7 @@ void CDXFmap::SetMakePointMap(CDXFdata* pData)
 			SetAt(pt, pArray);
 		}
 	}
+	m_bNativePointKey = FALSE;
 }
 
 tuple<BOOL, CDXFarray*, CPointF>
