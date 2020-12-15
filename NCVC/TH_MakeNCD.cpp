@@ -90,7 +90,7 @@ static	CDXFdata*	OrgTuningDrillCircle(void);
 static	BOOL		MakeLoopEuler(const CLayerData*, CDXFdata*);
 static	BOOL		MakeLoopEulerSearch(const CPointF&, CDXFmap&);
 static	INT_PTR		MakeLoopEulerAdd(const CDXFmap*);
-static	BOOL		MakeLoopEulerAdd_with_one_stroke(const CDXFmap*, BOOL, BOOL, const CPointF&, const CDXFarray*, CDXFlist&);
+static	BOOL		MakeLoopEulerAdd_with_one_stroke(const CDXFmap*, BOOL, const CPointF&, const CDXFarray*, CDXFlist&);
 static	BOOL		MakeLoopShape(CDXFshape*);
 static	INT_PTR		MakeLoopShapeSearch(const CDXFshape*);
 static	BOOL		MakeLoopShapeAdd(CDXFshape*, CDXFdata*);
@@ -1689,10 +1689,10 @@ INT_PTR MakeLoopEulerAdd(const CDXFmap* pEuler)
 	// --- 一筆書きの生成(再帰呼び出しによる木構造解析)
 	ASSERT( pStartArray );
 	ASSERT( !pStartArray->IsEmpty() );
-	if ( !MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, FALSE, pt, pStartArray, ltEuler) ) {
+	if ( !MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pStartArray, ltEuler) ) {
 		// 一筆書きできるハズやけど失敗したら条件緩和してやり直し
 		bEuler = FALSE;
-		MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, FALSE, pt, pStartArray, ltEuler);
+		MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pStartArray, ltEuler);
 	}
 
 	// --- 切削ﾃﾞｰﾀ生成
@@ -1737,7 +1737,7 @@ INT_PTR MakeLoopEulerAdd(const CDXFmap* pEuler)
 }
 
 BOOL MakeLoopEulerAdd_with_one_stroke
-	(const CDXFmap* pEuler, BOOL bEuler, BOOL bMakeShape, 
+	(const CDXFmap* pEuler, BOOL bEuler, 
 		const CPointF& ptEdge, const CDXFarray* pArray, CDXFlist& ltEuler)
 {
 	const INT_PTR	nLoop = pArray->GetSize();
@@ -1765,9 +1765,6 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 			ltEuler.AddTail(pData);
 			pData->SetSearchFlg();
 			ptKey = pData->GetEndCutterPoint();
-			if ( bMakeShape ) {
-				ptKey += CDXFdata::ms_ptOrg;
-			}
 			if ( !pEuler->Lookup(ptKey, pNextArray) ) {
 #ifdef _DEBUG
 				printf("Name=%s\n", (LPCTSTR)pData->GetParentMap()->GetShapeName());
@@ -1787,7 +1784,7 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 					NCVC_CriticalErrorMsg(__FILE__, __LINE__);	// 本当にない？
 			}
 			// 次の座標配列を検索
-			if ( MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, bMakeShape, ptKey, pNextArray, ltEuler) )
+			if ( MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, ptKey, pNextArray, ltEuler) )
 				return TRUE;	// 再帰を抜ける
 			// この座標配列のｉ番目のノードではなかったので
 			// 今登録した仮登録ﾙｰﾄは解除
@@ -2179,15 +2176,14 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bE
 	tie(bEuler, pArray, pt) = pEuler->IsEulerRequirement(ptNow);
 	if ( !IsThread() )
 		return FALSE;
-	pt -= ptOrg;
 	ASSERT( pArray );
 	ASSERT( !pArray->IsEmpty() );
 
 	// --- 一筆書きの生成(再帰呼び出しによる木構造解析)
-	if ( !MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, TRUE, pt, pArray, ltEuler) ) {
+	if ( !MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pArray, ltEuler) ) {
 		// 一筆書きできるハズやけど失敗したら条件緩和してやり直し
 		bEuler = FALSE;
-		MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, TRUE, pt, pArray, ltEuler);
+		MakeLoopEulerAdd_with_one_stroke(pEuler, bEuler, pt, pArray, ltEuler);
 	}
 	ASSERT( !ltEuler.IsEmpty() );
 
