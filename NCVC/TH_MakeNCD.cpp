@@ -1741,17 +1741,18 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 		const CPointF& ptEdge, const CDXFarray* pArray, CDXFlist& ltEuler)
 {
 	const INT_PTR	nLoop = pArray->GetSize();
+	const CPointF	ptOrg(CDXFdata::ms_ptOrg);
 	INT_PTR		i;
 	CDXFdata*	pData;
 	CDXFarray*	pNextArray;
-	CPointF		pt, ptKey;
+	CPointF		pt, ptKey, ptEdgeOrg(ptEdge-ptOrg);
 	POSITION	pos, posTail = ltEuler.GetTailPosition();	// この時点での仮登録ﾘｽﾄの最後
 
 	// まずこの座標配列の円(に準拠する)ﾃﾞｰﾀを仮登録
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pData = pArray->GetAt(i);
 		if ( !pData->IsSearchFlg() && pData->IsStartEqEnd() ) {
-			pData->GetEdgeGap(ptEdge);	// pt値に近い方をｵﾌﾞｼﾞｪｸﾄの始点に入れ替え
+			pData->GetEdgeGap(ptEdgeOrg);	// ptEdge値に近い方をｵﾌﾞｼﾞｪｸﾄの始点に入れ替え
 			ltEuler.AddTail( pData );
 			pData->SetSearchFlg();
 		}
@@ -1761,10 +1762,11 @@ BOOL MakeLoopEulerAdd_with_one_stroke
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pData = pArray->GetAt(i);
 		if ( !pData->IsSearchFlg() ) {
-			pData->GetEdgeGap(ptEdge);
+			pData->GetEdgeGap(ptEdgeOrg);
 			ltEuler.AddTail(pData);
 			pData->SetSearchFlg();
-			ptKey = pData->GetEndCutterPoint();
+//			ptKey = pData->GetEndCutterPoint();
+			ptKey = pData->GetNativePoint(1);	// 終点座標（引数1固定で大丈夫か？）
 			if ( !pEuler->Lookup(ptKey, pNextArray) ) {
 #ifdef _DEBUG
 				printf("Name=%s\n", (LPCTSTR)pData->GetParentMap()->GetShapeName());
