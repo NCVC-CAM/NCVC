@@ -651,6 +651,127 @@ BEGIN
     END
 END
 
+IDR_3DMTYPE MENU
+BEGIN
+    POPUP "ﾌｧｲﾙ(&F)"
+    BEGIN
+        MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
+        MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
+        MENUITEM SEPARATOR
+        MENUITEM "閉じて開く(&L)...",                ID_FILE_CLANDOP
+        MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
+        MENUITEM SEPARATOR
+        MENUITEM "加工情報の保存(&S)...\tCtrl+S",      ID_FILE_SAVE
+        MENUITEM "加工情報を名前を付けて保存(&A)...",        ID_FILE_SAVE_AS
+        MENUITEM SEPARATOR
+        POPUP "NCﾃﾞｰﾀの生成"
+        BEGIN
+            MENUITEM "標準生成(&1)...\tF7",             ID_FILE_DXF2NCD
+            MENUITEM "ﾚｲﾔごとの複数条件(&2)...\tCtrl+F7",  ID_FILE_DXF2NCD_EX1
+            MENUITEM "ﾚｲﾔごとのZ座標指定(&3)...\tShift+F7", ID_FILE_DXF2NCD_EX2
+            MENUITEM SEPARATOR
+            MENUITEM "形状加工生成(&4)...\tAlt+F7",       ID_FILE_DXF2NCD_SHAPE
+            MENUITEM SEPARATOR
+            MENUITEM "旋盤ﾃﾞｰﾀの生成(&5)...\tCtrl+Alt+F7", ID_FILE_DXF2NCD_LATHE
+            MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成(&6)...\tShift+Ctrl+Alt+F7", ID_FILE_DXF2NCD_WIRE
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1
+        MENUITEM SEPARATOR
+        MENUITEM "ｱﾌﾟﾘｹｰｼｮﾝの終了(&X)",            ID_APP_EXIT
+    END
+    POPUP "編集(&E)"
+    BEGIN
+        MENUITEM "移動を元に戻す\tCtrl+Z",             ID_EDIT_UNDO
+        MENUITEM SEPARATOR
+        MENUITEM "切り取り(&T)\tCtrl+X",            ID_EDIT_CUT
+        MENUITEM "ｺﾋﾟｰ(&C)\tCtrl+C",            ID_EDIT_COPY
+        MENUITEM "貼り付け(&P)\tCtrl+V",            ID_EDIT_PASTE
+        MENUITEM SEPARATOR
+        MENUITEM "原点調整...\tCtrl+@",             ID_EDIT_DXFORG
+        MENUITEM SEPARATOR
+        POPUP "加工指示"
+        BEGIN
+            MENUITEM "形状認識処理\tCtrl+E",              ID_EDIT_DXFSHAPE
+            MENUITEM SEPARATOR
+            MENUITEM "方向\tF9",                      ID_EDIT_SHAPE_VEC
+            MENUITEM "開始位置\tF10",                   ID_EDIT_SHAPE_START
+            MENUITEM "輪郭\tF11",                     ID_EDIT_SHAPE_OUT
+            MENUITEM "ﾎﾟｹｯﾄ\tCtrl+F11",             ID_EDIT_SHAPE_POC
+            MENUITEM "分離\tF12",                     ID_EDIT_SHAPE_SEL
+            MENUITEM "加工指示の削除\tDel",                ID_EDIT_SHAPE_DEL
+            MENUITEM SEPARATOR
+            MENUITEM "名前の変更(&M)\tF2",               ID_EDIT_SHAPE_NAME
+            MENUITEM "形状プロパティ...",                  ID_EDIT_SHAPE_PROP
+            MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
+            MENUITEM SEPARATOR
+            MENUITEM "自動輪郭処理...",                   ID_EDIT_SHAPE_AUTO
+            MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
+        END
+        POPUP "統合ﾃﾞｰﾀ"
+        BEGIN
+            MENUITEM "処理対象の切り替え\tIns",              ID_EDIT_BIND_TARGET
+            MENUITEM "削除\tShift+Del",               ID_EDIT_BIND_DEL
+        END
+    END
+    POPUP "表示(&V)"
+    BEGIN
+        MENUITEM "ﾂｰﾙﾊﾞｰ(&T)...",               ID_VIEW_TOOLBARCUSTOM
+        MENUITEM "ｽﾃｰﾀｽ ﾊﾞｰ(&S)",               ID_VIEW_STATUS_BAR
+        MENUITEM SEPARATOR
+        MENUITEM "ﾚｲﾔ(&L)...\tCtrl+L",          ID_DXFVIEW_LAYER
+        MENUITEM SEPARATOR
+        MENUITEM "図形ﾌｨｯﾄ(&O)\tHome",            ID_VIEW_FIT
+        MENUITEM "拡大(&Z)\tPageUp",              ID_VIEW_LENSP
+        MENUITEM "縮小(&N)\tPageDown",            ID_VIEW_LENSN
+        MENUITEM "上移動(&U)\t↑",                  ID_VIEW_UP
+        MENUITEM "下移動(&D)\t↓",                  ID_VIEW_DW
+        MENUITEM "左移動(&L)\t←",                  ID_VIEW_LT
+        MENUITEM "右移動(&R)\t→",                  ID_VIEW_RT
+    END
+    POPUP "ｵﾌﾟｼｮﾝ(&O)"
+    BEGIN
+        MENUITEM "工作機械の設定(&N)...",              ID_OPTION_MC
+        MENUITEM "工作機械情報のﾃｷｽﾄ編集(&O)...",        ID_OPTION_EDITMC
+        MENUITEM SEPARATOR
+        MENUITEM "CADﾃﾞｰﾀの読み込み設定(&D)...",       ID_OPTION_DXF
+        MENUITEM SEPARATOR
+        MENUITEM "切削ﾊﾟﾗﾒｰﾀの設定(&M)...\tF8",      ID_OPTION_MAKENC
+        MENUITEM "切削ﾊﾟﾗﾒｰﾀのﾃｷｽﾄ編集(&T)...",      ID_OPTION_EDITNC
+        MENUITEM SEPARATOR
+        POPUP "表示属性"
+        BEGIN
+            MENUITEM "表示属性の設定(&P)...",              ID_OPTION_VIEW_SETUP
+            MENUITEM "表示属性のｲﾝﾎﾟｰﾄ(&I)",             ID_OPTION_VIEW_INPORT
+            MENUITEM "表示属性のｴｸｽﾎﾟｰﾄ(&X)",            ID_OPTION_VIEW_EXPORT
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "外部ｱﾌﾟﾘｹｰｼｮﾝの設定(&E)...",       ID_OPTION_EXEC
+        MENUITEM "拡張子の設定(&X)...",               ID_OPTION_EXT
+    END
+    POPUP "ｳｨﾝﾄﾞｳ(&W)"
+    BEGIN
+        MENUITEM "重ねて表示(&C)",                   ID_WINDOW_CASCADE
+        MENUITEM "並べて表示(&T)",                   ID_WINDOW_TILE_HORZ
+        MENUITEM "ｱｲｺﾝの整列(&A)",                 ID_WINDOW_ARRANGE
+        MENUITEM SEPARATOR
+        MENUITEM "次のｳｨﾝﾄﾞｳ(&N)\tF6",            ID_WINDOW_NEXT
+        MENUITEM SEPARATOR
+        MENUITEM "閉じる(&O)",                     ID_FILE_CLOSE
+        MENUITEM "すべて閉じる(&L)",                  ID_WINDOW_ALLCLOSE
+    END
+    POPUP "ﾍﾙﾌﾟ(&H)"
+    BEGIN
+        MENUITEM "NCVC解説書...",                  ID_HELP_USING
+        MENUITEM "自動輪郭処理...",                   ID_HELP_USING2
+        MENUITEM "旋盤ﾃﾞｰﾀの生成...",                ID_HELP_USING3
+        MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成...",          ID_HELP_USING4
+        MENUITEM "CADﾃﾞｰﾀの統合...",               ID_HELP_USING5
+        MENUITEM SEPARATOR
+        MENUITEM "NCVC のﾊﾞｰｼﾞｮﾝ情報(&A)...",      ID_APP_ABOUT
+        MENUITEM "ｱﾄﾞｲﾝについて...",                ID_HELP_ADDIN
+    END
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -3391,12 +3512,13 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_DXF_FILTER          "dxf\nDXF data (*.dxf)|*.dxf"
     IDS_PERL_FILTER         "pl\nPerlｽｸﾘﾌﾟﾄﾌｧｲﾙ (*.pl)|*.pl"
     IDS_TEXTURE_FILTER      "ﾃｸｽﾁｬ画像ﾌｧｲﾙ (*.bmp; *.png; *.gif; *.jpeg; *.tiff)|*.bmp;*.png;*.gif;*.jpg;*.jpeg;*.tif;*.tiff"
     IDS_NCVC_FILTER         "NCVC files (%s)|%s"
     IDS_NCD_FILTER          "ncd\nNC data (%s)|%s"
     IDS_CAM_FILTER          "cam\nCAM data (%s)|%s"
-    IDS_DXF_FILTER          "dxf\nDXF data (*.dxf)|*.dxf"
+    IDS_3DM_FILTER          "3dm\n3dm data (%s)|%s"
     IDS_NCI_FILTER          "切削条件ﾌｧｲﾙ (*.nci; *.ncj; *.ncw)|*.nci;*.ncj;*.ncw"
 END
 
@@ -3889,6 +4011,11 @@ STRINGTABLE
 BEGIN
     IDS_REG_DXF_SORTLAYER1  "SORTLAYER1"
     IDS_REG_DXF_SORTLAYER2  "SORTLAYER2"
+END
+
+STRINGTABLE
+BEGIN
+    IDR_3DMTYPE             "\n\n\n3DM ﾌｧｲﾙ (*.igs; *.iges; *.stl)\n\n\n"
 END
 
 STRINGTABLE
