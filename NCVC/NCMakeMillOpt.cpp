@@ -41,7 +41,8 @@ static	LPCTSTR	g_szMilDOrder[] = {
 	"Ellipse",
 	"MakeEndValue", "MakeEndFeed", "DeepFinal", "ZStep", "FinishFeed",
 	"DrillFeed", "DrillR", "DrillZ", "DrillQ", "Dwell", "DrillCircleR",
-	"Tolerance", "DrillMargin"
+	"Tolerance", "DrillMargin",
+	"ZApproach"
 };
 static	const	float	g_dfMilDOrder[] = {
 	300.0f, 100.0f,
@@ -49,7 +50,8 @@ static	const	float	g_dfMilDOrder[] = {
 	0.5f,
 	0.0f, 1000.0f, -20.0f, -2.0f, 100.0f,
 	60.0f, -9.0f, -12.0f, 1.0f, 1.0f, 10.0f,
-	NCMIN, 1.0f
+	NCMIN, 1.0f,
+	0.0f
 };
 
 // BOOLå^ñΩóﬂ
@@ -174,6 +176,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKNC_NUM_OPTIMAIZEDRILL,"åäâ¡çHäÓèÄé≤(0:Ç»Çµ,1:X,2:Y)"},
 	{NC_DBL,	MKNC_DBL_DRILLMARGIN,	"åäâ¡çHìØàÍé≤è„Ç∆å©Ç»Ç∑ãñóeç∑"},
 	{NC_STR,	MKNC_STR_PERLSCRIPT,	"ê∂ê¨å„Ç…é¿çsÇ≥ÇÍÇÈPerlΩ∏ÿÃﬂƒ"},
+	{NC_DBL,	MKNC_DBL_ZAPPROACH,		"Zé≤êiì¸±Ãﬂ€∞¡"}
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -395,5 +398,6 @@ void CNCMakeMillOpt::DbgDump(void) const
 	printf("  DrillOptimaiz=%d\n", MIL_I_OPTIMAIZEDRILL);
 	printf("  DrillMargin  =%f\n", MIL_D_DRILLMARGIN);
 	printf("  PerlScript   =%s\n", LPCTSTR(MIL_S_PERLSCRIPT));
+	printf("  ZApproach    =%f\n", MIL_D_ZAPPROACH);
 }
 #endif

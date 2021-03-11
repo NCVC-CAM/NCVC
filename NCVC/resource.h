@@ -582,6 +582,8 @@
 #define IDC_MKNC4_CIRCLEPROCESS         4323
 #define IDC_MKNC4_CIRCLEGROUP           4324
 #define IDD_MKNC_SETUP5                 4400
+#define IDC_MKNC5_APPROACH              4401
+#define IDC_MKNC5_ZAPPROACH             4401
 #define IDC_MKNC5_TOLERANCE             4403
 #define IDC_MKNC5_TOLERANCE_P           4404
 #define IDC_MKNC5_DRILL                 4405
@@ -788,7 +790,6 @@
 #define IDS_ERR_DXF_DRAGLINK            21054
 #define IDS_ERR_DXF_CREATEOUTELINE      21055
 #define IDS_ERR_DRAGTREE                21056
-#define IDS_STRING21057                 21095
 #define IDS_ERR_PERLSCRIPT              21095
 #define IDS_ERR_DLL                     21096
 #define IDS_ERR_PROCESS                 21097
