@@ -83,7 +83,6 @@ extern	DECIMALPOINT	_dp;
 //////////////////////////////////////////////////////////////////////
 // 実数型 CPoint の雛形
 
-template<typename T> class	CPoint3T;
 template<typename T>
 class CPointT :
 	// +=, -=, *=, /= で +, -, * / も自動定義
@@ -177,16 +176,12 @@ public:
 		ASSERT(a>=0 && a<SIZEOF(xy));
 		return xy[a];
 	}
-//	T		hypot(void) const;	// 特殊化のためここでは宣言のみ
 	T		hypot(void) const {
 		return ::sqrt(x*x + y*y);
 	}
 	// 変換関数
 	operator CPoint() const {
 		return CPoint((int)x, (int)y);
-	}
-	operator CPoint3T<T>() const {
-		return CPoint3T<T>(x, y, 0);
 	}
 	CPointT<T>	RoundUp(void) const {
 		return CPointT<T>(::RoundUp(x), ::RoundUp(y));
@@ -254,6 +249,9 @@ public:
 	CPoint3T(T xx, T yy, T zz) {
 		SetPoint(xx, yy, zz);
 	}
+	CPoint3T(const CPointT<T> pt, T zz = 0) {
+		SetPoint(pt.x, pt.y, zz);
+	}
 	CPoint3T(const CPoint3T<double>& pt) {
 		// double -> float 初期化
 		SetPoint((T)pt.x, (T)pt.y, (T)pt.z);
@@ -261,10 +259,6 @@ public:
 	// 演算子定義
 	CPoint3T<T>&	operator = (T xyz) {
 		x = y = z = xyz;
-		return *this;
-	}
-	CPoint3T<T>&	operator = (const CPointT<T>& pt) {
-		x = pt.x;	y = pt.y;
 		return *this;
 	}
 	CPoint3T<float>& operator = (const CPoint3T<double>& pt) {

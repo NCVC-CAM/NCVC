@@ -140,6 +140,10 @@ static	void	AddMoveZ_R(void);
 static	void	AddMoveZ_Initial(void);
 static	void	AddMoveCust_B(void);
 static	void	AddMoveCust_A(void);
+static	function<void (const CDXFdata*)>	g_pfnAddMoveGdata;
+static	void	AddMoveGdataG0(const CDXFdata*);
+static	void	AddMoveGdataG1(const CDXFdata*);
+static	void	AddMoveGdataApproach(const CDXFdata*);
 
 // Z軸の移動(切削)ﾃﾞｰﾀ生成
 static inline	void	AddMoveGdataZ(int nCode, float dZ, float dFeed)
@@ -188,20 +192,6 @@ static inline	void	AddMoveGdata(int nCode, const CDXFdata* pData, float dFeed)
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 }
-static inline	void	AddMoveGdataG0(const CDXFdata* pData)
-{
-	// G0移動ﾃﾞｰﾀの生成
-	AddMoveGdata(0, pData, 0);
-	// Z軸の下降
-	AddMoveGdataZdown();
-}
-static inline	void	AddMoveGdataG1(const CDXFdata* pData)
-{
-	// Z軸の下降
-	AddMoveGdataZdown();
-	// G1移動ﾃﾞｰﾀの生成
-	AddMoveGdata(1, pData, GetDbl(MKNC_DBL_FEED));
-}
 // 切削ﾃﾞｰﾀ
 static inline	void	AddMakeGdata(CDXFdata* pData, float dFeed)
 {
@@ -229,7 +219,7 @@ static inline	void	AddMakeGdataDrill(CDXFdata* pData)
 	// 切削ﾃﾞｰﾀの生成(穴加工)
 	AddMakeGdata(pData, GetDbl(MKNC_DBL_DRILLFEED));
 }
-static 	void	AddMakeGdataHelical(CDXFdata* pData)
+static inline	void	AddMakeGdataHelical(CDXFdata* pData)
 {
 	// 切削ﾃﾞｰﾀの生成(深彫円ﾃﾞｰﾀのﾍﾘｶﾙ切削)
 	ASSERT( pData );
@@ -707,6 +697,11 @@ void SetStaticOption(void)
 	// 深彫の処理
 	g_pfnDeepProc = GetNum(MKNC_NUM_DEEPALL) == 0 ?
 		&MakeLoopDeepAdd_All : &MakeLoopDeepAdd_Euler;
+	// Z軸進入アプローチ
+	if ( GetNum(MKNC_NUM_TOLERANCE) == 0 )
+		g_pfnAddMoveGdata = GetDbl(MKNC_DBL_ZAPPROACH) > NCMIN ? &AddMoveGdataG0 : &AddMoveGdataApproach;
+	else
+		g_pfnAddMoveGdata = &AddMoveGdataG1;
 
 	// CDXFdataの静的変数初期化
 	CDXFdata::ms_fXRev = GetFlg(MKNC_FLG_XREV);
@@ -1719,10 +1714,7 @@ INT_PTR MakeLoopEulerAdd(const CDXFmap* mpEuler)
 	else {
 		// 切削ﾃﾞｰﾀまでの移動
 		pData = ltEuler.GetHead();
-		if ( GetNum(MKNC_NUM_TOLERANCE) == 0 )
-			AddMoveGdataG0(pData);
-		else
-			AddMoveGdataG1(pData);
+		g_pfnAddMoveGdata(pData);
 		// 切削ﾃﾞｰﾀ生成
 		PLIST_FOREACH(pData, &ltEuler)
 			AddMakeGdataCut(pData);
@@ -2080,10 +2072,7 @@ BOOL MakeLoopShapeAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain, CDXFdata* 
 			pData = pChain->GetSeqData(pos);
 		}
 		// 切削ﾃﾞｰﾀまでの移動
-		if ( GetNum(MKNC_NUM_TOLERANCE) == 0 )
-			AddMoveGdataG0(pData);
-		else
-			AddMoveGdataG1(pData);
+		g_pfnAddMoveGdata(pData);
 		// 開始ﾎﾟｼﾞｼｮﾝからﾙｰﾌﾟ
 		do {
 			pData = pChain->GetSeqData(pos1);
@@ -2237,10 +2226,7 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* mpEuler, BOOL& b
 		BOOL	bNext = FALSE;
 		// 切削ﾃﾞｰﾀまでの移動
 		pData = ltEuler.GetFirstData();
-		if ( GetNum(MKNC_NUM_TOLERANCE) == 0 )
-			AddMoveGdataG0(pData);
-		else
-			AddMoveGdataG1(pData);
+		g_pfnAddMoveGdata(pData);
 		// 切削ﾃﾞｰﾀ生成
 		for ( pos=ltEuler.GetFirstPosition(); pos && IsThread(); ) {
 			pData = ltEuler.GetSeqData(pos);
@@ -3313,6 +3299,39 @@ void AddMoveCust_B(void)
 void AddMoveCust_A(void)
 {
 	AddMakeGdataStr(GetStr(MKNC_STR_CUSTMOVE_A));
+}
+
+void AddMoveGdataG0(const CDXFdata* pData)
+{
+	// G0移動ﾃﾞｰﾀの生成
+	AddMoveGdata(0, pData, 0);
+	// Z軸の下降
+	AddMoveGdataZdown();
+}
+
+void AddMoveGdataG1(const CDXFdata* pData)
+{
+	// Z軸の下降
+	AddMoveGdataZdown();
+	// G1移動ﾃﾞｰﾀの生成
+	AddMoveGdata(1, pData, GetDbl(MKNC_DBL_FEED));
+}
+
+void AddMoveGdataApproach(const CDXFdata* pData)
+{
+	if ( pData->GetMakeType()!=DXFLINEDATA || pData->GetLength()<=GetDbl(MKNC_DBL_ZAPPROACH) )
+		return AddMoveGdataG0(pData);
+
+	// アプローチの開始位置へG00移動
+	CPointF	pt( CalcIntersectionPoint_TC(pData->GetStartCutterPoint(), GetDbl(MKNC_DBL_ZAPPROACH), pData->GetEndCutterPoint()) );
+	CNCMakeMill* pNCD = new CNCMakeMill(0, pt, 0);
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+	// pData の開始位置へ3軸移動
+	CPoint3F	pt3d(pData->GetEndMakePoint(), g_dZCut);
+	pNCD = new CNCMakeMill(pt3d, GetDbl(MKNC_DBL_FEED));
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
 }
 
 // ﾃｷｽﾄ情報の生成

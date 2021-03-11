@@ -629,7 +629,7 @@ void CDXFDoc::MakeDXF(const CString& strFile)
 		}
 		// Œ´“_î•ño—Í
 		if ( m_pCircle ) {
-			CPoint3F	ptOrg = m_pCircle->GetCenter();
+			CPoint3F	ptOrg( m_pCircle->GetCenter() );
 			pMake = new CDXFMake(ptOrg, m_pCircle->GetR());
 			obDXFdata.Add(pMake);
 		}

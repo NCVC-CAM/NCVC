@@ -37,6 +37,8 @@ public:
 	CNCMakeMill(int, float, float);
 	// XY‚ÌG[0|1]ˆÚ“®
 	CNCMakeMill(int, const CPointF&, float);
+	// XYZ‚ÌG01
+	CNCMakeMill(const CPoint3F&, float);
 	// À•Ww¦‚É‚æ‚é‰~ŒÊ‚Ì¶¬
 	CNCMakeMill(int, const CPointF&, const CPointF&, const CPointF&, float);
 	// ”CˆÓ‚Ì•¶š—ñº°ÄŞ

@@ -172,6 +172,19 @@ CNCMakeMill::CNCMakeMill(int nCode, const CPointF& pt, float dFeed)
 	}
 }
 
+// XYZÇÃG01
+CNCMakeMill::CNCMakeMill(const CPoint3F& pt, float dFeed)
+{
+	CString	strGcode(GetValString(NCA_X, pt.x) +
+					 GetValString(NCA_Y, pt.y) +
+					 GetValString(NCA_Z, pt.z) );
+	if ( !strGcode.IsEmpty() ) {
+		strGcode += GetFeedString(dFeed);
+		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
+			strGcode + ms_strEOB;
+	}
+}
+
 // ç¿ïWéwé¶Ç…ÇÊÇÈâ~å ÇÃê∂ê¨
 CNCMakeMill::CNCMakeMill
 	(int nCode, const CPointF& pts, const CPointF& pte, const CPointF& pto, float r)
