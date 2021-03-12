@@ -69,6 +69,11 @@ inline BOOL CDXFdata::IsSearchFlg(void) const
 	return m_dwFlags & DXFFLG_SEARCH;
 }
 
+inline BOOL CDXFdata::IsEdgeFlg(void) const
+{
+	return m_dwFlags & DXFFLG_EDGE;
+}
+
 inline void CDXFdata::SetMakeFlg(void)
 {
 	m_dwFlags |= DXFFLG_MAKE;		// SetDxfFlg(DXFFLG_MAKE);

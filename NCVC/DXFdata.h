@@ -15,6 +15,7 @@ class	CDXFshape;
 // DXFèÛë‘Ã◊∏ﬁ
 #define	DXFFLG_MAKE				0x0001
 #define	DXFFLG_SEARCH			0x0002
+#define	DXFFLG_EDGE				0x0004
 #define	DXFFLG_CLRWORK			0x000f
 #define	DXFFLG_POLYCHILD		0x0010
 #define	DXFFLG_SELECT			0x0080
@@ -162,6 +163,7 @@ public:
 	void		SetDxfFlg(DWORD, BOOL = TRUE);
 	BOOL		IsMakeFlg(void) const;
 	BOOL		IsSearchFlg(void) const;
+	BOOL		IsEdgeFlg(void) const;
 	void		SetMakeFlg(void);
 	void		SetSearchFlg(void);
 	void		ClearMakeFlg(void);

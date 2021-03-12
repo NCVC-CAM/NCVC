@@ -161,12 +161,8 @@ static inline	void	AddMoveGdataZup(void)
 	AddMoveGdataZ(0, g_dZReturn, -1.0f);
 }
 // ZŽ²‚Ì‰º~
-static inline	void	AddMoveGdataZdown(void)
+static inline	float	GetZValue(void)
 {
-	// ZŽ²‚ÌŒ»ÝˆÊ’u‚ªR“_‚æ‚è‘å‚«‚¢(‚‚¢)‚È‚çR“_‚Ü‚Å‘‘—‚è
-	if ( CNCMakeMill::ms_xyz[NCA_Z] > g_dZG0Stop )
-		AddMoveGdataZ(0, g_dZG0Stop, -1.0f);
-	// ‰ÁHÏ‚Ý[‚³‚Ö‚ÌZŽ²ØíˆÚ“®
 	float	dZValue;
 	switch ( GetNum(MKNC_NUM_MAKEEND) ) {
 	case 1:		// µÌ¾¯ÄˆÚ“®
@@ -179,6 +175,15 @@ static inline	void	AddMoveGdataZdown(void)
 		dZValue = HUGE_VALF;
 		break;
 	}
+	return dZValue;
+}
+static inline	void	AddMoveGdataZdown(void)
+{
+	// ZŽ²‚ÌŒ»ÝˆÊ’u‚ªR“_‚æ‚è‘å‚«‚¢(‚‚¢)‚È‚çR“_‚Ü‚Å‘‘—‚è
+	if ( CNCMakeMill::ms_xyz[NCA_Z] > g_dZG0Stop )
+		AddMoveGdataZ(0, g_dZG0Stop, -1.0f);
+	// ‰ÁHÏ‚Ý[‚³‚Ö‚ÌZŽ²ØíˆÚ“®
+	float	dZValue = GetZValue();
 	if ( CNCMakeMill::ms_xyz[NCA_Z] > dZValue )
 		AddMoveGdataZ(1, dZValue, GetDbl(MKNC_DBL_MAKEENDFEED));
 	// Øí“_‚Ü‚ÅØí‘—‚è
@@ -2233,7 +2238,7 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* mpEuler, BOOL& b
 			if ( pData ) {
 				if ( bNext ) {
 					AddMoveGdataZup();
-					AddMoveGdataG0(pData);
+					g_pfnAddMoveGdata(pData);
 					bNext = FALSE;
 				}
 				AddMakeGdataCut(pData);
@@ -2287,12 +2292,15 @@ BOOL MakeLoopDeepAdd(void)
 	float		dZCut = g_dZCut;	// g_dZCutÊÞ¯¸±¯Ìß
 	CDXFdata*	pData;
 
-	if ( g_ltDeepData.IsEmpty() )
-		return TRUE;
-
 	// ÅŒã‚ÌZŽ²ˆÚ“®Ï°¶‚Ííœ
 	if ( g_ltDeepData.GetTail() == NULL )
 		g_ltDeepData.RemoveTail();
+	if ( g_ltDeepData.IsEmpty() )
+		return TRUE;
+
+	// Head‚ÆTail‚Ìƒ}[ƒLƒ“ƒO
+	g_ltDeepData.GetHead()->SetDxfFlg(DXFFLG_EDGE);
+	g_ltDeepData.GetTail()->SetDxfFlg(DXFFLG_EDGE);
 
 #ifdef _DEBUGOLD
 	int	n;
@@ -2311,7 +2319,7 @@ BOOL MakeLoopDeepAdd(void)
 	if ( !strSpindle.IsEmpty() )
 		AddMakeGdataStr(strSpindle);
 	// ØíÃÞ°À‚Ü‚Å‚ÌˆÚ“®
-	AddMoveGdataG0( g_ltDeepData.GetHead() );
+	g_pfnAddMoveGdata( g_ltDeepData.GetHead() );
 
 	// [’¤‚ªu‘S‘Ìv‚Ìê‡CÄ°ÀÙŒ”*[’¤½Ã¯Ìß‚ÅÌßÛ¸ÞÚ½ºÝÄÛ°Ù‚ÌÄÝ’è
 	if ( GetNum(MKNC_NUM_DEEPALL) == 0 ) {
@@ -2391,7 +2399,7 @@ BOOL MakeLoopDeepAdd(void)
 			AddMakeGdataStr( CNCMakeMill::MakeSpindle(DXFLINEDATA, TRUE) );
 			// µÌÞ¼Þª¸ÄØíˆÊ’u‚ÖˆÚ“®
 			pData = bAction ? g_ltDeepData.GetHead() : g_ltDeepData.GetTail();
-			AddMoveGdataG0(pData);
+			g_pfnAddMoveGdata(pData);
 		}
 		else {
 			// Ždã‚°–Ê‚Ö‚ÌZŽ²‰º~
@@ -2487,7 +2495,7 @@ CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeep)
 					if ( !bMove )	// ˆÚ“®‚È‚¯‚ê‚Î
 						MakeLoopDeepZUp();
 					// pData‚Ü‚ÅˆÚ“®(ZŽ²‰º~ž‚Ý)
-					AddMoveGdataG0(pData);
+					g_pfnAddMoveGdata(pData);
 				}
 				if ( bMove ) {
 					// ˆÚ“®ÃÞ°Àˆ—’†
@@ -2531,7 +2539,7 @@ void MakeLoopDeepZDown(void)
 		// ‚Ü‚¸ZŽ²‚Ìã¸
 		MakeLoopDeepZUp();
 		// æ“ªµÌÞ¼Þª¸Ä‚ÉˆÚ“®
-		AddMoveGdataG0(pDataHead);
+		g_pfnAddMoveGdata(pDataHead);
 	}
 }
 
@@ -3330,6 +3338,10 @@ void AddMoveGdataApproach(const CDXFdata* pData)
 	// ZŽ²‚ÌŒ»ÝˆÊ’u‚ªR“_‚æ‚è‘å‚«‚¢(‚‚¢)‚È‚çR“_‚Ü‚Å‘‘—‚è
 	if ( CNCMakeMill::ms_xyz[NCA_Z] > g_dZG0Stop )
 		AddMoveGdataZ(0, g_dZG0Stop, -1.0f);
+	// ‰ÁHÏ‚Ý[‚³‚Ö‚ÌZŽ²ØíˆÚ“®
+	float	dZValue = GetZValue();
+	if ( CNCMakeMill::ms_xyz[NCA_Z] > dZValue )
+		AddMoveGdataZ(1, dZValue, GetDbl(MKNC_DBL_MAKEENDFEED));
 	// pData ‚ÌŠJŽnˆÊ’u‚Ö3Ž²ˆÚ“®
 	CPoint3F	pt3d(pData->GetStartMakePoint(), g_dZCut);
 	pNCD = new CNCMakeMill(pt3d, GetDbl(MKNC_DBL_FEED));
