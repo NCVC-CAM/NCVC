@@ -699,7 +699,7 @@ void SetStaticOption(void)
 		&MakeLoopDeepAdd_All : &MakeLoopDeepAdd_Euler;
 	// Z軸進入アプローチ
 	if ( GetNum(MKNC_NUM_TOLERANCE) == 0 )
-		g_pfnAddMoveGdata = GetDbl(MKNC_DBL_ZAPPROACH) > NCMIN ? &AddMoveGdataG0 : &AddMoveGdataApproach;
+		g_pfnAddMoveGdata = GetDbl(MKNC_DBL_ZAPPROACH) > NCMIN ? &AddMoveGdataApproach : &AddMoveGdataG0;
 	else
 		g_pfnAddMoveGdata = &AddMoveGdataG1;
 
@@ -3327,8 +3327,11 @@ void AddMoveGdataApproach(const CDXFdata* pData)
 	CNCMakeMill* pNCD = new CNCMakeMill(0, pt, 0);
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
+	// Z軸の現在位置がR点より大きい(高い)ならR点まで早送り
+	if ( CNCMakeMill::ms_xyz[NCA_Z] > g_dZG0Stop )
+		AddMoveGdataZ(0, g_dZG0Stop, -1.0f);
 	// pData の開始位置へ3軸移動
-	CPoint3F	pt3d(pData->GetEndMakePoint(), g_dZCut);
+	CPoint3F	pt3d(pData->GetStartMakePoint(), g_dZCut);
 	pNCD = new CNCMakeMill(pt3d, GetDbl(MKNC_DBL_FEED));
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
