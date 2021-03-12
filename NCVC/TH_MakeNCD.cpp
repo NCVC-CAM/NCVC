@@ -144,7 +144,13 @@ static	function<void (const CDXFdata*)>	g_pfnAddMoveGdata;
 static	void	AddMoveGdataG0(const CDXFdata*);
 static	void	AddMoveGdataG1(const CDXFdata*);
 static	void	AddMoveGdataApproach(const CDXFdata*);
+static	void	AddMakeGdataDeepZApproach(const CDXFdata*);
 
+// Z軸進入アプローチの可否
+static inline	BOOL	_IsZApproach(const CDXFdata* pData)
+{
+	return pData->GetMakeType()==DXFLINEDATA && pData->GetLength()>GetDbl(MKNC_DBL_ZAPPROACH);
+}
 // Z軸の移動(切削)ﾃﾞｰﾀ生成
 static inline	void	_AddMoveGdataZ(int nCode, float dZ, float dFeed)
 {
@@ -2427,7 +2433,7 @@ BOOL MakeLoopDeepAdd(void)
 
 CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeep)
 {
-
+	BOOL		bIgnoreFirstEdge = FALSE;	// 最初のEdgeだけ無視
 	POSITION	(CDXFlist::*pfnGetPosition)(void) const;
 	CDXFdata*&	(CDXFlist::*pfnGetData)(POSITION&);
 	if ( bAction ) {
@@ -2443,7 +2449,11 @@ CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeep)
 	CDXFdata*	pData;
 	for ( POSITION pos=(g_ltDeepData.*pfnGetPosition)(); pos && IsThread(); ) {
 		pData = (g_ltDeepData.*pfnGetData)(pos);
-		_AddMakeGdataDeep(pData, bDeep);
+		if ( bIgnoreFirstEdge && pData->IsEdgeFlg() )
+			AddMakeGdataDeepZApproach(pData);	// 終点への3軸切削
+		else
+			_AddMakeGdataDeep(pData, bDeep);
+		bIgnoreFirstEdge = TRUE;
 	}
 /*
 	CDXFdata*	pData;
@@ -3327,7 +3337,7 @@ void AddMoveGdataG1(const CDXFdata* pData)
 
 void AddMoveGdataApproach(const CDXFdata* pData)
 {
-	if ( pData->GetMakeType()!=DXFLINEDATA || pData->GetLength()<=GetDbl(MKNC_DBL_ZAPPROACH) )
+	if ( !_IsZApproach(pData) )
 		return AddMoveGdataG0(pData);
 
 	// アプローチの開始位置へG00移動
@@ -3342,8 +3352,22 @@ void AddMoveGdataApproach(const CDXFdata* pData)
 	float	dZValue = _GetZValue();
 	if ( CNCMakeMill::ms_xyz[NCA_Z] > dZValue )
 		_AddMoveGdataZ(1, dZValue, GetDbl(MKNC_DBL_MAKEENDFEED));
-	// pData の開始位置へ3軸移動
+	// pDataの始点へ3軸移動
 	CPoint3F	pt3d(pData->GetStartMakePoint(), g_dZCut);
+	pNCD = new CNCMakeMill(pt3d, GetDbl(MKNC_DBL_FEED));
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+}
+
+void AddMakeGdataDeepZApproach(const CDXFdata* pData)	// 深彫終点への3軸切削
+{
+	// アプローチ開始位置までG01切削
+	CPointF	pt( CalcIntersectionPoint_TC(pData->GetEndCutterPoint(), GetDbl(MKNC_DBL_ZAPPROACH), pData->GetStartCutterPoint()) );
+	CNCMakeMill* pNCD = new CNCMakeMill(1, pt, GetDbl(MKNC_DBL_FEED));
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+	// pDataの終点へ3軸切削
+	CPoint3F	pt3d(pData->GetEndMakePoint(), g_dZCut);
 	pNCD = new CNCMakeMill(pt3d, GetDbl(MKNC_DBL_FEED));
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
