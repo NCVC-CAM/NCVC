@@ -2325,6 +2325,7 @@ BOOL MakeLoopDeepAdd(void)
 		nCnt = (int)(ceil(fabs((g_dDeep - g_dZCut) / GetDbl(MKNC_DBL_ZSTEP)))
 			* g_ltDeepData.GetCount());
 		SendFaseMessage( nCnt );
+/*	-- 深彫全体ではマーキング不要？？
 		// ブレイク(NULL)の前後にマーキング
 		g_ltDeepData.GetHead()->SetDxfFlg(DXFFLG_EDGE);
 		CDXFdata*	pPrev;
@@ -2340,6 +2341,7 @@ BOOL MakeLoopDeepAdd(void)
 				bNext = TRUE;
 			}
 		END_FOREACH
+*/
 	}
 	else {
 		// [一筆]
@@ -2524,16 +2526,20 @@ CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeepFin, BOOL bApproach)
 {
 	POSITION	(CDXFlist::*pfnGetPosition)(void) const;
 	CDXFdata*&	(CDXFlist::*pfnGetData)(POSITION&);
+	CDXFdata*&	(CDXFlist::*pfnGetEnd)(void);
 	if ( bAction ) {
 		pfnGetPosition	= &(CDXFlist::GetHeadPosition);
 		pfnGetData		= &(CDXFlist::GetNext);
+		pfnGetEnd		= &(CDXFlist::GetTail);
 	}
 	else {
 		pfnGetPosition	= &(CDXFlist::GetTailPosition);
 		pfnGetData		= &(CDXFlist::GetPrev);
+		pfnGetEnd		= &(CDXFlist::GetHead);
 	}
 	BOOL		bMove = FALSE, bBreak = FALSE;
 	CDXFdata*	pData;
+	CDXFdata*	pDataEnd = (g_ltDeepData.*pfnGetEnd)();
 	CDXFdata*	pDataResult = NULL;
 
 	// ﾃﾞｰﾀ生成ﾙｰﾌﾟ(正転逆転)
@@ -2554,7 +2560,17 @@ CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeepFin, BOOL bApproach)
 					_AddMoveGdataZdown();
 					bMove = FALSE;
 				}
-				_AddMakeGdataDeep(pData, bDeepFin);
+				// リストの最後でZ軸進入アプローチが必要かどうか
+				if ( bApproach && pData==pDataEnd && _IsZApproach(pData) ) {
+					// アプローチ終点まで切削
+					CPointF	pts(pData->GetStartCutterPoint()),
+							pte(pData->GetEndCutterPoint());
+					_AddMakeGdataApproach(pte, pts, 1, GetDbl(MKNC_DBL_FEED));
+					pData->SetMakeFlg();
+				}
+				else {
+					_AddMakeGdataDeep(pData, bDeepFin);
+				}
 			}
 			else {
 				// 移動ﾃﾞｰﾀ
