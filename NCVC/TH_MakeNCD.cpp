@@ -99,9 +99,9 @@ static	BOOL		MakeLoopShapeAdd_EulerMap(CDXFshape*);
 static	BOOL		MakeLoopShapeAdd_EulerMap_Make(CDXFshape*, CDXFmap*, BOOL&);
 static	BOOL		MakeLoopShapeAdd_EulerMap_Search(const CPointF&, CDXFmap*, CDXFmap*);
 static	BOOL		MakeLoopDeepAdd(void);
-static	function<CDXFdata* (BOOL, BOOL)>	g_pfnDeepProc;	// MakeLoopDeepAdd_*
-static	CDXFdata*	MakeLoopDeepAdd_Euler(BOOL, BOOL);
-static	CDXFdata*	MakeLoopDeepAdd_All(BOOL, BOOL);
+static	function<CDXFdata* (BOOL, BOOL, BOOL)>	g_pfnDeepProc;	// MakeLoopDeepAdd_*
+static	CDXFdata*	MakeLoopDeepAdd_Euler(BOOL, BOOL, BOOL);
+static	CDXFdata*	MakeLoopDeepAdd_All(BOOL, BOOL, BOOL);
 static	void		MakeLoopDeepZDown(void);
 static	void		MakeLoopDeepZUp(void);
 static	BOOL		MakeLoopDrillPoint(CDXFdata*);
@@ -144,7 +144,6 @@ static	function<void (const CDXFdata*)>	g_pfnAddMoveGdata;
 static	void	AddMoveGdataG0(const CDXFdata*);
 static	void	AddMoveGdataG1(const CDXFdata*);
 static	void	AddMoveGdataApproach(const CDXFdata*);
-static	void	AddMakeGdataDeepZApproach(const CDXFdata*);
 
 // Z軸進入アプローチの可否
 static inline	BOOL	_IsZApproach(const CDXFdata* pData)
@@ -220,10 +219,24 @@ static inline	void	_AddMakeGdataCut(CDXFdata* pData)
 	// 切削ﾃﾞｰﾀの生成(切削)
 	_AddMakeGdata(pData, GetDbl(MKNC_DBL_FEED));
 }
-static inline	void	_AddMakeGdataDeep(CDXFdata* pData, BOOL bDeep)
+static inline	void	_AddMakeGdataDeep(CDXFdata* pData, BOOL bDeepFin)
 {
 	// 切削ﾃﾞｰﾀの生成(深彫)
-	_AddMakeGdata(pData, bDeep ? GetDbl(MKNC_DBL_DEEPFEED) : GetDbl(MKNC_DBL_FEED));
+	_AddMakeGdata(pData, bDeepFin ? GetDbl(MKNC_DBL_DEEPFEED) : GetDbl(MKNC_DBL_FEED));
+}
+static inline	void	_AddMakeGdataApproach(const CPointF& pts, const CPointF& pte, int nCode, float dFeed = 0.0f)
+{
+	CPointF	pt( CalcIntersectionPoint_TC(pts, GetDbl(MKNC_DBL_ZAPPROACH), pte) );
+	CNCMakeMill* pNCD = new CNCMakeMill(nCode, pt, dFeed);
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+}
+static inline	void	_AddMakeGdata3dCut(const CPoint3F& pt3d)
+{
+	// pt3dへ3軸動作
+	CNCMakeMill* pNCD = new CNCMakeMill(pt3d, GetDbl(MKNC_DBL_FEED));
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
 }
 static inline	void	_AddMakeGdataDrill(CDXFdata* pData)
 {
@@ -2344,9 +2357,7 @@ BOOL MakeLoopDeepAdd(void)
 		// g_dZCut==g_dDeepまでﾍﾘｶﾙで落とすので
 		// ここは::RoundUp(g_dZCut-g_dDeep)>0で
 		while ( ::RoundUp(g_dZCut-g_dDeep)>0 && IsThread() ) {
-			g_dZCut += GetDbl(MKNC_DBL_ZSTEP);
-			if ( g_dZCut < g_dDeep )
-				g_dZCut = g_dDeep;
+			g_dZCut = max(g_dZCut+GetDbl(MKNC_DBL_ZSTEP), g_dDeep);
 			_AddMakeGdataHelical(pData);
 		}
 	}
@@ -2355,8 +2366,21 @@ BOOL MakeLoopDeepAdd(void)
 		// g_dZCut > g_dDeep での条件では数値誤差が発生したときﾙｰﾌﾟ脱出しないため
 		// ここは::RoundUp(g_dZCut-g_dDeep)>NCMIN
 		while ( ::RoundUp(g_dZCut-g_dDeep)>NCMIN && IsThread() ) {
-			pData = g_pfnDeepProc(bAction, FALSE);
+			pData = g_pfnDeepProc(bAction, FALSE, TRUE);
 			CDXFdata::ms_pData = pData;
+			// Z軸の下降
+			g_dZCut = max(g_dZCut+GetDbl(MKNC_DBL_ZSTEP), g_dDeep);
+			if ( _IsZApproach(pData) ) {
+				// pDataの終点へ3軸切削
+				CPoint3F	pt3d(pData->GetEndMakePoint(), g_dZCut);
+				_AddMakeGdata3dCut(pt3d);
+			}
+			else {
+				if ( pData->GetParentLayer()->IsCutType() && ::RoundUp(g_dZCut-g_dDeep)>NCMIN ) {
+					// 一方通行切削のﾁｪｯｸ
+					MakeLoopDeepZDown();
+				}
+			}
 			// ｱｸｼｮﾝの切り替え(往復切削のみ)
 			if ( GetNum(MKNC_NUM_DEEPROUND) == 0 ) {
 				bAction = !bAction;
@@ -2375,12 +2399,6 @@ BOOL MakeLoopDeepAdd(void)
 							pData->SwapMakePt(0);
 					}
 				END_FOREACH
-			}
-			// Z軸の下降
-			g_dZCut += GetDbl(MKNC_DBL_ZSTEP);
-			if ( pData->GetParentLayer()->IsCutType() && ::RoundUp(g_dZCut-g_dDeep)>NCMIN ) {
-				// 一方通行切削のﾁｪｯｸ
-				MakeLoopDeepZDown();
 			}
 			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
 			if ( GetNum(MKNC_NUM_DEEPALL) == 0 )
@@ -2419,7 +2437,7 @@ BOOL MakeLoopDeepAdd(void)
 	}
 
 	// 仕上げ面のﾃﾞｰﾀ生成
-	CDXFdata::ms_pData = g_pfnDeepProc(bAction, bFinish);
+	CDXFdata::ms_pData = g_pfnDeepProc(bAction, bFinish, FALSE);
 
 	// 深彫切削におけるZ軸の上昇
 	MakeLoopDeepZUp();
@@ -2431,7 +2449,7 @@ BOOL MakeLoopDeepAdd(void)
 	return IsThread();
 }
 
-CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeep)
+CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeepFin, BOOL bApproach)
 {
 	BOOL		bIgnoreFirstEdge = FALSE;	// 最初のEdgeだけ無視
 	POSITION	(CDXFlist::*pfnGetPosition)(void) const;
@@ -2449,10 +2467,15 @@ CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeep)
 	CDXFdata*	pData;
 	for ( POSITION pos=(g_ltDeepData.*pfnGetPosition)(); pos && IsThread(); ) {
 		pData = (g_ltDeepData.*pfnGetData)(pos);
-		if ( bIgnoreFirstEdge && pData->IsEdgeFlg() )
-			AddMakeGdataDeepZApproach(pData);	// 終点への3軸切削
+		if ( bApproach && bIgnoreFirstEdge && pData->IsEdgeFlg() && _IsZApproach(pData) ) {
+			// アプローチ終点まで切削
+			CPointF	pts(pData->GetStartCutterPoint()),
+					pte(pData->GetEndCutterPoint());
+			_AddMakeGdataApproach(pte, pts, 1, GetDbl(MKNC_DBL_FEED));
+			pData->SetMakeFlg();
+		}
 		else
-			_AddMakeGdataDeep(pData, bDeep);
+			_AddMakeGdataDeep(pData, bDeepFin);
 		bIgnoreFirstEdge = TRUE;
 	}
 /*
@@ -2478,7 +2501,7 @@ CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeep)
 	return pData;
 }
 
-CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeep)
+CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeepFin, BOOL)
 {
 	POSITION	(CDXFlist::*pfnGetPosition)(void) const;
 	CDXFdata*&	(CDXFlist::*pfnGetData)(POSITION&);
@@ -2512,7 +2535,7 @@ CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeep)
 					_AddMoveGdataZdown();
 					bMove = FALSE;
 				}
-				_AddMakeGdataDeep(pData, bDeep);
+				_AddMakeGdataDeep(pData, bDeepFin);
 			}
 			else {
 				// 移動ﾃﾞｰﾀ
@@ -3341,10 +3364,9 @@ void AddMoveGdataApproach(const CDXFdata* pData)
 		return AddMoveGdataG0(pData);
 
 	// アプローチの開始位置へG00移動
-	CPointF	pt( CalcIntersectionPoint_TC(pData->GetStartCutterPoint(), GetDbl(MKNC_DBL_ZAPPROACH), pData->GetEndCutterPoint()) );
-	CNCMakeMill* pNCD = new CNCMakeMill(0, pt, 0);
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
+	CPointF	pts(pData->GetStartCutterPoint()), 
+			pte(pData->GetEndCutterPoint());
+	_AddMakeGdataApproach(pts, pte, 0);
 	// Z軸の現在位置がR点より大きい(高い)ならR点まで早送り
 	if ( CNCMakeMill::ms_xyz[NCA_Z] > g_dZG0Stop )
 		_AddMoveGdataZ(0, g_dZG0Stop, -1.0f);
@@ -3352,25 +3374,9 @@ void AddMoveGdataApproach(const CDXFdata* pData)
 	float	dZValue = _GetZValue();
 	if ( CNCMakeMill::ms_xyz[NCA_Z] > dZValue )
 		_AddMoveGdataZ(1, dZValue, GetDbl(MKNC_DBL_MAKEENDFEED));
-	// pDataの始点へ3軸移動
+	// pDataの始点へ3軸切削
 	CPoint3F	pt3d(pData->GetStartMakePoint(), g_dZCut);
-	pNCD = new CNCMakeMill(pt3d, GetDbl(MKNC_DBL_FEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
-}
-
-void AddMakeGdataDeepZApproach(const CDXFdata* pData)	// 深彫終点への3軸切削
-{
-	// アプローチ開始位置までG01切削
-	CPointF	pt( CalcIntersectionPoint_TC(pData->GetEndCutterPoint(), GetDbl(MKNC_DBL_ZAPPROACH), pData->GetStartCutterPoint()) );
-	CNCMakeMill* pNCD = new CNCMakeMill(1, pt, GetDbl(MKNC_DBL_FEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
-	// pDataの終点へ3軸切削
-	CPoint3F	pt3d(pData->GetEndMakePoint(), g_dZCut);
-	pNCD = new CNCMakeMill(pt3d, GetDbl(MKNC_DBL_FEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
+	_AddMakeGdata3dCut(pt3d);
 }
 
 // ﾃｷｽﾄ情報の生成
