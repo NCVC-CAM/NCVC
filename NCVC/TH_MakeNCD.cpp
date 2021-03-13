@@ -2307,7 +2307,8 @@ BOOL MakeLoopShapeAdd_EulerMap_Search
 BOOL MakeLoopDeepAdd(void)
 {
 	int			nCnt;
-	BOOL		bAction = TRUE;		// まずは正方向
+	BOOL		bAction = TRUE,		// まずは正方向
+				bEndZApproach = GetNum(MKNC_NUM_DEEPROUND)==0;	// 終点でのアプローチ計算は[往復]のみ
 	float		dZCut = g_dZCut;	// g_dZCutﾊﾞｯｸｱｯﾌﾟ
 	CDXFdata*	pData;
 
@@ -2317,9 +2318,35 @@ BOOL MakeLoopDeepAdd(void)
 	if ( g_ltDeepData.IsEmpty() )
 		return TRUE;
 
-	// HeadとTailのマーキング
-	g_ltDeepData.GetHead()->SetDxfFlg(DXFFLG_EDGE);
-	g_ltDeepData.GetTail()->SetDxfFlg(DXFFLG_EDGE);
+	// 深彫準備
+	if ( GetNum(MKNC_NUM_DEEPALL) == 0 ) {
+		// [全体]
+		// ﾄｰﾀﾙ件数*深彫ｽﾃｯﾌﾟでﾌﾟﾛｸﾞﾚｽｺﾝﾄﾛｰﾙの再設定(深彫ｽﾃｯﾌﾟｶｳﾝﾄは切り上げ)
+		nCnt = (int)(ceil(fabs((g_dDeep - g_dZCut) / GetDbl(MKNC_DBL_ZSTEP)))
+			* g_ltDeepData.GetCount());
+		SendFaseMessage( nCnt );
+		// ブレイク(NULL)の前後にマーキング
+		g_ltDeepData.GetHead()->SetDxfFlg(DXFFLG_EDGE);
+		CDXFdata*	pPrev;
+		BOOL		bNext = FALSE;
+		PLIST_FOREACH(pData, &g_ltDeepData)
+			if ( pData ) {
+				if ( bNext )	// NULLの次のデータ
+					pData->SetDxfFlg(DXFFLG_EDGE);
+				pPrev = pData;
+			}
+			else {
+				pPrev->SetDxfFlg(DXFFLG_EDGE);	// NULLの前のデータ
+				bNext = TRUE;
+			}
+		END_FOREACH
+	}
+	else {
+		// [一筆]
+		// HeadとTailのマーキング
+		g_ltDeepData.GetHead()->SetDxfFlg(DXFFLG_EDGE);
+		g_ltDeepData.GetTail()->SetDxfFlg(DXFFLG_EDGE);
+	}
 
 #ifdef _DEBUGOLD
 	int	n;
@@ -2340,14 +2367,6 @@ BOOL MakeLoopDeepAdd(void)
 	// 切削ﾃﾞｰﾀまでの移動
 	g_pfnAddMoveGdata( g_ltDeepData.GetHead() );
 
-	// 深彫が「全体」の場合，ﾄｰﾀﾙ件数*深彫ｽﾃｯﾌﾟでﾌﾟﾛｸﾞﾚｽｺﾝﾄﾛｰﾙの再設定
-	if ( GetNum(MKNC_NUM_DEEPALL) == 0 ) {
-		// ﾄｰﾀﾙ件数(深彫ｽﾃｯﾌﾟｶｳﾝﾄは切り上げ)
-		nCnt = (int)(ceil(fabs((g_dDeep - g_dZCut) / GetDbl(MKNC_DBL_ZSTEP)))
-			* g_ltDeepData.GetCount());
-		SendFaseMessage( nCnt );
-	}
-
 	nCnt  = 0;
 	pData = g_ltDeepData.GetHead();
 	// 深彫最終位置まで仮登録ﾃﾞｰﾀのNC生成
@@ -2355,8 +2374,8 @@ BOOL MakeLoopDeepAdd(void)
 			g_ltDeepData.GetCount()==1 && pData->GetMakeType()==DXFCIRCLEDATA ) {
 		// 円ﾃﾞｰﾀのﾍﾘｶﾙ切削
 		// g_dZCut==g_dDeepまでﾍﾘｶﾙで落とすので
-		// ここは::RoundUp(g_dZCut-g_dDeep)>0で
-		while ( ::RoundUp(g_dZCut-g_dDeep)>0 && IsThread() ) {
+		// ここはRoundUp(g_dZCut-g_dDeep)>0で
+		while ( RoundUp(g_dZCut-g_dDeep)>0 && IsThread() ) {
 			g_dZCut = max(g_dZCut+GetDbl(MKNC_DBL_ZSTEP), g_dDeep);
 			_AddMakeGdataHelical(pData);
 		}
@@ -2364,25 +2383,25 @@ BOOL MakeLoopDeepAdd(void)
 	else {
 		// 深彫生成処理
 		// g_dZCut > g_dDeep での条件では数値誤差が発生したときﾙｰﾌﾟ脱出しないため
-		// ここは::RoundUp(g_dZCut-g_dDeep)>NCMIN
-		while ( ::RoundUp(g_dZCut-g_dDeep)>NCMIN && IsThread() ) {
-			pData = g_pfnDeepProc(bAction, FALSE, TRUE);
+		// ここはRoundUp(g_dZCut-g_dDeep)>NCMIN
+		while ( RoundUp(g_dZCut-g_dDeep)>NCMIN && IsThread() ) {
+			pData = g_pfnDeepProc(bAction, FALSE, bEndZApproach);
 			CDXFdata::ms_pData = pData;
 			// Z軸の下降
 			g_dZCut = max(g_dZCut+GetDbl(MKNC_DBL_ZSTEP), g_dDeep);
-			if ( _IsZApproach(pData) ) {
+			if ( bEndZApproach && _IsZApproach(pData) ) {
 				// pDataの終点へ3軸切削
 				CPoint3F	pt3d(pData->GetEndMakePoint(), g_dZCut);
 				_AddMakeGdata3dCut(pt3d);
 			}
 			else {
-				if ( pData->GetParentLayer()->IsCutType() && ::RoundUp(g_dZCut-g_dDeep)>NCMIN ) {
+				if ( pData->GetParentLayer()->IsCutType() && RoundUp(g_dZCut-g_dDeep)>NCMIN ) {
 					// 一方通行切削のﾁｪｯｸ
 					MakeLoopDeepZDown();
 				}
 			}
 			// ｱｸｼｮﾝの切り替え(往復切削のみ)
-			if ( GetNum(MKNC_NUM_DEEPROUND) == 0 ) {
+			if ( bEndZApproach ) { // GetNum(MKNC_NUM_DEEPROUND) == 0
 				bAction = !bAction;
 				// 各ｵﾌﾞｼﾞｪｸﾄの始点終点を入れ替え
 				PLIST_FOREACH(pData, &g_ltDeepData)
@@ -2451,7 +2470,7 @@ BOOL MakeLoopDeepAdd(void)
 
 CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeepFin, BOOL bApproach)
 {
-	BOOL		bIgnoreFirstEdge = FALSE;	// 最初のEdgeだけ無視
+	BOOL		bIgnoreFirstEdge = FALSE;	// 先頭のEdgeは無視
 	POSITION	(CDXFlist::*pfnGetPosition)(void) const;
 	CDXFdata*&	(CDXFlist::*pfnGetData)(POSITION&);
 	if ( bAction ) {
@@ -2501,7 +2520,7 @@ CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeepFin, BOOL bApproach)
 	return pData;
 }
 
-CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeepFin, BOOL)
+CDXFdata* MakeLoopDeepAdd_All(BOOL bAction, BOOL bDeepFin, BOOL bApproach)
 {
 	POSITION	(CDXFlist::*pfnGetPosition)(void) const;
 	CDXFdata*&	(CDXFlist::*pfnGetData)(POSITION&);
