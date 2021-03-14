@@ -38,6 +38,7 @@ void CMKNCSetup5::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKNC5_TOLERANCE, m_dTolerance);
 	DDX_Control(pDX, IDC_MKNC5_DRILLMARGIN, m_dDrillMargin);
 	DDX_Control(pDX, IDC_MKNC5_ZAPPROACH, m_dZApproach);
+	DDX_Control(pDX, IDC_MKNC4_DWELL, m_nZAppDwell);
 	DDX_Control(pDX, IDC_MKNC5_SCRIPT, m_ctScript);
 	DDX_CBIndex(pDX, IDC_MKNC5_DRILL, m_nOptimaizeDrill);
 	DDX_CBIndex(pDX, IDC_MKNC5_TOLERANCE_P, m_nTolerance);
@@ -65,6 +66,7 @@ BOOL CMKNCSetup5::OnInitDialog()
 	m_nOptimaizeDrill	= pOpt->MIL_I_OPTIMAIZEDRILL;
 	m_dDrillMargin		= pOpt->MIL_D_DRILLMARGIN;
 	m_dZApproach		= pOpt->MIL_D_ZAPPROACH;
+	m_nZAppDwell		= (int)(pOpt->MIL_D_ZAPPDWELL);
 	::Path_Name_From_FullPath(pOpt->MIL_S_PERLSCRIPT, m_strScriptPath, m_strScript);
 	// Êß½•\Ž¦‚ÌÅ“K‰»(shlwapi.h)
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC5_SCRIPTPATH, m_strScriptPath);
@@ -108,6 +110,7 @@ BOOL CMKNCSetup5::OnApply()
 	pOpt->MIL_D_DRILLMARGIN		= fabs((float)m_dDrillMargin);
 	pOpt->MIL_S_PERLSCRIPT		= m_strScriptPath+m_strScript;
 	pOpt->MIL_D_ZAPPROACH		= m_dZApproach;
+	pOpt->MIL_D_ZAPPDWELL		= fabs((float)m_nZAppDwell);
 
 	return TRUE;
 }

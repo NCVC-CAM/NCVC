@@ -42,7 +42,7 @@ static	LPCTSTR	g_szMilDOrder[] = {
 	"MakeEndValue", "MakeEndFeed", "DeepFinal", "ZStep", "FinishFeed",
 	"DrillFeed", "DrillR", "DrillZ", "DrillQ", "Dwell", "DrillCircleR",
 	"Tolerance", "DrillMargin",
-	"ZApproach"
+	"ZApproach", "ZApproachDwell"
 };
 static	const	float	g_dfMilDOrder[] = {
 	300.0f, 100.0f,
@@ -51,7 +51,7 @@ static	const	float	g_dfMilDOrder[] = {
 	0.0f, 1000.0f, -20.0f, -2.0f, 100.0f,
 	60.0f, -9.0f, -12.0f, 1.0f, 1.0f, 10.0f,
 	NCMIN, 1.0f,
-	0.0f
+	0.0f, 20.0f
 };
 
 // BOOL型命令
@@ -176,7 +176,8 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKNC_NUM_OPTIMAIZEDRILL,"穴加工基準軸(0:なし,1:X,2:Y)"},
 	{NC_DBL,	MKNC_DBL_DRILLMARGIN,	"穴加工同一軸上と見なす許容差"},
 	{NC_STR,	MKNC_STR_PERLSCRIPT,	"生成後に実行されるPerlｽｸﾘﾌﾟﾄ"},
-	{NC_DBL,	MKNC_DBL_ZAPPROACH,		"Z軸進入ｱﾌﾟﾛｰﾁ"}
+	{NC_DBL,	MKNC_DBL_ZAPPROACH,		"Z軸進入ｱﾌﾟﾛｰﾁ"},
+	{NC_DBL,	MKNC_DBL_ZAPPDWELL,		"Z軸進入ｱﾌﾟﾛｰﾁのﾄﾞｳｪﾙ時間[msec]"}
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -399,5 +400,6 @@ void CNCMakeMillOpt::DbgDump(void) const
 	printf("  DrillMargin  =%f\n", MIL_D_DRILLMARGIN);
 	printf("  PerlScript   =%s\n", LPCTSTR(MIL_S_PERLSCRIPT));
 	printf("  ZApproach    =%f\n", MIL_D_ZAPPROACH);
+	printf("  ZApproachDwel=%f\n", MIL_D_ZAPPDWELL);
 }
 #endif

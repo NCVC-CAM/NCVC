@@ -306,9 +306,19 @@ CString	CNCMakeBase::GetGString(int nCode)
 CString	CNCMakeBase::GetGString_Clip(int nCode)
 {
 	CString		strResult;
-	if ( ms_nGcode != nCode ) {
+	
+	switch ( nCode ) {
+	// NCVCで生成可能性のあるワンショットコード
+	case 4:
+	case 92:
 		strResult = GetGString(nCode);
-		ms_nGcode = nCode;
+		break;
+	// モーダル指定
+	default:
+		if ( ms_nGcode != nCode ) {
+			strResult = GetGString(nCode);
+			ms_nGcode = nCode;
+		}
 	}
 	return strResult;
 }

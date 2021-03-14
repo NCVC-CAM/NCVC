@@ -195,6 +195,12 @@ CNCMakeMill::CNCMakeMill
 			GetFeedString(GetDbl(MKNC_DBL_FEED)) + ms_strEOB;
 }
 
+// ドウェル時間（G04）
+CNCMakeMill::CNCMakeMill(float t)
+{
+	m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(4) + GetValString(NCA_P, t) + ms_strEOB;
+}
+
 // 任意の文字列ｺｰﾄﾞ
 CNCMakeMill::CNCMakeMill(const CString& strGcode) : CNCMakeBase(strGcode)
 {

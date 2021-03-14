@@ -237,6 +237,12 @@ static inline	void	_AddMakeGdata3dCut(const CPoint3F& pt3d)
 	CNCMakeMill* pNCD = new CNCMakeMill(pt3d, GetDbl(MKNC_DBL_FEED));
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
+	// ドウェル時間
+	if ( GetDbl(MKNC_DBL_ZAPPDWELL) > 0.0f ) {
+		CNCMakeMill* pNCD = new CNCMakeMill(GetDbl(MKNC_DBL_ZAPPDWELL));
+		ASSERT( pNCD );
+		g_obMakeData.Add(pNCD);
+	}
 }
 static inline	void	_AddMakeGdataDrill(CDXFdata* pData)
 {
@@ -2325,23 +2331,6 @@ BOOL MakeLoopDeepAdd(void)
 		nCnt = (int)(ceil(fabs((g_dDeep - g_dZCut) / GetDbl(MKNC_DBL_ZSTEP)))
 			* g_ltDeepData.GetCount());
 		SendFaseMessage( nCnt );
-/*	-- 深彫全体ではマーキング不要？？
-		// ブレイク(NULL)の前後にマーキング
-		g_ltDeepData.GetHead()->SetDxfFlg(DXFFLG_EDGE);
-		CDXFdata*	pPrev;
-		BOOL		bNext = FALSE;
-		PLIST_FOREACH(pData, &g_ltDeepData)
-			if ( pData ) {
-				if ( bNext )	// NULLの次のデータ
-					pData->SetDxfFlg(DXFFLG_EDGE);
-				pPrev = pData;
-			}
-			else {
-				pPrev->SetDxfFlg(DXFFLG_EDGE);	// NULLの前のデータ
-				bNext = TRUE;
-			}
-		END_FOREACH
-*/
 	}
 	else {
 		// [一筆]

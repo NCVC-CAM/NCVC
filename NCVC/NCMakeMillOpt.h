@@ -56,7 +56,8 @@ enum {
 	MKNC_DBL_TOLERANCE,			// 同一座標と見なす許容差
 	MKNC_DBL_DRILLMARGIN,		// 基準軸に対する許容差
 	MKNC_DBL_ZAPPROACH,			// Z軸進入アプローチ
-		MKNC_DBL_NUMS		// [22]
+	MKNC_DBL_ZAPPDWELL,			// Z軸進入アプローチのドウェル時間
+		MKNC_DBL_NUMS		// [23]
 };
 enum {
 	MKNC_FLG_PROG = 0,			// O番号付与
@@ -137,6 +138,7 @@ enum {
 #define	MIL_D_TOLERANCE				m_pDblOpt[MKNC_DBL_TOLERANCE]
 #define	MIL_D_DRILLMARGIN			m_pDblOpt[MKNC_DBL_DRILLMARGIN]
 #define	MIL_D_ZAPPROACH				m_pDblOpt[MKNC_DBL_ZAPPROACH]
+#define	MIL_D_ZAPPDWELL				m_pDblOpt[MKNC_DBL_ZAPPDWELL]
 //
 #define	MIL_F_PROG					m_pFlgOpt[MKNC_FLG_PROG]
 #define	MIL_F_PROGAUTO				m_pFlgOpt[MKNC_FLG_PROGAUTO]
