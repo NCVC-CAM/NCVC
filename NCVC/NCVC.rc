@@ -1379,13 +1379,13 @@ BEGIN
     EDITTEXT        IDC_MKNC5_SCRIPT,54,136,136,12,ES_AUTOHSCROLL
     PUSHBUTTON      "参照...",IDC_MKNC5_SCRIPT_LOOKUP,195,116,35,14
     GROUPBOX        "生成後に実行するPerlスクリプト",IDC_STATIC,7,104,229,54,WS_GROUP
-    LTEXT           "Z軸進入(&Z)",IDC_STATIC,14,178,37,8
+    LTEXT           "長さ(&L)",IDC_STATIC,14,178,23,8
     EDITTEXT        IDC_MKNC5_ZAPPROACH,53,176,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,97,178,19,8,NOT WS_GROUP
     LTEXT           "ﾄﾞｳｪﾙ(&W)",IDC_STATIC,127,178,37,8
     EDITTEXT        IDC_MKNC4_DWELL,164,176,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "msec",IDC_STATIC,207,178,19,8,NOT WS_GROUP
-    GROUPBOX        "アプローチ",IDC_STATIC,7,162,229,34,WS_GROUP
+    GROUPBOX        "Z軸進入アプローチ",IDC_STATIC,7,162,229,34,WS_GROUP
 END
 
 IDD_MKNC_SETUP6 DIALOGEX 0, 0, 243, 203
@@ -3667,7 +3667,7 @@ BEGIN
     IDS_ERR_FILEPATH        "有効なﾌｧｲﾙﾊﾟｽを指示してください"
     IDS_ERR_UNDERZERO       "指定の項目にﾏｲﾅｽ(またはｾﾞﾛ)値を設定できません"
     IDS_ERR_POSITIVE        "指定の項目にプラス値を設定できません"
-    IDS_ERR_SETTING         "ﾃﾞｰﾀを設定してください"
+    IDS_ERR_SETTING         "データを正しく設定してください"
     IDS_ERR_REGEX           "入力した正規表現はライブラリ側で拒否されました。変更してください。"
     IDS_ERR_GLSL            "OpenGLシェーダの準備でエラーが発生しました。Line=%d\nMsg=%s"
 END

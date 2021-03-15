@@ -124,12 +124,17 @@ BOOL CMKNCSetup5::OnKillActive()
 		m_ctScript.SetFocus();
 		return FALSE;
 	}
-	if ( m_dZApproach < 0 ) {
-		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
+	if ( m_dZApproach < 0.0f ) {
+		AfxMessageBox(IDS_ERR_SETTING, MB_OK|MB_ICONEXCLAMATION);
 		m_dZApproach.SetFocus();
 		m_dZApproach.SetSel(0, -1);
 		return FALSE;
 	}
-
+	if ( m_nZAppDwell < 0 ) {
+		AfxMessageBox(IDS_ERR_SETTING, MB_OK|MB_ICONEXCLAMATION);
+		m_dZApproach.SetFocus();
+		m_dZApproach.SetSel(0, -1);
+		return FALSE;
+	}
 	return TRUE;
 }
