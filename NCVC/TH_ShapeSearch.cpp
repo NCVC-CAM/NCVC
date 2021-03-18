@@ -24,7 +24,7 @@ static	BOOL	IsThread_NoChk(void)
 	return TRUE;
 }
 static	boost::function<BOOL ()>	IsThread;
-static	inline	void	SetProgressPos(INT_PTR n)
+static	inline	void	_SetProgressPos(INT_PTR n)
 {
 	g_pParent->m_ctReadProgress.SetPos((int)n);
 }
@@ -101,10 +101,10 @@ UINT ShapeSearch_Thread(LPVOID pVoid)
 						static_cast<CDXFpolyline*>(pData)->CheckPolylineIntersection();
 				}
 				if ( g_pParent && (j & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
-					SetProgressPos(j);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
+					_SetProgressPos(j);		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
 			}
 			if ( g_pParent )
-				SetProgressPos(nDataCnt);
+				_SetProgressPos(nDataCnt);
 			// ﾚｲﾔごとの固有座標ﾏｯﾌﾟ母体から連結ｵﾌﾞｼﾞｪｸﾄの検索
 			SetChainMap(&mpDXFdata, pLayer, &chkParam);
 			// 座標ﾏｯﾌﾟ母体を消去
@@ -181,7 +181,7 @@ void SetChainMap(const CDXFmap* pMasterMap, CLayerData* pLayer, LPCHECKMAPTHREAD
 			pParam->evStart.SetEvent();
 		}
 		if ( g_pParent && (nCnt & 0x003f) == 0 )
-			SetProgressPos(nCnt);
+			_SetProgressPos(nCnt);
 	}
 	pParam->evEnd.Lock();
 	pParam->evEnd.ResetEvent();

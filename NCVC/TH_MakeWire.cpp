@@ -69,40 +69,40 @@ static	CDXFcircle*	GetOutsideAWF(void);
 static	void	AddCustomWireCode(const CString&);
 
 // 任意ﾃﾞｰﾀの生成
-static inline	void	AddMakeWireStr(const CString& strData)
+static inline	void	_AddMakeWireStr(const CString& strData)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(strData);
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 }
 // AWF結線
-static inline	void	AddAWFconnect(void)
+static inline	void	_AddAWFconnect(void)
 {
 	if ( !g_bAWF ) {
-		AddMakeWireStr(GetStr(MKWI_STR_AWFCNT));
+		_AddMakeWireStr(GetStr(MKWI_STR_AWFCNT));
 		g_bAWF = TRUE;
 	}
 }
 // AWF切断
-static inline	void	AddAWFcut(void)
+static inline	void	_AddAWFcut(void)
 {
 	if ( g_bAWF ) {
-		AddMakeWireStr(GetStr(MKWI_STR_AWFCUT));
+		_AddMakeWireStr(GetStr(MKWI_STR_AWFCUT));
 		g_bAWF = FALSE;
 	}
 }
 // AWFﾎﾟｲﾝﾄへの移動(G00)
-static inline	void	AddMoveAWFpoint(CDXFcircle* pCircle)
+static inline	void	_AddMoveAWFpoint(CDXFcircle* pCircle)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(0, pCircle->GetMakeCenter(),
 			0.0f, GetDbl(MKWI_DBL_TAPER));
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 	pCircle->SetMakeFlg();
-	AddAWFconnect();
+	_AddAWFconnect();
 }
 // 切削ﾃﾞｰﾀへの移動(G01)
-static inline	void	AddMoveGdata(const CDXFdata* pData)
+static inline	void	_AddMoveGdata(const CDXFdata* pData)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(1, pData->GetStartMakePoint(),
 			GetDbl(MKWI_DBL_FEED), GetDbl(MKWI_DBL_TAPER));
@@ -110,7 +110,7 @@ static inline	void	AddMoveGdata(const CDXFdata* pData)
 	g_obMakeData.Add(pNCD);
 }
 // 切削ﾃﾞｰﾀへの移動(G01)
-static inline	void	AddMoveGdata(const CDXFdata* pDataXY, const CDXFdata* pDataUV)
+static inline	void	_AddMoveGdata(const CDXFdata* pDataXY, const CDXFdata* pDataUV)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(
 			pDataXY->GetStartMakePoint(), pDataUV->GetStartMakePoint(),
@@ -119,7 +119,7 @@ static inline	void	AddMoveGdata(const CDXFdata* pDataXY, const CDXFdata* pDataUV
 	g_obMakeData.Add(pNCD);
 }
 // 切削ﾃﾞｰﾀ
-static inline	void	AddMakeGdata(CDXFdata* pData)
+static inline	void	_AddMakeGdata(CDXFdata* pData)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(pData, GetDbl(MKWI_DBL_FEED));
 	ASSERT( pNCD );
@@ -127,7 +127,7 @@ static inline	void	AddMakeGdata(CDXFdata* pData)
 	pData->SetMakeFlg();
 }
 // 切削ﾃﾞｰﾀ（上下異形状）
-static inline	void	AddMakeGdata(CDXFdata* pDataXY, CDXFdata* pDataUV)
+static inline	void	_AddMakeGdata(CDXFdata* pDataXY, CDXFdata* pDataUV)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(pDataXY, pDataUV, GetDbl(MKWI_DBL_FEED));
 	ASSERT( pNCD );
@@ -136,7 +136,7 @@ static inline	void	AddMakeGdata(CDXFdata* pDataXY, CDXFdata* pDataUV)
 	pDataUV->SetMakeFlg();
 }
 // 切削ﾃﾞｰﾀ（上下異形状微細線分）
-static inline	void	AddMakeGdata(const CVPointF& vptXY, const CVPointF& vptUV)
+static inline	void	_AddMakeGdata(const CVPointF& vptXY, const CVPointF& vptUV)
 {
 	CNCMakeWire*	pNCD = new CNCMakeWire(vptXY, vptUV, GetDbl(MKWI_DBL_FEED));
 	ASSERT( pNCD );
@@ -146,7 +146,7 @@ static inline	void	AddMakeGdata(const CVPointF& vptXY, const CVPointF& vptUV)
 // ﾌｪｰｽﾞ更新
 static	int		g_nFase;			// ﾌｪｰｽﾞ№
 static	void	SendFaseMessage(INT_PTR = -1, int = -1, LPCTSTR = NULL);
-static	inline	void	SetProgressPos(INT_PTR n)
+static	inline	void	_SetProgressPos(INT_PTR n)
 {
 	g_pParent->m_ctReadProgress.SetPos((int)n);
 }
@@ -297,7 +297,7 @@ BOOL OutputWireCode(void)
 			fp.SeekToEnd();
 		for ( INT_PTR i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 			g_obMakeData[i]->WriteGcode(fp);
-			SetProgressPos(i+1);
+			_SetProgressPos(i+1);
 		}
 	}
 	catch (	CFileException* e ) {
@@ -307,7 +307,7 @@ BOOL OutputWireCode(void)
 		return FALSE;
 	}
 
-	SetProgressPos(g_obMakeData.GetSize());
+	_SetProgressPos(g_obMakeData.GetSize());
 	return IsThread();
 }
 
@@ -356,7 +356,7 @@ BOOL MakeWire_MainFunc(void)
 	if ( pShape ) {
 		// AWF切断
 		if ( GetFlg(MKWI_FLG_AWFEND) )
-			AddAWFcut();
+			_AddAWFcut();
 		// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
 		if ( g_wBindOperator & TH_FOOTER )
 			AddCustomWireCode(GetStr(MKWI_STR_FOOTER));
@@ -387,7 +387,7 @@ BOOL MakeLoopWire(CDXFshape* pShape)
 			return FALSE;
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
 		nPos += nCnt+1;
-		SetProgressPos(nPos);
+		_SetProgressPos(nPos);
 		// 次の形状集合を検索
 		pShape = GetNearPointWire(CDXFdata::ms_pData->GetEndCutterPoint() + CDXFdata::ms_ptOrg);
 	}
@@ -517,7 +517,7 @@ BOOL MakeLoopWireAdd(CDXFshape* pShapeXY, CDXFshape* pShapeUV, BOOL bParent)
 		if ( g_pDoc->IsDocFlag(DXFDOC_BIND) && AfxGetNCVCApp()->GetDXFOption()->GetDxfOptFlg(DXFOPT_FILECOMMENT) ) {
 			CString	strBuf;
 			strBuf.Format(IDS_MAKENCD_BINDFILE, g_pDoc->GetTitle());
-			AddMakeWireStr(strBuf);
+			_AddMakeWireStr(strBuf);
 		}
 	}
 
@@ -525,14 +525,14 @@ BOOL MakeLoopWireAdd(CDXFshape* pShapeXY, CDXFshape* pShapeUV, BOOL bParent)
 	CDXFcircle* pCircle = bParent ? GetOutsideAWF() : GetInsideAWF(pShapeXY);
 	if ( pCircle ) {
 		// AWF切断
-		AddAWFcut();
+		_AddAWFcut();
 		// AWFﾎﾟｲﾝﾄまでの移動と結線
-		AddMoveAWFpoint(pCircle);
+		_AddMoveAWFpoint(pCircle);
 		CDXFdata::ms_pData = pCircle;
 	}
 	else {
 		// AWF結線
-		AddAWFconnect();
+		_AddAWFconnect();
 	}
 
 	// 処理の分岐
@@ -567,7 +567,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 
 	pDataXY = pChainXY->GetAt(posXY);
 	pDataUV = pChainUV->GetAt(posUV);
-	AddMoveGdata(pDataXY, pDataUV);
+	_AddMoveGdata(pDataXY, pDataUV);
 
 	if ( !g_mpPause.IsEmpty() ) {
 		// XY,UV連携 一時停止ﾓｰﾄﾞ（ｵﾌﾞｼﾞｪｸﾄ数が正しく連携できることが条件）
@@ -596,7 +596,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 				ptsUV = pDataUV->GetStartMakePoint();
 				for ( i=0; i<nCnt; i++ )
 					vptUV.push_back(ptsUV);
-				AddMakeGdata(vptXY, vptUV);
+				_AddMakeGdata(vptXY, vptUV);
 				pDataXY->SetMakeFlg();
 				// 次のﾃﾞｰﾀ読み込み
 				bSeqXY = posXY==posXYb ? FALSE : TRUE;	// 読む
@@ -608,7 +608,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 				ptsXY = pDataXY->GetStartMakePoint();
 				for ( i=0; i<nCnt; i++ )
 					vptXY.push_back(ptsXY);
-				AddMakeGdata(vptXY, vptUV);
+				_AddMakeGdata(vptXY, vptUV);
 				pDataUV->SetMakeFlg();
 				bSeqXY = FALSE;
 				bSeqUV = posUV==posUVb ? FALSE : TRUE;
@@ -621,11 +621,11 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 				pDataXY->SetWireHeteroData(pDataUV, vptXY, vptUV, GetDbl(MKWI_DBL_ELLIPSE));
 				if ( vptXY.empty() ) {
 					// 座標分割必要なし -> ｵﾌﾞｼﾞｪｸﾄ座標から直接生成
-					AddMakeGdata(pDataXY, pDataUV);
+					_AddMakeGdata(pDataXY, pDataUV);
 				}
 				else {
 					// 分割座標からG01生成
-					AddMakeGdata(vptXY, vptUV);
+					_AddMakeGdata(vptXY, vptUV);
 					pDataXY->SetMakeFlg();
 					pDataUV->SetMakeFlg();
 				}
@@ -642,7 +642,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 			ptsXY = pDataXY->GetEndMakePoint();		// 終点
 			for ( i=0; i<nCnt; i++ )
 				vptXY.push_back(ptsXY);
-			AddMakeGdata(vptXY, vptUV);
+			_AddMakeGdata(vptXY, vptUV);
 			pDataUV->SetMakeFlg();
 			break;
 		case 2:
@@ -651,7 +651,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 			ptsUV = pDataUV->GetEndMakePoint();
 			for ( i=0; i<nCnt; i++ )
 				vptUV.push_back(ptsUV);
-			AddMakeGdata(vptXY, vptUV);
+			_AddMakeGdata(vptXY, vptUV);
 			pDataXY->SetMakeFlg();
 			break;
 		}
@@ -668,11 +668,11 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 			pDataXY->SetWireHeteroData(pDataUV, vptXY, vptUV, GetDbl(MKWI_DBL_ELLIPSE));
 			if ( vptXY.empty() ) {
 				// 座標分割必要なし -> ｵﾌﾞｼﾞｪｸﾄ座標から直接生成
-				AddMakeGdata(pDataXY, pDataUV);
+				_AddMakeGdata(pDataXY, pDataUV);
 			}
 			else {
 				// 分割座標からG01生成
-				AddMakeGdata(vptXY, vptUV);
+				_AddMakeGdata(vptXY, vptUV);
 				pDataXY->SetMakeFlg();
 				pDataUV->SetMakeFlg();
 			}
@@ -690,7 +690,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 		n = vptUV.size();		// 端数が出るので分割数を再取得
 		pChainXY->SetVectorPoint(posXY, vptXY, n);
 		// 座標生成
-		AddMakeGdata(vptXY, vptUV);
+		_AddMakeGdata(vptXY, vptUV);
 		// 生成済みﾌﾗｸﾞ
 		pChainXY->SetMakeFlags();
 		pChainUV->SetMakeFlags();
@@ -701,7 +701,7 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 		pChainXY->SetVectorPoint(posXY, vptXY, n);
 		n = vptXY.size();
 		pChainUV->SetVectorPoint(posUV, vptUV, n);
-		AddMakeGdata(vptXY, vptUV);
+		_AddMakeGdata(vptXY, vptUV);
 		pChainXY->SetMakeFlags();
 		pChainUV->SetMakeFlags();
 	}
@@ -709,14 +709,14 @@ BOOL MakeLoopWireAdd_Hetero(CDXFshape* pShapeXY, CDXFshape* pShapeUV)
 		// ｵﾌﾞｼﾞｪｸﾄの数が多い（複雑な形状を想定）を基準に分割を行う
 		pChainXY->SetVectorPoint(posXY, vptXY, GetDbl(MKWI_DBL_ELLIPSE));
 		pChainUV->SetVectorPoint(posUV, vptUV, vptXY.size());
-		AddMakeGdata(vptXY, vptUV);
+		_AddMakeGdata(vptXY, vptUV);
 		pChainXY->SetMakeFlags();
 		pChainUV->SetMakeFlags();
 	}
 	else {
 		pChainUV->SetVectorPoint(posUV, vptUV, GetDbl(MKWI_DBL_ELLIPSE));
 		pChainXY->SetVectorPoint(posXY, vptXY, vptUV.size());
-		AddMakeGdata(vptXY, vptUV);
+		_AddMakeGdata(vptXY, vptUV);
 		pChainXY->SetMakeFlags();
 		pChainUV->SetMakeFlags();
 	}
@@ -735,11 +735,11 @@ BOOL MakeLoopWireAdd_ChainList(CDXFshape* pShape, CDXFchain* pChain)
 	pData = pChain->GetAt(pos1);
 
 	// 切削ﾃﾞｰﾀ生成
-	AddMoveGdata(pData);
+	_AddMoveGdata(pData);
 	// 開始ﾎﾟｼﾞｼｮﾝからﾙｰﾌﾟ
 	do {
 		pData = pChain->GetSeqData(pos1);
-		AddMakeGdata(pData);
+		_AddMakeGdata(pData);
 		if ( !pos1 )
 			pos1 = pChain->GetFirstPosition();
 	} while ( pos1!=pos2 && IsThread() ); 
@@ -864,16 +864,16 @@ BOOL MakeLoopWireAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bEu
 	BOOL	bNext = FALSE;
 	// 切削ﾃﾞｰﾀまでの移動
 	pData = ltEuler.GetFirstData();
-	AddMoveGdata(pData);
+	_AddMoveGdata(pData);
 	// 切削ﾃﾞｰﾀ生成
 	for ( pos=ltEuler.GetFirstPosition(); pos && IsThread(); ) {
 		pData = ltEuler.GetSeqData(pos);
 		if ( pData ) {
 			if ( bNext ) {
-				AddMoveGdata(pData);
+				_AddMoveGdata(pData);
 				bNext = FALSE;
 			}
-			AddMakeGdata(pData);
+			_AddMakeGdata(pData);
 		}
 		else
 			bNext = TRUE;
@@ -1070,7 +1070,7 @@ void AddCustomWireCode(const CString& strFileName)
 				strResult += custom.ReplaceCustomCode(strTok);
 			}
 			if ( !strResult.IsEmpty() )
-				AddMakeWireStr(strResult);
+				_AddMakeWireStr(strResult);
 		}
 	}
 	catch (CFileException* e) {

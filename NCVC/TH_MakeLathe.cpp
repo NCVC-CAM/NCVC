@@ -65,7 +65,7 @@ static	BOOL	OutputLatheCode(void);			// NCｺｰﾄﾞの出力
 static	void	AddCustomLatheCode(const CString&);
 
 // 任意ﾃﾞｰﾀの生成
-static inline	void	AddMakeLatheStr(const CString& strData)
+static inline	void	_AddMakeLatheStr(const CString& strData)
 {
 	CNCMakeLathe*	pNCD = new CNCMakeLathe(strData);
 	ASSERT( pNCD );
@@ -75,7 +75,7 @@ static inline	void	AddMakeLatheStr(const CString& strData)
 // ﾌｪｰｽﾞ更新
 static	int		g_nFase;			// ﾌｪｰｽﾞ№
 static	void	SendFaseMessage(INT_PTR = -1, int = -1, LPCTSTR = NULL);
-static	inline	void	SetProgressPos(INT_PTR n)
+static	inline	void	_SetProgressPos(INT_PTR n)
 {
 	g_pParent->m_ctReadProgress.SetPos((int)n);
 }
@@ -223,7 +223,7 @@ BOOL OutputLatheCode(void)
 			CFile::shareExclusive | CFile::typeText | CFile::osSequentialScan);
 		for ( INT_PTR i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 			g_obMakeData[i]->WriteGcode(fp);
-			SetProgressPos(i+1);
+			_SetProgressPos(i+1);
 		}
 	}
 	catch (	CFileException* e ) {
@@ -233,7 +233,7 @@ BOOL OutputLatheCode(void)
 		return FALSE;
 	}
 
-	SetProgressPos(g_obMakeData.GetSize());
+	_SetProgressPos(g_obMakeData.GetSize());
 	return IsThread();
 }
 
@@ -602,7 +602,7 @@ BOOL CreateRoughPass(int io)
 
 	// 外径準備ﾃﾞｰﾀをﾙｰﾌﾟさせ荒加工ﾃﾞｰﾀを作成
 	for ( i=0; i<g_obLineTemp[io].GetSize() && IsThread(); i++ ) {
-		SetProgressPos(i+iPosBase+1);
+		_SetProgressPos(i+iPosBase+1);
 		pData = g_obLineTemp[io][i];
 		pts = pData->GetNativePoint(0);
 		pDataChain = NULL;
@@ -743,15 +743,15 @@ BOOL MakeInsideCode(const CPointF& ptMax)
 	// 初期設定
 	CString	strCode( CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_I_SPINDLE)) );
 	if ( !strCode.IsEmpty() )
-		AddMakeLatheStr(strCode);
+		_AddMakeLatheStr(strCode);
 	ptPull.x = GetDbl(MKLA_DBL_I_PULLZ);
 	ptPull.y = GetDbl(MKLA_DBL_I_PULLX);
 
 	// ｶｽﾀﾑｺｰﾄﾞ
 	if ( !GetStr(MKLA_STR_I_CUSTOM).IsEmpty() )
-		AddMakeLatheStr(GetStr(MKLA_STR_I_CUSTOM));
+		_AddMakeLatheStr(GetStr(MKLA_STR_I_CUSTOM));
 	// NCVCの内径切削指示
-	AddMakeLatheStr( '('+CString(INSIDE_S)+')' );
+	_AddMakeLatheStr( '('+CString(INSIDE_S)+')' );
 
 	// 先頭ﾃﾞｰﾀの始点に移動
 	if ( nLoop > 0 ) {
@@ -777,7 +777,7 @@ BOOL MakeInsideCode(const CPointF& ptMax)
 
 	// 荒加工ﾊﾟｽﾙｰﾌﾟ
 	for ( i=1; i<nLoop && IsThread(); i++ ) {
-		SetProgressPos(i+1);
+		_SetProgressPos(i+1);
 		pData = g_obMakeLine[0][i];
 		pt = pte = pData->GetStartMakePoint();
 		dCutX = pt.y;
@@ -850,7 +850,7 @@ BOOL MakeInsideCode(const CPointF& ptMax)
 	}
 
 	// 内径切削終了ｺﾒﾝﾄ
-	AddMakeLatheStr( '('+CString(ENDINSIDE_S)+')' );
+	_AddMakeLatheStr( '('+CString(ENDINSIDE_S)+')' );
 
 	return IsThread();
 }
@@ -869,13 +869,13 @@ BOOL MakeOutsideCode(const CPointF& ptMax)
 	// 初期設定
 	CString	strCode( CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_O_SPINDLE)) );
 	if ( !strCode.IsEmpty() )
-		AddMakeLatheStr(strCode);
+		_AddMakeLatheStr(strCode);
 	ptPull.x = GetDbl(MKLA_DBL_O_PULLZ);
 	ptPull.y = GetDbl(MKLA_DBL_O_PULLX);
 
 	// ｶｽﾀﾑｺｰﾄﾞ
 	if ( !GetStr(MKLA_STR_O_CUSTOM).IsEmpty() )
-		AddMakeLatheStr(GetStr(MKLA_STR_O_CUSTOM));
+		_AddMakeLatheStr(GetStr(MKLA_STR_O_CUSTOM));
 
 	// 先頭ﾃﾞｰﾀの始点に移動
 	if ( nLoop > 0 ) {
@@ -912,7 +912,7 @@ BOOL MakeOutsideCode(const CPointF& ptMax)
 
 	// 荒加工ﾊﾟｽﾙｰﾌﾟ
 	for ( i=1; i<nLoop && IsThread(); i++ ) {
-		SetProgressPos(i+iPosBase+1);
+		_SetProgressPos(i+iPosBase+1);
 		pData = g_obMakeLine[1][i];
 		pt = pte = pData->GetStartMakePoint();
 		dCutX = pt.y;
@@ -1027,11 +1027,11 @@ BOOL MakeGrooveCode(const CPointF& ptMax)
 	// 初期設定
 	CString	strCode( CNCMakeLathe::MakeSpindle(GetNum(MKLA_NUM_G_SPINDLE)) );
 	if ( !strCode.IsEmpty() )
-		AddMakeLatheStr(strCode);
+		_AddMakeLatheStr(strCode);
 
 	// ｶｽﾀﾑｺｰﾄﾞ
 	if ( !GetStr(MKLA_STR_G_CUSTOM).IsEmpty() )
-		AddMakeLatheStr(GetStr(MKLA_STR_G_CUSTOM));
+		_AddMakeLatheStr(GetStr(MKLA_STR_G_CUSTOM));
 	// NCVCの突っ切り切削指示
 	CString	strTool;
 	strTool.Format(IDS_MAKENCD_FORMAT, GetDbl(MKLA_DBL_GROOVEWIDTH));
@@ -1043,7 +1043,7 @@ BOOL MakeGrooveCode(const CPointF& ptMax)
 		strTool = 'R'+strTool;
 		break;
 	}
-	AddMakeLatheStr( '('+CString(GROOVE_S)+'='+strTool+')' );
+	_AddMakeLatheStr( '('+CString(GROOVE_S)+'='+strTool+')' );
 
 	// 突っ切りデータ生成
 	for ( i=0; i<arDXFdata.GetSize(); i++ ) {
@@ -1101,7 +1101,7 @@ BOOL MakeGrooveCode(const CPointF& ptMax)
 	g_obMakeData.Add(pNCD);
 
 	// 突っ切り切削終了ｺﾒﾝﾄ
-	AddMakeLatheStr( '('+CString(ENDGROOVE_S)+')' );
+	_AddMakeLatheStr( '('+CString(ENDGROOVE_S)+')' );
 
 	return IsThread();
 }
@@ -1308,7 +1308,7 @@ void AddCustomLatheCode(const CString& strFileName)
 				strResult += custom.ReplaceCustomCode(strTok);
 			}
 			if ( !strResult.IsEmpty() )
-				AddMakeLatheStr(strResult);
+				_AddMakeLatheStr(strResult);
 		}
 	}
 	catch (CFileException* e) {
