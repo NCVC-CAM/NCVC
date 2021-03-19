@@ -214,6 +214,8 @@
 #define ID_EDIT_SHAPE_AUTO              2005
 #define ID_EDIT_SHAPE_NAME              2006
 #define ID_EDIT_SHAPE_STRICTOFFSET      2007
+#define ID_EDIT_SHAPE_POCKET            2008
+#define ID_EDIT_SHAPE_OUTLINE           2009
 #define ID_EDIT_SHAPE_SEL               2011
 #define IDC_VIEWSETUP1_BT_RECT          2011
 #define ID_EDIT_SHAPE_VEC               2012
@@ -375,7 +377,7 @@
 #define IDC_DXFEDIT_SEL_RECT            2702
 #define IDC_DXFEDIT_SEL_ORIG            2703
 #define IDC_DXFEDIT_NUM                 2704
-#define IDD_DXFEDIT_AUTOWORKING         2800
+#define IDD_DXFEDIT_AUTOPOCKET          2800
 #define IDC_AUTO_SELECT_OUTLINE         2801
 #define IDC_AUTO_SELECT_POCKET          2802
 #define IDC_AUTO_OFFSET                 2810

@@ -10,7 +10,7 @@
 #include "DXFDoc.h"
 #include "DXFView.h"
 #include "DxfEditOrgDlg.h"
-#include "DxfAutoWorkingDlg.h"
+#include "DxfAutoPocketDlg.h"
 #include "DXFMakeOption.h"
 #include "DXFMakeClass.h"
 #include "MakeNCDlg.h"
@@ -64,11 +64,9 @@ BEGIN_MESSAGE_MAP(CDXFDoc, CDocument)
 	ON_COMMAND(ID_FILE_SAVE_AS, &CDXFDoc::OnFileSaveAs)
 	ON_COMMAND(ID_EDIT_DXFORG, &CDXFDoc::OnEditOrigin)
 	ON_COMMAND(ID_EDIT_DXFSHAPE, &CDXFDoc::OnEditShape)
-	ON_COMMAND(ID_EDIT_SHAPE_AUTO, &CDXFDoc::OnEditAutoShape)
 	ON_COMMAND(ID_EDIT_SHAPE_STRICTOFFSET, &CDXFDoc::OnEditStrictOffset)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_DXFSHAPE, &CDXFDoc::OnUpdateEditShape)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SORTSHAPE, &CDXFDoc::OnUpdateEditShaping)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_AUTO, &CDXFDoc::OnUpdateEditShaping)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_STRICTOFFSET, &CDXFDoc::OnUpdateEditShaping)
 	//}}AFX_MSG_MAP
 	ON_COMMAND(ID_FILE_NCD2DXF, &CDXFDoc::OnFileDXF2DXF)
@@ -78,6 +76,9 @@ BEGIN_MESSAGE_MAP(CDXFDoc, CDocument)
 	// å`èÛâ¡çHéwé¶
 	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, &CDXFDoc::OnUpdateShapePattern)
 	ON_COMMAND_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, &CDXFDoc::OnShapePattern)
+	// é©ìÆèàóù
+	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_POCKET, ID_EDIT_SHAPE_OUTLINE, &CDXFDoc::OnUpdateEditShaping)
+	ON_COMMAND_RANGE(ID_EDIT_SHAPE_POCKET, ID_EDIT_SHAPE_OUTLINE, &CDXFDoc::OnEditAuto)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1327,9 +1328,9 @@ void CDXFDoc::OnEditShape()
 	}
 }
 
-void CDXFDoc::OnEditAutoShape() 
+void CDXFDoc::OnEditAuto(UINT nID)
 {
-	CDxfAutoWorkingDlg	dlg(&m_AutoWork);
+	CDxfAutoPocketgDlg	dlg(&m_AutoWork);
 	if ( dlg.DoModal() != IDOK )
 		return;
 

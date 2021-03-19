@@ -1,22 +1,22 @@
-// DxfAutoWorkingDlg.h : ヘッダー ファイル
+// DxfAutoPocketDlg.h : ヘッダー ファイル
 //
 
 #pragma once
 
 /////////////////////////////////////////////////////////////////////////////
-// CDxfAutoWorkingDlg ダイアログ
+// CDxfAutoPocketgDlg ダイアログ
 
-class CDxfAutoWorkingDlg : public CDialog
+class CDxfAutoPocketgDlg : public CDialog
 {
 	void	SetDetailCtrl(void);
 
 // コンストラクション
 public:
-	CDxfAutoWorkingDlg(LPAUTOWORKINGDATA);
+	CDxfAutoPocketgDlg(LPAUTOWORKINGDATA);
 
 // ダイアログ データ
-	//{{AFX_DATA(CDxfAutoWorkingDlg)
-	enum { IDD = IDD_DXFEDIT_AUTOWORKING };
+	//{{AFX_DATA(CDxfAutoPocketgDlg)
+	enum { IDD = IDD_DXFEDIT_AUTOPOCKET };
 	int		m_nSelect;
 	BOOL	m_bAcuteRound;
 	int		m_nScan;
@@ -32,7 +32,7 @@ public:
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
-	//{{AFX_VIRTUAL(CDxfAutoWorkingDlg)
+	//{{AFX_VIRTUAL(CDxfAutoPocketgDlg)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
 	//}}AFX_VIRTUAL
@@ -40,7 +40,7 @@ public:
 // インプリメンテーション
 protected:
 	// 生成されたメッセージ マップ関数
-	//{{AFX_MSG(CDxfAutoWorkingDlg)
+	//{{AFX_MSG(CDxfAutoPocketgDlg)
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
 	afx_msg void OnBnClickedSelect();

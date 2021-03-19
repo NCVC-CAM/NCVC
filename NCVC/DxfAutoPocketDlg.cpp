@@ -1,30 +1,30 @@
-// DxfAutoWorkingDlg.cpp : インプリメンテーション ファイル
+// DxfAutoPocketDlg.cpp : インプリメンテーション ファイル
 //
 
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
 #include "DXFDoc.h"
-#include "DxfAutoWorkingDlg.h"
+#include "DxfAutoPocketDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-BEGIN_MESSAGE_MAP(CDxfAutoWorkingDlg, CDialog)
-	//{{AFX_MSG_MAP(CDxfAutoWorkingDlg)
-	ON_BN_CLICKED(IDC_AUTO_SELECT_OUTLINE, &CDxfAutoWorkingDlg::OnBnClickedSelect)
-	ON_BN_CLICKED(IDC_AUTO_SELECT_POCKET, &CDxfAutoWorkingDlg::OnBnClickedSelect)
+BEGIN_MESSAGE_MAP(CDxfAutoPocketgDlg, CDialog)
+	//{{AFX_MSG_MAP(CDxfAutoPocketgDlg)
+	ON_BN_CLICKED(IDC_AUTO_SELECT_OUTLINE, &CDxfAutoPocketgDlg::OnBnClickedSelect)
+	ON_BN_CLICKED(IDC_AUTO_SELECT_POCKET, &CDxfAutoPocketgDlg::OnBnClickedSelect)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// CDxfAutoWorkingDlg ダイアログ
+// CDxfAutoPocketgDlg ダイアログ
 
-CDxfAutoWorkingDlg::CDxfAutoWorkingDlg(LPAUTOWORKINGDATA pAuto)
-	: CDialog(CDxfAutoWorkingDlg::IDD, NULL)
+CDxfAutoPocketgDlg::CDxfAutoPocketgDlg(LPAUTOWORKINGDATA pAuto)
+	: CDialog(CDxfAutoPocketgDlg::IDD, NULL)
 {
-	//{{AFX_DATA_INIT(CDxfAutoWorkingDlg)
+	//{{AFX_DATA_INIT(CDxfAutoPocketgDlg)
 	m_nSelect	= pAuto->nSelect;
 	m_dOffset	= pAuto->dOffset;
 	m_bAcuteRound = pAuto->bAcuteRound;
@@ -34,10 +34,10 @@ CDxfAutoWorkingDlg::CDxfAutoWorkingDlg(LPAUTOWORKINGDATA pAuto)
 	//}}AFX_DATA_INIT
 }
 
-void CDxfAutoWorkingDlg::DoDataExchange(CDataExchange* pDX)
+void CDxfAutoPocketgDlg::DoDataExchange(CDataExchange* pDX)
 {
 	__super::DoDataExchange(pDX);
-	//{{AFX_DATA_MAP(CDxfAutoWorkingDlg)
+	//{{AFX_DATA_MAP(CDxfAutoPocketgDlg)
 	DDX_Control(pDX, IDC_AUTO_OFFSET, m_ctOffset);
 	DDX_Control(pDX, IDC_AUTO_ACUTEROUND, m_ctAcuteRound);
 	DDX_Control(pDX, IDC_AUTO_LOOPCNT, m_ctLoop);
@@ -50,7 +50,7 @@ void CDxfAutoWorkingDlg::DoDataExchange(CDataExchange* pDX)
 	//}}AFX_DATA_MAP
 }
 
-void CDxfAutoWorkingDlg::SetDetailCtrl(void)
+void CDxfAutoPocketgDlg::SetDetailCtrl(void)
 {
 	if ( m_nSelect > 0 ) {		// ﾎﾟｹｯﾄ加工
 		m_ctScan.EnableWindow(TRUE);
@@ -63,9 +63,9 @@ void CDxfAutoWorkingDlg::SetDetailCtrl(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CDxfAutoWorkingDlg メッセージ ハンドラ
+// CDxfAutoPocketgDlg メッセージ ハンドラ
 
-BOOL CDxfAutoWorkingDlg::OnInitDialog() 
+BOOL CDxfAutoPocketgDlg::OnInitDialog() 
 {
 	__super::OnInitDialog();
 	m_ctOffset = m_dOffset;	// ﾃﾞﾌｫﾙﾄｵﾌｾｯﾄ
@@ -74,7 +74,7 @@ BOOL CDxfAutoWorkingDlg::OnInitDialog()
 	return TRUE;
 }
 
-void CDxfAutoWorkingDlg::OnOK() 
+void CDxfAutoPocketgDlg::OnOK() 
 {
 	UpdateData();
 	if ( m_ctOffset <= 0 ) {
@@ -95,7 +95,7 @@ void CDxfAutoWorkingDlg::OnOK()
 	EndDialog(IDOK);
 }
 
-void CDxfAutoWorkingDlg::OnBnClickedSelect()
+void CDxfAutoPocketgDlg::OnBnClickedSelect()
 {
 	UpdateData();
 	SetDetailCtrl();

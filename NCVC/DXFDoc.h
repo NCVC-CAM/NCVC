@@ -257,7 +257,6 @@ protected:
 	afx_msg void OnFileSaveAs();
 	afx_msg void OnEditOrigin();
 	afx_msg void OnEditShape();
-	afx_msg void OnEditAutoShape();
 	afx_msg void OnEditStrictOffset();
 	afx_msg void OnUpdateEditShape(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateEditShaping(CCmdUI* pCmdUI);
@@ -269,6 +268,8 @@ protected:
 	// Œ`ó‰ÁHˆ—
 	afx_msg void OnUpdateShapePattern(CCmdUI* pCmdUI);
 	afx_msg	void OnShapePattern(UINT);
+	// ©“®ˆ—
+	afx_msg void OnEditAuto(UINT);
 
 	DECLARE_MESSAGE_MAP()
 };

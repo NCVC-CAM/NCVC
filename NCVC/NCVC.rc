@@ -164,7 +164,8 @@ BEGIN
     BUTTON      ID_EDIT_SHAPE_SEL
     BUTTON      ID_EDIT_SHAPE_DEL
     SEPARATOR
-    BUTTON      ID_EDIT_SHAPE_AUTO
+    BUTTON      ID_EDIT_SHAPE_POCKET
+    BUTTON      ID_EDIT_SHAPE_OUTLINE
     BUTTON      ID_EDIT_SHAPE_PROP
 END
 
@@ -406,7 +407,8 @@ BEGIN
             MENUITEM "形状プロパティ...",                  ID_EDIT_SHAPE_PROP
             MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
             MENUITEM SEPARATOR
-            MENUITEM "自動輪郭処理...",                   ID_EDIT_SHAPE_AUTO
+            MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
+            MENUITEM "自動輪郭加工...",                   ID_EDIT_SHAPE_OUTLINE
             MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
         END
         POPUP "統合ﾃﾞｰﾀ"
@@ -509,7 +511,8 @@ BEGIN
             MENUITEM "分離",                          ID_EDIT_SHAPE_SEL
             MENUITEM "加工指示の削除\tDel",                ID_EDIT_SHAPE_DEL
             MENUITEM SEPARATOR
-            MENUITEM "自動輪郭処理...",                   ID_EDIT_SHAPE_AUTO
+            MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
+            MENUITEM "自動輪郭加工...",                   ID_EDIT_SHAPE_OUTLINE
             MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
         END
         MENUITEM SEPARATOR
@@ -637,7 +640,8 @@ BEGIN
         MENUITEM "形状プロパティ...",                  ID_EDIT_SHAPE_PROP
         MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
         MENUITEM SEPARATOR
-        MENUITEM "自動輪郭処理...",                   ID_EDIT_SHAPE_AUTO
+        MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
+        MENUITEM "自動輪郭加工...",                   ID_EDIT_SHAPE_OUTLINE
         MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
     END
 END
@@ -756,7 +760,7 @@ BEGIN
     DEFPUSHBUTTON   "閉じる(&C)",IDCANCEL,115,222,50,14
 END
 
-IDD_DXFEDIT_AUTOWORKING DIALOGEX 0, 0, 231, 203
+IDD_DXFEDIT_AUTOPOCKET DIALOGEX 0, 0, 231, 203
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "自動処理"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
@@ -2191,7 +2195,7 @@ BEGIN
         BOTTOMMARGIN, 236
     END
 
-    IDD_DXFEDIT_AUTOWORKING, DIALOG
+    IDD_DXFEDIT_AUTOPOCKET, DIALOG
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 224
@@ -2830,7 +2834,7 @@ BEGIN
     0
 END
 
-IDD_DXFEDIT_AUTOWORKING DLGINIT
+IDD_DXFEDIT_AUTOPOCKET DLGINIT
 BEGIN
     IDC_AUTO_SCANLINE, 0x403, 5, 0
 0xc882, 0xb582, "\000" 
@@ -3761,10 +3765,11 @@ BEGIN
     ID_EDIT_DXFORG          "機械原点情報を更新します\n原点調整(Ctrl+@)"
     ID_EDIT_DXFSHAPE        "形状認識処理のあと各種加工指示(輪郭・ポケット)が可能です\n形状認識(Ctrl+E)"
     ID_EDIT_SHAPE_PROP      "形状ごとの設定を行います\n形状ﾌﾟﾛﾊﾟﾃｨ"
-    ID_EDIT_SHAPE_AUTO      "占有矩形から内外の加工指示を計算します\n自動処理"
     ID_EDIT_SHAPE_NAME      "形状集合の名前を変更します"
     ID_EDIT_SHAPE_STRICTOFFSET 
                             "ｵﾌｾｯﾄ同士の交点を除去し厳格な輪郭を形成します。自動輪郭処理では自動的に処理されます\nｵﾌｾｯﾄ交点除去"
+    ID_EDIT_SHAPE_POCKET    "占有矩形から内外のポケット加工パスを計算します\n自動ポケット"
+    ID_EDIT_SHAPE_OUTLINE   "占有矩形から内外の輪郭加工パスを計算します\n自動輪郭"
     ID_EDIT_SHAPE_SEL       "形状ｸﾞﾙｰﾌﾟから単一のｵﾌﾞｼﾞｪｸﾄを分離します\n分離(F12)"
     ID_EDIT_SHAPE_VEC       "切削方向を指示します\n方向指示(F9)"
     ID_EDIT_SHAPE_START     "形状ごとに開始位置を指示します\n開始位置(F10)"
