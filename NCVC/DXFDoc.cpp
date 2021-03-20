@@ -78,8 +78,8 @@ BEGIN_MESSAGE_MAP(CDXFDoc, CDocument)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, &CDXFDoc::OnUpdateShapePattern)
 	ON_COMMAND_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, &CDXFDoc::OnShapePattern)
 	// é©ìÆèàóù
-	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_POCKET, ID_EDIT_SHAPE_OUTLINE, &CDXFDoc::OnUpdateEditShaping)
-	ON_COMMAND_RANGE(ID_EDIT_SHAPE_POCKET, ID_EDIT_SHAPE_OUTLINE, &CDXFDoc::OnEditAuto)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_OUTLINE, ID_EDIT_SHAPE_POCKET, &CDXFDoc::OnUpdateEditShaping)
+	ON_COMMAND_RANGE(ID_EDIT_SHAPE_OUTLINE, ID_EDIT_SHAPE_POCKET, &CDXFDoc::OnEditAuto)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1331,11 +1331,25 @@ void CDXFDoc::OnEditShape()
 
 void CDXFDoc::OnEditAuto(UINT nID)
 {
-	CDxfAutoPocketgDlg	dlg(&m_AutoWork);
-	if ( dlg.DoModal() != IDOK )
+	switch ( nID ) {
+	case ID_EDIT_SHAPE_OUTLINE:
+		{
+			CDxfAutoOutlineDlg	dlg(&m_AutoWork);
+			if ( dlg.DoModal() != IDOK )
+				return;
+		}
+		break;
+	case ID_EDIT_SHAPE_POCKET:
+		{
+			CDxfAutoPocketgDlg	dlg(&m_AutoWork);
+			if ( dlg.DoModal() != IDOK )
+				return;
+		}
+	default:
 		return;
+	}
 
-	m_AutoWork.nSelect		= nID - ID_EDIT_SHAPE_POCKET;
+	m_AutoWork.nSelect		= nID - ID_EDIT_SHAPE_OUTLINE;
 
 	// µÃæØƒèâä˙ílÇÃçXêV
 	int	i, j;

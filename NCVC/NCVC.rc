@@ -407,8 +407,8 @@ BEGIN
             MENUITEM "形状プロパティ...",                  ID_EDIT_SHAPE_PROP
             MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
             MENUITEM SEPARATOR
-            MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
             MENUITEM "自動輪郭加工...",                   ID_EDIT_SHAPE_OUTLINE
+            MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
             MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
         END
         POPUP "統合ﾃﾞｰﾀ"
@@ -511,8 +511,8 @@ BEGIN
             MENUITEM "分離",                          ID_EDIT_SHAPE_SEL
             MENUITEM "加工指示の削除\tDel",                ID_EDIT_SHAPE_DEL
             MENUITEM SEPARATOR
-            MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
             MENUITEM "自動輪郭加工...",                   ID_EDIT_SHAPE_OUTLINE
+            MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
             MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
         END
         MENUITEM SEPARATOR
@@ -640,8 +640,8 @@ BEGIN
         MENUITEM "形状プロパティ...",                  ID_EDIT_SHAPE_PROP
         MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
         MENUITEM SEPARATOR
-        MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
         MENUITEM "自動輪郭加工...",                   ID_EDIT_SHAPE_OUTLINE
+        MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
         MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
     END
 END
@@ -765,15 +765,15 @@ STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "自動ポケット計算"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
-    LTEXT           "ｵﾌｾｯﾄ値(&F)",IDC_STATIC,7,9,36,8
-    EDITTEXT        IDC_AUTO_OFFSET,51,7,37,12,ES_AUTOHSCROLL,WS_EX_RIGHT
-    LTEXT           "mm",IDC_STATIC,94,9,24,8
-    LTEXT           "繰り返し数(&L)",IDC_STATIC,7,26,39,8
-    EDITTEXT        IDC_AUTO_LOOPCNT,51,24,37,12,ES_RIGHT | ES_AUTOHSCROLL
+    LTEXT           "ｵﾌｾｯﾄ値(&F)",IDC_STATIC,7,9,39,8
+    EDITTEXT        IDC_AUTO_OFFSET,58,7,37,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,101,9,24,8
+    LTEXT           "繰り返し数(&L)",IDC_STATIC,7,26,43,8
+    EDITTEXT        IDC_AUTO_LOOPCNT,58,24,37,12,ES_RIGHT | ES_AUTOHSCROLL
     CONTROL         "鋭角の外側を丸める(&A)",IDC_AUTO_ACUTEROUND,"Button",BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_DISABLED | WS_TABSTOP,7,70,81,10
-    LTEXT           "外枠走査線(&S)",IDC_STATIC,15,113,44,8
+    LTEXT           "外枠走査線(&S)",IDC_STATIC,15,113,48,8
     COMBOBOX        IDC_AUTO_SCANLINE,87,111,48,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "円ﾃﾞｰﾀはｽｸﾛｰﾙ切削(&E)",IDC_AUTO_CIRCLESCROLL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,137,86,10
+    CONTROL         "円ﾃﾞｰﾀはｽｸﾛｰﾙ切削(&E)",IDC_AUTO_CIRCLESCROLL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,137,93,10
     GROUPBOX        "ﾎﾟｹｯﾄ加工ｵﾌﾟｼｮﾝ",IDC_STATIC,7,95,217,69,WS_GROUP
     DEFPUSHBUTTON   "&OK",IDOK,57,182,50,14
     PUSHBUTTON      "ｷｬﾝｾﾙ(&C)",IDCANCEL,123,182,50,14
@@ -2130,11 +2130,18 @@ STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "自動輪郭計算"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
-    LTEXT           "ｵﾌｾｯﾄ値(&F)",-1,7,9,36,8
-    EDITTEXT        IDC_AUTO_OFFSET,51,7,37,12,ES_AUTOHSCROLL,WS_EX_RIGHT
-    LTEXT           "mm",-1,94,9,24,8
-    LTEXT           "繰り返し数(&L)",-1,7,26,39,8
-    EDITTEXT        IDC_AUTO_LOOPCNT,51,24,37,12,ES_RIGHT | ES_AUTOHSCROLL
+    LTEXT           "ｵﾌｾｯﾄ値(&F)",IDC_STATIC,7,9,39,8
+    EDITTEXT        IDC_AUTO_OFFSET,58,7,37,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,101,9,12,8
+    LTEXT           "繰り返し数(&L)",IDC_STATIC,7,26,43,8
+    EDITTEXT        IDC_AUTO_LOOPCNT,58,24,37,12,ES_RIGHT | ES_AUTOHSCROLL
+    LTEXT           "ゲート作成(&G)",IDC_STATIC,17,116,44,8
+    EDITTEXT        IDC_AUTO_GATE,69,114,37,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,112,116,12,8
+    LTEXT           "アプローチ(&A)",IDC_STATIC,17,139,39,8
+    EDITTEXT        IDC_AUTO_APPROACH,69,137,37,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,112,139,12,8
+    GROUPBOX        "輪郭加工ｵﾌﾟｼｮﾝ",IDC_STATIC,7,95,217,69,WS_GROUP
     DEFPUSHBUTTON   "&OK",IDOK,57,182,50,14
     PUSHBUTTON      "ｷｬﾝｾﾙ(&C)",IDCANCEL,123,182,50,14
 END
@@ -3797,8 +3804,8 @@ BEGIN
     ID_EDIT_SHAPE_NAME      "形状集合の名前を変更します"
     ID_EDIT_SHAPE_STRICTOFFSET 
                             "ｵﾌｾｯﾄ同士の交点を除去し厳格な輪郭を形成します。自動輪郭処理では自動的に処理されます\nｵﾌｾｯﾄ交点除去"
-    ID_EDIT_SHAPE_POCKET    "占有矩形から内外のポケット加工パスを計算します\n自動ポケット"
     ID_EDIT_SHAPE_OUTLINE   "占有矩形から内外の輪郭加工パスを計算します\n自動輪郭"
+    ID_EDIT_SHAPE_POCKET    "占有矩形から内外のポケット加工パスを計算します\n自動ポケット"
     ID_EDIT_SHAPE_SEL       "形状ｸﾞﾙｰﾌﾟから単一のｵﾌﾞｼﾞｪｸﾄを分離します\n分離(F12)"
     ID_EDIT_SHAPE_VEC       "切削方向を指示します\n方向指示(F9)"
     ID_EDIT_SHAPE_START     "形状ごとに開始位置を指示します\n開始位置(F10)"

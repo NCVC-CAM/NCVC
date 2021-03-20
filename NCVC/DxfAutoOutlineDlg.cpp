@@ -27,6 +27,8 @@ void CDxfAutoOutlineDlg::DoDataExchange(CDataExchange* pDX)
 	__super::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_AUTO_OFFSET, m_dOffset);
 	DDX_Control(pDX, IDC_AUTO_LOOPCNT, m_nLoop);
+	DDX_Control(pDX, IDC_AUTO_GATE, m_dGate);
+	DDX_Control(pDX, IDC_AUTO_APPROACH, m_dApproach);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -35,8 +37,10 @@ void CDxfAutoOutlineDlg::DoDataExchange(CDataExchange* pDX)
 BOOL CDxfAutoOutlineDlg::OnInitDialog() 
 {
 	__super::OnInitDialog();
-	m_dOffset = m_pAuto->dOffset;
-	m_nLoop   = m_pAuto->nLoopCnt;
+	m_dOffset	= m_pAuto->dOffset;
+	m_nLoop		= m_pAuto->nLoopCnt;
+	m_dGate		= m_pAuto->dGate;
+	m_dApproach	= m_pAuto->dApproach;
 
 	return TRUE;
 }
@@ -44,7 +48,7 @@ BOOL CDxfAutoOutlineDlg::OnInitDialog()
 void CDxfAutoOutlineDlg::OnOK() 
 {
 	UpdateData();
-	if ( m_dOffset < 0.0f ) {	// ƒ[ƒOK
+	if ( m_dOffset < 0.0f ) {	// —ÖŠs‚Íƒ[ƒOK
 		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
 		m_dOffset.SetFocus();
 		m_dOffset.SetSel(0, -1);
@@ -57,8 +61,10 @@ void CDxfAutoOutlineDlg::OnOK()
 		return;
 	}
 
-	m_pAuto->dOffset		= m_dOffset;
-	m_pAuto->nLoopCnt		= m_nLoop;
+	m_pAuto->dOffset	= m_dOffset;
+	m_pAuto->nLoopCnt	= m_nLoop;
+	m_pAuto->dGate		= m_dGate;
+	m_pAuto->dApproach	= m_dApproach;
 
 	EndDialog(IDOK);
 }

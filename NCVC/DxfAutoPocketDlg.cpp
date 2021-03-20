@@ -43,8 +43,8 @@ void CDxfAutoPocketgDlg::DoDataExchange(CDataExchange* pDX)
 BOOL CDxfAutoPocketgDlg::OnInitDialog() 
 {
 	__super::OnInitDialog();
-	m_dOffset = m_pAuto->dOffset;
-	m_nLoop   = m_pAuto->nLoopCnt;
+	m_dOffset	= m_pAuto->dOffset;
+	m_nLoop		= m_pAuto->nLoopCnt;
 
 	return TRUE;
 }
@@ -52,7 +52,7 @@ BOOL CDxfAutoPocketgDlg::OnInitDialog()
 void CDxfAutoPocketgDlg::OnOK() 
 {
 	UpdateData();
-	if ( m_dOffset < 0.0f ) {	// ƒ[ƒOK
+	if ( m_dOffset <= 0.0f ) {
 		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
 		m_dOffset.SetFocus();
 		m_dOffset.SetSel(0, -1);

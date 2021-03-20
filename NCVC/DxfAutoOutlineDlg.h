@@ -17,6 +17,8 @@ public:
 	enum { IDD = IDD_DXFEDIT_AUTOOUTLINE };
 	CFloatEdit	m_dOffset;
 	CIntEdit	m_nLoop;
+	CFloatEdit	m_dGate;
+	CFloatEdit	m_dApproach;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
