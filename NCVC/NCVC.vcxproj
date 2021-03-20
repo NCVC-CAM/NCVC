@@ -407,6 +407,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DxfAutoOutlineDlg.cpp" />
     <ClCompile Include="MyTemplate.cpp" />
     <ClCompile Include="AboutDlg.cpp" />
     <ClCompile Include="AddinDlg.cpp" />
@@ -548,6 +549,7 @@
     <ClCompile Include="ViewSetup6.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DxfAutoOutlineDlg.h" />
     <ClInclude Include="MyTemplate.h" />
     <ClInclude Include="AboutDlg.h" />
     <ClInclude Include="AddinDlg.h" />

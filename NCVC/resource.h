@@ -379,12 +379,13 @@
 #define IDC_DXFEDIT_NUM                 2704
 #define IDD_DXFEDIT_AUTOPOCKET          2800
 #define IDC_AUTO_SELECT_OUTLINE         2801
+#define IDC_AUTO_OFFSET                 2801
 #define IDC_AUTO_SELECT_POCKET          2802
-#define IDC_AUTO_OFFSET                 2810
+#define IDC_AUTO_LOOPCNT                2802
 #define IDC_AUTO_ACUTEROUND             2811
-#define IDC_AUTO_LOOPCNT                2812
 #define IDC_AUTO_SCANLINE               2813
 #define IDC_AUTO_CIRCLESCROLL           2814
+#define IDD_DXFEDIT_AUTOOUTLINE         2820
 #define ID_NCVIEW_MAXRECT               3001
 #define ID_NCVIEW_WORKRECT              3002
 #define ID_NCVIEW_ALLFIT                3003
@@ -889,7 +890,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        205
+#define _APS_NEXT_RESOURCE_VALUE        206
 #define _APS_NEXT_COMMAND_VALUE         32823
 #define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           101

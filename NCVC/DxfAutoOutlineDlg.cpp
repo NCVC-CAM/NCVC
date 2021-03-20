@@ -1,46 +1,38 @@
-// DxfAutoPocketDlg.cpp : インプリメンテーション ファイル
+// DxfAutoOutlineDlg.cpp : 実装ファイル
 //
 
 #include "stdafx.h"
 #include "NCVC.h"
 #include "DXFDoc.h"
-#include "DxfAutoPocketDlg.h"
+#include "DxfAutoOutlineDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-BEGIN_MESSAGE_MAP(CDxfAutoPocketgDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(CDxfAutoOutlineDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// CDxfAutoPocketgDlg ダイアログ
+// CDxfAutoOutlineDlg ダイアログ
 
-CDxfAutoPocketgDlg::CDxfAutoPocketgDlg(LPAUTOWORKINGDATA pAuto)
-	: CDialogEx(CDxfAutoPocketgDlg::IDD, NULL)
+CDxfAutoOutlineDlg::CDxfAutoOutlineDlg(LPAUTOWORKINGDATA pAuto)
+	: CDialogEx(CDxfAutoOutlineDlg::IDD, NULL)
 {
 	m_pAuto = pAuto;
-	m_bAcuteRound	= pAuto->bAcuteRound;
-	m_nScan			= pAuto->nScanLine;
-	m_bCircle		= pAuto->bCircleScroll;
 }
 
-void CDxfAutoPocketgDlg::DoDataExchange(CDataExchange* pDX)
+void CDxfAutoOutlineDlg::DoDataExchange(CDataExchange* pDX)
 {
 	__super::DoDataExchange(pDX);
-	//{{AFX_DATA_MAP(CDxfAutoPocketgDlg)
 	DDX_Control(pDX, IDC_AUTO_OFFSET, m_dOffset);
 	DDX_Control(pDX, IDC_AUTO_LOOPCNT, m_nLoop);
-	DDX_Check(pDX, IDC_AUTO_ACUTEROUND, m_bAcuteRound);
-	DDX_CBIndex(pDX, IDC_AUTO_SCANLINE, m_nScan);
-	DDX_Check(pDX, IDC_AUTO_CIRCLESCROLL, m_bCircle);
-	//}}AFX_DATA_MAP
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CDxfAutoPocketgDlg メッセージ ハンドラ
+// CDxfAutoOutlineDlg メッセージ ハンドラー
 
-BOOL CDxfAutoPocketgDlg::OnInitDialog() 
+BOOL CDxfAutoOutlineDlg::OnInitDialog() 
 {
 	__super::OnInitDialog();
 	m_dOffset = m_pAuto->dOffset;
@@ -49,7 +41,7 @@ BOOL CDxfAutoPocketgDlg::OnInitDialog()
 	return TRUE;
 }
 
-void CDxfAutoPocketgDlg::OnOK() 
+void CDxfAutoOutlineDlg::OnOK() 
 {
 	UpdateData();
 	if ( m_dOffset < 0.0f ) {	// ゼロOK
@@ -67,9 +59,6 @@ void CDxfAutoPocketgDlg::OnOK()
 
 	m_pAuto->dOffset		= m_dOffset;
 	m_pAuto->nLoopCnt		= m_nLoop;
-	m_pAuto->bAcuteRound	= m_bAcuteRound;
-	m_pAuto->nScanLine		= m_nScan;
-	m_pAuto->bCircleScroll	= m_bCircle;
 
 	EndDialog(IDOK);
 }

@@ -11,6 +11,7 @@
 #include "DXFView.h"
 #include "DxfEditOrgDlg.h"
 #include "DxfAutoPocketDlg.h"
+#include "DxfAutoOutlineDlg.h"
 #include "DXFMakeOption.h"
 #include "DXFMakeClass.h"
 #include "MakeNCDlg.h"
@@ -1334,12 +1335,7 @@ void CDXFDoc::OnEditAuto(UINT nID)
 	if ( dlg.DoModal() != IDOK )
 		return;
 
-	m_AutoWork.nSelect		= dlg.m_nSelect;
-	m_AutoWork.dOffset		= dlg.m_dOffset;
-	m_AutoWork.bAcuteRound	= dlg.m_bAcuteRound;
-	m_AutoWork.nLoopCnt		= dlg.m_nLoopCnt;
-	m_AutoWork.nScanLine	= dlg.m_nScan;
-	m_AutoWork.bCircleScroll= dlg.m_bCircle;
+	m_AutoWork.nSelect		= nID - ID_EDIT_SHAPE_POCKET;
 
 	// µÃæØƒèâä˙ílÇÃçXêV
 	int	i, j;

@@ -6,9 +6,9 @@
 /////////////////////////////////////////////////////////////////////////////
 // CDxfAutoPocketgDlg ダイアログ
 
-class CDxfAutoPocketgDlg : public CDialog
+class CDxfAutoPocketgDlg : public CDialogEx
 {
-	void	SetDetailCtrl(void);
+	LPAUTOWORKINGDATA	m_pAuto;
 
 // コンストラクション
 public:
@@ -17,18 +17,12 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CDxfAutoPocketgDlg)
 	enum { IDD = IDD_DXFEDIT_AUTOPOCKET };
-	int		m_nSelect;
+	CFloatEdit	m_dOffset;
+	CIntEdit	m_nLoop;
 	BOOL	m_bAcuteRound;
 	int		m_nScan;
 	BOOL	m_bCircle;
-	CFloatEdit	m_ctOffset;
-	CIntEdit m_ctLoop;
-	CComboBox m_ctScan;
-	CButton m_ctAcuteRound;
-	CButton m_ctCircle;
 	//}}AFX_DATA
-	float	m_dOffset;	// ｵﾌｾｯﾄ値取得用
-	int		m_nLoopCnt;	// 繰り返し数取得用
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
@@ -43,7 +37,6 @@ protected:
 	//{{AFX_MSG(CDxfAutoPocketgDlg)
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
-	afx_msg void OnBnClickedSelect();
 	//}}AFX_MSG
 
 	DECLARE_MESSAGE_MAP()
