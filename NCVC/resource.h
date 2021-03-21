@@ -585,7 +585,6 @@
 #define IDC_MKNC4_CIRCLEPROCESS         4323
 #define IDC_MKNC4_CIRCLEGROUP           4324
 #define IDD_MKNC_SETUP5                 4400
-#define IDC_MKNC5_APPROACH              4401
 #define IDC_MKNC5_ZAPPROACH             4401
 #define IDC_MKNC5_TOLERANCE             4403
 #define IDC_MKNC5_TOLERANCE_P           4404

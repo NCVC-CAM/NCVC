@@ -3801,6 +3801,7 @@ BEGIN
     ID_EDIT_DXFORG          "機械原点情報を更新します\n原点調整(Ctrl+@)"
     ID_EDIT_DXFSHAPE        "形状認識処理のあと各種加工指示(輪郭・ポケット)が可能です\n形状認識(Ctrl+E)"
     ID_EDIT_SHAPE_PROP      "形状ごとの設定を行います\n形状ﾌﾟﾛﾊﾟﾃｨ"
+    ID_EDIT_SHAPE_AUTO      "CThreadDlg ID用（メニューからは削除）"
     ID_EDIT_SHAPE_NAME      "形状集合の名前を変更します"
     ID_EDIT_SHAPE_STRICTOFFSET 
                             "ｵﾌｾｯﾄ同士の交点を除去し厳格な輪郭を形成します。自動輪郭処理では自動的に処理されます\nｵﾌｾｯﾄ交点除去"
