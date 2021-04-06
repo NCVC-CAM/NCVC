@@ -36,7 +36,8 @@ class CNCVCDocTemplate : public CMultiDocTemplate
 {
 	friend	class	CExtensionDlg;
 
-	CMapStringToPtr		m_mpExt[2];	// “o˜^Šg’£q‚Æ¼Ø±ÙŠÖ”‚ÌÏ¯Ìß
+	CMapStringToPtr		m_mpExt[2];			// “o˜^Šg’£q‚Æ¼Ø±ÙŠÖ”‚ÌÏ¯Ìß
+	CString				m_strDefaultExt;	// ƒfƒtƒHƒ‹ƒgŠg’£q
 
 public:
 	CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
@@ -55,7 +56,16 @@ public:
 	CString	GetFilterString(void);
 	// “o˜^Šg’£q‚©”Û‚©
 	BOOL	IsExtension(LPCTSTR, LPVOID* = NULL);
-
+	// ƒfƒtƒHƒ‹ƒgŠg’£q‚ğ•Ô‚·
+	CString	GetUserDefaultExt(void) const {
+		if ( m_strDefaultExt.IsEmpty() ) {
+			CString	strFilter;
+			GetDocString(strFilter, CDocTemplate::filterExt);
+			return strFilter;
+		}
+		return '.' + m_strDefaultExt;
+	}
+	
 	// ŒµŠi‚ÈŠg’£qŒŸ¸
 	virtual	Confidence	MatchDocType(LPCTSTR lpszPathName, CDocument*& rpDocMatch);
 #ifdef _DEBUG_FILEOPEN

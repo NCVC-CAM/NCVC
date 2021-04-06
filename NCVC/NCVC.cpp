@@ -1825,13 +1825,14 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 	CRuntimeClass* pFrameClass, CRuntimeClass* pViewClass) :
 			CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass)
 {
-	// ⁄ºﬁΩƒÿÇ©ÇÁägí£éqèÓïÒÇéÊìæ
 	extern	LPCTSTR		gg_szComma;		// ","
 
-	CString		strRegKey, strEntry, strResult;
+	// ⁄ºﬁΩƒÿÇ©ÇÁägí£éqèÓïÒÇéÊìæ
+	CString		strRegKey, strEntry, strDef, strResult;
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 	VERIFY(strEntry.LoadString(IDS_REG_EXTENSION));
-	GetDocString(strResult, CDocTemplate::filterExt);
+	VERIFY(strDef.LoadString(IDS_REG_EXTENSION_DEF));
+	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
 	strEntry += strResult;
 
 	std::string	str(AfxGetApp()->GetProfileString(strRegKey, strEntry)), strTok;
@@ -1840,19 +1841,21 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 	try {
 		BOOST_FOREACH(strTok, tok) {
 			strResult = boost::algorithm::trim_copy(strTok).c_str();
-			strResult.MakeUpper();		// ëÂï∂éöìoò^
+//			strResult.MakeUpper();		// ëÂï∂éöìoò^
 			m_mpExt[EXT_DLG].SetAt(strResult, NULL);
 		}
 	}
 	catch (CMemoryException* e) {
 		e->Delete();
 	}
+	// ÉfÉtÉHÉãÉgägí£éq
+	m_strDefaultExt = AfxGetApp()->GetProfileString(strRegKey, strEntry+strDef);
 }
 
 BOOL CNCVCDocTemplate::AddExtensionFunc(LPCTSTR lpszExt, LPVOID pAddFunc)
 {
 	CString	strExt(lpszExt);
-	strExt.MakeUpper();
+//	strExt.MakeUpper();
 	// ¿ﬁ≤±€∏ﬁópÇ…ìoò^Ç≥ÇÍÇƒÇ¢ÇÍÇŒÇªÇÍÇçÌèú(±ƒﬁ≤›óDêÊ)
 	LPVOID	pFunc;
 	if ( m_mpExt[EXT_DLG].Lookup(strExt, pFunc) )
@@ -1916,7 +1919,7 @@ BOOL CNCVCDocTemplate::IsExtension(LPCTSTR lpszExt, LPVOID* pFuncResult/*=NULL*/
 	CString	strFilter, strExt(lpszExt);
 
 	// ïWèÄägí£éqÇ∆ÇÃ¡™Ø∏
-	GetDocString(strFilter, CDocTemplate::filterExt);	// .ncd or .cam
+	GetDocString(strFilter, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
 	if ( strExt.CompareNoCase(strFilter.Right(3)) == 0 ) {
 		if ( pFuncResult )
 			*pFuncResult = NULL;	// √ﬁÃ´Ÿƒºÿ±Ÿä÷êî
@@ -1926,7 +1929,7 @@ BOOL CNCVCDocTemplate::IsExtension(LPCTSTR lpszExt, LPVOID* pFuncResult/*=NULL*/
 	// ∂Ω¿—ägí£éqÇÃåüçı
 	// pFunc ÇÕ NULL Ç‡Ç†ÇËìæÇÈÇÃÇ≈ÅCñﬂÇËílÇ…èoóàÇ»Ç¢
 	LPVOID	pFunc;
-	strExt.MakeUpper();
+//	strExt.MakeUpper();
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		if ( m_mpExt[i].Lookup(strExt, pFunc) ) {
 			if ( pFuncResult )
@@ -1942,10 +1945,11 @@ BOOL CNCVCDocTemplate::SaveExt(void)
 {
 	extern	LPCTSTR		gg_szComma;		// ","
 
-	CString		strRegKey, strEntry, strResult, strKey;
+	CString		strRegKey, strEntry, strDef, strResult, strKey;
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 	VERIFY(strEntry.LoadString(IDS_REG_EXTENSION));
-	GetDocString(strResult, CDocTemplate::filterExt);
+	VERIFY(strDef.LoadString(IDS_REG_EXTENSION_DEF));
+	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
 	strEntry += strResult;
 
 	LPVOID	pDummy;
@@ -1957,6 +1961,10 @@ BOOL CNCVCDocTemplate::SaveExt(void)
 	END_FOREACH
 
 	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, strResult) ) {
+		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry+strDef, m_strDefaultExt) ) {
 		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
 		return FALSE;
 	}
@@ -1972,14 +1980,14 @@ CString CNCVCDocTemplate::GetFilterString(void)
 	LPVOID	pDummy;
 
 	// äÓñ{ägí£éq
-	GetDocString(strResult, CDocTemplate::filterExt);
-	strResult.MakeLower();
+	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
+//	strResult.MakeLower();
 	strResult = gg_szWild + strResult.Right(3);
 
 	// ìoò^ägí£éq
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		PMAP_FOREACH(strKey, pDummy, &m_mpExt[i])
-			strKey.MakeLower();
+//			strKey.MakeLower();
 			strResult += ss_cSplt;
 			strResult += gg_szWild + strKey;
 		END_FOREACH

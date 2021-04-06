@@ -3468,6 +3468,7 @@ BEGIN
     IDS_REG_LOGFONT         "LOGFONT"
     IDS_REG_CUSTOMCOLOR     "CustomColor"
     IDS_REG_EXTENSION       "Extension"
+    IDS_REG_EXTENSION_DEF   ".def"
     IDS_REG_THUMBNAIL_SORT  "ThumbnailSort"
     IDS_REG_THUMBNAIL_PLANE "ThumbnailPlane"
 END

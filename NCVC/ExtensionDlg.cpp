@@ -57,7 +57,7 @@ BOOL CExtensionDlg::OnInitDialog()
 	// Ø½ÄºİÄÛ°Ù‚Ö‚Ì“o˜^
 	for ( int i=0; i<SIZEOF(m_ctExtList); i++ ) {
 		strResult = AfxGetNCVCApp()->GetDocExtString((DOCTYPE)i).Right(3);	// ncd or cam
-		strResult.MakeUpper();
+//		strResult.MakeUpper();
 		m_ctExtList[i].SetItemData(m_ctExtList[i].AddString(strResult), 0);	// íœ•s”\Ï°¸
 		for ( int j=0; j<2/*SIZEOF(m_mpExt)*/; j++ ) {
 			PMAP_FOREACH(strResult, pDummy, &AfxGetNCVCApp()->GetDocTemplate((DOCTYPE)i)->m_mpExt[j])
@@ -114,7 +114,8 @@ void CExtensionDlg::OnExtAdd()
 	int	nID = GetFocus()->GetDlgCtrlID() - IDC_EXT_NCD_ADD;
 	ASSERT( nID>=0 && nID<SIZEOF(m_strExtTxt) );
 	CString	strTmp(m_strExtTxt[nID]);
-	m_strExtTxt[nID] = strTmp.Trim().MakeUpper();
+//	m_strExtTxt[nID] = strTmp.Trim().MakeUpper();
+	m_strExtTxt[nID] = strTmp.Trim();
 	if ( m_strExtTxt[nID].IsEmpty() ) {
 		::MessageBeep(MB_ICONASTERISK);
 		return;

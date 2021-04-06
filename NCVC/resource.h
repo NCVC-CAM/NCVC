@@ -753,8 +753,9 @@
 #define IDS_REG_LOGFONT                 10903
 #define IDS_REG_CUSTOMCOLOR             10904
 #define IDS_REG_EXTENSION               10905
-#define IDS_REG_THUMBNAIL_SORT          10906
-#define IDS_REG_THUMBNAIL_PLANE         10907
+#define IDS_REG_EXTENSION_DEF           10906
+#define IDS_REG_THUMBNAIL_SORT          10907
+#define IDS_REG_THUMBNAIL_PLANE         10908
 #define IDS_REG_VIEW_WHEEL              10950
 #define IDS_REG_VIEW_WHEELTYPE          10951
 #define IDS_REG_VIEW_COLOR              10952
