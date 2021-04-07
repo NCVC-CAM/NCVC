@@ -17,9 +17,11 @@ public:
 	enum { IDD = IDD_EXTENSION };
 	//}}AFX_DATA
 	CString		m_strExtTxt[2];	// ncd or dxf
+	CString		m_strExtDefault;
 	CListBox	m_ctExtList[2];
 	CEdit		m_ctExtTxt[2];
 	CButton		m_ctExtDelBtn[2];
+	CButton		m_ctExtDefBtn;
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。
@@ -37,6 +39,7 @@ protected:
 	virtual void OnOK();
 	afx_msg void OnExtAdd();
 	afx_msg void OnExtDel();
+	afx_msg void OnExtDefault();
 	afx_msg void OnExtSelchangeList();
 	//}}AFX_MSG
 

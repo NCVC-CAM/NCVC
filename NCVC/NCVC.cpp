@@ -1841,7 +1841,6 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 	try {
 		BOOST_FOREACH(strTok, tok) {
 			strResult = boost::algorithm::trim_copy(strTok).c_str();
-//			strResult.MakeUpper();		// ëÂï∂éöìoò^
 			m_mpExt[EXT_DLG].SetAt(strResult, NULL);
 		}
 	}
@@ -1855,7 +1854,6 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 BOOL CNCVCDocTemplate::AddExtensionFunc(LPCTSTR lpszExt, LPVOID pAddFunc)
 {
 	CString	strExt(lpszExt);
-//	strExt.MakeUpper();
 	// ¿ﬁ≤±€∏ﬁópÇ…ìoò^Ç≥ÇÍÇƒÇ¢ÇÍÇŒÇªÇÍÇçÌèú(±ƒﬁ≤›óDêÊ)
 	LPVOID	pFunc;
 	if ( m_mpExt[EXT_DLG].Lookup(strExt, pFunc) )
@@ -1929,7 +1927,6 @@ BOOL CNCVCDocTemplate::IsExtension(LPCTSTR lpszExt, LPVOID* pFuncResult/*=NULL*/
 	// ∂Ω¿—ägí£éqÇÃåüçı
 	// pFunc ÇÕ NULL Ç‡Ç†ÇËìæÇÈÇÃÇ≈ÅCñﬂÇËílÇ…èoóàÇ»Ç¢
 	LPVOID	pFunc;
-//	strExt.MakeUpper();
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		if ( m_mpExt[i].Lookup(strExt, pFunc) ) {
 			if ( pFuncResult )
@@ -1961,11 +1958,11 @@ BOOL CNCVCDocTemplate::SaveExt(void)
 	END_FOREACH
 
 	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, strResult) ) {
-		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
+		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
 	}
-	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry+strDef, m_strDefaultExt) ) {
-		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
+	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry + strDef, m_strDefaultExt) ) {
+		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
 	}
 
@@ -1981,13 +1978,11 @@ CString CNCVCDocTemplate::GetFilterString(void)
 
 	// äÓñ{ägí£éq
 	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
-//	strResult.MakeLower();
 	strResult = gg_szWild + strResult.Right(3);
 
 	// ìoò^ägí£éq
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		PMAP_FOREACH(strKey, pDummy, &m_mpExt[i])
-//			strKey.MakeLower();
 			strResult += ss_cSplt;
 			strResult += gg_szWild + strKey;
 		END_FOREACH

@@ -656,6 +656,9 @@
 #define IDC_EXT_DXF_ADD                 9106
 #define IDC_EXT_NCD_DEL                 9107
 #define IDC_EXT_DXF_DEL                 9108
+#define IDC_EXT_NCD_DEF                 9109
+#define IDC_EXT_NCD_TXT2                9110
+#define IDC_EXT_NCD_DEFTXT              9110
 #define IDD_THREADDLG                   9500
 #define IDC_READ_PROGRESS               9501
 #define IDC_READ_TEXT                   9502
