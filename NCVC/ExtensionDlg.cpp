@@ -146,6 +146,15 @@ void CExtensionDlg::OnExtDel()
 	int	nIndex = m_ctExtList[nID].GetCurSel();
 	// ﾀﾞｲｱﾛｸﾞ登録分だけ削除対象
 	if ( nIndex != LB_ERR && m_ctExtList[nID].GetItemData(nIndex) > 0 ) {
+		if ( nID == 0 ) {
+			// デフォルト拡張子とマッチしたらデフォルト拡張子も削除
+			CString	strBuf;
+			m_ctExtList[0].GetText(nIndex, strBuf);
+			if ( m_strExtDefault.CompareNoCase(strBuf) == 0 ) {
+				m_strExtDefault.Empty();
+				UpdateData(FALSE);
+			}
+		}
 		m_ctExtList[nID].DeleteString( nIndex );
 		m_ctExtList[nID].SetFocus();
 		int n = m_ctExtList[nID].GetCount() - 1;
@@ -158,8 +167,12 @@ void CExtensionDlg::OnExtDefault()
 {
 	int	nIndex = m_ctExtList[0].GetCurSel();
 	if ( nIndex != LB_ERR ) {
-		m_ctExtList[0].GetText(nIndex, m_strExtDefault);
-		UpdateData(FALSE);
+		CString	strBuf;
+		m_ctExtList[0].GetText(nIndex, strBuf);
+		if ( strBuf != "*" ) {	// 2重チェック
+			m_strExtDefault = strBuf;
+			UpdateData(FALSE);
+		}
 	}
 }
 
@@ -170,7 +183,17 @@ void CExtensionDlg::OnExtSelchangeList()
 	int	nIndex = m_ctExtList[nID].GetCurSel();
 	m_ctExtDelBtn[nID].EnableWindow( nIndex!=LB_ERR && m_ctExtList[nID].GetItemData(nIndex)!=0 ?
 		TRUE : FALSE);
+
 	if ( nID == 0 ) {
-		m_ctExtDefBtn.EnableWindow( nIndex!=LB_ERR );
+		BOOL	bDefEnable = TRUE;
+		if ( nIndex != LB_ERR ) {
+			CString	strBuf;
+			m_ctExtList[0].GetText(nIndex, strBuf);
+			if ( strBuf == "*" )
+				bDefEnable = FALSE;
+		}
+		else
+			bDefEnable = FALSE;
+		m_ctExtDefBtn.EnableWindow( bDefEnable );
 	}
 }
