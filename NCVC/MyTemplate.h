@@ -161,12 +161,11 @@ public:
 	BOOL		operator == (T pt) const {
 		return ( fabs(x-pt)<NCMIN && fabs(y-pt)<NCMIN );
 	}
-	BOOL		operator == (const CPointT& pt) const {
+	BOOL		operator == (const CPointT<T>& pt) const {
 		return IsMatchPoint(&pt);
 	}
-	BOOL	IsMatchPoint(const CPointT* pt) const {
-		CPointT<T>	ptw(x - pt->x, y - pt->y);
-		return ptw.hypot() < NCMIN;
+	BOOL	IsMatchPoint(const CPointT<T>* pt) const {
+		return hypot(pt) < NCMIN;
 	}
 	T&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xy));
@@ -178,6 +177,10 @@ public:
 	}
 	T		hypot(void) const {
 		return ::sqrt(x*x + y*y);
+	}
+	T		hypot(const CPointT<T>* pt) const {
+		CPointT<T>	ptw(x-pt->x, y-pt->y);
+		return ::sqrt(ptw.x*ptw.x + ptw.y*ptw.y);
 	}
 	// 変換関数
 	operator CPoint() const {
@@ -202,7 +205,7 @@ public:
 		return atan2(y, x);
 	}
 	// 自分を基点とした指定点への角度
-	T		arctan(const CPointT<T> e) const {
+	T		arctan(const CPointT<T>& e) const {
 		return atan2(e.y-y, e.x-x);
 	}
 };
@@ -340,7 +343,7 @@ public:
 		return atan2(y, x);
 	}
 	// 自分を基点とした指定点への角度(2D only)
-	T		arctan(const CPoint3T<T> e) const {
+	T		arctan(const CPoint3T<T>& e) const {
 		return atan2(e.y-y, e.x-x);
 	}
 	// 2D変換

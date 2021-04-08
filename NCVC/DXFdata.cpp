@@ -2770,7 +2770,7 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv)
 BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 {
 	float	q = fabs(4 * atan(dBow));
-	float	d = _hypotf(lpArgv->c.x - pts.x, lpArgv->c.y - pts.y);
+	float	d = lpArgv->c.hypot(&pts);
 	// ┌Q⌠_┌╙⌠≥┌╣┌╒▐Й█┤┌м╣лч╪ч╙╦д┌П░╤░╛┌╣┌х┌╒
 	if ( d < NCMIN )
 		return TRUE;

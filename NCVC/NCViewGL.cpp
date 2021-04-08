@@ -785,7 +785,7 @@ CPoint3F CNCViewGL::PtoR(const CPoint& pt)
 	// ÓÃÞÙ‹óŠÔ‚Ì‰ñ“]
 	ptResult.x = ( 2.0f * pt.x - m_cx ) / m_cx * 0.5f;
 	ptResult.y = ( m_cy - 2.0f * pt.y ) / m_cy * 0.5f;
-	float	 d = _hypotf( ptResult.x, ptResult.y );
+	float	 d = ptResult.hypot();
 	ptResult.z = cos( (PI/2.0f) * min(d, 1.0f) );
 
 	ptResult *= 1.0f / ptResult.hypot();
