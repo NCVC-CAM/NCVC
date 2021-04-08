@@ -178,9 +178,9 @@ public:
 	T		hypot(void) const {
 		return ::sqrt(x*x + y*y);
 	}
-	T		hypot(const CPointT<T>* pt) const {
-		CPointT<T>	ptw(x-pt->x, y-pt->y);
-		return ::sqrt(ptw.x*ptw.x + ptw.y*ptw.y);
+	T		hypot(const CPointT<T>* e) const {
+		CPointT<T>	p(e->x-x, e->y-y);
+		return ::sqrt(p.x*p.x + p.y*p.y);
 	}
 	// ïœä∑ä÷êî
 	operator CPoint() const {
@@ -214,16 +214,7 @@ typedef	CPointT<float>			CPointF;
 typedef	std::vector<CPointF>	CVPointF;
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointF, float,  cs::cartesian, x, y)
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointD, double, cs::cartesian, x, y)
-/*
-template<typename T> inline T CPointT<T>::hypot(void) const
-{
-	return ::hypotf(x, y);	// hypot()ÇÕÇ»Ç∫Ç©floatÇ∆doubleÇ≈ãÊï 
-}
-template<> inline double CPointT<double>::hypot(void) const
-{
-	return ::hypot(x, y);
-}
-*/
+
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD ÉNÉâÉX
 
@@ -252,7 +243,7 @@ public:
 	CPoint3T(T xx, T yy, T zz) {
 		SetPoint(xx, yy, zz);
 	}
-	CPoint3T(const CPointT<T> pt, T zz = 0) {
+	CPoint3T(const CPointT<T>& pt, T zz = 0) {
 		SetPoint(pt.x, pt.y, zz);
 	}
 	CPoint3T(const CPoint3T<double>& pt) {
@@ -307,8 +298,7 @@ public:
 		return IsMatchPoint(&pt);
 	}
 	BOOL	IsMatchPoint(const CPoint3T<T>* pt) const {
-		CPoint3T<T>	ptw(x - pt->x, y - pt->y, z - pt->z);
-		return ptw.hypot() < NCMIN;
+		return hypot(pt) < NCMIN;
 	}
 	T&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xyz));
@@ -320,6 +310,10 @@ public:
 	}
 	T		hypot(void) const {
 		return ::sqrt(x*x + y*y + z*z);
+	}
+	T		hypot(const CPoint3T<T>* e) const {
+		CPoint3T<T>	p(e->x-x, e->y-y, e->z-z);
+		return ::sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
 	}
 	// ïœä∑ä÷êî
 	CPointT<T>	GetXY(void) const {
