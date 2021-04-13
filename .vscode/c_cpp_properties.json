@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include",
+                "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\atlmfc\\include",
+                "C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1A\\Include",
+                "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt",
+                "C:\\Users\\magara\\Documents\\Visual Studio 2015\\Projects\\NCVC\\NCVC",
+                "C:\\Users\\magara\\Documents\\Visual Studio 2015\\include",
+                "C:\\Users\\magara\\Documents\\Visual Studio 2015\\boost"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "8.1",
+            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/cl.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ],
+    "version": 4
+}
