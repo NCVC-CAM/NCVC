@@ -13,7 +13,7 @@
 #include "NCMakeMill.h"
 #include "MakeCustomCode.h"
 #include "ThreadDlg.h"
-//#include "boost/bind.hpp"
+//#include "boost/bind/bind.hpp"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -22,6 +22,7 @@
 
 using std::string;
 using namespace boost;
+//using namespace boost::placeholders;
 
 // --- CDXFdata ÇÃ GetType() Ç∆ GetMakeType() ÇÃégÇ¢ï™ÇØÇ…íçà”ÅIÅI
 
@@ -2466,6 +2467,7 @@ BOOL MakeLoopDeepAdd(void)
 
 CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeepFin)
 {
+	CDXFdata*	pData;
 	POSITION	(CDXFlist::*pfnGetPosition)(void) const;
 	CDXFdata*&	(CDXFlist::*pfnGetData)(POSITION&);
 	if ( bAction ) {
@@ -2477,7 +2479,6 @@ CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeepFin)
 		pfnGetData		= &(CDXFlist::GetPrev);
 	}
 	// √ﬁ∞¿ê∂ê¨Ÿ∞Ãﬂ(ê≥ì]ãtì])
-	CDXFdata*	pData;
 	for ( POSITION pos=(g_ltDeepData.*pfnGetPosition)(); pos && IsThread(); ) {
 		pData = (g_ltDeepData.*pfnGetData)(pos);
 		_AddMakeGdataDeep(pData, bDeepFin);
@@ -2494,12 +2495,12 @@ CDXFdata* MakeLoopDeepAdd_Euler(BOOL bAction, BOOL bDeepFin)
 	}
 	else {
 		pfnGetPosition	= bind(&CDXFlist::GetTailPosition, &g_ltDeepData);
-//		pfnGetData		= bind(&CDXFlist::GetPrev, &g_ltDeepData, _1);
+		pfnGetData		= bind(&CDXFlist::GetPrev, &g_ltDeepData, _1);
 	}
 	// √ﬁ∞¿ê∂ê¨Ÿ∞Ãﬂ(ê≥ì]ãtì])
 	for ( pos=pfnGetPosition(); pos && IsThread(); ) {
 		pData = pfnGetData(pos);
-		_AddMakeGdataDeep(pData, bDeep);
+		_AddMakeGdataDeep(pData, bDeepFin);
 	}
 */
 	return pData;
