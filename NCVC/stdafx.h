@@ -240,6 +240,9 @@ LPVOID	GetVersionResource(LPCTSTR lpszFileName, LPDWORD* dwTrans);
 //		"SpecialBuild"     // スペシャルビルド情報
 BOOL	GetVersionValue(CString& strBuffer, LPVOID pVersionInfo, DWORD dwTrans, LPCTSTR strKeyWord);
 
+// スクリプト実行ファイルを取得
+CString	GetScriptExec(const CString& strFile);
+
 #ifdef _DEBUG
 // MagaDebugからAllocConsole()使用にチェンジ
 #include <stdio.h>

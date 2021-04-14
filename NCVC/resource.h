@@ -135,7 +135,7 @@
 #define IDS_VIEW_SETUP_INPORT           1314
 #define IDS_VIEW_SETUP_EXPORT           1315
 #define IDS_VIEW_TEXTURE                1316
-#define IDS_PERL_FILTER                 1385
+#define IDS_SCRIPT_FILTER               1385
 #define IDS_TEXTURE_FILTER              1386
 #define IDS_NCVC_FILTER                 1387
 #define IDS_NCD_FILTER                  1388
@@ -784,11 +784,12 @@
 #define IDS_ERR_GLTRACE                 21009
 #define IDS_ERR_CONTROL                 21010
 #define IDS_ERR_FILEPATH                21011
-#define IDS_ERR_UNDERZERO               21012
-#define IDS_ERR_POSITIVE                21013
-#define IDS_ERR_SETTING                 21014
-#define IDS_ERR_REGEX                   21015
-#define IDS_ERR_GLSL                    21016
+#define IDS_ERR_SCRIPTEXT               21012
+#define IDS_ERR_UNDERZERO               21013
+#define IDS_ERR_POSITIVE                21014
+#define IDS_ERR_SETTING                 21015
+#define IDS_ERR_REGEX                   21016
+#define IDS_ERR_GLSL                    21017
 #define IDS_ERR_CAMDATA                 21050
 #define IDS_ERR_CAMVER                  21051
 #define IDS_ERR_CAMOLD                  21052
@@ -796,7 +797,7 @@
 #define IDS_ERR_DXF_DRAGLINK            21054
 #define IDS_ERR_DXF_CREATEOUTELINE      21055
 #define IDS_ERR_DRAGTREE                21056
-#define IDS_ERR_PERLSCRIPT              21095
+#define IDS_ERR_SCRIPT                  21095
 #define IDS_ERR_DLL                     21096
 #define IDS_ERR_PROCESS                 21097
 #define IDS_ERR_THREAD                  21098

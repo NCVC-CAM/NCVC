@@ -19,6 +19,14 @@ extern	LPCTSTR	gg_szComma = ",";
 extern	LPCTSTR	gg_szWild = "*.";
 // 円記号
 extern	LPCTSTR	gg_szEn = "\\";
+// スクリプト拡張子
+extern	LPCTSTR	gg_szScriptExt[] = {
+	".pl", ".py"
+};
+// スクリプト実行
+extern	LPCTSTR	gg_szScriptRun[] = {
+	"perl.exe", "python.exe"
+};
 
 // ｱｲｺﾝｻｲｽﾞ
 extern	const	int		gg_nIconX = 16;
@@ -180,6 +188,17 @@ BOOL GetVersionValue(CString& strBuffer, LPVOID pVersionInfo, DWORD dwTrans, LPC
 
 	strBuffer.Empty();
 	return FALSE;
+}
+
+// スクリプト実行ファイルを取得
+CString	GetScriptExec(const CString& strFile)
+{
+	CString	strExt( strFile.Right(3) );
+	for ( int i=0; i<SIZEOF(gg_szScriptExt); i++ ) {
+		if ( strExt.CompareNoCase(gg_szScriptExt[i]) == 0 )
+			return CString( gg_szScriptRun[i] );
+	}
+	return CString();
 }
 
 #ifdef _DEBUG

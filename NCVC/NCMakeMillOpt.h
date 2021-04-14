@@ -88,7 +88,7 @@ enum {
 	MKNC_STR_FOOTER,			// ∂Ω¿—ÃØ¿∞
 	MKNC_STR_CUSTMOVE_B,		// ∂Ω¿—à⁄ìÆ∫∞ƒﬁ(ëOå„)
 	MKNC_STR_CUSTMOVE_A,
-	MKNC_STR_PERLSCRIPT,		// ê∂ê¨å„Ç…é¿çsÇ≥ÇÍÇÈPerlΩ∏ÿÃﬂƒ
+	MKNC_STR_SCRIPT,			// ê∂ê¨å„Ç…é¿çsÇ≥ÇÍÇÈPerlΩ∏ÿÃﬂƒ
 		MKNC_STR_NUMS		// [7]
 };
 //
@@ -166,7 +166,7 @@ enum {
 #define	MIL_S_FOOTER				m_strOption[MKNC_STR_FOOTER]
 #define	MIL_S_CUSTMOVE_B			m_strOption[MKNC_STR_CUSTMOVE_B]
 #define	MIL_S_CUSTMOVE_A			m_strOption[MKNC_STR_CUSTMOVE_A]
-#define	MIL_S_PERLSCRIPT			m_strOption[MKNC_STR_PERLSCRIPT]
+#define	MIL_S_SCRIPT				m_strOption[MKNC_STR_SCRIPT]
 //
 class CNCMakeMillOpt : public CNCMakeOption
 {

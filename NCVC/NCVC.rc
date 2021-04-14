@@ -1381,7 +1381,7 @@ BEGIN
     LTEXT           "ﾌｧｲﾙ名(&S)",IDC_STATIC,14,138,33,8
     EDITTEXT        IDC_MKNC5_SCRIPT,54,136,136,12,ES_AUTOHSCROLL
     PUSHBUTTON      "参照...",IDC_MKNC5_SCRIPT_LOOKUP,195,116,35,14
-    GROUPBOX        "生成後に実行するPerlスクリプト",IDC_STATIC,7,104,229,54,WS_GROUP
+    GROUPBOX        "生成後に実行するスクリプト（*.pl, *.py）",IDC_STATIC,7,104,229,54,WS_GROUP
     LTEXT           "長さ(&L)",IDC_STATIC,14,178,23,8
     EDITTEXT        IDC_MKNC5_ZAPPROACH,53,176,37,12,ES_RIGHT | ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,97,178,19,8,NOT WS_GROUP
@@ -2181,7 +2181,7 @@ BEGIN
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "ProductName", "NCVC"
             VALUE "ProductVersion", "3.8.8.0"
-            VALUE "SpecialBuild", "Boost C++ 1.75, GLEW 2.10, Kodatuno R3.4kai"
+            VALUE "SpecialBuild", "Boost C++ 1.76, GLEW 2.10, Kodatuno R3.4kai"
         END
     END
     BLOCK "VarFileInfo"
@@ -3440,7 +3440,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PERL_FILTER         "pl\nPerlｽｸﾘﾌﾟﾄﾌｧｲﾙ (*.pl)|*.pl"
+    IDS_SCRIPT_FILTER       "ｽｸﾘﾌﾟﾄﾌｧｲﾙ (*.pl; *.py)|*.pl;*.py"
     IDS_TEXTURE_FILTER      "ﾃｸｽﾁｬ画像ﾌｧｲﾙ (*.bmp; *.png; *.gif; *.jpeg; *.tiff)|*.bmp;*.png;*.gif;*.jpg;*.jpeg;*.tif;*.tiff"
     IDS_NCVC_FILTER         "NCVC files (%s)|%s"
     IDS_NCD_FILTER          "ncd\nNC data (%s)|%s"
@@ -3496,7 +3496,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_PERLSCRIPT      "［生成後に実行するPerlスクリプト］でエラーが発生しました。\nPerlのインストールかスクリプトを確認してください。"
+    IDS_ERR_SCRIPT          "［生成後に実行するスクリプト］でエラーが発生しました。\nPerl/Pythonの実行環境かスクリプトを確認してください。"
     IDS_ERR_DLL             "以下のアドインDLL\n%s\nが返した内部情報が現在のNCVCのバージョンと合いません\nアドインDLLをバージョンアップするか消去してください"
     IDS_ERR_PROCESS         "外部編集ﾌﾟﾛｾｽを起動できませんでした"
     IDS_ERR_THREAD          "現在ﾊﾞｯｸｸﾞﾗｳﾝﾄﾞで処理中です。終了できません"
@@ -3708,6 +3708,7 @@ BEGIN
     IDS_ERR_GLTRACE         "ｿﾘｯﾄﾞ描画が有効でないと、OpenGLﾀﾌﾞでﾄﾚｰｽ描画が実行できません"
     IDS_ERR_CONTROL         "ｺﾝﾄﾛｰﾙの生成に失敗しました\nFile=%s:DebugLine=%d"
     IDS_ERR_FILEPATH        "有効なﾌｧｲﾙﾊﾟｽを指示してください"
+    IDS_ERR_SCRIPTEXT       "現在登録できるのは Perl(*.pl) か Python(*.py) のみとなります"
     IDS_ERR_UNDERZERO       "指定の項目にﾏｲﾅｽ(またはｾﾞﾛ)値を設定できません"
     IDS_ERR_POSITIVE        "指定の項目にプラス値を設定できません"
     IDS_ERR_SETTING         "データを正しく設定してください"

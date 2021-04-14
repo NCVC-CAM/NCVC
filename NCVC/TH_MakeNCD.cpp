@@ -959,7 +959,7 @@ BOOL MakeNCD_FinalFunc(LPCTSTR lpszFileName/*=NULL*/)
 
 BOOL OutputMillCode(LPCTSTR lpszFileName)
 {
-	static CString	s_strNCtemp;
+	static	CString	s_strNCtemp;
 	CString	strPath, strFile, strWriteFile,
 			strNCFile(lpszFileName ? lpszFileName : g_pDoc->GetNCFileName());
 	Path_Name_From_FullPath(strNCFile, strPath, strFile);
@@ -967,7 +967,7 @@ BOOL OutputMillCode(LPCTSTR lpszFileName)
 
 	// 一時ﾌｧｲﾙ生成か否か
 	if ( g_wBindOperator & TH_HEADER ) {
-		if ( !GetStr(MKNC_STR_PERLSCRIPT).IsEmpty() && ::IsFileExist(GetStr(MKNC_STR_PERLSCRIPT), TRUE, FALSE) ) {
+		if ( !GetStr(MKNC_STR_SCRIPT).IsEmpty() && ::IsFileExist(GetStr(MKNC_STR_SCRIPT), TRUE, FALSE) ) {
 			TCHAR	szPath[_MAX_PATH], szFile[_MAX_PATH];
 			::GetTempPath(_MAX_PATH, szPath);
 			::GetTempFileName(szPath, AfxGetNCVCApp()->GetDocExtString(TYPE_NCD).Right(3)/*ncd*/,
@@ -1007,11 +1007,18 @@ BOOL OutputMillCode(LPCTSTR lpszFileName)
 
 	// 出力後の処理
 	if ( g_wBindOperator & TH_FOOTER && !s_strNCtemp.IsEmpty() ) {
-		CString	strArgv("\""+GetStr(MKNC_STR_PERLSCRIPT)+"\" \""+s_strNCtemp+"\" \""+strNCFile+"\"");
-		// Perlｽｸﾘﾌﾟﾄ起動
-		if ( !AfxGetNCVCMainWnd()->CreateOutsideProcess("perl.exe", strArgv, FALSE, TRUE) ) {
-			AfxMessageBox(IDS_ERR_PERLSCRIPT, MB_OK|MB_ICONEXCLAMATION);
+		CString	strExec( GetScriptExec(GetStr(MKNC_STR_SCRIPT)) ),
+				strArgv("\""+GetStr(MKNC_STR_SCRIPT)+"\" \""+s_strNCtemp+"\" \""+strNCFile+"\"");
+		// スクリプト起動
+		if ( strExec.IsEmpty() ) {
+			AfxMessageBox(IDS_ERR_SCRIPT, MB_OK|MB_ICONEXCLAMATION);
 			return FALSE;
+		}
+		else {
+			if ( !AfxGetNCVCMainWnd()->CreateOutsideProcess(strExec, strArgv, FALSE, TRUE) ) {
+				AfxMessageBox(IDS_ERR_SCRIPT, MB_OK|MB_ICONEXCLAMATION);
+				return FALSE;
+			}
 		}
 	}
 

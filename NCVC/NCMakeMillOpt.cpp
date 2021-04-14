@@ -175,7 +175,7 @@ static	SAVEORDER	g_stSaveOrder[] = {
 	{NC_NUM,	MKNC_NUM_TOLERANCE,		"超えた時の動作(0:Z上昇G00移動,1:G01補間)"},
 	{NC_NUM,	MKNC_NUM_OPTIMAIZEDRILL,"穴加工基準軸(0:なし,1:X,2:Y)"},
 	{NC_DBL,	MKNC_DBL_DRILLMARGIN,	"穴加工同一軸上と見なす許容差"},
-	{NC_STR,	MKNC_STR_PERLSCRIPT,	"生成後に実行されるPerlｽｸﾘﾌﾟﾄ"},
+	{NC_STR,	MKNC_STR_SCRIPT,		"生成後に実行されるｽｸﾘﾌﾟﾄ（*.pl, *.py）"},
 	{NC_DBL,	MKNC_DBL_ZAPPROACH,		"Z軸進入ｱﾌﾟﾛｰﾁ"},
 	{NC_DBL,	MKNC_DBL_ZAPPDWELL,		"Z軸進入ｱﾌﾟﾛｰﾁのﾄﾞｳｪﾙ時間[msec]"}
 };
@@ -230,7 +230,7 @@ void CNCMakeMillOpt::InitialDefault(void)
 
 BOOL CNCMakeMillOpt::IsPathID(int n)
 {
-	return ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER || n==MKNC_STR_PERLSCRIPT );
+	return ( n==MKNC_STR_HEADER || n==MKNC_STR_FOOTER || n==MKNC_STR_SCRIPT );
 }
 
 CString CNCMakeMillOpt::GetLineNoForm(void) const
@@ -398,7 +398,7 @@ void CNCMakeMillOpt::DbgDump(void) const
 	printf("  TolerancePro =%d\n", MIL_I_TOLERANCE);
 	printf("  DrillOptimaiz=%d\n", MIL_I_OPTIMAIZEDRILL);
 	printf("  DrillMargin  =%f\n", MIL_D_DRILLMARGIN);
-	printf("  PerlScript   =%s\n", LPCTSTR(MIL_S_PERLSCRIPT));
+	printf("  PerlScript   =%s\n", LPCTSTR(MIL_S_SCRIPT));
 	printf("  ZApproach    =%f\n", MIL_D_ZAPPROACH);
 	printf("  ZApproachDwel=%f\n", MIL_D_ZAPPDWELL);
 }
