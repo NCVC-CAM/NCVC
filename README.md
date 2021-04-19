@@ -2,7 +2,7 @@
 NC Viewer and Converter (Free CAM)
 
 ## Requirement
-* Boost C++ 1.73.0 or later
+* Boost C++ 1.76.0 or later
 * GLEW
 * Kodatuno R3.4改
 

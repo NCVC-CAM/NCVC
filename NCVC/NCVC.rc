@@ -222,6 +222,7 @@ BEGIN
         MENUITEM "旋盤ﾃﾞｰﾀの生成...",                ID_HELP_USING3
         MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成...",          ID_HELP_USING4
         MENUITEM "CADﾃﾞｰﾀの統合...",               ID_HELP_USING5
+        MENUITEM "複数のﾜｰｸ座標原点を処理...",            ID_HELP_USING6
         MENUITEM SEPARATOR
         MENUITEM "NCVC のﾊﾞｰｼﾞｮﾝ情報(&A)...",      ID_APP_ABOUT
         MENUITEM "ｱﾄﾞｲﾝについて...",                ID_HELP_ADDIN
@@ -300,7 +301,7 @@ BEGIN
         END
         MENUITEM "指定行(&G)...\tCtrl+G",          ID_NCVIEW_JUMP
         MENUITEM "検索(&F)...\tCtrl+F",           ID_EDIT_FIND
-        MENUITEM "ｵﾌﾟｼｮﾅﾙﾌﾞﾛｯｸｽｷｯﾌﾟ設定(&B)...\tCtrl+Alt+B", 3006
+        MENUITEM "ｵﾌﾟｼｮﾅﾙﾌﾞﾛｯｸｽｷｯﾌﾟ設定(&B)...\tCtrl+Alt+B", ID_NCVIEW_OBS
     END
     POPUP "ｵﾌﾟｼｮﾝ(&O)"
     BEGIN
@@ -344,6 +345,7 @@ BEGIN
         MENUITEM "旋盤ﾃﾞｰﾀの生成...",                ID_HELP_USING3
         MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成...",          ID_HELP_USING4
         MENUITEM "CADﾃﾞｰﾀの統合...",               ID_HELP_USING5
+        MENUITEM "複数のﾜｰｸ座標原点を処理...",            ID_HELP_USING6
         MENUITEM SEPARATOR
         MENUITEM "NCVC のﾊﾞｰｼﾞｮﾝ情報(&A)...",      ID_APP_ABOUT
         MENUITEM "ｱﾄﾞｲﾝについて...",                ID_HELP_ADDIN
@@ -470,6 +472,7 @@ BEGIN
         MENUITEM "旋盤ﾃﾞｰﾀの生成...",                ID_HELP_USING3
         MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成...",          ID_HELP_USING4
         MENUITEM "CADﾃﾞｰﾀの統合...",               ID_HELP_USING5
+        MENUITEM "複数のﾜｰｸ座標原点を処理...",            ID_HELP_USING6
         MENUITEM SEPARATOR
         MENUITEM "NCVC のﾊﾞｰｼﾞｮﾝ情報(&A)...",      ID_APP_ABOUT
         MENUITEM "ｱﾄﾞｲﾝについて...",                ID_HELP_ADDIN
@@ -2138,10 +2141,10 @@ BEGIN
     LTEXT           "繰り返し数(&L)",IDC_STATIC,7,26,43,8
     EDITTEXT        IDC_AUTO_LOOPCNT,58,24,37,12,ES_RIGHT | ES_AUTOHSCROLL
     LTEXT           "ゲート作成(&G)",IDC_STATIC,17,116,44,8
-    EDITTEXT        IDC_AUTO_GATE,69,114,37,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    EDITTEXT        IDC_AUTO_GATE,69,114,37,12,ES_AUTOHSCROLL | WS_DISABLED,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,112,116,12,8
     LTEXT           "アプローチ(&A)",IDC_STATIC,17,139,39,8
-    EDITTEXT        IDC_AUTO_APPROACH,69,137,37,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    EDITTEXT        IDC_AUTO_APPROACH,69,137,37,12,ES_AUTOHSCROLL | WS_DISABLED,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,112,139,12,8
     GROUPBOX        "輪郭加工ｵﾌﾟｼｮﾝ",IDC_STATIC,7,95,217,69,WS_GROUP
     DEFPUSHBUTTON   "&OK",IDOK,57,182,50,14

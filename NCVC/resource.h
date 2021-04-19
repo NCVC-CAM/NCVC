@@ -657,7 +657,6 @@
 #define IDC_EXT_NCD_DEL                 9107
 #define IDC_EXT_DXF_DEL                 9108
 #define IDC_EXT_NCD_DEF                 9109
-#define IDC_EXT_NCD_TXT2                9110
 #define IDC_EXT_NCD_DEFTXT              9110
 #define IDD_THREADDLG                   9500
 #define IDC_READ_PROGRESS               9501
@@ -690,6 +689,7 @@
 #define ID_HELP_USING3                  9903
 #define ID_HELP_USING4                  9904
 #define ID_HELP_USING5                  9905
+#define ID_HELP_USING6                  9906
 #define IDS_REGISTRY_KEY                10000
 #define IDS_REGKEY_SETTINGS             10001
 #define IDS_REGKEY_WINDOW               10002
@@ -895,7 +895,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        206
-#define _APS_NEXT_COMMAND_VALUE         32823
+#define _APS_NEXT_COMMAND_VALUE         32824
 #define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
