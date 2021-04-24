@@ -271,25 +271,7 @@ public:
 	virtual	void	Serialize(CArchive&);
 	DECLARE_DYNAMIC(CDXFworking)
 };
-
-typedef	CTypedPtrListEx<CObList, CDXFworking*>	CDXFworkingList;
-namespace boost { namespace range_detail_microsoft {
-	template< >
-	struct customization< ::CDXFworkingList > :
-		list_functions
-	{
-		template< class X >
-		struct meta
-		{
-			typedef list_iterator<X, ::CDXFworking *> mutable_iterator;
-			typedef list_iterator<X const, ::CDXFworking const * const, ::CDXFworking const * const> const_iterator;
-		};
-	};
-} }
-BOOST_RANGE_DETAIL_MICROSOFT_CUSTOMIZATION_TYPE(
-	boost::range_detail_microsoft::using_type_as_tag,
-	BOOST_PP_NIL, CDXFworkingList
-)
+typedef	CTypedPtrList<CObList, CDXFworking*>	CDXFworkingList;
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「方向」加工指示クラス
@@ -385,24 +367,7 @@ public:
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFworkingOutline)
 };
-typedef	CTypedPtrListEx<CObList, CDXFworkingOutline*>	COutlineList;
-namespace boost { namespace range_detail_microsoft {
-	template< >
-	struct customization< ::COutlineList > :
-		list_functions
-	{
-		template< class X >
-		struct meta
-		{
-			typedef list_iterator<X, ::CDXFworkingOutline *> mutable_iterator;
-			typedef list_iterator<X const, ::CDXFworkingOutline const * const, ::CDXFworkingOutline const * const> const_iterator;
-		};
-	};
-} }
-BOOST_RANGE_DETAIL_MICROSOFT_CUSTOMIZATION_TYPE(
-	boost::range_detail_microsoft::using_type_as_tag,
-	BOOST_PP_NIL, COutlineList
-)
+typedef	CTypedPtrList<CObList, CDXFworkingOutline*>	COutlineList;
 
 /////////////////////////////////////////////////////////////////////////////
 // ＤＸＦデータの「ポケット」加工指示クラス

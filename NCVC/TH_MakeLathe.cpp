@@ -430,7 +430,7 @@ void InitialShapeData(void)
 #ifdef _DEBUG
 			printf("(pts.x < pte.x) Object Reverse\n");
 #endif
-			pChain->Reverse();
+			boost::reverse(*pChain);
 			pChain->ReverseNativePt();
 		}
 		// ‡˜‚ğ³‚µ‚­‚µ‚Ä‚©‚çŒ´“_’²®

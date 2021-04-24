@@ -85,33 +85,6 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////
-//	CTypedPtrListEx : 拡張 CTypedPtrList
-
-template<typename BASE_CLASS, typename TYPE>
-class CTypedPtrListEx : public CTypedPtrList<BASE_CLASS, TYPE>
-{
-public:
-	void	Reverse(void) {
-		if ( GetSize() <= 1 )	// ｵﾌﾞｼﾞｪｸﾄ1つ以下なら交換の必要なし
-			return;
-		POSITION	posH = GetHeadPosition(), posHb,
-					posT = GetTailPosition(), posTb;
-		TYPE		pObjH, pObjT;
-		BOOL		bLoop = TRUE;
-		while ( bLoop && posH != posT ) {
-			posHb = posH;
-			pObjH = GetNext(posH);
-			if ( posH == posT )		// 要素数が偶数のとき
-				bLoop = FALSE;
-			posTb = posT;
-			pObjT = GetPrev(posT);
-			SetAt(posHb, pObjT);
-			SetAt(posTb, pObjH);
-		}
-	}
-};
-
-//////////////////////////////////////////////////////////////////////
 //	CStringKeyIndex : CMapStringToPtrを使って文字列キーのｲﾝﾃﾞｯｸｽを検索
 
 class CStringKeyIndex : public CMapStringToPtr

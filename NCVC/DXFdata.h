@@ -213,27 +213,10 @@ public:
 	virtual	void	Serialize(CArchive&);
 	DECLARE_DYNAMIC(CDXFdata)
 };
-
 typedef CSortArray<CObArray, CDXFdata*>			CDXFsort;
-typedef CTypedPtrListEx<CObList, CDXFdata*>		CDXFlist;
+typedef CTypedPtrList<CObList, CDXFdata*>		CDXFlist;
 typedef	CTypedPtrArrayEx<CObArray, CDXFdata*>	CDXFarray;
-namespace boost { namespace range_detail_microsoft {
-	template< >
-	struct customization< ::CDXFlist > :
-		list_functions
-	{
-		template< class X >
-		struct meta
-		{
-			typedef list_iterator<X, ::CDXFdata *> mutable_iterator;
-			typedef list_iterator<X const, ::CDXFdata const * const, ::CDXFdata const * const> const_iterator;
-		};
-	};
-} }
-BOOST_RANGE_DETAIL_MICROSOFT_CUSTOMIZATION_TYPE(
-	boost::range_detail_microsoft::using_type_as_tag,
-	BOOST_PP_NIL, CDXFlist
-)
+
 /////////////////////////////////////////////////////////////////////////////
 // Point ƒNƒ‰ƒX
 class CDXFpoint : public CDXFdata  
