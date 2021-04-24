@@ -146,6 +146,10 @@ class CNCVCApp : public CWinAppEx
 	void	WriteRecentViewList(void);
 	void	AddToRecentViewList(LPCTSTR);
 
+#ifdef _DEBUG
+	void	DebugCode(void);
+#endif
+
 public:
 	CNCVCApp();
 	virtual ~CNCVCApp();

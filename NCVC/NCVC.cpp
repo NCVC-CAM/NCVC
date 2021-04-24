@@ -157,10 +157,10 @@ CNCVCApp::~CNCVCApp()
 /////////////////////////////////////////////////////////////////////////////
 // 唯一の CNCVCApp オブジェクトです。
 
-CNCVCApp theApp;
 #ifdef _DEBUG
 DbgConsole	theDebug;	// ﾃﾞﾊﾞｯｸﾞ用ｺﾝｿｰﾙ
 #endif
+CNCVCApp theApp;
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCVCApp オーバーライド
@@ -189,6 +189,7 @@ BOOL CNCVCApp::InitInstance()
 	// 設定が格納されているレジストリ キーを変更します。
 	SetRegistryKey(IDS_REGISTRY_KEY);
 #ifdef _DEBUG
+	DebugCode();
 	printf("Processer Count=%d\n", g_nProcesser);
 	printf("RegistryKey=%s\n", m_pszRegistryKey);
 	printf("NCDATA   struct size=%d\n", sizeof(NCDATA));
@@ -1683,6 +1684,29 @@ void CNCVCApp::OnAppAbout()
 	CAboutDlg aboutDlg;
 	aboutDlg.DoModal();
 }
+
+#ifdef _DEBUG
+void CNCVCApp::DebugCode(void)
+{
+	CDXFdata*	pData;
+//	CDXFlist	lt;		// これでコンパイルエラーの意味がわからん
+	CDXFchain	lt;
+	DXFPARGV	p;
+	DXFLARGV	l;
+	DXFCARGV	c;
+	lt.AddTail( new CDXFpoint(&p) );
+	lt.AddTail( new CDXFline(&l) );
+	lt.AddTail( new CDXFcircle(&c) );
+	BOOST_FOREACH( pData, lt ) {
+		printf("Type=%d\n", pData->GetType() );
+	}
+	boost::reverse(lt);		// 検証
+	BOOST_FOREACH( pData, lt ) {
+		printf("Type=%d\n", pData->GetType() );
+		delete	pData;
+	}
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // ﾌﾟﾛｼﾞｪｸﾄ広域関数
