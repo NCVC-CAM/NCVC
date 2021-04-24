@@ -77,6 +77,7 @@
 #include "boost/function.hpp"
 #include "boost/utility.hpp"
 #include "boost/foreach.hpp"
+#include "boost/range/mfc.hpp"
 #include "boost/range/algorithm.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/minmax.hpp"

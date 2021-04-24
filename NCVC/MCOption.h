@@ -108,6 +108,7 @@ public:
 		m_dToolD = m_dToolH = 0;
 	}
 };
+typedef	CTypedPtrList<CPtrList, CMCTOOLINFO*>	CMCTOOLLIST;
 
 class CMCOption
 {
@@ -155,7 +156,7 @@ friend	class	COBSdlg;
 				m_strAutoBreak,	// ©“®ÌŞÚ²¸İ’èº°ÄŞ
 				m_strMacroOpt[MCMACROSTRING];	// Ï¸ÛŠÖŒW
 	// H‹ïî•ñµÌß¼®İ
-	CTypedPtrList<CPtrList, CMCTOOLINFO*>	m_ltTool;	// CMCTOOLINFOŒ^‚ğŠi”[
+	CMCTOOLLIST		m_ltTool;	// CMCTOOLINFOŒ^‚ğŠi”[
 
 	void	Convert(void);			// Ú¼Ş½ÄØ‚©‚çÌ§²Ù‚Ö & ‹ŒÊŞ°¼Ş®İ‚ÌÚ¼Ş½ÄØ‚ğÁ‹
 	void	ConvertWorkOffset(size_t, LPCTSTR);

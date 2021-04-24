@@ -393,12 +393,12 @@ BOOL CreateShapeThread(void)
 #ifdef _DEBUG
 				pChainDbg = pShape->GetShapeChain();
 				printf("  ShapeNo.%d ChainCnt=%d\n", i, pChainDbg->GetCount());
-				PLIST_FOREACH(pDataDbg, pChainDbg)
+				BOOST_FOREACH(pDataDbg, *pChainDbg) {
 					ptsd = pDataDbg->GetNativePoint(0);
 					pted = pDataDbg->GetNativePoint(1);
 					printf("%d (%.3f, %.3f)-(%.3f, %.3f)\n", pDataDbg->GetType(),
 						ptsd.x, ptsd.y, pted.x, pted.y);
-				END_FOREACH
+				}
 #endif
 				delete	pMap;
 				// 生成対象形状を保存
@@ -611,7 +611,7 @@ BOOL CreateRoughPass(int io)
 		pOutline = g_pShape[io]->GetLatheList();
 		pChain = pOutline->IsEmpty() ?
 			g_pShape[io]->GetShapeChain() : pOutline->GetHead();
-		PLIST_FOREACH(pDataChain, pChain)
+		BOOST_FOREACH(pDataChain, *pChain) {
 			bCreate = FALSE;
 			enType = pDataChain->GetType();
 			nResult = pData->GetIntersectionPoint(pDataChain, ptChk, FALSE);
@@ -678,7 +678,7 @@ BOOL CreateRoughPass(int io)
 				g_obMakeLine[io].Add(pDataNew);
 				bInter = TRUE;
 			}
-		END_FOREACH	// End of Chain Loop
+		}	// End of Chain Loop
 
 		// 交点端数処理
 		if ( pts ) {
@@ -820,11 +820,11 @@ BOOL MakeInsideCode(const CPointF& ptMax)
 		if ( !pChain->IsEmpty() )
 			MoveInsideCode(pChain, ptMax, ptPull);
 		// 切削ﾊﾟｽ
-		PLIST_FOREACH(pData, pChain)
+		BOOST_FOREACH(pData, *pChain) {
 			pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_I_FEED));
 			ASSERT(pNCD);
 			g_obMakeData.Add(pNCD);
-		END_FOREACH
+		}
 	}
 
 	// 形状仕上げ
@@ -832,11 +832,11 @@ BOOL MakeInsideCode(const CPointF& ptMax)
 	ASSERT(pChain);
 	if ( !pChain->IsEmpty() )
 		ptMov = MoveInsideCode(pChain, ptMax, ptPull);
-	PLIST_FOREACH(pData, pChain)
+	BOOST_FOREACH(pData, *pChain) {
 		pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_I_FEED));
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
-	END_FOREACH
+	}
 
 	// 工具初期位置へ復帰
 	if ( !pChain->IsEmpty() ) {
@@ -959,11 +959,11 @@ BOOL MakeOutsideCode(const CPointF& ptMax)
 		if ( !pChain->IsEmpty() )
 			MoveOutsideCode(pChain->GetHead(), ptMax, ptPull);
 		// 切削ﾊﾟｽ
-		PLIST_FOREACH(pData, pChain)
+		BOOST_FOREACH(pData, *pChain) {
 			pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_O_FEED));
 			ASSERT(pNCD);
 			g_obMakeData.Add(pNCD);
-		END_FOREACH
+		}
 	}
 
 	// 形状仕上げ
@@ -971,11 +971,11 @@ BOOL MakeOutsideCode(const CPointF& ptMax)
 	ASSERT(pChain);
 	if ( !pChain->IsEmpty() )
 		MoveOutsideCode(pChain->GetHead(), ptMax, ptPull);
-	PLIST_FOREACH(pData, pChain)
+	BOOST_FOREACH(pData, *pChain) {
 		pNCD = new CNCMakeLathe(pData, GetDbl(MKLA_DBL_O_FEED));
 		ASSERT(pNCD);
 		g_obMakeData.Add(pNCD);
-	END_FOREACH
+	}
 
 	// 工具初期位置へ復帰
 	if ( !pChain->IsEmpty() ) {
@@ -1121,12 +1121,12 @@ BOOL CheckXZMove(int io, const CPointF& pts, const CPointF& pte)
 		nLoop = pOutline->IsEmpty() ? 1 : pOutline->GetSize();
 		for ( i=0; i<nLoop && !bResult && IsThread(); i++ ) {
 			pChain = pOutline->IsEmpty() ? g_pShape[io]->GetShapeChain() : pOutline->GetAt(i);
-			PLIST_FOREACH(pData, pChain)
+			BOOST_FOREACH(pData, *pChain) {
 				if ( pData->GetIntersectionPoint(pts, pte, pt, FALSE) > 0 ) {
 					bResult = TRUE;
 					break;
 				}
-			END_FOREACH
+			}
 		}
 	}
 

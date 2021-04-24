@@ -87,9 +87,9 @@ CDXFView::CDXFView()
 
 CDXFView::~CDXFView()
 {
-	PLIST_FOREACH(auto p, &m_bindUndo)
+	BOOST_FOREACH(auto p, m_bindUndo) {
 		delete	p;
-	END_FOREACH
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -293,10 +293,10 @@ CDXFworking* CDXFView::CreateWorkingData(void)
 				pWork = new CDXFworkingOutline(pShape, &m_ltOutline[m_nSelect], m_dOffset);
 			// m_nSelect•ª‚ÍCDXFworkingOutline‚ÌÃÞ½Ä×¸À‚É‚Ädelete
 			nInOut = n;		// “àŠO‚Ç‚¿‚ç‚ÖŽwŽ¦‚µ‚½‚©‹L˜^‚µ‚Ä‚¨‚­
-			PLIST_FOREACH(CDXFdata* pData, &m_ltOutline[n])
+			BOOST_FOREACH(CDXFdata* pData, m_ltOutline[n]) {
 				if ( pData )
 					delete	pData;
-			END_FOREACH
+			}
 			m_ltOutline[0].RemoveAll();
 			m_ltOutline[1].RemoveAll();
 			break;
@@ -350,10 +350,10 @@ BOOL CDXFView::CreateOutlineTempObject(CDXFshape* pShape)
 		for ( i=0; i<SIZEOF(m_ltOutline); i++ ) {
 			if ( !pShape->CreateOutlineTempObject(i, &m_ltOutline[i], m_dOffset) ) {
 				nError++;	// ´×°¶³ÝÄ
-				PLIST_FOREACH(CDXFdata* pData, &m_ltOutline[i])
+				BOOST_FOREACH(CDXFdata* pData, m_ltOutline[i]) {
 					if ( pData )
 						delete	pData;
-				END_FOREACH
+				}
 				m_ltOutline[i].RemoveAll();
 #ifdef _DEBUG
 				printf("Loop%d Error\n", i);
@@ -380,10 +380,10 @@ BOOL CDXFView::CreateOutlineTempObject(CDXFshape* pShape)
 void CDXFView::DeleteOutlineTempObject(void)
 {
 	for ( int i=0; i<SIZEOF(m_ltOutline); i++ ) {
-		PLIST_FOREACH(CDXFdata* pData, &m_ltOutline[i])
+		BOOST_FOREACH(CDXFdata* pData, m_ltOutline[i]) {
 			if ( pData )
 				delete	pData;
-		END_FOREACH
+		}
 		m_ltOutline[i].RemoveAll();
 	}
 }
@@ -406,10 +406,10 @@ BOOL CDXFView::CancelForSelect(CDC* pDC/*=NULL*/)
 void CDXFView::AllChangeFactor_OutlineTempObject(void)
 {
 	for ( int i=0; i<SIZEOF(m_ltOutline); i++ ) {
-		PLIST_FOREACH(CDXFdata* pData, &m_ltOutline[i])
+		BOOST_FOREACH(CDXFdata* pData, m_ltOutline[i]) {
 			if ( pData )
 				pData->DrawTuning(m_dFactor);
-		END_FOREACH
+		}
 	}
 }
 
@@ -682,10 +682,10 @@ void CDXFView::DrawTempOutline(CDC* pDC)
 		CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_OUTLINE));
 		CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
 		pDC->SetROP2(R2_XORPEN);
-		PLIST_FOREACH(CDXFdata* pData, &m_ltOutline[m_nSelect])
+		BOOST_FOREACH(CDXFdata* pData, m_ltOutline[m_nSelect]) {
 			if ( pData )
 				pData->Draw(pDC);
-		END_FOREACH
+		}
 		pDC->SelectObject(pOldPen);
 		pDC->SelectObject(pOldBrush);
 	}

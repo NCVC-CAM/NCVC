@@ -2574,7 +2574,7 @@ CDXFpolyline::CDXFpolyline(CLayerData* pLayer, const CDXFpolyline* pPoly, LPCDXF
 	// 例外ｽﾛｰは上位でｷｬｯﾁ
 	CDXFdata*		pData;
 
-	PLIST_FOREACH(CDXFdata* pDataSrc, &pPoly->m_ltVertex)
+	BOOST_FOREACH(CDXFdata* pDataSrc, const_cast<CDXFlist&>(pPoly->m_ltVertex)) {
 		switch ( pDataSrc->GetType() ) {
 		case DXFPOINTDATA:
 			pData = new CDXFpoint(pLayer, static_cast<CDXFpoint*>(pDataSrc), lpBlock, DXFFLG_POLYCHILD);
@@ -2598,7 +2598,7 @@ CDXFpolyline::CDXFpolyline(CLayerData* pLayer, const CDXFpolyline* pPoly, LPCDXF
 			}
 			break;
 		}
-	END_FOREACH
+	}
 
 	EndSeq();
 }
@@ -2607,9 +2607,8 @@ CDXFpolyline::~CDXFpolyline()
 {
 	if ( m_pArrawLine )
 		delete	m_pArrawLine;
-	PLIST_FOREACH(CDXFdata* pData, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata* pData, m_ltVertex)
 		delete pData;
-	END_FOREACH
 }
 
 #ifdef _DEBUG
@@ -2666,7 +2665,7 @@ void CDXFpolyline::SetMaxRect(void)
 	m_rcMax.TopLeft()     = m_pt[0];	// 占有矩形初期化
 	m_rcMax.BottomRight() = m_pt[0];
 
-	PLIST_FOREACH(CDXFdata*	pData, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata*	pData, m_ltVertex) {
 		switch ( pData->GetType() ) {
 		case DXFPOINTDATA:
 			pt = pData->GetNativePoint(0);
@@ -2686,7 +2685,7 @@ void CDXFpolyline::SetMaxRect(void)
 			m_rcMax |= pData->GetMaxRect();
 			break;
 		}
-	END_FOREACH
+	}
 }
 
 void CDXFpolyline::SwapMakePt(int)
@@ -2696,11 +2695,11 @@ void CDXFpolyline::SwapMakePt(int)
 	CDXFdata::SwapMakePt(0);
 
 	// 構成ｵﾌﾞｼﾞｪｸﾄの座標入れ替え
-	PLIST_FOREACH(CDXFdata* pData, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata* pData, m_ltVertex) {
 		// CDXFpoint以外は回転方向をﾁｪﾝｼﾞ
 		if ( pData->GetType() != DXFPOINTDATA )
 			pData->SwapMakePt(0);
-	END_FOREACH
+	}
 }
 
 void CDXFpolyline::SwapNativePt(void)
@@ -2708,17 +2707,17 @@ void CDXFpolyline::SwapNativePt(void)
 	m_dwPolyFlags ^= (DXFPOLY_SEQ|DXFPOLY_SEQBAK);
 	CDXFdata::SwapNativePt();
 
-	PLIST_FOREACH(CDXFdata* pData, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata* pData, m_ltVertex) {
 		if ( pData->GetType() != DXFPOINTDATA )
 			pData->SwapNativePt();
-	END_FOREACH
+	}
 }
 
 void CDXFpolyline::RoundObjPoint(const CPointF& ptOrg, float dRound)
 {
-	PLIST_FOREACH(CDXFdata* pData, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata* pData, m_ltVertex) {
 		pData->RoundObjPoint(ptOrg, dRound);
-	END_FOREACH
+	}
 	CDXFdata::RoundObjPoint(ptOrg, dRound);
 }
 
@@ -2882,7 +2881,7 @@ void CDXFpolyline::EndSeq(void)
 	SetMaxRect();
 
 	// DataCount
-	PLIST_FOREACH(CDXFdata*	pData, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata*	pData, m_ltVertex) {
 		switch ( pData->GetType() ) {
 		case DXFPOINTDATA:
 			m_nObjCnt[0]++;
@@ -2896,7 +2895,7 @@ void CDXFpolyline::EndSeq(void)
 			m_nObjCnt[0]--;
 			break;
 		}
-	END_FOREACH
+	}
 	m_nObjCnt[0]--;		// 始点が含まれるため「-1」で線の数
 #ifdef _DEBUG
 	printf("CDXFpolyline::EndSeq() LineCnt=%d ArcCnt=%d Ellipse=%d\n",
@@ -3183,9 +3182,8 @@ void CDXFpolyline::CheckPolylineIntersection_SubLoop(const CDXFellipse* pData1, 
 
 void CDXFpolyline::DrawTuning(float f)
 {
-	PLIST_FOREACH(CDXFdata* pData, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata* pData, m_ltVertex)
 		pData->DrawTuning(f);
-	END_FOREACH
 }
 
 void CDXFpolyline::Draw(CDC* pDC) const
@@ -3230,9 +3228,8 @@ float CDXFpolyline::OrgTuning(BOOL bCalc)
 	// 順序を初期状態に戻す
 	m_dwPolyFlags = ((m_dwPolyFlags & DXFPOLY_SEQBAK)>>1) | (m_dwPolyFlags & ~DXFPOLY_SEQ);
 	// 各要素は値の入れ替えや原点からの距離は必要ないので OrgTuning(FALSE) で呼ぶ
-	PLIST_FOREACH(CDXFdata* pData, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata* pData, m_ltVertex)
 		pData->OrgTuning(FALSE);
-	END_FOREACH
 	// 以下 CDXFline と同じ
 	return CDXFline::OrgTuning(bCalc);
 }
@@ -3312,7 +3309,7 @@ int CDXFpolyline::GetIntersectionPoint(const CDXFdata* pData1, CPointF pt[], BOO
 	DXFLARGV	dxfLine;
 	dxfLine.pLayer = NULL;
 
-	PLIST_FOREACH(CDXFdata* pData2, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata* pData2, const_cast<CDXFlist&>(m_ltVertex)) {
 		if ( pData2->GetType() == DXFPOINTDATA ) {
 			pte = pData2->GetNativePoint(0);
 			if ( pts ) {
@@ -3333,7 +3330,7 @@ int CDXFpolyline::GetIntersectionPoint(const CDXFdata* pData1, CPointF pt[], BOO
 		}
 		if ( nResult )
 			break;
-	END_FOREACH
+	}
 
 	return nResult;
 }
@@ -3378,7 +3375,7 @@ int CDXFpolyline::CheckIntersectionCircle(const CPointF& ptc, float r) const
 	dxfLine.pLayer = NULL;
 
 	// 交点あり(nResult==2)が見つかるまで繰り返す
-	PLIST_FOREACH(CDXFdata* pData, &m_ltVertex)
+	BOOST_FOREACH(CDXFdata* pData, const_cast<CDXFlist&>(m_ltVertex)) {
 		if ( pData->GetType() == DXFPOINTDATA ) {
 			pte = pData->GetNativePoint(0);
 			if ( pts ) {
@@ -3396,7 +3393,7 @@ int CDXFpolyline::CheckIntersectionCircle(const CPointF& ptc, float r) const
 		}
 		if ( nResult >= 2 )
 			break;
-	END_FOREACH
+	}
 
 	return nResult;
 }

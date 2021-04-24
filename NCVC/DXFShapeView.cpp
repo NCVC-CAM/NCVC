@@ -262,14 +262,14 @@ void CDXFShapeView::OnUpdateShape(LPDXFADDSHAPE lpShape)
 	// ‰ÁHŽwŽ¦‚Ì“o˜^
 	tvInsert.hParent = hTree;
 	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-	PLIST_FOREACH(auto ref, lpShape->pShape->GetWorkList())
+	BOOST_FOREACH(auto ref, *lpShape->pShape->GetWorkList()) {
 		tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 		GetTreeCtrl().InsertItem(&tvInsert);
-	END_FOREACH
-	PLIST_FOREACH(auto ref, lpShape->pShape->GetOutlineList())
+	}
+	BOOST_FOREACH(auto ref, *lpShape->pShape->GetOutlineList()) {
 		tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 		GetTreeCtrl().InsertItem(&tvInsert);
-	END_FOREACH
+	}
 	if ( bExpand )
 		GetTreeCtrl().Expand(hTree, TVE_EXPAND);
 }
@@ -447,20 +447,20 @@ HTREEITEM CDXFShapeView::DragInsertLayer(void)
 			pShape->SetShapeAssemble((DXFSHAPE_ASSEMBLE)(dwRoot-1));
 		// ‰ÁHŽwŽ¦
 		tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-		PLIST_FOREACH(auto ref, pShape->GetWorkList())
+		BOOST_FOREACH(auto ref, *pShape->GetWorkList()) {
 			tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 			GetTreeCtrl().InsertItem(&tvInsert);
-		END_FOREACH
+		}
 		if ( dwRoot==ROOTTREE_LOCUS && bOutline ) {
 			// Œ³ÂØ°‚ªŽc‚Á‚Ä‚¢‚éó‘Ô‚ÅÎß²ÝÀíœ‚·‚é‚½‚ß
 			// ˆÈ~ÂØ°‘€ì‚ð‚·‚é‚ÆOnGetDispInfo()‚Å´×°‚Ì‰Â”\«‚ª‚ ‚é
 			pShape->DelOutlineData();	// —ÖŠs‰ÁHŽwŽ¦‘Síœ
 		}
 		else {
-			PLIST_FOREACH(auto ref, pShape->GetOutlineList())
+			BOOST_FOREACH(auto ref, *pShape->GetOutlineList()) {
 				tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 				GetTreeCtrl().InsertItem(&tvInsert);
-			END_FOREACH
+			}
 		}
 		// ˆÚ“®‘O‚Ìó‘Ô‚ð•œŒ³
 		if ( tvItem.state & TVIS_EXPANDED )
@@ -555,17 +555,17 @@ HTREEITEM CDXFShapeView::DragInsertShape(void)
 	tvInsert.hInsertAfter = TVI_LAST;
 	tvInsert.hParent = hTree;
 	tvInsert.item.iImage = tvInsert.item.iSelectedImage = TREEIMG_WORK;
-	PLIST_FOREACH(auto ref, m_pDragShape->GetWorkList())
+	BOOST_FOREACH(auto ref, *m_pDragShape->GetWorkList()) {
 		tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 		GetTreeCtrl().InsertItem(&tvInsert);
-	END_FOREACH
+	}
 	if ( dwRoot==ROOTTREE_LOCUS )
 		m_pDragShape->DelOutlineData();	// —ÖŠs‰ÁHŽwŽ¦‘Síœ
 	else {
-		PLIST_FOREACH(auto ref, m_pDragShape->GetOutlineList())
+		BOOST_FOREACH(auto ref, *m_pDragShape->GetOutlineList()) {
 			tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 			GetTreeCtrl().InsertItem(&tvInsert);
-		END_FOREACH
+		}
 	}
 
 	return hTree;
@@ -624,12 +624,12 @@ void CDXFShapeView::DragLink(void)
 	}
 	else {
 		// ‰ÁHŽwŽ¦‚ÌÄ“o˜^(—ÖŠsŽwŽ¦‚Í–³‚µ)
-		PLIST_FOREACH(auto ref, pShape->GetWorkList())
+		BOOST_FOREACH(auto ref, *pShape->GetWorkList()) {
 			hTree = GetTreeCtrl().InsertItem(TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE|TVIF_PARAM,
 				LPSTR_TEXTCALLBACK, TREEIMG_WORK, TREEIMG_WORK, 0, 0,
 				reinterpret_cast<LPARAM>(ref), m_hItemDrop, TVI_LAST);
 			ASSERT( hTree );
-		END_FOREACH
+		}
 		// Œ‹‡æ±²ÃÑ‚Ì‘I‘ð
 		GetTreeCtrl().SelectItem(m_hItemDrop);
 	}
@@ -865,17 +865,17 @@ void CDXFShapeView::AutoWorkingSet
 			tvInsert.hParent = hTree;
 			if ( !bAuto ) {
 				// •ûŒüEŠJŽnˆÊ’u‚È‚Ç‚Ì‰ÁHŽwŽ¦‚É‚Í IsAutoWorking() ‚ª–³‚¢
-				PLIST_FOREACH(auto ref, pShape->GetWorkList())
+				BOOST_FOREACH(auto ref, *pShape->GetWorkList()) {
 					tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 					GetTreeCtrl().InsertItem(&tvInsert);
-				END_FOREACH
+				}
 			}
-			PLIST_FOREACH(auto ref, pShape->GetOutlineList())
+			BOOST_FOREACH(auto ref, *pShape->GetOutlineList()) {
 				if ( !bAuto || ref->IsAutoWorking() ) {
 					tvInsert.item.lParam = reinterpret_cast<LPARAM>(ref);
 					GetTreeCtrl().InsertItem(&tvInsert);
 				}
-			END_FOREACH
+			}
 			GetTreeCtrl().Expand(hTree, TVE_EXPAND);
 		}
 	}

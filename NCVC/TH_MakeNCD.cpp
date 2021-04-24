@@ -1734,9 +1734,9 @@ INT_PTR MakeLoopEulerAdd(const CDXFmap* mpEuler)
 	ASSERT( !ltEuler.IsEmpty() );
 	if ( GetFlg(MKNC_FLG_DEEP) ) {
 		// 切削ﾃﾞｰﾀ生成
-		PLIST_FOREACH(pData, &ltEuler)
+		BOOST_FOREACH(pData, ltEuler) {
 			pData->SetMakeFlg();
-		END_FOREACH
+		}
 		g_ltDeepData.AddTail(&ltEuler);
 		// 深彫が全体か否か
 		if ( GetNum(MKNC_NUM_DEEPALL) == 0 ) {
@@ -1754,9 +1754,9 @@ INT_PTR MakeLoopEulerAdd(const CDXFmap* mpEuler)
 		pData = ltEuler.GetHead();
 		g_pfnAddMoveGdata(pData);
 		// 切削ﾃﾞｰﾀ生成
-		PLIST_FOREACH(pData, &ltEuler)
+		BOOST_FOREACH(pData, ltEuler) {
 			_AddMakeGdataCut(pData);
-		END_FOREACH
+		}
 		// 最後に生成したﾃﾞｰﾀを待避
 		CDXFdata::ms_pData = pData;
 	}
@@ -1999,13 +1999,13 @@ BOOL MakeLoopShapeAdd(CDXFshape* pShape, CDXFdata* pData)
 	obMerge.SetSize(0, 64);
 
 	// 形状に属する全ての輪郭ｵﾌﾞｼﾞｪｸﾄを統合
-	PLIST_FOREACH(pOutline, pOutlineList)
+	BOOST_FOREACH(pOutline, *pOutlineList) {
 		for ( i=0; i<pOutline->GetOutlineSize() && IsThread(); i++ ) {
 			pChain = pOutline->GetOutlineObject(i);
 			pChain->OrgTuning();
 			obMerge.Add(pChain);
 		}
-	END_FOREACH
+	}
 
 	// 統合した輪郭ｵﾌﾞｼﾞｪｸﾄを面積で並べ替え
 	obMerge.Sort(AreaSizeCompareFunc);
@@ -2228,14 +2228,14 @@ BOOL MakeLoopShapeAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* mpEuler, BOOL& b
 	tie(pWork, pDataFix) = pShape->GetDirectionObject();
 	if ( pDataFix ) {
 		// 方向指示がltEulerに含まれる場合だけﾁｪｯｸ
-		PLIST_FOREACH(pData, &ltEuler)
+		BOOST_FOREACH(pData, ltEuler) {
 			if ( pDataFix == pData ) {
 				CPointF	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() - ptOrg ),
 						pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
 				bReverse = pData->IsDirectionPoint(pts, pte);
 				break;
 			}
-		END_FOREACH
+		}
 	}
 
 	// 生成順序の設定
@@ -2350,13 +2350,13 @@ BOOL MakeLoopDeepAdd(void)
 #ifdef _DEBUGOLD
 	int	n;
 	printf("LayerName=%s\n", LPCTSTR(g_ltDeepData.GetHead()->GetParentLayer()->GetLayerName()));
-	PLIST_FOREACH(pData, &g_ltDeepData)
+	BOOST_FOREACH(pData, g_ltDeepData) {
 		if ( pData )
 			n = pData->GetParentLayer()->IsCutType() ? 1 : 2;
 		else
 			n = 0;
 		printf("ListType=%d\n", n);
-	END_FOREACH
+	}
 #endif
 
 	// 回転数
@@ -2408,7 +2408,7 @@ BOOL MakeLoopDeepAdd(void)
 			if ( bEndZApproach ) { // GetNum(MKNC_NUM_DEEPROUND) == 0
 				bAction = !bAction;
 				// 各ｵﾌﾞｼﾞｪｸﾄの始点終点を入れ替え
-				PLIST_FOREACH(pData, &g_ltDeepData)
+				BOOST_FOREACH(pData, g_ltDeepData) {
 					if ( pData && pData->GetMakeType()!=DXFCIRCLEDATA ) {
 						// 円ﾃﾞｰﾀ以外の座標入れ替え
 						if ( pData->GetMakeType() == DXFELLIPSEDATA ) {
@@ -2421,7 +2421,7 @@ BOOL MakeLoopDeepAdd(void)
 						else
 							pData->SwapMakePt(0);
 					}
-				END_FOREACH
+				}
 			}
 			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
 			if ( GetNum(MKNC_NUM_DEEPALL) == 0 )

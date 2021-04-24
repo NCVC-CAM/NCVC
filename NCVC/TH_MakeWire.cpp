@@ -848,14 +848,14 @@ BOOL MakeLoopWireAdd_EulerMap_Make(CDXFshape* pShape, CDXFmap* pEuler, BOOL& bEu
 	tie(pWork, pDataFix) = pShape->GetDirectionObject();
 	if ( pDataFix ) {
 		// •ûŒüw¦‚ªltEuler‚ÉŠÜ‚Ü‚ê‚éê‡‚¾‚¯Áª¯¸
-		PLIST_FOREACH(pData, &ltEuler)
+		BOOST_FOREACH(pData, ltEuler) {
 			if ( pDataFix == pData ) {
 				CPointF	pts( static_cast<CDXFworkingDirection*>(pWork)->GetStartPoint() - ptOrg ),
 						pte( static_cast<CDXFworkingDirection*>(pWork)->GetArrowPoint() - ptOrg );
 				bReverse = pData->IsDirectionPoint(pts, pte);
 				break;
 			}
-		END_FOREACH
+		}
 	}
 
 	// ¶¬‡˜‚Ìİ’è

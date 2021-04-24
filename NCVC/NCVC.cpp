@@ -307,10 +307,10 @@ int CNCVCApp::ExitInstance()
 
 	// MRUﾘｽﾄに準拠した描画情報を保存
 	WriteRecentViewList();
-	PLIST_FOREACH(CRecentViewInfo* pInfo, &m_liRecentView)
+	BOOST_FOREACH(CRecentViewInfo* pInfo, m_liRecentView) {
 		if ( pInfo )
 			delete	pInfo;
-	END_FOREACH
+	}
 	m_liRecentView.RemoveAll();
 
 	// ｵﾌﾟｼｮﾝ関連の削除
@@ -320,9 +320,9 @@ int CNCVCApp::ExitInstance()
 	if ( m_pDefViewInfo )	delete	m_pDefViewInfo;
 
 	// 外部ｱﾌﾟﾘｹｰｼｮﾝ情報削除
-	PLIST_FOREACH(auto ptr, &m_liExec)
+	BOOST_FOREACH(auto ptr, m_liExec) {
 		delete	ptr;
-	END_FOREACH
+	}
 	m_liExec.RemoveAll();
 	m_mpExec.RemoveAll();
 
@@ -642,10 +642,10 @@ void CNCVCApp::SaveExecData(void)
 	// 外部ｱﾌﾟﾘｹｰｼｮﾝ登録
 	WriteProfileInt(strRegKey, strEntry, (int)m_liExec.GetCount());
 	int		i = 0;
-	PLIST_FOREACH(CExecOption* pExec, &m_liExec)
+	BOOST_FOREACH(CExecOption* pExec, m_liExec) {
 		strFormat.Format(IDS_COMMON_FORMAT, strEntry, i++);
 		WriteProfileString(strRegKey, strFormat, pExec->GetStringData());
-	END_FOREACH
+	}
 }
 
 BOOL CNCVCApp::CreateExecMap(void)
@@ -654,11 +654,11 @@ BOOL CNCVCApp::CreateExecMap(void)
 	m_wExec = EXECSTARTID;
 
 	try {
-		PLIST_FOREACH(CExecOption* pExec, &m_liExec)
+		BOOST_FOREACH(CExecOption* pExec, m_liExec) {
 			// ﾒﾆｭｰIDに対するﾏｯﾌﾟ作成
 			m_mpExec.SetAt(m_wExec, pExec);
 			pExec->SetMenuID(m_wExec++);
-		END_FOREACH
+		}
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -1016,13 +1016,13 @@ void CNCVCApp::ReloadDXFDocument(void)
 				ltDoc.AddTail(pDoc);
 		}
 		// 必要な情報を取得後，閉じて開く
-		PLIST_FOREACH(pDoc, &ltDoc)
+		BOOST_FOREACH(pDoc, ltDoc) {
 			pfnSerialFunc = pDoc->GetSerializeFunc();
 			strFileName = pDoc->GetPathName();
 			pDoc->OnCloseDocument();
 			SetSerializeFunc(pfnSerialFunc);
 			m_pDocTemplate[TYPE_DXF]->OpenDocumentFile(strFileName);
-		END_FOREACH
+		}
 		SetSerializeFunc((PFNNCVCSERIALIZEFUNC)NULL);
 	}
 	catch (CMemoryException* e) {
@@ -1442,9 +1442,9 @@ void CNCVCApp::OnOptionMC()
 			while ( pos )
 				listStrFileName.AddTail(m_pDocTemplate[TYPE_NCD]->GetNextDoc(pos)->GetPathName());
 			m_pDocTemplate[TYPE_NCD]->CloseAllDocuments(FALSE);
-			PLIST_FOREACH(strBuf, &listStrFileName)
+			BOOST_FOREACH(strBuf, listStrFileName) {
 				OpenDocumentFile(strBuf);
-			END_FOREACH
+			}
 		}
 		catch (CMemoryException* e) {
 			AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -1599,10 +1599,10 @@ void CNCVCApp::OnOptionExec()
 	INT_PTR		i=0, nBtnCnt = m_liExec.GetCount();
 	try {
 		pMenuID = new WORD[nBtnCnt];
-		PLIST_FOREACH(CExecOption* pExec, &m_liExec)
+		BOOST_FOREACH(CExecOption* pExec, m_liExec) {
 			strArray.Add( pExec->GetToolTip() );
 			pMenuID[i++] = pExec->GetMenuID();
-		END_FOREACH
+		}
 	}
 	catch (CMemoryException* e) {
 		if ( pMenuID )

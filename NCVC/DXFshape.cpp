@@ -209,9 +209,8 @@ CDXFworkingOutline::~CDXFworkingOutline()
 {
 	for ( int i=0; i<m_obOutline.GetSize(); i++ ) {
 		CDXFchain* pChain = m_obOutline[i];
-		PLIST_FOREACH(CDXFdata* pData, pChain)
+		BOOST_FOREACH(CDXFdata* pData, *pChain)
 			delete	pData;
-		END_FOREACH
 		delete	pChain;
 	}
 	m_obOutline.RemoveAll();
@@ -223,7 +222,7 @@ void CDXFworkingOutline::SeparateAdd_Construct(const CDXFchain* pOutline)
 	CDXFchain*	pChain = NULL;
 	;
 	// NULL で分割された集合を分離して登録
-	PLIST_FOREACH(CDXFdata* pData, pOutline)
+	BOOST_FOREACH(CDXFdata* pData, *const_cast<CDXFchain*>(pOutline)) {
 		if ( pData ) {
 			if ( !pChain )
 				pChain = new CDXFchain;
@@ -234,7 +233,7 @@ void CDXFworkingOutline::SeparateAdd_Construct(const CDXFchain* pOutline)
 			m_obOutline.Add(pChain);
 			pChain = NULL;
 		}
-	END_FOREACH
+	}
 
 	if ( pChain )
 		m_obOutline.Add(pChain);
@@ -245,11 +244,11 @@ void CDXFworkingOutline::SeparateAdd_Construct(const CDXFchain* pOutline)
 	for ( int i=0; i<m_obOutline.GetSize(); i++ ) {
 		pChain = m_obOutline[i];
 		int	j = 0;
-		PLIST_FOREACH(auto ref, pChain)
+		BOOST_FOREACH(auto ref, *const_cast<CDXFchain*>(pChain)) {
 			if ( !ref )
 				printf("??? NULL element %d\n", j);
 			j++;
-		END_FOREACH
+		}
 	}
 #endif
 }
@@ -358,14 +357,14 @@ void CDXFworkingOutline::SeparateModify(void)
 #ifdef _DEBUG
 		pte.reset();
 		printf("%s nLoop=%d\n", LPCTSTR(m_pShape->GetShapeName()), i);
-		PLIST_FOREACH(pData, pOutline)
+		BOOST_FOREACH(pData, *pOutline) {
 			ptDbgS = pData->GetNativePoint(0);
 			ptDbgE = pData->GetNativePoint(1);
 			printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s\n",
 				ptDbgS.x, ptDbgS.y, ptDbgE.x, ptDbgE.y,
 				pte && sqrt(GAPCALC(*pte-ptDbgS))>=NCMIN ? "X" : " ");
 			pte = ptDbgE;
-		END_FOREACH
+		}
 #endif
 	}
 
@@ -374,14 +373,14 @@ void CDXFworkingOutline::SeparateModify(void)
 		for ( i=nMainLoop; i<m_obOutline.GetSize(); i++ ) {
 			pte.reset();
 			printf("--- Separate Add %d ---\n", i);
-			PLIST_FOREACH(pData, m_obOutline[i])
+			BOOST_FOREACH(pData, *m_obOutline[i]) {
 				ptDbgS = pData->GetNativePoint(0);
 				ptDbgE = pData->GetNativePoint(1);
 				printf("pt=(%.3f, %.3f) - (%.3f, %.3f) %s\n",
 					ptDbgS.x, ptDbgS.y, ptDbgE.x, ptDbgE.y,
 					pte && sqrt(GAPCALC(*pte-ptDbgS))>=NCMIN ? "X" : " ");
 				pte = ptDbgE;
-			END_FOREACH
+			}
 		}
 	}
 #endif
@@ -413,18 +412,18 @@ void CDXFworkingOutline::SetMergeHandle(const CString& strHandle)
 void CDXFworkingOutline::DrawTuning(float f)
 {
 	for ( int i=0; i<m_obOutline.GetSize(); i++ ) {
-		PLIST_FOREACH(CDXFdata* pData, m_obOutline[i])
+		BOOST_FOREACH(CDXFdata* pData, *m_obOutline[i]) {
 			pData->DrawTuning(f);
-		END_FOREACH
+		}
 	}
 }
 
 void CDXFworkingOutline::Draw(CDC* pDC) const
 {
 	for ( int i=0; i<m_obOutline.GetSize(); i++ ) {
-		PLIST_FOREACH(CDXFdata* pData, m_obOutline[i])
+		BOOST_FOREACH(CDXFdata* pData, *m_obOutline[i]) {
 			pData->Draw(pDC);
-		END_FOREACH
+		}
 	}
 }
 
@@ -451,9 +450,9 @@ void CDXFworkingOutline::Serialize(CArchive& ar)
 			pChain = m_obOutline[i];
 			nLoop2 =  (int)pChain->GetSize();
 			ar << nLoop2 << pChain->GetChainFlag();
-			PLIST_FOREACH(pData, pChain)
+			BOOST_FOREACH(pData, *pChain) {
 				ar << pData;
-			END_FOREACH
+			}
 		}
 		// 併合情報
 		m_obMergeHandle.Serialize(ar);
@@ -983,9 +982,9 @@ void CDXFmap::Append(const CDXFmap* pMap)
 
 void CDXFmap::Append(const CDXFchain* pChain)
 {
-	PLIST_FOREACH(CDXFdata* pData, pChain)
+	BOOST_FOREACH(CDXFdata* pData, *const_cast<CDXFchain*>(pChain)) {
 		SetPointMap(pData);
-	END_FOREACH
+	}
 }
 
 INT_PTR CDXFmap::GetObjectCount(void) const
@@ -1137,9 +1136,9 @@ void CDXFchain::Serialize(CArchive& ar)
 	if ( ar.IsStoring() ) {
 		nLstCnt = (UINT)GetCount();
 		ar << nLstCnt << m_dwFlags;
-		PLIST_FOREACH(CDXFdata* pData, this)
+		BOOST_FOREACH(CDXFdata* pData, *this) {
 			ar << pData->GetSerializeSeq();
-		END_FOREACH
+		}
 	}
 	else {
 		DWORD		nIndex;
@@ -1158,31 +1157,31 @@ void CDXFchain::Serialize(CArchive& ar)
 
 void CDXFchain::SetMakeFlags(void)
 {
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *this) {
 		pData->SetMakeFlg();
-	END_FOREACH
+	}
 }
 
 void CDXFchain::ReverseMakePt(void)
 {
 	// 全ｵﾌﾞｼﾞｪｸﾄの座標反転
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *this) {
 		pData->SwapMakePt(0);
-	END_FOREACH
+	}
 }
 
 void CDXFchain::ReverseNativePt(void)
 {
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *this) {
 		pData->SwapNativePt();
-	END_FOREACH
+	}
 }
 
 void CDXFchain::CopyToMap(CDXFmap* pMap)
 {
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *this) {
 		pMap->SetPointMap(pData);
-	END_FOREACH
+	}
 }
 
 BOOL CDXFchain::IsLoop(void) const
@@ -1214,7 +1213,7 @@ BOOL CDXFchain::IsPointInPolygon(const CPointF& ptTarget) const
 
 	BOOL	bNext = TRUE;
 	// 各ｵﾌﾞｼﾞｪｸﾄの始点を配列に
-	PLIST_FOREACH(pData, this)
+	BOOST_FOREACH(pData, *const_cast<CDXFchain*>(this)) {
 		if ( pData ) {
 			switch ( pData->GetType() ) {
 			case DXFLINEDATA:
@@ -1232,7 +1231,7 @@ BOOL CDXFchain::IsPointInPolygon(const CPointF& ptTarget) const
 				bNext = TRUE;
 			}
 		}
-	END_FOREACH
+	}
 
 	if ( bNext ) {
 		// 最終ｵﾌﾞｼﾞｪｸﾄの終点をｾｯﾄ
@@ -1333,17 +1332,17 @@ INT_PTR CDXFchain::GetObjectCount(void) const
 float CDXFchain::GetLength(void) const
 {
 	float	dLength = 0;
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *const_cast<CDXFchain*>(this)) {
 		dLength += pData->GetLength();
-	END_FOREACH
+	}
 	return dLength;
 }
 
 void CDXFchain::AllChainObject_ClearSearchFlg(void)
 {
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *this) {
 		pData->ClearSearchFlg();
-	END_FOREACH
+	}
 }
 
 float CDXFchain::GetSelectObjectFromShape
@@ -1358,7 +1357,7 @@ float CDXFchain::GetSelectObjectFromShape
 		_rcView.SetRect(rcView);
 
 	// 指定座標に一番近いｵﾌﾞｼﾞｪｸﾄを検索
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *this) {
 		// DXFViewからの呼び出しで pData が NULL の可能性アリ
 		if ( !pData )
 			continue;
@@ -1370,7 +1369,7 @@ float CDXFchain::GetSelectObjectFromShape
 			if ( pDataResult )
 				*pDataResult = pData;
 		}
-	END_FOREACH
+	}
 
 	return dGapMin;
 }
@@ -1436,9 +1435,9 @@ void CDXFchain::SetVectorPoint(POSITION pos1, CVPointF& vpt, size_t n)
 
 void CDXFchain::SetShapeSwitch(BOOL bSelect)
 {
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *this) {
 		pData->SetDxfFlg(DXFFLG_SELECT, bSelect);
-	END_FOREACH
+	}
 }
 
 void CDXFchain::RemoveObject(const CDXFdata* pData)
@@ -1459,23 +1458,23 @@ void CDXFchain::DrawShape(CDC* pDC) const
 	CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
 	CPen* pOldPen = pDC->SelectObject(AfxGetNCVCMainWnd()->GetPenDXF(DXFPEN_CUTTER));
 	pDC->SetROP2(R2_COPYPEN);
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *const_cast<CDXFchain*>(this)) {
 		dwSel = pData->GetDxfFlg() & DXFFLG_SELECT;
 		if ( dwSel != dwSelBak ) {
 			dwSelBak = dwSel;
 			pDC->SelectObject(pData->GetDrawPen());
 		}
 		pData->Draw(pDC);
-	END_FOREACH
+	}
 	pDC->SelectObject(pOldPen);
 	pDC->SelectObject(pOldBrush);
 }
 
 void CDXFchain::OrgTuning(void)
 {
-	PLIST_FOREACH(CDXFdata* pData, this)
+	BOOST_FOREACH(CDXFdata* pData, *this) {
 		pData->OrgTuning(FALSE);
-	END_FOREACH
+	}
 	// 自分自身のﾌﾗｸﾞも初期化
 	m_dwFlags &= ~(DXFMAPFLG_MAKE|DXFMAPFLG_SEARCH);
 }
@@ -1522,10 +1521,10 @@ void CDXFshape::Constructor(DXFSHAPE_ASSEMBLE enAssemble, LPCTSTR lpszShape, DWO
 
 void CDXFshape::SetDetailInfo(CDXFchain* pChain)
 {
-	PLIST_FOREACH(CDXFdata* pData, pChain)
+	BOOST_FOREACH(CDXFdata* pData, *pChain) {
 		m_rcMax |= pData->GetMaxRect();
 		pData->SetParentMap(this);
-	END_FOREACH
+	}
 }
 
 void CDXFshape::SetDetailInfo(CDXFmap* pMap)
@@ -1545,12 +1544,12 @@ void CDXFshape::SetDetailInfo(CDXFmap* pMap)
 
 CDXFshape::~CDXFshape()
 {
-	PLIST_FOREACH(auto ref, &m_ltWork)
+	BOOST_FOREACH(auto ref, m_ltWork) {
 		delete	ref;
-	END_FOREACH
-	PLIST_FOREACH(auto ref, &m_ltOutline)
+	}
+	BOOST_FOREACH(auto ref, m_ltOutline) {
 		delete	ref;
-	END_FOREACH
+	}
 	m_ltWork.RemoveAll();
 	m_ltOutline.RemoveAll();
 	CrearScanLine_Lathe();		// Clear m_obLathe
@@ -1716,12 +1715,12 @@ tuple<CDXFworking*, CDXFdata*> CDXFshape::GetDirectionObject(void) const
 	CDXFworking*	pWork;
 	CDXFdata*		pData = NULL;
 
-	PLIST_FOREACH(pWork, &m_ltWork)
+	BOOST_FOREACH(pWork, const_cast<CDXFworkingList&>(m_ltWork)) {
 		if ( pWork->GetWorkingType() == WORK_DIRECTION ) {
 			pData = pWork->GetTargetObject();
 			break;
 		}
-	END_FOREACH
+	}
 
 	return make_tuple(pWork, pData);
 }
@@ -1731,12 +1730,12 @@ tuple<CDXFworking*, CDXFdata*> CDXFshape::GetStartObject(void) const
 	CDXFworking*	pWork;
 	CDXFdata*		pData = NULL;
 
-	PLIST_FOREACH(pWork, &m_ltWork)
+	BOOST_FOREACH(pWork, const_cast<CDXFworkingList&>(m_ltWork)) {
 		if ( pWork->GetWorkingType() == WORK_START ) {
 			pData = pWork->GetTargetObject();
 			break;
 		}
-	END_FOREACH
+	}
 
 	return make_tuple(pWork, pData);
 }
@@ -1910,7 +1909,7 @@ BOOL CDXFshape::LinkShape(CDXFshape* pShape)
 		// 結合出来るかどうか(座標検索)
 		pChain = pShape->GetShapeChain();
 		if ( pChain ) {
-			PLIST_FOREACH(CDXFdata* pData, pChain)
+			BOOST_FOREACH(CDXFdata* pData, *pChain) {
 				pt = pData->GetNativePoint(1);
 				if ( pMapTmp->PLookup(pt) ) {
 					// １つでも見つかれば結合処理
@@ -1918,7 +1917,7 @@ BOOL CDXFshape::LinkShape(CDXFshape* pShape)
 					pMapTmp->Append(pChain);
 					break;
 				}
-			END_FOREACH
+			}
 		}
 		else {
 			pMap = pShape->GetShapeMap();
@@ -2092,9 +2091,9 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dO
 			}
 			else {
 				for ( k=0; k<nLoop; k++ ) {
-					PLIST_FOREACH(pData, obSepArray[k])
+					BOOST_FOREACH(pData, *obSepArray[k]) {
 						delete	pData;
-					END_FOREACH
+					}
 					delete	obSepArray[k];
 				}
 			}
@@ -2196,9 +2195,9 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dO
 	if ( !bResult ) {
 		// ｴﾗｰﾘｶﾊﾞﾘ
 		for ( k=0; k<nLoop; k++ ) {
-			PLIST_FOREACH(pData, obSepArray[k])
+			BOOST_FOREACH(pData, *obSepArray[k]) {
 				delete	pData;
-			END_FOREACH
+			}
 			delete	obSepArray[k];
 		}
 		return FALSE;
@@ -2484,13 +2483,13 @@ void CDXFshape::CreateScanLine_Lathe(int n, float d)
 
 	while ( n > 0 ) {
 		pChain = new CDXFchain;
-		PLIST_FOREACH(CDXFdata* pDataOrig, pChainOrig)
+		BOOST_FOREACH(CDXFdata* pDataOrig, *pChainOrig) {
 			pData = CreateDxfLatheObject(pDataOrig, n*d);
 			if ( pData ) {
 				pChain->AddTail(pData);
 				pChain->SetMaxRect(pData);
 			}
-		END_FOREACH
+		}
 		n--;
 		m_obLathe.Add(pChain);
 	}
@@ -2500,9 +2499,9 @@ void CDXFshape::CrearScanLine_Lathe(void)
 {
 	for ( int i=0; i<m_obLathe.GetSize(); i++ ) {
 		CDXFchain* pChain = m_obLathe[i];
-		PLIST_FOREACH(CDXFdata* pData, pChain)
+		BOOST_FOREACH(CDXFdata* pData, *pChain) {
 			delete	pData;
-		END_FOREACH
+		}
 		delete	pChain;
 	}
 	m_obLathe.RemoveAll();
@@ -2608,9 +2607,9 @@ BOOL CDXFshape::SeparateOutlineIntersection
 
 	if ( !bResult && pSepList ) {
 		// ｺﾞﾐ掃除
-		PLIST_FOREACH(pData, pSepList)
+		BOOST_FOREACH(pData, *pSepList) {
 			delete	pData;
-		END_FOREACH
+		}
 	}
 
 	return TRUE;
@@ -2698,27 +2697,27 @@ BOOL CDXFshape::CheckSeparateChain(CDXFlist* pResult, const float dOffset)
 
 BOOL CDXFshape::CheckIntersectionCircle(const CPointF& ptc, float dOffset)
 {
-	const CDXFchain*	pChain = GetShapeChain();
+	CDXFchain*	pChain = GetShapeChain();
 	ASSERT( pChain );
 
 	// ｵﾘｼﾞﾅﾙｵﾌﾞｼﾞｪｸﾄとの交点ﾁｪｯｸ
-	PLIST_FOREACH(CDXFdata* pData, pChain)
+	BOOST_FOREACH(CDXFdata* pData, *pChain) {
 		// 交点あり(==2)なら TRUE、「接する」(==1)はOK!
 		if ( pData->CheckIntersectionCircle(ptc, dOffset) > 1 )
 			return TRUE;
-	END_FOREACH
+	}
 
 	return FALSE;
 }
 
 void CDXFshape::AllChangeFactor(float dFactor) const
 {
-	PLIST_FOREACH(auto ref, &m_ltWork)
+	BOOST_FOREACH(auto ref, const_cast<CDXFworkingList&>(m_ltWork)) {
 		ref->DrawTuning(dFactor);
-	END_FOREACH
-	PLIST_FOREACH(auto ref, &m_ltOutline)
+	}
+	BOOST_FOREACH(auto ref, const_cast<COutlineList&>(m_ltOutline)) {
 		ref->DrawTuning(dFactor);
-	END_FOREACH
+	}
 }
 
 void CDXFshape::DrawWorking(CDC* pDC) const
@@ -2734,7 +2733,7 @@ void CDXFshape::DrawWorking(CDC* pDC) const
 	CPen*	pOldPen   = pDC->SelectObject(pPen[i]);
 	CBrush* pOldBrush = (CBrush *)pDC->SelectStockObject(NULL_BRUSH);
 	pDC->SetROP2(R2_COPYPEN);
-	PLIST_FOREACH(pWork, &m_ltWork)
+	BOOST_FOREACH(pWork, const_cast<CDXFworkingList&>(m_ltWork)) {
 		j = pWork->GetWorkingFlag() & DXFWORKFLG_SELECT ? 1 : 0;
 		if ( i != j ) {
 			i = j;
@@ -2749,16 +2748,16 @@ void CDXFshape::DrawWorking(CDC* pDC) const
 				pDC->SelectObject(AfxGetNCVCMainWnd()->GetBrushDXF(DXFBRUSH_START));
 		}
 		pWork->Draw(pDC);
-	END_FOREACH
+	}
 	pDC->SelectStockObject(NULL_BRUSH);
-	PLIST_FOREACH(pOutline, &m_ltOutline)
+	BOOST_FOREACH(pOutline, const_cast<COutlineList&>(m_ltOutline)) {
 		j = pOutline->GetWorkingFlag() & DXFWORKFLG_SELECT ? 1 : 0;
 		if ( i != j ) {
 			i = j;
 			pDC->SelectObject( pPen[i] );
 		}
 		pOutline->Draw(pDC);
-	END_FOREACH
+	}
 
 	pDC->SelectObject(pOldBrush);
 	pDC->SelectObject(pOldPen);

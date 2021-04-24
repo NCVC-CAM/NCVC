@@ -322,9 +322,9 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 	CMCTOOLINFO		tool;
 
 	// çHãÔèÓïÒÇàÍíUçÌèú
-	PLIST_FOREACH(pToolInfo, &m_ltTool)
+	BOOST_FOREACH(pToolInfo, m_ltTool) {
 		delete	pToolInfo;
-	END_FOREACH
+	}
 	m_ltTool.RemoveAll();
 
 	// ñΩóﬂÇï™äÑ
@@ -551,28 +551,28 @@ BOOL CMCOption::AddMCListHistory(LPCTSTR lpszSearch)
 
 optional<float> CMCOption::GetToolD(int nTool) const
 {
-	PLIST_FOREACH(CMCTOOLINFO* pTool, &m_ltTool)
+	BOOST_FOREACH(CMCTOOLINFO* pTool, const_cast<CMCTOOLLIST&>(m_ltTool)) {
 		if ( pTool->m_nTool == nTool )
 			return pTool->m_dToolD;
-	END_FOREACH
+	}
 	return optional<float>();
 }
 
 optional<float> CMCOption::GetToolH(int nTool) const
 {
-	PLIST_FOREACH(CMCTOOLINFO* pTool, &m_ltTool)
+	BOOST_FOREACH(CMCTOOLINFO* pTool, const_cast<CMCTOOLLIST&>(m_ltTool)) {
 		if ( pTool->m_nTool == nTool )
 			return pTool->m_dToolH;
-	END_FOREACH
+	}
 	return optional<float>();
 }
 
 int CMCOption::GetMillType(int nTool) const
 {
-	PLIST_FOREACH(CMCTOOLINFO* pTool, &m_ltTool)
+	BOOST_FOREACH(CMCTOOLINFO* pTool, const_cast<CMCTOOLLIST&>(m_ltTool)) {
 		if ( pTool->m_nTool == nTool )
 			return pTool->m_nType;
-	END_FOREACH
+	}
 	return 0;
 }
 
@@ -582,12 +582,12 @@ BOOL CMCOption::AddTool(int nTool, float d, BOOL bAbs)
 	BOOL			bMatch = FALSE, bResult = TRUE;
 
 	// ë∂ç›¡™Ø∏
-	PLIST_FOREACH(pTool, &m_ltTool)
+	BOOST_FOREACH(pTool, m_ltTool) {
 		if ( pTool->m_nTool == nTool ) {
 			bMatch = TRUE;
 			break;
 		}
-	END_FOREACH
+	}
 	if ( bMatch && !bAbs )
 		d += pTool->m_dToolD;	// ≤›∏ÿ“›¿Ÿ
 
@@ -633,10 +633,10 @@ void CMCOption::AddMCHistory_ComboBox(CComboBox& combo)
 
 	// ∫›ŒﬁŒﬁØ∏ΩÇ…ã@äBèÓïÒÇÃóöóÇí«â¡
 	CString	strBuf, strPath, strFile;
-	PLIST_FOREACH(strBuf, &m_strMCList)
+	BOOST_FOREACH(strBuf, m_strMCList) {
 		::Path_Name_From_FullPath(strBuf, strPath, strFile);
 		combo.AddString(strFile);
-	END_FOREACH
+	}
 	combo.AddString( ss_lpszRefer );
 
 	combo.SetCurSel( combo.GetCount() > 1 ? 0 : -1 );

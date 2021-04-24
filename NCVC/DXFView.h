@@ -53,8 +53,8 @@ class CDXFView : public CViewBase
 	float		m_dOffset;			// ↑のｵﾌｾｯﾄ値
 	int			m_nSelect;			// m_ptArraw[0|1] or -1
 	CRect		m_rcDrawWork;		// ﾜｰｸ矩形(bind)
-	std::vector<SELECTBIND>						m_bindSel;	// 選択情報
-	CTypedPtrListEx<CPtrList, LPCADBINDINFO>	m_bindUndo;	// 移動のUNDO蓄積
+	std::vector<SELECTBIND>					m_bindSel;	// 選択情報
+	CTypedPtrList<CPtrList, LPCADBINDINFO>	m_bindUndo;	// 移動のUNDO蓄積
 	ENBINDSTATE	m_enBind;
 	// ↓謎のﾒﾓﾘﾘｰｸが発生
 //	CToolTipCtrl*	m_pToolTip;		// 子ﾋﾞｭｰ用ToolTip(ﾌｧｲﾙ名表示)

@@ -39,10 +39,10 @@ CExecSetupDlg::CExecSetupDlg() : CDialog(CExecSetupDlg::IDD, NULL)
 	//}}AFX_DATA_INIT
 
 	// Œ»Ý“o˜^Ï‚Ý‚Ìî•ñ‚ÍC“o˜^EíœÌ×¸Þ‚ð¸Ø±
-	PLIST_FOREACH(CExecOption* pExec, AfxGetNCVCApp()->GetExecList())
+	BOOST_FOREACH(CExecOption* pExec, *AfxGetNCVCApp()->GetExecList()) {
 		pExec->m_bDlgAdd = FALSE;
 		pExec->m_bDlgDel = FALSE;
-	END_FOREACH
+	}
 }
 
 void CExecSetupDlg::DoDataExchange(CDataExchange* pDX)
@@ -134,7 +134,7 @@ BOOL CExecSetupDlg::OnInitDialog()
 	lvi.iSubItem = 0;
 	lvi.iImage = I_IMAGECALLBACK;
 	lvi.pszText = LPSTR_TEXTCALLBACK;
-	PLIST_FOREACH(CExecOption* pExec, pExeList)
+	BOOST_FOREACH(CExecOption* pExec, *pExeList) {
 		lvi.iItem  = i++;
 		lvi.lParam = (LPARAM)pExec;
 		if ( m_ctList.InsertItem(&lvi) < 0 ) {
@@ -143,7 +143,7 @@ BOOL CExecSetupDlg::OnInitDialog()
 			AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 			break;
 		}
-	END_FOREACH
+	}
 	// —ñ•
 	m_ctList.SetColumnWidth(0, LVSCW_AUTOSIZE);
 	// Ú×•\Ž¦

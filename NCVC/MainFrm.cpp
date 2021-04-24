@@ -602,7 +602,7 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 	try {
 		i = 0;
 		lpInfo = new CUSTTBINFO[pExeList->GetCount()];
-		PLIST_FOREACH(pExec, pExeList)
+		BOOST_FOREACH(pExec, *pExeList) {
 			nIndex = m_ilEnableToolBar[TOOLIMAGE_EXEC].Add(
 							GetIconHandle(FALSE, pExec->GetFileName()) );
 			pExec->SetImageNo(nIndex);
@@ -611,7 +611,7 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 			i++;
 			// ¶½ÀÑÒÆ­°‚ÉÒÆ­°ID‚Æ²Ò°¼Þ‡‚‚Ì“o˜^
 			m_menuMain.SetMapImageID(pExec->GetMenuID(), TOOLIMAGE_EXEC, nIndex);
-		END_FOREACH
+		}
 		CreateDisableToolBar(TOOLIMAGE_EXEC);	// ¸ÞÚ²±²ºÝ‚Ìì¬
 		m_wndToolBar[TOOLBAR_EXEC].SetCustomButtons(
 			MAKEINTRESOURCE(g_tbInfo[TOOLBAR_EXEC].nBitmap),
@@ -667,13 +667,13 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 	menuMain.CreatePopupMenu();
 	menuNCD.CreatePopupMenu();
 	menuDXF.CreatePopupMenu();
-	PLIST_FOREACH(pExec, pExeList)
+	BOOST_FOREACH(pExec, *pExeList) {
 		nID = pExec->GetMenuID();
 		strTip = pExec->GetToolTip();
 		menuMain.AppendMenu(MF_STRING, nID, strTip);
 		menuNCD.AppendMenu (MF_STRING, nID, strTip);
 		menuDXF.AppendMenu (MF_STRING, nID, strTip);
-	END_FOREACH
+	}
 	pMenuMain->InsertMenu(MAINMENUCOUNT-1, MF_BYPOSITION|MF_POPUP, (UINT_PTR)menuMain.Detach(), szMenu);
 	pMenuNCD->InsertMenu(nMenuNCD, MF_BYPOSITION|MF_POPUP, (UINT_PTR)menuNCD.Detach(), szMenu);
 	pMenuDXF->InsertMenu(nMenuDXF, MF_BYPOSITION|MF_POPUP, (UINT_PTR)menuDXF.Detach(), szMenu);

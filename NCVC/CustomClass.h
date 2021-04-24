@@ -5,46 +5,17 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////
-// 配列・コンテナのzeroクリア
+//	配列・コンテナのzeroクリア
 
 #define	ZEROCLR(ar)		for ( auto& ref : ar ) ref = 0;
 
 //////////////////////////////////////////////////////////////////////
-// CList, CMap用のFOREACH
+//	CMap用のFOREACH
 
-#define	PLIST_FOREACH(FOO, LIST) \
-	for ( POSITION pos=(LIST)->GetHeadPosition(); pos; ) { \
-		FOO = (LIST)->GetNext(pos);
 #define	PMAP_FOREACH(KEY, VAL, MAP) \
 	for ( POSITION pos=(MAP)->GetStartPosition(); pos; ) { \
 		(MAP)->GetNextAssoc(pos, KEY, VAL);
 #define	END_FOREACH		}
-/*
-//	なかなかスマートには書けないねぇ...無理だな
-template<typename VAR, typename LIST>
-class CPLIST_FOREACH<VAR, LIST>
-{
-	LIST*		list;	// pointer
-	POSITION	pos;
-public:
-	CPLIST_FOREACH(LIST List) : list(List) {
-		pos = list->GetHeadPosition();
-	}
-	BOOL	IsPos(void) { return pos; }
-	VAR		GetNext(void) {
-		var = list->GetNext(pos);
-	}
-	VAR		var;
-};
-#define	PLIST_FOREACH(VAR, LIST) \
-	for ( CPLIST_FOREACH<VAR, typeid(LIST).name()> PF(LIST); PF.IsPos(); )
-
-	// example
-//	PLIST_FOREACH(CDXFdata*, pList) {
-//		PF.GetNext();
-//		PF.var->hogehoge();
-//	}
-*/
 
 //////////////////////////////////////////////////////////////////////
 //	CTypedPtrArrayEx : 拡張 CTypedPtrArray

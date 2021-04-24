@@ -378,10 +378,10 @@ BOOL InitialMakeNCDlgComboBox(const CStringList* pList, CComboBox& ctCombo)
 	CString	strPath, strFile;
 	LPCTSTR	pszFullPath;
 	// ºÝÎÞÎÞ¯¸½‚ÉÌÙÊß½•¶Žš—ñ‚Ö‚ÌÎß²ÝÀ‚ðŠ„‚è“–‚Ä‚é
-	PLIST_FOREACH(pszFullPath, pList)
+	BOOST_FOREACH(pszFullPath, *const_cast<CStringList*>(pList)) {
 		::Path_Name_From_FullPath(pszFullPath, strPath, strFile);
 		ctCombo.SetItemDataPtr( ctCombo.AddString(strFile), (LPVOID)pszFullPath );
-	END_FOREACH
+	}
 
 	return TRUE;
 }

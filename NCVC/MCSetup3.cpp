@@ -48,10 +48,10 @@ CMCSetup3::CMCSetup3() : CPropertyPage(CMCSetup3::IDD)
 	m_nSortColumn = 0;
 
 	// Œ»Ý“o˜^Ï‚Ý‚ÌH‹ïî•ñ‚ÍC“o˜^EíœÌ×¸Þ‚ð¸Ø±
-	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
-	PLIST_FOREACH(CMCTOOLINFO* pToolInfo, &pMCopt->m_ltTool)
+	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
+	BOOST_FOREACH(CMCTOOLINFO* pToolInfo, pMCopt->m_ltTool) {
 		pToolInfo->m_bDlgAdd = pToolInfo->m_bDlgDel = FALSE;
-	END_FOREACH
+	}
 	m_nType = pMCopt->m_nCorrectType;
 }
 
@@ -138,7 +138,7 @@ BOOL CMCSetup3::OnInitDialog()
 	__super::OnInitDialog();
 
 	int			i;
-	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
+	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
 
 	// ¿°Ä—ñ‚ÌŽæ“¾
 	CString		strRegKey, strEntry;
@@ -170,7 +170,7 @@ BOOL CMCSetup3::OnInitDialog()
 	lvi.iSubItem = 0;
 	lvi.pszText = LPSTR_TEXTCALLBACK;
 	i = 0;
-	PLIST_FOREACH(CMCTOOLINFO* pToolInfo, &pMCopt->m_ltTool)
+	BOOST_FOREACH(CMCTOOLINFO* pToolInfo, pMCopt->m_ltTool) {
 		lvi.iItem  = i++;
 		lvi.lParam = (LPARAM)pToolInfo;
 		if ( m_ctToolList.InsertItem(&lvi) < 0 ) {
@@ -179,7 +179,7 @@ BOOL CMCSetup3::OnInitDialog()
 			AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 			break;
 		}
-	END_FOREACH
+	}
 	// ‚Ps‘I‘ð
 	DWORD	dwStyle = m_ctToolList.GetExtendedStyle();
 	dwStyle |= LVS_EX_FULLROWSELECT;

@@ -194,10 +194,10 @@ void AutoRecalcWorking(const CLayerData* pLayer, LPVOID pParam)
 			for ( j=0; j<nOutline; j++ ) {
 				if ( !pShape->CreateOutlineTempObject(nInOut, &ltOutline, dOffset) ) {
 					// ！！失敗！！一時ｵﾌﾞｼﾞｪｸﾄ全削除
-					PLIST_FOREACH(CDXFdata* pData, &ltOutline)
+					BOOST_FOREACH(CDXFdata* pData, ltOutline) {
 						if ( pData )
 							delete	pData;
-					END_FOREACH
+					}
 					continue;
 				}
 				// 加工指示登録
@@ -366,12 +366,12 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 			}
 			if ( !dbgConnect ) {
 				printf("---> No.%d Connect Error!\n", j);
-				PLIST_FOREACH(dbgData, pChain1)
+				BOOST_FOREACH(dbgData, *pChain1) {
 					dbgPts = dbgData->GetNativePoint(0);
 					dbgPte = dbgData->GetNativePoint(1);
 					printf("(%.3f, %.3f)-(%.3f, %.3f)\n",
 						dbgPts.x, dbgPts.y, dbgPte.x, dbgPte.y);
-				END_FOREACH
+				}
 			}
 			else if ( pChain1->GetChainFlag() & DXFMAPFLG_SEPARATE ) {
 				dbgPts = pChain1->GetHead()->GetNativePoint(0);
@@ -487,9 +487,9 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 		printf("Name=%s Outline=%d\n",
 			LPCTSTR(pShape1->GetShapeName()), dbgOutlineList->GetCount());
 		ii=0;
-		PLIST_FOREACH(pOutline1, dbgOutlineList)
+		BOOST_FOREACH(pOutline1, *dbgOutlineList) {
 			printf("No.%d Sep=%d\n", ii++, pOutline1->GetOutlineSize());
-		END_FOREACH
+		}
 	}
 #endif
 }
@@ -684,18 +684,18 @@ void CreateAutoWorking(const CLayerData* pLayer, float dOffset)
 				}
 				// Select分はCDXFworkingOutlineのﾃﾞｽﾄﾗｸﾀにてdelete
 				n = 1 - j;	// 1->0, 0->1
-				PLIST_FOREACH(pData, &ltOutline[n])
+				BOOST_FOREACH(pData, ltOutline[n]) {
 					if ( pData )
 						delete	pData;
-				END_FOREACH
+				}
 			}
 			else {
 				// ！！失敗！！一時ｵﾌﾞｼﾞｪｸﾄ全削除
 				for ( n=0; n<SIZEOF(ltOutline); n++ ) {
-					PLIST_FOREACH(pData, &ltOutline[n])
+					BOOST_FOREACH(pData, ltOutline[n]) {
 						if ( pData )
 							delete	pData;
-					END_FOREACH
+					}
 				}
 			}
 			// 次のﾙｰﾌﾟに備え、矩形の初期化
@@ -707,10 +707,10 @@ void CreateAutoWorking(const CLayerData* pLayer, float dOffset)
 		if ( pWork )
 			delete	pWork;
 		for ( n=0; n<SIZEOF(ltOutline); n++ ) {
-			PLIST_FOREACH(pData, &ltOutline[n])
+			BOOST_FOREACH(pData, ltOutline[n]) {
 				if ( pData )
 					delete	pData;
-			END_FOREACH
+			}
 		}
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
 		e->Delete();
@@ -996,7 +996,7 @@ BOOL CheckOffsetIntersection
 	optional<CPointF>	ptDbgE;
 	for ( i=0; i<SIZEOF(vInfo); i++ ) {
 		ptDbgE.reset();
-		PLIST_FOREACH(pData1, pChain1)
+		BOOST_FOREACH(pData1, *pChain1) {
 			if ( pData1 ) {
 				pt[0] = pData1->GetNativePoint(0);
 				pt[1] = pData1->GetNativePoint(1);
@@ -1015,7 +1015,7 @@ BOOL CheckOffsetIntersection
 				printf("null\n");
 				ptDbgE.reset();
 			}
-		END_FOREACH
+		}
 		printf("---\n");
 		if ( bScan )
 			break;
@@ -1044,7 +1044,7 @@ void CheckCircleIntersection
 			continue;
 		if ( rcCross.CrossRect(rc, pShape->GetMaxRect()) ) {
 			for ( j=0; j<nOutlineLoop && IsThread(); j++ ) {
-				PLIST_FOREACH(CDXFdata* pData, pOutline->GetOutlineObject(j));
+				BOOST_FOREACH(CDXFdata* pData, *pOutline->GetOutlineObject(j)) {
 					if ( IsThread() )
 						break;
 					if ( pData && !(pData->GetDxfFlg()&DXFFLG_OFFSET_EXCLUDE) ) {
@@ -1057,7 +1057,7 @@ void CheckCircleIntersection
 							pData->SetDxfFlg(DXFFLG_OFFSET_EXCLUDE);
 						}
 					}
-				END_FOREACH
+				}
 			}
 		}
 	}
@@ -1142,10 +1142,10 @@ CDXFdata* ChangeCircleToArc
 
 void SetAllExcludeData(CDXFchain* pChain)
 {
-	PLIST_FOREACH(CDXFdata* pData, pChain)
+	BOOST_FOREACH(CDXFdata* pData, *pChain) {
 		if ( pData )
 			pData->SetDxfFlg(DXFFLG_OFFSET_EXCLUDE);
-	END_FOREACH
+	}
 }
 
 CDXFworkingOutline*	GetOutlineHierarchy(CDXFshape* pShape, INT_PTR n)
@@ -1155,7 +1155,7 @@ CDXFworkingOutline*	GetOutlineHierarchy(CDXFshape* pShape, INT_PTR n)
 	CDXFworkingOutline*	pOutline = NULL;
 	INT_PTR		i;
 	POSITION	pos;
-	// 0回実行でbreakの可能性 -> PLIST_FOREACH 使えない
+	// 0回実行でbreakの可能性 -> BOOST_FOREACH 使えない
 	for ( i=0, pos=pOutlineList->GetHeadPosition(); pos && i<=n; i++ )
 		pOutline = pOutlineList->GetNext(pos);
 
