@@ -175,10 +175,10 @@ public:
 	CViewOption*	GetViewOption(void) {
 		return m_pOptView;
 	}
-	const	CNCVCaddinArray*	GetAddinArray(void) {
+	CNCVCaddinArray*	GetAddinArray(void) {
 		return &m_obAddin;
 	}
-	const	CNCVCaddinWordMap*	GetAddinMap(void) {
+	CNCVCaddinWordMap*	GetAddinMap(void) {
 		return &m_mpAddin;
 	}
 	WORD	GetMaxAddinID(void) {

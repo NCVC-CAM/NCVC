@@ -367,13 +367,12 @@ BOOL CThumbnailDlg::OnInitDialog()
 	}
 
 	// Œ»İ“o˜^‚³‚ê‚Ä‚¢‚éŠg’£q‚ğæ“¾
-	LPVOID		pFunc;		// dummy
-	CString		strExt;
+	typedef std::pair<CString, LPVOID>	PAIR;
 	m_aExt.Add( gg_szWild + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD).Right(3) );	// '.' œ‚­uncdv
 	for ( i=0; i<2/*EXT_ADN,EXT_DLG*/; i++ ) {	// “o˜^Šg’£q‚Å‚ÌÌ«ÙÀŞŒŸõ
-		PMAP_FOREACH(strExt, pFunc, AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((eEXTTYPE)i))
-			m_aExt.Add( gg_szWild + strExt );
-		END_FOREACH
+		BOOST_FOREACH(PAIR p, *AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((eEXTTYPE)i)) {
+			m_aExt.Add( gg_szWild + p.first );
+		}
 	}
 	// ‰ŠúÌ«ÙÀŞ‚ÉŠÜ‚Ü‚ê‚éÌ§²Ù‚ğ—ñ‹“
 	ChangeFolder(strPath);

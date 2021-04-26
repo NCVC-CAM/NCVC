@@ -330,11 +330,9 @@ int CNCVCApp::ExitInstance()
 	// ±ƒﬁ≤›èÓïÒçÌèú
 	for ( int i=0; i<m_obAddin.GetSize(); i++ )
 		delete	m_obAddin[i];
-	WORD			wKey;
-	CNCVCaddinMap*	pAddin;
-	PMAP_FOREACH(wKey, pAddin, &m_mpAddin)
-		delete	pAddin;
-	END_FOREACH
+	typedef	std::pair<WORD, CNCVCaddinMap*>		PAIR;
+	BOOST_FOREACH(PAIR p, m_mpAddin)
+		delete	p.second;
 	m_obAddin.RemoveAll();
 	m_mpAddin.RemoveAll();
 
@@ -1966,20 +1964,20 @@ BOOL CNCVCDocTemplate::SaveExt(void)
 {
 	extern	LPCTSTR		gg_szComma;		// ","
 
-	CString		strRegKey, strEntry, strDef, strResult, strKey;
+	CString		strRegKey, strEntry, strDef, strResult;
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 	VERIFY(strEntry.LoadString(IDS_REG_EXTENSION));
 	VERIFY(strDef.LoadString(IDS_REG_EXTENSION_DEF));
 	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
 	strEntry += strResult;
 
-	LPVOID	pDummy;
+	typedef	std::pair<CString, LPVOID>	PAIR;
 	strResult.Empty();
-	PMAP_FOREACH(strKey, pDummy, &m_mpExt[EXT_DLG])
+	BOOST_FOREACH(PAIR p, m_mpExt[EXT_DLG]) {
 		if ( !strResult.IsEmpty() )
 			strResult += gg_szComma;
-		strResult += strKey;
-	END_FOREACH
+		strResult += p.first;
+	}
 
 	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, strResult) ) {
 		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK | MB_ICONEXCLAMATION);
@@ -1997,8 +1995,8 @@ CString CNCVCDocTemplate::GetFilterString(void)
 {
 	extern	LPCTSTR	gg_szWild;	// "*.";
 	static	const	TCHAR	ss_cSplt = ';';
-	CString	strResult, strKey;
-	LPVOID	pDummy;
+	CString	strResult;
+	typedef	std::pair<CString, LPVOID>	PAIR;
 
 	// äÓñ{ägí£éq
 	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
@@ -2006,10 +2004,10 @@ CString CNCVCDocTemplate::GetFilterString(void)
 
 	// ìoò^ägí£éq
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
-		PMAP_FOREACH(strKey, pDummy, &m_mpExt[i])
+		BOOST_FOREACH(PAIR p, m_mpExt[i]) {
 			strResult += ss_cSplt;
-			strResult += gg_szWild + strKey;
-		END_FOREACH
+			strResult += gg_szWild + p.first;
+		}
 	}
 
 	return strResult;

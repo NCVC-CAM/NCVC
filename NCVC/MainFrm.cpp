@@ -687,11 +687,10 @@ void CMainFrame::SetAddinButtons(void)
 #endif
 	extern	const	DWORD	g_dwAddinType[];	// NCVCaddinIF.cpp
 	int		i, nIndex;
-	const	CNCVCaddinArray*	pAddinArray = AfxGetNCVCApp()->GetAddinArray();
-	const	CNCVCaddinWordMap*	pAddinMap = AfxGetNCVCApp()->GetAddinMap();
+	CNCVCaddinArray*	pAddinArray = AfxGetNCVCApp()->GetAddinArray();
+	CNCVCaddinWordMap*	pAddinMap = AfxGetNCVCApp()->GetAddinMap();
 	CNCVCaddinIF*	pAddin;
-	CNCVCaddinMap*	pMap;
-	WORD			wKey;
+	typedef	std::pair<WORD, CNCVCaddinMap*>		PAIR;
 
 	nIndex = m_ilAddin.GetImageCount();
 	for ( i=0; i<nIndex; i++ )
@@ -720,11 +719,11 @@ void CMainFrame::SetAddinButtons(void)
 			&m_ilDisableToolBar[TOOLIMAGE_ADDIN], lpInfo );
 		// ±ÄÞ²Ý‚Ìê‡C‚P‚Â‚Ì±ÄÞ²Ý‚Å•¡”‚ÌID‚ðŽ‚Âê‡‚ª‚ ‚é‚Ì‚Å
 		// IDÏ¯Ìß‚©‚ç²Ò°¼Þ“o˜^
-		PMAP_FOREACH(wKey, pMap, pAddinMap)
+		BOOST_FOREACH(PAIR p, *pAddinMap) {
 			// ¶½ÀÑÒÆ­°‚ÉÒÆ­°ID‚Æ²Ò°¼Þ‡‚‚Ì“o˜^
-			m_menuMain.SetMapImageID(wKey, TOOLIMAGE_ADDIN,
-					pMap->GetAddinIF()->GetImageNo());
-		END_FOREACH
+			m_menuMain.SetMapImageID(p.first, TOOLIMAGE_ADDIN,
+					p.second->GetAddinIF()->GetImageNo());
+		}
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);

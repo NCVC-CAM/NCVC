@@ -1879,8 +1879,8 @@ void SetWireView_fromComment(void)
 CString SearchFolder(const regex& r)
 {
 	extern	LPCTSTR	gg_szWild;	// "*.";
-	CString	strResult, strExt;
-	LPVOID	pFunc;
+	CString	strResult;
+	typedef std::pair<CString, LPVOID>	PAIR;
 
 	for ( int i=0; i<SIZEOF(g_strSearchFolder); i++ ) {
 		if ( g_strSearchFolder[i].IsEmpty() )
@@ -1893,11 +1893,11 @@ CString SearchFolder(const regex& r)
 			return strResult;
 		// “o˜^Šg’£Žq‚Å‚ÌÌ«ÙÀÞŒŸõ
 		for ( int j=0; j<2/*EXT_ADN,EXT_DLG*/; j++ ) {
-			PMAP_FOREACH(strExt, pFunc, AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((eEXTTYPE)j));
-				strResult = SearchFolder_Sub(i, gg_szWild + strExt, r);
+			BOOST_FOREACH(PAIR p, *AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((eEXTTYPE)j)) {
+				strResult = SearchFolder_Sub(i, gg_szWild + p.first, r);
 				if ( !strResult.IsEmpty() )
 					return strResult;
-			END_FOREACH
+			}
 		}
 	}
 

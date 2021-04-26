@@ -507,11 +507,10 @@ void CCustomMenu::OnSysColorChange(int nSize, UINT nIDResource[])
 
 CCustomMenuEx::~CCustomMenuEx()
 {
-	WORD		wKey;
-	LPCUSTMENUINFO	pInfo;
-	PMAP_FOREACH(wKey, pInfo, &m_mpImage)
-		delete	pInfo;
-	END_FOREACH
+	typedef	std::pair<WORD, LPCUSTMENUINFO>	PAIR;
+	BOOST_FOREACH(PAIR p, m_mpImage) {
+		delete	p.second;
+	}
 	m_mpImage.RemoveAll();
 }
 

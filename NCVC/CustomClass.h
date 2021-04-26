@@ -86,7 +86,27 @@ public:
 
 //////////////////////////////////////////////////////////////////////
 //	CStringKeyIndex : CMapStringToPtrÇégÇ¡Çƒï∂éöóÒÉLÅ[ÇÃ≤›√ﬁØ∏ΩÇåüçı
+class CStringKeyIndex;
+namespace boost { namespace range_detail_microsoft {
+    template< >
+    struct customization< ::CStringKeyIndex > :
+        mfc_map_functions
+    {
+        template< class X >
+        struct meta
+        {
+            typedef ::CString key_t;
+            typedef void *mapped_t;
 
+            typedef mfc_map_iterator<X, key_t, mapped_t> mutable_iterator;
+            typedef mutable_iterator const_iterator;
+        };
+    };
+} }
+BOOST_RANGE_DETAIL_MICROSOFT_CUSTOMIZATION_TYPE(
+    boost::range_detail_microsoft::using_type_as_tag,
+    BOOST_PP_NIL, CStringKeyIndex
+)
 class CStringKeyIndex : public CMapStringToPtr
 {
 	BOOL	m_bCaseUpper;
@@ -103,11 +123,10 @@ public:
 		m_bCaseUpper = cp.m_bCaseUpper;
 		RemoveAll();
 		InitHashTable(cp.GetHashTableSize());
-		CString	rKey;
-		LPVOID	rValue;
-		PMAP_FOREACH(rKey, rValue, &cp)
-			SetAt(rKey, rValue);
-		END_FOREACH
+		typedef std::pair<CString, LPVOID>	PAIR;
+		BOOST_FOREACH(PAIR p, cp) {
+			SetAt(p.first, p.second);
+		}
 	}
 
 	void	SetElement(UINT nSize, LPCTSTR pszElement[]) {

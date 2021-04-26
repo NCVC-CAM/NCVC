@@ -1378,24 +1378,24 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 
 	// ñ¢ªŒﬂ∞ƒÇÃ∑∞‹∞ƒﬁÇàƒì‡Åu√ﬁ∞¿åáóéÇÃâ¬î\ê´Åv
 	CString		strMiss, strMsg, strAdd;
-	LPVOID		pDummy;
+	typedef std::pair<CString, LPVOID>	PAIR;
 	VERIFY(strAdd.LoadString(IDS_ERR_DXFMISSING));
 	if ( !g_strMissEntiMap.IsEmpty() ) {
-		PMAP_FOREACH(strMsg, pDummy, &g_strMissEntiMap)
+		BOOST_FOREACH(PAIR p, g_strMissEntiMap) {
 			if ( !strMiss.IsEmpty() )
 				strMiss += gg_szCat;
-			strMiss += strMsg;
-		END_FOREACH
+			strMiss += p.first;
+		}
 		strMsg.Format(IDS_ERR_DXFKEYWORD, strMiss);
 		AfxMessageBox(strMsg+strAdd, MB_OK|MB_ICONINFORMATION);
 	}
 	if ( !g_strMissBlckMap.IsEmpty() ) {
 		strMiss.Empty();
-		PMAP_FOREACH(strMsg, pDummy, &g_strMissBlckMap)
+		BOOST_FOREACH(PAIR p, g_strMissBlckMap) {
 			if ( !strMiss.IsEmpty() )
 				strMiss += gg_szCat;
-			strMiss += strMsg;
-		END_FOREACH
+			strMiss += p.first;
+		}
 		strMsg.Format(IDS_ERR_DXFBLOCK, strMiss);
 		AfxMessageBox(strMsg+strAdd, MB_OK|MB_ICONINFORMATION);
 	}
@@ -1409,11 +1409,10 @@ UINT RemoveBlockMapThread(LPVOID)
 #ifdef _DEBUG
 	printf("RemoveBlockMapThread() Start Cnt=%d\n", g_strBlockMap.GetCount());
 #endif
-	CDXFBlockData*	pBlock;
-	CString			strBlock;
-	PMAP_FOREACH(strBlock, pBlock, &g_strBlockMap)
-		delete	pBlock;
-	END_FOREACH
+	typedef std::pair<CString, CDXFBlockData*>	PAIR;
+	BOOST_FOREACH(PAIR p, g_strBlockMap) {
+		delete	p.second;
+	}
 	g_strBlockMap.RemoveAll();
 	g_csRemoveBlockMap.Unlock();
 

@@ -53,17 +53,17 @@ BOOL CExtensionDlg::OnInitDialog()
 {
 	__super::OnInitDialog();
 
-	CString		strResult;
-	LPVOID		pDummy;
+	CString	strResult;
+	typedef	std::pair<CString, LPVOID>	PAIR;
 
 	// ÿΩƒ∫›ƒ€∞ŸÇ÷ÇÃìoò^
 	for ( int i=0; i<SIZEOF(m_ctExtList); i++ ) {
 		strResult = AfxGetNCVCApp()->GetDocExtString((DOCTYPE)i).Right(3);	// ncd or cam
 		m_ctExtList[i].SetItemData(m_ctExtList[i].AddString(strResult), 0);	// çÌèúïsî\œ∞∏
 		for ( int j=0; j<2/*SIZEOF(m_mpExt)*/; j++ ) {
-			PMAP_FOREACH(strResult, pDummy, &AfxGetNCVCApp()->GetDocTemplate((DOCTYPE)i)->m_mpExt[j])
-				m_ctExtList[i].SetItemData(m_ctExtList[i].AddString(strResult), j);
-			END_FOREACH
+			BOOST_FOREACH(PAIR p, AfxGetNCVCApp()->GetDocTemplate((DOCTYPE)i)->m_mpExt[j]) {
+				m_ctExtList[i].SetItemData(m_ctExtList[i].AddString(p.first), j);
+			}
 		}
 	}
 
@@ -75,23 +75,23 @@ void CExtensionDlg::OnOK()
 {
 	CMapStringToPtr*	pMapExt;
 	int		i, j, nCnt;
-	CString	strResult, strList;
-	LPVOID	pDummy;
+	CString	strList;
+	typedef	std::pair<CString, LPVOID>	PAIR;
 
 	try {
 		for ( i=0; i<SIZEOF(m_ctExtList); i++ ) {
 			nCnt = m_ctExtList[i].GetCount();
 			// œØÃﬂÇ…Ç†Ç¡ÇƒÿΩƒŒﬁØ∏ΩÇ…Ç»Ç¢Ç‡ÇÃÇçÌèú
 			pMapExt = &(AfxGetNCVCApp()->GetDocTemplate((DOCTYPE)i)->m_mpExt[EXT_DLG]);
-			PMAP_FOREACH(strResult, pDummy, pMapExt)
+			BOOST_FOREACH(PAIR p, *pMapExt) {
 				for ( j=0; j<nCnt; j++ ) {	// FindString() Ç≈ÇÕïîï™àÍívÇµÇƒÇµÇ‹Ç§
 					m_ctExtList[i].GetText(j, strList);
-					if ( strResult == strList )
+					if ( p.first == strList )
 						break;	// ìØÇ∂ägí£éqÇ™Ç†ÇÍÇŒ
 				}
 				if ( j >= nCnt )
-					pMapExt->RemoveKey(strResult);
-			END_FOREACH
+					pMapExt->RemoveKey(p.first);
+			}
 			// ÿΩƒŒﬁØ∏ΩÇ…Ç†Ç¡ÇƒœØÃﬂÇ…Ç»Ç¢Ç‡ÇÃÇìoò^
 			for ( j=0; j<nCnt; j++ ) {
 				if ( m_ctExtList[i].GetItemData(j) > 0 ) {
