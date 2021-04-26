@@ -1684,22 +1684,35 @@ void CNCVCApp::OnAppAbout()
 }
 
 #ifdef _DEBUG
+bool DbgComp(const CDXFdata* pData1, const CDXFdata* pData2)
+{
+	return pData1->GetType() < pData2->GetType();
+}
+
 void CNCVCApp::DebugCode(void)
 {
 	CDXFdata*	pData;
-//	CDXFlist	lt;		// これでコンパイルエラーの意味がわからん
+//	CDXFlist	lt;		// 独自のtemplate宣言がないのでコンパイルエラー
 	CDXFchain	lt;
 	DXFPARGV	p;
 	DXFLARGV	l;
 	DXFCARGV	c;
+	CTypedPtrArray<CObArray, CDXFdata*>	ar;
 	lt.AddTail( new CDXFpoint(&p) );
 	lt.AddTail( new CDXFline(&l) );
 	lt.AddTail( new CDXFcircle(&c) );
 	BOOST_FOREACH( pData, lt ) {
 		printf("Type=%d\n", pData->GetType() );
+		ar.Add(pData);
 	}
-	boost::reverse(lt);		// 検証
+	printf("---\n");
+	boost::reverse(lt);			// 検証
 	BOOST_FOREACH( pData, lt ) {
+		printf("Type=%d\n", pData->GetType() );
+	}
+	printf("---\n");
+	boost::sort(ar, DbgComp);	// 検証
+	BOOST_FOREACH( pData, ar ) {
 		printf("Type=%d\n", pData->GetType() );
 		delete	pData;
 	}
