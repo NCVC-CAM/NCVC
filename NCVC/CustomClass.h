@@ -18,6 +18,21 @@
 #define	END_FOREACH		}
 
 //////////////////////////////////////////////////////////////////////
+//	CTypedPtrArrayópÇÃGetTail
+
+template<typename BASE, typename TYPE>
+TYPE GetTail(const CTypedPtrArray<BASE, TYPE>& ar)
+{
+	// std::array::back() ïóÇ…èëÇ≠Ç∆
+//	auto tmp = boost::end(ar);		// boost::range
+//	--tmp;
+//	return *tmp;
+	// MFCïó
+	ASSERT( !ar.IsEmpty() );
+	return ar.GetAt(ar.GetUpperBound());
+}
+
+//////////////////////////////////////////////////////////////////////
 //	CTypedPtrArrayEx : ägí£ CTypedPtrArray
 
 template<typename BASE_CLASS, typename TYPE>
