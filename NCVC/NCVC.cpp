@@ -1711,7 +1711,7 @@ void CNCVCApp::DebugCode(void)
 		printf("Type=%d\n", pData->GetType() );
 	}
 	printf("---\n");
-	boost::sort(ar, DbgComp);	// ŒŸØ
+//	boost::sort(ar, DbgComp);	// ŒŸØ
 	BOOST_FOREACH( pData, ar ) {
 		printf("Type=%d\n", pData->GetType() );
 		delete	pData;

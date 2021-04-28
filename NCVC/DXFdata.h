@@ -214,8 +214,8 @@ public:
 	DECLARE_DYNAMIC(CDXFdata)
 };
 typedef CSortArray<CObArray, CDXFdata*>			CDXFsort;
-typedef CTypedPtrList<CObList, CDXFdata*>		CDXFlist;
-typedef	CTypedPtrArrayEx<CObArray, CDXFdata*>	CDXFarray;
+typedef CTypedPtrList<CObList, CDXFdata*>	CDXFlist;
+typedef	CTypedPtrArray<CObArray, CDXFdata*>	CDXFarray;
 
 /////////////////////////////////////////////////////////////////////////////
 // Point ƒNƒ‰ƒX
