@@ -417,8 +417,8 @@ class CDXFshape : public CObject
 	void	SetDetailInfo(CDXFchain*);
 	void	SetDetailInfo(CDXFmap*);
 	BOOL	CreateOutlineTempObject_polyline(const CDXFpolyline*, BOOL, float,
-				CDXFchain*, CTypedPtrArrayEx<CPtrArray, CDXFlist*>&);
-	BOOL	SeparateOutlineIntersection(CDXFchain*, CTypedPtrArrayEx<CPtrArray, CDXFlist*>&, BOOL = FALSE);
+				CDXFchain*, CTypedPtrArray<CPtrArray, CDXFlist*>&);
+	BOOL	SeparateOutlineIntersection(CDXFchain*, CTypedPtrArray<CPtrArray, CDXFlist*>&, BOOL = FALSE);
 	BOOL	CheckSeparateChain(CDXFlist*, const float);
 
 protected:

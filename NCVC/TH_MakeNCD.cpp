@@ -44,13 +44,13 @@ static	CDXFmap		g_mpDXFdata,	// À•W‚ğ·°‚ÉCDXFdata‚ğŠi”[
 			g_mpDXFmove, g_mpDXFmovetext,	// ˆÚ“®Ú²ÔÏ¯Ìß
 			g_mpDXFtext, g_mpDXFcomment;	// ‰ÁHÃ·½ÄCºÒİÄê—p
 typedef	CTypedPtrMap<CMapStringToOb, CString, CDXFshape*>	CShapeHandleMap;
-typedef	CTypedPtrArrayEx<CPtrArray, CDXFsort*>	CDrillAxis;
+typedef	CTypedPtrArray<CPtrArray, CDXFsort*>	CDrillAxis;
 static	CDXFsort	g_obDrill;		// ŒŠ‰ÁHÃŞ°À
 static	CSortArray<CObArray, CDXFcircle*>
 					g_obCircle;		// ‰~ÃŞ°À‚ğŒŠ‰ÁH‚·‚é‚Æ‚«‚Ì‰¼“o˜^
 static	CDXFsort	g_obStartData;	// ‰ÁHŠJnˆÊ’uw¦ÃŞ°À
 static	CDXFlist	g_ltDeepData;	// [’¤Øí—p‚Ì‰¼“o˜^
-static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeData;	// ‰ÁHÃŞ°À
+static	CTypedPtrArray<CPtrArray, CNCMakeMill*>	g_obMakeData;	// ‰ÁHÃŞ°À
 
 static	WORD		g_wBindOperator;// Bind‚ÌÌ§²Ùo—Íw¦
 static	BOOL		g_bData;		// Še¶¬ˆ—‚Å¶¬‚³‚ê‚½‚©

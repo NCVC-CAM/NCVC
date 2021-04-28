@@ -9,7 +9,7 @@
 
 class CTabViewBase : public CCtrlView  
 {
-	CTypedPtrArrayEx<CObArray, CWnd*> m_pPages;
+	CTypedPtrArray<CObArray, CWnd*> m_pPages;
 
 public:
 	CTabViewBase() : CCtrlView(WC_TABCONTROL,

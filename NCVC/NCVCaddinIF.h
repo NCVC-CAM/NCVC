@@ -73,7 +73,7 @@ public:
 	int			GetToolBarID(void) const;
 };
 
-typedef	CTypedPtrArrayEx<CPtrArray, CNCVCaddinIF*>	CNCVCaddinArray;
+typedef	CTypedPtrArray<CPtrArray, CNCVCaddinIF*>	CNCVCaddinArray;
 
 //////////////////////////////////////////////////////////////////////
 // CNCVCApp::m_mpAddin “o˜^—p

@@ -164,12 +164,12 @@ inline const CPoint3F CNCdata::GetOffsetPoint(void) const
 
 inline const CPoint3F CNCdata::GetEndCorrectPoint(void) const
 {
-	return m_obCdata.IsEmpty() ? GetEndPoint() : m_obCdata.GetTail()->GetEndPoint();
+	return m_obCdata.IsEmpty() ? GetEndPoint() : (*(boost::end(m_obCdata)-1))->GetEndPoint();
 }
 
 inline CNCdata* CNCdata::GetEndCorrectObject(void)
 {
-	return m_obCdata.IsEmpty() ? this : m_obCdata.GetTail();
+	return m_obCdata.IsEmpty() ? this : *(boost::end(m_obCdata)-1);
 }
 
 inline const CPointF CNCdata::Get2DPoint(void) const

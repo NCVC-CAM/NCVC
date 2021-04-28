@@ -132,7 +132,7 @@ struct CNCread
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀ，描画ｵﾌﾞｼﾞｪｸﾄ以外のﾍﾞｰｽｸﾗｽ
 // 描画ｵﾌﾞｼﾞｪｸﾄ以外でも生成することで，ﾄﾚｰｽの重要ﾎﾟｲﾝﾄで停止させる
 class CNCdata;
-typedef	CTypedPtrArrayEx<CPtrArray, CNCdata*>	CNCarray;
+typedef	CTypedPtrArray<CPtrArray, CNCdata*>	CNCarray;
 class CNCdata
 {
 	ENNCDTYPE	m_enType;		// ﾃﾞｰﾀﾀｲﾌﾟ : NCVCdefine.h
@@ -204,7 +204,7 @@ public:
 	BOOL	GetG98(void) const;
 	CNCdata*	NC_CopyObject(void);			// from TH_Correct.cpp
 	void		AddCorrectObject(CNCdata*);
-	CTypedPtrArrayEx<CPtrArray, CNCdata*>*
+	CTypedPtrArray<CPtrArray, CNCdata*>*
 				GetCorrectArray(void);			// DXF出力用
 	void		SetWireObj(CNCdata*);			// from TH_UVWire.cpp
 	CNCdata*	GetWireObj(void) const;
@@ -524,6 +524,6 @@ public:
 	void	SetBlockToNCdata(CNCdata*, size_t);
 };
 
-typedef	CTypedPtrArrayEx<CPtrArray, CNCblock*>	CNCblockArray;
+typedef	CTypedPtrArray<CPtrArray, CNCblock*>	CNCblockArray;
 
 #include "NCdata.inl"

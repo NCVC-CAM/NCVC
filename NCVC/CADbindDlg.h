@@ -29,7 +29,7 @@ public:
 	int			m_nOrgType;
 	BOOL		m_bMarge;
 
-	//	CTypedPtrArrayEx‚¾‚Æ—v‘f‚ÌdeleteÀ²ÐÝ¸Þ‚ª“ï‚µ‚¢
+	//	CTypedPtrArray‚¾‚Æ—v‘f‚ÌdeleteÀ²ÐÝ¸Þ‚ª“ï‚µ‚¢
 	std::vector<BINDFILE>	m_arBind;
 
 protected:

@@ -84,7 +84,7 @@ typedef	CUSTMENUINFO*	LPCUSTMENUINFO;
 class CCustomMenuEx : public CCustomMenu
 {
 	// ²Ò°¼ŞØ½Ä‚ÌÎß²İÀ”z—ñ
-	CTypedPtrArrayEx<CObArray, CImageList*>	m_pilEnable, m_pilDisable;
+	CTypedPtrArray<CObArray, CImageList*>	m_pilEnable, m_pilDisable;
 	// ÒÆ­°ºÏİÄŞID‚ğ·°‚É‚µ‚½²Ò°¼Şî•ñ
 	CTypedPtrMap<CMapWordToPtr, WORD, LPCUSTMENUINFO>	m_mpImage;
 

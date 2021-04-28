@@ -85,7 +85,7 @@ public:
 #endif
 };
 
-typedef	CTypedPtrArrayEx<CPtrArray, CDXFMake*>	CDxfMakeArray;
+typedef	CTypedPtrArray<CPtrArray, CDXFMake*>	CDxfMakeArray;
 
 /////////////////////////////////////////////////
 

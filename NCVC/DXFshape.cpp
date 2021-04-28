@@ -2037,7 +2037,7 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dO
 	if ( !pChain || pChain->IsEmpty() )
 		return FALSE;
 
-	CTypedPtrArrayEx<CPtrArray, CDXFlist*>	obSepArray;
+	CTypedPtrArray<CPtrArray, CDXFlist*>	obSepArray;
 	obSepArray.SetSize(0, 32);
 
 	int			k = bLeft ? -1 : 1;
@@ -2236,7 +2236,7 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dO
 
 BOOL CDXFshape::CreateOutlineTempObject_polyline
 	(const CDXFpolyline* pPolyline, BOOL bLeft, float dOffset,
-		CDXFchain* pResult, CTypedPtrArrayEx<CPtrArray, CDXFlist*>& obSepArray)
+		CDXFchain* pResult, CTypedPtrArray<CPtrArray, CDXFlist*>& obSepArray)
 {
 	int		k = bLeft ? -1 : 1;
 	BOOL	bResult = TRUE;
@@ -2508,7 +2508,7 @@ void CDXFshape::CrearScanLine_Lathe(void)
 }
 
 BOOL CDXFshape::SeparateOutlineIntersection
-	(CDXFchain* pOffset, CTypedPtrArrayEx<CPtrArray, CDXFlist*>& obSepList, BOOL bFinish/*=FALSE*/)
+	(CDXFchain* pOffset, CTypedPtrArray<CPtrArray, CDXFlist*>& obSepList, BOOL bFinish/*=FALSE*/)
 {
 #ifdef _DEBUG
 	printf("SeparateOutlineIntersection() Start\n");

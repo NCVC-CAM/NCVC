@@ -43,7 +43,7 @@ protected:
 	LPCTSTR			m_lpszResourceName;	// ﾂｰﾙﾊﾞｰのﾘｿｰｽ名
 	LPCUSTTBBUTTON	m_lpCustTbButtons;	// 初期表示用ﾂｰﾙﾊﾞｰﾎﾞﾀﾝ定義
 	// ﾎﾞﾀﾝ情報(TBBUTTON構造体格納)
-	CTypedPtrArrayEx<CPtrArray, LPCUSTTBINFO>	m_arButton;
+	CTypedPtrArray<CPtrArray, LPCUSTTBINFO>	m_arButton;
 
 public:
 	CCustomToolBar();

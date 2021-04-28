@@ -42,7 +42,7 @@ static	CDXFshape*	g_pShape[2];	// 0:Inside, 1:Outside
 static	CLayerData*	g_pGrooveLayer;
 static	CDXFarray	g_obLineTemp[2];
 static	CDXFarray	g_obMakeLine[2];
-static	CTypedPtrArrayEx<CPtrArray, CNCMakeLathe*>	g_obMakeData;	// ‰ÁHÃŞ°À
+static	CTypedPtrArray<CPtrArray, CNCMakeLathe*>	g_obMakeData;	// ‰ÁHÃŞ°À
 
 // »ÌŞŠÖ”
 static	void	InitialVariable(void);			// •Ï”‰Šú‰»

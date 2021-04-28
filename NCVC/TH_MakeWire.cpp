@@ -38,7 +38,7 @@ static	CNCMakeWireOpt*		g_pMakeOpt;
 static	CSortArray<CObArray, CDXFcircle*>
 					g_obAWFinside, g_obAWFoutside;	// AWFﾃﾞｰﾀ(CDXFcircle*)
 static	CDXFmap		g_mpPause;		// 一時停止指示点
-static	CTypedPtrArrayEx<CPtrArray, CNCMakeWire*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
+static	CTypedPtrArray<CPtrArray, CNCMakeWire*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
 
 static	WORD	g_wBindOperator;	// Bind時のﾌｧｲﾙ出力指示
 static	BOOL	g_bAWF;				// AWF接続状況

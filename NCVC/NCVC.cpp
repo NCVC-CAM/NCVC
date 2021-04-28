@@ -1706,6 +1706,9 @@ void CNCVCApp::DebugCode(void)
 		ar.Add(pData);
 	}
 	printf("---\n");
+	// «‚±‚Ì‘‚«•û‚Å³‰ð‚È‚Ì‚©H NCdata.inl
+	printf("ar tail=%d\n", (*(boost::end(ar)-1))->GetType());
+	printf("---\n");
 	boost::reverse(lt);			// ŒŸØ
 	BOOST_FOREACH( pData, lt ) {
 		printf("Type=%d\n", pData->GetType() );

@@ -40,7 +40,7 @@ friend	class	CMakeNCDlgEx21;
 	CString	m_strLayer;		// ﾚｲﾔ名
 	int		m_nType;		// ﾚｲﾔﾀｲﾌﾟ(DXFORGLAYER～DXFCOMLAYER)
 	CDXFarray	m_obDXFArray;		// 切削ﾃﾞｰﾀ(CDXFdata)
-	CTypedPtrArrayEx<CObArray, CDXFtext*>
+	CTypedPtrArray<CObArray, CDXFtext*>
 				m_obDXFTextArray;	// 切削ﾃﾞｰﾀ(CDXFtext only)
 	// 形状認識
 	CShapeArray	m_obShapeArray;	// 連結集団
