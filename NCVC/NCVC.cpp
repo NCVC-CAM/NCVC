@@ -1692,8 +1692,9 @@ bool DbgComp(const CDXFdata* pData1, const CDXFdata* pData2)
 void CNCVCApp::DebugCode(void)
 {
 	CDXFdata*	pData;
-//	CDXFlist	lt;		// 独自のtemplate宣言がないのでコンパイルエラー
-	CDXFchain	lt;
+	CDXFlist	lt;		// 独自のtemplate宣言がないのでコンパイルエラー？
+//	CDXFchain	lt;
+//	CTypedPtrList<CObList, CDXFdata*>	lt;
 	DXFPARGV	p;
 	DXFLARGV	l;
 	DXFCARGV	c;
@@ -1708,7 +1709,8 @@ void CNCVCApp::DebugCode(void)
 	printf("---\n");
 	printf("ar tail=%d\n", GetTail(ar)->GetType());
 	printf("---\n");
-	boost::reverse(lt);			// 検証
+//	boost::reverse(lt);			// 検証 これが解決できればOK！
+//	std::reverse(boost::begin(lt), boost::end(lt));
 	BOOST_FOREACH( pData, lt ) {
 		printf("Type=%d\n", pData->GetType() );
 	}
