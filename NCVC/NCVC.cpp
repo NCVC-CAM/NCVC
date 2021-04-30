@@ -1698,26 +1698,35 @@ void CNCVCApp::DebugCode(void)
 	DXFPARGV	p;
 	DXFLARGV	l;
 	DXFCARGV	c;
-	CTypedPtrArray<CObArray, CDXFdata*>	ar;
+//	CTypedPtrArray<CObArray, CDXFdata*>	ar;
+	CDXFarray	ar;
+	CObArray	ob;
 	lt.AddTail( new CDXFpoint(&p) );
 	lt.AddTail( new CDXFline(&l) );
 	lt.AddTail( new CDXFcircle(&c) );
 	BOOST_FOREACH( pData, lt ) {
-		printf("Type=%d\n", pData->GetType() );
+		printf("lt Type=%d\n", pData->GetType() );
 		ar.Add(pData);
+		ob.Add(pData);
 	}
 	printf("---\n");
 	printf("ar tail=%d\n", GetTail(ar)->GetType());
 	printf("---\n");
-//	boost::reverse(lt);			// 検証 これが解決できればOK！
 //	std::reverse(boost::begin(lt), boost::end(lt));
+//	boost::reverse(lt);			// 検証 これが解決できればOK！
+	boost::reverse(ar);
+	boost::reverse(ob);			// CObArrayならコンパイルOK
+//	boost::sort(ar, DbgComp);	// 検証
 	BOOST_FOREACH( pData, lt ) {
-		printf("Type=%d\n", pData->GetType() );
+		printf("lt Type=%d\n", pData->GetType() );
 	}
 	printf("---\n");
-//	boost::sort(ar, DbgComp);	// 検証
+	BOOST_FOREACH( CObject* p, ob ) {
+		printf("ob Type=%d\n", ((CDXFdata *)p)->GetType() );
+	}
+	printf("---\n");
 	BOOST_FOREACH( pData, ar ) {
-		printf("Type=%d\n", pData->GetType() );
+		printf("ar Type=%d\n", pData->GetType() );
 		delete	pData;
 	}
 }

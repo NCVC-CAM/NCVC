@@ -94,6 +94,37 @@ public:
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFmap)
 };
+namespace boost { namespace range_detail_microsoft {
+    template< >
+    struct customization< ::CDXFmap > :
+    #if !defined(BOOST_RANGE_MFC_NO_CPAIR)
+        mfc_cpair_map_functions
+    #else
+        mfc_map_functions
+    #endif
+    {
+        template< class X >
+        struct meta
+        {
+    #if !defined(BOOST_RANGE_MFC_NO_CPAIR)
+            typedef typename X::CPair pair_t;
+
+            typedef mfc_cpair_map_iterator<X, pair_t> mutable_iterator;
+            typedef mfc_cpair_map_iterator<X const, pair_t const> const_iterator;
+    #else
+            typedef CPointF key_t;
+            typedef CDXFarray* mapped_t;
+
+            typedef mfc_map_iterator<X, key_t, mapped_t> mutable_iterator;
+            typedef mutable_iterator const_iterator;
+    #endif            
+        };
+    };
+} }
+BOOST_RANGE_DETAIL_MICROSOFT_CUSTOMIZATION_TYPE(
+    boost::range_detail_microsoft::using_type_as_tag,
+    BOOST_PP_NIL, CDXFmap
+)
 
 /////////////////////////////////////////////////////////////////////////////
 // CDXFmap(CMap)ÇªŒﬂ∞ƒÇ∑ÇÈ∏ﬁ€∞ ﬁŸÕŸ ﬂ∞ä÷êî

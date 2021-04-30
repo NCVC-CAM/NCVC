@@ -216,6 +216,56 @@ public:
 typedef CSortArray<CObArray, CDXFdata*>			CDXFsort;
 typedef CTypedPtrList<CObList, CDXFdata*>	CDXFlist;
 typedef	CTypedPtrArray<CObArray, CDXFdata*>	CDXFarray;
+namespace boost { namespace range_detail_microsoft {
+    template< >
+    struct customization< ::CDXFarray >
+    {
+        template< class X >
+        struct fun
+        {
+            typedef typename remove_pointer<CDXFdata*>::type val_t;
+
+            typedef typename mpl::if_< is_const<X>,
+                val_t const,
+                val_t
+            >::type val_t_;
+
+            typedef val_t_ * const result_type;
+
+            template< class PtrType_ >
+            result_type operator()(PtrType_ p) const
+            {
+                return static_cast<result_type>(p);
+            }
+        };
+
+        template< class X >
+        struct meta
+        {
+            typedef typename compatible_mutable_iterator<CObArray>::type miter_t;
+            typedef typename range_const_iterator<CObArray>::type citer_t;
+
+            typedef transform_iterator<fun<X>, miter_t> mutable_iterator;
+            typedef transform_iterator<fun<X const>, citer_t> const_iterator;
+        };
+
+        template< class Iterator, class X >
+        Iterator begin(X& x)
+        {
+            return Iterator(boost::begin<CObArray>(x), fun<X>());
+        }
+
+        template< class Iterator, class X >
+        Iterator end(X& x)
+        {
+            return Iterator(boost::end<CObArray>(x), fun<X>());
+        }
+    };
+} }
+BOOST_RANGE_DETAIL_MICROSOFT_CUSTOMIZATION_TYPE(
+    boost::range_detail_microsoft::using_type_as_tag,
+    BOOST_PP_NIL, CDXFarray
+)
 
 /////////////////////////////////////////////////////////////////////////////
 // Point ƒNƒ‰ƒX

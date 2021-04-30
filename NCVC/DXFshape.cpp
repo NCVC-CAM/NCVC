@@ -569,11 +569,14 @@ void CDXFmap::DbgDump(void) const
 {
 	CPointF		pt;
 	CDXFarray*	pArray;
+//	typedef CPair<CPointF, CDXFarray*>	PAIR;
 
 	printf("CDXFmap::DbgDump() Cnt=%d\n", GetCount());
 	PMAP_FOREACH(pt, pArray, this)
+//	BOOST_FOREACH(PAIR p, *this) {
 		printf("Key=(%f, %f)\n", pt.x, pt.y);
 		printf("DataCnt=%d\n", pArray->GetCount());
+//	}
 	END_FOREACH
 }
 #endif
