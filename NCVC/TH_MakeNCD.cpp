@@ -1040,7 +1040,7 @@ BOOL MakeNCD_MainFunc(CLayerData* pLayer)
 
 	// 加工開始位置指示ﾃﾞｰﾀのｾｯﾄ
 	if ( !g_bData && !g_obStartData.IsEmpty() )
-		CDXFdata::ms_pData = g_obStartData.GetTail();
+		CDXFdata::ms_pData = GetTail(g_obStartData);	// CustomClass.h
 
 	// ﾒｲﾝ分岐
 	switch ( GetNum(MKNC_NUM_DRILLPROCESS) ) {
@@ -1089,7 +1089,7 @@ BOOL MakeNCD_ShapeFunc(void)
 
 	// 加工開始位置指示ﾃﾞｰﾀのｾｯﾄ
 	if ( !g_bData && !g_obStartData.IsEmpty() )
-		CDXFdata::ms_pData = g_obStartData.GetTail();
+		CDXFdata::ms_pData = GetTail(g_obStartData);	// CustomClass.h
 
 	// ﾌｪｰｽﾞ1
 	switch ( GetNum(MKNC_NUM_DRILLPROCESS) ) {

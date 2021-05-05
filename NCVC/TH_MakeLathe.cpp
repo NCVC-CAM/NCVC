@@ -471,7 +471,7 @@ BOOL CreateInsidePitch(float& dHole)
 	pOutline = g_pShape[0]->GetLatheList();
 	// n==0‚Ì‘Îˆ
 	pChain = pOutline->IsEmpty() ?
-		g_pShape[0]->GetShapeChain() : pOutline->GetHead();
+		g_pShape[0]->GetShapeChain() : pOutline->GetAt(0);
 	CRectF rc = pChain->GetMaxRect();
 	dLimit = max(rc.top, rc.bottom);
 #ifdef _DEBUG
@@ -533,7 +533,7 @@ BOOL CreateOutsidePitch(void)
 	pOutline = g_pShape[1]->GetLatheList();
 	// n==0‚Ì‘Îˆ
 	pChain = pOutline->IsEmpty() ?
-		g_pShape[1]->GetShapeChain() : pOutline->GetHead();
+		g_pShape[1]->GetShapeChain() : pOutline->GetAt(0);
 	CRectF rc = pChain->GetMaxRect();
 	dLimit = min(rc.top, rc.bottom);
 #ifdef _DEBUG
@@ -610,7 +610,7 @@ BOOL CreateRoughPass(int io)
 		// ˆê”ÔŠO‘¤‚ÌŒ`óµÌ¾¯Ä‚ÆŒð“_Áª¯¸
 		pOutline = g_pShape[io]->GetLatheList();
 		pChain = pOutline->IsEmpty() ?
-			g_pShape[io]->GetShapeChain() : pOutline->GetHead();
+			g_pShape[io]->GetShapeChain() : pOutline->GetAt(0);
 		BOOST_FOREACH(pDataChain, *pChain) {
 			bCreate = FALSE;
 			enType = pDataChain->GetType();

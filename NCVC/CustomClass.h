@@ -62,6 +62,7 @@ public:
 
 template<typename BASE_CLASS, typename TYPE>
 class CSortArray : public CTypedPtrArrayEx<BASE_CLASS, TYPE>
+//class CSortArray : public CTypedPtrArray<BASE_CLASS, TYPE>	reverse() ‚ª‰ðŒˆ‚Å‚«‚È‚¢‚Æ
 {
 public:
 	typedef	int	(*PFNCOMPARE)(TYPE pFirst, TYPE pSecond);

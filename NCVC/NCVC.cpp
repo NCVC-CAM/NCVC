@@ -1691,6 +1691,8 @@ bool DbgComp(const CDXFdata* pData1, const CDXFdata* pData2)
 
 void CNCVCApp::DebugCode(void)
 {
+	printf("_MFC_VER=%04x\n", _MFC_VER);
+	printf("---\n");
 	CDXFdata*	pData;
 	CDXFlist	lt;		// 独自のtemplate宣言がないのでコンパイルエラー？
 //	CDXFchain	lt;
@@ -1712,9 +1714,11 @@ void CNCVCApp::DebugCode(void)
 	printf("---\n");
 	printf("ar tail=%d\n", GetTail(ar)->GetType());
 	printf("---\n");
-//	std::reverse(boost::begin(lt), boost::end(lt));
-//	boost::reverse(lt);			// 検証 これが解決できればOK！
-	boost::reverse(ar);
+//	auto ps = boost::begin(lt);
+//	auto pe = boost::end(lt);
+//	std::reverse(ps, pe);
+	boost::reverse(lt);			// 検証 これが解決できればOK！
+//	boost::reverse(ar);
 	boost::reverse(ob);			// CObArrayならコンパイルOK
 //	boost::sort(ar, DbgComp);	// 検証
 	BOOST_FOREACH( pData, lt ) {
