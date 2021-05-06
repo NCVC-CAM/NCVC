@@ -242,32 +242,10 @@ namespace boost { namespace range_detail_microsoft {
 		struct meta
 		{
             typedef list_iterator<X, ::CDXFdata *> mutable_iterator;
-    #if !defined(BOOST_RANGE_MFC_CONST_COL_RETURNS_NON_REF)
-            typedef list_iterator<X const, ::CDXFdata const *> const_iterator;
-    #else
             typedef list_iterator<X const, ::CDXFdata const * const, ::CDXFdata const * const> const_iterator;
-    #endif
 		};
 	};
-
-/*
-    template< >
-    struct customization< ::CTypedPtrList<CObList, CDXFdata*> > :
-        list_functions
-    {
-        template< class X >
-        struct meta
-        {
-            typedef typename remove_pointer<CDXFdata*>::type val_t;
-
-            // not l-value
-            typedef list_iterator<X, val_t * const, val_t * const> mutable_iterator;
-            typedef list_iterator<X const, val_t const * const, val_t const * const> const_iterator;
-        };
-    };
-*/
 } }
-
 BOOST_RANGE_DETAIL_MICROSOFT_CUSTOMIZATION_TYPE(
 	boost::range_detail_microsoft::using_type_as_tag,
 	BOOST_PP_NIL, CDXFchain

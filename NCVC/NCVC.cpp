@@ -1694,9 +1694,9 @@ void CNCVCApp::DebugCode(void)
 	printf("_MFC_VER=%04x\n", _MFC_VER);
 	printf("---\n");
 	CDXFdata*	pData;
-	CDXFlist	lt;		// 独自のtemplate宣言がないのでコンパイルエラー？
-//	CDXFchain	lt;
+//	CDXFlist	lt;
 //	CTypedPtrList<CObList, CDXFdata*>	lt;
+	CDXFchain	lt;		// DXFshape.hの宣言でコンパイルOK
 	DXFPARGV	p;
 	DXFLARGV	l;
 	DXFCARGV	c;
@@ -1717,8 +1717,8 @@ void CNCVCApp::DebugCode(void)
 //	auto ps = boost::begin(lt);
 //	auto pe = boost::end(lt);
 //	std::reverse(ps, pe);
-//	boost::reverse(lt);			// 検証 これが解決できればOK！
-//	boost::reverse(ar);
+	boost::reverse(lt);			// DXFshape.hの宣言でコンパイルOK
+//	boost::reverse(ar);			// これがコンパイルできない
 	boost::reverse(ob);			// CObArrayならコンパイルOK
 //	boost::sort(ar, DbgComp);	// 検証
 	BOOST_FOREACH( pData, lt ) {
