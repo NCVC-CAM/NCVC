@@ -1717,7 +1717,7 @@ void CNCVCApp::DebugCode(void)
 //	auto ps = boost::begin(lt);
 //	auto pe = boost::end(lt);
 //	std::reverse(ps, pe);
-	boost::reverse(lt);			// 検証 これが解決できればOK！
+//	boost::reverse(lt);			// 検証 これが解決できればOK！
 //	boost::reverse(ar);
 	boost::reverse(ob);			// CObArrayならコンパイルOK
 //	boost::sort(ar, DbgComp);	// 検証

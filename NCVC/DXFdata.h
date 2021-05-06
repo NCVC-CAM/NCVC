@@ -217,7 +217,7 @@ typedef CSortArray<CObArray, CDXFdata*>			CDXFsort;
 typedef CTypedPtrList<CObList, CDXFdata*>	CDXFlist;
 typedef	CTypedPtrArray<CObArray, CDXFdata*>	CDXFarray;
 namespace boost { namespace range_detail_microsoft {
-
+/*
     template< >
     struct customization< ::CDXFarray >
     {
@@ -262,7 +262,7 @@ namespace boost { namespace range_detail_microsoft {
             return Iterator(boost::end<CObArray>(x), fun<X>());
         }
     };
-
+*/
 /*
     template< >
     struct customization< ::CDXFarray > :
@@ -277,6 +277,7 @@ namespace boost { namespace range_detail_microsoft {
     };
 */
 } }
+/*
 BOOST_RANGE_DETAIL_MICROSOFT_CUSTOMIZATION_TYPE(
     boost::range_detail_microsoft::using_type_as_tag,
     BOOST_PP_NIL, CDXFarray
@@ -289,7 +290,7 @@ inline void std::swap<CDXFdata*, CDXFdata*>(CDXFdata*& l, CDXFdata*& r)
 	l = r;
 	r = t;
 }
-
+*/
 /////////////////////////////////////////////////////////////////////////////
 // Point ƒNƒ‰ƒX
 class CDXFpoint : public CDXFdata  

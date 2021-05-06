@@ -95,6 +95,7 @@ public:
 	DECLARE_SERIAL(CDXFmap)
 };
 namespace boost { namespace range_detail_microsoft {
+/*
     template< >
     struct customization< ::CDXFmap > :
     #if !defined(BOOST_RANGE_MFC_NO_CPAIR)
@@ -120,12 +121,14 @@ namespace boost { namespace range_detail_microsoft {
     #endif            
         };
     };
+*/
 } }
+/*
 BOOST_RANGE_DETAIL_MICROSOFT_CUSTOMIZATION_TYPE(
     boost::range_detail_microsoft::using_type_as_tag,
     BOOST_PP_NIL, CDXFmap
 )
-
+*/
 /////////////////////////////////////////////////////////////////////////////
 // CDXFmap(CMap)ÇªŒﬂ∞ƒÇ∑ÇÈ∏ﬁ€∞ ﬁŸÕŸ ﬂ∞ä÷êî
 template<> AFX_INLINE
@@ -246,6 +249,7 @@ namespace boost { namespace range_detail_microsoft {
     #endif
 		};
 	};
+
 /*
     template< >
     struct customization< ::CTypedPtrList<CObList, CDXFdata*> > :
