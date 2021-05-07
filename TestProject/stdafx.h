@@ -34,9 +34,17 @@
 
 
 
+#include "boost/foreach.hpp"
+#include "boost/range/algorithm.hpp"
+#include "boost/range/mfc.hpp"
 
 
 
+#ifdef _DEBUG
+#include <stdio.h>
+#include <iostream>
+#include "DbgConsole.h"
+#endif
 
 
 

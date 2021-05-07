@@ -47,8 +47,10 @@ CTestProjectApp::CTestProjectApp()
 	// ここに InitInstance 中の重要な初期化処理をすべて記述してください。
 }
 
+#ifdef _DEBUG
+DbgConsole	theDebug;	// ﾃﾞﾊﾞｯｸﾞ用ｺﾝｿｰﾙ
+#endif
 // 唯一の CTestProjectApp オブジェクトです。
-
 CTestProjectApp theApp;
 
 
@@ -67,7 +69,9 @@ BOOL CTestProjectApp::InitInstance()
 	InitCommonControlsEx(&InitCtrls);
 
 	CWinApp::InitInstance();
-
+#ifdef _DEBUG
+	DebugCode();
+#endif
 
 	EnableTaskbarInteraction(FALSE);
 
@@ -160,4 +164,34 @@ void CTestProjectApp::OnAppAbout()
 // CTestProjectApp メッセージ ハンドラー
 
 
+#ifdef _DEBUG
+class CMyClass
+{
+	int		_m;
+public:
+	CMyClass(int m):_m(m) {}
+	int		GetType(void) {
+		return _m;
+	}
+};
 
+void CTestProjectApp::DebugCode(void)
+{
+	printf("_MFC_VER=%04x\n", _MFC_VER);
+	printf("---\n");
+	CTypedPtrArray<CPtrArray, CMyClass*>	ar;
+	CMyClass*	p;
+	for ( int i=0; i<3; i++ ) {
+		p = new CMyClass(i);
+		ar.Add(p);
+	}
+	BOOST_FOREACH(p, ar) {
+		printf("%d\n", p->GetType());
+	}
+	boost::reverse(ar);
+	BOOST_FOREACH(p, ar) {
+		printf("%d\n", p->GetType());
+		delete	p;
+	}
+}
+#endif

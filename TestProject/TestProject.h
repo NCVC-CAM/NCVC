@@ -16,6 +16,10 @@
 
 class CTestProjectApp : public CWinApp
 {
+#ifdef _DEBUG
+	void	DebugCode(void);
+#endif
+
 public:
 	CTestProjectApp();
 
