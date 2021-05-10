@@ -180,6 +180,7 @@ void CTestProjectApp::DebugCode(void)
 	printf("_MFC_VER=%04x\n", _MFC_VER);
 	printf("---\n");
 	CTypedPtrArray<CPtrArray, CMyClass*>	ar;
+//	CPtrArray	ar;
 	CMyClass*	p;
 	for ( int i=0; i<3; i++ ) {
 		p = new CMyClass(i);
@@ -187,11 +188,16 @@ void CTestProjectApp::DebugCode(void)
 	}
 	BOOST_FOREACH(p, ar) {
 		printf("%d\n", p->GetType());
+//	BOOST_FOREACH(auto pp, ar) {
+//		printf("%d\n", ((CMyClass*)pp)->GetType());
 	}
-	boost::reverse(ar);
+	boost::reverse(ar);	// CPtrArray‚È‚çOK
 	BOOST_FOREACH(p, ar) {
 		printf("%d\n", p->GetType());
 		delete	p;
+//	BOOST_FOREACH(auto pp, ar) {
+//		printf("%d\n", ((CMyClass*)pp)->GetType());
+//		delete	pp;
 	}
 }
 #endif
