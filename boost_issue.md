@@ -2,7 +2,8 @@ Algorithm functions cannot be used with CTypedPtrArray of MFC.
 
 
 If you use an algorithm function with CTypedPtrArray, you will get a compile error where the template arguments do not match with std::swap().  
-I used reverse() as an example, but the same was true for sort() and so on.
+I used reverse() as an example, but the same was true for sort() and so on.  
+The following sample code is a console application + MFC, and unnecessary initialization is omitted.
 
 ```C++
 #include "boost/foreach.hpp"
