@@ -3,7 +3,8 @@ Algorithm functions cannot be used with CTypedPtrArray of MFC.
 
 If you use an algorithm function with CTypedPtrArray, you will get a compile error where the template arguments do not match with std::swap().  
 I used reverse() as an example, but the same was true for sort() and so on.  
-The following sample code is a console application + MFC, and unnecessary initialization is omitted.
+The following sample code is a console application + MFC, and unnecessary initialization is omitted.  
+Boost 1.76, Tried with Visual Studio 2015 and 2019
 
 ```C++
 #include "boost/foreach.hpp"
@@ -12,10 +13,10 @@ The following sample code is a console application + MFC, and unnecessary initia
 
 class CMyClass
 {
-	int		_m;
+	int	_m;
 public:
 	CMyClass(int m):_m(m) {}
-	int		GetType(void) {
+	int	GetType(void) {
 		return _m;
 	}
 };
@@ -30,7 +31,7 @@ int main()
 	}
 	BOOST_FOREACH(p, ar) {
 		printf("%d\n", p->GetType());
-    }
+	}
 	boost::reverse(ar);     // Error with std::swap()
 	BOOST_FOREACH(p, ar) {
 		printf("%d\n", p->GetType());
@@ -49,7 +50,7 @@ It works fine with CPtrArray instead of CTypedPtrArray.
 	}
 	BOOST_FOREACH(auto pp, ar) {
 		printf("%d\n", ((CMyClass*)pp)->GetType());
-    }
+	}
 	boost::reverse(ar);     // ok !!
 	BOOST_FOREACH(auto pp, ar) {
 		printf("%d\n", ((CMyClass*)pp)->GetType());
