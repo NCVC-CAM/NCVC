@@ -255,7 +255,7 @@ void CreateNCFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
 		}
 		else {
 			::Path_Name_From_FullPath(strDocFile, strPath, strFile, FALSE);
-			strFile += AfxGetNCVCApp()->GetDocExtString(TYPE_NCD);
+			strFile += AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetUserDefaultExt();
 		}
 	}
 	else
@@ -289,8 +289,9 @@ BOOL CheckMakeDlgFileExt(DOCTYPE enType, CString& strFile)
 	// 登録拡張子ならそのまま，でないならﾃﾞﾌｫﾙﾄ拡張子を付与
 	if ( lstrlen(szExt) <= 1 ||		// 「.」のみか，それ以下
 			!AfxGetNCVCApp()->GetDocTemplate(enType)->IsExtension(szExt+1) ) {	// 「.」除く
-		if ( enType == TYPE_NCD )
-			strFile += AfxGetNCVCApp()->GetDocExtString(TYPE_NCD);	// .ncd
+		if ( enType == TYPE_NCD ) {
+			strFile += AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetUserDefaultExt();
+		}
 		else {
 			CString	strFilter;
 			VERIFY(strFilter.LoadString(IDS_DXF_FILTER));

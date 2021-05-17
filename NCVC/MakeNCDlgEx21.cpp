@@ -160,7 +160,7 @@ void CMakeNCDlgEx21::EnablePartOut(void)
 			::Path_Name_From_FullPath(GetNCMakeParent()->m_dlg1.GetNCFileName(),
 					m_strNCPath, m_strNCFileName, FALSE);
 			m_strNCFileName += "_" + m_obLayer[m_nIndex]->m_strLayer +
-				AfxGetNCVCApp()->GetDocExtString(TYPE_NCD);
+				AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetUserDefaultExt();
 			::PathSetDlgItemPath(m_hWnd, IDC_MKNC_NCPATH, m_strNCPath);
 			UpdateData(FALSE);
 		}
@@ -337,7 +337,8 @@ void CMakeNCDlgEx21::OnCopy()
 		pLayer->m_strLayerComment	= strComment;
 		pLayer->m_strLayerCode		= strCode;
 		if ( bPartOut && pLayer->m_strNCFile.IsEmpty() )
-			pLayer->m_strNCFile = strNCFile + pLayer->m_strLayer + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD);
+			pLayer->m_strNCFile = strNCFile + pLayer->m_strLayer +
+					AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetUserDefaultExt();
 	}
 	m_ctLayer.SetFocus();
 }

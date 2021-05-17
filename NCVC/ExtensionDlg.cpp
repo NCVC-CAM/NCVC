@@ -15,6 +15,7 @@ BEGIN_MESSAGE_MAP(CExtensionDlg, CDialog)
 	ON_BN_CLICKED(IDC_EXT_DXF_ADD, &CExtensionDlg::OnExtAdd)
 	ON_BN_CLICKED(IDC_EXT_NCD_DEL, &CExtensionDlg::OnExtDel)
 	ON_BN_CLICKED(IDC_EXT_DXF_DEL, &CExtensionDlg::OnExtDel)
+	ON_BN_CLICKED(IDC_EXT_NCD_DEF, &CExtensionDlg::OnExtDefault)
 	ON_LBN_SELCHANGE(IDC_EXT_NCD_LIST, &CExtensionDlg::OnExtSelchangeList)
 	ON_LBN_SELCHANGE(IDC_EXT_DXF_LIST, &CExtensionDlg::OnExtSelchangeList)
 	//}}AFX_MSG_MAP
@@ -25,8 +26,7 @@ END_MESSAGE_MAP()
 
 CExtensionDlg::CExtensionDlg() : CDialog(CExtensionDlg::IDD, NULL)
 {
-	//{{AFX_DATA_INIT(CExtensionDlg)
-	//}}AFX_DATA_INIT
+	m_strExtDefault = AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->m_strDefaultExt;
 }
 
 void CExtensionDlg::DoDataExchange(CDataExchange* pDX)
@@ -36,12 +36,14 @@ void CExtensionDlg::DoDataExchange(CDataExchange* pDX)
 	//}}AFX_DATA_MAP
 	DDX_Text(pDX, IDC_EXT_NCD_TXT, m_strExtTxt[0]);
 	DDX_Text(pDX, IDC_EXT_DXF_TXT, m_strExtTxt[1]);
+	DDX_Text(pDX, IDC_EXT_NCD_DEFTXT, m_strExtDefault);
 	DDX_Control(pDX, IDC_EXT_NCD_TXT, m_ctExtTxt[0]);
 	DDX_Control(pDX, IDC_EXT_DXF_TXT, m_ctExtTxt[1]);
 	DDX_Control(pDX, IDC_EXT_NCD_LIST, m_ctExtList[0]);
 	DDX_Control(pDX, IDC_EXT_DXF_LIST, m_ctExtList[1]);
 	DDX_Control(pDX, IDC_EXT_NCD_DEL, m_ctExtDelBtn[0]);
 	DDX_Control(pDX, IDC_EXT_DXF_DEL, m_ctExtDelBtn[1]);
+	DDX_Control(pDX, IDC_EXT_NCD_DEF, m_ctExtDefBtn);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -57,7 +59,6 @@ BOOL CExtensionDlg::OnInitDialog()
 	// ﾘｽﾄｺﾝﾄﾛｰﾙへの登録
 	for ( int i=0; i<SIZEOF(m_ctExtList); i++ ) {
 		strResult = AfxGetNCVCApp()->GetDocExtString((DOCTYPE)i).Right(3);	// ncd or cam
-		strResult.MakeUpper();
 		m_ctExtList[i].SetItemData(m_ctExtList[i].AddString(strResult), 0);	// 削除不能ﾏｰｸ
 		for ( int j=0; j<2/*SIZEOF(m_mpExt)*/; j++ ) {
 			PMAP_FOREACH(strResult, pDummy, &AfxGetNCVCApp()->GetDocTemplate((DOCTYPE)i)->m_mpExt[j])
@@ -99,6 +100,8 @@ void CExtensionDlg::OnOK()
 				}
 			}
 		}
+		// デフォルト拡張子
+		AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->m_strDefaultExt = m_strExtDefault;
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -114,7 +117,7 @@ void CExtensionDlg::OnExtAdd()
 	int	nID = GetFocus()->GetDlgCtrlID() - IDC_EXT_NCD_ADD;
 	ASSERT( nID>=0 && nID<SIZEOF(m_strExtTxt) );
 	CString	strTmp(m_strExtTxt[nID]);
-	m_strExtTxt[nID] = strTmp.Trim().MakeUpper();
+	m_strExtTxt[nID] = strTmp.Trim();
 	if ( m_strExtTxt[nID].IsEmpty() ) {
 		::MessageBeep(MB_ICONASTERISK);
 		return;
@@ -142,7 +145,16 @@ void CExtensionDlg::OnExtDel()
 	ASSERT( nID>=0 && nID<SIZEOF(m_ctExtList) );
 	int	nIndex = m_ctExtList[nID].GetCurSel();
 	// ﾀﾞｲｱﾛｸﾞ登録分だけ削除対象
-	if ( nIndex >= 0 && m_ctExtList[nID].GetItemData(nIndex) > 0 ) {
+	if ( nIndex != LB_ERR && m_ctExtList[nID].GetItemData(nIndex) > 0 ) {
+		if ( nID == 0 ) {
+			// デフォルト拡張子とマッチしたらデフォルト拡張子も削除
+			CString	strBuf;
+			m_ctExtList[0].GetText(nIndex, strBuf);
+			if ( m_strExtDefault.CompareNoCase(strBuf) == 0 ) {
+				m_strExtDefault.Empty();
+				UpdateData(FALSE);
+			}
+		}
 		m_ctExtList[nID].DeleteString( nIndex );
 		m_ctExtList[nID].SetFocus();
 		int n = m_ctExtList[nID].GetCount() - 1;
@@ -151,11 +163,37 @@ void CExtensionDlg::OnExtDel()
 	}
 }
 
+void CExtensionDlg::OnExtDefault()
+{
+	int	nIndex = m_ctExtList[0].GetCurSel();
+	if ( nIndex != LB_ERR ) {
+		CString	strBuf;
+		m_ctExtList[0].GetText(nIndex, strBuf);
+		if ( strBuf != "*" ) {	// 2重チェック
+			m_strExtDefault = strBuf;
+			UpdateData(FALSE);
+		}
+	}
+}
+
 void CExtensionDlg::OnExtSelchangeList() 
 {
 	int	nID = GetFocus()->GetDlgCtrlID() - IDC_EXT_NCD_LIST;
 	ASSERT( nID>=0 && nID<SIZEOF(m_ctExtDelBtn) );
 	int	nIndex = m_ctExtList[nID].GetCurSel();
-	m_ctExtDelBtn[nID].EnableWindow( nIndex<0 || m_ctExtList[nID].GetItemData(nIndex)==0 ?
-		FALSE : TRUE);
+	m_ctExtDelBtn[nID].EnableWindow( nIndex!=LB_ERR && m_ctExtList[nID].GetItemData(nIndex)!=0 ?
+		TRUE : FALSE);
+
+	if ( nID == 0 ) {
+		BOOL	bDefEnable = TRUE;
+		if ( nIndex != LB_ERR ) {
+			CString	strBuf;
+			m_ctExtList[0].GetText(nIndex, strBuf);
+			if ( strBuf == "*" )
+				bDefEnable = FALSE;
+		}
+		else
+			bDefEnable = FALSE;
+		m_ctExtDefBtn.EnableWindow( bDefEnable );
+	}
 }

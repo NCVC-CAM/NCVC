@@ -112,8 +112,7 @@ UINT AFXAPI HashKey(CPointF& ptKey)
 template<> AFX_INLINE
 BOOL AFXAPI CompareElements(const CPointF* lpt1, const CPointF* lpt2)
 {
-	return ( lpt1->IsMatchPoint(lpt2) ||
-				_hypot(lpt1->x - lpt2->x, lpt1->y - lpt2->y) < CDXFmap::ms_dTolerance );
+	return lpt1->hypot(lpt2) < CDXFmap::ms_dTolerance;
 }
 
 #ifdef _DEBUG

@@ -207,7 +207,7 @@ void CDXFdata::YRev(void)		// Y軸の符号反転
 
 void CDXFdata::OrgTuningBase(void)
 {
-	m_dwFlags &= ~DXFFLG_CLRWORK;	// 生成，検索ﾌﾗｸﾞのｸﾘｱ
+	m_dwFlags &= ~DXFFLG_CLRWORK;	// 生成，検索，エッジフラグのクリア
 	for ( int i=0; i<m_nPoint; i++ )
 		m_ptMake[i] = m_ptTun[i].RoundUp();
 	if ( ms_fXRev ) XRev();		// 符号反転(virtual)
@@ -2770,7 +2770,7 @@ BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv)
 BOOL CDXFpolyline::SetVertex(LPCDXFPARGV lpArgv, float dBow, const CPointF& pts)
 {
 	float	q = fabs(4 * atan(dBow));
-	float	d = _hypotf(lpArgv->c.x - pts.x, lpArgv->c.y - pts.y);
+	float	d = lpArgv->c.hypot(&pts);
 	// ２点が等しい場合はｵﾌﾞｼﾞｪｸﾄを生成しない
 	if ( d < NCMIN )
 		return TRUE;

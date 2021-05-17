@@ -671,6 +671,80 @@ void CNCViewGL::RenderMill(const CNCdata* pData)
 	}
 }
 
+CPoint3F CNCViewGL::PtoR(const CPoint& pt)
+{
+	CPoint3F	ptResult;
+	// ”√ﬁŸãÛä‘ÇÃâÒì]
+	ptResult.x = ( 2.0f * pt.x - m_cx ) / m_cx * 0.5f;
+	ptResult.y = ( m_cy - 2.0f * pt.y ) / m_cy * 0.5f;
+	float	 d = ptResult.hypot();
+	ptResult.z = cos( (PI/2.0f) * min(d, 1.0f) );
+
+	ptResult *= 1.0f / ptResult.hypot();
+
+	return ptResult;
+}
+
+void CNCViewGL::BeginTracking(const CPoint& pt, ENTRACKINGMODE enTrackingMode)
+{
+	::ShowCursor(FALSE);
+	SetCapture();
+	m_enTrackingMode = enTrackingMode;
+	switch( m_enTrackingMode ) {
+	case TM_SPIN:
+		m_ptLastRound = PtoR(pt);
+		break;
+	case TM_PAN:
+		m_ptLastMove = pt;
+		break;
+//	default:	// TM_NONE
+//		break;
+	}
+}
+
+void CNCViewGL::EndTracking(void)
+{
+	ReleaseCapture();
+	::ShowCursor(TRUE);
+	m_enTrackingMode = TM_NONE;
+	Invalidate(FALSE);
+}
+
+void CNCViewGL::DoTracking( const CPoint& pt )
+{
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
+	switch( m_enTrackingMode ) {
+	case TM_SPIN:
+	{
+		CPoint3F	ptRound( PtoR(pt) );
+		CPoint3F	ptw( ptRound - m_ptLastRound );
+		m_dRoundStep = 180.0f * ptw.hypot();
+		m_ptRoundBase.SetPoint(
+			m_ptLastRound.y*ptRound.z - m_ptLastRound.z*ptRound.y,
+			m_ptLastRound.z*ptRound.x - m_ptLastRound.x*ptRound.z,
+			m_ptLastRound.x*ptRound.y - m_ptLastRound.y*ptRound.x );
+		DoRotation(m_dRoundStep);
+		Invalidate(FALSE);
+		m_ptLastRound = ptRound;
+	}
+		break;
+	case TM_PAN:
+		m_ptCenter.x += ( pt.x - m_ptLastMove.x ) / m_dRate;
+		m_ptCenter.y -= ( pt.y - m_ptLastMove.y ) / m_dRate;
+		m_ptLastMove = pt;
+		// ”√ﬁÿ›∏ﬁ&Àﬁ≠∞≤›∏ﬁïœä∑çsóÒ
+		SetupViewingTransform();
+		Invalidate(FALSE);
+		break;
+//	deault:		// TM_NONE
+//		break;
+	}
+
+	::wglMakeCurrent( NULL, NULL );
+}
+
 void CNCViewGL::DoScale(int nRate)
 {
 	CViewBaseGL::DoScale(nRate);

@@ -10,7 +10,8 @@
 #include "DXFDoc.h"
 #include "DXFView.h"
 #include "DxfEditOrgDlg.h"
-#include "DxfAutoWorkingDlg.h"
+#include "DxfAutoPocketDlg.h"
+#include "DxfAutoOutlineDlg.h"
 #include "DXFMakeOption.h"
 #include "DXFMakeClass.h"
 #include "MakeNCDlg.h"
@@ -64,11 +65,9 @@ BEGIN_MESSAGE_MAP(CDXFDoc, CDocument)
 	ON_COMMAND(ID_FILE_SAVE_AS, &CDXFDoc::OnFileSaveAs)
 	ON_COMMAND(ID_EDIT_DXFORG, &CDXFDoc::OnEditOrigin)
 	ON_COMMAND(ID_EDIT_DXFSHAPE, &CDXFDoc::OnEditShape)
-	ON_COMMAND(ID_EDIT_SHAPE_AUTO, &CDXFDoc::OnEditAutoShape)
 	ON_COMMAND(ID_EDIT_SHAPE_STRICTOFFSET, &CDXFDoc::OnEditStrictOffset)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_DXFSHAPE, &CDXFDoc::OnUpdateEditShape)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SORTSHAPE, &CDXFDoc::OnUpdateEditShaping)
-	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_AUTO, &CDXFDoc::OnUpdateEditShaping)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_SHAPE_STRICTOFFSET, &CDXFDoc::OnUpdateEditShaping)
 	//}}AFX_MSG_MAP
 	ON_COMMAND(ID_FILE_NCD2DXF, &CDXFDoc::OnFileDXF2DXF)
@@ -78,6 +77,9 @@ BEGIN_MESSAGE_MAP(CDXFDoc, CDocument)
 	// 形状加工指示
 	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, &CDXFDoc::OnUpdateShapePattern)
 	ON_COMMAND_RANGE(ID_EDIT_SHAPE_SEL, ID_EDIT_SHAPE_POC, &CDXFDoc::OnShapePattern)
+	// 自動処理
+	ON_UPDATE_COMMAND_UI_RANGE(ID_EDIT_SHAPE_OUTLINE, ID_EDIT_SHAPE_POCKET, &CDXFDoc::OnUpdateEditShaping)
+	ON_COMMAND_RANGE(ID_EDIT_SHAPE_OUTLINE, ID_EDIT_SHAPE_POCKET, &CDXFDoc::OnEditAuto)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -629,7 +631,7 @@ void CDXFDoc::MakeDXF(const CString& strFile)
 		}
 		// 原点情報出力
 		if ( m_pCircle ) {
-			CPoint3F	ptOrg = m_pCircle->GetCenter();
+			CPoint3F	ptOrg( m_pCircle->GetCenter() );
 			pMake = new CDXFMake(ptOrg, m_pCircle->GetR());
 			obDXFdata.Add(pMake);
 		}
@@ -1323,18 +1325,27 @@ void CDXFDoc::OnEditShape()
 	}
 }
 
-void CDXFDoc::OnEditAutoShape() 
+void CDXFDoc::OnEditAuto(UINT nID)
 {
-	CDxfAutoWorkingDlg	dlg(&m_AutoWork);
-	if ( dlg.DoModal() != IDOK )
+	switch ( nID ) {
+	case ID_EDIT_SHAPE_OUTLINE:
+		{
+			CDxfAutoOutlineDlg	dlg(&m_AutoWork);
+			if ( dlg.DoModal() != IDOK )
+				return;
+		}
+		break;
+	case ID_EDIT_SHAPE_POCKET:
+		{
+			CDxfAutoPocketgDlg	dlg(&m_AutoWork);
+			if ( dlg.DoModal() != IDOK )
+				return;
+		}
+	default:
 		return;
+	}
 
-	m_AutoWork.nSelect		= dlg.m_nSelect;
-	m_AutoWork.dOffset		= dlg.m_dOffset;
-	m_AutoWork.bAcuteRound	= dlg.m_bAcuteRound;
-	m_AutoWork.nLoopCnt		= dlg.m_nLoopCnt;
-	m_AutoWork.nScanLine	= dlg.m_nScan;
-	m_AutoWork.bCircleScroll= dlg.m_bCircle;
+	m_AutoWork.nSelect		= nID - ID_EDIT_SHAPE_OUTLINE;
 
 	// ｵﾌｾｯﾄ初期値の更新
 	int	i, j;

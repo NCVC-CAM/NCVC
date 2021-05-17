@@ -55,7 +55,9 @@ enum {
 	MKNC_DBL_DRILLCIRCLE,		// 穴加工に見立てる円ﾃﾞｰﾀの半径
 	MKNC_DBL_TOLERANCE,			// 同一座標と見なす許容差
 	MKNC_DBL_DRILLMARGIN,		// 基準軸に対する許容差
-		MKNC_DBL_NUMS		// [21]
+	MKNC_DBL_ZAPPROACH,			// Z軸進入アプローチ
+	MKNC_DBL_ZAPPDWELL,			// Z軸進入アプローチのドウェル時間
+		MKNC_DBL_NUMS		// [23]
 };
 enum {
 	MKNC_FLG_PROG = 0,			// O番号付与
@@ -86,7 +88,7 @@ enum {
 	MKNC_STR_FOOTER,			// ｶｽﾀﾑﾌｯﾀｰ
 	MKNC_STR_CUSTMOVE_B,		// ｶｽﾀﾑ移動ｺｰﾄﾞ(前後)
 	MKNC_STR_CUSTMOVE_A,
-	MKNC_STR_PERLSCRIPT,		// 生成後に実行されるPerlｽｸﾘﾌﾟﾄ
+	MKNC_STR_SCRIPT,			// 生成後に実行されるPerlｽｸﾘﾌﾟﾄ
 		MKNC_STR_NUMS		// [7]
 };
 //
@@ -135,6 +137,8 @@ enum {
 #define	MIL_D_DRILLCIRCLE			m_pDblOpt[MKNC_DBL_DRILLCIRCLE]
 #define	MIL_D_TOLERANCE				m_pDblOpt[MKNC_DBL_TOLERANCE]
 #define	MIL_D_DRILLMARGIN			m_pDblOpt[MKNC_DBL_DRILLMARGIN]
+#define	MIL_D_ZAPPROACH				m_pDblOpt[MKNC_DBL_ZAPPROACH]
+#define	MIL_D_ZAPPDWELL				m_pDblOpt[MKNC_DBL_ZAPPDWELL]
 //
 #define	MIL_F_PROG					m_pFlgOpt[MKNC_FLG_PROG]
 #define	MIL_F_PROGAUTO				m_pFlgOpt[MKNC_FLG_PROGAUTO]
@@ -162,7 +166,7 @@ enum {
 #define	MIL_S_FOOTER				m_strOption[MKNC_STR_FOOTER]
 #define	MIL_S_CUSTMOVE_B			m_strOption[MKNC_STR_CUSTMOVE_B]
 #define	MIL_S_CUSTMOVE_A			m_strOption[MKNC_STR_CUSTMOVE_A]
-#define	MIL_S_PERLSCRIPT			m_strOption[MKNC_STR_PERLSCRIPT]
+#define	MIL_S_SCRIPT				m_strOption[MKNC_STR_SCRIPT]
 //
 class CNCMakeMillOpt : public CNCMakeOption
 {

@@ -83,7 +83,6 @@ extern	DECIMALPOINT	_dp;
 //////////////////////////////////////////////////////////////////////
 // 実数型 CPoint の雛形
 
-template<typename T> class	CPoint3T;
 template<typename T>
 class CPointT :
 	// +=, -=, *=, /= で +, -, * / も自動定義
@@ -162,12 +161,11 @@ public:
 	BOOL		operator == (T pt) const {
 		return ( fabs(x-pt)<NCMIN && fabs(y-pt)<NCMIN );
 	}
-	BOOL		operator == (const CPointT& pt) const {
+	BOOL		operator == (const CPointT<T>& pt) const {
 		return IsMatchPoint(&pt);
 	}
-	BOOL	IsMatchPoint(const CPointT* pt) const {
-		CPointT<T>	ptw(x - pt->x, y - pt->y);
-		return ptw.hypot() < NCMIN;
+	BOOL	IsMatchPoint(const CPointT<T>* pt) const {
+		return hypot(pt) < NCMIN;
 	}
 	T&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xy));
@@ -177,16 +175,16 @@ public:
 		ASSERT(a>=0 && a<SIZEOF(xy));
 		return xy[a];
 	}
-//	T		hypot(void) const;	// 特殊化のためここでは宣言のみ
 	T		hypot(void) const {
 		return ::sqrt(x*x + y*y);
+	}
+	T		hypot(const CPointT<T>* e) const {
+		CPointT<T>	p(e->x-x, e->y-y);
+		return ::sqrt(p.x*p.x + p.y*p.y);
 	}
 	// 変換関数
 	operator CPoint() const {
 		return CPoint((int)x, (int)y);
-	}
-	operator CPoint3T<T>() const {
-		return CPoint3T<T>(x, y, 0);
 	}
 	CPointT<T>	RoundUp(void) const {
 		return CPointT<T>(::RoundUp(x), ::RoundUp(y));
@@ -207,7 +205,7 @@ public:
 		return atan2(y, x);
 	}
 	// 自分を基点とした指定点への角度
-	T		arctan(const CPointT<T> e) const {
+	T		arctan(const CPointT<T>& e) const {
 		return atan2(e.y-y, e.x-x);
 	}
 };
@@ -216,16 +214,6 @@ typedef	CPointT<float>			CPointF;
 typedef	std::vector<CPointF>	CVPointF;
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointF, float,  cs::cartesian, x, y)
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointD, double, cs::cartesian, x, y)
-/*
-template<typename T> inline T CPointT<T>::hypot(void) const
-{
-	return ::hypotf(x, y);	// hypot()はなぜかfloatとdoubleで区別
-}
-template<> inline double CPointT<double>::hypot(void) const
-{
-	return ::hypot(x, y);
-}
-*/
 
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD クラス
@@ -257,6 +245,9 @@ public:
 	CPoint3T(T xx, T yy, T zz) {
 		SetPoint(xx, yy, zz);
 	}
+	CPoint3T(const CPointT<T>& pt, T zz = 0) {
+		SetPoint(pt.x, pt.y, zz);
+	}
 	CPoint3T(const CPoint3T<double>& pt) {
 		// double -> float 初期化
 		SetPoint((T)pt.x, (T)pt.y, (T)pt.z);
@@ -264,10 +255,6 @@ public:
 	// 演算子定義
 	CPoint3T<T>&	operator = (T xyz) {
 		x = y = z = xyz;
-		return *this;
-	}
-	CPoint3T<T>&	operator = (const CPointT<T>& pt) {
-		x = pt.x;	y = pt.y;
 		return *this;
 	}
 	CPoint3T<float>& operator = (const CPoint3T<double>& pt) {
@@ -313,8 +300,7 @@ public:
 		return IsMatchPoint(&pt);
 	}
 	BOOL	IsMatchPoint(const CPoint3T<T>* pt) const {
-		CPoint3T<T>	ptw(x - pt->x, y - pt->y, z - pt->z);
-		return ptw.hypot() < NCMIN;
+		return hypot(pt) < NCMIN;
 	}
 	T&		operator[] (size_t a) {
 		ASSERT(a>=0 && a<SIZEOF(xyz));
@@ -326,6 +312,10 @@ public:
 	}
 	T		hypot(void) const {
 		return ::sqrt(x*x + y*y + z*z);
+	}
+	T		hypot(const CPoint3T<T>* e) const {
+		CPoint3T<T>	p(e->x-x, e->y-y, e->z-z);
+		return ::sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
 	}
 	// 変換関数
 	CPointT<T>	GetXY(void) const {
@@ -349,7 +339,7 @@ public:
 		return atan2(y, x);
 	}
 	// 自分を基点とした指定点への角度(2D only)
-	T		arctan(const CPoint3T<T> e) const {
+	T		arctan(const CPoint3T<T>& e) const {
 		return atan2(e.y-y, e.x-x);
 	}
 	// 2D変換

@@ -147,7 +147,7 @@
       <ValidateAllParameters>false</ValidateAllParameters>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>/Zm256 /MP %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zm256 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
@@ -156,8 +156,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <MultiProcessorCompilation>
-      </MultiProcessorCompilation>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnablePREfast>false</EnablePREfast>
       <AssemblerOutput>
       </AssemblerOutput>
@@ -419,7 +418,7 @@
     <ClCompile Include="CustomMenu.cpp" />
     <ClCompile Include="CustomToolBar.cpp" />
     <ClCompile Include="DocBase.cpp" />
-    <ClCompile Include="DxfAutoWorkingDlg.cpp" />
+    <ClCompile Include="DxfAutoPocketDlg.cpp" />
     <ClCompile Include="DXFBlock.cpp" />
     <ClCompile Include="DXFChild.cpp" />
     <ClCompile Include="DXFdata.cpp" />
@@ -566,7 +565,7 @@
     <ClInclude Include="CustomToolBar.h" />
     <ClInclude Include="DbgConsole.h" />
     <ClInclude Include="DocBase.h" />
-    <ClInclude Include="DxfAutoWorkingDlg.h" />
+    <ClInclude Include="DxfAutoPocketDlg.h" />
     <ClInclude Include="DXFBlock.h" />
     <ClInclude Include="DXFChild.h" />
     <ClInclude Include="DXFdata.h" />

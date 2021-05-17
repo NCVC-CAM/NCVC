@@ -9,12 +9,14 @@
 #include "NCDoc.h"
 #include "ThreadDlg.h"
 #include "NCVCdefine.h"
-#pragma warning( push )
-#pragma	warning( disable : 4244 )		// Boost 1.59Å`
-#pragma	warning( disable : 4018 )
+//#pragma warning( push )
+//#pragma	warning( disable : 4244 )		// Boost 1.59Å`, end 1.76
+//#pragma	warning( disable : 4018 )
+#undef	min		// C4003 warning avoidance (Boost 1.76Å`)
+#undef	max		// https://yohhoy.hatenadiary.jp/entry/20120115/p1
 #include "boost/spirit/include/qi.hpp"
 #include "boost/spirit/repository/include/qi_confix.hpp"
-#pragma	warning( pop )
+//#pragma	warning( pop )
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

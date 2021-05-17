@@ -83,7 +83,7 @@ BEGIN_MESSAGE_MAP(CNCVCApp, CWinAppEx)
 	ON_COMMAND(ID_FILE_CADBIND, &CNCVCApp::OnFileCADbind)
 	ON_COMMAND(ID_FILE_CLANDOP, &CNCVCApp::OnFileCloseAndOpen)
 	ON_COMMAND(ID_HELP_USING, &CNCVCApp::OnHelp)
-	ON_COMMAND_RANGE(ID_HELP_USING2, ID_HELP_USING5, &CNCVCApp::OnHelpUsing)
+	ON_COMMAND_RANGE(ID_HELP_USING2, ID_HELP_USING6, &CNCVCApp::OnHelpUsing)
 	ON_COMMAND(ID_HELP_ADDIN, &CNCVCApp::OnHelpAddin)
 	ON_COMMAND(ID_OPTION_MC, &CNCVCApp::OnOptionMC)
 	ON_COMMAND(ID_OPTION_EDITMC, &CNCVCApp::OnOptionEditMC)
@@ -1838,13 +1838,14 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 	CRuntimeClass* pFrameClass, CRuntimeClass* pViewClass) :
 			CMultiDocTemplate(nIDResource, pDocClass, pFrameClass, pViewClass)
 {
-	// ﾚｼﾞｽﾄﾘから拡張子情報を取得
 	extern	LPCTSTR		gg_szComma;		// ","
 
-	CString		strRegKey, strEntry, strResult;
+	// ﾚｼﾞｽﾄﾘから拡張子情報を取得
+	CString		strRegKey, strEntry, strDef, strResult;
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 	VERIFY(strEntry.LoadString(IDS_REG_EXTENSION));
-	GetDocString(strResult, CDocTemplate::filterExt);
+	VERIFY(strDef.LoadString(IDS_REG_EXTENSION_DEF));
+	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
 	strEntry += strResult;
 
 	std::string	str(AfxGetApp()->GetProfileString(strRegKey, strEntry)), strTok;
@@ -1853,19 +1854,19 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 	try {
 		BOOST_FOREACH(strTok, tok) {
 			strResult = boost::algorithm::trim_copy(strTok).c_str();
-			strResult.MakeUpper();		// 大文字登録
 			m_mpExt[EXT_DLG].SetAt(strResult, NULL);
 		}
 	}
 	catch (CMemoryException* e) {
 		e->Delete();
 	}
+	// デフォルト拡張子
+	m_strDefaultExt = AfxGetApp()->GetProfileString(strRegKey, strEntry+strDef);
 }
 
 BOOL CNCVCDocTemplate::AddExtensionFunc(LPCTSTR lpszExt, LPVOID pAddFunc)
 {
 	CString	strExt(lpszExt);
-	strExt.MakeUpper();
 	// ﾀﾞｲｱﾛｸﾞ用に登録されていればそれを削除(ｱﾄﾞｲﾝ優先)
 	LPVOID	pFunc;
 	if ( m_mpExt[EXT_DLG].Lookup(strExt, pFunc) )
@@ -1930,8 +1931,8 @@ BOOL CNCVCDocTemplate::IsExtension(LPCTSTR lpszExt, LPVOID* pFuncResult/*=NULL*/
 	CString	strFilter, strExt(lpszExt);
 
 	// 標準拡張子とのﾁｪｯｸ
-	GetDocString(strFilter, CDocTemplate::filterExt);	// .ncd or .cam
-	if ( strExt.CompareNoCase(strFilter.Mid(1)) == 0 ) {
+	GetDocString(strFilter, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
+	if ( strExt.CompareNoCase(strFilter.Right(3)) == 0 ) {
 		if ( pFuncResult )
 			*pFuncResult = NULL;	// ﾃﾞﾌｫﾙﾄｼﾘｱﾙ関数
 		return TRUE;
@@ -1939,14 +1940,21 @@ BOOL CNCVCDocTemplate::IsExtension(LPCTSTR lpszExt, LPVOID* pFuncResult/*=NULL*/
 
 	// ｶｽﾀﾑ拡張子の検索
 	// pFunc は NULL もあり得るので，戻り値に出来ない
+	CString	strKey;
 	LPVOID	pFunc;
-	strExt.MakeUpper();
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
-		if ( m_mpExt[i].Lookup(strExt, pFunc) ) {
-			if ( pFuncResult )
-				*pFuncResult = pFunc;
-			return TRUE;
-		}
+//		if ( m_mpExt[i].Lookup(strExt, pFunc) ) {
+//			if ( pFuncResult )
+//				*pFuncResult = pFunc;
+//			return TRUE;
+//		}
+		PMAP_FOREACH(strKey, pFunc, &m_mpExt[i])		// Lookup() では大文字小文字を区別してしまう
+			if ( strExt.CompareNoCase(strKey) == 0 ) {
+				if ( pFuncResult )
+					*pFuncResult = pFunc;
+				return TRUE;
+			}
+		END_FOREACH
 	}
 
 	return FALSE;
@@ -1956,10 +1964,11 @@ BOOL CNCVCDocTemplate::SaveExt(void)
 {
 	extern	LPCTSTR		gg_szComma;		// ","
 
-	CString		strRegKey, strEntry, strResult, strKey;
+	CString		strRegKey, strEntry, strDef, strResult, strKey;
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 	VERIFY(strEntry.LoadString(IDS_REG_EXTENSION));
-	GetDocString(strResult, CDocTemplate::filterExt);
+	VERIFY(strDef.LoadString(IDS_REG_EXTENSION_DEF));
+	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
 	strEntry += strResult;
 
 	LPVOID	pDummy;
@@ -1971,7 +1980,11 @@ BOOL CNCVCDocTemplate::SaveExt(void)
 	END_FOREACH
 
 	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, strResult) ) {
-		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK|MB_ICONEXCLAMATION);
+		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry + strDef, m_strDefaultExt) ) {
+		AfxMessageBox(IDS_ERR_REGISTRY, MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
 	}
 
@@ -1986,18 +1999,13 @@ CString CNCVCDocTemplate::GetFilterString(void)
 	LPVOID	pDummy;
 
 	// 基本拡張子
-	GetDocString(strResult, CDocTemplate::filterExt);
-	if ( !strResult.IsEmpty() ) {
-		strResult.MakeLower();
-		strResult = gg_szWild + strResult.Mid(1);
-	}
+	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
+	strResult = gg_szWild + strResult.Right(3);
 
 	// 登録拡張子
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		PMAP_FOREACH(strKey, pDummy, &m_mpExt[i])
-			strKey.MakeLower();
-			if ( !strResult.IsEmpty() )
-				strResult += gg_szSemicolon;
+			strResult += ss_cSplt;
 			strResult += gg_szWild + strKey;
 		END_FOREACH
 	}

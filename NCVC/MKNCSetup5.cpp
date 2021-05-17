@@ -37,6 +37,8 @@ void CMKNCSetup5::DoDataExchange(CDataExchange* pDX)
 	//{{AFX_DATA_MAP(CMKNCSetup5)
 	DDX_Control(pDX, IDC_MKNC5_TOLERANCE, m_dTolerance);
 	DDX_Control(pDX, IDC_MKNC5_DRILLMARGIN, m_dDrillMargin);
+	DDX_Control(pDX, IDC_MKNC5_ZAPPROACH, m_dZApproach);
+	DDX_Control(pDX, IDC_MKNC4_DWELL, m_nZAppDwell);
 	DDX_Control(pDX, IDC_MKNC5_SCRIPT, m_ctScript);
 	DDX_CBIndex(pDX, IDC_MKNC5_DRILL, m_nOptimaizeDrill);
 	DDX_CBIndex(pDX, IDC_MKNC5_TOLERANCE_P, m_nTolerance);
@@ -63,7 +65,9 @@ BOOL CMKNCSetup5::OnInitDialog()
 	m_nTolerance		= pOpt->MIL_I_TOLERANCE;
 	m_nOptimaizeDrill	= pOpt->MIL_I_OPTIMAIZEDRILL;
 	m_dDrillMargin		= pOpt->MIL_D_DRILLMARGIN;
-	::Path_Name_From_FullPath(pOpt->MIL_S_PERLSCRIPT, m_strScriptPath, m_strScript);
+	m_dZApproach		= pOpt->MIL_D_ZAPPROACH;
+	m_nZAppDwell		= (int)(pOpt->MIL_D_ZAPPDWELL);
+	::Path_Name_From_FullPath(pOpt->MIL_S_SCRIPT, m_strScriptPath, m_strScript);
 	// Êß½•\Ž¦‚ÌÅ“K‰»(shlwapi.h)
 	::PathSetDlgItemPath(m_hWnd, IDC_MKNC5_SCRIPTPATH, m_strScriptPath);
 	//
@@ -84,7 +88,7 @@ void CMKNCSetup5::OnSelchangeDrill()
 void CMKNCSetup5::OnScriptLookup() 
 {
 	UpdateData();
-	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_PERL_FILTER, TRUE, m_strScript, m_strScriptPath) == IDOK ) {
+	if ( ::NCVC_FileDlgCommon(IDS_CUSTOMFILE, IDS_SCRIPT_FILTER, TRUE, m_strScript, m_strScriptPath) == IDOK ) {
 		// ÃÞ°À‚Ì”½‰f
 		::Path_Name_From_FullPath(m_strScript, m_strScriptPath, m_strScript);
 		::PathSetDlgItemPath(m_hWnd, IDC_MKNC5_SCRIPTPATH, m_strScriptPath);
@@ -104,7 +108,9 @@ BOOL CMKNCSetup5::OnApply()
 	pOpt->MIL_I_TOLERANCE		= m_nTolerance;
 	pOpt->MIL_I_OPTIMAIZEDRILL	= m_nOptimaizeDrill;
 	pOpt->MIL_D_DRILLMARGIN		= fabs((float)m_dDrillMargin);
-	pOpt->MIL_S_PERLSCRIPT		= m_strScriptPath+m_strScript;
+	pOpt->MIL_S_SCRIPT			= m_strScriptPath+m_strScript;
+	pOpt->MIL_D_ZAPPROACH		= m_dZApproach;
+	pOpt->MIL_D_ZAPPDWELL		= fabs((float)m_nZAppDwell);
 
 	return TRUE;
 }
@@ -114,10 +120,29 @@ BOOL CMKNCSetup5::OnKillActive()
 	if ( !__super::OnKillActive() )
 		return FALSE;
 
-	if ( !m_strScript.IsEmpty() && !::IsFileExist(m_strScriptPath+m_strScript) ) {
-		m_ctScript.SetFocus();
+	if ( !m_strScript.IsEmpty() ) {
+		if ( GetScriptExec(m_strScript).IsEmpty() ) {
+			AfxMessageBox(IDS_ERR_SCRIPTEXT, MB_OK|MB_ICONEXCLAMATION);
+			m_ctScript.SetFocus();
+			return FALSE;
+		}
+		if ( !::IsFileExist(m_strScriptPath+m_strScript) ) {
+			AfxMessageBox(IDS_ERR_FILEPATH, MB_OK|MB_ICONEXCLAMATION);
+			m_ctScript.SetFocus();
+			return FALSE;
+		}
+	}
+	if ( m_dZApproach < 0.0f ) {
+		AfxMessageBox(IDS_ERR_SETTING, MB_OK|MB_ICONEXCLAMATION);
+		m_dZApproach.SetFocus();
+		m_dZApproach.SetSel(0, -1);
 		return FALSE;
 	}
-
+	if ( m_nZAppDwell < 0 ) {
+		AfxMessageBox(IDS_ERR_SETTING, MB_OK|MB_ICONEXCLAMATION);
+		m_dZApproach.SetFocus();
+		m_dZApproach.SetSel(0, -1);
+		return FALSE;
+	}
 	return TRUE;
 }

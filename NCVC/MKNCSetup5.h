@@ -2,7 +2,6 @@
 //
 
 #pragma once
-#include "afxwin.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CMKNCSetup5 ダイアログ
@@ -23,6 +22,8 @@ public:
 	enum { IDD = IDD_MKNC_SETUP5 };
 	CFloatEdit	m_dTolerance;
 	CFloatEdit	m_dDrillMargin;
+	CFloatEdit	m_dZApproach;
+	CIntEdit	m_nZAppDwell;
 	CEdit	m_ctScript;
 	int		m_nOptimaizeDrill;
 	int		m_nTolerance;

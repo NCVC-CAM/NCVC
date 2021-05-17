@@ -37,8 +37,12 @@ public:
 	CNCMakeMill(int, float, float);
 	// XYのG[0|1]移動
 	CNCMakeMill(int, const CPointF&, float);
+	// XYZのG01
+	CNCMakeMill(const CPoint3F&, float);
 	// 座標指示による円弧の生成
 	CNCMakeMill(int, const CPointF&, const CPointF&, const CPointF&, float);
+	// ドウェル時間（G04）
+	CNCMakeMill(float);
 	// 任意の文字列ｺｰﾄﾞ
 	CNCMakeMill(const CString&);
 

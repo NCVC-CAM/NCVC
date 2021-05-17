@@ -137,13 +137,13 @@
 #define IDS_VIEW_SETUP_INPORT           1314
 #define IDS_VIEW_SETUP_EXPORT           1315
 #define IDS_VIEW_TEXTURE                1316
-#define IDS_DXF_FILTER                  1384
-#define IDS_PERL_FILTER                 1385
+#define IDS_3DM_FILTER                  1384
+#define IDS_SCRIPT_FILTER               1385
 #define IDS_TEXTURE_FILTER              1386
 #define IDS_NCVC_FILTER                 1387
 #define IDS_NCD_FILTER                  1388
 #define IDS_CAM_FILTER                  1389
-#define IDS_3DM_FILTER                  1390
+#define IDS_DXF_FILTER                  1390
 #define IDS_NCI_FILTER                  1391
 #define IDS_NCIM_FILTER                 1392
 #define IDS_NCIL_FILTER                 1393
@@ -217,6 +217,8 @@
 #define ID_EDIT_SHAPE_AUTO              2005
 #define ID_EDIT_SHAPE_NAME              2006
 #define ID_EDIT_SHAPE_STRICTOFFSET      2007
+#define ID_EDIT_SHAPE_OUTLINE           2008
+#define ID_EDIT_SHAPE_POCKET            2009
 #define ID_EDIT_SHAPE_SEL               2011
 #define IDC_VIEWSETUP1_BT_RECT          2011
 #define ID_EDIT_SHAPE_VEC               2012
@@ -378,14 +380,15 @@
 #define IDC_DXFEDIT_SEL_RECT            2702
 #define IDC_DXFEDIT_SEL_ORIG            2703
 #define IDC_DXFEDIT_NUM                 2704
-#define IDD_DXFEDIT_AUTOWORKING         2800
-#define IDC_AUTO_SELECT_OUTLINE         2801
-#define IDC_AUTO_SELECT_POCKET          2802
-#define IDC_AUTO_OFFSET                 2810
+#define IDD_DXFEDIT_AUTOPOCKET          2800
+#define IDC_AUTO_OFFSET                 2801
+#define IDC_AUTO_LOOPCNT                2802
+#define IDC_AUTO_GATE                   2805
+#define IDC_AUTO_APPROACH               2806
 #define IDC_AUTO_ACUTEROUND             2811
-#define IDC_AUTO_LOOPCNT                2812
 #define IDC_AUTO_SCANLINE               2813
 #define IDC_AUTO_CIRCLESCROLL           2814
+#define IDD_DXFEDIT_AUTOOUTLINE         2820
 #define ID_NCVIEW_MAXRECT               3001
 #define ID_NCVIEW_WORKRECT              3002
 #define ID_NCVIEW_ALLFIT                3003
@@ -585,6 +588,7 @@
 #define IDC_MKNC4_CIRCLEPROCESS         4323
 #define IDC_MKNC4_CIRCLEGROUP           4324
 #define IDD_MKNC_SETUP5                 4400
+#define IDC_MKNC5_ZAPPROACH             4401
 #define IDC_MKNC5_TOLERANCE             4403
 #define IDC_MKNC5_TOLERANCE_P           4404
 #define IDC_MKNC5_DRILL                 4405
@@ -655,6 +659,8 @@
 #define IDC_EXT_DXF_ADD                 9106
 #define IDC_EXT_NCD_DEL                 9107
 #define IDC_EXT_DXF_DEL                 9108
+#define IDC_EXT_NCD_DEF                 9109
+#define IDC_EXT_NCD_DEFTXT              9110
 #define IDD_THREADDLG                   9500
 #define IDC_READ_PROGRESS               9501
 #define IDC_READ_TEXT                   9502
@@ -686,6 +692,7 @@
 #define ID_HELP_USING3                  9903
 #define ID_HELP_USING4                  9904
 #define ID_HELP_USING5                  9905
+#define ID_HELP_USING6                  9906
 #define IDS_REGISTRY_KEY                10000
 #define IDS_REGKEY_SETTINGS             10001
 #define IDS_REGKEY_WINDOW               10002
@@ -752,8 +759,9 @@
 #define IDS_REG_LOGFONT                 10903
 #define IDS_REG_CUSTOMCOLOR             10904
 #define IDS_REG_EXTENSION               10905
-#define IDS_REG_THUMBNAIL_SORT          10906
-#define IDS_REG_THUMBNAIL_PLANE         10907
+#define IDS_REG_EXTENSION_DEF           10906
+#define IDS_REG_THUMBNAIL_SORT          10907
+#define IDS_REG_THUMBNAIL_PLANE         10908
 #define IDS_REG_VIEW_WHEEL              10950
 #define IDS_REG_VIEW_WHEELTYPE          10951
 #define IDS_REG_VIEW_COLOR              10952
@@ -779,11 +787,12 @@
 #define IDS_ERR_GLTRACE                 21009
 #define IDS_ERR_CONTROL                 21010
 #define IDS_ERR_FILEPATH                21011
-#define IDS_ERR_UNDERZERO               21012
-#define IDS_ERR_POSITIVE                21013
-#define IDS_ERR_SETTING                 21014
-#define IDS_ERR_REGEX                   21015
-#define IDS_ERR_GLSL                    21016
+#define IDS_ERR_SCRIPTEXT               21012
+#define IDS_ERR_UNDERZERO               21013
+#define IDS_ERR_POSITIVE                21014
+#define IDS_ERR_SETTING                 21015
+#define IDS_ERR_REGEX                   21016
+#define IDS_ERR_GLSL                    21017
 #define IDS_ERR_CAMDATA                 21050
 #define IDS_ERR_CAMVER                  21051
 #define IDS_ERR_CAMOLD                  21052
@@ -791,8 +800,7 @@
 #define IDS_ERR_DXF_DRAGLINK            21054
 #define IDS_ERR_DXF_CREATEOUTELINE      21055
 #define IDS_ERR_DRAGTREE                21056
-#define IDS_STRING21057                 21095
-#define IDS_ERR_PERLSCRIPT              21095
+#define IDS_ERR_SCRIPT                  21095
 #define IDS_ERR_DLL                     21096
 #define IDS_ERR_PROCESS                 21097
 #define IDS_ERR_THREAD                  21098
@@ -889,8 +897,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        207
-#define _APS_NEXT_COMMAND_VALUE         32823
+#define _APS_NEXT_RESOURCE_VALUE        206
+#define _APS_NEXT_COMMAND_VALUE         32824
 #define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

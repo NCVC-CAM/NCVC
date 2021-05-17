@@ -20,11 +20,11 @@ using namespace boost;
 
 static	CThreadDlg*	g_pParent;
 #define	IsThread()	g_pParent->IsThreadContinue()
-static	inline	void	SetProgressRange(INT_PTR n)
+static	inline	void	_SetProgressRange(INT_PTR n)
 {
 	g_pParent->m_ctReadProgress.SetRange32(0, (int)n);
 }
-static	inline	void	SetProgressPos(INT_PTR n)
+static	inline	void	_SetProgressPos(INT_PTR n)
 {
 	g_pParent->m_ctReadProgress.SetPos((int)n);
 }
@@ -173,13 +173,13 @@ void AutoRecalcWorking(const CLayerData* pLayer, LPVOID pParam)
 	if ( vSelect && vSelect->which()==DXFTREETYPE_SHAPE )
 		pShapeSrc = get<CDXFshape*>(*vSelect);
 
-	SetProgressRange(nLoop);
+	_SetProgressRange(nLoop);
 
 	try {
 		for ( i=0; i<nLoop && IsThread(); i++ ) {
 			pShape = pLayer->GetShapeData(i);
 			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
-			SetProgressPos(i);
+			_SetProgressPos(i);
 			// 形状集合が指定されていれば、それにﾏｯﾁするものだけ
 			if ( pShapeSrc && pShapeSrc != pShape )
 				continue;
@@ -221,7 +221,7 @@ void AutoRecalcWorking(const CLayerData* pLayer, LPVOID pParam)
 		e->Delete();
 	}
 
-	SetProgressPos(nLoop);
+	_SetProgressPos(nLoop);
 
 	// ｵﾌｾｯﾄｵﾌﾞｼﾞｪｸﾄ同士の交点ﾁｪｯｸ
 	CheckStrictOffset(pLayer, reinterpret_cast<LPVOID>(TRUE));	// 処理にﾙｰﾌﾟが必要
@@ -250,7 +250,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 	if ( !pSepThread )
 		::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 
-	SetProgressRange(nLoop);
+	_SetProgressRange(nLoop);
 	thSepParam.evEnd.SetEvent();
 
 	if ( pParam ) {
@@ -273,7 +273,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 	for ( n=0; n<nMax && IsThread(); n++ ) {		// 階層ﾙｰﾌﾟ
 		for ( i=0; i<nLoop && IsThread(); i++ ) {
 			pShape1 = pLayer->GetShapeData(i);
-			SetProgressPos(i);
+			_SetProgressPos(i);
 			pOutline1 = pfnGetOutline(pShape1, n);	// 処理に応じた輪郭ｵﾌﾞｼﾞｪｸﾄ取得
 			if ( !pOutline1 )
 				continue;
@@ -329,7 +329,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 	thSepParam.evStart.SetEvent();
 	WaitForSingleObject(pSepThread->m_hThread, INFINITE);
 
-	SetProgressPos(nLoop);
+	_SetProgressPos(nLoop);
 
 #ifdef _DEBUG
 	// 分割数の確認
@@ -413,14 +413,14 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 	if ( !pSepThread )
 		::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
 
-	SetProgressRange(nLoop);
+	_SetProgressRange(nLoop);
 	thSepParam.evEnd.SetEvent();
 
 	// ﾒｲﾝﾙｰﾌﾟ
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pShape1 = pLayer->GetShapeData(i);
 		pOutline1 = pShape1->GetOutlineLastObj();
-		SetProgressPos(i);
+		_SetProgressPos(i);
 		if ( !pOutline1 || !(pShape1->GetShapeFlag()&DXFMAPFLG_INSIDE) )
 			continue;
 		dOffset1 = pOutline1->GetOutlineOffset();
@@ -474,7 +474,7 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 	thSepParam.evStart.SetEvent();
 	WaitForSingleObject(pSepThread->m_hThread, INFINITE);
 
-	SetProgressPos(nLoop);
+	_SetProgressPos(nLoop);
 
 #ifdef _DEBUG
 	// 分割数の確認
@@ -509,14 +509,14 @@ BOOL SelectOutline(const CLayerData* pLayer)
 	CDXFshape*	pShapeTmp;
 	CRectF		rcBase;
 
-	SetProgressRange(nLoop);
+	_SetProgressRange(nLoop);
 	const_cast<CLayerData*>(pLayer)->AscendingShapeSort();	// 面積で昇順並べ替え
 
 	// 占有矩形の内外判定
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pShape = pLayer->GetShapeData(i);
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
-		SetProgressPos(i);	// 件数少ないので１件ずつ更新
+		_SetProgressPos(i);	// 件数少ないので１件ずつ更新
 		// 自動処理対象か否か(CDXFchain* だけを対象とする)
 		if ( pShape->GetShapeType()!=DXFSHAPETYPE_CHAIN || pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING )
 			continue;
@@ -533,7 +533,7 @@ BOOL SelectOutline(const CLayerData* pLayer)
 		bResult = TRUE;		// 処理済み
 	}
 
-	SetProgressPos(nLoop);
+	_SetProgressPos(nLoop);
 	return bResult;
 }
 
@@ -549,14 +549,14 @@ BOOL SelectPocket(const CLayerData* pLayer)
 	CDXFshape*	pShapeTmp;
 	CRectF		rcBase;
 
-	SetProgressRange(nLoop);
+	_SetProgressRange(nLoop);
 	const_cast<CLayerData*>(pLayer)->DescendingShapeSort();	// 面積で降順並べ替え
 
 	// 外周判定
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		pShape = pLayer->GetShapeData(i);
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
-		SetProgressPos(i);
+		_SetProgressPos(i);
 		// 自動処理対象か否か(CDXFchain* だけを対象とする)
 		if ( pShape->GetShapeType()!=DXFSHAPETYPE_CHAIN ||
 				pShape->GetShapeFlag()&DXFMAPFLG_CANNOTAUTOWORKING ||
@@ -581,7 +581,7 @@ BOOL SelectPocket(const CLayerData* pLayer)
 		}
 	}
 
-	SetProgressPos(nLoop);
+	_SetProgressPos(nLoop);
 	return bResult;
 }
 
@@ -620,14 +620,14 @@ void CreateAutoWorking(const CLayerData* pLayer, float dOffset)
 	CDXFshape*	pShape;
 	CDXFworkingOutline*	pWork;
 
-	SetProgressRange(nLoop);
+	_SetProgressRange(nLoop);
 
 	try {
 		for ( i=0; i<nLoop && IsThread(); i++ ) {
 			pWork = NULL;
 			pShape = pLayer->GetShapeData(i);
 			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰ
-			SetProgressPos(i);
+			_SetProgressPos(i);
 			// 処理対象ﾁｪｯｸ
 			if ( !pShape->IsSideFlg() )
 				continue;
@@ -716,7 +716,7 @@ void CreateAutoWorking(const CLayerData* pLayer, float dOffset)
 		e->Delete();
 	}
 
-	SetProgressPos(nLoop);
+	_SetProgressPos(nLoop);
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -2314,7 +2314,7 @@ optional<CPointF> CNCcircle::SetChamferingPoint(BOOL bStart, float c)
 	}
 	else {
 		// 180‹–¢–ž‚Ìê‡‚ÍŒ·‚Ì’·‚³‚Æ”äŠr
-		if ( c >= _hypot(pt1.x-pt2.x, pt1.y-pt2.y) )
+		if ( c >= pt1.hypot(&pt2) )
 			return optional<CPointF>();
 	}
 

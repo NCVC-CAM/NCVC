@@ -172,6 +172,19 @@ CNCMakeMill::CNCMakeMill(int nCode, const CPointF& pt, float dFeed)
 	}
 }
 
+// XYZのG01
+CNCMakeMill::CNCMakeMill(const CPoint3F& pt, float dFeed)
+{
+	CString	strGcode(GetValString(NCA_X, pt.x) +
+					 GetValString(NCA_Y, pt.y) +
+					 GetValString(NCA_Z, pt.z) );
+	if ( !strGcode.IsEmpty() ) {
+		strGcode += GetFeedString(dFeed);
+		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
+			strGcode + ms_strEOB;
+	}
+}
+
 // 座標指示による円弧の生成
 CNCMakeMill::CNCMakeMill
 	(int nCode, const CPointF& pts, const CPointF& pte, const CPointF& pto, float r)
@@ -180,6 +193,12 @@ CNCMakeMill::CNCMakeMill
 	if ( !strGcode.IsEmpty() )
 		m_strGcode = (*ms_pfnGetLineNo)() + strGcode +
 			GetFeedString(GetDbl(MKNC_DBL_FEED)) + ms_strEOB;
+}
+
+// ドウェル時間（G04）
+CNCMakeMill::CNCMakeMill(float t)
+{
+	m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(4) + GetValString(NCA_P, t) + ms_strEOB;
 }
 
 // 任意の文字列ｺｰﾄﾞ

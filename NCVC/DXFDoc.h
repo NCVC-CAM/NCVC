@@ -20,18 +20,21 @@ struct	AUTOWORKINGDATA
 {
 	int		nSelect;		// 機能選択(0:輪郭, 1:ｵﾌｾｯﾄ)
 	float	dOffset;		// ｵﾌｾｯﾄ
-	BOOL	bAcuteRound;	// 鋭角の外側を丸める
 	int		nLoopCnt;		// 繰り返し数
+	BOOL	bAcuteRound;	// 鋭角の外側を丸める
 	int		nScanLine;		// 走査線(0:なし, 1:X方向, 2:Y方向)
 	BOOL	bCircleScroll;	// 円ﾃﾞｰﾀはｽｸﾛｰﾙ切削
+	float	dGate,			// ゲート間隔
+			dApproach;		// アプローチ長さ
 	// 初期化
 	AUTOWORKINGDATA() {
 		nSelect	= 0;
-		dOffset	= 1.0;
-		bAcuteRound	= TRUE;
+		dOffset	= 1.0f;
 		nLoopCnt	= 1;
+		bAcuteRound	= TRUE;
 		nScanLine	= 0;
 		bCircleScroll	= TRUE;
+		dGate = dApproach = 0.0f;
 	}
 };
 typedef	AUTOWORKINGDATA*	LPAUTOWORKINGDATA;
@@ -257,7 +260,6 @@ protected:
 	afx_msg void OnFileSaveAs();
 	afx_msg void OnEditOrigin();
 	afx_msg void OnEditShape();
-	afx_msg void OnEditAutoShape();
 	afx_msg void OnEditStrictOffset();
 	afx_msg void OnUpdateEditShape(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateEditShaping(CCmdUI* pCmdUI);
@@ -269,6 +271,8 @@ protected:
 	// 形状加工処理
 	afx_msg void OnUpdateShapePattern(CCmdUI* pCmdUI);
 	afx_msg	void OnShapePattern(UINT);
+	// 自動処理
+	afx_msg void OnEditAuto(UINT);
 
 	DECLARE_MESSAGE_MAP()
 };
