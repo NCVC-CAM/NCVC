@@ -1926,13 +1926,21 @@ BOOL CNCVCDocTemplate::IsExtension(LPCTSTR lpszExt, LPVOID* pFuncResult/*=NULL*/
 
 	// ｶｽﾀﾑ拡張子の検索
 	// pFunc は NULL もあり得るので，戻り値に出来ない
+	CString	strKey;
 	LPVOID	pFunc;
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
-		if ( m_mpExt[i].Lookup(strExt, pFunc) ) {
-			if ( pFuncResult )
-				*pFuncResult = pFunc;
-			return TRUE;
-		}
+//		if ( m_mpExt[i].Lookup(strExt, pFunc) ) {
+//			if ( pFuncResult )
+//				*pFuncResult = pFunc;
+//			return TRUE;
+//		}
+		PMAP_FOREACH(strKey, pFunc, &m_mpExt[i])		// Lookup() では大文字小文字を区別してしまう
+			if ( strExt.CompareNoCase(strKey) == 0 ) {
+				if ( pFuncResult )
+					*pFuncResult = pFunc;
+				return TRUE;
+			}
+		END_FOREACH
 	}
 
 	return FALSE;
