@@ -27,7 +27,20 @@ public:
 		return _m;
 	}
 };
-
+typedef	CTypedPtrArray<CPtrArray, CMyClass*>	CMyArray;
+namespace boost { namespace range_detail_microsoft {
+    template< >
+    struct customization< ::CMyArray > :
+        mfc_ptr_array_functions
+    {
+        template< class X >
+        struct meta
+        {
+            typedef mfc_ptr_array_iterator<X, CMyClass *> mutable_iterator;
+            typedef mfc_ptr_array_iterator<X const, CMyClass const *> const_iterator;
+        };
+    };
+} }
 
 int main()
 {
@@ -57,25 +70,28 @@ int main()
 
     // TODO: アプリケーションの動作を記述するコードをここに挿入してください。
 //	CTypedPtrArray<CPtrArray, CMyClass*>	ar;
-	CPtrArray	ar;
+//	CPtrArray	ar;
+	CMyArray	ar;			// Error
 	CMyClass*	p;
 	for ( int i=0; i<3; i++ ) {
 		p = new CMyClass(i);
 		ar.Add(p);
 	}
-//	BOOST_FOREACH(p, ar) {
-//		printf("%d\n", p->GetType());
-	BOOST_FOREACH(auto pp, ar) {
-		printf("%d\n", ((CMyClass*)pp)->GetType());
-    }
-	boost::reverse(ar);     // Error with std::swap()
-//	BOOST_FOREACH(p, ar) {
-//		printf("%d\n", p->GetType());
-//		delete	p;
-	BOOST_FOREACH(auto pp, ar) {
-		printf("%d\n", ((CMyClass*)pp)->GetType());
-		delete	pp;
+	BOOST_FOREACH(p, ar) {
+		printf("%d\n", p->GetType());
 	}
+//	BOOST_FOREACH(auto pp, ar) {
+//		printf("%d\n", ((CMyClass*)pp)->GetType());
+//	}
+//	boost::reverse(ar);     // Error with std::swap()
+	BOOST_FOREACH(p, ar) {
+		printf("%d\n", p->GetType());
+		delete	p;
+	}
+//	BOOST_FOREACH(auto pp, ar) {
+//		printf("%d\n", ((CMyClass*)pp)->GetType());
+//		delete	pp;
+//	}
 
 	return nRetCode;
 }
