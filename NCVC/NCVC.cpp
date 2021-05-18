@@ -1980,7 +1980,6 @@ BOOL CNCVCDocTemplate::SaveExt(void)
 CString CNCVCDocTemplate::GetFilterString(void)
 {
 	extern	LPCTSTR	gg_szWild;	// "*.";
-	static	const	TCHAR	ss_cSplt = ';';
 	CString	strResult, strKey;
 	LPVOID	pDummy;
 
@@ -1991,7 +1990,7 @@ CString CNCVCDocTemplate::GetFilterString(void)
 	// “o˜^Šg’£Žq
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		PMAP_FOREACH(strKey, pDummy, &m_mpExt[i])
-			strResult += ss_cSplt;
+			strResult += ';';
 			strResult += gg_szWild + strKey;
 		END_FOREACH
 	}
