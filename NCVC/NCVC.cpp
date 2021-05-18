@@ -2005,7 +2005,7 @@ CString CNCVCDocTemplate::GetFilterString(void)
 	// “o˜^Šg’£Žq
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		PMAP_FOREACH(strKey, pDummy, &m_mpExt[i])
-			strResult += ss_cSplt;
+			strResult += gg_szSemicolon;
 			strResult += gg_szWild + strKey;
 		END_FOREACH
 	}

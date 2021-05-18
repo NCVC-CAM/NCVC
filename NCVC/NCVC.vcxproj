@@ -409,6 +409,7 @@
     <ClCompile Include="3dModelChild.cpp" />
     <ClCompile Include="3dModelDoc.cpp" />
     <ClCompile Include="3dModelView.cpp" />
+    <ClCompile Include="DxfAutoOutlineDlg.cpp" />
     <ClCompile Include="MyTemplate.cpp" />
     <ClCompile Include="AboutDlg.cpp" />
     <ClCompile Include="AddinDlg.cpp" />
@@ -554,6 +555,7 @@
     <ClInclude Include="3dModelChild.h" />
     <ClInclude Include="3dModelDoc.h" />
     <ClInclude Include="3dModelView.h" />
+    <ClInclude Include="DxfAutoOutlineDlg.h" />
     <ClInclude Include="MyTemplate.h" />
     <ClInclude Include="AboutDlg.h" />
     <ClInclude Include="AddinDlg.h" />
