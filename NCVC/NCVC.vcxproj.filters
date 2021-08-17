@@ -848,6 +848,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
+    <Text Include="Document\Readme.txt" />
   </ItemGroup>
 </Project>

@@ -55,7 +55,7 @@ enum {
 	MKNC_DBL_DRILLCIRCLE,		// 穴加工に見立てる円ﾃﾞｰﾀの半径
 	MKNC_DBL_TOLERANCE,			// 同一座標と見なす許容差
 	MKNC_DBL_DRILLMARGIN,		// 基準軸に対する許容差
-	MKNC_DBL_ZAPPROACH,			// Z軸進入アプローチ
+	MKNC_DBL_ZAPPROACH,			// Z軸進入アプローチの長さ
 	MKNC_DBL_ZAPPDWELL,			// Z軸進入アプローチのドウェル時間
 		MKNC_DBL_NUMS		// [23]
 };
