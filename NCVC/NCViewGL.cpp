@@ -513,27 +513,27 @@ void  CNCViewGL::CreateTexture(GLsizeiptr n, const GLfloat* pfTEX)
 
 	// ﾃｸｽﾁｬ座標をGPUﾒﾓﾘに転送
 	if ( m_nTextureID > 0 )
-		::glDeleteBuffersARB(1, &m_nTextureID);
-	::glGenBuffersARB(1, &m_nTextureID);
-	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nTextureID);
-	::glBufferDataARB(GL_ARRAY_BUFFER_ARB, n*sizeof(GLfloat), pfTEX,
-			GL_STATIC_DRAW_ARB);
+		::glDeleteBuffers(1, &m_nTextureID);
+	::glGenBuffers(1, &m_nTextureID);
+	::glBindBuffer(GL_ARRAY_BUFFER, m_nTextureID);
+	::glBufferData(GL_ARRAY_BUFFER, n*sizeof(GLfloat), pfTEX,
+			GL_STATIC_DRAW);
 	errLine = __LINE__;
 	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
 		ClearTexture();
 		OutputGLErrorMessage(errCode, errLine);
 	}
-	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	::glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void CNCViewGL::ClearVBO(void)
 {
 	if ( m_nVertexID[0] > 0 )
-		::glDeleteBuffersARB(SIZEOF(m_nVertexID), m_nVertexID);
+		::glDeleteBuffers(SIZEOF(m_nVertexID), m_nVertexID);
 	m_nVBOsize = 0;
 	m_nVertexID[0] = m_nVertexID[1] = 0;
 	if ( m_pSolidElement ) {
-		::glDeleteBuffersARB(GetElementSize(), m_pSolidElement);
+		::glDeleteBuffers(GetElementSize(), m_pSolidElement);
 		delete[]	m_pSolidElement;
 		m_pSolidElement = NULL;
 	}
@@ -548,7 +548,7 @@ void CNCViewGL::ClearTexture(void)
 	if ( m_nPictureID > 0 )
 		::glDeleteTextures(1, &m_nPictureID);
 	if ( m_nTextureID > 0 )
-		::glDeleteBuffersARB(1, &m_nTextureID);
+		::glDeleteBuffers(1, &m_nTextureID);
 	m_nPictureID = m_nTextureID = 0;
 }
 
@@ -1011,7 +1011,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glPolygonOffset(1.0f, 1.0f);
 		// 頂点ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄによるﾎﾞｸｾﾙ描画
 		::glEnableClientState(GL_VERTEX_ARRAY);
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[0]);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
 		::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);
 		if ( IsWireMode() && m_bWirePath ) {
 			// 軌跡ﾜｲﾔｰﾌﾚｰﾑ表示
@@ -1019,22 +1019,22 @@ void CNCViewGL::OnDraw(CDC* pDC)
 			for ( const auto& v : m_WireDraw.vwl ) {
 				::glColor3ub(GetRValue(v.col), GetGValue(v.col), GetBValue(v.col));
 				::glLineStipple(1, v.pattern);
-				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pLocusElement[j++]);
+				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pLocusElement[j++]);
 				::glDrawElements(GL_LINE_STRIP, (GLsizei)(v.vel.size()), GL_UNSIGNED_INT, NULL);
 			}
 			::glDisable( GL_LINE_STIPPLE );
 		}
 		::glEnableClientState(GL_NORMAL_ARRAY);
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[1]);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
 		::glNormalPointer(GL_FLOAT, 0, NULL);
 		// ﾃｸｽﾁｬ
 		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nTextureID > 0 ) {
-			::glActiveTextureARB(GL_TEXTURE0);
+			::glActiveTexture(GL_TEXTURE0);
 			::glEnable(GL_TEXTURE_2D);
-			::glClientActiveTextureARB(GL_TEXTURE0);
+			::glClientActiveTexture(GL_TEXTURE0);
 			::glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 			::glBindTexture(GL_TEXTURE_2D, m_nPictureID);
-			::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nTextureID);
+			::glBindBuffer(GL_ARRAY_BUFFER, m_nTextureID);
 			::glTexCoordPointer(2, GL_FLOAT, 0, NULL);
 		}
 		::glEnable(GL_LIGHTING);
@@ -1067,7 +1067,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glEnable (GL_LIGHT3);
 		j = 0;
 		for ( const auto& v : m_vElementCut ) {
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[j++]);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[j++]);
 #ifdef _DEBUG_POLYGONLINE_
 			::glDrawElements(GL_LINE_STRIP,     v, GL_UNSIGNED_INT, NULL);
 #else
@@ -1080,7 +1080,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glEnable (GL_LIGHT0);
 		::glEnable (GL_LIGHT1);
 		for ( const auto& v : m_vElementWrk ) {
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[j++]);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[j++]);
 #ifdef _DEBUG_POLYGONLINE_
 			::glDrawElements(GL_LINE_STRIP,     v, GL_UNSIGNED_INT, NULL);
 #else
@@ -1089,7 +1089,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		}
 		// 旋盤端面
 		for ( const auto& v : m_vElementEdg ) {
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[j++]);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[j++]);
 #ifdef _DEBUG_POLYGONLINE_
 			::glDrawElements(GL_LINE_STRIP,     v, GL_UNSIGNED_INT, NULL);
 #else
@@ -1098,22 +1098,22 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		}
 		// ﾃｸｽﾁｬ解除
 		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nTextureID > 0 ) {
-			::glActiveTextureARB(GL_TEXTURE0);
+			::glActiveTexture(GL_TEXTURE0);
 			::glBindTexture(GL_TEXTURE_2D, 0);
 			::glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 			::glDisable(GL_TEXTURE_2D);
 		}
 		// 旋盤断面（ﾜｰｸ矩形色で表示...色が違う？？）
 		for ( const auto& v : m_vElementSlt ) {
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[j++]);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[j++]);
 #ifdef _DEBUG_POLYGONLINE_
 			::glDrawElements(GL_LINE_STRIP,     v, GL_UNSIGNED_INT, NULL);
 #else
 			::glDrawElements(GL_TRIANGLE_STRIP, v, GL_UNSIGNED_INT, NULL);
 #endif
 		}
-		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TOOLTRACE) &&
 					GetDocument()->IsDocMill() && GetDocument()->GetTraceMode()!=ID_NCVIEW_TRACE_STOP ) {
 			// ｴﾝﾄﾞﾐﾙ描画
@@ -1324,7 +1324,7 @@ void CNCViewGL::OnDestroy()
 	ClearVBO();
 	ClearTexture();
 	if ( m_pLocusElement ) {
-		::glDeleteBuffersARB((GLsizei)(m_WireDraw.vwl.size()), m_pLocusElement);
+		::glDeleteBuffers((GLsizei)(m_WireDraw.vwl.size()), m_pLocusElement);
 		delete[]	m_pLocusElement;
 	}
 
