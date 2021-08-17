@@ -184,6 +184,8 @@ NCVCのホームページから必要な分をダウンロードしてください。
 3.88a → 3.88b への変更は
 ・ＮＣ生成
 　：Z軸進入アプローチのドウェル時間のデフォルト値をゼロにした
+・バグレポート
+　：旋盤ビューモードのOpenGL表示で落ちる場合があったバグを修正
 
 3.88 → 3.88a への変更は
 ・バグレポート
@@ -411,6 +413,6 @@ E-mail:magara[at]maizuru-ct.ac.jp
 ビデオ　　　：GeForce RTX 2070
 ＯＳ　　　　：Windows 10 Enterprise(64bit)
 開発言語　　：VisualC++ 2015
-ライブラリ　：MFC, boost-1.76.0, GLEW-2.10, Kodatuno-R3.4改
+ライブラリ　：MFC, boost-1.77.0, GLEW-2.10, Kodatuno-R3.4改
 　Kodatunoは、金沢大学マンマシン研究室で開発されている
 　オープンソースCAMカーネルです

@@ -150,8 +150,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 			// ífñ ï\é¶Ç≈Ç‡1é¸ï™ÇÃç¿ïWê∂ê¨
 			nSize  = (ARCCOUNT+1) * m_icx * 2;	// â~é¸Å~í∑Ç≥Å~[ì‡|äO]åa
 			nSize += (ARCCOUNT+1) * 2 * 2;		// â~é¸Å~[ì‡|äO]åaÅ~ç∂âEí[ñ 
-			if ( m_bSlitView )
-				nSize += m_icx * 4;				// ífñ ópç¿ïW
+			nSize += m_icx * 4;					// ífñ ópç¿ïW
 			nSize *= NCXYZ;
 			m_pfXYZ		= new GLfloat[nSize];
 			m_pfNOR		= new GLfloat[nSize];
@@ -358,8 +357,6 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 	int	i, ii, j,
 		offset = m_icx * (m_icy-1),	// m_pfDepthÇÃäOåaäJénµÃæØƒ
 		nSlit  = m_bSlitView ? (ARCCOUNT/2) : ARCCOUNT;	// ífñ ï\é¶Ç»ÇÁâ~ÇÃîºï™ÇæÇØ
-	GLsizeiptr	nVBOsize = ( (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*2*2 + m_icx*4 )
-									* NCXYZ * sizeof(GLfloat);
 	GLuint		n0, n1;
 	GLenum		errCode;
 	UINT		errLine;
@@ -368,6 +365,8 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 						vvElementEdg,
 						vvElementSlt;
 	CVelement	vElement;
+	GLsizeiptr	nVBOsize = (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*2*2 + m_icx*4;
+	nVBOsize *= NCXYZ * sizeof(GLfloat);
 
 	// í∏ì_≤›√ﬁØ∏ΩÇÃè¡ãé
 	if ( m_pSolidElement ) {
@@ -444,7 +443,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 
 	// ífñ ≤›√ﬁØ∏Ω
 	if ( m_bSlitView ) {
-		ii = (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*4;
+		ii = (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*2*2;
 		for ( i=0; i<2; i++ ) {	// è„â∫ífñ 
 			vElement.clear();
 			for ( j=0; j<m_icx; j++ ) {
