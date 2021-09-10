@@ -306,38 +306,37 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 		m_pfNOR[jj+NCA_Y] = m_pfNOR[jj+NCA_Z] = 0.0f;
 	}
 
-	if ( m_bSlitView ) {
-		// 断面座標の登録（座標は計算済み。内径と外径をつなぎ法線ﾍﾞｸﾄﾙを設定）
-		for ( i=j=0; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
-			// 外径下側
-			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
-			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
-			m_pfNOR[jj+NCA_Y] = -1.0f;
-			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-			// 内径下側
-			jj += NCXYZ;
-			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
-			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
-			m_pfNOR[jj+NCA_Y] = -1.0f;
-			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-		}
-		for ( i=0, j=ARCCOUNT/2*NCXYZ; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
-			// 外径上側
-			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
-			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
-			m_pfNOR[jj+NCA_Y] = -1.0f;
-			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-			// 内径上側
-			jj += NCXYZ;
-			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
-			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
-			m_pfNOR[jj+NCA_Y] = -1.0f;
-			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-		}
+	// m_bSlitView に関係なく
+	// 断面座標の登録（座標は計算済み。内径と外径をつなぎ法線ﾍﾞｸﾄﾙを設定）
+	for ( i=j=0; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
+		// 外径下側
+		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
+		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
+		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
+		m_pfNOR[jj+NCA_Y] = -1.0f;
+		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+		// 内径下側
+		jj += NCXYZ;
+		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
+		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
+		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
+		m_pfNOR[jj+NCA_Y] = -1.0f;
+		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+	}
+	for ( i=0, j=ARCCOUNT/2*NCXYZ; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
+		// 外径上側
+		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
+		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
+		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
+		m_pfNOR[jj+NCA_Y] = -1.0f;
+		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+		// 内径上側
+		jj += NCXYZ;
+		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
+		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
+		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
+		m_pfNOR[jj+NCA_Y] = -1.0f;
+		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
 	}
 
 #ifdef _DEBUG
