@@ -24,6 +24,7 @@ IMPLEMENT_SERIAL(CDXFcircleEx, CDXFcircle, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFarc, CDXFcircle, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFellipse, CDXFarc, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFpolyline, CDXFline, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
+IMPLEMENT_SERIAL(CDXFspline, CDXFline, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFtext, CDXFpoint, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 
 using namespace boost;
@@ -3399,6 +3400,29 @@ int CDXFpolyline::CheckIntersectionCircle(const CPointF& ptc, float r) const
 	END_FOREACH
 
 	return nResult;
+}
+
+//////////////////////////////////////////////////////////////////////
+// ÇcÇwÇeÉfÅ[É^ÇÃSplineÉNÉâÉX
+//////////////////////////////////////////////////////////////////////
+
+CDXFspline::CDXFspline() : CDXFline(DXFSPLINEDATA, NULL, 2, 0)
+{
+}
+
+#ifdef _DEBUG
+void CDXFspline::DbgDump(void)
+{
+}
+#endif
+
+void CDXFspline::Serialize(CArchive& ar)
+{
+	CDXFdata::Serialize(ar);
+	if ( ar.IsStoring() ) {
+	}
+	else {
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
