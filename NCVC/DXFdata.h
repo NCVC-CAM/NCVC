@@ -72,16 +72,6 @@ struct	DXFEARGV : public DXFPARGV
 typedef	DXFEARGV*		LPDXFEARGV;
 typedef	const DXFEARGV*	LPCDXFEARGV;
 
-struct	DXFSARGV : public DXFBASE
-{
-	int			kai;
-	CVPointD	vControl;
-	std::vector<double>	vKnot,
-						vWait;
-};
-typedef	DXFSARGV*		LPDXFSARGV;
-typedef	const DXFSARGV*	LPCDXFSARGV;
-
 struct	DXFTARGV : public DXFPARGV
 {
 	CString		strValue;	// 文字列
@@ -687,27 +677,6 @@ public:
 
 	virtual	void	Serialize(CArchive&);
 	DECLARE_SERIAL(CDXFpolyline)
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// SPLINE クラス
-//		始点，終点の管理のため
-//		CDXFline からの派生
-class CDXFspline : public CDXFline
-{
-protected:
-	int			m_nKai;				// 71:次数+1
-	CVPointD	m_vControl;			// 制御点
-	std::vector<double>	m_vKnot,	// ノットベクトル
-						m_vWait;	// 重み（制御点と同じ数）
-	CDXFspline();
-public:
-#ifdef _DEBUG
-	virtual	void	DbgDump(void);
-#endif
-
-	virtual	void	Serialize(CArchive&);
-	DECLARE_SERIAL(CDXFspline)
 };
 
 /////////////////////////////////////////////////////////////////////////////

@@ -212,7 +212,6 @@ public:
 typedef	CPointT<double>			CPointD;
 typedef	CPointT<float>			CPointF;
 typedef	std::vector<CPointF>	CVPointF;
-typedef	std::vector<CPointD>	CVPointD;
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointF, float,  cs::cartesian, x, y)
 //BOOST_GEOMETRY_REGISTER_POINT_2D(CPointD, double, cs::cartesian, x, y)
 
