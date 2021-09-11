@@ -31,12 +31,14 @@ extern	int		g_nGroupCode[] = {
 extern	int		g_nValueGroupCode[] = {
 	10, 20, 11, 21,
 	40, 41, 42, 50, 51,
+	71, 72, 73,
 	210, 220, 230
 };
 extern	const	DWORD	g_dwValSet[] = {
 	VALFLG10, VALFLG20, VALFLG11, VALFLG21,
 	VALFLG40, VALFLG41, VALFLG42,
 	VALFLG50, VALFLG51,
+	VALFLG71, VALFLG72, VALFLG73,
 	VALFLG210, VALFLG220, VALFLG230
 };
 
@@ -63,8 +65,9 @@ extern	LPCTSTR	g_szBlocks[] = {
 };
 // ｴﾝﾃｨﾃｨｷｰﾜｰﾄﾞ
 extern	LPCTSTR	g_szEntitiesKey[] = {
-	"POINT", "LINE", "CIRCLE", "ARC", "ELLIPSE", "POLYLINE", "TEXT",
-	"INSERT", "LWPOLYLINE", "VIEWPORT"
+	"POINT", "LINE", "CIRCLE", "ARC", "ELLIPSE", "POLYLINE", "LWPOLYLINE", "SPLINE",
+	"TEXT",
+	"INSERT", "VIEWPORT"
 };
 // Polylineｷｰﾜｰﾄﾞ
 extern	LPCTSTR	g_szPolyline[] = {
@@ -753,6 +756,19 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 			_DeletePolyline();	// SEQENDで登録するはずなので消去
 		break;
 
+	case TYPE_LWPOLYLINE:
+		// 最後の点を処理
+		LWPolylineProcedure(pDoc, TRUE);
+		// LWPOLYLINE終了処理
+		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
+			g_pPolyline->SetParentLayer(pDoc->AddLayerMap(g_strLayer, g_nLayer));
+			PolylineEndProcedure(pDoc);
+			g_pPolyline = NULL;
+		}
+		else
+			_DeletePolyline();
+		break;
+
 	case TYPE_TEXT:
 		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFCOMLAYER ) {
 			dxfText.pLayer = pDoc->AddLayerMap(g_strLayer, g_nLayer);
@@ -766,19 +782,6 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 			SetEntitiesFromBlock(pDoc, pBlock);
 		else
 			g_strMissBlckMap.SetAt(g_strBlock, NULL);
-		break;
-
-	case TYPE_LWPOLYLINE:
-		// 最後の点を処理
-		LWPolylineProcedure(pDoc, TRUE);
-		// LWPOLYLINE終了処理
-		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
-			g_pPolyline->SetParentLayer(pDoc->AddLayerMap(g_strLayer, g_nLayer));
-			PolylineEndProcedure(pDoc);
-			g_pPolyline = NULL;
-		}
-		else
-			_DeletePolyline();
 		break;
 	}
 
@@ -923,6 +926,12 @@ BOOL SetBlockData(void)
 		g_pPolyline = NULL;
 		break;
 
+	case TYPE_LWPOLYLINE:
+		LWPolylineProcedure(NULL, TRUE);
+		g_pBkData->AddData(g_pPolyline);
+		g_pPolyline = NULL;
+		break;
+
 	case TYPE_TEXT:
 		dxfText.pLayer = NULL;
 		if ( _SetDxfArgv(&dxfText) )
@@ -937,15 +946,6 @@ BOOL SetBlockData(void)
 		}
 		else
 			g_strMissBlckMap.SetAt(g_strBlock, NULL);
-		break;
-
-	case TYPE_LWPOLYLINE:
-		LWPolylineProcedure(NULL, TRUE);
-		// ↓ SetBlockData()を再起呼び出ししてしまい落ちる
-		//    なぜこのコードが入っているか不明
-//		PolylineEndProcedure(NULL);
-		g_pBkData->AddData(g_pPolyline);
-		g_pPolyline = NULL;
 		break;
 
 	case TYPE_VIEWPORT:
