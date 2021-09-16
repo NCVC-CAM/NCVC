@@ -167,6 +167,18 @@ static inline ULONGLONG _DubleRead(CStdioFile& fp)
 	return dwResult;
 }
 
+static inline BOOL _IsValueFlg(DWORD dwFlgs)
+{
+	// 指定されたビットが全てONの場合のみTRUE
+	for ( int i=0; i<SIZEOF(g_dwValSet); i++ ) {
+		if ( dwFlgs & g_dwValSet[i] ) {
+			if ( !(g_dwValSet[i] & g_dwValueFlg) )	// 単独フラグチェック
+				return FALSE;
+		}
+	}
+	return TRUE;
+}
+
 static inline void _ClearValue(void)
 {
 	ZEROCLR(g_dValue);	// g_dValue[i++]=0.0
@@ -239,9 +251,9 @@ static inline BOOL _SetDxfArgv(LPDXFPARGV lpPoint)
 #ifdef _DEBUG_ARGV
 	printf("SetDxfArgv() Point Layer=%s\n", lpPoint->pLayer ? LPCTSTR(lpPoint->pLayer->GetLayerName()) : "?");
 #endif
-	if ( g_dwValueFlg & VALFLG_POINT ) {
+	if ( _IsValueFlg(VALFLG_POINT) ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
-		if ( g_dwValueFlg & VALFLG_PLANE )
+		if ( _IsValueFlg(VALFLG_PLANE) )
 			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 		lpPoint->c = pt;
 #ifdef _DEBUG_ARGV
@@ -262,10 +274,10 @@ static inline BOOL _SetDxfArgv(LPDXFLARGV lpLine)
 #ifdef _DEBUG_ARGV
 	printf("SetDxfArgv() Line Layer=%s\n", lpLine->pLayer ? LPCTSTR(lpLine->pLayer->GetLayerName()) : "?");
 #endif
-	if ( g_dwValueFlg & VALFLG_LINE ) {
+	if ( _IsValueFlg(VALFLG_LINE) ) {
 		CPointF	pts(g_dValue[VALUE10], g_dValue[VALUE20]),
 				pte(g_dValue[VALUE11], g_dValue[VALUE21]);
-		if ( g_dwValueFlg & VALFLG_PLANE ) {
+		if ( _IsValueFlg(VALFLG_PLANE) ) {
 			_ArbitraryAxis(pts);
 			_ArbitraryAxis(pte);
 		}
@@ -290,9 +302,9 @@ static inline BOOL _SetDxfArgv(LPDXFCARGV lpCircle)
 #ifdef _DEBUG_ARGV
 	printf("SetDxfArgv() Circle Layer=%s\n", lpCircle->pLayer ? LPCTSTR(lpCircle->pLayer->GetLayerName()) : "?");
 #endif
-	if ( g_dwValueFlg & VALFLG_CIRCLE ) {
+	if ( _IsValueFlg(VALFLG_CIRCLE) ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
-		if ( g_dwValueFlg & VALFLG_PLANE )
+		if ( _IsValueFlg(VALFLG_PLANE) )
 			_ArbitraryAxis(pt);
 		lpCircle->c = pt;
 		lpCircle->r = g_dValue[VALUE40];
@@ -315,9 +327,9 @@ static inline BOOL _SetDxfArgv(LPDXFAARGV lpArc)
 #ifdef _DEBUG_ARGV
 	printf("SetDxfArgv() Arc Layer=%s\n", lpArc->pLayer ? LPCTSTR(lpArc->pLayer->GetLayerName()) : "?");
 #endif
-	if ( g_dwValueFlg & VALFLG_ARC ) {
+	if ( _IsValueFlg(VALFLG_ARC) ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
-		if ( g_dwValueFlg & VALFLG_PLANE )
+		if ( _IsValueFlg(VALFLG_PLANE) )
 			_ArbitraryAxis(pt);
 		lpArc->c = pt;
 		lpArc->r = g_dValue[VALUE40];
@@ -342,10 +354,10 @@ static inline BOOL _SetDxfArgv(LPDXFEARGV lpEllipse)
 #ifdef _DEBUG_ARGV
 	printf("SetDxfArgv() Ellipse Layer=%s\n", lpEllipse->pLayer ? LPCTSTR(lpEllipse->pLayer->GetLayerName()) : "?");
 #endif
-	if ( g_dwValueFlg & VALFLG_ELLIPSE ) {
+	if ( _IsValueFlg(VALFLG_ELLIPSE) ) {
 		CPointF	ptc(g_dValue[VALUE10], g_dValue[VALUE20]),
 				ptl(g_dValue[VALUE11], g_dValue[VALUE21]);
-		if ( g_dwValueFlg & VALFLG_PLANE ) {
+		if ( _IsValueFlg(VALFLG_PLANE) ) {
 			_ArbitraryAxis(ptc);
 			_ArbitraryAxis(ptl);
 		}
@@ -376,9 +388,9 @@ static inline BOOL _SetDxfArgv(LPDXFTARGV lpText)
 #ifdef _DEBUG_ARGV
 	printf("SetDxfArgv() Text Layer=%s\n", lpText->pLayer ? LPCTSTR(lpText->pLayer->GetLayerName()) : "?");
 #endif
-	if ( g_dwValueFlg & VALFLG_TEXT ) {
+	if ( _IsValueFlg(VALFLG_TEXT) ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
-		if ( g_dwValueFlg & VALFLG_PLANE )
+		if ( _IsValueFlg(VALFLG_PLANE) )
 			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 		lpText->strValue = g_strValue;
 		lpText->c = pt;
@@ -398,9 +410,9 @@ static inline BOOL _SetDxfArgv(LPDXFTARGV lpText)
 
 static inline BOOL _SetBlockArgv(LPDXFBLOCK lpBlock)
 {
-	if ( g_dwValueFlg & VALFLG_POINT ) {
+	if ( _IsValueFlg(VALFLG_POINT) ) {
 		CPointF	pt(g_dValue[VALUE10], g_dValue[VALUE20]);
-		if ( g_dwValueFlg & VALFLG_PLANE )
+		if ( _IsValueFlg(VALFLG_PLANE) )
 			_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 		lpBlock->ptOrg = pt;
 		lpBlock->dwBlockFlg = 0;
@@ -717,9 +729,9 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 	case TYPE_CIRCLE:
 		switch ( g_nLayer ) {
 		case DXFORGLAYER:
-			if ( g_dwValueFlg & VALFLG_CIRCLE ) {
+			if ( _IsValueFlg(VALFLG_CIRCLE) ) {
 				pt.SetPoint(g_dValue[VALUE10], g_dValue[VALUE20]);
-				if ( g_dwValueFlg & VALFLG_PLANE )
+				if ( _IsValueFlg(VALFLG_PLANE) )
 					_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 #ifdef _DEBUG
 				printf("Org x=%f y=%f\n", pt.x, pt.y);
@@ -738,9 +750,9 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 				pData = new CDXFcircle(&dxfCircle);
 			break;
 		case DXFSTRLAYER:
-			if ( g_dwValueFlg & VALFLG_CIRCLE ) {
+			if ( _IsValueFlg(VALFLG_CIRCLE) ) {
 				pt.SetPoint(g_dValue[VALUE10], g_dValue[VALUE20]);
-				if ( g_dwValueFlg & VALFLG_PLANE )
+				if ( _IsValueFlg(VALFLG_PLANE) )
 					_ArbitraryAxis(pt);		// OCS -> WCS 座標変換
 #ifdef _DEBUG
 				printf("StartOrg x=%f y=%f\n", pt.x, pt.y);
@@ -845,7 +857,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 						g_vKnot.push_back( g_dValue[VALUE40] );
 						g_dwValueFlg &= ~VALFLG40;		// フラグクリア（次のデータに備える）
 					}
-					else if ( g_dwValueFlg & VALFLG_POINT ) {
+					else if ( _IsValueFlg(VALFLG_POINT) ) {
 						// 73:制御点数とのチェックは行わない
 						SPC		spc(g_dValue[VALUE10], g_dValue[VALUE20]);
 						g_vControl.push_back( spc );
@@ -1061,13 +1073,16 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 				else if ( g_nType == TYPE_SPLINE ) {
 					if ( g_dwValueFlg & VALFLG40 ) {
 						g_vKnot.push_back( g_dValue[VALUE40] );
+						g_dwValueFlg &= ~VALFLG40;
 					}
-					else if ( g_dwValueFlg & VALFLG_POINT ) {
+					else if ( _IsValueFlg(VALFLG_POINT) ) {
 						SPC		spc(g_dValue[VALUE10], g_dValue[VALUE20]);
 						g_vControl.push_back( spc );
+						g_dwValueFlg &= ~VALFLG_POINT;
 					}
 					else if ( g_dwValueFlg & VALFLG41 ) {
 						g_vControl.back().w = g_dValue[VALUE41];
+						g_dwValueFlg &= ~VALFLG41;
 					}
 				}
 			}
@@ -1246,7 +1261,7 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc)
 	printf("LWPolylineProcedure()\n");
 #endif
 	// グループコード 10,20 そろったとき処理
-	if ( !(g_dwValueFlg & VALFLG_POINT) )
+	if ( _IsValueFlg(VALFLG_POINT) )
 		return TRUE;
 
 	DXFPARGV	dxfPoint;
@@ -1280,11 +1295,11 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc)
 
 float RecursiveSpline(int i, int m, float t)
 {
-	ASSERT( 0<=i && i<g_vKnot.size()-1);
+	ASSERT( 0<=i && i<(int)g_vKnot.size()-1);
 	if ( m == 1 )
 		return (g_vKnot[i]<=t  && t<g_vKnot[i+1]) ? 1.0f : 0.0f;
 
-	ASSERT(i<g_vKnot.size()-m);
+	ASSERT(i<(int)g_vKnot.size()-m);
 	float	w1, w2, d;
 
 	d = g_vKnot[i+m-1] - g_vKnot[i];
