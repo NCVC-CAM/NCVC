@@ -18,6 +18,7 @@ static	ULONGLONG	g_dbgReadLine;
 #endif
 
 using namespace boost;
+using namespace std;
 
 /*
 	定義は DXFkeyword.h
@@ -101,6 +102,19 @@ static	int		g_nBlock,		// (-1:未処理, 0:Block基点待ち, 1:Block処理中)
 static	CString	g_strLayer,		// ﾚｲﾔ名
 				g_strBlock;		// ﾌﾞﾛｯｸ名
 
+struct SPC
+{
+	CPointF	pt;	// 制御点(x,y)
+	float	w;	// 重み
+	SPC(float x, float y) {
+		pt.x = x;
+		pt.y = y;
+		w = 1.0;	// 初期値
+	}
+};
+vector<SPC>		g_vControl;	// Spline制御点
+vector<float>	g_vKnot;	// ノットベクトル
+
 // g_strBlockMapをﾊﾞｯｸｸﾞﾗｳﾝﾄﾞで消去するｽﾚｯﾄﾞ
 static	CCriticalSection	g_csRemoveBlockMap;
 static	UINT	RemoveBlockMapThread(LPVOID);
@@ -113,7 +127,8 @@ static	void	SetEntitiesInfo(CDXFDoc*);
 static	BOOL	BlocksProcedure(CDXFDoc*);
 static	BOOL	PolylineProcedure(CDXFDoc*);
 static	BOOL	PolylineEndProcedure(CDXFDoc*);
-static	BOOL	LWPolylineProcedure(CDXFDoc*, BOOL);
+static	BOOL	LWPolylineProcedure(CDXFDoc*);
+static	BOOL	SplineProcedure(CDXFDoc*);
 
 /////////////////////////////////////////////////////////////////////////////
 //	ReadDXF() 補助関数
@@ -156,6 +171,8 @@ static inline void _ClearValue(void)
 {
 	ZEROCLR(g_dValue);	// g_dValue[i++]=0.0
 	g_dwValueFlg = 0;
+	g_vControl.clear();
+	g_vKnot.clear();
 }
 
 static inline int _SetValue(void)
@@ -178,8 +195,8 @@ static inline enSECTION _SectionCheck(void)
 {
 	if ( g_nGroup != g_nGroupCode[GROUP0] )
 		return SEC_NOSECTION;
-	// EOF除く検索(の条件があってboost::find_if使えない！！)
-	auto f = std::find_if(begin(g_szSection), end(g_szSection)-1, lambda::_1==g_strOrder);
+	// EOF除く検索
+	auto f = find_if(begin(g_szSection), end(g_szSection)-1, lambda::_1==g_strOrder);
 	return f==end(g_szSection)-1 ? SEC_NOSECTION : (enSECTION)(f-g_szSection);
 }
 
@@ -412,6 +429,11 @@ static inline BOOL _SetBlockArgv(LPDXFBLOCK lpBlock)
 	}
 	else
 		return FALSE;
+}
+
+static inline BOOL _IsPolyline(void)
+{
+	return g_nType==TYPE_POLYLINE || g_nType==TYPE_LWPOLYLINE;
 }
 
 static inline void _CreatePolyline(void)
@@ -757,9 +779,6 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 		break;
 
 	case TYPE_LWPOLYLINE:
-		// 最後の点を処理
-		LWPolylineProcedure(pDoc, TRUE);
-		// LWPOLYLINE終了処理
 		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
 			g_pPolyline->SetParentLayer(pDoc->AddLayerMap(g_strLayer, g_nLayer));
 			PolylineEndProcedure(pDoc);
@@ -767,6 +786,9 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 		}
 		else
 			_DeletePolyline();
+		break;
+
+	case TYPE_SPLINE:
 		break;
 
 	case TYPE_TEXT:
@@ -801,7 +823,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			g_strBlock = g_strOrder;	// ﾌﾞﾛｯｸ名ｾｯﾄ
 			break;
 		}
-		else if ( g_pPolyline && g_nGroup==g_nGroupCode[GROUP70] ) {
+		else if ( _IsPolyline() && g_nGroup==g_nGroupCode[GROUP70] ) {
 			if ( atoi(g_strOrder) & 1 )	// Polylineの閉ﾙｰﾌﾟか？
 				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
 			break;
@@ -811,9 +833,24 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 		switch ( nResultLayer ) {
 		case -2:	// ﾚｲﾔｺｰﾄﾞでもない
 			if ( g_nType > TYPE_NOTSUPPORT ) {
+				_SetValue();	// 値ｾｯﾄ
 				if ( g_nType == TYPE_LWPOLYLINE )
-					LWPolylineProcedure(pDoc, FALSE);
-				_SetValue();				// 値ｾｯﾄ
+					LWPolylineProcedure(pDoc);
+				else if ( g_nType == TYPE_SPLINE ) {
+					if ( g_dwValueFlg & VALFLG40 ) {
+						// 72:ノット数とのチェックは行わない
+						g_vKnot.push_back( g_dValue[VALUE40] );
+					}
+					else if ( g_dwValueFlg & VALFLG_POINT ) {
+						// 73:制御点数とのチェックは行わない
+						SPC		spc(g_dValue[VALUE10], g_dValue[VALUE20]);
+						g_vControl.push_back( spc );
+					}
+					else if ( g_dwValueFlg & VALFLG41 ) {
+						// 重み
+						g_vControl.back().w = g_dValue[VALUE41];
+					}
+				}
 			}
 			break;
 		case -1:	// 違うﾚｲﾔ
@@ -834,7 +871,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			else {
 				g_nLayer = nResultLayer;
 				g_strLayer = g_strOrder;
-				if ( g_nType==TYPE_POLYLINE || g_nType==TYPE_LWPOLYLINE )
+				if ( _IsPolyline() )
 					_CreatePolyline();		// Polylineﾃﾞｰﾀの先行生成
 			}
 			break;
@@ -922,14 +959,12 @@ BOOL SetBlockData(void)
 		break;
 
 	case TYPE_POLYLINE:
+	case TYPE_LWPOLYLINE:
 		g_pBkData->AddData(g_pPolyline);
 		g_pPolyline = NULL;
 		break;
 
-	case TYPE_LWPOLYLINE:
-		LWPolylineProcedure(NULL, TRUE);
-		g_pBkData->AddData(g_pPolyline);
-		g_pPolyline = NULL;
+	case TYPE_SPLINE:
 		break;
 
 	case TYPE_TEXT:
@@ -1002,15 +1037,27 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 				}
 			}
 		}
-		else if ( g_pPolyline && g_nGroup==g_nGroupCode[GROUP70] ) {
+		else if ( _IsPolyline() && g_nGroup==g_nGroupCode[GROUP70] ) {
 			if ( atoi(g_strOrder) & 1 )
 				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
 		}
 		else {
 			if ( g_nType>TYPE_NOTSUPPORT || g_nBlock==0 ) {
-				if ( g_nType == TYPE_LWPOLYLINE )
-					LWPolylineProcedure(pDoc, FALSE);
 				_SetValue();
+				if ( g_nType == TYPE_LWPOLYLINE )
+					LWPolylineProcedure(pDoc);
+				else if ( g_nType == TYPE_SPLINE ) {
+					if ( g_dwValueFlg & VALFLG40 ) {
+						g_vKnot.push_back( g_dValue[VALUE40] );
+					}
+					else if ( g_dwValueFlg & VALFLG_POINT ) {
+						SPC		spc(g_dValue[VALUE10], g_dValue[VALUE20]);
+						g_vControl.push_back( spc );
+					}
+					else if ( g_dwValueFlg & VALFLG41 ) {
+						g_vControl.back().w = g_dValue[VALUE41];
+					}
+				}
 			}
 		}
 		break;
@@ -1041,7 +1088,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		}
 		else {
 			g_nType = nResultEntities;
-			if ( g_nType==TYPE_POLYLINE || g_nType==TYPE_LWPOLYLINE )
+			if ( _IsPolyline() )
 				_CreatePolyline();	// Polylineﾃﾞｰﾀの先行生成(ﾚｲﾔ情報無視)
 		}
 		break;
@@ -1181,17 +1228,14 @@ BOOL PolylineEndProcedure(CDXFDoc* pDoc)
 /////////////////////////////////////////////////////////////////////////////
 //	LWPOLYLINE 補助関数
 
-BOOL LWPolylineProcedure(CDXFDoc* pDoc, BOOL bEnd)
+BOOL LWPolylineProcedure(CDXFDoc* pDoc)
 {
 #ifdef _DEBUG
 	printf("LWPolylineProcedure()\n");
 #endif
-
-	if ( !bEnd ) {
-		// ｸﾞﾙｰﾌﾟｺｰﾄﾞ"10"で既に値が読み込まれている場合に処理する
-		if ( g_nGroup!=g_nValueGroupCode[0] || !(g_dwValueFlg&VALFLG10) )
-			return TRUE;
-	}
+	// グループコード 10,20 そろったとき処理
+	if ( !(g_dwValueFlg & VALFLG_POINT) )
+		return TRUE;
 
 	DXFPARGV	dxfPoint;
 	dxfPoint.pLayer = !pDoc || g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
@@ -1214,6 +1258,61 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc, BOOL bEnd)
 	g_dPuff = g_dValue[VALUE42];
 	g_bPuff = g_dValue[VALUE42] == 0.0f ? FALSE : TRUE;
 	g_dValue[VALUE42] = 0.0f;
+
+	return TRUE;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//	SPLINE 補助関数
+
+float RecursiveSpline(int i, int m, float t)
+{
+	if ( m == 1 )
+		return (g_vKnot[i]<=t  && t<g_vKnot[i+1]) ? 1.0f : 0.0f;
+
+	float	w1, w2, d;
+
+	d = g_vKnot[i+m-1] - g_vKnot[i];
+	if ( d != 0 )
+		w1 = (t-g_vKnot[i])/d * RecursiveSpline(i, m-1, t);
+	else
+		w1 = 0;
+
+	d = g_vKnot[i+m] - g_vKnot[i+1];
+	if ( d != 0 )
+		w2 = (g_vKnot[i+m]-t)/d * RecursiveSpline(i+1, m-1, t);
+	else
+		w2 = 0;
+
+	return w1+w2;
+}
+
+BOOL SplineProcedure(CDXFDoc* pDoc)
+{
+#ifdef _DEBUG
+	printf("SplineProcedure()\n");
+#endif
+	DXFPARGV	dxfPoint;
+	dxfPoint.pLayer = !pDoc || g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
+
+	int		i, m = (int)g_dValue[VALUE71] + 1;		// 階数
+	float	knot_min = *min_element(g_vKnot.begin(), g_vKnot.end()),
+			knot_max = *max_element(g_vKnot.begin(), g_vKnot.end()),
+			step = (knot_max - knot_min) / (500 - 1),	// numpy.linspace(min, max, 500)
+			t, r;
+	vector<SPC>::iterator	it;
+
+	for ( t=knot_min; t<=knot_max; t+=step ) {
+		i = 0;
+		dxfPoint.c = 0;
+		if ( t == knot_max ) t -= NCMIN;
+		for ( it=g_vControl.begin(); it!=g_vControl.end(); ++it ) {
+			r = RecursiveSpline(i++, m, t);
+			dxfPoint.c += (*it).pt * r * (*it).w;
+		}
+		if ( dxfPoint.c != 0 )
+			g_pPolyline->SetVertex(&dxfPoint);
+	}
 
 	return TRUE;
 }
