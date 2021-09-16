@@ -128,7 +128,7 @@ static	BOOL	BlocksProcedure(CDXFDoc*);
 static	BOOL	PolylineProcedure(CDXFDoc*);
 static	BOOL	PolylineEndProcedure(CDXFDoc*);
 static	BOOL	LWPolylineProcedure(CDXFDoc*);
-static	BOOL	SplineProcedure(CDXFDoc*);
+static	CDXFpolyline*	SplineProcedure(CDXFDoc*);
 
 /////////////////////////////////////////////////////////////////////////////
 //	ReadDXF() 補助関数
@@ -440,7 +440,7 @@ static inline void _CreatePolyline(void)
 {
 	if ( !g_pPolyline ) {
 		// 例外処理はﾒｲﾝﾙｰﾌﾟで
-		g_pPolyline = new CDXFpolyline();
+		g_pPolyline = new CDXFpolyline;
 		ASSERT( g_pPolyline );
 #ifdef _DEBUG
 		printf("CreatePolyline()\n");
@@ -789,6 +789,9 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 		break;
 
 	case TYPE_SPLINE:
+		if ( g_nLayer == DXFCAMLAYER ) {
+			pData = SplineProcedure(pDoc);
+		}
 		break;
 
 	case TYPE_TEXT:
@@ -840,15 +843,18 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 					if ( g_dwValueFlg & VALFLG40 ) {
 						// 72:ノット数とのチェックは行わない
 						g_vKnot.push_back( g_dValue[VALUE40] );
+						g_dwValueFlg &= ~VALFLG40;		// フラグクリア（次のデータに備える）
 					}
 					else if ( g_dwValueFlg & VALFLG_POINT ) {
 						// 73:制御点数とのチェックは行わない
 						SPC		spc(g_dValue[VALUE10], g_dValue[VALUE20]);
 						g_vControl.push_back( spc );
+						g_dwValueFlg &= ~VALFLG_POINT;
 					}
 					else if ( g_dwValueFlg & VALFLG41 ) {
 						// 重み
 						g_vControl.back().w = g_dValue[VALUE41];
+						g_dwValueFlg &= ~VALFLG41;
 					}
 				}
 			}
@@ -924,6 +930,7 @@ BOOL SetBlockData(void)
 	DXFAARGV	dxfArc;
 	DXFEARGV	dxfEllipse;
 	DXFTARGV	dxfText;
+	CDXFpolyline*	pPolyline;
 	CDXFBlockData*	pBlock;
 
 	// BLOCKﾃﾞｰﾀｵﾌﾞｼﾞｪｸﾄ生成(ﾚｲﾔ情報は無視)
@@ -960,11 +967,16 @@ BOOL SetBlockData(void)
 
 	case TYPE_POLYLINE:
 	case TYPE_LWPOLYLINE:
-		g_pBkData->AddData(g_pPolyline);
-		g_pPolyline = NULL;
+		if ( g_pPolyline ) {
+			g_pBkData->AddData(g_pPolyline);
+			g_pPolyline = NULL;
+		}
 		break;
 
 	case TYPE_SPLINE:
+		pPolyline = SplineProcedure(NULL);
+		if ( pPolyline ) 
+			g_pBkData->AddData(pPolyline);
 		break;
 
 	case TYPE_TEXT:
@@ -1253,11 +1265,12 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc)
 		return FALSE;
 	}
 
-	// 次のﾃﾞｰﾀに備える
+	// 次のデータに備える
 	g_ptPuff = dxfPoint.c;
 	g_dPuff = g_dValue[VALUE42];
 	g_bPuff = g_dValue[VALUE42] == 0.0f ? FALSE : TRUE;
 	g_dValue[VALUE42] = 0.0f;
+	g_dwValueFlg &= ~VALFLG_POINT;
 
 	return TRUE;
 }
@@ -1267,9 +1280,11 @@ BOOL LWPolylineProcedure(CDXFDoc* pDoc)
 
 float RecursiveSpline(int i, int m, float t)
 {
+	ASSERT( 0<=i && i<g_vKnot.size()-1);
 	if ( m == 1 )
 		return (g_vKnot[i]<=t  && t<g_vKnot[i+1]) ? 1.0f : 0.0f;
 
+	ASSERT(i<g_vKnot.size()-m);
 	float	w1, w2, d;
 
 	d = g_vKnot[i+m-1] - g_vKnot[i];
@@ -1287,13 +1302,23 @@ float RecursiveSpline(int i, int m, float t)
 	return w1+w2;
 }
 
-BOOL SplineProcedure(CDXFDoc* pDoc)
+CDXFpolyline* SplineProcedure(CDXFDoc* pDoc)
 {
 #ifdef _DEBUG
 	printf("SplineProcedure()\n");
 #endif
-	DXFPARGV	dxfPoint;
-	dxfPoint.pLayer = !pDoc || g_strLayer.IsEmpty() ? NULL : pDoc->AddLayerMap(g_strLayer, g_nLayer);
+	CDXFpolyline*	pPolyline = NULL;
+	if ( g_vControl.empty() || g_vKnot.empty() || !(g_dwValueFlg&VALFLG71) )
+		return pPolyline;
+	pPolyline = new CDXFpolyline;
+	ASSERT( pPolyline );
+
+	DXFPARGV		dxfPoint;
+	if ( pDoc ) {
+		CLayerData* pLayer = pDoc->AddLayerMap(g_strLayer);
+		dxfPoint.pLayer = pLayer;
+		pPolyline->SetParentLayer(pLayer);
+	}
 
 	int		i, m = (int)g_dValue[VALUE71] + 1;		// 階数
 	float	knot_min = *min_element(g_vKnot.begin(), g_vKnot.end()),
@@ -1305,16 +1330,21 @@ BOOL SplineProcedure(CDXFDoc* pDoc)
 	for ( t=knot_min; t<=knot_max; t+=step ) {
 		i = 0;
 		dxfPoint.c = 0;
-		if ( t == knot_max ) t -= NCMIN;
+		if ( t == knot_max )
+			t -= NCMIN;
 		for ( it=g_vControl.begin(); it!=g_vControl.end(); ++it ) {
 			r = RecursiveSpline(i++, m, t);
 			dxfPoint.c += (*it).pt * r * (*it).w;
 		}
 		if ( dxfPoint.c != 0 )
-			g_pPolyline->SetVertex(&dxfPoint);
+			pPolyline->SetVertex(&dxfPoint);
 	}
 
-	return TRUE;
+	pPolyline->EndSeq();
+	g_vControl.clear();
+	g_vKnot.clear();
+
+	return pPolyline;
 }
 
 /////////////////////////////////////////////////////////////////////////////
