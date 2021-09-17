@@ -1345,8 +1345,6 @@ CDXFpolyline* SplineProcedure(CDXFDoc* pDoc)
 	for ( t=knot_min; t<=knot_max; t+=step ) {
 		i = 0;
 		dxfPoint.c = 0;
-		if ( t == knot_max )
-			t -= NCMIN;
 		for ( it=g_vControl.begin(); it!=g_vControl.end(); ++it ) {
 			r = RecursiveSpline(i++, m, t);
 			dxfPoint.c += (*it).pt * r * (*it).w;
@@ -1355,6 +1353,11 @@ CDXFpolyline* SplineProcedure(CDXFDoc* pDoc)
 			pPolyline->SetVertex(&dxfPoint);
 	}
 
+	// ÅŒã‚Ì§Œä“_‚É“ž’B‚µ‚È‚¢ê‡‚ª‚ ‚é‚Ì‚Å‹­§’Ç‰Á
+	dxfPoint.c = g_vControl.back().pt;
+	pPolyline->SetVertex(&dxfPoint);
+
+	// Œãˆ—
 	pPolyline->EndSeq();
 	g_vControl.clear();
 	g_vKnot.clear();
