@@ -13,9 +13,10 @@ enum {
 };
 enum {
 	DXFOPT_ORGTYPE = 0,
+	DXFOPT_SPLINENUM,
 	DXFOPT_BINDORG,
 	DXFOPT_BINDSORT,
-		DXFOPT_NUMS			// [3]
+		DXFOPT_NUMS			// [4]
 };
 enum {
 	DXFOPT_BINDWORKX = 0,
@@ -49,6 +50,7 @@ friend	class	CMakeBindOptDlg;
 		struct {
 			int		m_nOrgType,		// 原点ﾚｲﾔが無いときの処理
 									//    0:ｴﾗｰ,  1～4:右上,右下,左上,左下, 5:中央
+					m_nSplineNum,	// SPLINE分割数
 					m_nBindOrg,		// CADﾃﾞｰﾀ統合時の加工原点
 									//    0～3:右上,右下,左上,左下, 4:中央
 					m_nBindSort;	// 生成時の並べ替え

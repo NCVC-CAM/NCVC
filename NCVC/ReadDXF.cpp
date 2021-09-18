@@ -1335,10 +1335,11 @@ CDXFpolyline* SplineProcedure(CDXFDoc* pDoc)
 		pPolyline->SetParentLayer(pLayer);
 	}
 
-	int		i, m = (int)g_dValue[VALUE71] + 1;		// äKêî
+	int		i, m = (int)g_dValue[VALUE71] + 1,				// äKêî
+			num = g_pOpt->GetDxfOptNum(DXFOPT_SPLINENUM);	// ï™äÑêî
 	float	knot_min = *min_element(g_vKnot.begin(), g_vKnot.end()),
 			knot_max = *max_element(g_vKnot.begin(), g_vKnot.end()),
-			step = (knot_max - knot_min) / (500 - 1),	// numpy.linspace(min, max, 500)
+			step = (knot_max - knot_min) / (num - 1),	// numpy.linspace(min, max, num)
 			t, r;
 	vector<SPC>::iterator	it;
 

@@ -24,10 +24,6 @@ CDxfSetup1::CDxfSetup1() : CPropertyPage(CDxfSetup1::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CDxfSetup1)
 	//}}AFX_DATA_INIT
-	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
-	m_strOrgLayer	= pOpt->m_strReadLayer[DXFORGLAYER];
-	m_strCamLayer	= pOpt->m_strReadLayer[DXFCAMLAYER];
-	m_nOrgType		= pOpt->m_nOrgType;
 }
 
 void CDxfSetup1::DoDataExchange(CDataExchange* pDX)
@@ -36,6 +32,7 @@ void CDxfSetup1::DoDataExchange(CDataExchange* pDX)
 	//{{AFX_DATA_MAP(CDxfSetup1)
 	DDX_Control(pDX, IDC_DXF_CAMLINE, m_ctCamLayer);
 	DDX_Control(pDX, IDC_DXF_ORIGIN, m_ctOrgLayer);
+	DDX_Control(pDX, IDC_DXF_SPLINENUM, m_nSplineNum);
 	DDX_Control(pDX, IDC_DXF_RELOAD, m_ctReload);
 	DDX_Text(pDX, IDC_DXF_CAMLINE, m_strCamLayer);
 	DDX_Text(pDX, IDC_DXF_ORIGIN, m_strOrgLayer);
@@ -59,6 +56,13 @@ BOOL CDxfSetup1::OnInitDialog()
 {
 	__super::OnInitDialog();
 
+	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
+	m_strOrgLayer	= pOpt->m_strReadLayer[DXFORGLAYER];
+	m_strCamLayer	= pOpt->m_strReadLayer[DXFCAMLAYER];
+	m_nOrgType		= pOpt->m_nOrgType;
+	m_nSplineNum	= pOpt->m_nSplineNum;
+	UpdateData(FALSE);
+
 	// DXFÄÞ·­ÒÝÄ‚ªŠJ‚©‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©
 	EnableReloadButton();
 
@@ -71,7 +75,8 @@ BOOL CDxfSetup1::OnApply()
 	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
 	pOpt->m_strReadLayer[DXFORGLAYER]	= m_strOrgLayer;
 	pOpt->m_strReadLayer[DXFCAMLAYER]	= m_strCamLayer;
-	pOpt->m_nOrgType  = m_nOrgType;
+	pOpt->m_nOrgType	= m_nOrgType;
+	pOpt->m_nSplineNum	= m_nSplineNum;
 	try {
 		pOpt->m_regCutter = m_strCamLayer;
 	}
@@ -103,6 +108,12 @@ BOOL CDxfSetup1::OnKillActive()
 	if ( m_strOrgLayer.IsEmpty() ) {
 		AfxMessageBox(IDS_ERR_DXFLAYER, MB_OK|MB_ICONEXCLAMATION);
 		m_ctOrgLayer.SetFocus();
+		return FALSE;
+	}
+	if ( m_nSplineNum <= 0 ) {
+		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
+		m_nSplineNum.SetFocus();
+		m_nSplineNum.SetSel(0, -1);
 		return FALSE;
 	}
 

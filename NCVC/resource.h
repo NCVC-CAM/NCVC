@@ -111,6 +111,7 @@
 #define IDC_DXF_CAMLINE                 1201
 #define IDC_DXF_ORIGIN                  1202
 #define IDC_DXF_CORRECT                 1203
+#define IDC_DXF_SPLINENUM               1204
 #define IDC_DXF_ORGTYPE                 1205
 #define IDC_DXF_RELOAD                  1206
 #define IDD_DXF_SETUP_RELOAD            1250
@@ -725,6 +726,7 @@
 #define IDS_REG_DXF_BINDORGTYPE         10118
 #define IDS_REG_DXF_BINDSORT            10119
 #define IDS_REG_DXF_BINDFILECOMMENT     10120
+#define IDS_REG_DXF_SPLINENUM           10121
 #define IDS_REG_DXF_SORTLAYER1          10130
 #define IDS_REG_DXF_SORTLAYER2          10131
 #define IDS_REG_DXF_CUT                 10190

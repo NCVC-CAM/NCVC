@@ -17,7 +17,8 @@ static	const	int		g_bDxfID[] = {
 	IDS_REG_DXF_VIEWER, IDS_REG_DXF_BINDFILECOMMENT
 };
 static	const	int		g_nDxfID[] = {
-	IDS_REG_DXF_ORGTYPE, IDS_REG_DXF_BINDORGTYPE, IDS_REG_DXF_BINDSORT
+	IDS_REG_DXF_ORGTYPE, IDS_REG_DXF_SPLINENUM,
+	IDS_REG_DXF_BINDORGTYPE, IDS_REG_DXF_BINDSORT
 };
 static	const	int		g_nDxfOldID[] = {
 	IDS_REG_DXF_REGEX, IDS_REG_DXF_MATCH, IDS_REG_DXF_ACCEPT
@@ -26,7 +27,8 @@ static	const	int		g_bDxfDef[] = {
 	1, 1
 };
 static	const	int		g_nDxfDef[] = {
-	0, 0, 0
+	0, 1000,
+	0, 0
 };
 static	const	float	g_dDxfDef[] = {
 	300.0, 300.0,

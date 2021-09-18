@@ -17,12 +17,13 @@ public:
 // ダイアログ データ
 	//{{AFX_DATA(CDxfSetup1)
 	enum { IDD = IDD_DXF_SETUP1 };
-	CEdit	m_ctCamLayer;
-	CEdit	m_ctOrgLayer;
-	CButton	m_ctReload;
-	CString	m_strCamLayer;
-	CString	m_strOrgLayer;
-	int		m_nOrgType;
+	CEdit		m_ctCamLayer;
+	CEdit		m_ctOrgLayer;
+	CIntEdit	m_nSplineNum;
+	CButton		m_ctReload;
+	CString		m_strCamLayer;
+	CString		m_strOrgLayer;
+	int			m_nOrgType;
 	//}}AFX_DATA
 
 // オーバーライド
