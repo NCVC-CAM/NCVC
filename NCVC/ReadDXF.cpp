@@ -27,7 +27,7 @@ using namespace std;
 
 // ｸﾞﾙｰﾌﾟｺｰﾄﾞ
 extern	int		g_nGroupCode[] = {
-	0, 1, 2, 3, 6, 8, 9, 70
+	0, 1, 2, 3, 6, 8, 9
 };
 extern	int		g_nValueGroupCode[] = {
 	10, 20, 11, 21,
@@ -66,15 +66,17 @@ extern	LPCTSTR	g_szBlocks[] = {
 };
 // ｴﾝﾃｨﾃｨｷｰﾜｰﾄﾞ
 extern	LPCTSTR	g_szEntitiesKey[] = {
-	"POINT", "LINE", "CIRCLE", "ARC", "ELLIPSE", "POLYLINE", "LWPOLYLINE", "SPLINE",
-	"TEXT",
-	"INSERT", "VIEWPORT"
+	"POINT", "LINE", "CIRCLE", "ARC", "ELLIPSE",
+	"POLYLINE",
+		"VERTEX", "SEQEND",
+	"LWPOLYLINE", "SPLINE", "TEXT", "INSERT", "VIEWPORT"
 };
+/*
 // Polylineｷｰﾜｰﾄﾞ
 extern	LPCTSTR	g_szPolyline[] = {
 	"VERTEX", "SEQEND"
 };
-
+*/
 //
 static	int				g_nGroup;
 static	CString			g_strOrder,
@@ -90,12 +92,12 @@ static	DWORD			g_dwValueFlg;
 static	CString			g_strValue;
 
 static	CDXFBlockData*	g_pBkData;		// BLOCK要素
-static	CDXFpolyline*	g_pPolyline;	// Polylineﾃﾞｰﾀの先行生成
+//static	CDXFpolyline*	g_pPolyline;	// Polylineﾃﾞｰﾀの先行生成
 										// VERTEX溜まってからﾄﾞｷｭﾒﾝﾄﾃﾞｰﾀとして登録
-static	BOOL	g_bVertex,		// Polylineの各頂点処理中
-				g_bPuff;		// ふくらみ情報処理中
-static	float	g_dPuff;		// 前のVERTEXのふくらみ値
-static	CPointF	g_ptPuff;		// ふくらみ情報を計算するための前回位置
+//static	BOOL	g_bVertex,		// Polylineの各頂点処理中
+//				g_bPuff;		// ふくらみ情報処理中
+//static	float	g_dPuff;		// 前のVERTEXのふくらみ値
+//static	CPointF	g_ptPuff;		// ふくらみ情報を計算するための前回位置
 static	enENTITIESTYPE	g_nType;// TYPE_XXX
 static	int		g_nBlock,		// (-1:未処理, 0:Block基点待ち, 1:Block処理中)
 				g_nLayer;		// ﾚｲﾔ情報
@@ -125,10 +127,10 @@ static	BOOL	EntitiesProcedure(CDXFDoc*);
 static	void	SetEntitiesFromBlock(CDXFDoc*, CDXFBlockData*);
 static	void	SetEntitiesInfo(CDXFDoc*);
 static	BOOL	BlocksProcedure(CDXFDoc*);
-static	BOOL	PolylineProcedure(CDXFDoc*);
-static	BOOL	PolylineEndProcedure(CDXFDoc*);
-static	void			SetLWPolylineValue(void);
-static	CDXFpolyline*	LWPolylineProcedure(CDXFDoc*);
+//static	BOOL	PolylineProcedure(CDXFDoc*);
+//static	BOOL	PolylineEndProcedure(CDXFDoc*);
+static	void			SetPolylineValue(void);
+static	CDXFpolyline*	PolylineProcedure(CDXFDoc*);
 static	void			SetSplineValue(void);
 static	CDXFpolyline*	SplineProcedure(CDXFDoc*);
 
@@ -444,9 +446,11 @@ static inline BOOL _SetBlockArgv(LPDXFBLOCK lpBlock)
 	else
 		return FALSE;
 }
-
+/*
 static inline BOOL _IsPolyline(void)
 {
+	// LWPOLYLINE : SPLINE と同じ手法でデータ登録
+	// POLYLINE も同じように変更
 	return g_nType==TYPE_POLYLINE || g_nType==TYPE_LWPOLYLINE;
 }
 
@@ -471,7 +475,7 @@ static inline void _DeletePolyline(void)
 	g_pPolyline = NULL;
 	g_bVertex = g_bPuff = FALSE;
 }
-
+*/
 static inline void _NotsupportList(void)
 {
 	// 例外処理はﾒｲﾝﾙｰﾌﾟで
@@ -481,8 +485,8 @@ static inline void _NotsupportList(void)
 
 static inline void _InitialVariable(void)
 {
-	g_bVertex = g_bPuff = FALSE;
-	g_ptPuff = g_dPuff = 0.0f;
+//	g_bVertex = g_bPuff = FALSE;
+//	g_ptPuff = g_dPuff = 0.0f;
 	g_nType = TYPE_NOTSUPPORT;
 	g_nBlock = g_nLayer = -1;
 	g_strLayer.Empty();
@@ -788,27 +792,19 @@ void SetEntitiesInfo(CDXFDoc* pDoc)
 		break;
 
 	case TYPE_POLYLINE:
-		if ( g_pPolyline )
-			_DeletePolyline();	// SEQENDで登録するはずなので消去
-		break;
-
 	case TYPE_LWPOLYLINE:
 		if ( DXFCAMLAYER<=g_nLayer && g_nLayer<=DXFMOVLAYER ) {
-			pData = LWPolylineProcedure(pDoc);
+			pData = PolylineProcedure(pDoc);
 		}
-		else {
-			g_vVertex.clear();
-		}
+		g_vVertex.clear();
 		break;
 
 	case TYPE_SPLINE:
 		if ( g_nLayer == DXFCAMLAYER ) {
 			pData = SplineProcedure(pDoc);
 		}
-		else {
-			g_vVertex.clear();
-			g_vKnot.clear();
-		}
+		g_vVertex.clear();
+		g_vKnot.clear();
 		break;
 
 	case TYPE_TEXT:
@@ -838,16 +834,27 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 	BOOL	bResult = TRUE;
 	
 	switch ( enResultType ) {
-	case -2:	// ﾃﾞｰﾀ開始ｺｰﾄﾞ " 0" でない
+	case TYPE_VERTEX:
+		if ( g_nType == TYPE_POLYLINE ) {
+			g_nType = TYPE_VERTEX;
+		}
+		break;
+	case TYPE_SEQEND:
+		if ( g_nType == TYPE_VERTEX ) {
+			g_nType = TYPE_POLYLINE;
+			// ここで登録するよりも他のプリミティブ型と同じタイミングで
+		}
+		break;
+	case TYPE_SECTION_ERR:	// ﾃﾞｰﾀ開始ｺｰﾄﾞ " 0" でない
 		if ( g_nGroup == g_nGroupCode[GROUP2] ) {
 			g_strBlock = g_strOrder;	// ﾌﾞﾛｯｸ名ｾｯﾄ
 			break;
 		}
-		else if ( _IsPolyline() && g_nGroup==g_nGroupCode[GROUP70] ) {
-			if ( atoi(g_strOrder) & 1 )	// Polylineの閉ﾙｰﾌﾟか？
-				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
-			break;
-		}
+//		else if ( _IsPolyline() && g_nGroup==g_nGroupCode[GROUP70] ) {
+//			if ( atoi(g_strOrder) & 1 )	// Polylineの閉ﾙｰﾌﾟか？
+//				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
+//			break;
+//		}
 		// ﾚｲﾔﾁｪｯｸ
 		nResultLayer = _EntitiesLayerCheck();
 		switch ( nResultLayer ) {
@@ -855,8 +862,9 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			if ( g_nType > TYPE_NOTSUPPORT ) {
 				_SetValue();	// 値ｾｯﾄ
 				switch ( g_nType ) {
+				case TYPE_VERTEX:
 				case TYPE_LWPOLYLINE:
-					SetLWPolylineValue();
+					SetPolylineValue();
 					break;
 				case TYPE_SPLINE:
 					SetSplineValue();
@@ -865,14 +873,14 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			}
 			break;
 		case -1:	// 違うﾚｲﾔ
-			if ( !g_pPolyline ) {
-				g_nType = TYPE_NOTSUPPORT;
-				g_nLayer = -1;
-				g_strLayer.Empty();
-				g_strBlock.Empty();
-				g_strMissOrder.Empty();
-				_ClearValue();
-			}
+//			if ( !g_pPolyline ) {
+//				g_nType = TYPE_NOTSUPPORT;
+//				g_nLayer = -1;
+//				g_strLayer.Empty();
+//				g_strBlock.Empty();
+//				g_strMissOrder.Empty();
+//				_ClearValue();
+//			}
 			break;
 		default:	// Hit Layer!
 			if ( g_nType <= TYPE_NOTSUPPORT ) {
@@ -882,17 +890,17 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 			else {
 				g_nLayer = nResultLayer;
 				g_strLayer = g_strOrder;
-				if ( _IsPolyline() )
-					_CreatePolyline();		// Polylineﾃﾞｰﾀの先行生成
+//				if ( _IsPolyline() )
+//					_CreatePolyline();		// Polylineﾃﾞｰﾀの先行生成
 			}
 			break;
 		}
 		break;
-	case -1:	// 認識する命令ｷｰﾜｰﾄﾞでない
-		if ( g_nType==TYPE_POLYLINE && g_pPolyline ) {
-			bResult = PolylineProcedure(pDoc);
-			break;
-		}
+	case TYPE_NOTSUPPORT:	// 認識する命令ｷｰﾜｰﾄﾞでない
+//		if ( g_nType==TYPE_POLYLINE && g_pPolyline ) {
+//			bResult = PolylineProcedure(pDoc);
+//			break;
+//		}
 		g_strMissOrder = g_strOrder;
 		// through
 	default:	// 認識した
@@ -971,22 +979,19 @@ BOOL SetBlockData(void)
 		break;
 
 	case TYPE_POLYLINE:
-		if ( g_pPolyline ) {
-			g_pBkData->AddData(g_pPolyline);
-			g_pPolyline = NULL;
-		}
-		break;
-
 	case TYPE_LWPOLYLINE:
-		pPolyline = LWPolylineProcedure(NULL);
+		pPolyline = PolylineProcedure(NULL);
 		if ( pPolyline ) 
 			g_pBkData->AddData(pPolyline);
+		g_vVertex.clear();
 		break;
 
 	case TYPE_SPLINE:
 		pPolyline = SplineProcedure(NULL);
 		if ( pPolyline ) 
 			g_pBkData->AddData(pPolyline);
+		g_vVertex.clear();
+		g_vKnot.clear();
 		break;
 
 	case TYPE_TEXT:
@@ -1059,16 +1064,17 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 				}
 			}
 		}
-		else if ( _IsPolyline() && g_nGroup==g_nGroupCode[GROUP70] ) {
-			if ( atoi(g_strOrder) & 1 )
-				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
-		}
+//		else if ( _IsPolyline() && g_nGroup==g_nGroupCode[GROUP70] ) {
+//			if ( atoi(g_strOrder) & 1 )
+//				g_pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
+//		}
 		else {
 			if ( g_nType>TYPE_NOTSUPPORT || g_nBlock==0 ) {
 				_SetValue();
 				switch ( g_nType ) {
+				case TYPE_VERTEX:
 				case TYPE_LWPOLYLINE:
-					SetLWPolylineValue();
+					SetPolylineValue();
 					break;
 				case TYPE_SPLINE:
 					SetSplineValue();
@@ -1086,10 +1092,10 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 #endif
 			g_nBlock = 1;
 		}
-		if ( g_nType==TYPE_POLYLINE && g_pPolyline ) {	// VERTEX, SEQEND 処理
-			bResult = PolylineProcedure(pDoc);
-			break;
-		}
+//		if ( g_nType==TYPE_POLYLINE && g_pPolyline ) {	// VERTEX, SEQEND 処理
+//			bResult = PolylineProcedure(pDoc);
+//			break;
+//		}
 		if ( g_nType>TYPE_NOTSUPPORT && g_pBkData ) {
 			// 処理中のﾌﾞﾛｯｸ要素登録
 			bResult = SetBlockData();
@@ -1103,9 +1109,23 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 			g_nType = TYPE_NOTSUPPORT;
 		}
 		else {
-			g_nType = nResultEntities;
-			if ( _IsPolyline() )
-				_CreatePolyline();	// Polylineﾃﾞｰﾀの先行生成(ﾚｲﾔ情報無視)
+			switch ( nResultEntities ) {
+			case TYPE_VERTEX:
+				if ( g_nType == TYPE_POLYLINE ) {
+					g_nType = TYPE_VERTEX;
+				}
+				break;
+			case TYPE_SEQEND:
+				if ( g_nType == TYPE_VERTEX ) {
+					g_nType = TYPE_POLYLINE;
+				}
+				break;
+			default:
+				g_nType = nResultEntities;
+				break;
+			}
+//			if ( _IsPolyline() )
+//				_CreatePolyline();	// Polylineﾃﾞｰﾀの先行生成(ﾚｲﾔ情報無視)
 		}
 		break;
 	case 0:		// BLOCKｷｰﾜｰﾄﾞ
@@ -1114,8 +1134,8 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 			delete	g_pBkData;
 			g_pBkData = NULL;
 		}
-		if ( g_pPolyline )
-			_DeletePolyline();
+//		if ( g_pPolyline )
+//			_DeletePolyline();
 		g_nBlock = 0;
 		break;
 	case 1:		// ENDBLKｷｰﾜｰﾄﾞ
@@ -1142,6 +1162,21 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 /////////////////////////////////////////////////////////////////////////////
 //	POLYLINE 補助関数
 
+void SetPolylineValue(void)
+{
+	if ( _IsValueFlg(VALFLG_POINT) ) {
+		// 頂点退避
+		POLYVERTEX	pvx(g_dValue[VALUE10], g_dValue[VALUE20]);
+		g_vVertex.push_back( pvx );
+		g_dwValueFlg &= ~VALFLG_POINT;
+	}
+	if ( g_dwValueFlg & VALFLG42 ) {
+		// ふくらみ
+		g_vVertex.back().w = g_dValue[VALUE42];
+		g_dwValueFlg &= ~VALFLG42;
+	}
+}
+/*
 static inline int _PolylineKeywordCheck(void)
 {
 	// ｸﾞﾙｰﾌﾟｺｰﾄﾞ" 0" はﾁｪｯｸ済み
@@ -1240,29 +1275,14 @@ BOOL PolylineEndProcedure(CDXFDoc* pDoc)
 
 	return TRUE;
 }
-
+*/
 /////////////////////////////////////////////////////////////////////////////
 //	LWPOLYLINE 補助関数
 
-void SetLWPolylineValue(void)
-{
-	if ( _IsValueFlg(VALFLG_POINT) ) {
-		// 頂点退避
-		POLYVERTEX	pvx(g_dValue[VALUE10], g_dValue[VALUE20]);
-		g_vVertex.push_back( pvx );
-		g_dwValueFlg &= ~VALFLG_POINT;
-	}
-	if ( g_dwValueFlg & VALFLG42 ) {
-		// ふくらみ
-		g_vVertex.back().w = g_dValue[VALUE42];
-		g_dwValueFlg &= ~VALFLG42;
-	}
-}
-
-CDXFpolyline* LWPolylineProcedure(CDXFDoc* pDoc)
+CDXFpolyline* PolylineProcedure(CDXFDoc* pDoc)
 {
 #ifdef _DEBUG
-	printf("LWPolylineProcedure()\n");
+	printf("PolylineProcedure()\n");
 #endif
 	CDXFpolyline*	pPolyline = NULL;
 	if ( g_vVertex.empty() )
@@ -1298,9 +1318,13 @@ CDXFpolyline* LWPolylineProcedure(CDXFDoc* pDoc)
 	}
 
 	// 後処理
+	if ( g_dwValueFlg & VALFLG70 ) {
+		// 閉ループチェック
+		DWORD	dwFlg = (DWORD)g_dValue[VALUE70];
+		if ( dwFlg & 1 )
+			pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
+	}
 	pPolyline->EndSeq();
-//	PolylineEndProcedure(pDoc);
-	g_vVertex.clear();
 
 	return pPolyline;
 }
@@ -1395,8 +1419,6 @@ CDXFpolyline* SplineProcedure(CDXFDoc* pDoc)
 
 	// 後処理
 	pPolyline->EndSeq();
-	g_vVertex.clear();
-	g_vKnot.clear();
 
 	return pPolyline;
 }
@@ -1456,7 +1478,7 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	g_strMissEntiMap.RemoveAll();
 	g_strMissBlckMap.RemoveAll();
 	g_pBkData = NULL;
-	g_pPolyline = NULL;
+//	g_pPolyline = NULL;
 	_InitialVariable();
 
 	// ﾒｲﾝﾙｰﾌﾟ
@@ -1494,8 +1516,8 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 					delete	g_pBkData;		// ここでは消去
 					g_pBkData = NULL;
 				}
-				if ( g_pPolyline )		// SEQENDで登録するため
-					_DeletePolyline();		// ここでは消去
+//				if ( g_pPolyline )		// SEQENDで登録するため
+//					_DeletePolyline();		// ここでは消去
 				// 初期化
 				nSectionName = SEC_NOSECNAME;
 				_InitialVariable();
@@ -1556,8 +1578,8 @@ BOOL ReadDXF(CDXFDoc* pDoc, LPCTSTR lpszPathName)
 	// 安全ｺｰﾄﾞ
 	if ( g_pBkData )
 		delete	g_pBkData;
-	if ( g_pPolyline )
-		delete	g_pPolyline;
+//	if ( g_pPolyline )
+//		delete	g_pPolyline;
 
 	// 未ｻﾎﾟｰﾄのｷｰﾜｰﾄﾞを案内「ﾃﾞｰﾀ欠落の可能性」
 	CString		strMiss, strMsg, strAdd;

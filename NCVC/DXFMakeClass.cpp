@@ -144,26 +144,28 @@ static inline CString _MakeLayer(LPCTSTR pszLayer)
 static inline CString _MakeFigure(int nType, const CString& strLayer)
 {
 	extern	LPCTSTR	g_szEntitiesKey[];
-		// "POINT", "LINE", "CIRCLE", "ARC", "ELLIPSE", "POLYLINE", "TEXT",
-		// "INSERT", "LWPOLYLINE", "VIEWPORT"
+		// "POINT", "LINE", "CIRCLE", "ARC", "ELLIPSE",
+		// "POLYLINE", "VERTEX", "SEQEND", "LWPOLYLINE", "SPLINE", 
+		// "TEXT", "INSERT", "LWPOLYLINE", "VIEWPORT"
+
 	return _GROUPCODE(0)+g_szEntitiesKey[nType]+gg_szReturn+
 			_MakeLayer(strLayer);
 }
 
 static inline CString _MakeVertex(LPCTSTR pszLayer, const CPointF* pt)
 {
-	extern	LPCTSTR	g_szPolyline[];
-		// "VERTEX", "SEQEND"
+	extern	LPCTSTR	g_szEntitiesKey[];
+
 	if ( pt ) {
 		float	dVal[DXFMAXVALUESIZE];
 		dVal[VALUE10] = pt->x;
 		dVal[VALUE20] = pt->y;
-		return _GROUPCODE(0)+g_szPolyline[0]+gg_szReturn+
+		return _GROUPCODE(0)+g_szEntitiesKey[TYPE_VERTEX]+gg_szReturn+
 				_MakeLayer(pszLayer)+
 				_MakeValue(VALFLG_START, dVal);
 	}
 	else
-		return _GROUPCODE(0)+g_szPolyline[1]+gg_szReturn+
+		return _GROUPCODE(0)+g_szEntitiesKey[TYPE_SEQEND]+gg_szReturn+
 				_MakeLayer(pszLayer);
 }
 
