@@ -232,6 +232,9 @@ BOOL CDXFOption::SaveDXFoption(void)
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_ORGTYPE));
 	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nOrgType) )
 		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_SPLINENUM));
+	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nSplineNum) )
+		return FALSE;
 
 	return TRUE;
 }
