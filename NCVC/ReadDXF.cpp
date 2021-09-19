@@ -32,14 +32,14 @@ extern	int		g_nGroupCode[] = {
 extern	int		g_nValueGroupCode[] = {
 	10, 20, 11, 21,
 	40, 41, 42, 50, 51,
-	71, 72, 73,
+	70, 71, 72, 73,
 	210, 220, 230
 };
 extern	const	DWORD	g_dwValSet[] = {
 	VALFLG10, VALFLG20, VALFLG11, VALFLG21,
 	VALFLG40, VALFLG41, VALFLG42,
 	VALFLG50, VALFLG51,
-	VALFLG71, VALFLG72, VALFLG73,
+	VALFLG70, VALFLG71, VALFLG72, VALFLG73,
 	VALFLG210, VALFLG220, VALFLG230
 };
 
@@ -1284,10 +1284,10 @@ CDXFpolyline* PolylineProcedure(CDXFDoc* pDoc)
 #ifdef _DEBUG
 	printf("PolylineProcedure()\n");
 #endif
-	CDXFpolyline*	pPolyline = NULL;
 	if ( g_vVertex.empty() )
-		return pPolyline;
-	pPolyline = new CDXFpolyline;
+		return NULL;
+
+	CDXFpolyline* pPolyline = new CDXFpolyline;
 	ASSERT( pPolyline );
 
 	DXFPARGV	dxfPoint;
@@ -1297,32 +1297,47 @@ CDXFpolyline* PolylineProcedure(CDXFDoc* pDoc)
 		pPolyline->SetParentLayer(pLayer);
 	}
 
-	BOOL	bPuff = FALSE,		// Ç”Ç≠ÇÁÇ›ÉRÅ[ÉhÇÃóLñ≥
-			bResult;
+	BOOL	bResult;
+	float	w = 0;
+	CPointF	pt;
 	vector<POLYVERTEX>::iterator	it;
 	for ( it=g_vVertex.begin(); it!=g_vVertex.end(); ++it ) {
 		dxfPoint.c = (*it).pt;
 		if ( g_nBlock >= 0 )	// BlockèàóùíÜ
 			dxfPoint.c -= g_pBkData->GetBlockOrigin();	// å¥ì_ï‚ê≥
-		if ( bPuff ) {
-			bResult = pPolyline->SetVertex(&dxfPoint, (*prior(it)).w, (*prior(it)).pt);	// CDXFarcÇ∆ÇµÇƒìoò^
+		if ( w != 0 ) {
+			bResult = pPolyline->SetVertex(&dxfPoint, w, pt);	// CDXFarcÇ∆ÇµÇƒìoò^
 		}
 		else {
-			bResult = pPolyline->SetVertex(&dxfPoint);									// CDXFpointÇ∆ÇµÇƒìoò^
+			bResult = pPolyline->SetVertex(&dxfPoint);			// CDXFpointÇ∆ÇµÇƒìoò^
 		}
 		if ( !bResult ) {
 			AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
 			return FALSE;
 		}
-		bPuff = (*it).w == 0 ? FALSE : TRUE;
+		w = (*it).w;
+		pt = dxfPoint.c;
 	}
 
 	// å„èàóù
 	if ( g_dwValueFlg & VALFLG70 ) {
 		// ï¬ÉãÅ[ÉvÉ`ÉFÉbÉN
 		DWORD	dwFlg = (DWORD)g_dValue[VALUE70];
-		if ( dwFlg & 1 )
+		if ( dwFlg & 1 ) {
 			pPolyline->SetPolyFlag(DXFPOLY_CLOSED);
+			// ç≈èâÇÃç¿ïWÇ≈ìoò^
+			dxfPoint.c = pPolyline->GetFirstPoint();
+			if ( w != 0 ) {
+				bResult = pPolyline->SetVertex(&dxfPoint, w, pt);
+			}
+			else {
+				bResult = pPolyline->SetVertex(&dxfPoint);
+			}
+			if ( !bResult ) {
+				AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
+				return FALSE;
+			}
+		}
 	}
 	pPolyline->EndSeq();
 
@@ -1381,10 +1396,10 @@ CDXFpolyline* SplineProcedure(CDXFDoc* pDoc)
 #ifdef _DEBUG
 	printf("SplineProcedure()\n");
 #endif
-	CDXFpolyline*	pPolyline = NULL;
 	if ( g_vVertex.empty() || g_vKnot.empty() || !(g_dwValueFlg&VALFLG71) )
-		return pPolyline;
-	pPolyline = new CDXFpolyline;
+		return NULL;
+
+	CDXFpolyline* pPolyline = new CDXFpolyline;
 	ASSERT( pPolyline );
 
 	DXFPARGV		dxfPoint;
