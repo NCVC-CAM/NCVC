@@ -1084,23 +1084,24 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		}
 		break;
 	case -1:	// 認識できないｷｰﾜｰﾄﾞ(BLOCK, ENDBLK以外)
-		if ( g_nBlock==0 && g_pBkData ) {	// Block基点待ち
+		if ( g_nBlock==0 && g_pBkData && _IsValueFlg(VALFLG_POINT) ) {	// Block基点待ち
 			CPointF		pt(g_dValue[VALUE10], g_dValue[VALUE20]);
 			g_pBkData->SetBlockOrigin(pt);
 #ifdef _DEBUG
 			printf("BlockOrigin x=%f y=%f\n", pt.x, pt.y);
 #endif
 			g_nBlock = 1;
+			g_dwValueFlg &= ~VALFLG_POINT;
 		}
 //		if ( g_nType==TYPE_POLYLINE && g_pPolyline ) {	// VERTEX, SEQEND 処理
 //			bResult = PolylineProcedure(pDoc);
 //			break;
 //		}
-		if ( g_nType>TYPE_NOTSUPPORT && g_pBkData ) {
-			// 処理中のﾌﾞﾛｯｸ要素登録
-			bResult = SetBlockData();
-			_ClearValue();
-		}
+//		if ( g_nType>TYPE_NOTSUPPORT && g_pBkData ) {
+//			// 処理中のﾌﾞﾛｯｸ要素登録
+//			bResult = SetBlockData();
+//			_ClearValue();
+//		}
 		// ENTITIESｷｰﾜｰﾄﾞﾁｪｯｸ
 		nResultEntities = _EntitiesKeywordCheck();
 		if ( nResultEntities < 0 ) {
@@ -1113,6 +1114,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 			case TYPE_VERTEX:
 				if ( g_nType == TYPE_POLYLINE ) {
 					g_nType = TYPE_VERTEX;
+					g_dwValueFlg &= ~VALFLG_POLYLINE;	// 0:POLYLINEの座標コードを無視
 				}
 				break;
 			case TYPE_SEQEND:
