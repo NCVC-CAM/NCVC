@@ -173,6 +173,7 @@ static inline ULONGLONG _DubleRead(CStdioFile& fp)
 
 static inline BOOL _IsValueFlg(DWORD dwFlgs)
 {
+/*
 	// 指定されたビットが全てONの場合のみTRUE
 	for ( int i=0; i<SIZEOF(g_dwValSet); i++ ) {
 		if ( dwFlgs & g_dwValSet[i] ) {
@@ -181,6 +182,8 @@ static inline BOOL _IsValueFlg(DWORD dwFlgs)
 		}
 	}
 	return TRUE;
+*/
+	return (dwFlgs & g_dwValueFlg) == dwFlgs;
 }
 
 static inline void _ClearValue(void)
