@@ -84,7 +84,7 @@ static	CTypedPtrMap<CMapStringToPtr, CString, CDXFBlockData*>
 static	const	CDXFOption*		g_pOpt;	// DXFµÌß¼®İ
 static	float			g_dValue[DXFMAXVALUESIZE];
 static	DWORD			g_dwValueFlg;
-static	CString			g_strValue;
+static	CString			g_strValue;		// TYPE_TEXTê—p
 
 static	CDXFBlockData*	g_pBkData;		// BLOCK—v‘f
 static	enENTITIESTYPE	g_nType;// TYPE_XXX
@@ -181,7 +181,7 @@ static inline int _SetValue(void)
 		}
 	}
 	if ( g_nGroup == g_nGroupCode[GROUP1] ) {
-		g_strValue = g_strOrder;
+		g_strValue = g_strOrder;	// TYPE_TEXT‚Ì•¶š—ñ
 		return 0;
 	}
 	return -1;
@@ -803,8 +803,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 		nResultLayer = _EntitiesLayerCheck();
 		switch ( nResultLayer ) {
 		case -2:	// Ú²Ôº°ÄŞ‚Å‚à‚È‚¢
-			if ( g_nType > TYPE_NOTSUPPORT ) {
-				_SetValue();	// ’l¾¯Ä
+			if ( g_nType>TYPE_NOTSUPPORT && _SetValue()>=0 ) {
 				switch ( g_nType ) {
 				case TYPE_VERTEX:
 				case TYPE_LWPOLYLINE:
@@ -965,7 +964,6 @@ static inline void _SetBlockMap(void)
 	if ( g_strBlockMap.Lookup(g_pBkData->GetBlockName(), pBlock) )
 		delete	pBlock;
 	g_strBlockMap.SetAt(g_pBkData->GetBlockName(), g_pBkData);
-	g_pBkData = NULL;
 }
 
 BOOL BlocksProcedure(CDXFDoc* pDoc)
@@ -995,6 +993,12 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 #endif
 				}
 				else {
+					if ( g_pBkData ){
+#ifdef _DEBUG
+						printf("no ENDBLK?? name=%s\n", LPCTSTR(g_pBkData->GetBlockName()));
+#endif
+						delete	g_pBkData;	// ENDBLK‚ª‚È‚©‚Á‚½H
+					}
 					g_pBkData = new CDXFBlockData(g_strOrder);
 #ifdef _DEBUG
 					printf("New BlockName=%s\n", LPCTSTR(g_strOrder));
@@ -1003,8 +1007,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 			}
 		}
 		else {
-			if ( g_nType > TYPE_NOTSUPPORT ) {
-				_SetValue();
+			if ( g_nType>TYPE_NOTSUPPORT && _SetValue()>=0 ) {
 				switch ( g_nType ) {
 				case TYPE_VERTEX:
 				case TYPE_LWPOLYLINE:
@@ -1031,8 +1034,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		}
 		else if ( g_nType > TYPE_NOTSUPPORT ) {
 			// ˆ—’†‚ÌÌŞÛ¯¸—v‘f“o˜^
-			if ( SetBlockData() )
-				_SetBlockMap();
+			SetBlockData();
 		}
 		// ENTITIES·°Ü°ÄŞÁª¯¸
 		nResultEntities = _EntitiesKeywordCheck();
@@ -1070,11 +1072,15 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		break;
 	case 1:		// ENDBLK·°Ü°ÄŞ
 		if ( g_pBkData ) {
+			_SetBlockMap();	// BLOCKSÏ¯Ìß‚É“o˜^
 			if ( g_nType > TYPE_NOTSUPPORT ) {
 				// ˆ—’†‚ÌÌŞÛ¯¸—v‘f“o˜^
-				if ( SetBlockData() )
-					_SetBlockMap();	// BLOCKSÏ¯Ìß‚É“o˜^
+				SetBlockData();
 			}
+			else {
+				delete	g_pBkData;
+			}
+			g_pBkData = NULL;
 		}
 		_ClearValue();
 		g_nType = TYPE_NOTSUPPORT;
