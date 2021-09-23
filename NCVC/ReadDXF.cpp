@@ -786,6 +786,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 	case TYPE_VERTEX:
 		if ( g_nType == TYPE_POLYLINE ) {
 			g_nType = TYPE_VERTEX;
+			g_dwValueFlg &= ~VALFLG_POLYLINE;	// 0:POLYLINEの座標コードを無視
 		}
 		break;
 	case TYPE_SEQEND:
