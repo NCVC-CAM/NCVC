@@ -1137,7 +1137,7 @@ CDXFpolyline* PolylineProcedure(CDXFDoc* pDoc)
 	vector<POLYVERTEX>::iterator	it;
 	for ( it=g_vVertex.begin(); it!=g_vVertex.end(); ++it ) {
 		dxfPoint.c = (*it).pt;
-		if ( g_nBlock >= 0 )	// Block処理中
+		if ( g_nBlock>=0 && g_pBkData )	// Block処理中
 			dxfPoint.c -= g_pBkData->GetBlockOrigin();	// 原点補正
 		if ( w != 0 ) {
 			bResult = pPolyline->SetVertex(&dxfPoint, w, pt);	// CDXFarcとして登録
@@ -1258,8 +1258,11 @@ CDXFpolyline* SplineProcedure(CDXFDoc* pDoc)
 			r = RecursiveSpline(i++, m, t);
 			dxfPoint.c += (*it).pt * r * (*it).w;
 		}
-		if ( dxfPoint.c != 0 )
+		if ( dxfPoint.c != 0 ) {
+			if ( g_nBlock>=0 && g_pBkData )	// Block処理中
+				dxfPoint.c -= g_pBkData->GetBlockOrigin();	// 原点補正（テストデータがないので正しいか不明）
 			pPolyline->SetVertex(&dxfPoint);
+		}
 	}
 
 	// 最後の制御点に到達しない場合があるので強制追加
