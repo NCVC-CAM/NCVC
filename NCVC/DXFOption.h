@@ -127,6 +127,7 @@ public:
 	//
 	CString	GetIgnoreStr(void) const;
 	void	SetIgnoreArray(const CString&);
+	BOOL	IsIgnore(const CString&) const;
 	//
 	float	GetBindSize(size_t n) const {
 		return m_dBindWork[n];

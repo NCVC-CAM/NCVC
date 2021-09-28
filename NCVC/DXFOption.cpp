@@ -240,6 +240,15 @@ void CDXFOption::SetIgnoreArray(const CString& strIgnore)
 	}
 }
 
+BOOL CDXFOption::IsIgnore(const CString& strIgnore) const
+{
+	for ( int i=0; i<m_strIgnoreArray.GetSize(); i++ ) {
+		if ( strIgnore.CompareNoCase(m_strIgnoreArray[i]) == 0 )
+			return TRUE;
+	}
+	return FALSE;
+}
+
 BOOL CDXFOption::SaveDXFoption(void)
 {
 	int			i;

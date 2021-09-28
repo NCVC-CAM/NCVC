@@ -490,6 +490,9 @@ static inline enENTITIESTYPE _EntitiesKeywordCheck(void)
 {
 	if ( g_nGroup != g_nGroupCode[GROUP0] )
 		return TYPE_SECTION_ERR;
+	else if ( g_pOpt->IsIgnore(g_strOrder) )
+		return TYPE_IGNORE;
+
 	auto f = find_if(g_szEntitiesKey, lambda::_1==g_strOrder);
 	return f==end(g_szEntitiesKey) ? TYPE_NOTSUPPORT : (enENTITIESTYPE)(f-g_szEntitiesKey);
 }
@@ -819,7 +822,7 @@ BOOL EntitiesProcedure(CDXFDoc* pDoc)
 		case -1:	// ˆá‚¤Ú²Ô
 			break;
 		default:	// Hit Layer!
-			if ( g_nType <= TYPE_NOTSUPPORT ) {
+			if ( g_nType == TYPE_NOTSUPPORT ) {
 				if ( !g_strMissOrder.IsEmpty() )
 					_NotsupportList();	// –¢»Îß°Ä·°Ü°ÄÞ‚Ì“o˜^
 			}
@@ -1039,7 +1042,7 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		}
 		// ENTITIES·°Ü°ÄÞÁª¯¸
 		nResultEntities = _EntitiesKeywordCheck();
-		if ( nResultEntities < 0 ) {
+		if ( nResultEntities == TYPE_NOTSUPPORT ) {
 			g_strMissOrder = g_strOrder;
 			_NotsupportList();
 			g_nType = TYPE_NOTSUPPORT;
