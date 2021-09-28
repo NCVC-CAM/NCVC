@@ -59,7 +59,6 @@ BOOL CDxfSetup1::OnInitDialog()
 	m_strOrgLayer	= pOpt->m_strReadLayer[DXFORGLAYER];
 	m_strCamLayer	= pOpt->m_strReadLayer[DXFCAMLAYER];
 	m_nOrgType		= pOpt->m_nOrgType;
-	m_nSplineNum	= pOpt->m_nSplineNum;
 	UpdateData(FALSE);
 
 	// DXFÄÞ·­ÒÝÄ‚ªŠJ‚©‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©

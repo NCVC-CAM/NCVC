@@ -79,6 +79,9 @@ CDXFOption::CDXFOption()
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDMARGIN));
 	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
 	m_dBindMargin = strResult.IsEmpty() ? g_dDxfDef[i] : (float)atof(LPCTSTR(strResult.Trim()));
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_IGNORE));
+	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
+	SetIgnoreArray(strResult);
 
 	// 旧式ｵﾌﾟｼｮﾝの削除
 	CRegKey	reg;
@@ -214,10 +217,33 @@ void CDXFOption::DelInitHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
 	}
 }
 
+CString	CDXFOption::GetIgnoreStr(void) const
+{
+	extern	LPCTSTR	gg_szCRLF;	// "\r\n"
+	CString	strResult;
+	for ( int i=0; i<m_strIgnoreArray.GetSize(); i++ )
+		strResult += m_strIgnoreArray[i] + gg_szCRLF;		// エディットコントロールの改行
+	return strResult;
+}
+
+void CDXFOption::SetIgnoreArray(const CString& strIgnore)
+{
+	extern	LPCTSTR	gg_szCRLF;
+	m_strIgnoreArray.RemoveAll();
+	std::string	str(strIgnore), strTok;
+	char_separator<TCHAR> sep(gg_szCRLF);
+	tokenizer< char_separator<TCHAR> > tok(str, sep);
+	BOOST_FOREACH(strTok, tok) {
+		boost::algorithm::trim(strTok);
+		if ( !strTok.empty() )
+			m_strIgnoreArray.Add(strTok.c_str());
+	}
+}
+
 BOOL CDXFOption::SaveDXFoption(void)
 {
 	int			i;
-	CString		strRegKey, strEntry;
+	CString		strRegKey, strEntry, strResult;
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	for ( i=0; i<DXFLAYERSIZE; i++ ) {
@@ -234,6 +260,10 @@ BOOL CDXFOption::SaveDXFoption(void)
 		return FALSE;
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_SPLINENUM));
 	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nSplineNum) )
+		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_IGNORE));
+	strResult = GetIgnoreStr();
+	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, strResult) )
 		return FALSE;
 
 	return TRUE;

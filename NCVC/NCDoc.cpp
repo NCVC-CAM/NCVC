@@ -1150,6 +1150,7 @@ void CNCDoc::OnChangedViewList()
 
 void CNCDoc::Serialize(CArchive& ar)
 {
+	extern	LPCTSTR	gg_szCRLF;	// "\r\n"
 #ifdef _DEBUG
 	printf("CNCDoc::Serialize() Start\n");
 #endif
@@ -1163,7 +1164,7 @@ void CNCDoc::Serialize(CArchive& ar)
 		INT_PTR	n;
 		INT_PTR nLoop = GetNCBlockSize();
 		for ( INT_PTR i=0; i<nLoop; i++ ) {
-			ar.WriteString(m_obBlock[i]->GetStrBlock()+"\r\n");
+			ar.WriteString(m_obBlock[i]->GetStrBlock()+gg_szCRLF);
 			n = i*100/nLoop;
 			if ( n >= p ) {
 				while ( n >= p )

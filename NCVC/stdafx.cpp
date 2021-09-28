@@ -9,6 +9,8 @@ extern	LPCTSTR	gg_szRegKey = "Software\\MNCT-S\\NCVC\\";
 
 // ‰üs•¶š
 extern	LPCTSTR	gg_szReturn = "\n";
+// CR+LF
+extern	LPCTSTR	gg_szCRLF = "\r\n";
 // •ª‰ğ•¶š
 extern	LPCTSTR	gg_szDelimiter = ":";
 // •¶š˜AŒ‹

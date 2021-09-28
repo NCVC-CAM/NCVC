@@ -94,7 +94,6 @@
 #define ID_FILE_DXF2NCD_WIRE            1008
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
-#define IDC_EDIT1                       1068
 #define ID_FILE_CLANDOP                 1090
 #define IDD_CADBIND                     1100
 #define ID_FILE_CADBIND                 1100
@@ -730,6 +729,7 @@
 #define IDS_REG_DXF_BINDSORT            10119
 #define IDS_REG_DXF_BINDFILECOMMENT     10120
 #define IDS_REG_DXF_SPLINENUM           10121
+#define IDS_REG_DXF_IGNORE              10122
 #define IDS_REG_DXF_SORTLAYER1          10130
 #define IDS_REG_DXF_SORTLAYER2          10131
 #define IDS_REG_DXF_CUT                 10190

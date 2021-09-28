@@ -14,9 +14,8 @@ public:
 	CDxfSetup3();
 
 // ダイアログ データ
-#ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_DXF_SETUP3 };
-#endif
+	CButton		m_ctReload;
 	CString		m_strIgnore;
 	CIntEdit	m_nSplineNum;
 

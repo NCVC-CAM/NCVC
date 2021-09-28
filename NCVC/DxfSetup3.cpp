@@ -47,6 +47,7 @@ BOOL CDxfSetup3::OnInitDialog()
 	__super::OnInitDialog();
 
 	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
+	m_strIgnore		= pOpt->GetIgnoreStr();
 	m_nSplineNum	= pOpt->m_nSplineNum;
 	UpdateData(FALSE);
 
@@ -66,6 +67,8 @@ BOOL CDxfSetup3::OnApply()
 {
 	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
 	pOpt->m_nSplineNum	= m_nSplineNum;
+	pOpt->SetIgnoreArray(m_strIgnore);
+	return TRUE;
 }
 
 BOOL CDxfSetup3::OnKillActive()
@@ -83,7 +86,7 @@ BOOL CDxfSetup3::OnKillActive()
 	return TRUE;
 }
 
-void CDxfSetup1::OnReload() 
+void CDxfSetup3::OnReload() 
 {
 	if ( !OnKillActive() )	// UpdateData() & ÃÞ°ÀÁª¯¸
 		return;

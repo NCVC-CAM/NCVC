@@ -65,11 +65,12 @@ friend	class	CMakeBindOptDlg;
 		};
 		float		m_udNums[DXFOPT_DBL_NUMS];
 	};
-	CString	m_strReadLayer[DXFLAYERSIZE];	// 原点，切削(入力ｲﾒｰｼﾞ保存用)，
-											// 加工開始位置ﾚｲﾔ名, 強制移動指示ﾚｲﾔ名, ｺﾒﾝﾄ用
-	CStringList	m_strInitList[NCMAKENUM];	// 切削条件ﾌｧｲﾙ名の履歴
-	enMAKETYPE	m_enMakeType;				// 直前のNC生成ﾀｲﾌﾟ
-	boost::regex	m_regCutter;			// 切削ﾚｲﾔ正規表現
+	CString			m_strReadLayer[DXFLAYERSIZE];	// 原点，切削(入力ｲﾒｰｼﾞ保存用)，
+													// 加工開始位置ﾚｲﾔ名, 強制移動指示ﾚｲﾔ名, ｺﾒﾝﾄ用
+	CStringList		m_strInitList[NCMAKENUM];		// 切削条件ﾌｧｲﾙ名の履歴
+	CStringArray	m_strIgnoreArray;				// DXF無視ワード
+	enMAKETYPE		m_enMakeType;					// 直前のNC生成ﾀｲﾌﾟ
+	boost::regex	m_regCutter;					// 切削ﾚｲﾔ正規表現
 
 	BOOL	AddListHistory(enMAKETYPE, LPCTSTR);
 	BOOL	ReadInitHistory(enMAKETYPE);
@@ -123,6 +124,9 @@ public:
 		return FALSE;
 	}
 	void	DelInitHistory(enMAKETYPE, LPCTSTR);
+	//
+	CString	GetIgnoreStr(void) const;
+	void	SetIgnoreArray(const CString&);
 	//
 	float	GetBindSize(size_t n) const {
 		return m_dBindWork[n];
