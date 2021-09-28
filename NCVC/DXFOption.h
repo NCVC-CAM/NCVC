@@ -36,6 +36,7 @@ class CDXFOption
 {
 friend	class	CDxfSetup1;
 friend	class	CDxfSetup2;
+friend	class	CDxfSetup3;
 friend	class	CCADbindDlg;
 friend	class	CMakeBindOptDlg;
 

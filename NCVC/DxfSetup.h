@@ -5,6 +5,7 @@
 
 #include "DxfSetup1.h"
 #include "DxfSetup2.h"
+#include "DxfSetup3.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CDxfSetup
@@ -20,6 +21,7 @@ public:
 	// 内部ﾍﾟｰｼﾞﾀﾞｲｱﾛｸﾞ
 	CDxfSetup1	m_dlg1;
 	CDxfSetup2	m_dlg2;
+	CDxfSetup3	m_dlg3;
 
 // オペレーション
 public:

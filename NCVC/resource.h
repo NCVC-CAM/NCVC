@@ -94,6 +94,7 @@
 #define ID_FILE_DXF2NCD_WIRE            1008
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
+#define IDC_EDIT1                       1068
 #define ID_FILE_CLANDOP                 1090
 #define IDD_CADBIND                     1100
 #define ID_FILE_CADBIND                 1100
@@ -111,7 +112,6 @@
 #define IDC_DXF_CAMLINE                 1201
 #define IDC_DXF_ORIGIN                  1202
 #define IDC_DXF_CORRECT                 1203
-#define IDC_DXF_SPLINENUM               1204
 #define IDC_DXF_ORGTYPE                 1205
 #define IDC_DXF_RELOAD                  1206
 #define IDD_DXF_SETUP_RELOAD            1250
@@ -136,6 +136,9 @@
 #define IDS_VIEW_SETUP_INPORT           1314
 #define IDS_VIEW_SETUP_EXPORT           1315
 #define IDS_VIEW_TEXTURE                1316
+#define IDD_DXF_SETUP3                  1350
+#define IDC_DXF_IGNORE                  1351
+#define IDC_DXF_SPLINENUM               1352
 #define IDS_SCRIPT_FILTER               1385
 #define IDS_TEXTURE_FILTER              1386
 #define IDS_NCVC_FILTER                 1387
@@ -898,7 +901,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        206
 #define _APS_NEXT_COMMAND_VALUE         32824
-#define _APS_NEXT_CONTROL_VALUE         1068
+#define _APS_NEXT_CONTROL_VALUE         1069
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
