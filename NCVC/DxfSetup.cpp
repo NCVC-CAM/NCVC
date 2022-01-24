@@ -31,6 +31,7 @@ CDxfSetup::CDxfSetup(UINT nIDCaption) :
 
 	AddPage(&m_dlg1);
 	AddPage(&m_dlg2);
+	AddPage(&m_dlg3);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -24,10 +24,6 @@ CDxfSetup1::CDxfSetup1() : CPropertyPage(CDxfSetup1::IDD)
 	m_psp.dwFlags &= ~PSP_HASHELP;
 	//{{AFX_DATA_INIT(CDxfSetup1)
 	//}}AFX_DATA_INIT
-	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
-	m_strOrgLayer	= pOpt->m_strReadLayer[DXFORGLAYER];
-	m_strCamLayer	= pOpt->m_strReadLayer[DXFCAMLAYER];
-	m_nOrgType		= pOpt->m_nOrgType;
 }
 
 void CDxfSetup1::DoDataExchange(CDataExchange* pDX)
@@ -59,6 +55,12 @@ BOOL CDxfSetup1::OnInitDialog()
 {
 	__super::OnInitDialog();
 
+	const CDXFOption* pOpt = AfxGetNCVCApp()->GetDXFOption();
+	m_strOrgLayer	= pOpt->m_strReadLayer[DXFORGLAYER];
+	m_strCamLayer	= pOpt->m_strReadLayer[DXFCAMLAYER];
+	m_nOrgType		= pOpt->m_nOrgType;
+	UpdateData(FALSE);
+
 	// DXFÄŞ·­ÒİÄ‚ªŠJ‚©‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©
 	EnableReloadButton();
 
@@ -71,7 +73,7 @@ BOOL CDxfSetup1::OnApply()
 	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
 	pOpt->m_strReadLayer[DXFORGLAYER]	= m_strOrgLayer;
 	pOpt->m_strReadLayer[DXFCAMLAYER]	= m_strCamLayer;
-	pOpt->m_nOrgType  = m_nOrgType;
+	pOpt->m_nOrgType	= m_nOrgType;
 	try {
 		pOpt->m_regCutter = m_strCamLayer;
 	}

@@ -17,7 +17,8 @@ static	const	int		g_bDxfID[] = {
 	IDS_REG_DXF_VIEWER, IDS_REG_DXF_BINDFILECOMMENT
 };
 static	const	int		g_nDxfID[] = {
-	IDS_REG_DXF_ORGTYPE, IDS_REG_DXF_BINDORGTYPE, IDS_REG_DXF_BINDSORT
+	IDS_REG_DXF_ORGTYPE, IDS_REG_DXF_SPLINENUM,
+	IDS_REG_DXF_BINDORGTYPE, IDS_REG_DXF_BINDSORT
 };
 static	const	int		g_nDxfOldID[] = {
 	IDS_REG_DXF_REGEX, IDS_REG_DXF_MATCH, IDS_REG_DXF_ACCEPT
@@ -26,7 +27,8 @@ static	const	int		g_bDxfDef[] = {
 	1, 1
 };
 static	const	int		g_nDxfDef[] = {
-	0, 0, 0
+	0, 1000,
+	0, 0
 };
 static	const	float	g_dDxfDef[] = {
 	300.0, 300.0,
@@ -77,6 +79,9 @@ CDXFOption::CDXFOption()
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_BINDMARGIN));
 	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
 	m_dBindMargin = strResult.IsEmpty() ? g_dDxfDef[i] : (float)atof(LPCTSTR(strResult.Trim()));
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_IGNORE));
+	strResult = AfxGetApp()->GetProfileString(strRegKey, strEntry);
+	SetIgnoreArray(strResult);
 
 	// 旧式ｵﾌﾟｼｮﾝの削除
 	CRegKey	reg;
@@ -212,10 +217,42 @@ void CDXFOption::DelInitHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
 	}
 }
 
+CString	CDXFOption::GetIgnoreStr(void) const
+{
+	extern	LPCTSTR	gg_szCRLF;	// "\r\n"
+	CString	strResult;
+	for ( int i=0; i<m_strIgnoreArray.GetSize(); i++ )
+		strResult += m_strIgnoreArray[i] + gg_szCRLF;		// エディットコントロールの改行
+	return strResult;
+}
+
+void CDXFOption::SetIgnoreArray(const CString& strIgnore)
+{
+	extern	LPCTSTR	gg_szCRLF;
+	m_strIgnoreArray.RemoveAll();
+	std::string	str(strIgnore), strTok;
+	char_separator<TCHAR> sep(gg_szCRLF);
+	tokenizer< char_separator<TCHAR> > tok(str, sep);
+	BOOST_FOREACH(strTok, tok) {
+		boost::algorithm::trim(strTok);
+		if ( !strTok.empty() )
+			m_strIgnoreArray.Add(strTok.c_str());
+	}
+}
+
+BOOL CDXFOption::IsIgnore(const CString& strIgnore) const
+{
+	for ( int i=0; i<m_strIgnoreArray.GetSize(); i++ ) {
+		if ( strIgnore.CompareNoCase(m_strIgnoreArray[i]) == 0 )
+			return TRUE;
+	}
+	return FALSE;
+}
+
 BOOL CDXFOption::SaveDXFoption(void)
 {
 	int			i;
-	CString		strRegKey, strEntry;
+	CString		strRegKey, strEntry, strResult;
 
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_DXF));
 	for ( i=0; i<DXFLAYERSIZE; i++ ) {
@@ -229,6 +266,13 @@ BOOL CDXFOption::SaveDXFoption(void)
 		return FALSE;
 	VERIFY(strEntry.LoadString(IDS_REG_DXF_ORGTYPE));
 	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nOrgType) )
+		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_SPLINENUM));
+	if ( !AfxGetApp()->WriteProfileInt(strRegKey, strEntry, m_nSplineNum) )
+		return FALSE;
+	VERIFY(strEntry.LoadString(IDS_REG_DXF_IGNORE));
+	strResult = GetIgnoreStr();
+	if ( !AfxGetApp()->WriteProfileString(strRegKey, strEntry, strResult) )
 		return FALSE;
 
 	return TRUE;

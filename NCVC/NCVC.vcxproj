@@ -410,6 +410,7 @@
     <ClCompile Include="3dModelDoc.cpp" />
     <ClCompile Include="3dModelView.cpp" />
     <ClCompile Include="DxfAutoOutlineDlg.cpp" />
+    <ClCompile Include="DxfSetup3.cpp" />
     <ClCompile Include="MyTemplate.cpp" />
     <ClCompile Include="AboutDlg.cpp" />
     <ClCompile Include="AddinDlg.cpp" />
@@ -556,6 +557,7 @@
     <ClInclude Include="3dModelDoc.h" />
     <ClInclude Include="3dModelView.h" />
     <ClInclude Include="DxfAutoOutlineDlg.h" />
+    <ClInclude Include="DxfSetup3.h" />
     <ClInclude Include="MyTemplate.h" />
     <ClInclude Include="AboutDlg.h" />
     <ClInclude Include="AddinDlg.h" />
@@ -706,7 +708,7 @@
     <ResourceCompile Include="NCVC.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
+    <Text Include="Document\Readme.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

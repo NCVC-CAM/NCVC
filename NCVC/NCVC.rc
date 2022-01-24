@@ -866,7 +866,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.88a",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 3.91",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2021 MNCT K.Magara",IDC_STATIC,86,182,135,8
     LTEXT           "https://k-magara.github.io/",IDC_ABOUT_URL,86,198,135,8,SS_NOTIFY
 END
@@ -928,39 +928,39 @@ BEGIN
     LTEXT           "",IDC_DXF_RELOADLIST_ST,21,103,185,8,NOT WS_VISIBLE | WS_BORDER
 END
 
-IDD_DXF_SETUP1 DIALOGEX 0, 0, 219, 220
+IDD_DXF_SETUP1 DIALOGEX 0, 0, 222, 220
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "読み込みﾚｲﾔ1"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
-    LTEXT           "ﾚｲﾔ名(&L)",IDC_STATIC,14,24,28,8
+    LTEXT           "ﾚｲﾔ名(&L)",IDC_STATIC,14,24,31,8
     EDITTEXT        IDC_DXF_CAMLINE,55,22,150,12,ES_AUTOHSCROLL
-    GROUPBOX        "切削ﾚｲﾔ(正規表現が使えます)",IDC_STATIC,7,7,205,40,WS_GROUP
-    LTEXT           "ﾚｲﾔ名(&O)",IDC_STATIC,14,74,30,8
+    GROUPBOX        "切削ﾚｲﾔ(正規表現が使えます)",IDC_STATIC,7,7,208,38,WS_GROUP
+    LTEXT           "ﾚｲﾔ名(&O)",IDC_STATIC,14,74,32,8
     EDITTEXT        IDC_DXF_ORIGIN,55,72,150,12,ES_AUTOHSCROLL
-    LTEXT           "原点ﾃﾞｰﾀがないとき(&T)",IDC_STATIC,14,93,67,8
+    LTEXT           "原点ﾃﾞｰﾀがないとき(&T)",IDC_STATIC,14,93,70,8
     COMBOBOX        IDC_DXF_ORGTYPE,90,91,41,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "原点指定ﾚｲﾔ",IDC_STATIC,7,57,205,56,WS_GROUP
+    GROUPBOX        "原点指定ﾚｲﾔ",IDC_STATIC,7,57,208,56,WS_GROUP
     PUSHBUTTON      "再読込(&R)",IDC_DXF_RELOAD,78,175,62,14
-    LTEXT           "この設定は次のCADﾃﾞｰﾀ読み込みから有効",IDC_STATIC,45,205,143,8
+    LTEXT           "この設定は次のCADﾃﾞｰﾀ読み込みから有効",IDC_STATIC,45,205,131,8
 END
 
-IDD_DXF_SETUP2 DIALOGEX 0, 0, 219, 220
+IDD_DXF_SETUP2 DIALOGEX 0, 0, 222, 220
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "読み込みﾚｲﾔ2"
 FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
-    LTEXT           "ﾚｲﾔ名(&S)",IDC_STATIC,14,24,29,8
-    EDITTEXT        IDC_DXF_START,55,22,150,12,ES_AUTOHSCROLL
-    GROUPBOX        "加工開始位置指示ﾚｲﾔ",IDC_STATIC,7,7,205,38,WS_GROUP
-    LTEXT           "ﾚｲﾔ名(&M)",IDC_STATIC,14,74,30,8
-    EDITTEXT        IDC_DXF_MOVE,55,72,150,12,ES_AUTOHSCROLL
-    GROUPBOX        "強制移動指示ﾚｲﾔ",IDC_STATIC,7,57,205,38,WS_GROUP
-    LTEXT           "ﾚｲﾔ名(&C)",IDC_STATIC,14,124,30,8
-    EDITTEXT        IDC_DXF_COMMENT,55,122,150,12,ES_AUTOHSCROLL
-    GROUPBOX        "ｺﾒﾝﾄ文字列挿入用ﾚｲﾔ",IDC_STATIC,7,107,205,38,WS_GROUP
     PUSHBUTTON      "再読込(&R)",IDC_DXF_RELOAD,78,175,62,14
     LTEXT           "この設定は次のCADﾃﾞｰﾀ読み込みから有効",IDC_STATIC,45,205,142,8
+    LTEXT           "ﾚｲﾔ名(&S)",IDC_STATIC,14,24,29,8
+    GROUPBOX        "加工開始位置指示ﾚｲﾔ",IDC_STATIC,7,7,208,38,WS_GROUP
+    EDITTEXT        IDC_DXF_START,55,22,150,12,ES_AUTOHSCROLL
+    LTEXT           "ﾚｲﾔ名(&M)",IDC_STATIC,14,74,30,8
+    GROUPBOX        "強制移動指示ﾚｲﾔ",IDC_STATIC,7,57,208,38,WS_GROUP
+    EDITTEXT        IDC_DXF_MOVE,55,72,150,12,ES_AUTOHSCROLL
+    LTEXT           "ﾚｲﾔ名(&C)",IDC_STATIC,14,124,30,8
+    GROUPBOX        "ｺﾒﾝﾄ文字列挿入用ﾚｲﾔ",IDC_STATIC,7,107,208,38,WS_GROUP
+    EDITTEXT        IDC_DXF_COMMENT,55,122,150,12,ES_AUTOHSCROLL
 END
 
 IDD_EXEC_SETUP DIALOGEX 0, 0, 281, 243
@@ -2272,6 +2272,19 @@ BEGIN
     PUSHBUTTON      "ｷｬﾝｾﾙ(&C)",IDCANCEL,123,182,50,14
 END
 
+IDD_DXF_SETUP3 DIALOGEX 0, 0, 222, 220
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "DXF設定"
+FONT 9, "MS UI Gothic", 0, 0, 0x1
+BEGIN
+    LTEXT           "無視するワード(&W)",IDC_STATIC,7,14,53,8
+    EDITTEXT        IDC_DXF_IGNORE,70,7,145,90,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL
+    LTEXT           "SPLINE分割数(&S)",IDC_STATIC,7,118,54,8
+    EDITTEXT        IDC_DXF_SPLINENUM,70,116,50,12,ES_RIGHT | ES_AUTOHSCROLL
+    PUSHBUTTON      "再読込(&R)",IDC_DXF_RELOAD,78,175,62,14
+    LTEXT           "この設定は次のCADﾃﾞｰﾀ読み込みから有効",IDC_STATIC,45,205,142,8
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2279,8 +2292,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,8,8,1
- PRODUCTVERSION 3,8,8,1
+ FILEVERSION 3,9,1,0
+ PRODUCTVERSION 3,9,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -2298,14 +2311,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.8.8.1"
+            VALUE "FileVersion", "3.9.1.0"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2021 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.8.8.1"
-            VALUE "SpecialBuild", "Boost C++ 1.76, GLEW 2.10, Kodatuno R3.4kai"
+            VALUE "ProductVersion", "3.9.1.0"
+            VALUE "SpecialBuild", "Boost C++ 1.77, GLEW 2.10, Kodatuno R3.4kai"
         END
     END
     BLOCK "VarFileInfo"
@@ -2366,7 +2379,7 @@ BEGIN
     IDD_DXF_SETUP1, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 212
+        RIGHTMARGIN, 215
         TOPMARGIN, 7
         BOTTOMMARGIN, 213
     END
@@ -2374,7 +2387,7 @@ BEGIN
     IDD_DXF_SETUP2, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 212
+        RIGHTMARGIN, 215
         TOPMARGIN, 7
         BOTTOMMARGIN, 213
     END
@@ -2761,6 +2774,14 @@ BEGIN
         RIGHTMARGIN, 224
         TOPMARGIN, 7
         BOTTOMMARGIN, 196
+    END
+
+    IDD_DXF_SETUP3, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 215
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 213
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -3379,6 +3400,11 @@ BEGIN
     0
 END
 
+IDD_DXF_SETUP3 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -3654,6 +3680,8 @@ BEGIN
     IDS_REG_DXF_BINDORGTYPE "BindOriginType"
     IDS_REG_DXF_BINDSORT    "BindSort"
     IDS_REG_DXF_BINDFILECOMMENT "BindFileComment"
+    IDS_REG_DXF_SPLINENUM   "SplineNUM"
+    IDS_REG_DXF_IGNORE      "Ignore"
 END
 
 STRINGTABLE

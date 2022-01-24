@@ -13,9 +13,10 @@ enum {
 };
 enum {
 	DXFOPT_ORGTYPE = 0,
+	DXFOPT_SPLINENUM,
 	DXFOPT_BINDORG,
 	DXFOPT_BINDSORT,
-		DXFOPT_NUMS			// [3]
+		DXFOPT_NUMS			// [4]
 };
 enum {
 	DXFOPT_BINDWORKX = 0,
@@ -35,6 +36,7 @@ class CDXFOption
 {
 friend	class	CDxfSetup1;
 friend	class	CDxfSetup2;
+friend	class	CDxfSetup3;
 friend	class	CCADbindDlg;
 friend	class	CMakeBindOptDlg;
 
@@ -49,6 +51,7 @@ friend	class	CMakeBindOptDlg;
 		struct {
 			int		m_nOrgType,		// 原点ﾚｲﾔが無いときの処理
 									//    0:ｴﾗｰ,  1～4:右上,右下,左上,左下, 5:中央
+					m_nSplineNum,	// SPLINE分割数
 					m_nBindOrg,		// CADﾃﾞｰﾀ統合時の加工原点
 									//    0～3:右上,右下,左上,左下, 4:中央
 					m_nBindSort;	// 生成時の並べ替え
@@ -62,11 +65,12 @@ friend	class	CMakeBindOptDlg;
 		};
 		float		m_udNums[DXFOPT_DBL_NUMS];
 	};
-	CString	m_strReadLayer[DXFLAYERSIZE];	// 原点，切削(入力ｲﾒｰｼﾞ保存用)，
-											// 加工開始位置ﾚｲﾔ名, 強制移動指示ﾚｲﾔ名, ｺﾒﾝﾄ用
-	CStringList	m_strInitList[NCMAKENUM];	// 切削条件ﾌｧｲﾙ名の履歴
-	enMAKETYPE	m_enMakeType;				// 直前のNC生成ﾀｲﾌﾟ
-	boost::regex	m_regCutter;			// 切削ﾚｲﾔ正規表現
+	CString			m_strReadLayer[DXFLAYERSIZE];	// 原点，切削(入力ｲﾒｰｼﾞ保存用)，
+													// 加工開始位置ﾚｲﾔ名, 強制移動指示ﾚｲﾔ名, ｺﾒﾝﾄ用
+	CStringList		m_strInitList[NCMAKENUM];		// 切削条件ﾌｧｲﾙ名の履歴
+	CStringArray	m_strIgnoreArray;				// DXF無視ワード
+	enMAKETYPE		m_enMakeType;					// 直前のNC生成ﾀｲﾌﾟ
+	boost::regex	m_regCutter;					// 切削ﾚｲﾔ正規表現
 
 	BOOL	AddListHistory(enMAKETYPE, LPCTSTR);
 	BOOL	ReadInitHistory(enMAKETYPE);
@@ -120,6 +124,10 @@ public:
 		return FALSE;
 	}
 	void	DelInitHistory(enMAKETYPE, LPCTSTR);
+	//
+	CString	GetIgnoreStr(void) const;
+	void	SetIgnoreArray(const CString&);
+	BOOL	IsIgnore(const CString&) const;
 	//
 	float	GetBindSize(size_t n) const {
 		return m_dBindWork[n];

@@ -137,6 +137,9 @@
 #define IDS_VIEW_SETUP_INPORT           1314
 #define IDS_VIEW_SETUP_EXPORT           1315
 #define IDS_VIEW_TEXTURE                1316
+#define IDD_DXF_SETUP3                  1350
+#define IDC_DXF_IGNORE                  1351
+#define IDC_DXF_SPLINENUM               1352
 #define IDS_3DM_FILTER                  1384
 #define IDS_SCRIPT_FILTER               1385
 #define IDS_TEXTURE_FILTER              1386
@@ -728,6 +731,8 @@
 #define IDS_REG_DXF_BINDORGTYPE         10118
 #define IDS_REG_DXF_BINDSORT            10119
 #define IDS_REG_DXF_BINDFILECOMMENT     10120
+#define IDS_REG_DXF_SPLINENUM           10121
+#define IDS_REG_DXF_IGNORE              10122
 #define IDS_REG_DXF_SORTLAYER1          10130
 #define IDS_REG_DXF_SORTLAYER2          10131
 #define IDS_REG_DXF_CUT                 10190
@@ -899,7 +904,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        206
 #define _APS_NEXT_COMMAND_VALUE         32824
-#define _APS_NEXT_CONTROL_VALUE         1068
+#define _APS_NEXT_CONTROL_VALUE         1069
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

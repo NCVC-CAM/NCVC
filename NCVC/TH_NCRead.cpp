@@ -519,9 +519,9 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			float	dVal[3];
 			string	str(raw.begin(), raw.end());
 			char_separator<TCHAR>	sep("xXtT");
-			tokenizer< char_separator<TCHAR> > tok(str, sep);
-			typedef tokenizer< char_separator<TCHAR> >::iterator ITE;
-			for ( ITE it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
+			typedef tokenizer< char_separator<TCHAR> >	TOKEN;
+			TOKEN	tok(str, sep);
+			for ( TOKEN::iterator it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
 				dVal[n++] = (float)atof( (*it).c_str() );
 			}
 			dVal[0] /= 2.0f;	dVal[1] /= 2.0f;
@@ -542,9 +542,9 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			float	dVal[2];
 			string	str(raw.begin(), raw.end());
 			char_separator<TCHAR>	sep("hH");
-			tokenizer< char_separator<TCHAR> > tok(str, sep);
-			typedef tokenizer< char_separator<TCHAR> >::iterator ITE;
-			for ( ITE it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
+			typedef tokenizer< char_separator<TCHAR> >	TOKEN;
+			TOKEN	tok(str, sep);
+			for ( TOKEN::iterator it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
 				dVal[n++] = (float)atof( (*it).c_str() );
 			}
 			CPoint3F	pt(0, 0, -dVal[1]);

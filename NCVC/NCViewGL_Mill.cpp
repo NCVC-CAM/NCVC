@@ -762,7 +762,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 
 	// 頂点ｲﾝﾃﾞｯｸｽの消去
 	if ( m_pSolidElement ) {
-		::glDeleteBuffersARB(GetElementSize(), m_pSolidElement);
+		::glDeleteBuffers(GetElementSize(), m_pSolidElement);
 		delete[]	m_pSolidElement;
 		m_pSolidElement = NULL;
 	}
@@ -834,31 +834,31 @@ BOOL CNCViewGL::CreateVBOMill(void)
 
 	// 頂点配列と法線ﾍﾞｸﾄﾙをGPUﾒﾓﾘに転送
 	if ( m_nVBOsize==nVBOsize && m_nVertexID[0]>0 ) {
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[0]);
-		::glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, nVBOsize, m_pfXYZ);
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[1]);
-		::glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, nVBOsize, m_pfNOR);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
+		::glBufferSubData(GL_ARRAY_BUFFER, 0, nVBOsize, m_pfXYZ);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
+		::glBufferSubData(GL_ARRAY_BUFFER, 0, nVBOsize, m_pfNOR);
 	}
 	else {
 		if ( m_nVertexID[0] > 0 )
-			::glDeleteBuffersARB(SIZEOF(m_nVertexID), m_nVertexID);
-		::glGenBuffersARB(SIZEOF(m_nVertexID), m_nVertexID);
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[0]);
-		::glBufferDataARB(GL_ARRAY_BUFFER_ARB, nVBOsize, m_pfXYZ,
-				GL_STATIC_DRAW_ARB);
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[1]);
-		::glBufferDataARB(GL_ARRAY_BUFFER_ARB, nVBOsize, m_pfNOR,
-				GL_STATIC_DRAW_ARB);
+			::glDeleteBuffers(SIZEOF(m_nVertexID), m_nVertexID);
+		::glGenBuffers(SIZEOF(m_nVertexID), m_nVertexID);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
+		::glBufferData(GL_ARRAY_BUFFER, nVBOsize, m_pfXYZ,
+				GL_STATIC_DRAW);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
+		::glBufferData(GL_ARRAY_BUFFER, nVBOsize, m_pfNOR,
+				GL_STATIC_DRAW);
 		m_nVBOsize = nVBOsize;
 	}
 	errLine = __LINE__;
 	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY?
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 		ClearVBO();
 		OutputGLErrorMessage(errCode, errLine);
 		return FALSE;
 	}
-	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// 頂点ｲﾝﾃﾞｯｸｽをGPUﾒﾓﾘに転送
 #ifndef _WIN64
@@ -873,10 +873,10 @@ BOOL CNCViewGL::CreateVBOMill(void)
 		}
 
 		m_pSolidElement = new GLuint[nWrkSize+nCutSize];
-		::glGenBuffersARB((GLsizei)(nWrkSize+nCutSize), m_pSolidElement);
+		::glGenBuffers((GLsizei)(nWrkSize+nCutSize), m_pSolidElement);
 		errLine = __LINE__;
 		if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
-			::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+			::glBindBuffer(GL_ARRAY_BUFFER, 0);
 			ClearVBO();
 			OutputGLErrorMessage(errCode, errLine);
 			return FALSE;
@@ -892,17 +892,17 @@ BOOL CNCViewGL::CreateVBOMill(void)
 		for ( i=0; i<proc; i++ ) {
 			for ( const auto& v : m_pCeParam[i].vvElementCut ) {
 				nElement = v.size();
-				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
+				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[jj++]);
 				if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-					::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
-						GL_STATIC_DRAW_ARB);
+					::glBufferData(GL_ELEMENT_ARRAY_BUFFER, nElement*sizeof(GLuint), &(v[0]),
+						GL_STATIC_DRAW);
 					errLine = __LINE__;
 					errCode = GetGLError();
 				}
 				else
 					errLine = __LINE__;
 				if ( errCode != GL_NO_ERROR ) {
-					::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+					::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 					ClearVBO();
 					OutputGLErrorMessage(errCode, errLine);
 					return FALSE;
@@ -917,17 +917,17 @@ BOOL CNCViewGL::CreateVBOMill(void)
 		for ( i=0; i<proc; i++ ) {
 			for ( const auto& v : m_pCeParam[i].vvElementWrk ) {
 				nElement = v.size();
-				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
+				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[jj++]);
 				if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-					::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
-						GL_STATIC_DRAW_ARB);
+					::glBufferData(GL_ELEMENT_ARRAY_BUFFER, nElement*sizeof(GLuint), &(v[0]),
+						GL_STATIC_DRAW);
 					errLine = __LINE__;
 					errCode = GetGLError();
 				}
 				else
 					errLine = __LINE__;
 				if ( errCode != GL_NO_ERROR ) {
-					::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+					::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 					ClearVBO();
 					OutputGLErrorMessage(errCode, errLine);
 					return FALSE;
@@ -939,7 +939,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 			}
 		}
 
-		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+		::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 #ifdef _DEBUG
 		printf("CreateVBOMill()\n");

@@ -150,8 +150,7 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 			// ífñ ï\é¶Ç≈Ç‡1é¸ï™ÇÃç¿ïWê∂ê¨
 			nSize  = (ARCCOUNT+1) * m_icx * 2;	// â~é¸Å~í∑Ç≥Å~[ì‡|äO]åa
 			nSize += (ARCCOUNT+1) * 2 * 2;		// â~é¸Å~[ì‡|äO]åaÅ~ç∂âEí[ñ 
-			if ( m_bSlitView )
-				nSize += m_icx * 4;				// ífñ ópç¿ïW
+			nSize += m_icx * 4;					// ífñ ópç¿ïW
 			nSize *= NCXYZ;
 			m_pfXYZ		= new GLfloat[nSize];
 			m_pfNOR		= new GLfloat[nSize];
@@ -307,38 +306,37 @@ BOOL CNCViewGL::GetClipDepthLathe(void)
 		m_pfNOR[jj+NCA_Y] = m_pfNOR[jj+NCA_Z] = 0.0f;
 	}
 
-	if ( m_bSlitView ) {
-		// ífñ ç¿ïWÇÃìoò^Åiç¿ïWÇÕåvéZçœÇ›ÅBì‡åaÇ∆äOåaÇÇ¬Ç»Ç¨ñ@ê¸Õﬁ∏ƒŸÇê›íËÅj
-		for ( i=j=0; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
-			// äOåaâ∫ë§
-			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
-			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
-			m_pfNOR[jj+NCA_Y] = -1.0f;
-			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-			// ì‡åaâ∫ë§
-			jj += NCXYZ;
-			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
-			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
-			m_pfNOR[jj+NCA_Y] = -1.0f;
-			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-		}
-		for ( i=0, j=ARCCOUNT/2*NCXYZ; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
-			// äOåaè„ë§
-			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
-			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
-			m_pfNOR[jj+NCA_Y] = -1.0f;
-			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-			// ì‡åaè„ë§
-			jj += NCXYZ;
-			m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
-			m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
-			m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
-			m_pfNOR[jj+NCA_Y] = -1.0f;
-			m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
-		}
+	// m_bSlitView Ç…ä÷åWÇ»Ç≠
+	// ífñ ç¿ïWÇÃìoò^Åiç¿ïWÇÕåvéZçœÇ›ÅBì‡åaÇ∆äOåaÇÇ¬Ç»Ç¨ñ@ê¸Õﬁ∏ƒŸÇê›íËÅj
+	for ( i=j=0; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
+		// äOåaâ∫ë§
+		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
+		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
+		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
+		m_pfNOR[jj+NCA_Y] = -1.0f;
+		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+		// ì‡åaâ∫ë§
+		jj += NCXYZ;
+		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
+		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
+		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
+		m_pfNOR[jj+NCA_Y] = -1.0f;
+		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+	}
+	for ( i=0, j=ARCCOUNT/2*NCXYZ; i<m_icx; i++, j+=(ARCCOUNT+1)*NCXYZ, jj+=NCXYZ ) {
+		// äOåaè„ë§
+		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+NCA_X];
+		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+NCA_Y];
+		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+NCA_Z];
+		m_pfNOR[jj+NCA_Y] = -1.0f;
+		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
+		// ì‡åaè„ë§
+		jj += NCXYZ;
+		m_pfXYZ[jj+NCA_X] = m_pfXYZ[j+offset+NCA_X];
+		m_pfXYZ[jj+NCA_Y] = m_pfXYZ[j+offset+NCA_Y];
+		m_pfXYZ[jj+NCA_Z] = m_pfXYZ[j+offset+NCA_Z];
+		m_pfNOR[jj+NCA_Y] = -1.0f;
+		m_pfNOR[jj+NCA_X] = m_pfNOR[jj+NCA_Z] = 0.0f;
 	}
 
 #ifdef _DEBUG
@@ -358,8 +356,6 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 	int	i, ii, j,
 		offset = m_icx * (m_icy-1),	// m_pfDepthÇÃäOåaäJénµÃæØƒ
 		nSlit  = m_bSlitView ? (ARCCOUNT/2) : ARCCOUNT;	// ífñ ï\é¶Ç»ÇÁâ~ÇÃîºï™ÇæÇØ
-	GLsizeiptr	nVBOsize = ( (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*2*2 + m_icx*4 )
-									* NCXYZ * sizeof(GLfloat);
 	GLuint		n0, n1;
 	GLenum		errCode;
 	UINT		errLine;
@@ -368,10 +364,12 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 						vvElementEdg,
 						vvElementSlt;
 	CVelement	vElement;
+	GLsizeiptr	nVBOsize = (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*2*2 + m_icx*4;
+	nVBOsize *= NCXYZ * sizeof(GLfloat);
 
 	// í∏ì_≤›√ﬁØ∏ΩÇÃè¡ãé
 	if ( m_pSolidElement ) {
-		::glDeleteBuffersARB(GetElementSize(), m_pSolidElement);
+		::glDeleteBuffers(GetElementSize(), m_pSolidElement);
 		delete[]	m_pSolidElement;
 		m_pSolidElement = NULL;
 	}
@@ -444,7 +442,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 
 	// ífñ ≤›√ﬁØ∏Ω
 	if ( m_bSlitView ) {
-		ii = (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*4;
+		ii = (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*2*2;
 		for ( i=0; i<2; i++ ) {	// è„â∫ífñ 
 			vElement.clear();
 			for ( j=0; j<m_icx; j++ ) {
@@ -471,31 +469,31 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 
 	// í∏ì_îzóÒÇ∆ñ@ê¸Õﬁ∏ƒŸÇGPU“”ÿÇ…ì]ëó
 	if ( m_nVBOsize==nVBOsize && m_nVertexID[0]>0 ) {
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[0]);
-		::glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, nVBOsize, m_pfXYZ);
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[1]);
-		::glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, nVBOsize, m_pfNOR);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
+		::glBufferSubData(GL_ARRAY_BUFFER, 0, nVBOsize, m_pfXYZ);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
+		::glBufferSubData(GL_ARRAY_BUFFER, 0, nVBOsize, m_pfNOR);
 	}
 	else {
 		if ( m_nVertexID[0] > 0 )
-			::glDeleteBuffersARB(SIZEOF(m_nVertexID), m_nVertexID);
-		::glGenBuffersARB(SIZEOF(m_nVertexID), m_nVertexID);
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[0]);
-		::glBufferDataARB(GL_ARRAY_BUFFER_ARB, nVBOsize, m_pfXYZ,
-				GL_STATIC_DRAW_ARB);
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_nVertexID[1]);
-		::glBufferDataARB(GL_ARRAY_BUFFER_ARB, nVBOsize, m_pfNOR,
-				GL_STATIC_DRAW_ARB);
+			::glDeleteBuffers(SIZEOF(m_nVertexID), m_nVertexID);
+		::glGenBuffers(SIZEOF(m_nVertexID), m_nVertexID);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
+		::glBufferData(GL_ARRAY_BUFFER, nVBOsize, m_pfXYZ,
+				GL_STATIC_DRAW);
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
+		::glBufferData(GL_ARRAY_BUFFER, nVBOsize, m_pfNOR,
+				GL_STATIC_DRAW);
 		m_nVBOsize = nVBOsize;
 	}
 	errLine = __LINE__;
 	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
-		::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 		ClearVBO();
 		OutputGLErrorMessage(errCode, errLine);
 		return FALSE;
 	}
-	::glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// í∏ì_≤›√ﬁØ∏ΩÇGPU“”ÿÇ…ì]ëó
 #ifndef _WIN64
@@ -509,10 +507,10 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 				nSltSize = vvElementSlt.size();
 
 		m_pSolidElement = new GLuint[nWrkSize+nCutSize+nEdgSize+nSltSize];
-		::glGenBuffersARB((GLsizei)(nWrkSize+nCutSize+nEdgSize+nSltSize), m_pSolidElement);
+		::glGenBuffers((GLsizei)(nWrkSize+nCutSize+nEdgSize+nSltSize), m_pSolidElement);
 		errLine = __LINE__;
 		if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			ClearVBO();
 			OutputGLErrorMessage(errCode, errLine);
 			return FALSE;
@@ -527,17 +525,17 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 		// êÿçÌñ óp
 		for ( const auto& v : vvElementCut ) {
 			nElement = v.size();
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
-					GL_STATIC_DRAW_ARB);
+				::glBufferData(GL_ELEMENT_ARRAY_BUFFER, nElement*sizeof(GLuint), &(v[0]),
+					GL_STATIC_DRAW);
 				errLine = __LINE__;
 				errCode = GetGLError();
 			}
 			else
 				errLine = __LINE__;
 			if ( errCode != GL_NO_ERROR ) {
-				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 				ClearVBO();
 				OutputGLErrorMessage(errCode, errLine);
 				return FALSE;
@@ -550,17 +548,17 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 		// ‹∞∏ãÈå`óp
 		for ( const auto& v : vvElementWrk ) {
 			nElement = v.size();
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
-					GL_STATIC_DRAW_ARB);
+				::glBufferData(GL_ELEMENT_ARRAY_BUFFER, nElement*sizeof(GLuint), &(v[0]),
+					GL_STATIC_DRAW);
 				errLine = __LINE__;
 				errCode = GetGLError();
 			}
 			else
 				errLine = __LINE__;
 			if ( errCode != GL_NO_ERROR ) {
-				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 				ClearVBO();
 				OutputGLErrorMessage(errCode, errLine);
 				return FALSE;
@@ -573,17 +571,17 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 		// í[ñ 
 		for ( const auto& v : vvElementEdg ) {
 			nElement = v.size();
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
-					GL_STATIC_DRAW_ARB);
+				::glBufferData(GL_ELEMENT_ARRAY_BUFFER, nElement*sizeof(GLuint), &(v[0]),
+					GL_STATIC_DRAW);
 				errLine = __LINE__;
 				errCode = GetGLError();
 			}
 			else
 				errLine = __LINE__;
 			if ( errCode != GL_NO_ERROR ) {
-				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 				ClearVBO();
 				OutputGLErrorMessage(errCode, errLine);
 				return FALSE;
@@ -597,17 +595,17 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 		// ífñ 
 		for ( const auto&v : vvElementSlt ) {
 			nElement = v.size();
-			::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_pSolidElement[jj++]);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[jj++]);
 			if ( (errCode=GetGLError()) == GL_NO_ERROR ) {
-				::glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, nElement*sizeof(GLuint), &(v[0]),
-					GL_STATIC_DRAW_ARB);
+				::glBufferData(GL_ELEMENT_ARRAY_BUFFER, nElement*sizeof(GLuint), &(v[0]),
+					GL_STATIC_DRAW);
 				errLine = __LINE__;
 				errCode = GetGLError();
 			}
 			else
 				errLine = __LINE__;
 			if ( errCode != GL_NO_ERROR ) {
-				::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 				ClearVBO();
 				OutputGLErrorMessage(errCode, errLine);
 				return FALSE;
@@ -618,7 +616,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 #endif
 		}
 
-		::glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+		::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 #ifdef _DEBUG
 		printf("CreateVBOLathe()\n");
 		printf(" VertexCount(/3)=%d size=%d\n",
