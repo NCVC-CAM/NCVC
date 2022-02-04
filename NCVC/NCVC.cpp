@@ -191,9 +191,9 @@ BOOL CNCVCApp::InitInstance()
 #ifdef _DEBUG
 	printf("Processer Count=%d\n", g_nProcesser);
 	printf("RegistryKey=%s\n", m_pszRegistryKey);
-	printf("NCDATA   struct size=%d\n", sizeof(NCDATA));
-	printf("NCDATA_F struct size=%d\n", sizeof(NCDATA_F));
-	printf("CNCdata  struct size=%d\n", sizeof(CNCdata));
+	printf("NCDATA   struct size=%zd\n", sizeof(NCDATA));
+	printf("NCDATA_F struct size=%zd\n", sizeof(NCDATA_F));
+	printf("CNCdata  struct size=%zd\n", sizeof(CNCdata));
 #endif
 	LoadStdProfileSettings(MAXMRULSTCNT);	// 標準の INI ファイルのオプションをロードします (MRU を含む)
 	InitialRecentViewList();	// MRUﾘｽﾄからCRecentViewInfo構築

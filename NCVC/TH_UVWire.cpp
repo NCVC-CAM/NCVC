@@ -71,7 +71,7 @@ UINT UVWire_Thread(LPVOID pVoid)
 	}
 	pParent->m_ctReadProgress.SetRange32(0, (int)nLoopCnt);
 #ifdef _DEBUG
-	printf("GetNCsize()=%d Work=%f\n", nLoopCnt, z);
+	printf("GetNCsize()=%Id Work=%f\n", nLoopCnt, z);
 #endif
 
 	// ∙о░■▐┴┼З┴╩┌л┌╫┌ъ┌и│A█е▐┴┌л G_TYPE ╣лч╪ч╙╦д┌П▄÷█У

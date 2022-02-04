@@ -241,7 +241,7 @@ void CDXFworkingOutline::SeparateAdd_Construct(const CDXFchain* pOutline)
 	m_rcMax = pOutline->GetMaxRect();
 
 #ifdef _DEBUG
-	printf("SeparateAdd_Construct() OutlineSize=%d\n", m_obOutline.GetSize());
+	printf("SeparateAdd_Construct() OutlineSize=%Id\n", m_obOutline.GetSize());
 	for ( int i=0; i<m_obOutline.GetSize(); i++ ) {
 		pChain = m_obOutline[i];
 		int	j = 0;
@@ -357,7 +357,7 @@ void CDXFworkingOutline::SeparateModify(void)
 		}
 #ifdef _DEBUG
 		pte.reset();
-		printf("%s nLoop=%d\n", LPCTSTR(m_pShape->GetShapeName()), i);
+		printf("%s nLoop=%Id\n", LPCTSTR(m_pShape->GetShapeName()), i);
 		PLIST_FOREACH(pData, pOutline)
 			ptDbgS = pData->GetNativePoint(0);
 			ptDbgE = pData->GetNativePoint(1);
@@ -373,7 +373,7 @@ void CDXFworkingOutline::SeparateModify(void)
 	if ( nMainLoop < m_obOutline.GetSize() ) {
 		for ( i=nMainLoop; i<m_obOutline.GetSize(); i++ ) {
 			pte.reset();
-			printf("--- Separate Add %d ---\n", i);
+			printf("--- Separate Add %Id ---\n", i);
 			PLIST_FOREACH(pData, m_obOutline[i])
 				ptDbgS = pData->GetNativePoint(0);
 				ptDbgE = pData->GetNativePoint(1);
@@ -391,7 +391,7 @@ void CDXFworkingOutline::SeparateModify(void)
 		pOutline = m_obOutline[nMainLoop];
 		if ( pOutline->IsEmpty() ) {
 #ifdef _DEBUG
-			printf("--- Separete Delete %d ---\n", nMainLoop);
+			printf("--- Separete Delete %Id ---\n", nMainLoop);
 #endif
 			delete	pOutline;
 			m_obOutline.RemoveAt(nMainLoop);
@@ -571,10 +571,10 @@ void CDXFmap::DbgDump(void) const
 	CPointF		pt;
 	CDXFarray*	pArray;
 
-	printf("CDXFmap::DbgDump() Cnt=%d\n", GetCount());
+	printf("CDXFmap::DbgDump() Cnt=%Id\n", GetCount());
 	PMAP_FOREACH(pt, pArray, this)
 		printf("Key=(%f, %f)\n", pt.x, pt.y);
-		printf("DataCnt=%d\n", pArray->GetCount());
+		printf("DataCnt=%Id\n", pArray->GetCount());
 	END_FOREACH
 }
 #endif
@@ -819,7 +819,7 @@ DWORD CDXFmap::GetMapTypeFlag(void) const
 				for ( j=i+1; j<nLoop; j++ ) {
 					if ( pData->GetIntersectionPoint(obWorkArray[j], ptChk) > 0 ) {
 #ifdef _DEBUG
-						printf("Intersection !!! i=%d j=%d\n", i, j);
+						printf("Intersection !!! i=%Id j=%Id\n", i, j);
 						pData->DbgDump();
 						obWorkArray[j]->DbgDump();
 #endif
@@ -2205,23 +2205,23 @@ BOOL CDXFshape::CreateOutlineTempObject(BOOL bLeft, CDXFchain* pResult, float dO
 	}
 
 #ifdef _DEBUG
-	printf("Result member = %d\n", pResult->GetCount());
+	printf("Result member = %Id\n", pResult->GetCount());
 #endif
 	// 本集合の検査
 	CheckSeparateChain(pResult, dOffset);
 #ifdef _DEBUG
-	printf("CheckSeparateChain() -> Result member = %d\n", pResult->GetCount());
-	printf("obSepArray.GetSize()=%d\n", nLoop);
+	printf("CheckSeparateChain() -> Result member = %Id\n", pResult->GetCount());
+	printf("obSepArray.GetSize()=%Id\n", nLoop);
 #endif
 
 	// 分離集合の検査
 	for ( k=0; k<nLoop; k++ ) {
 #ifdef _DEBUG
-		printf("Separate member = %d\n", obSepArray[k]->GetCount()); 
+		printf("Separate member = %Id\n", obSepArray[k]->GetCount()); 
 #endif
 		CheckSeparateChain(obSepArray[k], dOffset);
 #ifdef _DEBUG
-		printf("CheckSeparateChain() -> Separate member = %d\n", obSepArray[k]->GetCount()); 
+		printf("CheckSeparateChain() -> Separate member = %Id\n", obSepArray[k]->GetCount()); 
 #endif
 		// 分離集合を末尾に結合
 		if ( !obSepArray[k]->IsEmpty() ) {

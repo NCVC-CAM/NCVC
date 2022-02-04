@@ -983,7 +983,7 @@ void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 	SetPathName(lpszPathName, FALSE);
 #ifdef _DEBUG
 	printf("CNCDoc::ReadThumbnail() File =%s\n", lpszPathName);
-	printf("Block=%d\n", GetNCBlockSize());
+	printf("Block=%Id\n", GetNCBlockSize());
 #endif
 	if ( !ValidBlockCheck() ) {
 #ifdef _DEBUG

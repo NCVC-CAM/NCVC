@@ -291,9 +291,9 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 						pChain2 = pOutline2->GetOutlineObject(jj);
 						if ( rcCross.CrossRect(rc, pChain2->GetMaxRect()) ) {
 #ifdef _DEBUG
-							printf("ShapeName1=%s No.%d Obj=%d\n", LPCTSTR(pShape1->GetShapeName()),
+							printf("ShapeName1=%s No.%Id Obj=%Id\n", LPCTSTR(pShape1->GetShapeName()),
 								ii, pChain1->GetSize());
-							printf("ShapeName2=%s No.%d Obj=%d\n", LPCTSTR(pShape2->GetShapeName()),
+							printf("ShapeName2=%s No.%Id Obj=%Id\n", LPCTSTR(pShape2->GetShapeName()),
 								jj, pChain2->GetSize());
 #endif
 							// “àŠO”»’è‚Ì‚½‚ß‚ÌÌ×¸ÞÝ’è
@@ -344,7 +344,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 		pOutline1  = pShape1->GetOutlineLastObj();
 		if ( !pOutline1 )
 			continue;
-		printf("Name=%s Sep=%d Merge=%d\n",
+		printf("Name=%s Sep=%Id Merge=%Id\n",
 			LPCTSTR(pShape1->GetShapeName()),
 			pOutline1->GetOutlineSize(), pOutline1->GetMergeHandleSize());
 		// •¹‡—ÖŠs‚ÌÃÞ°ÀÁª¯¸
@@ -365,7 +365,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 				dbgPte = dbgData->GetNativePoint(1);
 			}
 			if ( !dbgConnect ) {
-				printf("---> No.%d Connect Error!\n", j);
+				printf("---> No.%Id Connect Error!\n", j);
 				PLIST_FOREACH(dbgData, pChain1)
 					dbgPts = dbgData->GetNativePoint(0);
 					dbgPte = dbgData->GetNativePoint(1);
@@ -377,7 +377,7 @@ void CheckStrictOffset(const CLayerData* pLayer, LPVOID pParam)
 				dbgPts = pChain1->GetHead()->GetNativePoint(0);
 				dbgPte = pChain1->GetTail()->GetNativePoint(1);
 				if ( sqrt(GAPCALC(dbgPts-dbgPte)) < NCMIN )
-					printf("---> No.%d Loop Outline ? size=%d\n", j, pChain1->GetSize());
+					printf("---> No.%Id Loop Outline ? size=%Id\n", j, pChain1->GetSize());
 			}
 		}
 		// •¹‡ó‹µ
@@ -442,9 +442,9 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 					}
 					else if ( rcCross.CrossRect(rc2, rc1) ) {	// ‹éŒ`‚ÌŒð·‚àŠÜ‚Þ
 #ifdef _DEBUG
-						printf("ShapeName1=%s No.%d Obj=%d\n", LPCTSTR(pShape1->GetShapeName()),
+						printf("ShapeName1=%s No.%Id Obj=%Id\n", LPCTSTR(pShape1->GetShapeName()),
 							ii, pChain1->GetSize());
-						printf("ShapeName2=%s No.%d Obj=%d\n", LPCTSTR(pShape2->GetShapeName()),
+						printf("ShapeName2=%s No.%Id Obj=%Id\n", LPCTSTR(pShape2->GetShapeName()),
 							jj, pChain2->GetSize());
 #endif
 						pChain1->ClearSideFlg();
@@ -484,11 +484,11 @@ void CheckStrictOffset_forScan(const CLayerData* pLayer)
 		if ( !pShape1->IsOutlineList() )
 			continue;
 		dbgOutlineList = pShape1->GetOutlineList();
-		printf("Name=%s Outline=%d\n",
+		printf("Name=%s Outline=%Id\n",
 			LPCTSTR(pShape1->GetShapeName()), dbgOutlineList->GetCount());
 		ii=0;
 		PLIST_FOREACH(pOutline1, dbgOutlineList)
-			printf("No.%d Sep=%d\n", ii++, pOutline1->GetOutlineSize());
+			printf("No.%Id Sep=%Id\n", ii++, pOutline1->GetOutlineSize());
 		END_FOREACH
 	}
 #endif
@@ -679,7 +679,7 @@ void CreateAutoWorking(const CLayerData* pLayer, float dOffset)
 					pWork = new CDXFworkingOutline(pShape, &ltOutline[j], dOffset, DXFWORKFLG_AUTO);
 					pShape->AddOutlineData(pWork, (int)j);
 #ifdef _DEBUG
-					printf("Select OutLine = %d\n", j);
+					printf("Select OutLine = %zd\n", j);
 #endif
 				}
 				// Select•ª‚ÍCDXFworkingOutline‚ÌÃÞ½Ä×¸À‚É‚Ädelete

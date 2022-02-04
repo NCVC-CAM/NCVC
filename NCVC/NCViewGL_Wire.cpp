@@ -124,9 +124,9 @@ BOOL CNCViewGL::CreateWire(void)
 	}
 
 #ifdef _DEBUG
-	printf(" VertexCount=%d NormalCount=%d\n", m_WireDraw.vpt.size()/NCXYZ, m_WireDraw.vnr.size()/NCXYZ);
-	printf(" Area Count=%d\n", m_WireDraw.vvef.size());
-	printf(" WireLineCount=%d\n", m_WireDraw.vwl.size());
+	printf(" VertexCount=%zd NormalCount=%zd\n", m_WireDraw.vpt.size()/NCXYZ, m_WireDraw.vnr.size()/NCXYZ);
+	printf(" Area Count=%zd\n", m_WireDraw.vvef.size());
+	printf(" WireLineCount=%zd\n", m_WireDraw.vwl.size());
 	int	dbgMaxIndex = 0;
 	for ( const auto& v : m_WireDraw.vvef ) {
 		int dbgMax = *std::max_element(v.begin(), v.end());

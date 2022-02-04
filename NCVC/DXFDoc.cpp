@@ -702,7 +702,7 @@ void CDXFDoc::DbgSerializeInfo(void)
 	CLayerData*	pLayer;
 	for ( int i=0; i<m_obLayer.GetSize(); i++ ) {
 		pLayer = m_obLayer[i];
-		printf("LayerName=%s DataCnt=%d TextCnt=%d\n",
+		printf("LayerName=%s DataCnt=%Id TextCnt=%Id\n",
 			LPCTSTR(pLayer->GetLayerName()), pLayer->GetDxfSize(), pLayer->GetDxfTextSize());
 	}
 }

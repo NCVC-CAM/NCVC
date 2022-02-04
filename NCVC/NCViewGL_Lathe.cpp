@@ -520,7 +520,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 		m_vElementCut.reserve(nCutSize+1);
 
 #ifdef _DEBUG
-		int		dbgTriangleWrk = 0, dbgTriangleCut = 0;
+		INT_PTR	dbgTriangleWrk = 0, dbgTriangleCut = 0;
 #endif
 		// êÿçÌñ óp
 		for ( const auto& v : vvElementCut ) {
@@ -619,11 +619,11 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 		::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 #ifdef _DEBUG
 		printf("CreateVBOLathe()\n");
-		printf(" VertexCount(/3)=%d size=%d\n",
+		printf(" VertexCount(/3)=%d size=%zd\n",
 			m_icx*ARCCOUNT, m_icx*ARCCOUNT*NCXYZ*sizeof(GLfloat));
-		printf(" Work IndexCount=%d Triangle=%d\n",
+		printf(" Work IndexCount=%zd Triangle=%Id\n",
 			nWrkSize, dbgTriangleWrk/3);
-		printf(" Cut  IndexCount=%d Triangle=%d\n",
+		printf(" Cut  IndexCount=%zd Triangle=%Id\n",
 			nCutSize, dbgTriangleCut/3);
 #endif
 #ifndef _WIN64

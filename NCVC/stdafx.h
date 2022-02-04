@@ -48,11 +48,9 @@
 #define	USE_KODATUNO
 #ifdef USE_KODATUNO
 #ifdef _DEBUG
-#pragma comment(lib, "Kodatuno_R3.4d.lib")
-#elif defined(_WIN64)
-#pragma comment(lib, "Kodatuno_R3.4_x64.lib")
+#pragma comment(lib, "debug/Kodatuno.vs.lib")
 #else
-#pragma comment(lib, "Kodatuno_R3.4.lib")
+#pragma comment(lib, "Kodatuno.vs.lib")
 #endif
 #endif
 

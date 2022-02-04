@@ -295,7 +295,7 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 		proc  = max(1, min(MAXIMUM_WAIT_OBJECTS, min(nLoop, g_nProcesser*2)));
 	n = min(nLoop/proc, MAXNCBLK);	// 1つのｽﾚｯﾄﾞが処理する最大ﾌﾞﾛｯｸ数
 #ifdef _DEBUG
-	printf("loop=%d proc=%d OneThreadSize=%d\n", nLoop, proc, n);
+	printf("loop=%zd proc=%zd OneThreadSize=%zd\n", nLoop, proc, n);
 #endif
 
 	// CEventを使うとvector<>内で参照ｶｳﾝﾄが上がってしまう??
@@ -330,7 +330,7 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 			break;
 		}
 #ifdef _DEBUG
-		printf("WaitForMultipleObjects() id=%d Thread=%d return\n", id, vParam[id]->nID);
+		printf("WaitForMultipleObjects() id=%d Thread=%zd return\n", id, vParam[id]->nID);
 #endif
 		// ため込んだ座標値の描画
 		vParam[id]->vBD.Draw();
@@ -886,7 +886,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 		m_vElementCut.reserve(nCutSize+1);
 
 #ifdef _DEBUG
-		int		dbgTriangleWrk = 0, dbgTriangleCut = 0;
+		INT_PTR	dbgTriangleWrk = 0, dbgTriangleCut = 0;
 #endif
 		// 切削面用
 		for ( i=0; i<proc; i++ ) {
@@ -943,11 +943,11 @@ BOOL CNCViewGL::CreateVBOMill(void)
 
 #ifdef _DEBUG
 		printf("CreateVBOMill()\n");
-		printf(" VertexCount=%d size=%d\n",
+		printf(" VertexCount=%d size=%zd\n",
 			cx*cy*2, cx*cy*NCXYZ*2*sizeof(GLfloat));
-		printf(" Work IndexCount=%d Triangle=%d\n",
+		printf(" Work IndexCount=%zd Triangle=%Id\n",
 			nWrkSize, dbgTriangleWrk/3);
-		printf(" Cut  IndexCount=%d Triangle=%d\n",
+		printf(" Cut  IndexCount=%zd Triangle=%Id\n",
 			nCutSize, dbgTriangleCut/3);
 #endif
 #ifndef _WIN64
@@ -1087,7 +1087,7 @@ UINT AddBottomVertexThread(LPVOID pVoid)
 			}
 			bStartDraw = TRUE;
 #ifdef _DEBUG
-			printf("AddBottomVertexThread() ThreadID=%d s=%d e=%d Start!\n",
+			printf("AddBottomVertexThread() ThreadID=%zd s=%zd e=%zd Start!\n",
 				pParam->nID, pParam->s, pParam->e);
 			t1 = timeGetTime();
 #endif
@@ -1098,7 +1098,7 @@ UINT AddBottomVertexThread(LPVOID pVoid)
 			s = 0;
 			for ( const auto& v : pParam->vBD )
 				s += v.vpt.size();
-			printf("                        ThreadID=%d End %d[ms] DrawCount=%d VertexSize=%d(/3)\n",
+			printf("                        ThreadID=%zd End %d[ms] DrawCount=%zd VertexSize=%zd(/3)\n",
 				pParam->nID, t2 - t1, pParam->vBD.size(), s);
 #endif
 			// 終了イベント
@@ -1112,7 +1112,7 @@ UINT AddBottomVertexThread(LPVOID pVoid)
 	}
 
 #ifdef _DEBUG
-	printf("AddBottomVertexThread() ThreadID=%d ThreadEnd\n", pParam->nID);
+	printf("AddBottomVertexThread() ThreadID=%zd ThreadEnd\n", pParam->nID);
 #endif
 	CloseHandle(hStart);
 	CloseHandle(hEnd);

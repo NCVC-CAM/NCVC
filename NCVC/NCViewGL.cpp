@@ -1375,7 +1375,7 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 {
 #ifdef _DEBUG
-	printf("CNCViewGL::OnUserActivatePage() lParam=%d m_bActive=%d\n", lParam, m_bActive);
+	printf("CNCViewGL::OnUserActivatePage() lParam=%Id m_bActive=%d\n", lParam, m_bActive);
 #endif
 	if ( !m_bActive ) {
 		// m_rcViewèâä˙âª
@@ -1425,7 +1425,7 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 {
 	extern	const	float	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
 #ifdef _DEBUG
-	printf("CNCViewGL::OnUserViewFitMsg() wParam=%d lParam=%d\n", wParam, lParam);
+	printf("CNCViewGL::OnUserViewFitMsg() wParam=%Id lParam=%Id\n", wParam, lParam);
 #endif
 	float		dW, dH, dZ, dLength, d;
 

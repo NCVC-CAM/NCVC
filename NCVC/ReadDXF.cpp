@@ -549,7 +549,7 @@ void SetEntitiesFromBlock(CDXFDoc* pDoc, CDXFBlockData* pBlock)
 		printf(" Ymagni=%f\n", argvBlock.dMagni[NCA_Y]);
 	if ( argvBlock.dwBlockFlg & DXFBLFLG_R )
 		printf(" Round =%f\n", argvBlock.dRound);
-	printf("InsertCnt  =%d\n", pBlock->GetSize());
+	printf("InsertCnt  =%Id\n", pBlock->GetSize());
 #endif
 
 	// ó·äOΩ€∞ÇÕè„à Ç≈∑¨Ø¡
@@ -1462,7 +1462,7 @@ UINT RemoveBlockMapThread(LPVOID)
 {
 	g_csRemoveBlockMap.Lock();		// Ω⁄ØƒﬁèIóπÇ‹Ç≈€Ø∏
 #ifdef _DEBUG
-	printf("RemoveBlockMapThread() Start Cnt=%d\n", g_strBlockMap.GetCount());
+	printf("RemoveBlockMapThread() Start Cnt=%Id\n", g_strBlockMap.GetCount());
 #endif
 	CDXFBlockData*	pBlock;
 	CString			strBlock;

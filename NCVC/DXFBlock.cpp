@@ -20,7 +20,7 @@ void CDXFBlockData::CopyBlock(const CDXFBlockData* pBlock, LPCDXFBLOCK pBlockArg
 		printf(" Ymagni=%f\n", pBlockArgv->dMagni[NCA_Y]);
 	if ( pBlockArgv->dwBlockFlg & DXFBLFLG_R )
 		printf(" Round =%f\n", pBlockArgv->dRound);
-	printf("CopyCnt  =%d\n", pBlock->GetSize());
+	printf("CopyCnt  =%Id\n", pBlock->GetSize());
 #endif
 	CDXFdata*	pData;
 	DXFEARGV	dxfEllipse;

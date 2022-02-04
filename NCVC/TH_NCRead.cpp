@@ -259,7 +259,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 	}
 #ifdef _DEBUG
 	if ( !IsThumbnail() )
-		printf("LoopCount=%d\n", nLoopCnt);
+		printf("LoopCount=%Id\n", nLoopCnt);
 #endif
 
 	try {
@@ -718,7 +718,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 
 #ifdef _DEBUG_GSPIRIT
 	if ( !IsThumbnail() )
-		printf("NC_Gseparate() No.%004d Line=%s\n", nLine+1, strBlock.c_str());
+		printf("NC_Gseparate() No.%004Id Line=%s\n", nLine+1, strBlock.c_str());
 #endif
 
 	// ª—»≤Ÿï\é¶ÇÃÇ∆Ç´ÇÕèàóùÇµÇ»Ç¢Ÿ∞¡›
