@@ -33,3 +33,9 @@ NCVC用に若干の修正を加えてビルドしているので，stdafx.h の
 KodatunoさんがGitHubで公開されることを願います．  
 なお，feature_Kodatunoブランチに関して，Kodatunoライブラリを利用して3Dの切削データを生成する機能を実装実験中です．
 こちらのブランチをビルドするにはKodatunoライブラリが必須となります．
+
+Kodatunoライブラリのビルド方法は <https://github.com/NCVC-CAM/Kodatuno/blob/main/README.md> を参照してください．
+NCVC プロジェクトから見えるところに Kodatuno.vs.lib をコピー（またはシンボリックリンク）してもらえればOKです．
+インクルードファイルも同様です．僕は下図のようにKodatunoフォルダごとシンボリックリンクを張っています．
+
+![KodatunoLink.png](./KodatunoLink.png)

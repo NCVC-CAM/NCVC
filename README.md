@@ -7,7 +7,7 @@ NC Viewer and Converter (Free CAM)
 * Kodatuno R3.4改
 
 ## Usage
-Visual Studio 2015 Solution
+Visual Studio 2022 Solution
 
 ## Author
 Kenichi Magara / NIT, Maizuru College (KOSEN)
