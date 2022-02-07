@@ -1,5 +1,13 @@
 # NCVC ビルド方法
 
+## NCVC.SDK
+<https://github.com/NCVC-CAM/NCVC.SDK> のインクルードファイルを適切に設置してください．
+lib はアドインのビルドで使いますが，include はNCVC本体のビルドでも使います．
+
+## GLEW
+<http://glew.sourceforge.net/> から Windows 32-bit and 64-bit の Binaries をダウンロードしていただき，
+インクルードファイルとライブラリファイルを適切に設置してください．
+
 ## Boost C++ Library
 Boost C++ Library をビルドしておいてください．
 boost::regex を使用しているのでビルドが必要です．
@@ -19,10 +27,6 @@ boost::regex を使用しているのでビルドが必要です．
 バージョンが変わってもプロジェクトの設定（インクルードファイルやライブラリのパス）を変更しなくて済むように，
 シンボリックリンクを作ります．
 mklink コマンドだけ管理者権限でないと動かないのでご注意ください．
-
-## GLEW
-<http://glew.sourceforge.net/> から Windows 32-bit and 64-bit の Binaries をダウンロードしていただき，
-インクルードファイルとライブラリファイルを適切に設置してください．
 
 ## Kodatuno
 NCコードのシミュレーションにおいて，3Dワークデータと重ねる機能
