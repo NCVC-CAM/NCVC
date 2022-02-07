@@ -20,6 +20,10 @@ boost::regex を使用しているのでビルドが必要です．
 シンボリックリンクを作ります．
 mklink コマンドだけ管理者権限でないと動かないのでご注意ください．
 
+## GLEW
+<http://glew.sourceforge.net/> から Windows 32-bit and 64-bit の Binaries をダウンロードしていただき，
+インクルードファイルとライブラリファイルを適切に設置してください．
+
 ## Kodatuno
 NCコードのシミュレーションにおいて，3Dワークデータと重ねる機能
 (WorkFile=hoge.igs)
