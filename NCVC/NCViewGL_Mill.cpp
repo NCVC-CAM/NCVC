@@ -273,23 +273,23 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 	printf("CNCViewGL::CreateBottomFaceThread() Start\n");
 #endif
 	BOOL	bResult = TRUE;
-	size_t	i, n, e, p, nLoop, proc;
+	size_t	i, n, s, p, nLoop, proc;
 	UINT	pp = 0;		// progress position
 	DWORD	dwResult, id;
 
 	if ( bRange ) {
-		e = GetDocument()->GetTraceStart();
+		s = GetDocument()->GetTraceStart();
 		nLoop = GetDocument()->GetTraceDraw();
 	}
 	else {
-		e = 0;
+		s = 0;
 		nLoop = GetDocument()->GetNCsize();
 	}
 	if ( nLoop <= 0 )
 		return bResult;
 
 	// MAXNCBLK/2–¢–ž‚È‚ç‚P½Ú¯ÄÞ‚ÅŽÀs
-	if ( GetDocument()->GetNCsize() < MAXNCBLK/2 )
+	if ( nLoop < MAXNCBLK/2 )
 		proc = 1;
 	else
 		proc  = max(1, min(MAXIMUM_WAIT_OBJECTS, min(nLoop, g_nProcesser*2)));
@@ -311,8 +311,8 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 		strEvent.Format(g_szCBFT_E, i);
 		vHandleE.push_back( ::CreateEvent(NULL, FALSE, FALSE, strEvent) );	// I—¹²ÍÞÝÄ‚Í‰Šú”ñ¼¸ÞÅÙó‘Ô
 		pParam = new CREATEBOTTOMVERTEXPARAM(i, GetDocument());		// delete‚ÍAddBottomVertexThread()“à‚Å
-		pParam->s = e;
-		pParam->e = e = min(e+n, nLoop);
+		pParam->s = s;
+		pParam->e = s = min(s+n, nLoop);
 		vParam.push_back(pParam);
 		AfxBeginThread(AddBottomVertexThread, pParam);
 	}
@@ -336,10 +336,10 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 		vParam[id]->vBD.Draw();
 //		::glFinish();
 		//
-		if ( e < nLoop ) {
+		if ( s < nLoop ) {
 			vParam[id]->vBD.clear();
-			vParam[id]->s = e;
-			vParam[id]->e = e = min(e+n, nLoop);
+			vParam[id]->s = s;
+			vParam[id]->e = s = min(s+n, nLoop);
 			::SetEvent(vHandleS[id]);
 		}
 		else {
@@ -351,7 +351,7 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 			vHandleS.erase(vHandleS.begin()+id);
 			vHandleE.erase(vHandleE.begin()+id);
 		}
-		p = e*nProgress / nLoop;	// MAX 70% or 35%
+		p = s*nProgress / nLoop;	// MAX 70% or 35%
 		if ( p >= pp ) {
 			while ( p >= pp )
 				pp += 10;
