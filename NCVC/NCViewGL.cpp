@@ -209,13 +209,7 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 	case UAV_TRACECURSOR:
 		if ( (UINT_PTR)pHint == ID_NCVIEW_TRACE_CURSOR ) {
 			// ｶｰｿﾙ位置まで実行（範囲制限）
-			CClientDC	dc(this);
-			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-			if ( IsLatheMode() )
-				CreateLathe(TRUE);
-			else
-				CreateBoxel(TRUE);
-			::wglMakeCurrent( NULL, NULL );
+			OnSelectTrace(NULL, NULL);
 		}
 		else {
 			// ｶｰｿﾙ位置から実行
