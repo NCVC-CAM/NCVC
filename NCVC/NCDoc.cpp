@@ -770,7 +770,7 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 	// bStart==TRUE  -> ｶｰｿﾙ位置から実行
 	// bStart==FALSE -> ｶｰｿﾙ位置まで実行
 	INT_PTR		i;
-	CNCdata*	pData;
+	CNCdata*	pData = NULL;
 
 	for ( i=nLine; i<GetNCBlockSize(); i++ ) {
 		pData = m_obBlock[i]->GetBlockToNCdata();
@@ -797,11 +797,9 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 		INT_PTR n = m_nTraceDraw - 1;
 		m_nTraceStart = max(0, n);
 	}
-	else if ( m_nTrace == ID_NCVIEW_TRACE_PAUSE ) {
-		m_nTraceStart = m_nTraceDraw;
-	}
-	else
+	else {
 		m_nTraceStart = 0;
+	}
 	m_csTraceDraw.Unlock();
 
 	return TRUE;

@@ -20,7 +20,7 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define	_DEBUG_GSPIRIT
+//#define	_DEBUG_GSPIRIT
 #endif
 
 using std::string;
