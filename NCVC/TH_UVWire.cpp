@@ -476,6 +476,11 @@ BOOL SetArgvCornerRobject
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_INTERSECTION);
 		return FALSE;
 	}
+	else if ( r1<NCMIN && r2<NCMIN ) {
+		// 補正の必要なし
+		return FALSE;
+	}
+
 	pto -= ptOffset;
 
 	// pData1(前のｵﾌﾞｼﾞｪｸﾄ)の終点を補正
