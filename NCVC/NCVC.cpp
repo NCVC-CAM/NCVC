@@ -1836,8 +1836,8 @@ CNCVCDocTemplate::CNCVCDocTemplate(UINT nIDResource, CRuntimeClass* pDocClass,
 	strEntry += strResult;
 
 	std::string	str(AfxGetApp()->GetProfileString(strRegKey, strEntry)), strTok;
-	boost::char_separator<TCHAR> sep(gg_szComma);
-	boost::tokenizer< boost::char_separator<TCHAR> > tok(str, sep);
+	STDSEPA		sep(gg_szComma);
+	STDTOKEN	tok(str, sep);
 	try {
 		BOOST_FOREACH(strTok, tok) {
 			strResult = boost::algorithm::trim_copy(strTok).c_str();

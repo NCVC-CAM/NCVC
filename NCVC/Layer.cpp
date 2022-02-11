@@ -179,8 +179,8 @@ void CLayerData::SetLayerInfo(const CString& strBuf)
 	int		i = 0;
 	TCHAR	szFile[_MAX_PATH];
 	string	str(strBuf), strTok;
-	char_separator<TCHAR> sep(gg_szComma, "", keep_empty_tokens);
-	tokenizer< char_separator<TCHAR> > tok(str, sep);
+	STDSEPA		sep(gg_szComma, "", keep_empty_tokens);
+	STDTOKEN	tok(str, sep);
 
 	// ñΩóﬂâêÕŸ∞Ãﬂ
 	BOOST_FOREACH(strTok, tok) {

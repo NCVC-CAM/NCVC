@@ -80,15 +80,6 @@
 #include "boost/algorithm/minmax.hpp"
 #include "boost/algorithm/string.hpp"
 
-// VS2015 ïsãÔçá
-void MySplitPath(LPCTSTR lpszFullPath,
-	LPTSTR pszDrive, size_t nDrive, LPTSTR pszPath, size_t nPath,
-	LPTSTR pszName,  size_t nName,  LPTSTR pszExt,  size_t nExt);
-#ifdef _tsplitpath_s
-#undef _tsplitpath_s
-#define _tsplitpath_s MySplitPath
-#endif
-
 #define	NCVCSERIALVERSION_1503	1503	// v1.00RCÅ`
 #define	NCVCSERIALVERSION_1505	1505	// v1.10Å`
 #define	NCVCSERIALVERSION_1507	1507	// v1.10aÅ`
@@ -107,6 +98,9 @@ enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
 #define	AfxGetNCVCApp()			( static_cast<CNCVCApp *>(AfxGetApp()) )
 #define	AfxGetNCVCMainWnd()		( static_cast<CMainFrame *>(AfxGetMainWnd()) )
 #define	LOMETRICFACTOR			10.0f
+
+typedef	boost::char_separator<TCHAR>	STDSEPA;
+typedef boost::tokenizer< STDSEPA >		STDTOKEN;
 
 // Timer Event
 #define	IDC_SPLASH_TIMER		100
@@ -180,6 +174,15 @@ inline std::string Trim(LPCTSTR str)
 */
 // óêêî
 int		GetRandom(int min, int max);
+
+// VS2015 ïsãÔçá
+void MySplitPath(LPCTSTR lpszFullPath,
+	LPTSTR pszDrive, size_t nDrive, LPTSTR pszPath, size_t nPath,
+	LPTSTR pszName,  size_t nName,  LPTSTR pszExt,  size_t nExt);
+#ifdef _tsplitpath_s
+#undef _tsplitpath_s
+#define _tsplitpath_s MySplitPath
+#endif
 
 // ÃŸ ﬂΩñºÇ ﬂΩñºÇ∆Ãß≤ŸñºÇ…ï™äÑ
 void	Path_Name_From_FullPath(LPCTSTR, CString&, CString&, BOOL = TRUE);
