@@ -429,8 +429,8 @@ CNCdata* CNCDoc::DataOperation
 		m_obGdata.InsertAt(nIndex, pDataResult);
 		break;
 	case NCMOD:
-		RemoveAt(nIndex, 1);
-		m_obGdata.SetAt(nIndex, pDataResult);
+		RemoveObj(nIndex, 1);
+		m_obGdata.InsertAt(nIndex, pDataResult);
 		break;
 	}
 
@@ -465,7 +465,7 @@ void CNCDoc::StrOperation(LPCTSTR pszTmp, INT_PTR nIndex/*=-1*/, ENNCOPERATION e
 	}
 }
 
-void CNCDoc::RemoveAt(INT_PTR nIndex, INT_PTR nCnt)
+void CNCDoc::RemoveObj(INT_PTR nIndex, INT_PTR nCnt)
 {
 	nCnt = min(nCnt, m_obGdata.GetSize() - nIndex);
 	CNCdata*	pData;
