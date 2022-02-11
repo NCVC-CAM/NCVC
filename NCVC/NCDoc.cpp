@@ -769,10 +769,12 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 {
 	// bStart==TRUE  -> ｶｰｿﾙ位置から実行
 	// bStart==FALSE -> ｶｰｿﾙ位置まで実行
-	int		i;
+	INT_PTR		i;
+	CNCdata*	pData;
 
 	for ( i=nLine; i<GetNCBlockSize(); i++ ) {
-		if ( m_obBlock[i]->GetBlockToNCdata() )
+		pData = m_obBlock[i]->GetBlockToNCdata();
+		if ( pData )
 			break;
 	}
 	if ( i >= GetNCBlockSize() ) {
@@ -784,7 +786,13 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 		return FALSE;
 	}
 	m_csTraceDraw.Lock();
-	m_nTraceDraw = m_obBlock[i]->GetBlockToNCdataArrayNo();
+	// pDataを検索
+	for ( i=0; i<m_obGdata.GetSize(); i++ ) {
+		if ( pData == m_obGdata[i] )
+			break;
+	}
+	m_nTraceDraw = i;
+
 	if ( bStart ) {
 		INT_PTR n = m_nTraceDraw - 1;
 		m_nTraceStart = max(0, n);

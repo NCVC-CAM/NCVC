@@ -978,7 +978,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 		pDataResult = pData;
 		g_strComma = strComma;
 		// ÌŞÛ¯¸î•ñ‚ÌXV
-		pBlock->SetBlockToNCdata(pDataResult, g_pDoc->GetNCsize());
+		pBlock->SetBlockToNCdata(pDataResult);
 	}
 	if ( bNCsub ) {
 		// Mº°ÄŞŒãˆ—
