@@ -24,7 +24,6 @@ public:
 	//{{AFX_VIRTUAL(CNCJumpDlg)
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual void PostNcDestroy();
 	//}}AFX_VIRTUAL
 

@@ -30,6 +30,18 @@ BEGIN_MESSAGE_MAP(CColComboBox, CComboBox)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+static	BOOL	_IsVirtualKey(UINT nChar)
+{
+	switch ( nChar ) {
+	case VK_BACK:
+	case VK_LEFT:
+	case VK_RIGHT:
+	case VK_DELETE:
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CIntEdit
 
@@ -65,7 +77,7 @@ void CIntEdit::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	TCHAR	tChar = (TCHAR)nChar;
 
 	if ( (IsCharAlphaNumeric(tChar) && !IsCharAlpha(tChar)) ||
-				strLeave.Find(tChar) >= 0 || nChar == VK_BACK )
+				strLeave.Find(tChar) >= 0 || _IsVirtualKey(nChar) )
 		CEdit::OnChar(nChar, nRepCnt, nFlags);
 	else
 		::MessageBeep(MB_ICONASTERISK);
@@ -117,7 +129,7 @@ void CFloatEdit::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	TCHAR	tChar = (TCHAR)nChar;
 
 	if ( (IsCharAlphaNumeric(tChar) && !IsCharAlpha(tChar)) ||
-				strLeave.Find(tChar) >= 0 || nChar == VK_BACK )
+				strLeave.Find(tChar) >= 0 || _IsVirtualKey(nChar) )
 		CEdit::OnChar(nChar, nRepCnt, nFlags);
 	else
 		::MessageBeep(MB_ICONASTERISK);
