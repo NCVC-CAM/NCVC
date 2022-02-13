@@ -32,18 +32,21 @@ mklink コマンドだけ管理者権限でないと動かないのでご注意�
 NCコードのシミュレーションにおいて，3Dワークデータと重ねる機能
 (WorkFile=hoge.igs)
 のIGESファイル読み込みに，金沢大学マンマシン研究室で開発されている Kodatunoライブラリを使用しています．
-NCVC用に若干の修正を加えてビルドしているので，stdafx.h の
+NCVC用にパッチを当てているので，それが用意できない間は stdafx.h の
 
     #define USE_KODATUNO
 
 をコメントアウトしてください．
-フルビルドに際しては，Kodatunoライブラリはオープンソースで開発されているので，僕が修正したパッチの公開か，何かしらの方法を検討します．
-KodatunoさんがGitHubで公開されることを願います．  
+Visual Studio での Kodatuno のビルド方法や，NCVC用の修正パッチの公開方法は現在検討中です．
+<!-- 
 なお，feature_Kodatunoブランチに関して，Kodatunoライブラリを利用して3Dの切削データを生成する機能を実装実験中です．
 こちらのブランチをビルドするにはKodatunoライブラリが必須となります．
-
+ -->
+<!-- 
 Kodatunoライブラリのビルド方法は <https://github.com/NCVC-CAM/Kodatuno/blob/main/README.md> を参照してください．
 NCVC プロジェクトから見えるところに Kodatuno.vs.lib をコピー（またはシンボリックリンク）してもらえればOKです．
 インクルードファイルも同様です．僕は下図のようにKodatunoフォルダごとシンボリックリンクを張っています．
+NCVC.SDKに含まれるヘッダーも同様にシンボリックリンクしています．
 
 ![KodatunoLink.png](./KodatunoLink.png)
+ -->
