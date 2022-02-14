@@ -179,7 +179,7 @@ NCEXPORT BOOL WINAPI NCVC_ModNCData(NCVCHANDLE hDoc, int nIndex, LPNCARGV lpArgv
 NCEXPORT void WINAPI NCVC_DelNCData(NCVCHANDLE hDoc, int nIndex, int nCnt)
 {
 	if ( IsNCDocument(hDoc) )
-		reinterpret_cast<CNCDoc *>(hDoc)->RemoveAt(nIndex, nCnt);
+		reinterpret_cast<CNCDoc *>(hDoc)->RemoveObj(nIndex, nCnt);
 }
 
 NCEXPORT void WINAPI NCVC_TraceStart(NCVCHANDLE hDoc)

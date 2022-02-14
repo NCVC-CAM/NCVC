@@ -407,8 +407,8 @@ CNCdata* CNCDoc::DataOperation
 		m_obGdata.InsertAt(nIndex, pDataResult);
 		break;
 	case NCMOD:
-		RemoveAt(nIndex, 1);
-		m_obGdata.SetAt(nIndex, pDataResult);
+		RemoveObj(nIndex, 1);
+		m_obGdata.InsertAt(nIndex, pDataResult);
 		break;
 	}
 
@@ -443,7 +443,7 @@ void CNCDoc::StrOperation(LPCTSTR pszTmp, INT_PTR nIndex/*=-1*/, ENNCOPERATION e
 	}
 }
 
-void CNCDoc::RemoveAt(INT_PTR nIndex, INT_PTR nCnt)
+void CNCDoc::RemoveObj(INT_PTR nIndex, INT_PTR nCnt)
 {
 	nCnt = min(nCnt, m_obGdata.GetSize() - nIndex);
 	CNCdata*	pData;
@@ -747,10 +747,12 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 {
 	// bStart==TRUE  -> ｶｰｿﾙ位置から実行
 	// bStart==FALSE -> ｶｰｿﾙ位置まで実行
-	int		i;
+	INT_PTR		i;
+	CNCdata*	pData = NULL;
 
 	for ( i=nLine; i<GetNCBlockSize(); i++ ) {
-		if ( m_obBlock[i]->GetBlockToNCdata() )
+		pData = m_obBlock[i]->GetBlockToNCdata();
+		if ( pData )
 			break;
 	}
 	if ( i >= GetNCBlockSize() ) {
@@ -762,16 +764,20 @@ BOOL CNCDoc::SetLineToTrace(BOOL bStart, int nLine)
 		return FALSE;
 	}
 	m_csTraceDraw.Lock();
-	m_nTraceDraw = m_obBlock[i]->GetBlockToNCdataArrayNo();
+	// pDataを検索
+	for ( i=0; i<m_obGdata.GetSize(); i++ ) {
+		if ( pData == m_obGdata[i] )
+			break;
+	}
+	m_nTraceDraw = i;
+
 	if ( bStart ) {
 		INT_PTR n = m_nTraceDraw - 1;
 		m_nTraceStart = max(0, n);
 	}
-	else if ( m_nTrace == ID_NCVIEW_TRACE_PAUSE ) {
-		m_nTraceStart = m_nTraceDraw;
-	}
-	else
+	else {
 		m_nTraceStart = 0;
+	}
 	m_csTraceDraw.Unlock();
 
 	return TRUE;
@@ -961,7 +967,7 @@ void CNCDoc::ReadThumbnail(LPCTSTR lpszPathName)
 	SetPathName(lpszPathName, FALSE);
 #ifdef _DEBUG
 	printf("CNCDoc::ReadThumbnail() File =%s\n", lpszPathName);
-	printf("Block=%d\n", GetNCBlockSize());
+	printf("Block=%Id\n", GetNCBlockSize());
 #endif
 	if ( !ValidBlockCheck() ) {
 #ifdef _DEBUG

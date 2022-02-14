@@ -70,7 +70,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 	}
 	pParent->m_ctReadProgress.SetRange32(0, (int)nLoopCnt);
 #ifdef _DEBUG
-	printf("GetNCsize()=%d\n", nLoopCnt);
+	printf("GetNCsize()=%Id\n", nLoopCnt);
 #endif
 
 try {

@@ -38,15 +38,6 @@ void CNCJumpDlg::DoDataExchange(CDataExchange* pDX)
 	//}}AFX_DATA_MAP
 }
 
-BOOL CNCJumpDlg::PreTranslateMessage(MSG* pMsg) 
-{
-	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞでﾒｲﾝｳｨﾝﾄﾞｳのｷｰﾎﾞｰﾄﾞｱｸｾﾗﾚｰﾀを有効にする
-	CFrameWnd*	pFrame = GetParentFrame();	// CMainFrame
-	if ( pFrame && ::TranslateAccelerator(pFrame->GetSafeHwnd(), pFrame->GetDefaultAccelerator(), pMsg))
-		return TRUE;
-	return __super::PreTranslateMessage(pMsg);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // CNCJumpDlg メッセージ ハンドラ
 

@@ -259,7 +259,7 @@ UINT NCDtoXYZ_Thread(LPVOID pVoid)
 	}
 #ifdef _DEBUG
 	if ( !IsThumbnail() )
-		printf("LoopCount=%d\n", nLoopCnt);
+		printf("LoopCount=%Id\n", nLoopCnt);
 #endif
 
 	try {
@@ -518,10 +518,9 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			int		n = 0;
 			float	dVal[3];
 			string	str(raw.begin(), raw.end());
-			char_separator<TCHAR>	sep("xXtT");
-			typedef tokenizer< char_separator<TCHAR> >	TOKEN;
-			TOKEN	tok(str, sep);
-			for ( TOKEN::iterator it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
+			STDSEPA		sep("xXtT");
+			STDTOKEN	tok(str, sep);
+			for ( STDTOKEN::iterator it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
 				dVal[n++] = (float)atof( (*it).c_str() );
 			}
 			dVal[0] /= 2.0f;	dVal[1] /= 2.0f;
@@ -541,10 +540,9 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			int		n = 0;
 			float	dVal[2];
 			string	str(raw.begin(), raw.end());
-			char_separator<TCHAR>	sep("hH");
-			typedef tokenizer< char_separator<TCHAR> >	TOKEN;
-			TOKEN	tok(str, sep);
-			for ( TOKEN::iterator it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
+			STDSEPA		sep("hH");
+			STDTOKEN	tok(str, sep);
+			for ( STDTOKEN::iterator it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
 				dVal[n++] = (float)atof( (*it).c_str() );
 			}
 			CPoint3F	pt(0, 0, -dVal[1]);
@@ -726,7 +724,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 
 #ifdef _DEBUG_GSPIRIT
 	if ( !IsThumbnail() )
-		printf("NC_Gseparate() No.%004d Line=%s\n", nLine+1, strBlock.c_str());
+		printf("NC_Gseparate() No.%004Id Line=%s\n", nLine+1, strBlock.c_str());
 #endif
 
 	// ª—»≤Ÿï\é¶ÇÃÇ∆Ç´ÇÕèàóùÇµÇ»Ç¢Ÿ∞¡›
@@ -986,7 +984,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 		pDataResult = pData;
 		g_strComma = strComma;
 		// Ãﬁ€Ø∏èÓïÒÇÃçXêV
-		pBlock->SetBlockToNCdata(pDataResult, g_pDoc->GetNCsize());
+		pBlock->SetBlockToNCdata(pDataResult);
 	}
 	if ( bNCsub ) {
 		// M∫∞ƒﬁå„èàóù

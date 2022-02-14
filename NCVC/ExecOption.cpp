@@ -29,8 +29,8 @@ CExecOption::CExecOption(const CString& strExec)
 	m_nImage = m_nMenuID = -1;
 
 	string	str(strExec), strTok;
-	char_separator<TCHAR> sep(gg_szReturn, "", keep_empty_tokens);
-	tokenizer< char_separator<TCHAR> > tok(str, sep);
+	STDSEPA		sep(gg_szReturn, "", keep_empty_tokens);
+	STDTOKEN	tok(str, sep);
 	int		i = 0;
 
 	// ╨щ╫дв╦ю⌠Ю┌л≈А┼O┌м▐Ц┬й┌е▐┬≈²

@@ -187,7 +187,7 @@ void SetChainMap(const CDXFmap* pMasterMap, CLayerData* pLayer, LPCHECKMAPTHREAD
 	pParam->evEnd.ResetEvent();
 
 #ifdef _DEBUG
-	printf("m_obShapeArray.GetSize()=%d\n", pLayer->GetShapeSize());
+	printf("m_obShapeArray.GetSize()=%Id\n", pLayer->GetShapeSize());
 #endif
 }
 

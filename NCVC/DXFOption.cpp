@@ -231,8 +231,8 @@ void CDXFOption::SetIgnoreArray(const CString& strIgnore)
 	extern	LPCTSTR	gg_szCRLF;
 	m_strIgnoreArray.RemoveAll();
 	std::string	str(strIgnore), strTok;
-	char_separator<TCHAR> sep(gg_szCRLF);
-	tokenizer< char_separator<TCHAR> > tok(str, sep);
+	STDSEPA		sep(gg_szCRLF);
+	STDTOKEN	tok(str, sep);
 	BOOST_FOREACH(strTok, tok) {
 		boost::algorithm::trim(strTok);
 		if ( !strTok.empty() )

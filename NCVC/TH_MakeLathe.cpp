@@ -392,7 +392,7 @@ BOOL CreateShapeThread(void)
 			if ( pShape->ChangeCreate_MapToChain() ) {
 #ifdef _DEBUG
 				pChainDbg = pShape->GetShapeChain();
-				printf("  ShapeNo.%d ChainCnt=%d\n", i, pChainDbg->GetCount());
+				printf("  ShapeNo.%Id ChainCnt=%Id\n", i, pChainDbg->GetCount());
 				PLIST_FOREACH(pDataDbg, pChainDbg)
 					ptsd = pDataDbg->GetNativePoint(0);
 					pted = pDataDbg->GetNativePoint(1);

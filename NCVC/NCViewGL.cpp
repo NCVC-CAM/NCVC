@@ -185,13 +185,7 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 	case UAV_TRACECURSOR:
 		if ( (UINT_PTR)pHint == ID_NCVIEW_TRACE_CURSOR ) {
 			// ｶｰｿﾙ位置まで実行（範囲制限）
-			CClientDC	dc(this);
-			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-			if ( IsLatheMode() )
-				CreateLathe(TRUE);
-			else
-				CreateBoxel(TRUE);
-			::wglMakeCurrent( NULL, NULL );
+			OnSelectTrace(NULL, NULL);
 		}
 		else {
 			// ｶｰｿﾙ位置から実行
@@ -1051,7 +1045,7 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 {
 #ifdef _DEBUG
-	printf("CNCViewGL::OnUserActivatePage() lParam=%d m_bActive=%d\n", lParam, m_bActive);
+	printf("CNCViewGL::OnUserActivatePage() lParam=%Id m_bActive=%d\n", lParam, m_bActive);
 #endif
 	if ( !m_bActive ) {
 		// m_rcView初期化
@@ -1100,7 +1094,7 @@ LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 {
 #ifdef _DEBUG
-	printf("CNCViewGL::OnUserViewFitMsg() wParam=%d lParam=%d\n", wParam, lParam);
+	printf("CNCViewGL::OnUserViewFitMsg() wParam=%Id lParam=%Id\n", wParam, lParam);
 #endif
 	if ( lParam ) {		// from CNCViewTab::OnInitialUpdate()
 		// m_dRate の更新(m_cx,m_cyが正しい値のときに計算)

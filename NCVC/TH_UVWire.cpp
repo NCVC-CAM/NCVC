@@ -71,7 +71,7 @@ UINT UVWire_Thread(LPVOID pVoid)
 	}
 	pParent->m_ctReadProgress.SetRange32(0, (int)nLoopCnt);
 #ifdef _DEBUG
-	printf("GetNCsize()=%d Work=%f\n", nLoopCnt, z);
+	printf("GetNCsize()=%Id Work=%f\n", nLoopCnt, z);
 #endif
 
 	// 変数初期化のために、最初の G_TYPE ｵﾌﾞｼﾞｪｸﾄを検索
@@ -476,6 +476,11 @@ BOOL SetArgvCornerRobject
 		pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_INTERSECTION);
 		return FALSE;
 	}
+	else if ( r1<NCMIN && r2<NCMIN ) {
+		// 補正の必要なし
+		return FALSE;
+	}
+
 	pto -= ptOffset;
 
 	// pData1(前のｵﾌﾞｼﾞｪｸﾄ)の終点を補正

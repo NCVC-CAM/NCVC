@@ -329,8 +329,8 @@ BOOL CMCOption::ReadMCoption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 
 	// –½—ß‚ð•ªŠ„
 	string	str, strTok;
-	char_separator<TCHAR> sep(gg_szComma, "", keep_empty_tokens);
-	tokenizer< char_separator<TCHAR> > tok(str, sep);
+	STDSEPA		sep(gg_szComma, "", keep_empty_tokens);
+	STDTOKEN	tok(str, sep);
 
 	try {
 		for ( i=0; TRUE; i++ ) {	// Tool´ÝÄØ‚ª“Ç‚ß‚È‚­‚È‚é‚Ü‚Å

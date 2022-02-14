@@ -556,13 +556,7 @@ inline CNCdata* CNCblock::GetBlockToNCdata(void) const
 	return m_pData;
 }
 
-inline size_t CNCblock::GetBlockToNCdataArrayNo(void) const
-{
-	return m_nArray;
-}
-
-inline void CNCblock::SetBlockToNCdata(CNCdata* pData, size_t nArray)
+inline void CNCblock::SetBlockToNCdata(CNCdata* pData)
 {
 	m_pData	 = pData;
-	m_nArray = nArray;
 }

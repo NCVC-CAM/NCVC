@@ -608,7 +608,7 @@ BOOL MultiLayer(int nID)
 
 		// 生成開始
 #ifdef _DEBUG
-		printf("No.%d ID=%d Name=%s Cut=%f\n", i+1,
+		printf("No.%Id ID=%d Name=%s Cut=%f\n", i+1,
 			pLayer->GetLayerListNo(), LPCTSTR(pLayer->GetLayerName()), g_dZCut);
 #endif
 		if ( !MakeNCD_MainFunc(pLayer) ) {
@@ -1361,7 +1361,7 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 {
 #ifdef _DEBUG
 	printf("OrgTuningCutter()\n");
-	int			nDbg = -1;
+	INT_PTR		nDbg = -1;
 	CLayerData*	pLayerDbg = NULL;
 #endif
 	INT_PTR	i, nCnt = 0, nLayerLoop, nDataLoop;
@@ -1429,11 +1429,11 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 
 #ifdef _DEBUG
 	if ( pLayerDbg ) {
-		printf("FirstPoint Layer=%s Cnt=%d Gap=%f\n",
+		printf("FirstPoint Layer=%s Cnt=%Id Gap=%f\n",
 			LPCTSTR(pLayerDbg->GetLayerName()), nDbg, dGapMin);
 	}
 	else {
-		printf("FirstPoint Cnt=%d Gap=%f\n", nDbg, dGapMin);
+		printf("FirstPoint Cnt=%Id Gap=%f\n", nDbg, dGapMin);
 	}
 #endif
 	_SetProgressPos(nDataLoop);
@@ -1461,7 +1461,7 @@ tuple<CDXFdata*, BOOL> OrgTuningDrillPoint(void)
 
 	// 原点調整と切削開始ﾎﾟｲﾝﾄ検索ﾙｰﾌﾟ
 #ifdef _DEBUG
-	int	nDbg = -1;
+	INT_PTR	nDbg = -1;
 #endif
 
 	// 切削開始ﾎﾟｲﾝﾄの計算が必要かどうか
@@ -1490,7 +1490,7 @@ tuple<CDXFdata*, BOOL> OrgTuningDrillPoint(void)
 		_SetProgressPos64(i);
 	}
 #ifdef _DEBUG
-	printf("FirstPoint %d Gap=%f\n", nDbg, dGapMin);
+	printf("FirstPoint %Id Gap=%f\n", nDbg, dGapMin);
 #endif
 
 	_SetProgressPos(nLoop);
@@ -1716,7 +1716,7 @@ INT_PTR MakeLoopEulerAdd(const CDXFmap* mpEuler)
 	if ( !IsThread() )
 		return -1;
 #ifdef _DEBUG
-	printf("FirstPoint x=%f y=%f EulerFlg=%d Cnt=%d\n", pt.x, pt.y, bEuler, mpEuler->GetCount());
+	printf("FirstPoint x=%f y=%f EulerFlg=%d Cnt=%Id\n", pt.x, pt.y, bEuler, mpEuler->GetCount());
 #endif
 
 	// --- 一筆書きの生成(再帰呼び出しによる木構造解析)

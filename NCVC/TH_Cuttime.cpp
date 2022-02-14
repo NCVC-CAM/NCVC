@@ -41,7 +41,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	CNCdata*	pData;
 
 #ifdef _DEBUG
-	printf("GetNCsize()=%d\n", nLoopCnt);
+	printf("GetNCsize()=%Id\n", nLoopCnt);
 #endif
 
 	// ˆÚ“®EØí’·‚Ì‡ŒvŒvZ

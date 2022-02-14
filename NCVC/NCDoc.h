@@ -183,7 +183,7 @@ public:
 	}
 	CNCdata*	DataOperation(const CNCdata*, LPNCARGV, INT_PTR = -1, ENNCOPERATION = NCADD);
 	void	StrOperation(LPCTSTR, INT_PTR = -1, ENNCOPERATION = NCADD);
-	void	RemoveAt(INT_PTR, INT_PTR);
+	void	RemoveObj(INT_PTR, INT_PTR);
 	void	RemoveStr(INT_PTR, INT_PTR);
 
 	void	AllChangeFactor(ENNCDRAWVIEW, float) const;	// ägëÂó¶ÇÃçXêV

@@ -229,12 +229,11 @@ BOOL CNCMakeLatheOpt::GetDrillInfo(VLATHEDRILLINFO& v) const
 	std::string		strDrill(LTH_S_DRILL), strDrillTok,
 					strSpindle(LTH_S_DRILLSPINDLE), strResult,
 					strFeed(LTH_S_DRILLFEED);
-	boost::char_separator<TCHAR>	sep(gg_szComma);
-	typedef	boost::tokenizer< boost::char_separator<TCHAR> >	TOKEN;
-	TOKEN		tok1(strDrill, sep),
+	STDSEPA		sep(gg_szComma);
+	STDTOKEN	tok1(strDrill, sep),
 				tok2(strSpindle, sep),
 				tok3(strFeed, sep);
-	TOKEN::iterator	it2 = tok2.begin(), it3 = tok3.begin();
+	STDTOKEN::iterator	it2 = tok2.begin(), it3 = tok3.begin();
 	LATHEDRILLINFO	info;
 
 	BOOST_FOREACH(strDrillTok, tok1) {

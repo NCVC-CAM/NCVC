@@ -507,7 +507,6 @@ class CNCblock
 	DWORD		m_dwFlags;	// ÌŞÛ¯¸‚ÉØİ¸‚µ‚½Ì×¸Ş
 	UINT		m_nError;	// ´×°º°ÄŞ
 	CNCdata*	m_pData;	// ÌŞÛ¯¸‚É‘Î‰‚µ‚½ÅŒã‚ÌCNCdataµÌŞ¼Şª¸Ä
-	size_t		m_nArray;	// CNCDoc::m_obGdata “à‚Ì”Ô†
 
 public:
 	CNCblock(const CString&, DWORD = 0);
@@ -520,8 +519,7 @@ public:
 	UINT	GetNCBlkErrorCode(void) const;
 	void	SetNCBlkErrorCode(UINT);
 	CNCdata*	GetBlockToNCdata(void) const;
-	size_t	GetBlockToNCdataArrayNo(void) const;
-	void	SetBlockToNCdata(CNCdata*, size_t);
+	void	SetBlockToNCdata(CNCdata*);
 };
 
 typedef	CTypedPtrArrayEx<CPtrArray, CNCblock*>	CNCblockArray;
