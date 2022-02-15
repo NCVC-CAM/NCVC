@@ -14,10 +14,8 @@
 #include "NCListView.h"
 #include "ViewOption.h"
 #include "boost/array.hpp"
-#ifdef USE_KODATUNO
 #include "Kodatuno/Describe_BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
-#endif
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -730,7 +728,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glDisable(GL_TEXTURE_2D);
 		::glDisable(GL_LIGHTING);
 	}
-#elif defined(_DEBUG_DRAWBODY_) && defined(USE_KODATUNO)
+#elif defined(_DEBUG_DRAWBODY_)
 	BODYList* kbl = GetDocument()->GetKodatunoBodyList();
 	if ( kbl ) {
 		Describe_BODY	bd;
@@ -1140,23 +1138,17 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 #endif
 	CNCdata*	pData;
 	INT_PTR		i, s, e;
-#ifdef USE_KODATUNO
 	CREATEBOXEL_IGESPARAM	pParam;
-#endif
 
 	if ( lParam ) {
 		s = (INT_PTR)wParam;
 		e = (INT_PTR)lParam;
 		pData = NULL;
-#ifdef USE_KODATUNO
 		pParam = RANGEPARAM(s, e);
-#endif
 	}
 	else {
 		pData = reinterpret_cast<CNCdata*>(wParam);
-#ifdef USE_KODATUNO
 		pParam = pData;
-#endif
 	}
 
 	if ( !pData && !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
@@ -1210,7 +1202,6 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 	GetGLError();	// error flash
 
 	if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) ) {
-#ifdef USE_KODATUNO
 		if ( !pData ) {
 			// èââÒÇÃÇ›Ç±Ç±Ç≈BODYï`âÊÅïΩ√›ºŸèâä˙âª
 			Describe_BODY	bd;
@@ -1244,7 +1235,6 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 			if ( !bResult )
 				ClearVBO();
 		}
-#endif
 	}
 	else {
 		if ( !m_pFBO ) {

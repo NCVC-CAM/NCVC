@@ -14,11 +14,9 @@ struct RANGEPARAM
 	RANGEPARAM(INT_PTR ss, INT_PTR ee) : s(ss), e(ee) {}
 };
 
-#ifdef USE_KODATUNO
 // CreateBoxel_fromIGES() argument
 class	CNCdata;
 typedef	boost::variant<CNCdata*, RANGEPARAM>	CREATEBOXEL_IGESPARAM;
-#endif
 
 // GetClipDepthMill() argument
 enum ENCLIPDEPTH
@@ -127,9 +125,7 @@ class CNCViewGL : public CViewBaseGL
 	void	UpdateViewOption(void);
 	void	CreateDisplayList(void);
 	BOOL	CreateBoxel(BOOL = FALSE);
-#ifdef USE_KODATUNO
 	BOOL	CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* = NULL);
-#endif
 	BOOL	CreateLathe(BOOL = FALSE);
 	BOOL	CreateWire(void);
 	BOOL	CreateBottomFaceThread(BOOL, int);

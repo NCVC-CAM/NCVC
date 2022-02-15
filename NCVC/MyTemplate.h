@@ -217,9 +217,7 @@ typedef	std::vector<CPointF>	CVPointF;
 
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD ƒNƒ‰ƒX
-#ifdef USE_KODATUNO
 class Coord;	// Kodatuno/stdafx.h
-#endif
 template<typename T>
 class CPoint3T :
 	boost::operators< CPoint3T<T> >
@@ -356,12 +354,10 @@ public:
 		ms_ry_cos = cos(ry);		ms_ry_sin = sin(ry);
 		ms_rz_cos = cos(rz);		ms_rz_sin = sin(rz);
 	}
-#ifdef USE_KODATUNO
 	CPoint3T<double>& operator = (const Coord& pt) {
 		x = pt.x;	y = pt.y;	z = pt.z;
 		return *this;
 	}
-#endif
 };
 typedef	CPoint3T<double>	CPoint3D;
 typedef	CPoint3T<float>		CPoint3F;

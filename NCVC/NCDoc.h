@@ -8,10 +8,8 @@
 #include "NCdata.h"
 #include "DXFMakeOption.h"
 #include "MCOption.h"
-#ifdef USE_KODATUNO
 #include "Kodatuno/BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
-#endif
 
 enum NCCOMMENT		// g_szNCcomment[]
 {
@@ -88,11 +86,9 @@ class CNCDoc : public CDocBase
 	void	ClearBlockData(void);
 	void	DeleteMacroFile(void);
 
-#ifdef USE_KODATUNO
 	BODY*		m_pKoBody;		// Kodatuno Body
 	BODYList*	m_pKoList;		// Kodatuno Body List
 	void	CalcWorkFileRect(void);
-#endif
 
 protected: // シリアライズ機能のみから作成します。
 	CNCDoc();
@@ -257,13 +253,11 @@ public:
 	// from ThumbnailDlg.cpp
 	void	ReadThumbnail(LPCTSTR);
 
-#ifdef USE_KODATUNO
 	BOOL	ReadWorkFile(LPCTSTR);
 	BODYList*	GetKodatunoBodyList(void) const {
 		return m_pKoList;
 	}
 	void	SetWorkFileOffset(const Coord&);
-#endif
 
 //オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

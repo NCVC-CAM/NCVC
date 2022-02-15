@@ -105,10 +105,8 @@ CNCDoc::CNCDoc()
 	// 増分割り当てサイズ
 	m_obBlock.SetSize(0, 4096);
 	m_obGdata.SetSize(0, 4096);
-#ifdef USE_KODATUNO
 	m_pKoBody = NULL;
 	m_pKoList = NULL;
-#endif
 }
 
 CNCDoc::~CNCDoc()
@@ -117,7 +115,6 @@ CNCDoc::~CNCDoc()
 	for ( int i=0; i<m_obGdata.GetSize(); i++ )
 		delete	m_obGdata[i];
 	m_obGdata.RemoveAll();
-#ifdef USE_KODATUNO
 	// IGES Body
 	if ( m_pKoBody ) {
 		//m_pKoBody->DeleteBody(m_pKoList);
@@ -128,7 +125,6 @@ CNCDoc::~CNCDoc()
 		m_pKoList->clear();
 		delete	m_pKoList;
 	}
-#endif
 	// ﾌﾞﾛｯｸﾃﾞｰﾀの消去
 	ClearBlockData();
 	// 一時展開のﾏｸﾛﾌｧｲﾙを消去
@@ -175,7 +171,6 @@ void CNCDoc::SetLatheViewMode(void)
 	}
 }
 
-#ifdef USE_KODATUNO
 BOOL CNCDoc::ReadWorkFile(LPCTSTR strFile)
 {
 	// ３Ｄモデルの読み込み
@@ -226,7 +221,6 @@ void CNCDoc::CalcWorkFileRect(void)
 	printf("(%f,%f)\n", m_rcWorkCo.low, m_rcWorkCo.high);
 #endif
 }
-#endif	// USE_KODATUNO
 
 BOOL CNCDoc::ReadMCFile(LPCTSTR strFile)
 {
@@ -1272,15 +1266,11 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 		}
 	}
 	else {
-#ifdef USE_KODATUNO
 		if ( m_bDocFlg[NCDOC_WORKFILE] && m_pKoList ) {
 			CalcWorkFileRect();		// IGES/STEPの占有矩形を計算
 			m_rcWork = m_rcWorkCo;
 		}
 		else if ( m_bDocFlg[NCDOC_COMMENTWORK] )
-#else
-		if ( m_bDocFlg[NCDOC_COMMENTWORK] )
-#endif
 			m_rcWork = m_rcWorkCo;
 		else
 			m_rcWorkCo = m_rcWork;	// 指示がなければﾃﾞｰﾀを保存

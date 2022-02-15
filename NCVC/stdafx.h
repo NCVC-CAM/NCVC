@@ -45,13 +45,10 @@
 #include <gl/gl.h>			// OpenGL
 
 // Kodatuno
-#define	USE_KODATUNO
-#ifdef USE_KODATUNO
 #ifdef _DEBUG
 #pragma comment(lib, "debug/Kodatuno.vs.lib")
 #else
 #pragma comment(lib, "Kodatuno.vs.lib")
-#endif
 #endif
 
 // STL

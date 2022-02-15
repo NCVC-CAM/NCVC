@@ -552,13 +552,11 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 	// ﾜｰｸﾌｧｲﾙ
 	struct _SetWorkFile {
 		void operator()(const string& s, qi::unused_type, qi::unused_type) const {
-#ifdef USE_KODATUNO
 			if ( !IsThumbnail() ) {
 				if ( !g_pDoc->ReadWorkFile(s.c_str()) )
 					g_dwBlockFlags |= NCBLK_ERR_FILE;
 			}
 		}
-#endif
 	};
 	// 機械情報ﾌｧｲﾙ
 	struct _SetMCFile {
@@ -630,7 +628,6 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 	// ﾜｰｸ位置変更
 	struct _WorkPosX {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
-#ifdef USE_KODATUNO
 			g_dWorkPos[NCA_X] = d;
 			g_dwBlockFlags |= NCBLK_WORKX;
 #ifdef _DEBUG_GSPIRIT
@@ -638,11 +635,9 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 				printf("WorkPosX()=%f\n", d);
 #endif
 		}
-#endif
 	};
 	struct _WorkPosY {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
-#ifdef USE_KODATUNO
 			g_dWorkPos[NCA_Y] = d;
 			g_dwBlockFlags |= NCBLK_WORKY;
 #ifdef _DEBUG_GSPIRIT
@@ -650,11 +645,9 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 				printf("WorkPosY()=%f\n", d);
 #endif
 		}
-#endif
 	};
 	struct _WorkPosZ {
 		void operator()(const float& d, qi::unused_type, qi::unused_type) const {
-#ifdef USE_KODATUNO
 			g_dWorkPos[NCA_Z] = d;
 			g_dwBlockFlags |= NCBLK_WORKZ;
 #ifdef _DEBUG_GSPIRIT
@@ -662,7 +655,6 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 				printf("WorkPosZ()=%f\n", d);
 #endif
 		}
-#endif
 	};
 	// 旋盤中ぐり
 	struct _SetLatheInside {
@@ -750,7 +742,6 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LATHEHOLE);
 		if ( g_dwBlockFlags & NCBLK_ERR_FILE )
 			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_FILE);
-#ifdef USE_KODATUNO
 		else if ( g_dwBlockFlags & NCBLK_WORKPOS ) {
 			float	xyz[NCXYZ] = {0,0,0};
 			if ( g_dwBlockFlags & NCBLK_WORKX )
@@ -762,7 +753,6 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			Coord shift = SetCoord(xyz[NCA_X], xyz[NCA_Y], xyz[NCA_Z]);
 			g_pDoc->SetWorkFileOffset(shift);
 		}
-#endif
 	}
 
 	// ﾏｸﾛ置換解析

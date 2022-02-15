@@ -10,12 +10,10 @@
 #define new DEBUG_NEW
 #endif
 
-#ifdef USE_KODATUNO
 #include "Kodatuno/BODY.h"
 #include "Kodatuno/IGES_Parser.h"
 #include "Kodatuno/STL_Parser.h"
 #undef PI	// Use NCVC (MyTemplate.h)
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -247,7 +245,6 @@ UINT FileChangeNotificationThread(LPVOID pParam)
 
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef USE_KODATUNO
 BODY*	Read3dModel(LPCTSTR lpszFile, LPCTSTR lpszCurrent/*=NULL*/)
 {
 	extern	LPCTSTR	gg_szEn;	// "\\";
@@ -301,4 +298,3 @@ BODY*	Read3dModel(LPCTSTR lpszFile, LPCTSTR lpszCurrent/*=NULL*/)
 
 	return pBody;
 }
-#endif
