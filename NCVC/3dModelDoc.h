@@ -30,6 +30,7 @@ public:
 	}
 
 protected:
+	afx_msg void OnFile3dScan();
 
 	DECLARE_MESSAGE_MAP()
 };

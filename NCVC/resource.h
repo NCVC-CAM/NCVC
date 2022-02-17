@@ -187,6 +187,12 @@
 #define IDC_MKNCEX_LAYERCOMMENT         1454
 #define IDC_MKNCEX_LAYERCODE            1455
 #define IDC_MKNCEX_NEW                  1459
+#define IDD_3DSCAN                      1500
+#define IDC_3DSCAN_BALLENDMILL          1501
+#define IDC_3DSCAN_HEIGHT               1502
+#define IDC_3DSCAN_ZCUT                 1503
+#define IDC_3DSCAN_LINESPLIT            1504
+#define IDC_3DSCAN_ORIGIN               1505
 #define IDD_MAKENCD_EX1_1               1550
 #define IDD_MAKENCD_EX2                 1600
 #define IDD_MAKENCD_EX2_1               1650
@@ -882,6 +888,7 @@
 #define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
+#define ID_ACCELERATOR32826             32826
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -904,9 +911,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        206
-#define _APS_NEXT_COMMAND_VALUE         32824
-#define _APS_NEXT_CONTROL_VALUE         1069
+#define _APS_NEXT_RESOURCE_VALUE        208
+#define _APS_NEXT_COMMAND_VALUE         32827
+#define _APS_NEXT_CONTROL_VALUE         1071
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "3dModelDoc.h"
+#include "3dScanSetupDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -12,6 +13,7 @@
 IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(C3dModelDoc, CDocument)
+	ON_COMMAND(ID_FILE_3DSCAN, &C3dModelDoc::OnFile3dScan)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -94,4 +96,10 @@ void C3dModelDoc::OnCloseDocument()
 	OnCloseDocumentBase();		// Ãß≤ŸïœçXí ímΩ⁄Øƒﬁ
 
 	__super::OnCloseDocument();
+}
+
+void C3dModelDoc::OnFile3dScan()
+{
+	C3dScanSetupDlg		dlg;
+	dlg.DoModal();
 }
