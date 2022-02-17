@@ -64,7 +64,6 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	// ŠeËÞ­°‚Ö‚ÌÌ¨¯ÄÒ¯¾°¼Þ
 	ON_MESSAGE (WM_USERVIEWFITMSG, &CNCViewGL::OnUserViewFitMsg)
 	// ÒÆ­°ºÏÝÄÞ
-	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCViewGL::OnUpdateEditCopy)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCViewGL::OnUpdateMoveRoundKey)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewGL::OnUpdateMoveRoundKey)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &CNCViewGL::OnLensKey)
@@ -1311,11 +1310,6 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 	UpdateWindow();		// ‘¦Ä•`‰æ
 
 	return 0;
-}
-
-void CNCViewGL::OnUpdateEditCopy(CCmdUI* pCmdUI) 
-{
-	pCmdUI->Enable(FALSE);	// OpenGL‚Å‚Ícopy•s‰Â
 }
 
 void CNCViewGL::OnUpdateMoveRoundKey(CCmdUI* pCmdUI) 

@@ -64,6 +64,7 @@ protected:
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg	void OnMoveKey(UINT);
 	afx_msg	void OnRoundKey(UINT);
+	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 
 	DECLARE_MESSAGE_MAP()
 

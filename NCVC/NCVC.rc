@@ -668,19 +668,10 @@ BEGIN
         MENUITEM "閉じて開く(&L)...",                ID_FILE_CLANDOP
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
         MENUITEM SEPARATOR
-        MENUITEM "加工情報の保存(&S)...\tCtrl+S",      ID_FILE_SAVE
-        MENUITEM "加工情報を名前を付けて保存(&A)...",        ID_FILE_SAVE_AS
-        MENUITEM SEPARATOR
         POPUP "NCﾃﾞｰﾀの生成"
         BEGIN
-            MENUITEM "標準生成(&1)...\tF7",             ID_FILE_DXF2NCD
-            MENUITEM "ﾚｲﾔごとの複数条件(&2)...\tCtrl+F7",  ID_FILE_DXF2NCD_EX1
-            MENUITEM "ﾚｲﾔごとのZ座標指定(&3)...\tShift+F7", ID_FILE_DXF2NCD_EX2
-            MENUITEM SEPARATOR
-            MENUITEM "形状加工生成(&4)...\tAlt+F7",       ID_FILE_DXF2NCD_SHAPE
-            MENUITEM SEPARATOR
-            MENUITEM "旋盤ﾃﾞｰﾀの生成(&5)...\tCtrl+Alt+F7", ID_FILE_DXF2NCD_LATHE
-            MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成(&6)...\tShift+Ctrl+Alt+F7", ID_FILE_DXF2NCD_WIRE
+            MENUITEM "スキャニングパス生成(&1)...\tF7",       ID_FILE_3DSCAN
+            MENUITEM "3D切削データの生成(&2)...\tCtrl+F7",  ID_FILE_3DPATH
         END
         MENUITEM SEPARATOR
         MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1
@@ -689,44 +680,16 @@ BEGIN
     END
     POPUP "編集(&E)"
     BEGIN
-        MENUITEM "移動を元に戻す\tCtrl+Z",             ID_EDIT_UNDO
-        MENUITEM SEPARATOR
         MENUITEM "切り取り(&T)\tCtrl+X",            ID_EDIT_CUT
         MENUITEM "ｺﾋﾟｰ(&C)\tCtrl+C",            ID_EDIT_COPY
         MENUITEM "貼り付け(&P)\tCtrl+V",            ID_EDIT_PASTE
         MENUITEM SEPARATOR
         MENUITEM "原点調整...\tCtrl+@",             ID_EDIT_DXFORG
-        MENUITEM SEPARATOR
-        POPUP "加工指示"
-        BEGIN
-            MENUITEM "形状認識処理\tCtrl+E",              ID_EDIT_DXFSHAPE
-            MENUITEM SEPARATOR
-            MENUITEM "方向\tF9",                      ID_EDIT_SHAPE_VEC
-            MENUITEM "開始位置\tF10",                   ID_EDIT_SHAPE_START
-            MENUITEM "輪郭\tF11",                     ID_EDIT_SHAPE_OUT
-            MENUITEM "ﾎﾟｹｯﾄ\tCtrl+F11",             ID_EDIT_SHAPE_POC
-            MENUITEM "分離\tF12",                     ID_EDIT_SHAPE_SEL
-            MENUITEM "加工指示の削除\tDel",                ID_EDIT_SHAPE_DEL
-            MENUITEM SEPARATOR
-            MENUITEM "名前の変更(&M)\tF2",               ID_EDIT_SHAPE_NAME
-            MENUITEM "形状プロパティ...",                  ID_EDIT_SHAPE_PROP
-            MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
-            MENUITEM SEPARATOR
-            MENUITEM "自動輪郭処理...",                   ID_EDIT_SHAPE_AUTO
-            MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
-        END
-        POPUP "統合ﾃﾞｰﾀ"
-        BEGIN
-            MENUITEM "処理対象の切り替え\tIns",              ID_EDIT_BIND_TARGET
-            MENUITEM "削除\tShift+Del",               ID_EDIT_BIND_DEL
-        END
     END
     POPUP "表示(&V)"
     BEGIN
         MENUITEM "ﾂｰﾙﾊﾞｰ(&T)...",               ID_VIEW_TOOLBARCUSTOM
         MENUITEM "ｽﾃｰﾀｽ ﾊﾞｰ(&S)",               ID_VIEW_STATUS_BAR
-        MENUITEM SEPARATOR
-        MENUITEM "ﾚｲﾔ(&L)...\tCtrl+L",          ID_DXFVIEW_LAYER
         MENUITEM SEPARATOR
         MENUITEM "図形ﾌｨｯﾄ(&O)\tHome",            ID_VIEW_FIT
         MENUITEM "拡大(&Z)\tPageUp",              ID_VIEW_LENSP
@@ -779,6 +742,7 @@ BEGIN
         MENUITEM "ｱﾄﾞｲﾝについて...",                ID_HELP_ADDIN
     END
 END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -3549,6 +3513,8 @@ BEGIN
     ID_FILE_DXF2NCD_WIRE    "ﾜｲﾔ加工機NCﾃﾞｰﾀを生成します\nﾜｲﾔ加工機NC生成(Shift+Ctrl+Alt+F7)"
     ID_FILE_NCINSERT        "NCｺｰﾄﾞのｶｰｿﾙ位置に他のﾌｧｲﾙを読み込み挿入します"
     ID_FILE_NCD2DXF         "DXFを出力します\nDXF出力(Ctrl+D)"
+    ID_FILE_3DSCAN          "3Dモデルのスキャニングパスを生成します\nスキャニングパス生成(F7)"
+    ID_FILE_3DPATH          "スキャニングパスから3D切削データを生成します\n3D生成(Ctrl+F7)"
 END
 
 STRINGTABLE

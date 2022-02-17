@@ -188,7 +188,6 @@ protected:
 	// ŠeËÞ­°‚Ö‚ÌÌ¨¯ÄÒ¯¾°¼Þ
 	afx_msg LRESULT OnUserViewFitMsg(WPARAM, LPARAM);
 	// ÒÆ­°ºÏÝÄÞ
-	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
 	afx_msg	void OnLensKey(UINT);
 	afx_msg void OnDefViewInfo();

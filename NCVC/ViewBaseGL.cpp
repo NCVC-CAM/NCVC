@@ -29,6 +29,7 @@ BEGIN_MESSAGE_MAP(CViewBaseGL, CView)
 	ON_WM_MOUSEWHEEL()
 	ON_COMMAND_RANGE(ID_VIEW_UP,  ID_VIEW_RT,    &CViewBaseGL::OnMoveKey)
 	ON_COMMAND_RANGE(ID_VIEW_RUP, ID_VIEW_RRT,   &CViewBaseGL::OnRoundKey)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CViewBaseGL::OnUpdateEditCopy)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -585,6 +586,11 @@ void CViewBaseGL::OnRoundKey(UINT nID)
 		m_dRoundAngle = m_dRoundStep = 1.0f;
 		break;
 	}
+}
+
+void CViewBaseGL::OnUpdateEditCopy(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(FALSE);	// OpenGL‚Å‚Ícopy•s‰Â
 }
 
 /////////////////////////////////////////////////////////////////////////////

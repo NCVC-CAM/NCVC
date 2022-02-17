@@ -96,6 +96,8 @@
 #define ID_FILE_DXF2NCD_WIRE            1008
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
+#define ID_FILE_3DSCAN                  1020
+#define ID_FILE_3DPATH                  1021
 #define ID_FILE_CLANDOP                 1090
 #define IDD_CADBIND                     1100
 #define ID_FILE_CADBIND                 1100
