@@ -211,16 +211,20 @@ void C3dModelView::OnLensKey(UINT nID)
 			KillTimer(IDC_OPENGL_DRAGROUND);
 			m_dRoundStep = 0.0f;
 		}
-		OnInitialUpdate();
 		{
 			CClientDC	dc(this);
 			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+			SetOrthoView();
+			::glMatrixMode( GL_PROJECTION );
+			::glLoadIdentity();
+			::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
+				m_rcView.low, m_rcView.high);
+			::glMatrixMode( GL_MODELVIEW );
 			IdentityMatrix();
 			SetupViewingTransform();
 			::wglMakeCurrent( NULL, NULL );
 		}
 		Invalidate(FALSE);
-		DoScale(0);	// MDIéqÃ⁄∞—ÇÃΩ√∞¿Ω ﬁ∞Ç…èÓïÒï\é¶(ÇæÇØ)
 		break;
 	case ID_VIEW_LENSP:
 		DoScale(-1);
