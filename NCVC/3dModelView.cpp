@@ -115,7 +115,6 @@ void C3dModelView::OnDraw(CDC* pDC)
 
 	::glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-	// --- テスト描画
 	float		dLength = 50.0f;
 	COLORREF	col;
 //	::glPushAttrib( GL_LINE_BIT );
@@ -139,6 +138,8 @@ void C3dModelView::OnDraw(CDC* pDC)
 	::glEnd();
 //	::glPopAttrib();
 	//
+
+	// --- テスト描画
 //	::glBegin(GL_QUADS);
 //		::glColor3f(0.0f, 0.0f, 1.0f);
 //		::glVertex3f( 0.0f,  0.0f, 0.0f);
@@ -164,9 +165,13 @@ void C3dModelView::OnDraw(CDC* pDC)
 
 void C3dModelView::DrawBody(void)
 {
+	::glInitNames();
+	::glPushName(0);
+
 	Describe_BODY	bd;
 	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
 	for ( int i=0; i<kbl->getNum(); i++ ) {
+		::glLoadName(i+1);
 		bd.DrawBody( (BODY *)kbl->getData(i) );
 	}
 }
