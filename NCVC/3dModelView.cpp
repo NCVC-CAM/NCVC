@@ -19,6 +19,7 @@ IMPLEMENT_DYNCREATE(C3dModelView, CViewBaseGL)
 
 BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_WM_CREATE()
+	ON_WM_DESTROY()
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
 END_MESSAGE_MAP()
 
@@ -27,6 +28,7 @@ END_MESSAGE_MAP()
 
 C3dModelView::C3dModelView()
 {
+	m_glCode = 0;
 }
 
 C3dModelView::~C3dModelView()
@@ -67,6 +69,19 @@ void C3dModelView::OnInitialUpdate()
 //	::glLightfv(GL_LIGHT1, GL_POSITION, light_Position1);
 	::glEnable (GL_LIGHT0);
 //	::glEnable (GL_LIGHT1);
+
+	// ディスプレイリスト
+	m_glCode = ::glGenLists(1);
+	if( m_glCode > 0 ) {
+		// プリミティブ描画のディスプレイリスト生成
+		::glNewList( m_glCode, GL_COMPILE );
+			DrawBody();
+		::glEndList();
+		if ( GetGLError() != GL_NO_ERROR ) {
+			::glDeleteLists(m_glCode, 1);
+			m_glCode = 0;
+		}
+	}
 
 	::wglMakeCurrent(NULL, NULL);
 }
@@ -132,17 +147,25 @@ void C3dModelView::OnDraw(CDC* pDC)
 
 	// モデル描画 Kodatuno
 	::glEnable(GL_LIGHTING);
-	Describe_BODY	bd;
-	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
-	for ( int i=0; i<kbl->getNum(); i++ ) {
-		bd.DrawBody( (BODY *)kbl->getData(i) );
-	}
+	if ( m_glCode > 0 )
+		::glCallList( m_glCode );
+	else
+		DrawBody();
 	::glDisable(GL_LIGHTING);
 
 	::glPopAttrib();
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
+}
+
+void C3dModelView::DrawBody(void)
+{
+	Describe_BODY	bd;
+	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
+	for ( int i=0; i<kbl->getNum(); i++ ) {
+		bd.DrawBody( (BODY *)kbl->getData(i) );
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -154,6 +177,22 @@ int C3dModelView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	return 0;
+}
+
+void C3dModelView::OnDestroy()
+{
+	// OpenGL 後処理
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
+	// ディスプレイリスト消去
+	if ( m_glCode > 0 )
+		::glDeleteLists(m_glCode, 1);
+
+	::wglMakeCurrent(NULL, NULL);
+	::wglDeleteContext( m_hRC );
+
+	__super::OnDestroy();
 }
 
 void C3dModelView::OnLensKey(UINT nID)

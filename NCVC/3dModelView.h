@@ -10,6 +10,10 @@
 
 class C3dModelView : public CViewBaseGL
 {
+	GLuint		m_glCode;		// プリミティブ描画のディスプレイリスト
+
+	void	DrawBody(void);
+
 protected:
 	C3dModelView();
 	DECLARE_DYNCREATE(C3dModelView)
@@ -22,6 +26,7 @@ public:
 
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnDestroy();
 	afx_msg	void OnLensKey(UINT);
 
 	DECLARE_MESSAGE_MAP()
