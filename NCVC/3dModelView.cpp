@@ -41,17 +41,20 @@ C3dModelView::~C3dModelView()
 void C3dModelView::OnInitialUpdate() 
 {
 	m_rcView  = GetDocument()->GetMaxRect();
-	SetOrthoView();		// ViewBaseGL.cpp
+	CRecentViewInfo*	pInfo = GetDocument()->GetRecentViewInfo();
+	if ( pInfo && !pInfo->GetViewInfo(m_objXform, m_rcView, m_ptCenter) ) {
+		SetOrthoView();		// ViewBaseGL.cpp
+	}
 
 	// İ’è
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 	::glMatrixMode( GL_PROJECTION );
-	::glLoadIdentity();
 	::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
 		m_rcView.low, m_rcView.high);
 	GetGLError();
 	::glMatrixMode( GL_MODELVIEW );
+	SetupViewingTransform();
 
 	// ŒõŒ¹
 	::glEnable(GL_AUTO_NORMAL);
@@ -181,6 +184,11 @@ int C3dModelView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void C3dModelView::OnDestroy()
 {
+	// ‰ñ“]s—ñ“™‚ğ•Û‘¶
+	CRecentViewInfo* pInfo = GetDocument()->GetRecentViewInfo();
+	if ( pInfo ) 
+		pInfo->SetViewInfo(m_objXform, m_rcView, m_ptCenter);
+
 	// OpenGL Œãˆ—
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );

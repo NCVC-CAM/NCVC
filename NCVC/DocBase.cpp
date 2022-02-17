@@ -17,6 +17,23 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+CDocBase::CDocBase()
+{
+	UnlockDocument();
+	m_pFileChangeThread = NULL;
+	m_pfnSerialFunc = NULL;
+	m_bDocFlg.reset();
+	m_pRecentViewInfo = NULL;
+}
+
+void CDocBase::SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU)
+{
+	__super::SetPathName(lpszPathName, bAddToMRU);
+	// --> to be CNCVCApp::AddToRecentFileList()
+	m_pRecentViewInfo = AfxGetNCVCApp()->GetRecentViewInfo();
+	ASSERT( m_pRecentViewInfo );
+}
+
 void CDocBase::ReportSaveLoadException
 	(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault)
 {

@@ -18,9 +18,9 @@ class C3dModelDoc : public CDocBase
 protected:
 	C3dModelDoc();
 	DECLARE_DYNCREATE(C3dModelDoc)
+
 public:
 	virtual ~C3dModelDoc();
-
 	virtual void Serialize(CArchive& ar);   // ドキュメント I/O に対してオーバーライドされました。
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
 	virtual void OnCloseDocument();

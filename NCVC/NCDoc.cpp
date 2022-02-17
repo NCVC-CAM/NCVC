@@ -90,7 +90,6 @@ CNCDoc::CNCDoc()
 	m_nTrace = ID_NCVIEW_TRACE_STOP;
 	m_nTraceStart = m_nTraceDraw = 0;
 	m_pCutcalcThread  = NULL;
-	m_pRecentViewInfo = NULL;
 	// Ü°¸À•WŒnŽæ“¾
 	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
 	for ( i=0; i<WORKOFFSET; i++ )
@@ -1102,9 +1101,6 @@ void CNCDoc::SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU)
 	}
 	else {
 		__super::SetPathName(lpszPathName, bAddToMRU);
-		// --> to be CNCVCApp::AddToRecentFileList()
-		m_pRecentViewInfo = AfxGetNCVCApp()->GetRecentViewInfo();
-		ASSERT( m_pRecentViewInfo );
 #ifdef _DEBUG
 		printf("CNCDoc::SetPathName() %s OK\n", lpszPathName);
 #endif

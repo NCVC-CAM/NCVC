@@ -48,8 +48,6 @@ class CNCDoc : public CDocBase
 	CWinThread*	m_pCutcalcThread;	// 切削時間計算ｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
 				m_strCurrentFile;	// 現在処理中のNCﾌｧｲﾙ名(FileInsert etc.)
-	CRecentViewInfo*	m_pRecentViewInfo;		// ﾌｧｲﾙごとの描画情報
-	//
 	int			m_nWorkOrg;						// 使用中のﾜｰｸ座標
 	CPoint3F	m_ptNcWorkOrg[WORKOFFSET+1],	// ﾜｰｸ座標系(G54～G59)とG92原点
 				m_ptNcLocalOrg;					// ﾛｰｶﾙ座標系(G52)原点
@@ -104,9 +102,6 @@ public:
 	}
 	CString	GetCurrentFileName(void) const {
 		return m_strCurrentFile;
-	}
-	CRecentViewInfo*	GetRecentViewInfo(void) const {
-		return m_pRecentViewInfo;
 	}
 	INT_PTR		GetNCBlockSize(void) const {
 		return m_obBlock.GetSize();
