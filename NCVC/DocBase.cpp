@@ -313,5 +313,11 @@ BODY*	Read3dModel(LPCTSTR lpszFile, LPCTSTR lpszCurrent/*=NULL*/)
 		return NULL;
 	}
 
+#ifdef _DEBUG
+	for ( int i=0; i<ALL_ENTITY_TYPE_NUM; i++ ) {
+		printf("Body TypeNum[%d]=%d\n", i, pBody->TypeNum[i]);
+	}
+#endif
+
 	return pBody;
 }

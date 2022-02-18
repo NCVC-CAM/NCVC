@@ -10,7 +10,8 @@
 
 class C3dModelView : public CViewBaseGL
 {
-	GLuint		m_glCode;		// プリミティブ描画のディスプレイリスト
+	GLuint		m_glCode;		// BODY描画のディスプレイリスト
+	CPoint		m_ptLclick;
 
 	void	DrawBody(void);
 
@@ -27,6 +28,8 @@ public:
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg	void OnLensKey(UINT);
 
 	DECLARE_MESSAGE_MAP()

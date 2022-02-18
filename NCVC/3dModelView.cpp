@@ -20,6 +20,8 @@ IMPLEMENT_DYNCREATE(C3dModelView, CViewBaseGL)
 BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_WM_CREATE()
 	ON_WM_DESTROY()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
 END_MESSAGE_MAP()
 
@@ -165,14 +167,38 @@ void C3dModelView::OnDraw(CDC* pDC)
 
 void C3dModelView::DrawBody(void)
 {
-	::glInitNames();
-	::glPushName(0);
-
 	Describe_BODY	bd;
 	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
+	BODY*			body;
+
 	for ( int i=0; i<kbl->getNum(); i++ ) {
-		::glLoadName(i+1);
-		bd.DrawBody( (BODY *)kbl->getData(i) );
+		body = (BODY *)kbl->getData(i);
+		if ( !body ) continue;
+		// サンプルと同じようにループしネームスタックを生成
+		// void KODatUNO::DrawBODY()  in Sys/Kodatuno_main.cpp
+		::glPushName(i);
+		for ( int j=0; j<ALL_ENTITY_TYPE_NUM; j++ ) {
+			switch ( j ) {
+			case _NURBSC:
+				::glPushName(_NURBSC);
+				bd.Draw_NurbsCurves(body);
+				::glPopName();
+				break;
+			case _NURBSS:
+				::glPushName(_NURBSS);
+				bd.Draw_NurbsSurfaces(body);
+				::glPopName();
+				break;
+			case _TRIMMED_SURFACE:
+				::glPushName(_TRIMMED_SURFACE);
+				bd.Draw_TrimSurfes(body);
+				::glPopName();
+				break;
+//			case _MESH:
+//				break;
+			}
+		}
+		::glPopName();
 	}
 }
 
@@ -206,6 +232,21 @@ void C3dModelView::OnDestroy()
 	::wglDeleteContext( m_hRC );
 
 	__super::OnDestroy();
+}
+
+void C3dModelView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	m_ptLclick = point;
+	__super::OnLButtonDown(nFlags, point);
+}
+
+void C3dModelView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	if ( m_ptLclick == point ) {
+		// ピック処理
+		::glInitNames();
+	}
+	__super::OnLButtonUp(nFlags, point);
 }
 
 void C3dModelView::OnLensKey(UINT nID)
