@@ -14,6 +14,7 @@ class C3dModelView : public CViewBaseGL
 	CPoint		m_ptLclick;
 
 	void	DrawBody(void);
+	void	DoSelect(const CPoint&);
 
 protected:
 	C3dModelView();

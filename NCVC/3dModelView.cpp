@@ -244,9 +244,20 @@ void C3dModelView::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	if ( m_ptLclick == point ) {
 		// ピック処理
-		::glInitNames();
+		DoSelect(point);
 	}
 	__super::OnLButtonUp(nFlags, point);
+}
+
+void C3dModelView::DoSelect(const CPoint& pt)
+{
+	// 旧式のセレクションモードを使うか
+	// オフスクリーンレンダリング(FBO)してピックするか，悩みどころ
+	::glInitNames();
+	if ( m_glCode > 0 )
+		::glCallList( m_glCode );
+	else
+		DrawBody();
 }
 
 void C3dModelView::OnLensKey(UINT nID)
