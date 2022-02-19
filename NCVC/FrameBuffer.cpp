@@ -15,18 +15,10 @@ GLuint	CFrameBuffer::ms_uBind = 0;
 
 /////////////////////////////////////////////////////////////////////////////
 
-CFrameBuffer::CFrameBuffer()
-{
-	if ( ms_uBind > 0 ) {
-		Bind(FALSE);
-	}
-	m_fb = m_rb = m_tb = 0;
-}
-
-CFrameBuffer::CFrameBuffer(GLsizei w, GLsizei h, BOOL bBindKeep)
+CFrameBuffer::CFrameBuffer(GLsizei w, GLsizei h)
 {
 	m_fb = m_rb = m_tb = 0;
-	Create(w, h, bBindKeep);
+	Create(w, h);
 }
 
 CFrameBuffer::~CFrameBuffer()
@@ -34,7 +26,7 @@ CFrameBuffer::~CFrameBuffer()
 	Delete();
 }
 
-BOOL CFrameBuffer::Create(GLsizei w, GLsizei h, BOOL bBindKeep)
+BOOL CFrameBuffer::Create(GLsizei w, GLsizei h)
 {
 	m_w = w;	m_h = h;
 
@@ -75,15 +67,15 @@ BOOL CFrameBuffer::Create(GLsizei w, GLsizei h, BOOL bBindKeep)
 	if ( GetGLError() != GL_NO_ERROR )
 		return FALSE;
 
-	ms_uBind = m_fb;
-	Bind(bBindKeep);
+	Bind(TRUE);
 
 	return TRUE;
 }
 
 void CFrameBuffer::Delete(void)
 {
-	Bind(FALSE);
+	if (ms_uBind!=0 && ms_uBind==m_fb )
+		Bind(FALSE);
 	if ( m_tb )
 		::glDeleteTextures(1, &m_tb);
 	if ( m_rb )

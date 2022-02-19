@@ -16,11 +16,10 @@ class CFrameBuffer
 	GLsizei	m_w, m_h;
 
 public:
-	CFrameBuffer();
-	CFrameBuffer(GLsizei, GLsizei, BOOL = FALSE);
+	CFrameBuffer(GLsizei, GLsizei);
 	~CFrameBuffer();
 
-	BOOL	Create(GLsizei, GLsizei, BOOL = FALSE);
+	BOOL	Create(GLsizei, GLsizei);
 	void	Delete(void);
 	BOOL	Bind(BOOL);
 	BOOL	IsBind(void) const {
