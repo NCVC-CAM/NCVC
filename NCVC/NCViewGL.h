@@ -85,16 +85,12 @@ class CNCViewGL : public CViewBaseGL
 	CPointF		m_ptCenterBk;		// ﾎﾞｸｾﾙ処理前のﾊﾞｯｸｱｯﾌﾟ
 	GLdouble	m_objXformBk[4][4];
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
-
+	CFrameBuffer*	m_pFBO;		// FrameBufferObject
 	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
-#ifndef NO_TRACE_WORKFILE			// from NCViewTab.h
+#ifndef NO_TRACE_WORKFILE		// from NCViewTab.h
 	GLfloat*	m_pfDepthBottom;// WorkFile 2Pass
 #endif
 	GLubyte*	m_pbStencil;	// ｽﾃﾝｼﾙ
-	CFrameBuffer*	m_pFBO;		// FrameBufferObject
-#ifdef USE_SHADER
-	CGLSL			m_glsl;		// Shader Manager
-#endif
 	GLfloat*	m_pfXYZ;		// -- 変換されたﾜｰﾙﾄﾞ座標(temp area)
 	GLfloat*	m_pfNOR;		// -- 法線ﾍﾞｸﾄﾙ
 	GLfloat*	m_pLatheX;		// -- 旋盤のX値
@@ -114,6 +110,10 @@ class CNCViewGL : public CViewBaseGL
 		return (GLsizei)(m_vElementWrk.size()+m_vElementCut.size()+m_vElementEdg.size()+m_vElementSlt.size());
 	}
 	WIREDRAW	m_WireDraw;		// ﾜｲﾔ加工機用
+
+#ifdef USE_SHADER
+	CGLSL			m_glsl;		// Shader Manager
+#endif
 
 	struct {	// CreateElementThread() from CreateVBOMill()
 		DWORD	m_nCeProc;
