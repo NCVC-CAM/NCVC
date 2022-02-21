@@ -85,7 +85,6 @@ class CNCViewGL : public CViewBaseGL
 	CPointF		m_ptCenterBk;		// ÎŞ¸¾Ùˆ—‘O‚ÌÊŞ¯¸±¯Ìß
 	GLdouble	m_objXformBk[4][4];
 	GLuint		m_glCode;		// ØíÊß½‚ÌÃŞ¨½ÌßÚ²Ø½Ä
-	CFrameBuffer*	m_pFBO;		// FrameBufferObject
 	GLfloat*	m_pfDepth;		// ÃŞÌß½’læ“¾”z—ñ
 #ifndef NO_TRACE_WORKFILE		// from NCViewTab.h
 	GLfloat*	m_pfDepthBottom;// WorkFile 2Pass
@@ -145,7 +144,6 @@ class CNCViewGL : public CViewBaseGL
 	void	CreateTexture(GLsizeiptr, const GLfloat*);
 	void	ClearVBO(void);
 	void	ClearTexture(void);
-	void	CreateFBO(void);
 	void	InitialBoxel(void);
 	void	FinalBoxel(void);
 	void	DeleteDepthMemory(void);

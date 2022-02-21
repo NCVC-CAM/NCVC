@@ -38,16 +38,46 @@ END_MESSAGE_MAP()
 CViewBaseGL::CViewBaseGL()
 {
 	m_hRC = NULL;
+	m_pFBO = NULL;
 	m_cx = m_cy = 0;
 	m_enTrackingMode = TM_NONE;
 	m_dRate = m_dRoundAngle = m_dRoundStep = 0.0f;
 	IdentityMatrix();	// 単位行列に初期化
 }
 
+CViewBaseGL::~CViewBaseGL()
+{
+	if ( m_pFBO )
+		delete	m_pFBO;
+}
+
 BOOL CViewBaseGL::PreCreateWindow(CREATESTRUCT& cs)
 {
 	cs.style |= WS_CLIPSIBLINGS|WS_CLIPCHILDREN;
 	return __super::PreCreateWindow(cs);
+}
+
+void CViewBaseGL::CreateFBO(void)
+{
+	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_USEFBO) ) {
+		if ( !m_pFBO && GLEW_EXT_framebuffer_object ) {
+			// ｳｨﾝﾄﾞｳｻｲｽﾞでFBO作成
+			m_pFBO = new CFrameBuffer(m_cx, m_cy);
+			if ( m_pFBO->IsBind() ) {
+				::glClearDepth(0.0);			// 遠い方を優先させるためのﾃﾞﾌﾟｽ初期値
+				::glClear(GL_DEPTH_BUFFER_BIT);	// ﾃﾞﾌﾟｽﾊﾞｯﾌｧのみｸﾘｱ
+			}
+			else {
+				// FBO使用中止
+				delete	m_pFBO;
+				m_pFBO = NULL;
+			}
+		}
+	}
+	else if ( m_pFBO ) {
+		delete	m_pFBO;
+		m_pFBO = NULL;
+	}
 }
 
 void CViewBaseGL::IdentityMatrix(void)

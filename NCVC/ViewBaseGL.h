@@ -18,6 +18,7 @@ class CViewBaseGL : public CView
 {
 protected:
 	HGLRC		m_hRC;
+	CFrameBuffer*	m_pFBO;			// FrameBufferObject
 	int			m_cx,  m_cy;		// ≥®›ƒﬁ≥ª≤Ωﬁ(Ω∏ÿ∞›)
 	ENTRACKINGMODE	m_enTrackingMode;
 	CPoint		m_ptDownClick;		// ∫›√∑Ωƒ“∆≠∞ï\é¶ópëº
@@ -33,11 +34,13 @@ protected:
 	GLdouble	m_objXform[4][4];	// âÒì]çsóÒ
 
 	CViewBaseGL();
+	virtual ~CViewBaseGL();
 	DECLARE_DYNAMIC(CViewBaseGL)
 
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual	void DoScale(int);
 	//
+	void	CreateFBO(void);
 	void	IdentityMatrix(void);
 	void	SetOrthoView(void);
 	BOOL	SetupPixelFormat(CDC*);

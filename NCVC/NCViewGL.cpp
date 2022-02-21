@@ -99,7 +99,6 @@ CNCViewGL::CNCViewGL()
 	m_pfDepth = m_pfDepthBottom = m_pfXYZ = m_pfNOR = m_pLatheX = m_pLatheZo = m_pLatheZi = NULL;
 #endif
 	m_pbStencil = NULL;
-	m_pFBO = NULL;
 	m_nVBOsize = 0;
 	m_nVertexID[0] = m_nVertexID[1] = m_nPictureID = m_nTextureID = 0;
 	m_pSolidElement = m_pLocusElement = NULL;
@@ -113,10 +112,6 @@ CNCViewGL::~CNCViewGL()
 {
 	EndOfCreateElementThread();
 	DeleteDepthMemory();
-
-	if ( m_pFBO )
-		delete	m_pFBO;
-
 	ClearVBO();
 }
 
@@ -479,29 +474,6 @@ void CNCViewGL::ClearTexture(void)
 	if ( m_nTextureID > 0 )
 		::glDeleteBuffers(1, &m_nTextureID);
 	m_nPictureID = m_nTextureID = 0;
-}
-
-void CNCViewGL::CreateFBO(void)
-{
-	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_USEFBO) ) {
-		if ( !m_pFBO && GLEW_EXT_framebuffer_object ) {
-			// ³¨İÄŞ³»²½Ş‚ÅFBOì¬
-			m_pFBO = new CFrameBuffer(m_cx, m_cy);
-			if ( m_pFBO->IsBind() ) {
-				::glClearDepth(0.0);			// ‰“‚¢•û‚ğ—Dæ‚³‚¹‚é‚½‚ß‚ÌÃŞÌß½‰Šú’l
-				::glClear(GL_DEPTH_BUFFER_BIT);	// ÃŞÌß½ÊŞ¯Ì§‚Ì‚İ¸Ø±
-			}
-			else {
-				// FBOg—p’†~
-				delete	m_pFBO;
-				m_pFBO = NULL;
-			}
-		}
-	}
-	else if ( m_pFBO ) {
-		delete	m_pFBO;
-		m_pFBO = NULL;
-	}
 }
 
 void CNCViewGL::InitialBoxel(void)
