@@ -11,7 +11,8 @@
 class C3dModelView : public CViewBaseGL
 {
 	GLuint		m_glCode;		// BODY描画のディスプレイリスト
-	CPoint		m_ptLclick;
+	CPoint		m_ptLclick;		// Downのときのマウスポイント
+	int			m_icx, m_icy;	// FBOを作った時のサイズ
 
 	void	DrawBody(void);
 	void	DoSelect(const CPoint&);

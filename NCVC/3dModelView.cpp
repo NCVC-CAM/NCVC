@@ -174,25 +174,16 @@ void C3dModelView::DrawBody(void)
 	for ( int i=0; i<kbl->getNum(); i++ ) {
 		body = (BODY *)kbl->getData(i);
 		if ( !body ) continue;
-		// サンプルと同じようにループしネームスタックを生成
-		// void KODatUNO::DrawBODY()  in Sys/Kodatuno_main.cpp
-		::glPushName(i);
 		for ( int j=0; j<ALL_ENTITY_TYPE_NUM; j++ ) {
 			switch ( j ) {
 			case _NURBSC:
-				::glPushName(_NURBSC);
 				bd.Draw_NurbsCurves(body);
-				::glPopName();
 				break;
 			case _NURBSS:
-				::glPushName(_NURBSS);
 				bd.Draw_NurbsSurfaces(body);
-				::glPopName();
 				break;
 			case _TRIMMED_SURFACE:
-				::glPushName(_TRIMMED_SURFACE);
 				bd.Draw_TrimSurfes(body);
-				::glPopName();
 				break;
 //			case _MESH:
 //				break;
@@ -251,13 +242,46 @@ void C3dModelView::OnLButtonUp(UINT nFlags, CPoint point)
 
 void C3dModelView::DoSelect(const CPoint& pt)
 {
-	// 旧式のセレクションモードを使うか
-	// オフスクリーンレンダリング(FBO)してピックするか，悩みどころ
-	::glInitNames();
-	if ( m_glCode > 0 )
-		::glCallList( m_glCode );
-	else
-		DrawBody();
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
+	// オフスクリーンレンダリングしてピック
+	if ( m_pFBO ) {
+		if ( m_icx==m_cx && m_icy==m_cy ) {
+			// 再利用
+			m_pFBO->Bind(TRUE);
+		}
+		else {
+			// FBO作り直し
+			delete	m_pFBO;
+			m_pFBO = NULL;
+		}
+	}
+	if ( !m_pFBO ) {
+		m_icx = m_cx;
+		m_icy = m_cy;
+		CreateFBO();
+	}
+	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	// 座標系の設定
+	SetupViewingTransform();
+
+	// 色に識別番号を入れてNURBS曲線だけ描画
+//	if ( m_glCode > 0 )
+//		::glCallList( m_glCode );
+//	else
+//		DrawBody();
+
+	// マウスポイントの色情報を取得
+
+
+
+	// バインド解除
+	if ( m_pFBO )
+		m_pFBO->Bind(FALSE);
+
+	::wglMakeCurrent(NULL, NULL);
 }
 
 void C3dModelView::OnLensKey(UINT nID)
