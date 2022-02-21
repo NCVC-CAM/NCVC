@@ -15,7 +15,6 @@ protected:
 	virtual ~C3dModelChild();
 	DECLARE_DYNCREATE(C3dModelChild)
 
-public:
 	afx_msg void OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactivateWnd);
 
 	DECLARE_MESSAGE_MAP()

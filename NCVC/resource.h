@@ -888,7 +888,6 @@
 #define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
-#define ID_ACCELERATOR32826             32826
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -912,7 +911,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        208
-#define _APS_NEXT_COMMAND_VALUE         32827
+#define _APS_NEXT_COMMAND_VALUE         32829
 #define _APS_NEXT_CONTROL_VALUE         1071
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

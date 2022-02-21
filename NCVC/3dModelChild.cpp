@@ -36,7 +36,12 @@ void C3dModelChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDea
 #ifdef _DEBUG
 	printf("C3dModelChild::bActivate=%d\n", bActivate);
 #endif
-	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞへのﾄﾞｷｭﾒﾝﾄ切替通知
-	if ( bActivate )
+	if ( bActivate ) {
+		// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞへのﾄﾞｷｭﾒﾝﾄ切替通知
 		AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();
+		// アクセラレータテーブルの強制置換
+		// DestroyAcceleratorTable() しなくてもいい？
+		m_hAccelTable = NULL;	// これがないとMFC側でASSERT
+		LoadAccelTable( MAKEINTRESOURCE(IDR_3DMTYPE) );
+	}
 }

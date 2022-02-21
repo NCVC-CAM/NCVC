@@ -179,9 +179,14 @@ void CDXFChild::OnMDIActivate(BOOL bActivate, CWnd* pActivateWnd, CWnd* pDeactiv
 #ifdef _DEBUG
 	printf("CDXFChild::bActivate=%d\n", bActivate);
 #endif
-	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞへのﾄﾞｷｭﾒﾝﾄ切替通知
-	if ( bActivate )
+	if ( bActivate ) {
+		// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞへのﾄﾞｷｭﾒﾝﾄ切替通知
 		AfxGetNCVCMainWnd()->AllModelessDlg_PostSwitchMessage();
+		// アクセラレータテーブルの強制置換
+		// DestroyAcceleratorTable() しなくてもいい？
+		m_hAccelTable = NULL;	// これがないとMFC側でASSERT
+		LoadAccelTable( MAKEINTRESOURCE(IDR_DXFTYPE) );
+	}
 }
 
 LRESULT CDXFChild::OnUserInitialUpdate(WPARAM, LPARAM)
