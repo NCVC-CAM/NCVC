@@ -268,17 +268,29 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	Describe_BODY	bd;
 	BODY*			body = (BODY *)GetDocument()->GetKodatunoBodyList()->getData(0);
 	for ( int i=0; i<body->TypeNum[_NURBSC]; i++ ) {
-		// 識別番号をインデックスで指示
+		// 識別番号をカラーインデックスで指示
 		::glIndexf( i+1.0f );
         // IGESディレクトリ部の"Entity Use Flag"が0かつ，"Blank Status"が0の場合は実際のモデル要素として描画する
         if ( body->NurbsC[i].EntUseFlag==GEOMTRYELEM && body->NurbsC[i].BlankStat==DISPLAY ) {
 			bd.DrawNurbsCurve(body->NurbsC[i]);
 		}
 	}
+	GetGLError();		// error flash
 
 	// マウスポイントの色情報を取得
-
-
+	GLfloat	pBuf[100];		// 10x10pixels
+	::glReadPixels(pt.x-5, pt.y-5, 10, 10, GL_COLOR_INDEX, GL_FLOAT, pBuf);
+#ifdef _DEBUG
+	GetGLError();	// GL_INVALID_OPERATION
+	for ( int y=0; y<10; y++ ) {
+		CString	str, s;
+		for ( int x=0; x<10; x++ ) {
+			s.Format(" %d", (int)pBuf[y*10+x]);
+			str += s;
+		}
+		printf("pBuf[%d]=%s\n", y, LPCTSTR(str));
+	}
+#endif
 
 	// バインド解除
 	if ( m_pFBO )
