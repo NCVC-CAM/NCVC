@@ -115,11 +115,9 @@ void C3dModelView::OnDraw(CDC* pDC)
 	// 背景の描画
 	RenderBackground(pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1), pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2));
 
-	::glPushAttrib(GL_ALL_ATTRIB_BITS);
-
 	float		dLength = 50.0f;
 	COLORREF	col;
-//	::glPushAttrib( GL_LINE_BIT );
+	::glPushAttrib( GL_LINE_BIT );
 	::glLineWidth( 2.0f );
 	::glBegin( GL_LINES );
 	// X軸のｶﾞｲﾄﾞ
@@ -138,8 +136,7 @@ void C3dModelView::OnDraw(CDC* pDC)
 	::glVertex3f(0.0f, 0.0f, -dLength);
 	::glVertex3f(0.0f, 0.0f,  dLength);
 	::glEnd();
-//	::glPopAttrib();
-	//
+	::glPopAttrib();
 
 	// --- テスト描画
 //	::glBegin(GL_QUADS);
@@ -159,8 +156,6 @@ void C3dModelView::OnDraw(CDC* pDC)
 		DrawBody();
 	::glDisable(GL_LIGHTING);
 
-	::glPopAttrib();
-
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
 }
@@ -173,7 +168,9 @@ void C3dModelView::DrawBody(void)
 
 	for ( int i=0; i<kbl->getNum(); i++ ) {
 		body = (BODY *)kbl->getData(i);
-		if ( !body ) continue;
+		if ( body )
+			bd.DrawBody(body);
+/*
 		for ( int j=0; j<ALL_ENTITY_TYPE_NUM; j++ ) {
 			switch ( j ) {
 			case _NURBSC:
@@ -189,7 +186,7 @@ void C3dModelView::DrawBody(void)
 //				break;
 			}
 		}
-		::glPopName();
+*/
 	}
 }
 
@@ -268,10 +265,16 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	SetupViewingTransform();
 
 	// 色に識別番号を入れてNURBS曲線だけ描画
-//	if ( m_glCode > 0 )
-//		::glCallList( m_glCode );
-//	else
-//		DrawBody();
+	Describe_BODY	bd;
+	BODY*			body = (BODY *)GetDocument()->GetKodatunoBodyList()->getData(0);
+	for ( int i=0; i<body->TypeNum[_NURBSC]; i++ ) {
+		// 識別番号をインデックスで指示
+		::glIndexf( i+1.0f );
+        // IGESディレクトリ部の"Entity Use Flag"が0かつ，"Blank Status"が0の場合は実際のモデル要素として描画する
+        if ( body->NurbsC[i].EntUseFlag==GEOMTRYELEM && body->NurbsC[i].BlankStat==DISPLAY ) {
+			bd.DrawNurbsCurve(body->NurbsC[i]);
+		}
+	}
 
 	// マウスポイントの色情報を取得
 
