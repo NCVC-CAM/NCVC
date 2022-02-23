@@ -241,7 +241,7 @@ void C3dModelView::DoSelect(const CPoint& pt)
 {
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-
+/*
 	// オフスクリーンレンダリングしてピック
 	if ( m_pFBO ) {
 		if ( m_icx==m_cx && m_icy==m_cy ) {
@@ -259,11 +259,20 @@ void C3dModelView::DoSelect(const CPoint& pt)
 		m_icy = m_cy;
 		CreateFBO();
 	}
-	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	if ( !m_pFBO ) {
+		::wglMakeCurrent(NULL, NULL);
+		return;		// あとでエラーメッセージ
+	}
 
 	// 座標系の設定
+	::glMatrixMode(GL_PROJECTION);
+	::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
+		m_rcView.low, m_rcView.high);
+	GetGLError();
+	::glMatrixMode(GL_MODELVIEW);
 	SetupViewingTransform();
-
+	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+*/
 	// 色に識別番号を入れてNURBS曲線だけ描画
 	Describe_BODY	bd;
 	BODY*			body = (BODY *)GetDocument()->GetKodatunoBodyList()->getData(0);
@@ -279,9 +288,9 @@ void C3dModelView::DoSelect(const CPoint& pt)
 
 	// マウスポイントの色情報を取得
 	GLfloat	pBuf[100];		// 10x10pixels
-	::glReadPixels(pt.x-5, pt.y-5, 10, 10, GL_COLOR_INDEX, GL_FLOAT, pBuf);
+	::glReadPixels(pt.x-5, pt.y-5, 10, 10, GL_COLOR_INDEX, GL_FLOAT, pBuf);		// GL_INVALID_OPERATION
 #ifdef _DEBUG
-	GetGLError();	// GL_INVALID_OPERATION
+	GetGLError();
 	for ( int y=0; y<10; y++ ) {
 		CString	str, s;
 		for ( int x=0; x<10; x++ ) {
@@ -293,8 +302,7 @@ void C3dModelView::DoSelect(const CPoint& pt)
 #endif
 
 	// バインド解除
-	if ( m_pFBO )
-		m_pFBO->Bind(FALSE);
+//	m_pFBO->Bind(FALSE);
 
 	::wglMakeCurrent(NULL, NULL);
 }

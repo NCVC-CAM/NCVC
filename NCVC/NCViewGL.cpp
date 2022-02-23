@@ -481,10 +481,6 @@ void CNCViewGL::InitialBoxel(void)
 	if ( m_pFBO ) {
 		m_pFBO->Bind(TRUE);
 	}
-	else {
-		::glClearDepth(0.0);			// ‰“‚¢•û‚ð—Dæ‚³‚¹‚é‚½‚ß‚ÌÃÞÌß½‰Šú’l
-		::glClear(GL_DEPTH_BUFFER_BIT);	// ÃÞÌß½ÊÞ¯Ì§‚Ì‚Ý¸Ø±
-	}
 	// ÎÞ¸¾Ù¶¬‚Ì‚½‚ß‚Ì‰ŠúÝ’è
 	::glDisable(GL_NORMALIZE);
 	::glDepthFunc(GL_GREATER);		// ‰“‚¢•û‚ð—Dæ
@@ -1145,7 +1141,6 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 			delete	m_pFBO;
 			m_pFBO = NULL;
 		}
-		m_icx = m_icy = 0;	// ‚±‚ê‚ª‚È‚¢‚Æ‘O‰ñ‚Ì‹OÕ‚ªŽc‚é
 		if ( IsLatheMode() )
 			CreateLathe(TRUE);
 		else

@@ -63,11 +63,7 @@ void CViewBaseGL::CreateFBO(void)
 		if ( !m_pFBO && GLEW_EXT_framebuffer_object ) {
 			// ³¨ÝÄÞ³»²½Þ‚ÅFBOì¬
 			m_pFBO = new CFrameBuffer(m_cx, m_cy);
-			if ( m_pFBO->IsBind() ) {
-				::glClearDepth(0.0);			// ‰“‚¢•û‚ð—Dæ‚³‚¹‚é‚½‚ß‚ÌÃÞÌß½‰Šú’l
-				::glClear(GL_DEPTH_BUFFER_BIT);	// ÃÞÌß½ÊÞ¯Ì§‚Ì‚Ý¸Ø±
-			}
-			else {
+			if ( !m_pFBO->IsBind() ) {
 				// FBOŽg—p’†Ž~
 				delete	m_pFBO;
 				m_pFBO = NULL;
