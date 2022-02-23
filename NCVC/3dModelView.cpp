@@ -171,17 +171,18 @@ void C3dModelView::DrawBody(void)
 		if ( body )
 			bd.DrawBody(body);
 /*
+		if ( !body ) continue;
 		for ( int j=0; j<ALL_ENTITY_TYPE_NUM; j++ ) {
 			switch ( j ) {
 			case _NURBSC:
 				bd.Draw_NurbsCurves(body);
 				break;
-			case _NURBSS:
-				bd.Draw_NurbsSurfaces(body);
-				break;
-			case _TRIMMED_SURFACE:
-				bd.Draw_TrimSurfes(body);
-				break;
+//			case _NURBSS:
+//				bd.Draw_NurbsSurfaces(body);
+//				break;
+//			case _TRIMMED_SURFACE:
+//				bd.Draw_TrimSurfes(body);
+//				break;
 //			case _MESH:
 //				break;
 			}
@@ -271,39 +272,46 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	GetGLError();
 	::glMatrixMode(GL_MODELVIEW);
 	SetupViewingTransform();
-	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 */
-	// 色に識別番号を入れてNURBS曲線だけ描画
+	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	// 識別番号を色にセットしてNURBS曲線だけ描画
 	Describe_BODY	bd;
 	BODY*			body = (BODY *)GetDocument()->GetKodatunoBodyList()->getData(0);
 	for ( int i=0; i<body->TypeNum[_NURBSC]; i++ ) {
-		// 識別番号をカラーインデックスで指示
-		::glIndexf( i+1.0f );
         // IGESディレクトリ部の"Entity Use Flag"が0かつ，"Blank Status"が0の場合は実際のモデル要素として描画する
         if ( body->NurbsC[i].EntUseFlag==GEOMTRYELEM && body->NurbsC[i].BlankStat==DISPLAY ) {
+			// 識別番号を赤色にセット
+			::glColor3ub(i+1, 0, 0);
 			bd.DrawNurbsCurve(body->NurbsC[i]);
 		}
 	}
 	GetGLError();		// error flash
 
 	// マウスポイントの色情報を取得
-	GLfloat	pBuf[100];		// 10x10pixels
-	::glReadPixels(pt.x-5, pt.y-5, 10, 10, GL_COLOR_INDEX, GL_FLOAT, pBuf);		// GL_INVALID_OPERATION
+	GLubyte	buf[100*4];
+	::glPixelStorei(GL_PACK_ALIGNMENT, 1);
+//	::glReadBuffer(GL_BACK);
+	::glReadPixels(pt.x-5, pt.y-5, 10, 10, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+//	GLubyte	buf[4];
+//	::glReadPixels(pt.x, pt.y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 #ifdef _DEBUG
 	GetGLError();
-	for ( int y=0; y<10; y++ ) {
+	for ( int y=0; y<40; y+=4 ) {
 		CString	str, s;
-		for ( int x=0; x<10; x++ ) {
-			s.Format(" %d", (int)pBuf[y*10+x]);
+		for ( int x=0; x<40; x+=4 ) {
+			s.Format(" %d", (int)buf[y*40+x]);	// R要素だけ表示
 			str += s;
 		}
 		printf("pBuf[%d]=%s\n", y, LPCTSTR(str));
 	}
+//	printf("R=%d\n", buf[0]);
 #endif
 
 	// バインド解除
 //	m_pFBO->Bind(FALSE);
 
+//	::SwapBuffers( dc.GetSafeHdc() );	//試しに描画データを表示（面まで出てくるぞ？）
 	::wglMakeCurrent(NULL, NULL);
 }
 
