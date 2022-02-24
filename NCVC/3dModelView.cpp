@@ -26,10 +26,12 @@ BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 END_MESSAGE_MAP()
 
 #define	PICKREGION		5
+#define	READBUF			(2*PICKREGION*2*PICKREGION*4)
 
 // インデックスIDとRGBAを変換するローカルコード
 static	void	IDtoRGB(int, GLubyte[]);
 static	int		RGBtoID(GLubyte[]);
+static	int		SearchSelectID(GLubyte[]);
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView
@@ -301,26 +303,14 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	GetGLError();		// error flash
 
 	// マウスポイントの色情報を取得
-	GLubyte	buf[2*PICKREGION*2*PICKREGION*4];
+	GLubyte	buf[READBUF];
 	::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	::glReadPixels(pt.x-PICKREGION, m_cy-pt.y-PICKREGION,	// y座標に注意!!
 		2*PICKREGION, 2*PICKREGION, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-
-#ifdef _DEBUG
 	GetGLError();
-	for ( int y=0; y<2*PICKREGION; y++ ) {
-		CString	str, s;
-		for ( int x=0; x<2*PICKREGION; x++ ) {
-			rgb[0] = buf[4*(y*2*PICKREGION+x)+0];
-			rgb[1] = buf[4*(y*2*PICKREGION+x)+1];
-			rgb[2] = buf[4*(y*2*PICKREGION+x)+2];
-			s.Format(" %d", RGBtoID(rgb));
-//			s.Format(" %u", buf[4*(y*2*PICKREGION+x)+0]);
-			str += s;
-		}
-		printf("pBuf[%d]=%s\n", y, LPCTSTR(str));
-	}
-#endif
+
+	// bufの中で一番多く存在するIDを検索
+	int nResult = SearchSelectID(buf);
 
 	// バインド解除
 //	m_pFBO->Bind(FALSE);
@@ -381,4 +371,48 @@ int RGBtoID(GLubyte rgb[])
 {
 	return rgb[0]==255 && rgb[1]==255 && rgb[2]==255 ?
 		-1 : (rgb[2]*254*254 + rgb[1]*254 + rgb[0]);
+}
+
+int SearchSelectID(GLubyte buf[])
+{
+	GLubyte			rgb[3];
+	std::map<int, int>	mp;
+	int				id, maxct=0, maxid=-1;
+
+	for ( int i=0; i<READBUF; i+=4 ) {
+		rgb[0] = buf[i+0];
+		rgb[1] = buf[i+1];
+		rgb[2] = buf[i+2];
+		id = RGBtoID(rgb);
+		if ( id >= 0 ) {
+			mp[id] = mp[id] + 1;	// mp[id]++; ではワーニング
+		}
+	}
+
+	typedef std::map<int, int>::const_reference	T;
+	BOOST_FOREACH(T x, mp) {
+		if ( maxct < x.second ) {
+			maxid = x.first;
+			maxct = x.second;
+		}
+	}
+
+#ifdef _DEBUG
+	for ( int y=0; y<2*PICKREGION; y++ ) {
+		CString	str, s;
+		for ( int x=0; x<2*PICKREGION; x++ ) {
+			rgb[0] = buf[4*(y*2*PICKREGION+x)+0];
+			rgb[1] = buf[4*(y*2*PICKREGION+x)+1];
+			rgb[2] = buf[4*(y*2*PICKREGION+x)+2];
+			s.Format(" %d", RGBtoID(rgb));
+//			s.Format(" %u", buf[4*(y*2*PICKREGION+x)+0]);
+			str += s;
+		}
+		printf("pBuf[%d]=%s\n", y, LPCTSTR(str));
+	}
+	printf("size=%zd\n", mp.size());
+	printf("maxid=%d, cnt=%d\n", maxid, maxct);
+#endif
+
+	return maxid;
 }

@@ -55,6 +55,7 @@
 #define	_SCL_SECURE_NO_WARNINGS			// ‘ÎBoost1.44—p
 #include <string>
 #include <vector>
+#include <map>
 #include <bitset>
 #include <algorithm>
 
