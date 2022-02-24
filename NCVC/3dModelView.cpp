@@ -25,6 +25,12 @@ BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
 END_MESSAGE_MAP()
 
+#define	PICKREGION		5
+
+// インデックスIDとRGBAを変換するローカルコード
+static	void	IDtoRGB(int, GLubyte[]);
+static	int		RGBtoID(GLubyte[]);
+
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView
 
@@ -273,34 +279,43 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	::glMatrixMode(GL_MODELVIEW);
 	SetupViewingTransform();
 */
-	::glClearColor(0, 0, 0, 0);
-	::glClearDepth(1);
+//	::glClearColor(0.0, 0.0, 0.0, 0.0);	// 黒色でクリア
+	::glClearColor(1.0, 1.0, 1.0, 1.0);	// 白色でクリア
+	::glClearDepth(1.0);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// 識別番号を色にセットしてNURBS曲線だけ描画
 	Describe_BODY	bd;
 	BODY*			body = (BODY *)GetDocument()->GetKodatunoBodyList()->getData(0);
+	GLubyte			rgb[3];
 	for ( int i=0; i<body->TypeNum[_NURBSC]; i++ ) {
         // IGESディレクトリ部の"Entity Use Flag"が0かつ，"Blank Status"が0の場合は実際のモデル要素として描画する
         if ( body->NurbsC[i].EntUseFlag==GEOMTRYELEM && body->NurbsC[i].BlankStat==DISPLAY ) {
 			// 識別番号を赤色にセット
-			::glColor4ub(i, 0, 0, 0);
+			ZEROCLR(rgb);		// CustomClass.h
+			IDtoRGB(i, rgb);
+			::glColor3ubv(rgb);
 			bd.DrawNurbsCurve(body->NurbsC[i]);
 		}
 	}
 	GetGLError();		// error flash
 
 	// マウスポイントの色情報を取得
-	GLubyte	buf[100*4];
+	GLubyte	buf[2*PICKREGION*2*PICKREGION*4];
 	::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	::glReadPixels(pt.x-5, m_cy-pt.y-5, 10, 10, GL_RGBA, GL_UNSIGNED_BYTE, buf);	// y座標に注意!!
+	::glReadPixels(pt.x-PICKREGION, m_cy-pt.y-PICKREGION,	// y座標に注意!!
+		2*PICKREGION, 2*PICKREGION, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 
 #ifdef _DEBUG
 	GetGLError();
-	for ( int y=0; y<10; y++ ) {
+	for ( int y=0; y<2*PICKREGION; y++ ) {
 		CString	str, s;
-		for ( int x=0; x<10; x++ ) {
-			s.Format(" %d", buf[4*(y*10+x)]);	// R要素だけ表示
+		for ( int x=0; x<2*PICKREGION; x++ ) {
+			rgb[0] = buf[4*(y*2*PICKREGION+x)+0];
+			rgb[1] = buf[4*(y*2*PICKREGION+x)+1];
+			rgb[2] = buf[4*(y*2*PICKREGION+x)+2];
+			s.Format(" %d", RGBtoID(rgb));
+//			s.Format(" %u", buf[4*(y*2*PICKREGION+x)+0]);
 			str += s;
 		}
 		printf("pBuf[%d]=%s\n", y, LPCTSTR(str));
@@ -344,4 +359,26 @@ void C3dModelView::OnLensKey(UINT nID)
 		DoScale(1);
 		break;
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void IDtoRGB(int id, GLubyte rgb[])
+{
+	// 0～254 の数値を RGB に変換
+	// （255 は白色クリア値）
+	div_t	d;
+	int		n = 0;
+
+	d.quot = id;
+	do {
+		d = div(d.quot, 254);
+		rgb[n++] = d.rem;
+	} while ( d.quot>254 && n<3 );
+}
+
+int RGBtoID(GLubyte rgb[])
+{
+	return rgb[0]==255 && rgb[1]==255 && rgb[2]==255 ?
+		-1 : (rgb[2]*254*254 + rgb[1]*254 + rgb[0]);
 }
