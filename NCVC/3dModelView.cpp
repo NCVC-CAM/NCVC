@@ -259,10 +259,10 @@ void C3dModelView::DoSelect(const CPoint& pt)
 		m_icx = m_cx;
 		m_icy = m_cy;
 		CreateFBO();
-	}
-	if ( !m_pFBO ) {
-		::wglMakeCurrent(NULL, NULL);
-		return;		// あとでエラーメッセージ
+		if ( !m_pFBO ) {
+			::wglMakeCurrent(NULL, NULL);
+			return;		// あとでエラーメッセージ
+		}
 	}
 
 	// 座標系の設定
@@ -273,6 +273,8 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	::glMatrixMode(GL_MODELVIEW);
 	SetupViewingTransform();
 */
+	::glClearColor(0, 0, 0, 0);
+	::glClearDepth(1);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// 識別番号を色にセットしてNURBS曲線だけ描画
@@ -282,7 +284,7 @@ void C3dModelView::DoSelect(const CPoint& pt)
         // IGESディレクトリ部の"Entity Use Flag"が0かつ，"Blank Status"が0の場合は実際のモデル要素として描画する
         if ( body->NurbsC[i].EntUseFlag==GEOMTRYELEM && body->NurbsC[i].BlankStat==DISPLAY ) {
 			// 識別番号を赤色にセット
-			::glColor3ub(i+1, 0, 0);
+			::glColor4ub(i, 0, 0, 0);
 			bd.DrawNurbsCurve(body->NurbsC[i]);
 		}
 	}
@@ -290,22 +292,19 @@ void C3dModelView::DoSelect(const CPoint& pt)
 
 	// マウスポイントの色情報を取得
 	GLubyte	buf[100*4];
-	::glPixelStorei(GL_PACK_ALIGNMENT, 1);
-//	::glReadBuffer(GL_BACK);
-	::glReadPixels(pt.x-5, pt.y-5, 10, 10, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-//	GLubyte	buf[4];
-//	::glReadPixels(pt.x, pt.y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+	::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	::glReadPixels(pt.x-5, m_cy-pt.y-5, 10, 10, GL_RGBA, GL_UNSIGNED_BYTE, buf);	// y座標に注意!!
+
 #ifdef _DEBUG
 	GetGLError();
-	for ( int y=0; y<40; y+=4 ) {
+	for ( int y=0; y<10; y++ ) {
 		CString	str, s;
-		for ( int x=0; x<40; x+=4 ) {
-			s.Format(" %d", (int)buf[y*40+x]);	// R要素だけ表示
+		for ( int x=0; x<10; x++ ) {
+			s.Format(" %d", buf[4*(y*10+x)]);	// R要素だけ表示
 			str += s;
 		}
 		printf("pBuf[%d]=%s\n", y, LPCTSTR(str));
 	}
-//	printf("R=%d\n", buf[0]);
 #endif
 
 	// バインド解除
