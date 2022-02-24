@@ -364,7 +364,7 @@ void IDtoRGB(int id, GLubyte rgb[])
 	do {
 		d = div(d.quot, 254);
 		rgb[n++] = d.rem;
-	} while ( d.quot>254 && n<3 );
+	} while ( d.quot>0 && n<3 );
 }
 
 int RGBtoID(GLubyte rgb[])
