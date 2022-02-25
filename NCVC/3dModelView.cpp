@@ -4,12 +4,12 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
+#include "Kodatuno/Describe_BODY.h"
+#undef PI	// Use NCVC (MyTemplate.h)
 #include "3dModelChild.h"
 #include "3dModelDoc.h"
 #include "3dModelView.h"
 #include "ViewOption.h"
-#include "Kodatuno/Describe_BODY.h"
-#undef PI	// Use NCVC (MyTemplate.h)
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -38,7 +38,7 @@ static	int		SearchSelectID(GLubyte[]);
 
 C3dModelView::C3dModelView()
 {
-	m_glCode = 0;
+	m_pSelBody = NULL;
 	m_nSelCurve = -1;
 }
 
@@ -83,19 +83,6 @@ void C3dModelView::OnInitialUpdate()
 //	::glLightfv(GL_LIGHT1, GL_POSITION, light_Position1);
 	::glEnable (GL_LIGHT0);
 //	::glEnable (GL_LIGHT1);
-
-	// ディスプレイリスト
-	m_glCode = ::glGenLists(1);
-	if( m_glCode > 0 ) {
-		// プリミティブ描画のディスプレイリスト生成
-		::glNewList( m_glCode, GL_COMPILE );
-			DrawBody(RM_NORMAL);
-		::glEndList();
-		if ( GetGLError() != GL_NO_ERROR ) {
-			::glDeleteLists(m_glCode, 1);
-			m_glCode = 0;
-		}
-	}
 
 	::wglMakeCurrent(NULL, NULL);
 }
@@ -163,21 +150,8 @@ void C3dModelView::OnDraw(CDC* pDC)
 	// モデル描画 Kodatuno
 	::glEnable(GL_LIGHTING);
 	::glEnable(GL_DEPTH_TEST);
-	if ( m_glCode > 0 )
-		::glCallList( m_glCode );
-	else
-		DrawBody(RM_NORMAL);
+	DrawBody(RM_NORMAL);
 //	DrawBody(RM_PICKLINE);
-
-	// 選択したプリミティブを描画
-	if ( m_nSelCurve > 0 ) {
-		Describe_BODY	bd;
-		BODY* body = (BODY *)GetDocument()->GetKodatunoBodyList()->getData(0);
-		::glDisable(GL_LIGHTING);
-		COLORREF col = pOpt->GetDrawColor(COMCOL_SELECT);
-		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-		bd.DrawNurbsCurve(body->NurbsC[m_nSelCurve]);
-	}
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
@@ -189,21 +163,21 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
 	BODY*			body;
 	GLubyte			rgb[3];
-	int				i, j;
+	int				i, j,
+					id = 0;		// 複数ボディへの対応
 
 	for ( i=0; i<kbl->getNum(); i++ ) {
 		body = (BODY *)kbl->getData(i);
 		if ( !body ) continue;
-
 		switch ( enRender ) {
 		case RM_PICKLINE:
 			::glEnable(GL_DEPTH_TEST);
 			// 識別番号を色にセットして描画
-			for ( j=0; j<body->TypeNum[_NURBSC]; j++ ) {
+			for ( j=0; j<body->TypeNum[_NURBSC]; j++, id++ ) {
 		        if ( body->NurbsC[j].EntUseFlag==GEOMTRYELEM && body->NurbsC[j].BlankStat==DISPLAY ) {
 					::glDisable(GL_LIGHTING);	// DrawNurbsCurve()の中でEnableされる
-					ZEROCLR(rgb);		// CustomClass.h
-					IDtoRGB(j, rgb);
+					ZEROCLR(rgb);			// CustomClass.h
+					IDtoRGB(id, rgb);
 					::glColor3ubv(rgb);
 					bd.DrawNurbsCurve(body->NurbsC[j]);
 				}
@@ -254,10 +228,6 @@ void C3dModelView::OnDestroy()
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
-	// ディスプレイリスト消去
-	if ( m_glCode > 0 )
-		::glDeleteLists(m_glCode, 1);
-
 	::wglMakeCurrent(NULL, NULL);
 	::wglDeleteContext( m_hRC );
 
@@ -300,7 +270,38 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	GetGLError();
 
 	// bufの中で一番多く存在するIDを検索
-	m_nSelCurve = SearchSelectID(buf);
+	int nResult = SearchSelectID(buf);
+	if ( m_pSelBody && m_nSelCurve>=0 && m_nSelCurve!=nResult ) {
+		// 選択済みの色を元に戻す
+		m_pSelBody->NurbsC[m_nSelCurve].Dstat.Color[0] = 1.0f;
+		m_pSelBody->NurbsC[m_nSelCurve].Dstat.Color[1] = 1.0f;
+		m_pSelBody->NurbsC[m_nSelCurve].Dstat.Color[2] = 1.0f;
+	}
+	if ( nResult >= 0 ) {
+		int nSel = nResult, nNum;
+		// 複数のボディから選択オブジェクトを検索し色を設定
+		BODYList*	kbl = GetDocument()->GetKodatunoBodyList();
+		BODY*		body;
+		for ( int i=0; i<kbl->getNum(); i++ ) {
+			body = (BODY *)kbl->getData(i);
+			if ( !body ) continue;
+			nNum = body->TypeNum[_NURBSC];
+			if ( nNum < nSel ) {
+				nSel -= nNum;
+				continue;
+			}
+			COLORREF col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT);
+			body->NurbsC[nSel].Dstat.Color[0] = GetRValue(col) / 255.0f;
+			body->NurbsC[nSel].Dstat.Color[1] = GetGValue(col) / 255.0f;
+			body->NurbsC[nSel].Dstat.Color[2] = GetBValue(col) / 255.0f;
+		}
+		m_nSelCurve = nResult;
+		m_pSelBody = body;
+	}
+	else {
+		m_nSelCurve = -1;
+		m_pSelBody = NULL;
+	}
 
 	// 再描画
 	Invalidate(FALSE);
