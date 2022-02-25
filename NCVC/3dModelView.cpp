@@ -39,6 +39,7 @@ static	int		SearchSelectID(GLubyte[]);
 C3dModelView::C3dModelView()
 {
 	m_glCode = 0;
+	m_nSelCurve = -1;
 }
 
 C3dModelView::~C3dModelView()
@@ -118,6 +119,8 @@ void C3dModelView::OnDraw(CDC* pDC)
 	// ¶ÚİÄºİÃ·½Ä‚ÌŠ„‚è“–‚Ä
 	::wglMakeCurrent( pDC->GetSafeHdc(), m_hRC );
 
+	::glClearColor(0.0, 0.0, 0.0, 0.0);
+	::glClearDepth(1.0);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// ”wŒi‚Ì•`‰æ
@@ -162,7 +165,17 @@ void C3dModelView::OnDraw(CDC* pDC)
 		::glCallList( m_glCode );
 	else
 		DrawBody(RM_NORMAL);
-	::glDisable(GL_LIGHTING);
+
+	// ‘I‘ğ‚µ‚½ƒvƒŠƒ~ƒeƒBƒu‚ğ•`‰æ
+	if ( m_nSelCurve > 0 ) {
+		::glDisable(GL_LIGHTING);
+		::glDisable(GL_DEPTH_TEST);	// ÃŞÌß½Ã½Ä–³Œø‚Åã‘‚«•`‰æ
+		COLORREF col = pOpt->GetDrawColor(COMCOL_SELECT);
+		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+		Describe_BODY	bd;
+		BODY* body = (BODY *)GetDocument()->GetKodatunoBodyList()->getData(0);
+		bd.DrawNurbsCurve(body->NurbsC[m_nSelCurve]);
+	}
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
@@ -282,7 +295,10 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	GetGLError();
 
 	// buf‚Ì’†‚Åˆê”Ô‘½‚­‘¶İ‚·‚éID‚ğŒŸõ
-	int nResult = SearchSelectID(buf);
+	m_nSelCurve = SearchSelectID(buf);
+
+	// Ä•`‰æ
+	Invalidate();
 
 	::wglMakeCurrent(NULL, NULL);
 }

@@ -19,6 +19,7 @@ class C3dModelView : public CViewBaseGL
 	GLuint		m_glCode;		// BODY描画のディスプレイリスト
 	CPoint		m_ptLclick;		// Downのときのマウスポイント
 	int			m_icx, m_icy;	// FBOを作った時のサイズ
+	int			m_nSelCurve;	// 選択したNURBS曲線
 
 	void	DrawBody(RENDERMODE);
 	void	DoSelect(const CPoint&);
