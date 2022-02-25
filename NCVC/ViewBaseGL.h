@@ -6,7 +6,7 @@
 #include "FrameBuffer.h"
 
 // TrackingMode
-enum ENTRACKINGMODE
+enum TRACKINGMODE
 {
 	TM_NONE, TM_SPIN, TM_PAN
 };
@@ -20,7 +20,7 @@ protected:
 	HGLRC		m_hRC;
 	CFrameBuffer*	m_pFBO;			// FrameBufferObject
 	int			m_cx,  m_cy;		// ≥®›ƒﬁ≥ª≤Ωﬁ(Ω∏ÿ∞›)
-	ENTRACKINGMODE	m_enTrackingMode;
+	TRACKINGMODE	m_enTrackingMode;
 	CPoint		m_ptDownClick;		// ∫›√∑Ωƒ“∆≠∞ï\é¶ópëº
 	float		m_dRate,			// äÓèÄägëÂó¶
 				m_dRoundAngle,		// íÜŒﬁ¿›ÇÃâÒì]äpìx
@@ -45,7 +45,7 @@ protected:
 	void	SetOrthoView(void);
 	BOOL	SetupPixelFormat(CDC*);
 	void	SetupViewingTransform(void);
-	void	BeginTracking(const CPoint&, ENTRACKINGMODE);
+	void	BeginTracking(const CPoint&, TRACKINGMODE);
 	void	EndTracking(void);
 	CPoint3F	PtoR(const CPoint& pt);
 	void	DoTracking(const CPoint&);

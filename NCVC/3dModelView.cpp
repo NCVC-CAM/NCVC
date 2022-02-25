@@ -88,7 +88,7 @@ void C3dModelView::OnInitialUpdate()
 	if( m_glCode > 0 ) {
 		// プリミティブ描画のディスプレイリスト生成
 		::glNewList( m_glCode, GL_COMPILE );
-			DrawBody();
+			DrawBody(RM_NORMAL);
 		::glEndList();
 		if ( GetGLError() != GL_NO_ERROR ) {
 			::glDeleteLists(m_glCode, 1);
@@ -161,41 +161,56 @@ void C3dModelView::OnDraw(CDC* pDC)
 	if ( m_glCode > 0 )
 		::glCallList( m_glCode );
 	else
-		DrawBody();
+		DrawBody(RM_NORMAL);
 	::glDisable(GL_LIGHTING);
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
 }
 
-void C3dModelView::DrawBody(void)
+void C3dModelView::DrawBody(RENDERMODE enRender)
 {
 	Describe_BODY	bd;
 	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
 	BODY*			body;
+	GLubyte			rgb[3];
+	int				i, j;
 
-	for ( int i=0; i<kbl->getNum(); i++ ) {
+	for ( i=0; i<kbl->getNum(); i++ ) {
 		body = (BODY *)kbl->getData(i);
-		if ( body )
-			bd.DrawBody(body);
-/*
 		if ( !body ) continue;
-		for ( int j=0; j<ALL_ENTITY_TYPE_NUM; j++ ) {
-			switch ( j ) {
-			case _NURBSC:
-				bd.Draw_NurbsCurves(body);
-				break;
-//			case _NURBSS:
-//				bd.Draw_NurbsSurfaces(body);
-//				break;
-//			case _TRIMMED_SURFACE:
-//				bd.Draw_TrimSurfes(body);
-//				break;
-//			case _MESH:
-//				break;
+
+		switch ( enRender ) {
+		case RM_PICKLINE:
+			// 識別番号を色にセットして描画
+			for ( j=0; j<body->TypeNum[_NURBSC]; j++ ) {
+		        if ( body->NurbsC[j].EntUseFlag==GEOMTRYELEM && body->NurbsC[j].BlankStat==DISPLAY ) {
+					ZEROCLR(rgb);		// CustomClass.h
+					IDtoRGB(j, rgb);
+					::glColor3ubv(rgb);
+					bd.DrawNurbsCurve(body->NurbsC[j]);
+				}
 			}
+			// 隠線処理のため面を白色で描画
+			::glDisable(GL_LIGHTING);
+			rgb[0] = rgb[1] = rgb[2] = 255;
+			::glColor3ubv(rgb);
+			for ( j=0; j<body->TypeNum[_NURBSS]; j++ ) {
+				if ( body->NurbsS[j].TrmdSurfFlag == KOD_TRUE )
+					continue;
+				else
+					bd.DrawNurbsSurfe(body->NurbsS[j]);
+			}
+			for ( j=0; j<body->TypeNum[_TRIMMED_SURFACE]; j++ ) {
+				bd.DrawTrimdSurf(body->TrmS[j]);
+			}
+			break;
+		case RM_PICKFACE:
+			break;
+		default:
+			// ライブラリ側のループで描画
+			bd.DrawBody(body);
 		}
-*/
 	}
 }
 
@@ -250,56 +265,13 @@ void C3dModelView::DoSelect(const CPoint& pt)
 {
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-/*
-	// オフスクリーンレンダリングしてピック
-	if ( m_pFBO ) {
-		if ( m_icx==m_cx && m_icy==m_cy ) {
-			// 再利用
-			m_pFBO->Bind(TRUE);
-		}
-		else {
-			// FBO作り直し
-			delete	m_pFBO;
-			m_pFBO = NULL;
-		}
-	}
-	if ( !m_pFBO ) {
-		m_icx = m_cx;
-		m_icy = m_cy;
-		CreateFBO();
-		if ( !m_pFBO ) {
-			::wglMakeCurrent(NULL, NULL);
-			return;		// あとでエラーメッセージ
-		}
-	}
 
-	// 座標系の設定
-	::glMatrixMode(GL_PROJECTION);
-	::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
-		m_rcView.low, m_rcView.high);
-	GetGLError();
-	::glMatrixMode(GL_MODELVIEW);
-	SetupViewingTransform();
-*/
-//	::glClearColor(0.0, 0.0, 0.0, 0.0);	// 黒色でクリア
 	::glClearColor(1.0, 1.0, 1.0, 1.0);	// 白色でクリア
 	::glClearDepth(1.0);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// 識別番号を色にセットしてNURBS曲線だけ描画
-	Describe_BODY	bd;
-	BODY*			body = (BODY *)GetDocument()->GetKodatunoBodyList()->getData(0);
-	GLubyte			rgb[3];
-	for ( int i=0; i<body->TypeNum[_NURBSC]; i++ ) {
-        // IGESディレクトリ部の"Entity Use Flag"が0かつ，"Blank Status"が0の場合は実際のモデル要素として描画する
-        if ( body->NurbsC[i].EntUseFlag==GEOMTRYELEM && body->NurbsC[i].BlankStat==DISPLAY ) {
-			// 識別番号を赤色にセット
-			ZEROCLR(rgb);		// CustomClass.h
-			IDtoRGB(i, rgb);
-			::glColor3ubv(rgb);
-			bd.DrawNurbsCurve(body->NurbsC[i]);
-		}
-	}
+	DrawBody(RM_PICKLINE);
 	GetGLError();		// error flash
 
 	// マウスポイントの色情報を取得
@@ -312,10 +284,6 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	// bufの中で一番多く存在するIDを検索
 	int nResult = SearchSelectID(buf);
 
-	// バインド解除
-//	m_pFBO->Bind(FALSE);
-
-//	::SwapBuffers( dc.GetSafeHdc() );	//試しに描画データを表示（面まで出てくるぞ？）
 	::wglMakeCurrent(NULL, NULL);
 }
 

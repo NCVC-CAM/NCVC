@@ -5,6 +5,12 @@
 
 #include "ViewBaseGL.h"
 
+// RenderMode
+enum RENDERMODE
+{
+	RM_NORMAL, RM_PICKLINE, RM_PICKFACE
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView ビュー
 
@@ -14,7 +20,7 @@ class C3dModelView : public CViewBaseGL
 	CPoint		m_ptLclick;		// Downのときのマウスポイント
 	int			m_icx, m_icy;	// FBOを作った時のサイズ
 
-	void	DrawBody(void);
+	void	DrawBody(RENDERMODE);
 	void	DoSelect(const CPoint&);
 
 protected:

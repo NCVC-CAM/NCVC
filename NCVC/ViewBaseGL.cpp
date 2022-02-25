@@ -176,7 +176,7 @@ void CViewBaseGL::SetupViewingTransform(void)
 	::glMultMatrixd( (GLdouble *)m_objXform );	// 表示回転（＝モデル回転）
 }
 
-void CViewBaseGL::BeginTracking(const CPoint& pt, ENTRACKINGMODE enTrackingMode)
+void CViewBaseGL::BeginTracking(const CPoint& pt, TRACKINGMODE enTrackingMode)
 {
 	::ShowCursor(FALSE);
 	SetCapture();
