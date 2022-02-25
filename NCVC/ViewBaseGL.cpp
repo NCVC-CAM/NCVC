@@ -297,6 +297,7 @@ void CViewBaseGL::DoRotation(float dAngle)
 void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
 {
 	::glDisable(GL_DEPTH_TEST);	// ﾃﾞﾌﾟｽﾃｽﾄ無効で描画
+	::glDisable(GL_LIGHTING);	// ライティングも無効
 
 	GLubyte		col1v[3], col2v[3];
 	GLfloat		dVertex[3];
@@ -332,8 +333,6 @@ void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
 	//
 	::glEnd();
 	::glPopMatrix();
-
-	::glEnable(GL_DEPTH_TEST);	// ﾃﾞﾌﾟｽﾃｽﾄを元に戻す
 }
 
 /////////////////////////////////////////////////////////////////////////////

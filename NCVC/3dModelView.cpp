@@ -126,6 +126,7 @@ void C3dModelView::OnDraw(CDC* pDC)
 	// 背景の描画
 	RenderBackground(pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1), pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2));
 
+	::glDisable(GL_LIGHTING);
 	float		dLength = 50.0f;
 	COLORREF	col;
 	::glPushAttrib( GL_LINE_BIT );
@@ -161,19 +162,20 @@ void C3dModelView::OnDraw(CDC* pDC)
 
 	// モデル描画 Kodatuno
 	::glEnable(GL_LIGHTING);
+	::glEnable(GL_DEPTH_TEST);
 	if ( m_glCode > 0 )
 		::glCallList( m_glCode );
 	else
 		DrawBody(RM_NORMAL);
+//	DrawBody(RM_PICKLINE);
 
 	// 選択したプリミティブを描画
 	if ( m_nSelCurve > 0 ) {
-		::glDisable(GL_LIGHTING);
-		::glDisable(GL_DEPTH_TEST);	// ﾃﾞﾌﾟｽﾃｽﾄ無効で上書き描画
-		COLORREF col = pOpt->GetDrawColor(COMCOL_SELECT);
-		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
 		Describe_BODY	bd;
 		BODY* body = (BODY *)GetDocument()->GetKodatunoBodyList()->getData(0);
+		::glDisable(GL_LIGHTING);
+		COLORREF col = pOpt->GetDrawColor(COMCOL_SELECT);
+		::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
 		bd.DrawNurbsCurve(body->NurbsC[m_nSelCurve]);
 	}
 
@@ -195,9 +197,11 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 
 		switch ( enRender ) {
 		case RM_PICKLINE:
+			::glEnable(GL_DEPTH_TEST);
 			// 識別番号を色にセットして描画
 			for ( j=0; j<body->TypeNum[_NURBSC]; j++ ) {
 		        if ( body->NurbsC[j].EntUseFlag==GEOMTRYELEM && body->NurbsC[j].BlankStat==DISPLAY ) {
+					::glDisable(GL_LIGHTING);	// DrawNurbsCurve()の中でEnableされる
 					ZEROCLR(rgb);		// CustomClass.h
 					IDtoRGB(j, rgb);
 					::glColor3ubv(rgb);
@@ -209,9 +213,7 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 			rgb[0] = rgb[1] = rgb[2] = 255;
 			::glColor3ubv(rgb);
 			for ( j=0; j<body->TypeNum[_NURBSS]; j++ ) {
-				if ( body->NurbsS[j].TrmdSurfFlag == KOD_TRUE )
-					continue;
-				else
+				if ( body->NurbsS[j].TrmdSurfFlag != KOD_TRUE )
 					bd.DrawNurbsSurfe(body->NurbsS[j]);
 			}
 			for ( j=0; j<body->TypeNum[_TRIMMED_SURFACE]; j++ ) {
@@ -221,8 +223,11 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 		case RM_PICKFACE:
 			break;
 		default:
+			::glEnable(GL_POLYGON_OFFSET_FILL);
+			::glPolygonOffset(1.0f, 1.0f);		// 面を少し後ろにずらして描画
 			// ライブラリ側のループで描画
 			bd.DrawBody(body);
+			::glDisable(GL_POLYGON_OFFSET_FILL);
 		}
 	}
 }
@@ -298,7 +303,7 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	m_nSelCurve = SearchSelectID(buf);
 
 	// 再描画
-	Invalidate();
+	Invalidate(FALSE);
 
 	::wglMakeCurrent(NULL, NULL);
 }
@@ -307,10 +312,6 @@ void C3dModelView::OnLensKey(UINT nID)
 {
 	switch ( nID ) {
 	case ID_VIEW_FIT:
-		if ( m_dRoundStep != 0.0f ) {
-			KillTimer(IDC_OPENGL_DRAGROUND);
-			m_dRoundStep = 0.0f;
-		}
 		{
 			CClientDC	dc(this);
 			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );

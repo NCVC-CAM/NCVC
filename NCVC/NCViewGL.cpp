@@ -666,6 +666,9 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		return;
 	}
 
+	::glEnable(GL_DEPTH_TEST);
+	::glEnable(GL_LIGHTING);
+
 #if defined(_DEBUG_DRAWTEST_)
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ )
 		GetDocument()->GetNCdata(i)->DrawGLBottomFace();
