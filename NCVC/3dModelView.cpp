@@ -56,6 +56,15 @@ void C3dModelView::OnInitialUpdate()
 	if ( pInfo && !pInfo->GetViewInfo(m_objXform, m_rcView, m_ptCenter) ) {
 		SetOrthoView();		// ViewBaseGL.cpp
 	}
+	else {
+		// m_dRate ÇÃçXêV
+		float	dW = fabs(m_rcView.Width()),
+				dH = fabs(m_rcView.Height());
+		if ( dW > dH )
+			m_dRate = m_cx / dW;
+		else
+			m_dRate = m_cy / dH;
+	}
 
 	// ê›íË
 	CClientDC	dc(this);
