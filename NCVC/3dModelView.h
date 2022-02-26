@@ -16,13 +16,17 @@ enum RENDERMODE
 
 class C3dModelView : public CViewBaseGL
 {
-	CPoint		m_ptLclick;		// Downのときのマウスポイント
-	int			m_icx, m_icy;	// FBOを作った時のサイズ
-	BODY*		m_pSelBody;		// 選択したBODY
-	int			m_nSelCurve;	// 選択したNURBS曲線
+	CPoint		m_ptLclick;			// Downのときのマウスポイント
+	int			m_icx, m_icy;		// FBOを作った時のサイズ
+	BODY*		m_pSelCurveBody;	// 選択したNURBS曲線が属するBODY
+	BODY*		m_pSelFaceBody;		// 選択したNURBS曲面が属するBODY
+	int			m_nSelCurve;		// 選択したNURBS曲線
+	int			m_nSelFace;			// 選択したNURBS曲面
 
 	void	DrawBody(RENDERMODE);
 	void	DoSelect(const CPoint&);
+	int		DoSelectCurve(const CPoint&);
+	int		DoSelectFace (const CPoint&);
 
 protected:
 	C3dModelView();

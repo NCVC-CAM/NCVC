@@ -38,8 +38,8 @@ static	int		SearchSelectID(GLubyte[]);
 
 C3dModelView::C3dModelView()
 {
-	m_pSelBody = NULL;
-	m_nSelCurve = -1;
+	m_pSelCurveBody =m_pSelFaceBody = NULL;
+	m_nSelCurve = m_nSelFace = -1;
 }
 
 C3dModelView::~C3dModelView()
@@ -161,6 +161,7 @@ void C3dModelView::OnDraw(CDC* pDC)
 	::glEnable(GL_DEPTH_TEST);
 	DrawBody(RM_NORMAL);
 //	DrawBody(RM_PICKLINE);
+//	DrawBody(RM_PICKFACE);
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
@@ -196,14 +197,31 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 			rgb[0] = rgb[1] = rgb[2] = 255;
 			::glColor3ubv(rgb);
 			for ( j=0; j<body->TypeNum[_NURBSS]; j++ ) {
-				if ( body->NurbsS[j].TrmdSurfFlag != KOD_TRUE )
+				if ( body->NurbsS[j].TrmdSurfFlag != KOD_TRUE ) {
 					bd.DrawNurbsSurfe(body->NurbsS[j]);
+				}
 			}
 			for ( j=0; j<body->TypeNum[_TRIMMED_SURFACE]; j++ ) {
 				bd.DrawTrimdSurf(body->TrmS[j]);
 			}
 			break;
 		case RM_PICKFACE:
+			::glDisable(GL_LIGHTING);
+			// 識別番号を色にセットして描画
+			for ( j=0; j<body->TypeNum[_NURBSS]; j++, id++ ) {
+				if ( body->NurbsS[j].TrmdSurfFlag != KOD_TRUE ) {
+					ZEROCLR(rgb);
+					IDtoRGB(id, rgb);
+					::glColor3ubv(rgb);
+					bd.DrawNurbsSurfe(body->NurbsS[j]);
+				}
+			}
+			for ( j=0; j<body->TypeNum[_TRIMMED_SURFACE]; j++, id++ ) {
+				ZEROCLR(rgb);
+				IDtoRGB(id, rgb);
+				::glColor3ubv(rgb);
+				bd.DrawTrimdSurf(body->TrmS[j]);
+			}
 			break;
 		default:
 			::glEnable(GL_POLYGON_OFFSET_FILL);
@@ -263,14 +281,30 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
-	::glClearColor(1.0, 1.0, 1.0, 1.0);	// 白色でクリア
+	// NURBS曲線の判定
+	::glClearColor(1.0, 1.0, 1.0, 1.0);
 	::glClearDepth(1.0);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-	// 識別番号を色にセットしてNURBS曲線だけ描画
 	DrawBody(RM_PICKLINE);
 	GetGLError();		// error flash
+	if ( DoSelectCurve(pt) < 0 ) {
+		// NURBS曲面の判定
+		::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		DrawBody(RM_PICKFACE);
+		if ( DoSelectFace(pt) < 0 ) {
+			m_pSelCurveBody =m_pSelFaceBody = NULL;
+			m_nSelCurve = m_nSelFace = -1;
+		}
+	}
 
+	// 再描画
+	Invalidate(FALSE);
+
+	::wglMakeCurrent(NULL, NULL);
+}
+
+int C3dModelView::DoSelectCurve(const CPoint& pt)
+{
 	// マウスポイントの色情報を取得
 	GLubyte	buf[READBUF];
 	::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -280,11 +314,11 @@ void C3dModelView::DoSelect(const CPoint& pt)
 
 	// bufの中で一番多く存在するIDを検索
 	int nResult = SearchSelectID(buf);
-	if ( m_pSelBody && m_nSelCurve>=0 && m_nSelCurve!=nResult ) {
+	if ( m_pSelCurveBody && m_nSelCurve>=0 && m_nSelCurve!=nResult ) {
 		// 選択済みの色を元に戻す
-		m_pSelBody->NurbsC[m_nSelCurve].Dstat.Color[0] = 1.0f;
-		m_pSelBody->NurbsC[m_nSelCurve].Dstat.Color[1] = 1.0f;
-		m_pSelBody->NurbsC[m_nSelCurve].Dstat.Color[2] = 1.0f;
+		m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat.Color[0] = 1.0f;
+		m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat.Color[1] = 1.0f;
+		m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat.Color[2] = 1.0f;
 	}
 	if ( nResult >= 0 ) {
 		int nSel = nResult, nNum;
@@ -305,17 +339,70 @@ void C3dModelView::DoSelect(const CPoint& pt)
 			body->NurbsC[nSel].Dstat.Color[2] = GetBValue(col) / 255.0f;
 		}
 		m_nSelCurve = nResult;
-		m_pSelBody = body;
-	}
-	else {
-		m_nSelCurve = -1;
-		m_pSelBody = NULL;
+		m_pSelCurveBody = body;
 	}
 
-	// 再描画
-	Invalidate(FALSE);
+	return nResult;
+}
 
-	::wglMakeCurrent(NULL, NULL);
+int C3dModelView::DoSelectFace(const CPoint& pt)
+{
+	// マウスポイントの色情報を取得
+	GLubyte	buf[READBUF];
+	::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	::glReadPixels(pt.x-PICKREGION, m_cy-pt.y-PICKREGION,	// y座標に注意!!
+		2*PICKREGION, 2*PICKREGION, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+	GetGLError();
+
+	// bufの中で一番多く存在するIDを検索
+	int nResult = SearchSelectID(buf);
+	if ( m_pSelFaceBody && m_nSelFace>=0 && m_nSelFace!=nResult ) {
+		// 選択済みの色を元に戻す
+		int cnt = m_pSelFaceBody->TypeNum[_NURBSS];
+		if ( cnt <= m_nSelFace ) {
+			m_nSelFace -= cnt; 
+			m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat.Color[0] = 1.0f;
+			m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat.Color[1] = 1.0f;
+			m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat.Color[2] = 1.0f;
+		}
+		else {
+			m_pSelFaceBody->NurbsS[m_nSelFace].Dstat.Color[0] = 1.0f;
+			m_pSelFaceBody->NurbsS[m_nSelFace].Dstat.Color[1] = 1.0f;
+			m_pSelFaceBody->NurbsS[m_nSelFace].Dstat.Color[2] = 1.0f;
+		}
+	}
+	if ( nResult >= 0 ) {
+		int nSel = nResult, nNum;
+		// 複数のボディから選択オブジェクトを検索し色を設定
+		BODYList*	kbl = GetDocument()->GetKodatunoBodyList();
+		BODY*		body;
+		for ( int i=0; i<kbl->getNum(); i++ ) {
+			body = (BODY *)kbl->getData(i);
+			if ( !body ) continue;
+			nNum = body->TypeNum[_NURBSS] + body->TypeNum[_TRIMMED_SURFACE];
+			if ( nNum < nSel ) {
+				nSel -= nNum;
+				continue;
+			}
+			COLORREF col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT);
+			int cnt = body->TypeNum[_NURBSS];
+			if ( cnt <= nSel ) {
+				nSel -= cnt;
+				body->TrmS[nSel].pts->Dstat.Color[0] = GetRValue(col) / 255.0f;
+				body->TrmS[nSel].pts->Dstat.Color[1] = GetGValue(col) / 255.0f;
+				body->TrmS[nSel].pts->Dstat.Color[2] = GetBValue(col) / 255.0f;
+			}
+			else {
+				body->NurbsS[nSel].Dstat.Color[0] = GetRValue(col) / 255.0f;
+				body->NurbsS[nSel].Dstat.Color[1] = GetGValue(col) / 255.0f;
+				body->NurbsS[nSel].Dstat.Color[2] = GetBValue(col) / 255.0f;
+			}
+		}
+		m_nSelFace = nResult;
+		m_pSelFaceBody = body;
+	}
+
+	return nResult;
 }
 
 void C3dModelView::OnLensKey(UINT nID)
