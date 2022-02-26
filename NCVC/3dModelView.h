@@ -25,8 +25,8 @@ class C3dModelView : public CViewBaseGL
 
 	void	DrawBody(RENDERMODE);
 	void	DoSelect(const CPoint&);
-	int		DoSelectCurve(const CPoint&);
-	int		DoSelectFace (const CPoint&);
+	boost::tuple<BODY*, int, int>	DoSelectCurve(const CPoint&);
+	boost::tuple<BODY*, int, int>	DoSelectFace (const CPoint&);
 
 protected:
 	C3dModelView();

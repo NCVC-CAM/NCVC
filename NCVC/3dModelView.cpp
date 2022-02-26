@@ -15,6 +15,17 @@
 #define new DEBUG_NEW
 #endif
 
+#define	PICKREGION		5
+#define	READBUF			(2*PICKREGION*2*PICKREGION*4)
+
+using namespace boost;
+
+// インデックスIDとRGBAを変換するローカルコード
+static	void	IDtoRGB(int, GLubyte[]);
+static	int		RGBtoID(GLubyte[]);
+static	int		SearchSelectID(GLubyte[]);
+static	void	SetKodatunoColor(DispStat&, COLORREF);
+
 IMPLEMENT_DYNCREATE(C3dModelView, CViewBaseGL)
 
 BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
@@ -24,15 +35,6 @@ BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_WM_LBUTTONUP()
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
 END_MESSAGE_MAP()
-
-#define	PICKREGION		5
-#define	READBUF			(2*PICKREGION*2*PICKREGION*4)
-
-// インデックスIDとRGBAを変換するローカルコード
-static	void	IDtoRGB(int, GLubyte[]);
-static	int		RGBtoID(GLubyte[]);
-static	int		SearchSelectID(GLubyte[]);
-static	void	SetKodatunoColor(DispStat&, COLORREF);
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView
@@ -282,17 +284,75 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
+	BODY*	body;
+	int		nResult, nIndex;
+	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT),
+				clr = RGB(255,255,255);
+
 	// NURBS曲線の判定
 	::glClearColor(1.0, 1.0, 1.0, 1.0);
 	::glClearDepth(1.0);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	DrawBody(RM_PICKLINE);
-	GetGLError();		// error flash
-	if ( DoSelectCurve(pt) < 0 ) {
+	tie(body, nResult, nIndex) = DoSelectCurve(pt);
+	if ( body ) {
+		if ( m_nSelCurve != nResult ) {
+			if ( m_pSelCurveBody && m_nSelCurve>=0 ) {
+				// 選択済みの色を元に戻す
+				SetKodatunoColor(m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat, clr);
+			}
+			// 選択オブジェクトに色の設定
+			SetKodatunoColor(body->NurbsC[nIndex].Dstat, col);
+			m_nSelCurve = nResult;
+			m_pSelCurveBody = body;
+		}
+	}
+	else {
 		// NURBS曲面の判定
 		::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		DrawBody(RM_PICKFACE);
-		if ( DoSelectFace(pt) < 0 ) {
+		tie(body, nResult, nIndex) = DoSelectFace(pt);
+		if ( body ) {
+			if ( m_nSelFace != nResult ) {
+				if ( m_pSelFaceBody && m_nSelFace>=0 ) {
+					// 選択済みの色を元に戻す
+					int cnt = m_pSelFaceBody->TypeNum[_NURBSS];
+					if ( cnt <= m_nSelFace ) {
+						m_nSelFace -= cnt; 
+						SetKodatunoColor(m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat, clr);
+					}
+					else {
+						SetKodatunoColor(m_pSelFaceBody->NurbsS[m_nSelFace].Dstat, clr);
+					}
+				}
+				// 選択オブジェクトに色の設定
+				int cnt = body->TypeNum[_NURBSS];
+				if ( cnt <= nIndex ) {
+					nIndex -= cnt;
+					SetKodatunoColor(body->TrmS[nIndex].pts->Dstat, col);
+				}
+				else {
+					SetKodatunoColor(body->NurbsS[nIndex].Dstat, col);
+				}
+				m_nSelFace = nResult;
+				m_pSelFaceBody = body;
+			}
+		}
+		else {
+			// 線と面，両方の選択を解除
+			if ( m_pSelCurveBody && m_nSelCurve>=0 ) {
+				SetKodatunoColor(m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat, clr);
+			}
+			if ( m_pSelFaceBody && m_nSelFace>=0 ) {
+				int cnt = m_pSelFaceBody->TypeNum[_NURBSS];
+				if ( cnt <= m_nSelFace ) {
+					m_nSelFace -= cnt; 
+					SetKodatunoColor(m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat, clr);
+				}
+				else {
+					SetKodatunoColor(m_pSelFaceBody->NurbsS[m_nSelFace].Dstat, clr);
+				}
+			}
 			m_pSelCurveBody =m_pSelFaceBody = NULL;
 			m_nSelCurve = m_nSelFace = -1;
 		}
@@ -304,7 +364,7 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	::wglMakeCurrent(NULL, NULL);
 }
 
-int C3dModelView::DoSelectCurve(const CPoint& pt)
+tuple<BODY*, int, int> C3dModelView::DoSelectCurve(const CPoint& pt)
 {
 	// マウスポイントの色情報を取得
 	GLubyte	buf[READBUF];
@@ -314,35 +374,27 @@ int C3dModelView::DoSelectCurve(const CPoint& pt)
 	GetGLError();
 
 	// bufの中で一番多く存在するIDを検索
-	int nResult = SearchSelectID(buf);
-	if ( m_pSelCurveBody && m_nSelCurve>=0 && m_nSelCurve!=nResult ) {
-		// 選択済みの色を元に戻す
-		SetKodatunoColor(m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat, RGB(255,255,255));
-	}
+	BODY*	body = NULL;
+	int		nResult = SearchSelectID(buf), nIndex, nNum;
 	if ( nResult >= 0 ) {
-		int nSel = nResult, nNum;
-		// 複数のボディから選択オブジェクトを検索し色を設定
+		nIndex = nResult;
+		// 複数のボディから選択オブジェクトを検索
 		BODYList*	kbl = GetDocument()->GetKodatunoBodyList();
-		BODY*		body;
 		for ( int i=0; i<kbl->getNum(); i++ ) {
 			body = (BODY *)kbl->getData(i);
 			if ( !body ) continue;
 			nNum = body->TypeNum[_NURBSC];
-			if ( nNum < nSel ) {
-				nSel -= nNum;
+			if ( nNum < nIndex ) {
+				nIndex -= nNum;
 				continue;
 			}
-			COLORREF col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT);
-			SetKodatunoColor(body->NurbsC[nSel].Dstat, col);
 		}
-		m_nSelCurve = nResult;
-		m_pSelCurveBody = body;
 	}
 
-	return nResult;
+	return make_tuple(body, nResult, nIndex);
 }
 
-int C3dModelView::DoSelectFace(const CPoint& pt)
+tuple<BODY*, int, int> C3dModelView::DoSelectFace(const CPoint& pt)
 {
 	// マウスポイントの色情報を取得
 	GLubyte	buf[READBUF];
@@ -352,46 +404,24 @@ int C3dModelView::DoSelectFace(const CPoint& pt)
 	GetGLError();
 
 	// bufの中で一番多く存在するIDを検索
-	int nResult = SearchSelectID(buf);
-	if ( m_pSelFaceBody && m_nSelFace>=0 && m_nSelFace!=nResult ) {
-		// 選択済みの色を元に戻す
-		int cnt = m_pSelFaceBody->TypeNum[_NURBSS];
-		if ( cnt <= m_nSelFace ) {
-			m_nSelFace -= cnt; 
-			SetKodatunoColor(m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat, RGB(255,255,255));
-		}
-		else {
-			SetKodatunoColor(m_pSelFaceBody->NurbsS[m_nSelFace].Dstat, RGB(255,255,255));
-		}
-	}
+	BODY*	body = NULL;
+	int		nResult = SearchSelectID(buf), nIndex, nNum;
 	if ( nResult >= 0 ) {
-		int nSel = nResult, nNum;
-		// 複数のボディから選択オブジェクトを検索し色を設定
+		nIndex = nResult;
+		// 複数のボディから選択オブジェクトを検索
 		BODYList*	kbl = GetDocument()->GetKodatunoBodyList();
-		BODY*		body;
 		for ( int i=0; i<kbl->getNum(); i++ ) {
 			body = (BODY *)kbl->getData(i);
 			if ( !body ) continue;
 			nNum = body->TypeNum[_NURBSS] + body->TypeNum[_TRIMMED_SURFACE];
-			if ( nNum < nSel ) {
-				nSel -= nNum;
+			if ( nNum < nIndex ) {
+				nIndex -= nNum;
 				continue;
 			}
-			COLORREF col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT);
-			int cnt = body->TypeNum[_NURBSS];
-			if ( cnt <= nSel ) {
-				nSel -= cnt;
-				SetKodatunoColor(body->TrmS[nSel].pts->Dstat, col);
-			}
-			else {
-				SetKodatunoColor(body->NurbsS[nSel].Dstat, col);
-			}
 		}
-		m_nSelFace = nResult;
-		m_pSelFaceBody = body;
 	}
 
-	return nResult;
+	return make_tuple(body, nResult, nIndex);
 }
 
 void C3dModelView::OnLensKey(UINT nID)
