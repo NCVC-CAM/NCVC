@@ -313,10 +313,11 @@ void C3dModelView::OnLensKey(UINT nID)
 {
 	switch ( nID ) {
 	case ID_VIEW_FIT:
+		m_rcView  = GetDocument()->GetMaxRect();
+		SetOrthoView();
 		{
 			CClientDC	dc(this);
 			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-			SetOrthoView();
 			::glMatrixMode( GL_PROJECTION );
 			::glLoadIdentity();
 			::glOrtho(m_rcView.left, m_rcView.right, m_rcView.top, m_rcView.bottom,
