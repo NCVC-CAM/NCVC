@@ -32,6 +32,7 @@ END_MESSAGE_MAP()
 static	void	IDtoRGB(int, GLubyte[]);
 static	int		RGBtoID(GLubyte[]);
 static	int		SearchSelectID(GLubyte[]);
+static	void	SetKodatunoColor(DispStat&, COLORREF);
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView
@@ -316,9 +317,7 @@ int C3dModelView::DoSelectCurve(const CPoint& pt)
 	int nResult = SearchSelectID(buf);
 	if ( m_pSelCurveBody && m_nSelCurve>=0 && m_nSelCurve!=nResult ) {
 		// ‘I‘ðÏ‚Ý‚ÌF‚ðŒ³‚É–ß‚·
-		m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat.Color[0] = 1.0f;
-		m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat.Color[1] = 1.0f;
-		m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat.Color[2] = 1.0f;
+		SetKodatunoColor(m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat, RGB(255,255,255));
 	}
 	if ( nResult >= 0 ) {
 		int nSel = nResult, nNum;
@@ -334,9 +333,7 @@ int C3dModelView::DoSelectCurve(const CPoint& pt)
 				continue;
 			}
 			COLORREF col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT);
-			body->NurbsC[nSel].Dstat.Color[0] = GetRValue(col) / 255.0f;
-			body->NurbsC[nSel].Dstat.Color[1] = GetGValue(col) / 255.0f;
-			body->NurbsC[nSel].Dstat.Color[2] = GetBValue(col) / 255.0f;
+			SetKodatunoColor(body->NurbsC[nSel].Dstat, col);
 		}
 		m_nSelCurve = nResult;
 		m_pSelCurveBody = body;
@@ -361,14 +358,10 @@ int C3dModelView::DoSelectFace(const CPoint& pt)
 		int cnt = m_pSelFaceBody->TypeNum[_NURBSS];
 		if ( cnt <= m_nSelFace ) {
 			m_nSelFace -= cnt; 
-			m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat.Color[0] = 1.0f;
-			m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat.Color[1] = 1.0f;
-			m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat.Color[2] = 1.0f;
+			SetKodatunoColor(m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat, RGB(255,255,255));
 		}
 		else {
-			m_pSelFaceBody->NurbsS[m_nSelFace].Dstat.Color[0] = 1.0f;
-			m_pSelFaceBody->NurbsS[m_nSelFace].Dstat.Color[1] = 1.0f;
-			m_pSelFaceBody->NurbsS[m_nSelFace].Dstat.Color[2] = 1.0f;
+			SetKodatunoColor(m_pSelFaceBody->NurbsS[m_nSelFace].Dstat, RGB(255,255,255));
 		}
 	}
 	if ( nResult >= 0 ) {
@@ -388,14 +381,10 @@ int C3dModelView::DoSelectFace(const CPoint& pt)
 			int cnt = body->TypeNum[_NURBSS];
 			if ( cnt <= nSel ) {
 				nSel -= cnt;
-				body->TrmS[nSel].pts->Dstat.Color[0] = GetRValue(col) / 255.0f;
-				body->TrmS[nSel].pts->Dstat.Color[1] = GetGValue(col) / 255.0f;
-				body->TrmS[nSel].pts->Dstat.Color[2] = GetBValue(col) / 255.0f;
+				SetKodatunoColor(body->TrmS[nSel].pts->Dstat, col);
 			}
 			else {
-				body->NurbsS[nSel].Dstat.Color[0] = GetRValue(col) / 255.0f;
-				body->NurbsS[nSel].Dstat.Color[1] = GetGValue(col) / 255.0f;
-				body->NurbsS[nSel].Dstat.Color[2] = GetBValue(col) / 255.0f;
+				SetKodatunoColor(body->NurbsS[nSel].Dstat, col);
 			}
 		}
 		m_nSelFace = nResult;
@@ -498,4 +487,11 @@ int SearchSelectID(GLubyte buf[])
 #endif
 
 	return maxid;
+}
+
+void SetKodatunoColor(DispStat& Dstat, COLORREF col)
+{
+	Dstat.Color[0] = GetRValue(col) / 255.0f;
+	Dstat.Color[1] = GetGValue(col) / 255.0f;
+	Dstat.Color[2] = GetBValue(col) / 255.0f;
 }
