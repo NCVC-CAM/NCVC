@@ -17,8 +17,6 @@
 #define	PICKREGION		5
 #define	READBUF			(2*PICKREGION*2*PICKREGION*4)
 
-using namespace boost;
-
 // インデックスIDとRGBAを変換するローカルコード
 static	void	IDtoRGB(int, GLubyte[]);
 static	int		RGBtoID(GLubyte[]);
@@ -42,8 +40,8 @@ END_MESSAGE_MAP()
 
 C3dModelView::C3dModelView()
 {
-	m_pSelCurveBody =m_pSelFaceBody = NULL;
-	m_nSelCurve = m_nSelFace = -1;
+	m_pSelCurve = NULL;
+	m_pSelFace  = NULL;
 }
 
 C3dModelView::~C3dModelView()
@@ -285,8 +283,6 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
-	BODY*	body;
-	int		nResult, nIndex;
 	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT),
 				clr = RGB(255,255,255);
 
@@ -295,67 +291,44 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	::glClearDepth(1.0);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	DrawBody(RM_PICKLINE);
-	tie(body, nResult, nIndex) = DoSelectCurve(pt);
-	if ( body ) {
-		if ( m_nSelCurve != nResult ) {
-			if ( m_pSelCurveBody && m_nSelCurve>=0 ) {
+	NURBSC* pNurbsC = DoSelectCurve(pt);
+	if ( pNurbsC ) {
+		if ( m_pSelCurve != pNurbsC ) {
+			if ( m_pSelCurve ) {
 				// 選択済みの色を元に戻す
-				SetKodatunoColor(m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat, clr);
+				SetKodatunoColor(m_pSelCurve->Dstat, clr);
 			}
 			// 選択オブジェクトに色の設定
-			SetKodatunoColor(body->NurbsC[nIndex].Dstat, col);
-			m_nSelCurve = nResult;
-			m_pSelCurveBody = body;
+			SetKodatunoColor(pNurbsC->Dstat, col);
+			m_pSelCurve = pNurbsC;
 		}
 	}
 	else {
 		// NURBS曲面の判定
 		::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		DrawBody(RM_PICKFACE);
-		tie(body, nResult, nIndex) = DoSelectFace(pt);
-		if ( body ) {
-			if ( m_nSelFace != nResult ) {
-				if ( m_pSelFaceBody && m_nSelFace>=0 ) {
+		NURBSS* pNurbsS = DoSelectFace(pt);
+		if ( pNurbsS ) {
+			if ( m_pSelFace != pNurbsS ) {
+				if ( m_pSelFace ) {
 					// 選択済みの色を元に戻す
-					int cnt = m_pSelFaceBody->TypeNum[_NURBSS];
-					if ( cnt <= m_nSelFace ) {
-						m_nSelFace -= cnt; 
-						SetKodatunoColor(m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat, clr);
-					}
-					else {
-						SetKodatunoColor(m_pSelFaceBody->NurbsS[m_nSelFace].Dstat, clr);
-					}
+					SetKodatunoColor(m_pSelFace->Dstat, clr);
 				}
 				// 選択オブジェクトに色の設定
-				int cnt = body->TypeNum[_NURBSS];
-				if ( cnt <= nIndex ) {
-					nIndex -= cnt;
-					SetKodatunoColor(body->TrmS[nIndex].pts->Dstat, col);
-				}
-				else {
-					SetKodatunoColor(body->NurbsS[nIndex].Dstat, col);
-				}
-				m_nSelFace = nResult;
-				m_pSelFaceBody = body;
+				SetKodatunoColor(pNurbsS->Dstat, col);
+				m_pSelFace = pNurbsS;
 			}
 		}
 		else {
 			// 線と面，両方の選択を解除
-			if ( m_pSelCurveBody && m_nSelCurve>=0 ) {
-				SetKodatunoColor(m_pSelCurveBody->NurbsC[m_nSelCurve].Dstat, clr);
+			if ( m_pSelCurve ) {
+				SetKodatunoColor(m_pSelCurve->Dstat, clr);
 			}
-			if ( m_pSelFaceBody && m_nSelFace>=0 ) {
-				int cnt = m_pSelFaceBody->TypeNum[_NURBSS];
-				if ( cnt <= m_nSelFace ) {
-					m_nSelFace -= cnt; 
-					SetKodatunoColor(m_pSelFaceBody->TrmS[m_nSelFace].pts->Dstat, clr);
-				}
-				else {
-					SetKodatunoColor(m_pSelFaceBody->NurbsS[m_nSelFace].Dstat, clr);
-				}
+			if ( m_pSelFace ) {
+				SetKodatunoColor(m_pSelFace->Dstat, clr);
 			}
-			m_pSelCurveBody =m_pSelFaceBody = NULL;
-			m_nSelCurve = m_nSelFace = -1;
+			m_pSelCurve = NULL;
+			m_pSelFace  = NULL;
 		}
 	}
 
@@ -365,7 +338,7 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	::wglMakeCurrent(NULL, NULL);
 }
 
-tuple<BODY*, int, int> C3dModelView::DoSelectCurve(const CPoint& pt)
+NURBSC* C3dModelView::DoSelectCurve(const CPoint& pt)
 {
 	// マウスポイントの色情報を取得
 	GLubyte	buf[READBUF];
@@ -375,8 +348,10 @@ tuple<BODY*, int, int> C3dModelView::DoSelectCurve(const CPoint& pt)
 	GetGLError();
 
 	// bufの中で一番多く存在するIDを検索
-	BODY*	body = NULL;
+	BODY*	body;
+	NURBSC*	pNurbsC = NULL;
 	int		nResult = SearchSelectID(buf), nIndex, nNum;
+
 	if ( nResult >= 0 ) {
 		nIndex = nResult;
 		// 複数のボディから選択オブジェクトを検索
@@ -389,13 +364,14 @@ tuple<BODY*, int, int> C3dModelView::DoSelectCurve(const CPoint& pt)
 				nIndex -= nNum;
 				continue;
 			}
+			pNurbsC = &body->NurbsC[nIndex];
 		}
 	}
 
-	return make_tuple(body, nResult, nIndex);
+	return pNurbsC;
 }
 
-tuple<BODY*, int, int> C3dModelView::DoSelectFace(const CPoint& pt)
+NURBSS* C3dModelView::DoSelectFace(const CPoint& pt)
 {
 	// マウスポイントの色情報を取得
 	GLubyte	buf[READBUF];
@@ -405,8 +381,10 @@ tuple<BODY*, int, int> C3dModelView::DoSelectFace(const CPoint& pt)
 	GetGLError();
 
 	// bufの中で一番多く存在するIDを検索
-	BODY*	body = NULL;
+	BODY*	body;
+	NURBSS*	pNurbsS = NULL;
 	int		nResult = SearchSelectID(buf), nIndex, nNum;
+
 	if ( nResult >= 0 ) {
 		nIndex = nResult;
 		// 複数のボディから選択オブジェクトを検索
@@ -419,10 +397,18 @@ tuple<BODY*, int, int> C3dModelView::DoSelectFace(const CPoint& pt)
 				nIndex -= nNum;
 				continue;
 			}
+			nNum = body->TypeNum[_NURBSS];
+			if ( nNum <= nIndex ) {
+				nIndex -= nNum;
+				pNurbsS = body->TrmS[nIndex].pts;
+			}
+			else {
+				pNurbsS = &body->NurbsS[nIndex];
+			}
 		}
 	}
 
-	return make_tuple(body, nResult, nIndex);
+	return pNurbsS;
 }
 
 void C3dModelView::OnLensKey(UINT nID)
@@ -456,28 +442,15 @@ void C3dModelView::OnLensKey(UINT nID)
 
 void C3dModelView::OnUpdateFile3dScan(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable(m_pSelCurveBody && m_pSelFaceBody);
+	pCmdUI->Enable(m_pSelCurve && m_pSelFace);
 }
 
 void C3dModelView::OnFile3dScan()
 {
 	C3dScanSetupDlg		dlg;
 	if ( dlg.DoModal() == IDOK ) {
-		// 曲面オブジェクト
-		NURBSS*	ns;
-		int cnt = m_pSelFaceBody->TypeNum[_NURBSS],
-			nIndex = m_nSelFace;
-		if ( cnt <= nIndex ) {
-			nIndex -= cnt;
-			ns = m_pSelFaceBody->TrmS[nIndex].pts;
-		}
-		else {
-			ns = &m_pSelFaceBody->NurbsS[nIndex];
-		}
-		// 曲線オブジェクト
-		NURBSC*	nc = &m_pSelCurveBody->NurbsC[m_nSelCurve];
 		// スキャンパスの生成
-		GetDocument()->MakeScanPath(ns, nc, dlg.m);
+		GetDocument()->MakeScanPath(m_pSelFace, m_pSelCurve, dlg.m);
 	}
 }
 
