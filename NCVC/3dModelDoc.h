@@ -8,6 +8,8 @@
 #undef PI	// Use NCVC (MyTemplate.h)
 #include "3dScanSetupDlg.h"		// SCANSETUP
 
+using std::vector;
+
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelDoc ÉhÉLÉÖÉÅÉìÉg
 
@@ -15,6 +17,8 @@ class C3dModelDoc : public CDocBase
 {
 	BODY*		m_pKoBody;		// Kodatuno Body
 	BODYList*	m_pKoList;		// Kodatuno Body List
+
+	vector< vector< vector<Coord> > >	m_vPath;
 
 protected:
 	C3dModelDoc();

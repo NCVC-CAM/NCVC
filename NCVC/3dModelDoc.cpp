@@ -101,4 +101,53 @@ void C3dModelDoc::OnCloseDocument()
 void C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
 {
 	// Kodatuno User's Guide いいかげんな3xCAMの作成
+	NURBS_Func	nf;				// NURBS_Funcへのインスタンス
+	Coord		plane_pt;		// 分割する平面上の1点
+	Coord		plane_n;		// 分割する平面の法線ベクトル
+	vector<Coord>	v_path;		// 一時格納用バッファ
+	int				ptnum;
+//	vector<int>		v_ptnum;	// スキャンライン1本ごとの加工点数を格納←たぶんいらない
+	int		i, j, k,
+			D = (int)(s.dHeight / s.dZCut) + 1;	// Z方向分割数（粗加工用）
+
+	// 座標点の初期化
+	m_vPath.clear();
+	m_vPath.resize(D+1);
+	for ( auto& v : m_vPath ) v.resize(s.nLineSplit+1);
+
+	// ガイドカーブに沿って垂直平面をシフトしていき，加工面との交点群を求めていく
+	for ( i=0; i<=s.nLineSplit; i++ ) {
+		double t = (double)i/s.nLineSplit;
+		if ( i==0 ) {
+			t += 0.0001;		// 特異点回避
+		}
+		else if ( i==s.nLineSplit ) {
+			t-= 0.0001;			// 特異点回避
+		}
+		plane_pt = nf.CalcNurbsCCoord(nc, t);		// 注目中の垂直平面上の1点
+		plane_n  = nf.CalcTanVecOnNurbsC(nc, t);	// 注目中の垂直平面の法線ベクトル
+		// ↓ライブラリ側の変更待ち
+		ptnum = nf.CalcIntersecPtsPlaneSearch(ns, plane_pt, plane_n, 0.5, 3, v_path, RUNGE_KUTTA);	// 交点群算出
+//		v_ptnum.push_back(ptnum);
+		// 得られた交点群を，加工面法線方向に工具半径分オフセットさせた点を得る
+		for ( j=0; j<ptnum; j++ ) {
+			Coord pt = nf.CalcNurbsSCoord(ns, v_path[j].x, v_path[j].y);	// 工具コンタクト点
+			Coord n = nf.CalcNormVecOnNurbsS(ns, v_path[j].x, v_path[j].y);	// 法線ベクトル
+			if (n.z < 0) n = n*(-1);					// 法線ベクトルの向き調整
+//			m_vPath[D][i][j] = pt + n*s.dBallEndmill;	// 工具半径オフセット
+			m_vPath[D][i].push_back( pt + n*s.dBallEndmill );	// 工具半径オフセット
+		}
+	}
+
+	// 粗加工パス生成
+	for ( i=0; i<D; i++ ) {
+		for ( j=0; j<s.nLineSplit+1; j++ ) {
+//			for ( k=0; k<v_ptnum[j]; k++ ) {
+			for ( k=0; k<m_vPath[i][j].size(); k++ ) {
+				double del = (s.dHeight - m_vPath[D][j][k].z)/(double)D;
+				double Z = s.dHeight - del*(double)i;
+				m_vPath[i][j][k] = SetCoord(m_vPath[D][j][k].x, m_vPath[D][j][k].y, Z);
+			}
+		}
+	}
 }
