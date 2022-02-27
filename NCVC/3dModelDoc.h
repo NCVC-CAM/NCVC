@@ -6,6 +6,7 @@
 #include "DocBase.h"
 #include "Kodatuno/BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
+#include "3dScanSetupDlg.h"		// SCANSETUP
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelDoc ÉhÉLÉÖÉÅÉìÉg
@@ -28,9 +29,9 @@ public:
 	BODYList*	GetKodatunoBodyList(void) const {
 		return m_pKoList;
 	}
+	void	MakeScanPath(NURBSS*, NURBSC*, SCANSETUP&);
 
 protected:
-	afx_msg void OnFile3dScan();
 
 	DECLARE_MESSAGE_MAP()
 };

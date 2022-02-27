@@ -39,3 +39,12 @@ BOOL C3dScanSetupDlg::OnInitDialog()
 
 	return TRUE;
 }
+
+void C3dScanSetupDlg::OnOK()
+{
+	m.dBallEndmill	= m_dBallEndmill;
+	m.dHeight		= m_dHeight;
+	m.dZCut			= m_dZCut;
+	m.nLineSplit	= m_nLineSplit;
+	m.bOrigin		= m_bOrigin;
+}

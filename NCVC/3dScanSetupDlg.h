@@ -3,6 +3,15 @@
 
 #pragma once
 
+struct SCANSETUP
+{
+	float	dBallEndmill;
+	float	dHeight;
+	float	dZCut;
+	int		nLineSplit;
+	BOOL	bOrigin;
+};
+
 class C3dScanSetupDlg : public CDialog
 {
 public:
@@ -16,9 +25,12 @@ public:
 	CIntEdit	m_nLineSplit;
 	BOOL		m_bOrigin;
 
+	SCANSETUP	m;
+
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
 	virtual BOOL OnInitDialog();
+	virtual void OnOK();
 
 	DECLARE_MESSAGE_MAP()
 };

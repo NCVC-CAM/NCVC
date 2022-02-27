@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "3dModelDoc.h"
-#include "3dScanSetupDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -13,7 +12,6 @@
 IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(C3dModelDoc, CDocument)
-	ON_COMMAND(ID_FILE_3DSCAN, &C3dModelDoc::OnFile3dScan)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -98,8 +96,9 @@ void C3dModelDoc::OnCloseDocument()
 	__super::OnCloseDocument();
 }
 
-void C3dModelDoc::OnFile3dScan()
+/////////////////////////////////////////////////////////////////////////////
+
+void C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
 {
-	C3dScanSetupDlg		dlg;
-	dlg.DoModal();
+	// Kodatuno User's Guide Ç¢Ç¢Ç©Ç∞ÇÒÇ»3xCAMÇÃçÏê¨
 }

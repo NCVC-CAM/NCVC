@@ -4,12 +4,11 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
-#include "Kodatuno/Describe_BODY.h"
-#undef PI	// Use NCVC (MyTemplate.h)
 #include "3dModelChild.h"
 #include "3dModelDoc.h"
 #include "3dModelView.h"
 #include "ViewOption.h"
+#include "3dScanSetupDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -34,6 +33,8 @@ BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DSCAN, &C3dModelView::OnUpdateFile3dScan)
+	ON_COMMAND(ID_FILE_3DSCAN, &C3dModelView::OnFile3dScan)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -450,6 +451,33 @@ void C3dModelView::OnLensKey(UINT nID)
 	case ID_VIEW_LENSN:
 		DoScale(1);
 		break;
+	}
+}
+
+void C3dModelView::OnUpdateFile3dScan(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable(m_pSelCurveBody && m_pSelFaceBody);
+}
+
+void C3dModelView::OnFile3dScan()
+{
+	C3dScanSetupDlg		dlg;
+	if ( dlg.DoModal() == IDOK ) {
+		// 曲面オブジェクト
+		NURBSS*	ns;
+		int cnt = m_pSelFaceBody->TypeNum[_NURBSS],
+			nIndex = m_nSelFace;
+		if ( cnt <= nIndex ) {
+			nIndex -= cnt;
+			ns = m_pSelFaceBody->TrmS[nIndex].pts;
+		}
+		else {
+			ns = &m_pSelFaceBody->NurbsS[nIndex];
+		}
+		// 曲線オブジェクト
+		NURBSC*	nc = &m_pSelCurveBody->NurbsC[m_nSelCurve];
+		// スキャンパスの生成
+		GetDocument()->MakeScanPath(ns, nc, dlg.m);
 	}
 }
 
