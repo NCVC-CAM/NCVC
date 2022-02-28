@@ -12,6 +12,7 @@
 IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(C3dModelDoc, CDocument)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DPATH, &C3dModelDoc::OnUpdateFile3dMake)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -37,12 +38,7 @@ C3dModelDoc::~C3dModelDoc()
 		m_pKoList->clear();
 		delete	m_pKoList;
 	}
-	if ( m_pScanPath ) {
-		FreeCoord3(m_pScanPath, m_pScanX, m_pScanY);
-	}
-	if ( m_pScanNum ) {
-		delete[]	m_pScanNum;
-	}
+	ClearScanPath();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -105,7 +101,24 @@ void C3dModelDoc::OnCloseDocument()
 	__super::OnCloseDocument();
 }
 
+void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable( m_pScanPath != NULL );
+}
+
 /////////////////////////////////////////////////////////////////////////////
+
+void C3dModelDoc::ClearScanPath(void)
+{
+	if ( m_pScanPath ) {
+		FreeCoord3(m_pScanPath, m_pScanX, m_pScanY);
+		m_pScanPath = NULL;
+	}
+	if ( m_pScanNum ) {
+		delete[]	m_pScanNum;
+		m_pScanNum = NULL;
+	}
+}
 
 void C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
 {
@@ -119,10 +132,7 @@ void C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
 			N = s.nLineSplit;					// スキャニングライン分割数(N < 100)
 
 	// 座標点の初期化
-	if ( m_pScanPath ) {
-		FreeCoord3(m_pScanPath, m_pScanX, m_pScanY);
-		delete[]	m_pScanNum;
-	}
+	ClearScanPath();
 	m_pScanX = D+1;
 	m_pScanY = N+1;
 	m_pScanPath = NewCoord3(m_pScanX, m_pScanY, 2000);

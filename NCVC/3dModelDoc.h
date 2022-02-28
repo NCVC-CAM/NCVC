@@ -34,6 +34,7 @@ public:
 	BODYList*	GetKodatunoBodyList(void) const {
 		return m_pKoList;
 	}
+	void	ClearScanPath(void);
 	void	MakeScanPath(NURBSS*, NURBSC*, SCANSETUP&);
 	Coord***	GetScanPathCoord(void) const {
 		return m_pScanPath;
@@ -46,6 +47,7 @@ public:
 	}
 
 protected:
+	afx_msg void OnUpdateFile3dMake(CCmdUI* pCmdUI);
 
 	DECLARE_MESSAGE_MAP()
 };
