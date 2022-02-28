@@ -3948,6 +3948,7 @@ BEGIN
     IDS_ERR_SETTING         "データを正しく設定してください"
     IDS_ERR_REGEX           "入力した正規表現はライブラリ側で拒否されました。変更してください。"
     IDS_ERR_GLSL            "OpenGLシェーダの準備でエラーが発生しました。Line=%d\nMsg=%s"
+    IDS_ERR_KODATUNO        "Kodatunoライブラリ側で例外が発生しました．処理を中断します．"
 END
 
 STRINGTABLE

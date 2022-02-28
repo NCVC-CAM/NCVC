@@ -35,7 +35,7 @@ public:
 		return m_pKoList;
 	}
 	void	ClearScanPath(void);
-	void	MakeScanPath(NURBSS*, NURBSC*, SCANSETUP&);
+	BOOL	MakeScanPath(NURBSS*, NURBSC*, SCANSETUP&);
 	Coord***	GetScanPathCoord(void) const {
 		return m_pScanPath;
 	}

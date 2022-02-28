@@ -479,19 +479,14 @@ void C3dModelView::OnFile3dScan()
 	C3dScanSetupDlg		dlg;
 	if ( dlg.DoModal() != IDOK )
 		return;
+
 	// ウエイトカーソル
 	CWaitCursor	wait;
-	try {
-		// スキャンパスの生成
-		GetDocument()->MakeScanPath(m_pSelFace, m_pSelCurve, dlg.m);
+	// スキャンパスの生成
+	if ( GetDocument()->MakeScanPath(m_pSelFace, m_pSelCurve, dlg.m) ) {
+		// スキャンパス描画
+		Invalidate(FALSE);
 	}
-	catch(...) {
-		// ライブラリ側の例外に対応
-		GetDocument()->ClearScanPath();
-		MessageBeep(MB_ICONHAND);	// あとでメッセージリソースを追加
-	}
-	// スキャンパス描画
-	Invalidate(FALSE);
 }
 
 /////////////////////////////////////////////////////////////////////////////
