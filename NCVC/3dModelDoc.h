@@ -16,9 +16,10 @@ class C3dModelDoc : public CDocBase
 	BODY*		m_pKoBody;		// Kodatuno Body
 	BODYList*	m_pKoList;		// Kodatuno Body List
 
-	Coord***	m_pPath;
-	int			m_pPathX,
-				m_pPathY;
+	Coord***	m_pScanPath;	// 生成されたパスを格納
+	int			m_pScanX,
+				m_pScanY;
+	int*		m_pScanNum;		// スキャンライン1本ごとの加工点数を格納
 
 protected:
 	C3dModelDoc();
@@ -34,6 +35,15 @@ public:
 		return m_pKoList;
 	}
 	void	MakeScanPath(NURBSS*, NURBSC*, SCANSETUP&);
+	Coord***	GetScanPathCoord(void) const {
+		return m_pScanPath;
+	}
+	boost::tuple<int, int>	GetScanPathXY(void) const {
+		return boost::make_tuple(m_pScanX, m_pScanY);
+	}
+	int*		GetScanPathZ(void) const {
+		return m_pScanNum;
+	}
 
 protected:
 

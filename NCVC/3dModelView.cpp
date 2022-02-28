@@ -165,6 +165,10 @@ void C3dModelView::OnDraw(CDC* pDC)
 //	DrawBody(RM_PICKLINE);
 //	DrawBody(RM_PICKFACE);
 
+	// スキャンパスの描画 Kodatuno
+	::glDisable(GL_LIGHTING);
+	DrawScanPath();
+
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
 }
@@ -235,6 +239,30 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 	}
 }
 
+void C3dModelView::DrawScanPath(void)
+{
+	Coord***	pScanPath = GetDocument()->GetScanPathCoord();
+	if ( !pScanPath )
+		return;
+
+	int		i, j, k, x, y;
+	int*	z = GetDocument()->GetScanPathZ();
+	boost::tie(x, y) = GetDocument()->GetScanPathXY();
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	COLORREF	col = pOpt->GetDxfDrawColor(DXFCOL_MOVE);
+
+	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
+	::glBegin(GL_POINTS);
+	for ( i=0; i<x; i++ ) {
+		for ( j=0; j<y; j++ ) {
+			for ( k=0; k<z[j]; k++ ) {
+				::glVertex3d(pScanPath[i][j][k].x, pScanPath[i][j][k].y, pScanPath[i][j][k].z);
+			}
+		}
+	}
+	::glEnd();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView メッセージ ハンドラー
 
@@ -283,8 +311,9 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
-	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT),
-				clr = RGB(255,255,255);
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	COLORREF	col = pOpt->GetDrawColor(COMCOL_SELECT),
+				clr = pOpt->GetDxfDrawColor(DXFCOL_CUTTER);
 
 	// NURBS曲線の判定
 	::glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -451,6 +480,8 @@ void C3dModelView::OnFile3dScan()
 	if ( dlg.DoModal() == IDOK ) {
 		// スキャンパスの生成
 		GetDocument()->MakeScanPath(m_pSelFace, m_pSelCurve, dlg.m);
+		// スキャンパス描画
+		Invalidate(FALSE);
 	}
 }
 

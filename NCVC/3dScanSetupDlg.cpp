@@ -47,4 +47,5 @@ void C3dScanSetupDlg::OnOK()
 	m.dZCut			= m_dZCut;
 	m.nLineSplit	= m_nLineSplit;
 	m.bOrigin		= m_bOrigin;
+	EndDialog(IDOK);
 }
