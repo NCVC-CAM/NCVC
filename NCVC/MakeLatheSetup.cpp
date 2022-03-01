@@ -16,8 +16,6 @@ BEGIN_MESSAGE_MAP(CMakeLatheSetup, CPropertySheet)
 	ON_BN_CLICKED (ID_APPLY_NOW, &CMakeLatheSetup::OnApplyNow)
 END_MESSAGE_MAP()
 
-IMPLEMENT_DYNAMIC(CMakeLatheSetup, CPropertySheet)
-
 /////////////////////////////////////////////////////////////////////////////
 // CMakeLatheSetup
 

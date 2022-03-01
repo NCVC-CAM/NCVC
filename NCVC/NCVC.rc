@@ -4031,6 +4031,7 @@ BEGIN
     IDCV_FEEDERROR          "à⁄ìÆë¨ìxñ¢ê›íË"
     IDCV_LATHE              " (Lathe Mode)"
     IDCV_WIRE               " (Wire Mode)"
+    IDCV_NURBS              " (Nurbs Mode)"
     IDCV_VALFORMAT3         "%12.3f"
     IDCV_VALFORMAT4         "%11.4f"
     IDS_MAKEDXF_CODE        "%3d\n"

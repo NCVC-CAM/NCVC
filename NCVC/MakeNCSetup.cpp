@@ -18,8 +18,6 @@ BEGIN_MESSAGE_MAP(CMakeNCSetup, CPropertySheet)
 	ON_BN_CLICKED (ID_APPLY_NOW, &CMakeNCSetup::OnApplyNow)
 END_MESSAGE_MAP()
 
-IMPLEMENT_DYNAMIC(CMakeNCSetup, CPropertySheet)
-
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCSetup
 

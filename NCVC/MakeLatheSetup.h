@@ -23,7 +23,6 @@ class CMakeLatheSetup : public CPropertySheet
 public:
 	CMakeLatheSetup(LPCTSTR, LPCTSTR);
 	virtual ~CMakeLatheSetup();
-	DECLARE_DYNAMIC(CMakeLatheSetup)
 
 	// “à•”Íß°¼ÞÀÞ²±Û¸Þ
 	CMakeLatheSetup0	m_dlg0;		// Šî–{

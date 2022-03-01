@@ -47,6 +47,7 @@
 #define IDCV_FEEDERROR                  515
 #define IDCV_LATHE                      516
 #define IDCV_WIRE                       517
+#define IDCV_NURBS                      518
 #define IDCV_VALFORMAT3                 520
 #define IDCV_VALFORMAT4                 521
 #define IDS_MAKEDXF_CODE                522

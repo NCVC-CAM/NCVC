@@ -165,6 +165,7 @@ void CMakeNCDlg::OnMKNCInitEdit()
 
 	switch ( m_enType ) {
 	case NCMAKEMILL:
+		// ‹¤’Ê‰»‚µ‚½ MakeNCDlgInitFileEdit() ŠÖ”“à‚ÅŠ®Œ‹
 		MakeNCDlgInitFileEdit(m_strInitPath, m_strInitFileName,
 			this, IDC_MKNC_INITPATH, m_ctInitFileName);
 		break;
@@ -196,6 +197,9 @@ void CMakeNCDlg::OnMKNCInitEdit()
 #endif
 			strResult = ps.GetNCMakeOption()->GetInitFile();
 		}
+		break;
+	case NCMAKENURBS:
+		VERIFY(strResult.LoadString(IDCV_NURBS));
 		break;
 	}
 

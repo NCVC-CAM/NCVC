@@ -22,8 +22,7 @@ class CMakeNCSetup : public CPropertySheet
 // コンストラクション
 public:
 	CMakeNCSetup(LPCTSTR, LPCTSTR);
-	~CMakeNCSetup();
-	DECLARE_DYNAMIC(CMakeNCSetup)
+	virtual ~CMakeNCSetup();
 
 // アトリビュート
 public:
