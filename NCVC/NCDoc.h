@@ -7,7 +7,7 @@
 #include "DocBase.h"
 #include "NCdata.h"
 #include "DXFMakeOption.h"
-#include "MCOption.h"
+#include "MachineOption.h"
 #include "Kodatuno/BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
 

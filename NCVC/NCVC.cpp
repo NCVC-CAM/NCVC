@@ -15,13 +15,13 @@
 #include "3dModelChild.h"
 #include "3dModelDoc.h"
 #include "3dModelView.h"
-#include "MCSetup.h"
+#include "MachineSetup.h"
 #include "ViewSetup.h"
 #include "DxfSetup.h"
 #include "DXFMakeClass.h"
-#include "MKNCSetup.h"
-#include "MKLASetup.h"
-#include "MKWISetup.h"
+#include "MakeNCSetup.h"
+#include "MakeLatheSetup.h"
+#include "MakeWireSetup.h"
 #include "ExecSetupDlg.h"
 #include "ExtensionDlg.h"
 #include "ThreadDlg.h"
@@ -67,7 +67,7 @@ extern	float	_DRILL_HEIGHT = 0.0f;	// ƒhƒŠƒ‹æ’[Šp118‹‚Ì‚‚³
 		NCVC‰Ò“­’†‚ÉŒÀ‚è•ÛŽ‚·‚é
 */
 extern	int		g_nLastPage_DXFSetup = 0;		// DXFµÌß¼®Ý
-extern	int		g_nLastPage_MCSetup = 0;		// Hì‹@ŠBµÌß¼®Ý
+extern	int		g_nLastPage_MachineSetup = 0;	// Hì‹@ŠBµÌß¼®Ý
 extern	int		g_nLastPage_NCMake = 0;			// NC¶¬µÌß¼®Ý
 extern	int		g_nLastPage_NCMakeLathe = 0;	// ù”Õ—pNC¶¬µÌß¼®Ý
 extern	int		g_nLastPage_NCMakeWire = 0;		// Ü²Ô•ú“d‰ÁH‹@—pNC¶¬µÌß¼®Ý
@@ -432,7 +432,7 @@ BOOL CNCVCApp::NCVCRegInit(void)
 
 		// µÌß¼®Ý‚Ì\’z
 		// --- NCÝ’è
-		m_pOptMC = new CMCOption;
+		m_pOptMC = new CMachineOption;
 		// --- DXFÝ’è
 		m_pOptDXF = new CDXFOption;
 		// --- ViewÝ’è
@@ -1089,7 +1089,7 @@ BOOL CNCVCApp::ChangeMachine(int nIndex)
 BOOL CNCVCApp::ChangeMachine(LPCTSTR lpszMachineFile)
 {
 	// ‹@ŠBî•ñ“Ç‚Ýž‚Ý
-	if ( !m_pOptMC->ReadMCoption(lpszMachineFile) )
+	if ( !m_pOptMC->ReadMachineOption(lpszMachineFile) )
 		return FALSE;
 
 	// Â°ÙÊÞ°‚ÌXV
@@ -1421,10 +1421,10 @@ void CNCVCApp::OnOptionMC()
 		return;
 
 	VERIFY(strBuf.LoadString(IDS_SETUP_MC));
-	CMCSetup	ps(::AddDialogTitle2File(strBuf, strFileName), strFileName);
+	CMachineSetup	ps(::AddDialogTitle2File(strBuf, strFileName), strFileName);
 	if ( ps.DoModal() != IDOK ) {
 		if ( !strFileName.IsEmpty() )
-			m_pOptMC->ReadMCoption(strFileName, FALSE);	// Ý’è‘O‚ÌÌ§²Ù‚Å“Ç‚Ý’¼‚µ
+			m_pOptMC->ReadMachineOption(strFileName, FALSE);	// Ý’è‘O‚ÌÌ§²Ù‚Å“Ç‚Ý’¼‚µ
 		return;
 	}
 
@@ -1435,7 +1435,7 @@ void CNCVCApp::OnOptionMC()
 				strFileName, g_pszExecDir, FALSE, OFN_OVERWRITEPROMPT|OFN_HIDEREADONLY);
 	else
 		strFileName = ps.m_strFileName;
-	if ( !strFileName.IsEmpty() && !m_pOptMC->SaveMCoption(strFileName) ) {
+	if ( !strFileName.IsEmpty() && !m_pOptMC->SaveMachineOption(strFileName) ) {
 		strBuf.Format(IDS_ERR_WRITESETTING, strFileName);
 		AfxMessageBox(strBuf, MB_OK|MB_ICONEXCLAMATION);
 		return;
@@ -1539,7 +1539,7 @@ void CNCVCApp::OnOptionMakeNC()
 	switch ( nResult ) {
 	case NCMAKEMILL:
 		{
-			CMKNCSetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
+			CMakeNCSetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
 			if ( ps.DoModal() == IDOK ) {
 				// µÌß¼®Ý‚Ì•Û‘¶
 				ps.GetNCMakeOption()->SaveMakeOption();
@@ -1555,7 +1555,7 @@ void CNCVCApp::OnOptionMakeNC()
 	case NCMAKELATHE:
 		{
 			VERIFY(strCmpExt.LoadString(IDCV_LATHE));
-			CMKLASetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
+			CMakeLatheSetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
 			if ( ps.DoModal() == IDOK ) {
 				ps.GetNCMakeOption()->SaveMakeOption();
 #ifdef _DEBUGOLD
@@ -1569,7 +1569,7 @@ void CNCVCApp::OnOptionMakeNC()
 	case NCMAKEWIRE:
 		{
 			VERIFY(strCmpExt.LoadString(IDCV_WIRE));
-			CMKWISetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
+			CMakeWireSetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
 			if ( ps.DoModal() == IDOK ) {
 				ps.GetNCMakeOption()->SaveMakeOption();
 #ifdef _DEBUGOLD

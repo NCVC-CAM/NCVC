@@ -170,13 +170,13 @@ enum {
 //
 class CNCMakeMillOpt : public CNCMakeOption
 {
-	friend class CMKNCSetup1;
-	friend class CMKNCSetup2;
-	friend class CMKNCSetup3;
-	friend class CMKNCSetup4;
-	friend class CMKNCSetup5;
-	friend class CMKNCSetup6;
-	friend class CMKNCSetup8;
+	friend class CMakeNCSetup1;
+	friend class CMakeNCSetup2;
+	friend class CMakeNCSetup3;
+	friend class CMakeNCSetup4;
+	friend class CMakeNCSetup5;
+	friend class CMakeNCSetup6;
+	friend class CMakeNCSetup8;
 
 	// e¸×½‚ÉÃŞ°À‚ğ‚½‚¹‚é‚Ì‚ÅA
 	// union/struct‹Z‚Íg‚¦‚È‚¢

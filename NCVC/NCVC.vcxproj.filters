@@ -132,64 +132,64 @@
     <ClCompile Include="MakeNCDlgEx3.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MCOption.cpp">
+    <ClCompile Include="MachineOption.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MCSetup.cpp">
+    <ClCompile Include="MachineSetup.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MCSetup1.cpp">
+    <ClCompile Include="MachineSetup1.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MCSetup2.cpp">
+    <ClCompile Include="MachineSetup2.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MCSetup3.cpp">
+    <ClCompile Include="MachineSetup3.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MCSetup4.cpp">
+    <ClCompile Include="MachineSetup4.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MCSetup5.cpp">
+    <ClCompile Include="MachineSetup5.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKLASetup.cpp">
+    <ClCompile Include="MakeLatheSetup.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKLASetup1.cpp">
+    <ClCompile Include="MakeLatheSetup1.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKNCSetup.cpp">
+    <ClCompile Include="MakeNCSetup.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKNCSetup1.cpp">
+    <ClCompile Include="MakeNCSetup1.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKNCSetup2.cpp">
+    <ClCompile Include="MakeNCSetup2.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKNCSetup3.cpp">
+    <ClCompile Include="MakeNCSetup3.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKNCSetup4.cpp">
+    <ClCompile Include="MakeNCSetup4.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKNCSetup5.cpp">
+    <ClCompile Include="MakeNCSetup5.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKNCSetup6.cpp">
+    <ClCompile Include="MakeNCSetup6.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKNCSetup8.cpp">
+    <ClCompile Include="MakeNCSetup8.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKWISetup.cpp">
+    <ClCompile Include="MakeWireSetup.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKWISetup1.cpp">
+    <ClCompile Include="MakeWireSetup1.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKWISetup2.cpp">
+    <ClCompile Include="MakeWireSetup2.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NCChild.cpp">
@@ -375,16 +375,16 @@
     <ClCompile Include="GLSL.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKLASetup2.cpp">
+    <ClCompile Include="MakeLatheSetup2.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKLASetup3.cpp">
+    <ClCompile Include="MakeLatheSetup3.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKLASetup0.cpp">
+    <ClCompile Include="MakeLatheSetup0.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKLASetup4.cpp">
+    <ClCompile Include="MakeLatheSetup4.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NCViewGL.cpp">
@@ -402,7 +402,7 @@
     <ClCompile Include="OBSdlg.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MKLASetup5.cpp">
+    <ClCompile Include="MakeLatheSetup5.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="MyTemplate.cpp">
@@ -557,64 +557,64 @@
     <ClInclude Include="MakeNCDlgEx3.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MCOption.h">
+    <ClInclude Include="MachineOption.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MCSetup.h">
+    <ClInclude Include="MachineSetup.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MCSetup1.h">
+    <ClInclude Include="MachineSetup1.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MCSetup2.h">
+    <ClInclude Include="MachineSetup2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MCSetup3.h">
+    <ClInclude Include="MachineSetup3.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MCSetup4.h">
+    <ClInclude Include="MachineSetup4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MCSetup5.h">
+    <ClInclude Include="MachineSetup5.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKLASetup.h">
+    <ClInclude Include="MakeLatheSetup.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKLASetup1.h">
+    <ClInclude Include="MakeLatheSetup1.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKNCSetup.h">
+    <ClInclude Include="MakeNCSetup.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKNCSetup1.h">
+    <ClInclude Include="MakeNCSetup1.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKNCSetup2.h">
+    <ClInclude Include="MakeNCSetup2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKNCSetup3.h">
+    <ClInclude Include="MakeNCSetup3.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKNCSetup4.h">
+    <ClInclude Include="MakeNCSetup4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKNCSetup5.h">
+    <ClInclude Include="MakeNCSetup5.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKNCSetup6.h">
+    <ClInclude Include="MakeNCSetup6.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKNCSetup8.h">
+    <ClInclude Include="MakeNCSetup8.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKWISetup.h">
+    <ClInclude Include="MakeWireSetup.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKWISetup1.h">
+    <ClInclude Include="MakeWireSetup1.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKWISetup2.h">
+    <ClInclude Include="MakeWireSetup2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="NCChild.h">
@@ -767,16 +767,16 @@
     <ClInclude Include="GLSL.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKLASetup2.h">
+    <ClInclude Include="MakeLatheSetup2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKLASetup3.h">
+    <ClInclude Include="MakeLatheSetup3.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKLASetup0.h">
+    <ClInclude Include="MakeLatheSetup0.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKLASetup4.h">
+    <ClInclude Include="MakeLatheSetup4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="NCViewGL.h">
@@ -788,7 +788,7 @@
     <ClInclude Include="DbgConsole.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MKLASetup5.h">
+    <ClInclude Include="MakeLatheSetup5.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="MyTemplate.h">

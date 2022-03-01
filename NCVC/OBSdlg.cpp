@@ -6,7 +6,7 @@
 #include "MainFrm.h"
 #include "NCChild.h"
 #include "OBSdlg.h"
-#include "MCOption.h"
+#include "MachineOption.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -48,7 +48,7 @@ BOOL COBSdlg::PreTranslateMessage(MSG* pMsg)
 
 void COBSdlg::GetOBSdata(void)
 {
-	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
+	CMachineOption*	pMCopt = AfxGetNCVCApp()->GetMachineOption();
 	for ( int i=0; i<SIZEOF(m_bOBS); i++ )
 		m_bOBS[i] = pMCopt->m_bOBS[i];
 	CString		strPath;
@@ -57,7 +57,7 @@ void COBSdlg::GetOBSdata(void)
 
 void COBSdlg::SetOBSdata(void)
 {
-	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
+	CMachineOption*	pMCopt = AfxGetNCVCApp()->GetMachineOption();
 	for ( int i=0; i<SIZEOF(m_bOBS); i++ )
 		pMCopt->m_bOBS[i] = m_bOBS[i];
 }
@@ -84,9 +84,9 @@ void COBSdlg::OnObsWrite()
 {
 	UpdateData();
 	SetOBSdata();
-	CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
+	CMachineOption*	pMCopt = AfxGetNCVCApp()->GetMachineOption();
 	CString		strName(pMCopt->GetMCHeadFileName()), strMsg;
-	if ( pMCopt->SaveMCoption(strName) ) {
+	if ( pMCopt->SaveMachineOption(strName) ) {
 		strMsg.Format(IDS_ANA_FILEOUTPUT, strName);
 		AfxMessageBox(strMsg, MB_OK|MB_ICONINFORMATION);
 	}

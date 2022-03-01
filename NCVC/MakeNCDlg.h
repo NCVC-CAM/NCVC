@@ -19,7 +19,7 @@ class CMakeNCDlg : public CDialog
 	CString		m_strNCPath,	// 本物のﾊﾟｽ名
 				m_strInitPath;
 
-	void	CommonConstructor(void);
+	void	CommonConstructor(UINT, NCMAKETYPE, CDocBase*);
 
 	// コンストラクション
 public:

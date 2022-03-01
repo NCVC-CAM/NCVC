@@ -17,7 +17,7 @@
 // ±ƒﬁ≤›íËã`(ncvcaddin.h)
 #define	___NCVC___
 
-#include "MCOption.h"
+#include "MachineOption.h"
 #include "DXFOption.h"
 #include "ViewOption.h"
 #include "ExecOption.h"
@@ -110,7 +110,7 @@ class CNCVCApp : public CWinAppEx
 	int		m_nNCTabPage;		// ±∏√®ÃﬁÕﬂ∞ºﬁèÓïÒ
 
 	// ºΩ√—Ç≈óBàÍÇÃµÃﬂºÆ›
-	CMCOption*		m_pOptMC;		// MCµÃﬂºÆ›
+	CMachineOption*	m_pOptMC;		// MCµÃﬂºÆ›
 	CDXFOption*		m_pOptDXF;		// DXFµÃﬂºÆ›
 	CViewOption*	m_pOptView;		// ViewµÃﬂºÆ›
 	//
@@ -162,7 +162,7 @@ public:
 		m_nNCTabPage = nPage;
 	}
 
-	CMCOption*		GetMCOption(void) {
+	CMachineOption*	GetMachineOption(void) {
 		return m_pOptMC;
 	}
 	CDXFOption*		GetDXFOption(void) {

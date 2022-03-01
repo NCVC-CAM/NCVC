@@ -165,14 +165,14 @@ typedef	std::vector<LATHEDRILLINFO>		VLATHEDRILLINFO;
 //
 class CNCMakeLatheOpt : public CNCMakeOption
 {
-	friend class CMKLASetup0;
-	friend class CMKLASetup1;
-	friend class CMKLASetup2;
-	friend class CMKLASetup3;
-	friend class CMKLASetup4;
-	friend class CMKLASetup5;
-	friend class CMKNCSetup2;
-	friend class CMKNCSetup6;
+	friend class CMakeLatheSetup0;
+	friend class CMakeLatheSetup1;
+	friend class CMakeLatheSetup2;
+	friend class CMakeLatheSetup3;
+	friend class CMakeLatheSetup4;
+	friend class CMakeLatheSetup5;
+	friend class CMakeNCSetup2;
+	friend class CMakeNCSetup6;
 
 	// e¸×½‚ÉÃŞ°À‚ğ‚½‚¹‚é‚Ì‚ÅA
 	// union/struct‹Z‚Íg‚¦‚È‚¢

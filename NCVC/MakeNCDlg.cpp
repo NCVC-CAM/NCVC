@@ -7,9 +7,9 @@
 #include "Layer.h"
 #include "DXFDoc.h"
 #include "3dModelDoc.h"
-#include "MKNCSetup.h"
-#include "MKLASetup.h"
-#include "MKWISetup.h"
+#include "MakeNCSetup.h"
+#include "MakeLatheSetup.h"
+#include "MakeWireSetup.h"
 #include "MakeNCDlg.h"
 #include "MakeBindOptDlg.h"
 
@@ -35,11 +35,7 @@ END_MESSAGE_MAP()
 CMakeNCDlg::CMakeNCDlg(UINT nTitle, NCMAKETYPE enType, CDXFDoc* pDoc)
 	: CDialog(CMakeNCDlg::IDD, NULL)
 {
-	m_nTitle = nTitle;
-	m_enType = enType;
-	m_pDoc = pDoc;
-	CommonConstructor();
-
+	CommonConstructor(nTitle, enType, pDoc);
 	// ÄÞ·­ÒÝÄ–¼‚©‚çNCÌ§²Ù–¼‚ðì¬
 	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
 }
@@ -47,17 +43,16 @@ CMakeNCDlg::CMakeNCDlg(UINT nTitle, NCMAKETYPE enType, CDXFDoc* pDoc)
 CMakeNCDlg::CMakeNCDlg(UINT nTitle, NCMAKETYPE enType, C3dModelDoc* pDoc)
 	: CDialog(CMakeNCDlg::IDD, NULL)
 {
-	m_nTitle = nTitle;
-	m_enType = enType;
-	m_pDoc = pDoc;
-	CommonConstructor();
-
+	CommonConstructor(nTitle, enType, pDoc);
 	// ÄÞ·­ÒÝÄ–¼‚©‚çNCÌ§²Ù–¼‚ðì¬
 	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
 }
 
-void CMakeNCDlg::CommonConstructor(void)
+void CMakeNCDlg::CommonConstructor(UINT nTitle, NCMAKETYPE enType, CDocBase* pDoc)
 {
+	m_nTitle = nTitle;
+	m_enType = enType;
+	m_pDoc = pDoc;
 	// ØíðŒ—š—ð‚©‚ç‰Šú•\Ž¦Ì§²Ù‚ðŽæ“¾
 	const CDXFOption*  pOpt = AfxGetNCVCApp()->GetDXFOption();
 	if ( pOpt->GetInitList(m_enType)->GetCount() > 0 )
@@ -178,7 +173,7 @@ void CMakeNCDlg::OnMKNCInitEdit()
 		VERIFY(strResult.LoadString(IDCV_LATHE));
 		{
 			// ˆ—Žè‡‚Í MakeNCDlgInitFileEdit() ‚Æ“¯‚¶
-			CMKLASetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
+			CMakeLatheSetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
 			if ( ps.DoModal() != IDOK )
 				return;
 			ps.GetNCMakeOption()->SaveMakeOption();
@@ -192,7 +187,7 @@ void CMakeNCDlg::OnMKNCInitEdit()
 	case NCMAKEWIRE:
 		VERIFY(strResult.LoadString(IDCV_WIRE));
 		{
-			CMKWISetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
+			CMakeWireSetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
 			if ( ps.DoModal() != IDOK )
 				return;
 			ps.GetNCMakeOption()->SaveMakeOption();
@@ -356,7 +351,7 @@ void MakeNCDlgInitFileEdit
 	CString	strInitFile(strPath+strFile),
 			strCaption;
 	VERIFY(strCaption.LoadString(IDS_MAKE_NCD));
-	CMKNCSetup	ps(::AddDialogTitle2File(strCaption, strInitFile), strInitFile);
+	CMakeNCSetup	ps(::AddDialogTitle2File(strCaption, strInitFile), strInitFile);
 	if ( ps.DoModal() != IDOK )
 		return;
 

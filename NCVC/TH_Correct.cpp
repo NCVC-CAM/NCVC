@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 #include "stdafx.h"
 #include "NCVC.h"
-#include "MCOption.h"
+#include "MachineOption.h"
 #include "NCdata.h"
 #include "NCDoc.h"
 #include "ThreadDlg.h"
@@ -42,7 +42,7 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 	ASSERT(pDoc);
 	ASSERT(pParent);
 
-	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
+	const CMachineOption* pMCopt = AfxGetNCVCApp()->GetMachineOption();
 	INT_PTR		i=0, j, nLoopCnt = pDoc->GetNCsize();
 	int			nCorrect = 0,	// 0:•â³·¬Ý¾Ù 1: •â³ÌÞÛ¯¸’¼Œã 2:•â³ˆ—’†
 				nCorrectType = pMCopt->GetInt(MC_INT_CORRECTTYPE),

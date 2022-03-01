@@ -9,7 +9,7 @@
 #include "NCVCaddinIF.h"
 #include "NCDoc.h"
 #include "DXFDoc.h"
-#include "MCOption.h"
+#include "MachineOption.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -181,7 +181,7 @@ NCEXPORT void WINAPI NCVC_MainfrmProgressPos(int nPos)
 NCEXPORT int WINAPI NCVC_GetSelectMachineFileName(LPTSTR lpszPathName, int nSize)
 {
 	int		nLength;
-	CString	strFile( theApp.GetMCOption()->GetMCHeadFileName() );
+	CString	strFile( theApp.GetMachineOption()->GetMCHeadFileName() );
 
 	if ( strFile.IsEmpty() )
 		nLength = 0;

@@ -5,7 +5,7 @@
 #include "NCVC.h"
 #include "MainFrm.h"
 #include "NCChild.h"
-#include "MCOption.h"
+#include "MachineOption.h"
 #include "NCdata.h"
 #include "NCDoc.h"
 #include "NCViewTab.h"
@@ -91,7 +91,7 @@ CNCDoc::CNCDoc()
 	m_nTraceStart = m_nTraceDraw = 0;
 	m_pCutcalcThread  = NULL;
 	// ﾜｰｸ座標系取得
-	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
+	const CMachineOption* pMCopt = AfxGetNCVCApp()->GetMachineOption();
 	for ( i=0; i<WORKOFFSET; i++ )
 		m_ptNcWorkOrg[i] = pMCopt->GetWorkOffset(i);
 	m_ptNcWorkOrg[i] = 0.0f;		// G92の初期化
@@ -252,13 +252,13 @@ BOOL CNCDoc::ReadMCFile(LPCTSTR strFile)
 	// 機械情報の読み込み
 	// -- TH_NCRead.cpp からの呼び出しでﾂｰﾙﾊﾞｰの更新は別スレッドなのでダメ
 	// -- AfxGetNCVCMainWnd()->ChangeMachine() はできない
-	return  AfxGetNCVCApp()->GetMCOption()->ReadMCoption(strPath);
+	return  AfxGetNCVCApp()->GetMachineOption()->ReadMachineOption(strPath);
 }
 
 CNCdata* CNCDoc::DataOperation
 	(const CNCdata* pData, LPNCARGV lpArgv, INT_PTR nIndex/*=-1*/, ENNCOPERATION enOperation/*=NCADD*/)
 {
-	CMCOption*	pOpt = AfxGetNCVCApp()->GetMCOption();
+	CMachineOption*	pOpt = AfxGetNCVCApp()->GetMachineOption();
 	CNCdata*	pDataResult = NULL;
 	CNCblock*	pBlock;
 //	CPoint3F	ptOffset( m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg );	// GetOffsetOrig()
@@ -1298,7 +1298,7 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 	m_nTraceDraw = GetNCsize();
 
 	// G10で仮登録された工具情報を削除
-	AfxGetNCVCApp()->GetMCOption()->ReductionTools(TRUE);
+	AfxGetNCVCApp()->GetMachineOption()->ReductionTools(TRUE);
 	// 一時展開のﾏｸﾛﾌｧｲﾙを消去
 	DeleteMacroFile();
 

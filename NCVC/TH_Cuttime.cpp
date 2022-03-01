@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 #include "stdafx.h"
 #include "NCVC.h"
-#include "MCOption.h"
+#include "MachineOption.h"
 #include "NCdata.h"
 #include "NCDoc.h"
 #include "NCInfoView.h"
@@ -34,7 +34,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 	ASSERT(pView);
 	delete	pVoid;	// 完全ﾊﾞｯｸｸﾞﾗｳﾝﾄﾞ処理
 
-	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();	// G00位置決め移動速度取得用
+	const CMachineOption* pMCopt = AfxGetNCVCApp()->GetMachineOption();	// G00位置決め移動速度取得用
 	INT_PTR		i, j, nLoopCnt = pDoc->GetNCsize();
 	float		dTmp, dd;
 	DWORD		dwValFlags;
