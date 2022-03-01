@@ -6,6 +6,7 @@
 #include "MainFrm.h"
 #include "Layer.h"
 #include "DXFDoc.h"
+#include "3dModelDoc.h"
 #include "MKNCSetup.h"
 #include "MKLASetup.h"
 #include "MKWISetup.h"
@@ -31,21 +32,36 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCDlg ダイアログ
 
-CMakeNCDlg::CMakeNCDlg(UINT nTitle, enMAKETYPE enType, CDXFDoc* pDoc)
+CMakeNCDlg::CMakeNCDlg(UINT nTitle, NCMAKETYPE enType, CDXFDoc* pDoc)
 	: CDialog(CMakeNCDlg::IDD, NULL)
 {
 	m_nTitle = nTitle;
 	m_enType = enType;
 	m_pDoc = pDoc;
-	//{{AFX_DATA_INIT(CMakeNCDlg)
-	//}}AFX_DATA_INIT
+	CommonConstructor();
 
 	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成
 	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
+}
+
+CMakeNCDlg::CMakeNCDlg(UINT nTitle, NCMAKETYPE enType, C3dModelDoc* pDoc)
+	: CDialog(CMakeNCDlg::IDD, NULL)
+{
+	m_nTitle = nTitle;
+	m_enType = enType;
+	m_pDoc = pDoc;
+	CommonConstructor();
+
+	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成
+	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
+}
+
+void CMakeNCDlg::CommonConstructor(void)
+{
 	// 切削条件履歴から初期表示ﾌｧｲﾙを取得
 	const CDXFOption*  pOpt = AfxGetNCVCApp()->GetDXFOption();
-	if ( pOpt->GetInitList(enType)->GetCount() > 0 )
-		::Path_Name_From_FullPath(pOpt->GetInitList(enType)->GetHead(), m_strInitPath, m_strInitFileName);
+	if ( pOpt->GetInitList(m_enType)->GetCount() > 0 )
+		::Path_Name_From_FullPath(pOpt->GetInitList(m_enType)->GetHead(), m_strInitPath, m_strInitFileName);
 	m_bNCView = pOpt->GetDxfOptFlg(DXFOPT_VIEW);
 }
 
@@ -257,6 +273,18 @@ void CreateNCFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
 			::Path_Name_From_FullPath(strDocFile, strPath, strFile, FALSE);
 			strFile += AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetUserDefaultExt();
 		}
+	}
+	else
+		::Path_Name_From_FullPath(strNCFile, strPath, strFile);
+}
+
+void CreateNCFile(const C3dModelDoc* pDoc, CString& strPath, CString& strFile)
+{
+	CString	strNCFile(pDoc->GetNCFileName());
+	if ( strNCFile.IsEmpty() ) {
+		CString	strDocFile(pDoc->GetPathName());
+		::Path_Name_From_FullPath(strDocFile, strPath, strFile, FALSE);
+		strFile += AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetUserDefaultExt();
 	}
 	else
 		::Path_Name_From_FullPath(strNCFile, strPath, strFile);

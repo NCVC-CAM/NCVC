@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "3dModelDoc.h"
+#include "MakeNCDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -13,6 +14,7 @@ IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(C3dModelDoc, CDocument)
 	ON_UPDATE_COMMAND_UI(ID_FILE_3DPATH, &C3dModelDoc::OnUpdateFile3dMake)
+	ON_COMMAND(ID_FILE_3DPATH, &C3dModelDoc::OnFile3dMake)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -104,6 +106,13 @@ void C3dModelDoc::OnCloseDocument()
 void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable( m_pScanPath != NULL );
+}
+
+void C3dModelDoc::OnFile3dMake()
+{
+	CMakeNCDlg	dlg(IDS_MAKENCD_TITLE_NURBS, NCMAKENURBS, this);
+	if ( dlg.DoModal() != IDOK )
+		return;
 }
 
 /////////////////////////////////////////////////////////////////////////////

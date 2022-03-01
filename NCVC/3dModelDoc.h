@@ -13,6 +13,8 @@
 
 class C3dModelDoc : public CDocBase
 {
+	CString		m_strNCFileName;	// NCê∂ê¨Ãß≤Ÿñº
+
 	BODY*		m_pKoBody;		// Kodatuno Body
 	BODYList*	m_pKoList;		// Kodatuno Body List
 
@@ -31,6 +33,9 @@ public:
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
 	virtual void OnCloseDocument();
 
+	CString GetNCFileName(void) const {
+		return m_strNCFileName;
+	}
 	BODYList*	GetKodatunoBodyList(void) const {
 		return m_pKoList;
 	}
@@ -48,6 +53,7 @@ public:
 
 protected:
 	afx_msg void OnUpdateFile3dMake(CCmdUI* pCmdUI);
+	afx_msg void OnFile3dMake();
 
 	DECLARE_MESSAGE_MAP()
 };

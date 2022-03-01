@@ -3609,7 +3609,7 @@ BEGIN
     IDS_REG_DXF_LATHEINIT   "LATHEINIT"
     IDS_REG_DXF_WIREINIT    "WIREINIT"
     IDS_REG_DXF_LAYERTOINIT "LAYER2INIT"
-    IDS_REG_DXF_VIEWER      "VIEWER"
+    IDS_REG_DXF_NURBSINIT   "NURBSINIT"
 END
 
 STRINGTABLE
@@ -3679,14 +3679,15 @@ BEGIN
     IDS_CAM_FILTER          "cam\nCAM data (%s)|%s"
     IDS_DXF_FILTER          "dxf\nDXF data (*.dxf)|*.dxf"
     IDS_NCI_FILTER          "切削条件ﾌｧｲﾙ (*.nci; *.ncj; *.ncw)|*.nci;*.ncj;*.ncw"
+    IDS_NCIM_FILTER         "nci\n切削条件ﾌｧｲﾙ (*.nci)|*.nci"
+    IDS_NCIL_FILTER         "ncj\n旋盤用切削条件ﾌｧｲﾙ (*.ncj)|*.ncj"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_NCIM_FILTER         "nci\n切削条件ﾌｧｲﾙ (*.nci)|*.nci"
-    IDS_NCIL_FILTER         "ncj\n旋盤用切削条件ﾌｧｲﾙ (*.ncj)|*.ncj"
     IDS_NCIW_FILTER         "ncw\nﾜｲﾔ放電加工機用切削条件ﾌｧｲﾙ (*.ncw)|*.ncw"
     IDS_NCL_FILTER          "ncl\nLayerFile (*.ncl)|*.ncl"
+    IDS_NCNU_FILTER         "nci\nNurbs曲面用切削条件ﾌｧｲﾙ (*.nci)|*.nci"
     IDS_EXE_FILTER          "exe\n外部ｱﾌﾟﾘｹｰｼｮﾝ (*.exe)|*.exe"
     IDS_TXT_FILTER          "txt\nﾃｷｽﾄﾌｧｲﾙ (*.txt)|*.txt"
     IDS_MC_FILTER           "mnc\n機械情報ﾌｧｲﾙ (*.mnc)|*.mnc"
@@ -3752,6 +3753,7 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_REG_DXF_VIEWER      "VIEWER"
     IDS_REG_DXF_MATCH       "MATCH"
     IDS_REG_DXF_ACCEPT      "ACCEPT"
     IDS_REG_DXF_ORGTYPE     "OriginType"
@@ -4161,6 +4163,7 @@ BEGIN
     IDS_MAKENCD_TITLE_SHAPE "形状加工によるNCﾃﾞｰﾀ生成"
     IDS_MAKENCD_TITLE_LATHE "旋盤用NCﾃﾞｰﾀの生成"
     IDS_MAKENCD_TITLE_WIRE  "ﾜｲﾔ放電加工機用NCﾃﾞｰﾀの生成"
+    IDS_MAKENCD_TITLE_NURBS "Nurbs曲面用NCﾃﾞｰﾀの生成"
 END
 
 STRINGTABLE

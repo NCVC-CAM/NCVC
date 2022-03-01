@@ -5,7 +5,7 @@
 #pragma once
 
 #include "MainFrm.h"
-#include "DXFOption.h"		// enMAKETYPE
+#include "DXFOption.h"		// NCMAKETYPE
 #include "NCVCdefine.h"
 
 #ifdef _DEBUG
@@ -356,7 +356,7 @@ class CNCcycle : public CNCline
 	void	DrawCycle(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 public:
-	CNCcycle(const CNCdata*, LPNCARGV, const CPoint3F&, BOOL, enMAKETYPE);
+	CNCcycle(const CNCdata*, LPNCARGV, const CPoint3F&, BOOL, NCMAKETYPE);
 	virtual ~CNCcycle();
 
 	int		GetDrawCnt(void) const;
@@ -450,7 +450,7 @@ class CNCcircle : public CNCline
 	void	AngleTuning(const CPointF&, const CPointF&);
 
 public:
-	CNCcircle(const CNCdata*, LPNCARGV, const CPoint3F&, enMAKETYPE);
+	CNCcircle(const CNCdata*, LPNCARGV, const CPoint3F&, NCMAKETYPE);
 	CNCcircle(const CNCdata*);
 
 	BOOL	GetG03(void) const;

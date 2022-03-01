@@ -856,7 +856,7 @@ void CNCline::SetCorrectPoint(ENPOINTORDER enPoint, const CPointF& ptSrc, float)
 //////////////////////////////////////////////////////////////////////
 
 CNCcycle::CNCcycle
-	(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, BOOL bL0Cycle, enMAKETYPE enType) :
+	(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, BOOL bL0Cycle, NCMAKETYPE enType) :
 		CNCline(NCDCYCLEDATA, pData, lpArgv, ptOffset)
 {
 	//	!!! Z, R, P ílÇÕÅCTH_NCRead.cpp Ç≈Ç‡ï‚ä‘ÇµÇƒÇ¢ÇÈÇ±Ç∆Ç…íçà” !!!
@@ -1272,7 +1272,7 @@ void CNCcycle::DrawCycle(ENNCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
 //////////////////////////////////////////////////////////////////////
 
 CNCcircle::CNCcircle
-(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, enMAKETYPE enType) :
+(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, NCMAKETYPE enType) :
 	CNCline(NCDARCDATA, pData, lpArgv, ptOffset)
 {
 	BOOL		fError = TRUE;	// Error

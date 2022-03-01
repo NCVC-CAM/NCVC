@@ -1474,7 +1474,7 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 void CDXFDoc::OnFileDXF2NCD(UINT nID) 
 {
 	int			i;
-	enMAKETYPE	enType;
+	NCMAKETYPE	enType;
 	BOOL	bNCView, bAllOut,
 			bSingle = (nID==ID_FILE_DXF2NCD || nID==ID_FILE_DXF2NCD_SHAPE ||
 						nID==ID_FILE_DXF2NCD_LATHE || nID==ID_FILE_DXF2NCD_WIRE);
@@ -1515,7 +1515,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 	case ID_FILE_DXF2NCD_LATHE:	// ê˘î’√ﬁ∞¿ê∂ê¨
 	case ID_FILE_DXF2NCD_WIRE:	// ‹≤‘â¡çHã@√ﬁ∞¿ê∂ê¨
 		enType = ( nID <= ID_FILE_DXF2NCD_SHAPE ) ? NCMAKEMILL :
-					(enMAKETYPE)(nID - ID_FILE_DXF2NCD_LATHE + 1);
+					(NCMAKETYPE)(nID - ID_FILE_DXF2NCD_LATHE + 1);
 		{
 			CMakeNCDlg	dlg(nID-ID_FILE_DXF2NCD+IDS_MAKENCD_TITLE_BASIC, enType, this);
 			if ( dlg.DoModal() != IDOK )

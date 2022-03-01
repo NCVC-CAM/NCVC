@@ -3,7 +3,9 @@
 
 #pragma once
 #include "DXFOption.h"
+class CDocBase;
 class CDXFDoc;
+class C3dModelDoc;
 
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCDlg ダイアログ
@@ -11,15 +13,18 @@ class CDXFDoc;
 class CMakeNCDlg : public CDialog
 {
 	UINT		m_nTitle;
-	enMAKETYPE	m_enType;
-	CDXFDoc*	m_pDoc;
+	NCMAKETYPE	m_enType;
+	CDocBase*	m_pDoc;
 	// ｽﾀﾃｨｯｸｺﾝﾄﾛｰﾙに表示する前の省略形文字列
 	CString		m_strNCPath,	// 本物のﾊﾟｽ名
 				m_strInitPath;
 
-// コンストラクション
+	void	CommonConstructor(void);
+
+	// コンストラクション
 public:
-	CMakeNCDlg(UINT, enMAKETYPE, CDXFDoc*);
+	CMakeNCDlg(UINT, NCMAKETYPE, CDXFDoc*);
+	CMakeNCDlg(UINT, NCMAKETYPE, C3dModelDoc*);
 
 // ダイアログ データ
 	//{{AFX_DATA(CMakeNCDlg)
@@ -70,5 +75,6 @@ int		MakeNCDlgSelChange(const CComboBox&, HWND, int, CString&, CString&);
 void	MakeDlgKillFocus(CString&, CString&, CDialog*, int nID);
 //
 void	CreateNCFile(const CDXFDoc*, CString&, CString&);
+void	CreateNCFile(const C3dModelDoc*, CString&, CString&);
 void	CreateLayerFile(const CDXFDoc*, CString&, CString&);
 BOOL	InitialMakeNCDlgComboBox(const CStringList*, CComboBox&);

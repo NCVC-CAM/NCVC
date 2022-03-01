@@ -113,7 +113,7 @@ CDXFOption::CDXFOption()
 /////////////////////////////////////////////////////////////////////////////
 // “› ﬁä÷êî
 
-BOOL CDXFOption::ReadInitHistory(enMAKETYPE enType)
+BOOL CDXFOption::ReadInitHistory(NCMAKETYPE enType)
 {
 	extern	LPTSTR	g_pszExecDir;	// é¿çs√ﬁ®⁄∏ƒÿ(NCVC.cpp)
 	int		i;
@@ -143,7 +143,7 @@ BOOL CDXFOption::ReadInitHistory(enMAKETYPE enType)
 	return TRUE;
 }
 
-BOOL CDXFOption::SaveInitHistory(enMAKETYPE enType)
+BOOL CDXFOption::SaveInitHistory(NCMAKETYPE enType)
 {
 	int			i;
 	POSITION	pos;
@@ -168,7 +168,7 @@ BOOL CDXFOption::SaveInitHistory(enMAKETYPE enType)
 	return TRUE;
 }
 
-BOOL CDXFOption::AddListHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
+BOOL CDXFOption::AddListHistory(NCMAKETYPE enType, LPCTSTR lpszSearch)
 {
 	CStringList& strList = m_strInitList[enType];
 
@@ -204,7 +204,7 @@ BOOL CDXFOption::AddListHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
 	return TRUE;
 }
 
-void CDXFOption::DelInitHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
+void CDXFOption::DelInitHistory(NCMAKETYPE enType, LPCTSTR lpszSearch)
 {
 	CStringList& strList = m_strInitList[enType];
 

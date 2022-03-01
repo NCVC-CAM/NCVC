@@ -264,7 +264,7 @@ CNCdata* CNCDoc::DataOperation
 //	CPoint3F	ptOffset( m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg );	// GetOffsetOrig()
 	INT_PTR		i;
 	BOOL		bResult = TRUE;
-	enMAKETYPE	enMakeType;
+	NCMAKETYPE	enMakeType;
 
 	// â~å ï‚ä‘óp
 	if ( m_bDocFlg[NCDOC_LATHE] )
