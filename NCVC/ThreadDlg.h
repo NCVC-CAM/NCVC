@@ -4,14 +4,14 @@
 #pragma once
 
 // Ω⁄Øƒﬁä÷êî
-UINT NCDtoXYZ_Thread(LPVOID);
-UINT UVWire_Thread(LPVOID);
-UINT CorrectCalc_Thread(LPVOID);
-UINT MakeNCD_Thread(LPVOID);
-UINT MakeLathe_Thread(LPVOID);
-UINT MakeWire_Thread(LPVOID);
-UINT ShapeSearch_Thread(LPVOID);
-UINT AutoWorkingSet_Thread(LPVOID);
+UINT NCDtoXYZ_Thread(LPVOID);			// TH_NCRead.cpp
+UINT UVWire_Thread(LPVOID);				// TH_UVWire.cpp
+UINT CorrectCalc_Thread(LPVOID);		// TH_Correct.cpp
+UINT MakeNCD_Thread(LPVOID);			// TH_MakeNCD.cpp
+UINT MakeLathe_Thread(LPVOID);			// TH_MakeLathe.cpp
+UINT MakeWire_Thread(LPVOID);			// TH_MakeWire.cpp
+UINT ShapeSearch_Thread(LPVOID);		// TH_ShapeSearch.cpp
+UINT AutoWorkingSet_Thread(LPVOID);		// TH_AutoWorkingSet.cpp
 
 class CThreadDlg;
 // Ω⁄ØƒﬁÇ÷ÇÃà¯êî

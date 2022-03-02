@@ -97,11 +97,9 @@ CDXFOption::CDXFOption()
 	m_enMakeType = NCMAKEMILL;
 	try {
 		// ØíğŒÌ§²Ù‚Ì—š—ğ
-		ReadInitHistory(NCMAKEMILL);
-		ReadInitHistory(NCMAKELATHE);
-		ReadInitHistory(NCMAKEWIRE);
-		// Ú²Ô–¼‚ÆğŒÌ§²ÙŠÖŒW‚Ì—š—ğ
-		ReadInitHistory(NCMAKELAYER);
+		for ( i=0; i<NCMAKENUM; i++ ) {
+			ReadInitHistory((NCMAKETYPE)i);
+		}
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);

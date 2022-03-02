@@ -5,6 +5,7 @@
 #include "NCVC.h"
 #include "3dModelDoc.h"
 #include "MakeNCDlg.h"
+#include "ThreadDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -110,9 +111,40 @@ void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 
 void C3dModelDoc::OnFile3dMake()
 {
-	CMakeNCDlg	dlg(IDS_MAKENCD_TITLE_NURBS, NCMAKENURBS, this);
-	if ( dlg.DoModal() != IDOK )
-		return;
+	CString	strInit;
+	BOOL	bNCView;
+	{
+		CMakeNCDlg	dlg(IDS_MAKENCD_TITLE_NURBS, NCMAKENURBS, this);
+		if ( dlg.DoModal() != IDOK )
+			return;
+		m_strNCFileName	= dlg.m_strNCFileName;
+		strInit = dlg.m_strInitFileName;
+		bNCView = dlg.m_bNCView;
+	}
+
+	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
+
+	// 設定の保存
+	if ( !strInit.IsEmpty() ) {
+		pOpt->AddInitHistory(NCMAKENURBS, strInit);
+	}
+	pOpt->SetViewFlag(bNCView);
+
+	// すでに開いているﾄﾞｷｭﾒﾝﾄなら閉じる
+	CDocument* pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, m_strNCFileName);
+	if ( pDoc ) {
+		pDoc->OnCloseDocument();
+	}
+
+	// 生成開始
+	CThreadDlg*	pDlg = new CThreadDlg(ID_FILE_3DPATH, this);
+	INT_PTR		nResult = pDlg->DoModal();
+	delete	pDlg;
+
+	// NC生成後のﾃﾞｰﾀを開く
+	if ( nResult==IDOK && bNCView ) {
+		AfxGetNCVCApp()->OpenDocumentFile(m_strNCFileName);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////

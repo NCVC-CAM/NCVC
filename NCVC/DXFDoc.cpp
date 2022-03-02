@@ -1538,7 +1538,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 	}
 	pOpt->SetViewFlag(bNCView);
 
-	// ‚·‚Å‚ÉŠJ‚¢‚Ä‚¢‚éÄÞ·­ÒÝÄ‚È‚ç•Â‚¶‚é±Å³Ý½
+	// ‚·‚Å‚ÉŠJ‚¢‚Ä‚¢‚éÄÞ·­ÒÝÄ‚È‚ç•Â‚¶‚é
 	if ( bSingle ) {
 		pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, m_strNCFileName);
 		if ( pDoc )
