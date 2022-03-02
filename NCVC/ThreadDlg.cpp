@@ -82,6 +82,7 @@ BOOL CThreadDlg::OnInitDialog()
 		break;
 
 	case ID_FILE_3DPATH:		// Nurbs曲面のNC生成スレッド
+		pfnThread = MakeNurbs_Thread;
 		break;
 
 	case ID_EDIT_DXFSHAPE:		// 連結ｵﾌﾞｼﾞｪｸﾄの検索ｽﾚｯﾄﾞ開始

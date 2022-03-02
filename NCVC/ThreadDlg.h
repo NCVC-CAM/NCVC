@@ -10,6 +10,7 @@ UINT CorrectCalc_Thread(LPVOID);		// TH_Correct.cpp
 UINT MakeNCD_Thread(LPVOID);			// TH_MakeNCD.cpp
 UINT MakeLathe_Thread(LPVOID);			// TH_MakeLathe.cpp
 UINT MakeWire_Thread(LPVOID);			// TH_MakeWire.cpp
+UINT MakeNurbs_Thread(LPVOID);			// TH_MakeNurbs.cpp
 UINT ShapeSearch_Thread(LPVOID);		// TH_ShapeSearch.cpp
 UINT AutoWorkingSet_Thread(LPVOID);		// TH_AutoWorkingSet.cpp
 

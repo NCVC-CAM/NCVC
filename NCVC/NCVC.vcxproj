@@ -388,6 +388,7 @@
     <ClCompile Include="TH_Cuttime.cpp" />
     <ClCompile Include="TH_MakeLathe.cpp" />
     <ClCompile Include="TH_MakeNCD.cpp" />
+    <ClCompile Include="TH_MakeNurbs.cpp" />
     <ClCompile Include="TH_MakeWire.cpp" />
     <ClCompile Include="TH_NCRead.cpp" />
     <ClCompile Include="TH_ShapeSearch.cpp" />
