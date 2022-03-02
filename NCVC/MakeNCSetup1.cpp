@@ -7,6 +7,7 @@
 #include "ExecOption.h"
 #include "NCMakeMillOpt.h"
 #include "MakeNCSetup.h"
+#include "MakeNurbsSetup.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -20,8 +21,6 @@ BEGIN_MESSAGE_MAP(CMakeNCSetup1, CPropertyPage)
 	ON_BN_CLICKED(IDC_MKNC1_FOOTER_EDIT, &CMakeNCSetup1::OnFooterEdit)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
-
-#define	GetParentSheet()	static_cast<CMakeNCSetup *>(GetParentSheet())
 
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCSetup1 プロパティ ページ
@@ -46,6 +45,8 @@ void CMakeNCSetup1::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MKNC1_FOOTER_EDIT, m_ctFooterBt);
 	DDX_Control(pDX, IDC_MKNC1_HEADER, m_ctHeader);
 	DDX_Control(pDX, IDC_MKNC1_FOOTER, m_ctFooter);
+	DDX_Control(pDX, IDC_MKNC1_XREV, m_ctXrevBt);
+	DDX_Control(pDX, IDC_MKNC1_YREV, m_ctYrevBt);
 	DDX_Control(pDX, IDC_MKNC1_ZCUT, m_dZCut);
 	DDX_Control(pDX, IDC_MKNC1_R, m_dZG0Stop);
 	DDX_Control(pDX, IDC_MKNC1_SPINDLE, m_nSpindle);
@@ -67,7 +68,22 @@ BOOL CMakeNCSetup1::OnInitDialog()
 
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
 	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
-	CNCMakeMillOpt* pOpt = GetParentSheet()->GetNCMakeOption();
+	int		i;
+	CNCMakeMillOpt*	pOpt;
+	CWnd*	pWnd = GetParentSheet();
+	if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
+		// 通常フライスモード
+		pOpt = static_cast<CMakeNCSetup *>(pWnd)->GetNCMakeOption();
+	}
+	else {
+		// NURBSモード
+		pOpt = static_cast<CMakeNurbsSetup *>(pWnd)->GetNCMakeOption();
+		m_ctXrevBt.EnableWindow(FALSE);
+		m_ctYrevBt.EnableWindow(FALSE);
+		for ( i=0; i<NCXYZ; i++ )
+			m_dG92[i].EnableWindow(FALSE);
+	}
+
 	m_nSpindle	= pOpt->MIL_I_SPINDLE;
 	m_dFeed		= pOpt->MIL_D_FEED;
 	m_dZFeed	= pOpt->MIL_D_ZFEED;
@@ -75,7 +91,7 @@ BOOL CMakeNCSetup1::OnInitDialog()
 	m_dZG0Stop	= pOpt->MIL_D_ZG0STOP;
 	m_bXrev		= pOpt->MIL_F_XREV;
 	m_bYrev		= pOpt->MIL_F_YREV;
-	for ( int i=0; i<NCXYZ; i++ )
+	for ( i=0; i<NCXYZ; i++ )
 		m_dG92[i] = pOpt->m_pDblOpt[MKNC_DBL_G92X+i];
 	::Path_Name_From_FullPath(pOpt->MIL_S_HEADER, m_strHeaderPath, m_strHeader);
 	::Path_Name_From_FullPath(pOpt->MIL_S_FOOTER, m_strFooterPath, m_strFooter);
@@ -144,46 +160,53 @@ void CMakeNCSetup1::OnFooterEdit()
 
 BOOL CMakeNCSetup1::OnApply() 
 {
-	// ﾍﾟｰｼﾞ間の依存関係
-	// OnKillActive() ではﾍﾟｰｼﾞを切り替えられないのでうっとおしい
-	int		nMakeEnd;
-	BOOL	bDeep;
-	float	dDeep, dMakeValue;
-	CMakeNCSetup*	pParent = GetParentSheet();
-	CNCMakeMillOpt* pOpt = pParent->GetNCMakeOption();
-
-	if ( ::IsWindow(pParent->m_dlg3.m_hWnd) ) {
-		nMakeEnd	= pParent->m_dlg3.m_nMakeEnd;
-		dMakeValue	= pParent->m_dlg3.m_dMakeValue;
-		bDeep		= pParent->m_dlg3.m_bDeep;
-		dDeep		= pParent->m_dlg3.m_dDeep;
-	}
-	else {
-		nMakeEnd	= pOpt->MIL_I_MAKEEND;
-		dMakeValue	= pOpt->MIL_D_MAKEEND;
-		bDeep		= pOpt->MIL_F_DEEP;
-		dDeep		= pOpt->MIL_D_DEEP;
-	}
-
-	if ( nMakeEnd == 2 ) {
-		if ( dMakeValue > m_dZG0Stop ) {
-			AfxMessageBox(IDS_ERR_DEEPFIXR, MB_OK|MB_ICONEXCLAMATION);
-			m_dZG0Stop.SetFocus();
-			m_dZG0Stop.SetSel(0, -1);
-			return FALSE;
+	CNCMakeMillOpt*	pOpt;
+	CWnd*	pWnd = GetParentSheet();
+	if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
+		// ﾍﾟｰｼﾞ間の依存関係
+		// OnKillActive() ではﾍﾟｰｼﾞを切り替えられないのでうっとおしい
+		int		nMakeEnd;
+		BOOL	bDeep;
+		float	dDeep, dMakeValue;
+		CMakeNCSetup* pParent = static_cast<CMakeNCSetup *>(pWnd);
+		// 通常フライスモード
+		pOpt = pParent->GetNCMakeOption();
+		if ( ::IsWindow(pParent->m_dlg3.m_hWnd) ) {
+			nMakeEnd	= pParent->m_dlg3.m_nMakeEnd;
+			dMakeValue	= pParent->m_dlg3.m_dMakeValue;
+			bDeep		= pParent->m_dlg3.m_bDeep;
+			dDeep		= pParent->m_dlg3.m_dDeep;
 		}
-		if ( dMakeValue <= m_dZCut ) {
-			AfxMessageBox(IDS_ERR_DEEPFIXZ, MB_OK|MB_ICONEXCLAMATION);
+		else {
+			nMakeEnd	= pOpt->MIL_I_MAKEEND;
+			dMakeValue	= pOpt->MIL_D_MAKEEND;
+			bDeep		= pOpt->MIL_F_DEEP;
+			dDeep		= pOpt->MIL_D_DEEP;
+		}
+		if ( nMakeEnd == 2 ) {
+			if ( dMakeValue > m_dZG0Stop ) {
+				AfxMessageBox(IDS_ERR_DEEPFIXR, MB_OK|MB_ICONEXCLAMATION);
+				m_dZG0Stop.SetFocus();
+				m_dZG0Stop.SetSel(0, -1);
+				return FALSE;
+			}
+			if ( dMakeValue <= m_dZCut ) {
+				AfxMessageBox(IDS_ERR_DEEPFIXZ, MB_OK|MB_ICONEXCLAMATION);
+				m_dZCut.SetFocus();
+				m_dZCut.SetSel(0, -1);
+				return FALSE;
+			}
+		}
+		if ( bDeep && m_dZCut<dDeep ) {
+			AfxMessageBox(IDS_ERR_DEEPFINAL, MB_OK|MB_ICONEXCLAMATION);
 			m_dZCut.SetFocus();
 			m_dZCut.SetSel(0, -1);
 			return FALSE;
 		}
 	}
-	if ( bDeep && m_dZCut<dDeep ) {
-		AfxMessageBox(IDS_ERR_DEEPFINAL, MB_OK|MB_ICONEXCLAMATION);
-		m_dZCut.SetFocus();
-		m_dZCut.SetSel(0, -1);
-		return FALSE;
+	else {
+		// NURBSモード
+		pOpt = static_cast<CMakeNurbsSetup *>(pWnd)->GetNCMakeOption();
 	}
 
 	pOpt->MIL_I_SPINDLE	= m_nSpindle;

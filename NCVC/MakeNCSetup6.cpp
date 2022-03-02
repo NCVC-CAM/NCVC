@@ -9,6 +9,7 @@
 #include "MakeNCSetup.h"
 #include "MakeLatheSetup.h"
 #include "MakeWireSetup.h"
+#include "MakeNurbsSetup.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -69,9 +70,10 @@ BOOL CMakeNCSetup6::OnInitDialog()
 	
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
 	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
-	CWnd*	pParent = GetParentSheet();
-	if ( pParent->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
-		CNCMakeMillOpt* pOpt = static_cast<CMakeNCSetup *>(pParent)->GetNCMakeOption();
+	CWnd*	pWnd = GetParentSheet();
+	if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
+		// 通常フライスモード
+		CNCMakeMillOpt* pOpt = static_cast<CMakeNCSetup *>(pWnd)->GetNCMakeOption();
 		m_nDot			= pOpt->MIL_I_DOT;
 		m_nFDot			= pOpt->MIL_I_FDOT;
 		m_bZeroCut		= pOpt->MIL_F_ZEROCUT;
@@ -82,9 +84,9 @@ BOOL CMakeNCSetup6::OnInitDialog()
 		m_dEllipse		= pOpt->MIL_D_ELLIPSE;
 		m_bEllipse		= pOpt->MIL_F_ELLIPSE;
 	}
-	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMakeLatheSetup)) ) {
+	else if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeLatheSetup)) ) {
 		// 旋盤ﾓｰﾄﾞ
-		CNCMakeLatheOpt* pOpt = static_cast<CMakeLatheSetup *>(pParent)->GetNCMakeOption();
+		CNCMakeLatheOpt* pOpt = static_cast<CMakeLatheSetup *>(pWnd)->GetNCMakeOption();
 		m_nDot			= pOpt->LTH_I_DOT;
 		m_nFDot			= pOpt->LTH_I_FDOT;
 		m_bZeroCut		= pOpt->LTH_F_ZEROCUT;
@@ -95,20 +97,33 @@ BOOL CMakeNCSetup6::OnInitDialog()
 		m_dEllipse		= pOpt->LTH_D_ELLIPSE;
 		m_bEllipse		= pOpt->LTH_F_ELLIPSE;
 	}
-	else {
+	else if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeWireSetup)) ) {
 		// ﾜｲﾔ放電加工機ﾓｰﾄﾞ
 		m_ctCircleGroup.ShowWindow(SW_HIDE);
 		m_ctCircleR.ShowWindow(SW_HIDE);
 		m_ctCircleIJ.ShowWindow(SW_HIDE);
 		m_ctCircleHalf.ShowWindow(SW_HIDE);
 		m_ctZeroCutIJ.ShowWindow(SW_HIDE);
-		CNCMakeWireOpt* pOpt = static_cast<CMakeWireSetup *>(pParent)->GetNCMakeOption();
+		CNCMakeWireOpt* pOpt = static_cast<CMakeWireSetup *>(pWnd)->GetNCMakeOption();
 		m_nDot			= pOpt->WIR_I_DOT;
 		m_nFDot			= pOpt->WIR_I_FDOT;
 		m_bZeroCut		= pOpt->WIR_F_ZEROCUT;
 		m_nCircleCode	= pOpt->WIR_I_CIRCLECODE;
 		m_dEllipse		= pOpt->WIR_D_ELLIPSE;
 		m_bEllipse		= pOpt->WIR_F_ELLIPSE;
+	}
+	else {
+		// NURBSモード
+		CNCMakeMillOpt* pOpt = static_cast<CMakeNurbsSetup *>(pWnd)->GetNCMakeOption();
+		m_nDot			= pOpt->MIL_I_DOT;
+		m_nFDot			= pOpt->MIL_I_FDOT;
+		m_bZeroCut		= pOpt->MIL_F_ZEROCUT;
+		m_nCircleCode	= pOpt->MIL_I_CIRCLECODE;
+		m_nIJ			= pOpt->MIL_I_IJ;
+		m_bCircleHalf	= pOpt->MIL_F_CIRCLEHALF;
+		m_bZeroCutIJ	= pOpt->MIL_F_ZEROCUT_IJ;
+		m_dEllipse		= pOpt->MIL_D_ELLIPSE;
+		m_bEllipse		= pOpt->MIL_F_ELLIPSE;
 	}
 
 	if ( m_nIJ == 0 )
@@ -134,9 +149,9 @@ void CMakeNCSetup6::OnCircleIJ()
 
 BOOL CMakeNCSetup6::OnApply() 
 {
-	CWnd*	pParent = GetParentSheet();
-	if ( pParent->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
-		CNCMakeMillOpt* pOpt = static_cast<CMakeNCSetup *>(pParent)->GetNCMakeOption();
+	CWnd*	pWnd = GetParentSheet();
+	if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
+		CNCMakeMillOpt* pOpt = static_cast<CMakeNCSetup *>(pWnd)->GetNCMakeOption();
 		pOpt->MIL_I_DOT			= m_nDot;
 		pOpt->MIL_I_FDOT		= m_nFDot;
 		pOpt->MIL_F_ZEROCUT		= m_bZeroCut;
@@ -147,8 +162,8 @@ BOOL CMakeNCSetup6::OnApply()
 		pOpt->MIL_D_ELLIPSE		= m_dEllipse;
 		pOpt->MIL_F_ELLIPSE		= m_bEllipse;
 	}
-	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMakeLatheSetup)) ) {
-		CNCMakeLatheOpt* pOpt = static_cast<CMakeLatheSetup *>(pParent)->GetNCMakeOption();
+	else if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeLatheSetup)) ) {
+		CNCMakeLatheOpt* pOpt = static_cast<CMakeLatheSetup *>(pWnd)->GetNCMakeOption();
 		pOpt->LTH_I_DOT			= m_nDot;
 		pOpt->LTH_I_FDOT		= m_nFDot;
 		pOpt->LTH_F_ZEROCUT		= m_bZeroCut;
@@ -159,14 +174,26 @@ BOOL CMakeNCSetup6::OnApply()
 		pOpt->LTH_D_ELLIPSE		= m_dEllipse;
 		pOpt->LTH_F_ELLIPSE		= m_bEllipse;
 	}
-	else {
-		CNCMakeWireOpt* pOpt = static_cast<CMakeWireSetup *>(pParent)->GetNCMakeOption();
+	else if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeWireSetup)) ) {
+		CNCMakeWireOpt* pOpt = static_cast<CMakeWireSetup *>(pWnd)->GetNCMakeOption();
 		pOpt->WIR_I_DOT			= m_nDot;
 		pOpt->WIR_I_FDOT		= m_nFDot;
 		pOpt->WIR_F_ZEROCUT		= m_bZeroCut;
 		pOpt->WIR_I_CIRCLECODE	= m_nCircleCode;
 		pOpt->WIR_D_ELLIPSE		= m_dEllipse;
 		pOpt->WIR_F_ELLIPSE		= m_bEllipse;
+	}
+	else {
+		CNCMakeMillOpt* pOpt = static_cast<CMakeNurbsSetup *>(pWnd)->GetNCMakeOption();
+		pOpt->MIL_I_DOT			= m_nDot;
+		pOpt->MIL_I_FDOT		= m_nFDot;
+		pOpt->MIL_F_ZEROCUT		= m_bZeroCut;
+		pOpt->MIL_I_CIRCLECODE	= m_nCircleCode;
+		pOpt->MIL_I_IJ			= m_nIJ;
+		pOpt->MIL_F_CIRCLEHALF	= m_bCircleHalf;
+		pOpt->MIL_F_ZEROCUT_IJ	= m_bZeroCutIJ;
+		pOpt->MIL_D_ELLIPSE		= m_dEllipse;
+		pOpt->MIL_F_ELLIPSE		= m_bEllipse;
 	}
 
 	return TRUE;

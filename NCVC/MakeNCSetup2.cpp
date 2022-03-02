@@ -9,6 +9,7 @@
 #include "MakeNCSetup.h"
 #include "MakeLatheSetup.h"
 #include "MakeWireSetup.h"
+#include "MakeNurbsSetup.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -85,9 +86,10 @@ BOOL CMakeNCSetup2::OnInitDialog()
 
 	// ｶｽﾀﾑｺﾝﾄﾛｰﾙはｺﾝｽﾄﾗｸﾀで初期化できない
 	// + GetParentSheet() ﾎﾟｲﾝﾀを取得できない
-	CWnd*	pParent = GetParentSheet();
-	if ( pParent->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
-		CNCMakeMillOpt* pOpt = static_cast<CMakeNCSetup *>(pParent)->GetNCMakeOption();
+	CWnd*	pWnd = GetParentSheet();
+	if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
+		// 通常フライスモード
+		CNCMakeMillOpt* pOpt = static_cast<CMakeNCSetup *>(pWnd)->GetNCMakeOption();
 		m_bProg				= pOpt->MIL_F_PROG;
 		m_nProg				= pOpt->MIL_I_PROG;
 		m_bProgAuto			= pOpt->MIL_F_PROGAUTO;
@@ -100,11 +102,11 @@ BOOL CMakeNCSetup2::OnInitDialog()
 		m_strLineForm		= pOpt->MIL_S_LINEFORM;
 		m_strEOB			= pOpt->MIL_S_EOB;
 	}
-	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMakeLatheSetup)) ) {
+	else if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeLatheSetup)) ) {
 		// 旋盤ﾓｰﾄﾞ
 		m_ctZReturnS.ShowWindow(SW_HIDE);
 		m_ctZReturn.ShowWindow(SW_HIDE);
-		CNCMakeLatheOpt* pOpt = static_cast<CMakeLatheSetup *>(pParent)->GetNCMakeOption();
+		CNCMakeLatheOpt* pOpt = static_cast<CMakeLatheSetup *>(pWnd)->GetNCMakeOption();
 		m_bProg				= pOpt->LTH_F_PROG;
 		m_nProg				= pOpt->LTH_I_PROG;
 		m_bProgAuto			= pOpt->LTH_F_PROGAUTO;
@@ -116,12 +118,12 @@ BOOL CMakeNCSetup2::OnInitDialog()
 		m_strLineForm		= pOpt->LTH_S_LINEFORM;
 		m_strEOB			= pOpt->LTH_S_EOB;
 	}
-	else {
+	else if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeWireSetup)) ) {
 		// ﾜｲﾔ放電加工機ﾓｰﾄﾞ
 		m_ctZReturnS.ShowWindow(SW_HIDE);
 		m_ctZReturn.ShowWindow(SW_HIDE);
 		m_ctDisableSpindle.ShowWindow(SW_HIDE);
-		CNCMakeWireOpt* pOpt = static_cast<CMakeWireSetup *>(pParent)->GetNCMakeOption();
+		CNCMakeWireOpt* pOpt = static_cast<CMakeWireSetup *>(pWnd)->GetNCMakeOption();
 		m_bProg				= pOpt->WIR_F_PROG;
 		m_nProg				= pOpt->WIR_I_PROG;
 		m_bProgAuto			= pOpt->WIR_F_PROGAUTO;
@@ -131,6 +133,21 @@ BOOL CMakeNCSetup2::OnInitDialog()
 		m_bGclip			= pOpt->WIR_F_GCLIP;
 		m_strLineForm		= pOpt->WIR_S_LINEFORM;
 		m_strEOB			= pOpt->WIR_S_EOB;
+	}
+	else {
+		// NURBSモード
+		CNCMakeMillOpt* pOpt = static_cast<CMakeNurbsSetup *>(pWnd)->GetNCMakeOption();
+		m_bProg				= pOpt->MIL_F_PROG;
+		m_nProg				= pOpt->MIL_I_PROG;
+		m_bProgAuto			= pOpt->MIL_F_PROGAUTO;
+		m_bLineAdd			= pOpt->MIL_F_LINEADD;
+		m_nLineAdd			= pOpt->MIL_I_LINEADD;
+		m_nG90				= pOpt->MIL_I_G90;
+		m_nZReturn			= pOpt->MIL_I_ZRETURN;
+		m_bGclip			= pOpt->MIL_F_GCLIP;
+		m_bDisableSpindle	= pOpt->MIL_F_DISABLESPINDLE;
+		m_strLineForm		= pOpt->MIL_S_LINEFORM;
+		m_strEOB			= pOpt->MIL_S_EOB;
 	}
 	EnableControl_ProgNo();
 	EnableControl_LineAdd();
@@ -155,9 +172,9 @@ void CMakeNCSetup2::OnLineAdd()
 
 BOOL CMakeNCSetup2::OnApply() 
 {
-	CWnd*	pParent = GetParentSheet();
-	if ( pParent->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
-		CNCMakeMillOpt* pOpt = static_cast<CMakeNCSetup *>(pParent)->GetNCMakeOption();
+	CWnd*	pWnd = GetParentSheet();
+	if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeNCSetup)) ) {
+		CNCMakeMillOpt* pOpt = static_cast<CMakeNCSetup *>(pWnd)->GetNCMakeOption();
 		pOpt->MIL_F_PROG			= m_bProg;
 		pOpt->MIL_I_PROG			= m_nProg;
 		pOpt->MIL_F_PROGAUTO		= m_bProgAuto;
@@ -170,8 +187,8 @@ BOOL CMakeNCSetup2::OnApply()
 		pOpt->MIL_S_LINEFORM		= m_strLineForm;
 		pOpt->MIL_S_EOB				= m_strEOB;
 	}
-	else if ( pParent->IsKindOf(RUNTIME_CLASS(CMakeLatheSetup)) ) {
-		CNCMakeLatheOpt* pOpt = static_cast<CMakeLatheSetup *>(pParent)->GetNCMakeOption();
+	else if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeLatheSetup)) ) {
+		CNCMakeLatheOpt* pOpt = static_cast<CMakeLatheSetup *>(pWnd)->GetNCMakeOption();
 		pOpt->LTH_F_PROG			= m_bProg;
 		pOpt->LTH_I_PROG			= m_nProg;
 		pOpt->LTH_F_PROGAUTO		= m_bProgAuto;
@@ -183,8 +200,8 @@ BOOL CMakeNCSetup2::OnApply()
 		pOpt->LTH_S_LINEFORM		= m_strLineForm;
 		pOpt->LTH_S_EOB				= m_strEOB;
 	}
-	else {
-		CNCMakeWireOpt* pOpt = static_cast<CMakeWireSetup *>(pParent)->GetNCMakeOption();
+	else if ( pWnd->IsKindOf(RUNTIME_CLASS(CMakeWireSetup)) ) {
+		CNCMakeWireOpt* pOpt = static_cast<CMakeWireSetup *>(pWnd)->GetNCMakeOption();
 		pOpt->WIR_F_PROG			= m_bProg;
 		pOpt->WIR_I_PROG			= m_nProg;
 		pOpt->WIR_F_PROGAUTO		= m_bProgAuto;
@@ -194,6 +211,20 @@ BOOL CMakeNCSetup2::OnApply()
 		pOpt->WIR_F_GCLIP			= m_bGclip;
 		pOpt->WIR_S_LINEFORM		= m_strLineForm;
 		pOpt->WIR_S_EOB				= m_strEOB;
+	}
+	else {
+		CNCMakeMillOpt* pOpt = static_cast<CMakeNurbsSetup *>(pWnd)->GetNCMakeOption();
+		pOpt->MIL_F_PROG			= m_bProg;
+		pOpt->MIL_I_PROG			= m_nProg;
+		pOpt->MIL_F_PROGAUTO		= m_bProgAuto;
+		pOpt->MIL_F_LINEADD			= m_bLineAdd;
+		pOpt->MIL_I_LINEADD			= m_nLineAdd;
+		pOpt->MIL_I_G90				= m_nG90;
+		pOpt->MIL_I_ZRETURN			= m_nZReturn;
+		pOpt->MIL_F_GCLIP			= m_bGclip;
+		pOpt->MIL_F_DISABLESPINDLE	= m_bDisableSpindle;
+		pOpt->MIL_S_LINEFORM		= m_strLineForm;
+		pOpt->MIL_S_EOB				= m_strEOB;
 	}
 
 	return TRUE;

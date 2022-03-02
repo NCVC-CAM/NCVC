@@ -1,40 +1,36 @@
-// MakeNCSetup.cpp : インプリメンテーション ファイル
+// MakeNurbsSetup.cpp : インプリメンテーション ファイル
 //
 
 #include "stdafx.h"
 #include "NCVC.h"
-#include "MakeNCSetup.h"
+#include "MakeNurbsSetup.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-extern	int		g_nLastPage_NCMake;
+extern	int		g_nLastPage_NCMakeNurbs;
 
-IMPLEMENT_DYNAMIC(CMakeNCSetup, CPropertySheet)
+IMPLEMENT_DYNAMIC(CMakeNurbsSetup, CPropertySheet)
 
-BEGIN_MESSAGE_MAP(CMakeNCSetup, CPropertySheet)
-	//{{AFX_MSG_MAP(CMakeNCSetup)
+BEGIN_MESSAGE_MAP(CMakeNurbsSetup, CPropertySheet)
+	//{{AFX_MSG_MAP(CMakeNurbsSetup)
 	ON_WM_DESTROY()
 	//}}AFX_MSG_MAP
-	ON_BN_CLICKED (ID_APPLY_NOW, &CMakeNCSetup::OnApplyNow)
+	ON_BN_CLICKED (ID_APPLY_NOW, &CMakeNurbsSetup::OnApplyNow)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// CMakeNCSetup
+// CMakeNurbsSetup
 
-CMakeNCSetup::CMakeNCSetup(LPCTSTR lpszCaption, LPCTSTR lpszInitFile)
-	: CPropertySheet(lpszCaption, NULL, g_nLastPage_NCMake)
+CMakeNurbsSetup::CMakeNurbsSetup(LPCTSTR lpszCaption, LPCTSTR lpszInitFile)
+	: CPropertySheet(lpszCaption, NULL, g_nLastPage_NCMakeNurbs)
 {
 	m_psh.dwFlags &= ~PSH_HASHELP;
 
 	AddPage(&m_dlg1);	// 基本
 	AddPage(&m_dlg2);	// 生成
 	AddPage(&m_dlg6);	// 表記
-	AddPage(&m_dlg3);	// 深彫
-	AddPage(&m_dlg4);	// 穴加工
-	AddPage(&m_dlg8);	// レイヤ
-	AddPage(&m_dlg5);	// 最適化
 
 	// 切削ﾊﾟﾗﾒｰﾀｵﾌﾞｼﾞｪｸﾄの生成
 	try {
@@ -50,16 +46,16 @@ CMakeNCSetup::CMakeNCSetup(LPCTSTR lpszCaption, LPCTSTR lpszInitFile)
 	}
 }
 
-CMakeNCSetup::~CMakeNCSetup()
+CMakeNurbsSetup::~CMakeNurbsSetup()
 {
 	if ( m_pNCMake )
 		delete	m_pNCMake;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// CMakeNCSetup メッセージ ハンドラ
+// CMakeNurbsSetup メッセージ ハンドラ
 
-BOOL CMakeNCSetup::OnInitDialog() 
+BOOL CMakeNurbsSetup::OnInitDialog() 
 {
 	// 切削ﾊﾟﾗﾒｰﾀｵﾌﾞｼﾞｪｸﾄが生成できていなければ
 	if ( !m_pNCMake ) {
@@ -76,16 +72,16 @@ BOOL CMakeNCSetup::OnInitDialog()
 	return __super::OnInitDialog();
 }
 
-void CMakeNCSetup::OnDestroy() 
+void CMakeNurbsSetup::OnDestroy() 
 {
 	__super::OnDestroy();
 
 	// ﾗｽﾄﾍﾟｰｼﾞのｾｯﾄ
-	g_nLastPage_NCMake = GetActiveIndex();
+	g_nLastPage_NCMakeNurbs = GetActiveIndex();
 }
 
 // 新規保存
-void CMakeNCSetup::OnApplyNow()
+void CMakeNurbsSetup::OnApplyNow()
 {
 	// 現ｱｸﾃｨﾌﾞﾍﾟｰｼﾞのﾃﾞｰﾀﾁｪｯｸ
 	if ( !GetActivePage()->OnKillActive() )

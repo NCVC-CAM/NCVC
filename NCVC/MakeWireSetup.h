@@ -19,6 +19,7 @@ class CMakeWireSetup : public CPropertySheet
 public:
 	CMakeWireSetup(LPCTSTR, LPCTSTR);
 	virtual ~CMakeWireSetup();
+	DECLARE_DYNAMIC(CMakeWireSetup)	// RUNTIME_CLASSÉ}ÉNÉçóp
 
 	// ì‡ïîÕﬂ∞ºﬁ¿ﬁ≤±€∏ﬁ
 	CMakeWireSetup1	m_dlg1;

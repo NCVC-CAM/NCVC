@@ -10,6 +10,7 @@
 #include "MakeNCSetup.h"
 #include "MakeLatheSetup.h"
 #include "MakeWireSetup.h"
+#include "MakeNurbsSetup.h"
 #include "MakeNCDlg.h"
 #include "MakeBindOptDlg.h"
 
@@ -200,6 +201,16 @@ void CMakeNCDlg::OnMKNCInitEdit()
 		break;
 	case NCMAKENURBS:
 		VERIFY(strResult.LoadString(IDCV_NURBS));
+		{
+			CMakeNurbsSetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
+			if ( ps.DoModal() != IDOK )
+				return;
+			ps.GetNCMakeOption()->SaveMakeOption();
+#ifdef _DEBUGOLD
+			ps.GetNCMakeOption()->DbgDump();
+#endif
+			strResult = ps.GetNCMakeOption()->GetInitFile();
+		}
 		break;
 	}
 

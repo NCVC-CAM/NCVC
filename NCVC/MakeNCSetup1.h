@@ -23,6 +23,8 @@ public:
 	enum { IDD = IDD_MKNC_SETUP1 };
 	CButton	m_ctHeaderBt;
 	CButton	m_ctFooterBt;
+	CButton	m_ctXrevBt;
+	CButton	m_ctYrevBt;
 	CEdit	m_ctHeader;
 	CEdit	m_ctFooter;
 	CFloatEdit	m_dZCut;

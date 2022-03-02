@@ -266,6 +266,7 @@
     <ClCompile Include="3dScanSetupDlg.cpp" />
     <ClCompile Include="DxfAutoOutlineDlg.cpp" />
     <ClCompile Include="DxfSetup3.cpp" />
+    <ClCompile Include="MakeNurbsSetup.cpp" />
     <ClCompile Include="MyTemplate.cpp" />
     <ClCompile Include="AboutDlg.cpp" />
     <ClCompile Include="AddinDlg.cpp" />
@@ -412,6 +413,7 @@
     <ClInclude Include="3dScanSetupDlg.h" />
     <ClInclude Include="DxfAutoOutlineDlg.h" />
     <ClInclude Include="DxfSetup3.h" />
+    <ClInclude Include="MakeNurbsSetup.h" />
     <ClInclude Include="MyTemplate.h" />
     <ClInclude Include="AboutDlg.h" />
     <ClInclude Include="AddinDlg.h" />

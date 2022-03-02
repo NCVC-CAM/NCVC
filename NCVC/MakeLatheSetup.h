@@ -23,6 +23,7 @@ class CMakeLatheSetup : public CPropertySheet
 public:
 	CMakeLatheSetup(LPCTSTR, LPCTSTR);
 	virtual ~CMakeLatheSetup();
+	DECLARE_DYNAMIC(CMakeLatheSetup)	// RUNTIME_CLASSマクロ用
 
 	// 内部ﾍﾟｰｼﾞﾀﾞｲｱﾛｸﾞ
 	CMakeLatheSetup0	m_dlg0;		// 基本

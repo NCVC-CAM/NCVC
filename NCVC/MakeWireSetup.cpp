@@ -11,6 +11,8 @@
 
 extern	int		g_nLastPage_NCMakeWire;
 
+IMPLEMENT_DYNAMIC(CMakeWireSetup, CPropertySheet)
+
 BEGIN_MESSAGE_MAP(CMakeWireSetup, CPropertySheet)
 	ON_WM_DESTROY()
 	ON_BN_CLICKED (ID_APPLY_NOW, &CMakeWireSetup::OnApplyNow)

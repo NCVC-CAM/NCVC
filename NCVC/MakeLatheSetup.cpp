@@ -11,6 +11,8 @@
 
 extern	int		g_nLastPage_NCMakeLathe;
 
+IMPLEMENT_DYNAMIC(CMakeLatheSetup, CPropertySheet)
+
 BEGIN_MESSAGE_MAP(CMakeLatheSetup, CPropertySheet)
 	ON_WM_DESTROY()
 	ON_BN_CLICKED (ID_APPLY_NOW, &CMakeLatheSetup::OnApplyNow)

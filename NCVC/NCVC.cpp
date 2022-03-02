@@ -71,6 +71,7 @@ extern	int		g_nLastPage_MachineSetup = 0;	// 工作機械ｵﾌﾟｼｮﾝ
 extern	int		g_nLastPage_NCMake = 0;			// NC生成ｵﾌﾟｼｮﾝ
 extern	int		g_nLastPage_NCMakeLathe = 0;	// 旋盤用NC生成ｵﾌﾟｼｮﾝ
 extern	int		g_nLastPage_NCMakeWire = 0;		// ﾜｲﾔ放電加工機用NC生成ｵﾌﾟｼｮﾝ
+extern	int		g_nLastPage_NCMakeNurbs = 0;	// Nurbs曲面用NC生成ｵﾌﾟｼｮﾝ
 extern	int		g_nLastPage_ViewSetup = 0;		// 表示系ｾｯﾄｱｯﾌﾟ
 
 /////////////////////////////////////////////////////////////////////////////
