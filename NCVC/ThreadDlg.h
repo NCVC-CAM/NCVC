@@ -87,3 +87,11 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 };
+
+/////////////////////////////////////////////////////////////////////////////
+// 各スレッド共通関数
+
+// ﾌｪｰｽﾞ出力
+void SendFaseMessage(CThreadDlg*, int&, INT_PTR=-1, int=-1, LPCTSTR=NULL);
+void SetProgressPos64(CThreadDlg*, INT_PTR);
+void SetProgressPos(CThreadDlg*, INT_PTR);

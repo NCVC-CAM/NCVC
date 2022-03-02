@@ -30,6 +30,7 @@ using namespace boost;
 static	CThreadDlg*		g_pParent;
 static	CDXFDoc*		g_pDoc;
 static	CNCMakeMillOpt*	g_pMakeOpt;
+static	int				g_nFase;	// ﾌｪｰｽﾞ№
 
 // よく使う変数や呼び出しの簡略置換
 #define	IsThread()	g_pParent->IsThreadContinue()
@@ -293,19 +294,6 @@ static inline	void	_AddMakeText(CDXFdata* pData)
 	pData->SetMakeFlg();
 }
 
-// ﾌｪｰｽﾞ更新
-static	int		g_nFase;			// ﾌｪｰｽﾞ№
-static	void	SendFaseMessage(INT_PTR = -1, int = -1, LPCTSTR = NULL);
-static inline	void	_SetProgressPos64(INT_PTR i)
-{
-	if ( (i & 0x003f) == 0 )	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
-		g_pParent->m_ctReadProgress.SetPos((int)i);
-}
-static	inline	void	_SetProgressPos(INT_PTR n)
-{
-	g_pParent->m_ctReadProgress.SetPos((int)n);
-}
-
 // 並べ替え補助関数
 static	int		CircleSizeCompareFunc1(CDXFcircle*, CDXFcircle*);	// 円ﾃﾞｰﾀ昇順ｿｰﾄ
 static	int		CircleSizeCompareFunc2(CDXFcircle*, CDXFcircle*);	// 円ﾃﾞｰﾀ降順ｿｰﾄ
@@ -356,7 +344,7 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 
 	// 準備中表示
 	g_nFase = 0;
-	SendFaseMessage(-1, IDS_ANA_DATAINIT);
+	SendFaseMessage(g_pParent, g_nFase, -1, IDS_ANA_DATAINIT);
 	g_pMakeOpt = NULL;
 
 	// 下位の CMemoryException は全てここで集約
@@ -570,7 +558,7 @@ BOOL MultiLayer(int nID)
 		pLayer->SetLayerPartFlag();
 		// 処理ﾚｲﾔ名をﾀﾞｲｱﾛｸﾞに表示
 		g_nFase = 1;
-		SendFaseMessage(-1, IDS_ANA_DATAINIT, pLayer->GetLayerName());
+		SendFaseMessage(g_pParent, g_nFase, -1, IDS_ANA_DATAINIT, pLayer->GetLayerName());
 		//
 		if ( nID == ID_FILE_DXF2NCD_EX1 ) {
 			// NC生成ｵﾌﾟｼｮﾝ読み込み
@@ -963,7 +951,7 @@ BOOL OutputMillCode(LPCTSTR lpszFileName)
 	CString	strPath, strFile, strWriteFile,
 			strNCFile(lpszFileName ? lpszFileName : g_pDoc->GetNCFileName());
 	Path_Name_From_FullPath(strNCFile, strPath, strFile);
-	SendFaseMessage(g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
+	SendFaseMessage(g_pParent, g_nFase, g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
 
 	// 一時ﾌｧｲﾙ生成か否か
 	if ( g_wBindOperator & TH_HEADER ) {
@@ -994,7 +982,7 @@ BOOL OutputMillCode(LPCTSTR lpszFileName)
 			fp.SeekToEnd();
 		for ( INT_PTR i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 			g_obMakeData[i]->WriteGcode(fp);
-			_SetProgressPos64(i);
+			SetProgressPos64(g_pParent, i);
 		}
 	}
 	catch (	CFileException* e ) {
@@ -1003,7 +991,7 @@ BOOL OutputMillCode(LPCTSTR lpszFileName)
 		e->Delete();
 		return FALSE;
 	}
-	_SetProgressPos(g_obMakeData.GetSize());
+	SetProgressPos(g_pParent, g_obMakeData.GetSize());
 
 	// 出力後の処理
 	if ( g_wBindOperator & TH_FOOTER && !s_strNCtemp.IsEmpty() ) {
@@ -1155,7 +1143,7 @@ BOOL MakeNCD_ShapeFunc(void)
 
 	// ﾃﾞｰﾀ生成
 	g_bData = TRUE;
-	SendFaseMessage(nMapCnt);
+	SendFaseMessage(g_pParent, g_nFase, nMapCnt);
 
 	// NC生成ﾙｰﾌﾟ
 	if ( !MakeLoopShape(pShape) )
@@ -1332,7 +1320,7 @@ BOOL CallMakeLoop(ENMAKETYPE enMake, CLayerData* pLayer, CString& strLayer)
 	}
 
 	// ﾌｪｰｽﾞ2
-	SendFaseMessage();
+	SendFaseMessage(g_pParent, g_nFase);
 
 	// NC生成ﾙｰﾌﾟ
 	BOOL	bResult = FALSE;
@@ -1387,7 +1375,7 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 				nDataLoop += pLayer->GetDxfSize();
 		}
 	}
-	SendFaseMessage(nDataLoop);
+	SendFaseMessage(g_pParent, g_nFase, nDataLoop);
 
 	// 原点調整と切削開始ﾎﾟｲﾝﾄ検索ﾙｰﾌﾟ
 	while ( nLayerLoop-- > 0 && IsThread() ) {
@@ -1423,7 +1411,7 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 					}
 				}
 			}
-			_SetProgressPos64(nCnt);
+			SetProgressPos64(g_pParent, nCnt);
 		}
 	}
 
@@ -1436,7 +1424,7 @@ tuple<CDXFdata*, BOOL> OrgTuningCutter(const CLayerData* pLayerTarget)
 		printf("FirstPoint Cnt=%Id Gap=%f\n", nDbg, dGapMin);
 	}
 #endif
-	_SetProgressPos(nDataLoop);
+	SetProgressPos(g_pParent, nDataLoop);
 
 	return make_tuple(pDataResult, bMatch);
 }
@@ -1457,7 +1445,7 @@ tuple<CDXFdata*, BOOL> OrgTuningDrillPoint(void)
 		return make_tuple(pDataResult, bMatch);
 
 	// ﾌｪｰｽﾞ1
-	SendFaseMessage(nLoop);
+	SendFaseMessage(g_pParent, g_nFase, nLoop);
 
 	// 原点調整と切削開始ﾎﾟｲﾝﾄ検索ﾙｰﾌﾟ
 #ifdef _DEBUG
@@ -1487,13 +1475,13 @@ tuple<CDXFdata*, BOOL> OrgTuningDrillPoint(void)
 					bMatch = TRUE;
 			}
 		}
-		_SetProgressPos64(i);
+		SetProgressPos64(g_pParent, i);
 	}
 #ifdef _DEBUG
 	printf("FirstPoint %Id Gap=%f\n", nDbg, dGapMin);
 #endif
 
-	_SetProgressPos(nLoop);
+	SetProgressPos(g_pParent, nLoop);
 
 	if ( !pDataResult )		// !bCalc
 		pDataResult = g_obDrill[0];		// dummy
@@ -1514,21 +1502,21 @@ CDXFdata* OrgTuningDrillCircle(void)
 	CPointF		pt;
 	CDXFdata*	pData1;
 	CDXFdata*	pData2;
-	SendFaseMessage(nLoop);
+	SendFaseMessage(g_pParent, g_nFase, nLoop);
 
 	// ﾌｪｰｽﾞ1 原点調整
 	for ( i=0; i<nLoop && IsThread(); i++ ) {
 		g_obCircle[i]->OrgTuning(FALSE);	// 並べ替えるので近接計算は不要
-		_SetProgressPos64(i);
+		SetProgressPos64(g_pParent, i);
 	}
-	_SetProgressPos(nLoop);
+	SetProgressPos(g_pParent, nLoop);
 	// ﾌｪｰｽﾞ2 並べ替え
 	g_obCircle.Sort( GetNum(MKNC_NUM_DRILLSORT) == 0 ?
 		CircleSizeCompareFunc1 : CircleSizeCompareFunc2 );	// 昇順・降順
 
 	if ( GetFlg(MKNC_FLG_DRILLMATCH) ) {
 		// ﾌｪｰｽﾞ3 重複ﾁｪｯｸ
-		SendFaseMessage(nLoop);
+		SendFaseMessage(g_pParent, g_nFase, nLoop);
 		for ( i=0; i<nLoop && IsThread(); i++ ) {
 			pData1 = g_obCircle[i];
 			if ( !pData1->IsMakeFlg() ) {
@@ -1539,9 +1527,9 @@ CDXFdata* OrgTuningDrillCircle(void)
 						pData2->SetMakeFlg();
 				}
 			}
-			_SetProgressPos64(i);
+			SetProgressPos64(g_pParent, i);
 		}
-		_SetProgressPos(nLoop);
+		SetProgressPos(g_pParent, nLoop);
 	}
 
 	// ﾀﾞﾐｰﾃﾞｰﾀを返す
@@ -1584,7 +1572,7 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 		//
 		nPos += nCnt;
 		if ( nSetPos < nPos ) {
-			_SetProgressPos(nPos);
+			SetProgressPos(g_pParent, nPos);
 			while ( nSetPos < nPos )
 				nSetPos += nSetPos;
 		}
@@ -1654,7 +1642,7 @@ BOOL MakeLoopEuler(const CLayerData* pLayer, CDXFdata* pData)
 
 	} // End of while
 
-	_SetProgressPos(nPos);
+	SetProgressPos(g_pParent, nPos);
 
 	// 全体深彫の後処理
 	if ( GetFlg(MKNC_FLG_DEEP) && GetNum(MKNC_NUM_DEEPALL)==0 && IsThread() ) {
@@ -1885,7 +1873,7 @@ BOOL MakeLoopShape(CDXFshape* pShape)
 			return FALSE;
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
 		nPos += nCnt+1;
-		_SetProgressPos(nPos);
+		SetProgressPos(g_pParent, nPos);
 		// 次の形状集合を検索
 		pt = CDXFdata::ms_pData->GetEndCutterPoint() + ptOrg;
 		pShape = GetNearPointShape(pt);		// ﾈｲﾃｨﾌﾞ座標で検索
@@ -2338,7 +2326,7 @@ BOOL MakeLoopDeepAdd(void)
 		// ﾄｰﾀﾙ件数*深彫ｽﾃｯﾌﾟでﾌﾟﾛｸﾞﾚｽｺﾝﾄﾛｰﾙの再設定(深彫ｽﾃｯﾌﾟｶｳﾝﾄは切り上げ)
 		nCnt = (int)(ceil(fabs((g_dDeep - g_dZCut) / GetDbl(MKNC_DBL_ZSTEP)))
 			* g_ltDeepData.GetCount());
-		SendFaseMessage( nCnt );
+		SendFaseMessage(g_pParent, g_nFase, nCnt);
 	}
 	else {
 		// [一筆]
@@ -2425,7 +2413,7 @@ BOOL MakeLoopDeepAdd(void)
 			}
 			// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
 			if ( GetNum(MKNC_NUM_DEEPALL) == 0 )
-				_SetProgressPos(++nCnt * g_ltDeepData.GetCount());
+				SetProgressPos(g_pParent, ++nCnt * g_ltDeepData.GetCount());
 		}
 	}
 	if ( !IsThread() )
@@ -2948,10 +2936,10 @@ BOOL MakeLoopAddDrill(CDXFdata* pData)
 		// ﾃﾞｰﾀ生成
 		_AddMakeGdataDrill(pData);
 		CDXFdata::ms_pData = pData;
-		_SetProgressPos64(++nPos);
+		SetProgressPos64(g_pParent, ++nPos);
 	} // End of while
 
-	_SetProgressPos(nPos);
+	SetProgressPos(g_pParent, nPos);
 
 	return IsThread();
 }
@@ -2968,7 +2956,7 @@ tuple<INT_PTR, CDXFdata*> MakeLoopAddDrillSeq(INT_PTR nProgress, INT_PTR nStart,
 			continue;
 		// ﾃﾞｰﾀ生成
 		_AddMakeGdataDrill(pData);
-		_SetProgressPos64(i+nProgress);
+		SetProgressPos64(g_pParent, i+nProgress);
 		nCnt++;
 		// 移動ﾚｲﾔのﾁｪｯｸ
 		if ( (pDataMove=GetMatchPointMove(pData)) )
@@ -3462,25 +3450,6 @@ void AddCutterTextIntegrated(const CPointF& pt)
 			}
 		}
 	}
-}
-
-// ﾌｪｰｽﾞ出力
-void SendFaseMessage
-	(INT_PTR nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
-{
-#ifdef _DEBUG
-	printf("MakeNCD_Thread() Phase%d Start\n", g_nFase);
-#endif
-	if ( nRange > 0 )
-		g_pParent->m_ctReadProgress.SetRange32(0, (int)nRange);
-
-	CString	strMsg;
-	if ( nMsgID > 0 )
-		VERIFY(strMsg.LoadString(nMsgID));
-	else
-		strMsg.Format(IDS_MAKENCD_FASE, g_nFase);
-	g_pParent->SetFaseMessage(strMsg, lpszMsg);
-	g_nFase++;
 }
 
 //////////////////////////////////////////////////////////////////////

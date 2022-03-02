@@ -26,6 +26,7 @@ using namespace boost;
 static	CThreadDlg*			g_pParent;
 static	CDXFDoc*			g_pDoc;
 static	CNCMakeWireOpt*		g_pMakeOpt;
+static	int					g_nFase;	// ﾌｪｰｽﾞ№
 
 // よく使う変数や呼び出しの簡略置換
 #define	IsThread()	g_pParent->IsThreadContinue()
@@ -143,14 +144,6 @@ static inline	void	_AddMakeGdata(const CVPointF& vptXY, const CVPointF& vptUV)
 	g_obMakeData.Add(pNCD);
 }
 
-// ﾌｪｰｽﾞ更新
-static	int		g_nFase;			// ﾌｪｰｽﾞ№
-static	void	SendFaseMessage(INT_PTR = -1, int = -1, LPCTSTR = NULL);
-static	inline	void	_SetProgressPos(INT_PTR n)
-{
-	g_pParent->m_ctReadProgress.SetPos((int)n);
-}
-
 // ｻﾌﾞｽﾚｯﾄﾞ関数
 static	CCriticalSection	g_csMakeAfter;	// MakeWire_AfterThread()ｽﾚｯﾄﾞﾛｯｸｵﾌﾞｼﾞｪｸﾄ
 static	UINT	MakeWire_AfterThread(LPVOID);	// 後始末ｽﾚｯﾄﾞ
@@ -193,7 +186,7 @@ UINT MakeWire_Thread(LPVOID pVoid)
 
 	// 準備中表示
 	g_nFase = 0;
-	SendFaseMessage(-1, IDS_ANA_DATAINIT);
+	SendFaseMessage(g_pParent, g_nFase, -1, IDS_ANA_DATAINIT);
 	g_pMakeOpt = NULL;
 
 	// 下位の CMemoryException は全てここで集約
@@ -286,7 +279,7 @@ BOOL OutputWireCode(void)
 	CString	strPath, strFile,
 			strNCFile(g_pDoc->GetNCFileName());
 	Path_Name_From_FullPath(strNCFile, strPath, strFile);
-	SendFaseMessage(g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
+	SendFaseMessage(g_pParent, g_nFase, g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
 	try {
 		UINT	nOpenFlg = CFile::modeCreate | CFile::modeWrite |
 			CFile::shareExclusive | CFile::typeText | CFile::osSequentialScan;
@@ -297,7 +290,7 @@ BOOL OutputWireCode(void)
 			fp.SeekToEnd();
 		for ( INT_PTR i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 			g_obMakeData[i]->WriteGcode(fp);
-			_SetProgressPos(i+1);
+			SetProgressPos(g_pParent, i+1);
 		}
 	}
 	catch (	CFileException* e ) {
@@ -307,7 +300,7 @@ BOOL OutputWireCode(void)
 		return FALSE;
 	}
 
-	_SetProgressPos(g_obMakeData.GetSize());
+	SetProgressPos(g_pParent, g_obMakeData.GetSize());
 	return IsThread();
 }
 
@@ -387,7 +380,7 @@ BOOL MakeLoopWire(CDXFshape* pShape)
 			return FALSE;
 		// ﾌﾟﾛｸﾞﾚｽﾊﾞｰの更新
 		nPos += nCnt+1;
-		_SetProgressPos(nPos);
+		SetProgressPos(g_pParent, nPos);
 		// 次の形状集合を検索
 		pShape = GetNearPointWire(CDXFdata::ms_pData->GetEndCutterPoint() + CDXFdata::ms_ptOrg);
 	}
@@ -1262,25 +1255,6 @@ CDXFcircle*	GetOutsideAWF(void)
 }
 
 //////////////////////////////////////////////////////////////////////
-
-// ﾌｪｰｽﾞ出力
-void SendFaseMessage
-	(INT_PTR nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
-{
-#ifdef _DEBUG
-	printf("MakeWire_Thread() Phase%d Start\n", g_nFase);
-#endif
-	if ( nRange > 0 )
-		g_pParent->m_ctReadProgress.SetRange32(0, (int)nRange);
-
-	CString	strMsg;
-	if ( nMsgID > 0 )
-		VERIFY(strMsg.LoadString(nMsgID));
-	else
-		strMsg.Format(IDS_MAKENCD_FASE, g_nFase);
-	g_pParent->SetFaseMessage(strMsg, lpszMsg);
-	g_nFase++;
-}
 
 // NC生成のｸﾞﾛｰﾊﾞﾙ変数初期化(後始末)ｽﾚｯﾄﾞ
 UINT MakeWire_AfterThread(LPVOID)
