@@ -206,6 +206,13 @@ CNCMakeMill::CNCMakeMill(const CString& strGcode) : CNCMakeBase(strGcode)
 {
 }
 
+// Kodatunoç¿ïW
+CNCMakeMill::CNCMakeMill(const Coord& xyz)
+{
+	CPoint3D	pt(xyz);
+	CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
+}
+
 //////////////////////////////////////////////////////////////////////
 // “› ﬁä÷êî
 

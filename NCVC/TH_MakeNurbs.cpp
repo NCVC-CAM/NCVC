@@ -14,6 +14,9 @@
 #define new DEBUG_NEW
 #endif
 
+using std::string;
+using namespace boost;
+
 // ¸ÞÛ°ÊÞÙ•Ï”’è‹`
 static	CThreadDlg*		g_pParent;
 static	C3dModelDoc*	g_pDoc;
@@ -26,6 +29,9 @@ static	int				g_nFase;	// Ìª°½Þ‡‚
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
 #define	GetStr(a)	g_pMakeOpt->GetStr(a)
+
+//
+static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeData;	// ‰ÁHÃÞ°À
 
 // »ÌÞŠÖ”
 static	void	InitialVariable(void);			// •Ï”‰Šú‰»
@@ -109,6 +115,27 @@ void SetStaticOption(void)
 
 BOOL OutputNurbsCode(void)
 {
+	CString	strPath, strFile,
+			strNCFile(g_pDoc->GetNCFileName());
+	Path_Name_From_FullPath(strNCFile, strPath, strFile);
+	SendFaseMessage(g_pParent, g_nFase, g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
+	try {
+		UINT	nOpenFlg = CFile::modeCreate | CFile::modeWrite |
+			CFile::shareExclusive | CFile::typeText | CFile::osSequentialScan;
+		CStdioFile	fp(strNCFile, nOpenFlg);
+		for ( INT_PTR i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
+			g_obMakeData[i]->WriteGcode(fp);
+			SetProgressPos(g_pParent, i+1);
+		}
+	}
+	catch (	CFileException* e ) {
+		strFile.Format(IDS_ERR_DATAWRITE, strNCFile);
+		AfxMessageBox(strFile, MB_OK|MB_ICONSTOP);
+		e->Delete();
+		return FALSE;
+	}
+
+	SetProgressPos(g_pParent, g_obMakeData.GetSize());
 	return IsThread();
 }
 
@@ -118,5 +145,22 @@ BOOL OutputNurbsCode(void)
 
 BOOL MakeNurbs_MainFunc(void)
 {
+	int		mx, my, mz, i, j, k;
+	CNCMakeMill*	pNCD;
+	Coord***	pScanCoord = g_pDoc->GetScanPathCoord();
+
+	tie(mx, my) = g_pDoc->GetScanNumXY();
+
+	for ( i=0; i<mx; i++ ) {
+		for ( j=0; j<my; j++ ) {
+			mz = g_pDoc->GetScanNumZ(j);
+			for ( k=0; k<mz; k++ ) {
+				pNCD = new CNCMakeMill(pScanCoord[i][j][k]);
+				ASSERT( pNCD );
+				g_obMakeData.Add(pNCD);
+			}
+		}
+	}
+
 	return IsThread();
 }

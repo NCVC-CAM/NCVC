@@ -26,7 +26,7 @@ C3dModelDoc::C3dModelDoc()
 	m_pKoBody  = NULL;
 	m_pKoList = NULL;
 	m_rcMax.SetRectMinimum();
-	m_pScanPath = NULL;
+	m_pScanCoord = NULL;
 	m_pScanX = m_pScanY = 0;
 	m_pScanNum = NULL;
 }
@@ -106,7 +106,7 @@ void C3dModelDoc::OnCloseDocument()
 
 void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable( m_pScanPath != NULL );
+	pCmdUI->Enable( m_pScanCoord != NULL );
 }
 
 void C3dModelDoc::OnFile3dMake()
@@ -151,9 +151,9 @@ void C3dModelDoc::OnFile3dMake()
 
 void C3dModelDoc::ClearScanPath(void)
 {
-	if ( m_pScanPath ) {
-		FreeCoord3(m_pScanPath, m_pScanX, m_pScanY);
-		m_pScanPath = NULL;
+	if ( m_pScanCoord ) {
+		FreeCoord3(m_pScanCoord, m_pScanX, m_pScanY);
+		m_pScanCoord = NULL;
 	}
 	if ( m_pScanNum ) {
 		delete[]	m_pScanNum;
@@ -178,7 +178,7 @@ BOOL C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
 		ClearScanPath();
 		m_pScanX = D+1;
 		m_pScanY = N+1;
-		m_pScanPath = NewCoord3(m_pScanX, m_pScanY, 2000);
+		m_pScanCoord = NewCoord3(m_pScanX, m_pScanY, 2000);
 		m_pScanNum = new int[100];
 
 		// ガイドカーブに沿って垂直平面をシフトしていき，加工面との交点群を求めていく
@@ -198,7 +198,7 @@ BOOL C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
 				Coord pt = nf.CalcNurbsSCoord(ns, path_[j].x, path_[j].y);		// 工具コンタクト点
 				Coord n = nf.CalcNormVecOnNurbsS(ns, path_[j].x, path_[j].y);	// 法線ベクトル
 				if (n.z < 0) n = n*(-1);					// 法線ベクトルの向き調整
-				m_pScanPath[D][i][j] = pt + n*s.dBallEndmill;	// 工具半径オフセット
+				m_pScanCoord[D][i][j] = pt + n*s.dBallEndmill;	// 工具半径オフセット
 			}
 		}
 
@@ -206,9 +206,9 @@ BOOL C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
 		for ( i=0; i<D; i++ ) {
 			for ( j=0; j<m_pScanY; j++ ) {
 				for ( k=0; k<m_pScanNum[j]; k++ ) {
-					double del = (s.dHeight - m_pScanPath[D][j][k].z)/(double)D;
+					double del = (s.dHeight - m_pScanCoord[D][j][k].z)/(double)D;
 					double Z = s.dHeight - del*(double)i;
-					m_pScanPath[i][j][k] = SetCoord(m_pScanPath[D][j][k].x, m_pScanPath[D][j][k].y, Z);
+					m_pScanCoord[i][j][k] = SetCoord(m_pScanCoord[D][j][k].x, m_pScanCoord[D][j][k].y, Z);
 				}
 			}
 		}

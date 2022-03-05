@@ -241,22 +241,22 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 
 void C3dModelView::DrawScanPath(void)
 {
-	Coord***	pScanPath = GetDocument()->GetScanPathCoord();
-	if ( !pScanPath )
+	Coord***	pScanCoord = GetDocument()->GetScanPathCoord();
+	if ( !pScanCoord )
 		return;
 
-	int		i, j, k, x, y;
-	int*	z = GetDocument()->GetScanPathZ();
-	boost::tie(x, y) = GetDocument()->GetScanPathXY();
+	int		i, j, k, mx, my, mz;
+	boost::tie(mx, my) = GetDocument()->GetScanNumXY();
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col = pOpt->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
 	::glBegin(GL_POINTS);
-	for ( i=0; i<x; i++ ) {
-		for ( j=0; j<y; j++ ) {
-			for ( k=0; k<z[j]; k++ ) {
-				::glVertex3d(pScanPath[i][j][k].x, pScanPath[i][j][k].y, pScanPath[i][j][k].z);
+	for ( i=0; i<mx; i++ ) {
+		for ( j=0; j<my; j++ ) {
+			mz = GetDocument()->GetScanNumZ(j);
+			for ( k=0; k<mz; k++ ) {
+				::glVertex3d(pScanCoord[i][j][k].x, pScanCoord[i][j][k].y, pScanCoord[i][j][k].z);
 			}
 		}
 	}

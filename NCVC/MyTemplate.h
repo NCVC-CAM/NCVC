@@ -250,6 +250,9 @@ public:
 		// double -> float èâä˙âª
 		SetPoint((T)pt.x, (T)pt.y, (T)pt.z);
 	}
+	CPoint3T(const Coord& xyz) {
+		SetPoint(xyz.x, xyz.y, xyz.z);
+	}
 	// ââéZéqíËã`
 	CPoint3T<T>&	operator = (T xyz) {
 		x = y = z = xyz;
@@ -354,8 +357,8 @@ public:
 		ms_ry_cos = cos(ry);		ms_ry_sin = sin(ry);
 		ms_rz_cos = cos(rz);		ms_rz_sin = sin(rz);
 	}
-	CPoint3T<double>& operator = (const Coord& pt) {
-		x = pt.x;	y = pt.y;	z = pt.z;
+	CPoint3T<double>& operator = (const Coord& xyz) {
+		SetPoint(xyz.x, xyz.y, xyz.z);
 		return *this;
 	}
 };

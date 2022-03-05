@@ -18,7 +18,7 @@ class C3dModelDoc : public CDocBase
 	BODY*		m_pKoBody;		// Kodatuno Body
 	BODYList*	m_pKoList;		// Kodatuno Body List
 
-	Coord***	m_pScanPath;	// ¶¬‚³‚ê‚½ƒpƒX‚ğŠi”[
+	Coord***	m_pScanCoord;	// ¶¬‚³‚ê‚½ƒpƒX‚ğŠi”[
 	int			m_pScanX,
 				m_pScanY;
 	int*		m_pScanNum;		// ƒXƒLƒƒƒ“ƒ‰ƒCƒ“1–{‚²‚Æ‚Ì‰ÁH“_”‚ğŠi”[
@@ -42,13 +42,13 @@ public:
 	void	ClearScanPath(void);
 	BOOL	MakeScanPath(NURBSS*, NURBSC*, SCANSETUP&);
 	Coord***	GetScanPathCoord(void) const {
-		return m_pScanPath;
+		return m_pScanCoord;
 	}
-	boost::tuple<int, int>	GetScanPathXY(void) const {
+	boost::tuple<int, int>	GetScanNumXY(void) const {
 		return boost::make_tuple(m_pScanX, m_pScanY);
 	}
-	int*		GetScanPathZ(void) const {
-		return m_pScanNum;
+	int			GetScanNumZ(int y) const {
+		return m_pScanNum[y];
 	}
 
 protected:
