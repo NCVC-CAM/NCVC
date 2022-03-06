@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "NCVC.h"
 #include "MainFrm.h"
-#include "MCOption.h"
+#include "MachineOption.h"
 #include "NCdata.h"
 #include "NCDoc.h"
 #include "ThreadDlg.h"
@@ -742,7 +742,6 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_LATHEHOLE);
 		if ( g_dwBlockFlags & NCBLK_ERR_FILE )
 			pBlock->SetNCBlkErrorCode(IDS_ERR_NCBLK_FILE);
-#ifdef USE_KODATUNO
 		else if ( g_dwBlockFlags & NCBLK_WORKPOS ) {
 			float	xyz[NCXYZ] = {0,0,0};
 			if ( g_dwBlockFlags & NCBLK_WORKX )
@@ -754,7 +753,6 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			Coord shift = SetCoord(xyz[NCA_X], xyz[NCA_Y], xyz[NCA_Z]);
 			g_pDoc->SetWorkFileOffset(shift);
 		}
-#endif
 	}
 
 	// ﾏｸﾛ置換解析
@@ -799,7 +797,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				if ( nCode < 0 || nCode > 9 )
 					nCode = 0;
 			}
-			if ( AfxGetNCVCApp()->GetMCOption()->GetFlag(nCode) )
+			if ( AfxGetNCVCApp()->GetMachineOption()->GetFlag(nCode) )
 				bOptionalBlockSkip = TRUE;
 			break;
 		case 'M':
@@ -1398,9 +1396,9 @@ INT_PTR NC_SearchSubProgram(INT_PTR* pRepeat)
 // ﾏｸﾛﾌﾟﾛｸﾞﾗﾑの検索
 INT_PTR NC_SearchMacroProgram(const string& strBlock, CNCblock* pBlock)
 {
-	extern	const	int		g_nDefaultMacroID[];	// MCOption.cpp
+	extern	const	int		g_nDefaultMacroID[];	// MachineOption.cpp
 
-	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
+	const CMachineOption* pMCopt = AfxGetNCVCApp()->GetMachineOption();
 
 	if ( !regex_search(strBlock, g_reMacroStr) )
 		return -1;
@@ -1651,7 +1649,7 @@ void SetEndmillDiameter(const string& str)
 #endif
 
 	int		nTool = atoi(str.c_str());
-	const CMCOption* pMCopt = AfxGetNCVCApp()->GetMCOption();
+	const CMachineOption* pMCopt = AfxGetNCVCApp()->GetMachineOption();
 	optional<float> dResult = pMCopt->GetToolD(nTool);
 	if ( dResult ) {
 		g_ncArgv.dEndmill = *dResult;	// ｵﾌｾｯﾄは半径なので、そのまま使用
@@ -1842,7 +1840,7 @@ void SetLatheView_fromComment(void)
 	}
 
 	// 機械情報のﾋﾞｭｰﾓｰﾄﾞ初期値ｸﾘｱ
-	if ( AfxGetNCVCApp()->GetMCOption()->GetInt(MC_INT_FORCEVIEWMODE) == MC_VIEWMODE_WIRE ) {
+	if ( AfxGetNCVCApp()->GetMachineOption()->GetInt(MC_INT_FORCEVIEWMODE) == MC_VIEWMODE_WIRE ) {
 		g_pDoc->SetDocFlag(NCDOC_WIRE, FALSE);
 		// InitialVariableでの座標初期値は...
 	}
@@ -1869,7 +1867,7 @@ void SetWireView_fromComment(void)
 #endif
 
 	// 機械情報のﾋﾞｭｰﾓｰﾄﾞ初期値ｸﾘｱ
-	if ( AfxGetNCVCApp()->GetMCOption()->GetInt(MC_INT_FORCEVIEWMODE) == MC_VIEWMODE_LATHE ) {
+	if ( AfxGetNCVCApp()->GetMachineOption()->GetInt(MC_INT_FORCEVIEWMODE) == MC_VIEWMODE_LATHE ) {
 		g_pDoc->SetDocFlag(NCDOC_LATHE, FALSE);
 	}
 }
@@ -2054,8 +2052,8 @@ void InitialVariable(void)
 {
 	extern	LPCTSTR	gg_szEn;	// "\\";
 	int		i;
-	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
-	const CViewOption*	pVopt  = AfxGetNCVCApp()->GetViewOption();
+	const CMachineOption* pMCopt = AfxGetNCVCApp()->GetMachineOption();
+	const CViewOption*    pVopt  = AfxGetNCVCApp()->GetViewOption();
 
 	ZeroMemory(&g_ncArgv, sizeof(NCARGV));
 

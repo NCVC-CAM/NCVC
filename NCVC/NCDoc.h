@@ -7,11 +7,9 @@
 #include "DocBase.h"
 #include "NCdata.h"
 #include "DXFMakeOption.h"
-#include "MCOption.h"
-#ifdef USE_KODATUNO
+#include "MachineOption.h"
 #include "Kodatuno/BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
-#endif
 
 enum NCCOMMENT		// g_szNCcomment[]
 {
@@ -50,8 +48,6 @@ class CNCDoc : public CDocBase
 	CWinThread*	m_pCutcalcThread;	// 切削時間計算ｽﾚｯﾄﾞのﾊﾝﾄﾞﾙ
 	CString		m_strDXFFileName,	// DXF出力ﾌｧｲﾙ名
 				m_strCurrentFile;	// 現在処理中のNCﾌｧｲﾙ名(FileInsert etc.)
-	CRecentViewInfo*	m_pRecentViewInfo;		// ﾌｧｲﾙごとの描画情報
-	//
 	int			m_nWorkOrg;						// 使用中のﾜｰｸ座標
 	CPoint3F	m_ptNcWorkOrg[WORKOFFSET+1],	// ﾜｰｸ座標系(G54～G59)とG92原点
 				m_ptNcLocalOrg;					// ﾛｰｶﾙ座標系(G52)原点
@@ -88,11 +84,9 @@ class CNCDoc : public CDocBase
 	void	ClearBlockData(void);
 	void	DeleteMacroFile(void);
 
-#ifdef USE_KODATUNO
-	BODY*		m_kBody;		// Kodatuno Body
-	BODYList*	m_kbList;		// Kodatuno Body List
+	BODY*		m_pKoBody;		// Kodatuno Body
+	BODYList*	m_pKoList;		// Kodatuno Body List
 	void	CalcWorkFileRect(void);
-#endif
 
 protected: // シリアライズ機能のみから作成します。
 	CNCDoc();
@@ -108,9 +102,6 @@ public:
 	}
 	CString	GetCurrentFileName(void) const {
 		return m_strCurrentFile;
-	}
-	CRecentViewInfo*	GetRecentViewInfo(void) const {
-		return m_pRecentViewInfo;
 	}
 	INT_PTR		GetNCBlockSize(void) const {
 		return m_obBlock.GetSize();
@@ -224,7 +215,6 @@ public:
 		m_bDocFlg.set(NCDOC_LATHE_HOLE);
 	}
 	void	SetLatheViewMode(void);
-	BOOL	ReadWorkFile(LPCTSTR);
 	BOOL	ReadMCFile(LPCTSTR);
 
 	// from NCWorkDlg.cpp
@@ -258,12 +248,11 @@ public:
 	// from ThumbnailDlg.cpp
 	void	ReadThumbnail(LPCTSTR);
 
-#ifdef USE_KODATUNO
+	BOOL	ReadWorkFile(LPCTSTR);
 	BODYList*	GetKodatunoBodyList(void) const {
-		return m_kbList;
+		return m_pKoList;
 	}
 	void	SetWorkFileOffset(const Coord&);
-#endif
 
 //オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

@@ -12,13 +12,16 @@
 #include "DXFChild.h"
 #include "DXFDoc.h"
 #include "DXFView.h"
-#include "MCSetup.h"
+#include "3dModelChild.h"
+#include "3dModelDoc.h"
+#include "3dModelView.h"
+#include "MachineSetup.h"
 #include "ViewSetup.h"
 #include "DxfSetup.h"
 #include "DXFMakeClass.h"
-#include "MKNCSetup.h"
-#include "MKLASetup.h"
-#include "MKWISetup.h"
+#include "MakeNCSetup.h"
+#include "MakeLatheSetup.h"
+#include "MakeWireSetup.h"
 #include "ExecSetupDlg.h"
 #include "ExtensionDlg.h"
 #include "ThreadDlg.h"
@@ -64,10 +67,11 @@ extern	float	_DRILL_HEIGHT = 0.0f;	// ÉhÉäÉãêÊí[äp118ÅãÇÃçÇÇ≥
 		NCVCâ“ì≠íÜÇ…å¿ÇËï€éùÇ∑ÇÈ
 */
 extern	int		g_nLastPage_DXFSetup = 0;		// DXFµÃﬂºÆ›
-extern	int		g_nLastPage_MCSetup = 0;		// çHçÏã@äBµÃﬂºÆ›
+extern	int		g_nLastPage_MachineSetup = 0;	// çHçÏã@äBµÃﬂºÆ›
 extern	int		g_nLastPage_NCMake = 0;			// NCê∂ê¨µÃﬂºÆ›
 extern	int		g_nLastPage_NCMakeLathe = 0;	// ê˘î’ópNCê∂ê¨µÃﬂºÆ›
 extern	int		g_nLastPage_NCMakeWire = 0;		// ‹≤‘ï˙ìdâ¡çHã@ópNCê∂ê¨µÃﬂºÆ›
+extern	int		g_nLastPage_NCMakeNurbs = 0;	// Nurbsã»ñ ópNCê∂ê¨µÃﬂºÆ›
 extern	int		g_nLastPage_ViewSetup = 0;		// ï\é¶ånæØƒ±ØÃﬂ
 
 /////////////////////////////////////////////////////////////////////////////
@@ -223,8 +227,14 @@ BOOL CNCVCApp::InitInstance()
 		RUNTIME_CLASS(CDXFDoc),
 		RUNTIME_CLASS(CDXFChild),
 		RUNTIME_CLASS(CDXFView));
+	m_pDocTemplate[TYPE_3DM] = new CNCVCDocTemplate(	// 3DMƒﬁ∑≠“›ƒ
+		IDR_3DMTYPE,	// Ç±ÇÃéûì_Ç≈ï°êîÇÃägí£éqìoò^ÇÕïsâ¬
+		RUNTIME_CLASS(C3dModelDoc),
+		RUNTIME_CLASS(C3dModelChild),
+		RUNTIME_CLASS(C3dModelView));
 	AddDocTemplate(m_pDocTemplate[TYPE_NCD]);
 	AddDocTemplate(m_pDocTemplate[TYPE_DXF]);
+	AddDocTemplate(m_pDocTemplate[TYPE_3DM]);
 
 	// DDEÅAfile open Ç»Ç«ïWèÄÇÃÉVÉFÉã ÉRÉ}ÉìÉhÇÃÉRÉ}ÉìÉh ÉâÉCÉìÇâêÕÇµÇ‹Ç∑ÅB
 	CCommandLineInfo cmdInfo;
@@ -423,7 +433,7 @@ BOOL CNCVCApp::NCVCRegInit(void)
 
 		// µÃﬂºÆ›ÇÃç\íz
 		// --- NCê›íË
-		m_pOptMC = new CMCOption;
+		m_pOptMC = new CMachineOption;
 		// --- DXFê›íË
 		m_pOptDXF = new CDXFOption;
 		// --- Viewê›íË
@@ -698,10 +708,13 @@ BOOL CNCVCApp::NCVCAddinInit(int nShellCommand)
 		break;
 	}
 #endif
-	// äOïî±ƒﬁ≤›ìoò^ëOÇ…ÅCReadDXF()Çìoò^
+	// äOïî±ƒﬁ≤›ìoò^ëOÇ…ñ{ëÃÇ≈èàóùÇ∑ÇÈägí£éqÇìoò^
 	CString	strFilter;
 	VERIFY(strFilter.LoadString(IDS_DXF_FILTER));
-	m_pDocTemplate[TYPE_DXF]->AddExtensionFunc(strFilter.Left(3), ReadDXF);	// "DXF"
+	m_pDocTemplate[TYPE_DXF]->AddExtensionFunc(strFilter.Left(3), ReadDXF);
+	m_pDocTemplate[TYPE_3DM]->AddExtensionFunc("igs", NULL);
+	m_pDocTemplate[TYPE_3DM]->AddExtensionFunc("iges", NULL);
+	m_pDocTemplate[TYPE_3DM]->AddExtensionFunc("stl", NULL);
 
 	struct NCVCINITIALIZE_BUF {
 		DWORD		dwSize;
@@ -1077,7 +1090,7 @@ BOOL CNCVCApp::ChangeMachine(int nIndex)
 BOOL CNCVCApp::ChangeMachine(LPCTSTR lpszMachineFile)
 {
 	// ã@äBèÓïÒì«Ç›çûÇ›
-	if ( !m_pOptMC->ReadMCoption(lpszMachineFile) )
+	if ( !m_pOptMC->ReadMachineOption(lpszMachineFile) )
 		return FALSE;
 
 	// ¬∞Ÿ ﬁ∞ÇÃçXêV
@@ -1138,6 +1151,7 @@ BOOL CNCVCApp::DoPromptFileNameEx(CStringArray& aryFile, int nInitFilter/*=-1*/)
 #ifdef _DEBUG_FILEOPEN
 	printf("CNCVCApp::DoPromptFileNameEx() Start\n");
 #endif
+	extern	LPCTSTR	gg_szSemicolon;	// ";";
 	int			i, nExt;
 	CString		strAllFilter,
 				strFilter[SIZEOF(m_pDocTemplate)], strExt[SIZEOF(m_pDocTemplate)],
@@ -1147,7 +1161,7 @@ BOOL CNCVCApp::DoPromptFileNameEx(CStringArray& aryFile, int nInitFilter/*=-1*/)
 	for ( i=0; i<SIZEOF(m_pDocTemplate); i++ ) {
 		strFilter[i] = m_pDocTemplate[i]->GetFilterString();
 		if ( !strTmp.IsEmpty() )
-			strTmp += ';';
+			strTmp += gg_szSemicolon;
 		strTmp += strFilter[i];
 	}
 	strAllFilter.Format(IDS_NCVC_FILTER, strTmp, strTmp);
@@ -1408,10 +1422,10 @@ void CNCVCApp::OnOptionMC()
 		return;
 
 	VERIFY(strBuf.LoadString(IDS_SETUP_MC));
-	CMCSetup	ps(::AddDialogTitle2File(strBuf, strFileName), strFileName);
+	CMachineSetup	ps(::AddDialogTitle2File(strBuf, strFileName), strFileName);
 	if ( ps.DoModal() != IDOK ) {
 		if ( !strFileName.IsEmpty() )
-			m_pOptMC->ReadMCoption(strFileName, FALSE);	// ê›íËëOÇÃÃß≤ŸÇ≈ì«Ç›íºÇµ
+			m_pOptMC->ReadMachineOption(strFileName, FALSE);	// ê›íËëOÇÃÃß≤ŸÇ≈ì«Ç›íºÇµ
 		return;
 	}
 
@@ -1422,7 +1436,7 @@ void CNCVCApp::OnOptionMC()
 				strFileName, g_pszExecDir, FALSE, OFN_OVERWRITEPROMPT|OFN_HIDEREADONLY);
 	else
 		strFileName = ps.m_strFileName;
-	if ( !strFileName.IsEmpty() && !m_pOptMC->SaveMCoption(strFileName) ) {
+	if ( !strFileName.IsEmpty() && !m_pOptMC->SaveMachineOption(strFileName) ) {
 		strBuf.Format(IDS_ERR_WRITESETTING, strFileName);
 		AfxMessageBox(strBuf, MB_OK|MB_ICONEXCLAMATION);
 		return;
@@ -1526,7 +1540,7 @@ void CNCVCApp::OnOptionMakeNC()
 	switch ( nResult ) {
 	case NCMAKEMILL:
 		{
-			CMKNCSetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
+			CMakeNCSetup	ps(::AddDialogTitle2File(strCaption, strFileName), strFileName);
 			if ( ps.DoModal() == IDOK ) {
 				// µÃﬂºÆ›ÇÃï€ë∂
 				ps.GetNCMakeOption()->SaveMakeOption();
@@ -1542,7 +1556,7 @@ void CNCVCApp::OnOptionMakeNC()
 	case NCMAKELATHE:
 		{
 			VERIFY(strCmpExt.LoadString(IDCV_LATHE));
-			CMKLASetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
+			CMakeLatheSetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
 			if ( ps.DoModal() == IDOK ) {
 				ps.GetNCMakeOption()->SaveMakeOption();
 #ifdef _DEBUGOLD
@@ -1556,7 +1570,7 @@ void CNCVCApp::OnOptionMakeNC()
 	case NCMAKEWIRE:
 		{
 			VERIFY(strCmpExt.LoadString(IDCV_WIRE));
-			CMKWISetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
+			CMakeWireSetup	ps(::AddDialogTitle2File(strCaption, strFileName)+strCmpExt, strFileName);
 			if ( ps.DoModal() == IDOK ) {
 				ps.GetNCMakeOption()->SaveMakeOption();
 #ifdef _DEBUGOLD
@@ -1890,7 +1904,8 @@ CDocTemplate::Confidence
 			}
 		}
 	}
-	AfxGetNCVCApp()->SetSerializeFunc((PFNNCVCSERIALIZEFUNC)pFunc);
+	if ( match == yesAttemptNative )
+		AfxGetNCVCApp()->SetSerializeFunc((PFNNCVCSERIALIZEFUNC)pFunc);
 
 	return match;
 }
@@ -1979,7 +1994,8 @@ BOOL CNCVCDocTemplate::SaveExt(void)
 
 CString CNCVCDocTemplate::GetFilterString(void)
 {
-	extern	LPCTSTR	gg_szWild;	// "*.";
+	extern	LPCTSTR	gg_szWild;		// "*.";
+	extern	LPCTSTR	gg_szSemicolon;	// ";";
 	CString	strResult, strKey;
 	LPVOID	pDummy;
 
@@ -1990,7 +2006,7 @@ CString CNCVCDocTemplate::GetFilterString(void)
 	// ìoò^ägí£éq
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		PMAP_FOREACH(strKey, pDummy, &m_mpExt[i])
-			strResult += ';';
+			strResult += gg_szSemicolon;
 			strResult += gg_szWild + strKey;
 		END_FOREACH
 	}

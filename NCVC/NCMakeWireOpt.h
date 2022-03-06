@@ -83,10 +83,10 @@ enum {
 //
 class CNCMakeWireOpt : public CNCMakeOption
 {
-	friend class CMKWISetup1;
-	friend class CMKWISetup2;
-	friend class CMKNCSetup2;
-	friend class CMKNCSetup6;
+	friend class CMakeWireSetup1;
+	friend class CMakeWireSetup2;
+	friend class CMakeNCSetup2;
+	friend class CMakeNCSetup6;
 
 	// e¸×½‚ÉÃŞ°À‚ğ‚½‚¹‚é‚Ì‚ÅA
 	// union/struct‹Z‚Íg‚¦‚È‚¢

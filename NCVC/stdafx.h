@@ -45,19 +45,17 @@
 #include <gl/gl.h>			// OpenGL
 
 // Kodatuno
-#define	USE_KODATUNO
-#ifdef USE_KODATUNO
 #ifdef _DEBUG
 #pragma comment(lib, "debug/Kodatuno.vs.lib")
 #else
 #pragma comment(lib, "Kodatuno.vs.lib")
-#endif
 #endif
 
 // STL
 #define	_SCL_SECURE_NO_WARNINGS			// ‘ÎBoost1.44—p
 #include <string>
 #include <vector>
+#include <map>
 #include <bitset>
 #include <algorithm>
 
@@ -91,7 +89,10 @@
 #define	NCVCSERIALVERSION_3620	3620	// v3.62` (double->float)
 #define	NCVCSERIALVERSION		NCVCSERIALVERSION_3620
 
-enum	DOCTYPE		{TYPE_NCD = 0, TYPE_DXF = 1};
+enum	DOCTYPE		{
+	TYPE_NCD=0, TYPE_DXF, TYPE_3DM,
+		DOCTYPE_NUM		// 3
+};
 
 // Common Define
 #define	SIZEOF(array)			( sizeof(array)/sizeof(array[0]) )

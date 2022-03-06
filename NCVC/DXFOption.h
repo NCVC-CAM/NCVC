@@ -24,12 +24,13 @@ enum {
 	DXFOPT_BINDMARGIN,
 		DXFOPT_DBL_NUMS		// [3]
 };
-enum	enMAKETYPE	{
+enum	NCMAKETYPE	{
 	NCMAKEMILL = 0,		// MC
 	NCMAKELATHE,		// 旋盤
 	NCMAKEWIRE,			// ﾜｲﾔ放電加工機
 	NCMAKELAYER,		// ﾚｲﾔ名と条件ﾌｧｲﾙの関係ﾌｧｲﾙの履歴
-		NCMAKENUM			// [4]
+	NCMAKENURBS,		// Nurbs曲面(Kodatuno)
+		NCMAKENUM			// [5]
 };
 
 class CDXFOption
@@ -69,12 +70,12 @@ friend	class	CMakeBindOptDlg;
 													// 加工開始位置ﾚｲﾔ名, 強制移動指示ﾚｲﾔ名, ｺﾒﾝﾄ用
 	CStringList		m_strInitList[NCMAKENUM];		// 切削条件ﾌｧｲﾙ名の履歴
 	CStringArray	m_strIgnoreArray;				// DXF無視ワード
-	enMAKETYPE		m_enMakeType;					// 直前のNC生成ﾀｲﾌﾟ
+	NCMAKETYPE		m_enMakeType;					// 直前のNC生成ﾀｲﾌﾟ
 	boost::regex	m_regCutter;					// 切削ﾚｲﾔ正規表現
 
-	BOOL	AddListHistory(enMAKETYPE, LPCTSTR);
-	BOOL	ReadInitHistory(enMAKETYPE);
-	BOOL	SaveInitHistory(enMAKETYPE);
+	BOOL	AddListHistory(NCMAKETYPE, LPCTSTR);
+	BOOL	ReadInitHistory(NCMAKETYPE);
+	BOOL	SaveInitHistory(NCMAKETYPE);
 
 public:
 	CDXFOption();
@@ -111,19 +112,19 @@ public:
 	void	SetViewFlag(BOOL bView) {
 		m_bView = bView;
 	}
-	enMAKETYPE	GetNCMakeType(void) const {
+	NCMAKETYPE	GetNCMakeType(void) const {
 		return m_enMakeType;
 	}
-	const	CStringList*	GetInitList(enMAKETYPE enType) const {
+	const	CStringList*	GetInitList(NCMAKETYPE enType) const {
 		return &m_strInitList[enType];
 	}
 
-	BOOL	AddInitHistory(enMAKETYPE enType, LPCTSTR lpszSearch) {
+	BOOL	AddInitHistory(NCMAKETYPE enType, LPCTSTR lpszSearch) {
 		if ( AddListHistory(enType, lpszSearch) )
 			return SaveInitHistory(enType);
 		return FALSE;
 	}
-	void	DelInitHistory(enMAKETYPE, LPCTSTR);
+	void	DelInitHistory(NCMAKETYPE, LPCTSTR);
 	//
 	CString	GetIgnoreStr(void) const;
 	void	SetIgnoreArray(const CString&);

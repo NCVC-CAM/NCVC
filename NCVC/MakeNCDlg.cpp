@@ -6,9 +6,11 @@
 #include "MainFrm.h"
 #include "Layer.h"
 #include "DXFDoc.h"
-#include "MKNCSetup.h"
-#include "MKLASetup.h"
-#include "MKWISetup.h"
+#include "3dModelDoc.h"
+#include "MakeNCSetup.h"
+#include "MakeLatheSetup.h"
+#include "MakeWireSetup.h"
+#include "MakeNurbsSetup.h"
 #include "MakeNCDlg.h"
 #include "MakeBindOptDlg.h"
 
@@ -31,21 +33,31 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CMakeNCDlg ダイアログ
 
-CMakeNCDlg::CMakeNCDlg(UINT nTitle, enMAKETYPE enType, CDXFDoc* pDoc)
+CMakeNCDlg::CMakeNCDlg(UINT nTitle, NCMAKETYPE enType, CDXFDoc* pDoc)
 	: CDialog(CMakeNCDlg::IDD, NULL)
+{
+	CommonConstructor(nTitle, enType, pDoc);
+	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成
+	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
+}
+
+CMakeNCDlg::CMakeNCDlg(UINT nTitle, NCMAKETYPE enType, C3dModelDoc* pDoc)
+	: CDialog(CMakeNCDlg::IDD, NULL)
+{
+	CommonConstructor(nTitle, enType, pDoc);
+	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成
+	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
+}
+
+void CMakeNCDlg::CommonConstructor(UINT nTitle, NCMAKETYPE enType, CDocBase* pDoc)
 {
 	m_nTitle = nTitle;
 	m_enType = enType;
 	m_pDoc = pDoc;
-	//{{AFX_DATA_INIT(CMakeNCDlg)
-	//}}AFX_DATA_INIT
-
-	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成
-	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
 	// 切削条件履歴から初期表示ﾌｧｲﾙを取得
 	const CDXFOption*  pOpt = AfxGetNCVCApp()->GetDXFOption();
-	if ( pOpt->GetInitList(enType)->GetCount() > 0 )
-		::Path_Name_From_FullPath(pOpt->GetInitList(enType)->GetHead(), m_strInitPath, m_strInitFileName);
+	if ( pOpt->GetInitList(m_enType)->GetCount() > 0 )
+		::Path_Name_From_FullPath(pOpt->GetInitList(m_enType)->GetHead(), m_strInitPath, m_strInitFileName);
 	m_bNCView = pOpt->GetDxfOptFlg(DXFOPT_VIEW);
 }
 
@@ -154,6 +166,7 @@ void CMakeNCDlg::OnMKNCInitEdit()
 
 	switch ( m_enType ) {
 	case NCMAKEMILL:
+		// 共通化した MakeNCDlgInitFileEdit() 関数内で完結
 		MakeNCDlgInitFileEdit(m_strInitPath, m_strInitFileName,
 			this, IDC_MKNC_INITPATH, m_ctInitFileName);
 		break;
@@ -162,7 +175,7 @@ void CMakeNCDlg::OnMKNCInitEdit()
 		VERIFY(strResult.LoadString(IDCV_LATHE));
 		{
 			// 処理手順は MakeNCDlgInitFileEdit() と同じ
-			CMKLASetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
+			CMakeLatheSetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
 			if ( ps.DoModal() != IDOK )
 				return;
 			ps.GetNCMakeOption()->SaveMakeOption();
@@ -176,7 +189,20 @@ void CMakeNCDlg::OnMKNCInitEdit()
 	case NCMAKEWIRE:
 		VERIFY(strResult.LoadString(IDCV_WIRE));
 		{
-			CMKWISetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
+			CMakeWireSetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
+			if ( ps.DoModal() != IDOK )
+				return;
+			ps.GetNCMakeOption()->SaveMakeOption();
+#ifdef _DEBUGOLD
+			ps.GetNCMakeOption()->DbgDump();
+#endif
+			strResult = ps.GetNCMakeOption()->GetInitFile();
+		}
+		break;
+	case NCMAKENURBS:
+		VERIFY(strResult.LoadString(IDCV_NURBS));
+		{
+			CMakeNurbsSetup	ps(::AddDialogTitle2File(strCaption, strInitFile)+strResult, strInitFile);
 			if ( ps.DoModal() != IDOK )
 				return;
 			ps.GetNCMakeOption()->SaveMakeOption();
@@ -262,6 +288,18 @@ void CreateNCFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
 		::Path_Name_From_FullPath(strNCFile, strPath, strFile);
 }
 
+void CreateNCFile(const C3dModelDoc* pDoc, CString& strPath, CString& strFile)
+{
+	CString	strNCFile(pDoc->GetNCFileName());
+	if ( strNCFile.IsEmpty() ) {
+		CString	strDocFile(pDoc->GetPathName());
+		::Path_Name_From_FullPath(strDocFile, strPath, strFile, FALSE);
+		strFile += AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetUserDefaultExt();
+	}
+	else
+		::Path_Name_From_FullPath(strNCFile, strPath, strFile);
+}
+
 void CreateLayerFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
 {
 	// ﾄﾞｷｭﾒﾝﾄ名からﾚｲﾔﾌｧｲﾙ名を作成
@@ -328,7 +366,7 @@ void MakeNCDlgInitFileEdit
 	CString	strInitFile(strPath+strFile),
 			strCaption;
 	VERIFY(strCaption.LoadString(IDS_MAKE_NCD));
-	CMKNCSetup	ps(::AddDialogTitle2File(strCaption, strInitFile), strInitFile);
+	CMakeNCSetup	ps(::AddDialogTitle2File(strCaption, strInitFile), strInitFile);
 	if ( ps.DoModal() != IDOK )
 		return;
 

@@ -13,6 +13,8 @@ extern	LPCTSTR	gg_szReturn = "\n";
 extern	LPCTSTR	gg_szCRLF = "\r\n";
 // 分解文字
 extern	LPCTSTR	gg_szDelimiter = ":";
+// 分解文字（拡張子フィルタ）
+extern	LPCTSTR	gg_szSemicolon = ";";
 // 文字連結
 extern	LPCTSTR	gg_szCat = ", ";
 // カンマ分割

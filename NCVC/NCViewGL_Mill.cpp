@@ -13,10 +13,8 @@
 #include "NCViewGL.h"
 #include "NCListView.h"
 #include "ViewOption.h"
-#ifdef USE_KODATUNO
 #include "Kodatuno/Describe_BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
-#endif
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -67,6 +65,8 @@ BOOL CNCViewGL::CreateBoxel(BOOL bRange)
 
 	// ﾎﾞｸｾﾙ生成のための初期設定
 	InitialBoxel();
+	::glClearDepth(0.0);			// 遠い方を優先させるためのﾃﾞﾌﾟｽ初期値
+	::glClear(GL_DEPTH_BUFFER_BIT);	// ﾃﾞﾌﾟｽﾊﾞｯﾌｧのみｸﾘｱ
 	::glOrtho(m_rcDraw.left, m_rcDraw.right, m_rcDraw.top, m_rcDraw.bottom,
 		m_rcView.low, m_rcView.high);	// m_rcDraw ではｷﾞﾘｷﾞﾘなので m_rcView を使う
 //		m_rcDraw.low, m_rcDraw.high);	// ﾃﾞﾌﾟｽ値の更新はｷﾞﾘｷﾞﾘの範囲で精度よく -> 0.0～1.0
@@ -78,7 +78,6 @@ BOOL CNCViewGL::CreateBoxel(BOOL bRange)
 #endif
 
 	if ( GetDocument()->IsDocFlag(NCDOC_WORKFILE) ) {
-#ifdef USE_KODATUNO
 		// 図形ファイルと重ねるとき
 		if ( bRange ) {
 			CREATEBOXEL_IGESPARAM pParam = RANGEPARAM(GetDocument()->GetTraceStart(), GetDocument()->GetTraceDraw());
@@ -86,7 +85,6 @@ BOOL CNCViewGL::CreateBoxel(BOOL bRange)
 		}
 		else
 			bResult = CreateBoxel_fromIGES();
-#endif
 	}
 	else {
 		// 切削底面の描画（デプス値の更新）
@@ -129,7 +127,6 @@ BOOL CNCViewGL::CreateBoxel(BOOL bRange)
 	return bResult;
 }
 
-#ifdef USE_KODATUNO
 BOOL CNCViewGL::CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* pParam)
 {
 #ifdef _DEBUG
@@ -265,7 +262,6 @@ BOOL CNCViewGL::CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* pParam)
 
 	return TRUE;
 }
-#endif
 
 BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 {

@@ -4,14 +4,8 @@
 
 #pragma once
 
-#include "FrameBuffer.h"
+#include "ViewBaseGL.h"
 //#include "GLSL.h"
-
-// TrackingMode
-enum ENTRACKINGMODE
-{
-	TM_NONE, TM_SPIN, TM_PAN
-};
 
 // Range Parameter
 struct RANGEPARAM
@@ -20,11 +14,9 @@ struct RANGEPARAM
 	RANGEPARAM(INT_PTR ss, INT_PTR ee) : s(ss), e(ee) {}
 };
 
-#ifdef USE_KODATUNO
 // CreateBoxel_fromIGES() argument
 class	CNCdata;
 typedef	boost::variant<CNCdata*, RANGEPARAM>	CREATEBOXEL_IGESPARAM;
-#endif
 
 // GetClipDepthMill() argument
 enum ENCLIPDEPTH
@@ -81,39 +73,23 @@ typedef	CREATEELEMENTPARAM*		LPCREATEELEMENTPARAM;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class CNCViewGL : public CView
+class CNCViewGL : public CViewBaseGL
 {
 	CString		m_strGuide;
 	BOOL		m_bActive,
 				m_bSizeChg,
 				m_bWirePath,	// ﾋﾞｭｰごとに動的に切り替えるﾌﾗｸﾞ
 				m_bSlitView;
-	int			m_cx,  m_cy,	// ｳｨﾝﾄﾞｳｻｲｽﾞ(ｽｸﾘｰﾝ)
-				m_icx, m_icy;
+	int			m_icx, m_icy;	// glDrawPixels
 	GLint		m_wx, m_wy;		// glReadPixels, glWindowPos
-	float		m_dRate,		// 基準拡大率
-				m_dRoundAngle,	// 中ﾎﾞﾀﾝの回転角度
-				m_dRoundStep;	// 中ﾎﾞﾀﾝの１回あたりの回転角度
-	CRect3F		m_rcView,		// ﾓﾃﾞﾙ空間
-				m_rcDraw;		// ﾜｰｸ矩形(ｿﾘｯﾄﾞ表示用)
-	CPointF		m_ptCenter,		// 描画中心
-				m_ptCenterBk,
-				m_ptLastMove;	// 移動前座標
-	CPoint3F	m_ptLastRound,	// 回転前座標
-				m_ptRoundBase;	// 中ﾎﾞﾀﾝ連続回転の基準座標
-	CPoint		m_ptDownClick;	// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示用他
-	HGLRC		m_hRC;
+	CPointF		m_ptCenterBk;		// ﾎﾞｸｾﾙ処理前のﾊﾞｯｸｱｯﾌﾟ
+	GLdouble	m_objXformBk[4][4];
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
-
 	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
-#ifndef NO_TRACE_WORKFILE			// from NCViewTab.h
+#ifndef NO_TRACE_WORKFILE		// from NCViewTab.h
 	GLfloat*	m_pfDepthBottom;// WorkFile 2Pass
 #endif
 	GLubyte*	m_pbStencil;	// ｽﾃﾝｼﾙ
-	CFrameBuffer*	m_pFBO;		// FrameBufferObject
-#ifdef USE_SHADER
-	CGLSL			m_glsl;		// Shader Manager
-#endif
 	GLfloat*	m_pfXYZ;		// -- 変換されたﾜｰﾙﾄﾞ座標(temp area)
 	GLfloat*	m_pfNOR;		// -- 法線ﾍﾞｸﾄﾙ
 	GLfloat*	m_pLatheX;		// -- 旋盤のX値
@@ -134,24 +110,21 @@ class CNCViewGL : public CView
 	}
 	WIREDRAW	m_WireDraw;		// ﾜｲﾔ加工機用
 
+#ifdef USE_SHADER
+	CGLSL			m_glsl;		// Shader Manager
+#endif
+
 	struct {	// CreateElementThread() from CreateVBOMill()
 		DWORD	m_nCeProc;
 		HANDLE*	m_pCeHandle;
 		LPCREATEELEMENTPARAM	m_pCeParam;
 	};
 
-	ENTRACKINGMODE	m_enTrackingMode;
-	GLdouble		m_objXform[4][4],
-					m_objXformBk[4][4];	// ﾎﾞｸｾﾙ処理時のﾊﾞｯｸｱｯﾌﾟ
-
-	void	ClearObjectForm(BOOL = FALSE);
-	BOOL	SetupPixelFormat(CDC*);
+	void	InitialObjectForm(void);
 	void	UpdateViewOption(void);
 	void	CreateDisplayList(void);
 	BOOL	CreateBoxel(BOOL = FALSE);
-#ifdef USE_KODATUNO
 	BOOL	CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* = NULL);
-#endif
 	BOOL	CreateLathe(BOOL = FALSE);
 	BOOL	CreateWire(void);
 	BOOL	CreateBottomFaceThread(BOOL, int);
@@ -171,24 +144,15 @@ class CNCViewGL : public CView
 	void	CreateTexture(GLsizeiptr, const GLfloat*);
 	void	ClearVBO(void);
 	void	ClearTexture(void);
-	void	CreateFBO(void);
 	void	InitialBoxel(void);
 	void	FinalBoxel(void);
 	void	DeleteDepthMemory(void);
 	void	EndOfCreateElementThread(void);
 
-	void	RenderBack(void);
 	void	RenderAxis(void);
 	void	RenderCode(void);
 	void	RenderMill(const CNCdata*);
 
-	CPoint3F	PtoR(const CPoint& pt);
-	void	BeginTracking(const CPoint&, ENTRACKINGMODE);
-	void	EndTracking(void);
-	void	DoTracking(const CPoint&);
-	void	DoScale(int);
-	void	DoRotation(float);
-	void	SetupViewingTransform(void);
 #ifdef _DEBUG
 	void	DumpDepth(void) const;
 	void	DumpStencil(void) const;
@@ -205,43 +169,24 @@ public:
 	virtual void OnInitialUpdate();
 	virtual void OnDraw(CDC*);
 	virtual BOOL OnCmdMsg(UINT, int, void*, AFX_CMDHANDLERINFO*);
+
 protected:
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual void OnUpdate(CView*, LPARAM, CObject*);
 	virtual void OnActivateView(BOOL, CView*, CView*);
+	virtual void DoScale(int);	// ﾌﾚｰﾑの拡大率を更新
 
-public:
-#ifdef _DEBUG
-	virtual void AssertValid() const;
-	virtual void Dump(CDumpContext& dc) const;
-#endif
-
-protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
-	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	// CNCViewTab::OnActivatePage() から SendMessage()
 	afx_msg LRESULT OnUserActivatePage(WPARAM, LPARAM);
 	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
 	afx_msg LRESULT OnUserViewFitMsg(WPARAM, LPARAM);
 	// ﾒﾆｭｰｺﾏﾝﾄﾞ
-	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
-	afx_msg	void OnMoveKey(UINT);
-	afx_msg	void OnRoundKey(UINT);
 	afx_msg	void OnLensKey(UINT);
 	afx_msg void OnDefViewInfo();
 	//
@@ -252,7 +197,6 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 
-void	OutputGLErrorMessage(GLenum, UINT);
 void	InitialMillNormal(void);	// from CNCVCApp::CNCVCApp()
 
 #ifndef _DEBUG

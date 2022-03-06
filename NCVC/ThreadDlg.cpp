@@ -81,6 +81,10 @@ BOOL CThreadDlg::OnInitDialog()
 		}
 		break;
 
+	case ID_FILE_3DPATH:		// Nurbs曲面のNC生成スレッド
+		pfnThread = MakeNurbs_Thread;
+		break;
+
 	case ID_EDIT_DXFSHAPE:		// 連結ｵﾌﾞｼﾞｪｸﾄの検索ｽﾚｯﾄﾞ開始
 		pfnThread = ShapeSearch_Thread;
 		break;
@@ -145,4 +149,36 @@ LRESULT CThreadDlg::OnNcHitTest(CPoint pt)
 	if ( nHitTest==HTCLIENT && GetAsyncKeyState(MK_LBUTTON)<0 )
 		nHitTest = HTCAPTION;
 	return nHitTest;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+// ﾌｪｰｽﾞ出力
+void SendFaseMessage
+	(CThreadDlg* pParent, int& nFase, INT_PTR nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
+{
+#ifdef _DEBUG
+	printf("MakeXXX_Thread() Phase%d Start\n", nFase);
+#endif
+	if ( nRange > 0 )
+		pParent->m_ctReadProgress.SetRange32(0, (int)nRange);
+
+	CString	strMsg;
+	if ( nMsgID > 0 )
+		VERIFY(strMsg.LoadString(nMsgID));
+	else
+		strMsg.Format(IDS_MAKENCD_FASE, nFase);
+	pParent->SetFaseMessage(strMsg, lpszMsg);
+	nFase++;
+}
+
+void SetProgressPos64(CThreadDlg* pParent, INT_PTR n)
+{
+	if ((n & 0x003f) == 0)	// 64回おき(下位6ﾋﾞｯﾄﾏｽｸ)
+		pParent->m_ctReadProgress.SetPos((int)n);
+}
+
+void SetProgressPos(CThreadDlg* pParent, INT_PTR n)
+{
+	pParent->m_ctReadProgress.SetPos((int)n);
 }

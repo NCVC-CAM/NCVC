@@ -217,7 +217,7 @@ typedef	std::vector<CPointF>	CVPointF;
 
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD クラス
-
+class Coord;	// Kodatuno/stdafx.h
 template<typename T>
 class CPoint3T :
 	boost::operators< CPoint3T<T> >
@@ -250,13 +250,16 @@ public:
 		// double -> float 初期化
 		SetPoint((T)pt.x, (T)pt.y, (T)pt.z);
 	}
+	CPoint3T(const Coord& xyz) {
+		SetPoint(xyz.x, xyz.y, xyz.z);
+	}
 	// 演算子定義
 	CPoint3T<T>&	operator = (T xyz) {
 		x = y = z = xyz;
 		return *this;
 	}
 	CPoint3T<float>& operator = (const CPoint3T<double>& pt) {
-		x = (float)pt.x;	y = (float)pt.y;	z = (float)pt.z
+		x = (float)pt.x;	y = (float)pt.y;	z = (float)pt.z;
 		return *this;
 	}
 	CPoint3T<T>&	operator += (T d) {
@@ -353,6 +356,10 @@ public:
 		ms_rx_cos = cos(rx);		ms_rx_sin = sin(rx);
 		ms_ry_cos = cos(ry);		ms_ry_sin = sin(ry);
 		ms_rz_cos = cos(rz);		ms_rz_sin = sin(rz);
+	}
+	CPoint3T<double>& operator = (const Coord& xyz) {
+		SetPoint(xyz.x, xyz.y, xyz.z);
+		return *this;
 	}
 };
 typedef	CPoint3T<double>	CPoint3D;

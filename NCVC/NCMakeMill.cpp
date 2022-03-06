@@ -206,6 +206,23 @@ CNCMakeMill::CNCMakeMill(const CString& strGcode) : CNCMakeBase(strGcode)
 {
 }
 
+// Kodatunoç¿ïW
+CNCMakeMill::CNCMakeMill(const Coord& xyz)
+{
+	// Ç±ÇÃï˚ñ@ÇÕÉ_ÉÅ
+//	CPoint3D	pt(xyz);
+//	CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
+
+	CString	strGcode(GetValString(NCA_X, (float)xyz.x) +
+					 GetValString(NCA_Y, (float)xyz.y) +
+					 GetValString(NCA_Z, (float)xyz.z) );
+	if ( !strGcode.IsEmpty() ) {
+		strGcode += GetFeedString(GetDbl(MKNC_DBL_FEED));
+		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
+			strGcode + ms_strEOB;
+	}
+}
+
 //////////////////////////////////////////////////////////////////////
 // “› ﬁä÷êî
 

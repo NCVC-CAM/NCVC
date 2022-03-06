@@ -4,23 +4,32 @@
 
 #pragma once
 
+//#define	_DEPTH_TEXTURE_		// 将来的にデプス値をシェーダで扱えるようになったときに
+
 enum FBOTYPE
 {
-	FRAMEBUFFER, RANDERBUFFER, TEXTUREBUFFER
+	FRAMEBUFFER, RENDERBUFFER_COLOR, RENDERBUFFER_DEPTH,
+#ifdef _DEPTH_TEXTURE_
+	TEXTUREBUFFER
+#endif
 };
 
 class CFrameBuffer
 {
 	static	GLuint	ms_uBind;	// 現在bindされているFB
-	GLuint	m_fb, m_rb, m_tb;
+
 	GLsizei	m_w, m_h;
+	GLuint	m_fb;
+	GLuint	m_rbColor, m_rbDepth;
+#ifdef _DEPTH_TEXTURE_
+	GLuint	m_tb;
+#endif
 
 public:
-	CFrameBuffer();
-	CFrameBuffer(GLsizei, GLsizei, BOOL = FALSE);
+	CFrameBuffer(GLsizei, GLsizei);
 	~CFrameBuffer();
 
-	BOOL	Create(GLsizei, GLsizei, BOOL = FALSE);
+	BOOL	Create(GLsizei, GLsizei);
 	void	Delete(void);
 	BOOL	Bind(BOOL);
 	BOOL	IsBind(void) const {
@@ -29,9 +38,12 @@ public:
 
 	GLuint	GetBufferID(FBOTYPE e) {
 		switch ( e ) {
-		case FRAMEBUFFER:	return m_fb;
-		case RANDERBUFFER:	return m_rb;
-		case TEXTUREBUFFER:	return m_tb;
+		case FRAMEBUFFER:			return m_fb;
+		case RENDERBUFFER_COLOR:	return m_rbColor;
+		case RENDERBUFFER_DEPTH:	return m_rbDepth;
+#ifdef _DEPTH_TEXTURE_
+		case TEXTUREBUFFER:			return m_tb;
+#endif
 		}
 		return 0;
 	}

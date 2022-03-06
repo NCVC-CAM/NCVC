@@ -1302,5 +1302,5 @@ void CMachineToolBar::ChangeMachine(void)
 	printf("CMachineToolBar::ChangeMachine() Start\n");
 #endif
 	// ºÝÎÞÎÞ¯¸½‚É‹@ŠBî•ñ‚Ì—š—ð‚ð’Ç‰Á
-	AfxGetNCVCApp()->GetMCOption()->AddMCHistory_ComboBox(m_ctMachine);
+	AfxGetNCVCApp()->GetMachineOption()->AddMCHistory_ComboBox(m_ctMachine);
 }

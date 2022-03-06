@@ -871,9 +871,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 				m_bDocFlg.set(DXFDOC_WIRE);
 		}
 		// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
-		POSITION	pos = GetFirstViewPosition();
-		ASSERT( pos );
-		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());	// CDocBase
+		OnOpenDocumentBase(lpszPathName);	// CDocBase
 	}
 
 	// ﾒｲﾝﾌﾚｰﾑのﾌﾟﾛｸﾞﾚｽﾊﾞｰ初期化
@@ -896,7 +894,7 @@ BOOL CDXFDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	UpdateAllViews(NULL, UAV_FILESAVE);	// CDXFShapeView順序更新
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの終了
-	OnCloseDocumentSP();	// CDocBase
+	OnCloseDocumentBase();	// CDocBase
 
 	if ( GetPathName().CompareNoCase(lpszPathName) != 0 ) {
 		CDocument* pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_DXF, lpszPathName);
@@ -909,9 +907,7 @@ BOOL CDXFDoc::OnSaveDocument(LPCTSTR lpszPathName)
 
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	if ( bResult ) {
-		POSITION	pos = GetFirstViewPosition();
-		ASSERT( pos );
-		OnOpenDocumentSP(lpszPathName, GetNextView(pos)->GetParentFrame());
+		OnOpenDocumentBase(lpszPathName);
 	}
 
 	return bResult;
@@ -930,7 +926,7 @@ void CDXFDoc::OnCloseDocument()
 		return;
 	}
 	// 処理中のｽﾚｯﾄﾞを中断させる
-	OnCloseDocumentSP();	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
+	OnCloseDocumentBase();	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
 	m_bDocFlg.reset(DXFDOC_THREAD);
 	m_csRestoreCircleType.Lock();
 	m_csRestoreCircleType.Unlock();
@@ -1478,7 +1474,7 @@ void CDXFDoc::OnUpdateFileDXF2NCD(CCmdUI* pCmdUI)
 void CDXFDoc::OnFileDXF2NCD(UINT nID) 
 {
 	int			i;
-	enMAKETYPE	enType;
+	NCMAKETYPE	enType;
 	BOOL	bNCView, bAllOut,
 			bSingle = (nID==ID_FILE_DXF2NCD || nID==ID_FILE_DXF2NCD_SHAPE ||
 						nID==ID_FILE_DXF2NCD_LATHE || nID==ID_FILE_DXF2NCD_WIRE);
@@ -1519,7 +1515,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 	case ID_FILE_DXF2NCD_LATHE:	// 旋盤ﾃﾞｰﾀ生成
 	case ID_FILE_DXF2NCD_WIRE:	// ﾜｲﾔ加工機ﾃﾞｰﾀ生成
 		enType = ( nID <= ID_FILE_DXF2NCD_SHAPE ) ? NCMAKEMILL :
-					(enMAKETYPE)(nID - ID_FILE_DXF2NCD_LATHE + 1);
+					(NCMAKETYPE)(nID - ID_FILE_DXF2NCD_LATHE + 1);
 		{
 			CMakeNCDlg	dlg(nID-ID_FILE_DXF2NCD+IDS_MAKENCD_TITLE_BASIC, enType, this);
 			if ( dlg.DoModal() != IDOK )
@@ -1542,7 +1538,7 @@ void CDXFDoc::OnFileDXF2NCD(UINT nID)
 	}
 	pOpt->SetViewFlag(bNCView);
 
-	// すでに開いているﾄﾞｷｭﾒﾝﾄなら閉じるｱﾅｳﾝｽ
+	// すでに開いているﾄﾞｷｭﾒﾝﾄなら閉じる
 	if ( bSingle ) {
 		pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, m_strNCFileName);
 		if ( pDoc )

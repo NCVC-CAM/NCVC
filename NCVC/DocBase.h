@@ -92,25 +92,20 @@ class CDocBase : public CDocument
 {
 	// ﾌｧｲﾙ変更通知ｽﾚｯﾄﾞ
 	CWinThread*	m_pFileChangeThread;
-	HANDLE		m_hAddinThread;			// ｽﾚｯﾄﾞﾛｯｸﾊﾝﾄﾞﾙ
-	CEvent		m_evFinish;				// 終了通知ｲﾍﾞﾝﾄ
+	HANDLE		m_hAddinThread;				// ｽﾚｯﾄﾞﾛｯｸﾊﾝﾄﾞﾙ
+	CEvent		m_evFinish;					// 終了通知ｲﾍﾞﾝﾄ
 
 protected:
-	std::bitset<DOCFLG_NUM>	m_bDocFlg;	// 派生ｸﾗｽ用ﾄﾞｷｭﾒﾝﾄﾌﾗｸﾞ
-	CRect3F			m_rcMax;	// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
+	std::bitset<DOCFLG_NUM>	m_bDocFlg;			// 派生ｸﾗｽ用ﾄﾞｷｭﾒﾝﾄﾌﾗｸﾞ
+	CRect3F					m_rcMax;			// ﾄﾞｷｭﾒﾝﾄのｵﾌﾞｼﾞｪｸﾄ最大矩形
+	CRecentViewInfo*		m_pRecentViewInfo;	// ﾌｧｲﾙごとの描画情報
 
 	// ｱﾄﾞｲﾝｼﾘｱﾙ関数の保持
 	PFNNCVCSERIALIZEFUNC	m_pfnSerialFunc;
 	// ｱﾄﾞｲﾝ向けﾛｯｸﾊﾝﾄﾞﾙ
 	BOOL	IsLockThread(void);
 
-protected:
-	CDocBase() {
-		UnlockDocument();
-		m_pFileChangeThread = NULL;
-		m_pfnSerialFunc = NULL;
-		m_bDocFlg.reset();
-	}
+	CDocBase();
 #ifdef _DEBUG
 	virtual void AssertValid() const {
 		__super::AssertValid();
@@ -119,16 +114,11 @@ protected:
 		__super::Dump(dc);
 	}
 #endif
-
-protected:
-	BOOL	OnOpenDocumentSP(LPCTSTR lpstrFileName, CFrameWnd* pWnd);
-	void	OnCloseDocumentSP(void);
+	BOOL	OnOpenDocumentBase(LPCTSTR lpstrFileName);
+	void	OnCloseDocumentBase(void);
 	BOOL	UpdateModifiedTitle(BOOL bModified, CString& strTitle);
 
 public:
-	CRect3F	GetMaxRect(void) const {
-		return m_rcMax;
-	}
 	BOOL	IsDocFlag(size_t n) const {
 		ASSERT( n < m_bDocFlg.size() );
 		return m_bDocFlg[n];
@@ -136,6 +126,12 @@ public:
 	void	SetDocFlag(size_t n, BOOL val = TRUE) {
 		ASSERT( n < m_bDocFlg.size() );
 		m_bDocFlg.set(n, val);
+	}
+	CRect3F	GetMaxRect(void) const {
+		return m_rcMax;
+	}
+	CRecentViewInfo*	GetRecentViewInfo(void) const {
+		return m_pRecentViewInfo;
 	}
 	void	LockDocument(HANDLE hThread) {
 		m_hAddinThread = hThread;
@@ -150,7 +146,13 @@ public:
 		return m_hAddinThread;
 	}
 	//
+	virtual void SetPathName(LPCTSTR lpszPathName, BOOL bAddToMRU = TRUE);
 	virtual void ReportSaveLoadException(LPCTSTR lpszPathName, CException* e, BOOL bSaving, UINT nIDPDefault);
 	// 更新ﾏｰｸ付与
 	virtual void SetModifiedFlag(BOOL bModified = TRUE);
 };
+
+/////////////////////////////////////////////////////////////////////////////
+
+class BODY;
+BODY*	Read3dModel(LPCTSTR, LPCTSTR = NULL);

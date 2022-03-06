@@ -10,7 +10,6 @@
 #include "NCViewXZ.h"
 #include "NCViewYZ.h"
 #include "ThumbnailDlg.h"
-#include <afxshellmanager.h>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

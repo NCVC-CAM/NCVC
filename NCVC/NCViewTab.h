@@ -12,10 +12,8 @@
 class CNCViewTab;
 class CNCListView;
 
-#ifdef USE_KODATUNO
 // IGES/STLのときトレースするかどうか
 #define	NO_TRACE_WORKFILE
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // CTraceThread スレッド

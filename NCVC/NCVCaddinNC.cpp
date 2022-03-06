@@ -112,8 +112,8 @@ NCEXPORT void WINAPI NCVC_DelNCStrData(NCVCHANDLE hDoc, int nIndex, int nCnt)
 static void NCArgvInitialize(LPNCARGV lpArgv)
 {
 	int		i;
-	const CMCOption* pMCopt  = theApp.GetMCOption();
-	const CViewOption* pVopt = theApp.GetViewOption();
+	const CMachineOption* pMCopt  = theApp.GetMachineOption();
+	const CViewOption*	  pVopt = theApp.GetViewOption();
 
 	lpArgv->nc.nGtype = G_TYPE;
 	lpArgv->nc.nGcode = pMCopt->GetModalSetting(MODALGROUP0);

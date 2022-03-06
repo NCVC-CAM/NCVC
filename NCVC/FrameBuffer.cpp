@@ -9,24 +9,18 @@
 #define new DEBUG_NEW
 #endif
 
-//#define	_DEPTH_TEXTURE_
-
 GLuint	CFrameBuffer::ms_uBind = 0;
 
 /////////////////////////////////////////////////////////////////////////////
 
-CFrameBuffer::CFrameBuffer()
+CFrameBuffer::CFrameBuffer(GLsizei w, GLsizei h)
 {
-	if ( ms_uBind > 0 ) {
-		Bind(FALSE);
-	}
-	m_fb = m_rb = m_tb = 0;
-}
-
-CFrameBuffer::CFrameBuffer(GLsizei w, GLsizei h, BOOL bBindKeep)
-{
-	m_fb = m_rb = m_tb = 0;
-	Create(w, h, bBindKeep);
+	m_fb = 0;
+	m_rbColor = m_rbDepth = 0;
+#ifdef _DEPTH_TEXTURE_
+	m_tb = 0;
+#endif
+	Create(w, h);
 }
 
 CFrameBuffer::~CFrameBuffer()
@@ -34,7 +28,7 @@ CFrameBuffer::~CFrameBuffer()
 	Delete();
 }
 
-BOOL CFrameBuffer::Create(GLsizei w, GLsizei h, BOOL bBindKeep)
+BOOL CFrameBuffer::Create(GLsizei w, GLsizei h)
 {
 	m_w = w;	m_h = h;
 
@@ -51,9 +45,15 @@ BOOL CFrameBuffer::Create(GLsizei w, GLsizei h, BOOL bBindKeep)
 	::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	::glBindTexture(GL_TEXTURE_2D, 0);
 #else
+	// ColorBuffer RBOçÏê¨
+	::glGenRenderbuffersEXT(1, &m_rbColor);
+	::glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rbColor);
+	::glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA8, w, h);
+	::glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+
 	// Depth/Stencil RBOçÏê¨
-	::glGenRenderbuffersEXT(1, &m_rb);
-	::glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb);
+	::glGenRenderbuffersEXT(1, &m_rbDepth);
+	::glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rbDepth);
 	::glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8, w, h);
 	::glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
 #endif
@@ -70,27 +70,34 @@ BOOL CFrameBuffer::Create(GLsizei w, GLsizei h, BOOL bBindKeep)
 #ifdef _DEPTH_TEXTURE_
 	::glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, m_tb, 0);
 #else
-	::glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, m_rb);
+	::glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0,        GL_RENDERBUFFER_EXT, m_rbColor);
+	::glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, m_rbDepth);
 #endif
 	if ( GetGLError() != GL_NO_ERROR )
 		return FALSE;
 
-	ms_uBind = m_fb;
-	Bind(bBindKeep);
+	Bind(TRUE);
 
 	return TRUE;
 }
 
 void CFrameBuffer::Delete(void)
 {
-	Bind(FALSE);
+	if ( ms_uBind!=0 && ms_uBind==m_fb )
+		Bind(FALSE);
+#ifdef _DEPTH_TEXTURE_
 	if ( m_tb )
 		::glDeleteTextures(1, &m_tb);
-	if ( m_rb )
-		::glDeleteRenderbuffersEXT(1, &m_rb);
+	m_tb = 0;
+#endif
+	if ( m_rbColor )
+		::glDeleteRenderbuffersEXT(1, &m_rbColor);
+	if ( m_rbDepth )
+		::glDeleteRenderbuffersEXT(1, &m_rbDepth);
 	if ( m_fb )
 		::glDeleteFramebuffersEXT(1, &m_fb);
-	m_fb = m_rb = m_tb = 0;
+	m_fb = 0;
+	m_rbColor = m_rbDepth = 0;
 }
 
 BOOL CFrameBuffer::Bind(BOOL bind)

@@ -81,7 +81,6 @@ protected:
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
 #endif
-public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 
 	DECLARE_MESSAGE_MAP()

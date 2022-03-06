@@ -5,6 +5,7 @@
 
 #include "NCMakeBase.h"
 #include "NCMakeMillOpt.h"
+#include "Kodatuno/StdAfx.h"	// Coord’è‹`
 
 typedef CString (*PFNGETCYCLESTRING)(void);
 
@@ -45,6 +46,8 @@ public:
 	CNCMakeMill(float);
 	// ”CˆÓ‚Ì•¶š—ñº°ÄŞ
 	CNCMakeMill(const CString&);
+	// KodatunoÀ•W
+	CNCMakeMill(const Coord&);
 
 	// ¶¬µÌß¼®İ‚É‚æ‚éÃ“I•Ï”‚Ì‰Šú‰»(TH_MakeNCD.cpp)
 	static	void	SetStaticOption(const CNCMakeMillOpt*);

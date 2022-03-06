@@ -37,7 +37,9 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 	CreateFBO();
 
 	// ÎÞ¸¾Ù¶¬‚Ì‚½‚ß‚Ì‰ŠúÝ’è
-	InitialBoxel();		// m_pFBO->Bind(TRUE)
+	InitialBoxel();
+	::glClearDepth(0.0);			// ‰“‚¢•û‚ð—Dæ‚³‚¹‚é‚½‚ß‚ÌÃÞÌß½‰Šú’l
+	::glClear(GL_DEPTH_BUFFER_BIT);	// ÃÞÌß½ÊÞ¯Ì§‚Ì‚Ý¸Ø±
 	::glOrtho(m_rcDraw.left, m_rcDraw.right,
 		-LATHEHEIGHT, LATHEHEIGHT,
 		m_rcView.low, m_rcView.high);	// m_rcDraw ‚Å‚Í·ÞØ·ÞØ‚È‚Ì‚Å m_rcView ‚ðŽg‚¤

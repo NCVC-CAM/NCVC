@@ -28,6 +28,7 @@ extern	LPCTSTR	g_szNCcomment[];
 static	CThreadDlg*			g_pParent;
 static	CDXFDoc*			g_pDoc;
 static	CNCMakeLatheOpt*	g_pMakeOpt;
+static	int					g_nFase;	// ﾌｪｰｽﾞ№
 
 // よく使う変数や呼び出しの簡略置換
 #define	MAXLAYER	3	// 内径・外径・突切
@@ -72,14 +73,6 @@ static inline	void	_AddMakeLatheStr(const CString& strData)
 	g_obMakeData.Add(pNCD);
 }
 
-// ﾌｪｰｽﾞ更新
-static	int		g_nFase;			// ﾌｪｰｽﾞ№
-static	void	SendFaseMessage(INT_PTR = -1, int = -1, LPCTSTR = NULL);
-static	inline	void	_SetProgressPos(INT_PTR n)
-{
-	g_pParent->m_ctReadProgress.SetPos((int)n);
-}
-
 // 並べ替え補助関数
 static	int		ShapeSortFunc(CDXFshape*, CDXFshape*);	// 形状認識ﾃﾞｰﾀの並べ替え
 static	int		GrooveSortFunc(CDXFdata*, CDXFdata*);	// 突っ切り加工のﾃﾞｰﾀ並べ替え
@@ -113,7 +106,7 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 
 	// 準備中表示
 	g_nFase = 0;
-	SendFaseMessage(-1, IDS_ANA_DATAINIT);
+	SendFaseMessage(g_pParent, g_nFase, -1, IDS_ANA_DATAINIT);
 	g_pMakeOpt = NULL;
 
 	// 下位の CMemoryException は全てここで集約
@@ -165,15 +158,10 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 	// 終了処理
 	_dp.SetDecimal3();
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// このｽﾚｯﾄﾞからﾀﾞｲｱﾛｸﾞ終了
+
 	// 生成したNCｺｰﾄﾞの消去ｽﾚｯﾄﾞ(優先度を下げる)
 	AfxBeginThread(MakeLathe_AfterThread, NULL,
-//		THREAD_PRIORITY_LOWEST);
 		THREAD_PRIORITY_IDLE);
-//		THREAD_PRIORITY_BELOW_NORMAL;
-
-	// 条件ｵﾌﾞｼﾞｪｸﾄ削除
-	if ( g_pMakeOpt )
-		delete	g_pMakeOpt;
 
 	return 0;
 }
@@ -216,14 +204,14 @@ BOOL OutputLatheCode(void)
 	CString	strPath, strFile,
 			strNCFile(g_pDoc->GetNCFileName());
 	Path_Name_From_FullPath(strNCFile, strPath, strFile);
-	SendFaseMessage(g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
+	SendFaseMessage(g_pParent, g_nFase, g_obMakeData.GetSize(), IDS_ANA_DATAFINAL, strFile);
 	try {
 		CStdioFile	fp(strNCFile,
 			CFile::modeCreate | CFile::modeWrite |
 			CFile::shareExclusive | CFile::typeText | CFile::osSequentialScan);
 		for ( INT_PTR i=0; i<g_obMakeData.GetSize() && IsThread(); i++ ) {
 			g_obMakeData[i]->WriteGcode(fp);
-			_SetProgressPos(i+1);
+			SetProgressPos(g_pParent, i+1);
 		}
 	}
 	catch (	CFileException* e ) {
@@ -233,7 +221,7 @@ BOOL OutputLatheCode(void)
 		return FALSE;
 	}
 
-	_SetProgressPos(g_obMakeData.GetSize());
+	SetProgressPos(g_pParent, g_obMakeData.GetSize());
 	return IsThread();
 }
 
@@ -261,7 +249,7 @@ BOOL MakeLathe_MainFunc(void)
 	}
 
 	// ﾌｪｰｽﾞ1 : 形状のｵﾌｾｯﾄと内外径のｵﾌｾｯﾄの交点を計算し荒加工のﾃﾞｰﾀを生成
-	SendFaseMessage(g_obLineTemp[0].GetSize()+g_obLineTemp[1].GetSize());
+	SendFaseMessage(g_pParent, g_nFase, g_obLineTemp[0].GetSize()+g_obLineTemp[1].GetSize());
 	for ( int i=0; i<SIZEOF(g_obLineTemp); i++ ) {
 		if ( !g_obLineTemp[i].IsEmpty() ) {
 			if ( !CreateRoughPass(i) )
@@ -293,7 +281,7 @@ BOOL MakeLathe_MainFunc(void)
 	}
 
 	// ﾌｪｰｽﾞ2 : NCｺｰﾄﾞの生成
-	SendFaseMessage(
+	SendFaseMessage(g_pParent, g_nFase,
 		g_obMakeLine[0].GetSize()+GetNum(MKLA_NUM_I_MARGIN)+
 		g_obMakeLine[1].GetSize()+GetNum(MKLA_NUM_O_MARGIN)
 	);
@@ -602,7 +590,7 @@ BOOL CreateRoughPass(int io)
 
 	// 外径準備ﾃﾞｰﾀをﾙｰﾌﾟさせ荒加工ﾃﾞｰﾀを作成
 	for ( i=0; i<g_obLineTemp[io].GetSize() && IsThread(); i++ ) {
-		_SetProgressPos(i+iPosBase+1);
+		SetProgressPos(g_pParent, i+iPosBase+1);
 		pData = g_obLineTemp[io][i];
 		pts = pData->GetNativePoint(0);
 		pDataChain = NULL;
@@ -777,7 +765,7 @@ BOOL MakeInsideCode(const CPointF& ptMax)
 
 	// 荒加工ﾊﾟｽﾙｰﾌﾟ
 	for ( i=1; i<nLoop && IsThread(); i++ ) {
-		_SetProgressPos(i+1);
+		SetProgressPos(g_pParent, i+1);
 		pData = g_obMakeLine[0][i];
 		pt = pte = pData->GetStartMakePoint();
 		dCutX = pt.y;
@@ -912,7 +900,7 @@ BOOL MakeOutsideCode(const CPointF& ptMax)
 
 	// 荒加工ﾊﾟｽﾙｰﾌﾟ
 	for ( i=1; i<nLoop && IsThread(); i++ ) {
-		_SetProgressPos(i+iPosBase+1);
+		SetProgressPos(g_pParent, i+iPosBase+1);
 		pData = g_obMakeLine[1][i];
 		pt = pte = pData->GetStartMakePoint();
 		dCutX = pt.y;
@@ -1188,25 +1176,6 @@ void MoveOutsideCode(const CDXFdata* pData, const CPointF& ptMax, const CPointF&
 
 //////////////////////////////////////////////////////////////////////
 
-// ﾌｪｰｽﾞ出力
-void SendFaseMessage
-	(INT_PTR nRange/*=-1*/, int nMsgID/*=-1*/, LPCTSTR lpszMsg/*=NULL*/)
-{
-#ifdef _DEBUG
-	printf("MakeLathe_Thread() Phase%d Start\n", g_nFase);
-#endif
-	if ( nRange > 0 )
-		g_pParent->m_ctReadProgress.SetRange32(0, (int)nRange);
-
-	CString	strMsg;
-	if ( nMsgID > 0 )
-		VERIFY(strMsg.LoadString(nMsgID));
-	else
-		strMsg.Format(IDS_MAKENCD_FASE, g_nFase);
-	g_pParent->SetFaseMessage(strMsg, lpszMsg);
-	g_nFase++;
-}
-
 //	AddCustomLatheCode() から呼び出し
 class CMakeCustomCode_Lathe : public CMakeCustomCode	// MakeCustomCode.h
 {
@@ -1376,6 +1345,9 @@ UINT MakeLathe_AfterThread(LPVOID)
 	g_obMakeData.RemoveAll();
 	for ( i=0; i<g_pDoc->GetLayerCnt(); i++ )
 		g_pDoc->GetLayerData(i)->RemoveAllShape();
+
+	if ( g_pMakeOpt )
+		delete	g_pMakeOpt;
 
 	g_csMakeAfter.Unlock();
 

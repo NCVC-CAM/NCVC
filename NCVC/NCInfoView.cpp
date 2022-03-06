@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
-#include "MCOption.h"
+#include "MachineOption.h"
 #include "NCChild.h"
 #include "NCDoc.h"
 #include "NCViewTab.h"
@@ -323,7 +323,7 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 	CWaitCursor		wait;	// »ŽžŒv¶°¿Ù
 	CFileStatus		fStatus;
 
-	const CMCOption*	pMCopt = AfxGetNCVCApp()->GetMCOption();
+	const CMachineOption*	pMCopt = AfxGetNCVCApp()->GetMachineOption();
 	CString			strFormat, strItem, strBuf, strMM, strDelimiter,
 					strSpace(' ', 7);
 	CStringArray	strarrayInfo;

@@ -97,11 +97,9 @@ CDXFOption::CDXFOption()
 	m_enMakeType = NCMAKEMILL;
 	try {
 		// ØíğŒÌ§²Ù‚Ì—š—ğ
-		ReadInitHistory(NCMAKEMILL);
-		ReadInitHistory(NCMAKELATHE);
-		ReadInitHistory(NCMAKEWIRE);
-		// Ú²Ô–¼‚ÆğŒÌ§²ÙŠÖŒW‚Ì—š—ğ
-		ReadInitHistory(NCMAKELAYER);
+		for ( i=0; i<NCMAKENUM; i++ ) {
+			ReadInitHistory((NCMAKETYPE)i);
+		}
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);
@@ -113,7 +111,7 @@ CDXFOption::CDXFOption()
 /////////////////////////////////////////////////////////////////////////////
 // ÒİÊŞŠÖ”
 
-BOOL CDXFOption::ReadInitHistory(enMAKETYPE enType)
+BOOL CDXFOption::ReadInitHistory(NCMAKETYPE enType)
 {
 	extern	LPTSTR	g_pszExecDir;	// ÀsÃŞ¨Ú¸ÄØ(NCVC.cpp)
 	int		i;
@@ -143,7 +141,7 @@ BOOL CDXFOption::ReadInitHistory(enMAKETYPE enType)
 	return TRUE;
 }
 
-BOOL CDXFOption::SaveInitHistory(enMAKETYPE enType)
+BOOL CDXFOption::SaveInitHistory(NCMAKETYPE enType)
 {
 	int			i;
 	POSITION	pos;
@@ -168,7 +166,7 @@ BOOL CDXFOption::SaveInitHistory(enMAKETYPE enType)
 	return TRUE;
 }
 
-BOOL CDXFOption::AddListHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
+BOOL CDXFOption::AddListHistory(NCMAKETYPE enType, LPCTSTR lpszSearch)
 {
 	CStringList& strList = m_strInitList[enType];
 
@@ -204,7 +202,7 @@ BOOL CDXFOption::AddListHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
 	return TRUE;
 }
 
-void CDXFOption::DelInitHistory(enMAKETYPE enType, LPCTSTR lpszSearch)
+void CDXFOption::DelInitHistory(NCMAKETYPE enType, LPCTSTR lpszSearch)
 {
 	CStringList& strList = m_strInitList[enType];
 
