@@ -158,15 +158,10 @@ UINT MakeLathe_Thread(LPVOID pVoid)
 	// I—¹ˆ—
 	_dp.SetDecimal3();
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// ‚±‚Ì½Ú¯ÄŞ‚©‚çÀŞ²±Û¸ŞI—¹
+
 	// ¶¬‚µ‚½NCº°ÄŞ‚ÌÁ‹½Ú¯ÄŞ(—Dæ“x‚ğ‰º‚°‚é)
 	AfxBeginThread(MakeLathe_AfterThread, NULL,
-//		THREAD_PRIORITY_LOWEST);
 		THREAD_PRIORITY_IDLE);
-//		THREAD_PRIORITY_BELOW_NORMAL;
-
-	// ğŒµÌŞ¼Şª¸Äíœ
-	if ( g_pMakeOpt )
-		delete	g_pMakeOpt;
 
 	return 0;
 }
@@ -1350,6 +1345,9 @@ UINT MakeLathe_AfterThread(LPVOID)
 	g_obMakeData.RemoveAll();
 	for ( i=0; i<g_pDoc->GetLayerCnt(); i++ )
 		g_pDoc->GetLayerData(i)->RemoveAllShape();
+
+	if ( g_pMakeOpt )
+		delete	g_pMakeOpt;
 
 	g_csMakeAfter.Unlock();
 

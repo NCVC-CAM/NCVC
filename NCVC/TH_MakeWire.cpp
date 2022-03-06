@@ -236,15 +236,10 @@ UINT MakeWire_Thread(LPVOID pVoid)
 	// I—¹ˆ—
 	_dp.SetDecimal3();
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// ‚±‚Ì½Ú¯ÄŞ‚©‚çÀŞ²±Û¸ŞI—¹
+
 	// ¶¬‚µ‚½NCº°ÄŞ‚ÌÁ‹½Ú¯ÄŞ(—Dæ“x‚ğ‰º‚°‚é)
 	AfxBeginThread(MakeWire_AfterThread, NULL,
-		THREAD_PRIORITY_LOWEST);
-//		THREAD_PRIORITY_IDLE);
-//		THREAD_PRIORITY_BELOW_NORMAL;
-
-	// ğŒµÌŞ¼Şª¸Äíœ
-	if ( g_pMakeOpt )
-		delete	g_pMakeOpt;
+		THREAD_PRIORITY_IDLE);
 
 	return 0;
 }
@@ -1270,6 +1265,9 @@ UINT MakeWire_AfterThread(LPVOID)
 	g_obAWFinside.RemoveAll();
 	g_obAWFoutside.RemoveAll();
 	g_mpPause.RemoveAll();
+
+	if ( g_pMakeOpt )
+		delete	g_pMakeOpt;
 
 	g_csMakeAfter.Unlock();
 

@@ -30,7 +30,7 @@ static	int				g_nFase;	// ﾌｪｰｽﾞ№
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
 #define	GetStr(a)	g_pMakeOpt->GetStr(a)
 
-//
+// NC生成に必要なﾃﾞｰﾀ群
 static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
 
 // ｻﾌﾞ関数
@@ -38,6 +38,10 @@ static	void	InitialVariable(void);			// 変数初期化
 static	void	SetStaticOption(void);			// 静的変数の初期化
 static	BOOL	MakeNurbs_MainFunc(void);		// NC生成のﾒｲﾝﾙｰﾌﾟ
 static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
+
+// ｻﾌﾞｽﾚｯﾄﾞ関数
+static	CCriticalSection	g_csMakeAfter;	// MakeNurbs_AfterThread()ｽﾚｯﾄﾞﾛｯｸｵﾌﾞｼﾞｪｸﾄ
+static	UINT	MakeNurbs_AfterThread(LPVOID);	// 後始末ｽﾚｯﾄﾞ
 
 //////////////////////////////////////////////////////////////////////
 // NURBS曲面用NC生成ｽﾚｯﾄﾞ
@@ -67,12 +71,16 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 		// NC生成ｵﾌﾟｼｮﾝｵﾌﾞｼﾞｪｸﾄの生成とｵﾌﾟｼｮﾝの読み込み
 		g_pMakeOpt = new CNCMakeMillOpt(
 				AfxGetNCVCApp()->GetDXFOption()->GetInitList(NCMAKENURBS)->GetHead());
-
 		// NC生成のﾙｰﾌﾟ前に必要な初期化
 		InitialVariable();
 		// 条件ごとに変化するﾊﾟﾗﾒｰﾀを設定
 		SetStaticOption();
-
+		// 変数初期化ｽﾚｯﾄﾞの処理待ち
+		g_csMakeAfter.Lock();		// ｽﾚｯﾄﾞ側でﾛｯｸ解除するまで待つ
+		g_csMakeAfter.Unlock();
+		// 増分割り当て
+		g_obMakeData.SetSize(0, 2048);
+		// 生成開始
 		BOOL bResult = MakeNurbs_MainFunc();
 		if ( bResult )
 			bResult = OutputNurbsCode();
@@ -91,11 +99,12 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 	}
 
 	// 終了処理
+	_dp.SetDecimal3();
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// このｽﾚｯﾄﾞからﾀﾞｲｱﾛｸﾞ終了
 
-	// 条件ｵﾌﾞｼﾞｪｸﾄ削除
-	if ( g_pMakeOpt )
-		delete	g_pMakeOpt;
+	// 生成したNCｺｰﾄﾞの消去ｽﾚｯﾄﾞ(優先度を下げる)
+	AfxBeginThread(MakeNurbs_AfterThread, NULL,
+		THREAD_PRIORITY_IDLE);
 
 	return 0;
 }
@@ -150,6 +159,7 @@ BOOL MakeNurbs_MainFunc(void)
 	Coord***	pScanCoord = g_pDoc->GetScanPathCoord();
 
 	tie(mx, my) = g_pDoc->GetScanNumXY();
+	SendFaseMessage(g_pParent, g_nFase, mx*my);
 
 	for ( i=0; i<mx; i++ ) {
 		for ( j=0; j<my; j++ ) {
@@ -159,8 +169,31 @@ BOOL MakeNurbs_MainFunc(void)
 				ASSERT( pNCD );
 				g_obMakeData.Add(pNCD);
 			}
+			SetProgressPos(g_pParent, i*my+j);
 		}
 	}
 
 	return IsThread();
+}
+
+//////////////////////////////////////////////////////////////////////
+
+// NC生成のｸﾞﾛｰﾊﾞﾙ変数初期化(後始末)ｽﾚｯﾄﾞ
+UINT MakeNurbs_AfterThread(LPVOID)
+{
+	g_csMakeAfter.Lock();
+
+#ifdef _DEBUG
+	printf("MakeNurbs_AfterThread() Start\n");
+#endif
+	for ( int i=0; i<g_obMakeData.GetSize(); i++ )
+		delete	g_obMakeData[i];
+	g_obMakeData.RemoveAll();
+
+	if ( g_pMakeOpt )
+		delete	g_pMakeOpt;
+
+	g_csMakeAfter.Unlock();
+
+	return 0;
 }

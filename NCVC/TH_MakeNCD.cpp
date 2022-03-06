@@ -428,15 +428,10 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 	_dp.SetDecimal3();
 	CDXFmap::ms_dTolerance = NCMIN;		// ‹K’è’l‚É–ß‚·
 	g_pParent->PostMessage(WM_USERFINISH, nResult);	// ‚±‚Ì½Ú¯ÄŞ‚©‚çÀŞ²±Û¸ŞI—¹
+
 	// ¶¬‚µ‚½NCº°ÄŞ‚ÌÁ‹½Ú¯ÄŞ(—Dæ“x‚ğ‰º‚°‚é)
 	AfxBeginThread(MakeNCD_AfterThread, NULL,
-		THREAD_PRIORITY_LOWEST);
-//		THREAD_PRIORITY_IDLE);
-//		THREAD_PRIORITY_BELOW_NORMAL);
-
-	// ğŒµÌŞ¼Şª¸Äíœ
-	if ( g_pMakeOpt )
-		delete	g_pMakeOpt;
+		THREAD_PRIORITY_IDLE);
 
 	return 0;
 }
@@ -3547,6 +3542,9 @@ UINT MakeNCD_AfterThread(LPVOID)
 	g_ltDeepData.RemoveAll();
 	g_obDrill.RemoveAll();
 	g_obCircle.RemoveAll();
+
+	if ( g_pMakeOpt )
+		delete	g_pMakeOpt;
 
 	g_csMakeAfter.Unlock();
 
