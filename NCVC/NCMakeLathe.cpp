@@ -37,9 +37,9 @@ CNCMakeLathe::CNCMakeLathe(const CDXFdata* pData, float dFeed)
 	{
 		CPointF	pt(pData->GetEndMakePoint());
 		CString	strGcode(GetValString(NCA_Z, pt.x)+GetValString(NCA_X, pt.y));
-		if ( !strGcode.IsEmpty() )
-			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
-						strGcode + GetFeedString(dFeed) + ms_strEOB;
+		if ( !strGcode.IsEmpty() ) {
+			m_strGcode = MakeStrBlock((*ms_pfnGetGString)(1) + strGcode + GetFeedString(dFeed));
+		}
 	}
 		break;
 
@@ -71,7 +71,7 @@ CNCMakeLathe::CNCMakeLathe(int nCode, const CPointF& pt, float dFeed)
 	if ( !strGcode.IsEmpty() ) {
 		if ( nCode > 0 )
 			strGcode += GetFeedString(dFeed);
-		m_strGcode = (*ms_pfnGetLineNo)() + strGcode + ms_strEOB;
+		m_strGcode = MakeStrBlock(strGcode);
 	}
 }
 
@@ -95,9 +95,9 @@ CNCMakeLathe::CNCMakeLathe(TWOMOVEMODE enMode, const CPointF& pt, float dFeed)
 		strGcode2 = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, pt.x);
 	}
 	if ( !strGcode1.IsEmpty() )
-		AddGcode(strGcode1);
+		AddGcodeArray(strGcode1);
 	if ( !strGcode2.IsEmpty() )
-		AddGcode(strGcode2);
+		AddGcodeArray(strGcode2);
 }
 
 // X|Z軸の変化
@@ -109,7 +109,7 @@ CNCMakeLathe::CNCMakeLathe(int nCode, int xz, float dVal, float dFeed)
 		strGcode = (*ms_pfnGetGString)(nCode) + strValue;
 		if ( nCode > 0 )
 			strGcode += GetFeedString(dFeed);
-		m_strGcode = (*ms_pfnGetLineNo)() + strGcode + ms_strEOB;
+		m_strGcode = MakeStrBlock(strGcode);
 	}
 }
 
@@ -128,7 +128,7 @@ void CNCMakeLathe::CreateEndFace(const CPointF& pts)
 	// 回転数設定（ｶｽﾀﾑﾍｯﾀﾞｰで処理済み）
 	strGcode = MakeSpindle(GetNum(MKLA_NUM_E_SPINDLE));
 	if ( !strGcode.IsEmpty() ) {
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 	}
 
 	// ｶｽﾀﾑｺｰﾄﾞ挿入 改行ｺｰﾄﾞの置換, 行番号付与 etc.
@@ -143,28 +143,28 @@ void CNCMakeLathe::CreateEndFace(const CPointF& pts)
 	// Z軸の移動
 	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, pt.x);
 	if ( !strGcode.IsEmpty() )
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 	// X軸の切削移動
 	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_X, pt.y);
 	if ( !strGcode.IsEmpty() )
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 
 	// 最終切り込みまで繰り返し
 	while (TRUE) {
 		// 中心まで切削送り
 		strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, 0) + GetFeedString(GetDbl(MKLA_DBL_E_FEED));;
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 		// 引き代分移動(Z軸移動がG00だとOpenGL描画に反映されない)
 		strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_Z, pt.x+GetDbl(MKLA_DBL_E_PULLZ));
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 		strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_X, pt.y);
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 		// 次の端面座標
 		if ( fabs(GetDbl(MKLA_DBL_E_CUT)-pt.x) < NCMIN )
 			break;
 		pt.x = max(GetDbl(MKLA_DBL_E_CUT), pt.x+GetDbl(MKLA_DBL_E_STEP));
 		strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, pt.x);
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 	}
 }
 
@@ -180,7 +180,7 @@ void CNCMakeLathe::CreatePilotHole(void)
 		strFmt.Format(IDS_MAKENCD_FORMAT, GetDbl(MKLA_DBL_HOLE));
 		strGcode = LATHEHOLE_S;		// g_szNCcomment[LATHEHOLE]
 		strGcode += '=' + strFmt;
-		AddGcode( '(' + strGcode + ')' );
+		AddGcodeArray( '(' + strGcode + ')' );
 	}
 
 	// ドリル情報
@@ -191,11 +191,11 @@ void CNCMakeLathe::CreatePilotHole(void)
 		// 回転数設定
 		strGcode = MakeSpindle(info.s);
 		if ( !strGcode.IsEmpty() ) {
-			AddGcode(strGcode);
+			AddGcodeArray(strGcode);
 		}
 		// ドリル情報
 		strGcode.Format(IDS_MAKENCD_LATHEDRILL, info.d);
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 		// ｶｽﾀﾑｺｰﾄﾞ挿入 改行ｺｰﾄﾞの置換, 行番号付与 etc.
 		if ( !GetStr(MKLA_STR_D_CUSTOM).IsEmpty() ) {
 			m_strGarray.Add( GetChangeEnter(GetStr(MKLA_STR_D_CUSTOM)) );
@@ -203,11 +203,11 @@ void CNCMakeLathe::CreatePilotHole(void)
 		// 切削開始位置(R点)へ移動
 		if ( ms_xyz[NCA_Z] != GetDbl(MKLA_DBL_DRILLR) ) {
 			strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, GetDbl(MKLA_DBL_DRILLR));
-			AddGcode(strGcode);
+			AddGcodeArray(strGcode);
 		}
 		if ( ms_xyz[NCA_X] != 0 ) {
 			strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_X, 0);
-			AddGcode(strGcode);
+			AddGcodeArray(strGcode);
 		}
 		if ( GetFlg(MKLA_FLG_CYCLE) ) {
 			// 固定ｻｲｸﾙで生成
@@ -219,7 +219,7 @@ void CNCMakeLathe::CreatePilotHole(void)
 			if ( GetDbl(MKLA_DBL_D_DWELL) > 0 )
 				strGcode += GetValString(NCA_P, GetDbl(MKLA_DBL_D_DWELL));
 			strGcode += GetFeedString(info.f);
-			AddGcode(strGcode);
+			AddGcodeArray(strGcode);
 			// Z値を元に戻す
 			ms_xyz[NCA_Z] = GetDbl(MKLA_DBL_DRILLR);
 		}
@@ -230,30 +230,30 @@ void CNCMakeLathe::CreatePilotHole(void)
 				z -= GetDbl(MKLA_DBL_DRILLQ);
 				if ( z <= GetDbl(MKLA_DBL_DRILLZ) ) {
 					strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_Z, GetDbl(MKLA_DBL_DRILLZ)) + GetFeedString(info.f);
-					AddGcode(strGcode);
+					AddGcodeArray(strGcode);
 					if ( GetDbl(MKLA_DBL_D_DWELL) > 0 ) {
 						strGcode = (*ms_pfnGetGString)(4) + GetValString(NCA_P, GetDbl(MKLA_DBL_D_DWELL));
-						AddGcode(strGcode);
+						AddGcodeArray(strGcode);
 					}
 					strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, GetDbl(MKLA_DBL_DRILLR));
-					AddGcode(strGcode);
+					AddGcodeArray(strGcode);
 					break;
 				}
 				strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_Z, z) + GetFeedString(info.f);
-				AddGcode(strGcode);
+				AddGcodeArray(strGcode);
 				strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, z+GetDbl(MKLA_DBL_DRILLD));
-				AddGcode(strGcode);
+				AddGcodeArray(strGcode);
 			}
 		}
 	}
 
 	if ( GetFlg(MKLA_FLG_CYCLE) ) {
 		// 固定ｻｲｸﾙｷｬﾝｾﾙ
-		AddGcode( (*ms_pfnGetGString)(80) );
+		AddGcodeArray( (*ms_pfnGetGString)(80) );
 	}
 	// ﾄﾞﾘﾙ工程終了ｺﾒﾝﾄ
 	strGcode = ENDDRILL_S;	// g_szNCcomment[ENDDRILL]
-	AddGcode( '(' + strGcode + ')' );
+	AddGcodeArray( '(' + strGcode + ')' );
 }
 
 void CNCMakeLathe::CreateGroove(const CPointF& pt, float dPullX)
@@ -261,17 +261,17 @@ void CNCMakeLathe::CreateGroove(const CPointF& pt, float dPullX)
 	CString	strGcode;
 
 	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, pt.x);
-	AddGcode(strGcode);
+	AddGcodeArray(strGcode);
 	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_X, dPullX);
-	AddGcode(strGcode);
+	AddGcodeArray(strGcode);
 	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, pt.y) + GetFeedString(GetDbl(MKLA_DBL_G_FEEDX));
-	AddGcode(strGcode);
+	AddGcodeArray(strGcode);
 	if ( GetDbl(MKLA_DBL_G_DWELL) > 0 ) {
 		strGcode = (*ms_pfnGetGString)(4) + GetValString(NCA_P, GetDbl(MKLA_DBL_G_DWELL));
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 	}
 	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, dPullX) + GetFeedString(GetDbl(MKLA_DBL_G_FEEDX));
-	AddGcode(strGcode);
+	AddGcodeArray(strGcode);
 }
 
 void CNCMakeLathe::CreateGroove(const CPointF& pts, const CPointF& pte, float dPullX)
@@ -279,23 +279,23 @@ void CNCMakeLathe::CreateGroove(const CPointF& pts, const CPointF& pte, float dP
 	CString	strGcode;
 
 	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_Z, pts.x);
-	AddGcode(strGcode);
+	AddGcodeArray(strGcode);
 	strGcode = (*ms_pfnGetGString)(0) + GetValString(NCA_X, dPullX);
-	AddGcode(strGcode);
+	AddGcodeArray(strGcode);
 	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, pts.y) + GetFeedString(GetDbl(MKLA_DBL_G_FEEDX));
-	AddGcode(strGcode);
+	AddGcodeArray(strGcode);
 	if ( GetDbl(MKLA_DBL_G_DWELL) > 0 ) {
 		strGcode = (*ms_pfnGetGString)(4) + GetValString(NCA_P, GetDbl(MKLA_DBL_G_DWELL));
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 	}
 	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_Z, pte.x) + GetValString(NCA_X, pte.y) + GetFeedString(GetDbl(MKLA_DBL_G_FEED));
-	AddGcode(strGcode);
+	AddGcodeArray(strGcode);
 	if ( GetDbl(MKLA_DBL_G_DWELL) > 0 ) {
 		strGcode = (*ms_pfnGetGString)(4) + GetValString(NCA_P, GetDbl(MKLA_DBL_G_DWELL));
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 	}
 	strGcode = (*ms_pfnGetGString)(1) + GetValString(NCA_X, dPullX) + GetFeedString(GetDbl(MKLA_DBL_G_FEEDX));
-	AddGcode(strGcode);
+	AddGcodeArray(strGcode);
 }
 
 CString	CNCMakeLathe::MakeSpindle(int s)
@@ -407,8 +407,7 @@ void CNCMakeLathe::SetStaticOption(const CNCMakeLatheOpt* pNCMake)
 					 GetNum(MKLA_NUM_LINEADD)>=SIZEOF(nLineMulti) ?
 		nLineMulti[0] : nLineMulti[GetNum(MKLA_NUM_LINEADD)];
 	// --- EOB
-	ms_strEOB = GetStr(MKLA_STR_EOB).IsEmpty() ? 
-		gg_szReturn : (GetStr(MKLA_STR_EOB) + gg_szReturn);
+	ms_strEOB = GetStr(MKLA_STR_EOB) + gg_szReturn;
 	// --- 円ﾃﾞｰﾀの切削指示
 	ms_nCircleCode = GetNum(MKLA_NUM_CIRCLECODE) == 0 ? 2 : 3;
 	// --- 円,円弧ﾃﾞｰﾀの生成

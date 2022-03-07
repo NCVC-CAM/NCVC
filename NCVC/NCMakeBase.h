@@ -23,8 +23,8 @@ protected:
 
 	CString			m_strGcode;		// 生成されたGｺｰﾄﾞ(1ﾌﾞﾛｯｸ)
 	CStringArray	m_strGarray;	// POLYLINE, Ellipse等複数のGｺｰﾄﾞ生成
-	void	AddGcode(const CString& strGcode) {
-		m_strGarray.Add( (*ms_pfnGetLineNo)() + strGcode + ms_strEOB );
+	void	AddGcodeArray(const CString& strGcode) {
+		m_strGarray.Add( MakeStrBlock(strGcode) );
 	}
 
 	// 生成中は変化のないｵﾌﾟｼｮﾝに対する動作
@@ -51,6 +51,10 @@ protected:
 	static	PFNMAKEHELICAL		ms_pfnMakeHelical;		// 円ﾃﾞｰﾀのﾍﾘｶﾙ切削
 	static	PFNMAKEARC			ms_pfnMakeArc;			// 円弧ﾃﾞｰﾀの生成
 
+	// 1ブロック（1行）作成
+	static	CString	MakeStrBlock(const CString& strGcode) {
+		return (*ms_pfnGetLineNo)() + strGcode + ms_strEOB;
+	}
 	// 改行文字置換
 	static	CString	GetChangeEnter(const CString&);
 	// 回転指示

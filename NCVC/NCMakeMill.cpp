@@ -67,9 +67,9 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, float dFeed, const float* pdHeli
 			strGcode += "Q" + (*ms_pfnGetValDetail)(ms_dCycleQ[0]);
 			ms_dCycleQ[1] = ms_dCycleQ[0];
 		}
-		if ( !strGcode.IsEmpty() )
-			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetCycleString)() +
-						strGcode + GetFeedString(dFeed) + ms_strEOB;
+		if ( !strGcode.IsEmpty() ) {
+			m_strGcode = MakeStrBlock((*ms_pfnGetCycleString)() + strGcode + GetFeedString(dFeed));
+		}
 		// Z軸の復帰点を静的変数へ
 		ms_xyz[NCA_Z] = GetNum(MKNC_NUM_ZRETURN) == 0 ?
 			::RoundUp(GetDbl(MKNC_DBL_G92Z)) : ::RoundUp(GetDbl(MKNC_DBL_ZG0STOP));
@@ -78,9 +78,9 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, float dFeed, const float* pdHeli
 	case DXFLINEDATA:
 		pt = pData->GetEndMakePoint();
 		strGcode = GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y);
-		if ( !strGcode.IsEmpty() )
-			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
-						strGcode + GetFeedString(dFeed) + ms_strEOB;
+		if ( !strGcode.IsEmpty() ) {
+			m_strGcode = MakeStrBlock((*ms_pfnGetGString)(1) + strGcode + GetFeedString(dFeed));
+		}
 		break;
 
 	case DXFCIRCLEDATA:
@@ -114,9 +114,8 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, BOOL bL0)
 		pt = pData->GetStartMakePoint();
 		// そのｵﾌﾞｼﾞｪｸﾄと現在位置が違うなら、そこまで移動(bL0除く)
 		if ( bL0 && (pt.x!=ms_xyz[NCA_X] || pt.y!=ms_xyz[NCA_Y]) ) {
-			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(0) +
-				GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) +
-				ms_strEOB;
+			m_strGcode = MakeStrBlock((*ms_pfnGetGString)(0) +
+				GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y));
 		}
 		// through
 	case DXFCIRCLEDATA:
@@ -124,16 +123,13 @@ CNCMakeMill::CNCMakeMill(const CDXFdata* pData, BOOL bL0)
 		pt = pData->GetEndMakePoint();
 		if ( pt.x!=ms_xyz[NCA_X] || pt.y!=ms_xyz[NCA_Y] ) {
 			if ( bL0 ) {
-				m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetCycleString)() +
+				m_strGcode = MakeStrBlock((*ms_pfnGetCycleString)() +
 					GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y) +
-					GetValString(NCA_L, 0) +
-					ms_strEOB;
+					GetValString(NCA_L, 0));
 			}
 			else {
-				m_strGcode += (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(0) +
-					GetValString(NCA_X, pt.x) +
-					GetValString(NCA_Y, pt.y) +
-					ms_strEOB;
+				m_strGcode = MakeStrBlock((*ms_pfnGetGString)(0) +
+					GetValString(NCA_X, pt.x) + GetValString(NCA_Y, pt.y));
 			}
 		}
 		break;
@@ -155,8 +151,9 @@ CNCMakeMill::CNCMakeMill(int nCode, float ZVal, float dFeed)
 		if ( dFeed > 0 )
 			strGcode += GetFeedString(dFeed);
 	}
-	if ( !strGcode.IsEmpty() )
-		m_strGcode = (*ms_pfnGetLineNo)() + strGcode + ms_strEOB;
+	if ( !strGcode.IsEmpty() ) {
+		m_strGcode = MakeStrBlock(strGcode);
+	}
 }
 
 // XYのG[0|1]移動
@@ -167,8 +164,7 @@ CNCMakeMill::CNCMakeMill(int nCode, const CPointF& pt, float dFeed)
 	if ( !strGcode.IsEmpty() ) {
 		if ( nCode != 0 )	// G00以外
 			strGcode += GetFeedString(dFeed);
-		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
-			strGcode + ms_strEOB;
+		m_strGcode = MakeStrBlock((*ms_pfnGetGString)(nCode) + strGcode);
 	}
 }
 
@@ -179,9 +175,7 @@ CNCMakeMill::CNCMakeMill(const CPoint3F& pt, float dFeed)
 					 GetValString(NCA_Y, pt.y) +
 					 GetValString(NCA_Z, pt.z) );
 	if ( !strGcode.IsEmpty() ) {
-		strGcode += GetFeedString(dFeed);
-		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
-			strGcode + ms_strEOB;
+		m_strGcode = MakeStrBlock((*ms_pfnGetGString)(1) + strGcode + GetFeedString(dFeed));
 	}
 }
 
@@ -190,15 +184,15 @@ CNCMakeMill::CNCMakeMill
 	(int nCode, const CPointF& pts, const CPointF& pte, const CPointF& pto, float r)
 {
 	CString	strGcode( (*ms_pfnMakeCircleSub)(nCode, pte, pto-pts, r) );
-	if ( !strGcode.IsEmpty() )
-		m_strGcode = (*ms_pfnGetLineNo)() + strGcode +
-			GetFeedString(GetDbl(MKNC_DBL_FEED)) + ms_strEOB;
+	if ( !strGcode.IsEmpty() ) {
+		m_strGcode = MakeStrBlock(strGcode + GetFeedString(GetDbl(MKNC_DBL_FEED)));
+	}
 }
 
 // ドウェル時間（G04）
 CNCMakeMill::CNCMakeMill(float t)
 {
-	m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(4) + GetValString(NCA_P, t) + ms_strEOB;
+	m_strGcode = MakeStrBlock((*ms_pfnGetGString)(4) + GetValString(NCA_P, t));
 }
 
 // 任意の文字列ｺｰﾄﾞ
@@ -207,20 +201,10 @@ CNCMakeMill::CNCMakeMill(const CString& strGcode) : CNCMakeBase(strGcode)
 }
 
 // Kodatuno座標
-CNCMakeMill::CNCMakeMill(const Coord& xyz)
+CNCMakeMill::CNCMakeMill(const Coord& xyz) :
+	CNCMakeMill( CPoint3D(xyz), GetDbl(MKNC_DBL_FEED) )	// 委譲コンストラクタ(XYZのG01へ)
 {
-	// この方法はダメ
-//	CPoint3D	pt(xyz);
-//	CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
-
-	CString	strGcode(GetValString(NCA_X, (float)xyz.x) +
-					 GetValString(NCA_Y, (float)xyz.y) +
-					 GetValString(NCA_Z, (float)xyz.z) );
-	if ( !strGcode.IsEmpty() ) {
-		strGcode += GetFeedString(GetDbl(MKNC_DBL_FEED));
-		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
-			strGcode + ms_strEOB;
-	}
+	// double -> float のキャストが入るので改良の余地あり
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -252,7 +236,7 @@ void CNCMakeMill::MakePolylineMov(const CDXFpolyline* pPoly, BOOL bL0)
 					GetValString(NCA_X, pt.x) +
 					GetValString(NCA_Y, pt.y);
 			if ( !strGcode.IsEmpty() )
-				AddGcode(strGcode);
+				AddGcodeArray(strGcode);
 		}
 	}
 }
@@ -401,8 +385,7 @@ void CNCMakeMill::SetStaticOption(const CNCMakeMillOpt* pNCMake)
 					 GetNum(MKNC_NUM_LINEADD)>=SIZEOF(nLineMulti) ?
 		nLineMulti[0] : nLineMulti[GetNum(MKNC_NUM_LINEADD)];
 	// --- EOB
-	ms_strEOB = GetStr(MKNC_STR_EOB).IsEmpty() ? 
-		gg_szReturn : (GetStr(MKNC_STR_EOB) + gg_szReturn);
+	ms_strEOB = GetStr(MKNC_STR_EOB) + gg_szReturn;
 	// --- 固定ｻｲｸﾙ指示
 	ms_nCycleReturn = GetNum(MKNC_NUM_ZRETURN) == 0 ? 98 : 99;
 	if ( GetNum(MKNC_NUM_DRILLRETURN) == 2 ) {

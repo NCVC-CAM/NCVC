@@ -112,7 +112,7 @@ void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, float dFeed)
 				bFeed = FALSE;
 			}
 			if ( !strGcode.IsEmpty() )
-				AddGcode(strGcode);
+				AddGcodeArray(strGcode);
 		}
 	}
 	else {
@@ -123,14 +123,14 @@ void CNCMakeBase::MakeEllipse(const CDXFellipse* pEllipse, float dFeed)
 				bFeed = FALSE;
 			}
 			if ( !strGcode.IsEmpty() )
-				AddGcode(strGcode);
+				AddGcodeArray(strGcode);
 		}
 	}
 	strGcode = MakeEllipse_Tolerance(pEllipse, eq);
 	if ( bFeed && !strGcode.IsEmpty() )
 		strGcode += GetFeedString(dFeed);
 	if ( !strGcode.IsEmpty() )
-		AddGcode(strGcode);
+		AddGcodeArray(strGcode);
 }
 
 CString	CNCMakeBase::MakeEllipse_Tolerance(const CDXFellipse* pEllipse, float q)
@@ -171,13 +171,13 @@ void CNCMakeBase::MakePolylineCut(const CDXFpolyline* pPoly, float dFeed)
 				bFeed = FALSE;
 			}
 			if ( !strGcode.IsEmpty() )
-				AddGcode(strGcode);
+				AddGcodeArray(strGcode);
 			break;
 
 		case DXFARCDATA:
 			strGcode = (*ms_pfnMakeArc)(static_cast<CDXFarc*>(pData), dFeed);
 			if ( !strGcode.IsEmpty() ) {
-				AddGcode(strGcode);
+				AddGcodeArray(strGcode);
 				bFeed = FALSE;
 			}
 			// I“_•ª‚ð”ò‚Î‚·
@@ -242,7 +242,7 @@ CString	CNCMakeBase::GetChangeEnter(const CString& strGcode)
 	else {
 		CString	str(strGcode);
 		str.Replace("\\n", gg_szReturn);	// ‰üsº°ÄÞ‚Ì’uŠ·
-		strResult = (*ms_pfnGetLineNo)() + str + ms_strEOB;
+		strResult = MakeStrBlock(str);
 	}
 	return strResult;
 }
@@ -375,7 +375,7 @@ CString	CNCMakeBase::MakeCircleSub_IJ(int nCode, const CPointF& pt, const CPoint
 
 CString	CNCMakeBase::MakeCircleSub_Helical(int nCode, const CPoint3F& pt)
 {
-	return CString( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
+	return CString( (*ms_pfnGetGString)(nCode) +
 		(*ms_pfnGetValString)(NCAX,  pt.x, FALSE) +
 		(*ms_pfnGetValString)(NCAY,  pt.y, FALSE) +
 		(*ms_pfnGetValString)(NCA_Z, pt.z, FALSE) );	// ÍØ¶Ù‚ÍMILL‚Ì‚Ý
@@ -392,19 +392,20 @@ CString	CNCMakeBase::MakeCircle_R(const CDXFcircle* pCircle, float dFeed)
 	CString	strGcode;
 	CString	strBuf1( MakeCircleSub_R(nCode, pCircle->GetMakePoint(b), pt, r) );
 	CString	strBuf2( MakeCircleSub_R(nCode, pCircle->GetMakePoint(a), pt, r) );
-	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() )
-		strGcode = (*ms_pfnGetLineNo)() + strBuf1 + GetFeedString(dFeed) + ms_strEOB +
-						(*ms_pfnGetLineNo)() + strBuf2 + ms_strEOB;
+	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() ) {
+		strGcode = MakeStrBlock(strBuf1 + GetFeedString(dFeed)) +
+				   MakeStrBlock(strBuf2);
+	}
 	return strGcode;
 }
 
 CString	CNCMakeBase::MakeCircle_IJ(const CDXFcircle* pCircle, float dFeed)
 {
 	int		nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
-	return CString( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
+	return MakeStrBlock( (*ms_pfnGetGString)(nCode) +
 				(*ms_pfnGetValString)(NCAI, pCircle->GetIJK(NCA_I), ms_bIJValue) +
 				(*ms_pfnGetValString)(NCAJ, pCircle->GetIJK(NCA_J), ms_bIJValue) +
-				GetFeedString(dFeed) + ms_strEOB );
+				GetFeedString(dFeed) );
 }
 
 CString	CNCMakeBase::MakeCircle_IJHALF(const CDXFcircle* pCircle, float dFeed)
@@ -421,9 +422,10 @@ CString	CNCMakeBase::MakeCircle_IJHALF(const CDXFcircle* pCircle, float dFeed)
 	CString	strBuf1( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(b), ij, 0.0f) );
 	ij *= -1.0f;	// ij = -ij;
 	CString	strBuf2( (*ms_pfnMakeCircleSub)(nCode, pCircle->GetMakePoint(a), ij, 0.0f) );
-	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() )
-		strGcode = (*ms_pfnGetLineNo)() + strBuf1 + GetFeedString(dFeed) + ms_strEOB +
-						(*ms_pfnGetLineNo)() + strBuf2 + ms_strEOB;
+	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() ) {
+		strGcode = MakeStrBlock(strBuf1 + GetFeedString(dFeed)) +
+				   MakeStrBlock(strBuf2);
+	}
 	return strGcode;
 }
 
@@ -439,8 +441,8 @@ CString	CNCMakeBase::MakeCircle_R_Helical(const CDXFcircle* pCircle, float dFeed
 	CString	strGcode, strBuf( (*ms_pfnGetValString)(NCA_R, r, FALSE) );
 	if ( !strBuf.IsEmpty() ) {
 		// ŒvŽZ‡˜‚ÌŠÖŒW‚Å‚Ps‚É‚Å‚«‚È‚¢
-		strGcode  = MakeCircleSub_Helical(nCode, pt1) + strBuf + GetFeedString(dFeed) + ms_strEOB;
-		strGcode += MakeCircleSub_Helical(nCode, pt2) + strBuf + ms_strEOB;
+		strGcode  = MakeStrBlock(MakeCircleSub_Helical(nCode, pt1) + strBuf + GetFeedString(dFeed));
+		strGcode += MakeStrBlock(MakeCircleSub_Helical(nCode, pt2) + strBuf);
 	}
 	return strGcode;
 }
@@ -448,11 +450,11 @@ CString	CNCMakeBase::MakeCircle_R_Helical(const CDXFcircle* pCircle, float dFeed
 CString	CNCMakeBase::MakeCircle_IJ_Helical(const CDXFcircle* pCircle, float dFeed, float dHelical)
 {
 	int		nCode = pCircle->IsRoundFixed() ? pCircle->GetG() : ms_nCircleCode;
-	return CString( (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
+	return MakeStrBlock( (*ms_pfnGetGString)(nCode) +
 				(*ms_pfnGetValString)(NCA_Z, dHelical, FALSE) +
 				(*ms_pfnGetValString)(NCAI, pCircle->GetIJK(NCA_I), ms_bIJValue) +
 				(*ms_pfnGetValString)(NCAJ, pCircle->GetIJK(NCA_J), ms_bIJValue) +
-				GetFeedString(dFeed) + ms_strEOB );
+				GetFeedString(dFeed) );
 }
 
 CString	CNCMakeBase::MakeCircle_IJHALF_Helical(const CDXFcircle* pCircle, float dFeed, float dHelical)
@@ -474,8 +476,8 @@ CString	CNCMakeBase::MakeCircle_IJHALF_Helical(const CDXFcircle* pCircle, float 
 	CString	strBuf2( (*ms_pfnGetValString)(NCAI, ij.x, ms_bIJValue) + (*ms_pfnGetValString)(NCAJ, ij.y, ms_bIJValue) );
 	if ( !strBuf1.IsEmpty() && !strBuf2.IsEmpty() ) {
 		// ŒvŽZ‡˜‚ÌŠÖŒW‚Å‚Ps‚É‚Å‚«‚È‚¢
-		strGcode  = MakeCircleSub_Helical(nCode, pt1) + strBuf1 + GetFeedString(dFeed) + ms_strEOB;
-		strGcode += MakeCircleSub_Helical(nCode, pt2) + strBuf2 + ms_strEOB;
+		strGcode  = MakeStrBlock(MakeCircleSub_Helical(nCode, pt1) + strBuf1 + GetFeedString(dFeed));
+		strGcode += MakeStrBlock(MakeCircleSub_Helical(nCode, pt2) + strBuf2);
 	}
 	return strGcode;
 }
@@ -486,7 +488,7 @@ CString	CNCMakeBase::MakeArc_R(const CDXFarc* pArc, float dFeed)
 	CString	strGcode,
 			strBuf( MakeCircleSub_R(pArc->GetG(), pArc->GetEndMakePoint(), CPointF(), pArc->GetMakeR()) );
 	if ( !strBuf.IsEmpty() )
-		strGcode = (*ms_pfnGetLineNo)() + strBuf + GetFeedString(dFeed) + ms_strEOB;
+		strGcode = MakeStrBlock(strBuf + GetFeedString(dFeed));
 	return strGcode;
 }
 
@@ -496,7 +498,7 @@ CString	CNCMakeBase::MakeArc_IJ(const CDXFarc* pArc, float dFeed)
 	CString	strGcode,
 			strBuf( (*ms_pfnMakeCircleSub)(pArc->GetG(), pArc->GetEndMakePoint(), ij, 0.0f) );
 	if ( !strBuf.IsEmpty() )
-		strGcode = (*ms_pfnGetLineNo)() + strBuf + GetFeedString(dFeed) + ms_strEOB;
+		strGcode = MakeStrBlock(strBuf + GetFeedString(dFeed));
 	return strGcode;
 }
 

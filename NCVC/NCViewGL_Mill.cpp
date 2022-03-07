@@ -20,6 +20,7 @@
 #define new DEBUG_NEW
 #include <mmsystem.h>			// timeGetTime()
 //#define	_DEBUG_FILEOUT_		// Depth File out
+//#define	_DEBUG_THREAD_
 #endif
 
 using std::vector;
@@ -265,7 +266,7 @@ BOOL CNCViewGL::CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* pParam)
 
 BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 	printf("CNCViewGL::CreateBottomFaceThread() Start\n");
 #endif
 	BOOL	bResult = TRUE;
@@ -290,7 +291,7 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 	else
 		proc  = max(1, min(MAXIMUM_WAIT_OBJECTS, min(nLoop, g_nProcesser*2)));
 	n = min(nLoop/proc, MAXNCBLK);	// 1つのｽﾚｯﾄﾞが処理する最大ﾌﾞﾛｯｸ数
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 	printf("loop=%zd proc=%zd OneThreadSize=%zd\n", nLoop, proc, n);
 #endif
 
@@ -320,12 +321,12 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 		id = dwResult - WAIT_OBJECT_0;
 		if ( id<0 || id>=vParam.size() || !vParam[id]->bResult ) {
 			bResult = FALSE;
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 			printf("WaitForMultipleObjects() error id=%d\n", id);
 #endif
 			break;
 		}
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 		printf("WaitForMultipleObjects() id=%d Thread=%zd return\n", id, vParam[id]->nID);
 #endif
 		// ため込んだ座標値の描画
@@ -366,7 +367,7 @@ BOOL CNCViewGL::CreateBottomFaceThread(BOOL bRange, int nProgress)
 		::CloseHandle(vHandleE[i]);
 	}
 
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 	printf("AddBottomVertexThread() WaitForMultipleObjects() ");
 	if ( bResult )
 		printf("ok\n");
@@ -963,7 +964,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 
 void CNCViewGL::EndOfCreateElementThread(void)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 	printf("CNCViewGL::EndOfCreateElementThread() start\n");
 #endif
 	if ( m_nCeProc>0 && m_pCeParam ) {
@@ -1058,7 +1059,7 @@ void CNCViewGL::CreateTextureMill(void)
 UINT AddBottomVertexThread(LPVOID pVoid)
 {
 	LPCREATEBOTTOMVERTEXPARAM pParam = reinterpret_cast<LPCREATEBOTTOMVERTEXPARAM>(pVoid);
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 	DWORD		t1, t2;
 	size_t		s;
 #endif
@@ -1082,14 +1083,14 @@ UINT AddBottomVertexThread(LPVOID pVoid)
 				v.vel.clear();
 			}
 			bStartDraw = TRUE;
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 			printf("AddBottomVertexThread() ThreadID=%zd s=%zd e=%zd Start!\n",
 				pParam->nID, pParam->s, pParam->e);
 			t1 = timeGetTime();
 #endif
 			for ( i=pParam->s; i<pParam->e && i<nLoopMax; i++ )
 				bStartDraw = pParam->pDoc->GetNCdata(i)->AddGLBottomFaceVertex(pParam->vBD, bStartDraw);
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 			t2 = timeGetTime();
 			s = 0;
 			for ( const auto& v : pParam->vBD )
@@ -1107,7 +1108,7 @@ UINT AddBottomVertexThread(LPVOID pVoid)
 		pParam->bResult = FALSE;
 	}
 
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 	printf("AddBottomVertexThread() ThreadID=%zd ThreadEnd\n", pParam->nID);
 #endif
 	CloseHandle(hStart);
@@ -1120,7 +1121,7 @@ UINT AddBottomVertexThread(LPVOID pVoid)
 UINT CreateElementThread(LPVOID pVoid)
 {
 	LPCREATEELEMENTPARAM pParam = reinterpret_cast<LPCREATEELEMENTPARAM>(pVoid);
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 	DWORD		t1, t2, tt;
 #endif
 
@@ -1134,7 +1135,7 @@ UINT CreateElementThread(LPVOID pVoid)
 			//
 			pParam->vvElementCut.clear();
 			pParam->vvElementWrk.clear();
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 			printf("CreateElementThread() ThreadID=%d s=%d e=%d Start!\n",
 				pParam->dbgID, pParam->cs, pParam->ce-1);
 			tt = 0;
@@ -1142,7 +1143,7 @@ UINT CreateElementThread(LPVOID pVoid)
 #endif
 			// 切削面の頂点ｲﾝﾃﾞｯｸｽ処理
 			CreateElementCut(pParam);
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 			t2 = timeGetTime();
 			tt += t2 - t1;
 			printf("--- ThreadID=%d CreateElementCut() End %d[ms]\n",
@@ -1151,7 +1152,7 @@ UINT CreateElementThread(LPVOID pVoid)
 #endif
 			// ﾜｰｸ上面の頂点ｲﾝﾃﾞｯｸｽ処理
 			CreateElementTop(pParam);
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 			t2 = timeGetTime();
 			tt += t2 - t1;
 			printf("--- ThreadID=%d CreateElementTop() End %d[ms]\n",
@@ -1160,7 +1161,7 @@ UINT CreateElementThread(LPVOID pVoid)
 #endif
 			// ﾜｰｸ底面の頂点ｲﾝﾃﾞｯｸｽ処理
 			CreateElementBtm(pParam);
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 			t2 = timeGetTime();
 			tt += t2 - t1;
 			printf("--- ThreadID=%d CreateElementBtm() End %d[ms] Total %d[ms]\n",
@@ -1176,7 +1177,7 @@ UINT CreateElementThread(LPVOID pVoid)
 		pParam->bResult = FALSE;
 	}
 
-#ifdef _DEBUG
+#ifdef _DEBUG_THREAD_
 	printf("CreateElementThread() ThreadID=%d thread end.\n",
 		pParam->dbgID);
 #endif
