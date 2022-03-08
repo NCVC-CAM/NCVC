@@ -3,19 +3,14 @@
 
 #pragma once
 
-struct SCANSETUP
-{
-	float	dBallEndmill;
-	float	dHeight;
-	float	dZCut;
-	int		nLineSplit;
-	BOOL	bOrigin;
-};
+class C3dModelDoc;
 
 class C3dScanSetupDlg : public CDialog
 {
+	C3dModelDoc*	m_pDoc;
+
 public:
-	C3dScanSetupDlg(CWnd* pParent = nullptr);   // 標準コンストラクター
+	C3dScanSetupDlg(C3dModelDoc*, CWnd* pParent = nullptr);   // 標準コンストラクター
 
 // ダイアログ データ
 	enum { IDD = IDD_3DSCAN };
@@ -23,9 +18,6 @@ public:
 	CFloatEdit	m_dHeight;
 	CFloatEdit	m_dZCut;
 	CIntEdit	m_nLineSplit;
-	BOOL		m_bOrigin;
-
-	SCANSETUP	m;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート

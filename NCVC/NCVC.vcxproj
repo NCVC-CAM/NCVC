@@ -263,6 +263,7 @@
     <ClCompile Include="3dModelChild.cpp" />
     <ClCompile Include="3dModelDoc.cpp" />
     <ClCompile Include="3dModelView.cpp" />
+    <ClCompile Include="3dOption.cpp" />
     <ClCompile Include="3dScanSetupDlg.cpp" />
     <ClCompile Include="DxfAutoOutlineDlg.cpp" />
     <ClCompile Include="DxfSetup3.cpp" />
@@ -411,6 +412,7 @@
     <ClInclude Include="3dModelChild.h" />
     <ClInclude Include="3dModelDoc.h" />
     <ClInclude Include="3dModelView.h" />
+    <ClInclude Include="3dOption.h" />
     <ClInclude Include="3dScanSetupDlg.h" />
     <ClInclude Include="DxfAutoOutlineDlg.h" />
     <ClInclude Include="DxfSetup3.h" />

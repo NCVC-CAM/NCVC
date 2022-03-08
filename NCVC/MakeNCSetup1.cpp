@@ -78,6 +78,7 @@ BOOL CMakeNCSetup1::OnInitDialog()
 	else {
 		// NURBSÉÇÅ[Éh
 		pOpt = static_cast<CMakeNurbsSetup *>(pWnd)->GetNCMakeOption();
+		m_dZCut.EnableWindow(FALSE);
 		m_ctXrevBt.EnableWindow(FALSE);
 		m_ctYrevBt.EnableWindow(FALSE);
 		for ( i=0; i<NCXYZ; i++ )

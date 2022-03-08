@@ -3,6 +3,8 @@
 
 #include "stdafx.h"
 #include "NCVC.h"
+#include "3dOption.h"
+#include "3dModelDoc.h"
 #include "3dScanSetupDlg.h"
 
 #ifdef _DEBUG
@@ -15,9 +17,9 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // C3dScanSetupDlg ダイアログ
 
-C3dScanSetupDlg::C3dScanSetupDlg(CWnd*) : CDialog(C3dScanSetupDlg::IDD, NULL)
+C3dScanSetupDlg::C3dScanSetupDlg(C3dModelDoc* pDoc, CWnd*) : CDialog(C3dScanSetupDlg::IDD, NULL)
 {
-	m_bOrigin = TRUE;
+	m_pDoc = pDoc;
 }
 
 void C3dScanSetupDlg::DoDataExchange(CDataExchange* pDX)
@@ -27,7 +29,6 @@ void C3dScanSetupDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_3DSCAN_HEIGHT, m_dHeight);
 	DDX_Control(pDX, IDC_3DSCAN_ZCUT, m_dZCut);
 	DDX_Control(pDX, IDC_3DSCAN_LINESPLIT, m_nLineSplit);
-	DDX_Check(pDX, IDC_3DSCAN_ORIGIN, m_bOrigin);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -37,15 +38,26 @@ BOOL C3dScanSetupDlg::OnInitDialog()
 {
 	__super::OnInitDialog();
 
+	C3dOption*	pOpt = m_pDoc->Get3dOption();
+
+	m_dBallEndmill	= pOpt->m_dBallEndmill;
+	m_dHeight		= pOpt->m_dWorkHeight;
+	m_dZCut			= pOpt->m_dZCut;
+	m_nLineSplit	= pOpt->m_nLineSplit;
+
+	UpdateData(FALSE);
+
 	return TRUE;
 }
 
 void C3dScanSetupDlg::OnOK()
 {
-	m.dBallEndmill	= m_dBallEndmill;
-	m.dHeight		= m_dHeight;
-	m.dZCut			= m_dZCut;
-	m.nLineSplit	= m_nLineSplit;
-	m.bOrigin		= m_bOrigin;
+	C3dOption*	pOpt = m_pDoc->Get3dOption();
+
+	pOpt->m_dBallEndmill	= m_dBallEndmill;
+	pOpt->m_dWorkHeight		= m_dHeight;
+	pOpt->m_dZCut			= m_dZCut;
+	pOpt->m_nLineSplit		= m_nLineSplit;
+
 	EndDialog(IDOK);
 }

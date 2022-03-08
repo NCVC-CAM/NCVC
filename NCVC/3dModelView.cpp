@@ -476,14 +476,14 @@ void C3dModelView::OnUpdateFile3dScan(CCmdUI* pCmdUI)
 
 void C3dModelView::OnFile3dScan()
 {
-	C3dScanSetupDlg		dlg;
+	C3dScanSetupDlg		dlg(GetDocument());
 	if ( dlg.DoModal() != IDOK )
 		return;
 
 	// ウエイトカーソル
 	CWaitCursor	wait;
 	// スキャンパスの生成
-	if ( GetDocument()->MakeScanPath(m_pSelFace, m_pSelCurve, dlg.m) ) {
+	if ( GetDocument()->MakeScanPath(m_pSelFace, m_pSelCurve) ) {
 		// スキャンパス描画
 		Invalidate(FALSE);
 	}

@@ -154,7 +154,8 @@ BOOL OutputNurbsCode(void)
 
 BOOL MakeNurbs_MainFunc(void)
 {
-	int		mx, my, mz, i, j, k;
+	int		mx, my, mz, i, j, k,
+			fw = 0;
 	CNCMakeMill*	pNCD;
 	Coord***	pScanCoord = g_pDoc->GetScanPathCoord();
 
@@ -164,12 +165,22 @@ BOOL MakeNurbs_MainFunc(void)
 	for ( i=0; i<mx; i++ ) {
 		for ( j=0; j<my; j++ ) {
 			mz = g_pDoc->GetScanNumZ(j);
-			for ( k=0; k<mz; k++ ) {
-				pNCD = new CNCMakeMill(pScanCoord[i][j][k]);
-				ASSERT( pNCD );
-				g_obMakeData.Add(pNCD);
+			if ( fw == 0 ) {
+				for ( k=0; k<mz; k++ ) {
+					pNCD = new CNCMakeMill(pScanCoord[i][j][k]);
+					ASSERT( pNCD );
+					g_obMakeData.Add(pNCD);
+				}
+			}
+			else {
+				for ( k=mz-1; k>=0; k-- ) {
+					pNCD = new CNCMakeMill(pScanCoord[i][j][k]);
+					ASSERT( pNCD );
+					g_obMakeData.Add(pNCD);
+				}
 			}
 			SetProgressPos(g_pParent, i*my+j);
+			fw = 1 - fw;
 		}
 	}
 

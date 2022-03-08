@@ -6,13 +6,14 @@
 #include "DocBase.h"
 #include "Kodatuno/BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
-#include "3dScanSetupDlg.h"		// SCANSETUP
+#include "3dOption.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelDoc ドキュメント
 
 class C3dModelDoc : public CDocBase
 {
+	C3dOption	m_3dOpt;			// オプション管理クラス
 	CString		m_strNCFileName;	// NC生成ﾌｧｲﾙ名
 
 	BODY*		m_pKoBody;		// Kodatuno Body
@@ -33,6 +34,9 @@ public:
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
 	virtual void OnCloseDocument();
 
+	C3dOption* Get3dOption(void) {
+		return &m_3dOpt;
+	}
 	CString GetNCFileName(void) const {
 		return m_strNCFileName;
 	}
@@ -40,7 +44,7 @@ public:
 		return m_pKoList;
 	}
 	void	ClearScanPath(void);
-	BOOL	MakeScanPath(NURBSS*, NURBSC*, SCANSETUP&);
+	BOOL	MakeScanPath(NURBSS*, NURBSC*);
 	Coord***	GetScanPathCoord(void) const {
 		return m_pScanCoord;
 	}
