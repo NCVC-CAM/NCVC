@@ -1177,10 +1177,10 @@ void MoveOutsideCode(const CDXFdata* pData, const CPointF& ptMax, const CPointF&
 //////////////////////////////////////////////////////////////////////
 
 //	AddCustomLatheCode() Ç©ÇÁåƒÇ—èoÇµ
-class CMakeCustomCode_Lathe : public CMakeCustomCode	// MakeCustomCode.h
+class CMakeCustomLatheCode : public CMakeCustomCode	// MakeCustomCode.h
 {
 public:
-	CMakeCustomCode_Lathe(void) :
+	CMakeCustomLatheCode() :
 				CMakeCustomCode(g_pDoc, NULL, g_pMakeOpt) {
 		static	LPCTSTR	szCustomCode[] = {
 			"ProgNo", 
@@ -1262,7 +1262,7 @@ public:
 void AddCustomLatheCode(const CString& strFileName)
 {
 	CString	strBuf, strResult;
-	CMakeCustomCode_Lathe	custom;
+	CMakeCustomLatheCode		custom;
 	string	str, strTok;
 	tokenizer<custom_separator>	tokens(str);
 

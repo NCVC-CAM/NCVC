@@ -7,6 +7,7 @@
 #include "MainFrm.h"
 #include "DXFdata.h"
 #include "DXFDoc.h"
+#include "3dModelDoc.h"
 #include "NCMakeOption.h"
 #include "MakeCustomCode.h"
 
@@ -24,11 +25,21 @@ static	LPCTSTR	g_szCustomCode[] = {
 CMakeCustomCode::CMakeCustomCode
 	(const CDXFDoc* pDoc, const CDXFdata* pData, const CNCMakeOption* pMakeOpt)
 {
-	m_pDoc		= pDoc;
+	m_pDXFDoc	= pDoc;
+	m_p3DMDoc	= NULL;
 	m_pData		= pData;
 	m_pMakeOpt	= pMakeOpt;
-	// ã§í ∑∞‹∞ƒﬁÇìoò^
-	m_strOrderIndex.SetElement(SIZEOF(g_szCustomCode), g_szCustomCode);
+	m_strOrderIndex.SetElement(SIZEOF(g_szCustomCode), g_szCustomCode);	// ã§í ∑∞‹∞ƒﬁÇìoò^
+}
+
+CMakeCustomCode::CMakeCustomCode
+	(const C3dModelDoc* pDoc, const CDXFdata* pData, const CNCMakeOption* pMakeOpt)
+{
+	m_pDXFDoc	= NULL;
+	m_p3DMDoc	= pDoc;
+	m_pData		= pData;
+	m_pMakeOpt	= pMakeOpt;
+	m_strOrderIndex.SetElement(SIZEOF(g_szCustomCode), g_szCustomCode);	// ã§í ∑∞‹∞ƒﬁÇìoò^
 }
 
 tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) const
@@ -40,7 +51,7 @@ tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) c
 	TCHAR	szUserName[_MAX_PATH];
 	DWORD	dwResult;
 	CTime	time;
-
+	
 	nTestCode = (str.length()>2 && str.front()=='{' && str.back()=='}') ?
 		m_strOrderIndex.GetIndex(str.substr(1, str.length()-2).c_str()) : -1;
 
@@ -49,9 +60,8 @@ tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) c
 	case 0:		// MakeUser
 		dwResult = _MAX_PATH;
 		// ’∞ªﬁñºÇ…äøéöÇ™ä‹Ç‹ÇÍÇƒÇ¢ÇÈÇ∆ê∂ê¨ÇµÇ»Ç¢
-//		strResult = ::GetUserName(szUserName, &dwResult) && IsNCchar(szUserName) ?
 		strResult = ::GetUserName(szUserName, &dwResult) ?
-			szUserName : szReplaceErr;
+						szUserName : szReplaceErr;
 		break;
 	case 1:		// MakeDate
 		time = CTime::GetCurrentTime();
@@ -64,34 +74,45 @@ tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) c
 		strResult = time.Format(strPath);
 		break;
 	case 3:		// MakeNCD
-		if ( m_pDoc->IsDocFlag(DXFDOC_BIND) ) {
-			CDXFDoc* pDoc = m_pDoc->GetBindParentDoc();
-			ASSERT( pDoc );
-			::Path_Name_From_FullPath(pDoc->GetNCFileName(), strPath, strFile);
+		if ( m_pDXFDoc ) {
+			if ( m_pDXFDoc->IsDocFlag(DXFDOC_BIND) ) {
+				CDXFDoc* pDoc = m_pDXFDoc->GetBindParentDoc();
+				ASSERT( pDoc );
+				::Path_Name_From_FullPath(pDoc->GetNCFileName(), strPath, strFile);
+			}
+			else {
+				::Path_Name_From_FullPath(m_pDXFDoc->GetNCFileName(), strPath, strFile);
+			}
+			strResult = strFile;
 		}
-		else
-			::Path_Name_From_FullPath(m_pDoc->GetNCFileName(), strPath, strFile);
-//		strResult = IsNCchar(strFile) ? strFile : szReplaceErr;
-		strResult = strFile;
+		else if ( m_p3DMDoc ) {
+			::Path_Name_From_FullPath(m_p3DMDoc->GetNCFileName(), strPath, strFile);
+			strResult = strFile;
+		}
 		break;
 	case 4:		// MakeDXF
-		if ( m_pDoc->IsDocFlag(DXFDOC_BIND) ) {
-			CDXFDoc* pDoc = m_pDoc->GetBindParentDoc();
-			ASSERT( pDoc );
-			CString	strDocFile(pDoc->GetPathName());
-			if ( strDocFile.IsEmpty() )
-				strFile = szReplaceErr;
-			else
-				::Path_Name_From_FullPath(strDocFile, strPath, strFile);
+		if ( m_pDXFDoc ) {
+			if ( m_pDXFDoc->IsDocFlag(DXFDOC_BIND) ) {
+				CDXFDoc* pDoc = m_pDXFDoc->GetBindParentDoc();
+				ASSERT( pDoc );
+				CString	strDocFile(pDoc->GetPathName());
+				if ( strDocFile.IsEmpty() )
+					strFile = szReplaceErr;
+				else
+					::Path_Name_From_FullPath(strDocFile, strPath, strFile);
+			}
+			else {
+				::Path_Name_From_FullPath(m_pDXFDoc->GetPathName(), strPath, strFile);	// GetTitle()Ç…ÇÕ"*"Ç™ïtÇ≠â¬î\ê´Ç†ÇË
+			}
+			strResult = strFile;
 		}
-		else
-			::Path_Name_From_FullPath(m_pDoc->GetPathName(), strPath, strFile);	// GetTitle()Ç…ÇÕ"*"Ç™ïtÇ≠â¬î\ê´Ç†ÇË
-//		strResult = IsNCchar(strFile) ? strFile : szReplaceErr;
-		strResult = strFile;
+		else if ( m_p3DMDoc ) {
+			::Path_Name_From_FullPath(m_p3DMDoc->GetPathName(), strPath, strFile);
+			strResult = strFile;
+		}
 		break;
 	case 5:		// MakeCondition
 		::Path_Name_From_FullPath(m_pMakeOpt->GetInitFile(), strPath, strFile);
-//		strResult = IsNCchar(strFile) ? strFile : szReplaceErr;
 		strResult = strFile;
 		break;
 	}
@@ -100,14 +121,3 @@ tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) c
 
 	return make_tuple(nResult, strResult);
 }
-/*
-BOOL CMakeCustomCode::IsNCchar(LPCTSTR lpsz) const
-{
-	for ( int i=0; i<lstrlen(lpsz); i++ ) {
-//		if ( isprint(lpsz[i]) == 0 )
-		if ( ::IsDBCSLeadByte(lpsz[i]) )
-			return FALSE;
-	}
-	return TRUE;
-}
-*/

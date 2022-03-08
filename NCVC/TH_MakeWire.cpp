@@ -975,10 +975,10 @@ BOOL MakeLoopWireAdd_with_one_stroke
 //////////////////////////////////////////////////////////////////////
 
 //	AddCustomWireCode() Ç©ÇÁåƒÇ—èoÇµ
-class CMakeCustomCode_Wire : public CMakeCustomCode	// MakeCustomCode.h
+class CMakeCustomWireCode : public CMakeCustomCode	// MakeCustomCode.h
 {
 public:
-	CMakeCustomCode_Wire(void) :
+	CMakeCustomWireCode() :
 				CMakeCustomCode(g_pDoc, NULL, g_pMakeOpt) {
 		static	LPCTSTR	szCustomCode[] = {
 			"ProgNo", "WorkDepth", "TaperMode",
@@ -1043,7 +1043,7 @@ public:
 void AddCustomWireCode(const CString& strFileName)
 {
 	CString	strBuf, strResult;
-	CMakeCustomCode_Wire	custom;
+	CMakeCustomWireCode			custom;
 	string	str, strTok;
 	tokenizer<custom_separator>	tokens(str);
 

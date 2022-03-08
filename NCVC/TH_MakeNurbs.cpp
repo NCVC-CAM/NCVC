@@ -39,6 +39,17 @@ static	void	SetStaticOption(void);			// 静的変数の初期化
 static	BOOL	MakeNurbs_MainFunc(void);		// NC生成のﾒｲﾝﾙｰﾌﾟ
 static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 
+// ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
+static	void	AddCustomNurbsCode(const CString&);
+
+// 任意ﾃﾞｰﾀの生成
+static inline	void	_AddMakeNurbsStr(const CString& strData)
+{
+	CNCMakeMill*	pNCD = new CNCMakeMill(strData);
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+}
+
 // ｻﾌﾞｽﾚｯﾄﾞ関数
 static	CCriticalSection	g_csMakeAfter;	// MakeNurbs_AfterThread()ｽﾚｯﾄﾞﾛｯｸｵﾌﾞｼﾞｪｸﾄ
 static	UINT	MakeNurbs_AfterThread(LPVOID);	// 後始末ｽﾚｯﾄﾞ
@@ -162,6 +173,9 @@ BOOL MakeNurbs_MainFunc(void)
 	tie(mx, my) = g_pDoc->GetScanNumXY();
 	SendFaseMessage(g_pParent, g_nFase, mx*my);
 
+	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
+	AddCustomNurbsCode(GetStr(MKNC_STR_HEADER));
+
 	for ( i=0; i<mx; i++ ) {
 		for ( j=0; j<my; j++ ) {
 			mz = g_pDoc->GetScanNumZ(j);
@@ -184,7 +198,108 @@ BOOL MakeNurbs_MainFunc(void)
 		}
 	}
 
+	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
+	AddCustomNurbsCode(GetStr(MKNC_STR_FOOTER));
+
 	return IsThread();
+}
+
+//////////////////////////////////////////////////////////////////////
+
+//	AddCustomNurbsCode() から呼び出し
+class CMakeCustomNurbsCode : public CMakeCustomCode	// MakeCustomCode.h
+{
+public:
+	CMakeCustomNurbsCode() :
+				CMakeCustomCode(g_pDoc, NULL, g_pMakeOpt) {
+		static	LPCTSTR	szCustomCode[] = {
+			"ProgNo", 
+			"G90orG91", "G92_INITIAL", "G92X", "G92Y", "G92Z",
+			"SPINDLE", "G0XY_INITIAL"
+		};
+		// ｵｰﾀﾞｰ追加
+		m_strOrderIndex.AddElement(SIZEOF(szCustomCode), szCustomCode);
+	}
+
+	CString	ReplaceCustomCode(const string& str) {
+		extern	const	DWORD	g_dwSetValFlags[];
+		int		nTestCode;
+		float	dValue[VALUESIZE];
+		CString	strResult;
+
+		// 基底ｸﾗｽ呼び出し
+		tie(nTestCode, strResult) = CMakeCustomCode::ReplaceCustomCode(str);
+		if ( !strResult.IsEmpty() )
+			return strResult;
+
+		// 派生replace
+		switch ( nTestCode ) {
+		case 0:		// ProgNo
+			if ( GetFlg(MKNC_FLG_PROG) )
+				strResult.Format(IDS_MAKENCD_PROG,
+					GetFlg(MKNC_FLG_PROGAUTO) ? ::GetRandom(1,9999) : GetNum(MKNC_NUM_PROG));
+			break;
+		case 1:		// G90orG91
+			strResult = CNCMakeBase::MakeCustomString(GetNum(MKNC_NUM_G90)+90);
+			break;
+		case 2:		// G92_INITIAL
+			dValue[NCA_X] = GetDbl(MKNC_DBL_G92X);
+			dValue[NCA_Y] = GetDbl(MKNC_DBL_G92Y);
+			dValue[NCA_Z] = GetDbl(MKNC_DBL_G92Z);
+			strResult = CNCMakeBase::MakeCustomString(92, NCD_X|NCD_Y|NCD_Z, dValue, FALSE);
+			break;
+		case 3:		// G92X
+		case 4:		// G92Y
+		case 5:		// G92Z
+			nTestCode -= 3;
+			dValue[nTestCode] = GetDbl(MKNC_DBL_G92X+nTestCode);
+			strResult = CNCMakeBase::MakeCustomString(-1, g_dwSetValFlags[nTestCode], dValue, FALSE);
+			break;
+		case 6:		// SPINDLE
+			if ( m_pData )					// Header
+				strResult = CNCMakeMill::MakeSpindle(m_pData->GetMakeType());
+			else if ( CDXFdata::ms_pData )	// Footer
+				strResult = CNCMakeMill::MakeSpindle(CDXFdata::ms_pData->GetMakeType());
+			break;
+		case 7:		// G0XY_INITIAL
+			dValue[NCA_X] = GetDbl(MKNC_DBL_G92X);
+			dValue[NCA_Y] = GetDbl(MKNC_DBL_G92Y);
+			strResult = CNCMakeBase::MakeCustomString(0, NCD_X|NCD_Y, dValue);
+			break;
+		default:
+			strResult = str.c_str();
+		}
+
+		return strResult;
+	}
+};
+
+void AddCustomNurbsCode(const CString& strFileName)
+{
+	CString	strBuf, strResult;
+	CMakeCustomNurbsCode		custom;
+	string	str, strTok;
+	tokenizer<custom_separator>	tokens(str);
+
+	try {
+		CStdioFile	fp(strFileName,
+			CFile::modeRead | CFile::shareDenyWrite | CFile::typeText);
+		while ( fp.ReadString(strBuf) && IsThread() ) {
+			str = strBuf;
+			tokens.assign(str);
+			strResult.Empty();
+			BOOST_FOREACH(strTok, tokens) {
+				strResult += custom.ReplaceCustomCode(strTok);
+			}
+			if ( !strResult.IsEmpty() )
+				_AddMakeNurbsStr(strResult);
+		}
+	}
+	catch (CFileException* e) {
+		AfxMessageBox(IDS_ERR_MAKECUSTOM, MB_OK|MB_ICONEXCLAMATION);
+		e->Delete();
+		// このｴﾗｰは正常ﾘﾀｰﾝ(警告のみ)
+	}
 }
 
 //////////////////////////////////////////////////////////////////////

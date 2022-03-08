@@ -3190,10 +3190,10 @@ CDXFdata* GetMatchPointMove(const CDXFdata* pDataTarget)
 }
 
 //	AddCustomMillCode() Ç©ÇÁåƒÇ—èoÇµ
-class CMakeCustomCode_Mill : public CMakeCustomCode	// MakeCustomCode.h
+class CMakeCustomMillCode : public CMakeCustomCode	// MakeCustomCode.h
 {
 public:
-	CMakeCustomCode_Mill(const CDXFdata* pData) :
+	CMakeCustomMillCode(const CDXFdata* pData) :
 				CMakeCustomCode(g_pDoc, pData, g_pMakeOpt) {
 		static	LPCTSTR	szCustomCode[] = {
 			"ProgNo", 
@@ -3260,7 +3260,7 @@ public:
 void AddCustomMillCode(const CString& strFileName, const CDXFdata* pData)
 {
 	CString	strBuf, strResult;
-	CMakeCustomCode_Mill	custom(pData);
+	CMakeCustomMillCode			custom(pData);
 	string	str, strTok;
 	tokenizer<custom_separator>	tokens(str);
 
