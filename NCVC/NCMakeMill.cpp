@@ -200,13 +200,6 @@ CNCMakeMill::CNCMakeMill(const CString& strGcode) : CNCMakeBase(strGcode)
 {
 }
 
-// Kodatuno座標
-CNCMakeMill::CNCMakeMill(const Coord& xyz) :
-	CNCMakeMill( CPoint3D(xyz), GetDbl(MKNC_DBL_FEED) )	// 委譲コンストラクタ(XYZのG01へ)
-{
-	// double -> float のキャストが入るので改良の余地あり
-}
-
 //////////////////////////////////////////////////////////////////////
 // ﾒﾝﾊﾞ関数
 

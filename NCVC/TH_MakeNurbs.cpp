@@ -38,6 +38,9 @@ static	void	InitialVariable(void);			// 変数初期化
 static	void	SetStaticOption(void);			// 静的変数の初期化
 static	BOOL	MakeNurbs_MainFunc(void);		// NC生成のﾒｲﾝﾙｰﾌﾟ
 static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
+static	function<void (const Coord&)>	g_pfnAddCoord;
+static	void	AddCoord_Normal(const Coord&);
+static	void	AddCoord_ZOrigin(const Coord&);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomNurbsCode(const CString&);
@@ -129,6 +132,9 @@ void InitialVariable(void)
 
 void SetStaticOption(void)
 {
+	// 座標値の生成
+	g_pfnAddCoord = g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ZORIGIN) ? &AddCoord_ZOrigin : &AddCoord_Normal;
+
 	// 生成ｵﾌﾟｼｮﾝによる静的変数の初期化
 	CNCMakeMill::SetStaticOption(g_pMakeOpt);
 }
@@ -167,7 +173,6 @@ BOOL MakeNurbs_MainFunc(void)
 {
 	int		mx, my, mz, i, j, k,
 			fw = 0;
-	CNCMakeMill*	pNCD;
 	Coord***	pScanCoord = g_pDoc->GetScanPathCoord();
 
 	tie(mx, my) = g_pDoc->GetScanNumXY();
@@ -181,16 +186,12 @@ BOOL MakeNurbs_MainFunc(void)
 			mz = g_pDoc->GetScanNumZ(j);
 			if ( fw == 0 ) {
 				for ( k=0; k<mz && IsThread(); k++ ) {
-					pNCD = new CNCMakeMill(pScanCoord[i][j][k]);
-					ASSERT( pNCD );
-					g_obMakeData.Add(pNCD);
+					g_pfnAddCoord(pScanCoord[i][j][k]);
 				}
 			}
 			else {
 				for ( k=mz-1; k>=0 && IsThread(); k-- ) {
-					pNCD = new CNCMakeMill(pScanCoord[i][j][k]);
-					ASSERT( pNCD );
-					g_obMakeData.Add(pNCD);
+					g_pfnAddCoord(pScanCoord[i][j][k]);
 				}
 			}
 			SetProgressPos(g_pParent, i*my+j);
@@ -202,6 +203,25 @@ BOOL MakeNurbs_MainFunc(void)
 	AddCustomNurbsCode(GetStr(MKNC_STR_FOOTER));
 
 	return IsThread();
+}
+
+void AddCoord_Normal(const Coord& c)
+{
+	CPoint3D		pt(c);
+
+	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+}
+
+void AddCoord_ZOrigin(const Coord& c)
+{
+	CPoint3D		pt(c);
+	pt.z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_HEIGHT);
+
+	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
 }
 
 //////////////////////////////////////////////////////////////////////
