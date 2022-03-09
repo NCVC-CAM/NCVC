@@ -37,6 +37,7 @@ static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
 static	void	InitialVariable(void);			// 変数初期化
 static	void	SetStaticOption(void);			// 静的変数の初期化
 static	BOOL	MakeNurbs_MainFunc(void);		// NC生成のﾒｲﾝﾙｰﾌﾟ
+static	tuple<int, int>	SearchFirstPoint(int);	// 最初のCoordポイントを検索
 static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 static	function<void (const Coord&)>	g_pfnAddCoord;
 static	void	AddCoord_Normal(const Coord&);
@@ -172,31 +173,55 @@ BOOL OutputNurbsCode(void)
 BOOL MakeNurbs_MainFunc(void)
 {
 	int		mx, my, mz, i, j, k,
-			fw = 0;
+			fx, fy;
 	Coord***	pScanCoord = g_pDoc->GetScanPathCoord();
-
 	tie(mx, my) = g_pDoc->GetScanNumXY();
+
+	// 開始点の検索
+	tie(fx, fy) = SearchFirstPoint(my);
+
+	// フェーズ更新
 	SendFaseMessage(g_pParent, g_nFase, mx*my);
 
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 	AddCustomNurbsCode(GetStr(MKNC_STR_HEADER));
 
-	for ( i=0; i<mx && IsThread(); i++ ) {
-		for ( j=0; j<my && IsThread(); j++ ) {
-			mz = g_pDoc->GetScanNumZ(j);
-			if ( fw == 0 ) {
-				for ( k=0; k<mz && IsThread(); k++ ) {
-					g_pfnAddCoord(pScanCoord[i][j][k]);
+	for ( i=0; i<mx && IsThread(); i++ ) {				// Zの階層
+		if ( fy == 0 ) {
+			for ( j=0; j<my && IsThread(); j++ ) {		// スキャン分割数
+				mz = g_pDoc->GetScanNumZ(j);
+				if ( fx == 0 ) {
+					for ( k=0; k<mz && IsThread(); k++ ) {
+						g_pfnAddCoord(pScanCoord[i][j][k]);	// Coord座標の生成 AddCoord_Normal() | AddCoord_ZOrigin()
+					}
 				}
-			}
-			else {
-				for ( k=mz-1; k>=0 && IsThread(); k-- ) {
-					g_pfnAddCoord(pScanCoord[i][j][k]);
+				else {
+					for ( k=mz-1; k>=0 && IsThread(); k-- ) {
+						g_pfnAddCoord(pScanCoord[i][j][k]);
+					}
 				}
+				SetProgressPos(g_pParent, i*my+j);
+				fx = 1 - fx;
 			}
-			SetProgressPos(g_pParent, i*my+j);
-			fw = 1 - fw;
 		}
+		else {
+			for ( j=my-1; j>=0 && IsThread(); j-- ) {
+				mz = g_pDoc->GetScanNumZ(j);
+				if ( fx == 0 ) {
+					for ( k=0; k<mz && IsThread(); k++ ) {
+						g_pfnAddCoord(pScanCoord[i][j][k]);
+					}
+				}
+				else {
+					for ( k=mz-1; k>=0 && IsThread(); k-- ) {
+						g_pfnAddCoord(pScanCoord[i][j][k]);
+					}
+				}
+				SetProgressPos(g_pParent, i*my+my-j);
+				fx = 1 - fx;
+			}
+		}
+		fy = 1 - fy;
 	}
 
 	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
@@ -222,6 +247,38 @@ void AddCoord_ZOrigin(const Coord& c)
 	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
+}
+
+tuple<int, int>	SearchFirstPoint(int my)
+{
+	int		fx = 0, fy = 0;
+	Coord***	pScanCoord = g_pDoc->GetScanPathCoord();
+	// 4角の座標
+	CPoint3D	pt0(pScanCoord[0][0][0]),
+				pt1(pScanCoord[0][0][g_pDoc->GetScanNumZ(0)-1]),
+				pt2(pScanCoord[0][my-1][0]),
+				pt3(pScanCoord[0][my-1][g_pDoc->GetScanNumZ(my-1)-1]);
+	// 距離計算(sqrt()いらないけど4点くらいなら問題なし)
+	std::vector<double>		v;
+	v.push_back( pt0.hypot() );
+	v.push_back( pt1.hypot() );
+	v.push_back( pt2.hypot() );
+	v.push_back( pt3.hypot() );
+	// 一番小さい要素
+	auto	it  = std::min_element(v.begin(), v.end());
+	switch ( std::distance(v.begin(), it) ) {
+	case 1:		// pt1
+		fx = 1;		// 横方向反転
+		break;
+	case 2:		// pt2
+		fy = 1;		// 縦方向反転
+		break;
+	case 3:		// pt3
+		fx = fy = 1;
+		break;
+	}
+
+	return make_tuple(fx, fy);
 }
 
 //////////////////////////////////////////////////////////////////////
