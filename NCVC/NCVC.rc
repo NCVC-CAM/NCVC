@@ -4191,6 +4191,7 @@ STRINGTABLE
 BEGIN
     IDS_MAKENCD_LATHEDRILL4 "(DRILL=%.4f start)"
     IDS_MAKENCD_PROG        "O%04d"
+    IDS_MAKENCD_ENDMILL     "(Endmill=R%.3f)"
 END
 
 #endif    // “ú–{Œê (“ú–{) resources

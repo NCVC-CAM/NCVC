@@ -176,18 +176,18 @@ BOOL MakeNurbs_MainFunc(void)
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 	AddCustomNurbsCode(GetStr(MKNC_STR_HEADER));
 
-	for ( i=0; i<mx; i++ ) {
-		for ( j=0; j<my; j++ ) {
+	for ( i=0; i<mx && IsThread(); i++ ) {
+		for ( j=0; j<my && IsThread(); j++ ) {
 			mz = g_pDoc->GetScanNumZ(j);
 			if ( fw == 0 ) {
-				for ( k=0; k<mz; k++ ) {
+				for ( k=0; k<mz && IsThread(); k++ ) {
 					pNCD = new CNCMakeMill(pScanCoord[i][j][k]);
 					ASSERT( pNCD );
 					g_obMakeData.Add(pNCD);
 				}
 			}
 			else {
-				for ( k=mz-1; k>=0; k-- ) {
+				for ( k=mz-1; k>=0 && IsThread(); k-- ) {
 					pNCD = new CNCMakeMill(pScanCoord[i][j][k]);
 					ASSERT( pNCD );
 					g_obMakeData.Add(pNCD);
@@ -209,6 +209,8 @@ BOOL MakeNurbs_MainFunc(void)
 //	AddCustomNurbsCode() から呼び出し
 class CMakeCustomNurbsCode : public CMakeCustomCode	// MakeCustomCode.h
 {
+	BOOL	m_bComment;		// Endmill等のコメントを挿入したかどうか
+
 public:
 	CMakeCustomNurbsCode() :
 				CMakeCustomCode(g_pDoc, NULL, g_pMakeOpt) {
@@ -219,9 +221,12 @@ public:
 		};
 		// ｵｰﾀﾞｰ追加
 		m_strOrderIndex.AddElement(SIZEOF(szCustomCode), szCustomCode);
+		// コメント挿入初期化
+		m_bComment = FALSE;
 	}
 
 	CString	ReplaceCustomCode(const string& str) {
+		extern	LPCTSTR	gg_szReturn;		// "\n";
 		extern	const	DWORD	g_dwSetValFlags[];
 		int		nTestCode;
 		float	dValue[VALUESIZE];
@@ -230,7 +235,7 @@ public:
 		// 基底ｸﾗｽ呼び出し
 		tie(nTestCode, strResult) = CMakeCustomCode::ReplaceCustomCode(str);
 		if ( !strResult.IsEmpty() )
-			return strResult;
+			return strResult;	// 置換済みなら戻る（ここでGコードは来ない）
 
 		// 派生replace
 		switch ( nTestCode ) {
@@ -268,6 +273,21 @@ public:
 			break;
 		default:
 			strResult = str.c_str();
+			if ( strResult[0]=='%' && !m_bComment ) {
+				// '%'の次の行にコメントを挿入
+				CString	strBuf;
+				strBuf.Format(IDS_MAKENCD_ENDMILL, g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_BALLENDMILL));
+				strResult += gg_szReturn + strBuf;
+				m_bComment = TRUE;
+			}
+		}
+
+		if ( strResult[0]=='G' && !m_bComment ) {
+			// 最初のGコードの前にコメントを挿入
+			CString	strBuf;
+			strBuf.Format(IDS_MAKENCD_ENDMILL, g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_BALLENDMILL));
+			strResult = strBuf + gg_szReturn + strResult;
+			m_bComment = TRUE;
 		}
 
 		return strResult;

@@ -44,11 +44,12 @@ public:
 	BOOL	Read3dOption(LPCTSTR);
 	BOOL	Save3dOption(void);
 
-	int		GetInt(size_t n) const {
+	// CNCMakeOption と関数名が被ると TH_MakeXXX系の #define でバッティングする
+	int		Get3dInt(size_t n) const {
 		ASSERT( n>=0 && n<SIZEOF(m_unNums) );
 		return m_unNums[n];
 	}
-	float	GetDbl(size_t n) const {
+	float	Get3dDbl(size_t n) const {
 		ASSERT( n>=0 && n<SIZEOF(m_udNums) );
 		return m_udNums[n];
 	}

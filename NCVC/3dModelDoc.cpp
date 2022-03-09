@@ -172,8 +172,8 @@ BOOL C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc)
 	Coord		plane_n;		// 分割する平面の法線ベクトル
 	Coord		path_[2000];	// 一時格納用バッファ
 	int		i, j, k,
-			D = (int)(m_3dOpt.GetDbl(D3_DBL_HEIGHT) / m_3dOpt.GetDbl(D3_DBL_ZCUT)) + 1,	// Z方向分割数（粗加工用）
-			N = m_3dOpt.GetInt(D3_INT_LINESPLIT);					// スキャニングライン分割数(N < 100)
+			D = (int)(m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) / m_3dOpt.Get3dDbl(D3_DBL_ZCUT)) + 1,	// Z方向分割数（粗加工用）
+			N = m_3dOpt.Get3dInt(D3_INT_LINESPLIT);					// スキャニングライン分割数(N < 100)
 	BOOL	bResult = TRUE;
 
 	try {
@@ -201,7 +201,7 @@ BOOL C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc)
 				Coord pt = nf.CalcNurbsSCoord(ns, path_[j].x, path_[j].y);		// 工具コンタクト点
 				Coord n = nf.CalcNormVecOnNurbsS(ns, path_[j].x, path_[j].y);	// 法線ベクトル
 				if (n.z < 0) n = n*(-1);					// 法線ベクトルの向き調整
-				m_pScanCoord[D][i][j] = pt + n*m_3dOpt.GetDbl(D3_DBL_BALLENDMILL);	// 工具半径オフセット
+				m_pScanCoord[D][i][j] = pt + n*m_3dOpt.Get3dDbl(D3_DBL_BALLENDMILL);	// 工具半径オフセット
 			}
 		}
 
@@ -209,8 +209,8 @@ BOOL C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc)
 		for ( i=0; i<D; i++ ) {
 			for ( j=0; j<m_pScanY; j++ ) {
 				for ( k=0; k<m_pScanNum[j]; k++ ) {
-					double del = (m_3dOpt.GetDbl(D3_DBL_HEIGHT) - m_pScanCoord[D][j][k].z)/(double)D;
-					double Z = m_3dOpt.GetDbl(D3_DBL_HEIGHT) - del*i;
+					double del = (m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) - m_pScanCoord[D][j][k].z)/(double)D;
+					double Z = m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) - del*i;
 					m_pScanCoord[i][j][k] = SetCoord(m_pScanCoord[D][j][k].x, m_pScanCoord[D][j][k].y, Z);
 				}
 			}

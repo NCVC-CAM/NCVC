@@ -61,6 +61,7 @@
 #define IDS_MAKENCD_LATHEDRILL3         607
 #define IDS_MAKENCD_LATHEDRILL4         608
 #define IDS_MAKENCD_PROG                609
+#define IDS_MAKENCD_ENDMILL             610
 #define IDS_MAKE_NCD                    700
 #define IDS_MAKE_DXF                    701
 #define IDS_SETUP_MC                    702

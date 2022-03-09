@@ -3213,7 +3213,7 @@ public:
 		// Šî’ê¸×½ŒÄ‚Ño‚µ
 		tie(nTestCode, strResult) = CMakeCustomCode::ReplaceCustomCode(str);
 		if ( !strResult.IsEmpty() )
-			return strResult;
+			return strResult;	// ’uŠ·Ï‚İ‚È‚ç–ß‚é
 
 		// ”h¶replace
 		switch ( nTestCode ) {
