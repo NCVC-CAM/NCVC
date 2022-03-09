@@ -73,6 +73,13 @@ static inline	void	_AddMovePoint(CPoint3D& pt)
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 }
+// Z軸イニシャル点に復帰
+static inline	void	_AddMoveZinitial(void)
+{
+	CNCMakeMill*	pNCD = new CNCMakeMill(0, GetDbl(MKNC_DBL_G92Z), 0.0f);
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+}
 
 // ｻﾌﾞｽﾚｯﾄﾞ関数
 static	CCriticalSection	g_csMakeAfter;	// MakeNurbs_AfterThread()ｽﾚｯﾄﾞﾛｯｸｵﾌﾞｼﾞｪｸﾄ
@@ -259,6 +266,9 @@ BOOL MakeNurbs_MainFunc(void)
 		}
 		fy = 1 - fy;
 	}
+
+	// Z軸をイニシャル点に復帰
+	_AddMoveZinitial();
 
 	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
 	AddCustomNurbsCode(MKNC_STR_FOOTER);
