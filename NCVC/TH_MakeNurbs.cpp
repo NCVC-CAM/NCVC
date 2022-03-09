@@ -47,7 +47,7 @@ static	void	AddZcut_Normal(double);
 static	void	AddZcut_ZOrigin(double);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
-static	void	AddCustomNurbsCode(const CString&);
+static	void	AddCustomNurbsCode(int);
 
 // 任意ﾃﾞｰﾀの生成
 static inline	void	_AddMakeNurbsStr(const CString& strData)
@@ -208,7 +208,7 @@ BOOL MakeNurbs_MainFunc(void)
 	SendFaseMessage(g_pParent, g_nFase, mx*my);
 
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
-	AddCustomNurbsCode(GetStr(MKNC_STR_HEADER));
+	AddCustomNurbsCode(MKNC_STR_HEADER);
 
 	// 開始点の検索と移動
 	tie(fx, fy) = MoveFirstPoint(my);
@@ -261,7 +261,7 @@ BOOL MakeNurbs_MainFunc(void)
 	}
 
 	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
-	AddCustomNurbsCode(GetStr(MKNC_STR_FOOTER));
+	AddCustomNurbsCode(MKNC_STR_FOOTER);
 
 	return IsThread();
 }
@@ -347,7 +347,7 @@ class CMakeCustomNurbsCode : public CMakeCustomCode	// MakeCustomCode.h
 	BOOL	m_bComment;		// Endmill等のコメントを挿入したかどうか
 
 public:
-	CMakeCustomNurbsCode() :
+	CMakeCustomNurbsCode(int n) :
 				CMakeCustomCode(g_pDoc, NULL, g_pMakeOpt) {
 		static	LPCTSTR	szCustomCode[] = {
 			"ProgNo", 
@@ -357,7 +357,7 @@ public:
 		// ｵｰﾀﾞｰ追加
 		m_strOrderIndex.AddElement(SIZEOF(szCustomCode), szCustomCode);
 		// コメント挿入初期化
-		m_bComment = FALSE;
+		m_bComment = n==MKNC_STR_HEADER ? FALSE : TRUE;	// Header以外には入れない
 	}
 
 	CString	ReplaceCustomCode(const string& str) {
@@ -426,12 +426,14 @@ public:
 	}
 };
 
-void AddCustomNurbsCode(const CString& strFileName)
+void AddCustomNurbsCode(int n)
 {
-	CString	strBuf, strResult;
-	CMakeCustomNurbsCode		custom;
+	CString		strFileName, strBuf, strResult;
+	CMakeCustomNurbsCode		custom(n);
 	string	str, strTok;
 	tokenizer<custom_separator>	tokens(str);
+
+	strFileName = GetStr(n);	// MKNC_STR_HEADER or MKNC_STR_FOOTER
 
 	try {
 		CStdioFile	fp(strFileName,
