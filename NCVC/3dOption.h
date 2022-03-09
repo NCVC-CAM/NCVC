@@ -14,6 +14,10 @@ enum {		// floatŒ^
 	D3_DBL_ZCUT,
 		D3_DBL_NUMS		// [3]
 };
+enum {		// BOOLŒ^
+	D3_FLG_ZORIGIN = 0,
+		D3_FLG_NUMS		// [1]
+};
 
 class C3dOption
 {
@@ -37,6 +41,13 @@ friend	class	C3dScanSetupDlg;
 		};
 		float		m_udNums[D3_DBL_NUMS];
 	};
+	// BOOLŒ^µÌß¼®Ý
+	union {
+		struct {
+			int		m_bZOrigin;			// ƒ[ƒNã–Ê‚ðZŽ²Œ´“_‚É‚·‚é
+		};
+		int			m_ubFlgs[D3_FLG_NUMS];
+	};
 
 public:
 	C3dOption();
@@ -52,5 +63,9 @@ public:
 	float	Get3dDbl(size_t n) const {
 		ASSERT( n>=0 && n<SIZEOF(m_udNums) );
 		return m_udNums[n];
+	}
+	BOOL	Get3dFlg(size_t n) const {
+		ASSERT( n>=0 && n<SIZEOF(m_ubFlgs) );
+		return m_ubFlgs[n];
 	}
 };

@@ -911,7 +911,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.91",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 4.00",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2022 MNCT K.Magara",IDC_STATIC,86,182,135,8
     LTEXT           "https://k-magara.github.io/",IDC_ABOUT_URL,86,198,135,8,SS_NOTIFY
 END
@@ -2330,7 +2330,7 @@ BEGIN
     LTEXT           "この設定は次のCADﾃﾞｰﾀ読み込みから有効",IDC_STATIC,45,205,142,8
 END
 
-IDD_3DSCAN DIALOGEX 0, 0, 200, 128
+IDD_3DSCAN DIALOGEX 0, 0, 200, 150
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "3Dモデルのスキャニング"
 FONT 9, "MS UI Gothic", 400, 0, 0x80
@@ -2346,8 +2346,10 @@ BEGIN
     LTEXT           "mm",IDC_STATIC,145,49,11,8
     LTEXT           "スキャニングラインの分割数(&S)",IDC_STATIC,7,69,85,8
     EDITTEXT        IDC_3DSCAN_LINESPLIT,100,67,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
-    DEFPUSHBUTTON   "&OK",IDOK,37,107,50,14
-    PUSHBUTTON      "キャンセル",IDCANCEL,113,107,50,14
+    LTEXT           "< 100",IDC_STATIC,145,69,17,8
+    CONTROL         "ワーク上面をZ軸のゼロにする",IDC_3DSCAN_ZORIGIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,89,98,10
+    DEFPUSHBUTTON   "&OK",IDOK,37,129,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,113,129,50,14
 END
 
 
@@ -2357,8 +2359,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,9,1,0
- PRODUCTVERSION 3,9,1,0
+ FILEVERSION 4,0,0,0
+ PRODUCTVERSION 4,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -2376,13 +2378,13 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.9.1.0"
+            VALUE "FileVersion", "4.0.0.0"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2022 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.9.1.0"
+            VALUE "ProductVersion", "4.0.0.0"
             VALUE "SpecialBuild", "Boost C++ 1.78, GLEW 2.10, Kodatuno R3.4kai"
         END
     END
@@ -2854,7 +2856,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 193
         TOPMARGIN, 7
-        BOTTOMMARGIN, 121
+        BOTTOMMARGIN, 143
     END
 END
 #endif    // APSTUDIO_INVOKED

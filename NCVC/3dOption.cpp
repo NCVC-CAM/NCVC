@@ -20,7 +20,6 @@ static	LPCTSTR	g_szNOrder[] = {
 static	const	int		g_dfNOrder[] = {
 	50
 };
-
 // floatå^ñΩóﬂ
 static	LPCTSTR	g_szDOrder[] = {
 	"BallEndmill",
@@ -30,6 +29,13 @@ static	LPCTSTR	g_szDOrder[] = {
 static	const	float	g_dfDOrder[] = {
 	3.0f, 50.0f, 5.0f
 };
+// BOOLå^ñΩóﬂ
+static	LPCTSTR	g_szFOrder[] = {
+	"ZOrigin"
+};
+static	const	BOOL	g_dfFOrder[] = {
+	TRUE
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dOption ÉNÉâÉXÇÃç\íz/è¡ñ≈
@@ -38,6 +44,7 @@ C3dOption::C3dOption()
 {
 	ASSERT( D3_INT_NUMS == SIZEOF(g_dfNOrder) );
 	ASSERT( D3_DBL_NUMS == SIZEOF(g_dfDOrder) );
+	ASSERT( D3_FLG_NUMS == SIZEOF(g_dfFOrder) );
 
 	int		i;
 
@@ -46,6 +53,8 @@ C3dOption::C3dOption()
 		m_unNums[i] = g_dfNOrder[i];
 	for ( i=0; i<SIZEOF(g_dfDOrder); i++ )
 		m_udNums[i] = g_dfDOrder[i];
+	for ( i=0; i<SIZEOF(g_dfFOrder); i++ )
+		m_ubFlgs[i] = g_dfFOrder[i];
 }
 
 C3dOption::~C3dOption()
@@ -92,6 +101,10 @@ BOOL C3dOption::Read3dOption(LPCTSTR lpszFile)
 		m_udNums[i] = ::GetPrivateProfileString(strRegKey, g_szDOrder[i], "", szResult, _MAX_PATH, m_str3dOptionFile) > 0 ?
 			(float)atof(boost::algorithm::trim_copy(string(szResult)).c_str()) : g_dfDOrder[i];
 	}
+	// BOOLå^ñΩóﬂ
+	for ( i=0; i<SIZEOF(m_ubFlgs); i++ ) {
+		m_ubFlgs[i] = ::GetPrivateProfileInt(strRegKey, g_szFOrder[i], g_dfFOrder[i], m_str3dOptionFile);
+	}
 
 	return TRUE;
 }
@@ -111,11 +124,16 @@ BOOL C3dOption::Save3dOption(void)
 		if ( !::WritePrivateProfileString(strRegKey, g_szNOrder[i], strResult, m_str3dOptionFile) )
 			return FALSE;
 	}
-
 	// floatå^ñΩóﬂ
 	for ( i=0; i<SIZEOF(m_udNums); i++ ) {
 		strResult.Format(IDS_MAKENCD_FORMAT, m_udNums[i]);
 		if ( !::WritePrivateProfileString(strRegKey, g_szDOrder[i], strResult, m_str3dOptionFile) )
+			return FALSE;
+	}
+	// BOOLå^ñΩóﬂ
+	for ( i=0; i<SIZEOF(m_ubFlgs); i++ ) {
+		strResult = lexical_cast<string>(m_ubFlgs[i] ? 1 : 0).c_str();
+		if ( !::WritePrivateProfileString(strRegKey, g_szFOrder[i], strResult, m_str3dOptionFile) )
 			return FALSE;
 	}
 

@@ -261,10 +261,7 @@ public:
 			strResult = CNCMakeBase::MakeCustomString(-1, g_dwSetValFlags[nTestCode], dValue, FALSE);
 			break;
 		case 6:		// SPINDLE
-			if ( m_pData )					// Header
-				strResult = CNCMakeMill::MakeSpindle(m_pData->GetMakeType());
-			else if ( CDXFdata::ms_pData )	// Footer
-				strResult = CNCMakeMill::MakeSpindle(CDXFdata::ms_pData->GetMakeType());
+			strResult = CNCMakeMill::MakeSpindle(DXFLINEDATA);	// GetNum(MKNC_NUM_SPINDLE)
 			break;
 		case 7:		// G0XY_INITIAL
 			dValue[NCA_X] = GetDbl(MKNC_DBL_G92X);

@@ -195,7 +195,7 @@
 #define IDC_3DSCAN_HEIGHT               1502
 #define IDC_3DSCAN_ZCUT                 1503
 #define IDC_3DSCAN_LINESPLIT            1504
-#define IDC_3DSCAN_ORIGIN               1505
+#define IDC_3DSCAN_ZORIGIN              1505
 #define IDD_MAKENCD_EX1_1               1550
 #define IDD_MAKENCD_EX2                 1600
 #define IDD_MAKENCD_EX2_1               1650
@@ -917,7 +917,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        208
 #define _APS_NEXT_COMMAND_VALUE         32829
-#define _APS_NEXT_CONTROL_VALUE         1071
+#define _APS_NEXT_CONTROL_VALUE         1072
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -18,6 +18,7 @@ public:
 	CFloatEdit	m_dHeight;
 	CFloatEdit	m_dZCut;
 	CIntEdit	m_nLineSplit;
+	BOOL		m_bZOrigin;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
