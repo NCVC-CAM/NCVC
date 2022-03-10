@@ -145,7 +145,7 @@ void C3dModelDoc::OnFile3dMake()
 	}
 
 	// ¶¬ŠJŽn
-	CThreadDlg*	pDlg = new CThreadDlg(ID_FILE_3DARA, this);
+	CThreadDlg*	pDlg = new CThreadDlg(ID_FILE_3DROUGH, this);
 	INT_PTR		nResult = pDlg->DoModal();
 	delete	pDlg;
 

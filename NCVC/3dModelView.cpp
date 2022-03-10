@@ -31,8 +31,10 @@ BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
-	ON_UPDATE_COMMAND_UI(ID_FILE_3DARA, &C3dModelView::OnUpdateFile3dRough)
-	ON_COMMAND(ID_FILE_3DARA, &C3dModelView::OnFile3dRough)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DROUGH, &C3dModelView::OnUpdateFile3dRough)
+	ON_COMMAND(ID_FILE_3DROUGH, &C3dModelView::OnFile3dRough)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DSMOOTH, &C3dModelView::OnUpdateFile3dSmooth)
+	ON_COMMAND(ID_FILE_3DSMOOTH, &C3dModelView::OnFile3dSmooth)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -471,6 +473,7 @@ void C3dModelView::OnLensKey(UINT nID)
 
 void C3dModelView::OnUpdateFile3dRough(CCmdUI* pCmdUI)
 {
+	// 荒加工スキャンが有効になる条件
 	pCmdUI->Enable(m_pSelCurve && m_pSelFace);
 }
 
@@ -488,6 +491,17 @@ void C3dModelView::OnFile3dRough()
 		// 荒加工スキャンパス描画
 		Invalidate(FALSE);
 	}
+}
+
+void C3dModelView::OnUpdateFile3dSmooth(CCmdUI* pCmdUI)
+{
+	// 仕上げ加工スキャンが有効になる条件
+	pCmdUI->Enable(!m_pSelCurve && m_pSelFace);
+}
+
+void C3dModelView::OnFile3dSmooth()
+{
+	AfxMessageBox("作業中");
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -670,8 +670,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "NCﾃﾞｰﾀの生成"
         BEGIN
-            MENUITEM "荒加工のパス生成...\tF2",             ID_FILE_3DARA
-            MENUITEM "仕上げ等高線のパス生成...\tF3",          ID_FILE_3DSHIAGE
+            MENUITEM "荒加工のパス生成...\tF2",             ID_FILE_3DROUGH
+            MENUITEM "仕上げ等高線のパス生成...\tF3",          ID_FILE_3DSMOOTH
             MENUITEM "3D切削データの生成...\tF7",           ID_FILE_3DCUT
         END
         MENUITEM SEPARATOR
@@ -826,8 +826,8 @@ BEGIN
     VK_DOWN,        ID_VIEW_DW,             VIRTKEY, NOINVERT
     VK_DOWN,        ID_VIEW_RDW,            VIRTKEY, CONTROL, NOINVERT
     VK_F1,          ID_CONTEXT_HELP,        VIRTKEY, SHIFT, NOINVERT
-    VK_F2,          ID_FILE_3DARA,          VIRTKEY, NOINVERT
-    VK_F3,          ID_FILE_3DSHIAGE,       VIRTKEY, NOINVERT
+    VK_F2,          ID_FILE_3DROUGH,        VIRTKEY, NOINVERT
+    VK_F3,          ID_FILE_3DSMOOTH,       VIRTKEY, NOINVERT
     VK_F6,          ID_WINDOW_NEXT,         VIRTKEY, NOINVERT
     VK_F7,          ID_FILE_3DCUT,          VIRTKEY, NOINVERT
     VK_F8,          ID_OPTION_MAKENC,       VIRTKEY, NOINVERT
@@ -3632,8 +3632,8 @@ BEGIN
     ID_FILE_NCINSERT        "NCｺｰﾄﾞのｶｰｿﾙ位置に他のﾌｧｲﾙを読み込み挿入します"
     ID_FILE_NCD2DXF         "DXFを出力します\nDXF出力(Ctrl+D)"
     ID_FILE_3DCUT           "スキャニングパスから3D切削データを生成します\n3D生成(F7)"
-    ID_FILE_3DARA           "3Dモデルの荒加工用スキャニングパスを生成します\n荒加工パス生成(F2)"
-    ID_FILE_3DSHIAGE        "3Dモデルの仕上げ用スキャニングパスを生成します\n仕上げパス生成(F3)"
+    ID_FILE_3DROUGH         "3Dモデルの荒加工用スキャニングパスを生成します\n荒加工パス生成(F2)"
+    ID_FILE_3DSMOOTH        "3Dモデルの仕上げ用スキャニングパスを生成します\n仕上げパス生成(F3)"
 END
 
 STRINGTABLE
