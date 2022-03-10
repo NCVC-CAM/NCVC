@@ -45,9 +45,9 @@ CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, float
 				   GetValString(NCA_Y, ptxy.y) +
 				   GetValString(NCA_U, ::RoundUp(ptuv.x)) +
 				   GetValString(NCA_V, ::RoundUp(ptuv.y));
-		if ( !strGcode.IsEmpty() )
-			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
-						strGcode + GetFeedString(dFeed) + ms_strEOB;
+		if ( !strGcode.IsEmpty() ) {
+			m_strGcode = MakeStrBlock((*ms_pfnGetGString)(1) + strGcode + GetFeedString(dFeed));
+		}
 		break;
 
 	case DXFARCDATA:
@@ -81,9 +81,9 @@ CNCMakeWire::CNCMakeWire(const CDXFdata* pDataXY, const CDXFdata* pDataUV, float
 		CString	strGcodeKL(GetValString(NCA_K, ::RoundUp(ptOrgUV.x), TRUE) +	// bSpecial==TRUE
 						   GetValString(NCA_L, ::RoundUp(ptOrgUV.y), TRUE));
 		strGcode += strGcodeKL;
-		if ( !strGcode.IsEmpty() )
-			m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(nCode) +
-						strGcode + GetFeedString(dFeed) + ms_strEOB;
+		if ( !strGcode.IsEmpty() ) {
+			m_strGcode = MakeStrBlock((*ms_pfnGetGString)(nCode) + strGcode + GetFeedString(dFeed));
+		}
 	}
 		break;
 	}
@@ -103,9 +103,9 @@ CNCMakeWire::CNCMakeWire(const CVPointF& vptXY, const CVPointF& vptUV, float dFe
 			   GetValString(NCA_Y, vptXY[0].y) +
 			   GetValString(NCA_U, ::RoundUp(pt.x)) +
 			   GetValString(NCA_V, ::RoundUp(pt.y));
-	if ( !strGcode.IsEmpty() )
-		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
-					strGcode + GetFeedString(dFeed) + ms_strEOB;
+	if ( !strGcode.IsEmpty() ) {
+		m_strGcode = MakeStrBlock((*ms_pfnGetGString)(1) + strGcode + GetFeedString(dFeed));
+	}
 
 	for ( size_t i=1; i<vptXY.size(); i++ ) {
 		pt = vptUV[i] - vptXY[i];
@@ -114,7 +114,7 @@ CNCMakeWire::CNCMakeWire(const CVPointF& vptXY, const CVPointF& vptUV, float dFe
 				   GetValString(NCA_U, ::RoundUp(pt.x)) +
 				   GetValString(NCA_V, ::RoundUp(pt.y));
 		if ( !strGcode.IsEmpty() )
-			AddGcode( (*ms_pfnGetGString)(1) + strGcode );
+			AddGcodeArray( (*ms_pfnGetGString)(1) + strGcode );
 	}
 }
 
@@ -137,12 +137,7 @@ CNCMakeWire::CNCMakeWire(int nCode, const CPointF& pt, float dFeed, float dTaper
 			strGcode += GetFeedString(dFeed);
 	}
 	// ç≈èIêÆå`
-	if ( !strTaper.IsEmpty() || !strGcode.IsEmpty() ) {
-		m_strGcode = (*ms_pfnGetLineNo)() + strTaper;
-		if ( !strGcode.IsEmpty() )
-			m_strGcode += (*ms_pfnGetGString)(nCode) + strGcode;
-		m_strGcode += ms_strEOB;
-	}
+	MakeStrBlock(strTaper + (*ms_pfnGetGString)(nCode) + strGcode);
 }
 
 // XY/UVÇÃG[0|1]à⁄ìÆ
@@ -153,9 +148,9 @@ CNCMakeWire::CNCMakeWire(const CPointF& ptxy, const CPointF& ptuv, float dFeed)
 					 GetValString(NCA_Y, ptxy.y) +
 					 GetValString(NCA_U, ::RoundUp(pt.x)) +
 					 GetValString(NCA_V, ::RoundUp(pt.y)));
-	if ( !strGcode.IsEmpty() )
-		m_strGcode = (*ms_pfnGetLineNo)() + (*ms_pfnGetGString)(1) +
-					strGcode + GetFeedString(dFeed) + ms_strEOB;
+	if ( !strGcode.IsEmpty() ) {
+		m_strGcode = MakeStrBlock((*ms_pfnGetGString)(1) + strGcode + GetFeedString(dFeed));
+	}
 }
 
 // îCà”ÇÃï∂éöóÒ∫∞ƒﬁ
@@ -214,8 +209,7 @@ void CNCMakeWire::SetStaticOption(const CNCMakeWireOpt* pNCMake)
 					 GetNum(MKWI_NUM_LINEADD)>=SIZEOF(nLineMulti) ?
 		nLineMulti[0] : nLineMulti[GetNum(MKWI_NUM_LINEADD)];
 	// --- EOB
-	ms_strEOB = GetStr(MKWI_STR_EOB).IsEmpty() ? 
-		gg_szReturn : (GetStr(MKWI_STR_EOB) + gg_szReturn);
+	ms_strEOB = GetStr(MKWI_STR_EOB) + gg_szReturn;
 	// --- â~√ﬁ∞¿ÇÃêÿçÌéwé¶
 	ms_nCircleCode = GetNum(MKWI_NUM_CIRCLECODE) == 0 ? 2 : 3;
 	// --- â~,â~å √ﬁ∞¿ÇÃê∂ê¨

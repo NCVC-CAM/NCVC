@@ -81,7 +81,7 @@ BOOL CThreadDlg::OnInitDialog()
 		}
 		break;
 
-	case ID_FILE_3DPATH:		// Nurbs曲面のNC生成スレッド
+	case ID_FILE_3DROUGH:		// Nurbs曲面の荒加工NC生成スレッド
 		pfnThread = MakeNurbs_Thread;
 		break;
 

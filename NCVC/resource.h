@@ -61,6 +61,7 @@
 #define IDS_MAKENCD_LATHEDRILL3         607
 #define IDS_MAKENCD_LATHEDRILL4         608
 #define IDS_MAKENCD_PROG                609
+#define IDS_MAKENCD_ENDMILL             610
 #define IDS_MAKE_NCD                    700
 #define IDS_MAKE_DXF                    701
 #define IDS_SETUP_MC                    702
@@ -97,8 +98,9 @@
 #define ID_FILE_DXF2NCD_WIRE            1008
 #define ID_FILE_NCINSERT                1010
 #define ID_FILE_NCD2DXF                 1011
-#define ID_FILE_3DSCAN                  1020
-#define ID_FILE_3DPATH                  1021
+#define ID_FILE_3DCUT                   1020
+#define ID_FILE_3DROUGH                 1021
+#define ID_FILE_3DSMOOTH                1022
 #define ID_FILE_CLANDOP                 1090
 #define IDD_CADBIND                     1100
 #define ID_FILE_CADBIND                 1100
@@ -194,7 +196,7 @@
 #define IDC_3DSCAN_HEIGHT               1502
 #define IDC_3DSCAN_ZCUT                 1503
 #define IDC_3DSCAN_LINESPLIT            1504
-#define IDC_3DSCAN_ORIGIN               1505
+#define IDC_3DSCAN_ZORIGIN              1505
 #define IDD_MAKENCD_EX1_1               1550
 #define IDD_MAKENCD_EX2                 1600
 #define IDD_MAKENCD_EX2_1               1650
@@ -892,6 +894,7 @@
 #define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
+#define ID_NC32829                      32829
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -915,8 +918,8 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        208
-#define _APS_NEXT_COMMAND_VALUE         32829
-#define _APS_NEXT_CONTROL_VALUE         1071
+#define _APS_NEXT_COMMAND_VALUE         32832
+#define _APS_NEXT_CONTROL_VALUE         1072
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -14,8 +14,8 @@
 IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(C3dModelDoc, CDocument)
-	ON_UPDATE_COMMAND_UI(ID_FILE_3DPATH, &C3dModelDoc::OnUpdateFile3dMake)
-	ON_COMMAND(ID_FILE_3DPATH, &C3dModelDoc::OnFile3dMake)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DCUT, &C3dModelDoc::OnUpdateFile3dMake)
+	ON_COMMAND(ID_FILE_3DCUT, &C3dModelDoc::OnFile3dMake)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -26,9 +26,9 @@ C3dModelDoc::C3dModelDoc()
 	m_pKoBody  = NULL;
 	m_pKoList = NULL;
 	m_rcMax.SetRectMinimum();
-	m_pScanCoord = NULL;
-	m_pScanX = m_pScanY = 0;
-	m_pScanNum = NULL;
+	m_pRoughCoord = NULL;
+	m_nRoughX = m_nRoughY = 0;
+	m_pRoughNum = NULL;
 }
 
 C3dModelDoc::~C3dModelDoc()
@@ -41,7 +41,7 @@ C3dModelDoc::~C3dModelDoc()
 		m_pKoList->clear();
 		delete	m_pKoList;
 	}
-	ClearScanPath();
+	ClearRoughPath();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -79,6 +79,9 @@ BOOL C3dModelDoc::OnOpenDocument(LPCTSTR lpszPathName)
 	// ﾄﾞｷｭﾒﾝﾄ変更通知ｽﾚｯﾄﾞの生成
 	OnOpenDocumentBase(lpszPathName);	// CDocBase
 
+	// 同一フォルダにあるオプションファイルの読み込み
+	m_3dOpt.Read3dOption(lpszPathName);
+
 	// 占有矩形の取得
 	BODY*		pBody;
 	CPoint3D	pt;
@@ -92,6 +95,11 @@ BOOL C3dModelDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		pt = pBody->minmaxCoord[1];
 		m_rcMax |= pt;
 	}
+#ifdef _DEBUG
+	printf("m_rcMax=(%f, %f)-(%f, %f) h=%f l=%f\n",
+		m_rcMax.left, m_rcMax.top, m_rcMax.right, m_rcMax.bottom,
+		m_rcMax.high, m_rcMax.low);
+#endif
 
 	return TRUE;
 }
@@ -106,7 +114,7 @@ void C3dModelDoc::OnCloseDocument()
 
 void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable( m_pScanCoord != NULL );
+	pCmdUI->Enable( m_pRoughCoord != NULL );
 }
 
 void C3dModelDoc::OnFile3dMake()
@@ -137,7 +145,7 @@ void C3dModelDoc::OnFile3dMake()
 	}
 
 	// 生成開始
-	CThreadDlg*	pDlg = new CThreadDlg(ID_FILE_3DPATH, this);
+	CThreadDlg*	pDlg = new CThreadDlg(ID_FILE_3DROUGH, this);
 	INT_PTR		nResult = pDlg->DoModal();
 	delete	pDlg;
 
@@ -149,19 +157,20 @@ void C3dModelDoc::OnFile3dMake()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void C3dModelDoc::ClearScanPath(void)
+void C3dModelDoc::ClearRoughPath(void)
 {
-	if ( m_pScanCoord ) {
-		FreeCoord3(m_pScanCoord, m_pScanX, m_pScanY);
-		m_pScanCoord = NULL;
+	if ( m_pRoughCoord ) {
+		FreeCoord3(m_pRoughCoord, m_nRoughX, m_nRoughY);
+		m_pRoughCoord = NULL;
+		m_nRoughX = m_nRoughY = 0;
 	}
-	if ( m_pScanNum ) {
-		delete[]	m_pScanNum;
-		m_pScanNum = NULL;
+	if ( m_pRoughNum ) {
+		delete[]	m_pRoughNum;
+		m_pRoughNum = NULL;
 	}
 }
 
-BOOL C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
+BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
 {
 	// Kodatuno User's Guide いいかげんな3xCAMの作成
 	NURBS_Func	nf;				// NURBS_Funcへのインスタンス
@@ -169,17 +178,17 @@ BOOL C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
 	Coord		plane_n;		// 分割する平面の法線ベクトル
 	Coord		path_[2000];	// 一時格納用バッファ
 	int		i, j, k,
-			D = (int)(s.dHeight / s.dZCut) + 1,	// Z方向分割数（粗加工用）
-			N = s.nLineSplit;					// スキャニングライン分割数(N < 100)
+			D = (int)(m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) / m_3dOpt.Get3dDbl(D3_DBL_ZCUT)) + 1,	// Z方向分割数（粗加工用）
+			N = m_3dOpt.Get3dInt(D3_INT_LINESPLIT);					// スキャニングライン分割数(N < 100)
 	BOOL	bResult = TRUE;
 
 	try {
 		// 座標点の初期化
-		ClearScanPath();
-		m_pScanX = D+1;
-		m_pScanY = N+1;
-		m_pScanCoord = NewCoord3(m_pScanX, m_pScanY, 2000);
-		m_pScanNum = new int[100];
+		ClearRoughPath();
+		m_nRoughX = D+1;
+		m_nRoughY = N+1;
+		m_pRoughCoord = NewCoord3(m_nRoughX, m_nRoughY, 2000);
+		m_pRoughNum = new int[100];
 
 		// ガイドカーブに沿って垂直平面をシフトしていき，加工面との交点群を求めていく
 		for ( i=0; i<=N; i++ ) {
@@ -192,33 +201,37 @@ BOOL C3dModelDoc::MakeScanPath(NURBSS* ns, NURBSC* nc, SCANSETUP& s)
 			}
 			plane_pt = nf.CalcNurbsCCoord(nc, t);		// 注目中の垂直平面上の1点
 			plane_n  = nf.CalcTanVecOnNurbsC(nc, t);	// 注目中の垂直平面の法線ベクトル
-			m_pScanNum[i] = nf.CalcIntersecPtsPlaneSearch(ns, plane_pt, plane_n, 0.5, 3, path_, 2000, RUNGE_KUTTA);  // 交点群算出
+			m_pRoughNum[i] = nf.CalcIntersecPtsPlaneSearch(ns, plane_pt, plane_n, 0.5, 3, path_, 2000, RUNGE_KUTTA);  // 交点群算出
 			// 得られた交点群を，加工面法線方向に工具半径分オフセットさせた点を得る
-			for ( j=0; j<m_pScanNum[i]; j++ ) {
+			for ( j=0; j<m_pRoughNum[i]; j++ ) {
 				Coord pt = nf.CalcNurbsSCoord(ns, path_[j].x, path_[j].y);		// 工具コンタクト点
 				Coord n = nf.CalcNormVecOnNurbsS(ns, path_[j].x, path_[j].y);	// 法線ベクトル
 				if (n.z < 0) n = n*(-1);					// 法線ベクトルの向き調整
-				m_pScanCoord[D][i][j] = pt + n*s.dBallEndmill;	// 工具半径オフセット
+				m_pRoughCoord[D][i][j] = pt + n*m_3dOpt.Get3dDbl(D3_DBL_BALLENDMILL);	// 工具半径オフセット
 			}
 		}
 
 		// 粗加工パス生成
 		for ( i=0; i<D; i++ ) {
-			for ( j=0; j<m_pScanY; j++ ) {
-				for ( k=0; k<m_pScanNum[j]; k++ ) {
-					double del = (s.dHeight - m_pScanCoord[D][j][k].z)/(double)D;
-					double Z = s.dHeight - del*(double)i;
-					m_pScanCoord[i][j][k] = SetCoord(m_pScanCoord[D][j][k].x, m_pScanCoord[D][j][k].y, Z);
+			for ( j=0; j<m_nRoughY; j++ ) {
+				for ( k=0; k<m_pRoughNum[j]; k++ ) {
+					double del = (m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) - m_pRoughCoord[D][j][k].z)/(double)D;
+					double Z = m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) - del*i;
+					m_pRoughCoord[i][j][k] = SetCoord(m_pRoughCoord[D][j][k].x, m_pRoughCoord[D][j][k].y, Z);
 				}
 			}
 		}
 	}
 	catch(...) {
 		// ライブラリ側の例外に対応
-		ClearScanPath();
+		ClearRoughPath();
 		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
 		bResult = FALSE;
 	}
+
+	// スキャンオプションの保存
+	if ( bResult )
+		m_3dOpt.Save3dOption();
 
 	return bResult;
 }

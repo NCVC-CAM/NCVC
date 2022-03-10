@@ -78,10 +78,9 @@ BOOL CMakeNCSetup1::OnInitDialog()
 	else {
 		// NURBSÉÇÅ[Éh
 		pOpt = static_cast<CMakeNurbsSetup *>(pWnd)->GetNCMakeOption();
+		m_dZCut.EnableWindow(FALSE);
 		m_ctXrevBt.EnableWindow(FALSE);
 		m_ctYrevBt.EnableWindow(FALSE);
-		for ( i=0; i<NCXYZ; i++ )
-			m_dG92[i].EnableWindow(FALSE);
 	}
 
 	m_nSpindle	= pOpt->MIL_I_SPINDLE;

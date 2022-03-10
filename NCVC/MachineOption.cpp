@@ -93,7 +93,6 @@ CMachineOption::CMachineOption()
 	ASSERT( MC_INT_NUMS == SIZEOF(g_dfNOrder) );
 	ASSERT( MC_DBL_NUMS == SIZEOF(g_dfDOrder) );
 	ASSERT( MC_FLG_NUMS == SIZEOF(g_dfBOrder) );
-	ASSERT( MC_FLG_NUMS == SIZEOF(g_dfBOrder) );
 
 	CString	strRegKey, strEntry, strResult, strFmt;
 	int		i;
@@ -235,12 +234,12 @@ void CMachineOption::Convert(void)
 
 BOOL CMachineOption::ReadMachineOption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 {
+	if ( !::IsFileExist(lpszFile, TRUE, FALSE) )
+		return FALSE;
+
 	int		i, j, k;
 	CString	strRegKey, strEntry;
 	TCHAR	szResult[_MAX_PATH];
-
-	if ( !::IsFileExist(lpszFile, TRUE, FALSE) )
-		return FALSE;
 
 	// ì∆é©ÇÃì¸óÕÇÕñ ì|Ç»ÇÃÇ≈
 	// Win32API ÇÃ GetPrivateProfile[Int|String]() ä÷êîÇégÇ§
@@ -379,16 +378,15 @@ BOOL CMachineOption::ReadMachineOption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 
 BOOL CMachineOption::SaveMachineOption(LPCTSTR lpszFile)
 {
+	if ( !lpszFile || lstrlen(lpszFile)<=0 )
+		return FALSE;
+
 	int		i, j, k;
 	CString	strRegKey, strEntry, strResult, strFormat;
 	TCHAR	szResult[_MAX_PATH];
 
-	if ( !lpszFile || lstrlen(lpszFile)<=0 )
-		return FALSE;
-/* 
-	ì∆é©ÇÃèoóÕÇÕñ ì|Ç»ÇÃÇ≈
-	Win32API ÇÃ WritePrivateProfileString() ä÷êîÇégÇ§
-*/
+	// ì∆é©ÇÃèoóÕÇÕñ ì|Ç»ÇÃÇ≈
+	// Win32API ÇÃ WritePrivateProfileString() ä÷êîÇégÇ§
 	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 
 	// intå^ñΩóﬂ

@@ -46,8 +46,10 @@ protected:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg	void OnLensKey(UINT);
-	afx_msg void OnUpdateFile3dScan(CCmdUI* pCmdUI);
-	afx_msg void OnFile3dScan();
+	afx_msg void OnUpdateFile3dRough(CCmdUI* pCmdUI);
+	afx_msg void OnFile3dRough();
+	afx_msg void OnUpdateFile3dSmooth(CCmdUI* pCmdUI);
+	afx_msg void OnFile3dSmooth();
 
 	DECLARE_MESSAGE_MAP()
 };

@@ -670,8 +670,9 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "NCﾃﾞｰﾀの生成"
         BEGIN
-            MENUITEM "スキャニングパス生成(&1)...\tF7",       ID_FILE_3DSCAN
-            MENUITEM "3D切削データの生成(&2)...\tCtrl+F7",  ID_FILE_3DPATH
+            MENUITEM "荒加工のパス生成...\tF2",             ID_FILE_3DROUGH
+            MENUITEM "仕上げ等高線のパス生成...\tF3",          ID_FILE_3DSMOOTH
+            MENUITEM "3D切削データの生成...\tF7",           ID_FILE_3DCUT
         END
         MENUITEM SEPARATOR
         MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1
@@ -825,9 +826,10 @@ BEGIN
     VK_DOWN,        ID_VIEW_DW,             VIRTKEY, NOINVERT
     VK_DOWN,        ID_VIEW_RDW,            VIRTKEY, CONTROL, NOINVERT
     VK_F1,          ID_CONTEXT_HELP,        VIRTKEY, SHIFT, NOINVERT
+    VK_F2,          ID_FILE_3DROUGH,        VIRTKEY, NOINVERT
+    VK_F3,          ID_FILE_3DSMOOTH,       VIRTKEY, NOINVERT
     VK_F6,          ID_WINDOW_NEXT,         VIRTKEY, NOINVERT
-    VK_F7,          ID_FILE_3DSCAN,         VIRTKEY, NOINVERT
-    VK_F7,          ID_FILE_3DPATH,         VIRTKEY, CONTROL, NOINVERT
+    VK_F7,          ID_FILE_3DCUT,          VIRTKEY, NOINVERT
     VK_F8,          ID_OPTION_MAKENC,       VIRTKEY, NOINVERT
     VK_HOME,        ID_VIEW_FIT,            VIRTKEY, NOINVERT
     VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
@@ -911,7 +913,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 3.91",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 4.00",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2022 MNCT K.Magara",IDC_STATIC,86,182,135,8
     LTEXT           "https://k-magara.github.io/",IDC_ABOUT_URL,86,198,135,8,SS_NOTIFY
 END
@@ -2330,25 +2332,26 @@ BEGIN
     LTEXT           "この設定は次のCADﾃﾞｰﾀ読み込みから有効",IDC_STATIC,45,205,142,8
 END
 
-IDD_3DSCAN DIALOGEX 0, 0, 310, 231
+IDD_3DSCAN DIALOGEX 0, 0, 200, 150
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "3Dモデルのスキャニング"
+CAPTION "粗加工用スキャニングパスの生成"
 FONT 9, "MS UI Gothic", 400, 0, 0x80
 BEGIN
-    DEFPUSHBUTTON   "&OK",IDOK,58,210,50,14
-    PUSHBUTTON      "キャンセル",IDCANCEL,134,210,50,14
     LTEXT           "ボールエンドミル半径(&R)",IDC_STATIC,7,9,68,8
-    EDITTEXT        IDC_3DSCAN_BALLENDMILL,100,7,40,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_3DSCAN_BALLENDMILL,100,7,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,145,9,11,8
     LTEXT           "ワークの高さ(&H)",IDC_STATIC,7,29,44,8
-    EDITTEXT        IDC_3DSCAN_HEIGHT,100,27,40,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_3DSCAN_HEIGHT,100,27,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,145,29,11,8
     LTEXT           "１回の切り込み量(&C)",IDC_STATIC,7,49,60,8
-    EDITTEXT        IDC_3DSCAN_ZCUT,100,47,40,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_3DSCAN_ZCUT,100,47,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "mm",IDC_STATIC,145,49,11,8
     LTEXT           "スキャニングラインの分割数(&S)",IDC_STATIC,7,69,85,8
-    EDITTEXT        IDC_3DSCAN_LINESPLIT,100,67,40,12,ES_AUTOHSCROLL
-    CONTROL         "加工原点の自動調整(&G)",IDC_3DSCAN_ORIGIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,89,88,10
+    EDITTEXT        IDC_3DSCAN_LINESPLIT,100,67,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "< 100",IDC_STATIC,145,69,17,8
+    CONTROL         "NC生成時ワーク上面をZ軸のゼロにする",IDC_3DSCAN_ZORIGIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,89,129,10
+    DEFPUSHBUTTON   "&OK",IDOK,37,129,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,113,129,50,14
 END
 
 
@@ -2358,8 +2361,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,9,1,0
- PRODUCTVERSION 3,9,1,0
+ FILEVERSION 4,0,0,0
+ PRODUCTVERSION 4,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -2377,13 +2380,13 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "3.9.1.0"
+            VALUE "FileVersion", "4.0.0.0"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2022 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "3.9.1.0"
+            VALUE "ProductVersion", "4.0.0.0"
             VALUE "SpecialBuild", "Boost C++ 1.78, GLEW 2.10, Kodatuno R3.4kai"
         END
     END
@@ -2853,9 +2856,9 @@ BEGIN
     IDD_3DSCAN, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 303
+        RIGHTMARGIN, 193
         TOPMARGIN, 7
-        BOTTOMMARGIN, 224
+        BOTTOMMARGIN, 143
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -3628,8 +3631,9 @@ BEGIN
     ID_FILE_DXF2NCD_WIRE    "ﾜｲﾔ加工機NCﾃﾞｰﾀを生成します\nﾜｲﾔ加工機NC生成(Shift+Ctrl+Alt+F7)"
     ID_FILE_NCINSERT        "NCｺｰﾄﾞのｶｰｿﾙ位置に他のﾌｧｲﾙを読み込み挿入します"
     ID_FILE_NCD2DXF         "DXFを出力します\nDXF出力(Ctrl+D)"
-    ID_FILE_3DSCAN          "3Dモデルのスキャニングパスを生成します\nスキャニングパス生成(F7)"
-    ID_FILE_3DPATH          "スキャニングパスから3D切削データを生成します\n3D生成(Ctrl+F7)"
+    ID_FILE_3DCUT           "スキャニングパスから3D切削データを生成します\n3D生成(F7)"
+    ID_FILE_3DROUGH         "3Dモデルの荒加工用スキャニングパスを生成します\n荒加工パス生成(F2)"
+    ID_FILE_3DSMOOTH        "3Dモデルの仕上げ用スキャニングパスを生成します\n仕上げパス生成(F3)"
 END
 
 STRINGTABLE
@@ -4192,6 +4196,7 @@ STRINGTABLE
 BEGIN
     IDS_MAKENCD_LATHEDRILL4 "(DRILL=%.4f start)"
     IDS_MAKENCD_PROG        "O%04d"
+    IDS_MAKENCD_ENDMILL     "(Endmill=R%.3f)"
 END
 
 #endif    // 日本語 (日本) resources

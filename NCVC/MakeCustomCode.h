@@ -1,17 +1,20 @@
 // ∂Ω¿—ÕØ¿ﬁ∞, ÃØ¿ﬁ∞èàóùÇÃäÓíÍ∏◊Ω
-//	from TH_MakeNCD.cpp TH_MakeLathe.cpp
+//	from TH_MakeXXX.cpp
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
 
 class	CDXFDoc;
+class	C3dModelDoc;
 class	CDXFdata;
 class	CNCMakeOption;
 
 class CMakeCustomCode
 {
-	const CDXFDoc*			m_pDoc;
 	const CNCMakeOption*	m_pMakeOpt;
+	// boost::variant<> Ç…Ç∑ÇÈÇŸÇ«Ç≈Ç‡Ç»Ç¢
+	const CDXFDoc*			m_pDXFDoc;
+	const C3dModelDoc*		m_p3DMDoc;
 
 //	BOOL	IsNCchar(LPCTSTR) const;
 
@@ -20,7 +23,8 @@ protected:
 	const CDXFdata*	m_pData;			// îhê∂∏◊ΩÇ©ÇÁéQè∆
 
 public:
-	CMakeCustomCode(const CDXFDoc*, const CDXFdata*, const CNCMakeOption*);
+	CMakeCustomCode(const CDXFDoc*,     const CDXFdata*, const CNCMakeOption*);
+	CMakeCustomCode(const C3dModelDoc*, const CDXFdata*, const CNCMakeOption*);
 
 	boost::tuple<int, CString>	ReplaceCustomCode(const std::string&) const;
 };

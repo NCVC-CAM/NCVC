@@ -8,7 +8,7 @@
 #include "3dModelDoc.h"
 #include "3dModelView.h"
 #include "ViewOption.h"
-#include "3dScanSetupDlg.h"
+#include "3dRoughScanSetupDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -31,8 +31,10 @@ BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
-	ON_UPDATE_COMMAND_UI(ID_FILE_3DSCAN, &C3dModelView::OnUpdateFile3dScan)
-	ON_COMMAND(ID_FILE_3DSCAN, &C3dModelView::OnFile3dScan)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DROUGH, &C3dModelView::OnUpdateFile3dRough)
+	ON_COMMAND(ID_FILE_3DROUGH, &C3dModelView::OnFile3dRough)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DSMOOTH, &C3dModelView::OnUpdateFile3dSmooth)
+	ON_COMMAND(ID_FILE_3DSMOOTH, &C3dModelView::OnFile3dSmooth)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -241,12 +243,12 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 
 void C3dModelView::DrawScanPath(void)
 {
-	Coord***	pScanCoord = GetDocument()->GetScanPathCoord();
-	if ( !pScanCoord )
+	Coord***	pRoughCoord = GetDocument()->GetRoughCoord();
+	if ( !pRoughCoord )
 		return;
 
 	int		i, j, k, mx, my, mz;
-	boost::tie(mx, my) = GetDocument()->GetScanNumXY();
+	boost::tie(mx, my) = GetDocument()->GetRoughNumXY();
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	col = pOpt->GetDxfDrawColor(DXFCOL_MOVE);
 
@@ -254,9 +256,9 @@ void C3dModelView::DrawScanPath(void)
 	::glBegin(GL_POINTS);
 	for ( i=0; i<mx; i++ ) {
 		for ( j=0; j<my; j++ ) {
-			mz = GetDocument()->GetScanNumZ(j);
+			mz = GetDocument()->GetRoughNumZ(j);
 			for ( k=0; k<mz; k++ ) {
-				::glVertex3d(pScanCoord[i][j][k].x, pScanCoord[i][j][k].y, pScanCoord[i][j][k].z);
+				::glVertex3d(pRoughCoord[i][j][k].x, pRoughCoord[i][j][k].y, pRoughCoord[i][j][k].z);
 			}
 		}
 	}
@@ -469,24 +471,37 @@ void C3dModelView::OnLensKey(UINT nID)
 	}
 }
 
-void C3dModelView::OnUpdateFile3dScan(CCmdUI* pCmdUI)
+void C3dModelView::OnUpdateFile3dRough(CCmdUI* pCmdUI)
 {
+	// 荒加工スキャンが有効になる条件
 	pCmdUI->Enable(m_pSelCurve && m_pSelFace);
 }
 
-void C3dModelView::OnFile3dScan()
+void C3dModelView::OnFile3dRough()
 {
-	C3dScanSetupDlg		dlg;
+	// 荒加工スキャン設定
+	C3dRoughScanSetupDlg	dlg(GetDocument());
 	if ( dlg.DoModal() != IDOK )
 		return;
 
 	// ウエイトカーソル
 	CWaitCursor	wait;
-	// スキャンパスの生成
-	if ( GetDocument()->MakeScanPath(m_pSelFace, m_pSelCurve, dlg.m) ) {
-		// スキャンパス描画
+	// 荒加工スキャンパスの生成
+	if ( GetDocument()->MakeRoughPath(m_pSelFace, m_pSelCurve) ) {
+		// 荒加工スキャンパス描画
 		Invalidate(FALSE);
 	}
+}
+
+void C3dModelView::OnUpdateFile3dSmooth(CCmdUI* pCmdUI)
+{
+	// 仕上げ加工スキャンが有効になる条件
+	pCmdUI->Enable(!m_pSelCurve && m_pSelFace);
+}
+
+void C3dModelView::OnFile3dSmooth()
+{
+	AfxMessageBox("作業中");
 }
 
 /////////////////////////////////////////////////////////////////////////////
