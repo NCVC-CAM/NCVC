@@ -39,7 +39,7 @@ CMakeCustomCode::CMakeCustomCode
 	m_p3DMDoc	= pDoc;
 	m_pData		= pData;
 	m_pMakeOpt	= pMakeOpt;
-	m_strOrderIndex.SetElement(SIZEOF(g_szCustomCode), g_szCustomCode);	// ‹¤’Ê·°Ü°ÄÞ‚ð“o˜^
+	m_strOrderIndex.SetElement(SIZEOF(g_szCustomCode), g_szCustomCode);
 }
 
 tuple<int, CString>	CMakeCustomCode::ReplaceCustomCode(const std::string& str) const

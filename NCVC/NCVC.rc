@@ -670,8 +670,9 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "NCﾃﾞｰﾀの生成"
         BEGIN
-            MENUITEM "スキャニングパス生成(&1)...\tF7",       ID_FILE_3DSCAN
-            MENUITEM "3D切削データの生成(&2)...\tCtrl+F7",  ID_FILE_3DPATH
+            MENUITEM "荒加工のパス生成...\tF2",             ID_FILE_3DARA
+            MENUITEM "仕上げ等高線のパス生成...\tF3",          ID_FILE_3DSHIAGE
+            MENUITEM "3D切削データの生成...\tF7",           ID_FILE_3DCUT
         END
         MENUITEM SEPARATOR
         MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1
@@ -825,9 +826,10 @@ BEGIN
     VK_DOWN,        ID_VIEW_DW,             VIRTKEY, NOINVERT
     VK_DOWN,        ID_VIEW_RDW,            VIRTKEY, CONTROL, NOINVERT
     VK_F1,          ID_CONTEXT_HELP,        VIRTKEY, SHIFT, NOINVERT
+    VK_F2,          ID_FILE_3DARA,          VIRTKEY, NOINVERT
+    VK_F3,          ID_FILE_3DSHIAGE,       VIRTKEY, NOINVERT
     VK_F6,          ID_WINDOW_NEXT,         VIRTKEY, NOINVERT
-    VK_F7,          ID_FILE_3DSCAN,         VIRTKEY, NOINVERT
-    VK_F7,          ID_FILE_3DPATH,         VIRTKEY, CONTROL, NOINVERT
+    VK_F7,          ID_FILE_3DCUT,          VIRTKEY, NOINVERT
     VK_F8,          ID_OPTION_MAKENC,       VIRTKEY, NOINVERT
     VK_HOME,        ID_VIEW_FIT,            VIRTKEY, NOINVERT
     VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
@@ -2332,7 +2334,7 @@ END
 
 IDD_3DSCAN DIALOGEX 0, 0, 200, 150
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "3Dモデルのスキャニング"
+CAPTION "粗加工用スキャニングパスの生成"
 FONT 9, "MS UI Gothic", 400, 0, 0x80
 BEGIN
     LTEXT           "ボールエンドミル半径(&R)",IDC_STATIC,7,9,68,8
@@ -3629,8 +3631,9 @@ BEGIN
     ID_FILE_DXF2NCD_WIRE    "ﾜｲﾔ加工機NCﾃﾞｰﾀを生成します\nﾜｲﾔ加工機NC生成(Shift+Ctrl+Alt+F7)"
     ID_FILE_NCINSERT        "NCｺｰﾄﾞのｶｰｿﾙ位置に他のﾌｧｲﾙを読み込み挿入します"
     ID_FILE_NCD2DXF         "DXFを出力します\nDXF出力(Ctrl+D)"
-    ID_FILE_3DSCAN          "3Dモデルのスキャニングパスを生成します\nスキャニングパス生成(F7)"
-    ID_FILE_3DPATH          "スキャニングパスから3D切削データを生成します\n3D生成(Ctrl+F7)"
+    ID_FILE_3DCUT           "スキャニングパスから3D切削データを生成します\n3D生成(F7)"
+    ID_FILE_3DARA           "3Dモデルの荒加工用スキャニングパスを生成します\n荒加工パス生成(F2)"
+    ID_FILE_3DSHIAGE        "3Dモデルの仕上げ用スキャニングパスを生成します\n仕上げパス生成(F3)"
 END
 
 STRINGTABLE

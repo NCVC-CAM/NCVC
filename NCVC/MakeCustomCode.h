@@ -1,5 +1,5 @@
 // ¶½ÀÑÍ¯ÀŞ°, Ì¯ÀŞ°ˆ—‚ÌŠî’ê¸×½
-//	from TH_MakeNCD.cpp TH_MakeLathe.cpp
+//	from TH_MakeXXX.cpp
 //////////////////////////////////////////////////////////////////////
 
 #pragma once

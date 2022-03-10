@@ -21,7 +21,7 @@ enum {		// BOOLŒ^
 
 class C3dOption
 {
-friend	class	C3dScanSetupDlg;
+friend	class	C3dRoughScanSetupDlg;
 
 	CString		m_str3dOptionFile;
 

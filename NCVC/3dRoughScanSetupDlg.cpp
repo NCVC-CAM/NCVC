@@ -1,29 +1,29 @@
-﻿// 3dScanSetupDlg.cpp : 実装ファイル
+﻿// C3dRoughScanSetupDlg.cpp : 実装ファイル
 //
 
 #include "stdafx.h"
 #include "NCVC.h"
 #include "3dOption.h"
 #include "3dModelDoc.h"
-#include "3dScanSetupDlg.h"
+#include "3dRoughScanSetupDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-BEGIN_MESSAGE_MAP(C3dScanSetupDlg, CDialog)
+BEGIN_MESSAGE_MAP(C3dRoughScanSetupDlg, CDialog)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dScanSetupDlg ダイアログ
 
-C3dScanSetupDlg::C3dScanSetupDlg(C3dModelDoc* pDoc, CWnd*) : CDialog(C3dScanSetupDlg::IDD, NULL)
+C3dRoughScanSetupDlg::C3dRoughScanSetupDlg(C3dModelDoc* pDoc, CWnd*) : CDialog(C3dRoughScanSetupDlg::IDD, NULL)
 {
 	m_pDoc = pDoc;
 	m_bZOrigin = TRUE;
 }
 
-void C3dScanSetupDlg::DoDataExchange(CDataExchange* pDX)
+void C3dRoughScanSetupDlg::DoDataExchange(CDataExchange* pDX)
 {
 	__super::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_3DSCAN_BALLENDMILL, m_dBallEndmill);
@@ -36,7 +36,7 @@ void C3dScanSetupDlg::DoDataExchange(CDataExchange* pDX)
 /////////////////////////////////////////////////////////////////////////////
 // C3dScanSetupDlg メッセージ ハンドラー
 
-BOOL C3dScanSetupDlg::OnInitDialog() 
+BOOL C3dRoughScanSetupDlg::OnInitDialog() 
 {
 	__super::OnInitDialog();
 
@@ -53,7 +53,7 @@ BOOL C3dScanSetupDlg::OnInitDialog()
 	return TRUE;
 }
 
-void C3dScanSetupDlg::OnOK()
+void C3dRoughScanSetupDlg::OnOK()
 {
 	UpdateData();
 	if ( m_nLineSplit >= 100 ) {

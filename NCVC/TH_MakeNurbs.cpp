@@ -208,8 +208,8 @@ BOOL MakeNurbs_MainFunc(void)
 {
 	int		mx, my, mz, i, j, k,
 			fx, fy;
-	Coord***	pScanCoord = g_pDoc->GetScanPathCoord();
-	tie(mx, my) = g_pDoc->GetScanNumXY();
+	Coord***	pRoughCoord = g_pDoc->GetRoughCoord();
+	tie(mx, my) = g_pDoc->GetRoughNumXY();
 
 	// フェーズ更新
 	SendFaseMessage(g_pParent, g_nFase, mx*my);
@@ -220,23 +220,23 @@ BOOL MakeNurbs_MainFunc(void)
 	// 開始点の検索と移動
 	tie(fx, fy) = MoveFirstPoint(my);
 
-	// スキャン座標の生成
+	// スキャン座標の生成（記述が冗長なのでなんとかしたい）
 	for ( i=0; i<mx && IsThread(); i++ ) {				// Zの階層
 		if ( fy == 0 ) {
 			for ( j=0; j<my && IsThread(); j++ ) {		// スキャン分割数
-				mz = g_pDoc->GetScanNumZ(j);
+				mz = g_pDoc->GetRoughNumZ(j);
 				if ( fx == 0 ) {
 					k = 0;
-					g_pfnAddZcut(pScanCoord[i][j][k].z);	// Z軸の下降
+					g_pfnAddZcut(pRoughCoord[i][j][k].z);	// Z軸の下降
 					for ( ; k<mz && IsThread(); k++ ) {
-						g_pfnAddCoord(pScanCoord[i][j][k]);	// Coord座標の生成 AddCoord_Normal() | AddCoord_ZOrigin()
+						g_pfnAddCoord(pRoughCoord[i][j][k]);	// Coord座標の生成 AddCoord_Normal() | AddCoord_ZOrigin()
 					}
 				}
 				else {
 					k = mz - 1;
-					g_pfnAddZcut(pScanCoord[i][j][k].z);
+					g_pfnAddZcut(pRoughCoord[i][j][k].z);
 					for ( ; k>=0 && IsThread(); k-- ) {
-						g_pfnAddCoord(pScanCoord[i][j][k]);
+						g_pfnAddCoord(pRoughCoord[i][j][k]);
 					}
 				}
 				SetProgressPos(g_pParent, i*my+j);
@@ -245,19 +245,19 @@ BOOL MakeNurbs_MainFunc(void)
 		}
 		else {
 			for ( j=my-1; j>=0 && IsThread(); j-- ) {
-				mz = g_pDoc->GetScanNumZ(j);
+				mz = g_pDoc->GetRoughNumZ(j);
 				if ( fx == 0 ) {
 					k = 0;
-					g_pfnAddZcut(pScanCoord[i][j][k].z);
+					g_pfnAddZcut(pRoughCoord[i][j][k].z);
 					for ( ; k<mz && IsThread(); k++ ) {
-						g_pfnAddCoord(pScanCoord[i][j][k]);
+						g_pfnAddCoord(pRoughCoord[i][j][k]);
 					}
 				}
 				else {
 					k = mz - 1;
-					g_pfnAddZcut(pScanCoord[i][j][k].z);
+					g_pfnAddZcut(pRoughCoord[i][j][k].z);
 					for ( ; k>=0 && IsThread(); k-- ) {
-						g_pfnAddCoord(pScanCoord[i][j][k]);
+						g_pfnAddCoord(pRoughCoord[i][j][k]);
 					}
 				}
 				SetProgressPos(g_pParent, i*my+my-j);
@@ -313,13 +313,13 @@ void AddZcut_ZOrigin(double z)
 tuple<int, int>	MoveFirstPoint(int my)
 {
 	int		fx = 0, fy = 0;
-	Coord***	pScanCoord = g_pDoc->GetScanPathCoord();
+	Coord***	pRoughCoord = g_pDoc->GetRoughCoord();
 
 	// 4角の座標
-	CPoint3D	pt0(pScanCoord[0][0][0]),
-				pt1(pScanCoord[0][0][g_pDoc->GetScanNumZ(0)-1]),
-				pt2(pScanCoord[0][my-1][0]),
-				pt3(pScanCoord[0][my-1][g_pDoc->GetScanNumZ(my-1)-1]);
+	CPoint3D	pt0(pRoughCoord[0][0][0]),
+				pt1(pRoughCoord[0][0][g_pDoc->GetRoughNumZ(0)-1]),
+				pt2(pRoughCoord[0][my-1][0]),
+				pt3(pRoughCoord[0][my-1][g_pDoc->GetRoughNumZ(my-1)-1]);
 	// 距離計算(sqrt()いらないけど4点くらいなら問題なし)
 	std::vector<double>		v;
 	v.push_back( pt0.hypot() );
