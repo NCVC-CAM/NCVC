@@ -748,8 +748,6 @@
 #define IDS_REG_DXF_IGNORE              10123
 #define IDS_REG_DXF_SORTLAYER1          10130
 #define IDS_REG_DXF_SORTLAYER2          10131
-#define IDS_REG_3DM_ROUGH               10150
-#define IDS_REG_3DM_SMOOTH              10151
 #define IDS_REG_DXF_CUT                 10190
 #define IDS_REG_DXF_G90                 10191
 #define IDS_REG_DXF_CIRCLEIJ            10192

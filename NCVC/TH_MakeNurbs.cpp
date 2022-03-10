@@ -66,7 +66,7 @@ static inline	void	_AddMovePoint(CPoint3D& pt)
 	g_obMakeData.Add(pNCD);
 	// R“_‚Ü‚ÅZŽ²‰º~
 	if ( g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ZORIGIN) ) {
-		pt.z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_HEIGHT);
+		pt.z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_WORKHEIGHT);
 	}
 	float z = (float)pt.z + GetDbl(MKNC_DBL_ZG0STOP);
 	pNCD = new CNCMakeMill(0, z, 0.0f);
@@ -288,7 +288,7 @@ void AddCoord_Normal(const Coord& c)
 void AddCoord_ZOrigin(const Coord& c)
 {
 	CPoint3D		pt(c);
-	pt.z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_HEIGHT);
+	pt.z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_WORKHEIGHT);
 
 	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
 	ASSERT( pNCD );
@@ -304,7 +304,7 @@ void AddZcut_Normal(double z)
 
 void AddZcut_ZOrigin(double z)
 {
-	z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_HEIGHT);
+	z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_WORKHEIGHT);
 	CNCMakeMill* pNCD = new CNCMakeMill(1, (float)z, GetDbl(MKNC_DBL_ZFEED));
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);

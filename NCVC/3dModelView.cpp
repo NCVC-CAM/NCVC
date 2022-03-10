@@ -487,7 +487,7 @@ void C3dModelView::OnFile3dRough()
 	// ウエイトカーソル
 	CWaitCursor	wait;
 	// 荒加工スキャンパスの生成
-	if ( GetDocument()->MakeRoughPath(m_pSelFace, m_pSelCurve) ) {
+	if ( GetDocument()->MakeRoughCoord(m_pSelFace, m_pSelCurve) ) {
 		// 荒加工スキャンパス描画
 		Invalidate(FALSE);
 	}

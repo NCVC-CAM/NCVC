@@ -4199,12 +4199,6 @@ BEGIN
     IDS_MAKENCD_ENDMILL     "(Endmill=R%.3f)"
 END
 
-STRINGTABLE
-BEGIN
-    IDS_REG_3DM_ROUGH       "Rough"
-    IDS_REG_3DM_SMOOTH      "Smooth"
-END
-
 #endif    // “ú–{Œê (“ú–{) resources
 /////////////////////////////////////////////////////////////////////////////
 

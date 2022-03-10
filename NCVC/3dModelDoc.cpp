@@ -41,7 +41,7 @@ C3dModelDoc::~C3dModelDoc()
 		m_pKoList->clear();
 		delete	m_pKoList;
 	}
-	ClearRoughPath();
+	ClearRoughCoord();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -157,7 +157,7 @@ void C3dModelDoc::OnFile3dMake()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void C3dModelDoc::ClearRoughPath(void)
+void C3dModelDoc::ClearRoughCoord(void)
 {
 	if ( m_pRoughCoord ) {
 		FreeCoord3(m_pRoughCoord, m_nRoughX, m_nRoughY);
@@ -170,7 +170,12 @@ void C3dModelDoc::ClearRoughPath(void)
 	}
 }
 
-BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
+void C3dModelDoc::ClearContourCoord(void)
+{
+	m_vvContourCoord.clear();
+}
+
+BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 {
 	// Kodatuno User's Guide いいかげんな3xCAMの作成
 	NURBS_Func	nf;				// NURBS_Funcへのインスタンス
@@ -178,13 +183,13 @@ BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
 	Coord		plane_n;		// 分割する平面の法線ベクトル
 	Coord		path_[2000];	// 一時格納用バッファ
 	int		i, j, k,
-			D = (int)(m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) / m_3dOpt.Get3dDbl(D3_DBL_ZCUT)) + 1,	// Z方向分割数（粗加工用）
+			D = (int)(m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT) / m_3dOpt.Get3dDbl(D3_DBL_ROUGH_ZCUT)) + 1,	// Z方向分割数（粗加工用）
 			N = m_3dOpt.Get3dInt(D3_INT_LINESPLIT);					// スキャニングライン分割数(N < 100)
 	BOOL	bResult = TRUE;
 
 	try {
 		// 座標点の初期化
-		ClearRoughPath();
+		ClearRoughCoord();
 		m_nRoughX = D+1;
 		m_nRoughY = N+1;
 		m_pRoughCoord = NewCoord3(m_nRoughX, m_nRoughY, 2000);
@@ -215,8 +220,8 @@ BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
 		for ( i=0; i<D; i++ ) {
 			for ( j=0; j<m_nRoughY; j++ ) {
 				for ( k=0; k<m_pRoughNum[j]; k++ ) {
-					double del = (m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) - m_pRoughCoord[D][j][k].z)/(double)D;
-					double Z = m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) - del*i;
+					double del = (m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT) - m_pRoughCoord[D][j][k].z)/(double)D;
+					double Z = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT) - del*i;
 					m_pRoughCoord[i][j][k] = SetCoord(m_pRoughCoord[D][j][k].x, m_pRoughCoord[D][j][k].y, Z);
 				}
 			}
@@ -224,7 +229,7 @@ BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
 	}
 	catch(...) {
 		// ライブラリ側の例外に対応
-		ClearRoughPath();
+		ClearRoughCoord();
 		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
 		bResult = FALSE;
 	}
@@ -232,6 +237,14 @@ BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
 	// スキャンオプションの保存
 	if ( bResult )
 		m_3dOpt.Save3dOption();
+
+	return bResult;
+}
+
+BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
+{
+	// Kodatuno User's Guide 等高線を生成する
+	BOOL	bResult = TRUE;
 
 	return bResult;
 }

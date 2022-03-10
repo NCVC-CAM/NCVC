@@ -24,10 +24,15 @@ static	const	int		g_dfNOrder[] = {
 static	LPCTSTR	g_szDOrder[] = {
 	"BallEndmill",
 	"WorkHeight",
-	"ZCut"
+	"RoughZcut",
+	"ContourSpace",
+	"ContourZmin",
+	"ContourZmax",
+	"ContourZcut"
 };
 static	const	float	g_dfDOrder[] = {
-	3.0f, 50.0f, 5.0f
+	3.0f, 50.0f, 5.0f,
+	0.2f, -20.0f, 40.0f, 3.0f
 };
 // BOOLå^ñΩóﬂ
 static	LPCTSTR	g_szFOrder[] = {
@@ -90,7 +95,7 @@ BOOL C3dOption::Read3dOption(LPCTSTR lpszFile)
 
 	// ì∆é©ÇÃì¸óÕÇÕñ ì|Ç»ÇÃÇ≈
 	// Win32API ÇÃ GetPrivateProfile[Int|String]() ä÷êîÇégÇ§
-	VERIFY(strRegKey.LoadString(IDS_REG_3DM_ROUGH));
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 
 	// intå^ñΩóﬂ
 	for ( i=0; i<SIZEOF(m_unNums); i++ ) {
@@ -116,7 +121,7 @@ BOOL C3dOption::Save3dOption(void)
 
 	// ì∆é©ÇÃèoóÕÇÕñ ì|Ç»ÇÃÇ≈
 	// Win32API ÇÃ WritePrivateProfileString() ä÷êîÇégÇ§
-	VERIFY(strRegKey.LoadString(IDS_REG_3DM_ROUGH));
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
 
 	// intå^ñΩóﬂ
 	for ( i=0; i<SIZEOF(m_unNums); i++ ) {
