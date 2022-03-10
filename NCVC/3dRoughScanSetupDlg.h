@@ -13,7 +13,7 @@ public:
 	C3dRoughScanSetupDlg(C3dModelDoc*, CWnd* pParent = nullptr);   // 標準コンストラクター
 
 // ダイアログ データ
-	enum { IDD = IDD_3DSCAN };
+	enum { IDD = IDD_3DROUGH };
 	CFloatEdit	m_dBallEndmill;
 	CFloatEdit	m_dHeight;
 	CFloatEdit	m_dZCut;

@@ -90,7 +90,7 @@ BOOL C3dOption::Read3dOption(LPCTSTR lpszFile)
 
 	// “Æ©‚Ì“ü—Í‚Í–Ê“|‚È‚Ì‚Å
 	// Win32API ‚Ì GetPrivateProfile[Int|String]() ŠÖ”‚ğg‚¤
-	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
+	VERIFY(strRegKey.LoadString(IDS_REG_3DM_ROUGH));
 
 	// intŒ^–½—ß
 	for ( i=0; i<SIZEOF(m_unNums); i++ ) {
@@ -116,7 +116,7 @@ BOOL C3dOption::Save3dOption(void)
 
 	// “Æ©‚Ìo—Í‚Í–Ê“|‚È‚Ì‚Å
 	// Win32API ‚Ì WritePrivateProfileString() ŠÖ”‚ğg‚¤
-	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
+	VERIFY(strRegKey.LoadString(IDS_REG_3DM_ROUGH));
 
 	// intŒ^–½—ß
 	for ( i=0; i<SIZEOF(m_unNums); i++ ) {

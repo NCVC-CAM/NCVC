@@ -25,7 +25,7 @@ class C3dModelView : public CViewBaseGL
 	NURBSS*		m_pSelFace;			// ‘I‘ð‚µ‚½‹È–Ê
 
 	void	DrawBody(RENDERMODE);
-	void	DrawScanPath(void);
+	void	DrawRoughPath(void);
 	void	DoSelect(const CPoint&);
 	NURBSC*	DoSelectCurve(const CPoint&);
 	NURBSS*	DoSelectFace (const CPoint&);

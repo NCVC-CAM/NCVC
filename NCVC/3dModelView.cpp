@@ -169,7 +169,7 @@ void C3dModelView::OnDraw(CDC* pDC)
 
 	// スキャンパスの描画 Kodatuno
 	::glDisable(GL_LIGHTING);
-	DrawScanPath();
+	DrawRoughPath();
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
@@ -241,7 +241,7 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 	}
 }
 
-void C3dModelView::DrawScanPath(void)
+void C3dModelView::DrawRoughPath(void)
 {
 	Coord***	pRoughCoord = GetDocument()->GetRoughCoord();
 	if ( !pRoughCoord )

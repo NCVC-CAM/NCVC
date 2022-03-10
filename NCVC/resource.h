@@ -191,7 +191,7 @@
 #define IDC_MKNCEX_LAYERCOMMENT         1454
 #define IDC_MKNCEX_LAYERCODE            1455
 #define IDC_MKNCEX_NEW                  1459
-#define IDD_3DSCAN                      1500
+#define IDD_3DROUGH                     1500
 #define IDC_3DSCAN_BALLENDMILL          1501
 #define IDC_3DSCAN_HEIGHT               1502
 #define IDC_3DSCAN_ZCUT                 1503
@@ -748,6 +748,8 @@
 #define IDS_REG_DXF_IGNORE              10123
 #define IDS_REG_DXF_SORTLAYER1          10130
 #define IDS_REG_DXF_SORTLAYER2          10131
+#define IDS_REG_3DM_ROUGH               10150
+#define IDS_REG_3DM_SMOOTH              10151
 #define IDS_REG_DXF_CUT                 10190
 #define IDS_REG_DXF_G90                 10191
 #define IDS_REG_DXF_CIRCLEIJ            10192
