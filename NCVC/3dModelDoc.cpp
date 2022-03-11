@@ -285,5 +285,9 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 		bResult = FALSE;
 	}
 
+	// スキャンオプションの保存
+	if ( bResult )
+		m_3dOpt.Save3dOption();
+
 	return bResult;
 }
