@@ -115,7 +115,7 @@ void C3dModelDoc::OnCloseDocument()
 
 void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable( m_pRoughCoord != NULL );
+	pCmdUI->Enable(m_pRoughCoord!=NULL || !m_vvContourCoord.empty() );
 }
 
 void C3dModelDoc::OnFile3dMake()
@@ -145,8 +145,20 @@ void C3dModelDoc::OnFile3dMake()
 		pDoc->OnCloseDocument();
 	}
 
+	// 生成スレッドへのパラメータ準備
+	int		nID;
+	WPARAM	wParam;
+	if ( m_pRoughCoord != NULL ) {
+		nID = ID_FILE_3DROUGH;		// MakeNurbs_Thread()スレッド起動用
+		wParam = ID_FILE_3DROUGH;	// MakeNurbs_Thread()に渡す用
+	}
+	else {
+		nID = ID_FILE_3DSMOOTH;
+		wParam = ID_FILE_3DSMOOTH;
+	}
+
 	// 生成開始
-	CThreadDlg*	pDlg = new CThreadDlg(ID_FILE_3DROUGH, this);
+	CThreadDlg*	pDlg = new CThreadDlg(nID, this, wParam);
 	INT_PTR		nResult = pDlg->DoModal();
 	delete	pDlg;
 

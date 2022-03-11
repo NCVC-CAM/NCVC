@@ -81,7 +81,8 @@ BOOL CThreadDlg::OnInitDialog()
 		}
 		break;
 
-	case ID_FILE_3DROUGH:		// Nurbs曲面の荒加工NC生成スレッド
+	case ID_FILE_3DROUGH:		// Nurbs曲面の荒加工NC生成
+	case ID_FILE_3DSMOOTH:		// 　　〃　　　仕上げ等高線生成
 		pfnThread = MakeNurbs_Thread;
 		break;
 
