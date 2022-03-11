@@ -21,12 +21,12 @@ class C3dModelDoc : public CDocBase
 	BODY*		m_pKoBody;			// Kodatuno Body
 	BODYList*	m_pKoList;			// Kodatuno Body List
 
-	Coord***	m_pRoughCoord;		// 生成された荒加工パスを格納
+	Coord***	m_pRoughCoord;		// 荒加工スキャンパス
 	int			m_nRoughX,
 				m_nRoughY;
 	int*		m_pRoughNum;		// スキャンライン1本ごとの加工点数を格納
 
-	std::vector<VCoord>	m_vvContourCoord;	// 等高線座標
+	std::vector<VCoord>	m_vvContourCoord;	// 仕上げ等高線座標
 
 protected:
 	C3dModelDoc();

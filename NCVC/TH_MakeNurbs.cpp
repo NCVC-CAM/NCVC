@@ -36,7 +36,8 @@ static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
 // ｻﾌﾞ関数
 static	void	InitialVariable(void);			// 変数初期化
 static	void	SetStaticOption(void);			// 静的変数の初期化
-static	BOOL	MakeNurbs_MainFunc(void);		// NC生成のﾒｲﾝﾙｰﾌﾟ
+static	BOOL	MakeNurbs_RoughFunc(void);		// 荒加工の生成ループ
+static	BOOL	MakeNurbs_ContourFunc(void);	// 仕上げ等高線の生成ループ
 static	tuple<int, int>	MoveFirstPoint(int);	// 最初のCoordポイントを検索
 static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 static	function<void (const Coord&)>	g_pfnAddCoord;
@@ -123,7 +124,15 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 		// 増分割り当て
 		g_obMakeData.SetSize(0, 2048);
 		// 生成開始
-		BOOL bResult = MakeNurbs_MainFunc();
+		BOOL bResult = FALSE;
+		if ( g_pDoc->GetRoughCoord() ) {
+			// 荒加工生成ループ
+			bResult = MakeNurbs_RoughFunc();
+		}
+		else if ( !g_pDoc->GetContourCoord().empty() ) {
+			// 仕上げ生成ループ
+			bResult = MakeNurbs_ContourFunc();
+		}
 		if ( bResult )
 			bResult = OutputNurbsCode();
 
@@ -201,10 +210,10 @@ BOOL OutputNurbsCode(void)
 }
 
 //////////////////////////////////////////////////////////////////////
-// NC生成ﾒｲﾝｽﾚｯﾄﾞ
+//	荒加工生成ループ
 //////////////////////////////////////////////////////////////////////
 
-BOOL MakeNurbs_MainFunc(void)
+BOOL MakeNurbs_RoughFunc(void)
 {
 	int		mx, my, mz, i, j, k,
 			fx, fy;
@@ -275,6 +284,17 @@ BOOL MakeNurbs_MainFunc(void)
 
 	return IsThread();
 }
+
+//////////////////////////////////////////////////////////////////////
+//	仕上げ等高線の生成ループ
+//////////////////////////////////////////////////////////////////////
+
+BOOL MakeNurbs_ContourFunc(void)
+{
+	return IsThread();
+}
+
+//////////////////////////////////////////////////////////////////////
 
 void AddCoord_Normal(const Coord& c)
 {
