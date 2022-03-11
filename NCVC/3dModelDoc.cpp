@@ -42,6 +42,7 @@ C3dModelDoc::~C3dModelDoc()
 		delete	m_pKoList;
 	}
 	ClearRoughCoord();
+	ClearContourCoord();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -190,6 +191,7 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 	try {
 		// 座標点の初期化
 		ClearRoughCoord();
+		ClearContourCoord();
 		m_nRoughX = D+1;
 		m_nRoughY = N+1;
 		m_pRoughCoord = NewCoord3(m_nRoughX, m_nRoughY, 2000);
@@ -258,6 +260,8 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 	BOOL	bResult = TRUE;
 
 	try {
+		// 座標点の初期化
+		ClearRoughCoord();
 		ClearContourCoord();
 
 		// 平面をZ方向にシフトしていきながら等高線を算出する
