@@ -65,7 +65,7 @@ static inline	void	_AddMovePoint(CPoint3D& pt)
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 	// R点までZ軸下降
-	if ( g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ZORIGIN) ) {
+	if ( g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ROUGH_ZORIGIN) ) {
 		pt.z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_WORKHEIGHT);
 	}
 	float z = (float)pt.z + GetDbl(MKNC_DBL_ZG0STOP);
@@ -161,7 +161,7 @@ void InitialVariable(void)
 void SetStaticOption(void)
 {
 	// 座標値の生成
-	if ( g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ZORIGIN) ) {
+	if ( g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ROUGH_ZORIGIN) ) {
 		g_pfnAddCoord = &AddCoord_ZOrigin;
 		g_pfnAddZcut  = &AddZcut_ZOrigin;
 	}
@@ -418,7 +418,7 @@ public:
 			if ( strResult[0]=='%' && !m_bComment ) {
 				// '%'の次の行にコメントを挿入
 				CString	strBuf;
-				strBuf.Format(IDS_MAKENCD_ENDMILL, g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_BALLENDMILL));
+				strBuf.Format(IDS_MAKENCD_ENDMILL, g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_ROUGH_BALLENDMILL));
 				strResult += gg_szReturn + strBuf;
 				m_bComment = TRUE;
 			}
@@ -427,7 +427,7 @@ public:
 		if ( strResult[0]=='G' && !m_bComment ) {
 			// 最初のGコードの前にコメントを挿入
 			CString	strBuf;
-			strBuf.Format(IDS_MAKENCD_ENDMILL, g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_BALLENDMILL));
+			strBuf.Format(IDS_MAKENCD_ENDMILL, g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_ROUGH_BALLENDMILL));
 			strResult = strBuf + gg_szReturn + strResult;
 			m_bComment = TRUE;
 		}

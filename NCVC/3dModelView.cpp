@@ -9,6 +9,7 @@
 #include "3dModelView.h"
 #include "ViewOption.h"
 #include "3dRoughScanSetupDlg.h"
+#include "3dContourScanSetupDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -496,12 +497,23 @@ void C3dModelView::OnFile3dRough()
 void C3dModelView::OnUpdateFile3dSmooth(CCmdUI* pCmdUI)
 {
 	// 仕上げ加工スキャンが有効になる条件
-	pCmdUI->Enable(!m_pSelCurve && m_pSelFace);
+	pCmdUI->Enable(m_pSelFace!=NULL);
 }
 
 void C3dModelView::OnFile3dSmooth()
 {
-	AfxMessageBox("作業中");
+	// 仕上げ加工スキャン設定
+	C3dContourScanSetupDlg	dlg(GetDocument());
+	if ( dlg.DoModal() != IDOK )
+		return;
+
+	// ウエイトカーソル
+	CWaitCursor	wait;
+	// 仕上げ加工スキャンパスの生成
+	if ( GetDocument()->MakeContourCoord(m_pSelFace) ) {
+		// 仕上げ加工スキャンパス描画
+		Invalidate(FALSE);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -260,6 +260,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="3dContourScanSetupDlg.cpp" />
     <ClCompile Include="3dModelChild.cpp" />
     <ClCompile Include="3dModelDoc.cpp" />
     <ClCompile Include="3dModelView.cpp" />
@@ -409,6 +410,7 @@
     <ClCompile Include="ViewSetup6.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="3dContourScanSetupDlg.h" />
     <ClInclude Include="3dModelChild.h" />
     <ClInclude Include="3dModelDoc.h" />
     <ClInclude Include="3dModelView.h" />

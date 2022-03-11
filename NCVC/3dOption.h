@@ -9,23 +9,26 @@ enum {		// int型
 		D3_INT_NUMS		// [1]
 };
 enum {		// float型
-	D3_DBL_BALLENDMILL = 0,
+	D3_DBL_ROUGH_BALLENDMILL = 0,
 	D3_DBL_WORKHEIGHT,
 	D3_DBL_ROUGH_ZCUT,
+	D3_DBL_CONTOUR_BALLENDMILL,
 	D3_DBL_CONTOUR_SPACE,
 	D3_DBL_CONTOUR_ZMIN,
 	D3_DBL_CONTOUR_ZMAX,
-	D3_DBL_CONTOUR_ZCUT,
-		D3_DBL_NUMS		// [7]
+	D3_DBL_CONTOUR_SHIFT,
+		D3_DBL_NUMS		// [8]
 };
 enum {		// BOOL型
-	D3_FLG_ZORIGIN = 0,
-		D3_FLG_NUMS		// [1]
+	D3_FLG_ROUGH_ZORIGIN = 0,
+	D3_FLG_CONTOUR_ZORIGIN,
+		D3_FLG_NUMS		// [2]
 };
 
 class C3dOption
 {
 friend	class	C3dRoughScanSetupDlg;
+friend	class	C3dContourScanSetupDlg;
 
 	CString		m_str3dOptionFile;
 
@@ -39,16 +42,22 @@ friend	class	C3dRoughScanSetupDlg;
 	// float型ｵﾌﾟｼｮﾝ
 	union {
 		struct {
-			float	m_dBallEndmill,		// ボールエンドミル半径
-					m_dWorkHeight,		// ワークの高さ
-					m_dZCut;			// 1回の切り込み量
+			float	m_dRoughBallEndmill,	// 荒加工用ボールエンドミル半径
+					m_dWorkHeight,			// ワークの高さ
+					m_dRoughZCut,			// 荒加工の切り込み量
+					m_dContourBallEndmill,	// 等高線用ボールエンドミル半径
+					m_dContourSpace,		// 等高線の点間隔
+					m_dContourZmin,			// 等高線をスキャンするZ値
+					m_dContourZmax,
+					m_dContourShift;		// 等高線の平面シフト量
 		};
 		float		m_udNums[D3_DBL_NUMS];
 	};
 	// BOOL型ｵﾌﾟｼｮﾝ
 	union {
 		struct {
-			int		m_bZOrigin;			// ワーク上面をZ軸原点にする
+			int		m_bRoughZOrigin,		// ワーク上面をZ軸原点にする
+					m_bContourZOrigin;
 		};
 		int			m_ubFlgs[D3_FLG_NUMS];
 	};

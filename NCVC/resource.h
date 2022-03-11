@@ -197,6 +197,11 @@
 #define IDC_3DSCAN_ZCUT                 1503
 #define IDC_3DSCAN_LINESPLIT            1504
 #define IDC_3DSCAN_ZORIGIN              1505
+#define IDD_3DCONTOUR                   1510
+#define IDC_3DSCAN_SPACE                1511
+#define IDC_3DSCAN_ZMAX                 1512
+#define IDC_3DSCAN_ZMIN                 1513
+#define IDC_3DSCAN_SHIFT                1514
 #define IDD_MAKENCD_EX1_1               1550
 #define IDD_MAKENCD_EX2                 1600
 #define IDD_MAKENCD_EX2_1               1650

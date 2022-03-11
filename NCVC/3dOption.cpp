@@ -22,24 +22,25 @@ static	const	int		g_dfNOrder[] = {
 };
 // floatå^ñΩóﬂ
 static	LPCTSTR	g_szDOrder[] = {
-	"BallEndmill",
+	"RoughBallEndmill",
 	"WorkHeight",
 	"RoughZcut",
+	"ContourBallEndmill",
 	"ContourSpace",
 	"ContourZmin",
 	"ContourZmax",
-	"ContourZcut"
+	"ContourShift"
 };
 static	const	float	g_dfDOrder[] = {
 	3.0f, 50.0f, 5.0f,
-	0.2f, -20.0f, 40.0f, 3.0f
+	3.0f, 0.2f, -20.0f, 40.0f, 3.0f
 };
 // BOOLå^ñΩóﬂ
 static	LPCTSTR	g_szFOrder[] = {
-	"ZOrigin"
+	"RoughZorigin", "ContourZorigin"
 };
 static	const	BOOL	g_dfFOrder[] = {
-	TRUE
+	TRUE, TRUE
 };
 
 /////////////////////////////////////////////////////////////////////////////
