@@ -27,13 +27,13 @@ static	LPCTSTR	g_szDOrder[] = {
 	"RoughZcut",
 	"ContourBallEndmill",
 	"ContourSpace",
-	"ContourZmin",
 	"ContourZmax",
+	"ContourZmin",
 	"ContourShift"
 };
 static	const	float	g_dfDOrder[] = {
 	3.0f, 50.0f, 5.0f,
-	3.0f, 0.2f, -20.0f, 40.0f, 3.0f
+	3.0f, 0.2f, 50.0f, -20.0f, 3.0f
 };
 // BOOLŒ^–½—ß
 static	LPCTSTR	g_szFOrder[] = {
