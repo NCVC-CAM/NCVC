@@ -54,6 +54,9 @@ public:
 	Coord***	GetRoughCoord(void) const {
 		return m_pRoughCoord;
 	}
+	std::vector<VCoord>&	GetContourCoord(void) {
+		return m_vvContourCoord;
+	}
 	boost::tuple<int, int>	GetRoughNumXY(void) const {
 		return boost::make_tuple(m_nRoughX, m_nRoughY);
 	}

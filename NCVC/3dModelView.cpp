@@ -84,8 +84,7 @@ void C3dModelView::OnInitialUpdate()
 	// ŒõŒ¹
 	::glEnable(GL_AUTO_NORMAL);
 	::glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetDxfDrawColor(DXFCOL_CUTTER);
+	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_CUTTER);
 	GLfloat light_Model[] = {(GLfloat)GetRValue(col) / 255,
 							 (GLfloat)GetGValue(col) / 255,
 							 (GLfloat)GetBValue(col) / 255, 1.0f};
@@ -168,9 +167,11 @@ void C3dModelView::OnDraw(CDC* pDC)
 //	DrawBody(RM_PICKLINE);
 //	DrawBody(RM_PICKFACE);
 
-	// ƒXƒLƒƒƒ“ƒpƒX‚Ì•`‰æ Kodatuno
+	// r‰ÁHƒXƒLƒƒƒ“ƒpƒX‚Ì•`‰æ Kodatuno
 	::glDisable(GL_LIGHTING);
 	DrawRoughPath();
+	// Ždã‚°“™‚ü‚Ì•`‰æ Kodatuno
+	DrawContourPath();
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
@@ -250,8 +251,7 @@ void C3dModelView::DrawRoughPath(void)
 
 	int		i, j, k, mx, my, mz;
 	boost::tie(mx, my) = GetDocument()->GetRoughNumXY();
-	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetDxfDrawColor(DXFCOL_MOVE);
+	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
 	::glBegin(GL_POINTS);
@@ -261,6 +261,24 @@ void C3dModelView::DrawRoughPath(void)
 			for ( k=0; k<mz; k++ ) {
 				::glVertex3d(pRoughCoord[i][j][k].x, pRoughCoord[i][j][k].y, pRoughCoord[i][j][k].z);
 			}
+		}
+	}
+	::glEnd();
+}
+
+void C3dModelView::DrawContourPath(void)
+{
+	std::vector<VCoord>& vv = GetDocument()->GetContourCoord();
+	if ( vv.empty() )
+		return;
+
+	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
+
+	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
+	::glBegin(GL_POINTS);
+	for ( auto it1=vv.begin(); it1!=vv.end(); ++it1 ) {
+		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+			::glVertex3d((*it2).x, (*it2).y, (*it2).z);
 		}
 	}
 	::glEnd();

@@ -26,6 +26,7 @@ class C3dModelView : public CViewBaseGL
 
 	void	DrawBody(RENDERMODE);
 	void	DrawRoughPath(void);
+	void	DrawContourPath(void);
 	void	DoSelect(const CPoint&);
 	NURBSC*	DoSelectCurve(const CPoint&);
 	NURBSS*	DoSelectFace (const CPoint&);
