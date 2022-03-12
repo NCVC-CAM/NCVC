@@ -56,6 +56,6 @@ public:
 					ms_dCycleP[2],	// ŒÅ’è»²¸Ù‚ÌÄŞ³ªÙŠÔ
 					ms_dCycleQ[2];	// G83[ŒŠQ’l
 
-	// TH_MakeNCD.cpp ‚©‚çQÆ
+	// TH_MakeNCD.cpp, TH_MakeNurbs.cpp ‚©‚çQÆ
 	static	CString	MakeSpindle(ENDXFTYPE enType, BOOL bDeep = FALSE);
 };

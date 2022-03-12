@@ -60,7 +60,7 @@ public:
 	boost::tuple<int, int>	GetRoughNumXY(void) const {
 		return boost::make_tuple(m_nRoughX, m_nRoughY);
 	}
-	int			GetRoughNumZ(int y) const {
+	int		GetRoughNumZ(int y) const {
 		return m_pRoughNum[y];
 	}
 
