@@ -266,7 +266,7 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 
 		// 平面をZ方向にシフトしていきながら等高線を算出する
 		for ( i=0; i<step; i++ ) {
-			pt = SetCoord(0.0, 0.0, dZmin + dShift*i);	// 現在の平面のZ位置の1点を指示
+			pt = SetCoord(0.0, 0.0, dZmax - dShift*i);	// 現在の平面のZ位置の1点を指示（上面から計算）
 			num = nf.CalcIntersecPtsPlaneSearch(ns, pt, nvec, dSpace, 5, t, 5000, RUNGE_KUTTA);		// NURBS曲面と平面との交点群を交線追跡法で求める
 			for ( j=0; j<num; j++ ) {
 				p = nf.CalcNurbsSCoord(ns, t[j].x, t[j].y);		// 交点をパラメータ値から座標値へ変換
