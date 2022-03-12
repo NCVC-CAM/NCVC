@@ -52,7 +52,7 @@ static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 // 荒加工用サブ
 static	tuple<int, int>			MoveFirstPoint(int);		// 最初のCoordポイントを検索
 // 仕上げ等高線用サブ
-static	tuple<size_t, double>	SearchNearPoint(VCoord&);
+static	tuple<int, double>	SearchNearPoint(VCoord&);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomNurbsCode(int);
@@ -80,7 +80,7 @@ static inline	void _AddMakeG01Zcut(double z)
 	g_obMakeData.Add(pNCD);
 }
 // ptまで移動し，pt.z+R点までZ軸下降
-static inline	void _AddMovePoint(CPoint3D& pt)
+static inline	void _AddMovePoint(const CPoint3D& pt)
 {
 	CNCMakeMill*	pNCD;
 	// 切削ポイントまで移動
@@ -88,10 +88,7 @@ static inline	void _AddMovePoint(CPoint3D& pt)
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 	// pt.z+R点までG00Z軸移動
-	if ( Get3dFlg(D3_FLG_ROUGH_ZORIGIN) ) {
-		pt.z -= Get3dDbl(D3_DBL_WORKHEIGHT);
-	}
-	_AddMoveG00Z(pt.z + GetDbl(MKNC_DBL_ZG0STOP));
+	_AddMoveG00Z(pt.z - g_dZoffset + GetDbl(MKNC_DBL_ZG0STOP));
 }
 // Coord座標の生成
 static inline	void _AddMakeCoord(const Coord& c)
@@ -328,7 +325,7 @@ BOOL MakeNurbs_RoughFunc(void)
 BOOL MakeNurbs_ContourFunc(void)
 {
 	std::vector<VCoord>&	vv = g_pDoc->GetContourCoord();
-	size_t		idx;
+	int			idx, cnt = 0;
 	double		dGap;
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
@@ -350,6 +347,7 @@ BOOL MakeNurbs_ContourFunc(void)
 
 
 		// この階層で全て生成するまで繰り返し
+		// 　にこだわらないほうがいい．近い座標から切削する方が効率いいはず
 		idx = 0;
 		while ( IsThread() ) {
 			// 現在位置(x, y)に最も近い座標を検索
@@ -374,7 +372,10 @@ BOOL MakeNurbs_ContourFunc(void)
 				// そこまで下降
 				_AddMakeG01Zcut(pt.z);
 			}
+			// 生成済みマーク
+			(*it)[idx].dmy = 1.0;
 		}
+		SetProgressPos(g_pParent, ++cnt);
 	}
 
 	// Z軸をイニシャル点に復帰
@@ -427,12 +428,12 @@ tuple<int, int>	MoveFirstPoint(int my)
 	return make_tuple(fx, fy);
 }
 
-tuple<size_t, double> SearchNearPoint(VCoord& v)
+tuple<int, double> SearchNearPoint(VCoord& v)
 {
 	CPointF	ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
 	CPointD	pt;
 	double	dGap, dGapMin = HUGE_VAL;
-	size_t	i, minID = -1;
+	int		i, minID = -1;
 
 	// イテレータでやるとややこしい
 	for ( i=0; i<v.size(); i++ ) {
@@ -445,7 +446,7 @@ tuple<size_t, double> SearchNearPoint(VCoord& v)
 		}
 	}
 
-	return make_tuple(minID, dGap);
+	return make_tuple(minID, dGapMin);
 }
 
 //////////////////////////////////////////////////////////////////////
