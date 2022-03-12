@@ -17,11 +17,19 @@
 using std::string;
 using namespace boost;
 
+enum MAKEMODE
+{
+	ROUGH, CONTOUR
+};
+
 // ｸﾞﾛｰﾊﾞﾙ変数定義
 static	CThreadDlg*		g_pParent;
 static	C3dModelDoc*	g_pDoc;
 static	CNCMakeMillOpt*	g_pMakeOpt;
-static	int				g_nFase;	// ﾌｪｰｽﾞ№
+static	MAKEMODE		g_enMode;
+static	int				g_nMode;
+static	float			g_dZoffset;		// ワークの高さを原点にするときのオフセット
+static	int				g_nFase;
 
 // よく使う変数や呼び出しの簡略置換
 #define	IsThread()	g_pParent->IsThreadContinue()
@@ -33,32 +41,27 @@ static	int				g_nFase;	// ﾌｪｰｽﾞ№
 // NC生成に必要なﾃﾞｰﾀ群
 static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
 
-// ｻﾌﾞ関数
+// サブ関数関数
 static	void	InitialVariable(void);			// 変数初期化
 static	void	SetStaticOption(void);			// 静的変数の初期化
 static	BOOL	MakeNurbs_RoughFunc(void);		// 荒加工の生成ループ
 static	BOOL	MakeNurbs_ContourFunc(void);	// 仕上げ等高線の生成ループ
-static	tuple<int, int>	MoveFirstPoint(int);	// 最初のCoordポイントを検索
 static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
-static	function<void (const Coord&)>	g_pfnAddCoord;
-static	void	AddCoord_Normal(const Coord&);
-static	void	AddCoord_ZOrigin(const Coord&);
-static	function<void (double)>			g_pfnAddZcut;
-static	void	AddZcut_Normal(double);
-static	void	AddZcut_ZOrigin(double);
+// 荒加工用サブ
+static	tuple<int, int>	MoveFirstPoint(int);	// 最初のCoordポイントを検索
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomNurbsCode(int);
 
 // 任意ﾃﾞｰﾀの生成
-static inline	void	_AddMakeNurbsStr(const CString& strData)
+static inline	void _AddMakeNurbsStr(const CString& strData)
 {
 	CNCMakeMill*	pNCD = new CNCMakeMill(strData);
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 }
 // 開始点まで移動しR点までZ軸下降
-static inline	void	_AddMovePoint(CPoint3D& pt)
+static inline	void _AddMovePoint(CPoint3D& pt)
 {
 	CNCMakeMill*	pNCD;
 	// 切削ポイントまで移動
@@ -75,9 +78,26 @@ static inline	void	_AddMovePoint(CPoint3D& pt)
 	g_obMakeData.Add(pNCD);
 }
 // Z軸イニシャル点に復帰
-static inline	void	_AddMoveZinitial(void)
+static inline	void _AddMoveZinitial(void)
 {
 	CNCMakeMill*	pNCD = new CNCMakeMill(0, GetDbl(MKNC_DBL_G92Z), 0.0f);
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+}
+// Z軸G01下降
+static inline	void _AddMakeZcut(double z)
+{
+	z -= g_dZoffset;
+	CNCMakeMill* pNCD = new CNCMakeMill(1, (float)z, GetDbl(MKNC_DBL_ZFEED));
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+}
+// Coord座標の生成
+static inline	void _AddMakeCoord(const Coord& c)
+{
+	CPoint3D		pt(c);
+	pt.z -= g_dZoffset;
+	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 }
@@ -108,6 +128,13 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 	g_nFase = 0;
 	SendFaseMessage(g_pParent, g_nFase, -1, IDS_ANA_DATAINIT);
 	g_pMakeOpt = NULL;
+	// 生成モードの決定
+	if ( g_pDoc->GetRoughCoord() ) {
+		g_enMode = ROUGH;
+	}
+	else if ( !g_pDoc->GetContourCoord().empty() ) {
+		g_enMode = CONTOUR;
+	}
 
 	// 下位の CMemoryException は全てここで集約
 	try {
@@ -125,13 +152,15 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 		g_obMakeData.SetSize(0, 2048);
 		// 生成開始
 		BOOL bResult = FALSE;
-		if ( g_pDoc->GetRoughCoord() ) {
+		switch ( g_enMode ) {
+		case ROUGH:
 			// 荒加工生成ループ
 			bResult = MakeNurbs_RoughFunc();
-		}
-		else if ( !g_pDoc->GetContourCoord().empty() ) {
+			break;
+		case CONTOUR:
 			// 仕上げ生成ループ
 			bResult = MakeNurbs_ContourFunc();
+			break;
 		}
 		if ( bResult )
 			bResult = OutputNurbsCode();
@@ -170,15 +199,18 @@ void InitialVariable(void)
 void SetStaticOption(void)
 {
 	// 座標値の生成
-	if ( g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ROUGH_ZORIGIN) ) {
-		g_pfnAddCoord = &AddCoord_ZOrigin;
-		g_pfnAddZcut  = &AddZcut_ZOrigin;
+	switch ( g_enMode ) {
+	case ROUGH:
+		g_dZoffset = g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ROUGH_ZORIGIN) ?
+			g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_WORKHEIGHT) : 0.0f;
+		break;
+	case CONTOUR:
+		g_dZoffset = g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_CONTOUR_ZORIGIN) ?
+			g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_CONTOUR_ZMAX) : 0.0f;
+		break;
+	default:
+		g_dZoffset = 0.0f;
 	}
-	else {
-		g_pfnAddCoord = &AddCoord_Normal;
-		g_pfnAddZcut  = &AddZcut_Normal;
-	}
-
 	// 生成ｵﾌﾟｼｮﾝによる静的変数の初期化
 	CNCMakeMill::SetStaticOption(g_pMakeOpt);
 }
@@ -236,16 +268,16 @@ BOOL MakeNurbs_RoughFunc(void)
 				mz = g_pDoc->GetRoughNumZ(j);
 				if ( fx == 0 ) {
 					k = 0;
-					g_pfnAddZcut(pRoughCoord[i][j][k].z);	// Z軸の下降
+					_AddMakeZcut(pRoughCoord[i][j][k].z);		// Z軸の下降
 					for ( ; k<mz && IsThread(); k++ ) {
-						g_pfnAddCoord(pRoughCoord[i][j][k]);	// Coord座標の生成 AddCoord_Normal() | AddCoord_ZOrigin()
+						_AddMakeCoord(pRoughCoord[i][j][k]);	// Coord座標の生成
 					}
 				}
 				else {
 					k = mz - 1;
-					g_pfnAddZcut(pRoughCoord[i][j][k].z);
+					_AddMakeZcut(pRoughCoord[i][j][k].z);
 					for ( ; k>=0 && IsThread(); k-- ) {
-						g_pfnAddCoord(pRoughCoord[i][j][k]);
+						_AddMakeCoord(pRoughCoord[i][j][k]);
 					}
 				}
 				SetProgressPos(g_pParent, i*my+j);
@@ -257,16 +289,16 @@ BOOL MakeNurbs_RoughFunc(void)
 				mz = g_pDoc->GetRoughNumZ(j);
 				if ( fx == 0 ) {
 					k = 0;
-					g_pfnAddZcut(pRoughCoord[i][j][k].z);
+					_AddMakeZcut(pRoughCoord[i][j][k].z);
 					for ( ; k<mz && IsThread(); k++ ) {
-						g_pfnAddCoord(pRoughCoord[i][j][k]);
+						_AddMakeCoord(pRoughCoord[i][j][k]);
 					}
 				}
 				else {
 					k = mz - 1;
-					g_pfnAddZcut(pRoughCoord[i][j][k].z);
+					_AddMakeZcut(pRoughCoord[i][j][k].z);
 					for ( ; k>=0 && IsThread(); k-- ) {
-						g_pfnAddCoord(pRoughCoord[i][j][k]);
+						_AddMakeCoord(pRoughCoord[i][j][k]);
 					}
 				}
 				SetProgressPos(g_pParent, i*my+my-j);
@@ -295,40 +327,6 @@ BOOL MakeNurbs_ContourFunc(void)
 }
 
 //////////////////////////////////////////////////////////////////////
-
-void AddCoord_Normal(const Coord& c)
-{
-	CPoint3D		pt(c);
-
-	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
-}
-
-void AddCoord_ZOrigin(const Coord& c)
-{
-	CPoint3D		pt(c);
-	pt.z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_WORKHEIGHT);
-
-	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
-}
-
-void AddZcut_Normal(double z)
-{
-	CNCMakeMill* pNCD = new CNCMakeMill(1, (float)z, GetDbl(MKNC_DBL_ZFEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
-}
-
-void AddZcut_ZOrigin(double z)
-{
-	z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_WORKHEIGHT);
-	CNCMakeMill* pNCD = new CNCMakeMill(1, (float)z, GetDbl(MKNC_DBL_ZFEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
-}
 
 tuple<int, int>	MoveFirstPoint(int my)
 {
