@@ -17,7 +17,8 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // C3dScanSetupDlg ダイアログ
 
-C3dContourScanSetupDlg::C3dContourScanSetupDlg(C3dModelDoc* pDoc, CWnd*) : CDialog(C3dContourScanSetupDlg::IDD, NULL)
+C3dContourScanSetupDlg::C3dContourScanSetupDlg(C3dModelDoc* pDoc, CWnd*) :
+	CDialog(C3dContourScanSetupDlg::IDD, NULL)
 {
 	m_pDoc = pDoc;
 	m_bZOrigin = TRUE;
@@ -62,6 +63,13 @@ void C3dContourScanSetupDlg::OnOK()
 		AfxMessageBox(IDS_ERR_SETTING, MB_OK|MB_ICONEXCLAMATION);
 		m_dSpace.SetFocus();
 		m_dSpace.SetSel(0, -1);
+		return;
+	}
+	if ( m_dShift < m_dSpace*2.0 ) {
+		// 近接点を検索するためのマージン
+		AfxMessageBox(IDS_ERR_CONTOUR, MB_OK|MB_ICONEXCLAMATION);
+		m_dShift.SetFocus();
+		m_dShift.SetSel(0, -1);
 		return;
 	}
 

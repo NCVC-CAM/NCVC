@@ -17,7 +17,8 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // C3dScanSetupDlg ダイアログ
 
-C3dRoughScanSetupDlg::C3dRoughScanSetupDlg(C3dModelDoc* pDoc, CWnd*) : CDialog(C3dRoughScanSetupDlg::IDD, NULL)
+C3dRoughScanSetupDlg::C3dRoughScanSetupDlg(C3dModelDoc* pDoc, CWnd*) :
+	CDialog(C3dRoughScanSetupDlg::IDD, NULL)
 {
 	m_pDoc = pDoc;
 	m_bZOrigin = TRUE;

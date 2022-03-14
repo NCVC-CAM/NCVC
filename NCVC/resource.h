@@ -817,6 +817,7 @@
 #define IDS_ERR_REGEX                   21016
 #define IDS_ERR_GLSL                    21017
 #define IDS_ERR_KODATUNO                21018
+#define IDS_ERR_CONTOUR                 21019
 #define IDS_ERR_CAMDATA                 21050
 #define IDS_ERR_CAMVER                  21051
 #define IDS_ERR_CAMOLD                  21052
