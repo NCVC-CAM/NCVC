@@ -287,6 +287,25 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 		bResult = FALSE;
 	}
 
+#ifdef _DEBUG
+	printf("階層=%zd\n", m_vvvContourCoord.size());
+	for ( auto it1=m_vvvContourCoord.begin(); it1!=m_vvvContourCoord.end(); ++it1 ) {
+		printf(" 集合%Id=%zd\n", std::distance(m_vvvContourCoord.begin(), it1), it1->size());
+		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+			CPointD	ptF( it2->front().x, it2->front().y ),
+					ptB( it2->back().x,  it2->back().y  );
+			BOOL	bLoop;
+			if ( ptF.hypot(&ptB) < m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {
+				bLoop = TRUE;
+			}
+			else {
+				bLoop = FALSE;
+			}
+			printf("   %Id size=%zd(%c)\n", std::distance(it1->begin(), it2), it2->size(), bLoop ? 'o' : 'x');
+		}
+	}
+#endif
+
 	// スキャンオプションの保存
 	if ( bResult )
 		m_3dOpt.Save3dOption();
