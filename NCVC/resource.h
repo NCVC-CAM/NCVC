@@ -191,12 +191,17 @@
 #define IDC_MKNCEX_LAYERCOMMENT         1454
 #define IDC_MKNCEX_LAYERCODE            1455
 #define IDC_MKNCEX_NEW                  1459
-#define IDD_3DSCAN                      1500
+#define IDD_3DROUGH                     1500
 #define IDC_3DSCAN_BALLENDMILL          1501
 #define IDC_3DSCAN_HEIGHT               1502
 #define IDC_3DSCAN_ZCUT                 1503
 #define IDC_3DSCAN_LINESPLIT            1504
 #define IDC_3DSCAN_ZORIGIN              1505
+#define IDD_3DCONTOUR                   1510
+#define IDC_3DSCAN_SPACE                1511
+#define IDC_3DSCAN_ZMAX                 1512
+#define IDC_3DSCAN_ZMIN                 1513
+#define IDC_3DSCAN_SHIFT                1514
 #define IDD_MAKENCD_EX1_1               1550
 #define IDD_MAKENCD_EX2                 1600
 #define IDD_MAKENCD_EX2_1               1650
@@ -812,6 +817,7 @@
 #define IDS_ERR_REGEX                   21016
 #define IDS_ERR_GLSL                    21017
 #define IDS_ERR_KODATUNO                21018
+#define IDS_ERR_CONTOUR                 21019
 #define IDS_ERR_CAMDATA                 21050
 #define IDS_ERR_CAMVER                  21051
 #define IDS_ERR_CAMOLD                  21052

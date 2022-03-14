@@ -41,7 +41,8 @@ C3dModelDoc::~C3dModelDoc()
 		m_pKoList->clear();
 		delete	m_pKoList;
 	}
-	ClearRoughPath();
+	ClearRoughCoord();
+	ClearContourCoord();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -114,7 +115,7 @@ void C3dModelDoc::OnCloseDocument()
 
 void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable( m_pRoughCoord != NULL );
+	pCmdUI->Enable(m_pRoughCoord!=NULL || !m_vvContourCoord.empty() );
 }
 
 void C3dModelDoc::OnFile3dMake()
@@ -157,7 +158,7 @@ void C3dModelDoc::OnFile3dMake()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void C3dModelDoc::ClearRoughPath(void)
+void C3dModelDoc::ClearRoughCoord(void)
 {
 	if ( m_pRoughCoord ) {
 		FreeCoord3(m_pRoughCoord, m_nRoughX, m_nRoughY);
@@ -170,21 +171,27 @@ void C3dModelDoc::ClearRoughPath(void)
 	}
 }
 
-BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
+void C3dModelDoc::ClearContourCoord(void)
+{
+	m_vvContourCoord.clear();
+}
+
+BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 {
 	// Kodatuno User's Guide いいかげんな3xCAMの作成
-	NURBS_Func	nf;				// NURBS_Funcへのインスタンス
-	Coord		plane_pt;		// 分割する平面上の1点
-	Coord		plane_n;		// 分割する平面の法線ベクトル
-	Coord		path_[2000];	// 一時格納用バッファ
+	NURBS_Func	nf;			// NURBS_Funcへのインスタンス
+	Coord	plane_pt;		// 分割する平面上の1点
+	Coord	plane_n;		// 分割する平面の法線ベクトル
+	Coord	path_[2000];	// 一時格納用バッファ
 	int		i, j, k,
-			D = (int)(m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) / m_3dOpt.Get3dDbl(D3_DBL_ZCUT)) + 1,	// Z方向分割数（粗加工用）
+			D = (int)(m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT) / m_3dOpt.Get3dDbl(D3_DBL_ROUGH_ZCUT)) + 1,	// Z方向分割数（粗加工用）
 			N = m_3dOpt.Get3dInt(D3_INT_LINESPLIT);					// スキャニングライン分割数(N < 100)
 	BOOL	bResult = TRUE;
 
 	try {
 		// 座標点の初期化
-		ClearRoughPath();
+		ClearRoughCoord();
+		ClearContourCoord();
 		m_nRoughX = D+1;
 		m_nRoughY = N+1;
 		m_pRoughCoord = NewCoord3(m_nRoughX, m_nRoughY, 2000);
@@ -207,7 +214,7 @@ BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
 				Coord pt = nf.CalcNurbsSCoord(ns, path_[j].x, path_[j].y);		// 工具コンタクト点
 				Coord n = nf.CalcNormVecOnNurbsS(ns, path_[j].x, path_[j].y);	// 法線ベクトル
 				if (n.z < 0) n = n*(-1);					// 法線ベクトルの向き調整
-				m_pRoughCoord[D][i][j] = pt + n*m_3dOpt.Get3dDbl(D3_DBL_BALLENDMILL);	// 工具半径オフセット
+				m_pRoughCoord[D][i][j] = pt + n*m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL);	// 工具半径オフセット
 			}
 		}
 
@@ -215,8 +222,8 @@ BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
 		for ( i=0; i<D; i++ ) {
 			for ( j=0; j<m_nRoughY; j++ ) {
 				for ( k=0; k<m_pRoughNum[j]; k++ ) {
-					double del = (m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) - m_pRoughCoord[D][j][k].z)/(double)D;
-					double Z = m_3dOpt.Get3dDbl(D3_DBL_HEIGHT) - del*i;
+					double del = (m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT) - m_pRoughCoord[D][j][k].z)/(double)D;
+					double Z = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT) - del*i;
 					m_pRoughCoord[i][j][k] = SetCoord(m_pRoughCoord[D][j][k].x, m_pRoughCoord[D][j][k].y, Z);
 				}
 			}
@@ -224,7 +231,56 @@ BOOL C3dModelDoc::MakeRoughPath(NURBSS* ns, NURBSC* nc)
 	}
 	catch(...) {
 		// ライブラリ側の例外に対応
-		ClearRoughPath();
+		ClearRoughCoord();
+		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
+		bResult = FALSE;
+	}
+
+	// スキャンオプションの保存
+	if ( bResult )
+		m_3dOpt.Save3dOption();
+
+	return bResult;
+}
+
+BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
+{
+	// Kodatuno User's Guide 等高線を生成する
+	NURBS_Func	nf;		// NURBSを扱う関数集を呼び出す
+	VCoord	vc;			// 1平面の交点群
+	Coord	pt, p,
+			t[5000],	// 解の格納
+			nvec = SetCoord(0.0, 0.0, 1.0);	// 平面の法線ベクトル（XY平面）
+	double	dSpace = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE),	// 交点群の点間隔
+			dZmin  = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_ZMIN),		// 等高線のZmin
+			dZmax  = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_ZMAX),		// 等高線のZmax
+			dShift = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SHIFT);	// 等高線生成のZ間隔
+	int		i, j, num,
+			step = (int)(fabs(dZmax - dZmin) / dShift + 1);		// 等高線の本数
+	BOOL	bResult = TRUE;
+
+	try {
+		// 座標点の初期化
+		ClearRoughCoord();
+		ClearContourCoord();
+
+		// 平面をZ方向にシフトしていきながら等高線を算出する
+		for ( i=0; i<step; i++ ) {
+			pt = SetCoord(0.0, 0.0, dZmax - dShift*i);	// 現在の平面のZ位置の1点を指示（上面から計算）
+			num = nf.CalcIntersecPtsPlaneSearch(ns, pt, nvec, dSpace, 5, t, 5000, RUNGE_KUTTA);		// NURBS曲面と平面との交点群を交線追跡法で求める
+			for ( j=0; j<num; j++ ) {
+				p = nf.CalcNurbsSCoord(ns, t[j].x, t[j].y);		// 交点をパラメータ値から座標値へ変換
+				vc.push_back(p);
+			}
+			if ( !vc.empty() ) {
+				m_vvContourCoord.push_back(vc);	// 1平面の交点群を保存
+				vc.clear();
+			}
+		}
+	}
+	catch(...) {
+		// ライブラリ側の例外に対応
+		ClearRoughCoord();
 		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
 		bResult = FALSE;
 	}

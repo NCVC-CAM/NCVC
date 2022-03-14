@@ -17,11 +17,19 @@
 using std::string;
 using namespace boost;
 
+enum MAKEMODE
+{
+	ROUGH, CONTOUR
+};
+
 // ｸﾞﾛｰﾊﾞﾙ変数定義
 static	CThreadDlg*		g_pParent;
 static	C3dModelDoc*	g_pDoc;
 static	CNCMakeMillOpt*	g_pMakeOpt;
-static	int				g_nFase;	// ﾌｪｰｽﾞ№
+static	MAKEMODE		g_enMode;
+static	int				g_nMode;
+static	float			g_dZoffset;		// ワークの高さを原点にするときのオフセット
+static	int				g_nFase;
 
 // よく使う変数や呼び出しの簡略置換
 #define	IsThread()	g_pParent->IsThreadContinue()
@@ -29,54 +37,65 @@ static	int				g_nFase;	// ﾌｪｰｽﾞ№
 #define	GetNum(a)	g_pMakeOpt->GetNum(a)
 #define	GetDbl(a)	g_pMakeOpt->GetDbl(a)
 #define	GetStr(a)	g_pMakeOpt->GetStr(a)
+#define	Get3dDbl(a)	g_pDoc->Get3dOption()->Get3dDbl(a)
+#define	Get3dFlg(a)	g_pDoc->Get3dOption()->Get3dFlg(a)
 
 // NC生成に必要なﾃﾞｰﾀ群
 static	CTypedPtrArrayEx<CPtrArray, CNCMakeMill*>	g_obMakeData;	// 加工ﾃﾞｰﾀ
 
-// ｻﾌﾞ関数
+// サブ関数関数
 static	void	InitialVariable(void);			// 変数初期化
 static	void	SetStaticOption(void);			// 静的変数の初期化
-static	BOOL	MakeNurbs_MainFunc(void);		// NC生成のﾒｲﾝﾙｰﾌﾟ
-static	tuple<int, int>	MoveFirstPoint(int);	// 最初のCoordポイントを検索
+static	BOOL	MakeNurbs_RoughFunc(void);		// 荒加工の生成ループ
+static	BOOL	MakeNurbs_ContourFunc(void);	// 仕上げ等高線の生成ループ
 static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
-static	function<void (const Coord&)>	g_pfnAddCoord;
-static	void	AddCoord_Normal(const Coord&);
-static	void	AddCoord_ZOrigin(const Coord&);
-static	function<void (double)>			g_pfnAddZcut;
-static	void	AddZcut_Normal(double);
-static	void	AddZcut_ZOrigin(double);
+// 荒加工用サブ
+static	tuple<int, int>			MoveFirstPoint(int);		// 最初のCoordポイントを検索
+// 仕上げ等高線用サブ
+static	tuple<int, double>	SearchNearPoint(const VCoord&);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomNurbsCode(int);
 
 // 任意ﾃﾞｰﾀの生成
-static inline	void	_AddMakeNurbsStr(const CString& strData)
+static inline	void _AddMakeNurbsStr(const CString& strData)
 {
 	CNCMakeMill*	pNCD = new CNCMakeMill(strData);
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 }
-// 開始点まで移動しR点までZ軸下降
-static inline	void	_AddMovePoint(CPoint3D& pt)
+// G00でZ軸移動
+static inline	void _AddMoveG00Z(double z)
+{
+	CNCMakeMill*	pNCD = new CNCMakeMill(0, (float)z, 0.0f);
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+}
+// G01でZ軸移動
+static inline	void _AddMakeG01Zcut(double z)
+{
+	z -= g_dZoffset;
+	CNCMakeMill* pNCD = new CNCMakeMill(1, (float)z, GetDbl(MKNC_DBL_ZFEED));
+	ASSERT( pNCD );
+	g_obMakeData.Add(pNCD);
+}
+// ptまで移動し，pt.z+R点までZ軸下降
+static inline	void _AddMovePoint(const CPoint3D& pt)
 {
 	CNCMakeMill*	pNCD;
 	// 切削ポイントまで移動
 	pNCD = new CNCMakeMill(0, pt.GetXY(), 0.0f);
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
-	// R点までZ軸下降
-	if ( g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ZORIGIN) ) {
-		pt.z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_HEIGHT);
-	}
-	float z = (float)pt.z + GetDbl(MKNC_DBL_ZG0STOP);
-	pNCD = new CNCMakeMill(0, z, 0.0f);
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
+	// pt.z+R点までG00Z軸移動
+	_AddMoveG00Z(pt.z - g_dZoffset + GetDbl(MKNC_DBL_ZG0STOP));
 }
-// Z軸イニシャル点に復帰
-static inline	void	_AddMoveZinitial(void)
+// Coord座標の生成
+static inline	void _AddMakeCoord(const Coord& c)
 {
-	CNCMakeMill*	pNCD = new CNCMakeMill(0, GetDbl(MKNC_DBL_G92Z), 0.0f);
+	CPoint3D		pt(c);
+	pt.z -= g_dZoffset;
+	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
 	ASSERT( pNCD );
 	g_obMakeData.Add(pNCD);
 }
@@ -107,6 +126,13 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 	g_nFase = 0;
 	SendFaseMessage(g_pParent, g_nFase, -1, IDS_ANA_DATAINIT);
 	g_pMakeOpt = NULL;
+	// 生成モードの決定
+	if ( g_pDoc->GetRoughCoord() ) {
+		g_enMode = ROUGH;
+	}
+	else if ( !g_pDoc->GetContourCoord().empty() ) {
+		g_enMode = CONTOUR;
+	}
 
 	// 下位の CMemoryException は全てここで集約
 	try {
@@ -123,7 +149,17 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 		// 増分割り当て
 		g_obMakeData.SetSize(0, 2048);
 		// 生成開始
-		BOOL bResult = MakeNurbs_MainFunc();
+		BOOL bResult = FALSE;
+		switch ( g_enMode ) {
+		case ROUGH:
+			// 荒加工生成ループ
+			bResult = MakeNurbs_RoughFunc();
+			break;
+		case CONTOUR:
+			// 仕上げ生成ループ
+			bResult = MakeNurbs_ContourFunc();
+			break;
+		}
 		if ( bResult )
 			bResult = OutputNurbsCode();
 
@@ -161,14 +197,20 @@ void InitialVariable(void)
 void SetStaticOption(void)
 {
 	// 座標値の生成
-	if ( g_pDoc->Get3dOption()->Get3dFlg(D3_FLG_ZORIGIN) ) {
-		g_pfnAddCoord = &AddCoord_ZOrigin;
-		g_pfnAddZcut  = &AddZcut_ZOrigin;
+	switch ( g_enMode ) {
+	case ROUGH:
+		g_dZoffset = Get3dFlg(D3_FLG_ROUGH_ZORIGIN) ? Get3dDbl(D3_DBL_WORKHEIGHT) : 0.0f;
+		break;
+	case CONTOUR:
+		g_dZoffset = Get3dFlg(D3_FLG_CONTOUR_ZORIGIN) ? Get3dDbl(D3_DBL_CONTOUR_ZMAX) : 0.0f;
+		break;
+	default:
+		g_dZoffset = 0.0f;
 	}
-	else {
-		g_pfnAddCoord = &AddCoord_Normal;
-		g_pfnAddZcut  = &AddZcut_Normal;
-	}
+
+	// ABS, INC 関係なく G92値で初期化
+	for ( int i=0; i<NCXYZ; i++ )
+		CNCMakeMill::ms_xyz[i] = RoundUp(GetDbl(MKNC_DBL_G92X+i));
 
 	// 生成ｵﾌﾟｼｮﾝによる静的変数の初期化
 	CNCMakeMill::SetStaticOption(g_pMakeOpt);
@@ -201,10 +243,10 @@ BOOL OutputNurbsCode(void)
 }
 
 //////////////////////////////////////////////////////////////////////
-// NC生成ﾒｲﾝｽﾚｯﾄﾞ
+//	荒加工生成ループ
 //////////////////////////////////////////////////////////////////////
 
-BOOL MakeNurbs_MainFunc(void)
+BOOL MakeNurbs_RoughFunc(void)
 {
 	int		mx, my, mz, i, j, k,
 			fx, fy;
@@ -227,16 +269,16 @@ BOOL MakeNurbs_MainFunc(void)
 				mz = g_pDoc->GetRoughNumZ(j);
 				if ( fx == 0 ) {
 					k = 0;
-					g_pfnAddZcut(pRoughCoord[i][j][k].z);	// Z軸の下降
+					_AddMakeG01Zcut(pRoughCoord[i][j][k].z);	// Z軸の下降
 					for ( ; k<mz && IsThread(); k++ ) {
-						g_pfnAddCoord(pRoughCoord[i][j][k]);	// Coord座標の生成 AddCoord_Normal() | AddCoord_ZOrigin()
+						_AddMakeCoord(pRoughCoord[i][j][k]);	// Coord座標の生成
 					}
 				}
 				else {
 					k = mz - 1;
-					g_pfnAddZcut(pRoughCoord[i][j][k].z);
+					_AddMakeG01Zcut(pRoughCoord[i][j][k].z);
 					for ( ; k>=0 && IsThread(); k-- ) {
-						g_pfnAddCoord(pRoughCoord[i][j][k]);
+						_AddMakeCoord(pRoughCoord[i][j][k]);
 					}
 				}
 				SetProgressPos(g_pParent, i*my+j);
@@ -248,16 +290,16 @@ BOOL MakeNurbs_MainFunc(void)
 				mz = g_pDoc->GetRoughNumZ(j);
 				if ( fx == 0 ) {
 					k = 0;
-					g_pfnAddZcut(pRoughCoord[i][j][k].z);
+					_AddMakeG01Zcut(pRoughCoord[i][j][k].z);
 					for ( ; k<mz && IsThread(); k++ ) {
-						g_pfnAddCoord(pRoughCoord[i][j][k]);
+						_AddMakeCoord(pRoughCoord[i][j][k]);
 					}
 				}
 				else {
 					k = mz - 1;
-					g_pfnAddZcut(pRoughCoord[i][j][k].z);
+					_AddMakeG01Zcut(pRoughCoord[i][j][k].z);
 					for ( ; k>=0 && IsThread(); k-- ) {
-						g_pfnAddCoord(pRoughCoord[i][j][k]);
+						_AddMakeCoord(pRoughCoord[i][j][k]);
 					}
 				}
 				SetProgressPos(g_pParent, i*my+my-j);
@@ -268,7 +310,7 @@ BOOL MakeNurbs_MainFunc(void)
 	}
 
 	// Z軸をイニシャル点に復帰
-	_AddMoveZinitial();
+	_AddMoveG00Z(GetDbl(MKNC_DBL_G92Z));
 
 	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
 	AddCustomNurbsCode(MKNC_STR_FOOTER);
@@ -276,39 +318,78 @@ BOOL MakeNurbs_MainFunc(void)
 	return IsThread();
 }
 
-void AddCoord_Normal(const Coord& c)
-{
-	CPoint3D		pt(c);
+//////////////////////////////////////////////////////////////////////
+//	仕上げ等高線の生成ループ
+//////////////////////////////////////////////////////////////////////
 
-	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
+BOOL MakeNurbs_ContourFunc(void)
+{
+	std::vector<VCoord>&	vv = g_pDoc->GetContourCoord();
+	int			idx, cnt = 0;
+	double		dGap;
+
+	// Coord::dmy のクリア．生成済みフラグとして使用
+	for ( auto it1=vv.begin(); it1!=vv.end(); ++it1 ) {
+		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+			(*it2).dmy = 0.0;
+		}
+	}
+	
+	// フェーズ更新
+	SendFaseMessage(g_pParent, g_nFase, vv.size());
+
+	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
+	AddCustomNurbsCode(MKNC_STR_HEADER);
+
+	// 階層ごとにパス生成
+	for ( auto it=vv.begin(); it!=vv.end() && IsThread(); ++it ) {
+		// この階層が閉ループかどうかの判定
+
+
+		// この階層で全て生成するまで繰り返し
+		// 　にこだわらないほうがいい．近い座標から切削する方が効率いいはず
+		idx = 0;
+		while ( IsThread() ) {
+			// 現在位置(x, y)に最も近い座標を検索
+			tie(idx, dGap) = SearchNearPoint(*it);
+			if ( idx < 0 ) {
+				// R点まで上昇
+				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
+				// この階層での処理終了
+				break;
+			}
+			// dGapが規定値以下かどうか
+			if ( sqrt(dGap) <= Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {	// *2.0fはマージン
+				// 点間隔以下ならそのまま生成
+				_AddMakeCoord( (*it)[idx] );
+			}
+			else {
+				if ( CNCMakeMill::ms_xyz[NCA_Z] < GetDbl(MKNC_DBL_ZG0STOP) ) {
+					// 一旦R点まで上昇
+					_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
+				}
+				// 次の切削ポイントまで移動
+				CPoint3D	pt( (*it)[idx] );
+				_AddMovePoint(pt);
+				// そこまで下降
+				_AddMakeG01Zcut(pt.z);
+			}
+			// 生成済みマーク
+			(*it)[idx].dmy = 1.0;
+		}
+		SetProgressPos(g_pParent, ++cnt);
+	}
+
+	// Z軸をイニシャル点に復帰
+	_AddMoveG00Z(GetDbl(MKNC_DBL_G92Z));
+
+	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
+	AddCustomNurbsCode(MKNC_STR_FOOTER);
+
+	return IsThread();
 }
 
-void AddCoord_ZOrigin(const Coord& c)
-{
-	CPoint3D		pt(c);
-	pt.z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_HEIGHT);
-
-	CNCMakeMill* pNCD = new CNCMakeMill(pt, GetDbl(MKNC_DBL_FEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
-}
-
-void AddZcut_Normal(double z)
-{
-	CNCMakeMill* pNCD = new CNCMakeMill(1, (float)z, GetDbl(MKNC_DBL_ZFEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
-}
-
-void AddZcut_ZOrigin(double z)
-{
-	z -= g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_HEIGHT);
-	CNCMakeMill* pNCD = new CNCMakeMill(1, (float)z, GetDbl(MKNC_DBL_ZFEED));
-	ASSERT( pNCD );
-	g_obMakeData.Add(pNCD);
-}
+//////////////////////////////////////////////////////////////////////
 
 tuple<int, int>	MoveFirstPoint(int my)
 {
@@ -347,6 +428,27 @@ tuple<int, int>	MoveFirstPoint(int my)
 	}
 
 	return make_tuple(fx, fy);
+}
+
+tuple<int, double> SearchNearPoint(const VCoord& v)
+{
+	CPointF	ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
+	CPointD	pt;
+	double	dGap, dGapMin = HUGE_VAL;
+	int		i, minID = -1;
+
+	// イテレータでやるとややこしい
+	for ( i=0; i<v.size(); i++ ) {
+		if ( v[i].dmy > 0 ) continue;	// 生成済み
+		pt.SetPoint( v[i].x-ptNow.x, v[i].y-ptNow.y );	// 現在位置との差
+		dGap = pt.x*pt.x + pt.y*pt.y;	// hypot()は使わない sqrt()が遅い
+		if ( dGap < dGapMin ) {
+			dGapMin = dGap;
+			minID = i;
+		}
+	}
+
+	return make_tuple(minID, dGapMin);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -418,7 +520,7 @@ public:
 			if ( strResult[0]=='%' && !m_bComment ) {
 				// '%'の次の行にコメントを挿入
 				CString	strBuf;
-				strBuf.Format(IDS_MAKENCD_ENDMILL, g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_BALLENDMILL));
+				strBuf.Format(IDS_MAKENCD_ENDMILL, Get3dDbl(D3_DBL_ROUGH_BALLENDMILL));
 				strResult += gg_szReturn + strBuf;
 				m_bComment = TRUE;
 			}
@@ -427,7 +529,7 @@ public:
 		if ( strResult[0]=='G' && !m_bComment ) {
 			// 最初のGコードの前にコメントを挿入
 			CString	strBuf;
-			strBuf.Format(IDS_MAKENCD_ENDMILL, g_pDoc->Get3dOption()->Get3dDbl(D3_DBL_BALLENDMILL));
+			strBuf.Format(IDS_MAKENCD_ENDMILL, Get3dDbl(D3_DBL_ROUGH_BALLENDMILL));
 			strResult = strBuf + gg_szReturn + strResult;
 			m_bComment = TRUE;
 		}

@@ -1,4 +1,4 @@
-ï»¿// C3dRoughScanSetupDlg.cpp : å®Ÿè£…ãƒ•ã‚¡ã‚¤ãƒ«
+// C3dRoughScanSetupDlg.cpp : ŽÀ‘•ƒtƒ@ƒCƒ‹
 //
 
 #include "stdafx.h"
@@ -15,9 +15,10 @@ BEGIN_MESSAGE_MAP(C3dRoughScanSetupDlg, CDialog)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// C3dScanSetupDlg ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
+// C3dScanSetupDlg ƒ_ƒCƒAƒƒO
 
-C3dRoughScanSetupDlg::C3dRoughScanSetupDlg(C3dModelDoc* pDoc, CWnd*) : CDialog(C3dRoughScanSetupDlg::IDD, NULL)
+C3dRoughScanSetupDlg::C3dRoughScanSetupDlg(C3dModelDoc* pDoc, CWnd*) :
+	CDialog(C3dRoughScanSetupDlg::IDD, NULL)
 {
 	m_pDoc = pDoc;
 	m_bZOrigin = TRUE;
@@ -34,7 +35,7 @@ void C3dRoughScanSetupDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// C3dScanSetupDlg ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒãƒ³ãƒ‰ãƒ©ãƒ¼
+// C3dScanSetupDlg ƒƒbƒZ[ƒW ƒnƒ“ƒhƒ‰[
 
 BOOL C3dRoughScanSetupDlg::OnInitDialog() 
 {
@@ -42,11 +43,11 @@ BOOL C3dRoughScanSetupDlg::OnInitDialog()
 
 	C3dOption*	pOpt = m_pDoc->Get3dOption();
 
-	m_dBallEndmill	= pOpt->m_dBallEndmill;
+	m_dBallEndmill	= pOpt->m_dRoughBallEndmill;
 	m_dHeight		= pOpt->m_dWorkHeight;
-	m_dZCut			= pOpt->m_dZCut;
+	m_dZCut			= pOpt->m_dRoughZCut;
 	m_nLineSplit	= pOpt->m_nLineSplit;
-	m_bZOrigin		= pOpt->m_bZOrigin;
+	m_bZOrigin		= pOpt->m_bRoughZOrigin;
 
 	UpdateData(FALSE);
 
@@ -65,11 +66,11 @@ void C3dRoughScanSetupDlg::OnOK()
 
 	C3dOption*	pOpt = m_pDoc->Get3dOption();
 
-	pOpt->m_dBallEndmill	= m_dBallEndmill;
-	pOpt->m_dWorkHeight		= m_dHeight;
-	pOpt->m_dZCut			= m_dZCut;
-	pOpt->m_nLineSplit		= m_nLineSplit;
-	pOpt->m_bZOrigin		= m_bZOrigin;
+	pOpt->m_dRoughBallEndmill	= m_dBallEndmill;
+	pOpt->m_dWorkHeight			= m_dHeight;
+	pOpt->m_dRoughZCut			= m_dZCut;
+	pOpt->m_nLineSplit			= m_nLineSplit;
+	pOpt->m_bRoughZOrigin		= m_bZOrigin;
 
 	EndDialog(IDOK);
 }

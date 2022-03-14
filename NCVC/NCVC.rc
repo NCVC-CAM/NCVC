@@ -670,8 +670,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "NCﾃﾞｰﾀの生成"
         BEGIN
-            MENUITEM "荒加工のパス生成...\tF2",             ID_FILE_3DROUGH
-            MENUITEM "仕上げ等高線のパス生成...\tF3",          ID_FILE_3DSMOOTH
+            MENUITEM "荒加工パスの生成...\tF2",             ID_FILE_3DROUGH
+            MENUITEM "仕上げ等高線パスの生成...\tF3",          ID_FILE_3DSMOOTH
             MENUITEM "3D切削データの生成...\tF7",           ID_FILE_3DCUT
         END
         MENUITEM SEPARATOR
@@ -2332,9 +2332,9 @@ BEGIN
     LTEXT           "この設定は次のCADﾃﾞｰﾀ読み込みから有効",IDC_STATIC,45,205,142,8
 END
 
-IDD_3DSCAN DIALOGEX 0, 0, 200, 150
+IDD_3DROUGH DIALOGEX 0, 0, 200, 150
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "粗加工用スキャニングパスの生成"
+CAPTION "荒加工用スキャニングパスの生成"
 FONT 9, "MS UI Gothic", 400, 0, 0x80
 BEGIN
     LTEXT           "ボールエンドミル半径(&R)",IDC_STATIC,7,9,68,8
@@ -2348,10 +2348,37 @@ BEGIN
     LTEXT           "mm",IDC_STATIC,145,49,11,8
     LTEXT           "スキャニングラインの分割数(&S)",IDC_STATIC,7,69,85,8
     EDITTEXT        IDC_3DSCAN_LINESPLIT,100,67,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
-    LTEXT           "< 100",IDC_STATIC,145,69,17,8
-    CONTROL         "NC生成時ワーク上面をZ軸のゼロにする",IDC_3DSCAN_ZORIGIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,89,129,10
+    LTEXT           "< 100",IDC_STATIC,145,69,48,8
+    CONTROL         "NC生成時，ワーク上面をZ軸のゼロにする(&Z)",IDC_3DSCAN_ZORIGIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,89,186,10
     DEFPUSHBUTTON   "&OK",IDOK,37,129,50,14
     PUSHBUTTON      "キャンセル",IDCANCEL,113,129,50,14
+END
+
+IDD_3DCONTOUR DIALOGEX 0, 0, 200, 170
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "仕上げ加工用等高線パスの生成"
+FONT 9, "MS UI Gothic", 400, 0, 0x80
+BEGIN
+    LTEXT           "ボールエンドミル半径(&R)",IDC_STATIC,7,9,68,8
+    EDITTEXT        IDC_3DSCAN_BALLENDMILL,100,7,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,145,9,11,8
+    LTEXT           "交点群の点間隔(&S)",IDC_STATIC,7,29,59,8
+    EDITTEXT        IDC_3DSCAN_SPACE,100,27,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "(0.1～2.0)",IDC_STATIC,145,29,48,8
+    LTEXT           "スキャンするZ最大値(&1)",IDC_STATIC,7,49,67,8
+    EDITTEXT        IDC_3DSCAN_ZMAX,100,47,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,145,49,11,8
+    LTEXT           "スキャンするZ最小値(&2)",IDC_STATIC,7,69,67,8
+    EDITTEXT        IDC_3DSCAN_ZMIN,100,67,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "mm",IDC_STATIC,145,69,11,8
+    LTEXT           "スキャンするシフト量(&3)",IDC_STATIC,7,89,65,8
+    EDITTEXT        IDC_3DSCAN_SHIFT,100,87,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
+    LTEXT           "",IDC_STATIC,145,89,8,8
+    CONTROL         "NC生成時，スキャンするZ最大値をZ軸のゼロにする(&Z)",IDC_3DSCAN_ZORIGIN,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,109,186,10
+    DEFPUSHBUTTON   "&OK",IDOK,37,149,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,113,149,50,14
+    LTEXT           "mm",IDC_STATIC,145,89,11,8
 END
 
 
@@ -2853,12 +2880,20 @@ BEGIN
         BOTTOMMARGIN, 213
     END
 
-    IDD_3DSCAN, DIALOG
+    IDD_3DROUGH, DIALOG
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 193
         TOPMARGIN, 7
         BOTTOMMARGIN, 143
+    END
+
+    IDD_3DCONTOUR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 193
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 163
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -3482,7 +3517,12 @@ BEGIN
     0
 END
 
-IDD_3DSCAN AFX_DIALOG_LAYOUT
+IDD_3DROUGH AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_3DCONTOUR AFX_DIALOG_LAYOUT
 BEGIN
     0
 END
@@ -3633,7 +3673,7 @@ BEGIN
     ID_FILE_NCD2DXF         "DXFを出力します\nDXF出力(Ctrl+D)"
     ID_FILE_3DCUT           "スキャニングパスから3D切削データを生成します\n3D生成(F7)"
     ID_FILE_3DROUGH         "3Dモデルの荒加工用スキャニングパスを生成します\n荒加工パス生成(F2)"
-    ID_FILE_3DSMOOTH        "3Dモデルの仕上げ用スキャニングパスを生成します\n仕上げパス生成(F3)"
+    ID_FILE_3DSMOOTH        "3Dモデルの仕上げ用等高線パスを生成します\n仕上げパス生成(F3)"
 END
 
 STRINGTABLE
@@ -3955,6 +3995,7 @@ BEGIN
     IDS_ERR_REGEX           "入力した正規表現はライブラリ側で拒否されました。変更してください。"
     IDS_ERR_GLSL            "OpenGLシェーダの準備でエラーが発生しました。Line=%d\nMsg=%s"
     IDS_ERR_KODATUNO        "Kodatunoライブラリ側で例外が発生しました．処理を中断します．"
+    IDS_ERR_CONTOUR         "点間隔とシフト量は2倍以上あけてください"
 END
 
 STRINGTABLE
