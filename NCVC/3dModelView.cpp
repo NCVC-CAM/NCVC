@@ -268,17 +268,19 @@ void C3dModelView::DrawRoughPath(void)
 
 void C3dModelView::DrawContourPath(void)
 {
-	std::vector<VCoord>& vv = GetDocument()->GetContourCoord();
-	if ( vv.empty() )
+	std::vector<VVCoord>& vvv = GetDocument()->GetContourCoord();
+	if ( vvv.empty() )
 		return;
 
 	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
 	::glBegin(GL_POINTS);
-	for ( auto it1=vv.begin(); it1!=vv.end(); ++it1 ) {
+	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-			::glVertex3d((*it2).x, (*it2).y, (*it2).z);
+			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+				::glVertex3d((*it3).x, (*it3).y, (*it3).z);
+			}
 		}
 	}
 	::glEnd();

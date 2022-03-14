@@ -9,6 +9,7 @@
 #include "3dOption.h"
 
 typedef	std::vector<Coord>	VCoord;
+typedef std::vector< std::vector<Coord> >	VVCoord;
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelDoc ドキュメント
@@ -26,7 +27,7 @@ class C3dModelDoc : public CDocBase
 				m_nRoughY;
 	int*		m_pRoughNum;		// スキャンライン1本ごとの加工点数を格納
 
-	std::vector<VCoord>	m_vvContourCoord;	// 仕上げ等高線座標
+	std::vector<VVCoord>	m_vvvContourCoord;	// 仕上げ等高線座標（3次元配列）
 
 protected:
 	C3dModelDoc();
@@ -51,11 +52,13 @@ public:
 	void	ClearContourCoord(void);
 	BOOL	MakeRoughCoord(NURBSS*, NURBSC*);
 	BOOL	MakeContourCoord(NURBSS*);
+	void	SetCoordGroup(VCoord&);
+	boost::tuple<int, double>	SearchNearPoint(const VCoord&, const CPointD&);
 	Coord***	GetRoughCoord(void) const {
 		return m_pRoughCoord;
 	}
-	std::vector<VCoord>&	GetContourCoord(void) {
-		return m_vvContourCoord;
+	std::vector<VVCoord>&	GetContourCoord(void) {
+		return m_vvvContourCoord;
 	}
 	boost::tuple<int, int>	GetRoughNumXY(void) const {
 		return boost::make_tuple(m_nRoughX, m_nRoughY);

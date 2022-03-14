@@ -324,25 +324,28 @@ BOOL MakeNurbs_RoughFunc(void)
 
 BOOL MakeNurbs_ContourFunc(void)
 {
-	std::vector<VCoord>&	vv = g_pDoc->GetContourCoord();
+/*
+	std::vector<VVCoord>&	vvv = g_pDoc->GetContourCoord();
 	int			idx, cnt = 0;
 	double		dGap;
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
-	for ( auto it1=vv.begin(); it1!=vv.end(); ++it1 ) {
+	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-			(*it2).dmy = 0.0;
+			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+				(*it3).dmy = 0.0;
+			}
 		}
 	}
 	
-	// フェーズ更新
-	SendFaseMessage(g_pParent, g_nFase, vv.size());
+	// フェーズ更新（階層）
+	SendFaseMessage(g_pParent, g_nFase, vvv.size());
 
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 	AddCustomNurbsCode(MKNC_STR_HEADER);
 
 	// 階層ごとにパス生成
-	for ( auto it=vv.begin(); it!=vv.end() && IsThread(); ++it ) {
+	for ( auto it=vvv.begin(); it!=vvv.end() && IsThread(); ++it ) {
 		// この階層が閉ループかどうかの判定
 
 
@@ -353,9 +356,8 @@ BOOL MakeNurbs_ContourFunc(void)
 			// 現在位置(x, y)に最も近い座標を検索
 			tie(idx, dGap) = SearchNearPoint(*it);
 			if ( idx < 0 ) {
-				// R点まで上昇
-				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
-				// この階層での処理終了
+				// この階層での処理終了なのでR点まで上昇
+				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));	// これは将来的には無くす
 				break;
 			}
 			// dGapが規定値以下かどうか
@@ -385,7 +387,7 @@ BOOL MakeNurbs_ContourFunc(void)
 
 	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
 	AddCustomNurbsCode(MKNC_STR_FOOTER);
-
+*/
 	return IsThread();
 }
 

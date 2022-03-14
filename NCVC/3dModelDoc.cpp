@@ -115,7 +115,7 @@ void C3dModelDoc::OnCloseDocument()
 
 void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable(m_pRoughCoord!=NULL || !m_vvContourCoord.empty() );
+	pCmdUI->Enable(m_pRoughCoord!=NULL || !m_vvvContourCoord.empty() );
 }
 
 void C3dModelDoc::OnFile3dMake()
@@ -173,7 +173,7 @@ void C3dModelDoc::ClearRoughCoord(void)
 
 void C3dModelDoc::ClearContourCoord(void)
 {
-	m_vvContourCoord.clear();
+	m_vvvContourCoord.clear();
 }
 
 BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
@@ -247,7 +247,7 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 {
 	// Kodatuno User's Guide 等高線を生成する
 	NURBS_Func	nf;		// NURBSを扱う関数集を呼び出す
-	VCoord	vc;			// 1平面の交点群
+	VCoord	v;			// 1平面の交点群
 	Coord	pt, p,
 			t[5000],	// 解の格納
 			nvec = SetCoord(0.0, 0.0, 1.0);	// 平面の法線ベクトル（XY平面）
@@ -270,11 +270,13 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 			num = nf.CalcIntersecPtsPlaneSearch(ns, pt, nvec, dSpace, 5, t, 5000, RUNGE_KUTTA);		// NURBS曲面と平面との交点群を交線追跡法で求める
 			for ( j=0; j<num; j++ ) {
 				p = nf.CalcNurbsSCoord(ns, t[j].x, t[j].y);		// 交点をパラメータ値から座標値へ変換
-				vc.push_back(p);
+				p.dmy = 0.0;
+				v.push_back(p);
 			}
-			if ( !vc.empty() ) {
-				m_vvContourCoord.push_back(vc);	// 1平面の交点群を保存
-				vc.clear();
+			if ( !v.empty() ) {
+				// 1平面の座標をグループ集合で登録
+				SetCoordGroup(v);
+				v.clear();
 			}
 		}
 	}
@@ -290,4 +292,85 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 		m_3dOpt.Save3dOption();
 
 	return bResult;
+}
+
+void C3dModelDoc::SetCoordGroup(VCoord& v)
+{
+	int		i, idx;
+	size_t	grp;	// 現在処理対象のvGroup
+	double	dGap;
+	VCoord	vGroup;
+	VVCoord	vv;
+
+	// 最初の検索ポイント
+	vGroup.push_back(v.front());
+	vv.push_back(vGroup);
+	grp = 0;
+	CPointD	ptNow(v.front().x, v.front().y);
+	v.front().dmy = 1.0;
+
+	while ( TRUE ) {
+		boost::tie(idx, dGap) = SearchNearPoint(v, ptNow);
+		if ( idx < 0 ) {
+			break;	// ループ終了条件
+		}
+		else if ( sqrt(dGap) < m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {
+			// 同一グループ
+			vv[grp].push_back(v[idx]);
+		}
+		else {
+			// 他のグループから検索
+			for ( i=0; i<vv.size(); i++ ) {
+				if ( i==grp )
+					continue;
+				CPointD	ptF(vv[i].front() - ptNow),
+						ptB(vv[i].back()  - ptNow);
+				if ( ptF.hypot() < m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {
+					std::reverse(vv[i].begin(), vv[i].end());
+					vv[i].push_back(v[idx]);
+					grp = i;
+					break;
+				}
+				else if ( ptB.hypot() < m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {
+					vv[i].push_back(v[idx]);
+					grp = i;
+					break;
+				}
+			}
+			if ( i >= vv.size() ) {
+				// 新規グループ
+				vGroup.clear();
+				vGroup.push_back(v[idx]);
+				vv.push_back(vGroup);
+				grp = vv.size() - 1;
+			}
+		}
+		// 検索済みマーク
+		v[idx].dmy = 1.0;
+		// 現在位置更新
+		ptNow.SetPoint(v[idx].x, v[idx].y);
+	}
+
+	// 1平面の交点群を保存
+	m_vvvContourCoord.push_back(vv);
+}
+
+boost::tuple<int, double> C3dModelDoc::SearchNearPoint(const VCoord& v, const CPointD& ptNow)
+{
+	CPointD	pt;
+	double	dGap, dGapMin = HUGE_VAL;
+	int		i, minID = -1;
+
+	// イテレータでやるとややこしい
+	for ( i=0; i<v.size(); i++ ) {
+		if ( v[i].dmy > 0 ) continue;	// 生成済み
+		pt.SetPoint(v[i].x-ptNow.x, v[i].y-ptNow.y);	// 現在位置との差
+		dGap = pt.x*pt.x + pt.y*pt.y;	// hypot()は使わない sqrt()が遅い
+		if ( dGap < dGapMin ) {
+			dGapMin = dGap;
+			minID = i;
+		}
+	}
+
+	return boost::make_tuple(minID, dGapMin);
 }
