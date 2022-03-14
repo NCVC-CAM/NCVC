@@ -283,7 +283,10 @@ optional<CPointF> CalcIntersectionPoint_LL
 		}
 	}
 
-	return bResult ? pt : optional<CPointF>();
+	if ( bResult )
+		return pt;
+	else
+		return boost::none;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -587,7 +590,10 @@ optional<CPointF> CalcOffsetIntersectionPoint_LC
 			pr1 = pr2;
 //	}
 
-	return nResult > 0 ? pr1 : optional<CPointF>();
+	if ( nResult > 0 )
+		return pr1;
+	else
+		return boost::none;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -616,7 +622,10 @@ optional<CPointF> CalcOffsetIntersectionPoint_LE
 			pr1 = pr2;
 	}
 
-	return nResult > 0 ? pr1 : optional<CPointF>();
+	if ( nResult > 0 )
+		return pr1;
+	else
+		return boost::none;
 }
 
 //////////////////////////////////////////////////////////////////////

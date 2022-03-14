@@ -246,7 +246,7 @@ inline boost::tuple<BOOL, CPointF, float, float> CNCdata::CalcRoundPoint(const C
 
 inline boost::optional<CPointF> CNCdata::SetChamferingPoint(BOOL, float)
 {
-	return boost::optional<CPointF>();
+	return boost::none;
 }
 
 inline float CNCdata::CalcBetweenAngle(const CNCdata*) const
@@ -261,17 +261,17 @@ inline int CNCdata::CalcOffsetSign(void) const
 
 inline boost::optional<CPointF> CNCdata::CalcPerpendicularPoint(ENPOINTORDER, float, int) const
 {
-	return boost::optional<CPointF>();
+	return boost::none;
 }
 
 inline boost::optional<CPointF> CNCdata::CalcOffsetIntersectionPoint(const CNCdata*, float, float, BOOL) const
 {
-	return boost::optional<CPointF>();
+	return boost::none;
 }
 
 inline boost::optional<CPointF> CNCdata::CalcOffsetIntersectionPoint2(const CNCdata*, float, BOOL) const
 {
-	return boost::optional<CPointF>();
+	return boost::none;
 }
 
 inline void CNCdata::SetCorrectPoint(ENPOINTORDER, const CPointF&, float)
@@ -420,7 +420,7 @@ inline boost::tuple<BOOL, CPointF, float, float> CNCcycle::CalcRoundPoint(const 
 
 inline boost::optional<CPointF> CNCcycle::SetChamferingPoint(BOOL, float)
 {
-	return boost::optional<CPointF>();
+	return boost::none;
 }
 
 inline float CNCcycle::CalcBetweenAngle(const CNCdata*) const
@@ -435,17 +435,17 @@ inline int CNCcycle::CalcOffsetSign(void) const
 
 inline boost::optional<CPointF> CNCcycle::CalcPerpendicularPoint(ENPOINTORDER, float, int) const
 {
-	return boost::optional<CPointF>();
+	return boost::none;
 }
 
 inline boost::optional<CPointF> CNCcycle::CalcOffsetIntersectionPoint(const CNCdata*, float, float, BOOL) const
 {
-	return boost::optional<CPointF>();
+	return boost::none;
 }
 
 inline boost::optional<CPointF> CNCcycle::CalcOffsetIntersectionPoint2(const CNCdata*, float, BOOL) const
 {
-	return boost::optional<CPointF>();
+	return boost::none;
 }
 
 inline void CNCcycle::SetCorrectPoint(ENPOINTORDER, const CPointF&, float)

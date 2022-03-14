@@ -729,7 +729,7 @@ optional<CPointF> SetCorrectCancel(const CNCdata* pData1, CNCdata* pData2)
 		return pt;
 	}
 
-	return optional<CPointF>();
+	return boost::none;
 }
 
 CNCdata* CreateNCobj

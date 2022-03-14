@@ -553,7 +553,7 @@ optional<float> CMachineOption::GetToolD(int nTool) const
 		if ( pTool->m_nTool == nTool )
 			return pTool->m_dToolD;
 	END_FOREACH
-	return optional<float>();
+	return boost::none;
 }
 
 optional<float> CMachineOption::GetToolH(int nTool) const
@@ -562,7 +562,7 @@ optional<float> CMachineOption::GetToolH(int nTool) const
 		if ( pTool->m_nTool == nTool )
 			return pTool->m_dToolH;
 	END_FOREACH
-	return optional<float>();
+	return boost::none;
 }
 
 int CMachineOption::GetMillType(int nTool) const

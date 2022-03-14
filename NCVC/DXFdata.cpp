@@ -353,7 +353,7 @@ int CDXFpoint::GetIntersectionPoint(const CPointF&, const CPointF&, CPointF[], B
 optional<CPointF>
 CDXFpoint::CalcOffsetIntersectionPoint(const CDXFdata*, float, BOOL) const
 {
-	return optional<CPointF>();
+	return boost::none;
 }
 
 int CDXFpoint::CheckIntersectionCircle(const CPointF&, float) const
@@ -1084,7 +1084,7 @@ int CDXFcircle::GetIntersectionPoint(const CPointF& pts, const CPointF& pte, CPo
 optional<CPointF>
 CDXFcircle::CalcOffsetIntersectionPoint(const CDXFdata*, float, BOOL) const
 {
-	return optional<CPointF>();
+	return boost::none;
 }
 
 int CDXFcircle::CheckIntersectionCircle(const CPointF&, float) const
@@ -1789,9 +1789,8 @@ optional<CPointF>
 CDXFarc::CalcOffsetIntersectionPoint
 	(const CDXFdata* pNext, float r, BOOL bLeft) const
 {
-	CPointF	pto( GetNativePoint(1) ), pt1, pt2, ptResult;
+	CPointF	pto( GetNativePoint(1) ), pt1, pt2;
 	int		k1, k2, nResult;
-	BOOL	bResult = FALSE;
 	CDXFdata*	pData;
 	const CDXFarc*		pArc;
 	const CDXFpolyline*	pPolyline;
@@ -1805,8 +1804,7 @@ CDXFarc::CalcOffsetIntersectionPoint
 			optional<CPointF> ptr = ::CalcOffsetIntersectionPoint_LC(pt1, pt2, m_r, r, r,
 						!m_bRoundOrig, !bLeft);
 			if ( ptr ) {
-				ptResult = *ptr + pto;
-				bResult = TRUE;
+				return (*ptr) + pto;
 			}
 		}
 		break;
@@ -1821,15 +1819,11 @@ CDXFarc::CalcOffsetIntersectionPoint
 		tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(m_ct, pArc->GetCenter(),
 				m_r+r*k1, pArc->GetR()+r*k2);
 		if ( nResult > 1 ) {
-			ptResult = GAPCALC(pt1-pto) < GAPCALC(pt2-pto) ? pt1 : pt2;
-			bResult = TRUE;
+			return GAPCALC(pt1-pto) < GAPCALC(pt2-pto) ? pt1 : pt2;
 		}
 		else if ( nResult > 0 ) {
-			ptResult = pt1;
-			bResult = TRUE;
+			return pt1;
 		}
-		else
-			bResult = FALSE;
 		break;
 	case DXFELLIPSEDATA:
 		break;
@@ -1845,7 +1839,7 @@ CDXFarc::CalcOffsetIntersectionPoint
 		break;
 	}
 
-	return bResult ? ptResult : optional<CPointF>();
+	return boost::none;
 }
 
 int CDXFarc::CheckIntersectionCircle(const CPointF& ptc, float r) const

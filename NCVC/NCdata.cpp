@@ -695,7 +695,7 @@ optional<CPointF> CNCline::SetChamferingPoint(BOOL bStart, float c)
 {
 	// ’·‚³‚ª‘«‚ç‚È‚¢‚Æ‚«‚Í´×°
 	if ( c >= SetCalcLength() )
-		return optional<CPointF>();
+		return boost::none;
 
 	CPointF		pt;
 	CPointF		pto, pte;
@@ -804,7 +804,7 @@ optional<CPointF> CNCline::CalcOffsetIntersectionPoint
 		return pt;
 	}
 
-	return optional<CPointF>();
+	return boost::none;
 }
 
 optional<CPointF> CNCline::CalcOffsetIntersectionPoint2
@@ -834,7 +834,7 @@ optional<CPointF> CNCline::CalcOffsetIntersectionPoint2
 		pt += GetPlaneValue(m_ptValE);
 		return pt;
 	}
-	return optional<CPointF>();
+	return boost::none;
 }
 
 void CNCline::SetCorrectPoint(ENPOINTORDER enPoint, const CPointF& ptSrc, float)
@@ -2310,19 +2310,19 @@ optional<CPointF> CNCcircle::SetChamferingPoint(BOOL bStart, float c)
 	if ( m_eq - m_sq > PI ) {
 		// 180‹‚ğ’´‚¦‚é‚Æ‚«‚Í’¼Œa‚Æ”äŠr
 		if ( c >= fabs(m_r)*2 )
-			return optional<CPointF>();
+			return boost::none;
 	}
 	else {
 		// 180‹–¢–‚Ìê‡‚ÍŒ·‚Ì’·‚³‚Æ”äŠr
 		if ( c >= pt1.hypot(&pt2) )
-			return optional<CPointF>();
+			return boost::none;
 	}
 
 	// ‚Q‚Â‚Ì‰~‚ÌŒğ“_‚ğ‹‚ß‚é -> ‰ğ‚ª‚Q‚Â‚È‚¢‚Æ–Êæ‚èo—ˆ‚È‚¢‚Æ”»’f‚·‚é
 	int	nResult;
 	tie(nResult, pt1, pt2) = ::CalcIntersectionPoint_CC(ptOrg1, ptOrg2, fabs(m_r), c);
 	if ( nResult != 2 )
-		return optional<CPointF>();
+		return boost::none;
 
 	// Œv‰ñ‚è‚Ìê‡CnŠp‚ÆIŠp‚ª“ü‚ê‘Ö‚í‚Á‚Ä‚¢‚é‚Ì‚Åˆê“I‚ÉŒ³‚É–ß‚·
 	if ( !GetG03() )
@@ -2517,7 +2517,7 @@ optional<CPointF> CNCcircle::CalcOffsetIntersectionPoint
 		return pt;
 	}
 
-	return optional<CPointF>();
+	return boost::none;
 }
 
 optional<CPointF> CNCcircle::CalcOffsetIntersectionPoint2
@@ -2553,7 +2553,7 @@ optional<CPointF> CNCcircle::CalcOffsetIntersectionPoint2
 		pt += GetPlaneValue(m_ptValE);
 		return pt;
 	}
-	return optional<CPointF>();
+	return boost::none;
 }
 
 void CNCcircle::SetCorrectPoint(ENPOINTORDER enPoint, const CPointF& ptSrc, float rr)
@@ -2623,7 +2623,7 @@ optional<float> _CalcRoundPoint_CircleInOut
 		float	l1 = pts.x*pts.x + pts.y*pts.y;
 		float	l2 = pte.x*pte.x + pte.y*pte.y;
 		if ( fabs(l1 - l2) < NCMIN )	// ‹——£‚ª“™‚µ‚¢==“¯‹OÕ‰~
-			return optional<float>();
+			return boost::none;
 		else if ( l1 > l2 )
 			return -r;
 		else
