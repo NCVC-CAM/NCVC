@@ -52,7 +52,7 @@ static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 // 荒加工用サブ
 static	tuple<int, int>			MoveFirstPoint(int);		// 最初のCoordポイントを検索
 // 仕上げ等高線用サブ
-static	tuple<int, double>	SearchNearPoint(VCoord&);
+static	tuple<int, double>	SearchNearPoint(const VCoord&);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomNurbsCode(int);
@@ -364,8 +364,10 @@ BOOL MakeNurbs_ContourFunc(void)
 				_AddMakeCoord( (*it)[idx] );
 			}
 			else {
-				// 一旦R点まで上昇
-				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
+				if ( CNCMakeMill::ms_xyz[NCA_Z] < GetDbl(MKNC_DBL_ZG0STOP) ) {
+					// 一旦R点まで上昇
+					_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
+				}
 				// 次の切削ポイントまで移動
 				CPoint3D	pt( (*it)[idx] );
 				_AddMovePoint(pt);
@@ -428,7 +430,7 @@ tuple<int, int>	MoveFirstPoint(int my)
 	return make_tuple(fx, fy);
 }
 
-tuple<int, double> SearchNearPoint(VCoord& v)
+tuple<int, double> SearchNearPoint(const VCoord& v)
 {
 	CPointF	ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
 	CPointD	pt;
