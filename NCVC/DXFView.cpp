@@ -1085,7 +1085,7 @@ LRESULT CDXFView::OnBindInitMsg(WPARAM wParam, LPARAM)
 	bResult = FALSE;
 	for ( j=0; j<YY.size() && !bResult; j++ ) {
 		for ( it=YY[j].begin(); it!=YY[j].end(); ++it ) {
-			if ( (*it).y < 0 ) {
+			if ( it->y < 0 ) {
 				bResult = TRUE;
 				break;
 			}

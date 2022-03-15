@@ -1139,7 +1139,7 @@ CDXFpolyline* PolylineProcedure(CDXFDoc* pDoc)
 	CPointF	pt;
 	vector<POLYVERTEX>::iterator	it;
 	for ( it=g_vVertex.begin(); it!=g_vVertex.end(); ++it ) {
-		dxfPoint.c = (*it).pt;
+		dxfPoint.c = it->pt;
 		if ( g_nBlock>=0 && g_pBkData )	// Blockˆ—’†
 			dxfPoint.c -= g_pBkData->GetBlockOrigin();	// Œ´“_•â³
 		if ( w != 0 ) {
@@ -1152,7 +1152,7 @@ CDXFpolyline* PolylineProcedure(CDXFDoc* pDoc)
 			AfxMessageBox(IDS_ERR_DXFPOLYLINE, MB_OK|MB_ICONEXCLAMATION);
 			return FALSE;
 		}
-		w = (*it).w;
+		w = it->w;
 		pt = dxfPoint.c;
 	}
 
@@ -1259,7 +1259,7 @@ CDXFpolyline* SplineProcedure(CDXFDoc* pDoc)
 		dxfPoint.c = 0;
 		for ( it=g_vVertex.begin(); it!=g_vVertex.end(); ++it ) {
 			r = RecursiveSpline(i++, m, t);
-			dxfPoint.c += (*it).pt * r * (*it).w;
+			dxfPoint.c += it->pt * r * it->w;
 		}
 		if ( dxfPoint.c != 0 ) {
 			if ( g_nBlock>=0 && g_pBkData )	// Blockˆ—’†

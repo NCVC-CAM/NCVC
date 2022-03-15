@@ -753,15 +753,15 @@ void CDXFMake::MakeSection_TableLayer_NCD(VTABLELAYERINFO& v)
 		else
 			strLayer.MakeUpper();
 		for ( it=v.begin(); it!=v.end(); ++it ) {
-			if ( (*it).strLayer == strLayer )
+			if ( it->strLayer == strLayer )
 				break;
 		}
 		if ( it == v.end() )
 			v.push_back( TABLELAYERINFO(strLayer, strType, nColor) );
 		else {
-			(*it).strLayer = strLayer;
-			(*it).strType  = strType;
-			(*it).nColor   = nColor;
+			it->strLayer = strLayer;
+			it->strType  = strType;
+			it->nColor   = nColor;
 		}
 	}
 }
@@ -786,15 +786,15 @@ void CDXFMake::MakeSection_TableLayer_DXF(VTABLELAYERINFO& v, const CDXFDoc* pDo
 		else
 			strLayer.MakeUpper();
 		for ( it=v.begin(); it!=v.end(); ++it ) {
-			if ( (*it).strLayer == strLayer )
+			if ( it->strLayer == strLayer )
 				break;
 		}
 		if ( it == v.end() )
 			v.push_back( TABLELAYERINFO(strLayer, strType, nColor) );
 		else {
-			(*it).strLayer = strLayer;
-			(*it).strType  = strType;
-			(*it).nColor   = nColor;
+			it->strLayer = strLayer;
+			it->strType  = strType;
+			it->nColor   = nColor;
 		}
 	}
 }

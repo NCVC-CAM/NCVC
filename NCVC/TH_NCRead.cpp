@@ -521,7 +521,7 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			STDSEPA		sep("xXtT");
 			STDTOKEN	tok(str, sep);
 			for ( STDTOKEN::iterator it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
-				dVal[n++] = (float)atof( (*it).c_str() );
+				dVal[n++] = (float)atof( it->c_str() );
 			}
 			dVal[0] /= 2.0f;	dVal[1] /= 2.0f;
 			CRect3F	rc(-dVal[0], -dVal[1], dVal[0], dVal[1], 0, -dVal[2]);
@@ -543,7 +543,7 @@ struct CCommentParser : qi::grammar<Iterator, Skipper>
 			STDSEPA		sep("hH");
 			STDTOKEN	tok(str, sep);
 			for ( STDTOKEN::iterator it=tok.begin(); it!=tok.end() && n<SIZEOF(dVal); ++it ) {
-				dVal[n++] = (float)atof( (*it).c_str() );
+				dVal[n++] = (float)atof( it->c_str() );
 			}
 			CPoint3F	pt(0, 0, -dVal[1]);
 			g_pDoc->SetWorkCylinderComment(dVal[0], dVal[1], pt);

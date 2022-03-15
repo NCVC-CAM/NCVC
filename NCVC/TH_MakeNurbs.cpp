@@ -351,7 +351,7 @@ BOOL MakeNurbs_ContourFunc(void)
 	AddCustomNurbsCode(MKNC_STR_HEADER);
 
 	// ŠK‘w‚²‚Æ‚ÉƒpƒX¶¬
-	while ( TRUE ) {
+	while ( IsThread() ) {
 		// layerŠK‘w‚Å‚ÌŒŸõ
 		tie(grp1, idx1, dGap1) = SearchNearGroup(vvv[layer]);
 		if ( grp1 < 0 ) {

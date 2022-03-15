@@ -1430,7 +1430,7 @@ void CDXFchain::SetVectorPoint(POSITION pos1, CVPointF& vpt, size_t n)
 		pData = GetSeqData(pos1);
 		if ( !pos1 )
 			pos1 = GetFirstPosition();
-		pData->SetVectorPoint(vpt, *it++);
+		pData->SetVectorPoint(vpt, (*it)++);
 	} while ( pos1 != pos2 );
 }
 
