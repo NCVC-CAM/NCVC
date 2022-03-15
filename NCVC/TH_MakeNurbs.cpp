@@ -331,7 +331,8 @@ BOOL MakeNurbs_ContourFunc(void)
 	__int64				grp1, idx1, grp2, idx2;
 	size_t				layer = 0;		// 現在処理中の階層
 	optional<size_t>	pendingLayer;	// 処理を保留したレイヤ
-	double	dGap1, dGap2;
+	double		dGap1, dGap2;
+	CPoint3D	pt, ptNow;
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
@@ -357,10 +358,10 @@ BOOL MakeNurbs_ContourFunc(void)
 			SetProgressPos(g_pParent, ++cnt);
 			// この階層は終了
 			if ( ++layer < vvv.size() ) {
-				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));	// 一旦R点まで上昇
 				continue;
 			}
 			else if ( pendingLayer ) {
+				// R点まで上昇
 				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
 				// 保留中のレイヤを戻す
 				layer = pendingLayer.value();
@@ -373,7 +374,7 @@ BOOL MakeNurbs_ContourFunc(void)
 			}
 		}
 		// 次の階層でもチェック
-		if ( layer+1 < vvv.size() ) {
+		if ( layer!=0 && layer+1<vvv.size() ) {
 			tie(grp2, idx2, dGap2) = SearchNearGroup(vvv[layer+1]);
 			if ( dGap2 < dGap1 ) {
 				// 同じ階層よりも下の階層の方が近い
@@ -381,19 +382,27 @@ BOOL MakeNurbs_ContourFunc(void)
 					pendingLayer = layer;	// 処理中のレイヤを保存
 				}
 				layer++;
+				// 現在位置＋R点だけ上昇
+				_AddMoveG00Z(CNCMakeMill::ms_xyz[NCA_Z] + GetDbl(MKNC_DBL_ZG0STOP));
 				// 生成
 				MakeLoopCoord(vvv[layer][grp2], idx2);
 				continue;
 			}
 		}
+		pt = vvv[layer][grp1][idx1];
+		pt.z -= g_dZoffset;
+		ptNow.SetPoint(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y], CNCMakeMill::ms_xyz[NCA_Z]);
+		if ( ptNow.hypot(&pt) > Get3dDbl(D3_DBL_CONTOUR_SHIFT)*2.0 ) {
+			// 階層シフト量*2より大きい移動の場合は
+			// R点まで上昇（衝突回避）
+			_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
+		}
+		else {
+			// 最小の移動で
+			// 現在位置＋R点だけ上昇
+			_AddMoveG00Z(CNCMakeMill::ms_xyz[NCA_Z] + GetDbl(MKNC_DBL_ZG0STOP));
+		}
 		// この階層で生成
-		_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
-		// 次の切削ポイントまで移動
-		CPoint3D	pt( vvv[layer][grp1][idx1] );
-		_AddMovePoint(pt);
-		// そこまで下降
-		_AddMakeG01Zcut(pt.z);
-		// 生成
 		MakeLoopCoord(vvv[layer][grp1], idx1);
 	}
 
@@ -491,6 +500,11 @@ void MakeLoopCoord(VCoord& v, size_t idx)
 			ptB(v.back().x,  v.back().y );
 
 	if ( ptF.hypot(&ptB) < Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0 ) {
+		// 開始点に移動
+		CPoint3D	pt(v[idx]);
+		_AddMovePoint(pt);
+		// そこまで下降
+		_AddMakeG01Zcut(pt.z);
 		// idxから順に生成
 		size_t	i;
 		for ( i=idx; i<v.size(); i++ ) {
@@ -508,6 +522,9 @@ void MakeLoopCoord(VCoord& v, size_t idx)
 		ptF -= ptNow;
 		ptB -= ptNow;
 		if ( ptF.x*ptF.x+ptF.y*ptF.y < ptB.x*ptB.x+ptB.y*ptB.y ) {
+			CPoint3D	pt(v.front());
+			_AddMovePoint(pt);
+			_AddMakeG01Zcut(pt.z);
 			// 正順
 			BOOST_FOREACH(Coord& c, v) {
 				_AddMakeCoord(c);
@@ -515,6 +532,9 @@ void MakeLoopCoord(VCoord& v, size_t idx)
 			}
 		}
 		else {
+			CPoint3D	pt(v.back());
+			_AddMovePoint(pt);
+			_AddMakeG01Zcut(pt.z);
 			// 逆順
 			BOOST_REVERSE_FOREACH(Coord& c, v) {
 				_AddMakeCoord(c);
