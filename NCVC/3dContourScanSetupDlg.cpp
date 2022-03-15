@@ -65,6 +65,13 @@ void C3dContourScanSetupDlg::OnOK()
 		m_dSpace.SetSel(0, -1);
 		return;
 	}
+	if ( m_dShift <= 0.0f ) {
+		// これがマイナスだと処理が無限ループ
+		AfxMessageBox(IDS_ERR_SETTING, MB_OK|MB_ICONEXCLAMATION);
+		m_dShift.SetFocus();
+		m_dShift.SetSel(0, -1);
+		return;
+	}
 	if ( m_dShift < m_dSpace*2.0 ) {
 		// 近接点を検索するためのマージン
 		AfxMessageBox(IDS_ERR_CONTOUR, MB_OK|MB_ICONEXCLAMATION);
