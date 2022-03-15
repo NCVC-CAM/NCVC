@@ -315,11 +315,12 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 
 void C3dModelDoc::SetCoordGroup(VCoord& v)
 {
-	__int64	idx;
-	size_t	i, grp;	// 現在処理対象のvGroup
-	double	dGap, dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
-	VCoord	vGroup;
-	VVCoord	vv;
+	ptrdiff_t	idx,
+				grp;	// 現在処理対象のvGroup
+	double		dGap, dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
+	VCoord		vGroup;
+	VVCoord		vv;
+	VVCoord::iterator	it;
 
 	// 最初の検索ポイント
 	vGroup.push_back(v.front());
@@ -339,24 +340,24 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 		}
 		else {
 			// 他のグループから検索
-			for ( i=0; i<vv.size(); i++ ) {
-				if ( i==grp )
+			for ( it=vv.begin(); it!=vv.end(); ++it ) {
+				if ( grp == std::distance(vv.begin(), it) )
 					continue;
-				CPointD	ptF(vv[i].front().x-ptNow.x, vv[i].front().y-ptNow.y),
-						ptB(vv[i].back().x -ptNow.x, vv[i].back().y -ptNow.y);
+				CPointD	ptF(it->front().x-ptNow.x, it->front().y-ptNow.y),
+						ptB(it->back().x -ptNow.x, it->back().y -ptNow.y);
 				if ( ptF.hypot() < dMargin ) {
-					std::reverse(vv[i].begin(), vv[i].end());
-					vv[i].push_back(v[idx]);
-					grp = i;
+					std::reverse(it->begin(), it->end());
+					it->push_back(v[idx]);
+					grp = std::distance(vv.begin(), it);
 					break;
 				}
 				else if ( ptB.hypot() < dMargin ) {
-					vv[i].push_back(v[idx]);
-					grp = i;
+					it->push_back(v[idx]);
+					grp = std::distance(vv.begin(), it);
 					break;
 				}
 			}
-			if ( i >= vv.size() ) {
+			if ( it == vv.end() ) {
 				// 新規グループ
 				vGroup.clear();
 				vGroup.push_back(v[idx]);
@@ -374,11 +375,11 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 	m_vvvContourCoord.push_back(vv);
 }
 
-boost::tuple<__int64, double> C3dModelDoc::SearchNearPoint(const VCoord& v, const CPointD& ptNow)
+boost::tuple<ptrdiff_t, double> C3dModelDoc::SearchNearPoint(const VCoord& v, const CPointD& ptNow)
 {
-	CPointD	pt;
-	double	dGap, dGapMin = HUGE_VAL;
-	__int64	minID = -1;
+	CPointD		pt;
+	double		dGap, dGapMin = HUGE_VAL;
+	ptrdiff_t	minID = -1;
 
 	for ( auto it=v.begin(); it!=v.end(); ++it ) {
 		if ( it->dmy > 0 ) continue;	// 生成済み

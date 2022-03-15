@@ -52,8 +52,8 @@ static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 // 荒加工用サブ
 static	tuple<int, int>			MoveFirstPoint(int);		// 最初のCoordポイントを検索
 // 仕上げ等高線用サブ
-static	tuple<__int64, __int64, double>	SearchNearGroup(const VVCoord&);
-static	tuple<__int64, double>			SearchNearPoint(const VCoord&);
+static	tuple<ptrdiff_t, ptrdiff_t, double>	SearchNearGroup(const VVCoord&);
+static	tuple<ptrdiff_t, double>			SearchNearPoint(const VCoord&);
 static	void	MakeLoopCoord(VCoord&, size_t);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
@@ -328,7 +328,7 @@ BOOL MakeNurbs_ContourFunc(void)
 {
 	std::vector<VVCoord>&	vvv = g_pDoc->GetContourCoord();
 	INT_PTR				maxcnt = 0, cnt = 0;
-	__int64				grp1, idx1, grp2, idx2;
+	ptrdiff_t			grp1, idx1, grp2, idx2;
 	size_t				layer = 0;		// 現在処理中の階層
 	optional<size_t>	pendingLayer;	// 処理を保留したレイヤ
 	double		dGap1, dGap2;
@@ -456,10 +456,10 @@ tuple<int, int>	MoveFirstPoint(int my)
 	return make_tuple(fx, fy);
 }
 
-tuple<__int64, __int64, double> SearchNearGroup(const VVCoord& vv)
+tuple<ptrdiff_t, ptrdiff_t, double> SearchNearGroup(const VVCoord& vv)
 {
-	__int64	i, grp = -1, idx = -1;
-	double	dGap, dGapMin = HUGE_VAL;
+	ptrdiff_t	i, grp = -1, idx = -1;
+	double		dGap, dGapMin = HUGE_VAL;
 
 	for ( auto it=vv.begin(); it!=vv.end(); ++it ) {
 		tie(i, dGap) = SearchNearPoint(*it);
@@ -473,12 +473,12 @@ tuple<__int64, __int64, double> SearchNearGroup(const VVCoord& vv)
 	return make_tuple(grp, idx, dGapMin);
 }
 
-tuple<__int64, double> SearchNearPoint(const VCoord& v)
+tuple<ptrdiff_t, double> SearchNearPoint(const VCoord& v)
 {
-	CPointF	ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
-	CPointD	pt;
-	double	dGap, dGapMin = HUGE_VAL;
-	__int64	minID = -1;
+	CPointF		ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
+	CPointD		pt;
+	double		dGap, dGapMin = HUGE_VAL;
+	ptrdiff_t	minID = -1;
 
 	for ( auto it=v.begin(); it!=v.end(); ++it ) {
 		if ( it->dmy > 0 ) continue;	// 生成済み
