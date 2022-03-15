@@ -315,9 +315,9 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 
 void C3dModelDoc::SetCoordGroup(VCoord& v)
 {
-	int		i, idx;
-	size_t	grp;	// 現在処理対象のvGroup
-	double	dGap;
+	__int64	idx;
+	size_t	i, grp;	// 現在処理対象のvGroup
+	double	dGap, dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
 	VCoord	vGroup;
 	VVCoord	vv;
 
@@ -333,7 +333,7 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 		if ( idx < 0 ) {
 			break;	// ループ終了条件
 		}
-		else if ( sqrt(dGap) < m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {
+		else if ( sqrt(dGap) < dMargin ) {
 			// 同一グループ
 			vv[grp].push_back(v[idx]);
 		}
@@ -342,15 +342,15 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 			for ( i=0; i<vv.size(); i++ ) {
 				if ( i==grp )
 					continue;
-				CPointD	ptF(vv[i].front() - ptNow),
-						ptB(vv[i].back()  - ptNow);
-				if ( ptF.hypot() < m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {
+				CPointD	ptF(vv[i].front().x-ptNow.x, vv[i].front().y-ptNow.y),
+						ptB(vv[i].back().x -ptNow.x, vv[i].back().y -ptNow.y);
+				if ( ptF.hypot() < dMargin ) {
 					std::reverse(vv[i].begin(), vv[i].end());
 					vv[i].push_back(v[idx]);
 					grp = i;
 					break;
 				}
-				else if ( ptB.hypot() < m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {
+				else if ( ptB.hypot() < dMargin ) {
 					vv[i].push_back(v[idx]);
 					grp = i;
 					break;
@@ -374,20 +374,19 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 	m_vvvContourCoord.push_back(vv);
 }
 
-boost::tuple<int, double> C3dModelDoc::SearchNearPoint(const VCoord& v, const CPointD& ptNow)
+boost::tuple<__int64, double> C3dModelDoc::SearchNearPoint(const VCoord& v, const CPointD& ptNow)
 {
 	CPointD	pt;
 	double	dGap, dGapMin = HUGE_VAL;
-	int		i, minID = -1;
+	__int64	minID = -1;
 
-	// イテレータでやるとややこしい
-	for ( i=0; i<v.size(); i++ ) {
-		if ( v[i].dmy > 0 ) continue;	// 生成済み
-		pt.SetPoint(v[i].x-ptNow.x, v[i].y-ptNow.y);	// 現在位置との差
+	for ( auto it=v.begin(); it!=v.end(); ++it ) {
+		if ( it->dmy > 0 ) continue;	// 生成済み
+		pt.SetPoint(it->x-ptNow.x, it->y-ptNow.y);	// 現在位置との差
 		dGap = pt.x*pt.x + pt.y*pt.y;	// hypot()は使わない sqrt()が遅い
 		if ( dGap < dGapMin ) {
 			dGapMin = dGap;
-			minID = i;
+			minID = std::distance(v.begin(), it);
 		}
 	}
 

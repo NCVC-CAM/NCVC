@@ -53,7 +53,7 @@ public:
 	BOOL	MakeRoughCoord(NURBSS*, NURBSC*);
 	BOOL	MakeContourCoord(NURBSS*);
 	void	SetCoordGroup(VCoord&);
-	boost::tuple<int, double>	SearchNearPoint(const VCoord&, const CPointD&);
+	boost::tuple<__int64, double>	SearchNearPoint(const VCoord&, const CPointD&);
 	Coord***	GetRoughCoord(void) const {
 		return m_pRoughCoord;
 	}

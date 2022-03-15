@@ -279,7 +279,7 @@ void C3dModelView::DrawContourPath(void)
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
 			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				::glVertex3d((*it3).x, (*it3).y, (*it3).z);
+				::glVertex3d(it3->x, it3->y, it3->z);
 			}
 		}
 	}

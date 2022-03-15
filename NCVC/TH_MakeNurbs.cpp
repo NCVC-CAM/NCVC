@@ -52,7 +52,9 @@ static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 // 荒加工用サブ
 static	tuple<int, int>			MoveFirstPoint(int);		// 最初のCoordポイントを検索
 // 仕上げ等高線用サブ
-static	tuple<int, double>	SearchNearPoint(const VCoord&);
+static	tuple<__int64, __int64, double>	SearchNearGroup(const VVCoord&);
+static	tuple<__int64, double>			SearchNearPoint(const VCoord&);
+static	void	MakeLoopCoord(VCoord&, size_t);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomNurbsCode(int);
@@ -324,62 +326,75 @@ BOOL MakeNurbs_RoughFunc(void)
 
 BOOL MakeNurbs_ContourFunc(void)
 {
-/*
 	std::vector<VVCoord>&	vvv = g_pDoc->GetContourCoord();
-	int			idx, cnt = 0;
-	double		dGap;
+	INT_PTR				maxcnt = 0, cnt = 0;
+	__int64				grp1, idx1, grp2, idx2;
+	size_t				layer = 0;		// 現在処理中の階層
+	optional<size_t>	pendingLayer;	// 処理を保留したレイヤ
+	double	dGap1, dGap2;
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+			maxcnt++;	// 座標集合==処理数
 			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				(*it3).dmy = 0.0;
+				it3->dmy = 0.0;
 			}
 		}
 	}
 	
-	// フェーズ更新（階層）
-	SendFaseMessage(g_pParent, g_nFase, vvv.size());
+	// フェーズ更新
+	SendFaseMessage(g_pParent, g_nFase, maxcnt);
 
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 	AddCustomNurbsCode(MKNC_STR_HEADER);
 
 	// 階層ごとにパス生成
-	for ( auto it=vvv.begin(); it!=vvv.end() && IsThread(); ++it ) {
-		// この階層が閉ループかどうかの判定
-
-
-		// この階層で全て生成するまで繰り返し
-		// 　にこだわらないほうがいい．近い座標から切削する方が効率いいはず
-		idx = 0;
-		while ( IsThread() ) {
-			// 現在位置(x, y)に最も近い座標を検索
-			tie(idx, dGap) = SearchNearPoint(*it);
-			if ( idx < 0 ) {
-				// この階層での処理終了なのでR点まで上昇
-				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));	// これは将来的には無くす
-				break;
+	while ( TRUE ) {
+		// layer階層での検索
+		tie(grp1, idx1, dGap1) = SearchNearGroup(vvv[layer]);
+		if ( grp1 < 0 ) {
+			SetProgressPos(g_pParent, ++cnt);
+			// この階層は終了
+			if ( ++layer < vvv.size() ) {
+				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));	// 一旦R点まで上昇
+				continue;
 			}
-			// dGapが規定値以下かどうか
-			if ( sqrt(dGap) <= Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {	// *2.0fはマージン
-				// 点間隔以下ならそのまま生成
-				_AddMakeCoord( (*it)[idx] );
+			else if ( pendingLayer ) {
+				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
+				// 保留中のレイヤを戻す
+				layer = pendingLayer.value();
+				pendingLayer.reset();
+				continue;
 			}
 			else {
-				if ( CNCMakeMill::ms_xyz[NCA_Z] < GetDbl(MKNC_DBL_ZG0STOP) ) {
-					// 一旦R点まで上昇
-					_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
-				}
-				// 次の切削ポイントまで移動
-				CPoint3D	pt( (*it)[idx] );
-				_AddMovePoint(pt);
-				// そこまで下降
-				_AddMakeG01Zcut(pt.z);
+				// 主ループ終了
+				break;
 			}
-			// 生成済みマーク
-			(*it)[idx].dmy = 1.0;
 		}
-		SetProgressPos(g_pParent, ++cnt);
+		// 次の階層でもチェック
+		if ( layer+1 < vvv.size() ) {
+			tie(grp2, idx2, dGap2) = SearchNearGroup(vvv[layer+1]);
+			if ( dGap2 < dGap1 ) {
+				// 同じ階層よりも下の階層の方が近い
+				if ( !pendingLayer ) {		// 処理保留のレイヤがない場合
+					pendingLayer = layer;	// 処理中のレイヤを保存
+				}
+				layer++;
+				// 生成
+				MakeLoopCoord(vvv[layer][grp2], idx2);
+				continue;
+			}
+		}
+		// この階層で生成
+		_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
+		// 次の切削ポイントまで移動
+		CPoint3D	pt( vvv[layer][grp1][idx1] );
+		_AddMovePoint(pt);
+		// そこまで下降
+		_AddMakeG01Zcut(pt.z);
+		// 生成
+		MakeLoopCoord(vvv[layer][grp1], idx1);
 	}
 
 	// Z軸をイニシャル点に復帰
@@ -387,7 +402,7 @@ BOOL MakeNurbs_ContourFunc(void)
 
 	// Gｺｰﾄﾞﾌｯﾀﾞ(終了ｺｰﾄﾞ)
 	AddCustomNurbsCode(MKNC_STR_FOOTER);
-*/
+
 	return IsThread();
 }
 
@@ -432,25 +447,81 @@ tuple<int, int>	MoveFirstPoint(int my)
 	return make_tuple(fx, fy);
 }
 
-tuple<int, double> SearchNearPoint(const VCoord& v)
+tuple<__int64, __int64, double> SearchNearGroup(const VVCoord& vv)
+{
+	__int64	i, grp = -1, idx = -1;
+	double	dGap, dGapMin = HUGE_VAL;
+
+	for ( auto it=vv.begin(); it!=vv.end(); ++it ) {
+		tie(i, dGap) = SearchNearPoint(*it);
+		if ( 0<=i && dGap<dGapMin ) {
+			dGapMin = dGap;
+			grp = std::distance(vv.begin(), it);
+			idx = i;
+		}
+	}
+
+	return make_tuple(grp, idx, dGapMin);
+}
+
+tuple<__int64, double> SearchNearPoint(const VCoord& v)
 {
 	CPointF	ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
 	CPointD	pt;
 	double	dGap, dGapMin = HUGE_VAL;
-	int		i, minID = -1;
+	__int64	minID = -1;
 
-	// イテレータでやるとややこしい
-	for ( i=0; i<v.size(); i++ ) {
-		if ( v[i].dmy > 0 ) continue;	// 生成済み
-		pt.SetPoint( v[i].x-ptNow.x, v[i].y-ptNow.y );	// 現在位置との差
+	for ( auto it=v.begin(); it!=v.end(); ++it ) {
+		if ( it->dmy > 0 ) continue;	// 生成済み
+		pt.SetPoint( it->x-ptNow.x, it->y-ptNow.y );	// 現在位置との差
 		dGap = pt.x*pt.x + pt.y*pt.y;	// hypot()は使わない sqrt()が遅い
 		if ( dGap < dGapMin ) {
 			dGapMin = dGap;
-			minID = i;
+			minID = std::distance(v.begin(), it);
 		}
 	}
 
 	return make_tuple(minID, dGapMin);
+}
+
+void MakeLoopCoord(VCoord& v, size_t idx)
+{
+	// 閉じた集合か判断
+	CPointD	ptF(v.front().x, v.front().y),
+			ptB(v.back().x,  v.back().y );
+
+	if ( ptF.hypot(&ptB) < Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0 ) {
+		// idxから順に生成
+		size_t	i;
+		for ( i=idx; i<v.size(); i++ ) {
+			_AddMakeCoord(v[i]);
+			v[i].dmy = 1.0;
+		}
+		for ( i=0; i<idx; i++ ) {
+			_AddMakeCoord(v[i]);
+			v[i].dmy = 1.0;
+		}
+	}
+	else {
+		// 端点から順に生成
+		CPointD	ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
+		ptF -= ptNow;
+		ptB -= ptNow;
+		if ( ptF.x*ptF.x+ptF.y*ptF.y < ptB.x*ptB.x+ptB.y*ptB.y ) {
+			// 正順
+			BOOST_FOREACH(Coord& c, v) {
+				_AddMakeCoord(c);
+				c.dmy = 1.0;
+			}
+		}
+		else {
+			// 逆順
+			BOOST_REVERSE_FOREACH(Coord& c, v) {
+				_AddMakeCoord(c);
+				c.dmy = 1.0;
+			}
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
