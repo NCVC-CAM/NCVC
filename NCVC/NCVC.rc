@@ -3996,6 +3996,7 @@ BEGIN
     IDS_ERR_GLSL            "OpenGLシェーダの準備でエラーが発生しました。Line=%d\nMsg=%s"
     IDS_ERR_KODATUNO        "Kodatunoライブラリ側で例外が発生しました．処理を中断します．"
     IDS_ERR_CONTOUR         "点間隔とシフト量は2倍以上あけてください"
+    IDS_ERR_CONTOUR_ZOFFSET "荒加工のワークの高さと仕上げ設定のスキャン最大値が違います．\nこのまま続行しますか？"
 END
 
 STRINGTABLE

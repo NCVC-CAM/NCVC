@@ -75,6 +75,15 @@ void C3dContourScanSetupDlg::OnOK()
 
 	C3dOption*	pOpt = m_pDoc->Get3dOption();
 
+	if ( pOpt->m_bRoughZOrigin && m_bZOrigin ) {
+		// r‰ÁHCŽdã‚°C‚Æ‚à‚ÉZŽ²‚ð•â³‚·‚éê‡‚Å
+		// •â³’l‚ªˆá‚¤‚Æ‚«
+		if ( pOpt->m_dWorkHeight != m_dZmax ) {
+			if ( AfxMessageBox(IDS_ERR_CONTOUR_ZOFFSET, MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES )
+				return;
+		}
+	}
+
 	pOpt->m_dContourBallEndmill	= m_dBallEndmill;
 	pOpt->m_dContourSpace		= m_dSpace;
 	pOpt->m_dContourZmax		= m_dZmax;
