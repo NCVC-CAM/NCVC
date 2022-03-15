@@ -29,19 +29,14 @@ boost::regex を使用しているのでビルドが必要です．
 mklink コマンドだけ管理者権限でないと動かないのでご注意ください．
 
 ## Kodatuno
-NCコードのシミュレーションにおいて，3Dワークデータと重ねる機能
-(WorkFile=hoge.igs)
-のIGESファイル読み込みに，金沢大学マンマシン研究室で開発されているKodatunoライブラリを使用しています．
+NURBS曲面の切削データ生成等々に，NCVC内部で
+金沢大学マンマシン研究室で開発されているKodatunoライブラリを使用しています．
 NCVC用にパッチを当てているので，まずこちらのライブラリをご用意ください．
-Kodatunoライブラリのビルド方法は <https://github.com/NCVC-CAM/Kodatuno> を参照ください．
+Kodatunoライブラリのビルド方法は <https://github.com/NCVC-CAM/Kodatuno> を参照してください．
 NCVCプロジェクトから見えるところに Kodatuno.vs.lib をコピー（またはシンボリックリンク）してもらえればOKです．
 インクルードファイルも同様です．僕は下図のようにKodatunoフォルダごとシンボリックリンクを張っています．
-NCVC.SDKに含まれるヘッダーも同様にシンボリックリンクしています．
-![KodatunoLink.png](./KodatunoLink.png)
-
-それが用意できない場合は stdafx.h の
-
-    #define USE_KODATUNO
-
-をコメントアウトすればKodatunoの機能を無効にした状態でNCVCのビルドは可能です．
-今は依存度が低いので #define で対応できますが，今後の予定次第ではKodatunoライブラリが必須になる場合があります．
+NCVC.SDKに含まれるヘッダーも同様にシンボリックリンクしています．  
+  
+![KodatunoLink.png](./KodatunoLink.png)  
+  
+NCVC Ver3.91以前はオプションで無効にもできましたが，NCVC Ver4.00以降は Kodatunoライブラリが必須となっています．
