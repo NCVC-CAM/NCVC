@@ -293,8 +293,8 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 		printf(" 集合%Id=%zd\n", std::distance(m_vvvContourCoord.begin(), it1), it1->size());
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
 			// 閉ループか否かの判定
-			CPointD	ptF( it2->front().x, it2->front().y ),
-					ptB( it2->back().x,  it2->back().y  );
+			CPointD	ptF(it2->front()),
+					ptB(it2->back() );
 			BOOL	bLoop;
 			if ( ptF.hypot(&ptB) < m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0f ) {
 				bLoop = TRUE;
@@ -324,7 +324,7 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 
 	// 最初の検索ポイント
 	vGroup.push_back(v.front());
-	CPointD	ptNow(v.front().x, v.front().y);
+	CPointD	ptNow(v.front());
 	v.front().dmy = 1.0;
 
 	while ( TRUE ) {
@@ -354,7 +354,7 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 		// 検索済みマーク
 		v[idx].dmy = 1.0;
 		// 現在位置更新
-		ptNow.SetPoint(v[idx].x, v[idx].y);
+		ptNow = v[idx];
 	}
 
 	// 1平面の交点群を保存

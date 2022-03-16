@@ -6,6 +6,7 @@
 
 #include "boost/operators.hpp"		// 演算子の手抜き定義
 #include "boost/math/constants/constants.hpp"	// PIの定義
+class Coord;	// Kodatuno/stdafx.h
 
 //////////////////////////////////////////////////////////////////////
 
@@ -113,6 +114,9 @@ public:
 		// double -> float 初期化
 		SetPoint((T)pt.x, (T)pt.y);
 	}
+	CPointT(const Coord& xyz) {
+		SetPoint(xyz.x, xyz.y);
+	}
 	// 演算子定義
 	CPointT<T>&	operator = (T xy) {
 		x = y = xy;
@@ -189,6 +193,10 @@ public:
 	CPointT<T>	RoundUp(void) const {
 		return CPointT<T>(::RoundUp(x), ::RoundUp(y));
 	}
+	CPointT<double>& operator = (const Coord& xyz) {
+		SetPoint(xyz.x, xyz.y);
+		return *this;
+	}
 	// 代入関数
 	void	SetPoint(T xx, T yy) {
 		x = xx;		y = yy;
@@ -217,7 +225,7 @@ typedef	std::vector<CPointF>	CVPointF;
 
 //////////////////////////////////////////////////////////////////////
 // 3D-CPointD クラス
-class Coord;	// Kodatuno/stdafx.h
+
 template<typename T>
 class CPoint3T :
 	boost::operators< CPoint3T<T> >
@@ -331,6 +339,10 @@ public:
 	operator CPointT<T>() const {
 		return GetXY();
 	}
+	CPoint3T<double>& operator = (const Coord& xyz) {
+		SetPoint(xyz.x, xyz.y, xyz.z);
+		return *this;
+	}
 	// 代入関数
 	void	SetPoint(T xx, T yy, T zz) {
 		x = xx;		y = yy;		z = zz;
@@ -356,10 +368,6 @@ public:
 		ms_rx_cos = cos(rx);		ms_rx_sin = sin(rx);
 		ms_ry_cos = cos(ry);		ms_ry_sin = sin(ry);
 		ms_rz_cos = cos(rz);		ms_rz_sin = sin(rz);
-	}
-	CPoint3T<double>& operator = (const Coord& xyz) {
-		SetPoint(xyz.x, xyz.y, xyz.z);
-		return *this;
 	}
 };
 typedef	CPoint3T<double>	CPoint3D;

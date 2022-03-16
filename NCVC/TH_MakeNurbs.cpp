@@ -496,8 +496,8 @@ tuple<ptrdiff_t, double> SearchNearPoint(const VCoord& v)
 void MakeLoopCoord(VCoord& v, size_t idx)
 {
 	// 閉じた集合か判断
-	CPointD	ptF(v.front().x, v.front().y),
-			ptB(v.back().x,  v.back().y );
+	CPointD	ptF(v.front()),
+			ptB(v.back() );
 
 	if ( ptF.hypot(&ptB) < Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0 ) {
 		// 開始点に移動
