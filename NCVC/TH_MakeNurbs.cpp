@@ -461,7 +461,7 @@ tuple<ptrdiff_t, ptrdiff_t, double> SearchNearGroup(const VVCoord& vv)
 	ptrdiff_t	i, grp = -1, idx = -1;
 	double		dGap, dGapMin = HUGE_VAL;
 
-	for ( auto it=vv.begin(); it!=vv.end(); ++it ) {
+	for ( auto it=vv.begin(); it!=vv.end() && IsThread(); ++it ) {
 		tie(i, dGap) = SearchNearPoint(*it);
 		if ( 0<=i && dGap<dGapMin ) {
 			dGapMin = dGap;
@@ -480,7 +480,7 @@ tuple<ptrdiff_t, double> SearchNearPoint(const VCoord& v)
 	double		dGap, dGapMin = HUGE_VAL;
 	ptrdiff_t	minID = -1;
 
-	for ( auto it=v.begin(); it!=v.end(); ++it ) {
+	for ( auto it=v.begin(); it!=v.end() && IsThread(); ++it ) {
 		if ( it->dmy > 0 ) continue;	// ê∂ê¨çœÇ›
 		pt.SetPoint( it->x-ptNow.x, it->y-ptNow.y );	// åªç›à íuÇ∆ÇÃç∑
 		dGap = pt.x*pt.x + pt.y*pt.y;	// hypot()ÇÕégÇÌÇ»Ç¢ sqrt()Ç™íxÇ¢

@@ -276,6 +276,7 @@ void C3dModelView::DrawContourPath(void)
 
 	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
 	::glBegin(GL_POINTS);
+/*
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
 			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
@@ -283,6 +284,16 @@ void C3dModelView::DrawContourPath(void)
 			}
 		}
 	}
+*/
+	// –â‘è‚Ì‚ ‚é‘w‚¾‚¯‚µ‚É•\¦
+//		for ( auto it2=vvv[40].begin(); it2!=vvv[40].end(); ++it2 ) {
+		for ( auto it2=vvv[48].begin(); it2!=vvv[48].end(); ++it2 ) {
+//		auto it2=vvv[40].begin()+1;
+			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+				::glVertex3d(it3->x, it3->y, it3->z);
+			}
+		}
+
 	::glEnd();
 }
 

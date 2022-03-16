@@ -292,6 +292,7 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 	for ( auto it1=m_vvvContourCoord.begin(); it1!=m_vvvContourCoord.end(); ++it1 ) {
 		printf(" 集合%Id=%zd\n", std::distance(m_vvvContourCoord.begin(), it1), it1->size());
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+			// 閉ループか否かの判定
 			CPointD	ptF( it2->front().x, it2->front().y ),
 					ptB( it2->back().x,  it2->back().y  );
 			BOOL	bLoop;
@@ -301,7 +302,8 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 			else {
 				bLoop = FALSE;
 			}
-			printf("   %Id size=%zd(%c)\n", std::distance(it1->begin(), it2), it2->size(), bLoop ? 'o' : 'x');
+			printf("  %Id size=%zd(%c) ", std::distance(it1->begin(), it2), it2->size(), bLoop ? 'o' : 'x');
+			printf("  s(%.3f, %.3f) e(%.3f, %.3f)\n", ptF.x, ptF.y, ptB.x, ptB.y);
 		}
 	}
 #endif
@@ -315,55 +317,39 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 
 void C3dModelDoc::SetCoordGroup(VCoord& v)
 {
-	ptrdiff_t	idx,
-				grp;	// 現在処理対象のvGroup
+	ptrdiff_t	idx;
 	double		dGap, dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
 	VCoord		vGroup;
 	VVCoord		vv;
-	VVCoord::iterator	it;
 
 	// 最初の検索ポイント
 	vGroup.push_back(v.front());
-	vv.push_back(vGroup);
-	grp = 0;
 	CPointD	ptNow(v.front().x, v.front().y);
 	v.front().dmy = 1.0;
 
 	while ( TRUE ) {
 		boost::tie(idx, dGap) = SearchNearPoint(v, ptNow);
 		if ( idx < 0 ) {
+			vv.push_back(vGroup);
 			break;	// ループ終了条件
 		}
 		else if ( sqrt(dGap) < dMargin ) {
 			// 同一グループ
-			vv[grp].push_back(v[idx]);
+			vGroup.push_back(v[idx]);
 		}
 		else {
-			// 他のグループから検索
-			for ( it=vv.begin(); it!=vv.end(); ++it ) {
-				if ( grp == std::distance(vv.begin(), it) )
-					continue;
-				CPointD	ptF(it->front().x-ptNow.x, it->front().y-ptNow.y),
-						ptB(it->back().x -ptNow.x, it->back().y -ptNow.y);
-				if ( ptF.hypot() < dMargin ) {
-					std::reverse(it->begin(), it->end());
-					it->push_back(v[idx]);
-					grp = std::distance(vv.begin(), it);
-					break;
-				}
-				else if ( ptB.hypot() < dMargin ) {
-					it->push_back(v[idx]);
-					grp = std::distance(vv.begin(), it);
-					break;
-				}
+			// 現在対象グループの先頭に近いか
+			CPointD	pt(vGroup.front().x-ptNow.x, vGroup.front().y-ptNow.y);
+			if ( pt.hypot() < dMargin ) {
+				// 配列を反転させて継続
+				boost::range::reverse(vGroup);
 			}
-			if ( it == vv.end() ) {
-				// 新規グループ
-				vGroup.clear();
-				vGroup.push_back(v[idx]);
+			else {
+				// 新規グループとして登録
 				vv.push_back(vGroup);
-				grp = vv.size() - 1;
+				vGroup.clear();
 			}
+			vGroup.push_back(v[idx]);
 		}
 		// 検索済みマーク
 		v[idx].dmy = 1.0;

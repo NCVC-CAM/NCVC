@@ -271,7 +271,7 @@ void CViewBaseGL::DoScale(int nRate)
 		::glMatrixMode( GL_MODELVIEW );
 		Invalidate(FALSE);
 		::wglMakeCurrent( NULL, NULL );
-#ifdef _DEBUG
+#ifdef _DEBUGOLD
 		printf("DoScale() ---\n");
 		printf("  (%f,%f)-(%f,%f)\n", m_rcView.left, m_rcView.top, m_rcView.right, m_rcView.bottom);
 		printf("  (%f,%f)\n", m_rcView.low, m_rcView.high);
