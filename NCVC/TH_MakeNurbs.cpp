@@ -475,14 +475,14 @@ tuple<ptrdiff_t, ptrdiff_t, double> SearchNearGroup(const VVCoord& vv)
 
 tuple<ptrdiff_t, double> SearchNearPoint(const VCoord& v)
 {
-	CPointF		ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
-	CPointD		pt;
+	CPointD		ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]), pt;
 	double		dGap, dGapMin = HUGE_VAL;
 	ptrdiff_t	minID = -1;
 
 	for ( auto it=v.begin(); it!=v.end() && IsThread(); ++it ) {
 		if ( it->dmy > 0 ) continue;	// ¶¬Ï‚İ
-		pt.SetPoint( it->x-ptNow.x, it->y-ptNow.y );	// Œ»İˆÊ’u‚Æ‚Ì·
+		pt  = *it;
+		pt -= ptNow;					// Œ»İˆÊ’u‚Æ‚Ì·
 		dGap = pt.x*pt.x + pt.y*pt.y;	// hypot()‚Íg‚í‚È‚¢ sqrt()‚ª’x‚¢
 		if ( dGap < dGapMin ) {
 			dGapMin = dGap;

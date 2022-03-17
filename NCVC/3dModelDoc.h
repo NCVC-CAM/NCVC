@@ -32,6 +32,9 @@ class C3dModelDoc : public CDocBase
 protected:
 	C3dModelDoc();
 	DECLARE_DYNCREATE(C3dModelDoc)
+#ifdef _DEBUG
+	void	DumpCoord(const VCoord&);
+#endif
 
 public:
 	virtual ~C3dModelDoc();

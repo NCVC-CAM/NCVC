@@ -9,6 +9,7 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
+#define	_DEBUG_FILEOUT_
 #endif
 
 IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
@@ -274,6 +275,9 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 				v.push_back(p);
 			}
 			if ( !v.empty() ) {
+#ifdef _DEBUG_FILEOUT_
+				DumpCoord(v);	// デバッグ用の座標出力
+#endif
 				// 1平面の座標をグループ集合で登録
 				SetCoordGroup(v);
 				v.clear();
@@ -324,7 +328,7 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 
 	// 最初の検索ポイント
 	vGroup.push_back(v.front());
-	CPointD	ptNow(v.front());
+	CPointD	ptNow(v.front()), pt;
 	v.front().dmy = 1.0;
 
 	while ( TRUE ) {
@@ -339,7 +343,8 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 		}
 		else {
 			// 現在対象グループの先頭に近いか
-			CPointD	pt(vGroup.front().x-ptNow.x, vGroup.front().y-ptNow.y);
+			pt  = vGroup.front();
+			pt -= ptNow;
 			if ( pt.hypot() < dMargin ) {
 				// 配列を反転させて継続
 				boost::range::reverse(vGroup);
@@ -368,8 +373,9 @@ boost::tuple<ptrdiff_t, double> C3dModelDoc::SearchNearPoint(const VCoord& v, co
 	ptrdiff_t	minID = -1;
 
 	for ( auto it=v.begin(); it!=v.end(); ++it ) {
-		if ( it->dmy > 0 ) continue;	// 生成済み
-		pt.SetPoint(it->x-ptNow.x, it->y-ptNow.y);	// 現在位置との差
+		if ( it->dmy > 0 ) continue;	// 処理対象済み
+		pt  = *it;
+		pt -= ptNow;	// 現在位置との差
 		dGap = pt.x*pt.x + pt.y*pt.y;	// hypot()は使わない sqrt()が遅い
 		if ( dGap < dGapMin ) {
 			dGapMin = dGap;
@@ -379,3 +385,17 @@ boost::tuple<ptrdiff_t, double> C3dModelDoc::SearchNearPoint(const VCoord& v, co
 
 	return boost::make_tuple(minID, dGapMin);
 }
+
+#ifdef _DEBUG
+void C3dModelDoc::DumpCoord(const VCoord& v)
+{
+	CString	file, s;
+	file.Format("C:\\Users\\magara\\Documents\\tmp\\coord%d.csv", m_vvvContourCoord.size());
+	CStdioFile	f(file, CFile::typeText|CFile::modeCreate|CFile::modeWrite);
+
+	for ( auto it=v.begin(); it!=v.end(); ++it ) {
+		s.Format("%.3f, %.3f, %.3f\n", it->x, it->y, it->z);
+		f.WriteString(s);
+	}
+}
+#endif

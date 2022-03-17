@@ -130,6 +130,10 @@ public:
 		SetPoint((T)pt.x, (T)pt.y);
 		return *this;
 	}
+	CPointT<double>& operator = (const Coord& xyz) {
+		SetPoint(xyz.x, xyz.y);
+		return *this;
+	}
 	CPointT<T>&	operator += (T d) {
 		x += d;		y += d;
 		return *this;
@@ -179,23 +183,12 @@ public:
 		ASSERT(a>=0 && a<SIZEOF(xy));
 		return xy[a];
 	}
-	T		hypot(void) const {
-		return ::sqrt(x*x + y*y);
-	}
-	T		hypot(const CPointT<T>* e) const {
-		CPointT<T>	p(e->x-x, e->y-y);
-		return ::sqrt(p.x*p.x + p.y*p.y);
-	}
 	// 変換関数
 	operator CPoint() const {
 		return CPoint((int)x, (int)y);
 	}
 	CPointT<T>	RoundUp(void) const {
 		return CPointT<T>(::RoundUp(x), ::RoundUp(y));
-	}
-	CPointT<double>& operator = (const Coord& xyz) {
-		SetPoint(xyz.x, xyz.y);
-		return *this;
 	}
 	// 代入関数
 	void	SetPoint(T xx, T yy) {
@@ -207,6 +200,14 @@ public:
 		CPointT<T>	pt(x, y);
 		x = pt.x * cos_q - pt.y * sin_q;
 		y = pt.x * sin_q + pt.y * cos_q;
+	}
+	// hypot()
+	T		hypot(void) const {
+		return ::sqrt(x*x + y*y);
+	}
+	T		hypot(const CPointT<T>* e) const {
+		CPointT<T>	p(e->x-x, e->y-y);
+		return ::sqrt(p.x*p.x + p.y*p.y);
 	}
 	// 角度（atan2(pt.y, pt.x)書く手間省略）
 	T		arctan(void) const {
@@ -270,6 +271,10 @@ public:
 		x = (float)pt.x;	y = (float)pt.y;	z = (float)pt.z;
 		return *this;
 	}
+	CPoint3T<double>& operator = (const Coord& xyz) {
+		SetPoint(xyz.x, xyz.y, xyz.z);
+		return *this;
+	}
 	CPoint3T<T>&	operator += (T d) {
 		x += d;		y += d;		z += d;
 		return *this;
@@ -319,13 +324,6 @@ public:
 		ASSERT(a>=0 && a<SIZEOF(xyz));
 		return xyz[a];
 	}
-	T		hypot(void) const {
-		return ::sqrt(x*x + y*y + z*z);
-	}
-	T		hypot(const CPoint3T<T>* e) const {
-		CPoint3T<T>	p(e->x-x, e->y-y, e->z-z);
-		return ::sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
-	}
 	// 変換関数
 	CPointT<T>	GetXY(void) const {
 		return CPointT<T>(x, y);
@@ -339,13 +337,17 @@ public:
 	operator CPointT<T>() const {
 		return GetXY();
 	}
-	CPoint3T<double>& operator = (const Coord& xyz) {
-		SetPoint(xyz.x, xyz.y, xyz.z);
-		return *this;
-	}
 	// 代入関数
 	void	SetPoint(T xx, T yy, T zz) {
 		x = xx;		y = yy;		z = zz;
+	}
+	// hypot()
+	T		hypot(void) const {
+		return ::sqrt(x*x + y*y + z*z);
+	}
+	T		hypot(const CPoint3T<T>* e) const {
+		CPoint3T<T>	p(e->x-x, e->y-y, e->z-z);
+		return ::sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
 	}
 	// 角度（atan2(pt.y, pt.x)書く手間省略 2D only）
 	T		arctan(void) const {
