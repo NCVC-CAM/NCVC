@@ -336,8 +336,8 @@ BOOL MakeNurbs_ContourFunc(void)
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+		maxcnt += it1->size();	// 座標集合==処理数
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-			maxcnt++;	// 座標集合==処理数
 			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
 				it3->dmy = 0.0;
 			}
@@ -376,7 +376,7 @@ BOOL MakeNurbs_ContourFunc(void)
 		// 次の階層でもチェック
 		if ( layer!=0 && layer+1<vvv.size() ) {
 			tie(grp2, idx2, dGap2) = SearchNearGroup(vvv[layer+1]);
-			if ( dGap2 < dGap1 ) {
+			if ( 0<=grp2 && dGap2<dGap1 ) {
 				// 同じ階層よりも下の階層の方が近い
 				if ( !pendingLayer ) {		// 処理保留のレイヤがない場合
 					pendingLayer = layer;	// 処理中のレイヤを保存
@@ -458,15 +458,14 @@ tuple<int, int>	MoveFirstPoint(int my)
 
 tuple<ptrdiff_t, ptrdiff_t, double> SearchNearGroup(const VVCoord& vv)
 {
-	ptrdiff_t	i, grp = -1, idx = -1;
+	ptrdiff_t	grp = -1, idx;
 	double		dGap, dGapMin = HUGE_VAL;
 
 	for ( auto it=vv.begin(); it!=vv.end() && IsThread(); ++it ) {
-		tie(i, dGap) = SearchNearPoint(*it);
-		if ( 0<=i && dGap<dGapMin ) {
+		tie(idx, dGap) = SearchNearPoint(*it);
+		if ( 0<=idx && dGap<dGapMin ) {
 			dGapMin = dGap;
 			grp = std::distance(vv.begin(), it);
-			idx = i;
 		}
 	}
 
