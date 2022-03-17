@@ -129,14 +129,14 @@ BOOL CNCViewGL::CreateWire(void)
 	printf(" WireLineCount=%zd\n", m_WireDraw.vwl.size());
 	int	dbgMaxIndex = 0;
 	for ( const auto& v : m_WireDraw.vvef ) {
-		int dbgMax = *std::max_element(v.begin(), v.end());
+		int dbgMax = *boost::range::max_element(v);
 		if ( dbgMaxIndex < dbgMax )
 			dbgMaxIndex = dbgMax;
 	}
 	printf(" Max Face Index=%d\n", dbgMaxIndex);
 	dbgMaxIndex = 0;
 	for ( const auto&v : m_WireDraw.vwl ) {
-		int dbgMax = *std::max_element(v.vel.begin(), v.vel.end());
+		int dbgMax = *boost::range::max_element(v.vel);
 		if ( dbgMaxIndex < dbgMax )
 			dbgMaxIndex = dbgMax;
 	}

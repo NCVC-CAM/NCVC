@@ -434,7 +434,7 @@ tuple<int, int>	MoveFirstPoint(int my)
 	v.push_back( pt2.hypot() );
 	v.push_back( pt3.hypot() );
 	// 一番小さい要素
-	auto	it  = std::min_element(v.begin(), v.end());
+	auto	it  = boost::range::min_element(v);
 	switch ( std::distance(v.begin(), it) ) {
 	case 0:		// pt0
 		_AddMovePoint(pt0);	// 開始点まで移動

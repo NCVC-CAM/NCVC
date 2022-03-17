@@ -1248,8 +1248,8 @@ CDXFpolyline* SplineProcedure(CDXFDoc* pDoc)
 
 	int		i, m = (int)g_dValue[VALUE71] + 1,				// äKêî
 			num = g_pOpt->GetDxfOptNum(DXFOPT_SPLINENUM);	// ï™äÑêî
-	float	knot_min = *min_element(g_vKnot.begin(), g_vKnot.end()),
-			knot_max = *max_element(g_vKnot.begin(), g_vKnot.end()),
+	float	knot_min = *boost::range::min_element(g_vKnot),
+			knot_max = *boost::range::max_element(g_vKnot),
 			step = (knot_max - knot_min) / (num - 1),	// numpy.linspace(min, max, num)
 			t, r;
 	vector<POLYVERTEX>::iterator	it;

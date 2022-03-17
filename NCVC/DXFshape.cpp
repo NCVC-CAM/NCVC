@@ -1411,14 +1411,14 @@ void CDXFchain::SetVectorPoint(POSITION pos1, CVPointF& vpt, size_t n)
 	// ŽlŽÌŒÜ“ü‚·‚é‚Ì‚Å‰ß•s‘«‚ð’²®
 	if ( nTotal > n ) {
 		do {
-			it = max_element(vCnt.begin(), vCnt.end());
+			it = boost::range::max_element(vCnt);
 			(*it)--;
 			nTotal--;
 		} while ( nTotal > n );
 	}
 	else if ( nTotal < n ) {
 		do {
-			it = min_element(vCnt.begin(), vCnt.end());
+			it = boost::range::min_element(vCnt);
 			(*it)++;
 			nTotal++;
 		} while ( nTotal < n );

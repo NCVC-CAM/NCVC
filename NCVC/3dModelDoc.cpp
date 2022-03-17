@@ -9,7 +9,7 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define	_DEBUG_FILEOUT_
+//#define	_DEBUG_FILEOUT_
 #endif
 
 IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
