@@ -428,11 +428,11 @@ tuple<int, int>	MoveFirstPoint(int my)
 				pt2(pRoughCoord[0][my-1][0]),
 				pt3(pRoughCoord[0][my-1][g_pDoc->GetRoughNumZ(my-1)-1]);
 	// 距離計算(sqrt()いらないけど4点くらいなら問題なし)
-	std::vector<double>		v;
-	v.push_back( pt0.hypot() );
-	v.push_back( pt1.hypot() );
-	v.push_back( pt2.hypot() );
-	v.push_back( pt3.hypot() );
+	// 固定長配列なので vector ではなく array
+	boost::array<double, 4>	v = {
+		pt0.hypot(), pt1.hypot(),
+		pt2.hypot(), pt3.hypot()
+	};
 	// 一番小さい要素
 	auto	it  = boost::range::min_element(v);
 	switch ( std::distance(v.begin(), it) ) {
