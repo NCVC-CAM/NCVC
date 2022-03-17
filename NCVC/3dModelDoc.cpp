@@ -321,40 +321,40 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 
 void C3dModelDoc::SetCoordGroup(VCoord& v)
 {
-	ptrdiff_t	idx;
+	ptrdiff_t	grp, idx;
 	double		dGap, dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
-	VCoord		vGroup;
+	VCoord		vtmp;
 	VVCoord		vv;
 
 	// 最初の検索ポイント
-	vGroup.push_back(v.front());
+	vtmp.push_back(v.front());
+	vv.push_back(vtmp);
+	grp = 0;	// 現在処理中のグループID
 	CPointD	ptNow(v.front()), pt;
 	v.front().dmy = 1.0;
 
 	while ( TRUE ) {
 		boost::tie(idx, dGap) = SearchNearPoint(v, ptNow);
 		if ( idx < 0 ) {
-			vv.push_back(vGroup);
 			break;	// ループ終了条件
 		}
 		else if ( sqrt(dGap) < dMargin ) {
 			// 同一グループ
-			vGroup.push_back(v[idx]);
+			vv[grp].push_back(v[idx]);
 		}
 		else {
-			// 現在対象グループの先頭に近いか
-			pt  = vGroup.front();
-			pt -= ptNow;
-			if ( pt.hypot() < dMargin ) {
-				// 配列を反転させて継続
-				boost::range::reverse(vGroup);
+			// 近いグループを検索
+			grp = SearchNearGroup(vv, ptNow, grp);
+			if ( grp < 0 ) {
+				// 新規グループ作成
+				vtmp.clear();
+				vtmp.push_back(v[idx]);
+				vv.push_back(vtmp);
+				grp = vv.size() - 1;
 			}
 			else {
-				// 新規グループとして登録
-				vv.push_back(vGroup);
-				vGroup.clear();
+				vv[grp].push_back(v[idx]);
 			}
-			vGroup.push_back(v[idx]);
 		}
 		// 検索済みマーク
 		v[idx].dmy = 1.0;
@@ -385,6 +385,38 @@ boost::tuple<ptrdiff_t, double> C3dModelDoc::SearchNearPoint(const VCoord& v, co
 
 	return boost::make_tuple(minID, dGapMin);
 }
+
+ptrdiff_t C3dModelDoc::SearchNearGroup(VVCoord& vv, const CPointD& ptNow, ptrdiff_t grpNow)
+{
+	double		dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
+	CPointD		pt;
+	ptrdiff_t	grp = -1;
+
+	for ( auto it=vv.begin(); it!=vv.end(); ++it ) {
+		if ( grpNow == std::distance(vv.begin(), it) ) continue;
+		pt  = it->front();
+		pt -= ptNow;
+		if ( pt.hypot() < dMargin ) {
+			// このグループの先頭に近い場合
+			boost::range::reverse(*it);
+			grp = std::distance(vv.begin(), it);
+			break;
+		}
+		else {
+			pt  = it->back();
+			pt -= ptNow;
+			if ( pt.hypot() < dMargin ) {
+				// このグループの末尾に近い場合
+				grp = std::distance(vv.begin(), it);
+				break;
+			}
+		}
+	}
+
+	return grp;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 #ifdef _DEBUG
 void C3dModelDoc::DumpCoord(const VCoord& v)

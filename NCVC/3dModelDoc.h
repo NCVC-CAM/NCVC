@@ -57,6 +57,7 @@ public:
 	BOOL	MakeContourCoord(NURBSS*);
 	void	SetCoordGroup(VCoord&);
 	boost::tuple<ptrdiff_t, double>	SearchNearPoint(const VCoord&, const CPointD&);
+	ptrdiff_t	SearchNearGroup(VVCoord&, const CPointD&, ptrdiff_t);
 	Coord***	GetRoughCoord(void) const {
 		return m_pRoughCoord;
 	}
