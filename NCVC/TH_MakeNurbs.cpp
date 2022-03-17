@@ -376,7 +376,7 @@ BOOL MakeNurbs_ContourFunc(void)
 		// ŽŸ‚ÌŠK‘w‚Å‚àƒ`ƒFƒbƒN
 		if ( layer!=0 && layer+1<vvv.size() ) {
 			tie(grp2, idx2, dGap2) = SearchNearGroup(vvv[layer+1]);
-			if ( dGap2 < dGap1 ) {
+			if ( 0<=grp2 && dGap2<dGap1 ) {
 				// “¯‚¶ŠK‘w‚æ‚è‚à‰º‚ÌŠK‘w‚Ì•û‚ª‹ß‚¢
 				if ( !pendingLayer ) {		// ˆ—•Û—¯‚ÌƒŒƒCƒ„‚ª‚È‚¢ê‡
 					pendingLayer = layer;	// ˆ—’†‚ÌƒŒƒCƒ„‚ð•Û‘¶
