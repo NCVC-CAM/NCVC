@@ -336,8 +336,8 @@ BOOL MakeNurbs_ContourFunc(void)
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+		maxcnt += it1->size();		// 座標集合==処理数
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-			maxcnt++;	// 座標集合==処理数
 			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
 				it3->dmy = 0.0;
 			}

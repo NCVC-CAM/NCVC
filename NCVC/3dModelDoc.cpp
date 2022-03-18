@@ -9,7 +9,7 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-//#define	_DEBUG_FILEOUT_
+#define	_DEBUG_FILEOUT_
 #endif
 
 IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
@@ -271,7 +271,6 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 			num = nf.CalcIntersecPtsPlaneSearch(ns, pt, nvec, dSpace, 5, t, 5000, RUNGE_KUTTA);		// NURBS曲面と平面との交点群を交線追跡法で求める
 			for ( j=0; j<num; j++ ) {
 				p = nf.CalcNurbsSCoord(ns, t[j].x, t[j].y);		// 交点をパラメータ値から座標値へ変換
-				p.dmy = 0.0;
 				v.push_back(p);
 			}
 			if ( !v.empty() ) {
@@ -286,7 +285,7 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 	}
 	catch(...) {
 		// ライブラリ側の例外に対応
-		ClearRoughCoord();
+		ClearContourCoord();
 		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
 		bResult = FALSE;
 	}
@@ -321,99 +320,41 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 
 void C3dModelDoc::SetCoordGroup(VCoord& v)
 {
-	ptrdiff_t	grp, idx;
-	double		dGap, dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
+	double		dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
 	VCoord		vtmp;
 	VVCoord		vv;
+	VVCoord::iterator	itg;
+	CPointD		ptF, ptB;
 
-	// 最初の検索ポイント
+	// 最初の検索ポイント登録
 	vtmp.push_back(v.front());
 	vv.push_back(vtmp);
-	grp = 0;	// 現在処理中のグループID
-	CPointD	ptNow(v.front()), pt;
-	v.front().dmy = 1.0;
 
-	while ( TRUE ) {
-		boost::tie(idx, dGap) = SearchNearPoint(v, ptNow);
-		if ( idx < 0 ) {
-			break;	// ループ終了条件
-		}
-		else if ( sqrt(dGap) < dMargin ) {
-			// 同一グループ
-			vv[grp].push_back(v[idx]);
-		}
-		else {
-			// 近いグループを検索
-			grp = SearchNearGroup(vv, ptNow, grp);
-			if ( grp < 0 ) {
-				// 新規グループ作成
-				vtmp.clear();
-				vtmp.push_back(v[idx]);
-				vv.push_back(vtmp);
-				grp = vv.size() - 1;
+	// 近いグループに集約
+	for ( auto itc=v.begin()+1; itc!=v.end(); ++itc ) {
+		for ( itg=vv.begin(); itg!=vv.end(); ++itg ) {
+			ptF = itg->front() - (*itc);
+			ptB = itg->back()  - (*itc);
+			if ( ptB.hypot() < dMargin ) {
+				itg->push_back(*itc);
+				break;
 			}
-			else {
-				vv[grp].push_back(v[idx]);
+			else if ( ptF.hypot() < dMargin ) {
+				boost::range::reverse(*itg);
+				itg->push_back(*itc);
+				break;
 			}
 		}
-		// 検索済みマーク
-		v[idx].dmy = 1.0;
-		// 現在位置更新
-		ptNow = v[idx];
+		if ( itg == vv.end() ) {
+			// 新規グループの作成
+			vtmp.clear();
+			vtmp.push_back(*itc);
+			vv.push_back(vtmp);
+		}
 	}
 
 	// 1平面の交点群を保存
 	m_vvvContourCoord.push_back(vv);
-}
-
-boost::tuple<ptrdiff_t, double> C3dModelDoc::SearchNearPoint(const VCoord& v, const CPointD& ptNow)
-{
-	CPointD		pt;
-	double		dGap, dGapMin = HUGE_VAL;
-	ptrdiff_t	minID = -1;
-
-	for ( auto it=v.begin(); it!=v.end(); ++it ) {
-		if ( it->dmy > 0 ) continue;	// 処理対象済み
-		pt  = *it;
-		pt -= ptNow;	// 現在位置との差
-		dGap = pt.x*pt.x + pt.y*pt.y;	// hypot()は使わない sqrt()が遅い
-		if ( dGap < dGapMin ) {
-			dGapMin = dGap;
-			minID = std::distance(v.begin(), it);
-		}
-	}
-
-	return boost::make_tuple(minID, dGapMin);
-}
-
-ptrdiff_t C3dModelDoc::SearchNearGroup(VVCoord& vv, const CPointD& ptNow, ptrdiff_t grpNow)
-{
-	double		dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
-	CPointD		pt;
-	ptrdiff_t	grp = -1;
-
-	for ( auto it=vv.begin(); it!=vv.end(); ++it ) {
-		if ( grpNow == std::distance(vv.begin(), it) ) continue;
-		pt  = it->front();
-		pt -= ptNow;
-		if ( pt.hypot() < dMargin ) {
-			// このグループの先頭に近い場合
-			boost::range::reverse(*it);
-			grp = std::distance(vv.begin(), it);
-			break;
-		}
-		else {
-			pt  = it->back();
-			pt -= ptNow;
-			if ( pt.hypot() < dMargin ) {
-				// このグループの末尾に近い場合
-				grp = std::distance(vv.begin(), it);
-				break;
-			}
-		}
-	}
-
-	return grp;
 }
 
 /////////////////////////////////////////////////////////////////////////////
