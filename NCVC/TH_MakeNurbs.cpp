@@ -331,6 +331,7 @@ BOOL MakeNurbs_ContourFunc(void)
 	ptrdiff_t			grp1, idx1, grp2, idx2;
 	size_t				layer = 0;		// 現在処理中の階層
 	optional<size_t>	pendingLayer;	// 処理を保留したレイヤ
+	BOOL		bNext = FALSE;			// 次の階層をチェックするか否か
 	double		dGap1, dGap2;
 	CPoint3D	pt, ptNow;
 
@@ -366,6 +367,7 @@ BOOL MakeNurbs_ContourFunc(void)
 				// 保留中のレイヤから再検索
 				layer = pendingLayer.value();
 				pendingLayer.reset();
+				bNext = FALSE;
 				continue;
 			}
 			else {
@@ -374,7 +376,7 @@ BOOL MakeNurbs_ContourFunc(void)
 			}
 		}
 		// 次の階層を先にチェック
-		if ( layer!=0 && layer+1<vvv.size() ) {
+		if ( bNext && layer+1<vvv.size() ) {
 			tie(grp2, idx2, dGap2) = SearchNearGroup(vvv[layer+1]);
 			if ( 0<=grp2 && dGap2<dGap1 ) {
 				// 同じ階層よりも下の階層の方が近い
@@ -389,12 +391,15 @@ BOOL MakeNurbs_ContourFunc(void)
 				continue;
 			}
 		}
+		// 同じ階層の別グループに行く前に
 		if ( pendingLayer ) {
 			_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
 			layer = pendingLayer.value();
 			pendingLayer.reset();
+			bNext = FALSE;
 			continue;
 		}
+		//
 		pt = vvv[layer][grp1][idx1];
 		pt.z -= g_dZoffset;
 		ptNow.SetPoint(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y], CNCMakeMill::ms_xyz[NCA_Z]);
@@ -410,6 +415,7 @@ BOOL MakeNurbs_ContourFunc(void)
 		}
 		// この階層で生成
 		MakeLoopCoord(vvv[layer][grp1], idx1);
+		bNext = TRUE;
 	}
 
 	// Z軸をイニシャル点に復帰
