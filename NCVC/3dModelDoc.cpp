@@ -353,6 +353,17 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 		}
 	}
 
+	// 特異点（座標が1つだけ孤立している点）の除去
+	itg = vv.begin();
+	while ( itg != vv.end() ) {
+		if ( itg->size() == 1 ) {
+			itg = vv.erase(itg);
+		}
+		else {
+			++itg;
+		}
+	}
+
 	// 1平面の交点群を保存
 	m_vvvContourCoord.push_back(vv);
 }
