@@ -356,14 +356,14 @@ BOOL MakeNurbs_ContourFunc(void)
 		tie(grp1, idx1, dGap1) = SearchNearGroup(vvv[layer]);
 		if ( grp1 < 0 ) {
 			SetProgressPos(g_pParent, ++cnt);
-			// この階層は終了
 			if ( ++layer < vvv.size() ) {
+				// 次の階層へ
 				continue;
 			}
 			else if ( pendingLayer ) {
-				// R点まで上昇
+				// 保留中のレイヤがあればR点まで上昇
 				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
-				// 保留中のレイヤを戻す
+				// 保留中のレイヤから再検索
 				layer = pendingLayer.value();
 				pendingLayer.reset();
 				continue;
@@ -373,7 +373,7 @@ BOOL MakeNurbs_ContourFunc(void)
 				break;
 			}
 		}
-		// 次の階層でもチェック
+		// 次の階層を先にチェック
 		if ( layer!=0 && layer+1<vvv.size() ) {
 			tie(grp2, idx2, dGap2) = SearchNearGroup(vvv[layer+1]);
 			if ( 0<=grp2 && dGap2<dGap1 ) {
@@ -388,6 +388,12 @@ BOOL MakeNurbs_ContourFunc(void)
 				MakeLoopCoord(vvv[layer][grp2], idx2);
 				continue;
 			}
+		}
+		if ( pendingLayer ) {
+			_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
+			layer = pendingLayer.value();
+			pendingLayer.reset();
+			continue;
 		}
 		pt = vvv[layer][grp1][idx1];
 		pt.z -= g_dZoffset;
@@ -475,6 +481,7 @@ tuple<ptrdiff_t, ptrdiff_t, double> SearchNearGroup(const VVCoord& vv)
 
 tuple<ptrdiff_t, double> SearchNearPoint(const VCoord& v)
 {
+//	CPoint3D	ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y], CNCMakeMill::ms_xyz[NCA_Z]), pt;
 	CPointD		ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]), pt;
 	double		dGap, dGapMin = HUGE_VAL;
 	ptrdiff_t	minID = -1;
@@ -482,8 +489,9 @@ tuple<ptrdiff_t, double> SearchNearPoint(const VCoord& v)
 	for ( auto it=v.begin(); it!=v.end() && IsThread(); ++it ) {
 		if ( it->dmy > 0 ) continue;	// 生成済み
 		pt  = *it;
-		pt -= ptNow;					// 現在位置との差
-		dGap = pt.x*pt.x + pt.y*pt.y;	// hypot()は使わない sqrt()が遅い
+		pt -= ptNow;								// 現在位置との差
+//		dGap = pt.x*pt.x + pt.y*pt.y + pt.z*pt.z;	// hypot()は使わない sqrt()が遅い
+		dGap = pt.x*pt.x + pt.y*pt.y;				// hypot()は使わない sqrt()が遅い
 		if ( dGap < dGapMin ) {
 			dGapMin = dGap;
 			minID = std::distance(v.begin(), it);
