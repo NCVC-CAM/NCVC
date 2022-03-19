@@ -327,20 +327,20 @@ BOOL MakeNurbs_RoughFunc(void)
 BOOL MakeNurbs_ContourFunc(void)
 {
 	std::vector<VVCoord>&	vvv = g_pDoc->GetContourCoord();
-	INT_PTR				maxcnt = 0, cnt = 0;
-	ptrdiff_t			grp1, idx1, grp2, idx2;
-	size_t				layer = 0;		// 現在処理中の階層
-	optional<size_t>	pendingLayer;	// 処理を保留したレイヤ
-	BOOL		bNext = FALSE;			// 次の階層をチェックするか否か
-	double		dGap1, dGap2;
+	std::vector<size_t>		vLayer;		// 階層ごとの残グループ数
+	size_t		layer = 0;				// 現在処理中の階層
+	INT_PTR		maxcnt = 0, cnt = 0;
+	ptrdiff_t	grp, idx;
+	double		dGap;
 	CPointD		pt;
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
-		maxcnt += it1->size();		// 座標集合==処理数
+		maxcnt += it1->size();			// 座標集合==処理数
+		vLayer.push_back(it1->size());	// 階層ごとの座標グループ数で初期化
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
 			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				it3->dmy = 0.0;
+				it3->dmy = 0.0;			// 生成済みフラグのクリア
 			}
 		}
 	}
@@ -351,59 +351,38 @@ BOOL MakeNurbs_ContourFunc(void)
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 	AddCustomNurbsCode(MKNC_STR_HEADER);
 
-	// 階層ごとにパス生成
+	// 最初の階層から開始位置を検索
+	tie(grp, idx, dGap) = SearchNearGroup(vvv[0]);
+	if ( grp < 0 )
+		return FALSE;
+	MakeLoopCoord(vvv[0][grp], idx);
+	vLayer[0]--;
+
+	// パス生成ループ
 	while ( IsThread() ) {
-		// layer階層での検索
-		tie(grp1, idx1, dGap1) = SearchNearGroup(vvv[layer]);
-		if ( grp1 < 0 ) {
-			SetProgressPos(g_pParent, ++cnt);
-			if ( ++layer < vvv.size() ) {
-				// 次の階層へ
-				continue;
-			}
-			else if ( pendingLayer ) {
-				// 保留中のレイヤがあればR点まで上昇
-				_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
-				// 保留中のレイヤから再検索
-				layer = pendingLayer.value();
-				pendingLayer.reset();
-				bNext = FALSE;
-				continue;
-			}
-			else {
-				// 主ループ終了
+		SetProgressPos(g_pParent, ++cnt);
+		// 次の階層へ
+		layer++;
+		if ( layer >= vvv.size() ) {
+			// まだ残っている階層から
+			auto f = find_if(vLayer, lambda::_1>0);
+			if ( f == vLayer.end() ) {
+				// パス生成ループ終了
 				break;
 			}
+			layer = std::distance(vLayer.begin(), f);
 		}
-		// 次の階層を先にチェック
-		if ( bNext && layer+1<vvv.size() ) {
-			tie(grp2, idx2, dGap2) = SearchNearGroup(vvv[layer+1]);
-			if ( 0<=grp2 && dGap2<dGap1 ) {
-				// 同じ階層よりも下の階層の方が近い
-				if ( !pendingLayer ) {		// 処理保留のレイヤがない場合
-					pendingLayer = layer;	// 処理中のレイヤを保存
-				}
-				layer++;
-				// 現在位置＋R点だけ上昇
-				_AddMoveG00Z(CNCMakeMill::ms_xyz[NCA_Z] + GetDbl(MKNC_DBL_ZG0STOP));
-				// 生成
-				MakeLoopCoord(vvv[layer][grp2], idx2);
-				continue;
-			}
-		}
-		// 同じ階層の別グループに行く前に
-		if ( pendingLayer ) {
-			_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
-			layer = pendingLayer.value();
-			pendingLayer.reset();
-			bNext = FALSE;
-			continue;
+		// この階層で近い座標グループを検索
+		tie(grp, idx, dGap) = SearchNearGroup(vvv[layer]);
+		if ( grp < 0 ) {
+			ASSERT(TRUE);	// ないはずがない
+			break;
 		}
 		//
-		pt.x = vvv[layer][grp1][idx1].x - CNCMakeMill::ms_xyz[NCA_X];
-		pt.y = vvv[layer][grp1][idx1].y - CNCMakeMill::ms_xyz[NCA_Y];
-		if ( hypot(pt.x, pt.y) > Get3dDbl(D3_DBL_CONTOUR_SHIFT)*2.0 ) {
-			// 階層シフト量*2より大きい移動の場合は
+		pt.x = vvv[layer][grp][idx].x - CNCMakeMill::ms_xyz[NCA_X];
+		pt.y = vvv[layer][grp][idx].y - CNCMakeMill::ms_xyz[NCA_Y];
+		if ( hypot(pt.x, pt.y) > Get3dDbl(D3_DBL_CONTOUR_SHIFT)*2.5 ) {
+			// 階層シフト量*2.5より大きい移動の場合は
 			// R点まで上昇（衝突回避）
 			_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));
 		}
@@ -413,8 +392,9 @@ BOOL MakeNurbs_ContourFunc(void)
 			_AddMoveG00Z(CNCMakeMill::ms_xyz[NCA_Z] + GetDbl(MKNC_DBL_ZG0STOP));
 		}
 		// この階層で生成
-		MakeLoopCoord(vvv[layer][grp1], idx1);
-		bNext = TRUE;
+		MakeLoopCoord(vvv[layer][grp], idx);
+		// この階層のグループ数を減らす
+		vLayer[layer]--;
 	}
 
 	// Z軸をイニシャル点に復帰

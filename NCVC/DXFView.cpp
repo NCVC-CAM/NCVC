@@ -12,7 +12,6 @@
 #include "DXFShapeView.h"
 #include "LayerDlg.h"
 #include "ViewOption.h"
-//#include "boost/lambda/lambda.hpp"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -465,16 +464,9 @@ void CDXFView::BindMsgPost(CDC* pDC, LPCADBINDINFO pInfo, CPoint* ptDev)
 
 BOOL CDXFView::IsBindSelected(int nSel)
 {
-	for ( const auto& e : m_bindSel ) {
-		if ( e.nSel == nSel )
-			return TRUE;
-	}
-	return FALSE;
-/*
-	// ﾗﾑﾀﾞ式で書けるけど、かえってわかりにくい
-	auto f = find_if(m_bindSel, &lambda::_1->*&SELECTBIND::nSel == nSel);
+	// Boost::Lambda でメンバ変数にアクセスする書き方
+	auto f = find_if(m_bindSel, &lambda::_1 ->* &SELECTBIND::nSel == nSel);
 	return f==m_bindSel.end() ? FALSE : TRUE;
-*/
 }
 
 void CDXFView::ClearBindSelectData(void)

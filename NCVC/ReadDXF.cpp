@@ -9,7 +9,6 @@
 #include "DXFDoc.h"
 #include "DXFBlock.h"
 #include "DXFkeyword.h"
-#include "boost/lambda/lambda.hpp"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

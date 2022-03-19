@@ -71,6 +71,7 @@
 #include "boost/variant.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/function.hpp"
+#include "boost/lambda/lambda.hpp"
 #include "boost/utility.hpp"
 #include "boost/foreach.hpp"
 #include "boost/range/algorithm.hpp"
