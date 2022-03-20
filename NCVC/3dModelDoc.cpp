@@ -123,8 +123,19 @@ void C3dModelDoc::OnFile3dMake()
 {
 	CString	strInit;
 	BOOL	bNCView;
+	UINT	id;
+	if ( m_pRoughCoord ) {
+		id = IDS_MAKENCD_TITLE_ROUGH;
+	}
+	else if ( !m_vvvContourCoord.empty() ) {
+		id = IDS_MAKENCD_TITLE_CONTOUR;
+	}
+	else {
+		return;
+	}
+
 	{
-		CMakeNCDlg	dlg(IDS_MAKENCD_TITLE_NURBS, NCMAKENURBS, this);
+		CMakeNCDlg	dlg(id, NCMAKENURBS, this);
 		if ( dlg.DoModal() != IDOK )
 			return;
 		m_strNCFileName	= dlg.m_strNCFileName;
@@ -139,6 +150,7 @@ void C3dModelDoc::OnFile3dMake()
 		pOpt->AddInitHistory(NCMAKENURBS, strInit);
 	}
 	pOpt->SetViewFlag(bNCView);
+	m_3dOpt.Save3dOutfile(id-IDS_MAKENCD_TITLE_ROUGH, m_strNCFileName);
 
 	// ‚·‚Å‚ÉŠJ‚¢‚Ä‚¢‚éÄÞ·­ÒÝÄ‚È‚ç•Â‚¶‚é
 	CDocument* pDoc = AfxGetNCVCApp()->GetAlreadyDocument(TYPE_NCD, m_strNCFileName);

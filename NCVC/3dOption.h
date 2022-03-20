@@ -24,6 +24,11 @@ enum {		// BOOLŒ^
 	D3_FLG_CONTOUR_ZORIGIN,
 		D3_FLG_NUMS		// [2]
 };
+enum {		// StringŒ^
+	D3_STR_OUTFILE_ROUGH = 0,
+	D3_STR_OUTFILE_CONTOUR,
+		D3_STR_NUMS		// [2]
+};
 
 class C3dOption
 {
@@ -61,12 +66,15 @@ friend	class	C3dContourScanSetupDlg;
 		};
 		int			m_ubFlgs[D3_FLG_NUMS];
 	};
+	// StringŒ^
+	CString			m_strOutputFile[D3_STR_NUMS];
 
 public:
 	C3dOption();
 	~C3dOption();
 	BOOL	Read3dOption(LPCTSTR);
 	BOOL	Save3dOption(void);
+	BOOL	Save3dOutfile(size_t, const CString&);
 
 	// CNCMakeOption ‚ÆŠÖ”–¼‚ª”í‚é‚Æ TH_MakeXXXŒn‚Ì #define ‚ÅƒoƒbƒeƒBƒ“ƒO‚·‚é
 	int		Get3dInt(size_t n) const {
@@ -80,5 +88,9 @@ public:
 	BOOL	Get3dFlg(size_t n) const {
 		ASSERT( n>=0 && n<SIZEOF(m_ubFlgs) );
 		return m_ubFlgs[n];
+	}
+	CString	Get3dStr(size_t n) const {
+		ASSERT( n>=0 && n<D3_STR_NUMS );
+		return m_strOutputFile[n];
 	}
 };

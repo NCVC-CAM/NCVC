@@ -3958,6 +3958,8 @@ BEGIN
     IDS_ANA_OUTLINE         "輪郭加工指示が消去されますが続行しますか？"
     IDS_ANA_STRICTOFFSET    "この処理は手動で輪郭情報を変更したときにだけ必要です。\n実行しますか？"
     IDS_ANA_DEFVIEWINFO     "ﾃﾞﾌｫﾙﾄ回転情報を保存しました。\n初期化は HOMEｷｰ後、これを再実行してください。"
+    IDS_ANA_ROUGH           "仕上げ工程で出力したファイル名と同じようです．続行しますか？"
+    IDS_ANA_CONTOUR         "荒加工工程で出力したファイル名と同じようです．続行しますか？"
 END
 
 STRINGTABLE
@@ -4210,7 +4212,8 @@ BEGIN
     IDS_MAKENCD_TITLE_SHAPE "形状加工によるNCﾃﾞｰﾀ生成"
     IDS_MAKENCD_TITLE_LATHE "旋盤用NCﾃﾞｰﾀの生成"
     IDS_MAKENCD_TITLE_WIRE  "ﾜｲﾔ放電加工機用NCﾃﾞｰﾀの生成"
-    IDS_MAKENCD_TITLE_NURBS "Nurbs曲面用NCﾃﾞｰﾀの生成"
+    IDS_MAKENCD_TITLE_ROUGH "Nurbs曲面荒加工用NCﾃﾞｰﾀの生成"
+    IDS_MAKENCD_TITLE_CONTOUR "Nurbs曲面仕上げ用NCﾃﾞｰﾀの生成"
 END
 
 STRINGTABLE

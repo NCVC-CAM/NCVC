@@ -42,6 +42,10 @@ static	LPCTSTR	g_szFOrder[] = {
 static	const	BOOL	g_dfFOrder[] = {
 	TRUE, TRUE
 };
+// Stringå^ñΩóﬂ
+static	LPCTSTR	g_szSOrder[] = {
+	"OutfileRough", "OutfileContour"
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dOption ÉNÉâÉXÇÃç\íz/è¡ñ≈
@@ -51,6 +55,7 @@ C3dOption::C3dOption()
 	ASSERT( D3_INT_NUMS == SIZEOF(g_dfNOrder) );
 	ASSERT( D3_DBL_NUMS == SIZEOF(g_dfDOrder) );
 	ASSERT( D3_FLG_NUMS == SIZEOF(g_dfFOrder) );
+	ASSERT( D3_STR_NUMS == SIZEOF(g_szSOrder) );
 
 	int		i;
 
@@ -111,6 +116,11 @@ BOOL C3dOption::Read3dOption(LPCTSTR lpszFile)
 	for ( i=0; i<SIZEOF(m_ubFlgs); i++ ) {
 		m_ubFlgs[i] = ::GetPrivateProfileInt(strRegKey, g_szFOrder[i], g_dfFOrder[i], m_str3dOptionFile);
 	}
+	// Stringå^ñΩóﬂ
+	for ( i=0; i<D3_STR_NUMS; i++ ) {
+		if ( ::GetPrivateProfileString(strRegKey, g_szSOrder[i], "", szResult, _MAX_PATH, m_str3dOptionFile) > 0 )
+			m_strOutputFile[i] = szResult;
+	}
 
 	return TRUE;
 }
@@ -142,6 +152,18 @@ BOOL C3dOption::Save3dOption(void)
 		if ( !::WritePrivateProfileString(strRegKey, g_szFOrder[i], strResult, m_str3dOptionFile) )
 			return FALSE;
 	}
+
+	return TRUE;
+}
+
+BOOL C3dOption::Save3dOutfile(size_t n, const CString& strFile)
+{
+	CString	strRegKey;
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_SETTINGS));
+
+	m_strOutputFile[n] = strFile;
+	if ( !::WritePrivateProfileString(strRegKey, g_szSOrder[n], strFile, m_str3dOptionFile) )
+		return FALSE;
 
 	return TRUE;
 }

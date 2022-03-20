@@ -46,7 +46,7 @@ CMakeNCDlg::CMakeNCDlg(UINT nTitle, NCMAKETYPE enType, C3dModelDoc* pDoc)
 {
 	CommonConstructor(nTitle, enType, pDoc);
 	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成
-	CreateNCFile(pDoc, m_strNCPath, m_strNCFileName);
+	CreateNCFile(pDoc, m_nTitle-IDS_MAKENCD_TITLE_ROUGH, m_strNCPath, m_strNCFileName);
 }
 
 void CMakeNCDlg::CommonConstructor(UINT nTitle, NCMAKETYPE enType, CDocBase* pDoc)
@@ -122,6 +122,18 @@ void CMakeNCDlg::OnOK()
 		m_ctNCFileName.SetFocus();
 		m_ctNCFileName.SetSel(0, -1);
 		return;
+	}
+	// Nurbs曲面切削のチェック
+	if ( m_nTitle >= IDS_MAKENCD_TITLE_ROUGH ) {
+		UINT	id = m_nTitle - IDS_MAKENCD_TITLE_ROUGH;
+		C3dModelDoc* pDoc = static_cast<C3dModelDoc*>(m_pDoc);
+		if ( strNCPath.CompareNoCase(pDoc->Get3dOption()->Get3dStr(1-id)) == 0 ) {	// 逆のファイル名をチェック
+			// ファイル名が同じ警告
+			if ( AfxMessageBox(IDS_ANA_ROUGH+id, MB_YESNO|MB_ICONQUESTION) != IDYES )
+				m_ctNCFileName.SetFocus();
+				m_ctNCFileName.SetSel(0, -1);
+				return;
+		}
 	}
 
 	m_strInitFileName = strInitPath;
@@ -266,38 +278,46 @@ void CMakeNCDlg::OnKillFocusInit()
 /////////////////////////////////////////////////////////////////////////////
 // NC生成ﾀﾞｲｱﾛｸﾞ共通関数
 
-void CreateNCFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)
+void CreateNCFile(CDXFDoc* pDoc, CString& strPath, CString& strFile)
 {
-	// ﾄﾞｷｭﾒﾝﾄ名からNCﾌｧｲﾙ名を作成．ただし既に生成したﾌｧｲﾙ名があるならそれを採用
+	// ドキュメント名からＮＣファイル名を作成
+	//　ただし既に生成したファイル名があるならそれを採用
 	CString	strNCFile(pDoc->GetNCFileName());
 	if ( strNCFile.IsEmpty() ) {
-		CString	strDocFile(pDoc->GetPathName());
-		if ( strDocFile.IsEmpty() ) {	// from Bind
+		strNCFile = pDoc->GetPathName();
+		if ( strNCFile.IsEmpty() ) {	// from Bind
 			if ( pDoc->GetBindInfoCnt() >= 0 ) {
-				strDocFile = pDoc->GetBindInfoData(0)->pDoc->GetPathName();
-				::Path_Name_From_FullPath(strDocFile, strPath, strFile, FALSE);
+				strNCFile = pDoc->GetBindInfoData(0)->pDoc->GetPathName();
+				::Path_Name_From_FullPath(strNCFile, strPath, strFile, FALSE);
 				strFile.Empty();
 			}
 		}
 		else {
-			::Path_Name_From_FullPath(strDocFile, strPath, strFile, FALSE);
+			::Path_Name_From_FullPath(strNCFile, strPath, strFile, FALSE);
 			strFile += AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetUserDefaultExt();
 		}
 	}
-	else
+	else {
 		::Path_Name_From_FullPath(strNCFile, strPath, strFile);
+	}
 }
 
-void CreateNCFile(const C3dModelDoc* pDoc, CString& strPath, CString& strFile)
+void CreateNCFile(C3dModelDoc* pDoc, UINT id, CString& strPath, CString& strFile)
 {
-	CString	strNCFile(pDoc->GetNCFileName());
+	static LPCTSTR	szSuffix[] = {
+		"_Rough", "_Contour"
+	};
+	// 3dOptionに保存したファイル名からＮＣファイル名を作成
+	// 新規の場合のみサフィックスを付与
+	CString	strNCFile(pDoc->Get3dOption()->Get3dStr(id));
 	if ( strNCFile.IsEmpty() ) {
-		CString	strDocFile(pDoc->GetPathName());
-		::Path_Name_From_FullPath(strDocFile, strPath, strFile, FALSE);
+		strNCFile = pDoc->GetPathName();
+		::Path_Name_From_FullPath(strNCFile, strPath, strFile, FALSE);
+		strFile += szSuffix[id];
 		strFile += AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetUserDefaultExt();
+		return;
 	}
-	else
-		::Path_Name_From_FullPath(strNCFile, strPath, strFile);
+	::Path_Name_From_FullPath(strNCFile, strPath, strFile);
 }
 
 void CreateLayerFile(const CDXFDoc* pDoc, CString& strPath, CString& strFile)

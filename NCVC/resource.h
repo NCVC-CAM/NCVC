@@ -79,7 +79,8 @@
 #define IDS_MAKENCD_TITLE_SHAPE         723
 #define IDS_MAKENCD_TITLE_LATHE         724
 #define IDS_MAKENCD_TITLE_WIRE          725
-#define IDS_MAKENCD_TITLE_NURBS         726
+#define IDS_MAKENCD_TITLE_ROUGH         726
+#define IDS_MAKENCD_TITLE_CONTOUR       727
 #define IDS_NEW_SAVE                    750
 #define IDS_COMMON_FORMAT               999
 #define IDD_THUMBNAIL                   1000
@@ -899,9 +900,10 @@
 #define IDS_ANA_OUTLINE                 29015
 #define IDS_ANA_STRICTOFFSET            29016
 #define IDS_ANA_DEFVIEWINFO             29017
+#define IDS_ANA_ROUGH                   29018
+#define IDS_ANA_CONTOUR                 29019
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
-#define ID_NC32829                      32829
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
