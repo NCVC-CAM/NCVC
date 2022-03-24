@@ -52,8 +52,8 @@ static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 // 荒加工用サブ
 static	tuple<int, int>			MoveFirstPoint(int);		// 最初のCoordポイントを検索
 // 仕上げ等高線用サブ
-static	tuple<ptrdiff_t, ptrdiff_t, double>	SearchNearGroup(const VVCoord&);
-static	tuple<ptrdiff_t, double>			SearchNearPoint(const VCoord&);
+static	tuple<ptrdiff_t, ptrdiff_t>	SearchNearGroup(const VVCoord&);
+static	tuple<ptrdiff_t, double>	SearchNearPoint(const VCoord&);
 static	void	MakeLoopCoord(VCoord&, size_t);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
@@ -326,19 +326,19 @@ BOOL MakeNurbs_RoughFunc(void)
 
 BOOL MakeNurbs_ContourFunc(void)
 {
+	std::vector<VVCoord>::iterator	itv;
 	std::vector<VVCoord>&	vvv = g_pDoc->GetContourCoord();
 	std::vector<size_t>		vLayer;		// 階層ごとの残グループ数
 	size_t		layer = 0;				// 現在処理中の階層
 	INT_PTR		maxcnt = 0, cnt = 0;
 	ptrdiff_t	grp, idx;
-	double		dGap;
 	CPointD		pt;
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
-	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
-		maxcnt += it1->size();			// 座標集合==処理数
-		vLayer.push_back(it1->size());	// 階層ごとの座標グループ数で初期化
-		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+	for ( itv=vvv.begin(); itv!=vvv.end(); ++itv ) {
+		maxcnt += itv->size();			// 座標集合==処理数
+		vLayer.push_back(itv->size());	// 階層ごとの座標グループ数で初期化
+		for ( auto it2=itv->begin(); it2!=itv->end(); ++it2 ) {
 			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
 				it3->dmy = 0.0;			// 生成済みフラグのクリア
 			}
@@ -352,11 +352,20 @@ BOOL MakeNurbs_ContourFunc(void)
 	AddCustomNurbsCode(MKNC_STR_HEADER);
 
 	// 最初の階層から開始位置を検索
-	tie(grp, idx, dGap) = SearchNearGroup(vvv[0]);
-	if ( grp < 0 )
-		return FALSE;
-	MakeLoopCoord(vvv[0][grp], idx);
-	vLayer[0]--;
+	// エラーで最初の階層に有効なデータがない場合があるので
+	// データ生成できるところまでループ
+	for ( itv=vvv.begin(); itv!=vvv.end() && IsThread(); ++itv ) {
+		tie(grp, idx) = SearchNearGroup(*itv);
+		if ( grp >= 0 ) {
+			MakeLoopCoord(itv->operator[](grp), idx);
+			layer = std::distance(vvv.begin(), itv);
+			vLayer[layer]--;
+			break;
+		}
+	}
+	if ( itv == vvv.end() ) {
+		return FALSE;	
+	}
 
 	// パス生成ループ
 	while ( IsThread() ) {
@@ -373,7 +382,7 @@ BOOL MakeNurbs_ContourFunc(void)
 			layer = std::distance(vLayer.begin(), f);
 		}
 		// この階層で近い座標グループを検索
-		tie(grp, idx, dGap) = SearchNearGroup(vvv[layer]);
+		tie(grp, idx) = SearchNearGroup(vvv[layer]);
 		if ( grp < 0 ) {
 			ASSERT(TRUE);	// ないはずがない
 			break;
@@ -447,7 +456,7 @@ tuple<int, int>	MoveFirstPoint(int my)
 	return make_tuple(fx, fy);
 }
 
-tuple<ptrdiff_t, ptrdiff_t, double> SearchNearGroup(const VVCoord& vv)
+tuple<ptrdiff_t, ptrdiff_t> SearchNearGroup(const VVCoord& vv)
 {
 	ptrdiff_t	i, grp = -1, idx = -1;
 	double		dGap, dGapMin = HUGE_VAL;
@@ -461,7 +470,7 @@ tuple<ptrdiff_t, ptrdiff_t, double> SearchNearGroup(const VVCoord& vv)
 		}
 	}
 
-	return make_tuple(grp, idx, dGapMin);
+	return make_tuple(grp, idx);
 }
 
 tuple<ptrdiff_t, double> SearchNearPoint(const VCoord& v)
