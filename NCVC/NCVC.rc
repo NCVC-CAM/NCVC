@@ -3715,12 +3715,10 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_3DM_FILTER          "3dm\n3dm data (%s)|%s"
-    IDS_SCRIPT_FILTER       "Ω∏ÿÃﬂƒÃß≤Ÿ (*.pl; *.py)|*.pl;*.py"
-    IDS_TEXTURE_FILTER      "√∏Ω¡¨âÊëúÃß≤Ÿ (*.bmp; *.png; *.gif; *.jpeg; *.tiff)|*.bmp;*.png;*.gif;*.jpg;*.jpeg;*.tif;*.tiff"
     IDS_NCVC_FILTER         "NCVC files (%s)|%s"
     IDS_NCD_FILTER          "ncd\nNC data (%s)|%s"
     IDS_CAM_FILTER          "cam\nCAM data (%s)|%s"
+    IDS_3DM_FILTER          "3dm\n3dm data (%s)|%s"
     IDS_DXF_FILTER          "dxf\nDXF data (*.dxf)|*.dxf"
     IDS_NCI_FILTER          "êÿçÌèåèÃß≤Ÿ (*.nci; *.ncj; *.ncw)|*.nci;*.ncj;*.ncw"
     IDS_NCIM_FILTER         "nci\nêÿçÌèåèÃß≤Ÿ (*.nci)|*.nci"
@@ -4242,6 +4240,12 @@ BEGIN
     IDS_MAKENCD_LATHEDRILL4 "(DRILL=%.4f start)"
     IDS_MAKENCD_PROG        "O%04d"
     IDS_MAKENCD_ENDMILL     "(Endmill=R%.3f)"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SCRIPT_FILTER       "Ω∏ÿÃﬂƒÃß≤Ÿ (*.pl; *.py)|*.pl;*.py"
+    IDS_TEXTURE_FILTER      "√∏Ω¡¨âÊëúÃß≤Ÿ (*.bmp; *.png; *.gif; *.jpeg; *.tiff)|*.bmp;*.png;*.gif;*.jpg;*.jpeg;*.tif;*.tiff"
 END
 
 #endif    // ì˙ñ{åÍ (ì˙ñ{) resources

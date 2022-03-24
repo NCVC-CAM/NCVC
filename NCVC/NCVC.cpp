@@ -2001,12 +2001,16 @@ CString CNCVCDocTemplate::GetFilterString(void)
 
 	// Šî–{Šg’£Žq
 	GetDocString(strResult, CDocTemplate::filterExt);	// get original ext (.ncd or .cam)
-	strResult = gg_szWild + strResult.Right(3);
+	if ( !strResult.IsEmpty() ) {
+		strResult = gg_szWild + strResult.Right(3);
+	}
 
 	// “o˜^Šg’£Žq
 	for ( int i=0; i<SIZEOF(m_mpExt); i++ ) {
 		PMAP_FOREACH(strKey, pDummy, &m_mpExt[i])
-			strResult += gg_szSemicolon;
+			if ( !strResult.IsEmpty() ) {
+				strResult += gg_szSemicolon;
+			}
 			strResult += gg_szWild + strKey;
 		END_FOREACH
 	}
