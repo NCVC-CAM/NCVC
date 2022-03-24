@@ -27,9 +27,6 @@ C3dModelDoc::C3dModelDoc()
 	m_pKoBody  = NULL;
 	m_pKoList = NULL;
 	m_rcMax.SetRectMinimum();
-	m_pRoughCoord = NULL;
-	m_nRoughX = m_nRoughY = 0;
-	m_pRoughNum = NULL;
 }
 
 C3dModelDoc::~C3dModelDoc()
@@ -116,7 +113,7 @@ void C3dModelDoc::OnCloseDocument()
 
 void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable(m_pRoughCoord!=NULL || !m_vvvContourCoord.empty() );
+	pCmdUI->Enable( !m_vvvRoughCoord.empty() || !m_vvvContourCoord.empty() );
 }
 
 void C3dModelDoc::OnFile3dMake()
@@ -124,7 +121,7 @@ void C3dModelDoc::OnFile3dMake()
 	CString	strInit;
 	BOOL	bNCView;
 	UINT	id;
-	if ( m_pRoughCoord ) {
+	if ( !m_vvvRoughCoord.empty() ) {
 		id = IDS_MAKENCD_TITLE_ROUGH;
 	}
 	else if ( !m_vvvContourCoord.empty() ) {
@@ -173,15 +170,7 @@ void C3dModelDoc::OnFile3dMake()
 
 void C3dModelDoc::ClearRoughCoord(void)
 {
-	if ( m_pRoughCoord ) {
-		FreeCoord3(m_pRoughCoord, m_nRoughX, m_nRoughY);
-		m_pRoughCoord = NULL;
-		m_nRoughX = m_nRoughY = 0;
-	}
-	if ( m_pRoughNum ) {
-		delete[]	m_pRoughNum;
-		m_pRoughNum = NULL;
-	}
+	m_vvvRoughCoord.clear();
 }
 
 void C3dModelDoc::ClearContourCoord(void)
@@ -196,8 +185,11 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 	Coord	plane_pt;		// 分割する平面上の1点
 	Coord	plane_n;		// 分割する平面の法線ベクトル
 	Coord	path_[2000];	// 一時格納用バッファ
-	int		i, j, k,
-			D = (int)(m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT) / m_3dOpt.Get3dDbl(D3_DBL_ROUGH_ZCUT)) + 1,	// Z方向分割数（粗加工用）
+	VCoord	v;
+	VVCoord	vv;
+	double	H = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT);	// 素材上面のZ座標
+	int		i, j, k, num,
+			D = (int)(H / m_3dOpt.Get3dDbl(D3_DBL_ROUGH_ZCUT)) + 1,	// Z方向分割数（荒加工用）
 			N = m_3dOpt.Get3dInt(D3_INT_LINESPLIT);					// スキャニングライン分割数(N < 100)
 	BOOL	bResult = TRUE;
 
@@ -205,41 +197,34 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 		// 座標点の初期化
 		ClearRoughCoord();
 		ClearContourCoord();
-		m_nRoughX = D+1;
-		m_nRoughY = N+1;
-		m_pRoughCoord = NewCoord3(m_nRoughX, m_nRoughY, 2000);
-		m_pRoughNum = new int[100];
 
 		// ガイドカーブに沿って垂直平面をシフトしていき，加工面との交点群を求めていく
 		for ( i=0; i<=N; i++ ) {
 			double t = (double)i/N;
-			if ( i==0 ) {
-				t += 0.0001;		// 特異点回避
-			}
-			else if ( i==N ) {
-				t -= 0.0001;		// 特異点回避
-			}
+			if ( i==0 ) t += 0.0001;			// 特異点回避
+			else if ( i==N ) t -= 0.0001;		// 特異点回避
 			plane_pt = nf.CalcNurbsCCoord(nc, t);		// 注目中の垂直平面上の1点
 			plane_n  = nf.CalcTanVecOnNurbsC(nc, t);	// 注目中の垂直平面の法線ベクトル
-			m_pRoughNum[i] = nf.CalcIntersecPtsPlaneSearch(ns, plane_pt, plane_n, 0.5, 3, path_, 2000, RUNGE_KUTTA);  // 交点群算出
+			num = nf.CalcIntersecPtsPlaneSearch(ns, plane_pt, plane_n, 0.5, 3, path_, 2000, RUNGE_KUTTA);  // 交点群算出
 			// 得られた交点群を，加工面法線方向に工具半径分オフセットさせた点を得る
-			for ( j=0; j<m_pRoughNum[i]; j++ ) {
+			for ( j=0; j<num; j++ ) {
 				Coord pt = nf.CalcNurbsSCoord(ns, path_[j].x, path_[j].y);		// 工具コンタクト点
 				Coord n = nf.CalcNormVecOnNurbsS(ns, path_[j].x, path_[j].y);	// 法線ベクトル
-				if (n.z < 0) n = n*(-1);					// 法線ベクトルの向き調整
-				m_pRoughCoord[D][i][j] = pt + n*m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL);	// 工具半径オフセット
+				if ( n.z < 0 ) n = n * (-1);			// 法線ベクトルの向き調整
+				v.push_back(pt + n*m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL));	// 工具半径オフセット
 			}
+			vv.push_back(v);
 		}
 
-		// 粗加工パス生成
-		for ( i=0; i<D; i++ ) {
-			for ( j=0; j<m_nRoughY; j++ ) {
-				for ( k=0; k<m_pRoughNum[j]; k++ ) {
-					double del = (m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT) - m_pRoughCoord[D][j][k].z)/(double)D;
-					double Z = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT) - del*i;
-					m_pRoughCoord[i][j][k] = SetCoord(m_pRoughCoord[D][j][k].x, m_pRoughCoord[D][j][k].y, Z);
+		// 荒加工パス生成
+		for ( i=0; i<D; i++ ) {	// Z方向分割数
+			for ( auto it2=vv.begin(); it2!=vv.end(); ++it2 ) {
+				for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+					double del = (H - it3->z)/(double)D;
+					it3->z = H - del*i;
 				}
 			}
+			m_vvvRoughCoord.push_back(vv);
 		}
 	}
 	catch(...) {
@@ -287,10 +272,10 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 			}
 			if ( !v.empty() ) {
 #ifdef _DEBUG_FILEOUT_
-				DumpCoord(v);	// デバッグ用の座標出力
+				DumpContourCoord(v);	// デバッグ用の座標出力
 #endif
 				// 1平面の座標をグループ集合で登録
-				SetCoordGroup(v);
+				SetContourGroup(v);
 				v.clear();
 			}
 		}
@@ -330,7 +315,7 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 	return bResult;
 }
 
-void C3dModelDoc::SetCoordGroup(VCoord& v)
+void C3dModelDoc::SetContourGroup(VCoord& v)
 {
 	double		dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
 	VCoord		vtmp;
@@ -383,7 +368,7 @@ void C3dModelDoc::SetCoordGroup(VCoord& v)
 /////////////////////////////////////////////////////////////////////////////
 
 #ifdef _DEBUG
-void C3dModelDoc::DumpCoord(const VCoord& v)
+void C3dModelDoc::DumpContourCoord(const VCoord& v)
 {
 	CString	file, s;
 	file.Format("C:\\Users\\magara\\Documents\\tmp\\coord%d.csv", m_vvvContourCoord.size());

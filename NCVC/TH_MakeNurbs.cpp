@@ -50,7 +50,7 @@ static	BOOL	MakeNurbs_RoughFunc(void);		// 荒加工の生成ループ
 static	BOOL	MakeNurbs_ContourFunc(void);	// 仕上げ等高線の生成ループ
 static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 // 荒加工用サブ
-static	tuple<int, int>			MoveFirstPoint(int);		// 最初のCoordポイントを検索
+static	tuple<ptrdiff_t, BOOL>		SearchNearEdge(const VVCoord&);
 // 仕上げ等高線用サブ
 static	tuple<ptrdiff_t, ptrdiff_t>	SearchNearGroup(const VVCoord&);
 static	tuple<ptrdiff_t, double>	SearchNearPoint(const VCoord&);
@@ -250,19 +250,45 @@ BOOL OutputNurbsCode(void)
 
 BOOL MakeNurbs_RoughFunc(void)
 {
-	int		mx, my, mz, i, j, k,
-			fx, fy;
-	Coord***	pRoughCoord = g_pDoc->GetRoughCoord();
-	tie(mx, my) = g_pDoc->GetRoughNumXY();
+	std::vector<VVCoord>::iterator	itv;
+	std::vector<VVCoord>&	vvv = g_pDoc->GetRoughCoord();
+	INT_PTR		maxcnt = 0, cnt = 0;
+	ptrdiff_t	idx;
+	BOOL		bReverse;
+
+	// Coord::dmy のクリア．生成済みフラグとして使用
+	for ( itv=vvv.begin(); itv!=vvv.end(); ++itv ) {
+		maxcnt += itv->size();			// 座標集合==処理数
+		for ( auto it2=itv->begin(); it2!=itv->end(); ++it2 ) {
+			it2->front().dmy = 0.0;		// 生成済みフラグのクリア（frontのみ）
+		}
+	}
 
 	// フェーズ更新
-	SendFaseMessage(g_pParent, g_nFase, mx*my);
+	SendFaseMessage(g_pParent, g_nFase, maxcnt);
 
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 	AddCustomNurbsCode(MKNC_STR_HEADER);
 
-	// 開始点の検索と移動
-	tie(fx, fy) = MoveFirstPoint(my);
+	// スキャン座標の生成
+	for ( itv=vvv.begin(); itv!=vvv.end(); ++itv ) {
+		while ( IsThread() ) {
+			// 近い端点を検索
+			tie(idx, bReverse) = SearchNearEdge(*itv);
+			if ( idx < 0 ) {
+				// 次の階層へ
+				break;
+			}
+			if ( bReverse ) {
+			}
+			else {
+			}
+		}
+	}
+
+
+
+
 
 	// スキャン座標の生成（記述が冗長なのでなんとかしたい）
 	for ( i=0; i<mx && IsThread(); i++ ) {				// Zの階層
@@ -454,6 +480,41 @@ tuple<int, int>	MoveFirstPoint(int my)
 	}
 
 	return make_tuple(fx, fy);
+}
+
+tuple<ptrdiff_t, BOOL> SearchNearEdge(const VVCoord& vv)
+{
+	CPointD		ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]),
+				ptF, ptB;
+	ptrdiff_t	idx = -1;
+	double		dGapF, dGapB, dGapMin = HUGE_VAL;
+	BOOL		bReverse;
+
+	for ( auto it=vv.begin(); it!=vv.end() && IsThread(); ++it ) {
+		if ( it->front().dmy > 0 ) continue;
+		ptF  = it->front();
+		ptB  = it->back();
+		ptF -= ptNow;
+		ptB -= ptNow;
+		dGapF = ptF.x*ptF.x + ptF.y*ptF.y;
+		dGapB = ptB.x*ptB.x + ptB.y*ptB.y;
+		if ( dGapF <= dGapB ) {
+			if ( dGapF < dGapMin ) {
+				dGapMin = dGapF;
+				idx = std::distance(vv.begin(), it);
+				bReverse = FALSE;
+			}
+		}
+		else {
+			if ( dGapB < dGapMin ) {
+				dGapMin = dGapB;
+				idx = std::distance(vv.begin(), it);
+				bReverse = TRUE;
+			}
+		}
+	}
+
+	return make_tuple(idx, bReverse);
 }
 
 tuple<ptrdiff_t, ptrdiff_t> SearchNearGroup(const VVCoord& vv)

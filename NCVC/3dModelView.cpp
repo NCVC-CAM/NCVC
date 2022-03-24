@@ -253,24 +253,23 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 
 void C3dModelView::DrawRoughPath(void)
 {
-	Coord***	pRoughCoord = GetDocument()->GetRoughCoord();
-	if ( !pRoughCoord )
+	std::vector<VVCoord>& vvv = GetDocument()->GetRoughCoord();
+	if ( vvv.empty() )
 		return;
 
-	int		i, j, k, mx, my, mz;
-	boost::tie(mx, my) = GetDocument()->GetRoughNumXY();
 	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
 	::glBegin(GL_POINTS);
-	for ( i=0; i<mx; i++ ) {
-		for ( j=0; j<my; j++ ) {
-			mz = GetDocument()->GetRoughNumZ(j);
-			for ( k=0; k<mz; k++ ) {
-				::glVertex3d(pRoughCoord[i][j][k].x, pRoughCoord[i][j][k].y, pRoughCoord[i][j][k].z);
+
+	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+				::glVertex3d(it3->x, it3->y, it3->z);
 			}
 		}
 	}
+
 	::glEnd();
 }
 

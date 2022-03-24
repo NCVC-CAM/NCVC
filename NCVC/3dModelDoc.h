@@ -22,18 +22,14 @@ class C3dModelDoc : public CDocBase
 	BODY*		m_pKoBody;			// Kodatuno Body
 	BODYList*	m_pKoList;			// Kodatuno Body List
 
-	Coord***	m_pRoughCoord;		// 荒加工スキャンパス
-	int			m_nRoughX,
-				m_nRoughY;
-	int*		m_pRoughNum;		// スキャンライン1本ごとの加工点数を格納
-
-	std::vector<VVCoord>	m_vvvContourCoord;	// 仕上げ等高線座標（3次元配列）
+	std::vector<VVCoord>	m_vvvRoughCoord,	// 荒加工用座標（3次元配列）
+							m_vvvContourCoord;	// 仕上げ等高線座標
 
 protected:
 	C3dModelDoc();
 	DECLARE_DYNCREATE(C3dModelDoc)
 #ifdef _DEBUG
-	void	DumpCoord(const VCoord&);
+	void	DumpContourCoord(const VCoord&);
 #endif
 
 public:
@@ -55,18 +51,12 @@ public:
 	void	ClearContourCoord(void);
 	BOOL	MakeRoughCoord(NURBSS*, NURBSC*);
 	BOOL	MakeContourCoord(NURBSS*);
-	void	SetCoordGroup(VCoord&);
-	Coord***	GetRoughCoord(void) const {
-		return m_pRoughCoord;
+	void	SetContourGroup(VCoord&);
+	std::vector<VVCoord>&	GetRoughCoord(void) {
+		return m_vvvRoughCoord;
 	}
 	std::vector<VVCoord>&	GetContourCoord(void) {
 		return m_vvvContourCoord;
-	}
-	boost::tuple<int, int>	GetRoughNumXY(void) const {
-		return boost::make_tuple(m_nRoughX, m_nRoughY);
-	}
-	int		GetRoughNumZ(int y) const {
-		return m_pRoughNum[y];
 	}
 
 protected:
