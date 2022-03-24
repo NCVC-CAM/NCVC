@@ -160,17 +160,25 @@ void C3dModelView::OnDraw(CDC* pDC)
 //	::glEnd();
 	// ---
 
-	// モデル描画 Kodatuno
+	// モデル描画
 	::glEnable(GL_LIGHTING);
 	::glEnable(GL_DEPTH_TEST);
-	DrawBody(RM_NORMAL);
-//	DrawBody(RM_PICKLINE);
-//	DrawBody(RM_PICKFACE);
+	try {
+		// Kodatuno側での描画のため例外処理対応
+		// !!! tryブロック設置してもntdll.dllの例外がcatchできない？？？ !!!
+		DrawBody(RM_NORMAL);
+//		DrawBody(RM_PICKLINE);
+//		DrawBody(RM_PICKFACE);
+	}
+	catch(...) {
+		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
+		PostMessage(WM_CLOSE);	// ウィンドウ終了
+	}
 
-	// 荒加工スキャンパスの描画 Kodatuno
+	// 荒加工スキャンパスの描画
 	::glDisable(GL_LIGHTING);
 	DrawRoughPath();
-	// 仕上げ等高線の描画 Kodatuno
+	// 仕上げ等高線の描画
 	DrawContourPath();
 
 	::SwapBuffers( pDC->GetSafeHdc() );
