@@ -293,6 +293,8 @@ BOOL MakeNurbs_RoughFunc(void)
 			}
 			continue;
 		}
+		_AddMoveG00Z(GetDbl(MKNC_DBL_ZG0STOP));		// ˆê’U‹­§“I‚ÉZŽ²‚ðã¸
+		// ¶¬
 		MakeLoopCoord(itv->operator[](idx), 0, r);
 		SetProgressPos(g_pParent, ++cnt);
 	}
