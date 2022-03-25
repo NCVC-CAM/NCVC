@@ -184,12 +184,13 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 	NURBS_Func	nf;			// NURBS_Funcへのインスタンス
 	Coord	plane_pt;		// 分割する平面上の1点
 	Coord	plane_n;		// 分割する平面の法線ベクトル
-	Coord	path_[2000];	// 一時格納用バッファ
+	Coord	path[2000];		// 一時格納用バッファ
 	VCoord	v;
 	VVCoord	vv;
-	double	H = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT);	// 素材上面のZ座標
-	int		i, j, k, num,
-			D = (int)(H / m_3dOpt.Get3dDbl(D3_DBL_ROUGH_ZCUT)) + 1,	// Z方向分割数（荒加工用）
+	double	H = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT),		// 素材上面のZ座標
+			R = m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL);	// ボールエンドミル半径
+	int		i, j, num,
+			D = (int)(H / m_3dOpt.Get3dDbl(D3_DBL_ROUGH_ZCUT)) + 1,	// Z方向分割数
 			N = m_3dOpt.Get3dInt(D3_INT_LINESPLIT);					// スキャニングライン分割数(N < 100)
 	BOOL	bResult = TRUE;
 
@@ -205,26 +206,30 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 			else if ( i==N ) t -= 0.0001;		// 特異点回避
 			plane_pt = nf.CalcNurbsCCoord(nc, t);		// 注目中の垂直平面上の1点
 			plane_n  = nf.CalcTanVecOnNurbsC(nc, t);	// 注目中の垂直平面の法線ベクトル
-			num = nf.CalcIntersecPtsPlaneSearch(ns, plane_pt, plane_n, 0.5, 3, path_, 2000, RUNGE_KUTTA);  // 交点群算出
+			num = nf.CalcIntersecPtsPlaneSearch(ns, plane_pt, plane_n, 0.5, 3, path, 2000, RUNGE_KUTTA);  // 交点群算出
 			// 得られた交点群を，加工面法線方向に工具半径分オフセットさせた点を得る
+			v.clear();
 			for ( j=0; j<num; j++ ) {
-				Coord pt = nf.CalcNurbsSCoord(ns, path_[j].x, path_[j].y);		// 工具コンタクト点
-				Coord n = nf.CalcNormVecOnNurbsS(ns, path_[j].x, path_[j].y);	// 法線ベクトル
+				Coord pt = nf.CalcNurbsSCoord(ns, path[j].x, path[j].y);		// 工具コンタクト点
+				Coord n = nf.CalcNormVecOnNurbsS(ns, path[j].x, path[j].y);	// 法線ベクトル
 				if ( n.z < 0 ) n = n * (-1);			// 法線ベクトルの向き調整
-				v.push_back(pt + n*m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL));	// 工具半径オフセット
+				v.push_back(pt + n*R);	// 工具半径オフセット
 			}
-			vv.push_back(v);
+			if ( !v.empty() ) {
+				vv.push_back(v);
+			}
 		}
 
 		// 荒加工パス生成
 		for ( i=0; i<D; i++ ) {	// Z方向分割数
-			for ( auto it2=vv.begin(); it2!=vv.end(); ++it2 ) {
+			VVCoord	vvtmp = vv;
+			for ( auto it2=vvtmp.begin(); it2!=vvtmp.end(); ++it2 ) {
 				for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-					double del = (H - it3->z)/(double)D;
+					double del = (H - it3->z)/D;
 					it3->z = H - del*i;
 				}
 			}
-			m_vvvRoughCoord.push_back(vv);
+			m_vvvRoughCoord.push_back(vvtmp);
 		}
 	}
 	catch(...) {
@@ -233,6 +238,15 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
 		bResult = FALSE;
 	}
+
+#ifdef _DEBUG
+	printf("階層=%zd\n", m_vvvRoughCoord.size());
+	for ( auto it1=m_vvvRoughCoord.begin(); it1!=m_vvvRoughCoord.end(); ++it1 ) {
+		printf(" Line%0Id=%zd", std::distance(m_vvvRoughCoord.begin(), it1), it1->size());
+		printf(" num=%zd", it1->front().size());
+		printf(" Z=%f\n", it1->front().front().z);
+	}
+#endif
 
 	// スキャンオプションの保存
 	if ( bResult )

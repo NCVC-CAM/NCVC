@@ -50,11 +50,12 @@ static	BOOL	MakeNurbs_RoughFunc(void);		// 荒加工の生成ループ
 static	BOOL	MakeNurbs_ContourFunc(void);	// 仕上げ等高線の生成ループ
 static	BOOL	OutputNurbsCode(void);			// NCｺｰﾄﾞの出力
 // 荒加工用サブ
-static	tuple<ptrdiff_t, BOOL>		SearchNearEdge(const VVCoord&);
+static	tuple<ptrdiff_t, int>		SearchFirstPoint(const VVCoord&);
+static	tuple<ptrdiff_t, int>		SearchNearEdge(const VVCoord&);
 // 仕上げ等高線用サブ
 static	tuple<ptrdiff_t, ptrdiff_t>	SearchNearGroup(const VVCoord&);
 static	tuple<ptrdiff_t, double>	SearchNearPoint(const VCoord&);
-static	void	MakeLoopCoord(VCoord&, size_t);
+static	void	MakeLoopCoord(VCoord&, size_t, int=-1);
 
 // ﾍｯﾀﾞｰ,ﾌｯﾀﾞｰ等のｽﾍﾟｼｬﾙｺｰﾄﾞ生成
 static	void	AddCustomNurbsCode(int);
@@ -129,7 +130,7 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 	SendFaseMessage(g_pParent, g_nFase, -1, IDS_ANA_DATAINIT);
 	g_pMakeOpt = NULL;
 	// 生成モードの決定
-	if ( g_pDoc->GetRoughCoord() ) {
+	if ( !g_pDoc->GetRoughCoord().empty() ) {
 		g_enMode = ROUGH;
 	}
 	else if ( !g_pDoc->GetContourCoord().empty() ) {
@@ -250,17 +251,19 @@ BOOL OutputNurbsCode(void)
 
 BOOL MakeNurbs_RoughFunc(void)
 {
-	std::vector<VVCoord>::iterator	itv;
-	std::vector<VVCoord>&	vvv = g_pDoc->GetRoughCoord();
+	VVVCoord::iterator	itv;
+	VVVCoord&	vvv = g_pDoc->GetRoughCoord();
 	INT_PTR		maxcnt = 0, cnt = 0;
 	ptrdiff_t	idx;
-	BOOL		bReverse;
+	int			r;	// 0:正順, 1:逆順
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
 	for ( itv=vvv.begin(); itv!=vvv.end(); ++itv ) {
 		maxcnt += itv->size();			// 座標集合==処理数
 		for ( auto it2=itv->begin(); it2!=itv->end(); ++it2 ) {
-			it2->front().dmy = 0.0;		// 生成済みフラグのクリア（frontのみ）
+			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+				it3->dmy = 0.0;			// 生成済みフラグのクリア
+			}
 		}
 	}
 
@@ -270,71 +273,28 @@ BOOL MakeNurbs_RoughFunc(void)
 	// Gｺｰﾄﾞﾍｯﾀﾞ(開始ｺｰﾄﾞ)
 	AddCustomNurbsCode(MKNC_STR_HEADER);
 
+	// 最初の開始ポイントを検索
+	// 最初だけ front と back からの検索
+	itv = vvv.begin();
+	tie(idx, r) = SearchFirstPoint(*itv);
+	if ( idx < 0 ) {
+		return FALSE;
+	}
+	MakeLoopCoord(itv->operator[](idx), 0, r);
+	SetProgressPos(g_pParent, ++cnt);
+
 	// スキャン座標の生成
-	for ( itv=vvv.begin(); itv!=vvv.end(); ++itv ) {
-		while ( IsThread() ) {
-			// 近い端点を検索
-			tie(idx, bReverse) = SearchNearEdge(*itv);
-			if ( idx < 0 ) {
-				// 次の階層へ
+	while ( IsThread() ) {
+		tie(idx, r) = SearchNearEdge(*itv);
+		if ( idx < 0 ) {
+			if ( ++itv == vvv.end() ) {
+				// パス生成ループ終了
 				break;
 			}
-			if ( bReverse ) {
-			}
-			else {
-			}
+			continue;
 		}
-	}
-
-
-
-
-
-	// スキャン座標の生成（記述が冗長なのでなんとかしたい）
-	for ( i=0; i<mx && IsThread(); i++ ) {				// Zの階層
-		if ( fy == 0 ) {
-			for ( j=0; j<my && IsThread(); j++ ) {		// スキャン分割数
-				mz = g_pDoc->GetRoughNumZ(j);
-				if ( fx == 0 ) {
-					k = 0;
-					_AddMakeG01Zcut(pRoughCoord[i][j][k].z);	// Z軸の下降
-					for ( ; k<mz && IsThread(); k++ ) {
-						_AddMakeCoord(pRoughCoord[i][j][k]);	// Coord座標の生成
-					}
-				}
-				else {
-					k = mz - 1;
-					_AddMakeG01Zcut(pRoughCoord[i][j][k].z);
-					for ( ; k>=0 && IsThread(); k-- ) {
-						_AddMakeCoord(pRoughCoord[i][j][k]);
-					}
-				}
-				SetProgressPos(g_pParent, i*my+j);
-				fx = 1 - fx;
-			}
-		}
-		else {
-			for ( j=my-1; j>=0 && IsThread(); j-- ) {
-				mz = g_pDoc->GetRoughNumZ(j);
-				if ( fx == 0 ) {
-					k = 0;
-					_AddMakeG01Zcut(pRoughCoord[i][j][k].z);
-					for ( ; k<mz && IsThread(); k++ ) {
-						_AddMakeCoord(pRoughCoord[i][j][k]);
-					}
-				}
-				else {
-					k = mz - 1;
-					_AddMakeG01Zcut(pRoughCoord[i][j][k].z);
-					for ( ; k>=0 && IsThread(); k-- ) {
-						_AddMakeCoord(pRoughCoord[i][j][k]);
-					}
-				}
-				SetProgressPos(g_pParent, i*my+my-j);
-				fx = 1 - fx;
-			}
-		}
-		fy = 1 - fy;
+		MakeLoopCoord(itv->operator[](idx), 0, r);
+		SetProgressPos(g_pParent, ++cnt);
 	}
 
 	// Z軸をイニシャル点に復帰
@@ -352,8 +312,8 @@ BOOL MakeNurbs_RoughFunc(void)
 
 BOOL MakeNurbs_ContourFunc(void)
 {
-	std::vector<VVCoord>::iterator	itv;
-	std::vector<VVCoord>&	vvv = g_pDoc->GetContourCoord();
+	VVVCoord::iterator	itv;
+	VVVCoord&	vvv = g_pDoc->GetContourCoord();
 	std::vector<size_t>		vLayer;		// 階層ごとの残グループ数
 	size_t		layer = 0;				// 現在処理中の階層
 	INT_PTR		maxcnt = 0, cnt = 0;
@@ -443,52 +403,59 @@ BOOL MakeNurbs_ContourFunc(void)
 
 //////////////////////////////////////////////////////////////////////
 
-tuple<int, int>	MoveFirstPoint(int my)
+tuple<ptrdiff_t, int>	SearchFirstPoint(const VVCoord& vv)
 {
-	int		fx = 0, fy = 0;
-	Coord***	pRoughCoord = g_pDoc->GetRoughCoord();
-
-	// 4角の座標
-	CPoint3D	pt0(pRoughCoord[0][0][0]),
-				pt1(pRoughCoord[0][0][g_pDoc->GetRoughNumZ(0)-1]),
-				pt2(pRoughCoord[0][my-1][0]),
-				pt3(pRoughCoord[0][my-1][g_pDoc->GetRoughNumZ(my-1)-1]);
-	// 距離計算(sqrt()いらないけど4点くらいなら問題なし)
+	ptrdiff_t	idx;
+	int			r;
+	// 最初と最後の点
+	CPoint3D	pt0( vv.front().front() ),
+				pt1( vv.front().back()  ),
+				pt2( vv.back().front()  ),
+				pt3( vv.back().back()   );
+	CPointD		ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
+	pt0 -= ptNow;
+	pt1 -= ptNow;
+	pt2 -= ptNow;
+	pt3 -= ptNow;
+	// 距離計算
 	// 固定長配列なので vector ではなく array
 	boost::array<double, 4>	v = {
-		pt0.hypot(), pt1.hypot(),
-		pt2.hypot(), pt3.hypot()
+		pt0.x*pt0.x + pt0.y*pt0.y,
+		pt1.x*pt1.x + pt1.y*pt1.y,
+		pt2.x*pt2.x + pt2.y*pt2.y,
+		pt3.x*pt3.x + pt3.y*pt3.y
 	};
 	// 一番小さい要素
 	auto	it  = boost::range::min_element(v);
 	switch ( std::distance(v.begin(), it) ) {
 	case 0:		// pt0
-		_AddMovePoint(pt0);	// 開始点まで移動
+		idx = 0;
+		r = 0;		// 正順
 		break;
 	case 1:		// pt1
-		_AddMovePoint(pt1);
-		fx = 1;			// 横方向反転
+		idx = 0;
+		r = 1;		// 逆順
 		break;
 	case 2:		// pt2
-		_AddMovePoint(pt2);
-		fy = 1;			// 縦方向反転
+		idx = vv.size()-1;
+		r = 0;
 		break;
 	case 3:		// pt3
-		_AddMovePoint(pt3);
-		fx = fy = 1;	// 横も縦も反転
+		idx = vv.size()-1;
+		r = 1;
 		break;
 	}
 
-	return make_tuple(fx, fy);
+	return make_tuple(idx, r);
 }
 
-tuple<ptrdiff_t, BOOL> SearchNearEdge(const VVCoord& vv)
+tuple<ptrdiff_t, int> SearchNearEdge(const VVCoord& vv)
 {
 	CPointD		ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]),
 				ptF, ptB;
 	ptrdiff_t	idx = -1;
 	double		dGapF, dGapB, dGapMin = HUGE_VAL;
-	BOOL		bReverse;
+	int			r;
 
 	for ( auto it=vv.begin(); it!=vv.end() && IsThread(); ++it ) {
 		if ( it->front().dmy > 0 ) continue;
@@ -502,19 +469,19 @@ tuple<ptrdiff_t, BOOL> SearchNearEdge(const VVCoord& vv)
 			if ( dGapF < dGapMin ) {
 				dGapMin = dGapF;
 				idx = std::distance(vv.begin(), it);
-				bReverse = FALSE;
+				r = 0;
 			}
 		}
 		else {
 			if ( dGapB < dGapMin ) {
 				dGapMin = dGapB;
 				idx = std::distance(vv.begin(), it);
-				bReverse = TRUE;
+				r = 1;
 			}
 		}
 	}
 
-	return make_tuple(idx, bReverse);
+	return make_tuple(idx, r);
 }
 
 tuple<ptrdiff_t, ptrdiff_t> SearchNearGroup(const VVCoord& vv)
@@ -554,55 +521,70 @@ tuple<ptrdiff_t, double> SearchNearPoint(const VCoord& v)
 	return make_tuple(minID, dGapMin);
 }
 
-void MakeLoopCoord(VCoord& v, size_t idx)
+void MakeLoopCoord(VCoord& v, size_t idx, int r)
 {
-	// 閉じた集合か判断
-	CPointD	ptF(v.front()),
-			ptB(v.back() );
+	CPointD		ptF, ptB;
+	CPoint3D	pt;
 
-	if ( ptF.hypot(&ptB) < Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0 ) {
-		// 開始点に移動
-		CPoint3D	pt(v[idx]);
-		_AddMovePoint(pt);
-		// そこまで下降
-		_AddMakeG01Zcut(pt.z);
-		// idxから順に生成
-		size_t	i;
-		for ( i=idx; i<v.size(); i++ ) {
-			_AddMakeCoord(v[i]);
-			v[i].dmy = 1.0;
+	if ( r < 0 ) {
+		// 関数側で閉じた集合か判断（仕上げパス用）
+		ptF = v.front();
+		ptB = v.back();
+		if ( ptF.hypot(&ptB) < Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0 ) {
+			// 開始点に移動
+			pt = v[idx];
+			_AddMovePoint(pt);
+			// そこまで下降
+			_AddMakeG01Zcut(pt.z);
+			// idxから順に生成
+			size_t	i;
+			for ( i=idx; i<v.size(); i++ ) {
+				_AddMakeCoord(v[i]);
+				v[i].dmy = 1.0;
+			}
+			for ( i=0; i<idx; i++ ) {
+				_AddMakeCoord(v[i]);
+				v[i].dmy = 1.0;
+			}
+			// 開始点までつなぐ
+			_AddMakeCoord(v[idx]);
+			// 生成終了
+			return;
 		}
-		for ( i=0; i<idx; i++ ) {
-			_AddMakeCoord(v[i]);
-			v[i].dmy = 1.0;
-		}
-		// 開始点までつなぐ
-		_AddMakeCoord(v[idx]);
 	}
-	else {
-		// 端点から順に生成
+
+	if ( r < 0 ) {
+		// 関数側でどちらが近いか判断
 		CPointD	ptNow(CNCMakeMill::ms_xyz[NCA_X], CNCMakeMill::ms_xyz[NCA_Y]);
 		ptF -= ptNow;
 		ptB -= ptNow;
 		if ( ptF.x*ptF.x+ptF.y*ptF.y < ptB.x*ptB.x+ptB.y*ptB.y ) {
-			CPoint3D	pt(v.front());
-			_AddMovePoint(pt);
-			_AddMakeG01Zcut(pt.z);
-			// 正順
-			BOOST_FOREACH(Coord& c, v) {
-				_AddMakeCoord(c);
-				c.dmy = 1.0;
-			}
+			r = 0;	// 正順
 		}
 		else {
-			CPoint3D	pt(v.back());
-			_AddMovePoint(pt);
-			_AddMakeG01Zcut(pt.z);
-			// 逆順
-			BOOST_REVERSE_FOREACH(Coord& c, v) {
-				_AddMakeCoord(c);
-				c.dmy = 1.0;
-			}
+			r = 1;	// 逆順
+		}
+	}
+
+	// 端点から順に生成
+	if ( r == 0 ) {
+		// 正順
+		pt = v.front();
+		_AddMovePoint(pt);
+		_AddMakeG01Zcut(pt.z);
+		BOOST_FOREACH(Coord& c, v) {
+			_AddMakeCoord(c);
+			c.dmy = 1.0;
+		}
+	}
+	else {
+		// 逆順
+		pt = v.back();
+		_AddMovePoint(pt);
+		_AddMakeG01Zcut(pt.z);
+		BOOST_REVERSE_FOREACH(Coord& c, v) {
+			_AddMakeCoord(c);
+			c.dmy = 1.0;
 		}
 	}
 }

@@ -8,8 +8,9 @@
 #undef PI	// Use NCVC (MyTemplate.h)
 #include "3dOption.h"
 
-typedef	std::vector<Coord>	VCoord;
-typedef std::vector< std::vector<Coord> >	VVCoord;
+typedef	std::vector<Coord>		VCoord;
+typedef std::vector<VCoord>		VVCoord;
+typedef	std::vector<VVCoord>	VVVCoord;
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelDoc ドキュメント
@@ -22,8 +23,8 @@ class C3dModelDoc : public CDocBase
 	BODY*		m_pKoBody;			// Kodatuno Body
 	BODYList*	m_pKoList;			// Kodatuno Body List
 
-	std::vector<VVCoord>	m_vvvRoughCoord,	// 荒加工用座標（3次元配列）
-							m_vvvContourCoord;	// 仕上げ等高線座標
+	VVVCoord	m_vvvRoughCoord,	// 荒加工用座標（3次元配列）
+				m_vvvContourCoord;	// 仕上げ等高線座標
 
 protected:
 	C3dModelDoc();
@@ -52,10 +53,10 @@ public:
 	BOOL	MakeRoughCoord(NURBSS*, NURBSC*);
 	BOOL	MakeContourCoord(NURBSS*);
 	void	SetContourGroup(VCoord&);
-	std::vector<VVCoord>&	GetRoughCoord(void) {
+	VVVCoord&	GetRoughCoord(void) {
 		return m_vvvRoughCoord;
 	}
-	std::vector<VVCoord>&	GetContourCoord(void) {
+	VVVCoord&	GetContourCoord(void) {
 		return m_vvvContourCoord;
 	}
 
