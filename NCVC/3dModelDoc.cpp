@@ -9,7 +9,7 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define	_DEBUG_FILEOUT_
+//#define	_DEBUG_FILEOUT_
 #endif
 
 IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
@@ -210,10 +210,11 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 {
 	// Kodatuno User's Guide いいかげんな3xCAMの作成
 	NURBS_Func	nf;			// NURBS_Funcへのインスタンス
-	Coord	plane_pt;		// 分割する平面上の1点
-	Coord	plane_n;		// 分割する平面の法線ベクトル
-	Coord	path[2000];		// 一時格納用バッファ
-	VCoord	v;
+	Coord	plane_pt,		// 分割する平面上の1点
+			plane_n,		// 分割する平面の法線ベクトル
+			ct,				// 工具コンタクト点
+			nv,				// 法線ベクトル
+			path[2000];		// 一時格納用バッファ
 	VVCoord	vv;
 	double	H = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT),				// 素材上面のZ座標
 			R = m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL);			// ボールエンドミル半径
@@ -236,12 +237,12 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 			plane_n  = nf.CalcTanVecOnNurbsC(nc, t);	// 注目中の垂直平面の法線ベクトル
 			num = nf.CalcIntersecPtsPlaneSearch(ns, plane_pt, plane_n, 0.5, 3, path, 2000, RUNGE_KUTTA);  // 交点群算出
 			// 得られた交点群を，加工面法線方向に工具半径分オフセットさせた点を得る
-			v.clear();
+			VCoord	v;
 			for ( j=0; j<num; j++ ) {
-				Coord pt = nf.CalcNurbsSCoord(ns, path[j].x, path[j].y);		// 工具コンタクト点
-				Coord n = nf.CalcNormVecOnNurbsS(ns, path[j].x, path[j].y);		// 法線ベクトル
-				if ( n.z < 0 ) n = n * (-1);	// 法線ベクトルの向き調整
-				v.push_back(pt + n*R);			// 工具半径オフセット
+				ct = nf.CalcNurbsSCoord(ns, path[j].x, path[j].y);			// 工具コンタクト点
+				nv = nf.CalcNormVecOnNurbsS(ns, path[j].x, path[j].y);		// 法線ベクトル
+				if ( nv.z < 0 ) nv = nv * (-1);	// 法線ベクトルの向き調整
+				v.push_back(ct + nv*R);			// 工具半径オフセット
 			}
 			if ( !v.empty() ) {
 				// 連続する座標で登録
@@ -277,9 +278,10 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 #ifdef _DEBUG
 	printf("階層=%zd\n", m_vvvRoughCoord.size());
 	for ( auto it1=m_vvvRoughCoord.begin(); it1!=m_vvvRoughCoord.end(); ++it1 ) {
-		printf(" Line%0Id=%zd", std::distance(m_vvvRoughCoord.begin(), it1), it1->size());
-		printf(" num=%zd", it1->front().size());
-		printf(" Z=%f\n", it1->front().front().z);
+		printf(" Line%0Id=%zd\n", std::distance(m_vvvRoughCoord.begin(), it1), it1->size());
+		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+			printf("  num=%zd\n", it2->size() );
+		}
 	}
 #endif
 
@@ -294,8 +296,6 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 {
 	// Kodatuno User's Guide 等高線を生成する
 	NURBS_Func	nf;		// NURBSを扱う関数集を呼び出す
-	VCoord	v;			// 1平面の交点群
-	VVCoord	vv;
 	Coord	pt, p,
 			t[5000],	// 解の格納
 			nvec = SetCoord(0.0, 0.0, 1.0);	// 平面の法線ベクトル（XY平面）
@@ -316,6 +316,7 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 		for ( i=0; i<step; i++ ) {
 			pt = SetCoord(0.0, 0.0, dZmax - dShift*i);		// 現在の平面のZ位置の1点を指示（上面から計算）
 			num = nf.CalcIntersecPtsPlaneSearch(ns, pt, nvec, dSpace, 5, t, 5000, RUNGE_KUTTA);		// NURBS曲面と平面との交点群を交線追跡法で求める
+			VCoord	v;		// 1平面の交点群
 			for ( j=0; j<num; j++ ) {
 				p = nf.CalcNurbsSCoord(ns, t[j].x, t[j].y);	// 交点をパラメータ値から座標値へ変換
 				v.push_back(p);
@@ -325,13 +326,11 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 				DumpContourCoord(v);	// デバッグ用の座標出力
 #endif
 				// 1平面の座標をグループ集合で登録
-				vv = SetGroupCoord(v, m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0);
+				VVCoord vv = SetGroupCoord(v, m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0);
 				// 1平面の交点群を保存
 				if ( !vv.empty() ) {
 					m_vvvContourCoord.push_back(vv);
 				}
-				// 次へ
-				v.clear();
 			}
 		}
 	}
