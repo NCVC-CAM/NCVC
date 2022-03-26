@@ -30,6 +30,7 @@ protected:
 	C3dModelDoc();
 	DECLARE_DYNCREATE(C3dModelDoc)
 #ifdef _DEBUG
+	void	DumpRoughCoord(const VVCoord&);
 	void	DumpContourCoord(const VCoord&);
 #endif
 
@@ -52,7 +53,8 @@ public:
 	void	ClearContourCoord(void);
 	BOOL	MakeRoughCoord(NURBSS*, NURBSC*);
 	BOOL	MakeContourCoord(NURBSS*);
-	void	SetContourGroup(VCoord&);
+	VVCoord	SetGroupCoord(VCoord&, double);
+	//
 	VVVCoord&	GetRoughCoord(void) {
 		return m_vvvRoughCoord;
 	}

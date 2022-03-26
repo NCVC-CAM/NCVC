@@ -9,7 +9,7 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-//#define	_DEBUG_FILEOUT_
+#define	_DEBUG_FILEOUT_
 #endif
 
 IMPLEMENT_DYNCREATE(C3dModelDoc, CDocument)
@@ -46,6 +46,34 @@ C3dModelDoc::~C3dModelDoc()
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelDoc 診断
 
+
+#ifdef _DEBUG
+void C3dModelDoc::DumpRoughCoord(const VVCoord& vv)
+{
+	CString	file, s;
+
+	for ( auto it1=vv.begin(); it1!=vv.end(); ++it1 ) {
+		file.Format("C:\\Users\\magara\\Documents\\tmp\\coord%02d.csv", std::distance(vv.begin(), it1));
+		CStdioFile	f(file, CFile::typeText|CFile::modeCreate|CFile::modeWrite);
+		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+			s.Format("%.3f, %.3f, %.3f\n", it2->x, it2->y, it2->z);
+			f.WriteString(s);
+		}
+	}
+}
+
+void C3dModelDoc::DumpContourCoord(const VCoord& v)
+{
+	CString	file, s;
+	file.Format("C:\\Users\\magara\\Documents\\tmp\\coord%02d.csv", m_vvvContourCoord.size());
+	CStdioFile	f(file, CFile::typeText|CFile::modeCreate|CFile::modeWrite);
+
+	for ( auto it=v.begin(); it!=v.end(); ++it ) {
+		s.Format("%.3f, %.3f, %.3f\n", it->x, it->y, it->z);
+		f.WriteString(s);
+	}
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelDoc シリアル化
@@ -187,8 +215,8 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 	Coord	path[2000];		// 一時格納用バッファ
 	VCoord	v;
 	VVCoord	vv;
-	double	H = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT),		// 素材上面のZ座標
-			R = m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL);	// ボールエンドミル半径
+	double	H = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT),				// 素材上面のZ座標
+			R = m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL);			// ボールエンドミル半径
 	int		i, j, num,
 			D = (int)(H / m_3dOpt.Get3dDbl(D3_DBL_ROUGH_ZCUT)) + 1,	// Z方向分割数
 			N = m_3dOpt.Get3dInt(D3_INT_LINESPLIT);					// スキャニングライン分割数(N < 100)
@@ -211,18 +239,22 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 			v.clear();
 			for ( j=0; j<num; j++ ) {
 				Coord pt = nf.CalcNurbsSCoord(ns, path[j].x, path[j].y);		// 工具コンタクト点
-				Coord n = nf.CalcNormVecOnNurbsS(ns, path[j].x, path[j].y);	// 法線ベクトル
-				if ( n.z < 0 ) n = n * (-1);			// 法線ベクトルの向き調整
-				v.push_back(pt + n*R);	// 工具半径オフセット
+				Coord n = nf.CalcNormVecOnNurbsS(ns, path[j].x, path[j].y);		// 法線ベクトル
+				if ( n.z < 0 ) n = n * (-1);	// 法線ベクトルの向き調整
+				v.push_back(pt + n*R);			// 工具半径オフセット
 			}
 			if ( !v.empty() ) {
-				vv.push_back(v);
+				// 連続する座標で登録
+				VVCoord vvtmp = SetGroupCoord(v, R/2.0);	// キャパは工具半径の半分
+				if ( !vvtmp.empty() ) {
+					vv.insert(vv.end(), vvtmp.begin(), vvtmp.end());
+				}
 			}
 		}
 
 		// 荒加工パス生成
-		for ( i=0; i<D; i++ ) {	// Z方向分割数
-			VVCoord	vvtmp = vv;
+		for ( i=0; i<D; i++ ) {		// Z方向分割数
+			VVCoord	vvtmp = vv;		// データをコピーしてからZ値の更新
 			for ( auto it2=vvtmp.begin(); it2!=vvtmp.end(); ++it2 ) {
 				for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
 					double del = (H - it3->z)/D;
@@ -239,6 +271,9 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 		bResult = FALSE;
 	}
 
+#ifdef _DEBUG_FILEOUT_
+	DumpRoughCoord(m_vvvRoughCoord[0]);
+#endif
 #ifdef _DEBUG
 	printf("階層=%zd\n", m_vvvRoughCoord.size());
 	for ( auto it1=m_vvvRoughCoord.begin(); it1!=m_vvvRoughCoord.end(); ++it1 ) {
@@ -260,6 +295,7 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 	// Kodatuno User's Guide 等高線を生成する
 	NURBS_Func	nf;		// NURBSを扱う関数集を呼び出す
 	VCoord	v;			// 1平面の交点群
+	VVCoord	vv;
 	Coord	pt, p,
 			t[5000],	// 解の格納
 			nvec = SetCoord(0.0, 0.0, 1.0);	// 平面の法線ベクトル（XY平面）
@@ -278,10 +314,10 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 
 		// 平面をZ方向にシフトしていきながら等高線を算出する
 		for ( i=0; i<step; i++ ) {
-			pt = SetCoord(0.0, 0.0, dZmax - dShift*i);	// 現在の平面のZ位置の1点を指示（上面から計算）
+			pt = SetCoord(0.0, 0.0, dZmax - dShift*i);		// 現在の平面のZ位置の1点を指示（上面から計算）
 			num = nf.CalcIntersecPtsPlaneSearch(ns, pt, nvec, dSpace, 5, t, 5000, RUNGE_KUTTA);		// NURBS曲面と平面との交点群を交線追跡法で求める
 			for ( j=0; j<num; j++ ) {
-				p = nf.CalcNurbsSCoord(ns, t[j].x, t[j].y);		// 交点をパラメータ値から座標値へ変換
+				p = nf.CalcNurbsSCoord(ns, t[j].x, t[j].y);	// 交点をパラメータ値から座標値へ変換
 				v.push_back(p);
 			}
 			if ( !v.empty() ) {
@@ -289,7 +325,12 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 				DumpContourCoord(v);	// デバッグ用の座標出力
 #endif
 				// 1平面の座標をグループ集合で登録
-				SetContourGroup(v);
+				vv = SetGroupCoord(v, m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0);
+				// 1平面の交点群を保存
+				if ( !vv.empty() ) {
+					m_vvvContourCoord.push_back(vv);
+				}
+				// 次へ
 				v.clear();
 			}
 		}
@@ -329,9 +370,8 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 	return bResult;
 }
 
-void C3dModelDoc::SetContourGroup(VCoord& v)
+VVCoord C3dModelDoc::SetGroupCoord(VCoord& v, double dMargin)
 {
-	double		dMargin = m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0;
 	VCoord		vtmp;
 	VVCoord		vv;
 	VVCoord::iterator	itg;
@@ -375,22 +415,5 @@ void C3dModelDoc::SetContourGroup(VCoord& v)
 		}
 	}
 
-	// 1平面の交点群を保存
-	m_vvvContourCoord.push_back(vv);
+	return vv;
 }
-
-/////////////////////////////////////////////////////////////////////////////
-
-#ifdef _DEBUG
-void C3dModelDoc::DumpContourCoord(const VCoord& v)
-{
-	CString	file, s;
-	file.Format("C:\\Users\\magara\\Documents\\tmp\\coord%d.csv", m_vvvContourCoord.size());
-	CStdioFile	f(file, CFile::typeText|CFile::modeCreate|CFile::modeWrite);
-
-	for ( auto it=v.begin(); it!=v.end(); ++it ) {
-		s.Format("%.3f, %.3f, %.3f\n", it->x, it->y, it->z);
-		f.WriteString(s);
-	}
-}
-#endif

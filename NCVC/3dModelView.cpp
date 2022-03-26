@@ -270,7 +270,14 @@ void C3dModelView::DrawRoughPath(void)
 			}
 		}
 	}
-
+/*
+	// –â‘è‚Ì‚ ‚é‘w‚¾‚¯‚µ‚É•\¦
+		for ( auto it2=vvv[0].begin(); it2!=vvv[0].end(); ++it2 ) {
+			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+				::glVertex3d(it3->x, it3->y, it3->z);
+			}
+		}
+*/
 	::glEnd();
 }
 
