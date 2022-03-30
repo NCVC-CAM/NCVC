@@ -86,7 +86,7 @@ void C3dContourScanSetupDlg::OnOK()
 		// r‰ÁHCŽdã‚°C‚Æ‚à‚ÉZŽ²‚ð•â³‚·‚éê‡‚Å
 		// •â³’l‚ªˆá‚¤‚Æ‚«
 		if ( pOpt->m_dWorkHeight != m_dZmax ) {
-			if ( AfxMessageBox(IDS_ERR_CONTOUR_ZOFFSET, MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES )
+			if ( AfxMessageBox(IDS_ANA_CONTOUR_ZOFFSET, MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES )
 				return;
 		}
 	}

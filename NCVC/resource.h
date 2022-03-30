@@ -198,6 +198,7 @@
 #define IDC_3DSCAN_ZCUT                 1503
 #define IDC_3DSCAN_LINESPLIT            1504
 #define IDC_3DSCAN_ZORIGIN              1505
+#define IDC_3DSCAN_OFFSET               1506
 #define IDD_3DCONTOUR                   1510
 #define IDC_3DSCAN_SPACE                1511
 #define IDC_3DSCAN_ZMAX                 1512
@@ -819,7 +820,7 @@
 #define IDS_ERR_GLSL                    21017
 #define IDS_ERR_KODATUNO                21018
 #define IDS_ERR_CONTOUR                 21019
-#define IDS_ERR_CONTOUR_ZOFFSET         21020
+#define IDS_ERR_ROUGHOFFSET             21020
 #define IDS_ERR_CAMDATA                 21050
 #define IDS_ERR_CAMVER                  21051
 #define IDS_ERR_CAMOLD                  21052
@@ -902,6 +903,8 @@
 #define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_ROUGH                   29018
 #define IDS_ANA_CONTOUR                 29019
+#define IDS_ERR_CONTOUR_ZOFFSET         29020
+#define IDS_ANA_CONTOUR_ZOFFSET         29020
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
 #define ID_INDICATOR_DATE               59200

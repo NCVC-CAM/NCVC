@@ -217,7 +217,8 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 			path[2000];		// 一時格納用バッファ
 	VVCoord	vv;
 	double	H = m_3dOpt.Get3dDbl(D3_DBL_WORKHEIGHT),				// 素材上面のZ座標
-			R = m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL);			// ボールエンドミル半径
+			R = m_3dOpt.Get3dDbl(D3_DBL_ROUGH_BALLENDMILL),			// ボールエンドミル半径
+			offset = m_3dOpt.Get3dDbl(D3_DBL_ROUGH_OFFSET);			// 曲面からのオフセット
 	int		i, j, num,
 			D = (int)(H / m_3dOpt.Get3dDbl(D3_DBL_ROUGH_ZCUT)) + 1,	// Z方向分割数
 			N = m_3dOpt.Get3dInt(D3_INT_LINESPLIT);					// スキャニングライン分割数(N < 100)
@@ -242,7 +243,7 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 				ct = nf.CalcNurbsSCoord(ns, path[j].x, path[j].y);			// 工具コンタクト点
 				nv = nf.CalcNormVecOnNurbsS(ns, path[j].x, path[j].y);		// 法線ベクトル
 				if ( nv.z < 0 ) nv = nv * (-1);	// 法線ベクトルの向き調整
-				v.push_back(ct + nv*R);			// 工具半径オフセット
+				v.push_back(ct + nv*offset);	// オフセット
 			}
 			if ( !v.empty() ) {
 				// 連続する座標で登録

@@ -30,6 +30,7 @@ void C3dRoughScanSetupDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_3DSCAN_BALLENDMILL, m_dBallEndmill);
 	DDX_Control(pDX, IDC_3DSCAN_HEIGHT, m_dHeight);
 	DDX_Control(pDX, IDC_3DSCAN_ZCUT, m_dZCut);
+	DDX_Control(pDX, IDC_3DSCAN_OFFSET, m_dOffset);
 	DDX_Control(pDX, IDC_3DSCAN_LINESPLIT, m_nLineSplit);
 	DDX_Check(pDX, IDC_3DSCAN_ZORIGIN, m_bZOrigin);
 }
@@ -46,6 +47,7 @@ BOOL C3dRoughScanSetupDlg::OnInitDialog()
 	m_dBallEndmill	= pOpt->m_dRoughBallEndmill;
 	m_dHeight		= pOpt->m_dWorkHeight;
 	m_dZCut			= pOpt->m_dRoughZCut;
+	m_dOffset		= pOpt->m_dRoughOffset;
 	m_nLineSplit	= pOpt->m_nLineSplit;
 	m_bZOrigin		= pOpt->m_bRoughZOrigin;
 
@@ -57,6 +59,18 @@ BOOL C3dRoughScanSetupDlg::OnInitDialog()
 void C3dRoughScanSetupDlg::OnOK()
 {
 	UpdateData();
+	if ( m_dOffset < 0.0f ) {
+		AfxMessageBox(IDS_ERR_UNDERZERO, MB_OK|MB_ICONEXCLAMATION);
+		m_dOffset.SetFocus();
+		m_dOffset.SetSel(0, -1);
+		return;
+	}
+	if ( float(m_dBallEndmill) < float(m_dOffset) ) {
+		AfxMessageBox(IDS_ERR_ROUGHOFFSET, MB_OK|MB_ICONEXCLAMATION);
+		m_dOffset.SetFocus();
+		m_dOffset.SetSel(0, -1);
+		return;
+	}
 	if ( m_nLineSplit >= 100 ) {
 		AfxMessageBox(IDS_ERR_SETTING, MB_OK|MB_ICONEXCLAMATION);
 		m_nLineSplit.SetFocus();
@@ -69,6 +83,7 @@ void C3dRoughScanSetupDlg::OnOK()
 	pOpt->m_dRoughBallEndmill	= m_dBallEndmill;
 	pOpt->m_dWorkHeight			= m_dHeight;
 	pOpt->m_dRoughZCut			= m_dZCut;
+	pOpt->m_dRoughOffset		= m_dOffset;
 	pOpt->m_nLineSplit			= m_nLineSplit;
 	pOpt->m_bRoughZOrigin		= m_bZOrigin;
 

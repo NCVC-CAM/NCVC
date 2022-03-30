@@ -17,6 +17,7 @@ public:
 	CFloatEdit	m_dBallEndmill;
 	CFloatEdit	m_dHeight;
 	CFloatEdit	m_dZCut;
+	CFloatEdit	m_dOffset;
 	CIntEdit	m_nLineSplit;
 	BOOL		m_bZOrigin;
 
