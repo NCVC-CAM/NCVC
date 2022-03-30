@@ -110,7 +110,7 @@ static	const	BOOL	g_bDefaultSetting[] = {
 	TRUE,		// m_bSolidView
 	TRUE,		// m_bUseFBO
 	FALSE,		// m_bWirePath
-	FALSE,		// m_bDragRender
+	TRUE,		// m_bDragRender
 	FALSE,		// m_bTexture
 	FALSE,		// m_bLatheSlit
 	FALSE,		// m_bNoActiveTraceGL

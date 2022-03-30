@@ -316,7 +316,7 @@ BOOL MakeNurbs_ContourFunc(void)
 {
 	VVVCoord::iterator	itv;
 	VVVCoord&	vvv = g_pDoc->GetContourCoord();
-	std::vector<size_t>		vLayer;		// 階層ごとの残グループ数
+	std::vector<size_t>	vLayer;			// 階層ごとの残グループ数
 	size_t		layer = 0;				// 現在処理中の階層
 	INT_PTR		maxcnt = 0, cnt = 0;
 	ptrdiff_t	grp, idx;
