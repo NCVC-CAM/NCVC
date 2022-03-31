@@ -177,67 +177,68 @@ END
 
 IDR_MAINFRAME MENU
 BEGIN
-    POPUP "ﾌｧｲﾙ(&F)"
+    POPUP "ファイル(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
-        MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
+        MENUITEM "サムネイルでNCデータを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
         MENUITEM SEPARATOR
-        MENUITEM "CADﾃﾞｰﾀの統合(&B)...\tCtrl+B",   ID_FILE_CADBIND
+        MENUITEM "CADデータの統合(&B)...\tCtrl+B",    ID_FILE_CADBIND
         MENUITEM SEPARATOR
-        MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1, GRAYED
+        MENUITEM "最近使ったファイル",                   ID_FILE_MRU_FILE1, GRAYED
         MENUITEM SEPARATOR
-        MENUITEM "ｱﾌﾟﾘｹｰｼｮﾝの終了(&X)",            ID_APP_EXIT
+        MENUITEM "アプリケーションの終了(&X)",             ID_APP_EXIT
     END
     POPUP "表示(&V)"
     BEGIN
-        MENUITEM "ﾂｰﾙﾊﾞｰ(&T)...",               ID_VIEW_TOOLBARCUSTOM
-        MENUITEM "ｽﾃｰﾀｽ ﾊﾞｰ(&S)",               ID_VIEW_STATUS_BAR
+        MENUITEM "ツールバー(&T)...",                ID_VIEW_TOOLBARCUSTOM
+        MENUITEM "ステータスバー(&S)",                 ID_VIEW_STATUS_BAR
         MENUITEM SEPARATOR
-        MENUITEM "ｵﾌﾟｼｮﾅﾙﾌﾞﾛｯｸｽｷｯﾌﾟ設定(&B)...\tCtrl+Alt+B", 3006
+        MENUITEM "オプショナルブロックスキップ設定(&B)...\tCtrl+Alt+B", 3006
     END
-    POPUP "ｵﾌﾟｼｮﾝ(&O)"
+    POPUP "オプション(&O)"
     BEGIN
         MENUITEM "工作機械の設定(&N)...",              ID_OPTION_MC
-        MENUITEM "工作機械情報のﾃｷｽﾄ編集(&O)...",        ID_OPTION_EDITMC
+        MENUITEM "工作機械情報のテキスト編集(&O)...",        ID_OPTION_EDITMC
         MENUITEM SEPARATOR
-        MENUITEM "CADﾃﾞｰﾀの読み込み設定(&D)...",       ID_OPTION_DXF
+        MENUITEM "CADデータの読み込み設定(&D)...",        ID_OPTION_DXF
         MENUITEM SEPARATOR
-        MENUITEM "切削ﾊﾟﾗﾒｰﾀの設定(&M)...\tF8",      ID_OPTION_MAKENC
-        MENUITEM "切削ﾊﾟﾗﾒｰﾀのﾃｷｽﾄ編集(&T)...",      ID_OPTION_EDITNC
+        MENUITEM "切削パラメータの設定(&M)...\tF8",       ID_OPTION_MAKENC
+        MENUITEM "切削パラメータのテキスト編集(&T)...",       ID_OPTION_EDITNC
         MENUITEM SEPARATOR
         POPUP "表示属性"
         BEGIN
             MENUITEM "表示属性の設定(&P)...",              ID_OPTION_VIEW_SETUP
-            MENUITEM "表示属性のｲﾝﾎﾟｰﾄ(&I)",             ID_OPTION_VIEW_INPORT
-            MENUITEM "表示属性のｴｸｽﾎﾟｰﾄ(&X)",            ID_OPTION_VIEW_EXPORT
+            MENUITEM "表示属性のインポート(&I)",              ID_OPTION_VIEW_INPORT
+            MENUITEM "表示属性のエクスポート(&X)",             ID_OPTION_VIEW_EXPORT
         END
         MENUITEM SEPARATOR
-        MENUITEM "外部ｱﾌﾟﾘｹｰｼｮﾝの設定(&E)...",       ID_OPTION_EXEC
+        MENUITEM "外部アプリケーションの設定(&E)...",        ID_OPTION_EXEC
         MENUITEM "拡張子の設定(&X)...",               ID_OPTION_EXT
     END
-    POPUP "ﾍﾙﾌﾟ(&H)"
+    POPUP "ヘルプ(&H)"
     BEGIN
         MENUITEM "NCVC解説書...",                  ID_HELP_USING
         MENUITEM "自動輪郭処理...",                   ID_HELP_USING2
-        MENUITEM "旋盤ﾃﾞｰﾀの生成...",                ID_HELP_USING3
-        MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成...",          ID_HELP_USING4
-        MENUITEM "CADﾃﾞｰﾀの統合...",               ID_HELP_USING5
-        MENUITEM "複数のﾜｰｸ座標原点を処理...",            ID_HELP_USING6
+        MENUITEM "旋盤データの生成...",                 ID_HELP_USING3
+        MENUITEM "ワイヤ放電加工機データの生成...",           ID_HELP_USING4
+        MENUITEM "CADデータの統合...",                ID_HELP_USING5
+        MENUITEM "複数のワーク座標原点を処理...",            ID_HELP_USING6
+        MENUITEM "NURBS曲面の切削データ生成...",          ID_HELP_USING7
         MENUITEM SEPARATOR
-        MENUITEM "NCVC のﾊﾞｰｼﾞｮﾝ情報(&A)...",      ID_APP_ABOUT
-        MENUITEM "ｱﾄﾞｲﾝについて...",                ID_HELP_ADDIN
+        MENUITEM "NCVC のバージョン情報(&A)...",        ID_APP_ABOUT
+        MENUITEM "アドインについて...",                 ID_HELP_ADDIN
     END
 END
 
 IDR_NCTYPE MENU
 BEGIN
-    POPUP "ﾌｧｲﾙ(&F)"
+    POPUP "ファイル(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
-        MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
-        MENUITEM "ｶｰｿﾙ位置に読み込み(&I)...\tIns",     ID_FILE_NCINSERT
+        MENUITEM "サムネイルでNCデータを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
+        MENUITEM "カーソル位置に読み込み(&I)...\tIns",     ID_FILE_NCINSERT
         MENUITEM SEPARATOR
-        MENUITEM "CADﾃﾞｰﾀの統合(&B)...\tCtrl+B",   ID_FILE_CADBIND
+        MENUITEM "CADデータの統合(&B)...\tCtrl+B",    ID_FILE_CADBIND
         MENUITEM SEPARATOR
         MENUITEM "閉じて開く(&L)...",                ID_FILE_CLANDOP
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
@@ -246,9 +247,9 @@ BEGIN
         MENUITEM "名前を付けて保存(&A)...",             ID_FILE_SAVE_AS
         MENUITEM "DXF出力(&D)...\tCtrl+D",        ID_FILE_NCD2DXF
         MENUITEM SEPARATOR
-        MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1, GRAYED
+        MENUITEM "最近使ったファイル",                   ID_FILE_MRU_FILE1, GRAYED
         MENUITEM SEPARATOR
-        MENUITEM "ｱﾌﾟﾘｹｰｼｮﾝの終了(&X)",            ID_APP_EXIT
+        MENUITEM "アプリケーションの終了(&X)",             ID_APP_EXIT
     END
     POPUP "編集(&E)"
     BEGIN
@@ -258,11 +259,11 @@ BEGIN
     END
     POPUP "表示(&V)"
     BEGIN
-        MENUITEM "ﾂｰﾙﾊﾞｰ(&T)...",               ID_VIEW_TOOLBARCUSTOM
-        MENUITEM "ｽﾃｰﾀｽ ﾊﾞｰ(&S)",               ID_VIEW_STATUS_BAR
+        MENUITEM "ツールバー(&T)...",                ID_VIEW_TOOLBARCUSTOM
+        MENUITEM "ステータスバー(&S)",                 ID_VIEW_STATUS_BAR
         MENUITEM SEPARATOR
-        MENUITEM "図形ﾌｨｯﾄ(&O)\tHome",            ID_VIEW_FIT
-        MENUITEM "全てのﾍﾟｲﾝを図形ﾌｨｯﾄ(&A)\tShift+Home", ID_NCVIEW_ALLFIT
+        MENUITEM "図形フィット(&O)\tHome",            ID_VIEW_FIT
+        MENUITEM "全てのペインを図形フィット(&A)\tShift+Home", ID_NCVIEW_ALLFIT
         MENUITEM "拡大(&Z)\tPageUp",              ID_VIEW_LENSP
         MENUITEM "縮小(&N)\tPageDown",            ID_VIEW_LENSN
         POPUP "移動・回転"
@@ -281,19 +282,19 @@ BEGIN
         POPUP "補助矩形(&E)"
         BEGIN
             MENUITEM "最大移動矩形(&M)\tCtrl+M",          ID_NCVIEW_MAXRECT
-            MENUITEM "ﾜｰｸの表示(&W)...\tCtrl+W",       ID_NCVIEW_WORKRECT
+            MENUITEM "ワークの表示(&W)...\tCtrl+W",       ID_NCVIEW_WORKRECT
         END
         MENUITEM SEPARATOR
-        POPUP "ﾄﾚｰｽ(&T)"
+        POPUP "トレース(&T)"
         BEGIN
             MENUITEM "実行(&R)\tF5",                  ID_NCVIEW_TRACE_RUN
             MENUITEM "一時停止(&P)\tShift+F5",          ID_NCVIEW_TRACE_PAUSE
             MENUITEM "停止(&T)\tCtrl+F5",             ID_NCVIEW_TRACE_STOP
-            MENUITEM "ｶｰｿﾙ位置まで実行\tAlt+F5",          ID_NCVIEW_TRACE_CURSOR
-            MENUITEM "ｶｰｿﾙ位置から実行\tAlt+Shift+F5",    ID_NCVIEW_TRACE_CURSOR2
+            MENUITEM "カーソル位置まで実行\tAlt+F5",          ID_NCVIEW_TRACE_CURSOR
+            MENUITEM "カーソル位置から実行\tAlt+Shift+F5",    ID_NCVIEW_TRACE_CURSOR2
             MENUITEM SEPARATOR
-            MENUITEM "ﾌﾞﾚｰｸ(&K)\tF9",               ID_NCVIEW_TRACE_BREAK
-            MENUITEM "全ﾌﾞﾚｰｸ解除(&C)\tCtrl+F9",       ID_NCVIEW_TRACE_BREAKOFF
+            MENUITEM "ブレーク(&K)\tF9",                ID_NCVIEW_TRACE_BREAK
+            MENUITEM "全ブレーク解除(&C)\tCtrl+F9",        ID_NCVIEW_TRACE_BREAKOFF
             MENUITEM SEPARATOR
             MENUITEM "高速(&F)\tF2",                  ID_NCVIEW_TRACE_FAST
             MENUITEM "中速(&M)\tF3",                  ID_NCVIEW_TRACE_MIDDLE
@@ -301,65 +302,66 @@ BEGIN
         END
         MENUITEM "指定行(&G)...\tCtrl+G",          ID_NCVIEW_JUMP
         MENUITEM "検索(&F)...\tCtrl+F",           ID_EDIT_FIND
-        MENUITEM "ｵﾌﾟｼｮﾅﾙﾌﾞﾛｯｸｽｷｯﾌﾟ設定(&B)...\tCtrl+Alt+B", ID_NCVIEW_OBS
+        MENUITEM "オプショナルブロックスキップ設定(&B)...\tCtrl+Alt+B", ID_NCVIEW_OBS
     END
-    POPUP "ｵﾌﾟｼｮﾝ(&O)"
+    POPUP "オプション(&O)"
     BEGIN
         MENUITEM "工作機械の設定(&N)...",              ID_OPTION_MC
-        MENUITEM "工作機械情報のﾃｷｽﾄ編集(&O)...",        ID_OPTION_EDITMC
+        MENUITEM "工作機械情報のテキスト編集(&O)...",        ID_OPTION_EDITMC
         MENUITEM SEPARATOR
-        MENUITEM "CADﾃﾞｰﾀの読み込み設定(&D)...",       ID_OPTION_DXF
+        MENUITEM "CADデータの読み込み設定(&D)...",        ID_OPTION_DXF
         MENUITEM SEPARATOR
-        MENUITEM "切削ﾊﾟﾗﾒｰﾀの設定(&M)...\tF8",      ID_OPTION_MAKENC
-        MENUITEM "切削ﾊﾟﾗﾒｰﾀのﾃｷｽﾄ編集(&T)...",      ID_OPTION_EDITNC
+        MENUITEM "切削パラメータの設定(&M)...\tF8",       ID_OPTION_MAKENC
+        MENUITEM "切削パラメータのテキスト編集(&T)...",       ID_OPTION_EDITNC
         MENUITEM SEPARATOR
         POPUP "表示属性"
         BEGIN
             MENUITEM "表示属性の設定(&P)...",              ID_OPTION_VIEW_SETUP
-            MENUITEM "表示属性のｲﾝﾎﾟｰﾄ(&I)",             ID_OPTION_VIEW_INPORT
-            MENUITEM "表示属性のｴｸｽﾎﾟｰﾄ(&X)",            ID_OPTION_VIEW_EXPORT
+            MENUITEM "表示属性のインポート(&I)",              ID_OPTION_VIEW_INPORT
+            MENUITEM "表示属性のエクスポート(&X)",             ID_OPTION_VIEW_EXPORT
             MENUITEM SEPARATOR
-            MENUITEM "ﾃﾞﾌｫﾙﾄの回転角度として設定",            ID_OPTION_DEFVIEWINFO
+            MENUITEM "デフォルトの回転角度として設定",             ID_OPTION_DEFVIEWINFO
         END
         MENUITEM SEPARATOR
-        MENUITEM "外部ｱﾌﾟﾘｹｰｼｮﾝの設定(&E)...",       ID_OPTION_EXEC
+        MENUITEM "外部アプリケーションの設定(&E)...",        ID_OPTION_EXEC
         MENUITEM "拡張子の設定(&X)...",               ID_OPTION_EXT
     END
-    POPUP "ｳｨﾝﾄﾞｳ(&W)"
+    POPUP "ウィンドウ(&W)"
     BEGIN
         MENUITEM "重ねて表示(&C)",                   ID_WINDOW_CASCADE
         MENUITEM "並べて表示(&T)",                   ID_WINDOW_TILE_HORZ
-        MENUITEM "ｱｲｺﾝの整列(&A)",                 ID_WINDOW_ARRANGE
+        MENUITEM "アイコンの整列(&A)",                 ID_WINDOW_ARRANGE
         MENUITEM SEPARATOR
-        MENUITEM "次のｳｨﾝﾄﾞｳ(&N)\tF6",            ID_WINDOW_NEXT
-        MENUITEM "次のﾀﾌﾞ\tCtrl+PageDown",        ID_TAB_NEXT
-        MENUITEM "前のﾀﾌﾞ\tCtrl+PageUp",          ID_TAB_PREV
+        MENUITEM "次のウィンドウ(&N)\tF6",             ID_WINDOW_NEXT
+        MENUITEM "次のタブ\tCtrl+PageDown",         ID_TAB_NEXT
+        MENUITEM "前のタブ\tCtrl+PageUp",           ID_TAB_PREV
         MENUITEM SEPARATOR
         MENUITEM "閉じる(&O)",                     ID_FILE_CLOSE
         MENUITEM "すべて閉じる(&L)",                  ID_WINDOW_ALLCLOSE
     END
-    POPUP "ﾍﾙﾌﾟ(&H)"
+    POPUP "ヘルプ(&H)"
     BEGIN
         MENUITEM "NCVC解説書...",                  ID_HELP_USING
         MENUITEM "自動輪郭処理...",                   ID_HELP_USING2
-        MENUITEM "旋盤ﾃﾞｰﾀの生成...",                ID_HELP_USING3
-        MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成...",          ID_HELP_USING4
-        MENUITEM "CADﾃﾞｰﾀの統合...",               ID_HELP_USING5
-        MENUITEM "複数のﾜｰｸ座標原点を処理...",            ID_HELP_USING6
+        MENUITEM "旋盤データの生成...",                 ID_HELP_USING3
+        MENUITEM "ワイヤ放電加工機データの生成...",           ID_HELP_USING4
+        MENUITEM "CADデータの統合...",                ID_HELP_USING5
+        MENUITEM "複数のワーク座標原点を処理...",            ID_HELP_USING6
+        MENUITEM "NURBS曲面の切削データ生成...",          ID_HELP_USING7
         MENUITEM SEPARATOR
-        MENUITEM "NCVC のﾊﾞｰｼﾞｮﾝ情報(&A)...",      ID_APP_ABOUT
-        MENUITEM "ｱﾄﾞｲﾝについて...",                ID_HELP_ADDIN
+        MENUITEM "NCVC のバージョン情報(&A)...",        ID_APP_ABOUT
+        MENUITEM "アドインについて...",                 ID_HELP_ADDIN
     END
 END
 
 IDR_DXFTYPE MENU
 BEGIN
-    POPUP "ﾌｧｲﾙ(&F)"
+    POPUP "ファイル(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
-        MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
+        MENUITEM "サムネイルでNCデータを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
         MENUITEM SEPARATOR
-        MENUITEM "CADﾃﾞｰﾀの統合(&B)...\tCtrl+B",   ID_FILE_CADBIND
+        MENUITEM "CADデータの統合(&B)...\tCtrl+B",    ID_FILE_CADBIND
         MENUITEM SEPARATOR
         MENUITEM "閉じて開く(&L)...",                ID_FILE_CLANDOP
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
@@ -368,28 +370,28 @@ BEGIN
         MENUITEM "加工情報を名前を付けて保存(&A)...",        ID_FILE_SAVE_AS
         MENUITEM "DXF出力(&D)...\tCtrl+D",        ID_FILE_NCD2DXF
         MENUITEM SEPARATOR
-        POPUP "NCﾃﾞｰﾀの生成"
+        POPUP "NCデータの生成"
         BEGIN
             MENUITEM "標準生成(&1)...\tF7",             ID_FILE_DXF2NCD
-            MENUITEM "ﾚｲﾔごとの複数条件(&2)...\tCtrl+F7",  ID_FILE_DXF2NCD_EX1
-            MENUITEM "ﾚｲﾔごとのZ座標指定(&3)...\tShift+F7", ID_FILE_DXF2NCD_EX2
+            MENUITEM "レイヤごとの複数条件(&2)...\tCtrl+F7",  ID_FILE_DXF2NCD_EX1
+            MENUITEM "レイヤごとのZ座標指定(&3)...\tShift+F7", ID_FILE_DXF2NCD_EX2
             MENUITEM SEPARATOR
             MENUITEM "形状加工生成(&4)...\tAlt+F7",       ID_FILE_DXF2NCD_SHAPE
             MENUITEM SEPARATOR
-            MENUITEM "旋盤ﾃﾞｰﾀの生成(&5)...\tCtrl+Alt+F7", ID_FILE_DXF2NCD_LATHE
-            MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成(&6)...\tShift+Ctrl+Alt+F7", ID_FILE_DXF2NCD_WIRE
+            MENUITEM "旋盤データの生成(&5)...\tCtrl+Alt+F7", ID_FILE_DXF2NCD_LATHE
+            MENUITEM "ワイヤ放電加工機データの生成(&6)...\tShift+Ctrl+Alt+F7", ID_FILE_DXF2NCD_WIRE
         END
         MENUITEM SEPARATOR
-        MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1, GRAYED
+        MENUITEM "最近使ったファイル",                   ID_FILE_MRU_FILE1, GRAYED
         MENUITEM SEPARATOR
-        MENUITEM "ｱﾌﾟﾘｹｰｼｮﾝの終了(&X)",            ID_APP_EXIT
+        MENUITEM "アプリケーションの終了(&X)",             ID_APP_EXIT
     END
     POPUP "編集(&E)"
     BEGIN
         MENUITEM "移動を元に戻す\tCtrl+Z",             ID_EDIT_UNDO
         MENUITEM SEPARATOR
         MENUITEM "切り取り(&T)\tCtrl+X",            ID_EDIT_CUT
-        MENUITEM "ｺﾋﾟｰ(&C)\tCtrl+C",            ID_EDIT_COPY
+        MENUITEM "コピー(&C)\tCtrl+C",             ID_EDIT_COPY
         MENUITEM "貼り付け(&P)\tCtrl+V",            ID_EDIT_PASTE
         MENUITEM SEPARATOR
         MENUITEM "原点調整...\tCtrl+@",             ID_EDIT_DXFORG
@@ -401,7 +403,7 @@ BEGIN
             MENUITEM "方向\tF9",                      ID_EDIT_SHAPE_VEC
             MENUITEM "開始位置\tF10",                   ID_EDIT_SHAPE_START
             MENUITEM "輪郭\tF11",                     ID_EDIT_SHAPE_OUT
-            MENUITEM "ﾎﾟｹｯﾄ\tCtrl+F11",             ID_EDIT_SHAPE_POC
+            MENUITEM "ポケット\tCtrl+F11",              ID_EDIT_SHAPE_POC
             MENUITEM "分離\tF12",                     ID_EDIT_SHAPE_SEL
             MENUITEM "加工指示の削除\tDel",                ID_EDIT_SHAPE_DEL
             MENUITEM SEPARATOR
@@ -411,9 +413,9 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "自動輪郭加工...",                   ID_EDIT_SHAPE_OUTLINE
             MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
-            MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
+            MENUITEM "オフセット交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
         END
-        POPUP "統合ﾃﾞｰﾀ"
+        POPUP "統合データ"
         BEGIN
             MENUITEM "処理対象の切り替え\tIns",              ID_EDIT_BIND_TARGET
             MENUITEM "削除\tShift+Del",               ID_EDIT_BIND_DEL
@@ -421,12 +423,12 @@ BEGIN
     END
     POPUP "表示(&V)"
     BEGIN
-        MENUITEM "ﾂｰﾙﾊﾞｰ(&T)...",               ID_VIEW_TOOLBARCUSTOM
-        MENUITEM "ｽﾃｰﾀｽ ﾊﾞｰ(&S)",               ID_VIEW_STATUS_BAR
+        MENUITEM "ツールバー(&T)...",                ID_VIEW_TOOLBARCUSTOM
+        MENUITEM "ステータスバー(&S)",                 ID_VIEW_STATUS_BAR
         MENUITEM SEPARATOR
-        MENUITEM "ﾚｲﾔ(&L)...\tCtrl+L",          ID_DXFVIEW_LAYER
+        MENUITEM "レイヤ(&L)...\tCtrl+L",          ID_DXFVIEW_LAYER
         MENUITEM SEPARATOR
-        MENUITEM "図形ﾌｨｯﾄ(&O)\tHome",            ID_VIEW_FIT
+        MENUITEM "図形フィット(&O)\tHome",            ID_VIEW_FIT
         MENUITEM "拡大(&Z)\tPageUp",              ID_VIEW_LENSP
         MENUITEM "縮小(&N)\tPageDown",            ID_VIEW_LENSN
         MENUITEM "上移動(&U)\t↑",                  ID_VIEW_UP
@@ -434,48 +436,49 @@ BEGIN
         MENUITEM "左移動(&L)\t←",                  ID_VIEW_LT
         MENUITEM "右移動(&R)\t→",                  ID_VIEW_RT
     END
-    POPUP "ｵﾌﾟｼｮﾝ(&O)"
+    POPUP "オプション(&O)"
     BEGIN
         MENUITEM "工作機械の設定(&N)...",              ID_OPTION_MC
-        MENUITEM "工作機械情報のﾃｷｽﾄ編集(&O)...",        ID_OPTION_EDITMC
+        MENUITEM "工作機械情報のテキスト編集(&O)...",        ID_OPTION_EDITMC
         MENUITEM SEPARATOR
-        MENUITEM "CADﾃﾞｰﾀの読み込み設定(&D)...",       ID_OPTION_DXF
+        MENUITEM "CADデータの読み込み設定(&D)...",        ID_OPTION_DXF
         MENUITEM SEPARATOR
-        MENUITEM "切削ﾊﾟﾗﾒｰﾀの設定(&M)...\tF8",      ID_OPTION_MAKENC
-        MENUITEM "切削ﾊﾟﾗﾒｰﾀのﾃｷｽﾄ編集(&T)...",      ID_OPTION_EDITNC
+        MENUITEM "切削パラメータの設定(&M)...\tF8",       ID_OPTION_MAKENC
+        MENUITEM "切削パラメータのテキスト編集(&T)...",       ID_OPTION_EDITNC
         MENUITEM SEPARATOR
         POPUP "表示属性"
         BEGIN
             MENUITEM "表示属性の設定(&P)...",              ID_OPTION_VIEW_SETUP
-            MENUITEM "表示属性のｲﾝﾎﾟｰﾄ(&I)",             ID_OPTION_VIEW_INPORT
-            MENUITEM "表示属性のｴｸｽﾎﾟｰﾄ(&X)",            ID_OPTION_VIEW_EXPORT
+            MENUITEM "表示属性のインポート(&I)",              ID_OPTION_VIEW_INPORT
+            MENUITEM "表示属性のエクスポート(&X)",             ID_OPTION_VIEW_EXPORT
         END
         MENUITEM SEPARATOR
-        MENUITEM "外部ｱﾌﾟﾘｹｰｼｮﾝの設定(&E)...",       ID_OPTION_EXEC
+        MENUITEM "外部アプリケーションの設定(&E)...",        ID_OPTION_EXEC
         MENUITEM "拡張子の設定(&X)...",               ID_OPTION_EXT
     END
-    POPUP "ｳｨﾝﾄﾞｳ(&W)"
+    POPUP "ウィンドウ(&W)"
     BEGIN
         MENUITEM "重ねて表示(&C)",                   ID_WINDOW_CASCADE
         MENUITEM "並べて表示(&T)",                   ID_WINDOW_TILE_HORZ
-        MENUITEM "ｱｲｺﾝの整列(&A)",                 ID_WINDOW_ARRANGE
+        MENUITEM "アイコンの整列(&A)",                 ID_WINDOW_ARRANGE
         MENUITEM SEPARATOR
-        MENUITEM "次のｳｨﾝﾄﾞｳ(&N)\tF6",            ID_WINDOW_NEXT
+        MENUITEM "次のウィンドウ(&N)\tF6",             ID_WINDOW_NEXT
         MENUITEM SEPARATOR
         MENUITEM "閉じる(&O)",                     ID_FILE_CLOSE
         MENUITEM "すべて閉じる(&L)",                  ID_WINDOW_ALLCLOSE
     END
-    POPUP "ﾍﾙﾌﾟ(&H)"
+    POPUP "ヘルプ(&H)"
     BEGIN
         MENUITEM "NCVC解説書...",                  ID_HELP_USING
         MENUITEM "自動輪郭処理...",                   ID_HELP_USING2
-        MENUITEM "旋盤ﾃﾞｰﾀの生成...",                ID_HELP_USING3
-        MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成...",          ID_HELP_USING4
-        MENUITEM "CADﾃﾞｰﾀの統合...",               ID_HELP_USING5
-        MENUITEM "複数のﾜｰｸ座標原点を処理...",            ID_HELP_USING6
+        MENUITEM "旋盤データの生成...",                 ID_HELP_USING3
+        MENUITEM "ワイヤ放電加工機データの生成...",           ID_HELP_USING4
+        MENUITEM "CADデータの統合...",                ID_HELP_USING5
+        MENUITEM "複数のワーク座標原点を処理...",            ID_HELP_USING6
+        MENUITEM "NURBS曲面の切削データ生成...",          ID_HELP_USING7
         MENUITEM SEPARATOR
-        MENUITEM "NCVC のﾊﾞｰｼﾞｮﾝ情報(&A)...",      ID_APP_ABOUT
-        MENUITEM "ｱﾄﾞｲﾝについて...",                ID_HELP_ADDIN
+        MENUITEM "NCVC のバージョン情報(&A)...",        ID_APP_ABOUT
+        MENUITEM "アドインについて...",                 ID_HELP_ADDIN
     END
 END
 
@@ -483,43 +486,47 @@ IDR_DXFPOPUP1 MENU
 BEGIN
     POPUP ""
     BEGIN
-        POPUP "NCﾃﾞｰﾀの生成"
+        POPUP "NCデータの生成"
         BEGIN
             MENUITEM "標準生成(&1)...\tF7",             ID_FILE_DXF2NCD
-            MENUITEM "ﾚｲﾔごとの複数条件(&2)...\tCtrl+F7",  ID_FILE_DXF2NCD_EX1
-            MENUITEM "ﾚｲﾔごとのZ座標指定(&3)...\tShift+F7", ID_FILE_DXF2NCD_EX2
+            MENUITEM "レイヤごとの複数条件(&2)...\tCtrl+F7",  ID_FILE_DXF2NCD_EX1
+            MENUITEM "レイヤごとのZ座標指定(&3)...\tShift+F7", ID_FILE_DXF2NCD_EX2
             MENUITEM SEPARATOR
             MENUITEM "形状加工生成(&4)...\tAlt+F7",       ID_FILE_DXF2NCD_SHAPE
             MENUITEM SEPARATOR
-            MENUITEM "旋盤ﾃﾞｰﾀの生成(&5)...\tCtrl+Alt+F7", ID_FILE_DXF2NCD_LATHE
-            MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成(&6)...\tShift+Ctrl+Alt+F7", ID_FILE_DXF2NCD_WIRE
+            MENUITEM "旋盤データの生成(&5)...\tCtrl+Alt+F7", ID_FILE_DXF2NCD_LATHE
+            MENUITEM "ワイヤ放電加工機データの生成(&6)...\tShift+Ctrl+Alt+F7", ID_FILE_DXF2NCD_WIRE
         END
         MENUITEM SEPARATOR
         POPUP "表示属性"
         BEGIN
             MENUITEM "表示属性の設定(&P)...",              ID_OPTION_VIEW_SETUP
-            MENUITEM "表示属性のｲﾝﾎﾟｰﾄ(&I)",             ID_OPTION_VIEW_INPORT
-            MENUITEM "表示属性のｴｸｽﾎﾟｰﾄ(&X)",            ID_OPTION_VIEW_EXPORT
+            MENUITEM "表示属性のインポート(&I)",              ID_OPTION_VIEW_INPORT
+            MENUITEM "表示属性のエクスポート(&X)",             ID_OPTION_VIEW_EXPORT
         END
-        MENUITEM "ﾚｲﾔ(&L)...\tCtrl+L",          ID_DXFVIEW_LAYER
+        MENUITEM "レイヤ(&L)...\tCtrl+L",          ID_DXFVIEW_LAYER
         MENUITEM "原点調整...\tCtrl+@",             ID_EDIT_DXFORG
         POPUP "加工指示"
         BEGIN
             MENUITEM "形状認識処理\tCtrl+E",              ID_EDIT_DXFSHAPE
-            MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
             MENUITEM SEPARATOR
-            MENUITEM "方向",                          ID_EDIT_SHAPE_VEC
-            MENUITEM "輪郭",                          ID_EDIT_SHAPE_OUT
-            MENUITEM "ﾎﾟｹｯﾄ",                       ID_EDIT_SHAPE_POC
-            MENUITEM "分離",                          ID_EDIT_SHAPE_SEL
+            MENUITEM "方向\tF9",                      ID_EDIT_SHAPE_VEC
+            MENUITEM "開始位置\tF10",                   ID_EDIT_SHAPE_START
+            MENUITEM "輪郭\tF11",                     ID_EDIT_SHAPE_OUT
+            MENUITEM "ポケット\tCtrl+F11",              ID_EDIT_SHAPE_POC
+            MENUITEM "分離\tF12",                     ID_EDIT_SHAPE_SEL
             MENUITEM "加工指示の削除\tDel",                ID_EDIT_SHAPE_DEL
+            MENUITEM SEPARATOR
+            MENUITEM "名前の変更(&M)\tF2",               ID_EDIT_SHAPE_NAME
+            MENUITEM "形状プロパティ...",                  ID_EDIT_SHAPE_PROP
+            MENUITEM "形状名で並べ替え",                    ID_EDIT_SORTSHAPE
             MENUITEM SEPARATOR
             MENUITEM "自動輪郭加工...",                   ID_EDIT_SHAPE_OUTLINE
             MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
-            MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
+            MENUITEM "オフセット交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
         END
         MENUITEM SEPARATOR
-        MENUITEM "図形ﾌｨｯﾄ(&O)\tHome",            ID_VIEW_FIT
+        MENUITEM "図形フィット(&O)\tHome",            ID_VIEW_FIT
         MENUITEM "拡大(&Z)\tPageUp",              ID_VIEW_LENSP
         MENUITEM "縮小(&N)\tPageDown",            ID_VIEW_LENSN
         MENUITEM "上移動(&U)\t↑",                  ID_VIEW_UP
@@ -527,7 +534,7 @@ BEGIN
         MENUITEM "左移動(&L)\t←",                  ID_VIEW_LT
         MENUITEM "右移動(&R)\t→",                  ID_VIEW_RT
         MENUITEM SEPARATOR
-        MENUITEM "CADﾃﾞｰﾀの読み込み設定(&D)...",       ID_OPTION_DXF
+        MENUITEM "CADデータの読み込み設定(&D)...",        ID_OPTION_DXF
     END
 END
 
@@ -535,8 +542,8 @@ IDR_NCPOPUP1 MENU
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "図形ﾌｨｯﾄ(&O)\tHome",            ID_VIEW_FIT
-        MENUITEM "全てのﾍﾟｲﾝを図形ﾌｨｯﾄ(&A)\tShift+Home", ID_NCVIEW_ALLFIT
+        MENUITEM "図形フィット(&O)\tHome",            ID_VIEW_FIT
+        MENUITEM "全てのペインを図形フィット(&A)\tShift+Home", ID_NCVIEW_ALLFIT
         MENUITEM "拡大(&Z)\tPageUp",              ID_VIEW_LENSP
         MENUITEM "縮小(&N)\tPageDown",            ID_VIEW_LENSN
         POPUP "移動・回転"
@@ -555,19 +562,19 @@ BEGIN
         POPUP "補助矩形(&E)"
         BEGIN
             MENUITEM "最大移動矩形(&M)\tCtrl+M",          ID_NCVIEW_MAXRECT
-            MENUITEM "ﾜｰｸの表示(&W)...\tCtrl+W",       ID_NCVIEW_WORKRECT
+            MENUITEM "ワークの表示(&W)...\tCtrl+W",       ID_NCVIEW_WORKRECT
         END
         MENUITEM SEPARATOR
-        POPUP "ﾄﾚｰｽ(&T)"
+        POPUP "トレース(&T)"
         BEGIN
             MENUITEM "実行(&R)\tF5",                  ID_NCVIEW_TRACE_RUN
             MENUITEM "一時停止(&P)\tShift+F5",          ID_NCVIEW_TRACE_PAUSE
             MENUITEM "停止(&T)\tCtrl+F5",             ID_NCVIEW_TRACE_STOP
-            MENUITEM "ｶｰｿﾙ位置まで実行\tAlt+F5",          ID_NCVIEW_TRACE_CURSOR
-            MENUITEM "ｶｰｿﾙ位置から実行\tAlt+Shift+F5",    ID_NCVIEW_TRACE_CURSOR2
+            MENUITEM "カーソル位置まで実行\tAlt+F5",          ID_NCVIEW_TRACE_CURSOR
+            MENUITEM "カーソル位置から実行\tAlt+Shift+F5",    ID_NCVIEW_TRACE_CURSOR2
             MENUITEM SEPARATOR
-            MENUITEM "ﾌﾞﾚｰｸ(&K)\tF9",               ID_NCVIEW_TRACE_BREAK
-            MENUITEM "全ﾌﾞﾚｰｸ解除(&C)\tCtrl+F9",       ID_NCVIEW_TRACE_BREAKOFF
+            MENUITEM "ブレーク(&K)\tF9",                ID_NCVIEW_TRACE_BREAK
+            MENUITEM "全ブレーク解除(&C)\tCtrl+F9",        ID_NCVIEW_TRACE_BREAKOFF
             MENUITEM SEPARATOR
             MENUITEM "高速(&F)\tF2",                  ID_NCVIEW_TRACE_FAST
             MENUITEM "中速(&M)\tF3",                  ID_NCVIEW_TRACE_MIDDLE
@@ -575,19 +582,19 @@ BEGIN
         END
         MENUITEM "指定行(&G)...\tCtrl+G",          ID_NCVIEW_JUMP
         MENUITEM "検索(&F)...\tCtrl+F",           ID_EDIT_FIND
-        MENUITEM "ｵﾌﾟｼｮﾅﾙﾌﾞﾛｯｸｽｷｯﾌﾟ設定(&B)...\tCtrl+Alt+B", ID_NCVIEW_OBS
+        MENUITEM "オプショナルブロックスキップ設定(&B)...\tCtrl+Alt+B", ID_NCVIEW_OBS
         MENUITEM SEPARATOR
         POPUP "表示属性"
         BEGIN
             MENUITEM "表示属性の設定(&P)...",              ID_OPTION_VIEW_SETUP
-            MENUITEM "表示属性のｲﾝﾎﾟｰﾄ(&I)",             ID_OPTION_VIEW_INPORT
-            MENUITEM "表示属性のｴｸｽﾎﾟｰﾄ(&X)",            ID_OPTION_VIEW_EXPORT
+            MENUITEM "表示属性のインポート(&I)",              ID_OPTION_VIEW_INPORT
+            MENUITEM "表示属性のエクスポート(&X)",             ID_OPTION_VIEW_EXPORT
             MENUITEM SEPARATOR
-            MENUITEM "ﾃﾞﾌｫﾙﾄの回転角度として設定",            ID_OPTION_DEFVIEWINFO
+            MENUITEM "デフォルトの回転角度として設定",             ID_OPTION_DEFVIEWINFO
         END
         MENUITEM SEPARATOR
         MENUITEM "工作機械の設定(&C)...",              ID_OPTION_MC
-        MENUITEM "工作機械情報のﾃｷｽﾄ編集(&O)...",        ID_OPTION_EDITMC
+        MENUITEM "工作機械情報のテキスト編集(&O)...",        ID_OPTION_EDITMC
     END
 END
 
@@ -595,26 +602,27 @@ IDR_NCPOPUP2 MENU
 BEGIN
     POPUP ""
     BEGIN
-        POPUP "ﾄﾚｰｽ(&T)"
+        POPUP "トレース(&T)"
         BEGIN
             MENUITEM "実行(&R)\tF5",                  ID_NCVIEW_TRACE_RUN
             MENUITEM "一時停止(&P)\tShift+F5",          ID_NCVIEW_TRACE_PAUSE
             MENUITEM "停止(&T)\tCtrl+F5",             ID_NCVIEW_TRACE_STOP
-            MENUITEM "ｶｰｿﾙ位置まで実行\tAlt+F5",          ID_NCVIEW_TRACE_CURSOR
-            MENUITEM "ｶｰｿﾙ位置から実行\tAlt+Shift+F5",    ID_NCVIEW_TRACE_CURSOR2
+            MENUITEM "カーソル位置まで実行\tAlt+F5",          ID_NCVIEW_TRACE_CURSOR
+            MENUITEM "カーソル位置から実行\tAlt+Shift+F5",    ID_NCVIEW_TRACE_CURSOR2
+            MENUITEM SEPARATOR
+            MENUITEM "ブレーク(&K)\tF9",                ID_NCVIEW_TRACE_BREAK
+            MENUITEM "全ブレーク解除(&C)\tCtrl+F9",        ID_NCVIEW_TRACE_BREAKOFF
             MENUITEM SEPARATOR
             MENUITEM "高速(&F)\tF2",                  ID_NCVIEW_TRACE_FAST
             MENUITEM "中速(&M)\tF3",                  ID_NCVIEW_TRACE_MIDDLE
             MENUITEM "低速(&L)\tF4",                  ID_NCVIEW_TRACE_LOW
         END
         MENUITEM SEPARATOR
-        MENUITEM "ﾌﾞﾚｰｸ(&K)\tF9",               ID_NCVIEW_TRACE_BREAK
-        MENUITEM "全ﾌﾞﾚｰｸ解除(&C)\tCtrl+F9",       ID_NCVIEW_TRACE_BREAKOFF
         MENUITEM "指定行(&G)...\tCtrl+G",          ID_NCVIEW_JUMP
         MENUITEM "検索(&F)...\tCtrl+F",           ID_EDIT_FIND
-        MENUITEM "ｵﾌﾟｼｮﾅﾙﾌﾞﾛｯｸｽｷｯﾌﾟ設定(&B)...\tCtrl+Alt+B", ID_NCVIEW_OBS
+        MENUITEM "オプショナルブロックスキップ設定(&B)...\tCtrl+Alt+B", ID_NCVIEW_OBS
         MENUITEM SEPARATOR
-        MENUITEM "ｶｰｿﾙ位置に読み込み(&I)...\tIns",     ID_FILE_NCINSERT
+        MENUITEM "カーソル位置に読み込み(&I)...\tIns",     ID_FILE_NCINSERT
     END
 END
 
@@ -622,7 +630,7 @@ IDR_NCPOPUP3 MENU
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "NC情報ｺﾋﾟｰ\tCtrl+C",            ID_EDIT_COPY
+        MENUITEM "NC情報コピー\tCtrl+C",             ID_EDIT_COPY
     END
 END
 
@@ -635,7 +643,7 @@ BEGIN
         MENUITEM "方向\tF9",                      ID_EDIT_SHAPE_VEC
         MENUITEM "開始位置\tF10",                   ID_EDIT_SHAPE_START
         MENUITEM "輪郭\tF11",                     ID_EDIT_SHAPE_OUT
-        MENUITEM "ﾎﾟｹｯﾄ\tCtrl+F11",             ID_EDIT_SHAPE_POC
+        MENUITEM "ポケット\tCtrl+F11",              ID_EDIT_SHAPE_POC
         MENUITEM "分離\tF12",                     ID_EDIT_SHAPE_SEL
         MENUITEM "加工指示の削除\tDel",                ID_EDIT_SHAPE_DEL
         MENUITEM SEPARATOR
@@ -645,7 +653,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "自動輪郭加工...",                   ID_EDIT_SHAPE_OUTLINE
         MENUITEM "自動ポケット加工...",                 ID_EDIT_SHAPE_POCKET
-        MENUITEM "ｵﾌｾｯﾄ交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
+        MENUITEM "オフセット交点除去",                   ID_EDIT_SHAPE_STRICTOFFSET
     END
 END
 
@@ -660,39 +668,39 @@ END
 
 IDR_3DMTYPE MENU
 BEGIN
-    POPUP "ﾌｧｲﾙ(&F)"
+    POPUP "ファイル(&F)"
     BEGIN
         MENUITEM "開く(&O)...\tCtrl+O",           ID_FILE_OPEN
-        MENUITEM "ｻﾑﾈｲﾙでNCﾃﾞｰﾀを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
+        MENUITEM "サムネイルでNCデータを開く(&T)...\tCtrl+T", ID_FILE_THUMBNAIL
         MENUITEM SEPARATOR
         MENUITEM "閉じて開く(&L)...",                ID_FILE_CLANDOP
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
         MENUITEM SEPARATOR
-        POPUP "NCﾃﾞｰﾀの生成"
+        POPUP "NCデータの生成"
         BEGIN
             MENUITEM "荒加工パスの生成...\tF2",             ID_FILE_3DROUGH
             MENUITEM "仕上げ等高線パスの生成...\tF3",          ID_FILE_3DSMOOTH
             MENUITEM "3D切削データの生成...\tF7",           ID_FILE_3DCUT
         END
         MENUITEM SEPARATOR
-        MENUITEM "最近使ったﾌｧｲﾙ",                   ID_FILE_MRU_FILE1
+        MENUITEM "最近使ったファイル",                   ID_FILE_MRU_FILE1
         MENUITEM SEPARATOR
-        MENUITEM "ｱﾌﾟﾘｹｰｼｮﾝの終了(&X)",            ID_APP_EXIT
+        MENUITEM "アプリケーションの終了(&X)",             ID_APP_EXIT
     END
     POPUP "編集(&E)"
     BEGIN
         MENUITEM "切り取り(&T)\tCtrl+X",            ID_EDIT_CUT
-        MENUITEM "ｺﾋﾟｰ(&C)\tCtrl+C",            ID_EDIT_COPY
+        MENUITEM "コピー(&C)\tCtrl+C",             ID_EDIT_COPY
         MENUITEM "貼り付け(&P)\tCtrl+V",            ID_EDIT_PASTE
         MENUITEM SEPARATOR
         MENUITEM "原点調整...\tCtrl+@",             ID_EDIT_DXFORG
     END
     POPUP "表示(&V)"
     BEGIN
-        MENUITEM "ﾂｰﾙﾊﾞｰ(&T)...",               ID_VIEW_TOOLBARCUSTOM
-        MENUITEM "ｽﾃｰﾀｽ ﾊﾞｰ(&S)",               ID_VIEW_STATUS_BAR
+        MENUITEM "ツールバー(&T)...",                ID_VIEW_TOOLBARCUSTOM
+        MENUITEM "ステータスバー(&S)",                 ID_VIEW_STATUS_BAR
         MENUITEM SEPARATOR
-        MENUITEM "図形ﾌｨｯﾄ(&O)\tHome",            ID_VIEW_FIT
+        MENUITEM "図形フィット(&O)\tHome",            ID_VIEW_FIT
         MENUITEM "拡大(&Z)\tPageUp",              ID_VIEW_LENSP
         MENUITEM "縮小(&N)\tPageDown",            ID_VIEW_LENSN
         MENUITEM "上移動(&U)\t↑",                  ID_VIEW_UP
@@ -700,47 +708,49 @@ BEGIN
         MENUITEM "左移動(&L)\t←",                  ID_VIEW_LT
         MENUITEM "右移動(&R)\t→",                  ID_VIEW_RT
     END
-    POPUP "ｵﾌﾟｼｮﾝ(&O)"
+    POPUP "オプション(&O)"
     BEGIN
         MENUITEM "工作機械の設定(&N)...",              ID_OPTION_MC
-        MENUITEM "工作機械情報のﾃｷｽﾄ編集(&O)...",        ID_OPTION_EDITMC
+        MENUITEM "工作機械情報のテキスト編集(&O)...",        ID_OPTION_EDITMC
         MENUITEM SEPARATOR
-        MENUITEM "CADﾃﾞｰﾀの読み込み設定(&D)...",       ID_OPTION_DXF
+        MENUITEM "CADデータの読み込み設定(&D)...",        ID_OPTION_DXF
         MENUITEM SEPARATOR
-        MENUITEM "切削ﾊﾟﾗﾒｰﾀの設定(&M)...\tF8",      ID_OPTION_MAKENC
-        MENUITEM "切削ﾊﾟﾗﾒｰﾀのﾃｷｽﾄ編集(&T)...",      ID_OPTION_EDITNC
+        MENUITEM "切削パラメータの設定(&M)...\tF8",       ID_OPTION_MAKENC
+        MENUITEM "切削パラメータのテキスト編集(&T)...",       ID_OPTION_EDITNC
         MENUITEM SEPARATOR
         POPUP "表示属性"
         BEGIN
             MENUITEM "表示属性の設定(&P)...",              ID_OPTION_VIEW_SETUP
-            MENUITEM "表示属性のｲﾝﾎﾟｰﾄ(&I)",             ID_OPTION_VIEW_INPORT
-            MENUITEM "表示属性のｴｸｽﾎﾟｰﾄ(&X)",            ID_OPTION_VIEW_EXPORT
+            MENUITEM "表示属性のインポート(&I)",              ID_OPTION_VIEW_INPORT
+            MENUITEM "表示属性のエクスポート(&X)",             ID_OPTION_VIEW_EXPORT
         END
         MENUITEM SEPARATOR
-        MENUITEM "外部ｱﾌﾟﾘｹｰｼｮﾝの設定(&E)...",       ID_OPTION_EXEC
+        MENUITEM "外部アプリケーションの設定(&E)...",        ID_OPTION_EXEC
         MENUITEM "拡張子の設定(&X)...",               ID_OPTION_EXT
     END
-    POPUP "ｳｨﾝﾄﾞｳ(&W)"
+    POPUP "ウィンドウ(&W)"
     BEGIN
         MENUITEM "重ねて表示(&C)",                   ID_WINDOW_CASCADE
         MENUITEM "並べて表示(&T)",                   ID_WINDOW_TILE_HORZ
-        MENUITEM "ｱｲｺﾝの整列(&A)",                 ID_WINDOW_ARRANGE
+        MENUITEM "アイコンの整列(&A)",                 ID_WINDOW_ARRANGE
         MENUITEM SEPARATOR
-        MENUITEM "次のｳｨﾝﾄﾞｳ(&N)\tF6",            ID_WINDOW_NEXT
+        MENUITEM "次のウィンドウ(&N)\tF6",             ID_WINDOW_NEXT
         MENUITEM SEPARATOR
         MENUITEM "閉じる(&O)",                     ID_FILE_CLOSE
         MENUITEM "すべて閉じる(&L)",                  ID_WINDOW_ALLCLOSE
     END
-    POPUP "ﾍﾙﾌﾟ(&H)"
+    POPUP "ヘルプ(&H)"
     BEGIN
         MENUITEM "NCVC解説書...",                  ID_HELP_USING
         MENUITEM "自動輪郭処理...",                   ID_HELP_USING2
-        MENUITEM "旋盤ﾃﾞｰﾀの生成...",                ID_HELP_USING3
-        MENUITEM "ﾜｲﾔ放電加工機ﾃﾞｰﾀの生成...",          ID_HELP_USING4
-        MENUITEM "CADﾃﾞｰﾀの統合...",               ID_HELP_USING5
+        MENUITEM "旋盤データの生成...",                 ID_HELP_USING3
+        MENUITEM "ワイヤ放電加工機データの生成...",           ID_HELP_USING4
+        MENUITEM "CADデータの統合...",                ID_HELP_USING5
+        MENUITEM "複数のワーク座標原点を処理...",            ID_HELP_USING6
+        MENUITEM "NURBS曲面の切削データ生成...",          ID_HELP_USING7
         MENUITEM SEPARATOR
-        MENUITEM "NCVC のﾊﾞｰｼﾞｮﾝ情報(&A)...",      ID_APP_ABOUT
-        MENUITEM "ｱﾄﾞｲﾝについて...",                ID_HELP_ADDIN
+        MENUITEM "NCVC のバージョン情報(&A)...",        ID_APP_ABOUT
+        MENUITEM "アドインについて...",                 ID_HELP_ADDIN
     END
 END
 
@@ -3661,18 +3671,18 @@ END
 STRINGTABLE
 BEGIN
     IDS_COMMON_FORMAT       "%s%02d"
-    ID_FILE_THUMBNAIL       "ｻﾑﾈｲﾙ表示からファイルを開く\nｻﾑﾈｲﾙで開く"
+    ID_FILE_THUMBNAIL       "サムネイル表示からファイルを開く\nサムネで開く"
     ID_FILE_DXF2NCD         "CADﾃﾞｰﾀからNCﾃﾞｰﾀを生成します\nNC生成(F7)"
-    ID_FILE_DXF2NCD_EX1     "複数ﾚｲﾔのCADﾃﾞｰﾀからNCﾃﾞｰﾀを生成します\n拡張NC生成1(Ctrl+F7)"
-    ID_FILE_DXF2NCD_EX2     "複数ﾚｲﾔのCADﾃﾞｰﾀからNCﾃﾞｰﾀを生成します\n拡張NC生成2(Shift+F7)"
+    ID_FILE_DXF2NCD_EX1     "複数レイヤのCADデータからNCデータを生成します\n拡張NC生成1(Ctrl+F7)"
+    ID_FILE_DXF2NCD_EX2     "複数レイヤのCADデータからNCデータを生成します\n拡張NC生成2(Shift+F7)"
     ID_FILE_DXF2NCD_SHAPE   "形状指示からNCﾃﾞｰﾀを生成します\n形状NC生成(Alt+F7)"
-    ID_FILE_DXF2NCD_LATHE   "旋盤用NCﾃﾞｰﾀを生成します\n旋盤NC生成(Ctrl+Alt+F7)"
+    ID_FILE_DXF2NCD_LATHE   "旋盤用NCデータを生成します\n旋盤NC生成(Ctrl+Alt+F7)"
 END
 
 STRINGTABLE
 BEGIN
-    ID_FILE_DXF2NCD_WIRE    "ﾜｲﾔ加工機NCﾃﾞｰﾀを生成します\nﾜｲﾔ加工機NC生成(Shift+Ctrl+Alt+F7)"
-    ID_FILE_NCINSERT        "NCｺｰﾄﾞのｶｰｿﾙ位置に他のﾌｧｲﾙを読み込み挿入します"
+    ID_FILE_DXF2NCD_WIRE    "ワイヤ加工機NCデータを生成します\nﾜｲﾔ加工機NC生成(Shift+Ctrl+Alt+F7)"
+    ID_FILE_NCINSERT        "NCコードのカーソル位置に他のファイルを読み込み挿入します"
     ID_FILE_NCD2DXF         "DXFを出力します\nDXF出力(Ctrl+D)"
     ID_FILE_3DCUT           "スキャニングパスから3D切削データを生成します\n3D生成(F7)"
     ID_FILE_3DROUGH         "3Dモデルの荒加工用スキャニングパスを生成します\n荒加工パス生成(F2)"
@@ -3700,18 +3710,18 @@ STRINGTABLE
 BEGIN
     ID_OPTION_MC            "各種工作機械の設定を行います。正しく設定しないと切削時間の計算ができません\n機械情報の設定"
     ID_OPTION_MCCOMBO       "\n機械情報選択履歴"
-    ID_OPTION_EDITMC        "各種工作機械の設定をﾃｷｽﾄｴﾃﾞｨﾀで行います。外部ｱﾌﾟﾘの１つ目にﾃｷｽﾄｴﾃﾞｨﾀを登録しておいてください"
-    ID_OPTION_DXF           "CADﾃﾞｰﾀの読み込みﾚｲﾔを設定します"
-    ID_OPTION_MAKENC        "NC生成に必要な加工条件を設定します\n切削ﾊﾟﾗﾒｰﾀの設定(F8)"
-    ID_OPTION_EDITNC        "NC生成に必要な加工条件をﾃｷｽﾄｴﾃﾞｨﾀで編集します。外部ｱﾌﾟﾘの１つ目にﾃｷｽﾄｴﾃﾞｨﾀを登録しておいてください"
+    ID_OPTION_EDITMC        "各種工作機械の設定をテキストエディタで行います。外部アプリの１つ目にテキストエディタを登録しておいてください"
+    ID_OPTION_DXF           "CADデータの読み込みレイヤを設定します"
+    ID_OPTION_MAKENC        "NC生成に必要な加工条件を設定します\n切削パラメータの設定(F8)"
+    ID_OPTION_EDITNC        "NC生成に必要な加工条件をテキストエディタで編集します。外部アプリの１つ目にテキストエディタを登録しておいてください"
     ID_OPTION_VIEW_SETUP    "画面表示の色、ﾏｳｽの動作をｶｽﾀﾏｲｽﾞできます\n表示属性"
 END
 
 STRINGTABLE
 BEGIN
-    ID_OPTION_VIEW_INPORT   "ｴｸｽﾎﾟｰﾄした表示属性(ﾌｫﾝﾄ情報除く)を取り込みます"
-    ID_OPTION_VIEW_EXPORT   "現在の表示属性をﾃｷｽﾄﾌｧｲﾙに出力します。自分の設定を保存するとき、また他人に自分の設定を渡すのに使います"
-    ID_OPTION_EXEC          "外部ｱﾌﾟﾘｹｰｼｮﾝの設定を行います\n外部ｱﾌﾟﾘ"
+    ID_OPTION_VIEW_INPORT   "エクスポートした表示属性(フォント情報除く)を取り込みます"
+    ID_OPTION_VIEW_EXPORT   "現在の表示属性をテキストファイルに出力します。自分の設定を保存するとき、また他人に自分の設定を渡すのに使います"
+    ID_OPTION_EXEC          "外部アプリケーションの設定を行います\n外部アプリ"
     ID_OPTION_EXT           "NCVCで読み込む拡張子を登録します\n拡張子登録"
     ID_OPTION_DEFVIEWINFO   "現在表示中の回転角度をデフォルトとして設定します"
 END
@@ -3815,19 +3825,19 @@ END
 STRINGTABLE
 BEGIN
     ID_NCVIEW_MAXRECT       "最大移動矩形の表示"
-    ID_NCVIEW_WORKRECT      "ﾜｰｸの表示"
-    ID_NCVIEW_ALLFIT        "全てのﾍﾟｲﾝを現在のｳｨﾝﾄﾞｳ領域に合うように表示します\n全て図形ﾌｨｯﾄ(Shift+Home)"
+    ID_NCVIEW_WORKRECT      "ワークの表示"
+    ID_NCVIEW_ALLFIT        "全てのペインを現在のウィンドウ領域に合うように表示します\n全て図形フィット(Shift+Home)"
     ID_NCVIEW_JUMP          "指定されたNCｺｰﾄﾞの行を表示\nｼﾞｬﾝﾌﾟ"
     ID_NCVIEW_OBS           "オプショナルブロックスキップの設定ダイアログを表示\nOBS設定"
 END
 
 STRINGTABLE
 BEGIN
-    ID_VIEW_TOOLBARCUSTOM   "ﾂｰﾙﾊﾞｰの表示/非表示、ｶｽﾀﾏｲｽﾞ\nﾂｰﾙﾊﾞｰの表示切り替え"
-    ID_VIEW_FIT             "現在のｳｨﾝﾄﾞｳ領域に合うように表示します\n図形ﾌｨｯﾄ(Home)"
+    ID_VIEW_TOOLBARCUSTOM   "ツールバーの表示/非表示、カスタマイズ\nツールバーの表示切り替え"
+    ID_VIEW_FIT             "現在のウィンドウ領域に合うように表示します\n図形フィット(Home)"
     ID_VIEW_LENSP           "領域が指定されていれば領域を拡大、指定されていなければ表示領域を基準に10%ずつ拡大\n拡大(PageUp)"
     ID_VIEW_LENSN           "領域が指定されていれば領域を表示領域と見なして縮小、指定されていなければ表示領域を基準に10%ずつ縮小\n縮小(PageDown)"
-    ID_DXFVIEW_LAYER        "ﾚｲﾔの表示・非表示を切り替えます\nﾚｲﾔ(Ctrl+L)"
+    ID_DXFVIEW_LAYER        "レイヤの表示・非表示を切り替えます\nレイヤ(Ctrl+L)"
 END
 
 STRINGTABLE
@@ -3835,10 +3845,10 @@ BEGIN
     ID_NCVIEW_TRACE_RUN     "ﾄﾚｰｽ実行\nﾄﾚｰｽ実行(F5)"
     ID_NCVIEW_TRACE_PAUSE   "ﾄﾚｰｽ一時停止\n一時停止(Shift+F5)"
     ID_NCVIEW_TRACE_STOP    "ﾄﾚｰｽ停止\n停止(Ctrl+F5)"
-    ID_NCVIEW_TRACE_BREAK   "ﾌﾞﾚｰｸﾎﾟｲﾝﾄの設定/解除\nﾌﾞﾚｰｸ(F9)"
-    ID_NCVIEW_TRACE_BREAKOFF "全ﾌﾞﾚｰｸ解除\n全ﾌﾞﾚｰｸ解除(Ctrl+F9)"
-    ID_NCVIEW_TRACE_CURSOR  "ｶｰｿﾙ位置までﾄﾚｰｽ実行後、一時停止します\nｶｰｿﾙ位置まで実行(Alt+F5)"
-    ID_NCVIEW_TRACE_CURSOR2 "ｶｰｿﾙ位置からﾄﾚｰｽ実行、それ以前は表示されません。ただし再描画されると戻ります\nｶｰｿﾙ位置から実行(Alt+Shift+F5)"
+    ID_NCVIEW_TRACE_BREAK   "ブレークポイントの設定/解除\nブレーク(F9)"
+    ID_NCVIEW_TRACE_BREAKOFF "全ブレーク解除\n全ブレーク解除(Ctrl+F9)"
+    ID_NCVIEW_TRACE_CURSOR  "カーソル位置までトレース実行後、一時停止します\nカーソル位置まで実行(Alt+F5)"
+    ID_NCVIEW_TRACE_CURSOR2 "カーソル位置からトレース実行、それ以前は表示されません。ただし再描画されると戻ります\nカーソル位置から実行(Alt+Shift+F5)"
     ID_NCVIEW_TRACE_FAST    "ﾄﾚｰｽ高速実行\n高速(F2)"
     ID_NCVIEW_TRACE_MIDDLE  "ﾄﾚｰｽ中速実行\n中速(F3)"
     ID_NCVIEW_TRACE_LOW     "ﾄﾚｰｽ低速実行\n低速(F4)"
@@ -3927,7 +3937,7 @@ END
 STRINGTABLE
 BEGIN
     ID_WINDOW_ALLCLOSE      "すべてのｳｨﾝﾄﾞｳを閉じます"
-    ID_WINDOW_NEXT          "次のｳｨﾝﾄﾞｳに切り替える\n次のｳｨﾝﾄﾞｳ(F6)"
+    ID_WINDOW_NEXT          "次のウィンドウに切り替える\n次のウィンドウ(F6)"
 END
 
 STRINGTABLE
@@ -3937,7 +3947,7 @@ END
 
 STRINGTABLE
 BEGIN
-    ID_HELP_ADDIN           "読み込んだｱﾄﾞｲﾝについての情報表示\nｱﾄﾞｲﾝ情報"
+    ID_HELP_ADDIN           "読み込んだアドインについての情報表示\nアドイン情報"
 END
 
 STRINGTABLE
@@ -4092,18 +4102,18 @@ STRINGTABLE
 BEGIN
     ID_EDIT_DXFORG          "機械原点情報を更新します\n原点調整(Ctrl+@)"
     ID_EDIT_DXFSHAPE        "形状認識処理のあと各種加工指示(輪郭・ポケット)が可能です\n形状認識(Ctrl+E)"
-    ID_EDIT_SHAPE_PROP      "形状ごとの設定を行います\n形状ﾌﾟﾛﾊﾟﾃｨ"
+    ID_EDIT_SHAPE_PROP      "形状ごとの設定を行います\n形状プロパティ"
     ID_EDIT_SHAPE_AUTO      "CThreadDlg ID用（メニューからは削除）"
     ID_EDIT_SHAPE_NAME      "形状集合の名前を変更します"
     ID_EDIT_SHAPE_STRICTOFFSET 
-                            "ｵﾌｾｯﾄ同士の交点を除去し厳格な輪郭を形成します。自動輪郭処理では自動的に処理されます\nｵﾌｾｯﾄ交点除去"
+                            "オフセット同士の交点を除去し厳格な輪郭を形成します。自動輪郭処理では自動的に処理されます\nオフセット交点除去"
     ID_EDIT_SHAPE_OUTLINE   "占有矩形から内外の輪郭加工パスを計算します\n自動輪郭"
     ID_EDIT_SHAPE_POCKET    "占有矩形から内外のポケット加工パスを計算します\n自動ポケット"
-    ID_EDIT_SHAPE_SEL       "形状ｸﾞﾙｰﾌﾟから単一のｵﾌﾞｼﾞｪｸﾄを分離します\n分離(F12)"
+    ID_EDIT_SHAPE_SEL       "形状グループから単一のオブジェクトを分離します\n分離(F12)"
     ID_EDIT_SHAPE_VEC       "切削方向を指示します\n方向指示(F9)"
     ID_EDIT_SHAPE_START     "形状ごとに開始位置を指示します\n開始位置(F10)"
     ID_EDIT_SHAPE_OUT       "形状の輪郭切削を指示します\n輪郭加工(F11)"
-    ID_EDIT_SHAPE_POC       "形状のポケット加工を指示します\nﾎﾟｹｯﾄ加工(Ctrl+F11)"
+    ID_EDIT_SHAPE_POC       "形状のポケット加工を指示します\nポケット加工(Ctrl+F11)"
 END
 
 STRINGTABLE
@@ -4225,7 +4235,7 @@ END
 
 STRINGTABLE
 BEGIN
-    ID_FILE_CADBIND         "複数のCADﾃﾞｰﾀをﾜｰｸ矩形に配置します"
+    ID_FILE_CADBIND         "複数のCADデータをワーク矩形に配置します"
 END
 
 STRINGTABLE

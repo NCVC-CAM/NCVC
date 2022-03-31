@@ -715,6 +715,7 @@
 #define ID_HELP_USING4                  9904
 #define ID_HELP_USING5                  9905
 #define ID_HELP_USING6                  9906
+#define ID_HELP_USING7                  9907
 #define IDS_REGISTRY_KEY                10000
 #define IDS_REGKEY_SETTINGS             10001
 #define IDS_REGKEY_WINDOW               10002
@@ -907,6 +908,7 @@
 #define IDS_ANA_CONTOUR_ZOFFSET         29020
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
+#define ID_32832                        32832
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -930,7 +932,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        208
-#define _APS_NEXT_COMMAND_VALUE         32832
+#define _APS_NEXT_COMMAND_VALUE         32833
 #define _APS_NEXT_CONTROL_VALUE         1072
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
