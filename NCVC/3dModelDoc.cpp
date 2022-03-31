@@ -255,7 +255,7 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 		}
 
 		// 荒加工パス生成
-		for ( i=0; i<D; i++ ) {		// Z方向分割数
+		for ( i=0; i<=D; i++ ) {	// Z方向分割数
 			VVCoord	vvtmp = vv;		// データをコピーしてからZ値の更新
 			for ( auto it2=vvtmp.begin(); it2!=vvtmp.end(); ++it2 ) {
 				for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {

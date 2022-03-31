@@ -305,7 +305,7 @@ void CreateNCFile(CDXFDoc* pDoc, CString& strPath, CString& strFile)
 void CreateNCFile(C3dModelDoc* pDoc, UINT id, CString& strPath, CString& strFile)
 {
 	static LPCTSTR	szSuffix[] = {
-		"_Rough", "_Contour"
+		"_Scan", "_Contour"
 	};
 	// 3dOptionに保存したファイル名からＮＣファイル名を作成
 	// 新規の場合のみサフィックスを付与

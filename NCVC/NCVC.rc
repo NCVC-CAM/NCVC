@@ -678,9 +678,9 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "NCデータの生成"
         BEGIN
-            MENUITEM "荒加工パスの生成...\tF2",             ID_FILE_3DROUGH
-            MENUITEM "仕上げ等高線パスの生成...\tF3",          ID_FILE_3DSMOOTH
-            MENUITEM "3D切削データの生成...\tF7",           ID_FILE_3DCUT
+            MENUITEM "スキャニングパスの生成...\tF2",          ID_FILE_3DROUGH
+            MENUITEM "等高線パスの生成...\tF3",             ID_FILE_3DSMOOTH
+            MENUITEM "3D切削データの出力...\tF7",           ID_FILE_3DCUT
         END
         MENUITEM SEPARATOR
         MENUITEM "最近使ったファイル",                   ID_FILE_MRU_FILE1
@@ -2344,7 +2344,7 @@ END
 
 IDD_3DROUGH DIALOGEX 0, 0, 200, 170
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "荒加工用スキャニングパスの生成"
+CAPTION "スキャニングパスの生成"
 FONT 9, "MS UI Gothic", 400, 0, 0x80
 BEGIN
     LTEXT           "ボールエンドミル半径(&R)",IDC_STATIC,7,9,68,8
@@ -2362,14 +2362,14 @@ BEGIN
     LTEXT           "スキャニングラインの分割数(&S)",IDC_STATIC,7,89,85,8
     EDITTEXT        IDC_3DSCAN_LINESPLIT,100,87,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "< 100",IDC_STATIC,145,89,48,8
-    CONTROL         "NC生成時，ワーク上面をZ軸のゼロにする(&Z)",IDC_3DSCAN_ZORIGIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,109,186,10
+    CONTROL         "NC生成時ワーク上面をZ軸のゼロにする(&Z)",IDC_3DSCAN_ZORIGIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,109,186,10
     DEFPUSHBUTTON   "&OK",IDOK,37,149,50,14
     PUSHBUTTON      "キャンセル",IDCANCEL,113,149,50,14
 END
 
 IDD_3DCONTOUR DIALOGEX 0, 0, 200, 170
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "仕上げ加工用等高線パスの生成"
+CAPTION "等高線パスの生成"
 FONT 9, "MS UI Gothic", 400, 0, 0x80
 BEGIN
     LTEXT           "ボールエンドミル半径(&R)",IDC_STATIC,7,9,68,8
@@ -2387,8 +2387,7 @@ BEGIN
     LTEXT           "スキャンするシフト量(&3)",IDC_STATIC,7,89,65,8
     EDITTEXT        IDC_3DSCAN_SHIFT,100,87,40,12,ES_AUTOHSCROLL,WS_EX_RIGHT
     LTEXT           "",IDC_STATIC,145,89,8,8
-    CONTROL         "NC生成時，スキャンするZ最大値をZ軸のゼロにする(&Z)",IDC_3DSCAN_ZORIGIN,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,109,186,10
+    CONTROL         "NC生成時スキャンするZ最大値をZ軸のゼロにする(&Z)",IDC_3DSCAN_ZORIGIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,109,186,10
     DEFPUSHBUTTON   "&OK",IDOK,37,149,50,14
     PUSHBUTTON      "キャンセル",IDCANCEL,113,149,50,14
     LTEXT           "mm",IDC_STATIC,145,89,11,8
@@ -3684,9 +3683,9 @@ BEGIN
     ID_FILE_DXF2NCD_WIRE    "ワイヤ加工機NCデータを生成します\nﾜｲﾔ加工機NC生成(Shift+Ctrl+Alt+F7)"
     ID_FILE_NCINSERT        "NCコードのカーソル位置に他のファイルを読み込み挿入します"
     ID_FILE_NCD2DXF         "DXFを出力します\nDXF出力(Ctrl+D)"
-    ID_FILE_3DCUT           "スキャニングパスから3D切削データを生成します\n3D生成(F7)"
-    ID_FILE_3DROUGH         "3Dモデルの荒加工用スキャニングパスを生成します\n荒加工パス生成(F2)"
-    ID_FILE_3DSMOOTH        "3Dモデルの仕上げ用等高線パスを生成します\n仕上げパス生成(F3)"
+    ID_FILE_3DCUT           "スキャニングパスから3D切削データを出力します\n3Dデータ出力(F7)"
+    ID_FILE_3DROUGH         "3Dモデルのスキャニングパスを生成します\nスキャニングパス生成(F2)"
+    ID_FILE_3DSMOOTH        "3Dモデルの等高線パスを生成します\n等高線パス生成(F3)"
 END
 
 STRINGTABLE
@@ -3969,9 +3968,9 @@ BEGIN
     IDS_ANA_OUTLINE         "輪郭加工指示が消去されますが続行しますか？"
     IDS_ANA_STRICTOFFSET    "この処理は手動で輪郭情報を変更したときにだけ必要です。\n実行しますか？"
     IDS_ANA_DEFVIEWINFO     "ﾃﾞﾌｫﾙﾄ回転情報を保存しました。\n初期化は HOMEｷｰ後、これを再実行してください。"
-    IDS_ANA_ROUGH           "仕上げ工程で出力したファイル名と同じようです．続行しますか？"
-    IDS_ANA_CONTOUR         "荒加工工程で出力したファイル名と同じようです．続行しますか？"
-    IDS_ANA_CONTOUR_ZOFFSET "荒加工のワークの高さと仕上げ設定のスキャン最大値が違います．\nこのまま続行しますか？"
+    IDS_ANA_ROUGH           "等高線パスで出力したファイル名と同じようです．続行しますか？"
+    IDS_ANA_CONTOUR         "スキャニングパスで出力したファイル名と同じようです．続行しますか？"
+    IDS_ANA_CONTOUR_ZOFFSET "スキャニングパスのワークの高さと等高線のスキャン最大値が違います．\nこのまま続行しますか？"
 END
 
 STRINGTABLE
@@ -4091,7 +4090,7 @@ BEGIN
     IDCV_FEEDERROR          "移動速度未設定"
     IDCV_LATHE              " (Lathe Mode)"
     IDCV_WIRE               " (Wire Mode)"
-    IDCV_NURBS              " (Nurbs Mode)"
+    IDCV_NURBS              " (NURBS Mode)"
     IDCV_VALFORMAT3         "%12.3f"
     IDCV_VALFORMAT4         "%11.4f"
     IDS_MAKEDXF_CODE        "%3d\n"
@@ -4224,8 +4223,8 @@ BEGIN
     IDS_MAKENCD_TITLE_SHAPE "形状加工によるNCﾃﾞｰﾀ生成"
     IDS_MAKENCD_TITLE_LATHE "旋盤用NCﾃﾞｰﾀの生成"
     IDS_MAKENCD_TITLE_WIRE  "ﾜｲﾔ放電加工機用NCﾃﾞｰﾀの生成"
-    IDS_MAKENCD_TITLE_ROUGH "Nurbs曲面荒加工用NCﾃﾞｰﾀの生成"
-    IDS_MAKENCD_TITLE_CONTOUR "Nurbs曲面仕上げ用NCﾃﾞｰﾀの生成"
+    IDS_MAKENCD_TITLE_ROUGH "NURBS曲面スキャニングパスのNCデータ出力"
+    IDS_MAKENCD_TITLE_CONTOUR "NURBS曲面等高線パスのNデータ出力"
 END
 
 STRINGTABLE

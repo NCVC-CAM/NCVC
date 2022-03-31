@@ -72,6 +72,7 @@ void C3dContourScanSetupDlg::OnOK()
 		m_dShift.SetSel(0, -1);
 		return;
 	}
+/*	-- なくても良さそう？
 	if ( m_dShift < m_dSpace*2.0 ) {
 		// 近接点を検索するためのマージン
 		AfxMessageBox(IDS_ERR_CONTOUR, MB_OK|MB_ICONEXCLAMATION);
@@ -79,7 +80,7 @@ void C3dContourScanSetupDlg::OnOK()
 		m_dShift.SetSel(0, -1);
 		return;
 	}
-
+*/
 	C3dOption*	pOpt = m_pDoc->Get3dOption();
 
 	if ( pOpt->m_bRoughZOrigin && m_bZOrigin ) {
