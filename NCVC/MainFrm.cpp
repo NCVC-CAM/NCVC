@@ -586,7 +586,7 @@ void CMainFrame::SetExecButtons(BOOL bRestore)
 #ifdef _DEBUG
 	printf("CMainFrame::SetExecButtons() Start\n");
 #endif
-	static	LPCTSTR	szMenu = "外部ｱﾌﾟﾘ(&X)";
+	static	LPCTSTR	szMenu = "外部アプリ(&X)";
 	UINT		nMenuNCD, nMenuDXF;
 	int			i, nCount, nIndex, nBtnCnt;
 	CDocument*	pDoc = GetActiveFrame()->GetActiveDocument();

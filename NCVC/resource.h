@@ -157,8 +157,8 @@
 #define IDS_NCIM_FILTER                 1390
 #define IDS_NCIL_FILTER                 1391
 #define IDS_NCIW_FILTER                 1392
-#define IDS_NCL_FILTER                  1393
-#define IDS_NCNU_FILTER                 1394
+#define IDS_NCIN_FILTER                 1393
+#define IDS_NCL_FILTER                  1394
 #define IDS_EXE_FILTER                  1395
 #define IDS_TXT_FILTER                  1396
 #define IDS_MC_FILTER                   1397
@@ -904,11 +904,9 @@
 #define IDS_ANA_DEFVIEWINFO             29017
 #define IDS_ANA_ROUGH                   29018
 #define IDS_ANA_CONTOUR                 29019
-#define IDS_ERR_CONTOUR_ZOFFSET         29020
 #define IDS_ANA_CONTOUR_ZOFFSET         29020
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
-#define ID_32832                        32832
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202

@@ -316,7 +316,7 @@ BOOL MakeNurbs_ContourFunc(void)
 {
 	VVVCoord::iterator	itv;
 	VVVCoord&	vvv = g_pDoc->GetContourCoord();
-	std::vector<size_t>	vLayer;			// 階層ごとの残グループ数
+	std::vector<int>	vLayer;			// 階層ごとの残グループ数
 	size_t		layer = 0;				// 現在処理中の階層
 	INT_PTR		maxcnt = 0, cnt = 0;
 	ptrdiff_t	grp, idx;
@@ -324,11 +324,11 @@ BOOL MakeNurbs_ContourFunc(void)
 
 	// Coord::dmy のクリア．生成済みフラグとして使用
 	for ( itv=vvv.begin(); itv!=vvv.end(); ++itv ) {
-		maxcnt += itv->size();			// 座標集合==処理数
-		vLayer.push_back(itv->size());	// 階層ごとの座標グループ数で初期化
+		maxcnt += itv->size();				// 座標集合==処理数
+		vLayer.push_back((int)itv->size());	// 階層ごとの座標グループ数で初期化
 		for ( auto it2=itv->begin(); it2!=itv->end(); ++it2 ) {
 			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				it3->dmy = 0.0;			// 生成済みフラグのクリア
+				it3->dmy = 0.0;				// 生成済みフラグのクリア
 			}
 		}
 	}

@@ -838,7 +838,7 @@ BOOL CNCVCApp::NCVCAddinInit(int nShellCommand)
 
 BOOL CNCVCApp::NCVCAddinMenu(void)
 {
-	static	LPCTSTR	lpszAddin = "±ÄÞ²Ý(&A)";
+	static	LPCTSTR	lpszAddin = "ƒAƒhƒCƒ“(&A)";
 	extern	const	DWORD	g_dwAddinType[];	// NCVCaddinIF.cpp
 #ifdef _DEBUG
 	printf("NCVCAddinMenu() Start\n");

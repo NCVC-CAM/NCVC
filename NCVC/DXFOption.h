@@ -28,8 +28,8 @@ enum	NCMAKETYPE	{
 	NCMAKEMILL = 0,		// MC
 	NCMAKELATHE,		// ù”Õ
 	NCMAKEWIRE,			// Ü²Ô•ú“d‰ÁH‹@
+	NCMAKENURBS,		// NURBS‹È–Ê(Kodatuno)
 	NCMAKELAYER,		// Ú²Ô–¼‚ÆðŒÌ§²Ù‚ÌŠÖŒWÌ§²Ù‚Ì—š—ð
-	NCMAKENURBS,		// Nurbs‹È–Ê(Kodatuno)
 		NCMAKENUM			// [5]
 };
 

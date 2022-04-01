@@ -3553,8 +3553,8 @@ END
 STRINGTABLE
 BEGIN
     IDR_MAINFRAME           "NCVC"
-    IDR_NCTYPE              "\n\n\nNC ﾌｧｲﾙ (*.ncd)\n.ncd\nNC.Document\nNC Document"
-    IDR_DXFTYPE             "\n\n\nCAM ﾌｧｲﾙ (*.cam)\n.cam\nCAM.Document\nCAM Document"
+    IDR_NCTYPE              "\n\n\nNC ファイル (*.ncd)\n.ncd\nNC.Document\nNC Document"
+    IDR_DXFTYPE             "\n\n\nCAM ファイル (*.cam)\n.cam\nCAM.Document\nCAM Document"
 END
 
 STRINGTABLE
@@ -3575,8 +3575,8 @@ STRINGTABLE
 BEGIN
     ID_APP_ABOUT            "プログラム情報・バージョン・著作権を表示します。\nバージョン情報"
     ID_APP_EXIT             "アプリケーションを終了し、ファイルの保存を指示\\終了"
-    ID_CONTEXT_HELP         "ｸﾘｯｸされたﾎﾞﾀﾝ、ﾒﾆｭｰまたはｳｨﾝﾄﾞｳのﾍﾙﾌﾟを表示\nﾍﾙﾌﾟ"
-    ID_HELP                 "ﾍﾙﾌﾟ ﾄﾋﾟｯｸの一覧\nﾍﾙﾌﾟ ﾄﾋﾟｯｸ"
+    ID_CONTEXT_HELP         "クリックされたボタン，メニューまたはウィンドウのヘルプを表示\nヘルプ"
+    ID_HELP                 "ヘルプトピックの一覧\nヘルプトピック"
 END
 
 STRINGTABLE
@@ -3671,16 +3671,16 @@ STRINGTABLE
 BEGIN
     IDS_COMMON_FORMAT       "%s%02d"
     ID_FILE_THUMBNAIL       "サムネイル表示からファイルを開く\nサムネで開く"
-    ID_FILE_DXF2NCD         "CADﾃﾞｰﾀからNCﾃﾞｰﾀを生成します\nNC生成(F7)"
+    ID_FILE_DXF2NCD         "CADデータからNCデータを生成します\nNC生成(F7)"
     ID_FILE_DXF2NCD_EX1     "複数レイヤのCADデータからNCデータを生成します\n拡張NC生成1(Ctrl+F7)"
     ID_FILE_DXF2NCD_EX2     "複数レイヤのCADデータからNCデータを生成します\n拡張NC生成2(Shift+F7)"
-    ID_FILE_DXF2NCD_SHAPE   "形状指示からNCﾃﾞｰﾀを生成します\n形状NC生成(Alt+F7)"
+    ID_FILE_DXF2NCD_SHAPE   "形状指示からNCデータを生成します\n形状NC生成(Alt+F7)"
     ID_FILE_DXF2NCD_LATHE   "旋盤用NCデータを生成します\n旋盤NC生成(Ctrl+Alt+F7)"
 END
 
 STRINGTABLE
 BEGIN
-    ID_FILE_DXF2NCD_WIRE    "ワイヤ加工機NCデータを生成します\nﾜｲﾔ加工機NC生成(Shift+Ctrl+Alt+F7)"
+    ID_FILE_DXF2NCD_WIRE    "ワイヤ加工機NCデータを生成します\nワイヤ加工機NC生成(Shift+Ctrl+Alt+F7)"
     ID_FILE_NCINSERT        "NCコードのカーソル位置に他のファイルを読み込み挿入します"
     ID_FILE_NCD2DXF         "DXFを出力します\nDXF出力(Ctrl+D)"
     ID_FILE_3DCUT           "スキャニングパスから3D切削データを出力します\n3Dデータ出力(F7)"
@@ -3691,12 +3691,12 @@ END
 STRINGTABLE
 BEGIN
     IDS_ERR_OUTOFMEM        "Out of memory"
-    IDS_ERR_CRITICAL        "ﾌﾟﾛｸﾞﾗﾑ内部で致命的なｴﾗｰが発生しました。処理を中断します。\nFile=%s:DebugLine=%d"
-    IDS_ERR_REGISTRY        "設定をﾚｼﾞｽﾄﾘに保存できませんでした。処理は継続します。"
-    IDS_ERR_WRITESETTING    "%s\n設定ﾌｧｲﾙの書き出しに失敗しました"
-    IDS_ERR_CLIPBOARD       "ｸﾘｯﾌﾟﾎﾞｰﾄﾞの操作に失敗しました"
+    IDS_ERR_CRITICAL        "プログラム内部で致命的なエラーが発生しました。処理を中断します。\nFile=%s:DebugLine=%d"
+    IDS_ERR_REGISTRY        "設定をレジストリに保存できませんでした。処理は継続します。"
+    IDS_ERR_WRITESETTING    "%s\n設定ファイルの書き出しに失敗しました"
+    IDS_ERR_CLIPBOARD       "クリップボードの操作に失敗しました"
     IDS_ERR_MAXADD          "登録数の上限に達しました。これ以上は登録できません"
-    IDS_ERR_OPENGLVER       "OpenGLのﾊﾞｰｼﾞｮﾝが古く表示ができません。少なくとも1.5以上のｻﾎﾟｰﾄが必要です。\nこのマシンのOpenGLﾊﾞｰｼﾞｮﾝは %s です。"
+    IDS_ERR_OPENGLVER       "OpenGLのバージョンが古く表示ができません。少なくとも1.5以上のサポートが必要です。\nこのマシンのOpenGLバージョンは %s です。"
     IDS_ERR_OUTOFVRAM       "OpenGL操作でエラーが発生しました\n\nCode=%s, DebugLine=%d"
 END
 
@@ -3713,7 +3713,7 @@ BEGIN
     ID_OPTION_DXF           "CADデータの読み込みレイヤを設定します"
     ID_OPTION_MAKENC        "NC生成に必要な加工条件を設定します\n切削パラメータの設定(F8)"
     ID_OPTION_EDITNC        "NC生成に必要な加工条件をテキストエディタで編集します。外部アプリの１つ目にテキストエディタを登録しておいてください"
-    ID_OPTION_VIEW_SETUP    "画面表示の色、ﾏｳｽの動作をｶｽﾀﾏｲｽﾞできます\n表示属性"
+    ID_OPTION_VIEW_SETUP    "画面表示の色やマウスの動作をカスタマイズできます\n表示属性"
 END
 
 STRINGTABLE
@@ -3732,20 +3732,20 @@ BEGIN
     IDS_CAM_FILTER          "cam\nCAM data (%s)|%s"
     IDS_3DM_FILTER          "3dm\n3dm data (%s)|%s"
     IDS_DXF_FILTER          "dxf\nDXF data (*.dxf)|*.dxf"
-    IDS_NCI_FILTER          "切削条件ﾌｧｲﾙ (*.nci; *.ncj; *.ncw)|*.nci;*.ncj;*.ncw"
-    IDS_NCIM_FILTER         "nci\n切削条件ﾌｧｲﾙ (*.nci)|*.nci"
-    IDS_NCIL_FILTER         "ncj\n旋盤用切削条件ﾌｧｲﾙ (*.ncj)|*.ncj"
+    IDS_NCI_FILTER          "切削条件ファイル (*.nci; *.ncj; *.ncw)|*.nci;*.ncj;*.ncw"
+    IDS_NCIM_FILTER         "nci\n切削条件ファイル (*.nci)|*.nci"
+    IDS_NCIL_FILTER         "ncj\n旋盤用切削条件ファイル (*.ncj)|*.ncj"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_NCIW_FILTER         "ncw\nﾜｲﾔ放電加工機用切削条件ﾌｧｲﾙ (*.ncw)|*.ncw"
+    IDS_NCIW_FILTER         "ncw\nワイヤ放電加工機用切削条件ファイル (*.ncw)|*.ncw"
+    IDS_NCIN_FILTER         "nci\nNURBS曲面用切削条件ファイル (*.nci)|*.nci"
     IDS_NCL_FILTER          "ncl\nLayerFile (*.ncl)|*.ncl"
-    IDS_NCNU_FILTER         "nci\nNurbs曲面用切削条件ﾌｧｲﾙ (*.nci)|*.nci"
-    IDS_EXE_FILTER          "exe\n外部ｱﾌﾟﾘｹｰｼｮﾝ (*.exe)|*.exe"
-    IDS_TXT_FILTER          "txt\nﾃｷｽﾄﾌｧｲﾙ (*.txt)|*.txt"
-    IDS_MC_FILTER           "mnc\n機械情報ﾌｧｲﾙ (*.mnc)|*.mnc"
-    IDS_INI_FILTER          "ini\n表示属性ﾌｧｲﾙ (*.ini)|*.ini"
+    IDS_EXE_FILTER          "exe\n外部アプリケーション (*.exe)|*.exe"
+    IDS_TXT_FILTER          "txt\nテキストファイル (*.txt)|*.txt"
+    IDS_MC_FILTER           "mnc\n機械情報ファイル (*.mnc)|*.mnc"
+    IDS_INI_FILTER          "ini\n表示属性ファイル (*.ini)|*.ini"
     IDS_ALL_FILTER          "|All Files (*.*)|*.*||"
 END
 
@@ -3764,45 +3764,45 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_LATHE_INSIDE    "下穴ﾄﾞﾘﾙまたは既存下穴ｻｲｽﾞの指定なく内径ﾃﾞｰﾀを生成することはできません。内径ﾃﾞｰﾀを無視します。"
-    IDS_ERR_LATHE_LAYER     "旋盤ﾃﾞｰﾀの生成は、内側・外側・突切のﾚｲﾔ3枚までです。"
-    IDS_ERR_LATHE_SHAPE     "Layer=%s\n図形が連続線になっていないようです。\n旋盤ﾃﾞｰﾀを生成できません。"
+    IDS_ERR_LATHE_INSIDE    "下穴ドリルまたは既存下穴サイズの指定なく内径データを生成することはできません。内径データを無視します。"
+    IDS_ERR_LATHE_LAYER     "旋盤データの生成は、内側・外側・突切のレイヤ3枚までです。"
+    IDS_ERR_LATHE_SHAPE     "Layer=%s\n図形が連続線になっていないようです。\n旋盤データを生成できません。"
     IDS_ERR_MAKEDXFLAYER    "少なくとも１つ以上のレイヤを指定してください"
-    IDS_ERR_MAKEMULTILAYER  "切削対象ﾚｲﾔを１つ以上指定してください"
-    IDS_ERR_FAILMULTILAYER  "個別出力設定の以下のﾚｲﾔ\n%s\nには生成ﾃﾞｰﾀが存在しませんでした。切削条件ﾌｧｲﾙ等を確認してください"
-    IDS_ERR_OVERLAPPINGFILE "個別出力ﾌｧｲﾙが重複しています"
-    IDS_ERR_MAKEMULTILAYER_Z "以下のﾚｲﾔは切削条件ﾌｧｲﾙのR点と強制Z座標との関係が不正です\n%s"
-    IDS_ERR_MAKECUSTOM      "切削条件ﾌｧｲﾙのｶｽﾀﾑﾍｯﾀﾞｰ/ﾌｯﾀｰ読み込みでｴﾗｰが発生しました\n無視して生成を始めます"
-    IDS_ERR_MAKENC          "NC生成の対象ﾃﾞｰﾀが見つかりませんでした。\n切削条件ﾌｧｲﾙを確認してください"
-    IDS_ERR_DATAWRITE       "ﾃﾞｰﾀ保存でｴﾗｰが発生しました\nﾌｧｲﾙ名:%s"
-    IDS_ERR_DXF2NCDINIT_EX  "複数ﾚｲﾔ切削条件関係ﾌｧｲﾙの読み書きに失敗しました\nﾌｧｲﾙ名：%s"
-    IDS_ERR_DXF2NCDINIT     "切削条件ﾌｧｲﾙの読み書きに失敗しました\nﾌｧｲﾙ名：%s"
-    IDS_ERR_DXFDATAORG      "原点ﾚｲﾔが見つかりませんでした。\nCADﾃﾞｰﾀを確認してください"
-    IDS_ERR_DXFDATACUT      "切削ﾚｲﾔが見つかりませんでした。\nCADﾃﾞｰﾀを確認してください"
+    IDS_ERR_MAKEMULTILAYER  "切削対象レイヤを１つ以上指定してください"
+    IDS_ERR_FAILMULTILAYER  "個別出力設定の以下のレイヤ\n%s\nには生成データが存在しませんでした。切削条件ファイル等を確認してください"
+    IDS_ERR_OVERLAPPINGFILE "個別出力ファイルが重複しています"
+    IDS_ERR_MAKEMULTILAYER_Z "以下のレイヤは切削条件ファイルのR点と強制Z座標との関係が不正です\n%s"
+    IDS_ERR_MAKECUSTOM      "切削条件ファイルのカスタムヘッダー／フッター読み込みでエラーが発生しました\n無視して生成を始めます"
+    IDS_ERR_MAKENC          "NC生成の対象データが見つかりませんでした。\n切削条件ファイルを確認してください"
+    IDS_ERR_DATAWRITE       "データ保存でエラーが発生しました\nファイル名：%s"
+    IDS_ERR_DXF2NCDINIT_EX  "複数レイヤ切削条件関係ファイルの読み書きに失敗しました\nファイル名：%s"
+    IDS_ERR_DXF2NCDINIT     "切削条件ファイルの読み書きに失敗しました\nファイル名：%s"
+    IDS_ERR_DXFDATAORG      "原点レイヤが見つかりませんでした。\nCADデータを確認してください"
+    IDS_ERR_DXFDATACUT      "切削レイヤが見つかりませんでした。\nCADデータを確認してください"
 END
 
 STRINGTABLE
 BEGIN
     IDS_ERR_SCRIPT          "［生成後に実行するスクリプト］でエラーが発生しました。\nPerl/Pythonの実行環境かスクリプトを確認してください。"
     IDS_ERR_DLL             "以下のアドインDLL\n%s\nが返した内部情報が現在のNCVCのバージョンと合いません\nアドインDLLをバージョンアップするか消去してください"
-    IDS_ERR_PROCESS         "外部編集ﾌﾟﾛｾｽを起動できませんでした"
-    IDS_ERR_THREAD          "現在ﾊﾞｯｸｸﾞﾗｳﾝﾄﾞで処理中です。終了できません"
-    IDS_ERR_FILEREAD        "ﾃﾞｰﾀ読み込み中にｴﾗｰが発生しました"
-    IDS_ERR_SUBPRO          "M99ｻﾌﾞﾌﾟﾛ終了ｺｰﾄﾞが見つかりませんでした"
+    IDS_ERR_PROCESS         "外部編集プロセスを起動できませんでした"
+    IDS_ERR_THREAD          "現在バックグラウンドで処理中です。終了できません"
+    IDS_ERR_FILEREAD        "データ読み込み中にエラーが発生しました"
+    IDS_ERR_SUBPRO          "M99サブプロ終了コードが見つかりませんでした"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_DXF2NCD_FILE        "NCﾃﾞｰﾀの出力先指定"
-    IDS_NCD2DXF_FILE        "DXFﾃﾞｰﾀの出力先指定"
-    IDS_OPTION_INIT         "切削条件ﾌｧｲﾙの参照"
-    IDS_OPTION_INITSAVE     "切削条件ﾌｧｲﾙの新規保存"
-    IDS_CUSTOMFILE          "ｶｽﾀﾑﾍｯﾀﾞｰ/ﾌｯﾀｰﾌｧｲﾙの指定"
-    IDS_OPTION_LAYER2INIT   "ﾚｲﾔ名と切削条件ﾌｧｲﾙの関係ﾌｧｲﾙの参照"
-    IDS_OPTION_LAYER2INITSAVE "ﾚｲﾔ名と切削条件ﾌｧｲﾙの関係ﾌｧｲﾙの保存"
-    IDS_OPTION_MC           "機械情報ﾌｧｲﾙの参照"
+    IDS_DXF2NCD_FILE        "NCデータの出力先指定"
+    IDS_NCD2DXF_FILE        "DXFデータの出力先指定"
+    IDS_OPTION_INIT         "切削条件ファイルの参照"
+    IDS_OPTION_INITSAVE     "切削条件ファイルの新規保存"
+    IDS_CUSTOMFILE          "カスタムヘッダー／フッターファイルの指定"
+    IDS_OPTION_LAYER2INIT   "レイヤ名と切削条件ファイルの関係ファイルの参照"
+    IDS_OPTION_LAYER2INITSAVE "レイヤ名と切削条件ファイルの関係ファイルの保存"
+    IDS_OPTION_MC           "機械情報ファイルの参照"
     IDS_OPTION_MCSAVE       "機械情報の新規保存"
-    IDS_OPTION_MC_MACRO     "ﾏｸﾛ変換I/Fの参照"
+    IDS_OPTION_MC_MACRO     "マクロ変換I/Fの参照"
 END
 
 STRINGTABLE
@@ -3826,7 +3826,7 @@ BEGIN
     ID_NCVIEW_MAXRECT       "最大移動矩形の表示"
     ID_NCVIEW_WORKRECT      "ワークの表示"
     ID_NCVIEW_ALLFIT        "全てのペインを現在のウィンドウ領域に合うように表示します\n全て図形フィット(Shift+Home)"
-    ID_NCVIEW_JUMP          "指定されたNCｺｰﾄﾞの行を表示\nｼﾞｬﾝﾌﾟ"
+    ID_NCVIEW_JUMP          "指定されたNCｺｰﾄﾞの行を表示\nジャンプ"
     ID_NCVIEW_OBS           "オプショナルブロックスキップの設定ダイアログを表示\nOBS設定"
 END
 
@@ -3841,16 +3841,16 @@ END
 
 STRINGTABLE
 BEGIN
-    ID_NCVIEW_TRACE_RUN     "ﾄﾚｰｽ実行\nﾄﾚｰｽ実行(F5)"
-    ID_NCVIEW_TRACE_PAUSE   "ﾄﾚｰｽ一時停止\n一時停止(Shift+F5)"
-    ID_NCVIEW_TRACE_STOP    "ﾄﾚｰｽ停止\n停止(Ctrl+F5)"
+    ID_NCVIEW_TRACE_RUN     "トレース実行\nトレース実行(F5)"
+    ID_NCVIEW_TRACE_PAUSE   "トレース一時停止\n一時停止(Shift+F5)"
+    ID_NCVIEW_TRACE_STOP    "トレース停止\n停止(Ctrl+F5)"
     ID_NCVIEW_TRACE_BREAK   "ブレークポイントの設定/解除\nブレーク(F9)"
     ID_NCVIEW_TRACE_BREAKOFF "全ブレーク解除\n全ブレーク解除(Ctrl+F9)"
     ID_NCVIEW_TRACE_CURSOR  "カーソル位置までトレース実行後、一時停止します\nカーソル位置まで実行(Alt+F5)"
     ID_NCVIEW_TRACE_CURSOR2 "カーソル位置からトレース実行、それ以前は表示されません。ただし再描画されると戻ります\nカーソル位置から実行(Alt+Shift+F5)"
-    ID_NCVIEW_TRACE_FAST    "ﾄﾚｰｽ高速実行\n高速(F2)"
-    ID_NCVIEW_TRACE_MIDDLE  "ﾄﾚｰｽ中速実行\n中速(F3)"
-    ID_NCVIEW_TRACE_LOW     "ﾄﾚｰｽ低速実行\n低速(F4)"
+    ID_NCVIEW_TRACE_FAST    "トレース高速実行\n高速(F2)"
+    ID_NCVIEW_TRACE_MIDDLE  "トレース中速実行\n中速(F3)"
+    ID_NCVIEW_TRACE_LOW     "トレース低速実行\n低速(F4)"
 END
 
 STRINGTABLE
@@ -3891,7 +3891,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_TAB_INFO1           "NCﾌｧｲﾙ情報"
+    IDS_TAB_INFO1           "NCファイル情報"
     IDS_TAB_INFO2           "加工情報"
     IDS_TAB_INFO3           "矩形情報"
     IDCV_FILENAME           "ファイル"
@@ -3902,7 +3902,7 @@ BEGIN
     IDCV_G0LENGTH           "移 動 長"
     IDCV_G1LENGTH           "切 削 長"
     IDCV_SUMLENGTH          "合 　 計"
-    IDCV_CUTTIME            "ﾄｰﾀﾙ加工時間"
+    IDCV_CUTTIME            "トータル加工時間"
     IDCV_MAXRECT            "最大移動矩形"
     IDCV_KARA               "～"
     IDCV_MILI               "mm"
@@ -3935,13 +3935,13 @@ END
 
 STRINGTABLE
 BEGIN
-    ID_WINDOW_ALLCLOSE      "すべてのｳｨﾝﾄﾞｳを閉じます"
+    ID_WINDOW_ALLCLOSE      "すべてのウィンドウを閉じます"
     ID_WINDOW_NEXT          "次のウィンドウに切り替える\n次のウィンドウ(F6)"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_ADDITEM         "ﾘｽﾄｺﾝﾄﾛｰﾙへの登録でｴﾗｰが発生しました。行番号=%d\n登録処理を中断します"
+    IDS_ERR_ADDITEM         "リストコントロールへの登録でエラーが発生しました。行番号=%d\n登録処理を中断します"
 END
 
 STRINGTABLE
@@ -3952,22 +3952,22 @@ END
 STRINGTABLE
 BEGIN
     IDS_ERR_DEEPFINAL       "「深彫最終切り込み」は「基本切り込み」よりも小さく(低く)設定してください"
-    IDS_ERR_DEEPSTEP        "切り込みｽﾃｯﾌﾟはｾﾞﾛ未満(ﾏｲﾅｽ値)でないと無限ﾙｰﾌﾟになります"
-    IDS_ERR_DEEPVALUE       "加工済み深さの指示が「ｵﾌｾｯﾄ」の時は値がｾﾞﾛを超える必要があります"
+    IDS_ERR_DEEPSTEP        "切り込みステップはゼロ未満（マイナス値）でないと無限ループになります"
+    IDS_ERR_DEEPVALUE       "加工済み深さの指示が［オフセット］の時は値がゼロを超える必要があります"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ANA_NOMCFILE        "ﾌｧｲﾙへの保存が選択されませんでした。または書き込みに失敗しました。\n後で機械情報を設定して下さい。関連するﾚｼﾞｽﾄﾘは消去されます"
-    IDS_ANA_MCFILESHIFT     "ﾚｼﾞｽﾄﾘに登録されている機械情報をﾌｧｲﾙに移行します。\n「はい」を選択すると現在の設定がﾌｧｲﾙへ\n「いいえ」を選択すると後で設定し直す必要があります"
-    IDS_ANA_RELOAD          "再読込が必要なｵﾌﾟｼｮﾝが変更されました。再読込しますか？"
-    IDS_ANA_FILEOUTPUT      "%s\nにﾃﾞｰﾀ出力完了しました。"
+    IDS_ANA_NOMCFILE        "ファイルへの保存が選択されませんでした。または書き込みに失敗しました。\n後で機械情報を設定して下さい。関連するレジストリは消去されます"
+    IDS_ANA_MCFILESHIFT     "レジストリに登録されている機械情報をファイルに移行します。\n［はい］を選択すると現在の設定がファイルへ\n［いいえ］を選択すると後で設定し直す必要があります"
+    IDS_ANA_RELOAD          "再読込が必要なオプションが変更されました。再読込しますか？"
+    IDS_ANA_FILEOUTPUT      "%s\nにデータ出力完了しました。"
     IDS_ANA_FILEEXIST       "%s\nがすでに存在します。上書きしますか？"
-    IDS_ANA_FILECHANGE      "%s\n他のｱﾌﾟﾘｹｰｼｮﾝによって更新されたようです。再読込しますか？"
+    IDS_ANA_FILECHANGE      "%s\n他のアプリケーションによって更新されたようです。再読込しますか？"
     IDS_ANA_VALUECHANGE     "%s\nが変更されています。保存しますか？"
     IDS_ANA_OUTLINE         "輪郭加工指示が消去されますが続行しますか？"
     IDS_ANA_STRICTOFFSET    "この処理は手動で輪郭情報を変更したときにだけ必要です。\n実行しますか？"
-    IDS_ANA_DEFVIEWINFO     "ﾃﾞﾌｫﾙﾄ回転情報を保存しました。\n初期化は HOMEｷｰ後、これを再実行してください。"
+    IDS_ANA_DEFVIEWINFO     "デフォルト回転情報を保存しました。\n初期化は HOMEキー後、これを再実行してください。"
     IDS_ANA_ROUGH           "等高線パスで出力したファイル名と同じようです．続行しますか？"
     IDS_ANA_CONTOUR         "スキャニングパスで出力したファイル名と同じようです．続行しますか？"
     IDS_ANA_CONTOUR_ZOFFSET "スキャニングパスのワークの高さと等高線のスキャン最大値が違います．\nこのまま続行しますか？"
@@ -3976,7 +3976,7 @@ END
 STRINGTABLE
 BEGIN
     IDS_ERR_ZCUT            "切削点(切り込み)とR点の関係が間違っています\n切り込みを小さくしてください"
-    IDS_ERR_CUSTOMFILE      "ｶｽﾀﾑﾍｯﾀﾞｰ/ﾌｯﾀｰﾌｧｲﾙを指定してください"
+    IDS_ERR_CUSTOMFILE      "カスタムヘッダー／フッターファイルを指定してください"
 END
 
 STRINGTABLE
@@ -3986,23 +3986,23 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_DXFKEYWORD      "以下のDXFｷｰﾜｰﾄﾞ\n%s\nは現在のNCVCでは未ｻﾎﾟｰﾄです"
-    IDS_ERR_DXFBLOCK        "以下のﾌﾞﾛｯｸ名\n%s\nが見つかりませんでした"
-    IDS_ERR_DXFMISSING      "\nﾃﾞｰﾀが欠落している可能性があります"
-    IDS_ERR_DXFPOLYLINE     "POLYLINEの頂点処理でｴﾗｰが発生しました。CADｿﾌﾄでﾃﾞｰﾀを確認して下さい"
-    IDS_ERR_CADBIND         "有効なCADﾃﾞｰﾀがありませんでした。統合処理を中断します。"
-    IDS_ERR_DXFLAYER        "ﾚｲﾔ名を省略できません"
-    IDS_ERR_BINDAREAOVER    "ﾜｰｸ矩形をはみ出しました。手動で削除/移動させるか、ﾜｰｸ矩形を大きくして再設定してください。"
+    IDS_ERR_DXFKEYWORD      "以下のDXFキーワード\n%s\nは現在のNCVCでは未サポートです．\n頻繁に出るようなら［CADデータの読み込み設定］から［無視するワード］に登録してください．"
+    IDS_ERR_DXFBLOCK        "以下のブロック名\n%s\nが見つかりませんでした"
+    IDS_ERR_DXFMISSING      "\nデータが欠落している可能性があります"
+    IDS_ERR_DXFPOLYLINE     "POLYLINEの頂点処理でエラーが発生しました。CAD側でデータを確認して下さい"
+    IDS_ERR_CADBIND         "有効なCADデータがありませんでした。統合処理を中断します。"
+    IDS_ERR_DXFLAYER        "レイヤ名を省略できません"
+    IDS_ERR_BINDAREAOVER    "ワーク矩形をはみ出しました。手動で削除/移動させるか、ワーク矩形を大きくして再設定してください。"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_TEXTURE         "ﾃｸｽﾁｬ画像の読み込みに失敗しました"
-    IDS_ERR_GLTRACE         "ｿﾘｯﾄﾞ描画が有効でないと、OpenGLﾀﾌﾞでﾄﾚｰｽ描画が実行できません"
-    IDS_ERR_CONTROL         "ｺﾝﾄﾛｰﾙの生成に失敗しました\nFile=%s:DebugLine=%d"
-    IDS_ERR_FILEPATH        "有効なﾌｧｲﾙﾊﾟｽを指示してください"
+    IDS_ERR_TEXTURE         "テクスチャ画像の読み込みに失敗しました"
+    IDS_ERR_GLTRACE         "ソリッド描画が有効でないと、OpenGLタブでトレース描画が実行できません"
+    IDS_ERR_CONTROL         "コントロールの生成に失敗しました\nFile=%s:DebugLine=%d"
+    IDS_ERR_FILEPATH        "有効なファイルパスを指示してください"
     IDS_ERR_SCRIPTEXT       "現在登録できるのは Perl(*.pl) か Python(*.py) のみとなります"
-    IDS_ERR_UNDERZERO       "指定の項目にﾏｲﾅｽ(またはｾﾞﾛ)値を設定できません"
+    IDS_ERR_UNDERZERO       "指定の項目にマイナス（またはゼロ）値を設定できません"
     IDS_ERR_POSITIVE        "指定の項目にプラス値を設定できません"
     IDS_ERR_SETTING         "データを正しく設定してください"
     IDS_ERR_REGEX           "入力した正規表現はライブラリ側で拒否されました。変更してください。"
@@ -4064,16 +4064,16 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_ANA_LOCKADDIN       "ｱﾄﾞｲﾝがﾄﾞｷｭﾒﾝﾄをﾛｯｸしています。終了しますか？"
+    IDS_ANA_LOCKADDIN       "アドインがドキュメントをロックしています。終了しますか？"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_OPTION_EXEC         "外部ｱﾌﾟﾘｹｰｼｮﾝの参照"
+    IDS_OPTION_EXEC         "外部アプリケーションの参照"
     IDS_VIEW_SETUP          "画面表示属性"
-    IDS_VIEW_SETUP_INPORT   "表示属性のｲﾝﾎﾟｰﾄﾌｧｲﾙ指定"
-    IDS_VIEW_SETUP_EXPORT   "表示属性のｴｸｽﾎﾟｰﾄﾌｧｲﾙ指定"
-    IDS_VIEW_TEXTURE        "ﾃｸｽﾁｬ画像の選択"
+    IDS_VIEW_SETUP_INPORT   "表示属性のインポートファイル指定"
+    IDS_VIEW_SETUP_EXPORT   "表示属性のエクスポートファイル指定"
+    IDS_VIEW_TEXTURE        "テクスチャ画像の選択"
 END
 
 STRINGTABLE
@@ -4127,87 +4127,87 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_MAKE_NCD            "NC生成ｵﾌﾟｼｮﾝの設定"
+    IDS_MAKE_NCD            "NC生成オプションの設定"
     IDS_MAKE_DXF            "DXFの出力設定"
     IDS_SETUP_MC            "機械情報の設定"
-    IDS_SETUP_CADLAYER      "CADﾃﾞｰﾀの読み込み設定"
+    IDS_SETUP_CADLAYER      "CADデータの読み込み設定"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_READ_NCD            "ＮＣﾃﾞｰﾀを内部3Dﾃﾞｰﾀに変換中 ..."
+    IDS_READ_NCD            "NCデータを内部3Dデータに変換中 ..."
     IDS_CORRECT_NCD         "補正座標計算中 ..."
-    IDS_MAKENCD_FASE        "CADﾃﾞｰﾀをNCﾃﾞｰﾀに変換中 Phase %d ..."
+    IDS_MAKENCD_FASE        "CADデータをNCデータに変換中 Phase %d ..."
     IDS_RECALC_NCD          "%s 切削時間再計算中 ..."
-    IDS_SHAPESEARCH         "形状ﾃﾞｰﾀを検索中 ..."
+    IDS_SHAPESEARCH         "形状データを検索中 ..."
     IDS_AUTOWORKING         "自動加工指示処理中..."
-    IDS_UVTAPER_NCD         "UVﾃｰﾊﾟｵﾌﾞｼﾞｪｸﾄ生成中 ..."
+    IDS_UVTAPER_NCD         "UVテーパーオブジェクト生成中 ..."
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_MCMACRO         "ﾏｸﾛ呼び出し関連は検索ﾌｫﾙﾀﾞ以外全ての項目の設定が必要です"
+    IDS_ERR_MCMACRO         "マクロ呼び出し関連は検索フォルダ以外全ての項目の設定が必要です"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_CAMDATA         "%s\nNCVC CAMﾃﾞｰﾀではありません"
-    IDS_ERR_CAMVER          "%s\nNCVC CAMﾃﾞｰﾀのﾊﾞｰｼﾞｮﾝが違います。最新のNCVCを取得してください。"
-    IDS_ERR_CAMOLD          "%s\n旧形式のCAMﾃﾞｰﾀです。このﾊﾞｰｼﾞｮﾝはｻﾎﾟｰﾄされなくなりました。\nもう一度CADﾃﾞｰﾀからCAMﾃﾞｰﾀを生成してください。"
-    IDS_ERR_DXF_DRAGOUTLINE "形状集合に属する条件を満たしていないのでﾄﾞﾗｯｸﾞできません"
+    IDS_ERR_CAMDATA         "%s\nNCVC CAMデータではありません"
+    IDS_ERR_CAMVER          "%s\nNCVC CAMデータのバージョンが違います。最新のNCVCを取得してください。"
+    IDS_ERR_CAMOLD          "%s\n旧形式のCAMデータです。このバージョンはサポートされなくなりました。\nもう一度CADデータからCAMデータを生成してください。"
+    IDS_ERR_DXF_DRAGOUTLINE "形状集合に属する条件を満たしていないのでドラッグできません"
     IDS_ERR_DXF_DRAGLINK    "結合座標が見つかりませんでしたので処理が出来ません"
-    IDS_ERR_DXF_CREATEOUTELINE "輪郭ｵﾌﾞｼﾞｪｸﾄ計算でｴﾗｰが発生しました"
+    IDS_ERR_DXF_CREATEOUTELINE "輪郭オブジェクト計算でエラーが発生しました"
 END
 
 STRINGTABLE
 BEGIN
     IDS_ERR_NCBLK_LATHEHOLE "外径よりも大きい"
-    IDS_ERR_NCBLK_NOTLATHE  "旋盤ﾓｰﾄﾞではｻﾎﾟｰﾄされない"
+    IDS_ERR_NCBLK_NOTLATHE  "旋盤モードではサポートされない"
     IDS_ERR_NCBLK_CORRECT   "選択されている工作機械設定に工具情報がない"
     IDS_ERR_NCBLK_CORRECTSTART "工具情報がなく補正開始できない"
-    IDS_ERR_NCBLK_CORRECTLINE "補正またはﾃｰﾊﾟ開始ｺｰﾄﾞは直線補間限定"
-    IDS_ERR_NCBLK_CORRECTOBJECT "補正またはﾃｰﾊﾟｵﾌﾞｼﾞｪｸﾄ生成ｴﾗｰ"
+    IDS_ERR_NCBLK_CORRECTLINE "補正またはテーパ開始コードは直線補間限定"
+    IDS_ERR_NCBLK_CORRECTOBJECT "補正またはテーパオブジェクト生成エラー"
     IDS_ERR_NCBLK_CORRECTING "補正処理中の補正値変更には対応していない"
-    IDS_ERR_NCBLK_ENDCIRCLE "補正またはﾃｰﾊﾟ処理の最後が円弧補間では計算出来ない"
-    IDS_ERR_NCBLK_G10ADDTOOL "G10ﾂｰﾙ仮登録で失敗"
-    IDS_ERR_NCBLK_TAPER     "ﾃｰﾊﾟｰﾓｰﾄﾞでない"
-    IDS_ERR_NCBLK_GTYPE     "切削ｺｰﾄﾞでない"
+    IDS_ERR_NCBLK_ENDCIRCLE "補正またはテーパ処理の最後が円弧補間では計算出来ない"
+    IDS_ERR_NCBLK_G10ADDTOOL "G10ツール仮登録で失敗"
+    IDS_ERR_NCBLK_TAPER     "テーパモードでない"
+    IDS_ERR_NCBLK_GTYPE     "切削コードでない"
     IDS_ERR_NCBLK_PLANE     "平面が違う"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_NCBLK_UNKNOWN   "未知ｴﾗｰ"
+    IDS_ERR_NCBLK_UNKNOWN   "未知エラー"
     IDS_ERR_NCBLK_VALUE     "座標値が認識できない"
     IDS_ERR_NCBLK_ORDER     "必要な指示値が認識できない"
     IDS_ERR_NCBLK_OVER      "指定できる値の範囲を超えている"
-    IDS_ERR_NCBLK_M98       "ｻﾌﾞﾌﾟﾛまたはﾏｸﾛが見つからない"
-    IDS_ERR_NCBLK_M98L      "ｻﾌﾞﾌﾟﾛ呼び出しは4階層まで"
-    IDS_ERR_NCBLK_CHAMFERING "ｺｰﾅ,面取り指示ｴﾗｰ"
-    IDS_ERR_NCBLK_FILE      "File読み込みｴﾗｰ"
+    IDS_ERR_NCBLK_M98       "サブプロまたはマクロが見つからない"
+    IDS_ERR_NCBLK_M98L      "サブプロ呼び出しは4階層まで"
+    IDS_ERR_NCBLK_CHAMFERING "コーナー，面取り指示エラー"
+    IDS_ERR_NCBLK_FILE      "ファイル読み込みエラー"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_NCBLK_CIRCLECENTER "円弧補間の中心計算ｴﾗｰ"
-    IDS_ERR_NCBLK_NOTCYCLEZ "固定ｻｲｸﾙの切り込み値がない"
+    IDS_ERR_NCBLK_CIRCLECENTER "円弧補間の中心計算エラー"
+    IDS_ERR_NCBLK_NOTCYCLEZ "固定サイクルの切り込み値がない"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_NCBLK_INTERSECTION "交点計算ｴﾗｰ"
+    IDS_ERR_NCBLK_INTERSECTION "交点計算エラー"
     IDS_ERR_NCBLK_LENGTH    "補正のための長さが足らない"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ERR_DRAGTREE        "移動処理に失敗しました。ﾄﾞﾗｯｸﾞ処理を中断します。"
+    IDS_ERR_DRAGTREE        "移動処理に失敗しました。ドラッグ処理を中断します。"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_ANA_DATAINIT        "ﾃﾞｰﾀ準備中!!!"
-    IDS_ANA_DATAFINAL       "NCﾃﾞｰﾀ出力中!!!"
+    IDS_ANA_DATAINIT        "データ準備中!!!"
+    IDS_ANA_DATAFINAL       "NCデータ出力中!!!"
 END
 
 STRINGTABLE
@@ -4217,14 +4217,14 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_MAKENCD_TITLE_BASIC "標準NCﾃﾞｰﾀ生成"
-    IDS_MAKENCD_TITLE_EX1   "ﾚｲﾔごとの複数条件でNCﾃﾞｰﾀ生成"
-    IDS_MAKENCD_TITLE_EX2   "ﾚｲﾔごとのZ座標指定でNCﾃﾞｰﾀ生成"
-    IDS_MAKENCD_TITLE_SHAPE "形状加工によるNCﾃﾞｰﾀ生成"
-    IDS_MAKENCD_TITLE_LATHE "旋盤用NCﾃﾞｰﾀの生成"
-    IDS_MAKENCD_TITLE_WIRE  "ﾜｲﾔ放電加工機用NCﾃﾞｰﾀの生成"
+    IDS_MAKENCD_TITLE_BASIC "標準NCデータ生成"
+    IDS_MAKENCD_TITLE_EX1   "レイヤごとの複数条件でNCデータ生成"
+    IDS_MAKENCD_TITLE_EX2   "レイヤごとのZ座標指定でNCデータ生成"
+    IDS_MAKENCD_TITLE_SHAPE "形状加工によるNCデータ生成"
+    IDS_MAKENCD_TITLE_LATHE "旋盤用NCデータの生成"
+    IDS_MAKENCD_TITLE_WIRE  "ワイヤ放電加工機用NCデータの生成"
     IDS_MAKENCD_TITLE_ROUGH "NURBS曲面スキャニングパスのNCデータ出力"
-    IDS_MAKENCD_TITLE_CONTOUR "NURBS曲面等高線パスのNデータ出力"
+    IDS_MAKENCD_TITLE_CONTOUR "NURBS曲面等高線パスのNCデータ出力"
 END
 
 STRINGTABLE
@@ -4245,7 +4245,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDR_3DMTYPE             "\n\n\n3DM ﾌｧｲﾙ (*.igs; *.iges; *.stl)\n\n\n"
+    IDR_3DMTYPE             "\n\n\n3DM ファイル (*.igs; *.iges; *.stl)\n\n\n"
 END
 
 STRINGTABLE
@@ -4257,8 +4257,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_SCRIPT_FILTER       "ｽｸﾘﾌﾟﾄﾌｧｲﾙ (*.pl; *.py)|*.pl;*.py"
-    IDS_TEXTURE_FILTER      "ﾃｸｽﾁｬ画像ﾌｧｲﾙ (*.bmp; *.png; *.gif; *.jpeg; *.tiff)|*.bmp;*.png;*.gif;*.jpg;*.jpeg;*.tif;*.tiff"
+    IDS_SCRIPT_FILTER       "スクリプトファイル (*.pl; *.py)|*.pl;*.py"
+    IDS_TEXTURE_FILTER      "テクスチャ画像ファイル (*.bmp; *.png; *.gif; *.jpeg; *.tiff)|*.bmp;*.png;*.gif;*.jpg;*.jpeg;*.tif;*.tiff"
 END
 
 #endif    // 日本語 (日本) resources
