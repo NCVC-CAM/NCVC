@@ -1,9 +1,9 @@
 ===========================================================================
-【ソ フ ト名】　NCVC - NC(Gcode) Viewer and Converter Ver4.00
-【登  録  名】　ncvc400.zip
+【ソ フ ト名】　NCVC - NC(Gcode) Viewer and Converter Ver4.xx
+【登  録  名】　ncvc4xx.zip
 【著作権  者】　眞柄　賢一
 【対応  ＯＳ】　Windows Vista 以降（全VerOSで動作確認したわけではありません）
-【掲  載  日】　2022/04/01
+【掲  載  日】　2022/xx/xx
 【ソフト種別】　フリーソフト
 【転載  条件】　事後でも連絡
 ===========================================================================
@@ -24,7 +24,7 @@
 
 
 【ファイルリスト】
-　ncvc400.zipには、次のファイルがあります。
+　ncvc4xx.zipには、次のファイルがあります。
 NCVC.exe             ： 本体
 Init.mnc             ： 機械情報のサンプル
 Lathe.mnc            ： 機械情報のサンプル(旋盤)
@@ -251,11 +251,11 @@ E-mail:magara[at]maizuru-ct.ac.jp
 
 
 【開発環境】
-ＣＰＵ　　　：Core i7-10770K
+ＣＰＵ　　　：Core i7-10700K
 メモリ　　　：16GB
 ビデオ　　　：GeForce RTX 2070
-ＯＳ　　　　：Windows 10 Enterprise(64bit)
+ＯＳ　　　　：Windows 11 Enterprise(64bit)
 開発環境　　：Visual Studio Professional/Community 2022
-ライブラリ　：MFC, boost-1.78.0, GLEW-2.10, Kodatuno-R3.4改
+ライブラリ　：MFC, boost-1.79.0, GLEW-2.10, Kodatuno-R3.4改
 　Kodatunoは、金沢大学マンマシン研究室で開発されている
 　オープンソースCAMカーネルです
