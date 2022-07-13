@@ -19,7 +19,6 @@ enum RENDERMODE
 
 class C3dModelView : public CViewBaseGL
 {
-	CPoint		m_ptLclick;			// Downのときのマウスポイント
 	int			m_icx, m_icy;		// FBOを作った時のサイズ
 	NURBSC*		m_pSelCurve;		// 選択した曲線
 	NURBSS*		m_pSelFace;			// 選択した曲面

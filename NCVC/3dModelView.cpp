@@ -342,7 +342,7 @@ void C3dModelView::OnDestroy()
 
 void C3dModelView::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	m_ptLclick = point;
+	m_ptLclick = point;		// ViewBaseGL.h
 	__super::OnLButtonDown(nFlags, point);
 }
 

@@ -57,6 +57,8 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_WM_DESTROY()
 	ON_WM_SIZE()
 	ON_WM_CONTEXTMENU()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
 	ON_WM_LBUTTONDBLCLK()
 	ON_WM_KEYDOWN()
 	// Õﬂ∞ºﬁêÿë÷≤Õﬁ›ƒ
@@ -1328,6 +1330,21 @@ void CNCViewGL::OnContextMenu(CWnd* pWnd, CPoint point)
 	CMenu*	pMenu = menu.GetSubMenu(0);
 	pMenu->TrackPopupMenu(TPM_LEFTALIGN|TPM_LEFTBUTTON|TPM_RIGHTBUTTON,
 		point.x, point.y, AfxGetMainWnd());
+}
+
+void CNCViewGL::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	m_ptLclick = point;
+	__super::OnLButtonDown(nFlags, point);
+}
+
+void CNCViewGL::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	if ( m_ptLclick == point ) {
+		// ÉsÉbÉNèàóù
+//		DoSelect(point);
+	}
+	__super::OnLButtonUp(nFlags, point);
 }
 
 void CNCViewGL::OnLButtonDblClk(UINT nFlags, CPoint point) 

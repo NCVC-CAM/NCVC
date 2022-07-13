@@ -21,7 +21,8 @@ protected:
 	CFrameBuffer*	m_pFBO;			// FrameBufferObject
 	int			m_cx,  m_cy;		// ｳｨﾝﾄﾞｳｻｲｽﾞ(ｽｸﾘｰﾝ)
 	TRACKINGMODE	m_enTrackingMode;
-	CPoint		m_ptDownClick;		// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示用他
+	CPoint		m_ptLclick,			// Downのときのマウスポイント
+				m_ptDownClick;		// ｺﾝﾃｷｽﾄﾒﾆｭｰ表示用他
 	float		m_dRate,			// 基準拡大率
 				m_dRoundAngle,		// 中ﾎﾞﾀﾝの回転角度
 				m_dRoundStep;		// 中ﾎﾞﾀﾝの１回あたりの回転角度
