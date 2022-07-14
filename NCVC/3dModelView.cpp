@@ -197,7 +197,7 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 		        if ( body->NurbsC[j].EntUseFlag==GEOMTRYELEM && body->NurbsC[j].BlankStat==DISPLAY ) {
 					::glDisable(GL_LIGHTING);	// DrawNurbsCurve()‚Ì’†‚ÅEnable‚³‚ê‚é
 					ZEROCLR(rgb);			// CustomClass.h
-					IDtoRGB(id, rgb);
+					IDtoRGB(id, rgb);		// ViewBaseGL.cpp
 					::glColor3ubv(rgb);
 					bd.DrawNurbsCurve(body->NurbsC[j]);
 				}

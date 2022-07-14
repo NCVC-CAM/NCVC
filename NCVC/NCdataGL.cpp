@@ -370,11 +370,21 @@ void CNCline::DrawGLWirePass(RENDERMODE enRender) const
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
-		COLORREF col = pOpt->GetNcDrawColor(
-			m_obCdata.IsEmpty() ? (GetPenType()+NCCOL_G0) : NCCOL_CORRECT);
+		GLubyte		rgb[3];
+		if ( enRender == RM_NORMAL ) {
+			COLORREF col = pOpt->GetNcDrawColor(
+				m_obCdata.IsEmpty() ? (GetPenType()+NCCOL_G0) : NCCOL_CORRECT);
+			rgb[0] = GetRValue(col);
+			rgb[1] = GetGValue(col);
+			rgb[2] = GetBValue(col);
+		}
+		else {
+			// ブロック行をカラーコードに設定
+			IDtoRGB(GetBlockLineNo(), rgb);		// ViewBaseGL.cpp
+		}
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
 		::glBegin(GL_LINES);
-			::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+			::glColor3ubv(rgb);
 			::glVertex3fv(m_ptValS.xyz);
 			::glVertex3fv(m_ptValE.xyz);
 		::glEnd();
@@ -809,22 +819,32 @@ int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GL
 // CNCcycle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcycle::DrawGLWirePass(RENDERMODE) const
+void CNCcycle::DrawGLWirePass(RENDERMODE enRender) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	colG0 = pOpt->GetNcDrawColor( NCCOL_G0 ),
-				colCY = pOpt->GetNcDrawColor( NCCOL_CYCLE );
-	GLubyte	bG0col[3], bCYcol[3];
-	bG0col[0] = GetRValue(colG0);
-	bG0col[1] = GetGValue(colG0);
-	bG0col[2] = GetBValue(colG0);
-	bCYcol[0] = GetRValue(colCY);
-	bCYcol[1] = GetGValue(colCY);
-	bCYcol[2] = GetBValue(colCY);
+	GLubyte		rgbG0[3], rgbCY[3];
+
+	if ( enRender == RM_NORMAL ) {
+		COLORREF	colG0 = pOpt->GetNcDrawColor( NCCOL_G0 ),
+					colCY = pOpt->GetNcDrawColor( NCCOL_CYCLE );
+		rgbG0[0] = GetRValue(colG0);
+		rgbG0[1] = GetGValue(colG0);
+		rgbG0[2] = GetBValue(colG0);
+		rgbCY[0] = GetRValue(colCY);
+		rgbCY[1] = GetGValue(colCY);
+		rgbCY[2] = GetBValue(colCY);
+	}
+	else {
+		// ブロック行をカラーコードに設定
+		IDtoRGB(GetBlockLineNo(), rgbG0);		// ViewBaseGL.cpp
+		rgbCY[0] = rgbG0[0];
+		rgbCY[1] = rgbG0[1];
+		rgbCY[2] = rgbG0[2];
+	}
 
 	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern);
 	::glBegin(GL_LINE_STRIP);
-		::glColor3ubv( bG0col );
+		::glColor3ubv( rgbG0 );
 		::glVertex3fv(m_ptValS.xyz);
 		::glVertex3fv(m_ptValI.xyz);
 		::glVertex3fv(m_ptValR.xyz);
@@ -833,11 +853,11 @@ void CNCcycle::DrawGLWirePass(RENDERMODE) const
 	::glBegin(GL_LINES);
 	for ( int i=0; i<m_nDrawCnt; i++ ) {
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern);
-		::glColor3ubv( bG0col );
+		::glColor3ubv( rgbG0 );
 		::glVertex3fv(m_Cycle3D[i].ptI.xyz);
 		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_CYCLE)].nGLpattern);
-		::glColor3ubv( bCYcol );
+		::glColor3ubv( rgbCY );
 		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
 		::glVertex3fv(m_Cycle3D[i].ptC.xyz);
 	}
@@ -939,11 +959,21 @@ void CNCcircle::DrawGLWirePass(RENDERMODE enRender) const
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
-		COLORREF	col = pOpt->GetNcDrawColor(
-			m_obCdata.IsEmpty() ? NCCOL_G1 : NCCOL_CORRECT);
+		GLubyte		rgb[3];
+		if ( enRender == RM_NORMAL ) {
+			COLORREF	col = pOpt->GetNcDrawColor(
+				m_obCdata.IsEmpty() ? NCCOL_G1 : NCCOL_CORRECT);
+			rgb[0] = GetRValue(col);
+			rgb[1] = GetGValue(col);
+			rgb[2] = GetBValue(col);
+		}
+		else {
+			// ブロック行をカラーコードに設定
+			IDtoRGB(GetBlockLineNo(), rgb);		// ViewBaseGL.cpp
+		}
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
 		::glBegin(GL_LINE_STRIP);
-			::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+			::glColor3ubv(rgb);
 			DrawGLWirePassCircle(m_ptValS, m_ptValE);
 		::glEnd();
 	}
