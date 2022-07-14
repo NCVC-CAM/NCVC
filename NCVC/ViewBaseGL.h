@@ -80,3 +80,10 @@ public:
 };
 
 void	OutputGLErrorMessage(GLenum, UINT);
+
+// インデックスIDとRGBAを変換
+#define	PICKREGION		5
+#define	READBUF			(2*PICKREGION*2*PICKREGION*4)
+void	IDtoRGB(int, GLubyte[]);
+int		RGBtoID(GLubyte[]);
+int		SearchSelectID(GLubyte[]);

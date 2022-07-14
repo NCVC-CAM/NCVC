@@ -15,15 +15,6 @@
 #define new DEBUG_NEW
 #endif
 
-#define	PICKREGION		5
-#define	READBUF			(2*PICKREGION*2*PICKREGION*4)
-
-// インデックスIDとRGBAを変換するローカルコード
-static	void	IDtoRGB(int, GLubyte[]);
-static	int		RGBtoID(GLubyte[]);
-static	int		SearchSelectID(GLubyte[]);
-static	void	SetKodatunoColor(DispStat&, COLORREF);
-
 IMPLEMENT_DYNCREATE(C3dModelView, CViewBaseGL)
 
 BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
@@ -355,6 +346,13 @@ void C3dModelView::OnLButtonUp(UINT nFlags, CPoint point)
 	__super::OnLButtonUp(nFlags, point);
 }
 
+void C3dModelView::SetKodatunoColor(DispStat& Dstat, COLORREF col)
+{
+	Dstat.Color[0] = GetRValue(col) / 255.0f;
+	Dstat.Color[1] = GetGValue(col) / 255.0f;
+	Dstat.Color[2] = GetBValue(col) / 255.0f;
+}
+
 void C3dModelView::DoSelect(const CPoint& pt)
 {
 	CClientDC	dc(this);
@@ -560,77 +558,4 @@ void C3dModelView::OnFile3dSmooth()
 		// 仕上げ加工スキャンパス描画
 		Invalidate(FALSE);
 	}
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-void IDtoRGB(int id, GLubyte rgb[])
-{
-	// 0～254 の数値を RGB に変換
-	// （255 は白色クリア値）
-	div_t	d;
-	int		n = 0;
-
-	d.quot = id;
-	do {
-		d = div(d.quot, 254);
-		rgb[n++] = d.rem;
-	} while ( d.quot>0 && n<3 );
-}
-
-int RGBtoID(GLubyte rgb[])
-{
-	return rgb[0]==255 && rgb[1]==255 && rgb[2]==255 ?
-		-1 : (rgb[2]*254*254 + rgb[1]*254 + rgb[0]);
-}
-
-int SearchSelectID(GLubyte buf[])
-{
-	GLubyte			rgb[3];
-	std::map<int, int>	mp;
-	int				id, maxct=0, maxid=-1;
-
-	for ( int i=0; i<READBUF; i+=4 ) {
-		rgb[0] = buf[i+0];
-		rgb[1] = buf[i+1];
-		rgb[2] = buf[i+2];
-		id = RGBtoID(rgb);
-		if ( id >= 0 ) {
-			mp[id] = mp[id] + 1;	// mp[id]++; ではワーニング
-		}
-	}
-
-	typedef std::map<int, int>::const_reference	T;
-	BOOST_FOREACH(T x, mp) {
-		if ( maxct < x.second ) {
-			maxid = x.first;
-			maxct = x.second;
-		}
-	}
-
-#ifdef _DEBUG
-	for ( int y=0; y<2*PICKREGION; y++ ) {
-		CString	str, s;
-		for ( int x=0; x<2*PICKREGION; x++ ) {
-			rgb[0] = buf[4*(y*2*PICKREGION+x)+0];
-			rgb[1] = buf[4*(y*2*PICKREGION+x)+1];
-			rgb[2] = buf[4*(y*2*PICKREGION+x)+2];
-			s.Format(" %d", RGBtoID(rgb));
-//			s.Format(" %u", buf[4*(y*2*PICKREGION+x)+0]);
-			str += s;
-		}
-		printf("pBuf[%d]=%s\n", y, LPCTSTR(str));
-	}
-	printf("size=%zd\n", mp.size());
-	printf("maxid=%d, cnt=%d\n", maxid, maxct);
-#endif
-
-	return maxid;
-}
-
-void SetKodatunoColor(DispStat& Dstat, COLORREF col)
-{
-	Dstat.Color[0] = GetRValue(col) / 255.0f;
-	Dstat.Color[1] = GetGValue(col) / 255.0f;
-	Dstat.Color[2] = GetBValue(col) / 255.0f;
 }
