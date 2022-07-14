@@ -247,11 +247,11 @@ static inline void _SetEndmillCircleYZ_Half
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀｸﾗｽ
 //////////////////////////////////////////////////////////////////////
 
-void CNCdata::DrawGLWirePass(void) const
+void CNCdata::DrawGLWirePass(RENDERMODE enRender) const
 {
 	// 派生ｸﾗｽからの共通呼び出し
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawGLWirePass();
+		m_obCdata[i]->DrawGLWirePass(enRender);
 }
 
 void CNCdata::DrawGLLatheDepth(void) const
@@ -365,7 +365,7 @@ void CNCdata::AddEndmillSphere(const CPoint3F& ptOrg, BOTTOMDRAW& bd, CVBtmDraw&
 // CNCline クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCline::DrawGLWirePass(void) const
+void CNCline::DrawGLWirePass(RENDERMODE enRender) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -380,7 +380,7 @@ void CNCline::DrawGLWirePass(void) const
 		::glEnd();
 	}
 
-	CNCdata::DrawGLWirePass();
+	CNCdata::DrawGLWirePass(enRender);
 }
 
 void CNCline::DrawGLLatheDepth(void) const
@@ -809,7 +809,7 @@ int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GL
 // CNCcycle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcycle::DrawGLWirePass(void) const
+void CNCcycle::DrawGLWirePass(RENDERMODE) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	colG0 = pOpt->GetNcDrawColor( NCCOL_G0 ),
@@ -934,7 +934,7 @@ int CNCcycle::AddGLWireTexture(size_t, float&, float, GLfloat*) const
 // CNCcircle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcircle::DrawGLWirePass(void) const
+void CNCcircle::DrawGLWirePass(RENDERMODE enRender) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -948,7 +948,7 @@ void CNCcircle::DrawGLWirePass(void) const
 		::glEnd();
 	}
 
-	CNCdata::DrawGLWirePass();
+	CNCdata::DrawGLWirePass(enRender);
 }
 
 void CNCcircle::DrawGLLatheDepth(void) const

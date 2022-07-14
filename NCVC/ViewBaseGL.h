@@ -11,6 +11,12 @@ enum TRACKINGMODE
 	TM_NONE, TM_SPIN, TM_PAN
 };
 
+// RenderMode
+enum RENDERMODE
+{
+	RM_NORMAL, RM_PICKLINE, RM_PICKFACE
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // CViewBase
 

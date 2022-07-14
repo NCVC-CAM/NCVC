@@ -8,12 +8,6 @@
 #include "Kodatuno/Describe_BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
 
-// RenderMode
-enum RENDERMODE
-{
-	RM_NORMAL, RM_PICKLINE, RM_PICKFACE
-};
-
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView ÉrÉÖÅ[
 
