@@ -1,6 +1,6 @@
 // NCViewGL.cpp : 実装ファイル
 //
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
 #include "NCVC.h"
@@ -630,6 +630,37 @@ void CNCViewGL::RenderMill(const CNCdata* pData)
 		::glDrawRangeElements(GL_TRIANGLE_FAN, 65, 129,
 				(GLsizei)(bd.vel.size()), GL_UNSIGNED_INT, &(bd.vel[0]));
 	}
+}
+
+void CNCViewGL::DoSelect(const CPoint& pt)
+{
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
+	::glClearColor(1.0, 1.0, 1.0, 1.0);
+	::glClearDepth(1.0);
+	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	// 行番号をカラーコードにして描画
+	RenderCode(RM_PICKLINE);
+	// マウスポイントの色情報を取得
+	GLubyte	buf[READBUF];
+	::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	::glReadPixels(pt.x-PICKREGION, m_cy-pt.y-PICKREGION,	// y座標に注意!!
+		2*PICKREGION, 2*PICKREGION, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+	GetGLError();
+	// カラーコードから行番号へ
+	int		nResult = SearchSelectID(buf);
+	// リスト選択
+	CNCChild* pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
+	if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {	// 念のため
+		pFrame->SetJumpList(nResult);
+	}
+
+	// 再描画
+	Invalidate(FALSE);
+
+	::wglMakeCurrent(NULL, NULL);
 }
 
 void CNCViewGL::DoScale(int nRate)
@@ -1342,7 +1373,7 @@ void CNCViewGL::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	if ( m_ptLclick == point ) {
 		// ピック処理
-//		DoSelect(point);
+		DoSelect(point);
 	}
 	__super::OnLButtonUp(nFlags, point);
 }

@@ -632,13 +632,11 @@ void IDtoRGB(int id, GLubyte rgb[])
 	// 0～254 の数値を RGB に変換
 	// （255 は白色クリア値）
 	div_t	d;
-	int		n = 0;
-
 	d.quot = id;
-	do {
+	for ( int i=0; i<3; i++ ) {
 		d = div(d.quot, 254);
-		rgb[n++] = d.rem;
-	} while ( d.quot>0 && n<3 );
+		rgb[i] = d.rem;
+	}
 }
 
 int RGBtoID(GLubyte rgb[])

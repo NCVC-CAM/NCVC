@@ -152,6 +152,7 @@ class CNCViewGL : public CViewBaseGL
 	void	RenderAxis(void);
 	void	RenderCode(RENDERMODE);
 	void	RenderMill(const CNCdata*);
+	void	DoSelect(const CPoint&);
 
 #ifdef _DEBUG
 	void	DumpDepth(void) const;

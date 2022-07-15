@@ -196,7 +196,6 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 			for ( j=0; j<body->TypeNum[_NURBSC]; j++, id++ ) {
 		        if ( body->NurbsC[j].EntUseFlag==GEOMTRYELEM && body->NurbsC[j].BlankStat==DISPLAY ) {
 					::glDisable(GL_LIGHTING);	// DrawNurbsCurve()の中でEnableされる
-					ZEROCLR(rgb);			// CustomClass.h
 					IDtoRGB(id, rgb);		// ViewBaseGL.cpp
 					::glColor3ubv(rgb);
 					bd.DrawNurbsCurve(body->NurbsC[j]);
@@ -220,14 +219,12 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 			// 識別番号を色にセットして描画
 			for ( j=0; j<body->TypeNum[_NURBSS]; j++, id++ ) {
 				if ( body->NurbsS[j].TrmdSurfFlag != KOD_TRUE ) {
-					ZEROCLR(rgb);
 					IDtoRGB(id, rgb);
 					::glColor3ubv(rgb);
 					bd.DrawNurbsSurfe(body->NurbsS[j]);
 				}
 			}
 			for ( j=0; j<body->TypeNum[_TRIMMED_SURFACE]; j++, id++ ) {
-				ZEROCLR(rgb);
 				IDtoRGB(id, rgb);
 				::glColor3ubv(rgb);
 				bd.DrawTrimdSurf(body->TrmS[j]);
