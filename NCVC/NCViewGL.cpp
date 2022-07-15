@@ -387,7 +387,7 @@ void CNCViewGL::CreateDisplayList(void)
 	if( m_glCode > 0 ) {
 		// NC√ﬁ∞¿ï`âÊÇÃ√ﬁ®ΩÃﬂ⁄≤ÿΩƒê∂ê¨
 		::glNewList( m_glCode, GL_COMPILE );
-			RenderCode();
+			RenderCode(RM_NORMAL);
 		::glEndList();
 		if ( GetGLError() != GL_NO_ERROR ) {
 			::glDeleteLists(m_glCode, 1);
@@ -557,7 +557,7 @@ void CNCViewGL::RenderAxis(void)
 	::glPopAttrib();
 }
 
-void CNCViewGL::RenderCode(void)
+void CNCViewGL::RenderCode(RENDERMODE enRender)
 {
 	if ( IsWireMode() )
 		return;
@@ -568,7 +568,7 @@ void CNCViewGL::RenderCode(void)
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
 		pData = GetDocument()->GetNCdata(i);
 		if ( pData->GetGtype() == G_TYPE ) {
-			pData->DrawGLWirePass();
+			pData->DrawGLWirePass(enRender);
 		}
 	}
 	::glDisable( GL_LINE_STIPPLE );
@@ -882,7 +882,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 			if ( m_glCode > 0 )
 				::glCallList( m_glCode );
 			else
-				RenderCode();
+				RenderCode(RM_NORMAL);
 		}
 	}
 

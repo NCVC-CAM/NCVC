@@ -229,7 +229,7 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
-	virtual	void	DrawGLWirePass(RENDERMODE = RM_NORMAL) const;
+	virtual	void	DrawGLWirePass(RENDERMODE) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
@@ -301,7 +301,7 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
-	virtual	void	DrawGLWirePass(RENDERMODE = RM_NORMAL) const;
+	virtual	void	DrawGLWirePass(RENDERMODE) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
@@ -380,7 +380,7 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
-	virtual	void	DrawGLWirePass(RENDERMODE = RM_NORMAL) const;
+	virtual	void	DrawGLWirePass(RENDERMODE) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
@@ -473,7 +473,7 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
-	virtual	void	DrawGLWirePass(RENDERMODE = RM_NORMAL) const;
+	virtual	void	DrawGLWirePass(RENDERMODE) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;

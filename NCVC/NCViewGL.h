@@ -150,7 +150,7 @@ class CNCViewGL : public CViewBaseGL
 	void	EndOfCreateElementThread(void);
 
 	void	RenderAxis(void);
-	void	RenderCode(void);
+	void	RenderCode(RENDERMODE);
 	void	RenderMill(const CNCdata*);
 
 #ifdef _DEBUG
