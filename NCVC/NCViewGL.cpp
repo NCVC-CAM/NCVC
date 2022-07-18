@@ -70,6 +70,8 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewGL::OnUpdateMoveRoundKey)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &CNCViewGL::OnLensKey)
 	ON_COMMAND(ID_OPTION_DEFVIEWINFO, &CNCViewGL::OnDefViewInfo)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_LATHEMODE, &CNCViewGL::OnUpdateLatheViewMode)
+	ON_COMMAND(ID_NCVIEW_LATHEMODE, &CNCViewGL::OnLatheViewMode)
 	//
 	ON_MESSAGE(WM_USERTRACESELECT, &CNCViewGL::OnSelectTrace)
 END_MESSAGE_MAP()
@@ -1354,6 +1356,28 @@ void CNCViewGL::OnDefViewInfo()
 	AfxMessageBox(IDS_ANA_DEFVIEWINFO, MB_OK|MB_ICONINFORMATION);
 }
 
+void CNCViewGL::OnUpdateLatheViewMode(CCmdUI* pCmdUI) 
+{
+	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && IsLatheMode() ) {
+		pCmdUI->SetCheck(m_bSlitView);
+	}
+	else {
+		pCmdUI->SetCheck(FALSE);
+		pCmdUI->Enable(FALSE);
+	}
+}
+
+void CNCViewGL::OnLatheViewMode() 
+{
+	m_bSlitView = !m_bSlitView;	// 断面表示切り替え（旋盤）
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+		CreateVBOLathe();	// 頂点ｲﾝﾃﾞｯｸｽ再生成
+	::wglMakeCurrent( NULL, NULL );
+	Invalidate(FALSE);
+}
+
 void CNCViewGL::OnContextMenu(CWnd* pWnd, CPoint point) 
 {
 	CMenu	menu;
@@ -1382,16 +1406,7 @@ void CNCViewGL::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
-		// ﾛｰｶﾙ設定だけを切替
-		if ( nFlags&MK_CONTROL && IsLatheMode() ) {
-			m_bSlitView = !m_bSlitView;	// 断面表示切り替え（旋盤）
-			CClientDC	dc(this);
-			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-				CreateVBOLathe();	// 頂点ｲﾝﾃﾞｯｸｽ再生成
-			::wglMakeCurrent( NULL, NULL );
-		}
-		else
-			m_bWirePath = !m_bWirePath;	// パス表示切り替え
+		m_bWirePath = !m_bWirePath;	// パス表示切り替え
 		Invalidate(FALSE);
 	}
 }

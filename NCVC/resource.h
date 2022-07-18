@@ -416,6 +416,7 @@
 #define ID_NCVIEW_ALLFIT                3003
 #define ID_NCVIEW_JUMP                  3005
 #define ID_NCVIEW_OBS                   3006
+#define ID_NCVIEW_LATHEMODE             3007
 #define ID_NCVIEW_TRACE_RUN             3011
 #define ID_NCVIEW_TRACE_PAUSE           3012
 #define ID_NCVIEW_TRACE_STOP            3013
@@ -907,6 +908,7 @@
 #define IDS_ANA_CONTOUR_ZOFFSET         29020
 #define IDS_ANA_DATAINIT                29100
 #define IDS_ANA_DATAFINAL               29101
+#define ID_32833                        32833
 #define ID_INDICATOR_DATE               59200
 #define ID_INDICATOR_TIME               59201
 #define ID_INDICATOR_DATE_F             59202
@@ -930,7 +932,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        208
-#define _APS_NEXT_COMMAND_VALUE         32833
+#define _APS_NEXT_COMMAND_VALUE         32836
 #define _APS_NEXT_CONTROL_VALUE         1072
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

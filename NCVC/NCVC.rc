@@ -279,6 +279,8 @@ BEGIN
             MENUITEM "右回転(&E)\tCtrl+→",             ID_VIEW_RRT
         END
         MENUITEM SEPARATOR
+        MENUITEM "旋盤断面表示\tCtrl+L",              ID_NCVIEW_LATHEMODE
+        MENUITEM SEPARATOR
         POPUP "補助矩形(&E)"
         BEGIN
             MENUITEM "最大移動矩形(&M)\tCtrl+M",          ID_NCVIEW_MAXRECT
@@ -558,6 +560,8 @@ BEGIN
             MENUITEM "左回転(&K)\tCtrl+←",             ID_VIEW_RLT
             MENUITEM "右回転(&E)\tCtrl+→",             ID_VIEW_RRT
         END
+        MENUITEM SEPARATOR
+        MENUITEM "旋盤断面表示\tCtrl+L",              ID_NCVIEW_LATHEMODE
         MENUITEM SEPARATOR
         POPUP "補助矩形(&E)"
         BEGIN
@@ -867,6 +871,7 @@ BEGIN
     "D",            ID_FILE_NCD2DXF,        VIRTKEY, CONTROL, NOINVERT
     "F",            ID_EDIT_FIND,           VIRTKEY, CONTROL, NOINVERT
     "G",            ID_NCVIEW_JUMP,         VIRTKEY, CONTROL, NOINVERT
+    "L",            ID_NCVIEW_LATHEMODE,    VIRTKEY, CONTROL, NOINVERT
     "M",            ID_NCVIEW_MAXRECT,      VIRTKEY, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
     "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL, NOINVERT
