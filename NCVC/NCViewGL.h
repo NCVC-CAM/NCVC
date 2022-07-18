@@ -71,16 +71,21 @@ struct CREATEELEMENTPARAM
 };
 typedef	CREATEELEMENTPARAM*		LPCREATEELEMENTPARAM;
 
+enum {
+	NCVIEWGLFLG_ACTIVE = 0,
+	NCVIEWGLFLG_SIZECHG,
+	NCVIEWGLFLG_WIREVIEW,		// 線画表示
+	NCVIEWGLFLG_SOLIDVIEW,		// ソリッド表示
+	NCVIEWGLFLG_LATHEMODE,		// 断面表示（旋盤モード）
+		NCVIEWGLFLG_NUM	// 5
+};
+
 /////////////////////////////////////////////////////////////////////////////
 
 class CNCViewGL : public CViewBaseGL
 {
 	CString		m_strGuide;
-	BOOL		m_bActive,
-				m_bSizeChg,
-				m_bWirePath,	// 線画表示
-				m_bSolidView,	// ソリッド表示
-				m_bSlitView;	// 断面表示（旋盤モード）
+	std::bitset<NCVIEWGLFLG_NUM>	m_bGLflg;
 	int			m_icx, m_icy;	// glDrawPixels
 	GLint		m_wx, m_wy;		// glReadPixels, glWindowPos
 	CPointF		m_ptCenterBk;		// ﾎﾞｸｾﾙ処理前のﾊﾞｯｸｱｯﾌﾟ

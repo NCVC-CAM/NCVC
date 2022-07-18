@@ -357,7 +357,7 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 {
 	int	i, ii, j,
 		offset = m_icx * (m_icy-1),	// m_pfDepth‚ÌŠOŒaŠJŽnµÌ¾¯Ä
-		nSlit  = m_bSlitView ? (ARCCOUNT/2) : ARCCOUNT;	// ’f–Ê•\Ž¦‚È‚ç‰~‚Ì”¼•ª‚¾‚¯
+		nSlit  = m_bGLflg[NCVIEWGLFLG_LATHEMODE] ? (ARCCOUNT/2) : ARCCOUNT;	// ’f–Ê•\Ž¦‚È‚ç‰~‚Ì”¼•ª‚¾‚¯
 	GLuint		n0, n1;
 	GLenum		errCode;
 	UINT		errLine;
@@ -438,12 +438,12 @@ BOOL CNCViewGL::CreateVBOLathe(void)
 			for ( j=0; j<=nSlit; j++ )
 				ii+=2;
 		}
-		if ( m_bSlitView )
+		if ( m_bGLflg[NCVIEWGLFLG_LATHEMODE] )
 			ii += ARCCOUNT;
 	}
 
 	// ’f–Ê²ÝÃÞ¯¸½
-	if ( m_bSlitView ) {
+	if ( m_bGLflg[NCVIEWGLFLG_LATHEMODE] ) {
 		ii = (ARCCOUNT+1)*m_icx*2 + (ARCCOUNT+1)*2*2;
 		for ( i=0; i<2; i++ ) {	// ã‰º’f–Ê
 			vElement.clear();

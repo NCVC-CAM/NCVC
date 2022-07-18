@@ -90,11 +90,11 @@ CNCViewGL::CNCViewGL()
 #ifdef _DEBUG_FILEOPEN
 	printf("CNCViewGL::CNCViewGL() Start\n");
 #endif
+	m_bGLflg.reset();
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	m_bActive = m_bSizeChg = FALSE;
-	m_bWirePath  = pOpt->GetNCViewFlg(NCVIEWFLG_WIREPATH);	// ﾃﾞﾌｫﾙﾄ値を取得
-	m_bSolidView = pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW);
-	m_bSlitView  = pOpt->GetNCViewFlg(NCVIEWFLG_LATHESLIT);
+	m_bGLflg.set(NCVIEWGLFLG_WIREVIEW, pOpt->GetNCViewFlg(NCVIEWFLG_WIREPATH));		// デフォルト値を取得
+	m_bGLflg.set(NCVIEWGLFLG_SOLIDVIEW, pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW));
+	m_bGLflg.set(NCVIEWGLFLG_LATHEMODE, pOpt->GetNCViewFlg(NCVIEWFLG_LATHESLIT));
 	m_icx = m_icy = 0;
 	m_glCode = 0;
 
@@ -207,7 +207,7 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 			pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
 		// through
 	case UAV_CHANGEFONT:	// 色の変更 etc.
-		if ( m_bActive ) {
+		if ( m_bGLflg[NCVIEWGLFLG_ACTIVE] ) {
 			GLdouble	objXform[4][4];
 			CPointF		ptCenter(m_ptCenter);
 			if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
@@ -345,7 +345,7 @@ void CNCViewGL::UpdateViewOption(void)
 					CreateTextureMill();
 #endif
 			}
-			m_bSizeChg = FALSE;
+			m_bGLflg.reset(NCVIEWGLFLG_SIZECHG);
 		}
 	}
 
@@ -772,7 +772,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 //	::glPopMatrix();
 //	::glEnable(GL_DEPTH_TEST);
 #else
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && m_bSolidView && m_nVertexID[0]>0 &&
+	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && m_nVertexID[0]>0 &&
 		(pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
 		size_t	j = 0;
 		// 線画が正しく表示されるためにﾎﾟﾘｺﾞﾝｵﾌｾｯﾄ
@@ -782,7 +782,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glEnableClientState(GL_VERTEX_ARRAY);
 		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
 		::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);
-		if ( IsWireMode() && m_bWirePath ) {
+		if ( IsWireMode() && m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
 			// 軌跡ﾜｲﾔｰﾌﾚｰﾑ表示
 			::glEnable( GL_LINE_STIPPLE );
 			for ( const auto& v : m_WireDraw.vwl ) {
@@ -910,7 +910,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 #endif	// _DEBUG_DRAWTEST_
 
 	if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
-		if ( !pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) || m_bWirePath ||
+		if ( !pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
 				(!pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
 			// 線画
 			if ( m_glCode > 0 )
@@ -991,7 +991,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CNCViewGL::OnDestroy()
 {
 	// 回転行列等を保存
-	if ( m_bActive && !IsDocError() ) {
+	if ( m_bGLflg[NCVIEWGLFLG_ACTIVE] && !IsDocError() ) {
 		CRecentViewInfo* pInfo = GetDocument()->GetRecentViewInfo();
 		if ( pInfo ) 
 			pInfo->SetViewInfo(m_objXform, m_rcView, m_ptCenter);
@@ -1023,7 +1023,7 @@ void CNCViewGL::OnSize(UINT nType, int cx, int cy)
 	__super::OnSize(nType, cx, cy);
 
 	if ( cx > 0 && cy > 0 )
-		m_bSizeChg = TRUE;
+		m_bGLflg.set(NCVIEWGLFLG_SIZECHG);
 }
 
 void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDeactiveView) 
@@ -1049,9 +1049,10 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 {
 #ifdef _DEBUG
-	printf("CNCViewGL::OnUserActivatePage() lParam=%Id m_bActive=%d\n", lParam, m_bActive);
+	printf("CNCViewGL::OnUserActivatePage() lParam=%Id m_bActive=%d\n",
+		lParam, m_bGLflg[NCVIEWGLFLG_ACTIVE]?1:0);
 #endif
-	if ( !m_bActive ) {
+	if ( !m_bGLflg[NCVIEWGLFLG_ACTIVE] ) {
 		// m_rcView初期化
 		OnUserViewFitMsg(1, 0);		// glOrtho() を実行しない
 		CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
@@ -1087,7 +1088,7 @@ LRESULT CNCViewGL::OnUserActivatePage(WPARAM, LPARAM lParam)
 #endif
 		//
 		pOpt->m_dwUpdateFlg = 0;
-		m_bActive = TRUE;
+		m_bGLflg.set(NCVIEWGLFLG_ACTIVE);
 	}
 
 	// 他のﾋﾞｭｰとは違って、拡大率を更新する必要は無い
@@ -1174,7 +1175,7 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 		UpdateWindow();
 		return 0;
 	}
-	if ( m_bSizeChg || (!wParam && !lParam) ) {
+	if ( m_bGLflg[NCVIEWGLFLG_SIZECHG] || (!wParam && !lParam) ) {
 		// ｳｨﾝﾄﾞｳｻｲｽﾞ変更、またはﾄﾚｰｽ開始時は、最初からﾎﾞｸｾﾙ構築
 		if ( m_pFBO ) {
 			delete	m_pFBO;
@@ -1185,7 +1186,7 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 		else
 			CreateBoxel(TRUE);
 		::wglMakeCurrent(NULL, NULL);
-		m_bSizeChg = FALSE;
+		m_bGLflg.reset(NCVIEWGLFLG_SIZECHG);
 		Invalidate(FALSE);
 		UpdateWindow();
 		return 0;
@@ -1361,7 +1362,7 @@ void CNCViewGL::OnUpdateLatheViewMode(CCmdUI* pCmdUI)
 {
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && IsLatheMode() ) {
-		pCmdUI->SetCheck(m_bSlitView);
+		pCmdUI->SetCheck(m_bGLflg[NCVIEWGLFLG_LATHEMODE]);
 	}
 	else {
 		pCmdUI->SetCheck(FALSE);
@@ -1371,7 +1372,7 @@ void CNCViewGL::OnUpdateLatheViewMode(CCmdUI* pCmdUI)
 
 void CNCViewGL::OnLatheViewMode() 
 {
-	m_bSlitView = !m_bSlitView;	// 断面表示切り替え（旋盤）
+	m_bGLflg.flip(NCVIEWGLFLG_LATHEMODE);	// 断面表示切り替え（旋盤）
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 		CreateVBOLathe();	// 頂点ｲﾝﾃﾞｯｸｽ再生成
@@ -1408,15 +1409,15 @@ void CNCViewGL::OnLButtonDblClk(UINT nFlags, CPoint point)
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
 		if ( nFlags & MK_CONTROL ) {
-			m_bSolidView = !m_bSolidView;	// ソリッド表示切り替え
-			if ( !m_bSolidView && !m_bWirePath ) {
-				m_bWirePath = TRUE;
+			m_bGLflg.flip(NCVIEWGLFLG_SOLIDVIEW);		// ソリッド表示切り替え
+			if ( !m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && !m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
+				m_bGLflg.set(NCVIEWGLFLG_WIREVIEW);
 			}
 		}
 		else {
-			m_bWirePath = !m_bWirePath;		// パス表示切り替え
-			if ( !m_bSolidView && !m_bWirePath ) {
-				m_bSolidView = TRUE;
+			m_bGLflg.flip(NCVIEWGLFLG_WIREVIEW);;		// パス表示切り替え
+			if ( !m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && !m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
+				m_bGLflg.set(NCVIEWGLFLG_SOLIDVIEW);
 			}
 		}
 		Invalidate(FALSE);

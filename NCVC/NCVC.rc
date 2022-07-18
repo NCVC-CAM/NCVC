@@ -279,6 +279,8 @@ BEGIN
             MENUITEM "右回転(&E)\tCtrl+→",             ID_VIEW_RRT
         END
         MENUITEM SEPARATOR
+        MENUITEM "線画表示\tCtrl+I",                ID_NCVIEW_LATHEMODE
+        MENUITEM "ソリッド表示\tCtrl+H",              ID_NCVIEW_SOLIDVIEW
         MENUITEM "旋盤断面表示\tCtrl+L",              ID_NCVIEW_LATHEMODE
         MENUITEM SEPARATOR
         POPUP "補助矩形(&E)"
@@ -561,6 +563,8 @@ BEGIN
             MENUITEM "右回転(&E)\tCtrl+→",             ID_VIEW_RRT
         END
         MENUITEM SEPARATOR
+        MENUITEM "線画表示\tCtrl+I",                ID_NCVIEW_LATHEMODE
+        MENUITEM "ソリッド表示\tCtrl+H",              ID_NCVIEW_SOLIDVIEW
         MENUITEM "旋盤断面表示\tCtrl+L",              ID_NCVIEW_LATHEMODE
         MENUITEM SEPARATOR
         POPUP "補助矩形(&E)"
@@ -871,6 +875,8 @@ BEGIN
     "D",            ID_FILE_NCD2DXF,        VIRTKEY, CONTROL, NOINVERT
     "F",            ID_EDIT_FIND,           VIRTKEY, CONTROL, NOINVERT
     "G",            ID_NCVIEW_JUMP,         VIRTKEY, CONTROL, NOINVERT
+    "H",            ID_NCVIEW_SOLIDVIEW,    VIRTKEY, CONTROL, NOINVERT
+    "I",            ID_NCVIEW_WIREVIEW,     VIRTKEY, CONTROL, NOINVERT
     "L",            ID_NCVIEW_LATHEMODE,    VIRTKEY, CONTROL, NOINVERT
     "M",            ID_NCVIEW_MAXRECT,      VIRTKEY, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
@@ -909,7 +915,6 @@ BEGIN
     VK_UP,          ID_VIEW_UP,             VIRTKEY, NOINVERT
     VK_UP,          ID_VIEW_RUP,            VIRTKEY, CONTROL, NOINVERT
     "W",            ID_NCVIEW_WORKRECT,     VIRTKEY, CONTROL, NOINVERT
-    "X",            57635,                  VIRTKEY, CONTROL, NOINVERT
     "Z",            ID_EDIT_UNDO,           VIRTKEY, CONTROL, NOINVERT
 END
 
