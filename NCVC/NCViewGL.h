@@ -78,8 +78,9 @@ class CNCViewGL : public CViewBaseGL
 	CString		m_strGuide;
 	BOOL		m_bActive,
 				m_bSizeChg,
-				m_bWirePath,	// ﾋﾞｭｰごとに動的に切り替えるﾌﾗｸﾞ
-				m_bSlitView;
+				m_bWirePath,	// 線画表示
+				m_bSolidView,	// ソリッド表示
+				m_bSlitView;	// 断面表示（旋盤モード）
 	int			m_icx, m_icy;	// glDrawPixels
 	GLint		m_wx, m_wy;		// glReadPixels, glWindowPos
 	CPointF		m_ptCenterBk;		// ﾎﾞｸｾﾙ処理前のﾊﾞｯｸｱｯﾌﾟ

@@ -92,8 +92,9 @@ CNCViewGL::CNCViewGL()
 #endif
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	m_bActive = m_bSizeChg = FALSE;
-	m_bWirePath = pOpt->GetNCViewFlg(NCVIEWFLG_WIREPATH);	// ﾃﾞﾌｫﾙﾄ値を取得
-	m_bSlitView = pOpt->GetNCViewFlg(NCVIEWFLG_LATHESLIT);
+	m_bWirePath  = pOpt->GetNCViewFlg(NCVIEWFLG_WIREPATH);	// ﾃﾞﾌｫﾙﾄ値を取得
+	m_bSolidView = pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW);
+	m_bSlitView  = pOpt->GetNCViewFlg(NCVIEWFLG_LATHESLIT);
 	m_icx = m_icy = 0;
 	m_glCode = 0;
 
@@ -771,7 +772,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 //	::glPopMatrix();
 //	::glEnable(GL_DEPTH_TEST);
 #else
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && m_nVertexID[0]>0 &&
+	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && m_bSolidView && m_nVertexID[0]>0 &&
 		(pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
 		size_t	j = 0;
 		// 線画が正しく表示されるためにﾎﾟﾘｺﾞﾝｵﾌｾｯﾄ
@@ -1406,7 +1407,18 @@ void CNCViewGL::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
-		m_bWirePath = !m_bWirePath;	// パス表示切り替え
+		if ( nFlags & MK_CONTROL ) {
+			m_bSolidView = !m_bSolidView;	// ソリッド表示切り替え
+			if ( !m_bSolidView && !m_bWirePath ) {
+				m_bWirePath = TRUE;
+			}
+		}
+		else {
+			m_bWirePath = !m_bWirePath;		// パス表示切り替え
+			if ( !m_bSolidView && !m_bWirePath ) {
+				m_bSolidView = TRUE;
+			}
+		}
 		Invalidate(FALSE);
 	}
 }
