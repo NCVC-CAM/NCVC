@@ -330,13 +330,13 @@ void C3dModelView::OnDestroy()
 
 void C3dModelView::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	m_ptLclick = point;		// ViewBaseGL.h
+	m_ptDownClick = point;		// ViewBaseGL.h
 	__super::OnLButtonDown(nFlags, point);
 }
 
 void C3dModelView::OnLButtonUp(UINT nFlags, CPoint point)
 {
-	if ( m_ptLclick == point ) {
+	if ( m_ptDownClick == point ) {
 		// ÉsÉbÉNèàóù
 		DoSelect(point);
 	}

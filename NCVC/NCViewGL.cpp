@@ -1365,13 +1365,13 @@ void CNCViewGL::OnContextMenu(CWnd* pWnd, CPoint point)
 
 void CNCViewGL::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	m_ptLclick = point;
+	m_ptDownClick = point;
 	__super::OnLButtonDown(nFlags, point);
 }
 
 void CNCViewGL::OnLButtonUp(UINT nFlags, CPoint point)
 {
-	if ( m_ptLclick == point ) {
+	if ( m_ptDownClick == point ) {
 		// ÉsÉbÉNèàóù
 		DoSelect(point);
 	}
