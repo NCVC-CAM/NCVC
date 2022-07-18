@@ -70,8 +70,8 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewGL::OnUpdateMoveRoundKey)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &CNCViewGL::OnLensKey)
 	ON_COMMAND(ID_OPTION_DEFVIEWINFO, &CNCViewGL::OnDefViewInfo)
-	ON_UPDATE_COMMAND_UI(ID_NCVIEW_LATHEMODE, &CNCViewGL::OnUpdateLatheViewMode)
-	ON_COMMAND(ID_NCVIEW_LATHEMODE, &CNCViewGL::OnLatheViewMode)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_NCVIEW_WIREVIEW, ID_NCVIEW_LATHEMODE, &CNCViewGL::OnUpdateViewMode)
+	ON_COMMAND_RANGE(ID_NCVIEW_WIREVIEW, ID_NCVIEW_LATHEMODE, &CNCViewGL::OnViewMode)
 	//
 	ON_MESSAGE(WM_USERTRACESELECT, &CNCViewGL::OnSelectTrace)
 END_MESSAGE_MAP()
@@ -1358,25 +1358,58 @@ void CNCViewGL::OnDefViewInfo()
 	AfxMessageBox(IDS_ANA_DEFVIEWINFO, MB_OK|MB_ICONINFORMATION);
 }
 
-void CNCViewGL::OnUpdateLatheViewMode(CCmdUI* pCmdUI) 
+void CNCViewGL::OnUpdateViewMode(CCmdUI* pCmdUI) 
 {
-	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && IsLatheMode() ) {
-		pCmdUI->SetCheck(m_bGLflg[NCVIEWGLFLG_LATHEMODE]);
-	}
-	else {
+	if ( !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
 		pCmdUI->SetCheck(FALSE);
 		pCmdUI->Enable(FALSE);
+		return;
+	}
+
+	switch ( pCmdUI->m_nID ) {
+	case ID_NCVIEW_WIREVIEW:
+	case ID_NCVIEW_SOLIDVIEW:
+		pCmdUI->SetCheck(m_bGLflg[pCmdUI->m_nID - ID_NCVIEW_WIREVIEW]);
+		break;
+	case ID_NCVIEW_LATHEMODE:
+		if ( IsLatheMode() ) {
+			pCmdUI->SetCheck(m_bGLflg[NCVIEWGLFLG_LATHEMODE]);
+		}
+		else {
+			pCmdUI->SetCheck(FALSE);
+			pCmdUI->Enable(FALSE);
+		}
+		break;
 	}
 }
 
-void CNCViewGL::OnLatheViewMode() 
+void CNCViewGL::OnViewMode(UINT nID) 
 {
-	m_bGLflg.flip(NCVIEWGLFLG_LATHEMODE);	// 断面表示切り替え（旋盤）
-	CClientDC	dc(this);
-	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-		CreateVBOLathe();	// 頂点ｲﾝﾃﾞｯｸｽ再生成
-	::wglMakeCurrent( NULL, NULL );
+	if ( !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
+		return;
+	}
+
+	switch ( nID ) {
+	case ID_NCVIEW_WIREVIEW:
+		m_bGLflg.flip(NCVIEWGLFLG_WIREVIEW);;		// パス表示切り替え
+		if ( !m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && !m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
+			m_bGLflg.set(NCVIEWGLFLG_SOLIDVIEW);
+		}
+		break;
+	case ID_NCVIEW_SOLIDVIEW:
+		m_bGLflg.flip(NCVIEWGLFLG_SOLIDVIEW);		// ソリッド表示切り替え
+		if ( !m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && !m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
+			m_bGLflg.set(NCVIEWGLFLG_WIREVIEW);
+		}
+		break;
+	case ID_NCVIEW_LATHEMODE:
+		m_bGLflg.flip(NCVIEWGLFLG_LATHEMODE);	// 断面表示切り替え（旋盤）
+		CClientDC	dc(this);
+		::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+			CreateVBOLathe();	// 頂点ｲﾝﾃﾞｯｸｽ再生成
+		::wglMakeCurrent( NULL, NULL );
+		break;
+	}
 	Invalidate(FALSE);
 }
 

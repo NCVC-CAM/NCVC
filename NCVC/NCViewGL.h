@@ -198,8 +198,8 @@ protected:
 	afx_msg void OnUpdateMoveRoundKey(CCmdUI* pCmdUI);
 	afx_msg	void OnLensKey(UINT);
 	afx_msg void OnDefViewInfo();
-	afx_msg void OnLatheViewMode();
-	afx_msg void OnUpdateLatheViewMode(CCmdUI* pCmdUI);
+	afx_msg void OnViewMode(UINT);
+	afx_msg void OnUpdateViewMode(CCmdUI* pCmdUI);
 	//
 	afx_msg LRESULT OnSelectTrace(WPARAM, LPARAM);	// from NCViewTab.cpp
 

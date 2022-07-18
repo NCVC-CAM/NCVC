@@ -279,7 +279,7 @@ BEGIN
             MENUITEM "右回転(&E)\tCtrl+→",             ID_VIEW_RRT
         END
         MENUITEM SEPARATOR
-        MENUITEM "線画表示\tCtrl+I",                ID_NCVIEW_LATHEMODE
+        MENUITEM "線画表示\tCtrl+I",                ID_NCVIEW_WIREVIEW
         MENUITEM "ソリッド表示\tCtrl+H",              ID_NCVIEW_SOLIDVIEW
         MENUITEM "旋盤断面表示\tCtrl+L",              ID_NCVIEW_LATHEMODE
         MENUITEM SEPARATOR
@@ -563,7 +563,7 @@ BEGIN
             MENUITEM "右回転(&E)\tCtrl+→",             ID_VIEW_RRT
         END
         MENUITEM SEPARATOR
-        MENUITEM "線画表示\tCtrl+I",                ID_NCVIEW_LATHEMODE
+        MENUITEM "線画表示\tCtrl+I",                ID_NCVIEW_WIREVIEW
         MENUITEM "ソリッド表示\tCtrl+H",              ID_NCVIEW_SOLIDVIEW
         MENUITEM "旋盤断面表示\tCtrl+L",              ID_NCVIEW_LATHEMODE
         MENUITEM SEPARATOR
