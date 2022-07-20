@@ -14,7 +14,7 @@ enum TRACKINGMODE
 // RenderMode
 enum RENDERMODE
 {
-	RM_NORMAL, RM_PICKLINE, RM_PICKFACE
+	RM_NORMAL, RM_SELECT, RM_PICKLINE, RM_PICKFACE
 };
 
 /////////////////////////////////////////////////////////////////////////////

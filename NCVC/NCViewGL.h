@@ -80,6 +80,8 @@ enum {
 		NCVIEWGLFLG_NUM	// 5
 };
 
+class CNCdata;
+
 /////////////////////////////////////////////////////////////////////////////
 
 class CNCViewGL : public CViewBaseGL
@@ -91,6 +93,7 @@ class CNCViewGL : public CViewBaseGL
 	CPointF		m_ptCenterBk;		// ﾎﾞｸｾﾙ処理前のﾊﾞｯｸｱｯﾌﾟ
 	GLdouble	m_objXformBk[4][4];
 	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
+	CNCdata*	m_pData;		// 選択中のNCオブジェクト
 	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
 #ifndef NO_TRACE_WORKFILE		// from NCViewTab.h
 	GLfloat*	m_pfDepthBottom;// WorkFile 2Pass

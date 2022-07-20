@@ -247,11 +247,11 @@ static inline void _SetEndmillCircleYZ_Half
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀｸﾗｽ
 //////////////////////////////////////////////////////////////////////
 
-void CNCdata::DrawGLWirePass(RENDERMODE enRender) const
+void CNCdata::DrawGLWirePass(RENDERMODE enRender, int nID) const
 {
 	// 派生ｸﾗｽからの共通呼び出し
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawGLWirePass(enRender);
+		m_obCdata[i]->DrawGLWirePass(enRender, nID);
 }
 
 void CNCdata::DrawGLLatheDepth(void) const
@@ -365,22 +365,31 @@ void CNCdata::AddEndmillSphere(const CPoint3F& ptOrg, BOTTOMDRAW& bd, CVBtmDraw&
 // CNCline クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCline::DrawGLWirePass(RENDERMODE enRender) const
+void CNCline::DrawGLWirePass(RENDERMODE enRender, int nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+		COLORREF	col;
 		GLubyte		rgb[3];
-		if ( enRender == RM_NORMAL ) {
-			COLORREF col = pOpt->GetNcDrawColor(
-				m_obCdata.IsEmpty() ? (GetPenType()+NCCOL_G0) : NCCOL_CORRECT);
+		switch ( enRender ) {
+		case RM_NORMAL:
+			col = pOpt->GetNcDrawColor(
+					m_obCdata.IsEmpty() ? (GetPenType()+NCCOL_G0) : NCCOL_CORRECT);
 			rgb[0] = GetRValue(col);
 			rgb[1] = GetGValue(col);
 			rgb[2] = GetBValue(col);
-		}
-		else {
-			// ブロック行をカラーコードに設定
-			IDtoRGB(GetBlockLineNo(), rgb);		// ViewBaseGL.cpp
+			break;
+		case RM_SELECT:
+			col = pOpt->GetDrawColor(COMCOL_SELECT);
+			rgb[0] = GetRValue(col);
+			rgb[1] = GetGValue(col);
+			rgb[2] = GetBValue(col);
+			break;
+		default:
+			// CNCdataオブジェクトのIDをカラーコードに設定
+			IDtoRGB(nID, rgb);		// ViewBaseGL.cpp
+			break;
 		}
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
 		::glBegin(GL_LINES);
@@ -390,7 +399,7 @@ void CNCline::DrawGLWirePass(RENDERMODE enRender) const
 		::glEnd();
 	}
 
-	CNCdata::DrawGLWirePass(enRender);
+	CNCdata::DrawGLWirePass(enRender, nID);
 }
 
 void CNCline::DrawGLLatheDepth(void) const
@@ -819,27 +828,39 @@ int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GL
 // CNCcycle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcycle::DrawGLWirePass(RENDERMODE enRender) const
+void CNCcycle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
+	COLORREF	colG0, colCY;
 	GLubyte		rgbG0[3], rgbCY[3];
 
-	if ( enRender == RM_NORMAL ) {
-		COLORREF	colG0 = pOpt->GetNcDrawColor( NCCOL_G0 ),
-					colCY = pOpt->GetNcDrawColor( NCCOL_CYCLE );
+	switch ( enRender ) {
+	case RM_NORMAL:
+		colG0 = pOpt->GetNcDrawColor( NCCOL_G0 );
+		colCY = pOpt->GetNcDrawColor( NCCOL_CYCLE );
 		rgbG0[0] = GetRValue(colG0);
 		rgbG0[1] = GetGValue(colG0);
 		rgbG0[2] = GetBValue(colG0);
 		rgbCY[0] = GetRValue(colCY);
 		rgbCY[1] = GetGValue(colCY);
 		rgbCY[2] = GetBValue(colCY);
-	}
-	else {
-		// ブロック行をカラーコードに設定
-		IDtoRGB(GetBlockLineNo(), rgbG0);		// ViewBaseGL.cpp
+		break;
+	case RM_SELECT:
+		colCY = pOpt->GetDrawColor(COMCOL_SELECT);
+		rgbG0[0] = GetRValue(colCY);
+		rgbG0[1] = GetGValue(colCY);
+		rgbG0[2] = GetBValue(colCY);
 		rgbCY[0] = rgbG0[0];
 		rgbCY[1] = rgbG0[1];
 		rgbCY[2] = rgbG0[2];
+		break;
+	default:
+		// CNCdataオブジェクトのIDをカラーコードに設定
+		IDtoRGB(nID, rgbG0);		// ViewBaseGL.cpp
+		rgbCY[0] = rgbG0[0];
+		rgbCY[1] = rgbG0[1];
+		rgbCY[2] = rgbG0[2];
+		break;
 	}
 
 	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern);
@@ -954,22 +975,31 @@ int CNCcycle::AddGLWireTexture(size_t, float&, float, GLfloat*) const
 // CNCcircle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcircle::DrawGLWirePass(RENDERMODE enRender) const
+void CNCcircle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+		COLORREF	col;
 		GLubyte		rgb[3];
-		if ( enRender == RM_NORMAL ) {
-			COLORREF	col = pOpt->GetNcDrawColor(
-				m_obCdata.IsEmpty() ? NCCOL_G1 : NCCOL_CORRECT);
+		switch ( enRender ) {
+		case RM_NORMAL:
+			col = pOpt->GetNcDrawColor(
+					m_obCdata.IsEmpty() ? NCCOL_G1 : NCCOL_CORRECT);
 			rgb[0] = GetRValue(col);
 			rgb[1] = GetGValue(col);
 			rgb[2] = GetBValue(col);
-		}
-		else {
-			// ブロック行をカラーコードに設定
-			IDtoRGB(GetBlockLineNo(), rgb);		// ViewBaseGL.cpp
+			break;
+		case RM_SELECT:
+			col = pOpt->GetDrawColor(COMCOL_SELECT);
+			rgb[0] = GetRValue(col);
+			rgb[1] = GetGValue(col);
+			rgb[2] = GetBValue(col);
+			break;
+		default:
+			// CNCdataオブジェクトのIDをカラーコードに設定
+			IDtoRGB(nID, rgb);		// ViewBaseGL.cpp
+			break;
 		}
 		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
 		::glBegin(GL_LINE_STRIP);
@@ -978,7 +1008,7 @@ void CNCcircle::DrawGLWirePass(RENDERMODE enRender) const
 		::glEnd();
 	}
 
-	CNCdata::DrawGLWirePass(enRender);
+	CNCdata::DrawGLWirePass(enRender, nID);
 }
 
 void CNCcircle::DrawGLLatheDepth(void) const

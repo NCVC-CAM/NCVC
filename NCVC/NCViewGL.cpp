@@ -97,6 +97,7 @@ CNCViewGL::CNCViewGL()
 	m_bGLflg.set(NCVIEWGLFLG_LATHEMODE, pOpt->GetNCViewFlg(NCVIEWFLG_LATHESLIT));
 	m_icx = m_icy = 0;
 	m_glCode = 0;
+	m_pData = NULL;
 
 #ifdef NO_TRACE_WORKFILE
 	m_pfDepth = m_pfXYZ = m_pfNOR = m_pLatheX = m_pLatheZo = m_pLatheZi = NULL;
@@ -571,7 +572,7 @@ void CNCViewGL::RenderCode(RENDERMODE enRender)
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
 		pData = GetDocument()->GetNCdata(i);
 		if ( pData->GetGtype() == G_TYPE ) {
-			pData->DrawGLWirePass(enRender);
+			pData->DrawGLWirePass(enRender, i);		// オブジェクト番号をIDに
 		}
 	}
 	::glDisable( GL_LINE_STIPPLE );
@@ -652,16 +653,22 @@ void CNCViewGL::DoSelect(const CPoint& pt)
 	::glReadPixels(pt.x-PICKREGION, m_cy-pt.y-PICKREGION,	// y座標に注意!!
 		2*PICKREGION, 2*PICKREGION, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 	GetGLError();
-	// カラーコードから行番号へ
-	int		nResult = SearchSelectID(buf);
-	// リスト選択
-	CNCChild* pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
-	if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {	// 念のため
-		pFrame->SetJumpList(nResult);
+	// カラーコードからオブジェクト番号へ
+	int			nID = SearchSelectID(buf);		// ViewBaseGL.cpp
+	CNCdata*	pData = NULL;
+	if ( 0<=nID && nID<GetDocument()->GetNCsize() ) {
+		pData = GetDocument()->GetNCdata(nID);
 	}
-
-	// 再描画
-	Invalidate(FALSE);
+	m_pData = pData;	// 選択オブジェクト
+	if ( pData ) {
+		// リスト選択
+		CNCChild* pFrame = static_cast<CNCChild *>(AfxGetNCVCMainWnd()->MDIGetActive());
+		if ( pFrame && pFrame->IsKindOf(RUNTIME_CLASS(CNCChild)) ) {	// 念のため
+			pFrame->SetJumpList(pData->GetBlockLineNo());
+		}
+		// 再描画
+		Invalidate(FALSE);
+	}
 
 	::wglMakeCurrent(NULL, NULL);
 }
@@ -917,6 +924,10 @@ void CNCViewGL::OnDraw(CDC* pDC)
 				::glCallList( m_glCode );
 			else
 				RenderCode(RM_NORMAL);
+		}
+		if ( m_pData ) {
+			// 選択オブジェクトの描画
+			m_pData->DrawGLWirePass(RM_SELECT, -1);	// 第2引数は不使用
 		}
 	}
 
