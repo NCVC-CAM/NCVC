@@ -59,7 +59,6 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_WM_CONTEXTMENU()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
-	ON_WM_LBUTTONDBLCLK()
 	ON_WM_KEYDOWN()
 	// ﾍﾟｰｼﾞ切替ｲﾍﾞﾝﾄ
 	ON_MESSAGE (WM_USERACTIVATEPAGE, &CNCViewGL::OnUserActivatePage)
@@ -386,7 +385,6 @@ void CNCViewGL::InitialObjectForm(void)
 void CNCViewGL::CreateDisplayList(void)
 {
 	GetGLError();		// error flash
-
 	m_glCode = ::glGenLists(1);
 	if( m_glCode > 0 ) {
 		// NCﾃﾞｰﾀ描画のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
@@ -565,17 +563,19 @@ void CNCViewGL::RenderCode(RENDERMODE enRender)
 {
 	if ( IsWireMode() )
 		return;
-	CNCdata*	pData;
 
+	::glDisable(GL_LIGHTING);
 	::glEnable( GL_LINE_STIPPLE );
+
+	CNCdata*	pData;
 	// NCﾃﾞｰﾀの軌跡（ﾜｲﾔｰﾌﾚｰﾑ）描画
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
 		pData = GetDocument()->GetNCdata(i);
-		if ( pData->GetGtype() == G_TYPE ) {
+		// 選択オブジェクト以外を描画
+		if ( pData->GetGtype()==G_TYPE && m_pData!=pData ) {
 			pData->DrawGLWirePass(enRender, i);		// オブジェクト番号をIDに
 		}
 	}
-	::glDisable( GL_LINE_STIPPLE );
 }
 
 void CNCViewGL::RenderMill(const CNCdata* pData)
@@ -646,6 +646,7 @@ void CNCViewGL::DoSelect(const CPoint& pt)
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// 行番号をカラーコードにして描画
+	m_pData = NULL;
 	RenderCode(RM_PICKLINE);
 	// マウスポイントの色情報を取得
 	GLubyte	buf[READBUF];
@@ -813,7 +814,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 			::glBindBuffer(GL_ARRAY_BUFFER, m_nTextureID);
 			::glTexCoordPointer(2, GL_FLOAT, 0, NULL);
 		}
-		::glEnable(GL_LIGHTING);
 #ifdef _DEBUG_BASICSHADERTEST_
 		::glActiveTexture(GL_TEXTURE1);
 //		::glEnable(GL_TEXTURE_2D);
@@ -905,7 +905,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glDisableClientState(GL_NORMAL_ARRAY);
 		::glDisableClientState(GL_VERTEX_ARRAY);
 		::glDisable(GL_POLYGON_OFFSET_FILL);
-		::glDisable(GL_LIGHTING);
 	}
 #ifdef _DEBUG_BASICSHADERTEST_
 	m_glsl.Use(FALSE);
@@ -920,14 +919,18 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		if ( !pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
 				(!pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
 			// 線画
-			if ( m_glCode > 0 )
+			if ( m_glCode>0 && !m_pData ) {
+				::glDisable(GL_LIGHTING);
+				::glEnable( GL_LINE_STIPPLE );
 				::glCallList( m_glCode );
-			else
+			}
+			else {
 				RenderCode(RM_NORMAL);
-		}
-		if ( m_pData ) {
-			// 選択オブジェクトの描画
-			m_pData->DrawGLWirePass(RM_SELECT, -1);	// 第2引数は不使用
+				// 選択オブジェクトの描画
+				if ( m_pData ) {
+					m_pData->DrawGLWirePass(RM_SELECT, -1);	// 第2引数は不使用
+				}
+			}
 		}
 	}
 
@@ -1446,26 +1449,6 @@ void CNCViewGL::OnLButtonUp(UINT nFlags, CPoint point)
 		DoSelect(point);
 	}
 	__super::OnLButtonUp(nFlags, point);
-}
-
-void CNCViewGL::OnLButtonDblClk(UINT nFlags, CPoint point) 
-{
-	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
-		if ( nFlags & MK_CONTROL ) {
-			m_bGLflg.flip(NCVIEWGLFLG_SOLIDVIEW);		// ソリッド表示切り替え
-			if ( !m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && !m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
-				m_bGLflg.set(NCVIEWGLFLG_WIREVIEW);
-			}
-		}
-		else {
-			m_bGLflg.flip(NCVIEWGLFLG_WIREVIEW);;		// パス表示切り替え
-			if ( !m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && !m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
-				m_bGLflg.set(NCVIEWGLFLG_SOLIDVIEW);
-			}
-		}
-		Invalidate(FALSE);
-	}
 }
 
 void CNCViewGL::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)

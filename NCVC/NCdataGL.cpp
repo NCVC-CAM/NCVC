@@ -379,19 +379,21 @@ void CNCline::DrawGLWirePass(RENDERMODE enRender, int nID) const
 			rgb[0] = GetRValue(col);
 			rgb[1] = GetGValue(col);
 			rgb[2] = GetBValue(col);
+			::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
 			break;
 		case RM_SELECT:
 			col = pOpt->GetDrawColor(COMCOL_SELECT);
 			rgb[0] = GetRValue(col);
 			rgb[1] = GetGValue(col);
 			rgb[2] = GetBValue(col);
+			::glLineStipple(1, g_penStyle[pOpt->GetDrawType(COMCOL_SELECT)].nGLpattern);
 			break;
 		default:
+			::glLineStipple(1, g_penStyle[0].nGLpattern);	// 実線
 			// CNCdataオブジェクトのIDをカラーコードに設定
 			IDtoRGB(nID, rgb);		// ViewBaseGL.cpp
 			break;
 		}
-		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(GetLineType())].nGLpattern);
 		::glBegin(GL_LINES);
 			::glColor3ubv(rgb);
 			::glVertex3fv(m_ptValS.xyz);
@@ -833,6 +835,7 @@ void CNCcycle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	colG0, colCY;
 	GLubyte		rgbG0[3], rgbCY[3];
+	GLushort	patG0, patCY;
 
 	switch ( enRender ) {
 	case RM_NORMAL:
@@ -844,6 +847,8 @@ void CNCcycle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 		rgbCY[0] = GetRValue(colCY);
 		rgbCY[1] = GetGValue(colCY);
 		rgbCY[2] = GetBValue(colCY);
+		patG0 = g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern;
+		patCY = g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_CYCLE)].nGLpattern;
 		break;
 	case RM_SELECT:
 		colCY = pOpt->GetDrawColor(COMCOL_SELECT);
@@ -853,8 +858,10 @@ void CNCcycle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 		rgbCY[0] = rgbG0[0];
 		rgbCY[1] = rgbG0[1];
 		rgbCY[2] = rgbG0[2];
+		patG0 = patCY = g_penStyle[pOpt->GetDrawType(COMCOL_SELECT)].nGLpattern;
 		break;
 	default:
+		patG0 = patCY = g_penStyle[0].nGLpattern;		// 実線
 		// CNCdataオブジェクトのIDをカラーコードに設定
 		IDtoRGB(nID, rgbG0);		// ViewBaseGL.cpp
 		rgbCY[0] = rgbG0[0];
@@ -863,7 +870,7 @@ void CNCcycle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 		break;
 	}
 
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern);
+	::glLineStipple(1, patG0);
 	::glBegin(GL_LINE_STRIP);
 		::glColor3ubv( rgbG0 );
 		::glVertex3fv(m_ptValS.xyz);
@@ -873,11 +880,11 @@ void CNCcycle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 	::glEnd();
 	::glBegin(GL_LINES);
 	for ( int i=0; i<m_nDrawCnt; i++ ) {
-		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G0)].nGLpattern);
+		::glLineStipple(1, patG0);
 		::glColor3ubv( rgbG0 );
 		::glVertex3fv(m_Cycle3D[i].ptI.xyz);
 		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
-		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_CYCLE)].nGLpattern);
+		::glLineStipple(1, patCY);
 		::glColor3ubv( rgbCY );
 		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
 		::glVertex3fv(m_Cycle3D[i].ptC.xyz);
@@ -989,19 +996,21 @@ void CNCcircle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 			rgb[0] = GetRValue(col);
 			rgb[1] = GetGValue(col);
 			rgb[2] = GetBValue(col);
+			::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
 			break;
 		case RM_SELECT:
 			col = pOpt->GetDrawColor(COMCOL_SELECT);
 			rgb[0] = GetRValue(col);
 			rgb[1] = GetGValue(col);
 			rgb[2] = GetBValue(col);
+			::glLineStipple(1, g_penStyle[pOpt->GetDrawType(COMCOL_SELECT)].nGLpattern);
 			break;
 		default:
+			::glLineStipple(1, g_penStyle[0].nGLpattern);	// 実線
 			// CNCdataオブジェクトのIDをカラーコードに設定
 			IDtoRGB(nID, rgb);		// ViewBaseGL.cpp
 			break;
 		}
-		::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern);
 		::glBegin(GL_LINE_STRIP);
 			::glColor3ubv(rgb);
 			DrawGLWirePassCircle(m_ptValS, m_ptValE);

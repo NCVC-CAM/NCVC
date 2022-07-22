@@ -133,7 +133,7 @@ friend	class	CNCViewGL;		// OpenGL»Îß°Äó‹µ‚É‚æ‚Á‚ÄÌ×¸Þ‚ð‹­§OFF
 	};
 	union {
 		struct {
-			int		m_nLineType[2],
+			int		m_nLineType[COMCOL_NUMS],
 					m_nNCLineType[NCCOLLINE_NUMS],
 					m_nDXFLineType[DXFCOLLINE_NUMS],
 					m_nWheelType,			// 0->Žè‘O:Šg‘å,‰œ:k¬ 1->‹t
