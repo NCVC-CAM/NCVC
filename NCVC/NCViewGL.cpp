@@ -91,9 +91,9 @@ CNCViewGL::CNCViewGL()
 #endif
 	m_bGLflg.reset();
 	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	m_bGLflg.set(NCVIEWGLFLG_WIREVIEW, pOpt->GetNCViewFlg(NCVIEWFLG_WIREPATH));		// デフォルト値を取得
-	m_bGLflg.set(NCVIEWGLFLG_SOLIDVIEW, pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW));
-	m_bGLflg.set(NCVIEWGLFLG_LATHEMODE, pOpt->GetNCViewFlg(NCVIEWFLG_LATHESLIT));
+	m_bGLflg.set(NCVIEWGLFLG_WIREVIEW, pOpt->GetNCViewFlg(GLOPTFLG_WIREPATH));		// デフォルト値を取得
+	m_bGLflg.set(NCVIEWGLFLG_SOLIDVIEW, pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW));
+	m_bGLflg.set(NCVIEWGLFLG_LATHEMODE, pOpt->GetNCViewFlg(GLOPTFLG_LATHESLIT));
 	m_icx = m_icy = 0;
 	m_glCode = 0;
 	m_pData = NULL;
@@ -203,7 +203,7 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		pHint = (CObject *)1;	// dummy
 		// through
 	case UAV_DRAWWORKRECT:	// ﾜｰｸ矩形変更
-		if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) )
+		if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) )
 			pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
 		// through
 	case UAV_CHANGEFONT:	// 色の変更 etc.
@@ -247,10 +247,10 @@ void CNCViewGL::UpdateViewOption(void)
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
 	// ﾃｸｽﾁｬ画像の読み込み
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) &&
+	if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) &&
 					pOpt->m_dwUpdateFlg & VIEWUPDATE_TEXTURE ) {
 		ClearTexture();
-		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) ) {
+		if ( pOpt->GetNCViewFlg(GLOPTFLG_TEXTURE) ) {
 			if ( ReadTexture(pOpt->GetTextureFile()) &&	// m_nPictureID値ｾｯﾄ
 					!(pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL) ) {
 				// 画像だけ変更
@@ -319,7 +319,7 @@ void CNCViewGL::UpdateViewOption(void)
 	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
 		ClearVBO();
 		// ﾜｰｸ矩形の描画用座標
-		if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
+		if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
 			BOOL	bResult;
 			// 切削領域の設定
 			m_rcDraw = GetDocument()->GetWorkRect();
@@ -780,8 +780,8 @@ void CNCViewGL::OnDraw(CDC* pDC)
 //	::glPopMatrix();
 //	::glEnable(GL_DEPTH_TEST);
 #else
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) && m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && m_nVertexID[0]>0 &&
-		(pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
+	if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) && m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && m_nVertexID[0]>0 &&
+		(pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
 		size_t	j = 0;
 		// 線画が正しく表示されるためにﾎﾟﾘｺﾞﾝｵﾌｾｯﾄ
 		::glEnable(GL_POLYGON_OFFSET_FILL);
@@ -805,7 +805,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
 		::glNormalPointer(GL_FLOAT, 0, NULL);
 		// ﾃｸｽﾁｬ
-		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nTextureID > 0 ) {
+		if ( pOpt->GetNCViewFlg(GLOPTFLG_TEXTURE) && m_nTextureID > 0 ) {
 			::glActiveTexture(GL_TEXTURE0);
 			::glEnable(GL_TEXTURE_2D);
 			::glClientActiveTexture(GL_TEXTURE0);
@@ -873,7 +873,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 #endif
 		}
 		// ﾃｸｽﾁｬ解除
-		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TEXTURE) && m_nTextureID > 0 ) {
+		if ( pOpt->GetNCViewFlg(GLOPTFLG_TEXTURE) && m_nTextureID > 0 ) {
 			::glActiveTexture(GL_TEXTURE0);
 			::glBindTexture(GL_TEXTURE_2D, 0);
 			::glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -890,7 +890,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		}
 		::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		::glBindBuffer(GL_ARRAY_BUFFER, 0);
-		if ( pOpt->GetNCViewFlg(NCVIEWFLG_TOOLTRACE) &&
+		if ( pOpt->GetNCViewFlg(GLOPTFLG_TOOLTRACE) &&
 					GetDocument()->IsDocMill() && GetDocument()->GetTraceMode()!=ID_NCVIEW_TRACE_STOP ) {
 			// ｴﾝﾄﾞﾐﾙ描画
 			size_t	nDraw = GetDocument()->GetTraceDraw();
@@ -916,8 +916,8 @@ void CNCViewGL::OnDraw(CDC* pDC)
 #endif	// _DEBUG_DRAWTEST_
 
 	if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
-		if ( !pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
-				(!pOpt->GetNCViewFlg(NCVIEWFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
+		if ( !pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
+				(!pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
 			// 線画
 			if ( m_glCode>0 && !m_pData ) {
 				::glDisable(GL_LIGHTING);
@@ -1051,7 +1051,7 @@ void CNCViewGL::OnActivateView(BOOL bActivate, CView* pActivateView, CView* pDea
 	}
 	else {
 		if ( GetDocument()->GetTraceMode()==ID_NCVIEW_TRACE_RUN &&
-			!AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_NOACTIVETRACEGL) ) {
+			!AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_NOACTIVETRACEGL) ) {
 			// ﾄﾚｰｽ一時停止
 			static_cast<CNCChild *>(GetParentFrame())->GetMainView()->OnUserTracePause();
 		}
@@ -1172,7 +1172,7 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 		pParam = pData;
 	}
 
-	if ( !pData && !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
+	if ( !pData && !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
 		// 初回のみ警告ﾒｯｾｰｼﾞ
 		AfxMessageBox(IDS_ERR_GLTRACE, MB_OK|MB_ICONEXCLAMATION);
 		return 0;
@@ -1374,7 +1374,7 @@ void CNCViewGL::OnDefViewInfo()
 
 void CNCViewGL::OnUpdateViewMode(CCmdUI* pCmdUI) 
 {
-	if ( !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
+	if ( !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
 		pCmdUI->SetCheck(FALSE);
 		pCmdUI->Enable(FALSE);
 		return;
@@ -1399,7 +1399,7 @@ void CNCViewGL::OnUpdateViewMode(CCmdUI* pCmdUI)
 
 void CNCViewGL::OnViewMode(UINT nID) 
 {
-	if ( !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
+	if ( !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
 		return;
 	}
 

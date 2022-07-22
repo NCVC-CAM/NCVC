@@ -527,7 +527,7 @@ void CNCline::Draw(CDC* pDC, BOOL bSelect) const
 	printf("Line Draw()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( m_obCdata.IsEmpty() ||
-			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
+			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_DRAWREVISE) )
 		DrawLine(NCDRAWVIEW_XYZ, pDC, bSelect);
 	CNCdata::Draw(pDC, bSelect);
 }
@@ -538,7 +538,7 @@ void CNCline::DrawXY(CDC* pDC, BOOL bSelect) const
 	printf("Line DrawXY()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( m_obCdata.IsEmpty() ||
-			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
+			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_DRAWREVISE) )
 		DrawLine(NCDRAWVIEW_XY, pDC, bSelect);
 	CNCdata::DrawXY(pDC, bSelect);
 }
@@ -549,7 +549,7 @@ void CNCline::DrawXZ(CDC* pDC, BOOL bSelect) const
 	printf("Line DrawXZ()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( m_obCdata.IsEmpty() ||
-			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
+			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_DRAWREVISE) )
 		DrawLine(NCDRAWVIEW_XZ, pDC, bSelect);
 	CNCdata::DrawXZ(pDC, bSelect);
 }
@@ -560,7 +560,7 @@ void CNCline::DrawYZ(CDC* pDC, BOOL bSelect) const
 	printf("Line DrawYZ()=%d\n", GetBlockLineNo()+1);
 #endif
 	if ( m_obCdata.IsEmpty() ||
-			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) )
+			AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_DRAWREVISE) )
 		DrawLine(NCDRAWVIEW_YZ, pDC, bSelect);
 	CNCdata::DrawYZ(pDC, bSelect);
 }
@@ -1576,7 +1576,7 @@ void CNCcircle::Draw(CDC* pDC, BOOL bSelect) const
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
 	// •½–Ê‚²‚Æ‚Ì•`‰æŠÖ”
-	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(GLOPTFLG_DRAWREVISE) ) {
 		CPen*	pOldPen;
 		if ( bSelect )
 			pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
@@ -1588,7 +1588,7 @@ void CNCcircle::Draw(CDC* pDC, BOOL bSelect) const
 		pDC->SelectObject(pOldPen);
 	}
 	// ’†SÀ•W(‰©F)
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_DRAWCIRCLECENTER) )
+	if ( pOpt->GetNCViewFlg(GLOPTFLG_DRAWCIRCLECENTER) )
 		pDC->SetPixelV(m_ptOrg.PointConvert()*m_dFactor,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
 	// Œa•â³ÃÞ°À‚Ì•`‰æ
@@ -1602,7 +1602,7 @@ void CNCcircle::DrawXY(CDC* pDC, BOOL bSelect) const
 #endif
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
-	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(GLOPTFLG_DRAWREVISE) ) {
 		CPen*	pOldPen;
 		if ( bSelect )
 			pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
@@ -1613,7 +1613,7 @@ void CNCcircle::DrawXY(CDC* pDC, BOOL bSelect) const
 		(this->*m_pfnCircleDraw)(NCDRAWVIEW_XY, pDC);
 		pDC->SelectObject(pOldPen);
 	}
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_DRAWCIRCLECENTER) )
+	if ( pOpt->GetNCViewFlg(GLOPTFLG_DRAWCIRCLECENTER) )
 		pDC->SetPixelV(m_ptOrg.GetXY()*m_dFactorXY,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
 	CNCdata::DrawXY(pDC, bSelect);
@@ -1626,7 +1626,7 @@ void CNCcircle::DrawXZ(CDC* pDC, BOOL bSelect) const
 #endif
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
-	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(GLOPTFLG_DRAWREVISE) ) {
 		CPen*	pOldPen;
 		if ( bSelect )
 			pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
@@ -1637,7 +1637,7 @@ void CNCcircle::DrawXZ(CDC* pDC, BOOL bSelect) const
 		(this->*m_pfnCircleDraw)(NCDRAWVIEW_XZ, pDC);
 		pDC->SelectObject(pOldPen);
 	}
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_DRAWCIRCLECENTER) )
+	if ( pOpt->GetNCViewFlg(GLOPTFLG_DRAWCIRCLECENTER) )
 		pDC->SetPixelV(m_ptOrg.GetXZ()*m_dFactorXZ,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
 	CNCdata::DrawXZ(pDC, bSelect);
@@ -1650,7 +1650,7 @@ void CNCcircle::DrawYZ(CDC* pDC, BOOL bSelect) const
 #endif
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
 
-	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(GLOPTFLG_DRAWREVISE) ) {
 		CPen*	pOldPen;
 		if ( bSelect )
 			pOldPen = AfxGetNCVCMainWnd()->GetPenCom(COMPEN_SEL);
@@ -1661,7 +1661,7 @@ void CNCcircle::DrawYZ(CDC* pDC, BOOL bSelect) const
 		(this->*m_pfnCircleDraw)(NCDRAWVIEW_YZ, pDC);
 		pDC->SelectObject(pOldPen);
 	}
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_DRAWCIRCLECENTER) )
+	if ( pOpt->GetNCViewFlg(GLOPTFLG_DRAWCIRCLECENTER) )
 		pDC->SetPixelV(m_ptOrg.GetYZ()*m_dFactorYZ,
 			pOpt->GetNcDrawColor(NCCOL_CENTERCIRCLE));
 	CNCdata::DrawYZ(pDC, bSelect);

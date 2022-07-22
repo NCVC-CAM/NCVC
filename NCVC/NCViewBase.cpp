@@ -163,7 +163,7 @@ void CNCViewBase::OnDraw(CDC* pDC)
 				pDC->TextOut(m_ptGuide[i][0].x, m_ptGuide[i][0].y, m_strGuide.Mid(i, 1));
 			}
 		}
-		if ( pOpt->GetNCViewFlg(NCVIEWFLG_GUIDESCALE) )
+		if ( pOpt->GetNCViewFlg(GLOPTFLG_GUIDESCALE) )
 			DrawGuideDivi(pDC, x, y);	// 目盛表示
 	}
 
@@ -239,7 +239,7 @@ void CNCViewBase::DrawNCdata(CDC* pDC)
 		if ( pData->GetGtype() == G_TYPE )
 			(pData->*m_pfnDrawProc)(pDC, FALSE);
 	}
-	if ( pOpt->GetNCViewFlg(NCVIEWFLG_TRACEMARKER) && pData && nDraw!=GetDocument()->GetNCsize() ) {
+	if ( pOpt->GetNCViewFlg(GLOPTFLG_TRACEMARKER) && pData && nDraw!=GetDocument()->GetNCsize() ) {
 		// 最後に描画したｵﾌﾞｼﾞｪｸﾄのﾄﾚｰｽﾏｰｶｰ
 		(pData->*m_pfnDrawProc)(pDC, TRUE);
 	}
@@ -308,7 +308,7 @@ void CNCViewBase::OnViewLensComm(void)
 	GetDocument()->AllChangeFactor(m_enView, m_dFactor);
 	if ( !IsThumbnail() ) {
 		// ｶﾞｲﾄﾞ軸
-		if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) )
+		if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_GUIDELENGTH) )
 			SetGuideData();
 		// 各矩形情報の更新
 		ConvertMaxRect();

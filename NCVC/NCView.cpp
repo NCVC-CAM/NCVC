@@ -65,7 +65,7 @@ void CNCView::OnInitialUpdate()
 void CNCView::SetGuideData(void)
 {
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	float	dSrc = pOpt->GetNCViewFlg(NCVIEWFLG_GUIDELENGTH) ?
+	float	dSrc = pOpt->GetNCViewFlg(GLOPTFLG_GUIDELENGTH) ?
 						m_dFactor : LOMETRICFACTOR;
 	CPoint3F	pt;
 	float		dLength;

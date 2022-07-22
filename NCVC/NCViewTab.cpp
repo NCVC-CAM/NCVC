@@ -277,7 +277,7 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		ASSERT(nIndex >= 0);
 		nIndex = AddPage("４面-2", &m_wndSplitter2);
 		ASSERT(nIndex >= 0);
-		if ( pOpt->GetNCViewFlg(NCVIEWFLG_SOLIDVIEW) ) {
+		if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
 			nIndex = AddPage("OpenGL",
 				RUNTIME_CLASS(CNCViewGL), GetDocument(), GetParentFrame());
 //			ASSERT(nIndex >= 0);	// OpenGLﾊﾞｰｼﾞｮﾝﾁｪｯｸに引っかかる可能性アリ
@@ -559,7 +559,7 @@ BOOL CTraceThread::InitInstance()
 			break;
 
 		// ﾏｰｶ表示状態取得
-		bSelect = pOpt->GetNCViewFlg(NCVIEWFLG_TRACEMARKER);
+		bSelect = pOpt->GetNCViewFlg(GLOPTFLG_TRACEMARKER);
 
 		// ﾄﾚｰｽ開始・再開
 		do {

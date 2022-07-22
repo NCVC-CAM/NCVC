@@ -369,7 +369,7 @@ void CNCline::DrawGLWirePass(RENDERMODE enRender, int nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
-	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(GLOPTFLG_DRAWREVISE) ) {
 		COLORREF	col;
 		GLubyte		rgb[3];
 		switch ( enRender ) {
@@ -986,7 +986,7 @@ void CNCcircle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
-	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(NCVIEWFLG_DRAWREVISE) ) {
+	if ( m_obCdata.IsEmpty() || pOpt->GetNCViewFlg(GLOPTFLG_DRAWREVISE) ) {
 		COLORREF	col;
 		GLubyte		rgb[3];
 		switch ( enRender ) {

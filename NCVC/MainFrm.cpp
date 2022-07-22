@@ -318,7 +318,7 @@ void CMainFrame::ChangeViewOption(void)
 			m_penOrg[0][i].DeleteObject();
 		if ( (HPEN)m_penOrg[1][i] )
 			m_penOrg[1][i].DeleteObject();
-		pen = g_penStyle[pOpt->GetNCViewFlg(NCVIEWFLG_GUIDESCALE) ? 0 : pOpt->GetNcDrawType(i)].nPenType;
+		pen = g_penStyle[pOpt->GetNCViewFlg(GLOPTFLG_GUIDESCALE) ? 0 : pOpt->GetNcDrawType(i)].nPenType;
 		m_penOrg[0][i].CreatePen(pen, 0, col);
 		m_penOrg[1][i].CreatePen(pen, 0, col!=RGB(255,255,255) ? col : RGB(0,0,0));
 	}

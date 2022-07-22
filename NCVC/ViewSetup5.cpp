@@ -220,7 +220,7 @@ void CViewSetup5::OnTextureFind()
 	if ( strFile.IsEmpty() ) {
 		// Ì§²Ùw’è‚ª‚È‚¯‚ê‚ÎA²İ½Ä°ÙÌ«ÙÀŞ‚ğQÆ
 		strPath  = g_pszExecDir;
-		strPath += g_szViewOptFlag[NCVIEWFLG_TEXTURE];
+		strPath += g_szViewOptFlag[GLOPTFLG_TEXTURE];
 	}
 	else
 		strFile = m_strTexture;

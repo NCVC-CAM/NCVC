@@ -59,7 +59,7 @@ BOOL CViewBaseGL::PreCreateWindow(CREATESTRUCT& cs)
 
 void CViewBaseGL::CreateFBO(void)
 {
-	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(NCVIEWFLG_USEFBO) ) {
+	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_USEFBO) ) {
 		if ( !m_pFBO && GLEW_EXT_framebuffer_object ) {
 			// ≥®›ƒﬁ≥ª≤ΩﬁÇ≈FBOçÏê¨
 			m_pFBO = new CFrameBuffer(m_cx, m_cy);
