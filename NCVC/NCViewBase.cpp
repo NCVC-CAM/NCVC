@@ -35,6 +35,8 @@ BEGIN_MESSAGE_MAP(CNCViewBase, CViewBase)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, &CNCViewBase::OnUpdateEditCopy)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_UP,  ID_VIEW_RT,  &CNCViewBase::OnUpdateMoveKey)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewBase::OnUpdateRoundKey)
+	ON_UPDATE_COMMAND_UI(ID_NCVIEW_PATHVIEW, &CNCViewBase::OnUpdatePathView)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_NCVIEW_SOLIDVIEW, ID_NCVIEW_LATHEMODE, &CNCViewBase::OnUpdateSolidView)
 	ON_COMMAND(ID_EDIT_COPY, &CNCViewBase::OnEditCopy)
 	ON_COMMAND_RANGE(ID_VIEW_UP,  ID_VIEW_RT,    &CNCViewBase::OnMoveKey)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &CNCViewBase::OnLensKey)
@@ -418,6 +420,18 @@ void CNCViewBase::OnUpdateMoveKey(CCmdUI* pCmdUI)
 void CNCViewBase::OnUpdateRoundKey(CCmdUI* pCmdUI) 
 {
 	pCmdUI->Enable(FALSE);
+}
+
+void CNCViewBase::OnUpdatePathView(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(FALSE);
+	pCmdUI->SetCheck(TRUE);
+}
+
+void CNCViewBase::OnUpdateSolidView(CCmdUI* pCmdUI) 
+{
+	pCmdUI->Enable(FALSE);
+	pCmdUI->SetCheck(FALSE);
 }
 
 void CNCViewBase::OnEditCopy() 

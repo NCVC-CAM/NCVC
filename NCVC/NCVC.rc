@@ -279,7 +279,7 @@ BEGIN
             MENUITEM "右回転(&E)\tCtrl+→",             ID_VIEW_RRT
         END
         MENUITEM SEPARATOR
-        MENUITEM "線画表示\tCtrl+I",                ID_NCVIEW_WIREVIEW
+        MENUITEM "パス表示\tCtrl+I",                ID_NCVIEW_PATHVIEW
         MENUITEM "ソリッド表示\tCtrl+H",              ID_NCVIEW_SOLIDVIEW
         MENUITEM "旋盤断面表示\tCtrl+L",              ID_NCVIEW_LATHEMODE
         MENUITEM SEPARATOR
@@ -563,7 +563,7 @@ BEGIN
             MENUITEM "右回転(&E)\tCtrl+→",             ID_VIEW_RRT
         END
         MENUITEM SEPARATOR
-        MENUITEM "線画表示\tCtrl+I",                ID_NCVIEW_WIREVIEW
+        MENUITEM "パス表示\tCtrl+I",                ID_NCVIEW_PATHVIEW
         MENUITEM "ソリッド表示\tCtrl+H",              ID_NCVIEW_SOLIDVIEW
         MENUITEM "旋盤断面表示\tCtrl+L",              ID_NCVIEW_LATHEMODE
         MENUITEM SEPARATOR
@@ -876,7 +876,7 @@ BEGIN
     "F",            ID_EDIT_FIND,           VIRTKEY, CONTROL, NOINVERT
     "G",            ID_NCVIEW_JUMP,         VIRTKEY, CONTROL, NOINVERT
     "H",            ID_NCVIEW_SOLIDVIEW,    VIRTKEY, CONTROL, NOINVERT
-    "I",            ID_NCVIEW_WIREVIEW,     VIRTKEY, CONTROL, NOINVERT
+    "I",            ID_NCVIEW_PATHVIEW,     VIRTKEY, CONTROL, NOINVERT
     "L",            ID_NCVIEW_LATHEMODE,    VIRTKEY, CONTROL, NOINVERT
     "M",            ID_NCVIEW_MAXRECT,      VIRTKEY, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT

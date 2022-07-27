@@ -69,8 +69,8 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_RUP, ID_VIEW_RRT, &CNCViewGL::OnUpdateMoveRoundKey)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &CNCViewGL::OnLensKey)
 	ON_COMMAND(ID_OPTION_DEFVIEWINFO, &CNCViewGL::OnDefViewInfo)
-	ON_UPDATE_COMMAND_UI_RANGE(ID_NCVIEW_WIREVIEW, ID_NCVIEW_LATHEMODE, &CNCViewGL::OnUpdateViewMode)
-	ON_COMMAND_RANGE(ID_NCVIEW_WIREVIEW, ID_NCVIEW_LATHEMODE, &CNCViewGL::OnViewMode)
+	ON_UPDATE_COMMAND_UI_RANGE(ID_NCVIEW_PATHVIEW, ID_NCVIEW_LATHEMODE, &CNCViewGL::OnUpdateViewMode)
+	ON_COMMAND_RANGE(ID_NCVIEW_PATHVIEW, ID_NCVIEW_LATHEMODE, &CNCViewGL::OnViewMode)
 	//
 	ON_MESSAGE(WM_USERTRACESELECT, &CNCViewGL::OnSelectTrace)
 END_MESSAGE_MAP()
@@ -1375,23 +1375,25 @@ void CNCViewGL::OnDefViewInfo()
 void CNCViewGL::OnUpdateViewMode(CCmdUI* pCmdUI) 
 {
 	if ( !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
-		pCmdUI->SetCheck(FALSE);
 		pCmdUI->Enable(FALSE);
+		pCmdUI->SetCheck(FALSE);
 		return;
 	}
 
 	switch ( pCmdUI->m_nID ) {
-	case ID_NCVIEW_WIREVIEW:
+	case ID_NCVIEW_PATHVIEW:
 	case ID_NCVIEW_SOLIDVIEW:
-		pCmdUI->SetCheck(m_bGLflg[pCmdUI->m_nID - ID_NCVIEW_WIREVIEW]);
+		pCmdUI->Enable(TRUE);
+		pCmdUI->SetCheck(m_bGLflg[pCmdUI->m_nID - ID_NCVIEW_PATHVIEW]);
 		break;
 	case ID_NCVIEW_LATHEMODE:
 		if ( IsLatheMode() ) {
+			pCmdUI->Enable(TRUE);
 			pCmdUI->SetCheck(m_bGLflg[NCVIEWGLFLG_LATHEMODE]);
 		}
 		else {
-			pCmdUI->SetCheck(FALSE);
 			pCmdUI->Enable(FALSE);
+			pCmdUI->SetCheck(FALSE);
 		}
 		break;
 	}
@@ -1404,7 +1406,7 @@ void CNCViewGL::OnViewMode(UINT nID)
 	}
 
 	switch ( nID ) {
-	case ID_NCVIEW_WIREVIEW:
+	case ID_NCVIEW_PATHVIEW:
 		m_bGLflg.flip(NCVIEWGLFLG_WIREVIEW);;		// ÉpÉXï\é¶êÿÇËë÷Ç¶
 		if ( !m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && !m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
 			m_bGLflg.set(NCVIEWGLFLG_SOLIDVIEW);

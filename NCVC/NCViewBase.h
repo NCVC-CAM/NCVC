@@ -85,6 +85,8 @@ protected:
 	afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateMoveKey (CCmdUI* pCmdUI);
 	afx_msg void OnUpdateRoundKey(CCmdUI* pCmdUI);
+	afx_msg void OnUpdatePathView(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateSolidView(CCmdUI* pCmdUI);
 	afx_msg void OnEditCopy();
 	afx_msg	void OnMoveKey(UINT);
 	afx_msg	void OnLensKey(UINT);
