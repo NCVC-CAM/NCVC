@@ -377,6 +377,11 @@ void CDXFDoc::UpdateLayerSequence(void)
 	m_obLayer.Sort(LayerCompareFunc_CutNo);
 }
 
+void CDXFDoc::SortLayerName(void)
+{
+	m_obLayer.Sort(LayerCompareFunc_Name);
+}
+
 void CDXFDoc::AllChangeFactor(float f)
 {
 	int		i;

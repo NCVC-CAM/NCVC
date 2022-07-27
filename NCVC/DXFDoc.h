@@ -162,6 +162,14 @@ public:
 		}
 		return nCnt;
 	}
+	int GetTargetLayerCnt(void) const {
+		int	i = 0, nCnt = 0;
+		for ( ; i<m_obLayer.GetSize(); i++ ) {
+			if ( m_obLayer[i]->IsMakeTarget() )
+				nCnt++;
+		}
+		return nCnt;
+	}
 	CLayerData* GetSerializeLayer(void) const {
 		return m_pSerializeLayer;
 	}
@@ -216,6 +224,7 @@ public:
 	BOOL	ReadLayerMap(LPCTSTR);
 	BOOL	SaveLayerMap(LPCTSTR, const CLayerArray* = NULL);
 	void	UpdateLayerSequence(void);
+	void	SortLayerName(void);
 	//
 	void	AllChangeFactor(float);	// ägëÂó¶ÇÃçXêV
 	void	AllSetDxfFlg(DWORD, BOOL = TRUE);

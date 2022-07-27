@@ -350,7 +350,7 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 	// 下位の CMemoryException は全てここで集約
 	try {
 		// NC生成ﾀｲﾌﾟ
-		int		nID = (int)(pParam->wParam);
+		int		nID = (int)(pParam->wParam), nCnt;
 
 		// NC生成ｵﾌﾟｼｮﾝｵﾌﾞｼﾞｪｸﾄの生成
 		g_pMakeOpt = new CNCMakeMillOpt(NULL);	// 読み込みはしない
@@ -393,11 +393,20 @@ UINT MakeNCD_Thread(LPVOID pVoid)
 		// ﾒｲﾝﾙｰﾌﾟへ
 		BOOL	bResult = FALSE;
 		switch ( nID ) {
-		case ID_FILE_DXF2NCD:		// 単一ﾚｲﾔ
 		case ID_FILE_DXF2NCD_SHAPE:	// 形状加工
 			bResult = SingleLayer(nID);
 			break;
 
+		case ID_FILE_DXF2NCD:		// 単一ﾚｲﾔ
+			nCnt = g_pDoc->GetTargetLayerCnt();
+			if ( nCnt < 1 ) {
+				break;
+			}
+			else if ( nCnt == 1 ) {
+				bResult = SingleLayer(nID);
+				break;
+			}
+			// through
 		case ID_FILE_DXF2NCD_EX1:	// 複数の切削条件ﾌｧｲﾙ
 		case ID_FILE_DXF2NCD_EX2:	// 複数Z座標
 			bResult = MultiLayer(nID);
@@ -531,7 +540,11 @@ BOOL MultiLayer(int nID)
 			bNotPart = FALSE;	// 全体出力でﾙｰﾌﾟ終了なら  TRUE
 	CLayerData*	pLayer;
 
-	if ( nID == ID_FILE_DXF2NCD_EX2 ) {
+	if ( nID == ID_FILE_DXF2NCD ) {
+		// レイヤ名で並べ替え
+		g_pDoc->SortLayerName();
+	}
+	if ( nID == ID_FILE_DXF2NCD || nID == ID_FILE_DXF2NCD_EX2 ) {
 		// 基準となるNC生成ｵﾌﾟｼｮﾝ読み込み
 		g_pMakeOpt->ReadMakeOption(AfxGetNCVCApp()->GetDXFOption()->GetInitList(NCMAKEMILL)->GetHead());
 		// 条件ごとに変化するﾊﾟﾗﾒｰﾀを設定
@@ -555,7 +568,15 @@ BOOL MultiLayer(int nID)
 		g_nFase = 1;
 		SendFaseMessage(g_pParent, g_nFase, -1, IDS_ANA_DATAINIT, pLayer->GetLayerName());
 		//
-		if ( nID == ID_FILE_DXF2NCD_EX1 ) {
+		switch ( nID ) {
+		case ID_FILE_DXF2NCD:
+			// Z軸の切削座標ｾｯﾄ
+			g_dZCut = RoundUp(GetDbl(MKNC_DBL_ZCUT));
+			g_dDeep = RoundUp(GetDbl(MKNC_DBL_DEEP));
+			// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
+			CNCMakeMill::ms_dCycleZ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLZ));
+			break;
+		case ID_FILE_DXF2NCD_EX1:
 			// NC生成ｵﾌﾟｼｮﾝ読み込み
 			if ( pLayer->GetInitFile().CompareNoCase(g_pMakeOpt->GetInitFile()) != 0 ) {
 				g_pMakeOpt->ReadMakeOption(pLayer->GetInitFile());	// 違うときだけ
@@ -566,13 +587,14 @@ BOOL MultiLayer(int nID)
 			g_dDeep = RoundUp(GetDbl(MKNC_DBL_DEEP));
 			// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
 			CNCMakeMill::ms_dCycleZ[0] = RoundUp(GetDbl(MKNC_DBL_DRILLZ));
-		}
-		else {
+			break;
+		case ID_FILE_DXF2NCD_EX2:
 			// 強制Z座標補正
 			g_dZCut = g_dDeep = RoundUp(pLayer->GetZCut());
 			// 固定ｻｲｸﾙの切り込み座標ｾｯﾄ
 			CNCMakeMill::ms_dCycleZ[0] = pLayer->IsLayerFlag(LAYER_DRILL_Z) ?
-						g_dZCut : RoundUp(GetDbl(MKNC_DBL_DRILLZ));
+				g_dZCut : RoundUp(GetDbl(MKNC_DBL_DRILLZ));
+			break;
 		}
 		// 固定ｻｲｸﾙその他の座標ｾｯﾄ
 		CNCMakeMill::ms_dCycleR[0] = RoundUp(GetDbl(MKNC_DBL_DRILLR));
@@ -602,7 +624,7 @@ BOOL MultiLayer(int nID)
 		}
 
 		// 個別出力でないなら(並べ替えしているので途中に割り込むことはない)
-		if ( !pLayer->IsLayerFlag(LAYER_PART_OUT) ) {
+		if ( nID==ID_FILE_DXF2NCD || !pLayer->IsLayerFlag(LAYER_PART_OUT) ) {
 			bNotPart = TRUE;
 			continue;
 		}
