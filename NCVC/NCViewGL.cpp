@@ -780,28 +780,18 @@ void CNCViewGL::OnDraw(CDC* pDC)
 //	::glPopMatrix();
 //	::glEnable(GL_DEPTH_TEST);
 #else
+	size_t	j = 0;
+
 	if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) && m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && m_nVertexID[0]>0 &&
 		(pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
-		size_t	j = 0;
 		// 線画が正しく表示されるためにﾎﾟﾘｺﾞﾝｵﾌｾｯﾄ
 		::glEnable(GL_POLYGON_OFFSET_FILL);
 		::glPolygonOffset(1.0f, 1.0f);
 		// 頂点ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄによるﾎﾞｸｾﾙ描画
 		::glEnableClientState(GL_VERTEX_ARRAY);
+		::glEnableClientState(GL_NORMAL_ARRAY);
 		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
 		::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);
-		if ( IsWireMode() && m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
-			// 軌跡ﾜｲﾔｰﾌﾚｰﾑ表示
-			::glEnable( GL_LINE_STIPPLE );
-			for ( const auto& v : m_WireDraw.vwl ) {
-				::glColor3ub(GetRValue(v.col), GetGValue(v.col), GetBValue(v.col));
-				::glLineStipple(1, v.pattern);
-				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pLocusElement[j++]);
-				::glDrawElements(GL_LINE_STRIP, (GLsizei)(v.vel.size()), GL_UNSIGNED_INT, NULL);
-			}
-			::glDisable( GL_LINE_STIPPLE );
-		}
-		::glEnableClientState(GL_NORMAL_ARRAY);
 		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
 		::glNormalPointer(GL_FLOAT, 0, NULL);
 		// ﾃｸｽﾁｬ
@@ -841,7 +831,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glDisable(GL_LIGHT5);
 		::glEnable (GL_LIGHT2);
 		::glEnable (GL_LIGHT3);
-		j = 0;
 		for ( const auto& v : m_vElementCut ) {
 			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pSolidElement[j++]);
 #ifdef _DEBUG_POLYGONLINE_
@@ -902,18 +891,26 @@ void CNCViewGL::OnDraw(CDC* pDC)
 				RenderMill(GetDocument()->GetNCdata(nDraw-1));
 			}
 		}
-		::glDisableClientState(GL_NORMAL_ARRAY);
-		::glDisableClientState(GL_VERTEX_ARRAY);
-		::glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 #ifdef _DEBUG_BASICSHADERTEST_
 	m_glsl.Use(FALSE);
 	::glActiveTexture(GL_TEXTURE1);
 	::glBindTexture(GL_TEXTURE_2D, 0);
-//	::glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-//	::glDisable(GL_TEXTURE_2D);
 #endif
 #endif	// _DEBUG_DRAWTEST_
+	
+	if ( IsWireMode() && m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
+		// ワイヤ放電加工機モード
+		j = 0;
+		::glEnable( GL_LINE_STIPPLE );
+		for ( const auto& v : m_WireDraw.vwl ) {
+			::glColor3ub(GetRValue(v.col), GetGValue(v.col), GetBValue(v.col));
+			::glLineStipple(1, v.pattern);
+			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pLocusElement[j++]);
+			::glDrawElements(GL_LINE_STRIP, (GLsizei)(v.vel.size()), GL_UNSIGNED_INT, NULL);
+		}
+		::glDisable( GL_LINE_STIPPLE );
+	}
 
 	if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
 		if ( !pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
