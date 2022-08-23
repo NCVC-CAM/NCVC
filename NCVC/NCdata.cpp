@@ -2589,7 +2589,8 @@ void CNCcircle::SetCorrectPoint(ENPOINTORDER enPoint, const CPointF& ptSrc, floa
 int _CalcRoundPoint_OffsetFlag(const CPointF& pts, const CPointF& pto, BOOL bG03)
 {
 	// ‰ñ“]•„†
-	int		k = bG03 ? -1 : 1;		// G02:+90‹,G03:-90‹
+	// Issue #12 ‚½‚¾‚µ‚à‚¤­‚µŒŸØ‚ª•K—v
+	int		k = bG03 ? 1 : -1;		// G02:-90‹,G03:+90‹
 	// ’¼ü‚ÌŠp“x
 	float	q = pts.arctan();
 	// ‰~‚ÌÚü
