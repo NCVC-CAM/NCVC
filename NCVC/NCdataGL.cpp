@@ -254,6 +254,26 @@ void CNCdata::DrawGLWirePass(RENDERMODE enRender, int nID) const
 		m_obCdata[i]->DrawGLWirePass(enRender, nID);
 }
 
+void CNCdata::DrawGLWireWirePass(int nID) const
+{
+	//	AddGLWireVertex() から座標値を得る
+	CVfloat		vpt, dmy1;
+	CVelement	dmy2;
+	WIRELINE	dmy3;
+	AddGLWireVertex(vpt, dmy1, dmy2, dmy3, TRUE);	// 各オブジェクトのAddGLWireVertex()が呼ばれる
+	// CNCdataオブジェクトのIDをカラーコードに設定
+	GLubyte		rgb[3];
+	IDtoRGB(nID, rgb);
+
+	// vptを描画
+	::glBegin(GL_TRIANGLE_STRIP);
+	::glColor3ubv(rgb);
+	for ( size_t i=0; i<vpt.size(); i+=NCXYZ ) {
+		::glVertex3f(vpt[i+NCA_X], vpt[i+NCA_Y], vpt[i+NCA_Z]);
+	}
+	::glEnd();
+}
+
 void CNCdata::DrawGLLatheDepth(void) const
 {
 }

@@ -160,6 +160,7 @@ class CNCViewGL : public CViewBaseGL
 
 	void	RenderAxis(void);
 	void	RenderCode(RENDERMODE);
+	void	RenderCodeWire(void);
 	void	RenderMill(const CNCdata*);
 	void	DoSelect(const CPoint&);
 

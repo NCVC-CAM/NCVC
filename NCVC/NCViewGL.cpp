@@ -526,10 +526,10 @@ void CNCViewGL::RenderAxis(void)
 	float		dLength;
 	COLORREF	col;
 
-	::glPushAttrib( GL_LINE_BIT );	// 線情報
+	::glPushAttrib(GL_LINE_BIT);	// 線情報
 	::glLineWidth( 2.0f );
-	::glEnable( GL_LINE_STIPPLE );
-	::glBegin( GL_LINES );
+	::glEnable(GL_LINE_STIPPLE);
+	::glBegin(GL_LINES);
 
 	// X軸のｶﾞｲﾄﾞ
 	dLength = pOpt->GetGuideLength(NCA_X);
@@ -555,17 +555,14 @@ void CNCViewGL::RenderAxis(void)
 
 	::glEnd();
 
-	::glDisable( GL_LINE_STIPPLE );
+	::glDisable(GL_LINE_STIPPLE);
 	::glPopAttrib();
 }
 
 void CNCViewGL::RenderCode(RENDERMODE enRender)
 {
-	if ( IsWireMode() )
-		return;
-
 	::glDisable(GL_LIGHTING);
-	::glEnable( GL_LINE_STIPPLE );
+	::glDisable(GL_LINE_STIPPLE);
 
 	CNCdata*	pData;
 	// NCﾃﾞｰﾀの軌跡（ﾜｲﾔｰﾌﾚｰﾑ）描画
@@ -574,6 +571,21 @@ void CNCViewGL::RenderCode(RENDERMODE enRender)
 		// 選択オブジェクト以外を描画
 		if ( pData->GetGtype()==G_TYPE && m_pData!=pData ) {
 			pData->DrawGLWirePass(enRender, i);		// オブジェクト番号をIDに
+		}
+	}
+}
+
+void CNCViewGL::RenderCodeWire(void)
+{
+	::glDisable(GL_LIGHTING);
+	::glDisable(GL_LINE_STIPPLE);
+
+	CNCdata*	pData;
+	// NCﾃﾞｰﾀの軌跡（ﾜｲﾔｰﾌﾚｰﾑ）描画
+	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
+		pData = GetDocument()->GetNCdata(i);
+		if ( pData->GetGtype()==G_TYPE ) {
+			pData->DrawGLWireWirePass(i);
 		}
 	}
 }
@@ -647,13 +659,20 @@ void CNCViewGL::DoSelect(const CPoint& pt)
 
 	// 行番号をカラーコードにして描画
 	m_pData = NULL;
-	RenderCode(RM_PICKLINE);
+	if ( IsWireMode() ) {
+		RenderCodeWire();			// ワイヤ放電加工機用
+	}
+	else {
+		RenderCode(RM_PICKLINE);	// その他
+	}
+
 	// マウスポイントの色情報を取得
 	GLubyte	buf[READBUF];
 	::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	::glReadPixels(pt.x-PICKREGION, m_cy-pt.y-PICKREGION,	// y座標に注意!!
 		2*PICKREGION, 2*PICKREGION, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 	GetGLError();
+
 	// カラーコードからオブジェクト番号へ
 	int			nID = SearchSelectID(buf);		// ViewBaseGL.cpp
 	CNCdata*	pData = NULL;
@@ -911,8 +930,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		}
 		::glDisable( GL_LINE_STIPPLE );
 	}
-
-	if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
+	else if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
 		if ( !pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
 				(!pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
 			// 線画
