@@ -191,6 +191,8 @@ NCVCのホームページから必要な分をダウンロードしてください。
 　　左ダブルクリック（線画の表示/非表示切り替え）は廃止しました．
 　：OpenGLタブで描画された線をクリックすると，選択色になると同時に，
 　　対応したブロック（行）が選択されるようにした．
+　　→ワイヤ放電加工機モードのときは［ソリッド表示］をオフにしないと
+　　　選択色が表示されません．
 ・バグレポート
 　：コーナーRで向きが反対になるバグを修正（Issue #12）
 　　→ただしもう少し検証が必要
@@ -258,6 +260,6 @@ E-mail:magara[at]maizuru-ct.ac.jp
 ビデオ　　　：GeForce RTX 2070
 ＯＳ　　　　：Windows 11 Enterprise(64bit)
 開発環境　　：Visual Studio Professional/Community 2022
-ライブラリ　：MFC, boost-1.79.0, GLEW-2.10, Kodatuno-R3.4改
+ライブラリ　：MFC, boost-1.80.0, GLEW-2.10, Kodatuno-R3.4改
 　Kodatunoは、金沢大学マンマシン研究室で開発されている
 　オープンソースCAMカーネルです

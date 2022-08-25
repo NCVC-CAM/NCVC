@@ -229,9 +229,9 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
-	virtual	void	DrawGLWirePass(RENDERMODE, int) const;	// 3軸フライスの線画
-	virtual	void	DrawGLWireWirePass(int) const;			// ワイヤ放電加工機用（マウスピック用）
-	virtual	void	DrawGLLatheDepth(void) const;			// 旋盤用
+	virtual	void	DrawGLWirePass(RENDERMODE, int) const;			// 3軸フライスの線画
+	virtual	void	DrawGLWireWirePass(RENDERMODE, int) const;		// ワイヤ放電加工機用（マウスピック用）
+	virtual	void	DrawGLLatheDepth(void) const;					// 旋盤用
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
 	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
 	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;

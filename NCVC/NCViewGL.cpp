@@ -585,7 +585,7 @@ void CNCViewGL::RenderCodeWire(void)
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
 		pData = GetDocument()->GetNCdata(i);
 		if ( pData->GetGtype()==G_TYPE ) {
-			pData->DrawGLWireWirePass(i);
+			pData->DrawGLWireWirePass(RM_NORMAL, i);
 		}
 	}
 }
@@ -921,6 +921,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	if ( IsWireMode() && m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
 		// ワイヤ放電加工機モード
 		j = 0;
+		::glDisable(GL_LIGHTING);
 		::glEnable( GL_LINE_STIPPLE );
 		for ( const auto& v : m_WireDraw.vwl ) {
 			::glColor3ub(GetRValue(v.col), GetGValue(v.col), GetBValue(v.col));
@@ -928,22 +929,25 @@ void CNCViewGL::OnDraw(CDC* pDC)
 			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pLocusElement[j++]);
 			::glDrawElements(GL_LINE_STRIP, (GLsizei)(v.vel.size()), GL_UNSIGNED_INT, NULL);
 		}
-		::glDisable( GL_LINE_STIPPLE );
+		if ( m_pData ) {
+			// 選択オブジェクトの描画
+			m_pData->DrawGLWireWirePass(RM_SELECT, -1);	// 第2引数は不使用
+		}
 	}
 	else if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
 		if ( !pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
 				(!pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
 			// 線画
+			::glDisable(GL_LIGHTING);
+			::glEnable( GL_LINE_STIPPLE );
 			if ( m_glCode>0 && !m_pData ) {
-				::glDisable(GL_LIGHTING);
-				::glEnable( GL_LINE_STIPPLE );
 				::glCallList( m_glCode );
 			}
 			else {
 				RenderCode(RM_NORMAL);
-				// 選択オブジェクトの描画
 				if ( m_pData ) {
-					m_pData->DrawGLWirePass(RM_SELECT, -1);	// 第2引数は不使用
+					// 選択オブジェクトの描画
+					m_pData->DrawGLWirePass(RM_SELECT, -1);
 				}
 			}
 		}

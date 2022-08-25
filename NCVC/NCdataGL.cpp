@@ -254,16 +254,25 @@ void CNCdata::DrawGLWirePass(RENDERMODE enRender, int nID) const
 		m_obCdata[i]->DrawGLWirePass(enRender, nID);
 }
 
-void CNCdata::DrawGLWireWirePass(int nID) const
+void CNCdata::DrawGLWireWirePass(RENDERMODE enRender, int nID) const
 {
 	//	AddGLWireVertex() から座標値を得る
 	CVfloat		vpt, dmy1;
 	CVelement	dmy2;
 	WIRELINE	dmy3;
 	AddGLWireVertex(vpt, dmy1, dmy2, dmy3, TRUE);	// 各オブジェクトのAddGLWireVertex()が呼ばれる
-	// CNCdataオブジェクトのIDをカラーコードに設定
+
 	GLubyte		rgb[3];
-	IDtoRGB(nID, rgb);
+	if ( enRender == RM_SELECT ) {
+		COLORREF col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT);
+		rgb[0] = GetRValue(col);
+		rgb[1] = GetGValue(col);
+		rgb[2] = GetBValue(col);
+	}
+	else {
+		// CNCdataオブジェクトのIDをカラーコードに設定
+		IDtoRGB(nID, rgb);
+	}
 
 	// vptを描画
 	::glBegin(GL_TRIANGLE_STRIP);
