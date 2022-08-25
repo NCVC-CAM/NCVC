@@ -221,7 +221,7 @@ BOOL CNCVCApp::InitInstance()
 		IDR_NCTYPE,
 		RUNTIME_CLASS(CNCDoc),
 		RUNTIME_CLASS(CNCChild),
-		RUNTIME_CLASS(CNCViewTab));	// CTabViewBase
+		RUNTIME_CLASS(CNCViewTab));
 	m_pDocTemplate[TYPE_DXF] = new CNCVCDocTemplate(	// DXFÄÞ·­ÒÝÄ
 		IDR_DXFTYPE,
 		RUNTIME_CLASS(CDXFDoc),

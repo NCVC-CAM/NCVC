@@ -1,9 +1,9 @@
-// TabView.cpp: CTabViewBase クラスのインプリメンテーション
+// TabViewBase.cpp: CTabViewBase クラスのインプリメンテーション
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-#include "TabView.h"
+#include "TabViewBase.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -14,6 +14,7 @@ IMPLEMENT_DYNCREATE(CTabViewBase, CCtrlView)
 BEGIN_MESSAGE_MAP(CTabViewBase, CCtrlView)
 	ON_WM_SIZE()
 	ON_WM_DESTROY()
+	ON_WM_SETFOCUS()
 	ON_WM_ERASEBKGND()
 	ON_NOTIFY_REFLECT(TCN_SELCHANGING, &CTabViewBase::OnSelChanging)
 	ON_NOTIFY_REFLECT(TCN_SELCHANGE, &CTabViewBase::OnSelChange)
@@ -187,7 +188,7 @@ void CTabViewBase::OnSize(UINT nType, int cx, int cy)
 {
 	// When the view's size changes, resize the dialog (if any) shown in the
 	// view to prevent the dialog from clipping the view's inside border.
-	CCtrlView::OnSize (nType, cx, cy);
+	__super::OnSize (nType, cx, cy);
 	if ( GetPageCount() > 0 )
 		ResizePage(GetActivePageWnd());
 }
@@ -195,7 +196,26 @@ void CTabViewBase::OnSize(UINT nType, int cx, int cy)
 void CTabViewBase::OnDestroy() 
 {
 	m_pPages.RemoveAll();
-	CCtrlView::OnDestroy();
+	__super::OnDestroy();
+}
+
+void CTabViewBase::OnSetFocus(CWnd*) 
+{
+#ifdef _DEBUG
+	printf("CTabViewBase::OnSetFocus()\n");
+#endif
+	int	nIndex = GetActivePage();
+	if ( nIndex >= 0 ) {
+		ActivatePage(nIndex);
+//		GetPage(nIndex)->SetFocus();
+//		GetTabCtrl().SetCurSel(nIndex);
+//		GetTabCtrl().SetCurFocus(nIndex);
+	}
+#ifdef _DEBUG
+	else {
+		printf("CTabViewBase not select active page\n");
+	}
+#endif
 }
 
 BOOL CTabViewBase::OnEraseBkgnd(CDC* pDC)

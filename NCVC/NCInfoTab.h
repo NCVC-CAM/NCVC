@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "TabView.h"
+#include "TabViewBase.h"
 
 class CNCInfoTab : public CTabViewBase  
 {
@@ -35,7 +35,6 @@ protected:
 protected:
 	afx_msg int		OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void	OnDestroy();
-//	afx_msg void	OnSetFocus(CWnd* pOldWnd);
 	// ÀÌÞˆÚ“®
 	afx_msg	void	OnMoveTab(UINT);
 

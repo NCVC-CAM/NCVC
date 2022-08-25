@@ -27,7 +27,6 @@ IMPLEMENT_DYNCREATE(CNCViewTab, CTabViewBase)
 BEGIN_MESSAGE_MAP(CNCViewTab, CTabViewBase)
 	ON_WM_CREATE()
 	ON_WM_DESTROY()
-//	ON_WM_SETFOCUS()
 	// ﾀﾌﾞ移動
 	ON_COMMAND_RANGE(ID_TAB_NEXT, ID_TAB_PREV, &CNCViewTab::OnMoveTab)
 	// ﾄﾚｰｽ
@@ -74,7 +73,7 @@ CNCViewTab::CNCViewTab() : m_evTrace(FALSE, TRUE)
 
 void CNCViewTab::OnInitialUpdate() 
 {
-	CTabViewBase::OnInitialUpdate();
+	__super::OnInitialUpdate();
 
 	// ﾄﾚｰｽ描画ｽﾚｯﾄﾞ生成
 	// --- OnCreateではIsDocFlag()が間に合わない
@@ -125,7 +124,7 @@ void CNCViewTab::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		GetTabCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);
 		break;
 	}
-	CTabViewBase::OnUpdate(pSender, lHint, pHint);
+	__super::OnUpdate(pSender, lHint, pHint);
 }
 
 BOOL CNCViewTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo) 
@@ -142,14 +141,14 @@ BOOL CNCViewTab::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 				pWnd->IsKindOf(RUNTIME_CLASS(CNCViewXZ)) ||
 				pWnd->IsKindOf(RUNTIME_CLASS(CNCViewYZ)) ||
 				pWnd->IsKindOf(RUNTIME_CLASS(CNCViewGL)) )
-			return CTabViewBase::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+			return __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 		else
 			return FALSE;
 	}
 
 	// 自分自身とｱｸﾃｨﾌﾞなﾋﾞｭｰだけにｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞ
 	// 結果的に CNCDoc へのｺﾏﾝﾄﾞﾙｰﾃｨﾝｸﾞはここからだけになる
-	if ( CTabViewBase::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) ) {
+	if ( __super::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo) ) {
 #ifdef _DEBUG_CMDMSG
 		printf("CTabViewBase::OnCmdMsg() return\n");
 #endif
@@ -190,12 +189,12 @@ void CNCViewTab::OnActivatePage(int nIndex)
 #ifdef _DEBUG
 void CNCViewTab::AssertValid() const
 {
-	CTabViewBase::AssertValid();
+	__super::AssertValid();
 }
 
 void CNCViewTab::Dump(CDumpContext& dc) const
 {
-	CTabViewBase::Dump(dc);
+	__super::Dump(dc);
 }
 
 CNCDoc* CNCViewTab::GetDocument() // 非デバッグ バージョンはインラインです。
@@ -215,7 +214,7 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 #endif
 	extern	LPCTSTR	g_szNdelimiter;		// "XYZUVWIJKRPLDH" from NCDoc.cpp
 
-	if ( CTabViewBase::OnCreate(lpCreateStruct) < 0 )
+	if ( __super::OnCreate(lpCreateStruct) < 0 )
 		return -1;
 	GetTabCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);
 
@@ -325,7 +324,7 @@ void CNCViewTab::OnDestroy()
 		delete	m_pTraceThread;
 	}
 
-	CTabViewBase::OnDestroy();
+	__super::OnDestroy();
 }
 
 void CNCViewTab::OnMoveTab(UINT nID)

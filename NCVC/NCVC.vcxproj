@@ -384,7 +384,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="TabView.cpp" />
+    <ClCompile Include="TabViewBase.cpp" />
     <ClCompile Include="TH_AutoWorkingSet.cpp" />
     <ClCompile Include="TH_Correct.cpp" />
     <ClCompile Include="TH_Cuttime.cpp" />
@@ -526,7 +526,7 @@
     <ClInclude Include="ShapePropDlg.h" />
     <ClInclude Include="SplashWnd.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="TabView.h" />
+    <ClInclude Include="TabViewBase.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="ThreadDlg.h" />
     <ClInclude Include="ThumbnailDlg.h" />

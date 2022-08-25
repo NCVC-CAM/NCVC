@@ -1,4 +1,4 @@
-// TabView.h: CTabViewBase クラスのインターフェイス
+// TabViewBase.h: CTabViewBase クラスのインターフェイス
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -54,12 +54,15 @@ protected:
 	virtual	BOOL	OnInitPage(int nIndex) {
 		return TRUE;
 	}
-	virtual	void	OnActivatePage(int nIndex) {}
+	virtual	void	OnActivatePage(int nIndex) {
+		m_pPages[nIndex]->SetFocus();
+	}
 	virtual	void	OnDeactivatePage(int nIndex) {}
 	virtual	void	OnDestroyPage(int nIndex) {}
 
 // 生成されたメッセージ マップ関数
 	afx_msg	void	OnSize(UINT nType, int cx, int cy);
+	afx_msg void	OnSetFocus(CWnd* pOldWnd);
 	afx_msg	void	OnDestroy();
 	afx_msg BOOL	OnEraseBkgnd(CDC* pDC);
 	afx_msg	void	OnSelChanging(NMHDR* pNMHDR, LRESULT* pResult);
