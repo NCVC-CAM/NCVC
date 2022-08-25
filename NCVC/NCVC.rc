@@ -2436,7 +2436,7 @@ BEGIN
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "ProductName", "NCVC"
             VALUE "ProductVersion", "4.1.0.0"
-            VALUE "SpecialBuild", "Boost C++ 1.79, GLEW 2.10, Kodatuno R3.4kai"
+            VALUE "SpecialBuild", "Boost C++ 1.80, GLEW 2.10, Kodatuno R3.4kai"
         END
     END
     BLOCK "VarFileInfo"
