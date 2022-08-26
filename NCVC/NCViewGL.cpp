@@ -939,17 +939,17 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		if ( !pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
 				(!pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
 			// 線画
-			if ( m_glCode>0 && !m_pData ) {
+			if ( m_glCode > 0 ) {
 				::glCallList( m_glCode );
 			}
 			else {
 				RenderCode(RM_NORMAL);
-				if ( m_pData ) {
-					// 選択オブジェクトの描画
-					// デプステストを無効にして上書き
-					::glDisable(GL_DEPTH_TEST);
-					m_pData->DrawGLWirePass(RM_SELECT, -1);
-				}
+			}
+			if ( m_pData ) {
+				// 選択オブジェクトの描画
+				// デプステストを無効にして上書き
+				::glDisable(GL_DEPTH_TEST);
+				m_pData->DrawGLWirePass(RM_SELECT, -1);
 			}
 		}
 	}
