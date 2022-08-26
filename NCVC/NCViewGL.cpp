@@ -486,8 +486,10 @@ void CNCViewGL::InitialBoxel(void)
 		m_pFBO->Bind(TRUE);
 	}
 	// ﾎﾞｸｾﾙ生成のための初期設定
-	::glDisable(GL_NORMALIZE);
+	::glEnable(GL_DEPTH_TEST);
 	::glDepthFunc(GL_GREATER);		// 遠い方を優先
+	::glDisable(GL_NORMALIZE);
+	::glDisable(GL_LIGHTING);
 	::glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);	// ｶﾗｰﾏｽｸOFF
 	// 回転行列のﾊﾞｯｸｱｯﾌﾟと初期化
 	memcpy(m_objXformBk, m_objXform, sizeof(m_objXform));
@@ -568,8 +570,7 @@ void CNCViewGL::RenderCode(RENDERMODE enRender)
 	// NCﾃﾞｰﾀの軌跡（ﾜｲﾔｰﾌﾚｰﾑ）描画
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
 		pData = GetDocument()->GetNCdata(i);
-		// 選択オブジェクト以外を描画
-		if ( pData->GetGtype()==G_TYPE && m_pData!=pData ) {
+		if ( pData->GetGtype() == G_TYPE ) {
 			pData->DrawGLWirePass(enRender, i);		// オブジェクト番号をIDに
 		}
 	}
@@ -584,7 +585,7 @@ void CNCViewGL::RenderCodeWire(void)
 	// NCﾃﾞｰﾀの軌跡（ﾜｲﾔｰﾌﾚｰﾑ）描画
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
 		pData = GetDocument()->GetNCdata(i);
-		if ( pData->GetGtype()==G_TYPE ) {
+		if ( pData->GetGtype() == G_TYPE ) {
 			pData->DrawGLWireWirePass(RM_NORMAL, i);
 		}
 	}
@@ -918,11 +919,11 @@ void CNCViewGL::OnDraw(CDC* pDC)
 #endif
 #endif	// _DEBUG_DRAWTEST_
 	
+	::glDisable(GL_LIGHTING);
+	::glEnable(GL_LINE_STIPPLE);
 	if ( IsWireMode() && m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
 		// ワイヤ放電加工機モード
 		j = 0;
-		::glDisable(GL_LIGHTING);
-		::glEnable( GL_LINE_STIPPLE );
 		for ( const auto& v : m_WireDraw.vwl ) {
 			::glColor3ub(GetRValue(v.col), GetGValue(v.col), GetBValue(v.col));
 			::glLineStipple(1, v.pattern);
@@ -938,8 +939,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		if ( !pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
 				(!pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
 			// 線画
-			::glDisable(GL_LIGHTING);
-			::glEnable( GL_LINE_STIPPLE );
 			if ( m_glCode>0 && !m_pData ) {
 				::glCallList( m_glCode );
 			}
@@ -947,6 +946,8 @@ void CNCViewGL::OnDraw(CDC* pDC)
 				RenderCode(RM_NORMAL);
 				if ( m_pData ) {
 					// 選択オブジェクトの描画
+					// デプステストを無効にして上書き
+					::glDisable(GL_DEPTH_TEST);
 					m_pData->DrawGLWirePass(RM_SELECT, -1);
 				}
 			}

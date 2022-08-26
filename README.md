@@ -2,7 +2,7 @@
 NC Viewer and Converter (Free CAM)
 
 ## Requirement
-* Boost C++ 1.78.0 or later <https://www.boost.org/>
+* Boost C++ 1.80.0 or later <https://www.boost.org/>
 * GLEW 2.1.0 <http://glew.sourceforge.net/>
 * Kodatuno R3.4改 <https://github.com/NCVC-CAM/Kodatuno>
 * NCVC.SDK <https://github.com/NCVC-CAM/NCVC.SDK>
