@@ -388,18 +388,29 @@ void CNCListView::OnGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
 
 void CNCListView::OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult) 
 {
-	LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-
-	// m_bTraceSelect が真の時は、SelectTrace() から WM_USERSTATUSLINENO 呼び出し
-	if ( !m_bTraceSelect && (pNMListView->uNewState & LVIS_SELECTED) ) {
-		int	nItem = pNMListView->iItem;
-		// ｽﾃｰﾀｽﾊﾞｰの更新
-		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-		pFrame->SetStatusInfo(nItem+1,
-			nItem<0 || nItem>=GetDocument()->GetNCBlockSize() ?
-			(CNCblock *)NULL : GetDocument()->GetNCblock(nItem) );
-		pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
+	// OnSelectTrace(トレース)からの分は処理しない
+	if ( m_bTraceSelect ) {
+		LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+		if ( pNMListView->uChanged & LVIF_STATE ) {
+			int	nItem = pNMListView->iItem;
+			if ( nItem >= 0 ) {
+				if ( pNMListView->uNewState & LVIS_FOCUSED ) {
+					// 選択色表示
+				}
+				else {
+					// 選択解除
+				}
+			}
+			// ステータスバーの更新
+			// こちらはブロックベースで指示
+			CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
+			pFrame->SetStatusInfo(nItem+1,
+				nItem<0 || nItem>=GetDocument()->GetNCBlockSize() ?
+				(CNCblock *)NULL : GetDocument()->GetNCblock(nItem) );
+			pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
+		}
 	}
+
 	*pResult = 0;
 }
 
@@ -412,7 +423,8 @@ LRESULT CNCListView::OnSelectTrace(WPARAM wParam, LPARAM)
 	m_bTraceSelect = TRUE;	// OnItemChanged を発動しない
 	GetListCtrl().SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
 	m_bTraceSelect = FALSE;
-	// ｽﾃｰﾀｽﾊﾞｰ更新
+	// ステータスバーの更新
+	// こちらは pData ベースで指示
 	CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
 	pFrame->SetStatusInfo(nIndex+1, pData);
 	pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
