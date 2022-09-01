@@ -179,6 +179,7 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 	switch ( lHint ) {
 	case UAV_DRAWMAXRECT:
 		return;		// 無視
+
 	case UAV_TRACECURSOR:
 		if ( (UINT_PTR)pHint == ID_NCVIEW_TRACE_CURSOR ) {
 			// ｶｰｿﾙ位置まで実行（範囲制限）
@@ -191,6 +192,13 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		}
 		Invalidate(FALSE);
 		return;
+
+	case UAV_DRAWSELECT:
+	case UAV_DRAWUNSELECT:
+		m_pData = reinterpret_cast<CNCdata *>(pHint);
+		Invalidate(FALSE);
+		return;
+
 	case UAV_STARTSTOPTRACE:
 		if ( GetDocument()->GetTraceMode() != ID_NCVIEW_TRACE_STOP ) {
 			OnSelectTrace(NULL, NULL);
