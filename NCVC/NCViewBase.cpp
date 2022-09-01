@@ -115,9 +115,17 @@ void CNCViewBase::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 			CClientDC	dc(this);
 			dc.SetROP2(GetDocument()->IsDocFlag(NCDOC_MAXRECT) ? R2_COPYPEN : R2_XORPEN);
 			DrawMaxRect(&dc);
-			dc.SetROP2(R2_COPYPEN);
 		}
 		return;
+	case UAV_DRAWSELECT:
+	case UAV_DRAWUNSELECT:
+		if ( pHint ) {
+			CClientDC	dc(this);
+			dc.SetROP2(R2_COPYPEN);
+			CNCdata*	pData = reinterpret_cast<CNCdata *>(pHint);
+			(pData->*m_pfnDrawProc)(&dc, lHint==UAV_DRAWSELECT);
+		}
+		break;
 	case UAV_CHANGEFONT:
 		SetGuideData();
 		break;

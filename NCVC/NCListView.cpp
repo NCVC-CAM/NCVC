@@ -389,24 +389,28 @@ void CNCListView::OnGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
 void CNCListView::OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult) 
 {
 	// OnSelectTrace(トレース)からの分は処理しない
-	if ( m_bTraceSelect ) {
+	if ( !m_bTraceSelect ) {
 		LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
 		if ( pNMListView->uChanged & LVIF_STATE ) {
+			CNCblock*	pBlock = NULL;
 			int	nItem = pNMListView->iItem;
-			if ( nItem >= 0 ) {
+			if ( 0<=nItem && nItem<GetDocument()->GetNCBlockSize() ) {
+				pBlock = GetDocument()->GetNCblock(nItem);
+				ASSERT( pBlock );
+				CObject*	pData = reinterpret_cast<CObject *>(pBlock->GetBlockToNCdata());
 				if ( pNMListView->uNewState & LVIS_FOCUSED ) {
 					// 選択色表示
+					GetDocument()->UpdateAllViews(this, UAV_DRAWSELECT, pData);
 				}
 				else {
 					// 選択解除
+					GetDocument()->UpdateAllViews(this, UAV_DRAWUNSELECT, pData);
 				}
 			}
 			// ステータスバーの更新
 			// こちらはブロックベースで指示
 			CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-			pFrame->SetStatusInfo(nItem+1,
-				nItem<0 || nItem>=GetDocument()->GetNCBlockSize() ?
-				(CNCblock *)NULL : GetDocument()->GetNCblock(nItem) );
+			pFrame->SetStatusInfo(nItem+1, pBlock);		// pBlock渡し
 			pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
 		}
 	}
@@ -426,8 +430,9 @@ LRESULT CNCListView::OnSelectTrace(WPARAM wParam, LPARAM)
 	// ステータスバーの更新
 	// こちらは pData ベースで指示
 	CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-	pFrame->SetStatusInfo(nIndex+1, pData);
+	pFrame->SetStatusInfo(nIndex+1, pData);		// pData渡し
 	pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
+
 	// 強制ｽｸﾛｰﾙの可能性もあるのでUpdate()ではNG
 	GetListCtrl().EnsureVisible(nIndex, FALSE);
 
