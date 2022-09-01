@@ -568,21 +568,21 @@ BOOL CTraceThread::InitInstance()
 			bBreak = pDoc->IncrementTrace(nTraceDraw);
 			if ( nTraceDraw < 0 ) {
 				// ÅŒã‚Ì‘I‘ðÁ‹Ž
-				if ( bSelect && m_pParent->m_pDataTraceSel ) {
-					if ( nPage < NCDRAWVIEW_NUM ) {
-						if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
-							::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-						dc.SetROP2(R2_COPYPEN);
-						(m_pParent->m_pDataTraceSel->*pfnDrawXYZ[nPage])(&dc, FALSE);
-						dc.Detach();
-					}
-					else if ( nPage < NCVIEW_OPENGL ) {
-						pWndSplit = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
-						if ( pWndSplit )
-							pWndSplit->DrawData(m_pParent->m_pDataTraceSel, FALSE,
-								nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
-					}
-				}
+//				if ( bSelect && m_pParent->m_pDataTraceSel ) {
+//					if ( nPage < NCDRAWVIEW_NUM ) {
+//						if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
+//							::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+//						dc.SetROP2(R2_COPYPEN);
+//						(m_pParent->m_pDataTraceSel->*pfnDrawXYZ[nPage])(&dc, FALSE);
+//						dc.Detach();
+//					}
+//					else if ( nPage < NCVIEW_OPENGL ) {
+//						pWndSplit = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
+//						if ( pWndSplit )
+//							pWndSplit->DrawData(m_pParent->m_pDataTraceSel, FALSE,
+//								nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
+//					}
+//				}
 				// Â°ÙÎÞÀÝ‚ð‘¦ŽžXV
 				pDoc->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);
@@ -592,42 +592,42 @@ BOOL CTraceThread::InitInstance()
 				break;
 			}
 			pData = pDoc->GetNCdata(nTraceDraw-1);
-			if ( nPage < NCDRAWVIEW_NUM ) {
-				if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
-					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-				if ( bSelect && m_pParent->m_pDataTraceSel ) {
-					dc.SetROP2(R2_COPYPEN);
-					(m_pParent->m_pDataTraceSel->*pfnDrawXYZ[nPage])(&dc, FALSE);
-				}
-				(pData->*pfnDrawXYZ[nPage])(&dc, bSelect);
-				dc.Detach();
-			}
-			else if ( nPage < NCVIEW_OPENGL ) {
-				pWndSplit = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
-				if ( pWndSplit && bSelect && m_pParent->m_pDataTraceSel ) {
-					pWndSplit->DrawData(m_pParent->m_pDataTraceSel, FALSE,
-						nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
-				}
-				pWndSplit->DrawData(pData, bSelect,
-					nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
-			}
-			else {
-				pWndGL = static_cast<CNCViewGL *>(m_pParent->GetPage(nPage));
-				if ( pWndGL ) {
-					if ( nGLDraw ) {
-						pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)(*nGLDraw), (LPARAM)nTraceDraw);
-						nGLDraw.reset();
-					}
-					else
-						pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
-					Sleep(0);
-				}
-			}
-			if ( nPage < NCVIEW_OPENGL ) {
-				::GdiFlush();
-				if ( !nGLDraw )
-					nGLDraw = nTraceDraw - 1;
-			}
+//			if ( nPage < NCDRAWVIEW_NUM ) {
+//				if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
+//					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
+//				if ( bSelect && m_pParent->m_pDataTraceSel ) {
+//					dc.SetROP2(R2_COPYPEN);
+//					(m_pParent->m_pDataTraceSel->*pfnDrawXYZ[nPage])(&dc, FALSE);
+//				}
+//				(pData->*pfnDrawXYZ[nPage])(&dc, bSelect);
+//				dc.Detach();
+//			}
+//			else if ( nPage < NCVIEW_OPENGL ) {
+//				pWndSplit = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
+//				if ( pWndSplit && bSelect && m_pParent->m_pDataTraceSel ) {
+//					pWndSplit->DrawData(m_pParent->m_pDataTraceSel, FALSE,
+//						nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
+//				}
+//				pWndSplit->DrawData(pData, bSelect,
+//					nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
+//			}
+//			else {
+//				pWndGL = static_cast<CNCViewGL *>(m_pParent->GetPage(nPage));
+//				if ( pWndGL ) {
+//					if ( nGLDraw ) {
+//						pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)(*nGLDraw), (LPARAM)nTraceDraw);
+//						nGLDraw.reset();
+//					}
+//					else
+//						pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
+//					Sleep(0);
+//				}
+//			}
+//			if ( nPage < NCVIEW_OPENGL ) {
+//				::GdiFlush();
+//				if ( !nGLDraw )
+//					nGLDraw = nTraceDraw - 1;
+//			}
 			m_pListView->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
 			if ( bBreak ) {
 				m_pParent->m_bTracePause = TRUE;
