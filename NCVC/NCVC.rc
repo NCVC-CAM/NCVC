@@ -933,7 +933,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 4.10",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 4.11",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2022 MNCT K.Magara",IDC_STATIC,86,182,135,8
     LTEXT           "https://k-magara.github.io/",IDC_ABOUT_URL,86,198,135,8,SS_NOTIFY
 END
@@ -1852,8 +1852,7 @@ BEGIN
     EDITTEXT        IDC_VIEWSETUP4_TRACE1,73,124,32,12,ES_RIGHT | ES_AUTOHSCROLL
     LTEXT           "&S",IDC_STATIC,113,126,8,8,NOT WS_GROUP
     EDITTEXT        IDC_VIEWSETUP4_TRACE2,124,124,32,12,ES_RIGHT | ES_AUTOHSCROLL
-    CONTROL         "åªç›à íuÇÃœ∞∂∞ï\é¶(&P)",IDC_VIEWSETUP4_TRACEMARK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,144,143,10
-    GROUPBOX        "ƒ⁄∞Ω≥™≤ƒéûä‘",IDC_STATIC,7,111,157,52
+    GROUPBOX        "ƒ⁄∞Ω≥™≤ƒéûä‘",IDC_STATIC,7,111,157,34
     PUSHBUTTON      "êFÇ∆ê¸éÌëÆê´Çèâä˙ê›íËÇ…ñﬂÇ∑",IDC_VIEWSETUP1_DEFCOLOR,107,189,120,16
 END
 
@@ -2410,8 +2409,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,1,0,0
- PRODUCTVERSION 4,1,0,0
+ FILEVERSION 4,1,1,0
+ PRODUCTVERSION 4,1,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -2429,13 +2428,13 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "4.1.0.0"
+            VALUE "FileVersion", "4.1.1.0"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2022 MNCT K.Magara"
             VALUE "LegalTrademarks", "MNCT"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "4.1.0.0"
+            VALUE "ProductVersion", "4.1.1.0"
             VALUE "SpecialBuild", "Boost C++ 1.80, GLEW 2.10, Kodatuno R3.4kai"
         END
     END

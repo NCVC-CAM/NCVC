@@ -339,7 +339,6 @@
 #define IDC_VIEWSETUP4_TRACE0           2351
 #define IDC_VIEWSETUP4_TRACE1           2352
 #define IDC_VIEWSETUP4_TRACE2           2353
-#define IDC_VIEWSETUP4_TRACEMARK        2354
 #define IDD_VIEW_SETUP5                 2400
 #define IDC_VIEWSETUP5_DEFAULTENDMILL   2401
 #define IDC_VIEWSETUP5_FBO              2402

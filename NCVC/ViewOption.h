@@ -29,8 +29,7 @@ struct	PENSTYLE
 #define	VIEWUPDATE_ALL				0x001f
 
 enum {
-	GLOPTFLG_TRACEMARKER = 0,
-	GLOPTFLG_DRAWREVISE,
+	GLOPTFLG_DRAWREVISE = 0,
 	GLOPTFLG_DRAWCIRCLECENTER,
 	GLOPTFLG_GUIDESCALE,
 	GLOPTFLG_GUIDELENGTH,
@@ -42,7 +41,7 @@ enum {
 	GLOPTFLG_LATHESLIT,
 	GLOPTFLG_NOACTIVETRACEGL,
 	GLOPTFLG_TOOLTRACE,
-		GLOPTFLG_NUMS		// [13]
+		GLOPTFLG_NUMS		// [12]
 };
 enum {
 	VIEWINT_MILLTYPE = 0,
@@ -115,8 +114,7 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 	BOOL	m_bMouseWheel;				// 拡大縮小にﾏｳｽﾎｲｰﾙを使うか
 	union {
 		struct {
-			BOOL	m_bTraceMarker,		// ﾄﾚｰｽ中の現在位置表示
-					m_bDrawRevise,		// 補正前ﾃﾞｰﾀの描画
+			BOOL	m_bDrawRevise,		// 補正前ﾃﾞｰﾀの描画
 					m_bDrawCircleCenter,// 円弧補間の中心を描画
 					m_bScale,			// TRUE:ｶﾞｲﾄﾞに目盛
 					m_bGuide,			// TRUE:拡大率に同期

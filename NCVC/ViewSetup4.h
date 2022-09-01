@@ -24,7 +24,6 @@ public:
 	//}}AFX_DATA
 	CStatic		m_ctColor[NCINFOCOL_NUMS];
 	CIntEdit	m_nTraceSpeed[3];
-	BOOL		m_bTraceMarker;
 
 // オーバーライド
 	// ClassWizard は仮想関数のオーバーライドを生成します。

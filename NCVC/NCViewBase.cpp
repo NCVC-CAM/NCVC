@@ -241,15 +241,14 @@ void CNCViewBase::DrawInfo(CDC* pDC)
 void CNCViewBase::DrawNCdata(CDC* pDC)
 {
 	ASSERT( m_pfnDrawProc );
-	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	CNCdata*	pData = NULL;
-	size_t	nDraw = GetDocument()->GetTraceDraw();	// ¸ØÃ¨¶Ù¾¸¼®Ý‚É‚æ‚éÛ¯¸
+	size_t		nDraw = GetDocument()->GetTraceDraw();	// ¸ØÃ¨¶Ù¾¸¼®Ý‚É‚æ‚éÛ¯¸
 	for ( size_t i=GetDocument()->GetTraceStart(); i<nDraw; i++ ) {
 		pData = GetDocument()->GetNCdata(i);
 		if ( pData->GetGtype() == G_TYPE )
 			(pData->*m_pfnDrawProc)(pDC, FALSE);
 	}
-	if ( pOpt->GetNCViewFlg(GLOPTFLG_TRACEMARKER) && pData && nDraw!=GetDocument()->GetNCsize() ) {
+	if ( pData && nDraw!=GetDocument()->GetNCsize() ) {
 		// ÅŒã‚É•`‰æ‚µ‚½µÌÞ¼Þª¸Ä‚ÌÄÚ°½Ï°¶°
 		(pData->*m_pfnDrawProc)(pDC, TRUE);
 	}

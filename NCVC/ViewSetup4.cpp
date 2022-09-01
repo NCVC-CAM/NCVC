@@ -40,7 +40,6 @@ CViewSetup4::CViewSetup4() : CPropertyPage(CViewSetup4::IDD)
 		m_colView[i] = pOpt->m_colNCInfoView[i];
 		m_brColor[i].CreateSolidBrush( m_colView[i] );
 	}
-	m_bTraceMarker = pOpt->m_bTraceMarker;
 	memcpy(&m_lfFont, pOpt->GetLogFont(TYPE_NCD), sizeof(m_lfFont));
 }
 
@@ -61,7 +60,6 @@ void CViewSetup4::DoDataExchange(CDataExchange* pDX)
 		DDX_Control(pDX, i + IDC_VIEWSETUP4_ST_BACKGROUND1, m_ctColor[i]);
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ )
 		DDX_Control(pDX, i+IDC_VIEWSETUP4_TRACE0, m_nTraceSpeed[i]);
-	DDX_Check(pDX, IDC_VIEWSETUP4_TRACEMARK, m_bTraceMarker);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -93,7 +91,6 @@ BOOL CViewSetup4::OnApply()
 		pOpt->m_colNCInfoView[i] = m_colView[i];
 	for ( i=0; i<SIZEOF(m_nTraceSpeed); i++ )
 		pOpt->m_nTraceSpeed[i] = m_nTraceSpeed[i];
-	pOpt->m_bTraceMarker = m_bTraceMarker;
 
 	SetModified(FALSE);
 

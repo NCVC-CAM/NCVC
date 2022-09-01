@@ -102,7 +102,6 @@ static	const	int	g_nFontSize[] = {	// Îß²ÝÄŽw’è
 	9, 12
 };
 static	const	BOOL	g_bDefaultSetting[] = {
-	TRUE,		// m_bTraceMarker
 	TRUE,		// m_bDrawRevise
 	FALSE,		// m_bDrawCircleCenter
 	FALSE,		// m_bScale
@@ -117,7 +116,7 @@ static	const	BOOL	g_bDefaultSetting[] = {
 	TRUE		// m_bToolTrace
 };
 extern	LPCTSTR	g_szViewOptFlag[] = {	// to ViewSetup5.cpp
-	"TraceMarker", "DrawRevise", "DrawCenterCircle",
+	"DrawRevise", "DrawCenterCircle",
 	"GuideScale", "GuideLength",
 	"SolidView", "UseFBO", "G00View", "DragRender",
 	"Texture", "LatheSlit", "NoActiveTraceGL", "ToolTrace"
