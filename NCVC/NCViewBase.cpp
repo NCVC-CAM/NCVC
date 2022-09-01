@@ -125,7 +125,7 @@ void CNCViewBase::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 			CNCdata*	pData = reinterpret_cast<CNCdata *>(pHint);
 			(pData->*m_pfnDrawProc)(&dc, lHint==UAV_DRAWSELECT);
 		}
-		break;
+		return;
 	case UAV_CHANGEFONT:
 		SetGuideData();
 		break;
