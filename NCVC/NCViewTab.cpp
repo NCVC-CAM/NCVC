@@ -64,7 +64,6 @@ CNCViewTab::CNCViewTab() : m_evTrace(FALSE, TRUE)
 	m_nTraceSpeed = AfxGetNCVCApp()->GetTraceSpeed();
 	m_pTraceThread = NULL;
 	m_bTraceContinue = m_bTracePause = FALSE;
-	m_pDataTraceSel  = NULL;
 	ZEROCLR(m_bSplit);	// m_bSplit[i++]=FALSE
 }
 
@@ -422,7 +421,6 @@ void CNCViewTab::OnTraceStop()
 {
 	if ( GetDocument()->GetTraceMode() != ID_NCVIEW_TRACE_STOP ) {
 		m_bTraceContinue = FALSE;
-		m_pDataTraceSel  = NULL;
 		GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 		// 現在位置以降を描画
 		GetDocument()->StopTrace();
@@ -535,6 +533,9 @@ BOOL CTraceThread::InitInstance()
 		if ( !m_pParent->m_bTraceContinue )
 			break;
 
+		// OpenGLタブ以外に移動させたときの再開番号
+		nGLDraw.reset();
+
 		// OpenGLタブのウィンドウハンドルを取得
 		pWndGL = static_cast<CNCViewGL *>(m_pParent->GetPage(NCVIEW_OPENGL));
 
@@ -545,9 +546,6 @@ BOOL CTraceThread::InitInstance()
 				// ﾂｰﾙﾎﾞﾀﾝを即時更新
 				pDoc->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);
-				// 次の再開に備える
-				m_pParent->m_pDataTraceSel = NULL;
-				nGLDraw.reset();
 				break;
 			}
 			// 現在選択データ
@@ -565,7 +563,8 @@ BOOL CTraceThread::InitInstance()
 				}
 				Sleep(0);
 			}
-			if ( nPage < NCVIEW_OPENGL ) {
+			else {
+				// OpenGLタブ以外の時はその番号を記録
 				if ( !nGLDraw )
 					nGLDraw = nTraceDraw - 1;
 			}
@@ -580,14 +579,11 @@ BOOL CTraceThread::InitInstance()
 			}
 			else if ( pDoc->GetTraceMode() != ID_NCVIEW_TRACE_PAUSE )
 				::Sleep( pOpt->GetTraceSpeed(m_pParent->m_nTraceSpeed-ID_NCVIEW_TRACE_FAST) );
-			// 次の選択解除用
-			m_pParent->m_pDataTraceSel = pData;
+
 		} while ( m_pParent->m_bTraceContinue && !m_pParent->m_bTracePause );
 #ifdef _DEBUG
 		printf("Stop the trace loop\n");
 #endif
-		if ( !m_pParent->m_bTraceContinue )
-			m_pParent->m_pDataTraceSel = FALSE;	// 次の再開に備える
 	}
 
 #ifdef _DEBUG
