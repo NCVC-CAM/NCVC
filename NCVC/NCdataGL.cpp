@@ -247,14 +247,14 @@ static inline void _SetEndmillCircleYZ_Half
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀｸﾗｽ
 //////////////////////////////////////////////////////////////////////
 
-void CNCdata::DrawGLWirePass(RENDERMODE enRender, int nID) const
+void CNCdata::DrawGLWirePath(RENDERMODE enRender, int nID) const
 {
 	// 派生ｸﾗｽからの共通呼び出し
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
-		m_obCdata[i]->DrawGLWirePass(enRender, nID);
+		m_obCdata[i]->DrawGLWirePath(enRender, nID);
 }
 
-void CNCdata::DrawGLWireWirePass(RENDERMODE enRender, int nID) const
+void CNCdata::DrawGLWireWirePath(RENDERMODE enRender, int nID) const
 {
 	//	AddGLWireVertex() から座標値を得る
 	CVfloat		vpt, dmy1;
@@ -394,7 +394,7 @@ void CNCdata::AddEndmillSphere(const CPoint3F& ptOrg, BOTTOMDRAW& bd, CVBtmDraw&
 // CNCline クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCline::DrawGLWirePass(RENDERMODE enRender, int nID) const
+void CNCline::DrawGLWirePath(RENDERMODE enRender, int nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -430,7 +430,7 @@ void CNCline::DrawGLWirePass(RENDERMODE enRender, int nID) const
 		::glEnd();
 	}
 
-	CNCdata::DrawGLWirePass(enRender, nID);
+	CNCdata::DrawGLWirePath(enRender, nID);
 }
 
 void CNCline::DrawGLLatheDepth(void) const
@@ -859,7 +859,7 @@ int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GL
 // CNCcycle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcycle::DrawGLWirePass(RENDERMODE enRender, int nID) const
+void CNCcycle::DrawGLWirePath(RENDERMODE enRender, int nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	colG0, colCY;
@@ -1011,7 +1011,7 @@ int CNCcycle::AddGLWireTexture(size_t, float&, float, GLfloat*) const
 // CNCcircle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcircle::DrawGLWirePass(RENDERMODE enRender, int nID) const
+void CNCcircle::DrawGLWirePath(RENDERMODE enRender, int nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -1046,7 +1046,7 @@ void CNCcircle::DrawGLWirePass(RENDERMODE enRender, int nID) const
 		::glEnd();
 	}
 
-	CNCdata::DrawGLWirePass(enRender, nID);
+	CNCdata::DrawGLWirePath(enRender, nID);
 }
 
 void CNCcircle::DrawGLLatheDepth(void) const

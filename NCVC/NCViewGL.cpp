@@ -571,7 +571,7 @@ void CNCViewGL::RenderCode(RENDERMODE enRender)
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
 		pData = GetDocument()->GetNCdata(i);
 		if ( pData->GetGtype() == G_TYPE ) {
-			pData->DrawGLWirePass(enRender, i);		// オブジェクト番号をIDに
+			pData->DrawGLWirePath(enRender, i);		// オブジェクト番号をIDに
 		}
 	}
 }
@@ -586,7 +586,7 @@ void CNCViewGL::RenderCodeWire(void)
 	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
 		pData = GetDocument()->GetNCdata(i);
 		if ( pData->GetGtype() == G_TYPE ) {
-			pData->DrawGLWireWirePass(RM_NORMAL, i);
+			pData->DrawGLWireWirePath(RM_NORMAL, i);
 		}
 	}
 }
@@ -932,7 +932,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		}
 		if ( m_pData ) {
 			// 選択オブジェクトの描画
-			m_pData->DrawGLWireWirePass(RM_SELECT, -1);	// 第2引数は不使用
+			m_pData->DrawGLWireWirePath(RM_SELECT, -1);	// 第2引数は不使用
 		}
 	}
 	else if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
@@ -949,7 +949,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 				// 選択オブジェクトの描画
 				// デプステストを無効にして上書き
 				::glDisable(GL_DEPTH_TEST);
-				m_pData->DrawGLWirePass(RM_SELECT, -1);
+				m_pData->DrawGLWirePath(RM_SELECT, -1);
 			}
 		}
 	}
