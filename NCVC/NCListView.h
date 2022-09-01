@@ -9,11 +9,11 @@
 class CNCListView : public CListView
 {
 	boost::regex	m_regFind;
-	BOOL	m_bTraceSelect;	// SelectTrace()åƒÇ—èoÇµíÜÇ©î€Ç©
+	BOOL	m_bSelectTrace;		// SelectTrace()åƒÇ—èoÇµíÜÇ©î€Ç©
 
 protected:
 	CNCListView() {
-		m_bTraceSelect = FALSE;
+		m_bSelectTrace = FALSE;
 	}
 	DECLARE_DYNCREATE(CNCListView)
 

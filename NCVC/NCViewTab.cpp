@@ -518,34 +518,12 @@ BOOL CTraceThread::InitInstance()
 #endif
 	CNCDoc*			pDoc  = m_pParent->GetDocument();
 	CNCdata*		pData;
-	CNCViewSplit*	pWndSplit;
 	CNCViewGL*		pWndGL;
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	CDC		dc;
-	int		i, nPage;
+	int		nPage;
 	INT_PTR	nTraceDraw;
-	BOOL	bBreak, bSelect;
+	BOOL	bBreak;
 	boost::optional<INT_PTR>	nGLDraw;
-	PFNNCDRAWPROC	pfnDrawXYZ[NCDRAWVIEW_NUM],
-					pfnDrawSplit01[NCDRAWVIEW_NUM],
-					pfnDrawSplit02[NCDRAWVIEW_NUM];
-
-	if ( pDoc->IsDocFlag(NCDOC_WIRE) ) {
-		pfnDrawXYZ[NCDRAWVIEW_XYZ] = &(CNCdata::DrawWire);
-		pfnDrawXYZ[NCDRAWVIEW_XY ] = &(CNCdata::DrawWireXY);
-		pfnDrawXYZ[NCDRAWVIEW_XZ ] = &(CNCdata::DrawWireXZ);
-		pfnDrawXYZ[NCDRAWVIEW_YZ ] = &(CNCdata::DrawWireYZ);
-	}
-	else {
-		pfnDrawXYZ[NCDRAWVIEW_XYZ] = &(CNCdata::Draw);
-		pfnDrawXYZ[NCDRAWVIEW_XY ] = &(CNCdata::DrawXY);
-		pfnDrawXYZ[NCDRAWVIEW_XZ ] = &(CNCdata::DrawXZ);
-		pfnDrawXYZ[NCDRAWVIEW_YZ ] = &(CNCdata::DrawYZ);
-	}
-	for ( i=0; i<SIZEOF(pfnDrawXYZ); i++ ) {
-		pfnDrawSplit01[i] = pfnDrawXYZ[ pOpt->GetForceView01(i) ];
-		pfnDrawSplit02[i] = pfnDrawXYZ[ pOpt->GetForceView02(i) ];
-	}
 
 	// ｽﾚｯﾄﾞのﾙｰﾌﾟ
 	while ( TRUE ) {
@@ -557,32 +535,13 @@ BOOL CTraceThread::InitInstance()
 		if ( !m_pParent->m_bTraceContinue )
 			break;
 
-		// ﾏｰｶ表示状態取得
-		bSelect = pOpt->GetNCViewFlg(GLOPTFLG_TRACEMARKER);
+		// OpenGLタブのウィンドウハンドルを取得
+		pWndGL = static_cast<CNCViewGL *>(m_pParent->GetPage(NCVIEW_OPENGL));
 
 		// ﾄﾚｰｽ開始・再開
 		do {
-			nPage = m_pParent->GetActivePage();
-			if ( nPage < 0 )
-				break;
 			bBreak = pDoc->IncrementTrace(nTraceDraw);
 			if ( nTraceDraw < 0 ) {
-				// 最後の選択消去
-//				if ( bSelect && m_pParent->m_pDataTraceSel ) {
-//					if ( nPage < NCDRAWVIEW_NUM ) {
-//						if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
-//							::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-//						dc.SetROP2(R2_COPYPEN);
-//						(m_pParent->m_pDataTraceSel->*pfnDrawXYZ[nPage])(&dc, FALSE);
-//						dc.Detach();
-//					}
-//					else if ( nPage < NCVIEW_OPENGL ) {
-//						pWndSplit = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
-//						if ( pWndSplit )
-//							pWndSplit->DrawData(m_pParent->m_pDataTraceSel, FALSE,
-//								nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
-//					}
-//				}
 				// ﾂｰﾙﾎﾞﾀﾝを即時更新
 				pDoc->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);
@@ -591,44 +550,29 @@ BOOL CTraceThread::InitInstance()
 				nGLDraw.reset();
 				break;
 			}
+			// 現在選択データ
 			pData = pDoc->GetNCdata(nTraceDraw-1);
-//			if ( nPage < NCDRAWVIEW_NUM ) {
-//				if ( !dc.Attach(m_pParent->m_hDC[nPage]) )
-//					::NCVC_CriticalErrorMsg(__FILE__, __LINE__);
-//				if ( bSelect && m_pParent->m_pDataTraceSel ) {
-//					dc.SetROP2(R2_COPYPEN);
-//					(m_pParent->m_pDataTraceSel->*pfnDrawXYZ[nPage])(&dc, FALSE);
-//				}
-//				(pData->*pfnDrawXYZ[nPage])(&dc, bSelect);
-//				dc.Detach();
-//			}
-//			else if ( nPage < NCVIEW_OPENGL ) {
-//				pWndSplit = static_cast<CNCViewSplit *>(m_pParent->GetPage(nPage));
-//				if ( pWndSplit && bSelect && m_pParent->m_pDataTraceSel ) {
-//					pWndSplit->DrawData(m_pParent->m_pDataTraceSel, FALSE,
-//						nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
-//				}
-//				pWndSplit->DrawData(pData, bSelect,
-//					nPage == NCDRAWVIEW_NUM ? pfnDrawSplit01 : pfnDrawSplit02);
-//			}
-//			else {
-//				pWndGL = static_cast<CNCViewGL *>(m_pParent->GetPage(nPage));
-//				if ( pWndGL ) {
-//					if ( nGLDraw ) {
-//						pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)(*nGLDraw), (LPARAM)nTraceDraw);
-//						nGLDraw.reset();
-//					}
-//					else
-//						pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
-//					Sleep(0);
-//				}
-//			}
-//			if ( nPage < NCVIEW_OPENGL ) {
-//				::GdiFlush();
-//				if ( !nGLDraw )
-//					nGLDraw = nTraceDraw - 1;
-//			}
+			// アクティブなタブを取得
+			nPage = m_pParent->GetActivePage();
+			if ( nPage==NCVIEW_OPENGL && pWndGL ) {
+				// OpenGLタブだけSendMessage()
+				if ( nGLDraw ) {
+					pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)(*nGLDraw), (LPARAM)nTraceDraw);
+					nGLDraw.reset();
+				}
+				else {
+					pWndGL->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
+				}
+				Sleep(0);
+			}
+			if ( nPage < NCVIEW_OPENGL ) {
+				if ( !nGLDraw )
+					nGLDraw = nTraceDraw - 1;
+			}
+			// リストの選択
+			// 結果的にここから各ビューの更新
 			m_pListView->SendMessage(WM_USERTRACESELECT, (WPARAM)pData);
+			//
 			if ( bBreak ) {
 				m_pParent->m_bTracePause = TRUE;
 				pDoc->SetTraceMode(ID_NCVIEW_TRACE_PAUSE);

@@ -388,32 +388,32 @@ void CNCListView::OnGetDispInfo(NMHDR* pNMHDR, LRESULT* pResult)
 
 void CNCListView::OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult) 
 {
-	// OnSelectTrace(トレース)からの分は処理しない
-//	if ( !m_bTraceSelect ) {
-		LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-		if ( pNMListView->uChanged & LVIF_STATE ) {
-			CNCblock*	pBlock = NULL;
-			int	nItem = pNMListView->iItem;
-			if ( 0<=nItem && nItem<GetDocument()->GetNCBlockSize() ) {
-				pBlock = GetDocument()->GetNCblock(nItem);
-				ASSERT( pBlock );
-				CObject*	pData = reinterpret_cast<CObject *>(pBlock->GetBlockToNCdata());
-				if ( pNMListView->uNewState & LVIS_FOCUSED ) {
-					// 選択色表示
-					GetDocument()->UpdateAllViews(this, UAV_DRAWSELECT, pData);
-				}
-				else {
-					// 選択解除
-					GetDocument()->UpdateAllViews(this, UAV_DRAWUNSELECT, pData);
-				}
+	LPNMLISTVIEW pNMListView = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+
+	if ( pNMListView->uChanged & LVIF_STATE ) {
+		CNCblock*	pBlock = NULL;
+		int	nItem = pNMListView->iItem;
+		if ( 0<=nItem && nItem<GetDocument()->GetNCBlockSize() ) {
+			pBlock = GetDocument()->GetNCblock(nItem);
+			ASSERT( pBlock );
+			CObject*	pData = reinterpret_cast<CObject *>(pBlock->GetBlockToNCdata());
+			if ( pNMListView->uNewState & LVIS_FOCUSED ) {
+				// 選択色表示
+				GetDocument()->UpdateAllViews(this, UAV_DRAWSELECT, pData);
 			}
+			else {
+				// 選択解除
+				GetDocument()->UpdateAllViews(this, UAV_DRAWUNSELECT, pData);
+			}
+		}
+		if ( !m_bSelectTrace ) {
 			// ステータスバーの更新
 			// こちらはブロックベースで指示
 			CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
 			pFrame->SetStatusInfo(nItem+1, pBlock);		// pBlock渡し
 			pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
 		}
-//	}
+	}
 
 	*pResult = 0;
 }
@@ -424,14 +424,14 @@ LRESULT CNCListView::OnSelectTrace(WPARAM wParam, LPARAM)
 	ASSERT( pData );
 	// 別ｽﾚｯﾄﾞ(CTraceThread)からの呼び出しのため、ﾒｯｾｰｼﾞ送信にて不具合対応
 	int	nIndex = pData->GetBlockLineNo();
-//	m_bTraceSelect = TRUE;	// OnItemChanged を発動しない
+	m_bSelectTrace = TRUE;	// OnItemChanged()でステータスバーの更新をしない
 	GetListCtrl().SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
-//	m_bTraceSelect = FALSE;
+	m_bSelectTrace = FALSE;
 	// ステータスバーの更新
 	// こちらは pData ベースで指示
-//	CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-//	pFrame->SetStatusInfo(nIndex+1, pData);		// pData渡し
-//	pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
+	CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
+	pFrame->SetStatusInfo(nIndex+1, pData);		// pData渡し
+	pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
 
 	// 強制ｽｸﾛｰﾙの可能性もあるのでUpdate()ではNG
 	GetListCtrl().EnsureVisible(nIndex, FALSE);
