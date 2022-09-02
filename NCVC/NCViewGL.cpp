@@ -194,8 +194,12 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		return;
 
 	case UAV_DRAWSELECT:
-	case UAV_DRAWUNSELECT:
 		m_pData = reinterpret_cast<CNCdata *>(pHint);
+		Invalidate(FALSE);
+		return;
+
+	case UAV_DRAWUNSELECT:
+		m_pData = NULL;
 		Invalidate(FALSE);
 		return;
 
