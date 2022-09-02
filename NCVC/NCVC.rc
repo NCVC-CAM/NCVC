@@ -4007,7 +4007,6 @@ END
 STRINGTABLE
 BEGIN
     IDS_ERR_TEXTURE         "テクスチャ画像の読み込みに失敗しました"
-    IDS_ERR_GLTRACE         "ソリッド描画が有効でないと、OpenGLタブでトレース描画が実行できません"
     IDS_ERR_CONTROL         "コントロールの生成に失敗しました\nFile=%s:DebugLine=%d"
     IDS_ERR_FILEPATH        "有効なファイルパスを指示してください"
     IDS_ERR_SCRIPTEXT       "現在登録できるのは Perl(*.pl) か Python(*.py) のみとなります"

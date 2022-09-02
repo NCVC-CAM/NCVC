@@ -212,9 +212,10 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		pOpt->m_dwUpdateFlg = VIEWUPDATE_DISPLAYLIST | VIEWUPDATE_BOXEL;
 		pHint = (CObject *)1;	// dummy
 		// through
-	case UAV_DRAWWORKRECT:	// ﾜｰｸ矩形変更
-		if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) )
+	case UAV_DRAWWORKRECT:	// ワーク矩形変更
+		if ( m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] ) {
 			pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
+		}
 		// through
 	case UAV_CHANGEFONT:	// 色の変更 etc.
 		if ( m_bGLflg[NCVIEWGLFLG_ACTIVE] ) {
@@ -257,8 +258,7 @@ void CNCViewGL::UpdateViewOption(void)
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
 	// ﾃｸｽﾁｬ画像の読み込み
-	if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) &&
-					pOpt->m_dwUpdateFlg & VIEWUPDATE_TEXTURE ) {
+	if ( m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && pOpt->m_dwUpdateFlg & VIEWUPDATE_TEXTURE ) {
 		ClearTexture();
 		if ( pOpt->GetNCViewFlg(GLOPTFLG_TEXTURE) ) {
 			if ( ReadTexture(pOpt->GetTextureFile()) &&	// m_nPictureID値ｾｯﾄ
@@ -329,7 +329,7 @@ void CNCViewGL::UpdateViewOption(void)
 	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
 		ClearVBO();
 		// ﾜｰｸ矩形の描画用座標
-		if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
+		if ( m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] ) {
 			BOOL	bResult;
 			// 切削領域の設定
 			m_rcDraw = GetDocument()->GetWorkRect();
@@ -718,7 +718,7 @@ void CNCViewGL::DoScale(int nRate)
 void CNCViewGL::OnDraw(CDC* pDC)
 {
 #ifdef _DEBUG
-//	printf("CNCViewGL::OnDraw() Start\n");
+	printf("CNCViewGL::OnDraw() Start\n");
 #endif
 	ASSERT_VALID(GetDocument());
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
@@ -820,7 +820,10 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
 	::glNormalPointer(GL_FLOAT, 0, NULL);
 
-	if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) && m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && m_nVertexID[0]>0 &&
+	// pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) のフラグが立っていないと，
+	// そもそもこのビューが存在しない（CNCViewTab::OnCreate()参照）ので，
+	// チェックの必要はない．
+	if (  m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && m_nVertexID[0]>0 &&
 		(pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
 		// 線画が正しく表示されるためにﾎﾟﾘｺﾞﾝｵﾌｾｯﾄ
 		::glEnable(GL_POLYGON_OFFSET_FILL);
@@ -930,9 +933,9 @@ void CNCViewGL::OnDraw(CDC* pDC)
 #endif	// _DEBUG_DRAWTEST_
 	
 	// 線画
-	::glDisable(GL_LIGHTING);
-	::glEnable(GL_LINE_STIPPLE);
 	if ( m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
+		::glDisable(GL_LIGHTING);
+		::glEnable(GL_LINE_STIPPLE);
 		if ( IsWireMode() ) {
 			// ワイヤ放電加工機モード
 			j = 0;
@@ -973,6 +976,9 @@ void CNCViewGL::OnDraw(CDC* pDC)
 //	::glFinish();		// SwapBuffers() に含まれる
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
+#ifdef _DEBUG
+	printf("CNCViewGL::OnDraw() End\n");
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1208,12 +1214,6 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 		pParam = pData;
 	}
 
-	if ( !pData && !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
-		// 初回のみ警告ﾒｯｾｰｼﾞ
-		AfxMessageBox(IDS_ERR_GLTRACE, MB_OK|MB_ICONEXCLAMATION);
-		return 0;
-	}
-
 	BOOL		bResult = TRUE;
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
@@ -1410,12 +1410,6 @@ void CNCViewGL::OnDefViewInfo()
 
 void CNCViewGL::OnUpdateViewMode(CCmdUI* pCmdUI) 
 {
-	if ( !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
-		pCmdUI->Enable(FALSE);
-		pCmdUI->SetCheck(FALSE);
-		return;
-	}
-
 	switch ( pCmdUI->m_nID ) {
 	case ID_NCVIEW_PATHVIEW:
 	case ID_NCVIEW_SOLIDVIEW:
@@ -1437,10 +1431,6 @@ void CNCViewGL::OnUpdateViewMode(CCmdUI* pCmdUI)
 
 void CNCViewGL::OnViewMode(UINT nID) 
 {
-	if ( !AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
-		return;
-	}
-
 	switch ( nID ) {
 	case ID_NCVIEW_PATHVIEW:
 		m_bGLflg.flip(NCVIEWGLFLG_WIREVIEW);;		// パス表示切り替え

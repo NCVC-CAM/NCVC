@@ -812,7 +812,6 @@
 #define IDS_ERR_OPENGLVER               21006
 #define IDS_ERR_OUTOFVRAM               21007
 #define IDS_ERR_TEXTURE                 21008
-#define IDS_ERR_GLTRACE                 21009
 #define IDS_ERR_CONTROL                 21010
 #define IDS_ERR_FILEPATH                21011
 #define IDS_ERR_SCRIPTEXT               21012
