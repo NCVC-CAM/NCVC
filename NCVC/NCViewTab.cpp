@@ -542,7 +542,7 @@ BOOL CTraceThread::InitInstance()
 		// トレース開始・再開
 		do {
 			bBreak = pDoc->IncrementTrace(nTraceDraw);
-			if ( nTraceDraw < 0 ) {
+			if ( nTraceDraw < 0 ) {		// EOF
 				// ツールボタンを即時更新
 				pDoc->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);

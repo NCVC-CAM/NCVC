@@ -810,18 +810,19 @@ void CNCViewGL::OnDraw(CDC* pDC)
 #else
 	size_t	j = 0;
 
+	// ワイヤ放電モードは線画でも使うため，ここで有効にしておく
+	::glEnableClientState(GL_VERTEX_ARRAY);
+	::glEnableClientState(GL_NORMAL_ARRAY);
+	::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
+	::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);
+	::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
+	::glNormalPointer(GL_FLOAT, 0, NULL);
+
 	if ( pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) && m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] && m_nVertexID[0]>0 &&
 		(pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) || m_enTrackingMode==TM_NONE) ) {
 		// 線画が正しく表示されるためにﾎﾟﾘｺﾞﾝｵﾌｾｯﾄ
 		::glEnable(GL_POLYGON_OFFSET_FILL);
 		::glPolygonOffset(1.0f, 1.0f);
-		// 頂点ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄによるﾎﾞｸｾﾙ描画
-		::glEnableClientState(GL_VERTEX_ARRAY);
-		::glEnableClientState(GL_NORMAL_ARRAY);
-		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
-		::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);
-		::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[1]);
-		::glNormalPointer(GL_FLOAT, 0, NULL);
 		// ﾃｸｽﾁｬ
 		if ( pOpt->GetNCViewFlg(GLOPTFLG_TEXTURE) && m_nTextureID > 0 ) {
 			::glActiveTexture(GL_TEXTURE0);
@@ -852,6 +853,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		m_glsl.SetUniform("T", m_rcDraw.bottom);
 		m_glsl.SetUniform("B", m_rcDraw.top);
 #endif
+		// 頂点バッファオブジェクトによる描画
 		// 切削面
 		::glDisable(GL_LIGHT0);
 		::glDisable(GL_LIGHT1);
@@ -927,31 +929,34 @@ void CNCViewGL::OnDraw(CDC* pDC)
 #endif
 #endif	// _DEBUG_DRAWTEST_
 	
+	// 線画
 	::glDisable(GL_LIGHTING);
 	::glEnable(GL_LINE_STIPPLE);
-	if ( IsWireMode() && m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
-		// ワイヤ放電加工機モード
-		j = 0;
-		for ( const auto& v : m_WireDraw.vwl ) {
-			::glColor3ub(GetRValue(v.col), GetGValue(v.col), GetBValue(v.col));
-			::glLineStipple(1, v.pattern);
-			::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pLocusElement[j++]);
-			::glDrawElements(GL_LINE_STRIP, (GLsizei)(v.vel.size()), GL_UNSIGNED_INT, NULL);
-		}
-		if ( m_pData ) {
-			// 選択オブジェクトの描画
-			m_pData->DrawGLWireWirePath(RM_SELECT, -1);	// 第2引数は不使用
-		}
-	}
-	else if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
-		if ( !pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) || m_bGLflg[NCVIEWGLFLG_WIREVIEW] ||
-				(!pOpt->GetNCViewFlg(GLOPTFLG_DRAGRENDER) && m_enTrackingMode!=TM_NONE) ) {
-			// 線画
-			if ( m_glCode > 0 ) {
-				::glCallList( m_glCode );
+	if ( m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
+		if ( IsWireMode() ) {
+			// ワイヤ放電加工機モード
+			j = 0;
+			for ( const auto& v : m_WireDraw.vwl ) {
+				::glColor3ub(GetRValue(v.col), GetGValue(v.col), GetBValue(v.col));
+				::glLineStipple(1, v.pattern);
+				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pLocusElement[j++]);
+				::glDrawElements(GL_LINE_STRIP, (GLsizei)(v.vel.size()), GL_UNSIGNED_INT, NULL);
 			}
-			else {
-				RenderCode(RM_NORMAL);
+			if ( m_pData ) {
+				// 選択オブジェクトの描画
+				m_pData->DrawGLWireWirePath(RM_SELECT, -1);	// 第2引数は不使用
+			}
+		}
+		else {
+			// ＭＣ，旋盤モード
+			if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
+				// ディスプレイリストで全体表示のため，トレース停止状態のみ描画
+				if ( m_glCode > 0 ) {
+					::glCallList( m_glCode );
+				}
+				else {
+					RenderCode(RM_NORMAL);
+				}
 			}
 			if ( m_pData ) {
 				// 選択オブジェクトの描画

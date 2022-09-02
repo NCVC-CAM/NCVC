@@ -568,6 +568,9 @@
   <ItemGroup>
     <ResourceCompile Include="NCVC.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\docs\Readme.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
