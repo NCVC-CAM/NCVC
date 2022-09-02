@@ -523,7 +523,7 @@ BOOL CTraceThread::InitInstance()
 	BOOL	bBreak;
 	boost::optional<INT_PTR>	nGLDraw;
 
-	// ｽﾚｯﾄﾞのﾙｰﾌﾟ
+	// スレッドのmain無限ループ
 	while ( TRUE ) {
 		m_pParent->m_evTrace.Lock();
 #ifdef _DEBUG
@@ -539,13 +539,15 @@ BOOL CTraceThread::InitInstance()
 		// OpenGLタブのウィンドウハンドルを取得
 		pWndGL = static_cast<CNCViewGL *>(m_pParent->GetPage(NCVIEW_OPENGL));
 
-		// ﾄﾚｰｽ開始・再開
+		// トレース開始・再開
 		do {
 			bBreak = pDoc->IncrementTrace(nTraceDraw);
 			if ( nTraceDraw < 0 ) {
-				// ﾂｰﾙﾎﾞﾀﾝを即時更新
+				// ツールボタンを即時更新
 				pDoc->SetTraceMode(ID_NCVIEW_TRACE_STOP);
 				AfxGetNCVCMainWnd()->PostMessage(WM_NULL);
+				// 次の実行時に，前回の描画を残さないため
+				m_pListView->SendMessage(WM_USERTRACESELECT);
 				break;
 			}
 			// 現在選択データ

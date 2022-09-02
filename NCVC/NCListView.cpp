@@ -82,18 +82,12 @@ void CNCListView::OnInitialUpdate()
 void CNCListView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
 {
 	switch ( lHint ) {
-	case UAV_DRAWWORKRECT:
-		break;		// ｺﾒﾝﾄ更新の可能性があるので再描画
-	case UAV_STARTSTOPTRACE:	// 選択解除
-		{
-			POSITION pos = GetListCtrl().GetFirstSelectedItemPosition();
-			if ( pos ) {
-				int nIndex = GetListCtrl().GetNextSelectedItem(pos);
-				GetListCtrl().SetItemState(nIndex, ~LVIS_SELECTED, LVIS_SELECTED);
-				GetListCtrl().EnsureVisible(nIndex, FALSE);
-			}
-		}
+	case UAV_STARTSTOPTRACE:
+		// 選択解除
+		GetListCtrl().SetItemState(-1, 0, LVIS_SELECTED|LVIS_FOCUSED);
 		// through
+	case UAV_DRAWWORKRECT:
+		break;		// コメント更新の可能性があるので再描画
 	case UAV_TRACECURSOR:
 	case UAV_DRAWMAXRECT:
 		return;		// 再描画不要
@@ -420,21 +414,25 @@ void CNCListView::OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult)
 
 LRESULT CNCListView::OnSelectTrace(WPARAM wParam, LPARAM)
 {
-	CNCdata*	pData = reinterpret_cast<CNCdata *>(wParam);
-	ASSERT( pData );
-	// 別ｽﾚｯﾄﾞ(CTraceThread)からの呼び出しのため、ﾒｯｾｰｼﾞ送信にて不具合対応
-	int	nIndex = pData->GetBlockLineNo();
-	m_bSelectTrace = TRUE;	// OnItemChanged()でステータスバーの更新をしない
-	GetListCtrl().SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
-	m_bSelectTrace = FALSE;
-	// ステータスバーの更新
-	// こちらは pData ベースで指示
-	CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-	pFrame->SetStatusInfo(nIndex+1, pData);		// pData渡し
-	pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
-
-	// 強制ｽｸﾛｰﾙの可能性もあるのでUpdate()ではNG
-	GetListCtrl().EnsureVisible(nIndex, FALSE);
+	// from CTraceThread::InitInstance()
+	if ( wParam ) {
+		CNCdata*	pData = reinterpret_cast<CNCdata *>(wParam);
+		int			nIndex = pData->GetBlockLineNo();
+		m_bSelectTrace = TRUE;	// OnItemChanged()でステータスバーの更新をしない
+		GetListCtrl().SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
+		m_bSelectTrace = FALSE;
+		// ステータスバーの更新
+		// こちらは pData ベースで指示
+		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
+		pFrame->SetStatusInfo(nIndex+1, pData);		// pData渡し
+		pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
+		// 強制ｽｸﾛｰﾙの可能性もあるのでUpdate()ではNG
+		GetListCtrl().EnsureVisible(nIndex, FALSE);
+	}
+	else {
+		// 選択解除
+		GetListCtrl().SetItemState(-1, 0, LVIS_SELECTED|LVIS_FOCUSED);
+	}
 
 	return 0;
 }
