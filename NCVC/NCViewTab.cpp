@@ -422,10 +422,11 @@ void CNCViewTab::OnTraceStop()
 	if ( GetDocument()->GetTraceMode() != ID_NCVIEW_TRACE_STOP ) {
 		m_bTraceContinue = FALSE;
 		GetDocument()->SetTraceMode(ID_NCVIEW_TRACE_STOP);
-		// Œ»ÝˆÊ’uˆÈ~‚ð•`‰æ
-		GetDocument()->StopTrace();
-		GetDocument()->UpdateAllViews(this, UAV_STARTSTOPTRACE);
 	}
+	// Œ»ÝˆÊ’uˆÈ~‚ð•`‰æ
+	GetDocument()->StopTrace();
+	GetDocument()->ResetTraceStart();
+	GetDocument()->UpdateAllViews(this, UAV_STARTSTOPTRACE);
 }
 
 void CNCViewTab::OnUpdateTraceCursor(CCmdUI* pCmdUI) 

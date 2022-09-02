@@ -200,12 +200,10 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		return;
 
 	case UAV_STARTSTOPTRACE:
-		if ( GetDocument()->GetTraceMode() != ID_NCVIEW_TRACE_STOP ) {
-			OnSelectTrace(NULL, NULL);
-			Invalidate(FALSE);
-			return;
-		}
-		// else -> if (GetTraceMode()==ID_NCVIEW_TRACE_STOP) is through
+		OnSelectTrace(NULL, NULL);
+		Invalidate(FALSE);
+		return;
+
 	case UAV_FILEINSERT:	// è—L‹éŒ`‚Ì•ÏX
 		pOpt->m_dwUpdateFlg = VIEWUPDATE_DISPLAYLIST | VIEWUPDATE_BOXEL;
 		pHint = (CObject *)1;	// dummy
@@ -907,8 +905,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 			::glDrawElements(GL_TRIANGLE_STRIP, v, GL_UNSIGNED_INT, NULL);
 #endif
 		}
-		::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 		if ( pOpt->GetNCViewFlg(GLOPTFLG_TOOLTRACE) &&
 					GetDocument()->IsDocMill() && GetDocument()->GetTraceMode()!=ID_NCVIEW_TRACE_STOP ) {
 			// ´ÝÄÞÐÙ•`‰æ
@@ -966,6 +962,9 @@ void CNCViewGL::OnDraw(CDC* pDC)
 			}
 		}
 	}
+
+	::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 //	::glFinish();		// SwapBuffers() ‚ÉŠÜ‚Ü‚ê‚é
 	::SwapBuffers( pDC->GetSafeHdc() );
