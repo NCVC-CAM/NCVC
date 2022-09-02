@@ -912,18 +912,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 			::glDrawElements(GL_TRIANGLE_STRIP, v, GL_UNSIGNED_INT, NULL);
 #endif
 		}
-		if ( pOpt->GetNCViewFlg(GLOPTFLG_TOOLTRACE) &&
-					GetDocument()->IsDocMill() && GetDocument()->GetTraceMode()!=ID_NCVIEW_TRACE_STOP ) {
-			// ´ÝÄÞÐÙ•`‰æ
-			size_t	nDraw = GetDocument()->GetTraceDraw();
-			if ( nDraw > 0 ) {
-				::glDisable(GL_LIGHT0);
-				::glDisable(GL_LIGHT1);
-				::glEnable (GL_LIGHT4);
-				::glEnable (GL_LIGHT5);
-				RenderMill(GetDocument()->GetNCdata(nDraw-1));
-			}
-		}
 	}
 #ifdef _DEBUG_BASICSHADERTEST_
 	m_glsl.Use(FALSE);
@@ -931,7 +919,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	::glBindTexture(GL_TEXTURE_2D, 0);
 #endif
 #endif	// _DEBUG_DRAWTEST_
-	
+
 	// ü‰æ
 	if ( m_bGLflg[NCVIEWGLFLG_WIREVIEW] ) {
 		::glDisable(GL_LIGHTING);
@@ -972,6 +960,22 @@ void CNCViewGL::OnDraw(CDC* pDC)
 
 	::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// ƒGƒ“ƒhƒ~ƒ‹•`‰æ
+	if ( pOpt->GetNCViewFlg(GLOPTFLG_TOOLTRACE) &&
+				GetDocument()->IsDocMill() && GetDocument()->GetTraceMode()!=ID_NCVIEW_TRACE_STOP ) {
+		::glDisable(GL_LINE_STIPPLE);
+		::glEnable(GL_LIGHTING);
+		::glEnable(GL_DEPTH_TEST);
+		size_t	nDraw = GetDocument()->GetTraceDraw();
+		if ( nDraw > 0 ) {
+			::glDisable(GL_LIGHT0);
+			::glDisable(GL_LIGHT1);
+			::glEnable (GL_LIGHT4);
+			::glEnable (GL_LIGHT5);
+			RenderMill(GetDocument()->GetNCdata(nDraw-1));
+		}
+	}
 
 //	::glFinish();		// SwapBuffers() ‚ÉŠÜ‚Ü‚ê‚é
 	::SwapBuffers( pDC->GetSafeHdc() );
