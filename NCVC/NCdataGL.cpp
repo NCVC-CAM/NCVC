@@ -247,14 +247,14 @@ static inline void _SetEndmillCircleYZ_Half
 // NCﾃﾞｰﾀの基礎ﾃﾞｰﾀｸﾗｽ
 //////////////////////////////////////////////////////////////////////
 
-void CNCdata::DrawGLWirePath(RENDERMODE enRender, int nID) const
+void CNCdata::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 {
 	// 派生ｸﾗｽからの共通呼び出し
 	for ( int i=0; i<m_obCdata.GetSize(); i++ )
 		m_obCdata[i]->DrawGLWirePath(enRender, nID);
 }
 
-void CNCdata::DrawGLWireWirePath(RENDERMODE enRender, int nID) const
+void CNCdata::DrawGLWireWirePath(RENDERMODE enRender, INT_PTR nID) const
 {
 	//	AddGLWireVertex() から座標値を得る
 	CVfloat		vpt, dmy1;
@@ -271,7 +271,7 @@ void CNCdata::DrawGLWireWirePath(RENDERMODE enRender, int nID) const
 	}
 	else {
 		// CNCdataオブジェクトのIDをカラーコードに設定
-		IDtoRGB(nID, rgb);
+		IDtoRGB((int)nID, rgb);
 	}
 
 	// vptを描画
@@ -394,7 +394,7 @@ void CNCdata::AddEndmillSphere(const CPoint3F& ptOrg, BOTTOMDRAW& bd, CVBtmDraw&
 // CNCline クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCline::DrawGLWirePath(RENDERMODE enRender, int nID) const
+void CNCline::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -420,7 +420,7 @@ void CNCline::DrawGLWirePath(RENDERMODE enRender, int nID) const
 		default:
 			::glLineStipple(1, g_penStyle[0].nGLpattern);	// 実線
 			// CNCdataオブジェクトのIDをカラーコードに設定
-			IDtoRGB(nID, rgb);		// ViewBaseGL.cpp
+			IDtoRGB((int)nID, rgb);		// ViewBaseGL.cpp
 			break;
 		}
 		::glBegin(GL_LINES);
@@ -859,7 +859,7 @@ int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GL
 // CNCcycle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcycle::DrawGLWirePath(RENDERMODE enRender, int nID) const
+void CNCcycle::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 	COLORREF	colG0, colCY;
@@ -892,7 +892,7 @@ void CNCcycle::DrawGLWirePath(RENDERMODE enRender, int nID) const
 	default:
 		patG0 = patCY = g_penStyle[0].nGLpattern;		// 実線
 		// CNCdataオブジェクトのIDをカラーコードに設定
-		IDtoRGB(nID, rgbG0);		// ViewBaseGL.cpp
+		IDtoRGB((int)nID, rgbG0);		// ViewBaseGL.cpp
 		rgbCY[0] = rgbG0[0];
 		rgbCY[1] = rgbG0[1];
 		rgbCY[2] = rgbG0[2];
@@ -1011,7 +1011,7 @@ int CNCcycle::AddGLWireTexture(size_t, float&, float, GLfloat*) const
 // CNCcircle クラス
 //////////////////////////////////////////////////////////////////////
 
-void CNCcircle::DrawGLWirePath(RENDERMODE enRender, int nID) const
+void CNCcircle::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 {
 	const CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
@@ -1037,7 +1037,7 @@ void CNCcircle::DrawGLWirePath(RENDERMODE enRender, int nID) const
 		default:
 			::glLineStipple(1, g_penStyle[0].nGLpattern);	// 実線
 			// CNCdataオブジェクトのIDをカラーコードに設定
-			IDtoRGB(nID, rgb);		// ViewBaseGL.cpp
+			IDtoRGB((int)nID, rgb);		// ViewBaseGL.cpp
 			break;
 		}
 		::glBegin(GL_LINE_STRIP);

@@ -552,8 +552,9 @@ void CNCViewGL::RenderCode(RENDERMODE enRender)
 	::glDisable(GL_LINE_STIPPLE);
 
 	CNCdata*	pData;
-	// NCﾃﾞｰﾀの軌跡（ﾜｲﾔｰﾌﾚｰﾑ）描画
-	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
+	INT_PTR		i, nLoop = GetDocument()->GetTraceDraw();
+	// NCデータの軌跡（線画）描画，MC・旋盤モード
+	for ( i=GetDocument()->GetTraceStart(); i<nLoop; i++ ) {
 		pData = GetDocument()->GetNCdata(i);
 		if ( pData->GetGtype() == G_TYPE ) {
 			pData->DrawGLWirePath(enRender, i);		// オブジェクト番号をIDに
@@ -567,11 +568,12 @@ void CNCViewGL::RenderCodeWire(void)
 	::glDisable(GL_LINE_STIPPLE);
 
 	CNCdata*	pData;
-	// NCﾃﾞｰﾀの軌跡（ﾜｲﾔｰﾌﾚｰﾑ）描画
-	for ( int i=0; i<GetDocument()->GetNCsize(); i++ ) {
+	INT_PTR		i, nLoop = GetDocument()->GetTraceDraw();
+	// NCデータの軌跡（線画）描画，ワイヤ放電加工機モード
+	for ( i=GetDocument()->GetTraceStart(); i<nLoop; i++ ) {
 		pData = GetDocument()->GetNCdata(i);
 		if ( pData->GetGtype() == G_TYPE ) {
-			pData->DrawGLWireWirePath(RM_NORMAL, i);
+			pData->DrawGLWireWirePath(RM_PICKLINE, i);
 		}
 	}
 }
@@ -901,6 +903,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		::glEnable(GL_LINE_STIPPLE);
 		if ( IsWireMode() ) {
 			// ワイヤ放電加工機モード
+			// 頂点バッファを利用して線画を描画
 			j = 0;
 			for ( const auto& v : m_WireDraw.vwl ) {
 				::glColor3ub(GetRValue(v.col), GetGValue(v.col), GetBValue(v.col));
