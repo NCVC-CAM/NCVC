@@ -136,22 +136,14 @@ BOOL CViewSetup2::OnApply()
 	int		i;
 	CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 
-	if ( pOpt->m_bDrawRevise != m_bDraw[0] )
-		pOpt->m_dwUpdateFlg |= VIEWUPDATE_DISPLAYLIST;
 	pOpt->m_bDrawRevise = m_bDraw[0];
-	if ( pOpt->m_bDrawCircleCenter != m_bDraw[1] )
-		pOpt->m_dwUpdateFlg |= VIEWUPDATE_DISPLAYLIST;
 	pOpt->m_bDrawCircleCenter = m_bDraw[1];
 	pOpt->m_bScale = m_bGuide[0];
 	pOpt->m_bGuide = m_bGuide[1];
 	for ( i=0; i<SIZEOF(m_colView); i++ ) {
-		if ( pOpt->m_colNCView[i] != m_colView[i] )
-			pOpt->m_dwUpdateFlg |= VIEWUPDATE_DISPLAYLIST;
 		pOpt->m_colNCView[i] = m_colView[i];
 	}
 	for ( i=0; i<SIZEOF(m_cbLineType); i++ ) {
-		if ( pOpt->m_nNCLineType[i] != m_cbLineType[i].GetCurSel() )
-			pOpt->m_dwUpdateFlg |= VIEWUPDATE_DISPLAYLIST;
 		pOpt->m_nNCLineType[i] = m_cbLineType[i].GetCurSel();
 	}
 	for ( i=0; i<NCXYZ; i++ ) {

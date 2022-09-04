@@ -92,7 +92,6 @@ class CNCViewGL : public CViewBaseGL
 	GLint		m_wx, m_wy;		// glReadPixels, glWindowPos
 	CPointF		m_ptCenterBk;		// ﾎﾞｸｾﾙ処理前のﾊﾞｯｸｱｯﾌﾟ
 	GLdouble	m_objXformBk[4][4];
-	GLuint		m_glCode;		// 切削ﾊﾟｽのﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ
 	CNCdata*	m_pData;		// 選択中のNCオブジェクト
 	GLfloat*	m_pfDepth;		// ﾃﾞﾌﾟｽ値取得配列
 #ifndef NO_TRACE_WORKFILE		// from NCViewTab.h
@@ -131,7 +130,6 @@ class CNCViewGL : public CViewBaseGL
 
 	void	InitialObjectForm(void);
 	void	UpdateViewOption(void);
-	void	CreateDisplayList(void);
 	BOOL	CreateBoxel(BOOL = FALSE);
 	BOOL	CreateBoxel_fromIGES(CREATEBOXEL_IGESPARAM* = NULL);
 	BOOL	CreateLathe(BOOL = FALSE);

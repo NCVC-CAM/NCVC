@@ -95,7 +95,6 @@ CNCViewGL::CNCViewGL()
 	m_bGLflg.set(NCVIEWGLFLG_SOLIDVIEW, pOpt->GetNCViewFlg(GLOPTFLG_SOLIDVIEW));
 	m_bGLflg.set(NCVIEWGLFLG_LATHEMODE, pOpt->GetNCViewFlg(GLOPTFLG_LATHESLIT));
 	m_icx = m_icy = 0;
-	m_glCode = 0;
 	m_pData = NULL;
 
 #ifdef NO_TRACE_WORKFILE
@@ -209,7 +208,7 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		return;
 
 	case UAV_FILEINSERT:	// 占有矩形の変更
-		pOpt->m_dwUpdateFlg = VIEWUPDATE_DISPLAYLIST | VIEWUPDATE_BOXEL;
+		pOpt->m_dwUpdateFlg = VIEWUPDATE_BOXEL;
 		pHint = (CObject *)1;	// dummy
 		// through
 	case UAV_DRAWWORKRECT:	// ワーク矩形変更
@@ -317,14 +316,6 @@ void CNCViewGL::UpdateViewOption(void)
 		::glLightfv(GL_LIGHT5, GL_POSITION, light_Position1);
 	}
 
-	// ﾜｲﾔｰ(ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ)
-	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_DISPLAYLIST ) {
-		if ( m_glCode > 0 )
-			::glDeleteLists(m_glCode, 1);
-		if ( !IsWireMode() )
-			CreateDisplayList();
-	}
-
 	// ソリッドモデルの表示
 	if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
 		ClearVBO();
@@ -389,22 +380,6 @@ void CNCViewGL::InitialObjectForm(void)
 	else {
 		// 単位行列に初期化
 		IdentityMatrix();	// ViewBaseGL.cpp
-	}
-}
-
-void CNCViewGL::CreateDisplayList(void)
-{
-	GetGLError();		// error flash
-	m_glCode = ::glGenLists(1);
-	if( m_glCode > 0 ) {
-		// NCﾃﾞｰﾀ描画のﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ生成
-		::glNewList( m_glCode, GL_COMPILE );
-			RenderCode(RM_NORMAL);
-		::glEndList();
-		if ( GetGLError() != GL_NO_ERROR ) {
-			::glDeleteLists(m_glCode, 1);
-			m_glCode = 0;
-		}
 	}
 }
 
@@ -940,15 +915,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		}
 		else {
 			// ＭＣ，旋盤モード
-			if ( GetDocument()->GetTraceMode() == ID_NCVIEW_TRACE_STOP ) {
-				// ディスプレイリストで全体表示のため，トレース停止状態のみ描画
-				if ( m_glCode > 0 ) {
-					::glCallList( m_glCode );
-				}
-				else {
-					RenderCode(RM_NORMAL);
-				}
-			}
+			RenderCode(RM_NORMAL);
 			if ( m_pData ) {
 				// 選択オブジェクトの描画
 				// デプステストを無効にして上書き
@@ -1061,9 +1028,6 @@ void CNCViewGL::OnDestroy()
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
-	// ﾃﾞｨｽﾌﾟﾚｲﾘｽﾄ消去
-	if ( m_glCode > 0 )
-		::glDeleteLists(m_glCode, 1);
 	// ﾊﾞｯﾌｧｵﾌﾞｼﾞｪｸﾄ関連の削除
 	ClearVBO();
 	ClearTexture();
