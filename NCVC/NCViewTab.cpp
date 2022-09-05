@@ -280,13 +280,6 @@ int CNCViewTab::OnCreate(LPCREATESTRUCT lpCreateStruct)
 				RUNTIME_CLASS(CNCViewGL), GetDocument(), GetParentFrame());
 //			ASSERT(nIndex >= 0);	// OpenGLﾊﾞｰｼﾞｮﾝﾁｪｯｸに引っかかる可能性アリ
 		}
-		// 各ﾍﾟｰｼﾞのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄﾊﾝﾄﾞﾙを取得
-		CClientDC*	pDC;
-		for ( i=0; i<NCDRAWVIEW_NUM; i++ ) {	// ４面以外
-			pDC = new CClientDC(GetPage(i));
-			m_hDC[i] = pDC->GetSafeHdc();
-			delete	pDC;
-		}
 	}
 	catch (CMemoryException* e) {
 		AfxMessageBox(IDS_ERR_OUTOFMEM, MB_OK|MB_ICONSTOP);

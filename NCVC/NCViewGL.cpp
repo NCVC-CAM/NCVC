@@ -695,7 +695,7 @@ void CNCViewGL::DoScale(int nRate)
 void CNCViewGL::OnDraw(CDC* pDC)
 {
 #ifdef _DEBUG
-	printf("CNCViewGL::OnDraw() Start\n");
+//	printf("CNCViewGL::OnDraw() Start\n");
 #endif
 	ASSERT_VALID(GetDocument());
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
@@ -951,7 +951,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
 #ifdef _DEBUG
-	printf("CNCViewGL::OnDraw() End\n");
+//	printf("CNCViewGL::OnDraw() End\n");
 #endif
 }
 
