@@ -107,10 +107,13 @@ void CNCInfoBase::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	if ( nChar == VK_TAB ) {
 		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-		if ( ::GetKeyState(VK_SHIFT) < 0 )
+		if ( ::GetKeyState(VK_SHIFT) < 0 ) {
 			pFrame->GetListView()->SetFocus();
-		else
-			pFrame->GetMainView()->SetFocus();
+		}
+		else {
+			CNCViewTab* pParent = pFrame->GetMainView();
+			pParent->GetActivePageWnd()->SetFocus();
+		}
 	}
 
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);

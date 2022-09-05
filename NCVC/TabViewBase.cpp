@@ -14,7 +14,6 @@ IMPLEMENT_DYNCREATE(CTabViewBase, CCtrlView)
 BEGIN_MESSAGE_MAP(CTabViewBase, CCtrlView)
 	ON_WM_SIZE()
 	ON_WM_DESTROY()
-	ON_WM_SETFOCUS()
 	ON_WM_ERASEBKGND()
 	ON_NOTIFY_REFLECT(TCN_SELCHANGING, &CTabViewBase::OnSelChanging)
 	ON_NOTIFY_REFLECT(TCN_SELCHANGE, &CTabViewBase::OnSelChange)
@@ -197,25 +196,6 @@ void CTabViewBase::OnDestroy()
 {
 	m_pPages.RemoveAll();
 	__super::OnDestroy();
-}
-
-void CTabViewBase::OnSetFocus(CWnd*) 
-{
-#ifdef _DEBUG
-	printf("CTabViewBase::OnSetFocus()\n");
-#endif
-	int	nIndex = GetActivePage();
-	if ( nIndex >= 0 ) {
-		ActivatePage(nIndex);
-//		GetPage(nIndex)->SetFocus();
-//		GetTabCtrl().SetCurSel(nIndex);
-//		GetTabCtrl().SetCurFocus(nIndex);
-	}
-#ifdef _DEBUG
-	else {
-		printf("CTabViewBase not select active page\n");
-	}
-#endif
 }
 
 BOOL CTabViewBase::OnEraseBkgnd(CDC* pDC)

@@ -443,10 +443,14 @@ void CNCListView::OnKeyDown(NMHDR* pNMHDR, LRESULT* pResult)
 
 	if ( pTVKeyDown->wVKey == VK_TAB ) {
 		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-		if ( ::GetKeyState(VK_SHIFT) < 0 )
-			pFrame->GetInfoView()->SetFocus();
-		else
-			pFrame->GetMainView()->SetFocus();
+		if ( ::GetKeyState(VK_SHIFT) < 0 ) {
+			CNCInfoTab* pParent = pFrame->GetInfoView();
+			pParent->GetActivePageWnd()->SetFocus();
+		}
+		else {
+			CNCViewTab* pParent = pFrame->GetMainView();
+			pParent->GetActivePageWnd()->SetFocus();
+		}
 	}
 
 	*pResult = 0;

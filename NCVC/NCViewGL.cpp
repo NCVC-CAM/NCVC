@@ -1454,10 +1454,13 @@ void CNCViewGL::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	if ( nChar == VK_TAB ) {
 		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-		if ( ::GetKeyState(VK_SHIFT) < 0 )
-			pFrame->GetInfoView()->SetFocus();
-		else
+		if ( ::GetKeyState(VK_SHIFT) < 0 ) {
+			CNCInfoTab* pParent = pFrame->GetInfoView();
+			pParent->GetActivePageWnd()->SetFocus();
+		}
+		else {
 			pFrame->GetListView()->SetFocus();
+		}
 		return;
 	}
 
