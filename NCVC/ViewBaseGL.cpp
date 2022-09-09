@@ -296,43 +296,43 @@ void CViewBaseGL::DoRotation(float dAngle)
 
 void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
 {
-	::glDisable(GL_DEPTH_TEST);	// ﾃﾞﾌﾟｽﾃｽﾄ無効で描画
+	::glDisable(GL_DEPTH_TEST);	// デプステスト無効で描画
 	::glDisable(GL_LIGHTING);	// ライティングも無効
 
+	// 色情報
 	GLubyte		col1v[3], col2v[3];
-	GLfloat		dVertex[3];
 	col1v[0] = GetRValue(col1);
 	col1v[1] = GetGValue(col1);
 	col1v[2] = GetBValue(col1);
 	col2v[0] = GetRValue(col2);
 	col2v[1] = GetGValue(col2);
 	col2v[2] = GetBValue(col2);
+	GLubyte	col[] = {
+		col1v[0], col1v[1], col1v[2],		// 左下
+		col2v[0], col2v[1], col2v[2],		// 左上
+		col2v[0], col2v[1], col2v[2],		// 右上
+		col1v[0], col1v[1], col1v[2]		// 右下
+	};
+	// 座標値設定
+	GLfloat	vertex[] = {
+		m_rcView.left,	m_rcView.bottom,	// 左下
+		m_rcView.left,	m_rcView.top,		// 左上
+		m_rcView.right,	m_rcView.top,		// 右上
+		m_rcView.right,	m_rcView.bottom		// 右下
+	};
+
+	// 配列有効
+	::glEnableClientState(GL_COLOR_ARRAY);
+	::glEnableClientState(GL_VERTEX_ARRAY);
+	::glColorPointer(3, GL_UNSIGNED_BYTE, 0, col);
+	::glVertexPointer(2, GL_FLOAT, 0, vertex);
 
 	::glPushMatrix();
 	::glLoadIdentity();
-	::glBegin(GL_QUADS);
-	// 左下
-	dVertex[0] = m_rcView.left;
-	dVertex[1] = m_rcView.bottom;
-//	dVertex[2] = m_rcView.low;
-	dVertex[2] = m_rcView.high - NCMIN*2.0f;	// 一番奥(x2はｵﾏｹ)
-	::glColor3ubv(col1v);
-	::glVertex3fv(dVertex);
-	// 左上
-	dVertex[1] = m_rcView.top;
-	::glColor3ubv(col2v);
-	::glVertex3fv(dVertex);
-	// 右上
-	dVertex[0] = m_rcView.right;
-	::glColor3ubv(col2v);
-	::glVertex3fv(dVertex);
-	// 右下
-	dVertex[1] = m_rcView.bottom;
-	::glColor3ubv(col1v);
-	::glVertex3fv(dVertex);
-	//
-	::glEnd();
+	::glDrawArrays(GL_QUADS, 0, 4);		// 背面描画
 	::glPopMatrix();
+
+	::glDisableClientState(GL_COLOR_ARRAY);	// 色配列はここだけ
 }
 
 /////////////////////////////////////////////////////////////////////////////
