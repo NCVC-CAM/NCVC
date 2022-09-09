@@ -422,7 +422,6 @@ BOOL CNCViewGL::ReadTexture(LPCTSTR szFileName)
 void  CNCViewGL::CreateTexture(GLsizeiptr n, const GLfloat* pfTEX)
 {
 	GLenum	errCode;
-	UINT	errLine;
 
 	// Ã¸½Á¬À•W‚ðGPUÒÓØ‚É“]‘—
 	if ( m_nTextureID > 0 )
@@ -431,10 +430,9 @@ void  CNCViewGL::CreateTexture(GLsizeiptr n, const GLfloat* pfTEX)
 	::glBindBuffer(GL_ARRAY_BUFFER, m_nTextureID);
 	::glBufferData(GL_ARRAY_BUFFER, n*sizeof(GLfloat), pfTEX,
 			GL_STATIC_DRAW);
-	errLine = __LINE__;
-	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
+	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 		ClearTexture();
-		OutputGLErrorMessage(errCode, errLine);
+		OutputGLErrorMessage(errCode, __FILE__, __LINE__);
 	}
 	::glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

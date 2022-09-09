@@ -84,7 +84,7 @@ public:
 #endif
 };
 
-void	OutputGLErrorMessage(GLenum, UINT);
+void	OutputGLErrorMessage(GLenum, LPCTSTR, UINT);
 
 // インデックスIDとRGBAを変換
 #define	PICKREGION		5

@@ -3706,7 +3706,7 @@ BEGIN
     IDS_ERR_CLIPBOARD       "クリップボードの操作に失敗しました"
     IDS_ERR_MAXADD          "登録数の上限に達しました。これ以上は登録できません"
     IDS_ERR_OPENGLVER       "OpenGLのバージョンが古く表示ができません。少なくとも1.5以上のサポートが必要です。\nこのマシンのOpenGLバージョンは %s です。"
-    IDS_ERR_OUTOFVRAM       "OpenGL操作でエラーが発生しました\n\nCode=%s, DebugLine=%d"
+    IDS_ERR_OPENGL          "OpenGL操作でエラーが発生しました\nCode=%s, File=%s, DebugLine=%d"
 END
 
 STRINGTABLE

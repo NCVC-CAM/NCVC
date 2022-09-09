@@ -810,7 +810,7 @@
 #define IDS_ERR_CLIPBOARD               21004
 #define IDS_ERR_MAXADD                  21005
 #define IDS_ERR_OPENGLVER               21006
-#define IDS_ERR_OUTOFVRAM               21007
+#define IDS_ERR_OPENGL                  21007
 #define IDS_ERR_TEXTURE                 21008
 #define IDS_ERR_CONTROL                 21010
 #define IDS_ERR_FILEPATH                21011

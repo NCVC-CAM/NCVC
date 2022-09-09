@@ -620,10 +620,11 @@ void CViewBaseGL::OnUpdateEditCopy(CCmdUI* pCmdUI)
 
 /////////////////////////////////////////////////////////////////////////////
 
-void OutputGLErrorMessage(GLenum errCode, UINT nline)
+void OutputGLErrorMessage(GLenum errCode, LPCTSTR pszFile, UINT nline)
 {
-	CString		strMsg;
-	strMsg.Format(IDS_ERR_OUTOFVRAM, ::gluErrorString(errCode), nline);
+	CString	strMsg, strPath, strName;
+	::Path_Name_From_FullPath(pszFile, strPath, strName);
+	strMsg.Format(IDS_ERR_OPENGL, ::gluErrorString(errCode), strName, nline);
 	AfxMessageBox(strMsg, MB_OK|MB_ICONEXCLAMATION);
 }
 

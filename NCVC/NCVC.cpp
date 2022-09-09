@@ -1702,10 +1702,10 @@ void CNCVCApp::OnAppAbout()
 // Ãﬂ€ºﬁ™∏ƒçLàÊä÷êî
 /////////////////////////////////////////////////////////////////////////////
 
-void NCVC_CriticalErrorMsg(LPCTSTR lpszProg, int nLine)
+void NCVC_CriticalErrorMsg(LPCTSTR pszFile, int nLine)
 {
 	CString	strMsg, strPath, strName;
-	::Path_Name_From_FullPath(lpszProg, strPath, strName);
+	::Path_Name_From_FullPath(pszFile, strPath, strName);
 	strMsg.Format(IDS_ERR_CRITICAL, strName, nLine);
 	AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 	ExitProcess(-1);

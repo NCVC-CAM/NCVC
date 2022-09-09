@@ -155,10 +155,10 @@ BOOL CNCViewGL::CreateWire(void)
 	::glBufferData(GL_ARRAY_BUFFER, m_WireDraw.vpt.size()*sizeof(GLfloat),
 		&(m_WireDraw.vpt[0]), GL_STATIC_DRAW);
 	errLine = __LINE__;
-	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
+	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 		ClearVBO();
-		OutputGLErrorMessage(errCode, errLine);
+		OutputGLErrorMessage(errCode, __FILE__, errLine);
 		return FALSE;
 	}
 
@@ -170,7 +170,7 @@ BOOL CNCViewGL::CreateWire(void)
 	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 		ClearVBO();
-		OutputGLErrorMessage(errCode, errLine);
+		OutputGLErrorMessage(errCode, __FILE__, errLine);
 		return FALSE;
 	}
 	::glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -203,7 +203,7 @@ BOOL CNCViewGL::CreateWire(void)
 			if ( errCode != GL_NO_ERROR ) {
 				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 				ClearVBO();
-				OutputGLErrorMessage(errCode, errLine);
+				OutputGLErrorMessage(errCode, __FILE__, errLine);
 				return FALSE;
 			}
 			m_vElementCut.push_back(nElement);
@@ -226,7 +226,7 @@ BOOL CNCViewGL::CreateWire(void)
 			if ( errCode != GL_NO_ERROR ) {
 				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 				ClearVBO();
-				OutputGLErrorMessage(errCode, errLine);
+				OutputGLErrorMessage(errCode, __FILE__, errLine);
 				return FALSE;
 			}
 		}
