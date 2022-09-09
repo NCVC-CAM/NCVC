@@ -296,9 +296,6 @@ void CViewBaseGL::DoRotation(float dAngle)
 
 void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
 {
-	::glDisable(GL_DEPTH_TEST);	// デプステスト無効で描画
-	::glDisable(GL_LIGHTING);	// ライティングも無効
-
 	// 色情報
 	GLubyte		col1v[3], col2v[3];
 	col1v[0] = GetRValue(col1);
@@ -313,7 +310,7 @@ void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
 		col2v[0], col2v[1], col2v[2],		// 右上
 		col1v[0], col1v[1], col1v[2]		// 右下
 	};
-	// 座標値設定
+	// 座標値設定(2D)
 	GLfloat	vertex[] = {
 		m_rcView.left,	m_rcView.bottom,	// 左下
 		m_rcView.left,	m_rcView.top,		// 左上
@@ -322,8 +319,6 @@ void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
 	};
 
 	// 配列有効
-	::glEnableClientState(GL_COLOR_ARRAY);
-	::glEnableClientState(GL_VERTEX_ARRAY);
 	::glColorPointer(3, GL_UNSIGNED_BYTE, 0, col);
 	::glVertexPointer(2, GL_FLOAT, 0, vertex);
 
@@ -331,8 +326,76 @@ void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
 	::glLoadIdentity();
 	::glDrawArrays(GL_QUADS, 0, 4);		// 背面描画
 	::glPopMatrix();
+}
 
-	::glDisableClientState(GL_COLOR_ARRAY);	// 色配列はここだけ
+void CViewBaseGL::RenderAxis(void)
+{
+	extern	const PENSTYLE	g_penStyle[];	// ViewOption.cpp
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+//	float		dLength;
+
+	COLORREF	colX = pOpt->GetNcDrawColor(NCCOL_GUIDEX),
+				colY = pOpt->GetNcDrawColor(NCCOL_GUIDEY),
+				colZ = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
+	GLubyte		col[] = {
+		GetRValue(colX), GetGValue(colX), GetBValue(colX),
+		GetRValue(colX), GetGValue(colX), GetBValue(colX),
+		GetRValue(colY), GetGValue(colY), GetBValue(colY),
+		GetRValue(colY), GetGValue(colY), GetBValue(colY),
+		GetRValue(colZ), GetGValue(colZ), GetBValue(colZ),
+		GetRValue(colZ), GetGValue(colZ), GetBValue(colZ)
+	};
+	float		dx = pOpt->GetGuideLength(NCA_X),
+				dy = pOpt->GetGuideLength(NCA_Y),
+				dz = pOpt->GetGuideLength(NCA_Z);
+	GLfloat		vertex[] = {
+		-dx, 0, 0, dx, 0, 0,
+		0, -dy, 0, 0, dy, 0,
+		0, 0, -dz, 0, 0, dz
+	};
+
+	::glColorPointer(3, GL_UNSIGNED_BYTE, 0, col);
+	::glVertexPointer(3, GL_FLOAT, 0, vertex);
+
+	::glEnable(GL_LINE_STIPPLE);
+	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_X)].nGLpattern);
+	::glDrawArrays(GL_LINES, 0, 3*2);
+	::glDisable(GL_LINE_STIPPLE);
+/*
+	COLORREF	col;
+
+	::glPushAttrib(GL_LINE_BIT);	// 線情報
+	::glEnable(GL_LINE_STIPPLE);
+	::glBegin(GL_LINES);
+	::glLineWidth( 2.0f );
+
+	// X軸のｶﾞｲﾄﾞ
+	dLength = pOpt->GetGuideLength(NCA_X);
+	col = pOpt->GetNcDrawColor(NCCOL_GUIDEX);
+	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_X)].nGLpattern);
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+	::glVertex3f(-dLength, 0.0f, 0.0f);
+	::glVertex3f( dLength, 0.0f, 0.0f);
+	// Y軸のｶﾞｲﾄﾞ
+	dLength = pOpt->GetGuideLength(NCA_Y);
+	col = pOpt->GetNcDrawColor(NCCOL_GUIDEY);
+	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Y)].nGLpattern);
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+	::glVertex3f(0.0f, -dLength, 0.0f);
+	::glVertex3f(0.0f,  dLength, 0.0f);
+	// Z軸のｶﾞｲﾄﾞ
+	dLength = pOpt->GetGuideLength(NCA_Z);
+	col = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
+	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Z)].nGLpattern);
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+	::glVertex3f(0.0f, 0.0f, -dLength);
+	::glVertex3f(0.0f, 0.0f,  dLength);
+
+	::glEnd();
+
+	::glDisable(GL_LINE_STIPPLE);
+	::glPopAttrib();
+*/
 }
 
 /////////////////////////////////////////////////////////////////////////////

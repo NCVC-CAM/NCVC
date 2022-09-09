@@ -57,6 +57,7 @@ protected:
 	void	DoTracking(const CPoint&);
 	void	DoRotation(float);
 	void	RenderBackground(COLORREF, COLORREF);
+	void	RenderAxis(void);
 	//
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();

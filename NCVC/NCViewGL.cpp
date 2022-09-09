@@ -31,7 +31,6 @@
 
 using std::vector;
 using namespace boost;
-extern	const PENSTYLE	g_penStyle[];	// ViewOption.cpp
 
 #define	IsDocError()	GetDocument()->IsDocFlag(NCDOC_ERROR)
 #define	IsWireMode()	GetDocument()->IsDocFlag(NCDOC_WIRE)
@@ -505,45 +504,6 @@ void CNCViewGL::FinalBoxel(void)
 	SetupViewingTransform();
 }
 
-void CNCViewGL::RenderAxis(void)
-{
-	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	float		dLength;
-	COLORREF	col;
-
-	::glPushAttrib(GL_LINE_BIT);	// 線情報
-	::glLineWidth( 2.0f );
-	::glEnable(GL_LINE_STIPPLE);
-	::glBegin(GL_LINES);
-
-	// X軸のｶﾞｲﾄﾞ
-	dLength = pOpt->GetGuideLength(NCA_X);
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEX);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_X)].nGLpattern);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(-dLength, 0.0f, 0.0f);
-	::glVertex3f( dLength, 0.0f, 0.0f);
-	// Y軸のｶﾞｲﾄﾞ
-	dLength = pOpt->GetGuideLength(NCA_Y);
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEY);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Y)].nGLpattern);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, -dLength, 0.0f);
-	::glVertex3f(0.0f,  dLength, 0.0f);
-	// Z軸のｶﾞｲﾄﾞ
-	dLength = pOpt->GetGuideLength(NCA_Z);
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Z)].nGLpattern);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, 0.0f, -dLength);
-	::glVertex3f(0.0f, 0.0f,  dLength);
-
-	::glEnd();
-
-	::glDisable(GL_LINE_STIPPLE);
-	::glPopAttrib();
-}
-
 void CNCViewGL::RenderCode(RENDERMODE enRender)
 {
 	::glDisable(GL_LIGHTING);
@@ -704,10 +664,16 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// 背景の描画
+	::glEnableClientState(GL_COLOR_ARRAY);
+	::glEnableClientState(GL_VERTEX_ARRAY);
+	::glDisable(GL_DEPTH_TEST);	// デプステスト無効で描画
+	::glDisable(GL_LIGHTING);	// ライティングも無効
 	RenderBackground(pOpt->GetNcDrawColor(NCCOL_BACKGROUND1), pOpt->GetNcDrawColor(NCCOL_BACKGROUND2));
 
 	// 軸の描画
+	::glEnable(GL_DEPTH_TEST);
 	RenderAxis();
+	::glDisableClientState(GL_COLOR_ARRAY);
 
 	if ( IsDocError() ) {
 		::SwapBuffers( pDC->GetSafeHdc() );
@@ -715,7 +681,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		return;
 	}
 
-	::glEnable(GL_DEPTH_TEST);
 	::glEnable(GL_LIGHTING);
 
 #if defined(_DEBUG_DRAWTEST_)
@@ -788,7 +753,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	size_t	j = 0;
 
 	// ワイヤ放電モードは線画でも使うため，ここで有効にしておく
-	::glEnableClientState(GL_VERTEX_ARRAY);
 	::glEnableClientState(GL_NORMAL_ARRAY);
 	::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
 	::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);

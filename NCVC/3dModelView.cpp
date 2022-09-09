@@ -115,31 +115,16 @@ void C3dModelView::OnDraw(CDC* pDC)
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// 背景の描画
+	::glEnableClientState(GL_COLOR_ARRAY);
+	::glEnableClientState(GL_VERTEX_ARRAY);
+	::glDisable(GL_DEPTH_TEST);	// デプステスト無効で描画
+	::glDisable(GL_LIGHTING);	// ライティングも無効
 	RenderBackground(pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1), pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2));
 
-	::glDisable(GL_LIGHTING);
-	float		dLength = 50.0f;
-	COLORREF	col;
-	::glPushAttrib( GL_LINE_BIT );
-	::glLineWidth( 2.0f );
-	::glBegin( GL_LINES );
-	// X軸のｶﾞｲﾄﾞ
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEX);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(-dLength, 0.0f, 0.0f);
-	::glVertex3f( dLength, 0.0f, 0.0f);
-	// Y軸のｶﾞｲﾄﾞ
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEY);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, -dLength, 0.0f);
-	::glVertex3f(0.0f,  dLength, 0.0f);
-	// Z軸のｶﾞｲﾄﾞ
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, 0.0f, -dLength);
-	::glVertex3f(0.0f, 0.0f,  dLength);
-	::glEnd();
-	::glPopAttrib();
+	// 軸の描画
+	::glEnable(GL_DEPTH_TEST);
+	RenderAxis();
+	::glDisableClientState(GL_COLOR_ARRAY);
 
 	// --- テスト描画
 //	::glBegin(GL_QUADS);
@@ -153,7 +138,6 @@ void C3dModelView::OnDraw(CDC* pDC)
 
 	// モデル描画
 	::glEnable(GL_LIGHTING);
-	::glEnable(GL_DEPTH_TEST);
 //	try {
 		// Kodatuno側での描画のため例外処理対応
 		// !!! tryブロック設置してもntdll.dllの例外がcatchできない？？？ !!!
