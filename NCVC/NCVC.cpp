@@ -198,6 +198,7 @@ BOOL CNCVCApp::InitInstance()
 	printf("NCDATA   struct size=%zd\n", sizeof(NCDATA));
 	printf("NCDATA_F struct size=%zd\n", sizeof(NCDATA_F));
 	printf("CNCdata  struct size=%zd\n", sizeof(CNCdata));
+	printf("Coord class size=%zd\n", sizeof(Coord));
 #endif
 	LoadStdProfileSettings(MAXMRULSTCNT);	// 標準の INI ファイルのオプションをロードします (MRU を含む)
 	InitialRecentViewList();	// MRUﾘｽﾄからCRecentViewInfo構築

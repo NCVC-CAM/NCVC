@@ -230,16 +230,18 @@ void C3dModelView::DrawRoughPath(void)
 	if ( vvv.empty() )
 		return;
 
-	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
+	const COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
-	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
-	::glBegin(GL_POINTS);
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+//	::glBegin(GL_POINTS);
 
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				::glVertex3d(it3->x, it3->y, it3->z);
-			}
+			::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
+			::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+//			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+//				::glVertex3d(it3->x, it3->y, it3->z);
+//			}
 		}
 	}
 /*
@@ -250,7 +252,7 @@ void C3dModelView::DrawRoughPath(void)
 			}
 		}
 */
-	::glEnd();
+//	::glEnd();
 }
 
 void C3dModelView::DrawContourPath(void)
@@ -259,16 +261,18 @@ void C3dModelView::DrawContourPath(void)
 	if ( vvv.empty() )
 		return;
 
-	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
+	const COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
-	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
-	::glBegin(GL_POINTS);
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+//	::glBegin(GL_POINTS);
 
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				::glVertex3d(it3->x, it3->y, it3->z);
-			}
+			::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
+			::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+//			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+//				::glVertex3d(it3->x, it3->y, it3->z);
+//			}
 		}
 	}
 /*
@@ -281,7 +285,7 @@ void C3dModelView::DrawContourPath(void)
 			}
 		}
 */
-	::glEnd();
+//	::glEnd();
 }
 
 /////////////////////////////////////////////////////////////////////////////
