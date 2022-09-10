@@ -604,7 +604,9 @@ void CNCViewGL::DoSelect(const CPoint& pt)
 	// 行番号をカラーコードにして描画
 	m_pData = NULL;
 	if ( IsWireMode() ) {
+		::glEnableClientState(GL_VERTEX_ARRAY);
 		RenderCodeWire();			// ワイヤ放電加工機用
+		::glDisableClientState(GL_VERTEX_ARRAY);
 	}
 	else {
 		RenderCode(RM_PICKLINE);	// その他
@@ -872,6 +874,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 				::glDrawElements(GL_LINE_STRIP, (GLsizei)(v.vel.size()), GL_UNSIGNED_INT, NULL);
 			}
 			if ( m_pData ) {
+				::glBindBuffer(GL_ARRAY_BUFFER, 0);
 				// 選択オブジェクトの描画
 				m_pData->DrawGLWireWirePath(RM_SELECT, -1);	// 第2引数は不使用
 			}

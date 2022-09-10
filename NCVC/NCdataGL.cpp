@@ -275,12 +275,9 @@ void CNCdata::DrawGLWireWirePath(RENDERMODE enRender, INT_PTR nID) const
 	}
 
 	// vpt‚ð•`‰æ
-	::glBegin(GL_TRIANGLE_STRIP);
 	::glColor3ubv(rgb);
-	for ( size_t i=0; i<vpt.size(); i+=NCXYZ ) {
-		::glVertex3f(vpt[i+NCA_X], vpt[i+NCA_Y], vpt[i+NCA_Z]);
-	}
-	::glEnd();
+	::glVertexPointer(NCXYZ, GL_FLOAT, 0, &vpt[0]);
+	::glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)(vpt.size()/NCXYZ));
 }
 
 void CNCdata::DrawGLLatheDepth(void) const
