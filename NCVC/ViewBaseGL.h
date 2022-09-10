@@ -56,7 +56,7 @@ protected:
 	CPoint3F	PtoR(const CPoint& pt);
 	void	DoTracking(const CPoint&);
 	void	DoRotation(float);
-	void	RenderBackground(COLORREF, COLORREF);
+	void	RenderBackground(const COLORREF, const COLORREF);
 	void	RenderAxis(void);
 	//
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);

@@ -507,7 +507,6 @@ void CNCViewGL::FinalBoxel(void)
 void CNCViewGL::RenderCode(RENDERMODE enRender)
 {
 	::glDisable(GL_LIGHTING);
-	::glDisable(GL_LINE_STIPPLE);
 
 	CNCdata*	pData;
 	INT_PTR		i, nLoop = GetDocument()->GetTraceDraw();
@@ -523,7 +522,6 @@ void CNCViewGL::RenderCode(RENDERMODE enRender)
 void CNCViewGL::RenderCodeWire(void)
 {
 	::glDisable(GL_LIGHTING);
-	::glDisable(GL_LINE_STIPPLE);
 
 	CNCdata*	pData;
 	INT_PTR		i, nLoop = GetDocument()->GetTraceDraw();

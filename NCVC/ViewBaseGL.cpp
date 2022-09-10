@@ -294,24 +294,23 @@ void CViewBaseGL::DoRotation(float dAngle)
 	SetupViewingTransform();
 }
 
-void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
+void CViewBaseGL::RenderBackground(const COLORREF col1, const COLORREF col2)
 {
 	// 色情報
-	GLubyte		col1v[3], col2v[3];
-	col1v[0] = GetRValue(col1);
-	col1v[1] = GetGValue(col1);
-	col1v[2] = GetBValue(col1);
-	col2v[0] = GetRValue(col2);
-	col2v[1] = GetGValue(col2);
-	col2v[2] = GetBValue(col2);
-	GLubyte	col[] = {
+	const GLubyte	col1v[] = {
+		GetRValue(col1), GetGValue(col1), GetBValue(col1)
+	},
+					col2v[] = {
+		GetRValue(col2), GetGValue(col2), GetBValue(col2)
+	};
+	const GLubyte	col[] = {
 		col1v[0], col1v[1], col1v[2],		// 左下
 		col2v[0], col2v[1], col2v[2],		// 左上
 		col2v[0], col2v[1], col2v[2],		// 右上
 		col1v[0], col1v[1], col1v[2]		// 右下
 	};
 	// 座標値設定(2D)
-	GLfloat	vertex[] = {
+	const GLfloat	vertex[] = {
 		m_rcView.left,	m_rcView.bottom,	// 左下
 		m_rcView.left,	m_rcView.top,		// 左上
 		m_rcView.right,	m_rcView.top,		// 右上
@@ -330,25 +329,23 @@ void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
 
 void CViewBaseGL::RenderAxis(void)
 {
-	extern	const PENSTYLE	g_penStyle[];	// ViewOption.cpp
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-//	float		dLength;
 
-	COLORREF	colX = pOpt->GetNcDrawColor(NCCOL_GUIDEX),
-				colY = pOpt->GetNcDrawColor(NCCOL_GUIDEY),
-				colZ = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
-	GLubyte		col[] = {
-		GetRValue(colX), GetGValue(colX), GetBValue(colX),
-		GetRValue(colX), GetGValue(colX), GetBValue(colX),
-		GetRValue(colY), GetGValue(colY), GetBValue(colY),
-		GetRValue(colY), GetGValue(colY), GetBValue(colY),
-		GetRValue(colZ), GetGValue(colZ), GetBValue(colZ),
-		GetRValue(colZ), GetGValue(colZ), GetBValue(colZ)
+	const COLORREF	colX = pOpt->GetNcDrawColor(NCCOL_GUIDEX),
+					colY = pOpt->GetNcDrawColor(NCCOL_GUIDEY),
+					colZ = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
+	const GLubyte	col[] = {
+		GetRValue(colX), GetGValue(colX), GetBValue(colX),		// Xs
+		GetRValue(colX), GetGValue(colX), GetBValue(colX),		// Xe
+		GetRValue(colY), GetGValue(colY), GetBValue(colY),		// Ys
+		GetRValue(colY), GetGValue(colY), GetBValue(colY),		// Ye
+		GetRValue(colZ), GetGValue(colZ), GetBValue(colZ),		// Zs
+		GetRValue(colZ), GetGValue(colZ), GetBValue(colZ)		// Ze
 	};
-	float		dx = pOpt->GetGuideLength(NCA_X),
+	const float	dx = pOpt->GetGuideLength(NCA_X),
 				dy = pOpt->GetGuideLength(NCA_Y),
 				dz = pOpt->GetGuideLength(NCA_Z);
-	GLfloat		vertex[] = {
+	const GLfloat	vertex[] = {
 		-dx, 0, 0, dx, 0, 0,
 		0, -dy, 0, 0, dy, 0,
 		0, 0, -dz, 0, 0, dz
@@ -357,45 +354,7 @@ void CViewBaseGL::RenderAxis(void)
 	::glColorPointer(3, GL_UNSIGNED_BYTE, 0, col);
 	::glVertexPointer(3, GL_FLOAT, 0, vertex);
 
-	::glEnable(GL_LINE_STIPPLE);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_X)].nGLpattern);
-	::glDrawArrays(GL_LINES, 0, 3*2);
-	::glDisable(GL_LINE_STIPPLE);
-/*
-	COLORREF	col;
-
-	::glPushAttrib(GL_LINE_BIT);	// 線情報
-	::glEnable(GL_LINE_STIPPLE);
-	::glBegin(GL_LINES);
-	::glLineWidth( 2.0f );
-
-	// X軸のｶﾞｲﾄﾞ
-	dLength = pOpt->GetGuideLength(NCA_X);
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEX);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_X)].nGLpattern);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(-dLength, 0.0f, 0.0f);
-	::glVertex3f( dLength, 0.0f, 0.0f);
-	// Y軸のｶﾞｲﾄﾞ
-	dLength = pOpt->GetGuideLength(NCA_Y);
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEY);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Y)].nGLpattern);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, -dLength, 0.0f);
-	::glVertex3f(0.0f,  dLength, 0.0f);
-	// Z軸のｶﾞｲﾄﾞ
-	dLength = pOpt->GetGuideLength(NCA_Z);
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Z)].nGLpattern);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, 0.0f, -dLength);
-	::glVertex3f(0.0f, 0.0f,  dLength);
-
-	::glEnd();
-
-	::glDisable(GL_LINE_STIPPLE);
-	::glPopAttrib();
-*/
+	::glDrawArrays(GL_LINES, 0, 3*2);	// 軸描画
 }
 
 /////////////////////////////////////////////////////////////////////////////
