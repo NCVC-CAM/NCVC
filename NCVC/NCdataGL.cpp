@@ -256,11 +256,11 @@ void CNCdata::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 
 void CNCdata::DrawGLWireWirePath(RENDERMODE enRender, INT_PTR nID) const
 {
-	//	AddGLWireVertex() から座標値を得る
+	//	AddGLWireWireVertex() から座標値を得る
 	CVfloat		vpt, dmy1;
 	CVelement	dmy2;
 	WIRELINE	dmy3;
-	AddGLWireVertex(vpt, dmy1, dmy2, dmy3, TRUE);	// 各オブジェクトのAddGLWireVertex()が呼ばれる
+	AddGLWireWireVertex(vpt, dmy1, dmy2, dmy3, TRUE);	// 各オブジェクトのAddGLWireWireVertex()が呼ばれる
 
 	GLubyte		rgb[3];
 	if ( enRender == RM_SELECT ) {
@@ -291,7 +291,7 @@ BOOL CNCdata::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 	return bStartDraw;
 }
 
-BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
+BOOL CNCdata::AddGLWireWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
 {
 	if ( !bStart ) {
 		// 座標動かない
@@ -322,7 +322,7 @@ BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 	return FALSE;
 }
 
-int CNCdata::AddGLWireTexture(size_t, float&, float, GLfloat*) const
+int CNCdata::AddGLWireWireTexture(size_t, float&, float, GLfloat*) const
 {
 	return -1;
 }
@@ -783,14 +783,14 @@ BOOL CNCline::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 	return FALSE;	// 次の描画は始点不要
 }
 
-BOOL CNCline::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
+BOOL CNCline::AddGLWireWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
 {
 	INT_PTR		nSize;
 	GLuint		n;
 	CPoint3F	pte;
 
 	if ( bStart )
-		CNCdata::AddGLWireVertex(vpt, vnr, vef, wl, TRUE);
+		CNCdata::AddGLWireWireVertex(vpt, vnr, vef, wl, TRUE);
 
 	nSize = vpt.size() / NCXYZ - 2;		// 前回ｵﾌﾞｼﾞｪｸﾄのXY終点
 	n = nSize < 0 ?  0 : (GLuint)nSize;
@@ -836,7 +836,7 @@ BOOL CNCline::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 	return FALSE;
 }
 
-int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
+int CNCline::AddGLWireWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
 {
 	if ( GetGcode()!=1 || !m_pWireObj )
 		return -1;
@@ -994,12 +994,12 @@ BOOL CNCcycle::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL) const
 	return TRUE;	// 次の描画は始点必要
 }
 
-BOOL CNCcycle::AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const
+BOOL CNCcycle::AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const
 {
 	return TRUE;
 }
 
-int CNCcycle::AddGLWireTexture(size_t, float&, float, GLfloat*) const
+int CNCcycle::AddGLWireWireTexture(size_t, float&, float, GLfloat*) const
 {
 	return -1;
 }
@@ -1706,7 +1706,7 @@ void CNCcircle::AddEndmillChamferAndDrill(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 	vBD.push_back(bd);
 }
 
-BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
+BOOL CNCcircle::AddGLWireWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
 {
 	int			i, nCnt = 0;
 	size_t		nSize;
@@ -1722,7 +1722,7 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 				bt2 = begin(pt2.xyz), et2 = end(pt2.xyz);
 
 	if ( bStart )
-		CNCdata::AddGLWireVertex(vpt, vnr, vef, wl, TRUE);
+		CNCdata::AddGLWireWireVertex(vpt, vnr, vef, wl, TRUE);
 
 	nSize = vpt.size() / NCXYZ - 2;		// 前回ｵﾌﾞｼﾞｪｸﾄのXY終点
 	n = nSize < 0 ? 0 : (GLuint)nSize;
@@ -1835,7 +1835,7 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 	return FALSE;
 }
 
-int CNCcircle::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
+int CNCcircle::AddGLWireWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
 {
 	if ( !m_pWireObj )
 		return -1;

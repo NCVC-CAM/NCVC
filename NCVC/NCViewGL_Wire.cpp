@@ -66,7 +66,7 @@ BOOL CNCViewGL::CreateWire(void)
 			pData = GetDocument()->GetNCdata(i);
 			if ( pData->IsCutCode() )
 				break;
-			bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
+			bStart = pData->AddGLWireWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
 		}
 		if ( !vef.empty() ) {	// ここは空っぽのはず
 			m_WireDraw.vvef.push_back(vef);
@@ -81,14 +81,14 @@ BOOL CNCViewGL::CreateWire(void)
 		// 面形成（切削ﾃﾞｰﾀ）
 		wl.col = pOpt->GetNcDrawColor(NCCOL_G1);
 		wl.pattern = g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern;
-		bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
+		bStart = pData->AddGLWireWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
 		dLen = pData->GetWireObj() ? 
 						max(pData->GetCutLength(), pData->GetWireObj()->GetCutLength()) :
 						pData->GetCutLength();
 		for ( i++; i<nLoop; i++ ) {
 			pData = GetDocument()->GetNCdata(i);
 			if ( pData->IsCutCode() ) {
-				bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
+				bStart = pData->AddGLWireWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
 				dLen += pData->GetWireObj() ? 
 								max(pData->GetCutLength(), pData->GetWireObj()->GetCutLength()) :
 								pData->GetCutLength();
@@ -113,7 +113,7 @@ BOOL CNCViewGL::CreateWire(void)
 			m_WireDraw.vlen.push_back(dLen);
 		}
 		if ( i < nLoop ) 
-			bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);	// ※
+			bStart = pData->AddGLWireWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);	// ※
 	}
 	// 移動ﾃﾞｰﾀで抜けてくる(※の分の登録)
 	if ( !wl.vel.empty() ) {
@@ -294,7 +294,7 @@ void CNCViewGL::CreateTextureWire(void)
 		// 各ｵﾌﾞｼﾞｪｸﾄごとのﾃｸｽﾁｬ座標を登録
 		for ( i++; i<nLoop; i++ ) {
 			pData = GetDocument()->GetNCdata(i);
-			nResult = pData->AddGLWireTexture(n, dAccuLength, m_WireDraw.vlen[j], pfTEX);
+			nResult = pData->AddGLWireWireTexture(n, dAccuLength, m_WireDraw.vlen[j], pfTEX);
 			if ( nResult < 0 ) {
 				pfTEX[n++] = 0.0f;
 				pfTEX[n++] = 1.0f;

@@ -229,16 +229,16 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 	virtual	void	DrawGLWirePath(RENDERMODE, INT_PTR) const;			// 3軸フライスの線画
 	virtual	void	DrawGLWireWirePath(RENDERMODE, INT_PTR) const;		// ワイヤ放電加工機用（マウスピック用）
 	virtual	void	DrawGLLatheDepth(void) const;					// 旋盤用
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
-	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
+	virtual	BOOL	AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
+	virtual	int		AddGLWireWireTexture(size_t, float&, float, GLfloat*) const;
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
 	virtual	CPoint	GetDrawEndPoint(size_t) const;
-	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 	// ｵﾌﾞｼﾞｪｸﾄ占有矩形(都度ｾｯﾄ)
 	virtual	CRect3F	GetMaxRect(void) const;
@@ -302,15 +302,15 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 	virtual	void	DrawGLWirePath(RENDERMODE, INT_PTR) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
-	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
+	virtual	BOOL	AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
+	virtual	int		AddGLWireWireTexture(size_t, float&, float, GLfloat*) const;
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
 	virtual	CPoint	GetDrawEndPoint(size_t) const;
-	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 	virtual	CRect3F	GetMaxRect(void) const;
 	virtual	CRect3F	GetMaxCutRect(void) const;
@@ -384,8 +384,8 @@ public:
 	virtual	void	DrawGLWirePath(RENDERMODE, INT_PTR) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
-	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
+	virtual	BOOL	AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
+	virtual	int		AddGLWireWireTexture(size_t, float&, float, GLfloat*) const;
 
 	virtual	CRect3F	GetMaxRect(void) const;
 	virtual	CRect3F	GetMaxCutRect(void) const;
@@ -474,13 +474,13 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 	virtual	void	DrawGLWirePath(RENDERMODE, INT_PTR) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
-	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
+	virtual	BOOL	AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
+	virtual	int		AddGLWireWireTexture(size_t, float&, float, GLfloat*) const;
 	//
-	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 	virtual	CRect3F	GetMaxRect(void) const;
 	virtual	CRect3F	GetMaxCutRect(void) const;
