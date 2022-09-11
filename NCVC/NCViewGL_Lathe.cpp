@@ -63,16 +63,19 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 
 	::glPushAttrib( GL_LINE_BIT );
 	::glLineWidth( LATHELINEWIDTH*2.0f );	// 端面切削等のYZパスでデプス値を更新できない
+	::glEnableClientState(GL_VERTEX_ARRAY);
 
 	// 中空ﾃﾞﾌﾟｽ
 	if ( GetDocument()->IsDocFlag(NCDOC_LATHE_HOLE) ) {
-		CRect3F		rc(GetDocument()->GetWorkRectOrg());
-		::glBegin(GL_TRIANGLE_STRIP);
-			::glVertex3f(m_rcDraw.left,  -LATHEHEIGHT, -rc.low);
-			::glVertex3f(m_rcDraw.left,          0.0f, -rc.low);
-			::glVertex3f(m_rcDraw.right, -LATHEHEIGHT, -rc.low);
-			::glVertex3f(m_rcDraw.right,         0.0f, -rc.low);
-		::glEnd();
+		const CRect3F	rc(GetDocument()->GetWorkRectOrg());
+		const GLfloat	pt[] = {
+			m_rcDraw.left,  -LATHEHEIGHT, -rc.low,
+			m_rcDraw.left,          0.0f, -rc.low,
+			m_rcDraw.right, -LATHEHEIGHT, -rc.low,
+			m_rcDraw.right,         0.0f, -rc.low
+		};
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+		::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 	}
 
 	// 旋盤用ZXﾜｲﾔｰの描画
@@ -80,6 +83,7 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 	for ( i=s; i<e; i++ )
 		GetDocument()->GetNCdata(i)->DrawGLLatheDepth();
 
+	::glDisableClientState(GL_VERTEX_ARRAY);
 	::glPopAttrib();
 //	::glFinish();
 
