@@ -420,11 +420,11 @@ void CNCline::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 			IDtoRGB((int)nID, rgb);		// ViewBaseGL.cpp
 			break;
 		}
-		::glBegin(GL_LINES);
-			::glColor3ubv(rgb);
-			::glVertex3fv(m_ptValS.xyz);
-			::glVertex3fv(m_ptValE.xyz);
-		::glEnd();
+		GLfloat	pt[] = {m_ptValS.x, m_ptValS.y, m_ptValS.z, m_ptValE.x, m_ptValE.y, m_ptValE.z};
+		::glColor3ubv(rgb);
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+		::glDrawArrays(GL_LINES, 0, 2);
+
 	}
 
 	CNCdata::DrawGLWirePath(enRender, nID);
@@ -896,26 +896,35 @@ void CNCcycle::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 		break;
 	}
 
+	GLfloat	pt[] = {
+		m_ptValS.x, m_ptValS.y, m_ptValS.z,
+		m_ptValI.x, m_ptValI.y, m_ptValI.z,
+		m_ptValR.x, m_ptValR.y, m_ptValR.z,
+		m_ptValE.x, m_ptValE.y, m_ptValE.z
+	};
 	::glLineStipple(1, patG0);
-	::glBegin(GL_LINE_STRIP);
-		::glColor3ubv( rgbG0 );
-		::glVertex3fv(m_ptValS.xyz);
-		::glVertex3fv(m_ptValI.xyz);
-		::glVertex3fv(m_ptValR.xyz);
-		::glVertex3fv(m_ptValE.xyz);
-	::glEnd();
-	::glBegin(GL_LINES);
+	::glColor3ubv( rgbG0 );
+	::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+	::glDrawArrays(GL_LINE_STRIP, 0, SIZEOF(pt)/NCXYZ);
+
 	for ( int i=0; i<m_nDrawCnt; i++ ) {
+		GLfloat	pt1[] = {
+			m_Cycle3D[i].ptI.x, m_Cycle3D[i].ptI.y, m_Cycle3D[i].ptI.z,
+			m_Cycle3D[i].ptR.x, m_Cycle3D[i].ptR.y, m_Cycle3D[i].ptR.z
+		};
 		::glLineStipple(1, patG0);
 		::glColor3ubv( rgbG0 );
-		::glVertex3fv(m_Cycle3D[i].ptI.xyz);
-		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt1);
+		::glDrawArrays(GL_LINES, 0, 2);
+		GLfloat	pt2[] = {
+			m_Cycle3D[i].ptR.x, m_Cycle3D[i].ptR.y, m_Cycle3D[i].ptR.z,
+			m_Cycle3D[i].ptC.x, m_Cycle3D[i].ptC.y, m_Cycle3D[i].ptC.z
+		};
 		::glLineStipple(1, patCY);
 		::glColor3ubv( rgbCY );
-		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
-		::glVertex3fv(m_Cycle3D[i].ptC.xyz);
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt2);
+		::glDrawArrays(GL_LINES, 0, 2);
 	}
-	::glEnd();
 }
 
 void CNCcycle::DrawGLLatheDepth(void) const

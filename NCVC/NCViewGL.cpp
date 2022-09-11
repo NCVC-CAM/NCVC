@@ -506,8 +506,6 @@ void CNCViewGL::FinalBoxel(void)
 
 void CNCViewGL::RenderCode(RENDERMODE enRender)
 {
-	::glDisable(GL_LIGHTING);
-
 	CNCdata*	pData;
 	INT_PTR		i, nLoop = GetDocument()->GetTraceDraw();
 	// NCデータの軌跡（線画）描画，MC・旋盤モード
@@ -521,8 +519,6 @@ void CNCViewGL::RenderCode(RENDERMODE enRender)
 
 void CNCViewGL::RenderCodeWire(void)
 {
-	::glDisable(GL_LIGHTING);
-
 	CNCdata*	pData;
 	INT_PTR		i, nLoop = GetDocument()->GetTraceDraw();
 	// NCデータの軌跡（線画）描画，ワイヤ放電加工機モード
@@ -600,17 +596,19 @@ void CNCViewGL::DoSelect(const CPoint& pt)
 	::glClearColor(1.0, 1.0, 1.0, 1.0);
 	::glClearDepth(1.0);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	::glDisable(GL_LINE_STIPPLE);
+	::glDisable(GL_LIGHTING);
 
+	::glEnableClientState(GL_VERTEX_ARRAY);
 	// 行番号をカラーコードにして描画
 	m_pData = NULL;
 	if ( IsWireMode() ) {
-		::glEnableClientState(GL_VERTEX_ARRAY);
 		RenderCodeWire();			// ワイヤ放電加工機用
-		::glDisableClientState(GL_VERTEX_ARRAY);
 	}
 	else {
 		RenderCode(RM_PICKLINE);	// その他
 	}
+	::glDisableClientState(GL_VERTEX_ARRAY);
 
 	// マウスポイントの色情報を取得
 	GLubyte	buf[READBUF];
@@ -881,6 +879,7 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		}
 		else {
 			// ＭＣ，旋盤モード
+			::glBindBuffer(GL_ARRAY_BUFFER, 0);
 			RenderCode(RM_NORMAL);
 			if ( m_pData ) {
 				// 選択オブジェクトの描画
