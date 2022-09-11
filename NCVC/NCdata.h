@@ -405,14 +405,15 @@ public:
 class	CNCcircle;
 typedef void (CNCcircle::*PFNCIRCLEDRAW)(ENNCDRAWVIEW, CDC*) const;
 
-struct DRAWGLWIRECIRCLE	// DrawGLWirePassCircle()引数
+struct ADDGLWIRECIRCLE	// AddGLWirePassCircle()引数
 {
 	BOOL		bG03,	// TRUE:G03, FALSE:G02
 				bLatheDepth;	// 旋盤内径描画の特殊性
 	float		sq, eq;
 	CPoint3F	pts, pte;
+	CVfloat		vpt;	// result
 };
-typedef	DRAWGLWIRECIRCLE*		LPDRAWGLWIRECIRCLE;
+typedef	ADDGLWIRECIRCLE*		LPADDGLWIRECIRCLE;
 
 class CNCcircle : public CNCline  
 {
@@ -441,8 +442,7 @@ class CNCcircle : public CNCline
 	void	DrawG17(ENNCDRAWVIEW, CDC*) const;
 	void	DrawG18(ENNCDRAWVIEW, CDC*) const;
 	void	DrawG19(ENNCDRAWVIEW, CDC*) const;
-	void	DrawGLWirePassCircle(const CPoint3F&, const CPoint3F&) const;
-	void	DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE) const;
+	void	AddGLWirePassCircle(LPADDGLWIRECIRCLE) const;
 
 	// IJK指定なしの時，円の方程式から中心の算出
 	BOOL	CalcCenter(const CPointF&, const CPointF&);

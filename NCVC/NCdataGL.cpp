@@ -1046,10 +1046,16 @@ void CNCcircle::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 			IDtoRGB((int)nID, rgb);		// ViewBaseGL.cpp
 			break;
 		}
-		::glBegin(GL_LINE_STRIP);
-			::glColor3ubv(rgb);
-			DrawGLWirePassCircle(m_ptValS, m_ptValE);
-		::glEnd();
+		ADDGLWIRECIRCLE	argv;
+		argv.bG03 = GetG03();
+		argv.bLatheDepth = FALSE;
+		argv.pts  = m_ptValS;
+		argv.pte  = m_ptValE;
+		tie(argv.sq, argv.eq) = GetSqEq();
+		AddGLWirePassCircle(&argv);
+		::glColor3ubv(rgb);
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, &(argv.vpt[0]));
+		::glDrawArrays(GL_LINE_STRIP, 0, (GLsizei)(argv.vpt.size()/NCXYZ));
 	}
 
 	CNCdata::DrawGLWirePath(enRender, nID);
@@ -1058,11 +1064,10 @@ void CNCcircle::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 void CNCcircle::DrawGLLatheDepth(void) const
 {
 	CPoint3F	pts(m_ptValS), pte(m_ptValE);
+	ADDGLWIRECIRCLE	argv;
 
-	::glBegin(GL_LINE_STRIP);
 	if ( GetValFlags() & NCFLG_LATHE_INSIDE ) {
 		// 円弧の反転が必要
-		DRAWGLWIRECIRCLE	argv;
 		argv.bG03 = !GetG03();
 		argv.bLatheDepth = TRUE;
 		argv.pts.SetPoint(pts.x, -LATHELINEWIDTH, -pts.z);
@@ -1073,28 +1078,21 @@ void CNCcircle::DrawGLLatheDepth(void) const
 		tie(argv.sq, argv.eq) = CalcAngle(argv.bG03, pts.GetXZ(), pte.GetXZ());
 		if ( !argv.bG03 )
 			swap(argv.sq, argv.eq);		// GetSqEq()のかわり
-		DrawGLWirePassCircle(&argv);
+		AddGLWirePassCircle(&argv);
 	}
 	else {
-		pts.y  =  LATHELINEWIDTH;
-		pte.y  =  LATHELINEWIDTH;
-		DrawGLWirePassCircle(pts, pte);
+		argv.bG03 = GetG03();
+		argv.bLatheDepth = FALSE;
+		argv.pts.SetPoint(m_ptValS.x, LATHELINEWIDTH, m_ptValS.z);
+		argv.pte.SetPoint(m_ptValE.x, LATHELINEWIDTH, m_ptValE.z);
+		tie(argv.sq, argv.eq) = GetSqEq();
+		AddGLWirePassCircle(&argv);
 	}
-	::glEnd();
+	::glVertexPointer(NCXYZ, GL_FLOAT, 0, &(argv.vpt[0]));
+	::glDrawArrays(GL_LINE_STRIP, 0, (GLsizei)(argv.vpt.size()/NCXYZ));
 }
 
-void CNCcircle::DrawGLWirePassCircle(const CPoint3F& pts, const CPoint3F& pte) const
-{
-	DRAWGLWIRECIRCLE	argv;
-	argv.bG03 = GetG03();
-	argv.bLatheDepth = FALSE;
-	argv.pts  = pts;
-	argv.pte  = pte;
-	tie(argv.sq, argv.eq) = GetSqEq();
-	DrawGLWirePassCircle(&argv);
-}
-
-void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
+void CNCcircle::AddGLWirePassCircle(LPADDGLWIRECIRCLE lpArgv) const
 {
 #ifdef _DEBUGOLD
 	int			dbgCnt = 0;
@@ -1102,6 +1100,7 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 	float	r = fabs(m_r),
 			ptz = lpArgv->bLatheDepth ? -m_ptOrg.z : m_ptOrg.z;	// 旋盤内径デプス更新の特殊事情
 	CPoint3F	pt;
+	auto		b = begin(pt.xyz), e = end(pt.xyz);
 
 	switch ( GetPlane() ) {
 	case XY_PLANE:
@@ -1110,7 +1109,7 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 			for ( ; lpArgv->sq<lpArgv->eq; lpArgv->sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(lpArgv->sq) + m_ptOrg.x;
 				pt.y = r * sin(lpArgv->sq) + m_ptOrg.y;
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.insert(lpArgv->vpt.end(), b, e);
 #ifdef _DEBUGOLD
 				dbgCnt++;
 #endif
@@ -1120,7 +1119,7 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 			for ( ; lpArgv->sq>lpArgv->eq; lpArgv->sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(lpArgv->sq) + m_ptOrg.x;
 				pt.y = r * sin(lpArgv->sq) + m_ptOrg.y;
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.insert(lpArgv->vpt.end(), b, e);
 #ifdef _DEBUGOLD
 				dbgCnt++;
 #endif
@@ -1130,9 +1129,9 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 		pt.x = r * cos(lpArgv->eq) + m_ptOrg.x;
 		pt.y = r * sin(lpArgv->eq) + m_ptOrg.y;
 		pt.z = lpArgv->pte.z;		// ﾍﾘｶﾙ終了座標
-		::glVertex3fv(pt.xyz);
+		lpArgv->vpt.insert(lpArgv->vpt.end(), b, e);
 #ifdef _DEBUGOLD
-		printf("CNCcircle::DrawGLWirePassCircle() DrawCnt=%d\n", dbgCnt+1);
+		printf("CNCcircle::AddGLWirePassCircle() DrawCnt=%d\n", dbgCnt+1);
 #endif
 		break;
 
@@ -1142,20 +1141,20 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 			for ( ; lpArgv->sq<lpArgv->eq; lpArgv->sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(lpArgv->sq) + m_ptOrg.x;
 				pt.z = r * sin(lpArgv->sq) + ptz;	// <-
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.insert(lpArgv->vpt.end(), b, e);
 			}
 		}
 		else {
 			for ( ; lpArgv->sq>lpArgv->eq; lpArgv->sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(lpArgv->sq) + m_ptOrg.x;
 				pt.z = r * sin(lpArgv->sq) + ptz;	// <-
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.insert(lpArgv->vpt.end(), b, e);
 			}
 		}
 		pt.y = lpArgv->pte.y;
 		pt.x = r * cos(lpArgv->eq) + m_ptOrg.x;
 		pt.z = r * sin(lpArgv->eq) + ptz;			// <-
-		::glVertex3fv(pt.xyz);
+		lpArgv->vpt.insert(lpArgv->vpt.end(), b, e);
 		break;
 
 	case YZ_PLANE:
@@ -1164,23 +1163,24 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 			for ( ; lpArgv->sq<lpArgv->eq; lpArgv->sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(lpArgv->sq) + m_ptOrg.y;
 				pt.z = r * sin(lpArgv->sq) + m_ptOrg.z;
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.insert(lpArgv->vpt.end(), b, e);
 			}
 		}
 		else {
 			for ( ; lpArgv->sq>lpArgv->eq; lpArgv->sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(lpArgv->sq) + m_ptOrg.y;
 				pt.z = r * sin(lpArgv->sq) + m_ptOrg.z;
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.insert(lpArgv->vpt.end(), b, e);
 			}
 		}
 		pt.x = lpArgv->pte.x;
 		pt.y = r * cos(lpArgv->eq) + m_ptOrg.y;
 		pt.z = r * sin(lpArgv->eq) + m_ptOrg.z;
-		::glVertex3fv(pt.xyz);
+		lpArgv->vpt.insert(lpArgv->vpt.end(), b, e);
 		break;
 	}
 }
+
 //	--- CNCcircle::AddGLBottomFaceVertex() サブ
 static inline void _SetEndmillPathXY
 	(const CPointF& pt, float q, float h, float r1, float r2,
