@@ -230,20 +230,23 @@ void C3dModelView::DrawRoughPath(void)
 	if ( vvv.empty() )
 		return;
 
+	int		i, j;	// debug
 	const COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glBegin(GL_POINTS);
+//	::glBegin(GL_POINTS);
 
-	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
-		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-//			if ( it2->size() > 0 ) {
-//				::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
-//				::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+	i = 0;
+	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1, ++i ) {
+		j = 0;
+		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2, ++j ) {
+			printf("i=%d, j=%d, size=%zd draw\n", i, j, it2->size());
+			::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
+//			::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+			::glDrawArrays(GL_POINTS, 0, 100);
+//			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+//				::glVertex3d(it3->x, it3->y, it3->z);
 //			}
-			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				::glVertex3d(it3->x, it3->y, it3->z);
-			}
 		}
 	}
 /*
@@ -254,7 +257,7 @@ void C3dModelView::DrawRoughPath(void)
 			}
 		}
 */
-	::glEnd();
+//	::glEnd();
 }
 
 void C3dModelView::DrawContourPath(void)
@@ -266,17 +269,15 @@ void C3dModelView::DrawContourPath(void)
 	const COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glBegin(GL_POINTS);
+//	::glBegin(GL_POINTS);
 
 	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-//			if ( it2->size() > 0 ) {
-//				::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
-//				::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+			::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
+			::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+//			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+//				::glVertex3d(it3->x, it3->y, it3->z);
 //			}
-			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				::glVertex3d(it3->x, it3->y, it3->z);
-			}
 		}
 	}
 /*
@@ -289,7 +290,7 @@ void C3dModelView::DrawContourPath(void)
 			}
 		}
 */
-	::glEnd();
+//	::glEnd();
 }
 
 /////////////////////////////////////////////////////////////////////////////

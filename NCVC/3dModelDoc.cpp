@@ -263,7 +263,9 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 					it3->z = H - del*i;
 				}
 			}
-			m_vvvRoughCoord.push_back(vvtmp);
+			if ( !vvtmp.empty() ) {
+				m_vvvRoughCoord.push_back(vvtmp);
+			}
 		}
 	}
 	catch(...) {
