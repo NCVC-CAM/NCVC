@@ -1241,6 +1241,7 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 #endif
 		}
 		if ( pData || lParam ) {
+			::glEnableClientState(GL_VERTEX_ARRAY);
 			// Žw’èµÌÞ¼Þª¸Ä‚Ì•`‰æ
 			if ( IsLatheMode() ) {
 				::glPushAttrib( GL_LINE_BIT );
@@ -1263,11 +1264,10 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 				else
 					pData->AddGLBottomFaceVertex(vBD, TRUE);
 				if ( !vBD.empty() ) {
-					::glEnableClientState(GL_VERTEX_ARRAY);
 					vBD.Draw();
-					::glDisableClientState(GL_VERTEX_ARRAY);
 				}
 			}
+			::glDisableClientState(GL_VERTEX_ARRAY);
 			GetGLError();	// error flash
 //			::glFinish();
 		}

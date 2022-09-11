@@ -411,7 +411,7 @@ struct ADDGLWIRECIRCLE	// AddGLWirePassCircle()ˆø”
 				bLatheDepth;	// ù”Õ“àŒa•`‰æ‚Ì“Áê«
 	float		sq, eq;
 	CPoint3F	pts, pte;
-	CVfloat		vpt;	// result
+	CVPoint3F	vpt;	// result
 };
 typedef	ADDGLWIRECIRCLE*		LPADDGLWIRECIRCLE;
 
