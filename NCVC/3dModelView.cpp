@@ -25,8 +25,10 @@ BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
 	ON_UPDATE_COMMAND_UI(ID_FILE_3DROUGH, &C3dModelView::OnUpdateFile3dRough)
 	ON_COMMAND(ID_FILE_3DROUGH, &C3dModelView::OnFile3dRough)
-	ON_UPDATE_COMMAND_UI(ID_FILE_3DSMOOTH, &C3dModelView::OnUpdateFile3dSmooth)
-	ON_COMMAND(ID_FILE_3DSMOOTH, &C3dModelView::OnFile3dSmooth)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DCONTOUR, &C3dModelView::OnUpdateFile3dSmooth)
+	ON_COMMAND(ID_FILE_3DCONTOUR, &C3dModelView::OnFile3dSmooth)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DDEL, &C3dModelView::OnUpdateFile3dDel)
+	ON_COMMAND(ID_FILE_3DDEL, &C3dModelView::OnFile3dDel)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -282,6 +284,7 @@ void C3dModelView::DrawKodatunoCoordPath(void)
 		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 	else {
+		// ‚±‚¿‚ç‚Ì•`‰æ•û–@‚Í•ÛŒ¯
 		CVdouble	vpt;
 		for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 			for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
@@ -561,4 +564,16 @@ void C3dModelView::OnFile3dSmooth()
 		// “™‚ü‰ÁHƒXƒLƒƒƒ“ƒpƒX•`‰æ
 		Invalidate(FALSE);
 	}
+}
+
+void C3dModelView::OnUpdateFile3dDel(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable( !GetDocument()->GetKoCoord().empty() );
+}
+
+void C3dModelView::OnFile3dDel()
+{
+	GetDocument()->ClearKoCoord();
+	ClearVBO();
+	Invalidate(FALSE);
 }

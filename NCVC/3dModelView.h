@@ -48,6 +48,8 @@ protected:
 	afx_msg void OnFile3dRough();
 	afx_msg void OnUpdateFile3dSmooth(CCmdUI* pCmdUI);
 	afx_msg void OnFile3dSmooth();
+	afx_msg void OnUpdateFile3dDel(CCmdUI* pCmdUI);
+	afx_msg void OnFile3dDel();
 
 	DECLARE_MESSAGE_MAP()
 };

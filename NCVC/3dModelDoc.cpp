@@ -145,32 +145,30 @@ void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 
 void C3dModelDoc::OnFile3dMake()
 {
-	CString	strInit;
-	BOOL	bNCView;
 	UINT	id;
-	if ( m_enCoordMode == ROUGH ) {
+	switch ( m_enCoordMode ) {
+	case CM_ROUGH:
 		id = IDS_MAKENCD_TITLE_ROUGH;
-	}
-	else {
+		break;
+	case CM_CONTOUR:
 		id = IDS_MAKENCD_TITLE_CONTOUR;
+		break;
+	default:
+		return;
 	}
 
-	{
-		CMakeNCDlg	dlg(id, NCMAKENURBS, this);
-		if ( dlg.DoModal() != IDOK )
-			return;
-		m_strNCFileName	= dlg.m_strNCFileName;
-		strInit = dlg.m_strInitFileName;
-		bNCView = dlg.m_bNCView;
-	}
+	CMakeNCDlg	dlg(id, NCMAKENURBS, this);
+	if ( dlg.DoModal() != IDOK )
+		return;
+	m_strNCFileName	= dlg.m_strNCFileName;
 
 	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
 
 	// 設定の保存
-	if ( !strInit.IsEmpty() ) {
-		pOpt->AddInitHistory(NCMAKENURBS, strInit);
+	if ( !dlg.m_strInitFileName.IsEmpty() ) {
+		pOpt->AddInitHistory(NCMAKENURBS, dlg.m_strInitFileName);
 	}
-	pOpt->SetViewFlag(bNCView);
+	pOpt->SetViewFlag(dlg.m_bNCView);
 	m_3dOpt.Save3dOutfile(id-IDS_MAKENCD_TITLE_ROUGH, m_strNCFileName);
 
 	// すでに開いているﾄﾞｷｭﾒﾝﾄなら閉じる
@@ -185,7 +183,7 @@ void C3dModelDoc::OnFile3dMake()
 	delete	pDlg;
 
 	// NC生成後のﾃﾞｰﾀを開く
-	if ( nResult==IDOK && bNCView ) {
+	if ( nResult==IDOK && dlg.m_bNCView ) {
 		AfxGetNCVCApp()->OpenDocumentFile(m_strNCFileName);
 	}
 }
@@ -195,6 +193,7 @@ void C3dModelDoc::OnFile3dMake()
 void C3dModelDoc::ClearKoCoord(void)
 {
 	m_vvvKoCoord.clear();
+	m_enCoordMode = CM_NO;
 }
 
 BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
@@ -281,7 +280,7 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 	// スキャンオプションの保存
 	if ( bResult ) {
 		m_3dOpt.Save3dOption();
-		m_enCoordMode = ROUGH;
+		m_enCoordMode = CM_ROUGH;
 	}
 
 	return bResult;
@@ -359,7 +358,7 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 	// スキャンオプションの保存
 	if ( bResult ) {
 		m_3dOpt.Save3dOption();
-		m_enCoordMode = CONTOUR;
+		m_enCoordMode = CM_CONTOUR;
 	}
 
 	return bResult;

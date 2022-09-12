@@ -141,11 +141,11 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 		// 生成開始
 		BOOL bResult = FALSE;
 		switch ( g_pDoc->GetKoCoordMode() ) {
-		case ROUGH:
+		case CM_ROUGH:
 			// 荒加工生成ループ
 			bResult = MakeNurbs_RoughFunc();
 			break;
-		case CONTOUR:
+		case CM_CONTOUR:
 			// 仕上げ生成ループ
 			bResult = MakeNurbs_ContourFunc();
 			break;
@@ -188,10 +188,10 @@ void SetStaticOption(void)
 {
 	// 座標値の生成
 	switch ( g_pDoc->GetKoCoordMode() ) {
-	case ROUGH:
+	case CM_ROUGH:
 		g_dZoffset = Get3dFlg(D3_FLG_ROUGH_ZORIGIN) ? Get3dDbl(D3_DBL_WORKHEIGHT) : 0.0f;
 		break;
-	case CONTOUR:
+	case CM_CONTOUR:
 		g_dZoffset = Get3dFlg(D3_FLG_CONTOUR_ZORIGIN) ? Get3dDbl(D3_DBL_CONTOUR_ZMAX) : 0.0f;
 		break;
 	default:

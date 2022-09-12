@@ -101,7 +101,8 @@
 #define ID_FILE_NCD2DXF                 1011
 #define ID_FILE_3DCUT                   1020
 #define ID_FILE_3DROUGH                 1021
-#define ID_FILE_3DSMOOTH                1022
+#define ID_FILE_3DCONTOUR               1022
+#define ID_FILE_3DDEL                   1023
 #define ID_FILE_CLANDOP                 1090
 #define IDD_CADBIND                     1100
 #define ID_FILE_CADBIND                 1100
@@ -931,7 +932,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        208
-#define _APS_NEXT_COMMAND_VALUE         32842
+#define _APS_NEXT_COMMAND_VALUE         32845
 #define _APS_NEXT_CONTROL_VALUE         1072
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
