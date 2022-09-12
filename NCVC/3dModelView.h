@@ -8,10 +8,6 @@
 #include "Kodatuno/Describe_BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
 
-enum ENCREATECOORD {
-	ROUGH, CONTOUR
-};
-
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView ÉrÉÖÅ[
 
@@ -24,10 +20,9 @@ class C3dModelView : public CViewBaseGL
 	GLsizei		m_nDrawSize;		// ï`âÊåèêî
 
 	void	ClearVBO(void);
-	void	CreateVBO(ENCREATECOORD);
-	void	DrawBody(RENDERMODE);
-	void	DrawRoughPath(void);
-	void	DrawContourPath(void);
+	void	CreateVBO(void);
+	void	DrawKodatunoBody(RENDERMODE);
+	void	DrawKodatunoCoordPath(void);
 	void	DoSelect(const CPoint&);
 	NURBSC*	DoSelectCurve(const CPoint&);
 	NURBSS*	DoSelectFace (const CPoint&);

@@ -17,16 +17,10 @@
 using std::string;
 using namespace boost;
 
-enum MAKEMODE
-{
-	ROUGH, CONTOUR
-};
-
 // ｸﾞﾛｰﾊﾞﾙ変数定義
 static	CThreadDlg*		g_pParent;
 static	C3dModelDoc*	g_pDoc;
 static	CNCMakeMillOpt*	g_pMakeOpt;
-static	MAKEMODE		g_enMode;
 static	int				g_nMode;
 static	float			g_dZoffset;		// ワークの高さを原点にするときのオフセット
 static	int				g_nFase;
@@ -129,13 +123,6 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 	g_nFase = 0;
 	SendFaseMessage(g_pParent, g_nFase, -1, IDS_ANA_DATAINIT);
 	g_pMakeOpt = NULL;
-	// 生成モードの決定
-	if ( !g_pDoc->GetRoughCoord().empty() ) {
-		g_enMode = ROUGH;
-	}
-	else if ( !g_pDoc->GetContourCoord().empty() ) {
-		g_enMode = CONTOUR;
-	}
 
 	// 下位の CMemoryException は全てここで集約
 	try {
@@ -153,7 +140,7 @@ UINT MakeNurbs_Thread(LPVOID pVoid)
 		g_obMakeData.SetSize(0, 2048);
 		// 生成開始
 		BOOL bResult = FALSE;
-		switch ( g_enMode ) {
+		switch ( g_pDoc->GetKoCoordMode() ) {
 		case ROUGH:
 			// 荒加工生成ループ
 			bResult = MakeNurbs_RoughFunc();
@@ -200,7 +187,7 @@ void InitialVariable(void)
 void SetStaticOption(void)
 {
 	// 座標値の生成
-	switch ( g_enMode ) {
+	switch ( g_pDoc->GetKoCoordMode() ) {
 	case ROUGH:
 		g_dZoffset = Get3dFlg(D3_FLG_ROUGH_ZORIGIN) ? Get3dDbl(D3_DBL_WORKHEIGHT) : 0.0f;
 		break;
@@ -252,7 +239,7 @@ BOOL OutputNurbsCode(void)
 BOOL MakeNurbs_RoughFunc(void)
 {
 	VVVCoord::iterator	itv;
-	VVVCoord&	vvv = g_pDoc->GetRoughCoord();
+	VVVCoord&	vvv = g_pDoc->GetKoCoord();
 	INT_PTR		maxcnt = 0, cnt = 0;
 	ptrdiff_t	idx;
 	int			r;	// 0:正順, 1:逆順
@@ -315,7 +302,7 @@ BOOL MakeNurbs_RoughFunc(void)
 BOOL MakeNurbs_ContourFunc(void)
 {
 	VVVCoord::iterator	itv;
-	VVVCoord&	vvv = g_pDoc->GetContourCoord();
+	VVVCoord&	vvv = g_pDoc->GetKoCoord();
 	std::vector<int>	vLayer;			// 階層ごとの残グループ数
 	size_t		layer = 0;				// 現在処理中の階層
 	INT_PTR		maxcnt = 0, cnt = 0;

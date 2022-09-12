@@ -12,6 +12,10 @@ typedef	std::vector<Coord>		VCoord;
 typedef std::vector<VCoord>		VVCoord;
 typedef	std::vector<VVCoord>	VVVCoord;
 
+enum ENCOORDMODE {
+	ROUGH, CONTOUR
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelDoc ドキュメント
 
@@ -23,8 +27,8 @@ class C3dModelDoc : public CDocBase
 	BODY*		m_pKoBody;			// Kodatuno Body
 	BODYList*	m_pKoList;			// Kodatuno Body List
 
-	VVVCoord	m_vvvRoughCoord,	// 荒加工用座標（3次元配列）
-				m_vvvContourCoord;	// 仕上げ等高線座標
+	ENCOORDMODE	m_enCoordMode;		// 荒化工 or 等高線
+	VVVCoord	m_vvvKoCoord;		// 荒化工・等高線 兼用座標配列
 
 protected:
 	C3dModelDoc();
@@ -49,17 +53,16 @@ public:
 	BODYList*	GetKodatunoBodyList(void) const {
 		return m_pKoList;
 	}
-	void	ClearRoughCoord(void);
-	void	ClearContourCoord(void);
+	void	ClearKoCoord(void);
+	ENCOORDMODE	GetKoCoordMode(void) const {
+		return m_enCoordMode;
+	}
 	BOOL	MakeRoughCoord(NURBSS*, NURBSC*);
 	BOOL	MakeContourCoord(NURBSS*);
 	VVCoord	SetGroupCoord(VCoord&, double);
 	//
-	VVVCoord&	GetRoughCoord(void) {
-		return m_vvvRoughCoord;
-	}
-	VVVCoord&	GetContourCoord(void) {
-		return m_vvvContourCoord;
+	VVVCoord&	GetKoCoord(void) {
+		return m_vvvKoCoord;
 	}
 
 protected:
