@@ -230,25 +230,26 @@ void C3dModelView::DrawRoughPath(void)
 	if ( vvv.empty() )
 		return;
 
-	int		i, j;	// debug
+	CVdouble	vpt;	// debug
 	const COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
 //	::glBegin(GL_POINTS);
 
-	i = 0;
-	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1, ++i ) {
-		j = 0;
-		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2, ++j ) {
-			printf("i=%d, j=%d, size=%zd draw\n", i, j, it2->size());
-			::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
-//			::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
-			::glDrawArrays(GL_POINTS, 0, 100);
-//			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+//-			::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
+//-			::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
 //				::glVertex3d(it3->x, it3->y, it3->z);
-//			}
+				vpt.push_back(it3->x);
+				vpt.push_back(it3->y);
+				vpt.push_back(it3->z);
+			}
 		}
 	}
+	::glVertexPointer(NCXYZ, GL_DOUBLE, 0, &vpt[0]);
+	::glDrawArrays(GL_POINTS, 0, (GLsizei)(vpt.size()/NCXYZ));
 /*
 	// –â‘è‚Ì‚ ‚é‘w‚¾‚¯ŽŽ‚µ‚É•\Ž¦
 		for ( auto it2=vvv[0].begin(); it2!=vvv[0].end(); ++it2 ) {

@@ -77,10 +77,6 @@ enum	ENNCDRAWVIEW
 		NCDRAWVIEW_NUM		// [4]
 };
 #define	NCVIEW_OPENGL			6
-//
-typedef	std::vector<GLuint>		CVelement;
-typedef	std::vector<GLfloat>	CVfloat;
-//typedef	std::vector<GLdouble>	CVdouble;
 
 // ´ÝÄÞÐÙ’ê–Ê•`‰æ—p
 struct BOTTOMDRAW

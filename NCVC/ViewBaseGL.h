@@ -5,6 +5,10 @@
 
 #include "FrameBuffer.h"
 
+typedef	std::vector<GLuint>		CVelement;
+typedef	std::vector<GLfloat>	CVfloat;
+typedef	std::vector<GLdouble>	CVdouble;
+
 // TrackingMode
 enum TRACKINGMODE
 {
