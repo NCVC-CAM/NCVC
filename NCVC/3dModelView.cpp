@@ -36,10 +36,69 @@ C3dModelView::C3dModelView()
 {
 	m_pSelCurve = NULL;
 	m_pSelFace  = NULL;
+	m_nCoord = 0;
+	m_nDrawSize = 0;
 }
 
 C3dModelView::~C3dModelView()
 {
+	ClearVBO();
+}
+
+void C3dModelView::ClearVBO(void)
+{
+	if ( m_nCoord > 0 ) {
+		::glDeleteBuffers(1, &m_nCoord);
+		m_nCoord = 0;
+		m_nDrawSize = 0;
+	}
+}
+
+void C3dModelView::CreateVBO(ENCREATECOORD enMode)
+{
+	GLenum		errCode;
+	CVdouble	vpt;
+
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
+	ClearVBO();
+	GetGLError();	// reset GL error
+	::glGenBuffers(1, &m_nCoord);
+	::glBindBuffer(GL_ARRAY_BUFFER, m_nCoord);
+	if ( enMode == ROUGH ) {
+		VVVCoord& vvv = GetDocument()->GetRoughCoord();
+		for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+			for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+				for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+					vpt.push_back(it3->x);
+					vpt.push_back(it3->y);
+					vpt.push_back(it3->z);
+				}
+			}
+		}
+	}
+	else {
+		VVVCoord& vvv = GetDocument()->GetContourCoord();
+		for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+			for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+				for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+					vpt.push_back(it3->x);
+					vpt.push_back(it3->y);
+					vpt.push_back(it3->z);
+				}
+			}
+		}
+	}
+	m_nDrawSize = (GLsizei)(vpt.size()/NCXYZ);
+	::glBufferData(GL_ARRAY_BUFFER, vpt.size()*sizeof(GLdouble), &vpt[0], GL_STATIC_DRAW);
+	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
+		ClearVBO();
+		OutputGLErrorMessage(errCode, __FILE__, __LINE__);
+	}
+	::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	::wglMakeCurrent(NULL, NULL);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -154,7 +213,7 @@ void C3dModelView::OnDraw(CDC* pDC)
 	// 荒加工スキャンパスの描画
 	::glDisable(GL_LIGHTING);
 	DrawRoughPath();
-	// 仕上げ等高線の描画
+	// 等高線の描画
 	DrawContourPath();
 
 	::SwapBuffers( pDC->GetSafeHdc() );
@@ -230,26 +289,32 @@ void C3dModelView::DrawRoughPath(void)
 	if ( vvv.empty() )
 		return;
 
-	CVdouble	vpt;	// debug
 	const COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-//	::glBegin(GL_POINTS);
-
-	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
-		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-//-			::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
-//-			::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
-			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-//				::glVertex3d(it3->x, it3->y, it3->z);
-				vpt.push_back(it3->x);
-				vpt.push_back(it3->y);
-				vpt.push_back(it3->z);
+	if ( m_nCoord > 0 ) {
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nCoord);
+		::glVertexPointer(NCXYZ, GL_DOUBLE, 0, NULL);
+		::glDrawArrays(GL_POINTS, 0, m_nDrawSize);
+		::glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+	else {
+		CVdouble	vpt;
+		for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+			for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+//-				::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
+//-				::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+				for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+					vpt.push_back(it3->x);
+					vpt.push_back(it3->y);
+					vpt.push_back(it3->z);
+				}
 			}
 		}
+		::glBindBuffer(GL_ARRAY_BUFFER, 0);
+		::glVertexPointer(NCXYZ, GL_DOUBLE, 0, &vpt[0]);
+		::glDrawArrays(GL_POINTS, 0, (GLsizei)(vpt.size()/NCXYZ));
 	}
-	::glVertexPointer(NCXYZ, GL_DOUBLE, 0, &vpt[0]);
-	::glDrawArrays(GL_POINTS, 0, (GLsizei)(vpt.size()/NCXYZ));
 /*
 	// 問題のある層だけ試しに表示
 		for ( auto it2=vvv[0].begin(); it2!=vvv[0].end(); ++it2 ) {
@@ -258,7 +323,6 @@ void C3dModelView::DrawRoughPath(void)
 			}
 		}
 */
-//	::glEnd();
 }
 
 void C3dModelView::DrawContourPath(void)
@@ -270,16 +334,28 @@ void C3dModelView::DrawContourPath(void)
 	const COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-//	::glBegin(GL_POINTS);
-
-	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
-		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-			::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
-			::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
-//			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-//				::glVertex3d(it3->x, it3->y, it3->z);
-//			}
+	if ( m_nCoord > 0 ) {
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nCoord);
+		::glVertexPointer(NCXYZ, GL_DOUBLE, 0, NULL);
+		::glDrawArrays(GL_POINTS, 0, m_nDrawSize);
+		::glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+	else {
+		CVdouble	vpt;
+		for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+			for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+//-				::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
+//-				::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+				for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+					vpt.push_back(it3->x);
+					vpt.push_back(it3->y);
+					vpt.push_back(it3->z);
+				}
+			}
 		}
+		::glBindBuffer(GL_ARRAY_BUFFER, 0);
+		::glVertexPointer(NCXYZ, GL_DOUBLE, 0, &vpt[0]);
+		::glDrawArrays(GL_POINTS, 0, (GLsizei)(vpt.size()/NCXYZ));
 	}
 /*
 	// 問題のある層だけ試しに表示
@@ -291,7 +367,6 @@ void C3dModelView::DrawContourPath(void)
 			}
 		}
 */
-//	::glEnd();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -524,6 +599,8 @@ void C3dModelView::OnFile3dRough()
 	CWaitCursor	wait;
 	// 荒加工スキャンパスの生成
 	if ( GetDocument()->MakeRoughCoord(m_pSelFace, m_pSelCurve) ) {
+		// VBO
+		CreateVBO(ROUGH);
 		// 荒加工スキャンパス描画
 		Invalidate(FALSE);
 	}
@@ -531,22 +608,24 @@ void C3dModelView::OnFile3dRough()
 
 void C3dModelView::OnUpdateFile3dSmooth(CCmdUI* pCmdUI)
 {
-	// 仕上げ加工スキャンが有効になる条件
+	// 等高線加工スキャンが有効になる条件
 	pCmdUI->Enable(m_pSelFace!=NULL);
 }
 
 void C3dModelView::OnFile3dSmooth()
 {
-	// 仕上げ加工スキャン設定
+	// 等高線加工スキャン設定
 	C3dContourScanSetupDlg	dlg(GetDocument());
 	if ( dlg.DoModal() != IDOK )
 		return;
 
 	// ウエイトカーソル
 	CWaitCursor	wait;
-	// 仕上げ加工スキャンパスの生成
+	// 等高線加工スキャンパスの生成
 	if ( GetDocument()->MakeContourCoord(m_pSelFace) ) {
-		// 仕上げ加工スキャンパス描画
+		// VBO
+		CreateVBO(CONTOUR);
+		// 等高線加工スキャンパス描画
 		Invalidate(FALSE);
 	}
 }

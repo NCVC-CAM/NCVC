@@ -427,8 +427,7 @@ void  CNCViewGL::CreateTexture(GLsizeiptr n, const GLfloat* pfTEX)
 		::glDeleteBuffers(1, &m_nTextureID);
 	::glGenBuffers(1, &m_nTextureID);
 	::glBindBuffer(GL_ARRAY_BUFFER, m_nTextureID);
-	::glBufferData(GL_ARRAY_BUFFER, n*sizeof(GLfloat), pfTEX,
-			GL_STATIC_DRAW);
+	::glBufferData(GL_ARRAY_BUFFER, n*sizeof(GLfloat), pfTEX, GL_STATIC_DRAW);
 	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 		ClearTexture();
 		OutputGLErrorMessage(errCode, __FILE__, __LINE__);

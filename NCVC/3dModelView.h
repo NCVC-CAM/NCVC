@@ -8,6 +8,10 @@
 #include "Kodatuno/Describe_BODY.h"
 #undef PI	// Use NCVC (MyTemplate.h)
 
+enum ENCREATECOORD {
+	ROUGH, CONTOUR
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // C3dModelView ビュー
 
@@ -16,7 +20,11 @@ class C3dModelView : public CViewBaseGL
 	int			m_icx, m_icy;		// FBOを作った時のサイズ
 	NURBSC*		m_pSelCurve;		// 選択した曲線
 	NURBSS*		m_pSelFace;			// 選択した曲面
+	GLuint		m_nCoord;			// バッファオブジェクトID
+	GLsizei		m_nDrawSize;		// 描画件数
 
+	void	ClearVBO(void);
+	void	CreateVBO(ENCREATECOORD);
 	void	DrawBody(RENDERMODE);
 	void	DrawRoughPath(void);
 	void	DrawContourPath(void);
