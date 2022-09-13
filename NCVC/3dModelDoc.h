@@ -13,7 +13,7 @@ typedef std::vector<VCoord>		VVCoord;
 typedef	std::vector<VVCoord>	VVVCoord;
 
 enum ENCOORDMODE {
-	CM_NO, CM_ROUGH, CM_CONTOUR
+	CM_NOCOORD, CM_ROUGH, CM_CONTOUR
 };
 
 /////////////////////////////////////////////////////////////////////////////

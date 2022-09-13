@@ -27,6 +27,7 @@ C3dModelDoc::C3dModelDoc()
 	m_pKoBody  = NULL;
 	m_pKoList = NULL;
 	m_rcMax.SetRectMinimum();
+	m_enCoordMode = CM_NOCOORD;
 }
 
 C3dModelDoc::~C3dModelDoc()
@@ -193,7 +194,7 @@ void C3dModelDoc::OnFile3dMake()
 void C3dModelDoc::ClearKoCoord(void)
 {
 	m_vvvKoCoord.clear();
-	m_enCoordMode = CM_NO;
+	m_enCoordMode = CM_NOCOORD;
 }
 
 BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)

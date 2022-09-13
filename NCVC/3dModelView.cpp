@@ -198,7 +198,7 @@ void C3dModelView::OnDraw(CDC* pDC)
 //	}
 
 	// r‰ÁH‚Ü‚½‚Í“™‚üƒXƒLƒƒƒ“ƒpƒX‚Ì•`‰æ
-	if ( GetDocument()->GetKoCoordMode() != CM_NO ) {
+	if ( GetDocument()->GetKoCoordMode() != CM_NOCOORD ) {
 		::glDisable(GL_LIGHTING);
 		DrawKodatunoCoordPath();
 	}
