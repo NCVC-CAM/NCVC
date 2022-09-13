@@ -26,7 +26,7 @@ class C3dModelView : public CViewBaseGL
 	void	DoSelect(const CPoint&);
 	NURBSC*	DoSelectCurve(const CPoint&);
 	NURBSS*	DoSelectFace (const CPoint&);
-	void	SetKodatunoColor(DispStat&, COLORREF);
+	void	SetKodatunoColor(DispStat&, const COLORREF);
 
 protected:
 	C3dModelView();

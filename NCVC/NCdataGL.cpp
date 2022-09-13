@@ -301,7 +301,7 @@ BOOL CNCdata::AddGLWireWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WI
 	vpt.insert(vpt.end(), begin(m_ptValS.xyz), end(m_ptValS.xyz));
 
 	if ( m_pWireObj ) {
-		CPoint3F	pts(m_pWireObj->GetStartPoint());
+		const CPoint3F	pts(m_pWireObj->GetStartPoint());
 		vpt.insert(vpt.end(), begin(pts.xyz), end(pts.xyz));
 		// 法線ﾍﾞｸﾄﾙ
 		optional<CPointF> ptResult = CalcPerpendicularPoint(STARTPOINT, 1.0f, 1);
@@ -420,7 +420,10 @@ void CNCline::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 			IDtoRGB((int)nID, rgb);		// ViewBaseGL.cpp
 			break;
 		}
-		const GLfloat	pt[] = {m_ptValS.x, m_ptValS.y, m_ptValS.z, m_ptValE.x, m_ptValE.y, m_ptValE.z};
+		const GLfloat	pt[] = {
+			m_ptValS.x, m_ptValS.y, m_ptValS.z,
+			m_ptValE.x, m_ptValE.y, m_ptValE.z
+		};
 		::glColor3ubv(rgb);
 		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
 		::glDrawArrays(GL_LINES, 0, 2);
@@ -443,8 +446,8 @@ void CNCline::DrawGLLatheDepth(void) const
 		if ( GetValFlags() & NCD_X ) {		// ﾃﾞｰﾀ上はZ値
 			if ( GetValFlags() & NCD_Z ) {
 				// 角柱風の描画(S平面除く)
-				CRectF	rcs(pts.x, 0.0f, pts.x+m_dEndmill, LATHEHEIGHT),
-						rce(pte.x, 0.0f, pte.x+m_dEndmill, LATHEHEIGHT);
+				const CRectF	rcs(pts.x, 0.0f, pts.x+m_dEndmill, LATHEHEIGHT),
+								rce(pte.x, 0.0f, pte.x+m_dEndmill, LATHEHEIGHT);
 				const GLfloat	pt[] = {
 					rcs.left,  rcs.top,    pts.z,	// 左側面
 					rcs.left,  rcs.bottom, pts.z,
@@ -491,8 +494,8 @@ void CNCline::DrawGLLatheDepth(void) const
 	case NCMIL_GROOVE_R:	// 工具基準点(右)
 		if ( GetValFlags() & NCD_X ) {
 			if ( GetValFlags() & NCD_Z ) {
-				CRectF	rcs(pts.x-m_dEndmill, 0.0f, pts.x, LATHEHEIGHT),
-						rce(pte.x-m_dEndmill, 0.0f, pte.x, LATHEHEIGHT);
+				const CRectF	rcs(pts.x-m_dEndmill, 0.0f, pts.x, LATHEHEIGHT),
+								rce(pte.x-m_dEndmill, 0.0f, pte.x, LATHEHEIGHT);
 				const GLfloat	pt[] = {
 					rcs.left,  rcs.top,    pts.z,
 					rcs.left,  rcs.bottom, pts.z,
@@ -538,8 +541,8 @@ void CNCline::DrawGLLatheDepth(void) const
 		// m_dEndmillは読み込み時に半分にされている
 		if ( GetValFlags() & NCD_X ) {
 			if ( GetValFlags() & NCD_Z ) {
-				CRectF	rcs(pts.x-m_dEndmill, 0.0f, pts.x+m_dEndmill, LATHEHEIGHT),
-						rce(pte.x-m_dEndmill, 0.0f, pte.x+m_dEndmill, LATHEHEIGHT);
+				const CRectF	rcs(pts.x-m_dEndmill, 0.0f, pts.x+m_dEndmill, LATHEHEIGHT),
+								rce(pte.x-m_dEndmill, 0.0f, pte.x+m_dEndmill, LATHEHEIGHT);
 				const GLfloat	pt[] = {
 					rcs.left,  rcs.top,    pts.z,
 					rcs.left,  rcs.bottom, pts.z,
@@ -725,10 +728,10 @@ BOOL CNCline::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 					sin_q = sin(q) * m_dEndmill,
 					ptsz = m_ptValS.z + h,	// 高さ
 					ptez = m_ptValE.z + h;
-			CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, ptsz),
-						pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, ptez),
-						pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, ptsz),
-						pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, ptez);
+			const CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, ptsz),
+							pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, ptez),
+							pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, ptsz),
+							pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, ptez);
 			bd.vpt.insert(bd.vpt.end(), begin(pts1.xyz), end(pts1.xyz));
 			bd.vpt.insert(bd.vpt.end(), begin(pte1.xyz), end(pte1.xyz));
 			bd.vpt.insert(bd.vpt.end(), begin(m_ptValS.xyz), end(m_ptValS.xyz));
@@ -785,10 +788,10 @@ BOOL CNCline::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 				float	q = m_ptValS.arctan(m_ptValE)+RAD(90.0f),
 						cos_q = cos(q) * m_dEndmill,
 						sin_q = sin(q) * m_dEndmill;
-				CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, m_ptValS.z),
-							pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, m_ptValE.z),
-							pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, m_ptValS.z),
-							pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, m_ptValE.z);
+				const CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, m_ptValS.z),
+								pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, m_ptValE.z),
+								pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, m_ptValS.z),
+								pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, m_ptValE.z);
 				bd.vpt.insert(bd.vpt.end(), begin(pts1.xyz), end(pts1.xyz));
 				bd.vpt.insert(bd.vpt.end(), begin(pte1.xyz), end(pte1.xyz));
 				bd.vpt.insert(bd.vpt.end(), begin(pts2.xyz), end(pts2.xyz));
@@ -1113,8 +1116,8 @@ void CNCcircle::AddGLWirePassCircle(LPADDGLWIRECIRCLE lpArgv) const
 #ifdef _DEBUGOLD
 	int			dbgCnt = 0;
 #endif
-	float	r = fabs(m_r),
-			ptz = lpArgv->bLatheDepth ? -m_ptOrg.z : m_ptOrg.z;	// 旋盤内径デプス更新の特殊事情
+	float		r = fabs(m_r),
+				ptz = lpArgv->bLatheDepth ? -m_ptOrg.z : m_ptOrg.z;	// 旋盤内径デプス更新の特殊事情
 	CPoint3F	pt;
 
 	switch ( GetPlane() ) {
@@ -1203,8 +1206,8 @@ static inline void _SetEndmillPathXY
 {
 	float	cos_q = cos(q), 
 			sin_q = sin(q);
-	CPoint3F	pt1(r1*cos_q+pt.x, r1*sin_q+pt.y, h),
-				pt2(r2*cos_q+pt.x, r2*sin_q+pt.y, h);
+	const CPoint3F	pt1(r1*cos_q+pt.x, r1*sin_q+pt.y, h),
+					pt2(r2*cos_q+pt.x, r2*sin_q+pt.y, h);
 	v.insert(v.end(), begin(pt1.xyz), end(pt1.xyz));
 	v.insert(v.end(), begin(pt2.xyz), end(pt2.xyz));
 }
@@ -1213,7 +1216,7 @@ static inline void _SetEndmillPathXY_Pipe
 	(const CPointF& ptOrg, float q, float rr, float h, float d,
 		CVfloat& v)
 {
-	CPoint3F	pt(
+	const CPoint3F	pt(
 		rr * cos(q) + ptOrg.x,
 		rr * sin(q) + ptOrg.y,
 		h
@@ -1226,7 +1229,7 @@ static inline void _SetEndmillPathXZ_Pipe
 	(const CPointF& ptOrg, float q, float rr, float h, float d,
 		CVfloat& v)
 {
-	CPoint3F	pt(
+	const CPoint3F	pt(
 		rr * cos(q) + ptOrg.x,
 		h,
 		rr * sin(q) + ptOrg.y
@@ -1238,7 +1241,7 @@ static inline void _SetEndmillPathYZ_Pipe
 	(const CPointF& ptOrg, float q, float rr, float h, float d,
 		CVfloat& v)
 {
-	CPoint3F	pt(
+	const CPoint3F	pt(
 		h,
 		rr * cos(q) + ptOrg.x,
 		rr * sin(q) + ptOrg.y
@@ -1335,7 +1338,7 @@ void CNCcircle::SetEndmillXYPath(CVfloat& v) const
 {
 	float	sq, eq, h = m_ptValS.z,
 			r1, r2, rr = fabs(m_r);
-	CPointF	ptOrg(m_ptOrg.GetXY());
+	const CPointF	ptOrg(m_ptOrg.GetXY());
 
 	tie(sq, eq) = GetSqEq();
 
@@ -1360,7 +1363,7 @@ void CNCcircle::SetEndmillSquare(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 {
 	float	sq, eq, h,
 			rr = fabs(m_r);
-	CPointF	ptOrg(GetPlaneValue(m_ptOrg));
+	const CPointF	ptOrg(GetPlaneValue(m_ptOrg));
 
 	tie(sq, eq) = GetSqEq();
 
@@ -1415,8 +1418,8 @@ void CNCcircle::SetEndmillBall(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 	GLuint		n;
 	float		sq, eq, qp,
 				rr = fabs(m_r);
-	CPointF		ptOrg(GetPlaneValue(m_ptOrg));
-	CPoint3F	pt;
+	const CPointF	ptOrg(GetPlaneValue(m_ptOrg));
+	CPoint3F		pt;
 
 	tie(sq, eq) = GetSqEq();
 
@@ -1516,9 +1519,9 @@ static inline void _SendEndmillChamferXY(SETENDMILLARGV* pArgv)
 	float		cos_q = cos(pArgv->q), sin_q = sin(pArgv->q),
 				rr = pArgv->r,
 				r1 = pArgv->r + pArgv->d,	r2 = pArgv->r - pArgv->d;
-	CPoint3F	pt1(r1*cos_q+pArgv->pto.x, r1*sin_q+pArgv->pto.y, pArgv->t+pArgv->h),
-				pt2(rr*cos_q+pArgv->pto.x, rr*sin_q+pArgv->pto.y, pArgv->t),
-				pt3(r2*cos_q+pArgv->pto.x, r2*sin_q+pArgv->pto.y, pArgv->t+pArgv->h);
+	const CPoint3F	pt1(r1*cos_q+pArgv->pto.x, r1*sin_q+pArgv->pto.y, pArgv->t+pArgv->h),
+					pt2(rr*cos_q+pArgv->pto.x, rr*sin_q+pArgv->pto.y, pArgv->t),
+					pt3(r2*cos_q+pArgv->pto.x, r2*sin_q+pArgv->pto.y, pArgv->t+pArgv->h);
 	pArgv->v->insert(pArgv->v->end(), begin(pt1.xyz), end(pt1.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt2.xyz), end(pt2.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt3.xyz), end(pt3.xyz));
@@ -1528,9 +1531,9 @@ static inline void _SendEndmillChamferXZ(SETENDMILLARGV* pArgv)
 {
 	float		cos_q = cos(pArgv->q), sin_q = sin(pArgv->q),
 				rr = pArgv->r;
-	CPoint3F	pt1(rr*cos_q+pArgv->pto.x-pArgv->d, pArgv->t-pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h),
-				pt2(rr*cos_q+pArgv->pto.x,          pArgv->t,          rr*sin_q+pArgv->pto.y),
-				pt3(rr*cos_q+pArgv->pto.x+pArgv->d, pArgv->t+pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h);
+	const CPoint3F	pt1(rr*cos_q+pArgv->pto.x-pArgv->d, pArgv->t-pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h),
+					pt2(rr*cos_q+pArgv->pto.x,          pArgv->t,          rr*sin_q+pArgv->pto.y),
+					pt3(rr*cos_q+pArgv->pto.x+pArgv->d, pArgv->t+pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h);
 	pArgv->v->insert(pArgv->v->end(), begin(pt1.xyz), end(pt1.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt2.xyz), end(pt2.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt3.xyz), end(pt3.xyz));
@@ -1540,9 +1543,9 @@ static inline void _SendEndmillChamferYZ(SETENDMILLARGV* pArgv)
 {
 	float		cos_q = cos(pArgv->q), sin_q = sin(pArgv->q),
 				rr = pArgv->r;
-	CPoint3F	pt1(pArgv->t-pArgv->d, rr*cos_q+pArgv->pto.x-pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h),
-				pt2(pArgv->t,          rr*cos_q+pArgv->pto.x,          rr*sin_q+pArgv->pto.y),
-				pt3(pArgv->t+pArgv->d, rr*cos_q+pArgv->pto.x+pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h);
+	const CPoint3F	pt1(pArgv->t-pArgv->d, rr*cos_q+pArgv->pto.x-pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h),
+					pt2(pArgv->t,          rr*cos_q+pArgv->pto.x,          rr*sin_q+pArgv->pto.y),
+					pt3(pArgv->t+pArgv->d, rr*cos_q+pArgv->pto.x+pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h);
 	pArgv->v->insert(pArgv->v->end(), begin(pt1.xyz), end(pt1.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt2.xyz), end(pt2.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt3.xyz), end(pt3.xyz));

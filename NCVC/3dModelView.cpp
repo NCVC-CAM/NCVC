@@ -198,8 +198,10 @@ void C3dModelView::OnDraw(CDC* pDC)
 //	}
 
 	// 荒加工または等高線スキャンパスの描画
-	::glDisable(GL_LIGHTING);
-	DrawKodatunoCoordPath();
+	if ( GetDocument()->GetKoCoordMode() != CM_NO ) {
+		::glDisable(GL_LIGHTING);
+		DrawKodatunoCoordPath();
+	}
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
@@ -270,10 +272,6 @@ void C3dModelView::DrawKodatunoBody(RENDERMODE enRender)
 
 void C3dModelView::DrawKodatunoCoordPath(void)
 {
-	const VVVCoord& vvv = GetDocument()->GetKoCoord();
-	if ( vvv.empty() )
-		return;
-
 	const COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
 	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
@@ -285,6 +283,7 @@ void C3dModelView::DrawKodatunoCoordPath(void)
 	}
 	else {
 		// こちらの描画方法は保険
+		const VVVCoord& vvv = GetDocument()->GetKoCoord();
 		CVdouble	vpt;
 		for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
 			for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
@@ -348,7 +347,7 @@ void C3dModelView::OnLButtonUp(UINT nFlags, CPoint point)
 	__super::OnLButtonUp(nFlags, point);
 }
 
-void C3dModelView::SetKodatunoColor(DispStat& Dstat, COLORREF col)
+void C3dModelView::SetKodatunoColor(DispStat& Dstat, const COLORREF col)
 {
 	Dstat.Color[0] = GetRValue(col) / 255.0f;
 	Dstat.Color[1] = GetGValue(col) / 255.0f;
@@ -361,8 +360,8 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetDrawColor(COMCOL_SELECT),
-				clr = pOpt->GetDxfDrawColor(DXFCOL_CUTTER);
+	const COLORREF	col = pOpt->GetDrawColor(COMCOL_SELECT),
+					clr = pOpt->GetDxfDrawColor(DXFCOL_CUTTER);
 
 	// NURBS曲線の判定
 	::glClearColor(1.0, 1.0, 1.0, 1.0);
