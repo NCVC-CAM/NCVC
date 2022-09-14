@@ -115,7 +115,6 @@ CNCViewGL::~CNCViewGL()
 {
 	EndOfCreateElementThread();
 	DeleteDepthMemory();
-	ClearVBO();
 }
 
 void CNCViewGL::DeleteDepthMemory(void)
