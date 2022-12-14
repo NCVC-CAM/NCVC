@@ -282,6 +282,6 @@ E-mail:magara[at]maizuru-ct.ac.jp
 ビデオ　　　：GeForce RTX 2070
 ＯＳ　　　　：Windows 11 Enterprise(64bit)
 開発環境　　：Visual Studio Professional/Community 2022
-ライブラリ　：MFC, boost-1.80.0, GLEW-2.10, Kodatuno-R3.4改
+ライブラリ　：MFC, boost-1.81.0, GLEW-2.10, Kodatuno-R3.4改
 　Kodatunoは、金沢大学マンマシン研究室で開発されている
 　オープンソースCAMカーネルです
