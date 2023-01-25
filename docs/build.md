@@ -32,7 +32,7 @@ mklink コマンドだけ管理者権限でないと動かないのでご注意�
 NURBS曲面の切削データ生成等々に，NCVC内部で
 金沢大学マンマシン研究室で開発されているKodatunoライブラリを使用しています．
 NCVC用にパッチを当てているので，まずこちらのライブラリをご用意ください．
-Kodatunoライブラリのビルド方法は <https://github.com/NCVC-CAM/Kodatuno> を参照してください．
+Kodatunoライブラリのビルド方法は <https://github.com/KodatunoOrg/Kodatuno> を参照してください．
 NCVCプロジェクトから見えるところに Kodatuno.vs.lib をコピー（またはシンボリックリンク）してもらえればOKです．
 インクルードファイルも同様です．僕は下図のようにKodatunoフォルダごとシンボリックリンクを張っています．
 NCVC.SDKに含まれるヘッダーも同様にシンボリックリンクしています．  
