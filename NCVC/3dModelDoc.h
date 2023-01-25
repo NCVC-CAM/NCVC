@@ -27,8 +27,8 @@ class C3dModelDoc : public CDocBase
 	BODY*		m_pKoBody;			// Kodatuno Body
 	BODYList*	m_pKoList;			// Kodatuno Body List
 
-	ENCOORDMODE	m_enCoordMode;		// 荒化工 or 等高線
-	VVVCoord	m_vvvKoCoord;		// 荒化工・等高線 兼用座標配列
+	ENCOORDMODE	m_enCoordMode;		// 荒加工 or 等高線
+	VVVCoord	m_vvvKoCoord;		// 荒加工・等高線 兼用座標配列
 
 protected:
 	C3dModelDoc();
