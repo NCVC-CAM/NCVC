@@ -12,7 +12,7 @@ Visual Studio 2022 Solution
 Click here for how to build <https://github.com/NCVC-CAM/NCVC/blob/main/docs/build.md>
 
 ## Author
-Kenichi Magara / NIT, Maizuru College (KOSEN)
+Kenichi Magara / NIT(KOSEN) Maizuru College
 
 ## License
 "NCVC" is under [BSD license (3-clause BSD License)]
