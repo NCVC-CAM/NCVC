@@ -3,7 +3,7 @@
 【登  録  名】　ncvc412.zip
 【著作権  者】　眞柄　賢一
 【対応  ＯＳ】　Windows Vista 以降（全VerOSで動作確認したわけではありません）
-【掲  載  日】　2022/xx/xx
+【掲  載  日】　2023/04/14
 【ソフト種別】　フリーソフト
 【転載  条件】　事後でも連絡
 ===========================================================================
@@ -285,6 +285,6 @@ E-mail:magara[at]maizuru-ct.ac.jp
 ビデオ　　　：GeForce RTX 2070
 ＯＳ　　　　：Windows 11 Enterprise(64bit)
 開発環境　　：Visual Studio Professional/Community 2022
-ライブラリ　：MFC, boost-1.81.0, GLEW-2.10, Kodatuno-R3.4改
+ライブラリ　：MFC, boost-1.82.0, GLEW-2.10, Kodatuno-R3.4改
 　Kodatunoは、金沢大学マンマシン研究室で開発されている
 　オープンソースCAMカーネルです
