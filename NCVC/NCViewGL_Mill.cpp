@@ -849,10 +849,10 @@ BOOL CNCViewGL::CreateVBOMill(void)
 		m_nVBOsize = nVBOsize;
 	}
 	errLine = __LINE__;
-	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY?
+	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 		ClearVBO();
-		OutputGLErrorMessage(errCode, errLine);
+		OutputGLErrorMessage(errCode, __FILE__, errLine);
 		return FALSE;
 	}
 	::glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -875,7 +875,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 		if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 			::glBindBuffer(GL_ARRAY_BUFFER, 0);
 			ClearVBO();
-			OutputGLErrorMessage(errCode, errLine);
+			OutputGLErrorMessage(errCode, __FILE__, errLine);
 			return FALSE;
 		}
 
@@ -901,7 +901,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 				if ( errCode != GL_NO_ERROR ) {
 					::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 					ClearVBO();
-					OutputGLErrorMessage(errCode, errLine);
+					OutputGLErrorMessage(errCode, __FILE__, errLine);
 					return FALSE;
 				}
 				m_vElementCut.push_back((GLuint)nElement);
@@ -926,7 +926,7 @@ BOOL CNCViewGL::CreateVBOMill(void)
 				if ( errCode != GL_NO_ERROR ) {
 					::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 					ClearVBO();
-					OutputGLErrorMessage(errCode, errLine);
+					OutputGLErrorMessage(errCode, __FILE__, errLine);
 					return FALSE;
 				}
 				m_vElementWrk.push_back((GLuint)nElement);

@@ -118,7 +118,9 @@ void CNCViewTab::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 	case UAV_FILEINSERT:
 	case UAV_DRAWWORKRECT:
 	case UAV_DRAWMAXRECT:
-		return;		// Ä•`‰æ•s—v
+	case UAV_DRAWSELECT:
+	case UAV_DRAWUNSELECT:
+		return;		// Ä•`‰æ•s—viƒ`ƒ‰‚Â‚«–hŽ~j
 	case UAV_CHANGEFONT:
 		GetTabCtrl().SetFont(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD), FALSE);
 		break;

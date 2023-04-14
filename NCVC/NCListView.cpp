@@ -390,7 +390,7 @@ void CNCListView::OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult)
 		if ( 0<=nItem && nItem<GetDocument()->GetNCBlockSize() ) {
 			pBlock = GetDocument()->GetNCblock(nItem);
 			ASSERT( pBlock );
-			CObject*	pData = reinterpret_cast<CObject *>(pBlock->GetBlockToNCdata());
+			CObject*	pData = reinterpret_cast<CObject *>(m_pTraceData ? m_pTraceData : pBlock->GetBlockToNCdata());
 			if ( pNMListView->uNewState & LVIS_FOCUSED ) {
 				// 選択色表示
 				GetDocument()->UpdateAllViews(this, UAV_DRAWSELECT, pData);
@@ -400,7 +400,7 @@ void CNCListView::OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult)
 				GetDocument()->UpdateAllViews(this, UAV_DRAWUNSELECT, pData);
 			}
 		}
-		if ( !m_bSelectTrace ) {
+		if ( !m_pTraceData ) {
 			// ステータスバーの更新
 			// こちらはブロックベースで指示
 			CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
@@ -416,21 +416,27 @@ LRESULT CNCListView::OnSelectTrace(WPARAM wParam, LPARAM)
 {
 	// from CTraceThread::InitInstance()
 	if ( wParam ) {
-		CNCdata*	pData = reinterpret_cast<CNCdata *>(wParam);
-		int			nIndex = pData->GetBlockLineNo();
-		m_bSelectTrace = TRUE;	// OnItemChanged()でステータスバーの更新をしない
+		int	nIndex;
+		if ( m_pTraceData ) {
+			// 前回のトレースオブジェクトの選択を解除
+			nIndex = m_pTraceData->GetBlockLineNo();
+			GetListCtrl().SetItemState(nIndex, 0, LVIS_SELECTED|LVIS_FOCUSED);
+		}
+		// 現在のトレースオブジェクトを選択
+		m_pTraceData = reinterpret_cast<CNCdata *>(wParam);	// トレース中のオブジェクトを引数から取得
+		nIndex = m_pTraceData->GetBlockLineNo();
 		GetListCtrl().SetItemState(nIndex, LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
-		m_bSelectTrace = FALSE;
 		// ステータスバーの更新
-		// こちらは pData ベースで指示
+		// こちらはトレース中のオブジェクトで指示
 		CNCChild*	pFrame = static_cast<CNCChild *>(GetParentFrame());
-		pFrame->SetStatusInfo(nIndex+1, pData);		// pData渡し
+		pFrame->SetStatusInfo(nIndex+1, m_pTraceData);
 		pFrame->SendMessage(WM_USERSTATUSLINENO, (WPARAM)GetDocument());
 		// 強制ｽｸﾛｰﾙの可能性もあるのでUpdate()ではNG
 		GetListCtrl().EnsureVisible(nIndex, FALSE);
 	}
 	else {
 		// 選択解除
+		m_pTraceData = NULL;
 		GetListCtrl().SetItemState(-1, 0, LVIS_SELECTED|LVIS_FOCUSED);
 	}
 

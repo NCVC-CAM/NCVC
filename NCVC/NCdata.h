@@ -77,10 +77,6 @@ enum	ENNCDRAWVIEW
 		NCDRAWVIEW_NUM		// [4]
 };
 #define	NCVIEW_OPENGL			6
-//
-typedef	std::vector<GLuint>		CVelement;
-typedef	std::vector<GLfloat>	CVfloat;
-//typedef	std::vector<GLdouble>	CVdouble;
 
 // ｴﾝﾄﾞﾐﾙ底面描画用
 struct BOTTOMDRAW
@@ -229,16 +225,16 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 	virtual	void	DrawGLWirePath(RENDERMODE, INT_PTR) const;			// 3軸フライスの線画
 	virtual	void	DrawGLWireWirePath(RENDERMODE, INT_PTR) const;		// ワイヤ放電加工機用（マウスピック用）
 	virtual	void	DrawGLLatheDepth(void) const;					// 旋盤用
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
-	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
+	virtual	BOOL	AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
+	virtual	int		AddGLWireWireTexture(size_t, float&, float, GLfloat*) const;
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
 	virtual	CPoint	GetDrawEndPoint(size_t) const;
-	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 	// ｵﾌﾞｼﾞｪｸﾄ占有矩形(都度ｾｯﾄ)
 	virtual	CRect3F	GetMaxRect(void) const;
@@ -302,15 +298,15 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 	virtual	void	DrawGLWirePath(RENDERMODE, INT_PTR) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
-	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
+	virtual	BOOL	AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
+	virtual	int		AddGLWireWireTexture(size_t, float&, float, GLfloat*) const;
 	//
 	virtual	CPoint	GetDrawStartPoint(size_t) const;
 	virtual	CPoint	GetDrawEndPoint(size_t) const;
-	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 	virtual	CRect3F	GetMaxRect(void) const;
 	virtual	CRect3F	GetMaxCutRect(void) const;
@@ -384,8 +380,8 @@ public:
 	virtual	void	DrawGLWirePath(RENDERMODE, INT_PTR) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
-	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
+	virtual	BOOL	AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
+	virtual	int		AddGLWireWireTexture(size_t, float&, float, GLfloat*) const;
 
 	virtual	CRect3F	GetMaxRect(void) const;
 	virtual	CRect3F	GetMaxCutRect(void) const;
@@ -405,14 +401,15 @@ public:
 class	CNCcircle;
 typedef void (CNCcircle::*PFNCIRCLEDRAW)(ENNCDRAWVIEW, CDC*) const;
 
-struct DRAWGLWIRECIRCLE	// DrawGLWirePassCircle()引数
+struct ADDGLWIRECIRCLE	// AddGLWirePassCircle()引数
 {
 	BOOL		bG03,	// TRUE:G03, FALSE:G02
 				bLatheDepth;	// 旋盤内径描画の特殊性
 	float		sq, eq;
 	CPoint3F	pts, pte;
+	CVPoint3F	vpt;	// result
 };
-typedef	DRAWGLWIRECIRCLE*		LPDRAWGLWIRECIRCLE;
+typedef	ADDGLWIRECIRCLE*		LPADDGLWIRECIRCLE;
 
 class CNCcircle : public CNCline  
 {
@@ -441,8 +438,7 @@ class CNCcircle : public CNCline
 	void	DrawG17(ENNCDRAWVIEW, CDC*) const;
 	void	DrawG18(ENNCDRAWVIEW, CDC*) const;
 	void	DrawG19(ENNCDRAWVIEW, CDC*) const;
-	void	DrawGLWirePassCircle(const CPoint3F&, const CPoint3F&) const;
-	void	DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE) const;
+	void	AddGLWirePassCircle(LPADDGLWIRECIRCLE) const;
 
 	// IJK指定なしの時，円の方程式から中心の算出
 	BOOL	CalcCenter(const CPointF&, const CPointF&);
@@ -474,13 +470,13 @@ public:
 	virtual	void	DrawWireXY(CDC*, BOOL) const;
 	virtual	void	DrawWireXZ(CDC*, BOOL) const;
 	virtual	void	DrawWireYZ(CDC*, BOOL) const;
+	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 	virtual	void	DrawGLWirePath(RENDERMODE, INT_PTR) const;
 	virtual	void	DrawGLLatheDepth(void) const;
 	virtual	BOOL	AddGLBottomFaceVertex(CVBtmDraw&, BOOL) const;
-	virtual	BOOL	AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
-	virtual	int		AddGLWireTexture(size_t, float&, float, GLfloat*) const;
+	virtual	BOOL	AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const;
+	virtual	int		AddGLWireWireTexture(size_t, float&, float, GLfloat*) const;
 	//
-	virtual	void	DrawWireLine(ENNCDRAWVIEW, CDC*, BOOL) const;
 
 	virtual	CRect3F	GetMaxRect(void) const;
 	virtual	CRect3F	GetMaxCutRect(void) const;

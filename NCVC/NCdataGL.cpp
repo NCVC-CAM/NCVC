@@ -256,15 +256,15 @@ void CNCdata::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 
 void CNCdata::DrawGLWireWirePath(RENDERMODE enRender, INT_PTR nID) const
 {
-	//	AddGLWireVertex() から座標値を得る
+	//	AddGLWireWireVertex() から座標値を得る
 	CVfloat		vpt, dmy1;
 	CVelement	dmy2;
 	WIRELINE	dmy3;
-	AddGLWireVertex(vpt, dmy1, dmy2, dmy3, TRUE);	// 各オブジェクトのAddGLWireVertex()が呼ばれる
+	AddGLWireWireVertex(vpt, dmy1, dmy2, dmy3, TRUE);	// 各オブジェクトのAddGLWireWireVertex()が呼ばれる
 
 	GLubyte		rgb[3];
 	if ( enRender == RM_SELECT ) {
-		COLORREF col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT);
+		const COLORREF col = AfxGetNCVCApp()->GetViewOption()->GetDrawColor(COMCOL_SELECT);
 		rgb[0] = GetRValue(col);
 		rgb[1] = GetGValue(col);
 		rgb[2] = GetBValue(col);
@@ -275,12 +275,9 @@ void CNCdata::DrawGLWireWirePath(RENDERMODE enRender, INT_PTR nID) const
 	}
 
 	// vptを描画
-	::glBegin(GL_TRIANGLE_STRIP);
 	::glColor3ubv(rgb);
-	for ( size_t i=0; i<vpt.size(); i+=NCXYZ ) {
-		::glVertex3f(vpt[i+NCA_X], vpt[i+NCA_Y], vpt[i+NCA_Z]);
-	}
-	::glEnd();
+	::glVertexPointer(NCXYZ, GL_FLOAT, 0, &vpt[0]);
+	::glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)(vpt.size()/NCXYZ));
 }
 
 void CNCdata::DrawGLLatheDepth(void) const
@@ -294,7 +291,7 @@ BOOL CNCdata::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 	return bStartDraw;
 }
 
-BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
+BOOL CNCdata::AddGLWireWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
 {
 	if ( !bStart ) {
 		// 座標動かない
@@ -304,7 +301,7 @@ BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 	vpt.insert(vpt.end(), begin(m_ptValS.xyz), end(m_ptValS.xyz));
 
 	if ( m_pWireObj ) {
-		CPoint3F	pts(m_pWireObj->GetStartPoint());
+		const CPoint3F	pts(m_pWireObj->GetStartPoint());
 		vpt.insert(vpt.end(), begin(pts.xyz), end(pts.xyz));
 		// 法線ﾍﾞｸﾄﾙ
 		optional<CPointF> ptResult = CalcPerpendicularPoint(STARTPOINT, 1.0f, 1);
@@ -325,7 +322,7 @@ BOOL CNCdata::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 	return FALSE;
 }
 
-int CNCdata::AddGLWireTexture(size_t, float&, float, GLfloat*) const
+int CNCdata::AddGLWireWireTexture(size_t, float&, float, GLfloat*) const
 {
 	return -1;
 }
@@ -423,11 +420,14 @@ void CNCline::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 			IDtoRGB((int)nID, rgb);		// ViewBaseGL.cpp
 			break;
 		}
-		::glBegin(GL_LINES);
-			::glColor3ubv(rgb);
-			::glVertex3fv(m_ptValS.xyz);
-			::glVertex3fv(m_ptValE.xyz);
-		::glEnd();
+		const GLfloat	pt[] = {
+			m_ptValS.x, m_ptValS.y, m_ptValS.z,
+			m_ptValE.x, m_ptValE.y, m_ptValE.z
+		};
+		::glColor3ubv(rgb);
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+		::glDrawArrays(GL_LINES, 0, 2);
+
 	}
 
 	CNCdata::DrawGLWirePath(enRender, nID);
@@ -446,18 +446,20 @@ void CNCline::DrawGLLatheDepth(void) const
 		if ( GetValFlags() & NCD_X ) {		// ﾃﾞｰﾀ上はZ値
 			if ( GetValFlags() & NCD_Z ) {
 				// 角柱風の描画(S平面除く)
-				CRectF	rcs(pts.x, 0.0f, pts.x+m_dEndmill, LATHEHEIGHT),
-						rce(pte.x, 0.0f, pte.x+m_dEndmill, LATHEHEIGHT);
-				::glBegin(GL_TRIANGLE_STRIP);
-					::glVertex3f(rcs.left,  rcs.top,    pts.z);	// 左側面
-					::glVertex3f(rcs.left,  rcs.bottom, pts.z);
-					::glVertex3f(rce.left,  rce.top,    pte.z);
-					::glVertex3f(rce.left,  rce.bottom, pte.z);
-					::glVertex3f(rce.right, rce.top,    pte.z);	// 底面
-					::glVertex3f(rce.right, rce.bottom, pte.z);
-					::glVertex3f(rcs.right, rcs.top,    pts.z);	// 右側面
-					::glVertex3f(rcs.right, rcs.bottom, pts.z);
-				::glEnd();
+				const CRectF	rcs(pts.x, 0.0f, pts.x+m_dEndmill, LATHEHEIGHT),
+								rce(pte.x, 0.0f, pte.x+m_dEndmill, LATHEHEIGHT);
+				const GLfloat	pt[] = {
+					rcs.left,  rcs.top,    pts.z,	// 左側面
+					rcs.left,  rcs.bottom, pts.z,
+					rce.left,  rce.top,    pte.z,
+					rce.left,  rce.bottom, pte.z,
+					rce.right, rce.top,    pte.z,	// 底面
+					rce.right, rce.bottom, pte.z,
+					rcs.right, rcs.top,    pts.z,	// 右側面
+					rcs.right, rcs.bottom, pts.z
+				};
+				::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+				::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 			}
 			else {
 				// 始点から終点の平面描画
@@ -467,39 +469,45 @@ void CNCline::DrawGLLatheDepth(void) const
 				else {
 					pts.x += m_dEndmill;
 				}
-				::glBegin(GL_TRIANGLE_STRIP);
-					::glVertex3f(pts.x,        0.0f, pts.z);
-					::glVertex3f(pts.x, LATHEHEIGHT, pts.z);
-					::glVertex3f(pte.x,        0.0f, pte.z);
-					::glVertex3f(pte.x, LATHEHEIGHT, pte.z);
-				::glEnd();
+				const GLfloat	pt[] = {
+					pts.x,        0.0f, pts.z,
+					pts.x, LATHEHEIGHT, pts.z,
+					pte.x,        0.0f, pte.z,
+					pte.x, LATHEHEIGHT, pte.z
+				};
+				::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+				::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 			}
 		}
 		else if ( GetValFlags() & NCD_Z ) {
 			// 終点のデプス値だけ更新
-			::glBegin(GL_TRIANGLE_STRIP);
-				::glVertex3f(pte.x,                   0.0f, pte.z);
-				::glVertex3f(pte.x,            LATHEHEIGHT, pte.z);
-				::glVertex3f(pte.x+m_dEndmill,        0.0f, pte.z);
-				::glVertex3f(pte.x+m_dEndmill, LATHEHEIGHT, pte.z);
-			::glEnd();
+			const GLfloat	pt[] = {
+				pte.x,                   0.0f, pte.z,
+				pte.x,            LATHEHEIGHT, pte.z,
+				pte.x+m_dEndmill,        0.0f, pte.z,
+				pte.x+m_dEndmill, LATHEHEIGHT, pte.z
+			};
+			::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+			::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 		}
 		break;
 	case NCMIL_GROOVE_R:	// 工具基準点(右)
 		if ( GetValFlags() & NCD_X ) {
 			if ( GetValFlags() & NCD_Z ) {
-				CRectF	rcs(pts.x-m_dEndmill, 0.0f, pts.x, LATHEHEIGHT),
-						rce(pte.x-m_dEndmill, 0.0f, pte.x, LATHEHEIGHT);
-				::glBegin(GL_TRIANGLE_STRIP);
-					::glVertex3f(rcs.left,  rcs.top,    pts.z);
-					::glVertex3f(rcs.left,  rcs.bottom, pts.z);
-					::glVertex3f(rce.left,  rce.top,    pte.z);
-					::glVertex3f(rce.left,  rce.bottom, pte.z);
-					::glVertex3f(rce.right, rce.top,    pte.z);
-					::glVertex3f(rce.right, rce.bottom, pte.z);
-					::glVertex3f(rcs.right, rcs.top,    pts.z);
-					::glVertex3f(rcs.right, rcs.bottom, pts.z);
-				::glEnd();
+				const CRectF	rcs(pts.x-m_dEndmill, 0.0f, pts.x, LATHEHEIGHT),
+								rce(pte.x-m_dEndmill, 0.0f, pte.x, LATHEHEIGHT);
+				const GLfloat	pt[] = {
+					rcs.left,  rcs.top,    pts.z,
+					rcs.left,  rcs.bottom, pts.z,
+					rce.left,  rce.top,    pte.z,
+					rce.left,  rce.bottom, pte.z,
+					rce.right, rce.top,    pte.z,
+					rce.right, rce.bottom, pte.z,
+					rcs.right, rcs.top,    pts.z,
+					rcs.right, rcs.bottom, pts.z
+				};
+				::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+				::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 			}
 			else {
 				if ( pts.x < pte.x ) {
@@ -508,39 +516,45 @@ void CNCline::DrawGLLatheDepth(void) const
 				else {
 					pte.x -= m_dEndmill;
 				}
-				::glBegin(GL_TRIANGLE_STRIP);
-					::glVertex3f(pts.x,        0.0f, pts.z);
-					::glVertex3f(pts.x, LATHEHEIGHT, pts.z);
-					::glVertex3f(pte.x,        0.0f, pte.z);
-					::glVertex3f(pte.x, LATHEHEIGHT, pte.z);
-				::glEnd();
+				const GLfloat	pt[] = {
+					pts.x,        0.0f, pts.z,
+					pts.x, LATHEHEIGHT, pts.z,
+					pte.x,        0.0f, pte.z,
+					pte.x, LATHEHEIGHT, pte.z
+				};
+				::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+				::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 			}
 		}
 		else if ( GetValFlags() & NCD_Z ) {
-			::glBegin(GL_TRIANGLE_STRIP);
-				::glVertex3f(pte.x,                   0.0f, pte.z);
-				::glVertex3f(pte.x,            LATHEHEIGHT, pte.z);
-				::glVertex3f(pte.x-m_dEndmill,        0.0f, pte.z);
-				::glVertex3f(pte.x-m_dEndmill, LATHEHEIGHT, pte.z);
-			::glEnd();
+			const GLfloat	pt[] = {
+				pte.x,                   0.0f, pte.z,
+				pte.x,            LATHEHEIGHT, pte.z,
+				pte.x-m_dEndmill,        0.0f, pte.z,
+				pte.x-m_dEndmill, LATHEHEIGHT, pte.z
+			};
+			::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+			::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 		}
 		break;
 	case NCMIL_GROOVE_C:	// 工具基準点(中央)
 		// m_dEndmillは読み込み時に半分にされている
 		if ( GetValFlags() & NCD_X ) {
 			if ( GetValFlags() & NCD_Z ) {
-				CRectF	rcs(pts.x-m_dEndmill, 0.0f, pts.x+m_dEndmill, LATHEHEIGHT),
-						rce(pte.x-m_dEndmill, 0.0f, pte.x+m_dEndmill, LATHEHEIGHT);
-				::glBegin(GL_TRIANGLE_STRIP);
-					::glVertex3f(rcs.left,  rcs.top,    pts.z);
-					::glVertex3f(rcs.left,  rcs.bottom, pts.z);
-					::glVertex3f(rce.left,  rce.top,    pte.z);
-					::glVertex3f(rce.left,  rce.bottom, pte.z);
-					::glVertex3f(rce.right, rce.top,    pte.z);
-					::glVertex3f(rce.right, rce.bottom, pte.z);
-					::glVertex3f(rcs.right, rcs.top,    pts.z);
-					::glVertex3f(rcs.right, rcs.bottom, pts.z);
-				::glEnd();
+				const CRectF	rcs(pts.x-m_dEndmill, 0.0f, pts.x+m_dEndmill, LATHEHEIGHT),
+								rce(pte.x-m_dEndmill, 0.0f, pte.x+m_dEndmill, LATHEHEIGHT);
+				const GLfloat	pt[] = {
+					rcs.left,  rcs.top,    pts.z,
+					rcs.left,  rcs.bottom, pts.z,
+					rce.left,  rce.top,    pte.z,
+					rce.left,  rce.bottom, pte.z,
+					rce.right, rce.top,    pte.z,
+					rce.right, rce.bottom, pte.z,
+					rcs.right, rcs.top,    pts.z,
+					rcs.right, rcs.bottom, pts.z
+				};
+				::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+				::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 			}
 			else {
 				if ( pts.x < pte.x ) {
@@ -551,21 +565,25 @@ void CNCline::DrawGLLatheDepth(void) const
 					pts.x += m_dEndmill;
 					pte.x -= m_dEndmill;
 				}
-				::glBegin(GL_TRIANGLE_STRIP);
-					::glVertex3f(pts.x,        0.0f, pts.z);
-					::glVertex3f(pts.x, LATHEHEIGHT, pts.z);
-					::glVertex3f(pte.x,        0.0f, pte.z);
-					::glVertex3f(pte.x, LATHEHEIGHT, pte.z);
-				::glEnd();
+				const GLfloat	pt[] = {
+					pts.x,        0.0f, pts.z,
+					pts.x, LATHEHEIGHT, pts.z,
+					pte.x,        0.0f, pte.z,
+					pte.x, LATHEHEIGHT, pte.z
+				};
+				::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+				::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 			}
 		}
 		else if ( GetValFlags() & NCD_Z ) {
-			::glBegin(GL_TRIANGLE_STRIP);
-				::glVertex3f(pte.x-m_dEndmill,        0.0f, pte.z);
-				::glVertex3f(pte.x-m_dEndmill, LATHEHEIGHT, pte.z);
-				::glVertex3f(pte.x+m_dEndmill,        0.0f, pte.z);
-				::glVertex3f(pte.x+m_dEndmill, LATHEHEIGHT, pte.z);
-			::glEnd();
+			const GLfloat	pt[] = {
+				pte.x-m_dEndmill,        0.0f, pte.z,
+				pte.x-m_dEndmill, LATHEHEIGHT, pte.z,
+				pte.x+m_dEndmill,        0.0f, pte.z,
+				pte.x+m_dEndmill, LATHEHEIGHT, pte.z
+			};
+			::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+			::glDrawArrays(GL_TRIANGLE_STRIP, 0, SIZEOF(pt)/NCXYZ);
 		}
 		break;
 	default:
@@ -575,23 +593,22 @@ void CNCline::DrawGLLatheDepth(void) const
 			if ( GetValFlags() & NCFLG_LATHE_HOLE ) {
 				CPoint3F	pto(pte);	pto.x += m_dEndmill*_DRILL_HEIGHT;
 				CVPoint3F	vpt;
+				vpt.push_back(pte);	// GL_TRIANGLE_FANの中心
 				_SetEndmillCircleYZ_Half(m_dEndmill, pto, vpt);
 				pts.z = pto.z = -m_dEndmill;
-				::glBegin(GL_LINES);
-					::glVertex3fv(pts.xyz);
-					::glVertex3fv(pto.xyz);
-				::glEnd();
-				::glBegin(GL_TRIANGLE_STRIP);
-					::glVertex3f(pts.x, pts.y-LATHELINEWIDTH, pts.z);
-					::glVertex3f(pts.x, pts.y+LATHELINEWIDTH, pts.z);
-					::glVertex3f(pto.x, pto.y-LATHELINEWIDTH, pto.z);
-					::glVertex3f(pto.x, pto.y+LATHELINEWIDTH, pto.z);
-				::glEnd();
-				::glBegin(GL_TRIANGLE_FAN);
-					::glVertex3fv(pte.xyz);
-					for ( const auto& v : vpt )
-						::glVertex3fv(v.xyz);
-				::glEnd();
+				const GLfloat	pt[] = {
+					pts.x, pts.y, pts.z,				// GL_LINES
+					pto.x, pto.y, pto.z,
+					pts.x, pts.y-LATHELINEWIDTH, pts.z,	// GL_TRIANGLE_STRIP
+					pts.x, pts.y+LATHELINEWIDTH, pts.z,
+					pto.x, pto.y-LATHELINEWIDTH, pto.z,
+					pto.x, pto.y+LATHELINEWIDTH, pto.z
+				};
+				::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+				::glDrawArrays(GL_LINES, 0, 2);
+				::glDrawArrays(GL_TRIANGLE_STRIP, 2, SIZEOF(pt)/NCXYZ-2);
+				::glVertexPointer(NCXYZ, GL_FLOAT, 0, &(vpt[0]));
+				::glDrawArrays(GL_TRIANGLE_FAN, 0, (GLsizei)(vpt.size()));
 				return;
 			}
 			else {
@@ -603,16 +620,19 @@ void CNCline::DrawGLLatheDepth(void) const
 			pts.y = LATHELINEWIDTH;
 			pte.y = LATHELINEWIDTH;
 		}
-		::glBegin(GL_LINES);
-			::glVertex3fv(pts.xyz);
-			::glVertex3fv(pte.xyz);
-		::glEnd();
-		::glBegin(GL_TRIANGLE_STRIP);
-			::glVertex3f(pts.x, pts.y-LATHELINEWIDTH, pts.z);
-			::glVertex3f(pts.x, pts.y+LATHELINEWIDTH, pts.z);
-			::glVertex3f(pte.x, pte.y-LATHELINEWIDTH, pte.z);
-			::glVertex3f(pte.x, pte.y+LATHELINEWIDTH, pte.z);
-		::glEnd();
+		{
+			const GLfloat	pt[] = {
+				pts.x, pts.y, pts.z,				// GL_LINES
+				pte.x, pte.y, pte.z,
+				pts.x, pts.y-LATHELINEWIDTH, pts.z,	// GL_TRIANGLE_STRIP
+				pts.x, pts.y+LATHELINEWIDTH, pts.z,
+				pte.x, pte.y-LATHELINEWIDTH, pte.z,
+				pte.x, pte.y+LATHELINEWIDTH, pte.z
+			};
+			::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+			::glDrawArrays(GL_LINES, 0, 2);
+			::glDrawArrays(GL_TRIANGLE_STRIP, 2, SIZEOF(pt)/NCXYZ-2);
+		}
 	}
 }
 
@@ -708,10 +728,10 @@ BOOL CNCline::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 					sin_q = sin(q) * m_dEndmill,
 					ptsz = m_ptValS.z + h,	// 高さ
 					ptez = m_ptValE.z + h;
-			CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, ptsz),
-						pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, ptez),
-						pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, ptsz),
-						pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, ptez);
+			const CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, ptsz),
+							pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, ptez),
+							pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, ptsz),
+							pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, ptez);
 			bd.vpt.insert(bd.vpt.end(), begin(pts1.xyz), end(pts1.xyz));
 			bd.vpt.insert(bd.vpt.end(), begin(pte1.xyz), end(pte1.xyz));
 			bd.vpt.insert(bd.vpt.end(), begin(m_ptValS.xyz), end(m_ptValS.xyz));
@@ -768,10 +788,10 @@ BOOL CNCline::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 				float	q = m_ptValS.arctan(m_ptValE)+RAD(90.0f),
 						cos_q = cos(q) * m_dEndmill,
 						sin_q = sin(q) * m_dEndmill;
-				CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, m_ptValS.z),
-							pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, m_ptValE.z),
-							pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, m_ptValS.z),
-							pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, m_ptValE.z);
+				const CPoint3F	pts1( cos_q+m_ptValS.x,  sin_q+m_ptValS.y, m_ptValS.z),
+								pte1( cos_q+m_ptValE.x,  sin_q+m_ptValE.y, m_ptValE.z),
+								pts2(-cos_q+m_ptValS.x, -sin_q+m_ptValS.y, m_ptValS.z),
+								pte2(-cos_q+m_ptValE.x, -sin_q+m_ptValE.y, m_ptValE.z);
 				bd.vpt.insert(bd.vpt.end(), begin(pts1.xyz), end(pts1.xyz));
 				bd.vpt.insert(bd.vpt.end(), begin(pte1.xyz), end(pte1.xyz));
 				bd.vpt.insert(bd.vpt.end(), begin(pts2.xyz), end(pts2.xyz));
@@ -786,14 +806,14 @@ BOOL CNCline::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL bStartDraw) const
 	return FALSE;	// 次の描画は始点不要
 }
 
-BOOL CNCline::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
+BOOL CNCline::AddGLWireWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
 {
 	INT_PTR		nSize;
 	GLuint		n;
 	CPoint3F	pte;
 
 	if ( bStart )
-		CNCdata::AddGLWireVertex(vpt, vnr, vef, wl, TRUE);
+		CNCdata::AddGLWireWireVertex(vpt, vnr, vef, wl, TRUE);
 
 	nSize = vpt.size() / NCXYZ - 2;		// 前回ｵﾌﾞｼﾞｪｸﾄのXY終点
 	n = nSize < 0 ?  0 : (GLuint)nSize;
@@ -839,7 +859,7 @@ BOOL CNCline::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELI
 	return FALSE;
 }
 
-int CNCline::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
+int CNCline::AddGLWireWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
 {
 	if ( GetGcode()!=1 || !m_pWireObj )
 		return -1;
@@ -899,26 +919,32 @@ void CNCcycle::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 		break;
 	}
 
+	const GLfloat	pt[] = {
+		m_ptValS.x, m_ptValS.y, m_ptValS.z,
+		m_ptValI.x, m_ptValI.y, m_ptValI.z,
+		m_ptValR.x, m_ptValR.y, m_ptValR.z,
+		m_ptValE.x, m_ptValE.y, m_ptValE.z
+	};
 	::glLineStipple(1, patG0);
-	::glBegin(GL_LINE_STRIP);
-		::glColor3ubv( rgbG0 );
-		::glVertex3fv(m_ptValS.xyz);
-		::glVertex3fv(m_ptValI.xyz);
-		::glVertex3fv(m_ptValR.xyz);
-		::glVertex3fv(m_ptValE.xyz);
-	::glEnd();
-	::glBegin(GL_LINES);
+	::glColor3ubv( rgbG0 );
+	::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+	::glDrawArrays(GL_LINE_STRIP, 0, SIZEOF(pt)/NCXYZ);
+
 	for ( int i=0; i<m_nDrawCnt; i++ ) {
+		const GLfloat	pt[] = {
+			m_Cycle3D[i].ptI.x, m_Cycle3D[i].ptI.y, m_Cycle3D[i].ptI.z,		// G0
+			m_Cycle3D[i].ptR.x, m_Cycle3D[i].ptR.y, m_Cycle3D[i].ptR.z,
+			m_Cycle3D[i].ptR.x, m_Cycle3D[i].ptR.y, m_Cycle3D[i].ptR.z,		// CY
+			m_Cycle3D[i].ptC.x, m_Cycle3D[i].ptC.y, m_Cycle3D[i].ptC.z
+		};
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
 		::glLineStipple(1, patG0);
 		::glColor3ubv( rgbG0 );
-		::glVertex3fv(m_Cycle3D[i].ptI.xyz);
-		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
+		::glDrawArrays(GL_LINES, 0, 2);
 		::glLineStipple(1, patCY);
 		::glColor3ubv( rgbCY );
-		::glVertex3fv(m_Cycle3D[i].ptR.xyz);
-		::glVertex3fv(m_Cycle3D[i].ptC.xyz);
+		::glDrawArrays(GL_LINES, 2, 2);
 	}
-	::glEnd();
 }
 
 void CNCcycle::DrawGLLatheDepth(void) const
@@ -932,23 +958,22 @@ void CNCcycle::DrawGLLatheDepth(void) const
 	CPoint3F	pts(m_ptValS), pte(m_Cycle3D[0].ptC), pto(m_Cycle3D[0].ptC);
 	pts.y = pte.y = pto.y = -LATHELINEWIDTH;
 	pto.x += m_dEndmill*_DRILL_HEIGHT;
+	vpt.push_back(pte);	// GL_TRIANGLE_FANの中心
 	_SetEndmillCircleYZ_Half(m_dEndmill, pto, vpt);
 	pts.z = pto.z = -m_dEndmill;
-	::glBegin(GL_LINES);
-		::glVertex3fv(pts.xyz);
-		::glVertex3fv(pto.xyz);
-	::glEnd();
-	::glBegin(GL_TRIANGLE_STRIP);
-		::glVertex3f(pts.x, pts.y-LATHELINEWIDTH, pts.z);
-		::glVertex3f(pts.x, pts.y+LATHELINEWIDTH, pts.z);
-		::glVertex3f(pto.x, pto.y-LATHELINEWIDTH, pto.z);
-		::glVertex3f(pto.x, pto.y+LATHELINEWIDTH, pto.z);
-	::glEnd();
-	::glBegin(GL_TRIANGLE_FAN);
-		::glVertex3fv(pte.xyz);
-		for ( const auto& v : vpt )
-			::glVertex3fv(v.xyz);
-	::glEnd();
+	const GLfloat	pt[] = {
+		pts.x, pts.y, pts.z,				// GL_LINES
+		pto.x, pto.y, pto.z,
+		pts.x, pts.y-LATHELINEWIDTH, pts.z,	// GL_TRIANGLE_STRIP
+		pts.x, pts.y+LATHELINEWIDTH, pts.z,
+		pto.x, pto.y-LATHELINEWIDTH, pto.z,
+		pto.x, pto.y+LATHELINEWIDTH, pto.z
+	};
+	::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+	::glDrawArrays(GL_LINES, 0, 2);
+	::glDrawArrays(GL_TRIANGLE_STRIP, 2, SIZEOF(pt)/NCXYZ-2);
+	::glVertexPointer(NCXYZ, GL_FLOAT, 0, &(vpt[0]));
+	::glDrawArrays(GL_TRIANGLE_FAN, 0, (GLsizei)(vpt.size()));
 }
 
 BOOL CNCcycle::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL) const
@@ -997,12 +1022,12 @@ BOOL CNCcycle::AddGLBottomFaceVertex(CVBtmDraw& vBD, BOOL) const
 	return TRUE;	// 次の描画は始点必要
 }
 
-BOOL CNCcycle::AddGLWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const
+BOOL CNCcycle::AddGLWireWireVertex(CVfloat&, CVfloat&, CVelement&, WIRELINE&, BOOL) const
 {
 	return TRUE;
 }
 
-int CNCcycle::AddGLWireTexture(size_t, float&, float, GLfloat*) const
+int CNCcycle::AddGLWireWireTexture(size_t, float&, float, GLfloat*) const
 {
 	return -1;
 }
@@ -1040,10 +1065,16 @@ void CNCcircle::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 			IDtoRGB((int)nID, rgb);		// ViewBaseGL.cpp
 			break;
 		}
-		::glBegin(GL_LINE_STRIP);
-			::glColor3ubv(rgb);
-			DrawGLWirePassCircle(m_ptValS, m_ptValE);
-		::glEnd();
+		ADDGLWIRECIRCLE	argv;
+		argv.bG03 = GetG03();
+		argv.bLatheDepth = FALSE;
+		argv.pts  = m_ptValS;
+		argv.pte  = m_ptValE;
+		tie(argv.sq, argv.eq) = GetSqEq();
+		AddGLWirePassCircle(&argv);
+		::glColor3ubv(rgb);
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, &(argv.vpt[0]));
+		::glDrawArrays(GL_LINE_STRIP, 0, (GLsizei)(argv.vpt.size()));
 	}
 
 	CNCdata::DrawGLWirePath(enRender, nID);
@@ -1052,11 +1083,10 @@ void CNCcircle::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 void CNCcircle::DrawGLLatheDepth(void) const
 {
 	CPoint3F	pts(m_ptValS), pte(m_ptValE);
+	ADDGLWIRECIRCLE	argv;
 
-	::glBegin(GL_LINE_STRIP);
 	if ( GetValFlags() & NCFLG_LATHE_INSIDE ) {
 		// 円弧の反転が必要
-		DRAWGLWIRECIRCLE	argv;
 		argv.bG03 = !GetG03();
 		argv.bLatheDepth = TRUE;
 		argv.pts.SetPoint(pts.x, -LATHELINEWIDTH, -pts.z);
@@ -1067,34 +1097,27 @@ void CNCcircle::DrawGLLatheDepth(void) const
 		tie(argv.sq, argv.eq) = CalcAngle(argv.bG03, pts.GetXZ(), pte.GetXZ());
 		if ( !argv.bG03 )
 			swap(argv.sq, argv.eq);		// GetSqEq()のかわり
-		DrawGLWirePassCircle(&argv);
+		AddGLWirePassCircle(&argv);
 	}
 	else {
-		pts.y  =  LATHELINEWIDTH;
-		pte.y  =  LATHELINEWIDTH;
-		DrawGLWirePassCircle(pts, pte);
+		argv.bG03 = GetG03();
+		argv.bLatheDepth = FALSE;
+		argv.pts.SetPoint(m_ptValS.x, LATHELINEWIDTH, m_ptValS.z);
+		argv.pte.SetPoint(m_ptValE.x, LATHELINEWIDTH, m_ptValE.z);
+		tie(argv.sq, argv.eq) = GetSqEq();
+		AddGLWirePassCircle(&argv);
 	}
-	::glEnd();
+	::glVertexPointer(NCXYZ, GL_FLOAT, 0, &(argv.vpt[0]));
+	::glDrawArrays(GL_LINE_STRIP, 0, (GLsizei)(argv.vpt.size()));
 }
 
-void CNCcircle::DrawGLWirePassCircle(const CPoint3F& pts, const CPoint3F& pte) const
-{
-	DRAWGLWIRECIRCLE	argv;
-	argv.bG03 = GetG03();
-	argv.bLatheDepth = FALSE;
-	argv.pts  = pts;
-	argv.pte  = pte;
-	tie(argv.sq, argv.eq) = GetSqEq();
-	DrawGLWirePassCircle(&argv);
-}
-
-void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
+void CNCcircle::AddGLWirePassCircle(LPADDGLWIRECIRCLE lpArgv) const
 {
 #ifdef _DEBUGOLD
 	int			dbgCnt = 0;
 #endif
-	float	r = fabs(m_r),
-			ptz = lpArgv->bLatheDepth ? -m_ptOrg.z : m_ptOrg.z;	// 旋盤内径デプス更新の特殊事情
+	float		r = fabs(m_r),
+				ptz = lpArgv->bLatheDepth ? -m_ptOrg.z : m_ptOrg.z;	// 旋盤内径デプス更新の特殊事情
 	CPoint3F	pt;
 
 	switch ( GetPlane() ) {
@@ -1104,7 +1127,7 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 			for ( ; lpArgv->sq<lpArgv->eq; lpArgv->sq+=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(lpArgv->sq) + m_ptOrg.x;
 				pt.y = r * sin(lpArgv->sq) + m_ptOrg.y;
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.push_back(pt);
 #ifdef _DEBUGOLD
 				dbgCnt++;
 #endif
@@ -1114,7 +1137,7 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 			for ( ; lpArgv->sq>lpArgv->eq; lpArgv->sq-=ARCSTEP, pt.z+=m_dHelicalStep ) {
 				pt.x = r * cos(lpArgv->sq) + m_ptOrg.x;
 				pt.y = r * sin(lpArgv->sq) + m_ptOrg.y;
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.push_back(pt);
 #ifdef _DEBUGOLD
 				dbgCnt++;
 #endif
@@ -1124,9 +1147,9 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 		pt.x = r * cos(lpArgv->eq) + m_ptOrg.x;
 		pt.y = r * sin(lpArgv->eq) + m_ptOrg.y;
 		pt.z = lpArgv->pte.z;		// ﾍﾘｶﾙ終了座標
-		::glVertex3fv(pt.xyz);
+		lpArgv->vpt.push_back(pt);
 #ifdef _DEBUGOLD
-		printf("CNCcircle::DrawGLWirePassCircle() DrawCnt=%d\n", dbgCnt+1);
+		printf("CNCcircle::AddGLWirePassCircle() DrawCnt=%d\n", dbgCnt+1);
 #endif
 		break;
 
@@ -1136,20 +1159,20 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 			for ( ; lpArgv->sq<lpArgv->eq; lpArgv->sq+=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(lpArgv->sq) + m_ptOrg.x;
 				pt.z = r * sin(lpArgv->sq) + ptz;	// <-
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.push_back(pt);
 			}
 		}
 		else {
 			for ( ; lpArgv->sq>lpArgv->eq; lpArgv->sq-=ARCSTEP, pt.y+=m_dHelicalStep ) {
 				pt.x = r * cos(lpArgv->sq) + m_ptOrg.x;
 				pt.z = r * sin(lpArgv->sq) + ptz;	// <-
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.push_back(pt);
 			}
 		}
 		pt.y = lpArgv->pte.y;
 		pt.x = r * cos(lpArgv->eq) + m_ptOrg.x;
 		pt.z = r * sin(lpArgv->eq) + ptz;			// <-
-		::glVertex3fv(pt.xyz);
+		lpArgv->vpt.push_back(pt);
 		break;
 
 	case YZ_PLANE:
@@ -1158,23 +1181,24 @@ void CNCcircle::DrawGLWirePassCircle(LPDRAWGLWIRECIRCLE lpArgv) const
 			for ( ; lpArgv->sq<lpArgv->eq; lpArgv->sq+=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(lpArgv->sq) + m_ptOrg.y;
 				pt.z = r * sin(lpArgv->sq) + m_ptOrg.z;
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.push_back(pt);
 			}
 		}
 		else {
 			for ( ; lpArgv->sq>lpArgv->eq; lpArgv->sq-=ARCSTEP, pt.x+=m_dHelicalStep ) {
 				pt.y = r * cos(lpArgv->sq) + m_ptOrg.y;
 				pt.z = r * sin(lpArgv->sq) + m_ptOrg.z;
-				::glVertex3fv(pt.xyz);
+				lpArgv->vpt.push_back(pt);
 			}
 		}
 		pt.x = lpArgv->pte.x;
 		pt.y = r * cos(lpArgv->eq) + m_ptOrg.y;
 		pt.z = r * sin(lpArgv->eq) + m_ptOrg.z;
-		::glVertex3fv(pt.xyz);
+		lpArgv->vpt.push_back(pt);
 		break;
 	}
 }
+
 //	--- CNCcircle::AddGLBottomFaceVertex() サブ
 static inline void _SetEndmillPathXY
 	(const CPointF& pt, float q, float h, float r1, float r2,
@@ -1182,8 +1206,8 @@ static inline void _SetEndmillPathXY
 {
 	float	cos_q = cos(q), 
 			sin_q = sin(q);
-	CPoint3F	pt1(r1*cos_q+pt.x, r1*sin_q+pt.y, h),
-				pt2(r2*cos_q+pt.x, r2*sin_q+pt.y, h);
+	const CPoint3F	pt1(r1*cos_q+pt.x, r1*sin_q+pt.y, h),
+					pt2(r2*cos_q+pt.x, r2*sin_q+pt.y, h);
 	v.insert(v.end(), begin(pt1.xyz), end(pt1.xyz));
 	v.insert(v.end(), begin(pt2.xyz), end(pt2.xyz));
 }
@@ -1192,7 +1216,7 @@ static inline void _SetEndmillPathXY_Pipe
 	(const CPointF& ptOrg, float q, float rr, float h, float d,
 		CVfloat& v)
 {
-	CPoint3F	pt(
+	const CPoint3F	pt(
 		rr * cos(q) + ptOrg.x,
 		rr * sin(q) + ptOrg.y,
 		h
@@ -1205,7 +1229,7 @@ static inline void _SetEndmillPathXZ_Pipe
 	(const CPointF& ptOrg, float q, float rr, float h, float d,
 		CVfloat& v)
 {
-	CPoint3F	pt(
+	const CPoint3F	pt(
 		rr * cos(q) + ptOrg.x,
 		h,
 		rr * sin(q) + ptOrg.y
@@ -1217,7 +1241,7 @@ static inline void _SetEndmillPathYZ_Pipe
 	(const CPointF& ptOrg, float q, float rr, float h, float d,
 		CVfloat& v)
 {
-	CPoint3F	pt(
+	const CPoint3F	pt(
 		h,
 		rr * cos(q) + ptOrg.x,
 		rr * sin(q) + ptOrg.y
@@ -1314,7 +1338,7 @@ void CNCcircle::SetEndmillXYPath(CVfloat& v) const
 {
 	float	sq, eq, h = m_ptValS.z,
 			r1, r2, rr = fabs(m_r);
-	CPointF	ptOrg(m_ptOrg.GetXY());
+	const CPointF	ptOrg(m_ptOrg.GetXY());
 
 	tie(sq, eq) = GetSqEq();
 
@@ -1339,7 +1363,7 @@ void CNCcircle::SetEndmillSquare(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 {
 	float	sq, eq, h,
 			rr = fabs(m_r);
-	CPointF	ptOrg(GetPlaneValue(m_ptOrg));
+	const CPointF	ptOrg(GetPlaneValue(m_ptOrg));
 
 	tie(sq, eq) = GetSqEq();
 
@@ -1394,8 +1418,8 @@ void CNCcircle::SetEndmillBall(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 	GLuint		n;
 	float		sq, eq, qp,
 				rr = fabs(m_r);
-	CPointF		ptOrg(GetPlaneValue(m_ptOrg));
-	CPoint3F	pt;
+	const CPointF	ptOrg(GetPlaneValue(m_ptOrg));
+	CPoint3F		pt;
 
 	tie(sq, eq) = GetSqEq();
 
@@ -1495,9 +1519,9 @@ static inline void _SendEndmillChamferXY(SETENDMILLARGV* pArgv)
 	float		cos_q = cos(pArgv->q), sin_q = sin(pArgv->q),
 				rr = pArgv->r,
 				r1 = pArgv->r + pArgv->d,	r2 = pArgv->r - pArgv->d;
-	CPoint3F	pt1(r1*cos_q+pArgv->pto.x, r1*sin_q+pArgv->pto.y, pArgv->t+pArgv->h),
-				pt2(rr*cos_q+pArgv->pto.x, rr*sin_q+pArgv->pto.y, pArgv->t),
-				pt3(r2*cos_q+pArgv->pto.x, r2*sin_q+pArgv->pto.y, pArgv->t+pArgv->h);
+	const CPoint3F	pt1(r1*cos_q+pArgv->pto.x, r1*sin_q+pArgv->pto.y, pArgv->t+pArgv->h),
+					pt2(rr*cos_q+pArgv->pto.x, rr*sin_q+pArgv->pto.y, pArgv->t),
+					pt3(r2*cos_q+pArgv->pto.x, r2*sin_q+pArgv->pto.y, pArgv->t+pArgv->h);
 	pArgv->v->insert(pArgv->v->end(), begin(pt1.xyz), end(pt1.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt2.xyz), end(pt2.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt3.xyz), end(pt3.xyz));
@@ -1507,9 +1531,9 @@ static inline void _SendEndmillChamferXZ(SETENDMILLARGV* pArgv)
 {
 	float		cos_q = cos(pArgv->q), sin_q = sin(pArgv->q),
 				rr = pArgv->r;
-	CPoint3F	pt1(rr*cos_q+pArgv->pto.x-pArgv->d, pArgv->t-pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h),
-				pt2(rr*cos_q+pArgv->pto.x,          pArgv->t,          rr*sin_q+pArgv->pto.y),
-				pt3(rr*cos_q+pArgv->pto.x+pArgv->d, pArgv->t+pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h);
+	const CPoint3F	pt1(rr*cos_q+pArgv->pto.x-pArgv->d, pArgv->t-pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h),
+					pt2(rr*cos_q+pArgv->pto.x,          pArgv->t,          rr*sin_q+pArgv->pto.y),
+					pt3(rr*cos_q+pArgv->pto.x+pArgv->d, pArgv->t+pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h);
 	pArgv->v->insert(pArgv->v->end(), begin(pt1.xyz), end(pt1.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt2.xyz), end(pt2.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt3.xyz), end(pt3.xyz));
@@ -1519,9 +1543,9 @@ static inline void _SendEndmillChamferYZ(SETENDMILLARGV* pArgv)
 {
 	float		cos_q = cos(pArgv->q), sin_q = sin(pArgv->q),
 				rr = pArgv->r;
-	CPoint3F	pt1(pArgv->t-pArgv->d, rr*cos_q+pArgv->pto.x-pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h),
-				pt2(pArgv->t,          rr*cos_q+pArgv->pto.x,          rr*sin_q+pArgv->pto.y),
-				pt3(pArgv->t+pArgv->d, rr*cos_q+pArgv->pto.x+pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h);
+	const CPoint3F	pt1(pArgv->t-pArgv->d, rr*cos_q+pArgv->pto.x-pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h),
+					pt2(pArgv->t,          rr*cos_q+pArgv->pto.x,          rr*sin_q+pArgv->pto.y),
+					pt3(pArgv->t+pArgv->d, rr*cos_q+pArgv->pto.x+pArgv->d, rr*sin_q+pArgv->pto.y+pArgv->h);
 	pArgv->v->insert(pArgv->v->end(), begin(pt1.xyz), end(pt1.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt2.xyz), end(pt2.xyz));
 	pArgv->v->insert(pArgv->v->end(), begin(pt3.xyz), end(pt3.xyz));
@@ -1709,7 +1733,7 @@ void CNCcircle::AddEndmillChamferAndDrill(BOTTOMDRAW& bd, CVBtmDraw& vBD) const
 	vBD.push_back(bd);
 }
 
-BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
+BOOL CNCcircle::AddGLWireWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRELINE& wl, BOOL bStart) const
 {
 	int			i, nCnt = 0;
 	size_t		nSize;
@@ -1725,7 +1749,7 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 				bt2 = begin(pt2.xyz), et2 = end(pt2.xyz);
 
 	if ( bStart )
-		CNCdata::AddGLWireVertex(vpt, vnr, vef, wl, TRUE);
+		CNCdata::AddGLWireWireVertex(vpt, vnr, vef, wl, TRUE);
 
 	nSize = vpt.size() / NCXYZ - 2;		// 前回ｵﾌﾞｼﾞｪｸﾄのXY終点
 	n = nSize < 0 ? 0 : (GLuint)nSize;
@@ -1838,7 +1862,7 @@ BOOL CNCcircle::AddGLWireVertex(CVfloat& vpt, CVfloat& vnr, CVelement& vef, WIRE
 	return FALSE;
 }
 
-int CNCcircle::AddGLWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
+int CNCcircle::AddGLWireWireTexture(size_t n, float& dAccuLength, float dAllLength, GLfloat* pfTEX) const
 {
 	if ( !m_pWireObj )
 		return -1;

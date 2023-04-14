@@ -27,6 +27,7 @@ C3dModelDoc::C3dModelDoc()
 	m_pKoBody  = NULL;
 	m_pKoList = NULL;
 	m_rcMax.SetRectMinimum();
+	m_enCoordMode = CM_NOCOORD;
 }
 
 C3dModelDoc::~C3dModelDoc()
@@ -39,8 +40,7 @@ C3dModelDoc::~C3dModelDoc()
 		m_pKoList->clear();
 		delete	m_pKoList;
 	}
-	ClearRoughCoord();
-	ClearContourCoord();
+	ClearKoCoord();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ void C3dModelDoc::DumpRoughCoord(const VVCoord& vv)
 void C3dModelDoc::DumpContourCoord(const VCoord& v)
 {
 	CString	file, s;
-	file.Format("C:\\Users\\magara\\Documents\\tmp\\coord%02d.csv", m_vvvContourCoord.size());
+	file.Format("C:\\Users\\magara\\Documents\\tmp\\coord%02d.csv", m_vvvKoCoord.size());
 	CStdioFile	f(file, CFile::typeText|CFile::modeCreate|CFile::modeWrite);
 
 	for ( auto it=v.begin(); it!=v.end(); ++it ) {
@@ -141,40 +141,35 @@ void C3dModelDoc::OnCloseDocument()
 
 void C3dModelDoc::OnUpdateFile3dMake(CCmdUI* pCmdUI)
 {
-	pCmdUI->Enable( !m_vvvRoughCoord.empty() || !m_vvvContourCoord.empty() );
+	pCmdUI->Enable( !m_vvvKoCoord.empty() );
 }
 
 void C3dModelDoc::OnFile3dMake()
 {
-	CString	strInit;
-	BOOL	bNCView;
 	UINT	id;
-	if ( !m_vvvRoughCoord.empty() ) {
+	switch ( m_enCoordMode ) {
+	case CM_ROUGH:
 		id = IDS_MAKENCD_TITLE_ROUGH;
-	}
-	else if ( !m_vvvContourCoord.empty() ) {
+		break;
+	case CM_CONTOUR:
 		id = IDS_MAKENCD_TITLE_CONTOUR;
-	}
-	else {
+		break;
+	default:
 		return;
 	}
 
-	{
-		CMakeNCDlg	dlg(id, NCMAKENURBS, this);
-		if ( dlg.DoModal() != IDOK )
-			return;
-		m_strNCFileName	= dlg.m_strNCFileName;
-		strInit = dlg.m_strInitFileName;
-		bNCView = dlg.m_bNCView;
-	}
+	CMakeNCDlg	dlg(id, NCMAKENURBS, this);
+	if ( dlg.DoModal() != IDOK )
+		return;
+	m_strNCFileName	= dlg.m_strNCFileName;
 
 	CDXFOption*	pOpt = AfxGetNCVCApp()->GetDXFOption();
 
 	// 設定の保存
-	if ( !strInit.IsEmpty() ) {
-		pOpt->AddInitHistory(NCMAKENURBS, strInit);
+	if ( !dlg.m_strInitFileName.IsEmpty() ) {
+		pOpt->AddInitHistory(NCMAKENURBS, dlg.m_strInitFileName);
 	}
-	pOpt->SetViewFlag(bNCView);
+	pOpt->SetViewFlag(dlg.m_bNCView);
 	m_3dOpt.Save3dOutfile(id-IDS_MAKENCD_TITLE_ROUGH, m_strNCFileName);
 
 	// すでに開いているﾄﾞｷｭﾒﾝﾄなら閉じる
@@ -189,21 +184,17 @@ void C3dModelDoc::OnFile3dMake()
 	delete	pDlg;
 
 	// NC生成後のﾃﾞｰﾀを開く
-	if ( nResult==IDOK && bNCView ) {
+	if ( nResult==IDOK && dlg.m_bNCView ) {
 		AfxGetNCVCApp()->OpenDocumentFile(m_strNCFileName);
 	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-void C3dModelDoc::ClearRoughCoord(void)
+void C3dModelDoc::ClearKoCoord(void)
 {
-	m_vvvRoughCoord.clear();
-}
-
-void C3dModelDoc::ClearContourCoord(void)
-{
-	m_vvvContourCoord.clear();
+	m_vvvKoCoord.clear();
+	m_enCoordMode = CM_NOCOORD;
 }
 
 BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
@@ -226,8 +217,7 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 
 	try {
 		// 座標点の初期化
-		ClearRoughCoord();
-		ClearContourCoord();
+		ClearKoCoord();
 
 		// ガイドカーブに沿って垂直平面をシフトしていき，加工面との交点群を求めていく
 		for ( i=0; i<=N; i++ ) {
@@ -263,23 +253,25 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 					it3->z = H - del*i;
 				}
 			}
-			m_vvvRoughCoord.push_back(vvtmp);
+			if ( !vvtmp.empty() ) {
+				m_vvvKoCoord.push_back(vvtmp);
+			}
 		}
 	}
 	catch(...) {
 		// ライブラリ側の例外に対応
-		ClearRoughCoord();
+		ClearKoCoord();
 		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
 		bResult = FALSE;
 	}
 
 #ifdef _DEBUG_FILEOUT_
-	DumpRoughCoord(m_vvvRoughCoord[0]);
+	DumpRoughCoord(m_vvvKoCoord[0]);
 #endif
 #ifdef _DEBUG
-	printf("階層=%zd\n", m_vvvRoughCoord.size());
-	for ( auto it1=m_vvvRoughCoord.begin(); it1!=m_vvvRoughCoord.end(); ++it1 ) {
-		printf(" Line%0Id=%zd\n", std::distance(m_vvvRoughCoord.begin(), it1), it1->size());
+	printf("階層=%zd\n", m_vvvKoCoord.size());
+	for ( auto it1=m_vvvKoCoord.begin(); it1!=m_vvvKoCoord.end(); ++it1 ) {
+		printf(" Line%0Id=%zd\n", std::distance(m_vvvKoCoord.begin(), it1), it1->size());
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
 			printf("  num=%zd\n", it2->size() );
 		}
@@ -287,8 +279,10 @@ BOOL C3dModelDoc::MakeRoughCoord(NURBSS* ns, NURBSC* nc)
 #endif
 
 	// スキャンオプションの保存
-	if ( bResult )
+	if ( bResult ) {
 		m_3dOpt.Save3dOption();
+		m_enCoordMode = CM_ROUGH;
+	}
 
 	return bResult;
 }
@@ -310,8 +304,7 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 
 	try {
 		// 座標点の初期化
-		ClearRoughCoord();
-		ClearContourCoord();
+		ClearKoCoord();
 
 		// 平面をZ方向にシフトしていきながら等高線を算出する
 		for ( i=0; i<step; i++ ) {
@@ -330,22 +323,22 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 				VVCoord vv = SetGroupCoord(v, m_3dOpt.Get3dDbl(D3_DBL_CONTOUR_SPACE)*2.0);
 				// 1平面の交点群を保存
 				if ( !vv.empty() ) {
-					m_vvvContourCoord.push_back(vv);
+					m_vvvKoCoord.push_back(vv);
 				}
 			}
 		}
 	}
 	catch(...) {
 		// ライブラリ側の例外に対応
-		ClearContourCoord();
+		ClearKoCoord();
 		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
 		bResult = FALSE;
 	}
 
 #ifdef _DEBUG
-	printf("階層=%zd\n", m_vvvContourCoord.size());
-	for ( auto it1=m_vvvContourCoord.begin(); it1!=m_vvvContourCoord.end(); ++it1 ) {
-		printf(" 集合%Id=%zd\n", std::distance(m_vvvContourCoord.begin(), it1), it1->size());
+	printf("階層=%zd\n", m_vvvKoCoord.size());
+	for ( auto it1=m_vvvKoCoord.begin(); it1!=m_vvvKoCoord.end(); ++it1 ) {
+		printf(" 集合%Id=%zd\n", std::distance(m_vvvKoCoord.begin(), it1), it1->size());
 		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
 			// 閉ループか否かの判定
 			CPointD	ptF(it2->front()),
@@ -364,8 +357,10 @@ BOOL C3dModelDoc::MakeContourCoord(NURBSS* ns)
 #endif
 
 	// スキャンオプションの保存
-	if ( bResult )
+	if ( bResult ) {
 		m_3dOpt.Save3dOption();
+		m_enCoordMode = CM_CONTOUR;
+	}
 
 	return bResult;
 }

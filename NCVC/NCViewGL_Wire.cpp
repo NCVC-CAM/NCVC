@@ -66,7 +66,7 @@ BOOL CNCViewGL::CreateWire(void)
 			pData = GetDocument()->GetNCdata(i);
 			if ( pData->IsCutCode() )
 				break;
-			bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
+			bStart = pData->AddGLWireWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
 		}
 		if ( !vef.empty() ) {	// Ç±Ç±ÇÕãÛÇ¡Ç€ÇÃÇÕÇ∏
 			m_WireDraw.vvef.push_back(vef);
@@ -81,14 +81,14 @@ BOOL CNCViewGL::CreateWire(void)
 		// ñ å`ê¨ÅiêÿçÌ√ﬁ∞¿Åj
 		wl.col = pOpt->GetNcDrawColor(NCCOL_G1);
 		wl.pattern = g_penStyle[pOpt->GetNcDrawType(NCCOLLINE_G1)].nGLpattern;
-		bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
+		bStart = pData->AddGLWireWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
 		dLen = pData->GetWireObj() ? 
 						max(pData->GetCutLength(), pData->GetWireObj()->GetCutLength()) :
 						pData->GetCutLength();
 		for ( i++; i<nLoop; i++ ) {
 			pData = GetDocument()->GetNCdata(i);
 			if ( pData->IsCutCode() ) {
-				bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
+				bStart = pData->AddGLWireWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);
 				dLen += pData->GetWireObj() ? 
 								max(pData->GetCutLength(), pData->GetWireObj()->GetCutLength()) :
 								pData->GetCutLength();
@@ -113,7 +113,7 @@ BOOL CNCViewGL::CreateWire(void)
 			m_WireDraw.vlen.push_back(dLen);
 		}
 		if ( i < nLoop ) 
-			bStart = pData->AddGLWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);	// Å¶
+			bStart = pData->AddGLWireWireVertex(m_WireDraw.vpt, m_WireDraw.vnr, vef, wl, bStart);	// Å¶
 	}
 	// à⁄ìÆ√ﬁ∞¿Ç≈î≤ÇØÇƒÇ≠ÇÈ(Å¶ÇÃï™ÇÃìoò^)
 	if ( !wl.vel.empty() ) {
@@ -155,10 +155,10 @@ BOOL CNCViewGL::CreateWire(void)
 	::glBufferData(GL_ARRAY_BUFFER, m_WireDraw.vpt.size()*sizeof(GLfloat),
 		&(m_WireDraw.vpt[0]), GL_STATIC_DRAW);
 	errLine = __LINE__;
-	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
+	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 		ClearVBO();
-		OutputGLErrorMessage(errCode, errLine);
+		OutputGLErrorMessage(errCode, __FILE__, errLine);
 		return FALSE;
 	}
 
@@ -170,7 +170,7 @@ BOOL CNCViewGL::CreateWire(void)
 	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 		ClearVBO();
-		OutputGLErrorMessage(errCode, errLine);
+		OutputGLErrorMessage(errCode, __FILE__, errLine);
 		return FALSE;
 	}
 	::glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -203,7 +203,7 @@ BOOL CNCViewGL::CreateWire(void)
 			if ( errCode != GL_NO_ERROR ) {
 				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 				ClearVBO();
-				OutputGLErrorMessage(errCode, errLine);
+				OutputGLErrorMessage(errCode, __FILE__, errLine);
 				return FALSE;
 			}
 			m_vElementCut.push_back(nElement);
@@ -226,7 +226,7 @@ BOOL CNCViewGL::CreateWire(void)
 			if ( errCode != GL_NO_ERROR ) {
 				::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 				ClearVBO();
-				OutputGLErrorMessage(errCode, errLine);
+				OutputGLErrorMessage(errCode, __FILE__, errLine);
 				return FALSE;
 			}
 		}
@@ -294,7 +294,7 @@ void CNCViewGL::CreateTextureWire(void)
 		// äeµÃﬁºﬁ™∏ƒÇ≤Ç∆ÇÃ√∏Ω¡¨ç¿ïWÇìoò^
 		for ( i++; i<nLoop; i++ ) {
 			pData = GetDocument()->GetNCdata(i);
-			nResult = pData->AddGLWireTexture(n, dAccuLength, m_WireDraw.vlen[j], pfTEX);
+			nResult = pData->AddGLWireWireTexture(n, dAccuLength, m_WireDraw.vlen[j], pfTEX);
 			if ( nResult < 0 ) {
 				pfTEX[n++] = 0.0f;
 				pfTEX[n++] = 1.0f;

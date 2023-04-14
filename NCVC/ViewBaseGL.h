@@ -5,6 +5,10 @@
 
 #include "FrameBuffer.h"
 
+typedef	std::vector<GLuint>		CVelement;
+typedef	std::vector<GLfloat>	CVfloat;
+typedef	std::vector<GLdouble>	CVdouble;
+
 // TrackingMode
 enum TRACKINGMODE
 {
@@ -56,7 +60,8 @@ protected:
 	CPoint3F	PtoR(const CPoint& pt);
 	void	DoTracking(const CPoint&);
 	void	DoRotation(float);
-	void	RenderBackground(COLORREF, COLORREF);
+	void	RenderBackground(const COLORREF, const COLORREF);
+	void	RenderAxis(void);
 	//
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
@@ -84,7 +89,7 @@ public:
 #endif
 };
 
-void	OutputGLErrorMessage(GLenum, UINT);
+void	OutputGLErrorMessage(GLenum, LPCTSTR, UINT);
 
 // インデックスIDとRGBAを変換
 #define	PICKREGION		5

@@ -198,6 +198,7 @@ BOOL CNCVCApp::InitInstance()
 	printf("NCDATA   struct size=%zd\n", sizeof(NCDATA));
 	printf("NCDATA_F struct size=%zd\n", sizeof(NCDATA_F));
 	printf("CNCdata  struct size=%zd\n", sizeof(CNCdata));
+	printf("Coord class size=%zd\n", sizeof(Coord));
 #endif
 	LoadStdProfileSettings(MAXMRULSTCNT);	// 標準の INI ファイルのオプションをロードします (MRU を含む)
 	InitialRecentViewList();	// MRUﾘｽﾄからCRecentViewInfo構築
@@ -1702,10 +1703,10 @@ void CNCVCApp::OnAppAbout()
 // ﾌﾟﾛｼﾞｪｸﾄ広域関数
 /////////////////////////////////////////////////////////////////////////////
 
-void NCVC_CriticalErrorMsg(LPCTSTR lpszProg, int nLine)
+void NCVC_CriticalErrorMsg(LPCTSTR pszFile, int nLine)
 {
 	CString	strMsg, strPath, strName;
-	::Path_Name_From_FullPath(lpszProg, strPath, strName);
+	::Path_Name_From_FullPath(pszFile, strPath, strName);
 	strMsg.Format(IDS_ERR_CRITICAL, strName, nLine);
 	AfxMessageBox(strMsg, MB_OK|MB_ICONSTOP);
 	ExitProcess(-1);

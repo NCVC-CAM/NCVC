@@ -31,7 +31,6 @@
 
 using std::vector;
 using namespace boost;
-extern	const PENSTYLE	g_penStyle[];	// ViewOption.cpp
 
 #define	IsDocError()	GetDocument()->IsDocFlag(NCDOC_ERROR)
 #define	IsWireMode()	GetDocument()->IsDocFlag(NCDOC_WIRE)
@@ -116,7 +115,6 @@ CNCViewGL::~CNCViewGL()
 {
 	EndOfCreateElementThread();
 	DeleteDepthMemory();
-	ClearVBO();
 }
 
 void CNCViewGL::DeleteDepthMemory(void)
@@ -422,19 +420,16 @@ BOOL CNCViewGL::ReadTexture(LPCTSTR szFileName)
 void  CNCViewGL::CreateTexture(GLsizeiptr n, const GLfloat* pfTEX)
 {
 	GLenum	errCode;
-	UINT	errLine;
 
 	// ﾃｸｽﾁｬ座標をGPUﾒﾓﾘに転送
 	if ( m_nTextureID > 0 )
 		::glDeleteBuffers(1, &m_nTextureID);
 	::glGenBuffers(1, &m_nTextureID);
 	::glBindBuffer(GL_ARRAY_BUFFER, m_nTextureID);
-	::glBufferData(GL_ARRAY_BUFFER, n*sizeof(GLfloat), pfTEX,
-			GL_STATIC_DRAW);
-	errLine = __LINE__;
-	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {	// GL_OUT_OF_MEMORY
+	::glBufferData(GL_ARRAY_BUFFER, n*sizeof(GLfloat), pfTEX, GL_STATIC_DRAW);
+	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
 		ClearTexture();
-		OutputGLErrorMessage(errCode, errLine);
+		OutputGLErrorMessage(errCode, __FILE__, __LINE__);
 	}
 	::glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -507,50 +502,8 @@ void CNCViewGL::FinalBoxel(void)
 	SetupViewingTransform();
 }
 
-void CNCViewGL::RenderAxis(void)
-{
-	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	float		dLength;
-	COLORREF	col;
-
-	::glPushAttrib(GL_LINE_BIT);	// 線情報
-	::glLineWidth( 2.0f );
-	::glEnable(GL_LINE_STIPPLE);
-	::glBegin(GL_LINES);
-
-	// X軸のｶﾞｲﾄﾞ
-	dLength = pOpt->GetGuideLength(NCA_X);
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEX);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_X)].nGLpattern);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(-dLength, 0.0f, 0.0f);
-	::glVertex3f( dLength, 0.0f, 0.0f);
-	// Y軸のｶﾞｲﾄﾞ
-	dLength = pOpt->GetGuideLength(NCA_Y);
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEY);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Y)].nGLpattern);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, -dLength, 0.0f);
-	::glVertex3f(0.0f,  dLength, 0.0f);
-	// Z軸のｶﾞｲﾄﾞ
-	dLength = pOpt->GetGuideLength(NCA_Z);
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
-	::glLineStipple(1, g_penStyle[pOpt->GetNcDrawType(NCA_Z)].nGLpattern);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, 0.0f, -dLength);
-	::glVertex3f(0.0f, 0.0f,  dLength);
-
-	::glEnd();
-
-	::glDisable(GL_LINE_STIPPLE);
-	::glPopAttrib();
-}
-
 void CNCViewGL::RenderCode(RENDERMODE enRender)
 {
-	::glDisable(GL_LIGHTING);
-	::glDisable(GL_LINE_STIPPLE);
-
 	CNCdata*	pData;
 	INT_PTR		i, nLoop = GetDocument()->GetTraceDraw();
 	// NCデータの軌跡（線画）描画，MC・旋盤モード
@@ -564,9 +517,6 @@ void CNCViewGL::RenderCode(RENDERMODE enRender)
 
 void CNCViewGL::RenderCodeWire(void)
 {
-	::glDisable(GL_LIGHTING);
-	::glDisable(GL_LINE_STIPPLE);
-
 	CNCdata*	pData;
 	INT_PTR		i, nLoop = GetDocument()->GetTraceDraw();
 	// NCデータの軌跡（線画）描画，ワイヤ放電加工機モード
@@ -644,7 +594,10 @@ void CNCViewGL::DoSelect(const CPoint& pt)
 	::glClearColor(1.0, 1.0, 1.0, 1.0);
 	::glClearDepth(1.0);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	::glDisable(GL_LINE_STIPPLE);
+	::glDisable(GL_LIGHTING);
 
+	::glEnableClientState(GL_VERTEX_ARRAY);
 	// 行番号をカラーコードにして描画
 	m_pData = NULL;
 	if ( IsWireMode() ) {
@@ -653,6 +606,7 @@ void CNCViewGL::DoSelect(const CPoint& pt)
 	else {
 		RenderCode(RM_PICKLINE);	// その他
 	}
+	::glDisableClientState(GL_VERTEX_ARRAY);
 
 	// マウスポイントの色情報を取得
 	GLubyte	buf[READBUF];
@@ -706,10 +660,16 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// 背景の描画
+	::glEnableClientState(GL_COLOR_ARRAY);
+	::glEnableClientState(GL_VERTEX_ARRAY);
+	::glDisable(GL_DEPTH_TEST);	// デプステスト無効で描画
+	::glDisable(GL_LIGHTING);	// ライティングも無効
 	RenderBackground(pOpt->GetNcDrawColor(NCCOL_BACKGROUND1), pOpt->GetNcDrawColor(NCCOL_BACKGROUND2));
 
 	// 軸の描画
+	::glEnable(GL_DEPTH_TEST);
 	RenderAxis();
+	::glDisableClientState(GL_COLOR_ARRAY);
 
 	if ( IsDocError() ) {
 		::SwapBuffers( pDC->GetSafeHdc() );
@@ -717,7 +677,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 		return;
 	}
 
-	::glEnable(GL_DEPTH_TEST);
 	::glEnable(GL_LIGHTING);
 
 #if defined(_DEBUG_DRAWTEST_)
@@ -790,7 +749,6 @@ void CNCViewGL::OnDraw(CDC* pDC)
 	size_t	j = 0;
 
 	// ワイヤ放電モードは線画でも使うため，ここで有効にしておく
-	::glEnableClientState(GL_VERTEX_ARRAY);
 	::glEnableClientState(GL_NORMAL_ARRAY);
 	::glBindBuffer(GL_ARRAY_BUFFER, m_nVertexID[0]);
 	::glVertexPointer(NCXYZ, GL_FLOAT, 0, NULL);
@@ -912,12 +870,14 @@ void CNCViewGL::OnDraw(CDC* pDC)
 				::glDrawElements(GL_LINE_STRIP, (GLsizei)(v.vel.size()), GL_UNSIGNED_INT, NULL);
 			}
 			if ( m_pData ) {
+				::glBindBuffer(GL_ARRAY_BUFFER, 0);
 				// 選択オブジェクトの描画
 				m_pData->DrawGLWireWirePath(RM_SELECT, -1);	// 第2引数は不使用
 			}
 		}
 		else {
 			// ＭＣ，旋盤モード
+			::glBindBuffer(GL_ARRAY_BUFFER, 0);
 			RenderCode(RM_NORMAL);
 			if ( m_pData ) {
 				// 選択オブジェクトの描画
@@ -1279,6 +1239,7 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 #endif
 		}
 		if ( pData || lParam ) {
+			::glEnableClientState(GL_VERTEX_ARRAY);
 			// 指定ｵﾌﾞｼﾞｪｸﾄの描画
 			if ( IsLatheMode() ) {
 				::glPushAttrib( GL_LINE_BIT );
@@ -1301,11 +1262,10 @@ LRESULT CNCViewGL::OnSelectTrace(WPARAM wParam, LPARAM lParam)
 				else
 					pData->AddGLBottomFaceVertex(vBD, TRUE);
 				if ( !vBD.empty() ) {
-					::glEnableClientState(GL_VERTEX_ARRAY);
 					vBD.Draw();
-					::glDisableClientState(GL_VERTEX_ARRAY);
 				}
 			}
+			::glDisableClientState(GL_VERTEX_ARRAY);
 			GetGLError();	// error flash
 //			::glFinish();
 		}

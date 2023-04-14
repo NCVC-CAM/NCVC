@@ -156,7 +156,6 @@ class CNCViewGL : public CViewBaseGL
 	void	DeleteDepthMemory(void);
 	void	EndOfCreateElementThread(void);
 
-	void	RenderAxis(void);
 	void	RenderCode(RENDERMODE);
 	void	RenderCodeWire(void);
 	void	RenderMill(const CNCdata*);

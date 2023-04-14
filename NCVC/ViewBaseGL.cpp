@@ -294,45 +294,67 @@ void CViewBaseGL::DoRotation(float dAngle)
 	SetupViewingTransform();
 }
 
-void CViewBaseGL::RenderBackground(COLORREF col1, COLORREF col2)
+void CViewBaseGL::RenderBackground(const COLORREF col1, const COLORREF col2)
 {
-	::glDisable(GL_DEPTH_TEST);	// ﾃﾞﾌﾟｽﾃｽﾄ無効で描画
-	::glDisable(GL_LIGHTING);	// ライティングも無効
+	// 色情報
+	const GLubyte	col1v[] = {
+		GetRValue(col1), GetGValue(col1), GetBValue(col1)
+	},
+					col2v[] = {
+		GetRValue(col2), GetGValue(col2), GetBValue(col2)
+	};
+	const GLubyte	col[] = {
+		col1v[0], col1v[1], col1v[2],		// 左下
+		col2v[0], col2v[1], col2v[2],		// 左上
+		col2v[0], col2v[1], col2v[2],		// 右上
+		col1v[0], col1v[1], col1v[2]		// 右下
+	};
+	// 座標値設定(2D)
+	const GLfloat	vertex[] = {
+		m_rcView.left,	m_rcView.bottom,	// 左下
+		m_rcView.left,	m_rcView.top,		// 左上
+		m_rcView.right,	m_rcView.top,		// 右上
+		m_rcView.right,	m_rcView.bottom		// 右下
+	};
 
-	GLubyte		col1v[3], col2v[3];
-	GLfloat		dVertex[3];
-	col1v[0] = GetRValue(col1);
-	col1v[1] = GetGValue(col1);
-	col1v[2] = GetBValue(col1);
-	col2v[0] = GetRValue(col2);
-	col2v[1] = GetGValue(col2);
-	col2v[2] = GetBValue(col2);
+	// 配列有効
+	::glColorPointer(3, GL_UNSIGNED_BYTE, 0, col);
+	::glVertexPointer(2, GL_FLOAT, 0, vertex);
 
 	::glPushMatrix();
 	::glLoadIdentity();
-	::glBegin(GL_QUADS);
-	// 左下
-	dVertex[0] = m_rcView.left;
-	dVertex[1] = m_rcView.bottom;
-//	dVertex[2] = m_rcView.low;
-	dVertex[2] = m_rcView.high - NCMIN*2.0f;	// 一番奥(x2はｵﾏｹ)
-	::glColor3ubv(col1v);
-	::glVertex3fv(dVertex);
-	// 左上
-	dVertex[1] = m_rcView.top;
-	::glColor3ubv(col2v);
-	::glVertex3fv(dVertex);
-	// 右上
-	dVertex[0] = m_rcView.right;
-	::glColor3ubv(col2v);
-	::glVertex3fv(dVertex);
-	// 右下
-	dVertex[1] = m_rcView.bottom;
-	::glColor3ubv(col1v);
-	::glVertex3fv(dVertex);
-	//
-	::glEnd();
+	::glDrawArrays(GL_QUADS, 0, 4);		// 背面描画
 	::glPopMatrix();
+}
+
+void CViewBaseGL::RenderAxis(void)
+{
+	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	const COLORREF	colX = pOpt->GetNcDrawColor(NCCOL_GUIDEX),
+					colY = pOpt->GetNcDrawColor(NCCOL_GUIDEY),
+					colZ = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
+	const GLubyte	col[] = {
+		GetRValue(colX), GetGValue(colX), GetBValue(colX),		// Xs
+		GetRValue(colX), GetGValue(colX), GetBValue(colX),		// Xe
+		GetRValue(colY), GetGValue(colY), GetBValue(colY),		// Ys
+		GetRValue(colY), GetGValue(colY), GetBValue(colY),		// Ye
+		GetRValue(colZ), GetGValue(colZ), GetBValue(colZ),		// Zs
+		GetRValue(colZ), GetGValue(colZ), GetBValue(colZ)		// Ze
+	};
+	const float	dx = pOpt->GetGuideLength(NCA_X),
+				dy = pOpt->GetGuideLength(NCA_Y),
+				dz = pOpt->GetGuideLength(NCA_Z);
+	const GLfloat	vertex[] = {
+		-dx, 0, 0, dx, 0, 0,
+		0, -dy, 0, 0, dy, 0,
+		0, 0, -dz, 0, 0, dz
+	};
+
+	::glColorPointer(3, GL_UNSIGNED_BYTE, 0, col);
+	::glVertexPointer(3, GL_FLOAT, 0, vertex);
+
+	::glDrawArrays(GL_LINES, 0, 3*2);	// 軸描画
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -620,10 +642,11 @@ void CViewBaseGL::OnUpdateEditCopy(CCmdUI* pCmdUI)
 
 /////////////////////////////////////////////////////////////////////////////
 
-void OutputGLErrorMessage(GLenum errCode, UINT nline)
+void OutputGLErrorMessage(GLenum errCode, LPCTSTR pszFile, UINT nline)
 {
-	CString		strMsg;
-	strMsg.Format(IDS_ERR_OUTOFVRAM, ::gluErrorString(errCode), nline);
+	CString	strMsg, strPath, strName;
+	::Path_Name_From_FullPath(pszFile, strPath, strName);
+	strMsg.Format(IDS_ERR_OPENGL, ::gluErrorString(errCode), strName, nline);
 	AfxMessageBox(strMsg, MB_OK|MB_ICONEXCLAMATION);
 }
 

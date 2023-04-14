@@ -25,8 +25,10 @@ BEGIN_MESSAGE_MAP(C3dModelView, CViewBaseGL)
 	ON_COMMAND_RANGE(ID_VIEW_FIT, ID_VIEW_LENSN, &C3dModelView::OnLensKey)
 	ON_UPDATE_COMMAND_UI(ID_FILE_3DROUGH, &C3dModelView::OnUpdateFile3dRough)
 	ON_COMMAND(ID_FILE_3DROUGH, &C3dModelView::OnFile3dRough)
-	ON_UPDATE_COMMAND_UI(ID_FILE_3DSMOOTH, &C3dModelView::OnUpdateFile3dSmooth)
-	ON_COMMAND(ID_FILE_3DSMOOTH, &C3dModelView::OnFile3dSmooth)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DCONTOUR, &C3dModelView::OnUpdateFile3dSmooth)
+	ON_COMMAND(ID_FILE_3DCONTOUR, &C3dModelView::OnFile3dSmooth)
+	ON_UPDATE_COMMAND_UI(ID_FILE_3DDEL, &C3dModelView::OnUpdateFile3dDel)
+	ON_COMMAND(ID_FILE_3DDEL, &C3dModelView::OnFile3dDel)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -36,10 +38,54 @@ C3dModelView::C3dModelView()
 {
 	m_pSelCurve = NULL;
 	m_pSelFace  = NULL;
+	m_nCoord = 0;
+	m_nDrawSize = 0;
 }
 
 C3dModelView::~C3dModelView()
 {
+}
+
+void C3dModelView::ClearVBO(void)
+{
+	if ( m_nCoord > 0 ) {
+		::glDeleteBuffers(1, &m_nCoord);
+		m_nCoord = 0;
+		m_nDrawSize = 0;
+	}
+}
+
+void C3dModelView::CreateVBO(void)
+{
+	GLenum		errCode;
+	CVdouble	vpt;
+
+	CClientDC	dc(this);
+	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+
+	ClearVBO();
+	GetGLError();	// reset GL error
+	::glGenBuffers(1, &m_nCoord);
+	::glBindBuffer(GL_ARRAY_BUFFER, m_nCoord);
+	const VVVCoord& vvv = GetDocument()->GetKoCoord();
+	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+				vpt.push_back(it3->x);
+				vpt.push_back(it3->y);
+				vpt.push_back(it3->z);
+			}
+		}
+	}
+	m_nDrawSize = (GLsizei)(vpt.size()/NCXYZ);
+	::glBufferData(GL_ARRAY_BUFFER, vpt.size()*sizeof(GLdouble), &vpt[0], GL_STATIC_DRAW);
+	if ( (errCode=GetGLError()) != GL_NO_ERROR ) {
+		ClearVBO();
+		OutputGLErrorMessage(errCode, __FILE__, __LINE__);
+	}
+	::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	::wglMakeCurrent(NULL, NULL);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -115,31 +161,16 @@ void C3dModelView::OnDraw(CDC* pDC)
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	// 背景の描画
+	::glEnableClientState(GL_COLOR_ARRAY);
+	::glEnableClientState(GL_VERTEX_ARRAY);
+	::glDisable(GL_DEPTH_TEST);	// デプステスト無効で描画
+	::glDisable(GL_LIGHTING);	// ライティングも無効
 	RenderBackground(pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND1), pOpt->GetDxfDrawColor(DXFCOL_BACKGROUND2));
 
-	::glDisable(GL_LIGHTING);
-	float		dLength = 50.0f;
-	COLORREF	col;
-	::glPushAttrib( GL_LINE_BIT );
-	::glLineWidth( 2.0f );
-	::glBegin( GL_LINES );
-	// X軸のｶﾞｲﾄﾞ
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEX);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(-dLength, 0.0f, 0.0f);
-	::glVertex3f( dLength, 0.0f, 0.0f);
-	// Y軸のｶﾞｲﾄﾞ
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEY);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, -dLength, 0.0f);
-	::glVertex3f(0.0f,  dLength, 0.0f);
-	// Z軸のｶﾞｲﾄﾞ
-	col = pOpt->GetNcDrawColor(NCCOL_GUIDEZ);
-	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
-	::glVertex3f(0.0f, 0.0f, -dLength);
-	::glVertex3f(0.0f, 0.0f,  dLength);
-	::glEnd();
-	::glPopAttrib();
+	// 軸の描画
+	::glEnable(GL_DEPTH_TEST);
+	RenderAxis();
+	::glDisableClientState(GL_COLOR_ARRAY);
 
 	// --- テスト描画
 //	::glBegin(GL_QUADS);
@@ -153,31 +184,30 @@ void C3dModelView::OnDraw(CDC* pDC)
 
 	// モデル描画
 	::glEnable(GL_LIGHTING);
-	::glEnable(GL_DEPTH_TEST);
 //	try {
 		// Kodatuno側での描画のため例外処理対応
 		// !!! tryブロック設置してもntdll.dllの例外がcatchできない？？？ !!!
 		// こんなところでtryブロックを入れるべきではない．別の方法を考える
-		DrawBody(RM_NORMAL);
-//		DrawBody(RM_PICKLINE);
-//		DrawBody(RM_PICKFACE);
+		DrawKodatunoBody(RM_NORMAL);
+//		DrawKodatunoBody(RM_PICKLINE);
+//		DrawKodatunoBody(RM_PICKFACE);
 //	}
 //	catch(...) {
 //		AfxMessageBox(IDS_ERR_KODATUNO, MB_OK|MB_ICONSTOP);
 //		PostMessage(WM_CLOSE);	// ウィンドウ終了
 //	}
 
-	// 荒加工スキャンパスの描画
-	::glDisable(GL_LIGHTING);
-	DrawRoughPath();
-	// 仕上げ等高線の描画
-	DrawContourPath();
+	// 荒加工または等高線スキャンパスの描画
+	if ( GetDocument()->GetKoCoordMode() != CM_NOCOORD ) {
+		::glDisable(GL_LIGHTING);
+		DrawKodatunoCoordPath();
+	}
 
 	::SwapBuffers( pDC->GetSafeHdc() );
 	::wglMakeCurrent(NULL, NULL);
 }
 
-void C3dModelView::DrawBody(RENDERMODE enRender)
+void C3dModelView::DrawKodatunoBody(RENDERMODE enRender)
 {
 	Describe_BODY	bd;
 	BODYList*		kbl = GetDocument()->GetKodatunoBodyList();
@@ -240,64 +270,36 @@ void C3dModelView::DrawBody(RENDERMODE enRender)
 	}
 }
 
-void C3dModelView::DrawRoughPath(void)
+void C3dModelView::DrawKodatunoCoordPath(void)
 {
-	VVVCoord& vvv = GetDocument()->GetRoughCoord();
-	if ( vvv.empty() )
-		return;
+	const COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
 
-	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
-
-	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
-	::glBegin(GL_POINTS);
-
-	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
-		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				::glVertex3d(it3->x, it3->y, it3->z);
-			}
-		}
+	::glColor3ub( GetRValue(col), GetGValue(col), GetBValue(col) );
+	if ( m_nCoord > 0 ) {
+		::glBindBuffer(GL_ARRAY_BUFFER, m_nCoord);
+		::glVertexPointer(NCXYZ, GL_DOUBLE, 0, NULL);
+		::glDrawArrays(GL_POINTS, 0, m_nDrawSize);
+		::glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
-/*
-	// 問題のある層だけ試しに表示
-		for ( auto it2=vvv[0].begin(); it2!=vvv[0].end(); ++it2 ) {
-			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				::glVertex3d(it3->x, it3->y, it3->z);
+	else {
+		// こちらの描画方法は保険
+		const VVVCoord& vvv = GetDocument()->GetKoCoord();
+		CVdouble	vpt;
+		for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
+			for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
+//-				::glVertexPointer(NCXYZ, GL_DOUBLE, sizeof(Coord), &(it2[0]));
+//-				::glDrawArrays(GL_POINTS, 0, (GLsizei)(it2->size()));
+				for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
+					vpt.push_back(it3->x);
+					vpt.push_back(it3->y);
+					vpt.push_back(it3->z);
+				}
 			}
 		}
-*/
-	::glEnd();
-}
-
-void C3dModelView::DrawContourPath(void)
-{
-	VVVCoord& vvv = GetDocument()->GetContourCoord();
-	if ( vvv.empty() )
-		return;
-
-	COLORREF	col = AfxGetNCVCApp()->GetViewOption()->GetDxfDrawColor(DXFCOL_MOVE);
-
-	::glColor3f( GetRValue(col)/255.0f, GetGValue(col)/255.0f, GetBValue(col)/255.0f );
-	::glBegin(GL_POINTS);
-
-	for ( auto it1=vvv.begin(); it1!=vvv.end(); ++it1 ) {
-		for ( auto it2=it1->begin(); it2!=it1->end(); ++it2 ) {
-			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				::glVertex3d(it3->x, it3->y, it3->z);
-			}
-		}
+		::glBindBuffer(GL_ARRAY_BUFFER, 0);
+		::glVertexPointer(NCXYZ, GL_DOUBLE, 0, &vpt[0]);
+		::glDrawArrays(GL_POINTS, 0, (GLsizei)(vpt.size()/NCXYZ));
 	}
-/*
-	// 問題のある層だけ試しに表示
-//		for ( auto it2=vvv[40].begin(); it2!=vvv[40].end(); ++it2 ) {
-		for ( auto it2=vvv[48].begin(); it2!=vvv[48].end(); ++it2 ) {
-//		auto it2=vvv[40].begin()+1;
-			for ( auto it3=it2->begin(); it3!=it2->end(); ++it3 ) {
-				::glVertex3d(it3->x, it3->y, it3->z);
-			}
-		}
-*/
-	::glEnd();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -322,6 +324,8 @@ void C3dModelView::OnDestroy()
 	CClientDC	dc(this);
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
+	ClearVBO();
+
 	::wglMakeCurrent(NULL, NULL);
 	::wglDeleteContext( m_hRC );
 
@@ -343,7 +347,7 @@ void C3dModelView::OnLButtonUp(UINT nFlags, CPoint point)
 	__super::OnLButtonUp(nFlags, point);
 }
 
-void C3dModelView::SetKodatunoColor(DispStat& Dstat, COLORREF col)
+void C3dModelView::SetKodatunoColor(DispStat& Dstat, const COLORREF col)
 {
 	Dstat.Color[0] = GetRValue(col) / 255.0f;
 	Dstat.Color[1] = GetGValue(col) / 255.0f;
@@ -356,14 +360,14 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
 
 	const CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
-	COLORREF	col = pOpt->GetDrawColor(COMCOL_SELECT),
-				clr = pOpt->GetDxfDrawColor(DXFCOL_CUTTER);
+	const COLORREF	col = pOpt->GetDrawColor(COMCOL_SELECT),
+					clr = pOpt->GetDxfDrawColor(DXFCOL_CUTTER);
 
 	// NURBS曲線の判定
 	::glClearColor(1.0, 1.0, 1.0, 1.0);
 	::glClearDepth(1.0);
 	::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	DrawBody(RM_PICKLINE);
+	DrawKodatunoBody(RM_PICKLINE);
 	NURBSC* pNurbsC = DoSelectCurve(pt);
 	if ( pNurbsC ) {
 		if ( m_pSelCurve != pNurbsC ) {
@@ -379,7 +383,7 @@ void C3dModelView::DoSelect(const CPoint& pt)
 	else {
 		// NURBS曲面の判定
 		::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		DrawBody(RM_PICKFACE);
+		DrawKodatunoBody(RM_PICKFACE);
 		NURBSS* pNurbsS = DoSelectFace(pt);
 		if ( pNurbsS ) {
 			if ( m_pSelFace != pNurbsS ) {
@@ -530,6 +534,8 @@ void C3dModelView::OnFile3dRough()
 	CWaitCursor	wait;
 	// 荒加工スキャンパスの生成
 	if ( GetDocument()->MakeRoughCoord(m_pSelFace, m_pSelCurve) ) {
+		// VBO
+		CreateVBO();
 		// 荒加工スキャンパス描画
 		Invalidate(FALSE);
 	}
@@ -537,22 +543,36 @@ void C3dModelView::OnFile3dRough()
 
 void C3dModelView::OnUpdateFile3dSmooth(CCmdUI* pCmdUI)
 {
-	// 仕上げ加工スキャンが有効になる条件
+	// 等高線加工スキャンが有効になる条件
 	pCmdUI->Enable(m_pSelFace!=NULL);
 }
 
 void C3dModelView::OnFile3dSmooth()
 {
-	// 仕上げ加工スキャン設定
+	// 等高線加工スキャン設定
 	C3dContourScanSetupDlg	dlg(GetDocument());
 	if ( dlg.DoModal() != IDOK )
 		return;
 
 	// ウエイトカーソル
 	CWaitCursor	wait;
-	// 仕上げ加工スキャンパスの生成
+	// 等高線加工スキャンパスの生成
 	if ( GetDocument()->MakeContourCoord(m_pSelFace) ) {
-		// 仕上げ加工スキャンパス描画
+		// VBO
+		CreateVBO();
+		// 等高線加工スキャンパス描画
 		Invalidate(FALSE);
 	}
+}
+
+void C3dModelView::OnUpdateFile3dDel(CCmdUI* pCmdUI)
+{
+	pCmdUI->Enable( !GetDocument()->GetKoCoord().empty() );
+}
+
+void C3dModelView::OnFile3dDel()
+{
+	GetDocument()->ClearKoCoord();
+	ClearVBO();
+	Invalidate(FALSE);
 }

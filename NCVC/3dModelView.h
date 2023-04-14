@@ -16,14 +16,17 @@ class C3dModelView : public CViewBaseGL
 	int			m_icx, m_icy;		// FBOを作った時のサイズ
 	NURBSC*		m_pSelCurve;		// 選択した曲線
 	NURBSS*		m_pSelFace;			// 選択した曲面
+	GLuint		m_nCoord;			// バッファオブジェクトID
+	GLsizei		m_nDrawSize;		// 描画件数
 
-	void	DrawBody(RENDERMODE);
-	void	DrawRoughPath(void);
-	void	DrawContourPath(void);
+	void	ClearVBO(void);
+	void	CreateVBO(void);
+	void	DrawKodatunoBody(RENDERMODE);
+	void	DrawKodatunoCoordPath(void);
 	void	DoSelect(const CPoint&);
 	NURBSC*	DoSelectCurve(const CPoint&);
 	NURBSS*	DoSelectFace (const CPoint&);
-	void	SetKodatunoColor(DispStat&, COLORREF);
+	void	SetKodatunoColor(DispStat&, const COLORREF);
 
 protected:
 	C3dModelView();
@@ -45,6 +48,8 @@ protected:
 	afx_msg void OnFile3dRough();
 	afx_msg void OnUpdateFile3dSmooth(CCmdUI* pCmdUI);
 	afx_msg void OnFile3dSmooth();
+	afx_msg void OnUpdateFile3dDel(CCmdUI* pCmdUI);
+	afx_msg void OnFile3dDel();
 
 	DECLARE_MESSAGE_MAP()
 };
