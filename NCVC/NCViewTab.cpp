@@ -89,6 +89,7 @@ void CNCViewTab::OnInitialUpdate()
 
 	// ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ情報
 	int	nPage = AfxGetNCVCApp()->GetNCTabPage();
+	ActivatePage(NCVIEW_OPENGL);	// 一旦OpenGLタブをアクティブにする
 	if ( nPage < GetPageCount() )
 		ActivatePage(nPage);
 

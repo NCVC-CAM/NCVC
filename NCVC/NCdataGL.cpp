@@ -427,7 +427,6 @@ void CNCline::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 		::glColor3ubv(rgb);
 		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
 		::glDrawArrays(GL_LINES, 0, 2);
-
 	}
 
 	CNCdata::DrawGLWirePath(enRender, nID);
