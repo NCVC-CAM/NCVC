@@ -74,18 +74,19 @@ static	function<BOOL ()>	IsThread;
 // 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間値
 struct	CYCLE_INTERPOLATE
 {
-	BOOL	bCycle,		// 固定ｻｲｸﾙ処理中
-			bAbs;		// Abs(G90)|Inc(G91)
-	double	dValI;
+	BOOL	bAbs;				// Abs(G90)|Inc(G91)
+	optional<int>		nCode;	// 固定サイクル中のG00～G03モーダル保持
 	optional<double>	dValR, dValZ, dValP;
+	double	dValI;
+
 	void	clear(void) {
-		bCycle = FALSE;
+		nCode.reset();
 		dValR.reset();
 		dValZ.reset();
 		dValP.reset();
 	}
 	void	ChangeAbs(void) {
-		if ( bCycle && !bAbs ) {
+		if ( nCode && !bAbs ) {
 			bAbs = TRUE;
 			if ( dValZ ) {
 				if ( dValR ) {
@@ -99,7 +100,7 @@ struct	CYCLE_INTERPOLATE
 		}
 	}
 	void	ChangeInc(void) {
-		if ( bCycle && bAbs ) {
+		if ( nCode && bAbs ) {
 			bAbs = FALSE;
 			if ( dValZ ) {
 				if ( dValR ) {
@@ -921,7 +922,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				break;	// 無効なMｺｰﾄﾞに続くｱﾄﾞﾚｽ値は無視
 			nCode = (int)(strchr(g_szNdelimiter, strWord[0]) - g_szNdelimiter);
 			// 値取得
-			if ( g_Cycle.bCycle ) {		// 81～89
+			if ( g_Cycle.nCode ) {		// 81～89
 				// 固定ｻｲｸﾙの特別処理
 				switch ( nCode ) {
 				case NCA_K:		// Kはﾈｲﾃｨﾌﾞで(これ何やろ？)
@@ -1051,7 +1052,7 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 		}
 	}
 
-	if ( g_Cycle.bCycle && g_ncArgv.nc.nGtype==G_TYPE && !g_pDoc->IsDocFlag(NCDOC_WIRE) ) {
+	if ( g_Cycle.nCode && g_ncArgv.nc.nGtype==G_TYPE && !g_pDoc->IsDocFlag(NCDOC_WIRE) ) {
 		// 固定ｻｲｸﾙのﾓｰﾀﾞﾙ補間
 		CycleInterpolate();
 	}
@@ -1139,13 +1140,17 @@ ENGCODEOBJ	IsGcodeObject_Milling(int nCode)
 
 	switch ( nCode ) {
 	case 0:		case 1:		case 2:		case 3:
-		g_Cycle.bCycle = FALSE;
+		g_Cycle.nCode.reset();
 		enResult = MAKEOBJ;
 		break;
 	case 73:	case 74:	case 76:
 	case 81:	case 82:	case 83:	case 84:	case 85:
 	case 86:	case 87:	case 88:	case 89:
-		g_Cycle.bCycle	= TRUE;
+		if ( !g_Cycle.nCode ) {
+			if ( 0<=g_ncArgv.nc.nGcode && g_ncArgv.nc.nGcode<=3 ) {
+				g_Cycle.nCode = g_ncArgv.nc.nGcode;		// Group01モーダル保持兼固定サイクルモード
+			}
+		}
 		g_Cycle.bAbs	= g_ncArgv.bAbs;
 		g_Cycle.dValI	= g_ncArgv.nc.dValue[_GetPlaneZ()];
 		enResult = MAKEOBJ;
@@ -1186,11 +1191,15 @@ ENGCODEOBJ	IsGcodeObject_Lathe(int nCode)
 
 	switch ( nCode ) {
 	case 0:		case 1:		case 2:		case 3:
-		g_Cycle.bCycle = FALSE;
+		g_Cycle.nCode.reset();
 		enResult = MAKEOBJ;
 		break;
 	case 83:	case 84:	case 85:	// 端面穴あけ
-		g_Cycle.bCycle	= TRUE;
+		if ( !g_Cycle.nCode ) {
+			if ( 0<=g_ncArgv.nc.nGcode && g_ncArgv.nc.nGcode<=3 ) {
+				g_Cycle.nCode = g_ncArgv.nc.nGcode;		// Group01モーダル保持兼固定サイクルモード
+			}
+		}
 		g_Cycle.bAbs	= g_ncArgv.bAbs;
 		g_Cycle.dValI	= g_ncArgv.nc.dValue[_GetPlaneZ()];
 		enResult = MAKEOBJ;
@@ -1241,6 +1250,9 @@ int CheckGcodeOther_Milling(int nCode)
 		break;
 	// 固定ｻｲｸﾙｷｬﾝｾﾙ
 	case 80:
+		if ( g_Cycle.nCode ) {
+			g_ncArgv.nc.nGcode = g_Cycle.nCode.get();	// Group01モーダル復元
+		}
 		g_Cycle.clear();
 		break;
 	// ｱﾌﾞｿﾘｭｰﾄ, ｲﾝｸﾘﾒﾝﾄ
@@ -1320,6 +1332,9 @@ int CheckGcodeOther_Lathe(int nCode)
 		break;
 	// 固定ｻｲｸﾙｷｬﾝｾﾙ
 	case 80:
+		if ( g_Cycle.nCode ) {
+			g_ncArgv.nc.nGcode = g_Cycle.nCode.get();	// Group01モーダル復元
+		}
 		g_Cycle.clear();
 		break;
 	// ｱﾌﾞｿﾘｭｰﾄ, ｲﾝｸﾘﾒﾝﾄ
