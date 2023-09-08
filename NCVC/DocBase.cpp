@@ -1,4 +1,4 @@
-// DXFDoc.cpp : インプリメンテーション ファイル
+// DocBase.cpp : インプリメンテーション ファイル
 //
 
 #include "stdafx.h"

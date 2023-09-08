@@ -712,9 +712,15 @@ BOOL CNCDoc::IncrementTrace(INT_PTR& nTraceDraw)
 	}
 	pData = GetNCdata(m_nTraceDraw-1);
 	// ²İ¸ØÒİÄŒã‚ÌµÌŞ¼Şª¸Ä‚ªM_TYPE‚ÅA²İ¸ØÒİÄ‘O‚Æ“¯‚¶ÌŞÛ¯¸‚È‚ç
-	if ( pData->GetGtype()==M_TYPE && nLine1==pData->GetBlockLineNo() ) {
+	while ( pData->GetGtype()==M_TYPE && nLine1==pData->GetBlockLineNo() ) {
 		// ‚³‚ç‚É²İ¸ØÒİÄ
 		m_nTraceDraw++;
+		if ( nMax < m_nTraceDraw ) {
+			nTraceDraw = -1;
+			m_nTraceDraw = nMax;
+			m_csTraceDraw.Unlock();
+			return FALSE;
+		}
 		pData = GetNCdata(m_nTraceDraw-1);
 	}
 	nLine2 = pData->GetBlockLineNo();			// ²İ¸ØÒİÄŒã‚ÌÌŞÛ¯¸s

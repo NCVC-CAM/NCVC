@@ -803,7 +803,7 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 			break;
 		case 'M':
 			// ▒O┴Я┌л╨╟дч┌е⌠o≤^╣лч╪ч╙╦д┌╙┌═┌И┌х┌Г
-			if ( bNCobj ) {
+			if ( bNCobj || bNCval ) {
 				// ╣лч╪ч╙╦д░╤░╛
 				pData = AddGcode(pBlock, pDataResult, nNotModalCode);
 				// √й▌Ф┌Х╣лч╪ч╙╦д┌л⌠o≤^
