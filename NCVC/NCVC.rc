@@ -935,7 +935,7 @@ BEGIN
     CONTROL         IDB_SPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,7,7,285,137,WS_EX_DLGMODALFRAME
     CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME,46,152,187,70,WS_EX_STATICEDGE
     ICON            IDR_MAINFRAME,IDC_STATIC,58,166,20,20
-    LTEXT           "NCVC Version 4.12a",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
+    LTEXT           "NCVC Version 4.12b",IDC_ABOUT_VER,86,166,135,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 1997-2023 MNCT K.Magara",IDC_STATIC,86,182,135,8
     LTEXT           "https://k-magara.github.io/",IDC_ABOUT_URL,86,198,135,8,SS_NOTIFY
 END
@@ -2411,8 +2411,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,1,2,1
- PRODUCTVERSION 4,1,2,1
+ FILEVERSION 4,1,2,2
+ PRODUCTVERSION 4,1,2,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x29L
@@ -2430,14 +2430,14 @@ BEGIN
             VALUE "Comments", "NC Viewer and Converter"
             VALUE "CompanyName", "MNCT"
             VALUE "FileDescription", "NC Viewer and Converter"
-            VALUE "FileVersion", "4.1.2.1"
+            VALUE "FileVersion", "4.1.2.2"
             VALUE "InternalName", "NCVC.exe"
             VALUE "LegalCopyright", "Copyright (C) 1997-2023 K.Magara"
             VALUE "LegalTrademarks", "NIT(KOSEN) Maizuru College"
             VALUE "OriginalFilename", "NCVC.exe"
             VALUE "ProductName", "NCVC"
-            VALUE "ProductVersion", "4.1.2.1"
-            VALUE "SpecialBuild", "Boost C++ 1.82, GLEW 2.10, Kodatuno R3.4kai"
+            VALUE "ProductVersion", "4.1.2.2"
+            VALUE "SpecialBuild", "Boost C++ 1.83, GLEW 2.10, Kodatuno R3.4kai"
         END
     END
     BLOCK "VarFileInfo"
