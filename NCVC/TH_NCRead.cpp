@@ -963,8 +963,9 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 	//
 	if ( bNCsub && bNCval ) {
 		// M98Ç≈ÇÃ[P_|L_]ÇÃµÃﬁºﬁ™∏ƒê∂ê¨Çó}êß
-		if ( !(g_ncArgv.nc.dwValFlags & ~(NCD_P|NCD_L)) )
+		if ( g_ncArgv.nc.dwValFlags & (NCD_P|NCD_L) ) {
 			bNCval = FALSE;
+		}
 	}
 	//
 	if ( bNCobj || bNCval ) {
