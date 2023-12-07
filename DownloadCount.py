@@ -6,6 +6,6 @@ r = requests.get('https://api.github.com/repos/NCVC-CAM/NCVC/releases')
 for item in sorted(r.json(), key=lambda k: k['name']):
     print("ReleaseName:", item["name"], item["created_at"].split("T")[0])
     for detail in item["assets"]:
-        print(" FileName: ", detail["name"], end='')
+        print("  ", detail["name"], end='')
         print(" download_count=", detail["download_count"])
     print("")

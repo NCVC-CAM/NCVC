@@ -1639,16 +1639,20 @@ void CDXFarc::Draw(CDC* pDC) const
 #endif
 	if ( m_bRoundOrig ) {
 		st = (m_eqDraw - sq) / ARCCOUNT;
-		for ( sq+=st; sq<m_eqDraw; sq+=st ) {
-			pt.SetPoint(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
-			pDC->LineTo(pt);
+		if ( st > NCMIN ) {		// stが極端に小さい時，応答不能になるのを防止
+			for ( sq+=st; sq<m_eqDraw; sq+=st ) {
+				pt.SetPoint(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
+				pDC->LineTo(pt);
+			}
 		}
 	}
 	else {
 		st = (sq - m_eqDraw) / ARCCOUNT;
-		for ( sq-=st; sq>m_eqDraw; sq-=st ) {
-			pt.SetPoint(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
-			pDC->LineTo(pt);
+		if ( st > NCMIN ) {
+			for ( sq-=st; sq>m_eqDraw; sq-=st ) {
+				pt.SetPoint(m_rDraw * cos(sq) + m_ptDraw.x, m_rDraw * sin(sq) + m_ptDraw.y);
+				pDC->LineTo(pt);
+			}
 		}
 	}
 	pt.SetPoint(m_rDraw * cos(m_eqDraw) + m_ptDraw.x, m_rDraw * sin(m_eqDraw) + m_ptDraw.y);
