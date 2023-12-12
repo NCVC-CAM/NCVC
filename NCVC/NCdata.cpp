@@ -1463,8 +1463,10 @@ tuple<float, float>	CNCcircle::CalcAngle(BOOL bG03, const CPointF& pts, const CP
 	// 常に s<e (反時計回り) とする
 	if ( !bG03 )	// G02 なら開始角度と終了角度を入れ替え
 		swap(sq, eq);
+
+	// 微細円弧に注意
 	q = ::RoundUp(DEG(sq));
-	while ( q >= ::RoundUp(DEG(eq)) )
+	while ( q > ::RoundUp(DEG(eq)) )	// CDXFarc::AngleTuning()と同じ条件に変更
 		eq += PI2;
 
 	// 角度調整
