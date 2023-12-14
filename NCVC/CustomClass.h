@@ -67,7 +67,7 @@ public:
 		TYPE*	pObj = (TYPE *)GetData();
 		INT_PTR	ii = GetSize()/2;
 		for ( INT_PTR i=0, j=GetUpperBound(); i<ii; i++, j-- )
-			boost::swap(pObj[i], pObj[j]);
+			boost::core::invoke_swap(pObj[i], pObj[j]);
 	}
 };
 
@@ -95,12 +95,12 @@ private:
 			for ( ; i <= j && (*pfnCompare)(pObj[j], pObj[nFirst]) >= 0; j-- );
 			//
 			if ( i < j ) {
-				boost::swap(pObj[i], pObj[j]);
+				boost::core::invoke_swap(pObj[i], pObj[j]);
 				i++;	j--;
 			}
 		}
 
-		boost::swap(pObj[j], pObj[nFirst]);
+		boost::core::invoke_swap(pObj[j], pObj[nFirst]);
 
 		QSort( pfnCompare, nFirst, j-1 );
 		QSort( pfnCompare, j+1, nLast );

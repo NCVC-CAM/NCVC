@@ -27,6 +27,7 @@
 #endif
 
 using namespace boost;
+using namespace boost::core;
 
 // 文字列検査用(TH_NCRead.cpp, NCMakeClass.cpp からも参照)
 extern	LPCTSTR	g_szLineDelimiter = "%N0123456789";	// 行番号とGｺｰﾄﾞの分別
@@ -163,10 +164,10 @@ void CNCDoc::SetLatheViewMode(void)
 		// 座標系のXZを入れ替え
 		for ( int i=0; i<WORKOFFSET+1; i++ ) {
 			m_ptNcWorkOrg[i].x /= 2.0;
-			swap(m_ptNcWorkOrg[i].x, m_ptNcWorkOrg[i].z);
+			invoke_swap(m_ptNcWorkOrg[i].x, m_ptNcWorkOrg[i].z);
 		}
 		m_ptNcLocalOrg.x /= 2.0;
-		swap(m_ptNcLocalOrg.x, m_ptNcLocalOrg.z);
+		invoke_swap(m_ptNcLocalOrg.x, m_ptNcLocalOrg.z);
 	}
 }
 

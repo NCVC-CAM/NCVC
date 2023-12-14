@@ -23,6 +23,7 @@
 #endif
 
 using namespace boost;
+using namespace boost::core;
 
 // ﾚｲﾔ情報の保存
 static	LPCTSTR	g_szLayerToInitComment[] = {
@@ -859,7 +860,7 @@ BOOL CDXFDoc::OnOpenDocument(LPCTSTR lpszPathName)
 					}
 				}
 				if ( n > 1 )
-					swap(m_pLatheLine[0], m_pLatheLine[1]);
+					invoke_swap(m_pLatheLine[0], m_pLatheLine[1]);
 				// 外径ｵﾌﾞｼﾞｪｸﾄ調整(X値の大きい方を始点に)
 				pt1 = m_pLatheLine[0]->GetNativePoint(0);
 				pt2 = m_pLatheLine[0]->GetNativePoint(1);

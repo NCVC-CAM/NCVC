@@ -21,6 +21,7 @@
 
 using std::string;
 using namespace boost;
+using namespace boost::core;
 
 extern	LPCTSTR	g_szNCcomment[];
 
@@ -606,7 +607,7 @@ BOOL CreateRoughPass(int io)
 			if ( nResult > 1 ) {
 				// 交点が２個以上
 				if ( ptChk[0].x < ptChk[1].x )
-					swap(ptChk[0], ptChk[1]);
+					invoke_swap(ptChk[0], ptChk[1]);
 				if ( enType==DXFARCDATA || enType==DXFELLIPSEDATA ) {
 					pArc = static_cast<CDXFarc*>(pDataChain);
 					if ( pArc->GetRound() ) {
@@ -1039,7 +1040,7 @@ BOOL MakeGrooveCode(const CPointF& ptMax)
 		pts = pData->GetStartMakePoint();
 		pte = pData->GetEndMakePoint();
 		if ( pts.x < pte.x )
-			swap(pts, pte);
+			invoke_swap(pts, pte);
 		// X軸の長さによって生成方法を変える
 		if ( dWidth < pts.x-pte.x ) {
 			// Z軸スライド

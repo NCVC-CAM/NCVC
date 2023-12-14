@@ -27,6 +27,7 @@ IMPLEMENT_SERIAL(CDXFpolyline, CDXFline, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFtext, CDXFpoint, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 
 using namespace boost;
+using namespace boost::core;
 extern	DWORD	g_dwCamVer;		// NCVC.cpp
 
 /////////////////////////////////////////////////////////////////////////////
@@ -150,8 +151,8 @@ void CDXFdata::SwapMakePt(int n)	// m_ptTun ‚Ì“ü‚ê‘Ö‚¦
 #ifdef _DEBUGOLD
 		printf("SwapMakePt() calling ok\n");
 #endif
-		swap(m_ptTun[n],  m_ptTun[n+1]);
-		swap(m_ptMake[n], m_ptMake[n+1]);
+		invoke_swap(m_ptTun[n],  m_ptTun[n+1]);
+		invoke_swap(m_ptMake[n], m_ptMake[n+1]);
 	}
 #ifdef _DEBUGOLD
 	else
@@ -165,7 +166,7 @@ void CDXFdata::SwapNativePt(void)	// ŒÅ—LÀ•W’l‚Ì“ü‚ê‘Ö‚¦
 #ifdef _DEBUGOLD
 		printf("SwapNativePoint() calling ok\n");
 #endif
-		swap(m_pt[0], m_pt[1]);
+		invoke_swap(m_pt[0], m_pt[1]);
 	}
 #ifdef _DEBUGOLD
 	else
@@ -570,7 +571,7 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointF pt[], BOOL bEd
 				if ( !pCircle->IsRangeAngle(pt1) ) {
 					nResult--;
 					if ( nResult > 0 )
-						swap(pt1, pt2);
+						invoke_swap(pt1, pt2);
 				}
 			}
 		}
@@ -594,7 +595,7 @@ int CDXFline::GetIntersectionPoint(const CDXFdata* pData, CPointF pt[], BOOL bEd
 				if ( !pEllipse->IsRangeAngle(pt1) ) {
 					nResult--;
 					if ( nResult > 0 )
-						swap(pt1, pt2);
+						invoke_swap(pt1, pt2);
 				}
 			}
 		}
@@ -1045,7 +1046,7 @@ int CDXFcircle::GetIntersectionPoint(const CDXFdata* pData, CPointF pt[], BOOL) 
 				if ( !pCircle->IsRangeAngle(pt1) ) {
 					nResult--;
 					if ( nResult > 0 )
-						swap(pt1, pt2);
+						invoke_swap(pt1, pt2);
 				}
 			}
 		}
@@ -1460,8 +1461,8 @@ void CDXFarc::SwapNativePt(void)
 	// ‰ñ“]•ûŒü‚Ì”½“]
 	m_bRound = m_bRoundOrig = !m_bRoundOrig;
 	// Šp“x‚Ì“ü‚ê‘Ö‚¦
-	swap(m_sq, m_eq);
-	swap(m_sqDraw, m_eqDraw);
+	invoke_swap(m_sq, m_eq);
+	invoke_swap(m_sqDraw, m_eqDraw);
 }
 
 void CDXFarc::RoundObjPoint(const CPointF& ptOrg, float dRound)
@@ -1759,7 +1760,7 @@ int CDXFarc::GetIntersectionPoint(const CDXFdata* pData, CPointF pt[], BOOL bEdg
 				(pData->GetType()==DXFARCDATA && !pCircle->IsRangeAngle(pt1)) ) {
 			nResult--;
 			if ( nResult > 0 )
-				swap(pt1, pt2);
+				invoke_swap(pt1, pt2);
 		}
 	}
 
@@ -2473,7 +2474,7 @@ int CDXFellipse::GetIntersectionPoint(const CDXFdata* pData, CPointF pt[], BOOL 
 					(pData->GetType()==DXFARCDATA && !pCircle->IsRangeAngle(pt1)) ) {
 				nResult--;
 				if ( nResult > 0 )
-					swap(pt1, pt2);
+					invoke_swap(pt1, pt2);
 			}
 		}
 	}

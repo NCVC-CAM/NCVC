@@ -9,6 +9,7 @@
 #include "NCMakeMill.h"
 #include "MakeCustomCode.h"
 #include "ThreadDlg.h"
+#include "boost/array.hpp"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

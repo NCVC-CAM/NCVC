@@ -15,6 +15,7 @@ using std::vector;
 using std::begin;
 using std::end;
 using namespace boost;
+using namespace boost::core;
 extern	const	PENSTYLE	g_penStyle[];	// ViewOption.cpp
 extern	float	_TABLECOS[ARCCOUNT],		// NCVC.cpp
 				_TABLESIN[ARCCOUNT],
@@ -1095,7 +1096,7 @@ void CNCcircle::DrawGLLatheDepth(void) const
 		pte = m_ptValE - m_ptOrg;	pte.z = -pte.z;
 		tie(argv.sq, argv.eq) = CalcAngle(argv.bG03, pts.GetXZ(), pte.GetXZ());
 		if ( !argv.bG03 )
-			swap(argv.sq, argv.eq);		// GetSqEq()‚Ì‚©‚í‚è
+			invoke_swap(argv.sq, argv.eq);		// GetSqEq()‚Ì‚©‚í‚è
 		AddGLWirePassCircle(&argv);
 	}
 	else {

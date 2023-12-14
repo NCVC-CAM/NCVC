@@ -16,6 +16,12 @@
 //#define	_DEBUGDRAW_DXF
 #endif
 
+using std::vector;
+using namespace boost;
+using namespace boost::core;
+
+extern	DWORD	g_dwCamVer;		// NCVC.cpp
+
 IMPLEMENT_DYNAMIC(CDXFworking, CObject)
 IMPLEMENT_SERIAL(CDXFworkingDirection, CDXFworking, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFworkingStart, CDXFworking, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
@@ -24,11 +30,6 @@ IMPLEMENT_SERIAL(CDXFworkingPocket, CDXFworking, NCVCSERIALVERSION|VERSIONABLE_S
 IMPLEMENT_SERIAL(CDXFmap, CObject, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFchain, CObject, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
 IMPLEMENT_SERIAL(CDXFshape, CObject, NCVCSERIALVERSION|VERSIONABLE_SCHEMA)
-
-using std::vector;
-using namespace boost;
-
-extern	DWORD	g_dwCamVer;		// NCVC.cpp
 
 /////////////////////////////////////////////////////////////////////////////
 // Ã“I•Ï”‚Ì‰Šú‰»
@@ -2361,7 +2362,7 @@ BOOL CDXFshape::CreateScanLine_X(CDXFchain* pResult)
 			pData = new CDXFline(&dxfLine2);
 			pResult->AddTail(pData);
 			dxfLine.e.y = dxfLine.s.y;
-			swap(dxfLine.s, dxfLine.e);
+			invoke_swap(dxfLine.s, dxfLine.e);
 		}
 		else
 			break;	// Ù°ÌßI—¹ðŒ
@@ -2400,7 +2401,7 @@ BOOL CDXFshape::CreateScanLine_Y(CDXFchain* pResult)
 			pData = new CDXFline(&dxfLine2);
 			pResult->AddTail(pData);
 			dxfLine.e.x = dxfLine.s.x;
-			swap(dxfLine.s, dxfLine.e);
+			invoke_swap(dxfLine.s, dxfLine.e);
 		}
 		else
 			break;	// Ù°ÌßI—¹ðŒ
@@ -2918,7 +2919,7 @@ CDXFdata* CreateDxfOffsetObject
 							pte, pEllipse->GetNativePoint(1) );
 					if ( ptResult ) {
 						dxfEllipse.bRound = !dxfEllipse.bRound;
-						swap(dxfEllipse.sq, dxfEllipse.eq);
+						invoke_swap(dxfEllipse.sq, dxfEllipse.eq);
 					}
 				}
 				if ( dxfEllipse.bRound ) {

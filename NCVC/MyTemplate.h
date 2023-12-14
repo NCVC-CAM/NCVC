@@ -414,9 +414,9 @@ public:
 	// 幅と高さの正規化
 	void	NormalizeRect() {
 		if ( left > right )
-			boost::swap(left, right);
+			boost::core::invoke_swap(left, right);
 		if ( top > bottom )
-			boost::swap(top, bottom);
+			boost::core::invoke_swap(top, bottom);
 	}
 	// 指定座標が矩形内にあるか(矩形線上を含める)
 	BOOL	PtInRect(const CPointT<T>& pt) const {
@@ -579,7 +579,7 @@ public:
 	void	NormalizeRect() {
 		CRectT<T>::NormalizeRect();
 		if ( low > high )
-			boost::swap(low, high);
+			boost::core::invoke_swap(low, high);
 	}
 	// 中心座標...他
 	CPoint3T<T>	CenterPoint(void) const {

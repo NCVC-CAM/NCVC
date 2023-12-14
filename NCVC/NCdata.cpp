@@ -17,6 +17,7 @@ using std::string;
 #endif
 
 using namespace boost;
+using namespace boost::core;
 
 extern	const	DWORD		g_dwSetValFlags[];	// NCDoc.cpp
 
@@ -1462,7 +1463,7 @@ tuple<float, float>	CNCcircle::CalcAngle(BOOL bG03, const CPointF& pts, const CP
 
 	// 常に s<e (反時計回り) とする
 	if ( !bG03 )	// G02 なら開始角度と終了角度を入れ替え
-		swap(sq, eq);
+		invoke_swap(sq, eq);
 
 	// 微細円弧に注意
 	q = ::RoundUp(DEG(sq));
@@ -2328,7 +2329,7 @@ optional<CPointF> CNCcircle::SetChamferingPoint(BOOL bStart, float c)
 
 	// 時計回りの場合，始角と終角が入れ替わっているので一時的に元に戻す
 	if ( !GetG03() )
-		swap(m_sq, m_eq);
+		invoke_swap(m_sq, m_eq);
 
 	// 解の選択
 	ps = bStart ? m_sq : m_eq;
@@ -2401,7 +2402,7 @@ optional<CPointF> CNCcircle::SetChamferingPoint(BOOL bStart, float c)
 
 	// 角度補正
 	if ( !GetG03() )
-		swap(m_sq, m_eq);
+		invoke_swap(m_sq, m_eq);
 	ps = ::RoundUp(DEG(m_sq));
 	while ( ps >= ::RoundUp(DEG(m_eq)) )
 		m_eq += PI2;

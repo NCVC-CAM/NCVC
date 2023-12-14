@@ -17,6 +17,7 @@
 
 using std::vector;
 using namespace boost;
+using namespace boost::core;
 
 static	CThreadDlg*	g_pParent;
 #define	IsThread()	g_pParent->IsThreadContinue()
@@ -825,7 +826,7 @@ BOOL CheckOffsetIntersection
 		// 対象集合の切り替え
 		if ( bScan )
 			break;		// 走査線の場合は不要
-		swap(pChain1, pChain2);	// 処理方法は同じ
+		invoke_swap(pChain1, pChain2);	// 処理方法は同じ
 	}
 
 	// 基本的に交点数は偶数のハズやけど、
@@ -853,7 +854,7 @@ BOOL CheckOffsetIntersection
 			// 対象集合の切り替え
 			if ( bScan )
 				break;
-			swap(pChain1, pChain2);
+			invoke_swap(pChain1, pChain2);
 		}
 		if ( !IsThread() )
 			return FALSE;
@@ -939,7 +940,7 @@ BOOL CheckOffsetIntersection
 			// 対象集合の切り替え
 			if ( bScan )
 				break;
-			swap(pChain1,  pChain2);
+			invoke_swap(pChain1,  pChain2);
 		}
 	}
 
@@ -982,7 +983,7 @@ BOOL CheckOffsetIntersection
 			// 対象集合の切り替え
 			if ( bScan )
 				break;
-			swap(pChain1,  pChain2);
+			invoke_swap(pChain1,  pChain2);
 		}
 	}
 
@@ -1019,7 +1020,7 @@ BOOL CheckOffsetIntersection
 		printf("---\n");
 		if ( bScan )
 			break;
-		swap(pChain1, pChain2);
+		invoke_swap(pChain1, pChain2);
 	}
 #endif
 
@@ -1088,15 +1089,15 @@ CDXFdata* ChangeCircleToArc
 	if ( pChain->GetChainFlag() & DXFMAPFLG_INSIDE ) {
 		if ( !pChain->GetMaxRect().PtInRect(pt) ) {
 			// 角度の真ん中の座標が相手の集合矩形外なら
-			swap(sq, eq);		// 角度を入れ替え反対側の円弧で生成
-			swap(pts, pte);		// 楕円孤用
+			invoke_swap(sq, eq);		// 角度を入れ替え反対側の円弧で生成
+			invoke_swap(pts, pte);		// 楕円孤用
 		}
 	}
 	else {
 		if ( pChain->GetMaxRect().PtInRect(pt) ) {
 			// 角度の真ん中の座標が相手の集合矩形内なら
-			swap(sq, eq);		// 角度を入れ替え反対側の円弧で生成
-			swap(pts, pte);		// 楕円孤用
+			invoke_swap(sq, eq);		// 角度を入れ替え反対側の円弧で生成
+			invoke_swap(pts, pte);		// 楕円孤用
 		}
 	}
 

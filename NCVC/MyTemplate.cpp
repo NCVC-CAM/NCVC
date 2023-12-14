@@ -11,6 +11,7 @@
 #endif
 
 using namespace boost;
+using namespace boost::core;
 
 //////////////////////////////////////////////////////////////////////
 //	静的変数の初期化
@@ -334,7 +335,7 @@ tuple<int, CPointF, CPointF> CalcIntersectionPoint_LC
 			if ( pr2.x<0 || pt.x<pr2.x )
 				nResult--;
 			else if ( nResult == 1 )
-				swap(pr1, pr2);	// pr1の解を採用しない(代入では接線と区別付かない)
+				invoke_swap(pr1, pr2);	// pr1の解を採用しない(代入では接線と区別付かない)
 		}
 		// 回転を元に戻す
 		pr1.RoundPoint(q);
@@ -437,7 +438,7 @@ tuple<int, CPointF, CPointF> CalcIntersectionPoint_LE
 			if ( pr2.y<minY || maxY<pr2.y )
 				nResult--;
 			else if ( nResult == 1 )	// pr1がNGでpr2がOK
-				swap(pr1, pr2);
+				invoke_swap(pr1, pr2);
 		}
 	}
 	else if ( fabs(ya) < NCMIN ) {
@@ -452,7 +453,7 @@ tuple<int, CPointF, CPointF> CalcIntersectionPoint_LE
 			if ( pr2.x<minX || maxX<pr2.x )
 				nResult--;
 			else if ( nResult == 1 )
-				swap(pr1, pr2);
+				invoke_swap(pr1, pr2);
 		}
 	}
 	else {
@@ -477,7 +478,7 @@ tuple<int, CPointF, CPointF> CalcIntersectionPoint_LE
 				if ( pr1.x<minX || maxX<pr1.x || pr1.y<minY || pr1.y<maxY ) {
 					nResult--;
 					if ( nResult > 0 )
-						swap(pr1, pr2);
+						invoke_swap(pr1, pr2);
 				}
 			}
 		}
