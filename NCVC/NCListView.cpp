@@ -328,9 +328,9 @@ int CNCListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	GetListCtrl().InsertColumn(1, "Code", LVCFMT_LEFT);
 	GetListCtrl().SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
 	GetListCtrl().SetColumnWidth(1, LVSCW_AUTOSIZE_USEHEADER);
-	// 全ての列を選択可能にする
+	// 全ての列を選択可能にする，マウスオーバーで枠からはみ出したテキストの表示
 	DWORD	dwStyle = GetListCtrl().GetExtendedStyle();
-	dwStyle |= LVS_EX_FULLROWSELECT;
+	dwStyle |= LVS_EX_FULLROWSELECT | LVS_EX_INFOTIP;
 	GetListCtrl().SetExtendedStyle(dwStyle);
 
 	return 0;
