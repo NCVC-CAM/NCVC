@@ -1276,7 +1276,8 @@ CNCcircle::CNCcircle
 (const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, NCMAKETYPE enType) :
 	CNCline(NCDARCDATA, pData, lpArgv, ptOffset)
 {
-	BOOL		fError = TRUE;	// Error
+	BOOL	bError = TRUE,				// Error
+			bNeedAngle = TRUE;			// 角度計算が必要か否か
 
 	if ( GetGcode() == 2 )
 		m_dwFlags &= ~NCFLG_G02G03;		// 0:G02
@@ -1303,7 +1304,7 @@ CNCcircle::CNCcircle
 	// 半径と中心座標の計算(R優先 ただし、ﾜｲﾔﾓｰﾄﾞは無視)
 	if ( GetValFlags()&NCD_R && enType!=NCMAKEWIRE ) {
 		m_r = (float)lpArgv->nc.dValue[NCA_R];
-		fError = !CalcCenter(pts, pte);
+		bError = !CalcCenter(pts, pte);
 	}
 	else if ( GetValFlags() & (NCD_I|NCD_J|NCD_K) ) {
 		float	i = GetValFlags() & NCD_I ? (float)lpArgv->nc.dValue[NCA_I] : 0.0f,
@@ -1315,25 +1316,50 @@ CNCcircle::CNCcircle
 			m_r = _hypotf(i, j);
 			m_ptOrg.x += i;
 			m_ptOrg.y += j;
-			pto = m_ptOrg.GetXY();
+			if ( GetValFlags() & (NCD_X|NCD_Y) ) {
+				pto = m_ptOrg.GetXY();
+			}
+			else {
+				// 平面の移動指示がなければ真円として代入
+				// 角度計算の必要なし
+				bNeedAngle = FALSE;
+				m_sq = 0;
+				m_eq = PI2;
+			}
 			break;
 		case XZ_PLANE:
 			m_r = _hypotf(i, k);
 			m_ptOrg.x += i;
 			m_ptOrg.z += k;
-			pto = m_ptOrg.GetXZ();
+			if ( GetValFlags() & (NCD_X|NCD_Z) ) {
+				pto = m_ptOrg.GetXZ();
+			}
+			else {
+				bNeedAngle = FALSE;
+				m_sq = 0;
+				m_eq = PI2;
+			}
 			break;
 		case YZ_PLANE:
 			m_r = _hypotf(j, k);
 			m_ptOrg.y += j;
 			m_ptOrg.z += k;
-			pto = m_ptOrg.GetYZ();
+			if ( GetValFlags() & (NCD_Y|NCD_Z) ) {
+				pto = m_ptOrg.GetYZ();
+			}
+			else {
+				bNeedAngle = FALSE;
+				m_sq = 0;
+				m_eq = PI2;
+			}
 			break;
 		}
-		pts -= pto;		// 角度調整用の原点補正
-		pte -= pto;
-		AngleTuning(pts, pte);
-		fError = FALSE;
+		if ( bNeedAngle ) {
+			pts -= pto;		// 角度調整用の原点補正
+			pte -= pto;
+			AngleTuning(pts, pte);
+		}
+		bError = FALSE;
 	}
 
 	// 描画関数の決定とﾍﾘｶﾙ移動量の計算
@@ -1353,7 +1379,7 @@ CNCcircle::CNCcircle
 	// 描画終点を計算し保存
 	m_pt2D = m_ptValE.PointConvert();
 
-	if ( fError ) {
+	if ( bError ) {
 		m_nc.nErrorCode = IDS_ERR_NCBLK_CIRCLECENTER;
 	}
 
