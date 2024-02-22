@@ -102,6 +102,7 @@ CNCDoc::CNCDoc()
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
 	m_rcWork.SetRectMinimum();
+	m_dwAllCutValFlgs = 0;
 	// 増分割り当てサイズ
 	m_obBlock.SetSize(0, 4096);
 	m_obGdata.SetSize(0, 4096);
@@ -1214,6 +1215,7 @@ void CNCDoc::SerializeBlock
 
 BOOL CNCDoc::SerializeAfterCheck(void)
 {
+	extern	const	float	g_dDefaultGuideLength;	// 50.0 (ViewOption.cpp)
 #ifdef _DEBUG
 	printf("CNCDoc::SerializeAfterCheck()\n");
 #endif
@@ -1257,7 +1259,17 @@ BOOL CNCDoc::SerializeAfterCheck(void)
 
 	// 占有矩形調整
 	m_rcMax.NormalizeRect();
-	m_rcWork.NormalizeRect();
+	if ( m_dwAllCutValFlgs & (NCD_X|NCD_Y|NCD_I|NCD_J) ) {
+		m_rcWork.NormalizeRect();
+	}
+	else {
+		// XY平面の切削コードがない場合は
+		// 最低保証値を代入しておかないとOpenGLタブで異常終了
+		m_rcWork.left = m_rcWork.top = -g_dDefaultGuideLength/2;
+		m_rcWork.right = m_rcWork.bottom = g_dDefaultGuideLength/2;
+		m_rcWork.high = 0;
+		m_rcWork.low = -g_dDefaultGuideLength/2;
+	}
 	if ( m_bDocFlg[NCDOC_LATHE] ) {
 		if ( m_bDocFlg[NCDOC_COMMENTWORK_R] ) {
 			m_rcWork.high = m_rcWorkCo.high;

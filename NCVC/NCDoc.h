@@ -59,11 +59,16 @@ class CNCDoc : public CDocBase
 	UINT		m_nDecimalID;	// 小数点表記書式リソースＩＤ
 	CRect3F		m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
 				m_rcWorkCo;		// ｺﾒﾝﾄ指示
+	DWORD		m_dwAllCutValFlgs;	// 切削コード全体の座標指示
 	//
 	void	SetMaxRect(const CNCdata* pData) {
 		// 最大ｵﾌﾞｼﾞｪｸﾄ矩形ﾃﾞｰﾀｾｯﾄ
 		m_rcMax  |= pData->GetMaxRect();
 		m_rcWork |= pData->GetMaxCutRect();
+		if ( pData->IsCutCode() ) {
+			// 切削コードを対象に座標指示を収集
+			m_dwAllCutValFlgs |= pData->GetValFlags();
+		}
 	}
 
 	// ﾄﾚｰｽ
