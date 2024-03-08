@@ -11,12 +11,15 @@
 #include "NCInfoView.h"
 #include "ViewOption.h"
 #include "boost/format.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 using namespace boost;
+using namespace boost::gregorian;
+using namespace boost::posix_time;
 using std::string;
 
 extern	LPCTSTR	gg_szDelimiter;	// ":"
@@ -213,8 +216,13 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 		rc.SetRect(X, i*nHeight, W, (i+1)*nHeight);
 		pDC->DrawText(strFormat, &rc, DT_SINGLELINE|DT_VCENTER|DT_RIGHT);
 		//
-		if ( dTime == -1 )			// ‰Šúó‘Ô
+		if ( dTime == -1 ) {		// ‰Šúó‘Ô
 			VERIFY(strFormat.LoadString(IDCV_FEEDERROR));
+		}
+		else {
+			strFormat = to_simple_string(time_duration(seconds((long)dTime))).c_str();
+		}
+/*
 		else if ( dTime < 1 ) {		// 1•ªˆÈ‰º
 			VERIFY(strBuf.LoadString(IDCV_MINUTE));
 			strFormat = "< 1";
@@ -231,6 +239,7 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 			VERIFY(strBuf.LoadString(IDCV_MINUTE));
 			strFormat = (str(format(g_szNumFormat) % (int)dTime) + g_szSpace).c_str() + strBuf;
 		}
+*/
 	}
 	i = 5;
 	rc.SetRect(0, i*nHeight, W, (i+1)*nHeight);
@@ -382,9 +391,14 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 		strFormat.Format(strBuf, dMove);
 		strarrayInfo.Add(strItem + strDelimiter + strFormat + strMM);
 		VERIFY(strItem.LoadString(IDCV_CUTTIME2));
-		if ( dTime == -1 )
+		if ( dTime == -1 ) {
 			VERIFY(strFormat.LoadString(IDCV_FEEDERROR));
+		}
 		else {
+			strFormat = to_simple_string(time_duration(seconds((long)dTime))).c_str();
+			i = 12 - strFormat.GetLength();
+			strFormat.Insert(0, CString(' ', max(0, i)));
+/*
 			if ( dTime < 1 ) {
 				VERIFY(strBuf.LoadString(IDCV_MINUTE));
 				strFormat = "< 1";
@@ -405,6 +419,7 @@ void CopyNCInfoForClipboard(CView* pView, CNCDoc* pDoc)
 				i = 15 - strFormat.GetLength();
 				strFormat.Insert(0, CString(' ', max(0, i)));
 			}
+*/
 		}
 		strarrayInfo.Add(strItem + strDelimiter + strFormat);
 		// ‹@ŠBî•ñ(‘‘—‚è‘¬“x)

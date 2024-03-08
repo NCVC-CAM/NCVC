@@ -55,7 +55,7 @@ class CNCDoc : public CDocBase
 	CNCarray		m_obGdata;		// Gｺｰﾄﾞ描画ｵﾌﾞｼﾞｪｸﾄ
 	CStringArray	m_obMacroFile;	// ﾏｸﾛ展開一時ﾌｧｲﾙ
 	float		m_dMove[2],		// 移動距離, 切削移動距離
-				m_dCutTime;		// 切削時間
+				m_dCutTime;		// 切削時間（秒で保持）
 	UINT		m_nDecimalID;	// 小数点表記書式リソースＩＤ
 	CRect3F		m_rcWork,		// ﾜｰｸ矩形(最大切削矩形兼OpenGLﾜｰｸ矩形用)
 				m_rcWorkCo;		// ｺﾒﾝﾄ指示
