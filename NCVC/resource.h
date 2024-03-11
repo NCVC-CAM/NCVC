@@ -42,11 +42,12 @@
 #define IDCV_MILIpMIN                   511
 #define IDCV_HOUR                       512
 #define IDCV_MINUTE                     513
-#define IDCV_CUTCALC                    514
-#define IDCV_FEEDERROR                  515
-#define IDCV_LATHE                      516
-#define IDCV_WIRE                       517
-#define IDCV_NURBS                      518
+#define IDCV_SECOND                     514
+#define IDCV_CUTCALC                    515
+#define IDCV_FEEDERROR                  516
+#define IDCV_LATHE                      517
+#define IDCV_WIRE                       518
+#define IDCV_NURBS                      519
 #define IDCV_VALFORMAT3                 520
 #define IDCV_VALFORMAT4                 521
 #define IDS_MAKEDXF_CODE                522

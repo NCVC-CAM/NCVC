@@ -121,7 +121,7 @@ UINT CNCDoc::CuttimeCalc_Thread(LPVOID pVoid)
 			// Øí•ª
 			if ( pData->GetFeed() != 0 )
 				pDoc->m_dCutTime += pData->GetCutLength() / (pData->GetFeed() / 60.0f);
-			// ÄÞ³ªÙŽžŠÔ[•ª]
+			// ÄÞ³ªÙŽžŠÔ[•b]
 			pDoc->m_dCutTime += static_cast<CNCcycle*>(pData)->GetDwell();
 			break;
 		}

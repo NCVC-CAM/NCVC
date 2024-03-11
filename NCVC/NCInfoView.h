@@ -10,7 +10,11 @@
 
 class CNCInfoBase : public CViewBase
 {
+	void	CopyNCInfoForClipboard(void);	// クリップボードへのコピー
+
 protected:
+	CString	CreateCutTimeStr(void);
+
 	DECLARE_DYNAMIC(CNCInfoBase)
 
 	virtual BOOL PreCreateWindow(CREATESTRUCT&);

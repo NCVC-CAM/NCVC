@@ -4094,8 +4094,9 @@ END
 
 STRINGTABLE
 BEGIN
-    IDCV_HOUR               "ŽžŠÔ"
-    IDCV_MINUTE             "•ª"
+    IDCV_HOUR               "%dŽžŠÔ "
+    IDCV_MINUTE             "%d•ª "
+    IDCV_SECOND             "%d•b"
     IDCV_CUTCALC            "ŒvŽZ’†..."
     IDCV_FEEDERROR          "ˆÚ“®‘¬“x–¢Ý’è"
     IDCV_LATHE              " (Lathe Mode)"
