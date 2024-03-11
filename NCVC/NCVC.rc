@@ -3913,7 +3913,7 @@ BEGIN
     IDCV_G0LENGTH           "移 動 長"
     IDCV_G1LENGTH           "切 削 長"
     IDCV_SUMLENGTH          "合 　 計"
-    IDCV_CUTTIME            "トータル加工時間"
+    IDCV_CUTTIME            "トータル加工予想時間"
     IDCV_MAXRECT            "最大移動矩形"
     IDCV_KARA               "～"
     IDCV_MILI               "mm"

@@ -196,10 +196,12 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 	VERIFY(strBuf.LoadString(IDCV_CUTTIME));
 	pDC->TextOut(0, (i+1)*nHeight, strBuf+strFormat);
 	// ---
-	if ( GetDocument()->IsDocFlag(NCDOC_ERROR) )
+	if ( GetDocument()->IsDocFlag(NCDOC_ERROR) ) {
 		strFormat.Empty();
-	else if ( GetDocument()->IsDocFlag(NCDOC_CUTCALC) )
+	}
+	else if ( GetDocument()->IsDocFlag(NCDOC_CUTCALC) ) {
 		VERIFY(strFormat.LoadString(IDCV_CUTCALC));
+	}
 	else {
 		float	dMove = 0.0f;
 		for ( i=0; i<2; i++ ) {
@@ -306,7 +308,7 @@ CString	CNCInfoBase::CreateCutTimeStr(void)
 	CString	strResult, strBuf;
 	float	dTime = GetDocument()->GetCutTime();
 
-	if ( dTime == -1 ) {		// ‰Šúó‘Ô
+	if ( dTime < 0.0f ) {		// ‰Šúó‘Ô
 		VERIFY(strResult.LoadString(IDCV_FEEDERROR));
 	}
 	else {
