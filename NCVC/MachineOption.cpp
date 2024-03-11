@@ -656,10 +656,12 @@ CString	CMachineOption::MakeMacroCommand(int a) const
 
 CString CMachineOption::GetDefaultOption(void) const
 {
+	extern	LPCTSTR	gg_szSpace;		// " "
 	CString	strResult;
+
 	BOOST_FOREACH( auto ref, g_nDefaultMacroID ) {
 		if ( !strResult.IsEmpty() )
-			strResult += " ";
+			strResult += gg_szSpace;
 		strResult += MakeMacroCommand(ref);
 	}
 	return strResult;

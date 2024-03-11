@@ -22,11 +22,10 @@ using namespace boost::gregorian;
 using namespace boost::posix_time;
 using std::string;
 
+extern	LPCTSTR	gg_szSpace;		// " "
 extern	LPCTSTR	gg_szDelimiter;	// ":"
 extern	LPCTSTR	g_szNdelimiter;	// "XYZUVWIJKRPLDH" from NCDoc.cpp
-static	LPCTSTR	g_szSpace = " ";
 static	LPCTSTR	g_szNumFormat = "%12d";
-static	LPCTSTR	g_szMinFormat = "%2d ";
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCInfoBase
@@ -187,7 +186,7 @@ void CNCInfoView1::OnDraw(CDC* pDC)
 	pDC->SetBkMode(TRANSPARENT);
 
 	// â¡çHèÓïÒ
-	strFormat = g_szSpace;	strFormat += gg_szDelimiter;
+	strFormat = gg_szSpace;	strFormat += gg_szDelimiter;
 	for ( i=0; i<3; i++ ) {
 		VERIFY(strBuf.LoadString(i+IDCV_G0LENGTH));
 		pDC->TextOut(0, i*nHeight, strBuf+strFormat);
@@ -231,7 +230,7 @@ void CNCInfoView2::OnDraw(CDC* pDC)
 	CString		strBuf, strDelimiter;
 	CRect		rc;
 
-	strDelimiter = g_szSpace;	strDelimiter += gg_szDelimiter;
+	strDelimiter = gg_szSpace;	strDelimiter += gg_szDelimiter;
 	const	int		W = 10*nWidth;
 
 	CFont*	pFontOld = pDC->SelectObject(AfxGetNCVCMainWnd()->GetTextFont(TYPE_NCD));
@@ -344,10 +343,10 @@ void CNCInfoBase::CopyNCInfoForClipboard(void)
 	float	dMove = 0.0f, dResult[2];
 
 	VERIFY(strBuf.LoadString(IDCV_MILI));
-	strMM = g_szSpace + strBuf;
-	strDelimiter  = g_szSpace;
+	strMM = gg_szSpace + strBuf;
+	strDelimiter  = gg_szSpace;
 	strDelimiter += gg_szDelimiter;
-	strDelimiter += g_szSpace;
+	strDelimiter += gg_szSpace;
 
 	// ∏ÿØÃﬂŒﬁ∞ƒﬁÇ÷ÇÃ√ﬁ∞¿èÄîı
 	try {
@@ -363,8 +362,8 @@ void CNCInfoBase::CopyNCInfoForClipboard(void)
 			VERIFY(strItem.LoadString(IDCV_UPDATE));
 			VERIFY(strBuf.LoadString(ID_INDICATOR_DATE_F2));
 			VERIFY(strFormat.LoadString(ID_INDICATOR_TIME_F));
-			strItem += strDelimiter + fStatus.m_mtime.Format(strBuf) + g_szSpace +
-				fStatus.m_mtime.Format(strFormat) + g_szSpace + g_szSpace;
+			strItem += strDelimiter + fStatus.m_mtime.Format(strBuf) + gg_szSpace +
+				fStatus.m_mtime.Format(strFormat) + gg_szSpace + gg_szSpace;
 			if ( fStatus.m_size >= 1024*1024 )
 				strFormat = (lexical_cast<string>(fStatus.m_size/(1024*1024)) + " MB").c_str();
 			else if ( fStatus.m_size >= 1024 )
@@ -428,7 +427,7 @@ void CNCInfoBase::CopyNCInfoForClipboard(void)
 				GetDocument()->GetWorkRectPP(XZ[i], dResult);
 				strItem = g_szNdelimiter[ZX[i]] + strDelimiter;
 				strFormat.Format(GetDocument()->GetDecimalID(), dResult[0] * dHosei[i]);
-				strItem += strFormat + g_szSpace + strBuf + g_szSpace;
+				strItem += strFormat + gg_szSpace + strBuf + gg_szSpace;
 				strFormat.Format(GetDocument()->GetDecimalID(), dResult[1] * dHosei[i]);
 				strarrayInfo.Add(strItem + strFormat + strMM);
 			}
@@ -438,7 +437,7 @@ void CNCInfoBase::CopyNCInfoForClipboard(void)
 				GetDocument()->GetWorkRectPP(i, dResult);
 				strItem = g_szNdelimiter[i] + strDelimiter;
 				strFormat.Format(GetDocument()->GetDecimalID(), dResult[0]);
-				strItem += strFormat + g_szSpace + strBuf + g_szSpace;
+				strItem += strFormat + gg_szSpace + strBuf + gg_szSpace;
 				strFormat.Format(GetDocument()->GetDecimalID(), dResult[1]);
 				strarrayInfo.Add(strItem + strFormat + strMM);
 			}

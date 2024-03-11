@@ -541,7 +541,7 @@ BOOL CMainFrame::CreateOutsideProcess
 	// ãNìÆÃﬂ€æΩÇ¿ﬁÃﬁŸ∏´∞√∞ºÆ›Ç≈Ç≠Ç≠ÇÈ
 	strProcess  = "\"";
 	strProcess += lpszProcess;
-	strProcess += "\"";
+	strProcess += "\" ";
 
 	// à¯êîÇÕµÃﬂºÆ›ìôÃß≤ŸñºÇ≈Ç»Ç¢èÍçáÇ‡Ç†ÇÈÇÃÇ≈
 	// Ç§Ç©Ç¬Ç…¿ﬁÃﬁŸ∏´∞√∞ºÆ›Ç≈Ç≠Ç≠ÇÈÇ±Ç∆ÇÕÇ≈Ç´Ç»Ç¢
@@ -549,7 +549,7 @@ BOOL CMainFrame::CreateOutsideProcess
 	STARTUPINFO			si;
 	::ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
-	if ( ::CreateProcess(NULL, const_cast<LPTSTR>(LPCTSTR(strProcess+" "+lpszArgv)), NULL, NULL, FALSE, 
+	if ( ::CreateProcess(NULL, const_cast<LPTSTR>(LPCTSTR(strProcess+lpszArgv)), NULL, NULL, FALSE, 
 			NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi) ) {
 		if ( bWait )
 			::WaitForSingleObject(pi.hProcess, INFINITE);

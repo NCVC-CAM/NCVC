@@ -11,6 +11,8 @@ extern	LPCTSTR	gg_szRegKey = "Software\\MNCT-S\\NCVC\\";
 extern	LPCTSTR	gg_szReturn = "\n";
 // CR+LF
 extern	LPCTSTR	gg_szCRLF = "\r\n";
+// スペース
+extern	LPCTSTR	gg_szSpace = " ";
 // 分解文字
 extern	LPCTSTR	gg_szDelimiter = ":";
 // 分解文字（拡張子フィルタ）
