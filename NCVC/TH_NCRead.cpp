@@ -949,7 +949,11 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 					GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
 			}
 			g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[nCode];
-			bNCval = TRUE;
+			if ( bNCsub ) {
+				// M98ˆ—’†‚È‚çP‚©L‚Í’l‚Æ‚µ‚Äˆ—‚µ‚È‚¢
+				if ( nCode!=NCA_P && nCode!=NCA_L )
+					bNCval = TRUE;
+			}
 			break;
 		}	// End of switch()
 	}	// End of while() phrase_parse
@@ -959,13 +963,6 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 		nNotModalCode = 01;		// dummy
 		g_ncArgv.taper.bTonly = TRUE;	// TH_UVWire.cpp ‚Å‚Ìˆ—–Úˆó
 		bNCobj = TRUE;			// dummy object ‚Ì¶¬
-	}
-	//
-	if ( bNCsub && bNCval ) {
-		// M98‚Å‚Ì[P_|L_]‚ÌµÌŞ¼Şª¸Ä¶¬‚ğ—}§
-		if ( g_ncArgv.nc.dwValFlags & (NCD_P|NCD_L) ) {
-			bNCval = FALSE;
-		}
 	}
 	//
 	if ( bNCobj || bNCval ) {
