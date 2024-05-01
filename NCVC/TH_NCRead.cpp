@@ -949,10 +949,11 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 					GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
 			}
 			g_ncArgv.nc.dwValFlags |= g_dwSetValFlags[nCode];
+			bNCval = TRUE;
 			if ( bNCsub ) {
 				// M98ˆ—’†‚È‚çP‚©L‚Í’l‚Æ‚µ‚Äˆ—‚µ‚È‚¢
-				if ( nCode!=NCA_P && nCode!=NCA_L )
-					bNCval = TRUE;
+				if ( nCode==NCA_P || nCode==NCA_L )
+					bNCval = FALSE;
 			}
 			break;
 		}	// End of switch()
