@@ -127,8 +127,8 @@ public:
 		return m_dMove[a];
 	}
 	CPoint3F	GetOffsetOrig(void) const {
-		ASSERT(0<=m_nWorkOrg && m_nWorkOrg<SIZEOF(m_ptNcWorkOrg));
-		return m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg;
+		ASSERT(0<=m_nWorkOrg && m_nWorkOrg<WORKOFFSET);
+		return m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcWorkOrg[WORKOFFSET] + m_ptNcLocalOrg;	// Œ»Ý‚Ìƒ[ƒNÀ•WŒn+G92+G52
 	}
 	float	GetCutTime(void) const {
 		return m_dCutTime;
@@ -174,7 +174,7 @@ public:
 	BOOL	RouteCmdToAllViews(CView*, UINT, int, void*, AFX_CMDHANDLERINFO*);
 
 	void	SelectWorkOffset(int nWork) {
-		ASSERT(nWork>=0 && nWork<WORKOFFSET);
+		ASSERT(0<=nWork && nWork<WORKOFFSET);
 		m_nWorkOrg = nWork;
 	}
 	CNCdata*	DataOperation(const CNCdata*, LPNCARGV, INT_PTR = -1, ENNCOPERATION = NCADD);

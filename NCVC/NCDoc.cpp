@@ -82,8 +82,6 @@ CNCDoc::CNCDoc()
 #ifdef _DEBUG_FILEOPEN
 	printf("CNCDoc::CNCDoc() Start\n");
 #endif
-	int		i;
-
 	m_bDocFlg.set(NCDOC_ERROR);	// 初期状態はｴﾗｰﾌﾗｸﾞだけ立てる
 	ZEROCLR(m_dMove);
 	m_dCutTime = -1.0f;
@@ -93,11 +91,11 @@ CNCDoc::CNCDoc()
 	m_pCutcalcThread  = NULL;
 	// ﾜｰｸ座標系取得
 	const CMachineOption* pMCopt = AfxGetNCVCApp()->GetMachineOption();
-	for ( i=0; i<WORKOFFSET; i++ )
+	for ( int i=0; i<WORKOFFSET; i++ )
 		m_ptNcWorkOrg[i] = pMCopt->GetWorkOffset(i);
-	m_ptNcWorkOrg[i] = 0.0f;		// G92の初期化
+	m_ptNcWorkOrg[WORKOFFSET] = 0.0f;		// G92の初期化
 	m_nWorkOrg = pMCopt->GetModalSetting(MODALGROUP2);		// G54～G59
-	if ( m_nWorkOrg<0 || SIZEOF(m_ptNcWorkOrg)<=m_nWorkOrg )
+	if ( m_nWorkOrg<0 || WORKOFFSET<=m_nWorkOrg )
 		m_nWorkOrg = 0;
 	// ｵﾌﾞｼﾞｪｸﾄ矩形の初期化
 	m_rcMax.SetRectMinimum();
@@ -263,7 +261,6 @@ CNCdata* CNCDoc::DataOperation
 	CMachineOption*	pOpt = AfxGetNCVCApp()->GetMachineOption();
 	CNCdata*	pDataResult = NULL;
 	CNCblock*	pBlock;
-//	CPoint3F	ptOffset( m_ptNcWorkOrg[m_nWorkOrg] + m_ptNcLocalOrg );	// GetOffsetOrig()
 	INT_PTR		i;
 	BOOL		bResult = TRUE;
 	NCMAKETYPE	enMakeType;
@@ -370,9 +367,6 @@ CNCdata* CNCDoc::DataOperation
 						m_ptNcWorkOrg[WORKOFFSET][i] = pData->GetEndValue(i) - (float)lpArgv->nc.dValue[i];
 					}
 				}
-				// 現在位置 - G92値 で、G92座標系原点を計算
-				m_nWorkOrg = WORKOFFSET;	// G92座標系選択
-				// ptOffset = m_ptNcWorkOrg[WORKOFFSET];
 			}
 			if ( m_bDocFlg[NCDOC_WIRE] ) {
 				// ﾜｰｸ厚さとﾌﾟﾛｸﾞﾗﾑ面の指示
