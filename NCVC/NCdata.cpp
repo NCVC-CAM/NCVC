@@ -1276,8 +1276,7 @@ CNCcircle::CNCcircle
 (const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset, NCMAKETYPE enType) :
 	CNCline(NCDARCDATA, pData, lpArgv, ptOffset)
 {
-	BOOL	bError = TRUE,				// Error
-			bNeedAngle = TRUE;			// 角度計算が必要か否か
+	BOOL	bError = TRUE;				// Error
 
 	if ( GetGcode() == 2 )
 		m_dwFlags &= ~NCFLG_G02G03;		// 0:G02
@@ -1310,54 +1309,47 @@ CNCcircle::CNCcircle
 		float	i = GetValFlags() & NCD_I ? (float)lpArgv->nc.dValue[NCA_I] : 0.0f,
 				j = GetValFlags() & NCD_J ? (float)lpArgv->nc.dValue[NCA_J] : 0.0f,
 				k = GetValFlags() & NCD_K ? (float)lpArgv->nc.dValue[NCA_K] : 0.0f;
+		BOOL	bNeedCalcAngle = FALSE;		// 角度計算が必要か否か
 		m_ptOrg = m_ptValS;
 		switch ( GetPlane() ) {
 		case XY_PLANE:
 			m_r = _hypotf(i, j);
 			m_ptOrg.x += i;
 			m_ptOrg.y += j;
-			if ( GetValFlags() & (NCD_X|NCD_Y) ) {
+			if ( pts != pte ) {
+				bNeedCalcAngle = TRUE;
 				pto = m_ptOrg.GetXY();
 			}
-			else {
-				// 平面の移動指示がなければ真円として代入
-				// 角度計算の必要なし
-				bNeedAngle = FALSE;
-				m_sq = 0;
-				m_eq = PI2;
-			}
+			// 平面の移動指示がない（pts==pte）または指示があっても同一座標なら
+			// 真円として角度の計算は必要なし
 			break;
 		case XZ_PLANE:
 			m_r = _hypotf(i, k);
 			m_ptOrg.x += i;
 			m_ptOrg.z += k;
-			if ( GetValFlags() & (NCD_X|NCD_Z) ) {
+			if ( pts != pte ) {
+				bNeedCalcAngle = TRUE;
 				pto = m_ptOrg.GetXZ();
-			}
-			else {
-				bNeedAngle = FALSE;
-				m_sq = 0;
-				m_eq = PI2;
 			}
 			break;
 		case YZ_PLANE:
 			m_r = _hypotf(j, k);
 			m_ptOrg.y += j;
 			m_ptOrg.z += k;
-			if ( GetValFlags() & (NCD_Y|NCD_Z) ) {
+			if ( pts != pte  ) {
+				bNeedCalcAngle = TRUE;
 				pto = m_ptOrg.GetYZ();
-			}
-			else {
-				bNeedAngle = FALSE;
-				m_sq = 0;
-				m_eq = PI2;
 			}
 			break;
 		}
-		if ( bNeedAngle ) {
+		if ( bNeedCalcAngle ) {
 			pts -= pto;		// 角度調整用の原点補正
 			pte -= pto;
 			AngleTuning(pts, pte);
+		}
+		else {
+			m_sq = 0;
+			m_eq = PI2;
 		}
 		bError = FALSE;
 	}
