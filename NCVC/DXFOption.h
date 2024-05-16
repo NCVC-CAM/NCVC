@@ -71,7 +71,7 @@ friend	class	CMakeBindOptDlg;
 	CStringList		m_strInitList[NCMAKENUM];		// 切削条件ﾌｧｲﾙ名の履歴
 	CStringArray	m_strIgnoreArray;				// DXF無視ワード
 	NCMAKETYPE		m_enMakeType;					// 直前のNC生成ﾀｲﾌﾟ
-	boost::regex	m_regCutter;					// 切削ﾚｲﾔ正規表現
+	boost::xpressive::cregex	m_regCutter;		// 切削ﾚｲﾔ正規表現
 
 	BOOL	AddListHistory(NCMAKETYPE, LPCTSTR);
 	BOOL	ReadInitHistory(NCMAKETYPE);
@@ -86,7 +86,7 @@ public:
 		return (m_strReadLayer[DXFORGLAYER] == lpszLayer);
 	}
 	BOOL	IsCutterLayer(LPCTSTR lpszLayer) const {
-		return boost::regex_search(lpszLayer, m_regCutter);
+		return boost::xpressive::regex_search(lpszLayer, m_regCutter);
 	}
 	BOOL	IsStartLayer(LPCTSTR lpszLayer) const {
 		return m_strReadLayer[DXFSTRLAYER].IsEmpty() ?

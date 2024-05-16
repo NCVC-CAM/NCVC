@@ -56,10 +56,10 @@ CDXFOption::CDXFOption()
 			i<=DXFCAMLAYER ? g_szDefaultLayer[i] : strResult );	// ÃÞÌ«ÙÄÊß×Ò°À ‚ÍCŒ´“_‚ÆØíÚ²Ô‚Ì‚Ý
 	}
 	try {
-		m_regCutter = m_strReadLayer[DXFCAMLAYER];
+		m_regCutter = xpressive::cregex::compile(LPCTSTR(m_strReadLayer[DXFCAMLAYER]));
 	}
-	catch (boost::regex_error&) {
-		m_regCutter = g_szDefaultLayer[DXFCAMLAYER];
+	catch (xpressive::regex_error&) {
+		m_regCutter = xpressive::cregex::compile(g_szDefaultLayer[DXFCAMLAYER]);
 	}
 
 	// µÌß¼®Ý

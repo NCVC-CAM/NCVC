@@ -10,6 +10,8 @@
 #define new DEBUG_NEW
 #endif
 
+using namespace boost;
+
 BEGIN_MESSAGE_MAP(CDxfSetup1, CPropertyPage)
 	//{{AFX_MSG_MAP(CDxfSetup1)
 	ON_BN_CLICKED(IDC_DXF_RELOAD, &CDxfSetup1::OnReload)
@@ -75,9 +77,9 @@ BOOL CDxfSetup1::OnApply()
 	pOpt->m_strReadLayer[DXFCAMLAYER]	= m_strCamLayer;
 	pOpt->m_nOrgType	= m_nOrgType;
 	try {
-		pOpt->m_regCutter = m_strCamLayer;
+		pOpt->m_regCutter = xpressive::cregex::compile(LPCTSTR(m_strCamLayer));
 	}
-	catch (boost::regex_error&) {
+	catch (xpressive::regex_error&) {
 		AfxMessageBox(IDS_ERR_REGEX, MB_OK|MB_ICONEXCLAMATION);
 		m_ctCamLayer.SetFocus();
 		return FALSE;
