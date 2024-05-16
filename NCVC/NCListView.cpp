@@ -164,11 +164,12 @@ void CNCListView::SetJumpList(int nJump)
 
 void CNCListView::SetFindList(int nUpDown, const CString& strFind)
 {
-	if ( strFind != m_regFind.str().c_str() ) {
+	if ( strFind != m_strFind ) {
+		m_strFind = strFind;
 		try {
-			m_regFind = strFind;
+			m_regFind = xpressive::cregex::compile(LPCTSTR(strFind));
 		}
-		catch (boost::regex_error&) {
+		catch (boost::xpressive::regex_error&) {
 			AfxMessageBox(IDS_ERR_REGEX, MB_OK|MB_ICONEXCLAMATION);
 			return;
 		}

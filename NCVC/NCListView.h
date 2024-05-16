@@ -8,7 +8,8 @@
 
 class CNCListView : public CListView
 {
-	boost::regex	m_regFind;
+	CString						m_strFind;	// 実際の検索文字列
+	boost::xpressive::cregex	m_regFind;	// xpressiveオブジェクト
 	CNCdata*		m_pTraceData;	// SelectTrace()呼び出し中か否か
 
 protected:

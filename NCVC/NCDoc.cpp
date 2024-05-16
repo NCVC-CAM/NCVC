@@ -510,11 +510,11 @@ void CNCDoc::SetCommentStr(const CString& strComment)
 	else
 		return;
 
-	CString	strKey(g_szNCcomment[n]),
-			strDouble("[\\+\\-]?\\d+\\.?\\d*"),
-			strRegex(strKey+"\\s*=\\s*("+strDouble+")*(\\s*,\\s*"+strDouble+")*");
+	std::string	strKey(g_szNCcomment[n]),
+				strDouble("[\\+\\-]?\\d+\\.?\\d*"),
+				strRegex(strKey+"\\s*=\\s*("+strDouble+")*(\\s*,\\s*"+strDouble+")*");
 
-	regex	r1(strRegex, regex::icase);
+	xpressive::cregex	r1 = xpressive::cregex::compile(strRegex.c_str(), xpressive::regex_constants::icase);
 	INT_PTR	nIndex = SearchBlockRegex(r1, FALSE), i;
 	BOOL	bInsert = TRUE;
 	
@@ -522,10 +522,10 @@ void CNCDoc::SetCommentStr(const CString& strComment)
 		// 複数のｺﾒﾝﾄﾜｰﾄﾞが記述されている可能性があるので
 		// 該当部分を置換で除去する
 		std::string	strReplace(m_obBlock[nIndex]->GetStrBlock());
-		strReplace = regex_replace(strReplace, r1, "");
+		strReplace = xpressive::regex_replace(strReplace.c_str(), r1, "");
 		// ｶｯｺだけが残ったらｶｯｺも除去
-		regex	rc("\\(\\)");
-		strReplace = regex_replace(strReplace, rc, "");
+		xpressive::sregex	rc = xpressive::as_xpr('(')>>')';	//("\\(\\)");
+		strReplace = xpressive::regex_replace(strReplace, rc, "");
 		if ( strReplace.empty() )
 			bInsert = FALSE;
 		else
@@ -533,10 +533,10 @@ void CNCDoc::SetCommentStr(const CString& strComment)
 	}
 	if ( bInsert ) {
 		// ｺﾒﾝﾄ行を新規挿入
-		regex	r2("^%");
+		xpressive::cregex	r2 = xpressive::as_xpr("^%");
 		for ( i=0; i<GetNCBlockSize(); i++ ) {
 			// "%"の次行
-			if ( regex_search(LPCTSTR(m_obBlock[i]->GetStrBlock()), r2) ) {
+			if ( xpressive::regex_search(LPCTSTR(m_obBlock[i]->GetStrBlock()), r2) ) {
 				i++;
 				break;
 			}
@@ -644,19 +644,19 @@ void CNCDoc::WaitCalcThread(BOOL bWaitOnly/*=FALSE*/)
 	}
 }
 
-INT_PTR CNCDoc::SearchBlockRegex(regex& r,
+INT_PTR CNCDoc::SearchBlockRegex(xpressive::cregex& r,
 	BOOL bCommentThrough/*=TRUE*/, INT_PTR nStart/*=0*/, BOOL bReverse/*=FALSE*/)
 {
 	INT_PTR		i;
 	std::string	str;
-	regex		c("\\(.*\\)");	// (コメント)
-
+	xpressive::cregex	c = '(' >> *(~xpressive::as_xpr(')')) >> ')';;	// "\\(.*\\)";	// (コメント)
+	
 	if ( bReverse ) {
 		for (i=nStart; i>=0; i--) {
 			str = LPCTSTR(m_obBlock[i]->GetStrBlock());
 			if ( bCommentThrough )
-				str = regex_replace(str, c, "");	// ｺﾒﾝﾄを除く
-			if ( !str.empty() && regex_search(str, r) )
+				str = xpressive::regex_replace(str.c_str(), c, "");	// ｺﾒﾝﾄを除く
+			if ( !str.empty() && xpressive::regex_search(str.c_str(), r) )
 				return i;
 		}
 	}
@@ -664,8 +664,8 @@ INT_PTR CNCDoc::SearchBlockRegex(regex& r,
 		for (i=nStart; i<GetNCBlockSize(); i++) {
 			str = LPCTSTR(m_obBlock[i]->GetStrBlock());
 			if ( bCommentThrough )
-				str = regex_replace(str, c, "");
-			if ( !str.empty() && regex_search(str, r) )
+				str = xpressive::regex_replace(str.c_str(), c, "");
+			if ( !str.empty() && xpressive::regex_search(str.c_str(), r) )
 				return i;
 		}
 	}

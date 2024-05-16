@@ -64,7 +64,6 @@
 // BOOST Libraries
 #pragma	warning( disable : 4819 )		// codepage
 #pragma	warning( disable : 4348 )		// boost 1.60Å` ???
-#include "boost/regex.hpp"
 #include "boost/xpressive/xpressive.hpp"
 #include "boost/tokenizer.hpp"
 #include "boost/tuple/tuple.hpp"

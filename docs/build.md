@@ -9,8 +9,10 @@ lib はアドインのビルドで使いますが，include はNCVC本体のビ�
 インクルードファイルとライブラリファイルを適切に設置してください．
 
 ## Boost C++ Library
-Boost C++ Library をビルドしておいてください．
-boost::regex を使用しているのでビルドが必要です．
+~~Boost C++ Library をビルドしておいてください．boost::regex を使用しているのでビルドが必要です．~~  
+Ver4.xx以降はBoost.Xpressiveに切り替えたので，インクルードファイルだけでOKです．
+適当なフォルダに展開してください．
+
 参考までにビルド用のバッチファイルを以下に示します．
 
     set BOOST=boost_x_xx_x
