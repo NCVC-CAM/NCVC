@@ -1382,8 +1382,8 @@ INT_PTR NC_SearchSubProgram(INT_PTR* pRepeat)
 		}
 	}
 
-	// 正規表現(Oxxxxにﾏｯﾁする)
-	string	strBuf = "^O(0)*"+lexical_cast<string>(nProg)+"$";
+	// 正規表現(Oxxxxにﾏｯﾁする -> 末尾は行末か数字以外)
+	string	strBuf = "^O(0)*"+lexical_cast<string>(nProg)+"(\\D|$)";
 	xpressive::cregex	r = xpressive::cregex::compile(strBuf.c_str());
 
 	// 現在の(同じ)ﾒﾓﾘﾌﾞﾛｯｸから検索
@@ -1946,7 +1946,7 @@ BOOL SearchProgNo(LPCTSTR lpszFile, const xpressive::cregex& r)
 		HANDLE hMap = CreateFileMapping((HANDLE)(fp.m_hFile), NULL,
 							PAGE_READONLY, 0, 0, NULL);
 		if ( hMap ) {
-			LPCTSTR pMap = (LPCTSTR)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+			LPCTSTR pMap = LPCTSTR(MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0));
 			if ( pMap ) {
 				if ( xpressive::regex_search(pMap, r) )
 					bResult = TRUE;
