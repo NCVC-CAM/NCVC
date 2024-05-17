@@ -162,12 +162,12 @@ static	CString	g_strSearchFolder[2];	// ¶ÚİÄ‚Æw’èÌ«ÙÀŞ
 static	CString	SearchFolder(const xpressive::cregex&);
 static	CString	SearchFolder_Sub(int, LPCTSTR, const xpressive::cregex&);
 static	BOOL	SearchProgNo(LPCTSTR, const xpressive::cregex&);
-static	xpressive::cregex	g_reMacroStr;
+static	xpressive::sregex	g_reMacroStr;
 static	INT_PTR	NC_SearchSubProgram(INT_PTR*);
 static	INT_PTR	NC_SearchMacroProgram(const string&, CNCblock*);
 static	INT_PTR	NC_NoSearch(const string&, CNCblock*);
 // ©“®ÌŞÚ²¸º°ÄŞŒŸõ
-static	xpressive::cregex	g_reAutoBreak;
+static	xpressive::sregex	g_reAutoBreak;
 static	INT_PTR	NC_SearchAutoBreak(const string&, CNCblock*);
 static	function<INT_PTR (const string&, CNCblock*)>	SearchMacro,
 														SearchAutoBreak;
@@ -1415,7 +1415,7 @@ INT_PTR NC_SearchMacroProgram(const string& strBlock, CNCblock* pBlock)
 
 	const CMachineOption* pMCopt = AfxGetNCVCApp()->GetMachineOption();
 
-	if ( !xpressive::regex_search(strBlock.c_str(), g_reMacroStr) )
+	if ( !xpressive::regex_search(strBlock, g_reMacroStr) )
 		return -1;
 	// 5ŠK‘wˆÈã‚ÌŒÄ‚Ño‚µ‚Í´×°(4ŠK‘w‚Ü‚Å)
 	if ( g_nSubprog+1 >= 5 ) {
@@ -1475,7 +1475,7 @@ INT_PTR NC_SearchMacroProgram(const string& strBlock, CNCblock* pBlock)
 // ©“®ÌŞÚ²¸º°ÄŞ‚ÌŒŸõ
 INT_PTR NC_SearchAutoBreak(const string& strBlock, CNCblock* pBlock)
 {
-	if ( xpressive::regex_search(strBlock.c_str(), g_reAutoBreak) )
+	if ( xpressive::regex_search(strBlock, g_reAutoBreak) )
 		pBlock->SetBlockFlag(NCF_BREAK);
 
 	return 0;	// dummy
@@ -1948,7 +1948,7 @@ BOOL SearchProgNo(LPCTSTR lpszFile, const xpressive::cregex& r)
 		if ( hMap ) {
 			LPCTSTR pMap = (LPCTSTR)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
 			if ( pMap ) {
-				if ( regex_search(pMap, r) )
+				if ( xpressive::regex_search(pMap, r) )
 					bResult = TRUE;
 				UnmapViewOfFile(pMap);
 			}
@@ -2132,13 +2132,13 @@ void InitialVariable(void)
 		if ( pMCopt->GetMacroStr(MCMACROCODE).IsEmpty() || pMCopt->GetMacroStr(MCMACROIF).IsEmpty() )
 			SearchMacro = &NC_NoSearch;
 		else {
-			g_reMacroStr = xpressive::cregex::compile(LPCTSTR(pMCopt->GetMacroStr(MCMACROCODE)));
+			g_reMacroStr = xpressive::sregex::compile(LPCTSTR(pMCopt->GetMacroStr(MCMACROCODE)));
 			SearchMacro = &NC_SearchMacroProgram;
 		}
 		if ( pMCopt->GetAutoBreakStr().IsEmpty() )
 			SearchAutoBreak = &NC_NoSearch;
 		else {
-			g_reAutoBreak = xpressive::cregex::compile(LPCTSTR(pMCopt->GetAutoBreakStr()));
+			g_reAutoBreak = xpressive::sregex::compile(LPCTSTR(pMCopt->GetAutoBreakStr()));
 			SearchAutoBreak = &NC_SearchAutoBreak;
 		}
 	}
