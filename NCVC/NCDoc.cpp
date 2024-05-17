@@ -532,16 +532,9 @@ void CNCDoc::SetCommentStr(const CString& strComment)
 			StrOperation(strReplace.c_str(), nIndex, NCMOD);
 	}
 	if ( bInsert ) {
-		// ｺﾒﾝﾄ行を新規挿入
-		xpressive::cregex	r2 = xpressive::as_xpr("^%");
+		// "%"の次行へｺﾒﾝﾄ行を新規挿入
 		for ( i=0; i<GetNCBlockSize(); i++ ) {
-			// "%"の次行
-			if ( xpressive::regex_search(LPCTSTR(m_obBlock[i]->GetStrBlock()), r2) ) {
-				i++;
-				break;
-			}
-			// または最初のGｺｰﾄﾞの直前に挿入
-			if ( m_obBlock[i]->GetBlockToNCdata() )
+			if ( m_obBlock[i]->GetStrBlock()[0] != '%' )
 				break;
 		}
 		StrOperation(strComment, i, NCINS);
@@ -647,15 +640,17 @@ void CNCDoc::WaitCalcThread(BOOL bWaitOnly/*=FALSE*/)
 INT_PTR CNCDoc::SearchBlockRegex(xpressive::cregex& r,
 	BOOL bCommentThrough/*=TRUE*/, INT_PTR nStart/*=0*/, BOOL bReverse/*=FALSE*/)
 {
+	// 固定パターンはstatic変数化
+	static	xpressive::sregex	regComment = '(' >> *(~xpressive::as_xpr(')')) >> ')';	// (コメント)
+
 	INT_PTR		i;
 	std::string	str;
-	xpressive::cregex	c = '(' >> *(~xpressive::as_xpr(')')) >> ')';;	// "\\(.*\\)";	// (コメント)
 	
 	if ( bReverse ) {
 		for (i=nStart; i>=0; i--) {
 			str = LPCTSTR(m_obBlock[i]->GetStrBlock());
 			if ( bCommentThrough )
-				str = xpressive::regex_replace(str.c_str(), c, "");	// ｺﾒﾝﾄを除く
+				str = xpressive::regex_replace(str, regComment, "");	// ｺﾒﾝﾄを除く
 			if ( !str.empty() && xpressive::regex_search(str.c_str(), r) )
 				return i;
 		}
@@ -664,7 +659,7 @@ INT_PTR CNCDoc::SearchBlockRegex(xpressive::cregex& r,
 		for (i=nStart; i<GetNCBlockSize(); i++) {
 			str = LPCTSTR(m_obBlock[i]->GetStrBlock());
 			if ( bCommentThrough )
-				str = xpressive::regex_replace(str.c_str(), c, "");
+				str = xpressive::regex_replace(str, regComment, "");
 			if ( !str.empty() && xpressive::regex_search(str.c_str(), r) )
 				return i;
 		}
