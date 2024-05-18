@@ -7,9 +7,18 @@
 .
 └── Visual Studio 20XX/
     ├── Projects/
-    │   └── NCVC/
-    │       ├── NCVC.slh
-    │       └── NCVC/
+    │   ├── NCVC/
+    │   │   ├── NCVC.slh
+    │   │   └── NCVC/
+    │   ├── Kodatuno/
+    │   │   ├── Kodatuno.slh
+    │   │   └── Kodatuno.vs/
+    │   └── NCVC.Addin/
+    │       ├── ReadJW/
+    │       ├── ReadCSV/
+    │       ├── SendNCD/
+    │       ├── SolveTSP/
+    │       └── GRBLc/
     ├── include/
     ├── lib/
     └── boost/
