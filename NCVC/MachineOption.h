@@ -154,6 +154,10 @@ friend	class	COBSdlg;
 	CString		m_strMCname,	// ‹@ŠB–¼
 				m_strAutoBreak,	// ©“®ÌŞÚ²¸İ’èº°ÄŞ
 				m_strMacroOpt[MCMACROSTRING];	// Ï¸ÛŠÖŒW
+	// ³‹K•\Œ»
+	boost::xpressive::sregex	m_regMacroCode,
+								m_regAutoBreak;
+
 	// H‹ïî•ñµÌß¼®İ
 	CTypedPtrList<CPtrList, CMCTOOLINFO*>	m_ltTool;	// CMCTOOLINFOŒ^‚ğŠi”[
 
@@ -218,6 +222,12 @@ public:
 	CString	GetDefaultOption(void) const;	// from MachineSetup4.cpp
 	CString	GetAutoBreakStr(void) const {
 		return m_strAutoBreak;
+	}
+	BOOL	IsMacroCode(const std::string strCode) const {
+		return boost::xpressive::regex_search(strCode, m_regMacroCode);
+	}
+	BOOL	IsAutoBreak(const std::string strBreak) const {
+		return boost::xpressive::regex_search(strBreak, m_regAutoBreak);
 	}
 	boost::optional<float>	GetToolD(int) const;
 	boost::optional<float>	GetToolH(int) const;

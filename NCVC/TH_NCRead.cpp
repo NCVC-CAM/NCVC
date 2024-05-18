@@ -162,12 +162,10 @@ static	CString	g_strSearchFolder[2];	// ¶ÚİÄ‚Æw’èÌ«ÙÀŞ
 static	CString	SearchFolder(const xpressive::cregex&);
 static	CString	SearchFolder_Sub(int, LPCTSTR, const xpressive::cregex&);
 static	BOOL	SearchProgNo(LPCTSTR, const xpressive::cregex&);
-static	xpressive::sregex	g_reMacroStr;
 static	INT_PTR	NC_SearchSubProgram(INT_PTR*);
 static	INT_PTR	NC_SearchMacroProgram(const string&, CNCblock*);
 static	INT_PTR	NC_NoSearch(const string&, CNCblock*);
 // ©“®ÌŞÚ²¸º°ÄŞŒŸõ
-static	xpressive::sregex	g_reAutoBreak;
 static	INT_PTR	NC_SearchAutoBreak(const string&, CNCblock*);
 static	function<INT_PTR (const string&, CNCblock*)>	SearchMacro,
 														SearchAutoBreak;
@@ -1383,16 +1381,17 @@ INT_PTR NC_SearchSubProgram(INT_PTR* pRepeat)
 	}
 
 	// ³‹K•\Œ»(Oxxxx‚ÉÏ¯Á‚·‚é -> ––”ö‚Ís––‚©”šˆÈŠO)
-	string	strBuf = "^O(0)*"+lexical_cast<string>(nProg)+"(\\D|$)";
-	xpressive::cregex	r = xpressive::cregex::compile(strBuf.c_str());
+	xpressive::cregex	regO = xpressive::cregex::compile(
+		"^O(0)*"+lexical_cast<string>(nProg)+"(\\D|$)"
+	);
 
 	// Œ»İ‚Ì(“¯‚¶)ÒÓØÌŞÛ¯¸‚©‚çŒŸõ
-	n = g_pDoc->SearchBlockRegex(r);
+	n = g_pDoc->SearchBlockRegex(regO);
 	if ( n >= 0 )
 		return n;
 
 	// ‹@ŠBî•ñÌ«ÙÀŞ‚©‚çÌ§²ÙŒŸõ
-	CString	strFile( SearchFolder(r) );
+	CString	strFile( SearchFolder(regO) );
 	if ( strFile.IsEmpty() )
 		return -1;
 
@@ -1415,7 +1414,7 @@ INT_PTR NC_SearchMacroProgram(const string& strBlock, CNCblock* pBlock)
 
 	const CMachineOption* pMCopt = AfxGetNCVCApp()->GetMachineOption();
 
-	if ( !xpressive::regex_search(strBlock, g_reMacroStr) )
+	if ( !pMCopt->IsMacroCode(strBlock) )
 		return -1;
 	// 5ŠK‘wˆÈã‚ÌŒÄ‚Ño‚µ‚Í´×°(4ŠK‘w‚Ü‚Å)
 	if ( g_nSubprog+1 >= 5 ) {
@@ -1475,7 +1474,7 @@ INT_PTR NC_SearchMacroProgram(const string& strBlock, CNCblock* pBlock)
 // ©“®ÌŞÚ²¸º°ÄŞ‚ÌŒŸõ
 INT_PTR NC_SearchAutoBreak(const string& strBlock, CNCblock* pBlock)
 {
-	if ( xpressive::regex_search(strBlock, g_reAutoBreak) )
+	if ( AfxGetNCVCApp()->GetMachineOption()->IsAutoBreak(strBlock) )
 		pBlock->SetBlockFlag(NCF_BREAK);
 
 	return 0;	// dummy
@@ -1887,7 +1886,7 @@ void SetWireView_fromComment(void)
 	}
 }
 
-CString SearchFolder(const xpressive::cregex& r)
+CString SearchFolder(const xpressive::cregex& reg)
 {
 	extern	LPCTSTR	gg_szWild;	// "*.";
 	CString	strResult, strExt;
@@ -1899,13 +1898,13 @@ CString SearchFolder(const xpressive::cregex& r)
 		// Ì«ÙÀŞ‚ğ•W€Šg’£q‚ÅŒŸõ
 		strResult = SearchFolder_Sub(i,
 			gg_szWild + AfxGetNCVCApp()->GetDocExtString(TYPE_NCD).Right(3),	// '.' œ‚­uncdv
-			r);
+			reg);
 		if ( !strResult.IsEmpty() )
 			return strResult;
 		// “o˜^Šg’£q‚Å‚ÌÌ«ÙÀŞŒŸõ
 		for ( int j=0; j<2/*EXT_ADN,EXT_DLG*/; j++ ) {
 			PMAP_FOREACH(strExt, pFunc, AfxGetNCVCApp()->GetDocTemplate(TYPE_NCD)->GetExtMap((eEXTTYPE)j));
-				strResult = SearchFolder_Sub(i, gg_szWild + strExt, r);
+				strResult = SearchFolder_Sub(i, gg_szWild + strExt, reg);
 				if ( !strResult.IsEmpty() )
 					return strResult;
 			END_FOREACH
@@ -1915,7 +1914,7 @@ CString SearchFolder(const xpressive::cregex& r)
 	return CString();
 }
 
-CString	SearchFolder_Sub(int n, LPCTSTR lpszFind, const xpressive::cregex& r)
+CString	SearchFolder_Sub(int n, LPCTSTR lpszFind, const xpressive::cregex& reg)
 {
 	CString	strFile;
 	HANDLE	hFind;
@@ -1926,8 +1925,8 @@ CString	SearchFolder_Sub(int n, LPCTSTR lpszFind, const xpressive::cregex& r)
 		do {
 			strFile = g_strSearchFolder[n] + fd.cFileName;
 			if ( !(fd.dwFileAttributes & dwFlags) &&
-					xpressive::regex_search(fd.cFileName, r) &&
-					SearchProgNo(strFile, r) )
+					xpressive::regex_search(fd.cFileName, reg) &&
+					SearchProgNo(strFile, reg) )
 				return strFile;
 		} while ( ::FindNextFile(hFind, &fd) );
 		::FindClose(hFind);
@@ -1936,7 +1935,7 @@ CString	SearchFolder_Sub(int n, LPCTSTR lpszFind, const xpressive::cregex& r)
 	return CString();
 }
 
-BOOL SearchProgNo(LPCTSTR lpszFile, const xpressive::cregex& r)
+BOOL SearchProgNo(LPCTSTR lpszFile, const xpressive::cregex& reg)
 {
 	// Ì§²ÙÏ¯Ëßİ¸Ş‚µ‚ÄÌßÛ¸Ş×Ñ”Ô†(•¶š—ñ)‚Ì‘¶İŠm”F
 	BOOL	bResult = FALSE;
@@ -1948,7 +1947,7 @@ BOOL SearchProgNo(LPCTSTR lpszFile, const xpressive::cregex& r)
 		if ( hMap ) {
 			LPCTSTR pMap = LPCTSTR(MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0));
 			if ( pMap ) {
-				if ( xpressive::regex_search(pMap, r) )
+				if ( xpressive::regex_search(pMap, reg) )
 					bResult = TRUE;
 				UnmapViewOfFile(pMap);
 			}
@@ -2132,13 +2131,11 @@ void InitialVariable(void)
 		if ( pMCopt->GetMacroStr(MCMACROCODE).IsEmpty() || pMCopt->GetMacroStr(MCMACROIF).IsEmpty() )
 			SearchMacro = &NC_NoSearch;
 		else {
-			g_reMacroStr = xpressive::sregex::compile(LPCTSTR(pMCopt->GetMacroStr(MCMACROCODE)));
 			SearchMacro = &NC_SearchMacroProgram;
 		}
 		if ( pMCopt->GetAutoBreakStr().IsEmpty() )
 			SearchAutoBreak = &NC_NoSearch;
 		else {
-			g_reAutoBreak = xpressive::sregex::compile(LPCTSTR(pMCopt->GetAutoBreakStr()));
 			SearchAutoBreak = &NC_SearchAutoBreak;
 		}
 	}

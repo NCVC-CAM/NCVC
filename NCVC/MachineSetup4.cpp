@@ -90,10 +90,22 @@ BOOL CMachineSetup4::OnApply()
 	CMachineOption*	pMCopt = AfxGetNCVCApp()->GetMachineOption();
 
 	// Ä“ÇÁª¯¸
-	for ( int i=0; i<SIZEOF(m_strMacro); i++ ) {
+	if ( pMCopt->m_strMacroOpt[0] != m_strMacro[0] ) {
+		try {
+			pMCopt->m_regMacroCode = boost::xpressive::sregex::compile(LPCTSTR(m_strMacro[0]));
+		}
+		catch (boost::xpressive::regex_error&) {
+			AfxMessageBox(IDS_ERR_REGEX, MB_OK|MB_ICONEXCLAMATION);
+			m_ctMacro[0].SetFocus();
+			return FALSE;
+		}
+		pMCopt->m_strMacroOpt[0] = m_strMacro[0];
+		pParent->m_bReload = TRUE;
+	}
+	for ( int i=1; i<SIZEOF(m_strMacro); i++ ) {
 		if ( pMCopt->m_strMacroOpt[i] != m_strMacro[i] ) {
 			pMCopt->m_strMacroOpt[i] = m_strMacro[i];
-			pParent->m_bReload = TRUE;		// Ä“Ç‚ª•K—v
+			pParent->m_bReload = TRUE;
 		}
 	}
 

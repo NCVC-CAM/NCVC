@@ -499,6 +499,9 @@ void CNCDoc::SetWorkCylinder(BOOL bShow, float d, float h, const CPoint3F& ptOff
 
 void CNCDoc::SetCommentStr(const CString& strComment)
 {
+	// 固定パターンはstatic変数化
+	static	xpressive::sregex	regCC = xpressive::as_xpr('(')>>')';	// ()
+
 	// 既存のｺﾒﾝﾄ行を検索(hoge=ddd.dd, ddd.d, ...にﾏｯﾁ)
 	size_t	n;
 	if ( m_bDocFlg[NCDOC_LATHE] )
@@ -514,18 +517,17 @@ void CNCDoc::SetCommentStr(const CString& strComment)
 				strDouble("[\\+\\-]?\\d+\\.?\\d*"),
 				strRegex(strKey+"\\s*=\\s*("+strDouble+")*(\\s*,\\s*"+strDouble+")*");
 
-	xpressive::cregex	r1 = xpressive::cregex::compile(strRegex.c_str(), xpressive::regex_constants::icase);
-	INT_PTR	nIndex = SearchBlockRegex(r1, FALSE), i;
+	xpressive::cregex	regKey = xpressive::cregex::compile(strRegex.c_str(), xpressive::regex_constants::icase);
+	INT_PTR	nIndex = SearchBlockRegex(regKey, FALSE), i;
 	BOOL	bInsert = TRUE;
 	
 	if ( nIndex >= 0 ) {
 		// 複数のｺﾒﾝﾄﾜｰﾄﾞが記述されている可能性があるので
 		// 該当部分を置換で除去する
 		std::string	strReplace(m_obBlock[nIndex]->GetStrBlock());
-		strReplace = xpressive::regex_replace(strReplace.c_str(), r1, "");
+		strReplace = xpressive::regex_replace(strReplace.c_str(), regKey, "");
 		// ｶｯｺだけが残ったらｶｯｺも除去
-		xpressive::sregex	rc = xpressive::as_xpr('(')>>')';	//("\\(\\)");
-		strReplace = xpressive::regex_replace(strReplace, rc, "");
+		strReplace = xpressive::regex_replace(strReplace, regCC, "");
 		if ( strReplace.empty() )
 			bInsert = FALSE;
 		else

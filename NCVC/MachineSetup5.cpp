@@ -38,6 +38,7 @@ void CMachineSetup5::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_MCST5_LABEL1, m_ctDepthLabel1);
 	DDX_Control(pDX, IDC_MCST5_LABEL2, m_ctDepthLabel2);
 	DDX_Control(pDX, IDC_MCST5_L0CYCLE, m_ctL0Cycle);
+	DDX_Control(pDX, IDC_MCST5_AUTOBREAK, m_ctAutoBreak);
 	DDX_Text(pDX, IDC_MCST5_AUTOBREAK, m_strAutoBreak);
 	DDX_Check(pDX, IDC_MCST5_L0CYCLE, m_bL0Cycle);
 	for ( int i=0; i<SIZEOF(m_bOBS); i++ )
@@ -91,6 +92,14 @@ BOOL CMachineSetup5::OnApply()
 		pParent->m_bReload = TRUE;
 	}
 	if ( pMCopt->m_strAutoBreak != m_strAutoBreak ) {
+		try {
+			pMCopt->m_regAutoBreak = boost::xpressive::sregex::compile(LPCTSTR(m_strAutoBreak));
+		}
+		catch (boost::xpressive::regex_error&) {
+			AfxMessageBox(IDS_ERR_REGEX, MB_OK|MB_ICONEXCLAMATION);
+			m_ctAutoBreak.SetFocus();
+			return FALSE;
+		}
 		pMCopt->m_strAutoBreak = m_strAutoBreak;
 		pParent->m_bReload = TRUE;
 	}

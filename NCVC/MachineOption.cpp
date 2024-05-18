@@ -315,6 +315,23 @@ BOOL CMachineOption::ReadMachineOption(LPCTSTR lpszFile, BOOL bHistory/*=TRUE*/)
 	m_strMCname = szResult;
 	::GetPrivateProfileString(strRegKey, g_szSOrder[k++], "", szResult, _MAX_PATH, lpszFile);
 	m_strAutoBreak = szResult;
+	// CString型から正規表現オブジェクトの生成
+	if ( !m_strMacroOpt[MCMACROCODE].IsEmpty() ) {
+		try {
+			m_regMacroCode = xpressive::sregex::compile(LPCTSTR(m_strMacroOpt[MCMACROCODE]));
+		}
+		catch (xpressive::regex_error&) {
+			m_regMacroCode = xpressive::sregex::compile("");
+		}
+	}
+	if ( !m_strAutoBreak.IsEmpty() ) {
+		try {
+			m_regAutoBreak = xpressive::sregex::compile(LPCTSTR(m_strAutoBreak));
+		}
+		catch (xpressive::regex_error&) {
+			m_regAutoBreak = xpressive::sregex::compile("");
+		}
+	}
 
 	// 工具情報
 	CMCTOOLINFO*	pToolInfo;
