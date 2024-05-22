@@ -1309,48 +1309,30 @@ CNCcircle::CNCcircle
 		float	i = GetValFlags() & NCD_I ? (float)lpArgv->nc.dValue[NCA_I] : 0.0f,
 				j = GetValFlags() & NCD_J ? (float)lpArgv->nc.dValue[NCA_J] : 0.0f,
 				k = GetValFlags() & NCD_K ? (float)lpArgv->nc.dValue[NCA_K] : 0.0f;
-		BOOL	bNeedCalcAngle = FALSE;		// 角度計算が必要か否か
 		m_ptOrg = m_ptValS;
 		switch ( GetPlane() ) {
 		case XY_PLANE:
 			m_r = _hypotf(i, j);
 			m_ptOrg.x += i;
 			m_ptOrg.y += j;
-			if ( pts != pte ) {
-				bNeedCalcAngle = TRUE;
-				pto = m_ptOrg.GetXY();
-			}
-			// 平面の移動指示がない（pts==pte）または指示があっても同一座標なら
-			// 真円として角度の計算は必要なし
+			pto = m_ptOrg.GetXY();
 			break;
 		case XZ_PLANE:
 			m_r = _hypotf(i, k);
 			m_ptOrg.x += i;
 			m_ptOrg.z += k;
-			if ( pts != pte ) {
-				bNeedCalcAngle = TRUE;
-				pto = m_ptOrg.GetXZ();
-			}
+			pto = m_ptOrg.GetXZ();
 			break;
 		case YZ_PLANE:
 			m_r = _hypotf(j, k);
 			m_ptOrg.y += j;
 			m_ptOrg.z += k;
-			if ( pts != pte  ) {
-				bNeedCalcAngle = TRUE;
-				pto = m_ptOrg.GetYZ();
-			}
+			pto = m_ptOrg.GetYZ();
 			break;
 		}
-		if ( bNeedCalcAngle ) {
-			pts -= pto;		// 角度調整用の原点補正
-			pte -= pto;
-			AngleTuning(pts, pte);
-		}
-		else {
-			m_sq = 0;
-			m_eq = PI2;
-		}
+		pts -= pto;		// 角度調整用の原点補正
+		pte -= pto;
+		AngleTuning(pts, pte);
 		bError = FALSE;
 	}
 
@@ -1500,6 +1482,11 @@ tuple<float, float>	CNCcircle::CalcAngle(BOOL bG03, const CPointF& pts, const CP
 void CNCcircle::AngleTuning(const CPointF& pts, const CPointF& pte)
 {
 	tie(m_sq, m_eq) = CalcAngle(GetG03(), pts, pte);
+	if ( pts == pte ) {	
+		// 始点終点が同じ真円なら
+		// 終点角度 = 開始角度 + 360°に強制置換
+		m_eq = m_sq + PI2;
+	}
 }
 
 float CNCcircle::SetCalcLength(void)
