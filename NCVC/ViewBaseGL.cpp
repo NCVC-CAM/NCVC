@@ -451,6 +451,7 @@ int CViewBaseGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CViewBaseGL::OnDestroy()
 {
+	::wglDeleteContext( m_hRC );
 	if ( m_dRoundStep != 0.0f )
 		KillTimer(IDC_OPENGL_DRAGROUND);
 }

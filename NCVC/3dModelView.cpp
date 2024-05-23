@@ -327,7 +327,6 @@ void C3dModelView::OnDestroy()
 	ClearVBO();
 
 	::wglMakeCurrent(NULL, NULL);
-	::wglDeleteContext( m_hRC );
 
 	__super::OnDestroy();
 }

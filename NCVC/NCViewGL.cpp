@@ -999,7 +999,6 @@ void CNCViewGL::OnDestroy()
 	}
 
 	::wglMakeCurrent(NULL, NULL);
-	::wglDeleteContext( m_hRC );
 	
 	__super::OnDestroy();
 }
