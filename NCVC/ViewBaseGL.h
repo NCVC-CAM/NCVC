@@ -27,8 +27,12 @@ enum RENDERMODE
 class CViewBaseGL : public CView
 {
 protected:
-	HGLRC		m_hRC;
+	HGLRC		m_hRC,
+				m_hRCoffscreen;
 	CFrameBuffer*	m_pFBO;			// FrameBufferObject
+	CDC			m_dcOffScreen;
+	HBITMAP		m_hBitmap;
+	CBitmap		m_Bitmap;
 	int			m_cx,  m_cy;		// ³¨ÝÄÞ³»²½Þ(½¸Ø°Ý)
 	TRACKINGMODE	m_enTrackingMode;
 	CPoint		m_ptDownClick;		// ºÝÃ·½ÄÒÆ­°•\Ž¦—p‘¼
@@ -51,6 +55,7 @@ protected:
 	virtual	void DoScale(int);
 	//
 	void	CreateFBO(void);
+	BOOL	CreateOffscreen(void);
 	void	IdentityMatrix(void);
 	void	SetOrthoView(void);
 	BOOL	SetupPixelFormat(CDC*);

@@ -208,7 +208,7 @@ CString	GetScriptExec(const CString& strFile)
 }
 
 #ifdef _DEBUG
-// GetLastMessage() ‚ÌÒ¯¾°¼Ş®Œ`
+// GetLastError() ‚ÌÒ¯¾°¼Ş®Œ`
 void NC_FormatMessage(void)
 {
 	LPVOID	lpMsgBuf;

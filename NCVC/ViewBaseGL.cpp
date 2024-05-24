@@ -37,7 +37,8 @@ END_MESSAGE_MAP()
 
 CViewBaseGL::CViewBaseGL()
 {
-	m_hRC = NULL;
+	m_hRC = m_hRCoffscreen = NULL;
+	m_hBitmap = NULL;
 	m_pFBO = NULL;
 	m_cx = m_cy = 0;
 	m_enTrackingMode = TM_NONE;
@@ -74,6 +75,80 @@ void CViewBaseGL::CreateFBO(void)
 		delete	m_pFBO;
 		m_pFBO = NULL;
 	}
+}
+
+BOOL CViewBaseGL::CreateOffscreen(void)
+{
+	PIXELFORMATDESCRIPTOR pfd =
+	{
+		sizeof(PIXELFORMATDESCRIPTOR),
+		1,
+		PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL,
+		PFD_TYPE_RGBA,
+		32,
+		0, 0, 0, 0, 0, 0,
+		0,
+		0,
+		0,
+		0, 0, 0, 0,
+		24,
+		8,
+		0,
+		PFD_MAIN_PLANE,
+		0,
+		0, 0, 0
+	};
+	BITMAPINFO bmi;
+	::ZeroMemory(&bmi, sizeof(BITMAPINFO));
+	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmi.bmiHeader.biWidth = m_cx;
+	bmi.bmiHeader.biHeight = m_cy;
+	bmi.bmiHeader.biPlanes = 1;
+	bmi.bmiHeader.biBitCount = 32;
+
+	if ( !m_dcOffScreen.CreateCompatibleDC(NULL) ) {
+		TRACE0( "CreateCompatibleDC() is failed" );
+		return FALSE;
+	}
+	void*	pvBits;
+//	if ( !(m_hBitmap = CreateDIBSection(m_dcOffScreen.GetSafeHdc(), &bmi, DIB_RGB_COLORS, &pvBits, NULL, 0)) ) {
+	if ( !(m_hBitmap = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, &pvBits, NULL, 0)) ) {
+		NC_FormatMessage();	// 「この操作を正しく終了しました。」って出るのにm_hBitmapがNULL
+		TRACE0( "CreateDIBSection() is failed" );
+		return FALSE;
+	}
+	if ( !m_dcOffScreen.SelectObject(m_hBitmap) ) {
+		TRACE0( "SelectObject() is failed" );
+		return FALSE;
+	}
+//	if ( !m_Bitmap.CreateBitmap(m_cx, m_cy, 1, 32, NULL) ) {
+//		TRACE0( "CreateBitmap() is failed" );
+//		return FALSE;
+//	}
+//	if ( !m_Bitmap.CreateCompatibleBitmap(&m_dcOffScreen, m_cx, m_cy) ) {
+//		TRACE0( "CreateCompatibleBitmap() is failed" );
+//		return FALSE;
+//	}
+//	if ( !m_dcOffScreen.SelectObject(m_Bitmap) ) {
+//		TRACE0( "SelectObject() is failed" );
+//		return FALSE;
+//	}
+	int iPixelFormat;
+	if ( !(iPixelFormat=ChoosePixelFormat(m_dcOffScreen.GetSafeHdc(), &pfd)) ) {
+		TRACE0( "ChoosePixelFormat() is failed" );
+		return FALSE;
+	}
+	if ( !SetPixelFormat(m_dcOffScreen.GetSafeHdc(), iPixelFormat, &pfd) ) {
+		TRACE0( "SetPixelFormat() is failed" );
+		return FALSE;
+	}
+
+	if ( !(m_hRCoffscreen = wglCreateContext(m_dcOffScreen.GetSafeHdc())) ) {
+		TRACE0( "wglCreateContext() is failed" );
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 void CViewBaseGL::IdentityMatrix(void)
@@ -135,7 +210,7 @@ void CViewBaseGL::SetOrthoView(void)
 
 BOOL CViewBaseGL::SetupPixelFormat(CDC* pDC)
 {
-	static PIXELFORMATDESCRIPTOR pfd =
+	PIXELFORMATDESCRIPTOR pfd =
 	{
 		sizeof(PIXELFORMATDESCRIPTOR),
 		1,
@@ -157,12 +232,12 @@ BOOL CViewBaseGL::SetupPixelFormat(CDC* pDC)
 
 	int	iPixelFormat;
 	if( !(iPixelFormat = ::ChoosePixelFormat(pDC->GetSafeHdc(), &pfd)) ) {
-		TRACE0( "ChoosePixelFormat is failed" );
+		TRACE0( "ChoosePixelFormat() is failed" );
 		return FALSE;
 	}
 
 	if( !::SetPixelFormat(pDC->GetSafeHdc(), iPixelFormat, &pfd) ) {
-		TRACE0( "SetPixelFormat is failed" );
+		TRACE0( "SetPixelFormat() is failed" );
 		return FALSE;
 	}
 
@@ -374,7 +449,7 @@ int CViewBaseGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// OpenGL pixel format の設定
     if( !SetupPixelFormat(&dc) ) {
-		TRACE0("SetupPixelFormat failed\n");
+		TRACE0("SetupPixelFormat() failed\n");
 		return -1;
 	}
 #ifdef _DEBUG
@@ -383,7 +458,7 @@ int CViewBaseGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄの作成
 	if( !(m_hRC = ::wglCreateContext(hDC)) ) {
-		TRACE0("wglCreateContext failed\n");
+		TRACE0("wglCreateContext() failed\n");
 		return -1;
 	}
 #ifdef _DEBUG
@@ -392,7 +467,7 @@ int CViewBaseGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// ﾚﾝﾀﾞﾘﾝｸﾞｺﾝﾃｷｽﾄをｶﾚﾝﾄのﾃﾞﾊﾞｲｽｺﾝﾃｷｽﾄに設定
 	if( !::wglMakeCurrent(hDC, m_hRC) ) {
-		TRACE0("wglMakeCurrent failed\n");
+		TRACE0("wglMakeCurrent() failed\n");
 		return -1;
 	}
 #ifdef _DEBUG
@@ -443,8 +518,12 @@ int CViewBaseGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 	GetGLError();	// error flash
 #endif
-
 	::wglMakeCurrent( NULL, NULL );
+
+	// オフスクリーンレンダリングオブジェクトの生成
+	if ( !CreateOffscreen() ) {
+		return -1;
+	}
 
 	return 0;
 }
@@ -452,6 +531,13 @@ int CViewBaseGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CViewBaseGL::OnDestroy()
 {
 	::wglDeleteContext( m_hRC );
+	if ( m_hBitmap ) {
+		DeleteObject(m_hBitmap);
+	}
+	if ( m_hRCoffscreen ) {
+		::wglDeleteContext( m_hRCoffscreen );
+		m_dcOffScreen.DeleteDC();
+	}
 	if ( m_dRoundStep != 0.0f )
 		KillTimer(IDC_OPENGL_DRAGROUND);
 }
