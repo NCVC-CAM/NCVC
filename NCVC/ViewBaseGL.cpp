@@ -83,15 +83,15 @@ BOOL CViewBaseGL::CreateOffscreen(void)
 	{
 		sizeof(PIXELFORMATDESCRIPTOR),
 		1,
-		PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL,
+		PFD_DRAW_TO_BITMAP | PFD_SUPPORT_OPENGL | PFD_SUPPORT_GDI,
 		PFD_TYPE_RGBA,
-		32,
+		24,
 		0, 0, 0, 0, 0, 0,
 		0,
 		0,
 		0,
 		0, 0, 0, 0,
-		24,
+		32,
 		8,
 		0,
 		PFD_MAIN_PLANE,
@@ -110,35 +110,36 @@ BOOL CViewBaseGL::CreateOffscreen(void)
 		TRACE0( "CreateCompatibleDC() is failed" );
 		return FALSE;
 	}
-	void*	pvBits;
+//	void*	pvBits;
 //	if ( !(m_hBitmap = CreateDIBSection(m_dcOffScreen.GetSafeHdc(), &bmi, DIB_RGB_COLORS, &pvBits, NULL, 0)) ) {
-	if ( !(m_hBitmap = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, &pvBits, NULL, 0)) ) {
-		NC_FormatMessage();	// 「この操作を正しく終了しました。」って出るのにm_hBitmapがNULL
-		TRACE0( "CreateDIBSection() is failed" );
-		return FALSE;
-	}
-	if ( !m_dcOffScreen.SelectObject(m_hBitmap) ) {
-		TRACE0( "SelectObject() is failed" );
-		return FALSE;
-	}
+//	if ( !(m_hBitmap = CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, &pvBits, NULL, 0)) ) {
+//		NC_FormatMessage();	// 「この操作を正しく終了しました。」って出るのにm_hBitmapがNULL
+//		TRACE0( "CreateDIBSection() is failed" );
+//		return FALSE;
+//	}
+//	if ( !m_dcOffScreen.SelectObject(m_hBitmap) ) {
+//		TRACE0( "SelectObject() is failed" );
+//		return FALSE;
+//	}
 //	if ( !m_Bitmap.CreateBitmap(m_cx, m_cy, 1, 32, NULL) ) {
 //		TRACE0( "CreateBitmap() is failed" );
 //		return FALSE;
 //	}
-//	if ( !m_Bitmap.CreateCompatibleBitmap(&m_dcOffScreen, m_cx, m_cy) ) {
-//		TRACE0( "CreateCompatibleBitmap() is failed" );
-//		return FALSE;
-//	}
-//	if ( !m_dcOffScreen.SelectObject(m_Bitmap) ) {
-//		TRACE0( "SelectObject() is failed" );
-//		return FALSE;
-//	}
+	if ( !m_Bitmap.CreateCompatibleBitmap(&m_dcOffScreen, m_cx, m_cy) ) {
+		TRACE0( "CreateCompatibleBitmap() is failed" );
+		return FALSE;
+	}
+	if ( !m_dcOffScreen.SelectObject(m_Bitmap) ) {
+		TRACE0( "SelectObject() is failed" );
+		return FALSE;
+	}
 	int iPixelFormat;
 	if ( !(iPixelFormat=ChoosePixelFormat(m_dcOffScreen.GetSafeHdc(), &pfd)) ) {
 		TRACE0( "ChoosePixelFormat() is failed" );
 		return FALSE;
 	}
 	if ( !SetPixelFormat(m_dcOffScreen.GetSafeHdc(), iPixelFormat, &pfd) ) {
+		NC_FormatMessage();	// 「ファンクションが間違っています」
 		TRACE0( "SetPixelFormat() is failed" );
 		return FALSE;
 	}
