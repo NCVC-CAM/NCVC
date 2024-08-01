@@ -50,8 +50,8 @@ UINT CorrectCalc_Thread(LPVOID pVoid)
 				k,			// 90‹‰ñ“]‚³‚¹‚é•ûŒü(n“_‚ğŠî€)
 				nResult = IDOK;
 	BOOL		bFirst;
-	float		dToolD, dToolD_abs;
-	optional<float>	dToolResult;
+	float		dToolD_abs;
+	optional<float>	dToolD;
 	CPointF		pt1, pt2, pt3, pt4;
 	optional<CPointF>	ptResult;
 	DWORD		dwValFlags;
@@ -78,17 +78,15 @@ try {
 	while ( i<nLoopCnt && IsThread() ) {
 
 		// •â³ˆ—‚ª•K—v‚ÈµÌŞ¼Şª¸Ä‚ğŒŸõ(‘æ‚Pƒ‹[ƒv‚Í‚»‚±‚Ü‚Å“Ç‚İ”ò‚Î‚µ)
-		for ( dToolD=HUGE_VALF, bFirst=TRUE; i<nLoopCnt && nCorrect==0 && IsThread(); i++ ) {
+		for ( bFirst=TRUE; i<nLoopCnt && nCorrect==0 && IsThread(); i++ ) {
 			if ( (i & 0x003f) == 0 )	// 64‰ñ‚¨‚«(‰ºˆÊ6ËŞ¯ÄÏ½¸)
 				pParent->m_ctReadProgress.SetPos((int)i);		// ÌßÛ¸ŞÚ½ÊŞ°
 			pData1 = pDoc->GetNCdata(i);
 			dwValFlags = pData1->GetValFlags();
 			// H‹ïî•ñ‚Ìæ“¾
 			if ( dwValFlags & NCD_D ) {
-				dToolResult = pMCopt->GetToolD( (int)(pData1->GetValue(NCA_D)) );
-				if ( dToolResult )
-					dToolD = *dToolResult;
-				else {
+				dToolD = pMCopt->GetToolD( (int)(pData1->GetValue(NCA_D)) );
+				if ( !dToolD ) {
 					SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECT);
 					continue;
 				}
@@ -97,7 +95,7 @@ try {
 				continue;
 			//
 			if ( dwValFlags & NCD_CORRECT ) {
-				if ( dToolD == HUGE_VALF ) {
+				if ( !dToolD ) {
 					if ( bFirst ) {
 						SetErrorCode(pDoc, pData1, IDS_ERR_NCBLK_CORRECTSTART);
 						bFirst = FALSE;
@@ -110,7 +108,7 @@ try {
 					continue;
 				}
 				pData1->AddCorrectObject(pData1c);
-				dToolD_abs = fabs(dToolD);
+				dToolD_abs = fabs(*dToolD);
 				nCorrect = 1;	// •â³Ù°Ìß‚Ö(break)
 #ifdef _DEBUG
 				printf("Gcode=%d X=%.3f Y=%.3f Z=%.3f\n", pData1->GetGcode(),
@@ -131,7 +129,7 @@ try {
 				nSign1 = pData1->CalcOffsetSign();
 				if ( dwValFlags & NCD_CORRECT_R )
 					nSign1 = -nSign1;
-				if ( dToolD < 0 )
+				if ( *dToolD < 0 )
 					nSign1 = -nSign1;
 			}
 		}
@@ -158,7 +156,7 @@ try {
 				nSign1 = pData1->CalcOffsetSign();	// •„†ÄŒvZ
 				if ( dwValFlags & NCD_CORRECT_R )
 					nSign1 = -nSign1;
-				if ( dToolD < 0 )
+				if ( *dToolD < 0 )
 					nSign1 = -nSign1;
 				continue;
 			}
@@ -179,7 +177,7 @@ try {
 			}
 			else
 				k = 1;			// +90‹‰ñ“]
-			if ( dToolD < 0 ) {
+			if ( *dToolD < 0 ) {
 				nSign2 = -nSign2;	// H‹ïŒa‚ªÏ²Å½‚Ìê‡‚Í•„†”½“]
 				k = -k;
 			}
