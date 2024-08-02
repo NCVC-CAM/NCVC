@@ -1066,12 +1066,18 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 	else
 		pDataResult = g_pDoc->DataOperation(pDataBefore, &g_ncArgv);
 
+	// 同一ブロック内での座標値２重登録防止
+	// XYZUVWIJKRをクリア．PLDHは保持．
+	g_ncArgv.nc.dwValFlags &= NCD_CLEARVALUE|0xf000;
+
 	return pDataResult;
 }
 
 void AddM98code(CNCblock* pBlock, CNCdata* pDataBefore, INT_PTR nIndex)
 {
 	CNCdata*	pData;
+	// 退避
+	int			nGtype  = g_ncArgv.nc.nGtype;
 	DWORD		dwFlags = g_ncArgv.nc.dwValFlags;
 
 	g_ncArgv.nc.dwValFlags = 0;
@@ -1086,7 +1092,7 @@ void AddM98code(CNCblock* pBlock, CNCdata* pDataBefore, INT_PTR nIndex)
 		pData = AddGcode(pBlock, pDataBefore, 99);
 
 	// 復元
-	g_ncArgv.nc.nGtype = G_TYPE;
+	g_ncArgv.nc.nGtype     = nGtype;
 	g_ncArgv.nc.dwValFlags = dwFlags;
 
 	// M98コードはオブジェクト登録するが
