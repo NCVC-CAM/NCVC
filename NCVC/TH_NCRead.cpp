@@ -937,12 +937,39 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 					g_ncArgv.nc.dValue[nCode] = GetNCValue(strWord.substr(1));
 				}
 			}
+			//////////
+			// else if ×
+			if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
+				// 旋盤モードにおけるUWインクリメンタル処理対応
+				switch ( nCode ) {
+				case NCA_X:
+					g_ncArgv.nc.dValue[NCA_X] = GetNCValue(strWord.substr(1)) / 2.0;
+					g_ncArgv.nc.dwValFlags &= ~NCD_U;
+					break;
+				case NCA_Z:
+					g_ncArgv.nc.dValue[NCA_Z] = GetNCValue(strWord.substr(1));
+					g_ncArgv.nc.dwValFlags &= ~NCD_W;
+					break;
+				case NCA_U:
+					g_ncArgv.nc.dValue[NCA_U] = pDataResult->GetValue(NCA_Z) + GetNCValue(strWord.substr(1)) / 2.0;
+					g_ncArgv.nc.dwValFlags |= NCD_X;
+					break;
+				case NCA_W:
+					g_ncArgv.nc.dValue[NCA_W] = pDataResult->GetValue(NCA_X) + GetNCValue(strWord.substr(1));
+					g_ncArgv.nc.dwValFlags |= NCD_Z;
+					break;
+				default:
+					g_ncArgv.nc.dValue[nCode] = nCode < GVALSIZE ?
+						GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
+				}
+			}
 			else if ( g_pDoc->IsDocFlag(NCDOC_WIRE) ) {
-				// ﾜｲﾔﾓｰﾄﾞにおける特別処理(L値)
+				// ワイヤモードにおける特別処理(L値)
 				g_ncArgv.nc.dValue[nCode] = nCode<GVALSIZE || nCode==NCA_L ?
 					GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
 			}
 			else {
+				// ミルモード（通常処理）
 				g_ncArgv.nc.dValue[nCode] = nCode < GVALSIZE ?	// nCode < NCA_P
 					GetNCValue(strWord.substr(1)) : atoi(strWord.substr(1).c_str());
 			}
@@ -1002,14 +1029,14 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 		if ( g_ncArgv.nc.nGcode != 4 ) {
 			optional<double>	x, z, i, k;
 			if ( g_ncArgv.nc.dwValFlags & NCD_X )
-				x = g_ncArgv.nc.dValue[NCA_X] / 2.0;	// 直径指示
+				x = g_ncArgv.nc.dValue[g_ncArgv.nc.dwValFlags&NCD_U ? NCA_U : NCA_X];
 			if ( g_ncArgv.nc.dwValFlags & NCD_Z )
-				z = g_ncArgv.nc.dValue[NCA_Z];
+				z = g_ncArgv.nc.dValue[g_ncArgv.nc.dwValFlags&NCD_W ? NCA_W : NCA_Z];
 			if ( g_ncArgv.nc.dwValFlags & NCD_I )
 				i = g_ncArgv.nc.dValue[NCA_I];
 			if ( g_ncArgv.nc.dwValFlags & NCD_K )
 				k = g_ncArgv.nc.dValue[NCA_K];
-			g_ncArgv.nc.dwValFlags &= ~(NCD_X|NCD_Y|NCD_Z|NCD_I|NCD_J|NCD_K);
+			g_ncArgv.nc.dwValFlags &= ~(NCD_X|NCD_Y|NCD_Z|NCD_U|NCD_V|NCD_W|NCD_I|NCD_J|NCD_K);
 			if ( x ) {
 				g_ncArgv.nc.dValue[NCA_Z] = *x;
 				g_ncArgv.nc.dwValFlags |=  NCD_Z;
