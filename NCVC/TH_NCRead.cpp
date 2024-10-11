@@ -943,19 +943,14 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 				// 旋盤モードにおけるUWインクリメンタル処理対応
 				switch ( nCode ) {
 				case NCA_X:
-					g_ncArgv.nc.dValue[NCA_X] = GetNCValue(strWord.substr(1)) / 2.0;
-					g_ncArgv.nc.dwValFlags &= ~NCD_U;
-					break;
-				case NCA_Z:
-					g_ncArgv.nc.dValue[NCA_Z] = GetNCValue(strWord.substr(1));
-					g_ncArgv.nc.dwValFlags &= ~NCD_W;
+					g_ncArgv.nc.dValue[NCA_X] = GetNCValue(strWord.substr(1)) / 2.0;	// 直径指示
 					break;
 				case NCA_U:
-					g_ncArgv.nc.dValue[NCA_U] = pDataResult->GetValue(NCA_Z) + GetNCValue(strWord.substr(1)) / 2.0;
+					g_ncArgv.nc.dValue[NCA_X] = pDataResult->GetValue(NCA_Z) + GetNCValue(strWord.substr(1)) / 2.0;
 					g_ncArgv.nc.dwValFlags |= NCD_X;
 					break;
 				case NCA_W:
-					g_ncArgv.nc.dValue[NCA_W] = pDataResult->GetValue(NCA_X) + GetNCValue(strWord.substr(1));
+					g_ncArgv.nc.dValue[NCA_Z] = pDataResult->GetValue(NCA_X) + GetNCValue(strWord.substr(1));
 					g_ncArgv.nc.dwValFlags |= NCD_Z;
 					break;
 				default:
@@ -1029,9 +1024,9 @@ CNCdata* AddGcode(CNCblock* pBlock, CNCdata* pDataBefore, int nNotModalCode)
 		if ( g_ncArgv.nc.nGcode != 4 ) {
 			optional<double>	x, z, i, k;
 			if ( g_ncArgv.nc.dwValFlags & NCD_X )
-				x = g_ncArgv.nc.dValue[g_ncArgv.nc.dwValFlags&NCD_U ? NCA_U : NCA_X];
+				x = g_ncArgv.nc.dValue[NCA_X];
 			if ( g_ncArgv.nc.dwValFlags & NCD_Z )
-				z = g_ncArgv.nc.dValue[g_ncArgv.nc.dwValFlags&NCD_W ? NCA_W : NCA_Z];
+				z = g_ncArgv.nc.dValue[NCA_Z];
 			if ( g_ncArgv.nc.dwValFlags & NCD_I )
 				i = g_ncArgv.nc.dValue[NCA_I];
 			if ( g_ncArgv.nc.dwValFlags & NCD_K )
