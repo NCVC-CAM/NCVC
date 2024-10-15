@@ -946,11 +946,22 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 					g_ncArgv.nc.dValue[NCA_X] = GetNCValue(strWord.substr(1)) / 2.0;	// 直径指示
 					break;
 				case NCA_U:
-					g_ncArgv.nc.dValue[NCA_X] = pDataResult->GetValue(NCA_Z) + GetNCValue(strWord.substr(1)) / 2.0;
+					if ( g_ncArgv.bAbs ) {
+						g_ncArgv.nc.dValue[NCA_X] = pDataResult->GetValue(NCA_Z) + GetNCValue(strWord.substr(1)) / 2.0;
+					}
+					else {
+						// G91インクリメンタルの座標処理はオブジェクト生成時に行う(NCdata.cpp)
+						g_ncArgv.nc.dValue[NCA_X] = GetNCValue(strWord.substr(1)) / 2.0;
+					}
 					g_ncArgv.nc.dwValFlags |= NCD_X;
 					break;
 				case NCA_W:
-					g_ncArgv.nc.dValue[NCA_Z] = pDataResult->GetValue(NCA_X) + GetNCValue(strWord.substr(1));
+					if ( g_ncArgv.bAbs ) {
+						g_ncArgv.nc.dValue[NCA_Z] = pDataResult->GetValue(NCA_X) + GetNCValue(strWord.substr(1));
+					}
+					else {
+						g_ncArgv.nc.dValue[NCA_Z] = GetNCValue(strWord.substr(1));
+					}
 					g_ncArgv.nc.dwValFlags |= NCD_Z;
 					break;
 				default:
