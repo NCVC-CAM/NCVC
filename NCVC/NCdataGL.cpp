@@ -922,13 +922,28 @@ void CNCcycle::DrawGLWirePath(RENDERMODE enRender, INT_PTR nID) const
 	const GLfloat	pt[] = {
 		m_ptValS.x, m_ptValS.y, m_ptValS.z,
 		m_ptValI.x, m_ptValI.y, m_ptValI.z,
-		m_ptValR.x, m_ptValR.y, m_ptValR.z,
-		m_ptValE.x, m_ptValE.y, m_ptValE.z
+		m_ptValR.x, m_ptValR.y, m_ptValR.z
 	};
 	::glLineStipple(1, patG0);
 	::glColor3ubv( rgbG0 );
 	::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
 	::glDrawArrays(GL_LINE_STRIP, 0, SIZEOF(pt)/NCXYZ);
+	if ( m_bG98 ) {
+		const GLfloat	pt[] = {
+			m_ptValI.x, m_ptValI.y, m_ptValI.z,
+			m_ptValE.x, m_ptValE.y, m_ptValE.z
+		};
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+		::glDrawArrays(GL_LINE_STRIP, 0, SIZEOF(pt)/NCXYZ);
+	}
+	else {
+		const GLfloat	pt[] = {
+			m_ptValR.x, m_ptValR.y, m_ptValR.z,
+			m_ptValE.x, m_ptValE.y, m_ptValE.z
+		};
+		::glVertexPointer(NCXYZ, GL_FLOAT, 0, pt);
+		::glDrawArrays(GL_LINE_STRIP, 0, SIZEOF(pt)/NCXYZ);
+	}
 
 	for ( int i=0; i<m_nDrawCnt; i++ ) {
 		const GLfloat	pt[] = {

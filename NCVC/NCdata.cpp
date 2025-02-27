@@ -873,6 +873,9 @@ CNCcycle::CNCcycle
 	ZEROCLR(m_Cycle);	// m_Cycle[i++]=NULL
 	m_Cycle3D = NULL;
 
+	// 復帰点保持（描画で必要）
+	m_bG98 = lpArgv->bG98;
+
 	// 基準平面による座標設定
 	switch ( GetPlane() ) {
 	case XY_PLANE:
@@ -933,7 +936,7 @@ CNCcycle::CNCcycle
 	if ( enType == NCMAKELATHE )
 		dI = m_dInitial;	// 旋盤ﾓｰﾄﾞでG98/G99は別の意味
 	else
-		dI = lpArgv->bG98 ? m_dInitial : dR;
+		dI = m_bG98 ? m_dInitial : dR;
 
 	// 繰り返し数ｾﾞﾛなら
 	if ( m_nDrawCnt <= 0 ) {
@@ -1076,7 +1079,7 @@ CNCcycle::CNCcycle
 	case 87:
 	case 88:
 	case 89:
-		if ( lpArgv->bG98 && enType!=NCMAKELATHE ) {
+		if ( m_bG98 && enType!=NCMAKELATHE ) {
 			dResult = dRLength * nV;
 			m_nc.dLength += dZLength * nV;
 			m_dMove[z] += dResult;
@@ -1252,7 +1255,9 @@ void CNCcycle::DrawCycle(ENNCDRAWVIEW enDraw, CDC* pDC, BOOL bSelect) const
 	pDC->MoveTo(m_ptDrawS[enDraw]);
 	pDC->LineTo(m_ptDrawI[enDraw]);		// 現在位置から１点目のｲﾆｼｬﾙ点
 	pDC->LineTo(m_ptDrawR[enDraw]);		// ｲﾆｼｬﾙ点からR点
-	pDC->LineTo(m_ptDrawE[enDraw]);		// R点から最後の穴加工
+	if ( m_bG98 )						// G98なら
+		pDC->MoveTo(m_ptDrawI[enDraw]);	//		ｲﾆｼｬﾙ点に移動して
+	pDC->LineTo(m_ptDrawE[enDraw]);		// 最後の穴加工へ
 	// 切削方向の描画
 	for ( int i=0; i<m_nDrawCnt; i++ ) {
 		pDC->SelectObject(pPenM);

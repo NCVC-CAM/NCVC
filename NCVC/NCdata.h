@@ -337,6 +337,7 @@ struct PTCYCLE3D
 
 class CNCcycle : public CNCline
 {
+	BOOL		m_bG98;				// TRUE:G98ｲﾆｼｬﾙ点, FALSE:G99R点 復帰
 	int			m_nDrawCnt;			// ｵﾌﾞｼﾞｪｸﾄ座標値生成数==描画用繰り返し数
 	PTCYCLE*	m_Cycle[NCDRAWVIEW_NUM];
 	PTCYCLE3D*	m_Cycle3D;			// 実際の3D座標(兼OpenGL)
