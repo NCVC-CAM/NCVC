@@ -918,27 +918,14 @@ int NC_GSeparater(INT_PTR nLine, CNCdata*& pDataResult)
 		case 'D':	case 'H':
 			if ( bInvalidM )
 				break;	// 無効なMｺｰﾄﾞに続くｱﾄﾞﾚｽ値は無視
-			nCode = (int)(strchr(g_szNdelimiter, strWord[0]) - g_szNdelimiter);
 			// 値取得
+			nCode = (int)(strchr(g_szNdelimiter, strWord[0]) - g_szNdelimiter);
+
 			if ( g_Cycle.nCode ) {		// 81～89
-				// 固定ｻｲｸﾙの特別処理
-				switch ( nCode ) {
-				case NCA_K:		// Kはﾈｲﾃｨﾌﾞで(これ何やろ？)
-					g_ncArgv.nc.dValue[NCA_K] = atoi(strWord.substr(1).c_str());
-					break;
-				case NCA_P:
-					if ( bNCsub ) {
-						// 固定ｻｲｸﾙﾓｰﾄﾞ中のM98ｻﾌﾞﾌﾟﾛ呼び出し対応
-						g_ncArgv.nc.dValue[NCA_P] = atoi(strWord.substr(1).c_str());
-						break;
-					}
-					// through
-				default:	// P(ﾄﾞｳｪﾙ時間)もGetNCValue()でOK
-					g_ncArgv.nc.dValue[nCode] = GetNCValue(strWord.substr(1));
-				}
+				// 固定サイクルの特別処理
+				if ( nCode == NCA_K ) nCode = NCA_L;	// サイクルモードのK_はL_扱いに
 			}
-			//////////
-			// else if ×
+
 			if ( g_pDoc->IsDocFlag(NCDOC_LATHE) ) {
 				// 旋盤モードにおけるUWインクリメンタル処理対応
 				switch ( nCode ) {

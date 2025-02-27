@@ -909,9 +909,7 @@ CNCcycle::CNCcycle
 		nV = 1;
 	}
 	else {
-		if ( GetValFlags() & NCD_K )
-			nV = max(0, (int)lpArgv->nc.dValue[NCA_K]);
-		else if ( GetValFlags() & NCD_L )
+		if ( GetValFlags() & NCD_L )
 			nV = max(0, (int)lpArgv->nc.dValue[NCA_L]);
 		else
 			nV = 1;
@@ -1095,10 +1093,8 @@ CNCcycle::CNCcycle
 	}
 
 	// ﾄﾞｳｪﾙ時間
-//	if ( GetValFlags() & NCD_P &&
-//		(GetGcode()==82 || GetGcode()==88 || GetGcode()==89) )
 	if ( GetValFlags() & NCD_P )	// P_あればコードに関係なく加算に仕様変更
-		m_dDwell = (float)lpArgv->nc.dValue[NCA_P] * nV;
+		m_dDwell = (float)lpArgv->nc.dValue[NCA_P]/1000.0f * nV;	// msec扱い
 	else
 		m_dDwell = 0.0f;
 
