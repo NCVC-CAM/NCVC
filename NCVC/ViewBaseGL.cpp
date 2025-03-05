@@ -59,23 +59,16 @@ BOOL CViewBaseGL::PreCreateWindow(CREATESTRUCT& cs)
 
 BOOL CViewBaseGL::CreateFBO(void)
 {
-//	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_USEFBO) ) {
-		if ( !m_pFBO && GLEW_EXT_framebuffer_object ) {
-			// ³¨ÝÄÞ³»²½Þ‚ÅFBOì¬
-			m_pFBO = new CFrameBuffer(m_cx, m_cy);
-			if ( !m_pFBO->IsBind() ) {
-				// FBOŽg—p’†Ž~
-				delete	m_pFBO;
-				m_pFBO = NULL;
-				return FALSE;
-			}
+	if ( !m_pFBO ) {
+		// ³¨ÝÄÞ³»²½Þ‚ÅFBOì¬
+		m_pFBO = new CFrameBuffer(m_cx, m_cy);
+		if ( !m_pFBO->IsBind() ) {
+			// FBOŽg—p’†Ž~
+			delete	m_pFBO;
+			m_pFBO = NULL;
+			return FALSE;
 		}
-//	}
-//	else if ( m_pFBO ) {
-//		delete	m_pFBO;
-//		m_pFBO = NULL;
-//		return FALSE;
-//	}
+	}
 	return TRUE;
 }
 

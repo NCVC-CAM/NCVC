@@ -924,7 +924,7 @@ int CNCViewGL::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// OpenGLŠg’£»Îß°Ä‚ÌÁª¯¸
 	CString		strVer( ::glGetString(GL_VERSION) );
-	if ( !GLEW_ARB_vertex_buffer_object ) {
+	if ( !GLEW_ARB_vertex_buffer_object || !GLEW_EXT_framebuffer_object ) {
 		CViewOption*	pOpt = AfxGetNCVCApp()->GetViewOption();
 		CString	strErrMsg;
 		strErrMsg.Format(IDS_ERR_OPENGLVER, strVer);
