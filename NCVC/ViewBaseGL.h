@@ -50,7 +50,7 @@ protected:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual	void DoScale(int);
 	//
-	void	CreateFBO(void);
+	BOOL	CreateFBO(void);
 	void	IdentityMatrix(void);
 	void	SetOrthoView(void);
 	BOOL	SetupPixelFormat(CDC*);

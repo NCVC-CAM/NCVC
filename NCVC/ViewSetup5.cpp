@@ -85,7 +85,7 @@ void CViewSetup5::DoDataExchange(CDataExchange* pDX)
 
 void CViewSetup5::EnableSolidControl(void)
 {
-	m_ctUseFBO.EnableWindow(m_bSolid);
+//	m_ctUseFBO.EnableWindow(m_bSolid);		// ダイアログプロパティで無効に設定
 	m_ctWirePath.EnableWindow(m_bSolid);
 	m_ctDrag.EnableWindow(m_bSolid);
 	m_ctLatheSlit.EnableWindow(m_bSolid);

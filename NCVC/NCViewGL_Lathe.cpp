@@ -34,7 +34,7 @@ BOOL CNCViewGL::CreateLathe(BOOL bRange)
 #endif
 
 	// FBO
-	CreateFBO();
+	if ( !CreateFBO() ) return FALSE;
 
 	// нч╦╬ы░╤░╛┌л┌╫┌ъ┌л▐┴┼З░щ▓Х
 	InitialBoxel();

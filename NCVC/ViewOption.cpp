@@ -188,6 +188,7 @@ CViewOption::CViewOption()
 	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
 		m_bNCFlag[i] = AfxGetApp()->GetProfileInt(strRegKey, g_szViewOptFlag[i], m_bNCFlag[i]);
 	}
+	m_bNCFlag[GLOPTFLG_USEFBO] = TRUE;		// Ver4.16à⁄çsÇÕFBOã≠êß
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
@@ -606,6 +607,7 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 		m_bNCFlag[i] = (BOOL)::GetPrivateProfileInt(strRegKey, g_szViewOptFlag[i],
 								(UINT)m_bNCFlag[i], lpszFileName);
 	}
+	m_bNCFlag[GLOPTFLG_USEFBO] = TRUE;		// Ver4.16à⁄çsÇÕFBOã≠êß
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);

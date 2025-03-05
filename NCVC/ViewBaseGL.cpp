@@ -57,9 +57,9 @@ BOOL CViewBaseGL::PreCreateWindow(CREATESTRUCT& cs)
 	return __super::PreCreateWindow(cs);
 }
 
-void CViewBaseGL::CreateFBO(void)
+BOOL CViewBaseGL::CreateFBO(void)
 {
-	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_USEFBO) ) {
+//	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_USEFBO) ) {
 		if ( !m_pFBO && GLEW_EXT_framebuffer_object ) {
 			// ≥®›ƒﬁ≥ª≤ΩﬁÇ≈FBOçÏê¨
 			m_pFBO = new CFrameBuffer(m_cx, m_cy);
@@ -67,13 +67,16 @@ void CViewBaseGL::CreateFBO(void)
 				// FBOégópíÜé~
 				delete	m_pFBO;
 				m_pFBO = NULL;
+				return FALSE;
 			}
 		}
-	}
-	else if ( m_pFBO ) {
-		delete	m_pFBO;
-		m_pFBO = NULL;
-	}
+//	}
+//	else if ( m_pFBO ) {
+//		delete	m_pFBO;
+//		m_pFBO = NULL;
+//		return FALSE;
+//	}
+	return TRUE;
 }
 
 void CViewBaseGL::IdentityMatrix(void)

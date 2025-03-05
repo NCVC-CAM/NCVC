@@ -62,7 +62,7 @@ BOOL CNCViewGL::CreateBoxel(BOOL bRange)
 	pProgress->SetPos(0);
 
 	// FBO
-	CreateFBO();
+	if ( !CreateFBO() ) return FALSE;
 
 	// нч╦╬ы░╤░╛┌л┌╫┌ъ┌л▐┴┼З░щ▓Х
 	InitialBoxel();
