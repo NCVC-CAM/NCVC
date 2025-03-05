@@ -33,14 +33,13 @@ enum {
 	GLOPTFLG_GUIDESCALE,
 	GLOPTFLG_GUIDELENGTH,
 	GLOPTFLG_SOLIDVIEW,
-	GLOPTFLG_USEFBO,
 	GLOPTFLG_WIREPATH,
 	GLOPTFLG_DRAGRENDER,
 	GLOPTFLG_TEXTURE,
 	GLOPTFLG_LATHESLIT,
 	GLOPTFLG_NOACTIVETRACEGL,
 	GLOPTFLG_TOOLTRACE,
-		GLOPTFLG_NUMS		// [12]
+		GLOPTFLG_NUMS		// [11]
 };
 enum {
 	VIEWINT_MILLTYPE = 0,
@@ -118,7 +117,6 @@ friend	class	CNCViewGL;		// OpenGLｻﾎﾟｰﾄ状況によってﾌﾗｸﾞを強制OFF
 					m_bScale,			// TRUE:ｶﾞｲﾄﾞに目盛
 					m_bGuide,			// TRUE:拡大率に同期
 					m_bSolidView,		// OpenGLｿﾘｯﾄﾞ表示
-					m_bUseFBO,			// FBOを使用
 					m_bWirePath,		// ﾜｲﾔﾊﾟｽ表示
 					m_bDragRender,		// ﾄﾞﾗｯｸﾞ中もﾚﾝﾀﾞﾘﾝｸﾞ
 					m_bTexture,			// ﾃｸｽﾁｬの貼り付け

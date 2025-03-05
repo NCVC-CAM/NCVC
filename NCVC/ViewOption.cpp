@@ -107,7 +107,6 @@ static	const	BOOL	g_bDefaultSetting[] = {
 	FALSE,		// m_bScale
 	TRUE,		// m_bGuide
 	TRUE,		// m_bSolidView
-	TRUE,		// m_bUseFBO
 	FALSE,		// m_bWirePath
 	TRUE,		// m_bDragRender
 	FALSE,		// m_bTexture
@@ -118,7 +117,7 @@ static	const	BOOL	g_bDefaultSetting[] = {
 extern	LPCTSTR	g_szViewOptFlag[] = {	// to ViewSetup5.cpp
 	"DrawRevise", "DrawCenterCircle",
 	"GuideScale", "GuideLength",
-	"SolidView", "UseFBO", "G00View", "DragRender",
+	"SolidView", "G00View", "DragRender",
 	"Texture", "LatheSlit", "NoActiveTraceGL", "ToolTrace"
 };
 static	LPCTSTR	g_szViewOptInt[] = {
@@ -188,7 +187,6 @@ CViewOption::CViewOption()
 	for ( i=0; i<SIZEOF(m_bNCFlag); i++ ) {
 		m_bNCFlag[i] = AfxGetApp()->GetProfileInt(strRegKey, g_szViewOptFlag[i], m_bNCFlag[i]);
 	}
-	m_bNCFlag[GLOPTFLG_USEFBO] = TRUE;		// Ver4.16à⁄çsÇÕFBOã≠êß
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
@@ -607,7 +605,6 @@ void CViewOption::Inport(LPCTSTR lpszFileName)
 		m_bNCFlag[i] = (BOOL)::GetPrivateProfileInt(strRegKey, g_szViewOptFlag[i],
 								(UINT)m_bNCFlag[i], lpszFileName);
 	}
-	m_bNCFlag[GLOPTFLG_USEFBO] = TRUE;		// Ver4.16à⁄çsÇÕFBOã≠êß
 	VERIFY(strEntry.LoadString(IDS_REG_VIEW_COLOR));
 	for ( i=0; i<SIZEOF(m_colNCView); i++ ) {
 		strEntryFormat.Format(IDS_COMMON_FORMAT, strEntry, i);
