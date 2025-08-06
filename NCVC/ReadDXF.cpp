@@ -1075,12 +1075,14 @@ BOOL BlocksProcedure(CDXFDoc* pDoc)
 		break;
 	case 1:		// ENDBLKｷｰﾜｰﾄﾞ
 		if ( g_pBkData ) {
-			_SetBlockMap();	// BLOCKSﾏｯﾌﾟに登録
 			if ( g_nType > TYPE_NOTSUPPORT ) {
 				// 処理中のﾌﾞﾛｯｸ要素登録
 				SetBlockData();
+				// BLOCKSﾏｯﾌﾟに登録
+				_SetBlockMap();
 			}
 			else {
+				// このブロックは有効でない
 				delete	g_pBkData;
 			}
 			g_pBkData = NULL;
