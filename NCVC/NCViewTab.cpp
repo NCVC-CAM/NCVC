@@ -89,9 +89,16 @@ void CNCViewTab::OnInitialUpdate()
 
 	// ｱｸﾃｨﾌﾞﾍﾟｰｼﾞ情報
 	int	nPage = AfxGetNCVCApp()->GetNCTabPage();
-	ActivatePage(NCVIEW_OPENGL);	// 一旦OpenGLタブをアクティブにする
-	if ( nPage < GetPageCount() )
-		ActivatePage(nPage);
+	if ( AfxGetNCVCApp()->GetViewOption()->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) ) {
+		// もろもろ初期化のため一旦OpenGLタブをアクティブにする
+		ActivatePage(NCVIEW_OPENGL);
+	}
+	else {
+		// 動作中にソリッド表示をOFFにされる場合への対処
+		if ( nPage >= NCVIEW_OPENGL )
+			nPage = NCVIEW_OPENGL - 1;
+	}
+	ActivatePage(nPage);
 
 	// CNCViewSplitのｻｲｽﾞ調整
 	// 現在ｱｸﾃｨﾌﾞﾍﾟｰｼﾞと等しいときは，さらに各ﾋﾞｭｰWM_USERVIEWFITMSG送信
