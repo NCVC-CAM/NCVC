@@ -406,18 +406,6 @@ BOOL CNCVCApp::NCVCRegInit(void)
 	if ( !CreateExecMap() )
 		return FALSE;
 
-	// NCViewTab管理情報
-	// NCViewTab起動時ではなく，ﾌﾟﾛｸﾞﾗﾑ開始情報として取得
-	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
-	VERIFY(strEntry.LoadString(IDS_REG_NCV_TRACESPEED));
-	m_nTraceSpeed = GetProfileInt(strRegKey, strEntry, -1) + ID_NCVIEW_TRACE_FAST;
-	if ( m_nTraceSpeed<ID_NCVIEW_TRACE_FAST || m_nTraceSpeed>ID_NCVIEW_TRACE_LOW )
-		m_nTraceSpeed = ID_NCVIEW_TRACE_LOW;
-	VERIFY(strEntry.LoadString(IDS_REG_NCV_VIEWPAGE));
-	m_nNCTabPage = GetProfileInt(strRegKey, strEntry, 0);
-	if ( m_nNCTabPage < 0 || m_nNCTabPage > NCVIEW_OPENGL/*GetPageCount()*/ )
-		m_nNCTabPage = 0;
-
 	try {
 		// OpenGL Default View Info
 		CRecentViewInfo::VINFO*	bi = NULL;
@@ -445,6 +433,23 @@ BOOL CNCVCApp::NCVCRegInit(void)
 		e->Delete();
 		return FALSE;
 	}
+
+	// NCViewTab管理情報
+	// NCViewTab起動時ではなく，ﾌﾟﾛｸﾞﾗﾑ開始情報として取得
+	VERIFY(strRegKey.LoadString(IDS_REGKEY_NC));
+	VERIFY(strEntry.LoadString(IDS_REG_NCV_TRACESPEED));
+	m_nTraceSpeed = GetProfileInt(strRegKey, strEntry, -1) + ID_NCVIEW_TRACE_FAST;
+	if ( m_nTraceSpeed<ID_NCVIEW_TRACE_FAST || m_nTraceSpeed>ID_NCVIEW_TRACE_LOW )
+		m_nTraceSpeed = ID_NCVIEW_TRACE_LOW;
+	VERIFY(strEntry.LoadString(IDS_REG_NCV_VIEWPAGE));
+	m_nNCTabPage = GetProfileInt(strRegKey, strEntry, 0);
+	int nTabPage = NCVIEW_OPENGL;
+	if ( !GetViewOption()->GetNCViewFlg(GLOPTFLG_SOLIDVIEW) )
+		nTabPage--;
+	if ( m_nNCTabPage < 0 )
+		m_nNCTabPage = 0;
+	else if ( nTabPage < m_nNCTabPage )
+		m_nNCTabPage--;		// 0では初回表示時にアクティブにならない
 
 	// ﾚｼﾞｽﾄﾘの旧ﾃﾞｰﾀ削除
 	NCVCRegOld();
