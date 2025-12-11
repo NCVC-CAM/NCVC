@@ -182,10 +182,14 @@ NCVCのホームページから必要な分をダウンロードしてください。
 
 【変更履歴】
 4.15b → 4.15c への変更は
+・全般
+　：開発環境をVisualStudio2026に変更した
+　　→MFCランタイムが変更されているので，インストーラを推奨します．
 ・バグレポート
 　：サムネイルでNCデータを開くと重複して表示されるバグを修正（Issue #31）
 　　→拡張子の登録で"＊"を登録していると起きる現象．サムネ表示は登録拡張子のみを表示するように変更しました．
 　：ソリッド表示をOFFにしたら［引数が正しくありません］と表示されて，初回の表示が乱れるバグを修正（Issue #32）
+　　→OpenGLタブ表示中にソリッド表示をOFFにしたら背景が乱れる場合がありますが，これは仕様です(^^;)
 
 4.15a → 4.15b への変更は
 ・バグレポート
@@ -287,7 +291,7 @@ E-mail:magara[at]maizuru-ct.ac.jp
 メモリ　　　：16GB
 ビデオ　　　：GeForce RTX 2070
 ＯＳ　　　　：Windows 11 Enterprise(64bit)
-開発環境　　：Visual Studio Professional/Community 2022
-ライブラリ　：MFC, boost-1.89.0, GLEW-2.10, Kodatuno-R3.4改
+開発環境　　：Visual Studio Community 2026
+ライブラリ　：MFC, boost-1.90.0, GLEW-2.10, Kodatuno-R3.4改
 　Kodatunoは、金沢大学マンマシン研究室で開発されている
 　オープンソースCAMカーネルです
