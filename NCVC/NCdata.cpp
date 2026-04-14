@@ -743,6 +743,7 @@ optional<CPointF> CNCline::SetChamferingPoint(BOOL bStart, float c)
 		m_pt2Ds = m_ptValS.PointConvert();
 	else {
 		m_pRead->m_ptValOrg = m_ptValE;
+/*		àÍíUï€óØ
 		if ( m_pRead->m_pG68 ) {
 			// m_ptValE ÇÕG68âÒì]çœÇ›ç¿ïWÇÃÇΩÇﬂâÒì]Çå≥Ç…ñﬂÇµÇƒµÃæØƒå∏éZ
 			m_pRead->m_pG68->dRound = -m_pRead->m_pG68->dRound;
@@ -750,6 +751,7 @@ optional<CPointF> CNCline::SetChamferingPoint(BOOL bStart, float c)
 			m_pRead->m_pG68->dRound = -m_pRead->m_pG68->dRound;
 		}
 		m_pRead->m_ptValOrg -= m_pRead->m_ptOffset;	// m_ptValEÇ™G68ÇÃèÍçáÅAÇ®Ç©ÇµÇ≠Ç»ÇÈ
+*/
 		m_pt2D = m_ptValE.PointConvert();
 	}
 
@@ -2417,6 +2419,7 @@ optional<CPointF> CNCcircle::SetChamferingPoint(BOOL bStart, float c)
 		}
 		SetPlaneValue(pt, m_ptValE);
 		m_pRead->m_ptValOrg = m_ptValE;
+/*		àÍíUï€óØ
 		if ( m_pRead->m_pG68 ) {
 			// m_ptValE ÇÕG68âÒì]çœÇ›ç¿ïWÇÃÇΩÇﬂâÒì]Çå≥Ç…ñﬂÇµÇƒµÃæØƒå∏éZ
 			m_pRead->m_pG68->dRound = -m_pRead->m_pG68->dRound;
@@ -2424,6 +2427,7 @@ optional<CPointF> CNCcircle::SetChamferingPoint(BOOL bStart, float c)
 			m_pRead->m_pG68->dRound = -m_pRead->m_pG68->dRound;
 		}
 		m_pRead->m_ptValOrg -= m_pRead->m_ptOffset;
+*/
 		m_eq = pa;
 		m_pt2D = m_ptValE.PointConvert();
 	}
