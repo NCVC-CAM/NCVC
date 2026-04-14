@@ -201,6 +201,7 @@ protected:
 	afx_msg void OnViewMode(UINT);
 	afx_msg void OnUpdateViewMode(CCmdUI* pCmdUI);
 	//
+	afx_msg LRESULT OnGLViewUpdate(WPARAM, LPARAM);	// from NCWorkDlg.cpp
 	afx_msg LRESULT OnSelectTrace(WPARAM, LPARAM);	// from NCViewTab.cpp
 
 	DECLARE_MESSAGE_MAP()

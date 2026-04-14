@@ -129,16 +129,18 @@ typedef boost::tokenizer< STDSEPA >		STDTOKEN;
 	// ﾌﾚｰﾑへﾌｧｲﾙ変更通知
 #define	WM_USERFILECHANGENOTIFY	WM_USER+101
 	// CViewBase::OnInitialUpdate() で正確なｳｨﾝﾄﾞｳｻｲｽﾞを得るためのﾒｯｾｰｼﾞ
-#define	WM_USERINITIALUPDATE	WM_USER+105
+#define	WM_USERINITIALUPDATE	WM_USER+102
 	// ｽﾚｯﾄﾞからﾒｲﾝｽﾃｰﾀｽﾊﾞｰのﾌﾟﾛｸﾞﾚｽｺﾝﾄﾛｰﾙへのﾎﾟｼﾞｼｮﾝｾｯﾄ
-#define	WM_USERPROGRESSPOS		WM_USER+106
+#define	WM_USERPROGRESSPOS		WM_USER+103
 	// ﾓｰﾄﾞﾚｽﾀﾞｲｱﾛｸﾞへのﾄﾞｷｭﾒﾝﾄ切替通知
-#define	WM_USERSWITCHDOCUMENT	WM_USER+107
+#define	WM_USERSWITCHDOCUMENT	WM_USER+104
 	// CTabViewBase のﾍﾟｰｼﾞ切替ｲﾍﾞﾝﾄ
-#define	WM_USERACTIVATEPAGE		WM_USER+108
+#define	WM_USERACTIVATEPAGE		WM_USER+105
 	// MDI子ｳｨﾝﾄﾞｳのｼｽﾃﾑｺﾏﾝﾄﾞ(最大化,元に戻す)に対するﾌｨｯﾄﾒｯｾｰｼﾞ 兼
 	// 各ﾋﾞｭｰへのﾌｨｯﾄﾒｯｾｰｼﾞ
-#define	WM_USERVIEWFITMSG		WM_USER+109
+#define	WM_USERVIEWFITMSG		WM_USER+106
+	// OpenGLビュー専用
+#define	WM_USERVIEWGLUPDATE		WM_USER+107
 	// ﾄﾚｰｽ実行ｽﾚｯﾄﾞからの通知(CTraceThread -> CNCListView)
 #define WM_USERTRACESELECT		WM_USER+110
 	// Gｺｰﾄﾞのｽﾃｰﾀｽﾊﾞｰ更新(CNCListView -> CNCChild)

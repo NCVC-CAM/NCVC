@@ -71,6 +71,7 @@ BEGIN_MESSAGE_MAP(CNCViewGL, CViewBaseGL)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_NCVIEW_PATHVIEW, ID_NCVIEW_LATHEMODE, &CNCViewGL::OnUpdateViewMode)
 	ON_COMMAND_RANGE(ID_NCVIEW_PATHVIEW, ID_NCVIEW_LATHEMODE, &CNCViewGL::OnViewMode)
 	//
+	ON_MESSAGE(WM_USERVIEWGLUPDATE, &CNCViewGL::OnGLViewUpdate)
 	ON_MESSAGE(WM_USERTRACESELECT, &CNCViewGL::OnSelectTrace)
 END_MESSAGE_MAP()
 
@@ -205,42 +206,18 @@ void CNCViewGL::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 		Invalidate(FALSE);
 		return;
 
+	case UAV_ADDINREDRAW:
+		Invalidate(FALSE);
+		return;
+
 	case UAV_FILEINSERT:	// 占有矩形の変更
 		pOpt->m_dwUpdateFlg = VIEWUPDATE_BOXEL;
 		pHint = (CObject *)1;	// dummy
 		// through
+
 	case UAV_DRAWWORKRECT:	// ワーク矩形変更
-		if ( m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] ) {
-			pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
-		}
-		// through
 	case UAV_CHANGEFONT:	// 色の変更 etc.
-		if ( m_bGLflg[NCVIEWGLFLG_ACTIVE] ) {
-			GLdouble	objXform[4][4];
-			CPointF		ptCenter(m_ptCenter);
-			if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
-				// 行列ﾏﾄﾘｸｽのﾊﾞｯｸｱｯﾌﾟ
-				memcpy(objXform, m_objXform, sizeof(objXform));
-				// 行列ﾏﾄﾘｸｽの初期化
-				OnLensKey(ID_VIEW_FIT);
-			}
-			// 表示情報の更新
-			UpdateViewOption();
-			if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
-				// 行列ﾏﾄﾘｸｽのﾘｽﾄｱ
-				memcpy(m_objXform, objXform, sizeof(objXform));
-				m_ptCenter = ptCenter;
-				// 回転の復元
-				CClientDC	dc(this);
-				::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
-				SetupViewingTransform();
-				::wglMakeCurrent( NULL, NULL );
-			}
-		}
-		pOpt->m_dwUpdateFlg = 0;
-		// through
-	case UAV_ADDINREDRAW:
-		Invalidate(FALSE);
+		this->PostMessage(WM_USERVIEWGLUPDATE);
 		return;
 	}
 	__super::OnUpdate(pSender, lHint, pHint);
@@ -1120,6 +1097,43 @@ LRESULT CNCViewGL::OnUserViewFitMsg(WPARAM wParam, LPARAM lParam)
 		printf("Rate=%f\n", m_dRate);
 #endif
 	}
+
+	return 0;
+}
+
+LRESULT CNCViewGL::OnGLViewUpdate(WPARAM wParam, LPARAM lParam)
+{
+	CViewOption* pOpt = AfxGetNCVCApp()->GetViewOption();
+
+	if ( m_bGLflg[NCVIEWGLFLG_SOLIDVIEW] ) {
+		pOpt->m_dwUpdateFlg |= VIEWUPDATE_BOXEL;
+	}
+
+	if ( m_bGLflg[NCVIEWGLFLG_ACTIVE] ) {
+		GLdouble	objXform[4][4];
+		CPointF		ptCenter(m_ptCenter);
+		if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
+			// 行列ﾏﾄﾘｸｽのﾊﾞｯｸｱｯﾌﾟ
+			memcpy(objXform, m_objXform, sizeof(objXform));
+			// 行列ﾏﾄﾘｸｽの初期化
+			OnLensKey(ID_VIEW_FIT);
+		}
+		// 表示情報の更新
+		UpdateViewOption();
+		if ( pOpt->m_dwUpdateFlg & VIEWUPDATE_BOXEL ) {
+			// 行列ﾏﾄﾘｸｽのﾘｽﾄｱ
+			memcpy(m_objXform, objXform, sizeof(objXform));
+			m_ptCenter = ptCenter;
+			// 回転の復元
+			CClientDC	dc(this);
+			::wglMakeCurrent( dc.GetSafeHdc(), m_hRC );
+			SetupViewingTransform();
+			::wglMakeCurrent( NULL, NULL );
+		}
+	}
+
+	pOpt->m_dwUpdateFlg = 0;
+	Invalidate(FALSE);
 
 	return 0;
 }
