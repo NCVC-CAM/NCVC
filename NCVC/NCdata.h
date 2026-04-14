@@ -152,8 +152,8 @@ protected:
 	CNCread*	m_pRead;		// 読み込み終了後に消去するﾃﾞｰﾀ群
 
 	// G68座標回転
-	void	CalcG68Round(LPG68ROUND,   CPoint3F&) const;
-	void	CalcG68Round(LPG68ROUND_F, CPoint3F&) const;
+	CPoint3F	CalcG68Round(LPG68ROUND,   const CPoint3F&, const CPoint3F&) const;
+	CPoint3F	CalcG68Round(LPG68ROUND_F, const CPoint3F&, const CPoint3F&) const;
 
 	// 派生ｸﾗｽ用ｺﾝｽﾄﾗｸﾀ
 	CNCdata(ENNCDTYPE, const CNCdata*, LPNCARGV, const CPoint3F&);
@@ -180,7 +180,8 @@ public:
 	// CPointFからCPoint3Fへ座標設定
 	void	SetPlaneValue(const CPointF&, CPoint3F&) const;
 	// CPoint3Fから平面の2D座標を抽出して原点補正
-	CPointF	GetPlaneValueOrg(const CPoint3F&, const CPoint3F&) const;
+	CPointF		GetPlaneValueOrg(const CPoint3F&, const CPoint3F&) const;
+	CPoint3F	SetPlaneValueOrg(const CPoint3F&, const CPointF&, const CPoint3F&) const;
 	//
 	const CPoint3F	GetStartPoint(void) const;
 	const CPoint3F	GetEndPoint(void) const;

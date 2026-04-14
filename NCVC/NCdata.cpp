@@ -118,9 +118,10 @@ CNCdata::CNCdata(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset
 		if ( lpArgv->nc.dwValFlags & (NCD_X|NCD_Y|NCD_Z) ) {
 			m_pRead->m_ptValOrg.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
 			m_ptValS = pData->GetEndPoint();
-			m_ptValE = m_pRead->m_ptValOrg + ptOffset;
 			if ( lpArgv->g68.bG68 )
-				CalcG68Round(&(lpArgv->g68), m_ptValE);
+				m_ptValE = CalcG68Round(&(lpArgv->g68), ptOffset, m_pRead->m_ptValOrg);
+			else
+				m_ptValE = m_pRead->m_ptValOrg + ptOffset;
 			m_pt2D = m_ptValE.PointConvert();
 		}
 		else {
@@ -265,39 +266,64 @@ void CNCdata::SetPlaneValue(const CPointF& pt, CPoint3F& ptResult) const
 	}
 }
 
-CPointF	CNCdata::GetPlaneValueOrg(const CPoint3F& pt1, const CPoint3F& pt2) const
+CPointF	CNCdata::GetPlaneValueOrg(const CPoint3F& pt1, const CPoint3F& ptOrg) const
 {
 	CPointF	pt;
 	switch ( GetPlane() ) {
 	case XY_PLANE:
-		pt = pt1.GetXY() - pt2.GetXY();
+		pt = pt1.GetXY() - ptOrg.GetXY();
 		break;
 	case XZ_PLANE:
-		pt = pt1.GetXZ() - pt2.GetXZ();
+		pt = pt1.GetXZ() - ptOrg.GetXZ();
 		break;
 	case YZ_PLANE:
-		pt = pt1.GetYZ() - pt2.GetYZ();
+		pt = pt1.GetYZ() - ptOrg.GetYZ();
 		break;
 	}
 	return pt;
 }
 
-void CNCdata::CalcG68Round(LPG68ROUND lpG68, CPoint3F& ptResult) const
+CPoint3F CNCdata::SetPlaneValueOrg(const CPoint3F& ptOrg, const CPointF& ptr, const CPoint3F& pto) const
 {
-	CPoint3F	ptOrg((float)lpG68->dOrg[NCA_X], (float)lpG68->dOrg[NCA_Y], (float)lpG68->dOrg[NCA_Z]);
-	CPointF		pt(GetPlaneValueOrg(ptResult, ptOrg));
-	pt.RoundPoint((float)lpG68->dRound);
-	SetPlaneValue(pt, ptResult);
-	ptResult += ptOrg;
+	CPoint3F	ptResult;
+	switch ( GetPlane() ) {
+	case XY_PLANE:
+		ptResult.x = ptr.x + pto.x;
+		ptResult.y = ptr.y + pto.y;
+		ptResult.z = ptOrg.z;
+		break;
+	case XZ_PLANE:
+		ptResult.x = ptr.x + pto.x;
+		ptResult.z = ptr.y + pto.z;
+		ptResult.y = ptOrg.y;
+		break;
+	case YZ_PLANE:
+		ptResult.y = ptr.x + pto.y;
+		ptResult.z = ptr.y + pto.z;
+		ptResult.x = ptOrg.x;
+		break;
+	}
+	return ptResult;
 }
 
-void CNCdata::CalcG68Round(LPG68ROUND_F lpG68, CPoint3F& ptResult) const
+CPoint3F CNCdata::CalcG68Round(LPG68ROUND lpG68, const CPoint3F& ptOffset, const CPoint3F& ptOrg) const
 {
-	CPoint3F	ptOrg(lpG68->dOrg[NCA_X], lpG68->dOrg[NCA_Y], lpG68->dOrg[NCA_Z]);
-	CPointF		pt(GetPlaneValueOrg(ptResult, ptOrg));
-	pt.RoundPoint(lpG68->dRound);
-	SetPlaneValue(pt, ptResult);
-	ptResult += ptOrg;
+	CPoint3F	pto((float)lpG68->dOrg[NCA_X], (float)lpG68->dOrg[NCA_Y], (float)lpG68->dOrg[NCA_Z]);
+	pto += ptOffset;
+	CPointF		pt2r(GetPlaneValueOrg(ptOrg, pto));
+	pt2r.RoundPoint((float)lpG68->dRound);
+	CPoint3F	ptResult = SetPlaneValueOrg(ptOrg, pt2r, pto);
+	return ptResult;
+}
+
+CPoint3F CNCdata::CalcG68Round(LPG68ROUND_F lpG68, const CPoint3F& ptOffset, const CPoint3F& ptOrg) const
+{
+	CPoint3F	pto(lpG68->dOrg[NCA_X], lpG68->dOrg[NCA_Y], lpG68->dOrg[NCA_Z]);
+	pto += ptOffset;
+	CPointF		pt2r(GetPlaneValueOrg(ptOrg, pto));
+	pt2r.RoundPoint(lpG68->dRound);
+	CPoint3F	ptResult = SetPlaneValueOrg(ptOrg, pt2r, pto);
+	return ptResult;
 }
 
 CNCdata* CNCdata::NC_CopyObject(void)
@@ -438,10 +464,11 @@ CNCline::CNCline(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset
 	m_pt2Ds  = pData->Get2DPoint();
 	// 最終座標(==指定座標)ｾｯﾄ
 	m_pRead->m_ptValOrg.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
-	m_ptValE = m_pRead->m_ptValOrg + ptOffset;
 	// 座標回転
 	if ( lpArgv->g68.bG68 )
-		CalcG68Round(&(lpArgv->g68), m_ptValE);
+		m_ptValE = CalcG68Round(&(lpArgv->g68), ptOffset, m_pRead->m_ptValOrg);
+	else
+		m_ptValE = m_pRead->m_ptValOrg + ptOffset;
 	// 描画終点を計算し保存
 	m_pt2D = m_ptValE.PointConvert();
 
@@ -719,7 +746,7 @@ optional<CPointF> CNCline::SetChamferingPoint(BOOL bStart, float c)
 		if ( m_pRead->m_pG68 ) {
 			// m_ptValE はG68回転済み座標のため回転を元に戻してｵﾌｾｯﾄ減算
 			m_pRead->m_pG68->dRound = -m_pRead->m_pG68->dRound;
-			CalcG68Round(m_pRead->m_pG68, m_pRead->m_ptValOrg);
+			CalcG68Round(m_pRead->m_pG68, m_pRead->m_ptOffset, m_pRead->m_ptValOrg);
 			m_pRead->m_pG68->dRound = -m_pRead->m_pG68->dRound;
 		}
 		m_pRead->m_ptValOrg -= m_pRead->m_ptOffset;	// m_ptValEがG68の場合、おかしくなる
@@ -905,8 +932,7 @@ CNCcycle::CNCcycle
 
 	// 描画始点を前回の計算値から取得
 	m_pt2Ds  = pData->Get2DPoint();
-	// 以降ｵﾌｾｯﾄ無しで計算！
-	m_ptValS = pData->GetEndPoint() - pData->GetOffsetPoint();
+	m_ptValS = pData->GetEndPoint();
 	// 縦繰り返し数取得
 	if ( enType == NCMAKELATHE ) {
 		nV = 1;
@@ -919,8 +945,7 @@ CNCcycle::CNCcycle
 	}
 	// 復帰座標(前回のｵﾌﾞｼﾞｪｸﾄが固定ｻｲｸﾙかどうか)
 	m_dInitial = pData->GetType()==NCDCYCLEDATA ?
-				static_cast<const CNCcycle*>(pData)->GetInitialValue() - pData->GetOffsetPoint()[z] :
-				m_ptValS[z];
+				static_cast<const CNCcycle*>(pData)->GetInitialValue() : m_ptValS[z];
 	// ｲﾝｸﾘﾒﾝﾀﾙ補正(R座標はﾍﾞｰｽｸﾗｽで座標補正の対象外)
 	if ( lpArgv->bAbs ) {
 		dR = GetValFlags() & NCD_R ? (float)lpArgv->nc.dValue[NCA_R] : m_ptValS[z];
@@ -952,18 +977,20 @@ CNCcycle::CNCcycle
 			m_nc.dLength = m_dCycleMove = 0.0f;
 			m_ptValI = m_ptValR = m_ptValE = m_ptValS = pData->GetEndPoint();
 			m_pRead->m_ptValOrg = pData->GetOriginalEndPoint();
-			m_dInitial += ptOffset[z];
 			m_pt2D = m_pt2Ds;
 			return;
 		}
 	}
 
 	m_pRead->m_ptValOrg.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
-	m_ptValE = m_pRead->m_ptValOrg;
-	pt = pData->GetOriginalEndPoint();
+	pt = pData->GetOriginalEndPoint() + ptOffset;
 	// 座標回転
-	if ( lpArgv->g68.bG68 && enType!=NCMAKELATHE )
-		CalcG68Round(&(lpArgv->g68), m_ptValE);
+	if ( lpArgv->g68.bG68 && enType!=NCMAKELATHE ) {
+		m_ptValE = CalcG68Round(&(lpArgv->g68), ptOffset, m_pRead->m_ptValOrg);
+	}
+	else {
+		m_ptValE = m_pRead->m_ptValOrg + ptOffset;
+	}
 	// 各軸ごとの移動長計算
 	dx = m_ptValE[x] - m_ptValS[x];		dox = m_pRead->m_ptValOrg[x] - pt[x];
 	dy = m_ptValE[y] - m_ptValS[y];		doy = m_pRead->m_ptValOrg[y] - pt[y];
@@ -1008,13 +1035,6 @@ CNCcycle::CNCcycle
 		m_pRead->m_ptValOrg.SetPoint(dI, pt.y+dox*nH, pt.z+doy*nH);
 		break;
 	}
-	m_ptValS += ptOffset;
-	m_ptValE += ptOffset;
-	m_ptValI += ptOffset;
-	m_ptValR += ptOffset;
-	m_dInitial += ptOffset[z];
-	dI += ptOffset[z];
-	dR += ptOffset[z];
 	m_pt2D = m_ptValE.PointConvert();
 
 	// 切り込み値が指定されていなければｴﾗｰ(補間はTH_NCRead.cppにて)
@@ -1341,14 +1361,16 @@ CNCcircle::CNCcircle
 	Constracter();
 
 	m_ptValS = pData->GetEndPoint();	// 前回の計算値を補間
-	m_ptValE += ptOffset;
-	m_ptOrg  += ptOffset;
 	// 座標回転
 	if ( lpArgv->g68.bG68 ) {
-		CalcG68Round(&(lpArgv->g68), m_ptValE);
-		CalcG68Round(&(lpArgv->g68), m_ptOrg);
+		CalcG68Round(&(lpArgv->g68), ptOffset, m_ptValE);
+		CalcG68Round(&(lpArgv->g68), ptOffset, m_ptOrg);
 		// 角度の再調整( [m_sq|m_eq] += lpArgv->g68.dRound; でもOK )
 		AngleTuning(GetPlaneValueOrg(m_ptValS, m_ptOrg), GetPlaneValueOrg(m_ptValE, m_ptOrg));
+	}
+	else {
+		m_ptValE += ptOffset;
+		m_ptOrg  += ptOffset;
 	}
 
 	// 描画終点を計算し保存
@@ -2398,7 +2420,7 @@ optional<CPointF> CNCcircle::SetChamferingPoint(BOOL bStart, float c)
 		if ( m_pRead->m_pG68 ) {
 			// m_ptValE はG68回転済み座標のため回転を元に戻してｵﾌｾｯﾄ減算
 			m_pRead->m_pG68->dRound = -m_pRead->m_pG68->dRound;
-			CalcG68Round(m_pRead->m_pG68, m_pRead->m_ptValOrg);
+			CalcG68Round(m_pRead->m_pG68, m_pRead->m_ptOffset, m_pRead->m_ptValOrg);
 			m_pRead->m_pG68->dRound = -m_pRead->m_pG68->dRound;
 		}
 		m_pRead->m_ptValOrg -= m_pRead->m_ptOffset;
