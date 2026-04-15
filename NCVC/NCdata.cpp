@@ -115,6 +115,7 @@ CNCdata::CNCdata(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset
 		m_pt2D = m_ptValE.PointConvert();
 	}
 	else {
+/*		-- 切削コード以外の座標指示は無視
 		if ( lpArgv->nc.dwValFlags & (NCD_X|NCD_Y|NCD_Z) ) {
 			m_pRead->m_ptValOrg.SetPoint(GetValue(NCA_X), GetValue(NCA_Y), GetValue(NCA_Z));
 			m_ptValS = pData->GetEndPoint();
@@ -125,10 +126,11 @@ CNCdata::CNCdata(const CNCdata* pData, LPNCARGV lpArgv, const CPoint3F& ptOffset
 			m_pt2D = m_ptValE.PointConvert();
 		}
 		else {
+*/
 			m_pRead->m_ptValOrg = pData->GetOriginalEndPoint();
 			m_ptValS = m_ptValE = pData->GetEndPoint();
 			m_pt2D   = pData->Get2DPoint();
-		}
+//		}
 	}
 
 	m_enType = NCDBASEDATA;
@@ -309,21 +311,19 @@ CPoint3F CNCdata::SetPlaneValueOrg(const CPoint3F& ptOrg, const CPointF& ptr, co
 CPoint3F CNCdata::CalcG68Round(LPG68ROUND lpG68, const CPoint3F& ptOffset, const CPoint3F& ptOrg) const
 {
 	CPoint3F	pto((float)lpG68->dOrg[NCA_X], (float)lpG68->dOrg[NCA_Y], (float)lpG68->dOrg[NCA_Z]);
-	pto += ptOffset;
 	CPointF		pt2r(GetPlaneValueOrg(ptOrg, pto));
 	pt2r.RoundPoint((float)lpG68->dRound);
 	CPoint3F	ptResult = SetPlaneValueOrg(ptOrg, pt2r, pto);
-	return ptResult;
+	return ptResult + ptOffset;
 }
 
 CPoint3F CNCdata::CalcG68Round(LPG68ROUND_F lpG68, const CPoint3F& ptOffset, const CPoint3F& ptOrg) const
 {
 	CPoint3F	pto(lpG68->dOrg[NCA_X], lpG68->dOrg[NCA_Y], lpG68->dOrg[NCA_Z]);
-	pto += ptOffset;
 	CPointF		pt2r(GetPlaneValueOrg(ptOrg, pto));
 	pt2r.RoundPoint(lpG68->dRound);
 	CPoint3F	ptResult = SetPlaneValueOrg(ptOrg, pt2r, pto);
-	return ptResult;
+	return ptResult + ptOffset;
 }
 
 CNCdata* CNCdata::NC_CopyObject(void)
