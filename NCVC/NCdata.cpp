@@ -1365,8 +1365,8 @@ CNCcircle::CNCcircle
 	m_ptValS = pData->GetEndPoint();	// ëOâÒÇÃåvéZílÇï‚ä‘
 	// ç¿ïWâÒì]
 	if ( lpArgv->g68.bG68 ) {
-		CalcG68Round(&(lpArgv->g68), ptOffset, m_ptValE);
-		CalcG68Round(&(lpArgv->g68), ptOffset, m_ptOrg);
+		m_ptValE = CalcG68Round(&(lpArgv->g68), ptOffset, m_ptValE);
+		m_ptOrg  = CalcG68Round(&(lpArgv->g68), ptOffset, m_ptOrg);
 		// äpìxÇÃçƒí≤êÆ( [m_sq|m_eq] += lpArgv->g68.dRound; Ç≈Ç‡OK )
 		AngleTuning(GetPlaneValueOrg(m_ptValS, m_ptOrg), GetPlaneValueOrg(m_ptValE, m_ptOrg));
 	}
