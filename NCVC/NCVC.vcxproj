@@ -200,6 +200,11 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="TH_NCRead.cpp" />
+    <ClCompile Include="TH_MakeNCD.cpp" />
+    <ClCompile Include="TH_MakeLathe.cpp" />
+    <ClCompile Include="TH_MakeWire.cpp" />
+    <ClCompile Include="TH_MakeNurbs.cpp" />
     <ClCompile Include="3dContourScanSetupDlg.cpp" />
     <ClCompile Include="3dModelChild.cpp" />
     <ClCompile Include="3dModelDoc.cpp" />
@@ -327,11 +332,6 @@
     <ClCompile Include="TH_AutoWorkingSet.cpp" />
     <ClCompile Include="TH_Correct.cpp" />
     <ClCompile Include="TH_Cuttime.cpp" />
-    <ClCompile Include="TH_MakeLathe.cpp" />
-    <ClCompile Include="TH_MakeNCD.cpp" />
-    <ClCompile Include="TH_MakeNurbs.cpp" />
-    <ClCompile Include="TH_MakeWire.cpp" />
-    <ClCompile Include="TH_NCRead.cpp" />
     <ClCompile Include="TH_ShapeSearch.cpp" />
     <ClCompile Include="TH_UVWire.cpp" />
     <ClCompile Include="ThreadDlg.cpp" />
